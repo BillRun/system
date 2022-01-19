@@ -27,13 +27,23 @@ class BillrunController extends ApiController {
 	
 	protected $permissionReadAction = array('cycles', 'chargestatus', 'cycle');
 
+	protected $config_model;
+
 	public function init() {
 		$this->size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
 		if (in_array($this->getRequest()->action, $this->permissionReadAction)) {
 			$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 		}
+		$this->initializeModel();
 		$this->allowed();
 		parent::init();
+	}
+
+	/**
+	 * This method is for initializing controller's model.
+	 */
+	protected function initializeModel() {
+		$this->config_model = new ConfigModel();
 	}
 
 	/**
@@ -43,28 +53,32 @@ class BillrunController extends ApiController {
 	public function completeCycleAction() {
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
+		$invoicingDay = !empty($request->get('invoicing_day')) ? ltrim($request->get('invoicing_day'), "0") : null;
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
+		if (empty($invoicingDay) && Billrun_Factory::config()->isMultiDayCycle()) {
+			throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
+		}
 		$rerun = $request->get('rerun');
 		$generatedPdf = $request->get('generate_pdf');
-		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp();
+		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp(null, $invoicingDay);
 		if ($billrunKey >= $currentBillrunKey) {
 			throw new Exception("Can't run billing cycle on active or future cycles");
 		}
-		if (Billrun_Billingcycle::isCycleRunning($billrunKey, $this->size)) {
+		if (Billrun_Billingcycle::isCycleRunning($billrunKey, $this->size, $invoicingDay)) {
 			throw new Exception("Already Running");
 		}
-		$cycleStatus = Billrun_Billingcycle::getCycleStatus($billrunKey);
+		$cycleStatus = Billrun_Billingcycle::getCycleStatus($billrunKey, null, $invoicingDay);
 		if ($cycleStatus == 'finished' || $cycleStatus == 'to_rerun') {
 			if (is_null($rerun) || !$rerun) {
 				throw new Exception("For rerun pass rerun value as true");
 			}
 			Billrun_Factory::log("Rerunning cycle " . $billrunKey, Zend_Log::DEBUG);
-			Billrun_Billingcycle::removeBeforeRerun($billrunKey);
+			Billrun_Billingcycle::removeBeforeRerun($billrunKey, $invoicingDay);
 		}
 
-		$success = self::processCycle($billrunKey, $generatedPdf);
+		$success = self::processCycle($billrunKey, $generatedPdf, $invoicingDay);
 		Billrun_Factory::log("Finished running cycle " . $billrunKey, Zend_Log::DEBUG);
 		$output = array (
 			'status' => $success ? 1 : 0,
@@ -132,16 +146,26 @@ class BillrunController extends ApiController {
 			$invoicesId = explode(',', $invoices);
 		}
 		$billrunKey = $request->get('stamp');
+		$invoicingDay = !empty($request->get('invoicing_day')) ? ltrim($request->get('invoicing_day'), "0") : null;
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			return $this->setError("stamp is in incorrect format or missing ", $request);
 		}
-		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size) && (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey))) || !empty($invoices))){
-			if (is_null($invoices)) {
-				$success = self::processConfirmCycle($billrunKey);
-			} else {
-				$success = self::processConfirmCycle($billrunKey, $invoicesId);
-			}
+		if (Billrun_Factory::config()->isMultiDayCycle() && (empty($invoicingDay) || (!empty($invoicingDay) && !is_numeric($invoicingDay)))) {
+			return $this->setError('Need to pass numeric invoicing day when on multi day cycle mode.', $request);
 		}
+		if(!Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay)){
+			return $this->setError("Can't confirm invoices while the billing cycle run is ongoing", $request);
+		}
+		if (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices)) {
+			if (is_null($invoices)) {
+				$success = self::processConfirmCycle($billrunKey, [], [$invoicingDay]);
+			} else {
+				$success = self::processConfirmCycle($billrunKey, $invoicesId, $invoicingDay);
+			}
+		} else {
+			return $this->setError("Cycle was confirmed already, or no invoices were found to confirm", $request);
+		}
+
 		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
@@ -269,15 +293,27 @@ class BillrunController extends ApiController {
 		$params['billrun_key'] = $request->get('stamp');
 		$params['newestFirst'] = $request->get('newestFirst');
 		$params['timeStatus'] = $request->get('timeStatus');
+		$invoicing_day = $request->get('invoicing_day');
+		if ($this->config_model->isMultiDayCycleMode()) {
+			if (empty($invoicing_day)) {
+				$params['invoicing_day'] = Billrun_Factory::config()->getConfigChargingDay();
+				Billrun_Factory::log('No invoicing day was passed, the default one was taken', Zend_Log::DEBUG);
+			} else {
+				$params['invoicing_day'] = ltrim($invoicing_day, "0");
+			}
+		}
 		$billrunKeys = $this->getCyclesKeys($params);
 		foreach ($billrunKeys as $billrunKey) {
 			$setting['billrun_key'] = $billrunKey;
-			$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey));
-			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));	
+			$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey, $invoicing_day));
+			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey, $invoicing_day));	
 			if (empty($params['timeStatus'])) {
-				$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey);
+				$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey, $invoicing_day);
 			} else {
-				$setting['cycle_time_status'] = Billrun_Billingcycle::getCycleTimeStatus($billrunKey);
+				$setting['cycle_time_status'] = Billrun_Billingcycle::getCycleTimeStatus($billrunKey, $invoicing_day);
+			}	
+			if (!empty($invoicing_day)) {
+				$setting['invoicing_day'] = $invoicing_day;
 			}	
 			$settings[] = $setting;
 		}
@@ -295,21 +331,30 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function cycleAction() {
+		$config = Billrun_Factory::config();
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
+		$invoicingDay = !empty($request->get('invoicing_day')) ? ltrim($request->get('invoicing_day'), "0") : null;
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass stamp of the wanted cycle info');
 		}
-		$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey));
-		$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));
-		$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey);
-		$setting['completion_percentage'] = Billrun_Billingcycle::getCycleCompletionPercentage($billrunKey, $this->size);
-		$setting['generated_invoices'] = Billrun_Billingcycle::getNumberOfGeneratedInvoices($billrunKey);
-		$setting['generated_bills'] = Billrun_Billingcycle::getNumberOfGeneratedBills($billrunKey);
-		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size)) {
-			$setting['confirmation_percentage'] = Billrun_Billingcycle::getCycleConfirmationPercentage($billrunKey);
+		if (empty($invoicingDay) && $config->isMultiDayCycle()) {
+			throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
+		}
+		$setting['billrun_key'] = $billrunKey;
+		$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey, $invoicingDay));
+		$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey, $invoicingDay));
+		$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey, null, $invoicingDay);
+		$setting['completion_percentage'] = Billrun_Billingcycle::getCycleCompletionPercentage($billrunKey, $this->size, $invoicingDay);
+		$setting['generated_invoices'] = Billrun_Billingcycle::getNumberOfGeneratedInvoices($billrunKey, $invoicingDay);
+		$setting['generated_bills'] = Billrun_Billingcycle::getNumberOfGeneratedBills($billrunKey, $invoicingDay);
+		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay)) {
+			$setting['confirmation_percentage'] = Billrun_Billingcycle::getCycleConfirmationPercentage($billrunKey, $invoicingDay);
 		}
 		$setting['generate_pdf'] = Billrun_Factory::config()->getConfigValue('billrun.generate_pdf');
+		if (!empty($invoicingDay)) {
+			$setting['invoicing_day'] = $invoicingDay;
+		}
 		$output = array(
 			'status' => !empty($setting) ? 1 : 0,
 			'desc' => !empty($setting) ? 'success' : 'error',
@@ -318,7 +363,7 @@ class BillrunController extends ApiController {
 		$this->setOutput(array($output));
 	}
 
-	protected function processCycle($billrunKey, $generatedPdf = true) {
+	protected function processCycle($billrunKey, $generatedPdf = true, $invoicing_day = null) {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
@@ -326,29 +371,30 @@ class BillrunController extends ApiController {
 		if ((!in_array($generatedPdf,['true', 'false'])) || !is_numeric($billrunKey)) {
 			throw new Exception("One or more of the parameters of the 'cycle' command is not valid");
 		}
-		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf;
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf . (!is_null($invoicing_day) ? ' invoicing_days=' . $invoicing_day : "");
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 
 	protected function getCyclesKeys($params) {
+		$invoicing_day = !empty($params['invoicing_day']) ? $params['invoicing_day'] : null;
 		$newestFirst = !isset($params['newestFirst']) ? TRUE : boolval($params['newestFirst']);
 		if (!empty($params['from']) && !empty($params['to'])) {
-			return $this->getCyclesInRange($params['from'], $params['to'], $newestFirst);
+			return $this->getCyclesInRange($params['from'], $params['to'], $newestFirst, $invoicing_day);
 		}
 		if (!empty($params['billrun_key'])) {
 			return array($params['billrun_key']);
 		}
 		$to = date('Y/m/d', time());
 		$from = date('Y/m/d', strtotime('24 months ago'));		
-		return $this->getCyclesInRange($from, $to, $newestFirst);
+		return $this->getCyclesInRange($from, $to, $newestFirst, $invoicing_day);
 	}
 
-	public function getCyclesInRange($from, $to, $newestFirst = TRUE) {
+	public function getCyclesInRange($from, $to, $newestFirst = TRUE, $invoicing_day = null) {
 		$limit = 0;
-		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($from);
-		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($to);
-		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime - 1);
-		$lastBillrunKey = Billrun_Billingcycle::getOldestBillrunKey($startTime);
+		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($from, null, $invoicing_day);
+		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($to, null, $invoicing_day);
+		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime - 1, $invoicing_day);
+		$lastBillrunKey = Billrun_Billingcycle::getOldestBillrunKey($startTime, $invoicing_day);
 
 		while ($currentBillrunKey >= $lastBillrunKey && $limit < 100) {
 			$billrunKeys[] = $currentBillrunKey;
@@ -361,7 +407,7 @@ class BillrunController extends ApiController {
 		return $billrunKeys;
 	}
 
-	protected function processConfirmCycle($billrunKey, $invoicesId = array()) {
+	protected function processConfirmCycle($billrunKey, $invoicesId = array(), $invoicing_day = null) {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
@@ -373,11 +419,14 @@ class BillrunController extends ApiController {
 			$invoicesId = implode(',', $invoicesArray);			
 		}
 		if (!empty($invoicesId)) {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . escapeshellarg($billrunKey) . ' invoices=' . escapeshellarg($invoicesId);
 		} else {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey;
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . escapeshellarg($billrunKey);
 		}
-		return Billrun_Util::forkProcessCli($cmd);
+		if (!empty($invoicing_day)) {
+			$cmd .= ' invoicing_days=' . escapeshellarg($invoicing_day);
+		}
+		return Billrun_Util::forkProcessCli(escapeshellcmd($cmd));
 	}
 	
 	protected function processCharge($mode, $params = array()) {
@@ -411,13 +460,17 @@ class BillrunController extends ApiController {
 	public function resetCycleAction() {
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
+		$invoicingDay = !empty($request->get('invoicing_day')) ? ltrim($request->get('invoicing_day'), "0") : null;
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
+		if (empty($invoicingDay) && Billrun_Factory::config()->isMultiDayCycle()) {
+			throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
+		}
 		$success = false;
-		if (Billrun_Billingcycle::getCycleStatus($billrunKey) == 'finished') {
+		if (Billrun_Billingcycle::getCycleStatus($billrunKey, null, $invoicingDay) == 'finished') {
 			Billrun_Factory::log("Starting reset cycle for " . $billrunKey, Zend_Log::DEBUG);
-			Billrun_Billingcycle::removeBeforeRerun($billrunKey);
+			Billrun_Billingcycle::removeBeforeRerun($billrunKey, $invoicingDay);
 			Billrun_Factory::log("Finished reset cycle for " . $billrunKey, Zend_Log::DEBUG);
 			$success = true;
 		}
@@ -461,7 +514,7 @@ class BillrunController extends ApiController {
 					}
 					break;
 				case 'billrun_key':
-					if (!Billrun_Util::isBillrunKey(trim($value, '"'))) {
+					if (!is_null($value) && !Billrun_Util::isBillrunKey(trim($value, '"'))) {
 						return false;
 					}
 					break;

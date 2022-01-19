@@ -31,8 +31,10 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 	}
 	
 	protected function getCharges($options) {
-		if( $this->planIncluded && !Billrun_Factory::config()->getConfigValue('customer.aggregator.charge_included_service',TRUE)) {
-			return [ 'charge' => 0 ];
+		if( $this->planIncluded &&
+			!Billrun_Factory::config()->getConfigValue('customer.aggregator.charge_included_service',TRUE) &&
+			Billrun_Utils_Cycle::shouldBeInCycle($options, $options['cycle']) ) {
+				return [ 'charge' => 0 ];
 		}
 			
 		return parent::getCharges($options);

@@ -22,6 +22,10 @@ class Billrun_EntityGetter_Filters_Base {
 		'$isTrue' => array('$eq' => true),
 		'$isFalse' => array('$eq' => false),
 	);
+	
+	protected $andQueries = array(	
+		'$existsFalse',
+	);
 
 	protected $datePreFunctions = array(
 		'minute_of_hour' => 'i' , // with leading zeros
@@ -68,6 +72,10 @@ class Billrun_EntityGetter_Filters_Base {
 		if (!is_null($ufVal)) {
 			return $this->regexValue($ufVal, $regex);
 		}
+		$cfVal = Billrun_Util::getIn($row, 'cf.' . $field, null);
+		if (!is_null($cfVal)) {
+			return $this->regexValue($cfVal, $regex);
+		}
 		
 		if (isset($row['foreign'][$field])) {
 			if (is_array($row['foreign'][$field])) {
@@ -104,53 +112,52 @@ class Billrun_EntityGetter_Filters_Base {
 	 * @param array $row
 	 * @return value after regex applying, in case of condition - 1 if the condition is met, 0 otherwise
 	 */
-	protected function getComputedValue($row) {
+	public function getComputedValue($row) {
 		if (!isset($this->params['computed'])) {
 			return '';
 		}
 
 		$computedType = Billrun_Util::getIn($this->params, array('computed', 'type'), 'regex');
 		$firstValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'key'), '');
-		$firstValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'regex'), '');
-		$firstVal = $this->getRowFieldValue($row, $firstValKey, $firstValRegex);
-		$preFunction = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'preFunction'), false);
-		if ($preFunction) {
-			$firstVal = $this->applyPreFunction($firstVal, $preFunction);
-		}
-
-		if ($computedType === 'regex') {
-			return $firstVal;
-		}
 		$operator = $this->params['computed']['operator'];
-		$secondValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'key'), '');
-		if ($operator === '$regex') { // in case of hard coded value
-			$secondVal = $secondValKey;
-		} else {
-			$secondValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'regex'), '');
-			$secondVal = $this->getRowFieldValue($row, $secondValKey, $secondValRegex);
-		}
-		
-		$data = array('first_val' => $firstVal);
-		$query = array(
-			'first_val' => array(
-				$operator => $secondVal,
-			),
-		);
-		if (!empty($this->specialQueries[$operator]) ) {
-			$data = $row;
-			$op = in_array($operator, []) ? '$and' : '$or';
+		if (!empty($this->specialQueries[$operator])) {
+			$data = $row instanceof Mongodloid_Entity ? $row->getRawData() : $row;
+			$op = in_array($operator, $this->andQueries) ? '$and' : '$or';
+
 			$query = array(
 				$op => [
 					[$firstValKey => $this->specialQueries[$operator]],
 					['uf.'.$firstValKey => $this->specialQueries[$operator]],
 				]
 			);
+		} else {
+			$firstValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'regex'), '');
+			$firstVal = $this->getRowFieldValue($row, $firstValKey, $firstValRegex);
+			$preFunction = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'preFunction'), false);
+			if ($preFunction) {
+				$firstVal = $this->applyPreFunction($firstVal, $preFunction);
+			}
+
+			if ($computedType === 'regex') {
+				return $firstVal;
+			}
+			$secondValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'key'), '');
+			if ($operator === '$regex') { // in case of hard coded value
+				$secondVal = $secondValKey;
+			} else {
+				$secondValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'regex'), '');
+				$secondVal = $this->getRowFieldValue($row, $secondValKey, $secondValRegex);
+			}
+			
+			$data = array('first_val' => $firstVal);
+			$query = array(
+				'first_val' => array(
+					$operator => $secondVal,
+				),
+			);
 		}
 
 		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
-		if($operator === '$existsFalse') {
-			$res = !$res;
-		}
 		return $this->getComputedValueResult($row, $res);
 	}
 

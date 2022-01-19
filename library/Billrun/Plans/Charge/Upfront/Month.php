@@ -20,7 +20,7 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 	 */
 	protected function getFractionOfMonth() {
 		
-		if (empty($this->deactivation) ) {
+		if (empty($this->deactivation) && $this->activation < $this->cycle->start()  ) {
 			return 1;
 		} 
 
@@ -61,7 +61,9 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 		$refundFraction = 1- Billrun_Plan::calcFractionOfMonthUnix($cycle->key(), $this->activation, $endActivation);
 		
 		return array( 'value' => -$lastUpfrontCharge * $refundFraction, 
-			'start' => $this->activation, 
-			'end' => $this->deactivation);
+			'start' => $this->activation,
+			'prorated_start_date' => new Mongodloid_Date($this->deactivation),
+			'end' => $this->deactivation,
+			'prorated_end_date' =>  new Mongodloid_Date($this->cycle->end()));
 	}
 }

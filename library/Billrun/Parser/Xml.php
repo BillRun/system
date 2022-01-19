@@ -89,10 +89,15 @@ class Billrun_Parser_Xml {
             Billrun_Factory::log('Billrun_Parser_Xml: Couldn\'t open ' . $filename . ' file. No process was made.', Zend_Log::ALERT);
             return;
         }
-
+		
         $GivenXml->registerXPathNamespace($this->name_space_prefix, $this->name_space);
-        $xmlAsString = file_get_contents($filename);
-
+		if(!empty($this->name_space) && empty($this->name_space_prefix)) {
+			$xmlAsString = file_get_contents($filename);
+			$xmlAsString = str_replace(' xmlns="' . $this->name_space . '"', "", $xmlAsString);
+			unset($GivenXml);
+			$GivenXml = simplexml_load_string($xmlAsString);
+		}
+		
         $fixedTag = $commonPathAsArray[(count($commonPathAsArray) - 1)];
         $parentNode = $GivenXml;
         $this->getParentNode($parentNode);
@@ -166,12 +171,8 @@ class Billrun_Parser_Xml {
                             $SubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
                         }
                         $ReturndValue = $data->xpath($SubPath);
-                        if ($ReturndValue) {
-                            $Value = strval($ReturndValue[$this->{$segment.'RowsNum'} - 1]);
-                        } else {
-                            $Value = '';
-                        }
-                        $this->{$segment.'Rows'}[$this->{$segment.'RowsNum'} - 1][$this->input_array[$segment][$i]['name']] = $Value;    
+						$value = $this->getValue($ReturndValue, $segment, $i);
+                        $this->{$segment.'Rows'}[$this->{$segment.'RowsNum'} - 1][$this->input_array[$segment][$i]['name']] = $value;    
                     }
                 }
             }
@@ -179,46 +180,44 @@ class Billrun_Parser_Xml {
         }
     }
     
-    protected function getSegmentFixedTag($segment, $repeatedTags, $currentChild ,$data){
-        foreach($this->getChildren($data) as $child => $childData){
-            if ($child === $repeatedTags[$segment]['repeatedTag'][count($repeatedTags[$segment]['repeatedTag']) - 1]){
-                return $data;
-            }
-        }
-    }
-    
-    protected function parseLine($segment, $currentChild, $data) {
+   protected function getSegmentFixedTag($segment, $repeatedTags, $currentChild, $data) {
+		foreach ($this->getChildren($data) as $child => $childData) {
+			if ($child === $repeatedTags[$segment]['repeatedTag'][array_search($currentChild, $repeatedTags[$segment]['repeatedTag']) + 1]) {
+				return $data;
+			}
+		}
+	}
+
+	protected function parseLine($segment, $currentChild, $data) {
         $this->{$segment.'RowsNum'}++;
         for ($i = 0; $i < count($this->input_array[$segment]); $i++) {
-            $SubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array[$segment][$i]['path']), $this->pathDelimiter);
-            if($this->name_space_prefix === ""){
-                $SubPath = '//' . str_replace(".", "/" , $SubPath);
-            }else{
-                $SubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
-            }
-            $ReturndValue = $data->xpath($SubPath);
-            if ($ReturndValue) {
-                $Value = strval($ReturndValue[0]);
-            } else {
-                $Value = '';
-            }
-                $this->{$segment.'Rows'}[$this->{$segment.'RowsNum'} - 1][$this->input_array[$segment][$i]['name']] = $Value;
-        }
-    }
+			$SubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array[$segment][$i]['path']), $this->pathDelimiter);
+			if ($this->name_space_prefix === "") {
+				$SubPath = '//' . str_replace(".", "/", $SubPath);
+			} else {
+				$SubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
+			}
+			$ReturndValue = $data->xpath($SubPath);
+			$value = $this->getValue($ReturndValue, $segment, $i);
+			$this->{$segment . 'Rows'}[$this->{$segment . 'RowsNum'} - 1][$this->input_array[$segment][$i]['name']] = $value;
+		}
+	}
     
     protected function preXmlBuilding() {
         foreach ($this->input_array as $segment => $indexes) {
-            for ($a = 0; $a < count($indexes); $a++) {
-                if (isset($this->input_array[$segment][$a])) {
-                    if (isset($this->input_array[$segment][$a]['path'])) {
-                        $this->pathes[] = $this->input_array[$segment][$a]['path'];
-                        $this->pathesBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
-                    } else {
-                        throw new Exception("No path for one of the " . $segment . "'s entity. No parse was made.");
-                    }
-                }
-            }
-        }
+			if(!is_null($indexes)) {
+				for ($a = 0; $a < count($indexes); $a++) {
+					if (isset($this->input_array[$segment][$a])) {
+						if (isset($this->input_array[$segment][$a]['path'])) {
+							$this->pathes[] = $this->input_array[$segment][$a]['path'];
+							$this->pathesBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
+						} else {
+							throw new Exception("No path for one of the " . $segment . "'s entity. No parse was made.");
+						}
+					}
+				}
+			}
+		}
         sort($this->pathes);
         if (count($this->pathes) > 1) {
             $commonPrefix = array_shift($this->pathes);  // take the first item as initial prefix
@@ -312,5 +311,30 @@ class Billrun_Parser_Xml {
             return $parentNode->children();
         }
     }
+	
+	public function getValue($value, $segment, $field_index) {
+		$res = null;
+		if ($value) {
+			if (!empty($value[0]->attributes()) && !empty($this->input_array[$segment][$field_index]['attribute'])) {
+				foreach ($value[0]->attributes() as $attribute_name => $attribute_value) {
+					if ($attribute_name == $this->input_array[$segment][$field_index]['attribute']) {
+						$res = strval($attribute_value);
+					}
+				}
+				if (is_null($res)) {
+					Billrun_Factory::log('Billrun_Parser_Xml: Couldn\'t find attribute: ' . $this->input_array[$segment][$i]['attribute'] . ' in ' . $this->input_array[$segment][$i]['name'] . ' field. Considered as empty.', Zend_Log::WARN);
+					$res = '';
+				}
+			} else {
+				$res = strval($value[0]);
+			}
+		} else {
+			$res = '';
+		}
+		if (is_null($res)) {
+			$res = '';
+		}
+		return $res;
+	}
 
 }

@@ -139,7 +139,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array_merge(parent::getPossiblyUpdatedFields(), array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField, 'rates' ));
+		return array_merge(parent::getPossiblyUpdatedFields(), array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField, 'rates', 'cf' ));
 	}
 	
 	protected static function getRateCalculatorClassName($type) {
@@ -236,7 +236,11 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			$added_values[$this->aprField] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], $row['plan'], array(), 0, $row['urt']->sec);
 		}
 		$row->setRawData( array_merge($current, $added_values , $this->getForeignFields(array('rating_data' => $added_values),$current)) );
-
+                
+                if(isset($rate['rounding_rules'])){
+                    $row['rounding_rules'] = $rate['rounding_rules'];
+                }
+                
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
@@ -293,7 +297,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 
  		$rawData = $matchedRate->getRawData();
- 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
+ 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof Mongodloid_Id)) {
  			return false;	
  		}
  		$idQuery = array(

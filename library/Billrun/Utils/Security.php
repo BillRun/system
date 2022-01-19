@@ -102,7 +102,7 @@ class Billrun_Utils_Security {
 		if (!$oauthToken->requestHasToken($oauthRequest)) {
 			return false;
 		}
-		if ($oauth->verifyResourceRequest($oauthRequest)) {
+		if ($oauth->verifyResourceRequest($oauthRequest, null, 'global')) {
 			return true;
 		} 
 		if ($throwException) {
@@ -161,6 +161,57 @@ class Billrun_Utils_Security {
 			}
 		}
 		return $secret;
+	}
+	
+	/**
+	 * method to open http request to cross-domain
+	 * 
+	 * @return void
+	 */
+	static public function openCrossDomain() {
+		if(!isset($_SERVER['HTTP_ORIGIN']) ) {
+			// not under http request, no need for cors
+			return;
+		}
+		
+		header('Access-Control-Allow-Origin: ' . $_SERVER['HTTP_ORIGIN']); // cross domain
+		header('Access-Control-Allow-Methods: GET,POST');
+		header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
+		header('Access-Control-Allow-Credentials: true');
+	}
+
+
+	/**
+	 * validate password strength
+	 * 
+	 * @param string $password
+	 * @param array $args arguments for validation (length = 8, upper = true, lower = true, number = true, special = true)
+	 * 
+	 * @return boolean true if password is strong enough else return the strength issue (-1 length, -2 upper, -3 lower, -4 number, -5 special)
+	 */
+	public static function validatePasswordStrength($password, $args) {
+		$length = $args['length'] ? (int) $args['length'] : 8;
+		if (mb_strlen($password) < $length) {
+			return -1;
+		}
+
+		if (($args['upper'] ?? true) && !preg_match('@[A-Z]@', $password)) {
+			return -2;
+		}
+
+		if (($args['lower'] ?? true) && !preg_match('@[a-z]@', $password)) {
+			return -3;
+		}
+
+		if (($args['number'] ?? true) && !preg_match('@[0-9]@', $password)) {
+			return -4;
+		}
+
+		if (($args['special'] ?? true) && !preg_match('@[^\w]@', $password)) {
+			return -5;
+		}
+
+		return true;
 	}
 
 }

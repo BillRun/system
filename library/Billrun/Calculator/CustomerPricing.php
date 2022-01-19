@@ -153,7 +153,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->active_billrun_end_time = Billrun_Billingcycle::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($this->active_billrun);
 
-		$this->aidsQueuedForRebalance = array_flip(Billrun_Util::verify_array(Billrun_Factory::db()->rebalance_queueCollection()->distinct('aid'), 'int'));
+                $this->aidsQueuedForRebalance = array_flip(Billrun_Util::verify_array(Billrun_Factory::db()->rebalance_queueCollection()->distinct('aid'), 'int'));
 	}
 
 	protected function getLines() {
@@ -202,10 +202,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function updateRow($row) {
-		if (isset($this->aidsQueuedForRebalance[$row['aid']])) {
+                if (isset($this->aidsQueuedForRebalance[$row['aid']]) && $row['type'] !== "credit") {
 			return false;
 		}
-
+                
 		try {
 			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 			$rateField = 'arate';
@@ -407,5 +407,5 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function getNextActiveBillrun() {
 		return $this->next_active_billrun;
 	}
-
+	
 }

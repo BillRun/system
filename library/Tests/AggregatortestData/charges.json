@@ -1,0 +1,42 @@
+{
+	"collection": "chargesCollection",
+	"data":
+			[
+				{
+					"from": "time*2019-06-03T00:00:00Z",
+					"key": "CHARGE_A",
+					"description": "ChargeA",
+					"params": {
+						"min_subscribers": "",
+						"max_subscribers": "",
+						"conditions": [
+							{
+								"subscriber": [
+									{
+										"fields": [
+											{
+												"field": "plan",
+												"op": "in",
+												"value": [
+													"CONDITIONAL_CHARGES_PLAN"
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					"type": "monetary",
+					"subject": {
+						"general": {
+							"value": 50
+						}
+					},
+					"proration": "inherited",
+					"to": "time*2170-06-02T15:55:38Z",
+					"creation_time": "time*2019-06-03T00:00:00Z"
+				}
+
+			]
+}

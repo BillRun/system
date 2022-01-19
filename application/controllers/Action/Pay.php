@@ -66,6 +66,8 @@ class PayAction extends ApiAction {
 				$this->processPaymentUf($inputPayment);
 				$deposit = new $className($inputPayment, $params);
 				$deposit->setUserFields($deposit->getRawData(), true);
+				$deposit->setDepositFreezeDate();
+				$deposit->setProcessTime();
 				$foreignData = $this->getForeignFields(array('account' => $current_account));
 				if (!is_null($current_account)) {
 					$deposit->setForeignFields($foreignData);
@@ -91,7 +93,7 @@ class PayAction extends ApiAction {
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
 				$method = $payment->getBillMethod();
-				$payment->setBalanceEffectiveDate();
+				$payment->setProcessTime();
 				if (in_array($method, array('wire_transfer', 'cheque')) && $payment->getDir() == 'tc') {
 					if (!isset($emailsToSend[$method])) {
 						$emailsToSend[$method] = array(
@@ -158,7 +160,8 @@ class PayAction extends ApiAction {
 			if (empty($deposit)) {
 				continue;
 			}
-			$depositUnfreezed = $deposit->unfreezeDeposit();
+			$deposit->setProcessTime();
+			$depositUnfreezed = $deposit->unfreezeDeposit(!empty($request->get('urt')) ? strtotime($request->get('urt')) : time());
 			if ($depositUnfreezed) {
 				$unfreezedDeposits[] = $txid;
 			}
@@ -228,7 +231,7 @@ class PayAction extends ApiAction {
 		}
 		if (!empty($request->get('first_charge_date'))) {
 			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
-			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
+			$params['charge']['not_before'] = new Mongodloid_Date($chargeNotBefore);
 		}
 Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
 		if (!$executeSplitBill) {
@@ -358,11 +361,11 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 			throw new Exception('In action merge_installments must transfer split_bill_id and aid parameters');
 		}
 		if (!empty($request->get('due_date'))) {
-			$params['due_date'] = new MongoDate(strtotime($request->get('due_date')));
+			$params['due_date'] = new Mongodloid_Date(strtotime($request->get('due_date')));
 		}
 		if (!empty($request->get('first_charge_date'))) {
 			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
-			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
+			$params['charge']['not_before'] = new Mongodloid_Date($chargeNotBefore);
 		}
 		$params['autoload'] = true;
 		$success = Billrun_Bill_Payment::mergeSpllitedInstallments($params);

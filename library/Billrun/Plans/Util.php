@@ -32,14 +32,14 @@ class Billrun_Plans_Util {
 		$formatStart = date(Billrun_Base::base_dateformat,  $start);
 		$formatEnd = date(Billrun_Base::base_dateformat, $end);
 
-		$startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
-		$endOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatEnd);
+		$startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
+		$endOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatEnd);
 		if(isset($planOrServiceConfig['price']))
 		foreach($planOrServiceConfig['price'] as $price) {
 			if ($price['to'] == 'UNLIMITED') {
 				$price['to'] = PHP_INT_MAX;
 			}
-			if($price['from']  <= $endOffset &&  $startOffset < $price['to'] ) {
+			if($price['from']  <= $endOffset &&  $startOffset <= $price['to'] ) {
 				return TRUE;
 			}
 		}
