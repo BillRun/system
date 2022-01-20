@@ -215,7 +215,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$chargedUsagev = $this->getChargedUsagev($row, $lineToRebalance);
 		if ($chargedUsagev !== null) {
 			$rebalanceUsagev = $realUsagev - $chargedUsagev;
-			if (($rebalanceUsagev) < 0) {
+			if (($rebalanceUsagev) < 0 || ($row['usaget'] === 'data' && $lineToRebalance['record_type'] === 'initial_request')) {
 				$this->handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance, $row);
 			}
 		}

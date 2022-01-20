@@ -308,7 +308,8 @@ class RealtimeeventAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function isPretend($event) {
-		return (in_array($this->usaget, Billrun_Util::getCallTypes()) && $event['record_type'] === 'start_call');
+		return (in_array($this->usaget, Billrun_Util::getCallTypes()) && $event['record_type'] === 'start_call') ||
+                        ($this->usaget === 'data' && $event['record_type'] === 'initial_request');
 	}
 
 }
