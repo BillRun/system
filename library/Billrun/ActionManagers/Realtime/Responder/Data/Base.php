@@ -36,7 +36,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 			}
 		}
 
-		if ($this->row['usagev'] === 0) {
+		if ($this->row['usagev'] === 0 && !$this->row['billrun_pretend']) {
 			return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_CREDIT_LIMIT_REACHED", -1));
 		}
 
@@ -60,7 +60,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 			}
 		}
 
-		if ($usagev === 0) {
+		if ($usagev === 0 && !$this->row['billrun_pretend']) {
 			return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_CREDIT_LIMIT_REACHED", -1));
 		}
 
