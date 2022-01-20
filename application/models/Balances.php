@@ -43,7 +43,7 @@ class BalancesModel extends TableModel {
 			'current_plan' => Billrun_Factory::db()->plansCollection()->createRef($id),
 		);
 //		print_R($query);die;
-		return $this->collection->query($query)->cursor()->hint(array('aid' => 1, 'billrun_month' => 1))->limit($this->size);
+		return $this->collection->query($query)->cursor()->limit($this->size);
 	}
 
 	protected function getBalancesFields() {
