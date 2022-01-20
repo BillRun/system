@@ -1,7 +1,7 @@
 [
-		{
-			$match: {
-			   $and: [ {$and : [ { $expr: {$gte:['$urt', {
+{
+$match: {
+  $and: [ {$and : [ { $expr: {$gte:['$urt', {
                         $dateFromParts: {
                             'year': {$year:{{from}}},
                             'month': {$month:{{from}}},
@@ -25,7 +25,6 @@
                         }
                     }
                 ]}}]}]}},
-
 { $match : { "cf.cash_flow" : "E" } },
 {$group:{
 _id:{scenario:"$cf.scenario",product:"$cf.product",component:"$cf.component",cash_flow: "$cf.cash_flow",USER_SUMMARISATION:"$uf.USER_SUMMARISATION",
@@ -50,12 +49,12 @@ aid: {$substr:["$aid", 0, -1 ]}},aprice:{$sum:"$aprice"}
 
 {
          $addFields: {
-            res: {$arrayElemAt: ["$res" , 0 ]}	    
+            res: {$arrayElemAt: ["$res" , 0 ]}    
          }
  },
 {$project:{
 _id : 0,
-operator:'$res.params.operator', 
+operator:'$res.params.operator',
 CSG_VOUCHER_DATE:{ $dateToString: { format: "%d/%m/%Y", date: { $subtract: [ {{to}}, { $multiply: [ { $dayOfMonth: {{to}} }, 24 , 60 , 60 , 1000]}]}, timezone: "Asia/Nicosia"} },
 CSG_TRANSACTION_NO:"",
 CUSTOMER_CODE:"",
@@ -90,16 +89,16 @@ operator:"$operator",
 
 {$group:{_id :{ID:"$_id",
 items:{$concatArrays : ["$rows", [
-{"_id":{ 
-"CSG_VOUCHER_DATE" : "$res_rows._id.CSG_VOUCHER_DATE", 
-"CSG_TRANSACTION_NO" : "$res_rows._id.CSG_TRANSACTION_NO", 
-"CUSTOMER_CODE" : "$res_rows._id.CUSTOMER_CODE", 
-"CURRENCY" : "$res_rows._id.CURRENCY", 
-"STORE" : "$res_rows._id.STORE", 
-"TRANS_DATE" : "$res_rows._id.TRANS_DATE", 
-"REFERENCE_NO" : "$res_rows._id.REFERENCE_NO", 
-"ITEM_PRODUCT_GROUP" : "$res_rows._id.ITEM_PRODUCT_GROUP", 
-"MTN_IND" : "", "MISC_SUB_L" : "PRO", 
+{"_id":{
+"CSG_VOUCHER_DATE" : "$res_rows._id.CSG_VOUCHER_DATE",
+"CSG_TRANSACTION_NO" : "$res_rows._id.CSG_TRANSACTION_NO",
+"CUSTOMER_CODE" : "$res_rows._id.CUSTOMER_CODE",
+"CURRENCY" : "$res_rows._id.CURRENCY",
+"STORE" : "$res_rows._id.STORE",
+"TRANS_DATE" : "$res_rows._id.TRANS_DATE",
+"REFERENCE_NO" : "$res_rows._id.REFERENCE_NO",
+"ITEM_PRODUCT_GROUP" : "$res_rows._id.ITEM_PRODUCT_GROUP",
+"MTN_IND" : "", "MISC_SUB_L" : "PRO",
 "PROD_SERV" : "$res_rows._id.PROD_SERV", "DEBIT_AMOUNT" : "0.00",
 CREDIT_AMOUNT: "$CREDIT_AMOUNT",
 GL_ACCOUNT_NO:{$switch: {branches: [
@@ -138,22 +137,27 @@ GL_ACCOUNT_NO:{$switch: {branches: [
 { case: {$eq: ["$res_rows._id.operator","TPOINT"] }, then: "90800663" },
 { case: {$eq: ["$res_rows._id.operator","YEMAN"] }, then: "90800676" },
 ],default: "90800675"}}
-}}]]}}}},
+}
+}
+]
+]
+}
+}}},
 { $unwind : "$_id.items" },
-		
+
 {$project:{_id : 0,
 CSG_VOUCHER_DATE : "$_id.items._id.CSG_VOUCHER_DATE",
 CSG_TRANSACTION_NO:"",
 CUSTOMER_CODE:"",
 CURRENCY:"EUR",
-GL_ACCOUNT_NO : "$_id.items._id.GL_ACCOUNT_NO", 
+GL_ACCOUNT_NO : "$_id.items._id.GL_ACCOUNT_NO",
 STORE:"",
-TRANS_DATE : "$_id.items._id.TRANS_DATE", 
-REFERENCE_NO : "$_id.items._id.REFERENCE_NO", 
+TRANS_DATE : "$_id.items._id.TRANS_DATE",
+REFERENCE_NO : "$_id.items._id.REFERENCE_NO",
 ITEM_PRODUCT_GROUP:"",
-MTN_IND : "$_id.items._id.MTN_IND", 
+MTN_IND : "$_id.items._id.MTN_IND",
 MISC_SUB_L : "PRO",
-PROD_SERV : "$_id.items._id.PROD_SERV", 
+PROD_SERV : "$_id.items._id.PROD_SERV",
 DEBIT_AMOUNT : "$_id.items._id.DEBIT_AMOUNT",
 CREDIT_AMOUNT: "$_id.items._id.CREDIT_AMOUNT"}}
 ]
