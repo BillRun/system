@@ -135,26 +135,32 @@ class Portal_Actions_Registration extends Portal_Actions {
 		if (empty($token)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "token"');
 		}
-                $username = $params['username'] ?? '';
-                if (empty($username)) {
+		$username = $params['username'] ?? '';
+		if (empty($username)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "username"');
 		}
-                $password = $params['password'] ?? '';
+		$password = $params['password'] ?? '';
 		if (empty($password)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "password"');
 		}
-                $email = $this->getFieldByAuthenticationField('email', $username) ?? '';
+		
+		$passwordStrengthValidation = Billrun_Utils_Security::validatePasswordStrength($password, $params['signup_form']['password_strength'] ?? []);
+		if ($passwordStrengthValidation !== TRUE) {
+			throw new Portal_Exception('password_strength_failed_' . abs($passwordStrengthValidation), '', 'password strength validation failed');
+		}
+
+		$email = $this->getFieldByAuthenticationField('email', $username) ?? '';
 		if (empty($email)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
 		}
-                $params['email'] = $email;
+		$params['email'] = $email;
 		if (!$this->validateToken($token, $params, $tokenType)) {
 			throw new Portal_Exception('authentication_failed');
 		}
 
 		Billrun_Factory::oauth2()->getStorage('user_credentials')->setUser($username, $password);
 	}
-        
+
 	/**
 	 * sign the user in the system to allow him authenticate using OAuth2
 	 *
@@ -177,14 +183,19 @@ class Portal_Actions_Registration extends Portal_Actions {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "password"');
 		}
 
+		$passwordStrengthValidation = Billrun_Utils_Security::validatePasswordStrength($password, $params['signin_form']['password_strength'] ?? []);
+		if ($passwordStrengthValidation !== TRUE) {
+			throw new Portal_Exception('password_strength_failed_' . abs($passwordStrengthValidation));
+		}
+
 		if (!$this->validateToken($token, $params, self::TOKEN_TYPE_EMAIL_VERIFICATION)) {
 			throw new Portal_Exception('authentication_failed');
 		}
 
 		Billrun_Factory::oauth2()->getStorage('user_credentials')->setUser($params['id'] ?? $email, $password);
 	}
-        
-        /**
+
+	/**
 	 * get the subject email
 	 *
          * @param  string $path - the path of the requested email body
@@ -221,7 +232,7 @@ class Portal_Actions_Registration extends Portal_Actions {
 		}
 
 		$tokenFields = [
-			$this->params['authentication_field'],
+			'username',
 			'email',
 		];
         $params = [
