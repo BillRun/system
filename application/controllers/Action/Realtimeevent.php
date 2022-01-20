@@ -158,7 +158,10 @@ class RealtimeeventAction extends ApiAction {
 		foreach ($lines as $line) {
 			$line["mscc_data"][0]['granted_return_code'] = ( isset($line['granted_return_code']) ? $line['granted_return_code'] : null);
 			$line["mscc_data"][0]['usagev'] = ( isset($line['usagev']) ? $line['usagev'] : 0);
-			$current["mscc_data"][] = $line["mscc_data"][0];
+                        if(isset($line['granted_usagev'])){
+                            $line["mscc_data"][0]['granted_usagev'] =  $line['granted_usagev'];
+                        }	
+			$current["mscc_data"][] = $line["mscc_data"][0];                    
 		}
 		$current['session_id'] = $this->event['session_id']; // returns the original session_id of the request to the unified response (and not the modified one)
 		return $current;

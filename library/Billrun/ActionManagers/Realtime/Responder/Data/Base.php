@@ -86,8 +86,13 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 
 		foreach ($this->row['mscc_data'] as $msccData) {
 			$redirectionAnswer = array();
-			$currUsagev = $msccData['usagev'];
-			$returnCode = $this->getMsccReturnCode($msccData['granted_return_code'], $currUsagev);
+			if (isset($msccData['granted_usagev'])) {
+                            $currUsagev = $msccData['granted_usagev'];
+                            unset($msccData['granted_usagev']);
+                        } else {
+                            $currUsagev = $msccData['usagev'];
+                        }
+                        $returnCode = $this->getMsccReturnCode($msccData['granted_return_code'], $currUsagev);
 			unset($msccData['granted_return_code']);
 			unset($msccData['usagev']);
 			$quotaHoldingTimeArray = array("quotaHoldingTime" => $defaultQuotaHoldingTime);
