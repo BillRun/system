@@ -71,9 +71,13 @@ CURRENCY:"EUR",
 GROSS_AMOUNT:{'$ifNull':["$GROSS_AMOUNT", ""]},
 NET_AMOUNT:{'$ifNull':["$NET_AMOUNT", ""]},
 TAX_AMOUNT:{'$ifNull':["$TAX_AMOUNT", ""]},
-NOTE:{ $concat: [{ $dateToString: { format: "%d/%m/%Y", date: {{from}}, timezone: "Asia/Nicosia"} },"-",
-{ $dateToString: { format: "%d/%m/%Y", date: { $subtract: [ {{to}}, { $multiply: [ { $dayOfMonth: {{to}} }, 24 , 60 , 60 , 1000]}]}, timezone: "Asia/Nicosia"} }]},
-INVOICE_DATE:{ $dateToString: { format: "%d/%m/%Y", date: { $subtract: [ {{to}}, { $multiply: [ { $dayOfMonth: {{to}} }, 24 , 60 , 60 , 1000]}]}, timezone: "Asia/Nicosia"} },
+NOTE:{ $concat: [
+{ $dateToString: { format: "%d/%m/%Y", date: "$_id.start_date", timezone: "Asia/Nicosia"} },
+"-",
+{ $dateToString: { format: "%d/%m/%Y", date: { $subtract: [ "$_id.end_date", { $multiply: [ { $dayOfMonth: "$_id.end_date" }, 1 , 60 , 60 , 1000]}]}, timezone: "Asia/Nicosia"} }
+]},
+INVOICE_DATE:{ $dateToString: { format: "%d/%m/%Y", date:{ $subtract: [ "$_id.invoice_date", { $multiply: [ { $dayOfMonth: "$_id.invoice_date" }, 1 , 60 , 60 , 1000]}]}, timezone: "Asia/Nicosia"} },
+
 DELIVERY_DATE:"",
 PYMNT_TERM_BASE_DATE:"",
 PAYMENT_TERM:"",
