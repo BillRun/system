@@ -55,7 +55,7 @@ aid: {$substr:["$aid", 0, -1 ]}},aprice:{$sum:"$aprice"}
 {$project:{
 _id : 0,
 operator:'$res.params.operator',
-CSG_VOUCHER_DATE:{ $dateToString: { format: "%d/%m/%Y", date: { $subtract: [ {{to}}, { $multiply: [ 25, 60 , 60, 1000 ]}]}, timezone: "Asia/Nicosia"} },
+CSG_VOUCHER_DATE:{ $dateToString: { format: "%d/%m/%Y", date: { $subtract: [ {{to}}, { $multiply: [ 3, 60 , 60, 1000 ]}]}, timezone: "Asia/Nicosia"} },
 CSG_TRANSACTION_NO:"",
 CUSTOMER_CODE:"",
 CURRENCY:"EUR",
