@@ -53,6 +53,8 @@
 {$group:{_id:{
 res:"$res",
 invoice_date:"$invoice_date",
+start_date:"$start_date",
+end_date:"$end_date",
 INVOICE_NUMBER:"$invoice_id",
 IFS_CUST_CODE:"$totals.grouping.foreign.account.ifs_operator_id",
 OBJECT_ID:"$res.object_id",
