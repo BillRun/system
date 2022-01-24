@@ -277,7 +277,7 @@ class PortalController extends Yaf_Controller_Abstract {
         return Billrun_Util::getIn($this->settings, $settingPath, $defaulValue);
     }
 
-	protected function render($tpl, array $parameters = null) {
+	protected function render(string $tpl, array $parameters = null): string {
 		return $this->getView()->render('api/index.phtml', $parameters);
 	}
 

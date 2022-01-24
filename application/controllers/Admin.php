@@ -1456,7 +1456,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 * @return string the render layout including the page (component)
 	 */
-	protected function render($tpl, array $parameters = null) {
+	protected function render(string $tpl, array $parameters = null): string {
 		if ($tpl == 'edit' || $tpl == 'confirm' || $tpl == 'logdetails' || $tpl == 'wholesaleajax') {
 			return parent::render($tpl, $parameters);
 		}
