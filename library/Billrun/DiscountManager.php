@@ -18,7 +18,7 @@ class Billrun_DiscountManager {
 	protected $discountedLinesAmounts = [];
 	protected $seqEligibility = [];
 
-	public function __construct($accountRevisions, $subscribersRevisions = [], Billrun_DataTypes_CycleTime $cycle, $params = []) {
+	public function __construct($accountRevisions, $subscribersRevisions = [], $cycle = null, $params = []) {
 		$this->cycle = $cycle;
 		$this->prepareRevisions($accountRevisions, $subscribersRevisions);
 		$this->loadEligibleDiscounts($accountRevisions, $subscribersRevisions);
