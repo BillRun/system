@@ -9683,6 +9683,13 @@ lastConfig = runOnce(lastConfig, 'EPICIC-104', function () {
 	}
 });
 
+//EPICIC-137: adding  'foreign.account.vat_code' to grouping
+lastConfig = runOnce(lastConfig, 'EPICIC-137', function () {
+  if (!lastConfig['billrun']['grouping']['fields']['foreign.account.vat_code']) {
+    lastConfig['billrun']['grouping']['fields'].push('foreign.account.vat_code');
+}
+});
+
 
 db.config.insert(lastConfig);
 
