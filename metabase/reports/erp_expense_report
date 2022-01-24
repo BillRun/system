@@ -1,7 +1,7 @@
 [
-		{
-			$match: {
-			   $and: [ {$and : [ { $expr: {$gte:['$urt', {
+{
+$match: {
+  $and: [ {$and : [ { $expr: {$gte:['$urt', {
                         $dateFromParts: {
                             'year': {$year:{{from}}},
                             'month': {$month:{{from}}},
@@ -25,14 +25,12 @@
                         }
                     }
                 ]}}]}]}},
-
 { $match : { "cf.cash_flow" : "E" } },
 {$group:{
 _id:{scenario:"$cf.scenario",product:"$cf.product",component:"$cf.component",cash_flow: "$cf.cash_flow",USER_SUMMARISATION:"$uf.USER_SUMMARISATION",
 operator:"$cf.operator",
 aid: {$substr:["$aid", 0, -1 ]}},aprice:{$sum:"$aprice"}
 }},
-
 {$addFields: {
              MYKEY: { $concat: [
                      {$ifNull:["$_id.scenario",""]}, "_" ,
@@ -42,7 +40,7 @@ aid: {$substr:["$aid", 0, -1 ]}},aprice:{$sum:"$aprice"}
                      {$ifNull:["$_id.USER_SUMMARISATION",""]}, "_" ,
                      {$ifNull:["$_id.operator",""]},]}}},
 {$lookup: {
-             from: "epic_cy_erp_mapping",
+             from: "epic_cy_erp_mappings",
              let: { key: "$MYKEY"},
              pipeline: [
                      {$match:{"$expr":{"$eq": ["$key", "$$key"]}}},
@@ -51,53 +49,17 @@ aid: {$substr:["$aid", 0, -1 ]}},aprice:{$sum:"$aprice"}
 
 {
          $addFields: {
-            res: {$arrayElemAt: ["$res" , 0 ]}	    
+            res: {$arrayElemAt: ["$res" , 0 ]}    
          }
- }
- ,{$project:{
-_id : 0, 
-CSG_VOUCHER_DATE:{ $dateToString: { format: "%d/%m/%Y", date: { $subtract: [ {{to}}, { $multiply: [ { $dayOfMonth: {{to}} }, 24 , 60 , 60 , 1000]}]}, timezone: "Asia/Nicosia"} },
+ },
+{$project:{
+_id : 0,
+operator:'$res.params.operator',
+CSG_VOUCHER_DATE:{ $dateToString: { format: "%d/%m/%Y", date: { $subtract: [ {{to}}, { $multiply: [ 3, 60 , 60, 1000 ]}]}, timezone: "Asia/Nicosia"} },
 CSG_TRANSACTION_NO:"",
 CUSTOMER_CODE:"",
 CURRENCY:"EUR",
-
-GL_ACCOUNT_NO:{$switch: {branches: [
-{ case: {$eq: ["$_id.operator","AGI"] }, then: 90800668 },
-{ case: {$eq: ["$_id.operator","ALNFA"] }, then: 90800665 },
-{ case: {$eq: ["$_id.operator", "Alpha Media"] }, then: 90800676 },
-{ case: {$eq: ["$_id.operator","BICS"] }, then: 90800672 },
-{ case: {$eq: ["$_id.operator","CABLE"] }, then: 90800660 },
-{ case: {$eq: ["$_id.operator","CALSAT"] }, then: 90800665 },
-{ case: {$eq: ["$_id.operator","CYTA"] }, then: 90800671 },
-{ case: {$eq: ["$_id.operator","DATA SMS"] }, then: 90800676 },
-{ case: {$eq: ["$_id.operator","G.E.FOR ALL"] }, then: 90800676 },
-{ case: {$eq: ["$_id.operator","GRAVITY SOLUTIONS"] }, then: 90800676 },
-{ case: {$eq: ["$_id.operator","GT"] }, then: 90800676 },
-{ case: {$eq: ["$_id.operator","HSMS"] }, then: 90800676 },
-{ case: {$eq: ["$_id.operator","KPN"] }, then: 90800661 },
-{ case: {$eq: ["$_id.operator","MONTY"] }, then: 90800673 },
-{ case: {$eq: ["$_id.operator","MT"] }, then: 90800680 },
-{ case: {$eq: ["$_id.operator","MTN SA"] }, then: 90300052 },
-{ case: {$eq: ["$_id.operator","MTNSA"] }, then: 90300052 },
-{ case: {$eq: ["$_id.operator","MTT"] }, then: 90800664 },
-{ case: {$eq: ["$_id.operator","N.N REVERSE"] }, then: 90800676 },
-{ case: {$eq: ["$_id.operator","NCC"] }, then: 90800677 },
-{ case: {$eq: ["$_id.operator","NETSMART"] }, then: 90800676 },
-{ case: {$eq: ["$_id.operator","OTE"] }, then: 90800670 },
-{ case: {$eq: ["$_id.operator","Otero" ] }, then: 90800676 },
-{ case: {$eq: ["$_id.operator","PCCW"] }, then: 90800679 },
-{ case: {$eq: ["$_id.operator","PTL"] }, then: 90800669 },
-{ case: {$eq: ["$_id.operator","SAP"] }, then: 90800659 },
-{ case: {$eq: ["$_id.operator","SPINT"] }, then: 90800681 },
-{ case: { $eq:["$_id.operator","SYN"] }, then: 90800666 },
-{ case: {$eq: ["$_id.operator","Syn-Aicent"] }, then: 90800674 },
-{ case: {$eq: ["$_id.operator","TATA"] }, then: 90800678 },
-{ case: {$eq: ["$_id.operator","TELIA"] }, then: 90800667 },
-{ case: {$eq: ["$_id.operator","TIS"] }, then: 90800662 },
-{ case: {$eq: ["$_id.operator","TPOINT"] }, then: 90800663 },
-{ case: {$eq: ["$_id.operator","YEMAN"] }, then: 90800676 },
-],default: 90800675}},
-
+GL_ACCOUNT_NO:'$res.gl_account',
 STORE:"",
 TRANS_DATE:{ $dateToString: { format: "%d/%m/%Y", date: new Date(), timezone: "Asia/Nicosia"} },
 REFERENCE_NO :{ $concat: [{ $dateToString: { format: "%m%Y", date: {{from}}, timezone: "Asia/Nicosia"} },"$_id.aid",{ $dateToString: { format: "%m%Y", date: {{to}}, timezone: "Asia/Nicosia"} }]},
@@ -107,22 +69,95 @@ MISC_SUB_L : "PRO",
 PROD_SERV:'$res.prod_serv',
 DEBIT_AMOUNT: "$aprice",
 CREDIT_AMOUNT:"0"
-}}
-,{$group:{"_id":"$REFERENCE_NO", exps: { $push: "$$ROOT" }}}
+}},
+{$group:{
+_id:{
+CSG_VOUCHER_DATE:"$CSG_VOUCHER_DATE",
+GL_ACCOUNT_NO:"$GL_ACCOUNT_NO",
+MTN_IND:"$MTN_IND",
+PROD_SERV:"$PROD_SERV",
+TRANS_DATE:"$TRANS_DATE",
+REFERENCE_NO:"$REFERENCE_NO",
+DEBIT_AMOUNT:"$DEBIT_AMOUNT",
+CREDIT_AMOUNT:"$CREDIT_AMOUNT",
+operator:"$operator",
+}}},
 
-,{$addFields:{CREDIT_AMOUNT : { $sum: "$exps.DEBIT_AMOUNT" },
-		res_exps: {$arrayElemAt: ["$exps" , 0 ]}}}
-		
-		,{$project:{_id : 0,items:{$concatArrays : ["$exps", 
-		[{ "CSG_VOUCHER_DATE" : "$res_exps.CSG_VOUCHER_DATE",
-		"CSG_TRANSACTION_NO" : "$res_exps.CSG_TRANSACTION_NO","CUSTOMER_CODE" : "$res_exps.CUSTOMER_CODE","CURRENCY" : "$res_exps.CURRENCY","GL_ACCOUNT_NO" : "","STORE" : "$res_exps.STORE",
-		"TRANS_DATE" : "$res_exps.TRANS_DATE",
-		    "REFERENCE_NO" : "$res_exps.REFERENCE_NO",
-		    "ITEM_PRODUCT_GROUP" : "$res_exps.ITEM_PRODUCT_GROUP",
-		    "MTN_IND" : "","MISC_SUB_L" : "PRO","PROD_SERV" : "$res_exps.PROD_SERV","DEBIT_AMOUNT" : "0.00","CREDIT_AMOUNT": "$CREDIT_AMOUNT"
-		}] ] }}}
-		
-		,{ $unwind : "$items" }
-		
-	,{$project:{_id : 0,CSG_VOUCHER_DATE : "$items.CSG_VOUCHER_DATE",CSG_TRANSACTION_NO:"$items.CSG_TRANSACTION_NO",CUSTOMER_CODE : "$items.CUSTOMER_CODE", CURRENCY : "$items.CURRENCY", GL_ACCOUNT_NO : "$items.GL_ACCOUNT_NO", STORE : "$items.STORE", TRANS_DATE : "$items.TRANS_DATE", REFERENCE_NO : "$items.REFERENCE_NO", ITEM_PRODUCT_GROUP : "$items.ITEM_PRODUCT_GROUP", MTN_IND : "$items.MTN_IND", MISC_SUB_L : "$items.MISC_SUB_L", PROD_SERV : "$items.PROD_SERV", DEBIT_AMOUNT : "$items.DEBIT_AMOUNT",CREDIT_AMOUNT: "$items.CREDIT_AMOUNT"}}
+{$group:{"_id":"$_id.REFERENCE_NO", rows: { $push: "$$ROOT" },"CREDIT_AMOUNT": { "$sum":"$_id.DEBIT_AMOUNT" }}},
+
+{$addFields:{CREDIT_AMOUNT:"$CREDIT_AMOUNT",res_rows: {$arrayElemAt: ["$rows" , 0 ]}}},
+
+{$group:{_id :{ID:"$_id",
+items:{$concatArrays : ["$rows", [
+{"_id":{
+"CSG_VOUCHER_DATE" : "$res_rows._id.CSG_VOUCHER_DATE",
+"CSG_TRANSACTION_NO" : "$res_rows._id.CSG_TRANSACTION_NO",
+"CUSTOMER_CODE" : "$res_rows._id.CUSTOMER_CODE",
+"CURRENCY" : "$res_rows._id.CURRENCY",
+"STORE" : "$res_rows._id.STORE",
+"TRANS_DATE" : "$res_rows._id.TRANS_DATE",
+"REFERENCE_NO" : "$res_rows._id.REFERENCE_NO",
+"ITEM_PRODUCT_GROUP" : "$res_rows._id.ITEM_PRODUCT_GROUP",
+"MTN_IND" : "", "MISC_SUB_L" : "PRO",
+"PROD_SERV" : "$res_rows._id.PROD_SERV", "DEBIT_AMOUNT" : "0.00",
+CREDIT_AMOUNT: "$CREDIT_AMOUNT",
+GL_ACCOUNT_NO:{$switch: {branches: [
+{ case: {$eq: ["$res_rows._id.operator","AGI"] }, then: "90800668" },
+{ case: {$eq: ["$res_rows._id.operator","ALNFA"] }, then: "90800665" },
+{ case: {$eq: ["$res_rows._id.operator", "Alpha Media"] }, then: "90800676" },
+{ case: {$eq: ["$res_rows._id.operator","BICS"] }, then: "90800672" },
+{ case: {$eq: ["$res_rows._id.operator","CABLE"] }, then: "90800660" },
+{ case: {$eq: ["$res_rows._id.operator","CALSAT"] }, then: "90800665" },
+{ case: {$eq: ["$res_rows._id.operator","CYTA"] }, then: "90800671" },
+{ case: {$eq: ["$res_rows._id.operator","DATA SMS"] }, then: "90800676" },
+{ case: {$eq: ["$res_rows._id.operator","G.E.FOR ALL"] }, then: "90800676" },
+{ case: {$eq: ["$res_rows._id.operator","GRAVITY SOLUTIONS"] }, then: "90800676" },
+{ case: {$eq: ["$res_rows._id.operator","GT"] }, then: "90800676" },
+{ case: {$eq: ["$res_rows._id.operator","HSMS"] }, then: "90800676" },
+{ case: {$eq: ["$res_rows._id.operator","KPN"] }, then: "90800661" },
+{ case: {$eq: ["$res_rows._id.operator","MONTY"] }, then: "90800673" },
+{ case: {$eq: ["$res_rows._id.operator","MT"] }, then: "90800680" },
+{ case: {$eq: ["$res_rows._id.operator","MTN SA"] }, then: "90300052" },
+{ case: {$eq: ["$res_rows._id.operator","MTNSA"] }, then: "90300052" },
+{ case: {$eq: ["$res_rows._id.operator","MTT"] }, then: "90800664" },
+{ case: {$eq: ["$res_rows._id.operator","N.N REVERSE"] }, then: "90800676" },
+{ case: {$eq: ["$res_rows._id.operator","NCC"] }, then: "90800677" },
+{ case: {$eq: ["$res_rows._id.operator","NETSMART"] }, then: "90800676" },
+{ case: {$eq: ["$res_rows._id.operator","OTE"] }, then: "90800670" },
+{ case: {$eq: ["$res_rows._id.operator","Otero" ] }, then: "90800676" },
+{ case: {$eq: ["$res_rows._id.operator","PCCW"] }, then: "90800679" },
+{ case: {$eq: ["$res_rows._id.operator","PTL"] }, then: "90800669" },
+{ case: {$eq: ["$res_rows._id.operator","SAP"] }, then: "90800659" },
+{ case: {$eq: ["$res_rows._id.operator","SPINT"] }, then: "90800681" },
+{ case: { $eq:["$res_rows._id.operator","SYN"] }, then: "90800666" },
+{ case: {$eq: ["$res_rows._id.operator","Syn-Aicent"] }, then: "90800674" },
+{ case: {$eq: ["$res_rows._id.operator","TATA"] }, then: "90800678" },
+{ case: {$eq: ["$res_rows._id.operator","TELIA"] }, then: "90800667" },
+{ case: {$eq: ["$res_rows._id.operator","TIS"] }, then: "90800662" },
+{ case: {$eq: ["$res_rows._id.operator","TPOINT"] }, then: "90800663" },
+{ case: {$eq: ["$res_rows._id.operator","YEMAN"] }, then: "90800676" },
+],default: "90800675"}}
+}
+}
+]
+]
+}
+}}},
+{ $unwind : "$_id.items" },
+
+{$project:{_id : 0,
+CSG_VOUCHER_DATE : "$_id.items._id.CSG_VOUCHER_DATE",
+CSG_TRANSACTION_NO:"",
+CUSTOMER_CODE:"",
+CURRENCY:"EUR",
+GL_ACCOUNT_NO : "$_id.items._id.GL_ACCOUNT_NO",
+STORE:"",
+TRANS_DATE : "$_id.items._id.TRANS_DATE",
+REFERENCE_NO : "$_id.items._id.REFERENCE_NO",
+ITEM_PRODUCT_GROUP:"",
+MTN_IND : "$_id.items._id.MTN_IND",
+MISC_SUB_L : "PRO",
+PROD_SERV : "$_id.items._id.PROD_SERV",
+DEBIT_AMOUNT : "$_id.items._id.DEBIT_AMOUNT",
+CREDIT_AMOUNT: "$_id.items._id.CREDIT_AMOUNT"}}
 ]
