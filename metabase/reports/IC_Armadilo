@@ -68,7 +68,7 @@
   COSTY:{$cond:[{ $eq: ["$_id.cash_flow","E"]},{$sum:"$aprice"},""]},
   CASH_FLOW_COSTY:"Expense",
   CALL_COUNT_D:"$CALL_COUNT_D",
-  EVENT_DURATION_D:"$EVENT_DURATION_D",
+  EVENT_DURATION_D:{ $divide: ["$EVENT_DURATION_D", 60 ] }, 
   INCOMING_OPERATOR_D:"$_id.INCOMING_OPERATOR_D",
   OUTGOING_OPERATOR_D:"$_id.OUTGOING_OPERATOR_D",
 }}
