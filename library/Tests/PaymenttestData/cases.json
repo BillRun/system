@@ -6691,7 +6691,7 @@
 				"paid": false,
 				"payer_name": "yoss yossi",
 				"total_paid": 0,
-				"vatable_left_to_pay": 0,
+				"vatable_left_to_pay": 20,
 				"paid_by": []
 			}
 		],
