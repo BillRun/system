@@ -46,15 +46,18 @@ class Billrun_Account_External extends Billrun_Account {
 			if(!empty($invoicing_days)) {
 				$requestParams['invoicing_days'] = $invoicing_days;
 			}
+			$request_type = Billrun_Http_Request::POST;
+			Billrun_Factory::dispatcher()->trigger('beforeGetExternalBillableDetails', array(&$requestParams, &$request_type, &$this));
 			Billrun_Factory::log('Sending request to ' . $this->remote_billable_url . ' with params : ' . json_encode($requestParams), Zend_Log::DEBUG);
 			//Actually  do the request
 			$request = new Billrun_Http_Request($this->remote_billable_url, ['authentication' => $this->remote_billable_authentication]);
 			$request->setParameterPost($requestParams);
-			$results = $request->request(Billrun_Http_Request::POST)->getBody();
+			$results = $request->request($request_type)->getBody();
 
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
 			
-			$results = json_decode($results, true);		
+			$results = json_decode($results, true);	
+			Billrun_Factory::dispatcher()->trigger('afterGetExternalBillableDetails', array(&$results));
 			//Check for errors
 			if(empty($results)) {
 				Billrun_Factory::log('Failed to retrive valid results for billable, remote returned no data.',Zend_Log::WARN);
@@ -91,6 +94,8 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$requestData['date'] = $globalDate;
 		}
+		$request_type = Billrun_Http_Request::POST;
+		Billrun_Factory::dispatcher()->trigger('beforeGetExternalAccountsDetails', array(&$requestData, &$request_type, &$this));
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
 		$params = [
 			'authentication' => $this->remote_authentication,
@@ -98,9 +103,10 @@ class Billrun_Account_External extends Billrun_Account {
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
 		$request->setParameterPost($requestData);
-		$res = $request->request(Billrun_Http_Request::POST)->getBody();
+		$res = $request->request($request_type)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
 		$res = json_decode($res);
+		Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountsDetailsResponse', array(&$res));
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
@@ -131,6 +137,8 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
+		$request_type = Billrun_Http_Request::POST;
+		Billrun_Factory::dispatcher()->trigger('beforeGetExternalAccountDetails', array(&$externalQuery, &$request_type, &$this));
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
 		$params = [
 			'authentication' => $this->remote_authentication,
@@ -138,9 +146,10 @@ class Billrun_Account_External extends Billrun_Account {
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
 		$request->setParameterPost($externalQuery);
-		$results = $request->request(Billrun_Http_Request::POST)->getBody();
+		$results = $request->request($request_type)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
 		$results = json_decode($results, true);
+		Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountDetailsResponse', array(&$results));
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
@@ -189,6 +198,14 @@ class Billrun_Account_External extends Billrun_Account {
 		}
 		$query['params'] = $params;
 		return $query;
+	}
+	
+	public function getRemoteDetails() {
+		return $this->remote;
+	}
+	
+	public function setRemoteDetails($url) {
+		$this->remote = $url;
 	}
 
 }

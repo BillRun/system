@@ -221,7 +221,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
          */
         protected function getCalculatedFields($uf, $type) {
                 $row = array();
-		$configurations = Billrun_Util::getIn(Billrun_Factory::config()-> getFileTypeSettings($type,true),'processor.calculated_fields');
+		$configurations = Billrun_Util::getIn(Billrun_Factory::config()-> getFileTypeSettings($type,true),'processor.calculated_fields',[]);
                 foreach ($configurations as $calculatedConf){ 
                     $filter = new Billrun_EntityGetter_Filters_Base(array('computed' => $calculatedConf));
                     $targetFieldName = $calculatedConf['target_field'];

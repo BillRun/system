@@ -19,7 +19,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url', '');
+		$this->setRemoteDetails(Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url', ''));
 		$defaultAuthentication = Billrun_Factory::config()->getConfigValue('subscribers.external_authentication', []);
 		$this->remote_authentication = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_authentication', $defaultAuthentication);
 	}
@@ -47,6 +47,8 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
+		$request_type = Billrun_Http_Request::POST;
+		Billrun_Factory::dispatcher()->trigger('beforeGetExternalSubscriberDetails', array(&$externalQuery, &$request_type, &$this));
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
 		$params = [
 			'authentication' => $this->remote_authentication,
@@ -54,9 +56,10 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
 		$request->setParameterPost($externalQuery);
-		$results = $request->request(Billrun_Http_Request::POST)->getBody();
+		$results = $request->request($request_type)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results, Zend_Log::DEBUG);
 		$results = json_decode($results, true);
+		Billrun_Factory::dispatcher()->trigger('afterGetExternalSubscriberDetailsResponse', array(&$results, $externalQuery));
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
@@ -94,6 +97,14 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		}
 		$query['params'] = $params;
 		return $query;
+	}
+	
+	public function getRemoteDetails() {
+		return $this->remote;
+	}
+	
+	public function setRemoteDetails($url) {
+		$this->remote = $url;
 	}
 	
 }
