@@ -214,7 +214,7 @@ abstract class Portal_Actions {
 	 * @return void
 	 */
 	protected function getBillApiParams($module, $action, $query = [], $update = [], $sort = []) {
-        Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+		br_yaf_register_autoload("Models", APPLICATION_PATH . '/application/modules/Billapi');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/modules/billapi/{$module}.ini");
 		
         $ret = [

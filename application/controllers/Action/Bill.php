@@ -14,34 +14,35 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    5.0
  */
 class BillAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	public function execute() {
 		$this->allowed();
 		$request = $this->getRequest();
 		try {
 			switch ($request->get('action')) {
 				case 'query_bills_invoices' :
-					$response = $this->queryBillsInvoices($request->get('query'));
+					$response = $this->queryBillsInvoices($request->get('query')); // only json query
 					break;
 				case 'get_over_due' :
-					$response = $this->getOverDueBalances($request);
+					$response = $this->getOverDueBalances($request); // not defined yet
 					break;
 				case 'get_balances' :
-					$response = $this->getBalances($request);
+					$response = $this->getBalances($request); // aids list
 					break;
 				case 'collection_debt' :
-					$response = $this->getCollectionDebt($request);
+					$response = $this->getCollectionDebt($request); //aids json array
 					break;
 				case 'all_collection_debts' :
 					$response = $this->getAllCollectionDebts($request);
 					break;
 				case 'get_balance' :
-					$response = $this->getCollectionDebt($request, false);
+					$response = $this->getCollectionDebt($request, false); //aids json array
 					break;
 				case 'search_invoice' :
 				default :
-					$response = $this->getBalanceFor($request);
+					$response = $this->getBalanceFor($request); // aid or invoice id
 			}
 
 			if ($response !== FALSE) {
@@ -108,7 +109,7 @@ class BillAction extends ApiAction {
 			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
 		}
-		if (!$this->isLegalAccountIds($aids)){
+		if (!$this->isLegalAccountIds($aids)) {
 			$this->setError('Illegal account ids', $request->getPost());
 			return FALSE;
 		}
@@ -131,9 +132,9 @@ class BillAction extends ApiAction {
 		}
 
 		Billrun_Factory::log('queryBillsInvoices query  : ' . print_r($query, 1));
-                if (is_array($queryAsArray = json_decode($query, JSON_OBJECT_AS_ARRAY))){
-                    Billrun_Utils_Mongo::convertQueryMongodloidDates($queryAsArray);               
-                }
+		if (is_array($queryAsArray = json_decode($query, JSON_OBJECT_AS_ARRAY))) {
+			Billrun_Utils_Mongo::convertQueryMongodloidDates($queryAsArray);
+		}
 		return Billrun_Bill_Invoice::getInvoices($queryAsArray);
 	}
 
@@ -146,27 +147,26 @@ class BillAction extends ApiAction {
 	 */
 	public function getCollectionDebt($request, $only_debt = true) {
 		if ($request instanceof Yaf_Request_Abstract) {
-			$jsonAids = $request->get('aids', '[]');        
-                        $requestBody = $request->getPost();
+			$jsonAids = $request->get('aids', '[]');
+			$requestBody = $request->getPost();
 		} else {
 			$jsonAids = $request['aids'] ?? [];
-                        $requestBody = $request;
-			
+			$requestBody = $request;
 		}
-                $aids = json_decode($jsonAids, TRUE);
-                if (!is_array($aids) || json_last_error()) {
-                    $this->setError('Illegal account ids', $requestBody);
-                    return FALSE;
-                }
+		$aids = json_decode($jsonAids, TRUE);
+		if (!is_array($aids) || json_last_error()) {
+			$this->setError('Illegal account ids', $requestBody);
+			return FALSE;
+		}
 		if (empty($aids)) {
 			$this->setError('Must supply at least one aid', $requestBody);
 			return FALSE;
 		}
-		$contractors= Billrun_Bill::getBalanceByAids($aids, false, $only_debt);
+		$contractors = Billrun_Bill::getBalanceByAids($aids, false, $only_debt);
 		$result = array();
 		foreach ($contractors as $contractor) {
 			$result[$contractor['aid']] = current($contractor);
-		}	
+		}
 		return $result;
 	}
 
@@ -182,19 +182,20 @@ class BillAction extends ApiAction {
 		}
 		return $result;
 	}
-	
+
 	/**
 	 * Validate that aids are valid aids (numric type)
 	 * @param type $aids
 	 * @return boolean- return true if all aids are numric type, false otherwise
 	 */
 	protected function isLegalAccountIds($aids) {
-		$res = array_filter($aids, function($aid){
+		$res = array_filter($aids, function ($aid) {
 			return !is_numeric($aid);
 		});
-		if(empty($res)){
+		if (empty($res)) {
 			return true;
 		}
 		return false;
 	}
+
 }

@@ -93,6 +93,11 @@ class Portal_Actions_Account extends Portal_Actions {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "password"');
 		}
 
+		$passwordStrengthValidation = Billrun_Utils_Security::validatePasswordStrength($newPassword, $params['change_password']['password_strength'] ?? []);
+		if ($passwordStrengthValidation !== TRUE) {
+			throw new Portal_Exception('password_strength_failed_' . abs($passwordStrengthValidation));
+		}
+
 		$res = Billrun_Factory::oauth2()->getStorage('user_credentials')->setUser($userId, $newPassword);
 		if ($res === false) {
 			throw new Portal_Exception('account_update_failure');
@@ -100,7 +105,7 @@ class Portal_Actions_Account extends Portal_Actions {
 		
 		return true;
 	}
-	
+
 	/**
 	 * get account invoices
 	 *
@@ -203,8 +208,10 @@ class Portal_Actions_Account extends Portal_Actions {
 		if ($account === false ) {
 			return false;
 		}
-		
 		$account['subscribers'] = $this->getSubscribers($account);
+                foreach ($account['subscribers'] as &$subscriber){
+                    $this->addPlanDetails($subscriber);
+                }
 		unset($account['_id'], $account['payment_gateway']);
 		return $account;
 	}
@@ -228,6 +235,16 @@ class Portal_Actions_Account extends Portal_Actions {
 			return array_intersect_key($subscriber, array_flip($subscriberFields));
 		}, $subscribers);
 	}
+        
+        /**
+	 * add plan details to subscriber
+	 *
+	 * @param  array $subscriber
+	 */
+        protected function addPlanDetails(&$subscriber) {
+            $plan = Billrun_Factory::plan(['name' => $subscriber['plan'], 'time'=> strtotime(date('Y-m-d H:00:00'))]);
+            $subscriber['plan_description'] =  $plan->get('description');
+        }
 	
 	/**
 	 * get the basic fields to show for a subscriber
