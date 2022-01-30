@@ -26,6 +26,8 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$this->quantity = Billrun_Util::getFieldVal($options['quantity'],1);
 		$this->planIncluded = Billrun_Util::getFieldVal($options['included'], FALSE);
 		$this->serviceID = Billrun_Util::getFieldVal($options['service_id'], FALSE);
+		$this->start = Billrun_Util::getFieldVal($options['start'], $this->start);
+		$this->end = Billrun_Util::getFieldVal($options['end'], $this->end);
 		$this->constructOptions($options);
 		$this->foreignFields = $this->getForeignFields(array('service' => $options), $this->stumpLine);
 	}
@@ -58,7 +60,7 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 	}
 	
 	protected function generateLineStamp($line) {
-		return md5($line['usagev'].$line['charge_op']. $line['aid'] . $line['sid'] . $this->name . $this->cycle->start() . $this->cycle->key() . $this->serviceID . $this->start);
+		return md5($line['usagev'].$line['charge_op']. $line['aid'] . $line['sid'] . $this->name . $this->cycle->start() . $this->cycle->key() . $this->serviceID . $this->start.$this->quantity);
 	}
 
 }
