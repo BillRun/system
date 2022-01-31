@@ -24,7 +24,7 @@
                             'timezone' : "Asia/Nicosia"
                         }
                     }
-                ]}}]},
+               ]}}]}]}},
 
 {$group:{"_id":{
   rate_type:"$cf.rate_type",

@@ -24,7 +24,7 @@
                             'timezone' : "Asia/Nicosia"
                         }
                     }
-                ]}}]},
+               ]}}]}]}},
 
 {$match:{"cf.product_group":{ $eq: "VCE" }}},
 

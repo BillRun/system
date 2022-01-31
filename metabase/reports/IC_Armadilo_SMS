@@ -24,8 +24,7 @@
                             'timezone' : "Asia/Nicosia"
                         }
                     }
-                ]}}]},
-
+                ]}}]}]}},
 {$match:{"cf.product" :"SMS"}},
 
 {$group: {"_id":{
