@@ -16,22 +16,22 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 	protected $serviceID = FALSE;
 	
 	public function __construct(array $options) {
+			parent::__construct($options);
 		if(!isset($options['name'], $options['cycle'])) {
 			throw new InvalidArgumentException("Received empty service!");
 		}
 		$this->name = $options['name'];
-		$this->plan = $options['plan'];
-		$this->cycle = $options['cycle'];
-		$this->tax = Billrun_Util::getFieldVal($options['tax'], []);
 		$this->quantity = Billrun_Util::getFieldVal($options['quantity'],1);
 		$this->planIncluded = Billrun_Util::getFieldVal($options['included'], FALSE);
 		$this->serviceID = Billrun_Util::getFieldVal($options['service_id'], FALSE);
-		$this->start = Billrun_Util::getFieldVal($options['start'], $this->start);
-		$this->end = Billrun_Util::getFieldVal($options['end'], $this->end);
 		$this->constructOptions($options);
 		$this->foreignFields = $this->getForeignFields(array('service' => $options), $this->stumpLine);
 	}
-	
+
+	protected  function verifyConstrctionOptions($options) {
+	 return !(!isset($options['name'], $options['cycle']));
+	}
+
 	protected function getCharges($options) {
 		if( $this->planIncluded && !Billrun_Factory::config()->getConfigValue('customer.aggregator.charge_included_service',TRUE)) {
 			return [ 'charge' => 0 ];

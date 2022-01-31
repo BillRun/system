@@ -24,8 +24,8 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	public function __construct(array $options) {
 		parent::__construct($options);
-		if (!isset($options['plan'], $options['cycle'])) {
-			Billrun_Factory::log("Invalid aggregate plan data!");
+		if (!$this->verifyConstrctionOptions($options)) {
+			Billrun_Factory::log("Invalid aggregate data for : ".get_class($this));
 			return;
 		}
 		$this->name = $options['plan'];
@@ -35,6 +35,10 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		$this->start = Billrun_Util::getFieldVal($options['start'], $this->start);
 		$this->end = Billrun_Util::getFieldVal($options['end'], $this->end);
 		$this->foreignFields = $this->getForeignFields(array('plan' => $options), $this->stumpLine);
+	}
+
+	protected  function verifyConstrctionOptions($options) {
+	 return isset($options['plan'], $options['cycle']);
 	}
 
 	protected function getCharges($options) {
