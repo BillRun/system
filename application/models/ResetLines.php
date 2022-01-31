@@ -76,12 +76,12 @@ class ResetLinesModel {
 	/**
 	 * Removes the balance doc for each of the subscribers
 	 */
-	public function resetBalances($aids) {
+	public function resetBalances($aids, $stamps) {
 		$ret = true;
 		$balances_coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
 		if (!empty($this->aids) && !empty($this->billrun_key)) {
-			$ret = $this->resetDefaultBalances($aids, $balances_coll);
-			$this->resetExtendedBalances($aids, $balances_coll);
+			$ret = $this->resetDefaultBalances($aids, $balances_coll, $stamps);
+			$this->resetExtendedBalances($aids, $balances_coll, $stamps);
 		}
 		return $ret;
 	}
@@ -190,8 +190,8 @@ class ResetLinesModel {
                                 if (!empty($archivedLinesToInsert)){
                                      $this->restoringArchivedLinesToLines($archivedLinesToInsert);
                                 }
+                                Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
 				Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
-				Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
 				continue;
 			}
 			$this->resetLineForAccounts($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
@@ -406,10 +406,11 @@ class ResetLinesModel {
 			return FALSE;
 		}
 		Billrun_Factory::log('Starting to reset balances', Zend_Log::DEBUG);
-		$ret = $this->resetBalances($update_aids); // err null
+		$ret = $this->resetBalances($update_aids, $stamps); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
+                                                                               die();
 		if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
 			try{
 				$ret = $queue_coll->batchInsert($queue_lines); // ok==true, nInserted==0 if w was 0
@@ -467,10 +468,104 @@ class ResetLinesModel {
                             return FALSE;
                     }
                 }
+                $this->unsetTx2FromRelevantBalances($update_aids, $stamps);
 
 		return true;
 	}
 
+        protected function unsetTx2FromRelevantBalances($aids, $stamps) {
+            $balances_coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
+            if (!empty($this->aids) && !empty($this->billrun_key)) {
+                $ret = $this->unsetTx2FromDefaultBalances($aids, $balances_coll, $stamps);
+                $ret = $this->unsetTx2FromExtendedBalances($aids, $balances_coll, $stamps);
+                  
+            }
+        }
+        
+        protected function unsetTx2FromDefaultBalances($aids, $balancesColl, $stamps) {
+            if (empty($this->balanceSubstract)) {
+			return;
+		}
+		$queryBalances = array(
+			'aid' => array('$in' => $aids),
+			'period' => 'default',
+		);
+                
+                foreach ($stamps as $stamp){
+                    $queryBalances['tx2'][$stamp] = array('$exists' =>  true);
+                }
+
+		$balances = $balancesColl->query($queryBalances)->cursor();
+		$accounts = Billrun_Factory::account()->loadAccountsForQuery(['aid' => array('$in' => array_keys($this->balanceSubstract))]);
+		foreach ($this->balanceSubstract as $aid => $usageBySid) {
+			$current_account = array_filter($accounts, function($account) use($aid) {
+				return $account['aid'] == $aid;
+			});
+			$invoicing_day = isset($current_account['invoicing_day']) ? $current_account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+			foreach ($usageBySid as $sid => $usageByMonth) {
+				foreach ($usageByMonth as $billrunKey => $usage) {
+					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
+					foreach ($relevantBalances as $balanceToUpdate) {
+						if (empty($balanceToUpdate)) {
+							continue;
+						}
+                                                $updateData = [];
+                                                foreach ($stamps as $stamp){
+                                                    $updateData['$unset']['tx2'][$stamp] = true;
+                                                }
+						if (empty($updateData)) {
+							continue;
+						}
+						
+						$query = array(
+							'_id' => $balanceToUpdate['_id'],
+						);
+						$ret = $balancesColl->update($query, $updateData);
+					}
+				}
+			}
+		}
+		return $ret;
+        }
+        
+        protected function unsetTx2FromExtendedBalances($aids, $balancesColl, $stamps) {
+                if (empty($this->extendedBalanceUsageSubtract)) {
+			return;
+		}
+		$verifiedArray = Billrun_Util::verify_array($aids, 'int');
+		$aidsAsKeys = array_flip($verifiedArray);
+		$balancesToUpdate = array_intersect_key($this->extendedBalanceUsageSubtract, $aidsAsKeys);
+                $queryBalances = array(
+			'aid' => array('$in' => $aids),
+			'period' => array('$ne' => 'default'),
+		);
+		$balances = $balancesColl->query($queryBalances)->cursor();
+		foreach ($balancesToUpdate as $aid => $packageUsage) {
+			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
+			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+			foreach ($packageUsage as $balanceId => $usageByUsaget) {
+				$relevantBalances = $this->getRelevantBalances($balances, $balanceId, [], $invoicing_day);
+                                if (empty($relevantBalances)) {
+					continue;
+				}
+				foreach ($relevantBalances as $balanceToUpdate) {
+					if (empty($balanceToUpdate)) {
+						continue;
+					}
+                                        $updateData = [];
+                                        foreach ($stamps as $stamp){
+                                            $updateData['$unset']['tx2'][$stamp] = true;
+                                        }
+					$query = array(
+						'_id' => new MongoId($balanceId),
+					);
+					$ret = $balancesColl->update($query, $updateData);
+				}
+                        }
+                }
+                return $ret;
+        }
+        
 	/**
 	 * method to calculate the usage need to be subtracted from the balance.
 	 * 
@@ -557,7 +652,7 @@ class ResetLinesModel {
 		return !empty($ret) ? $ret : false;
 	}
 
-	protected function buildUpdateBalance($balance, $volumeToSubstract, $totalsUsage = array(), $balanceCost = 0) {
+	protected function buildUpdateBalance($balance, $volumeToSubstract, $stamps, $totalsUsage = array(), $balanceCost = 0) {
 		$isMainBlalance = isset($balance['balance']['totals']);
 		$update = array();
 		foreach ($volumeToSubstract as $group => $usaget) {
@@ -600,11 +695,11 @@ class ResetLinesModel {
 				}
 			}
 		}
-
+                $update['$set']['tx2'] = $stamps;
 		return $update;
 	}
 
-	protected function resetExtendedBalances($aids, $balancesColl) {
+	protected function resetExtendedBalances($aids, $balancesColl, $stamps) {
 		if (empty($this->extendedBalanceUsageSubtract)) {
 			return;
 		}
@@ -613,8 +708,11 @@ class ResetLinesModel {
 		$balancesToUpdate = array_intersect_key($this->extendedBalanceUsageSubtract, $aidsAsKeys);
 		$queryBalances = array(
 			'aid' => array('$in' => $aids),
-			'period' => array('$ne' => 'default')
+			'period' => array('$ne' => 'default'),
 		);
+                foreach ($stamps as $stamp){
+                    $queryBalances['tx2'][$stamp] = array('$exists' =>  false);
+                }
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($balancesToUpdate as $aid => $packageUsage) {
 			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
@@ -628,7 +726,7 @@ class ResetLinesModel {
 					if (empty($balanceToUpdate)) {
 						continue;
 					}
-					$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
+					$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget, $stamps);
 					$query = array(
 						'_id' => new MongoId($balanceId),
 					);
@@ -638,17 +736,21 @@ class ResetLinesModel {
 			}
 		}
 
-		$this->extendedBalanceUsageSubtract = array();
+//		$this->extendedBalanceUsageSubtract = array();
 	}
 
-	protected function resetDefaultBalances($aids, $balancesColl) {
+	protected function resetDefaultBalances($aids, $balancesColl, $stamps) {
 		if (empty($this->balanceSubstract)) {
 			return;
 		}
 		$queryBalances = array(
 			'aid' => array('$in' => $aids),
-			'period' => 'default'
+			'period' => 'default',
 		);
+                
+                foreach ($stamps as $stamp){
+                    $queryBalances['tx2'][$stamp] = array('$exists' =>  false);
+                }
 
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		$accounts = Billrun_Factory::account()->loadAccountsForQuery(['aid' => array('$in' => array_keys($this->balanceSubstract))]);
@@ -667,7 +769,7 @@ class ResetLinesModel {
 						$groups = !empty($usage['groups']) ? $usage['groups'] : array();
 						$totals = !empty($usage['totals']) ? $usage['totals'] : array();
 						$cost = !empty($usage['cost']) ? $usage['cost'] : 0;
-						$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $totals, $cost);
+						$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $stamps, $totals, $cost);
 						if (empty($updateData)) {
 							continue;
 						}
@@ -681,7 +783,7 @@ class ResetLinesModel {
 				}
 			}
 		}
-		$this->balanceSubstract = array();
+//		$this->balanceSubstract = array();
 		return $ret;
 	}
 
