@@ -410,7 +410,19 @@ class ResetLinesModel {
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
-                                                                               die();
+                Billrun_Factory::log('Resetting ' . count($stamps) . ' lines', Zend_Log::DEBUG);
+		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
+		if (isset($ret['err']) && !is_null($ret['err'])) {
+			return FALSE;
+		}
+                if(!empty($this->splitLinesStamp)){
+                    $split_lines_stamps_query = $this->getStampsQuery($this->splitLinesStamp);
+                    $ret = $lines_coll->remove($split_lines_stamps_query); // err null
+                    if (isset($ret['err']) && !is_null($ret['err'])) {
+                            return FALSE;
+                    }
+                }
+                $this->unsetTx2FromRelevantBalances($update_aids, $stamps);
 		if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
 			try{
 				$ret = $queue_coll->batchInsert($queue_lines); // ok==true, nInserted==0 if w was 0
@@ -455,45 +467,27 @@ class ResetLinesModel {
                                 }
                             }
 			}
-		}		
-		Billrun_Factory::log('Resetting ' . count($stamps) . ' lines', Zend_Log::DEBUG);
-		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
-		if (isset($ret['err']) && !is_null($ret['err'])) {
-			return FALSE;
-		}
-                if(!empty($this->splitLinesStamp)){
-                    $split_lines_stamps_query = $this->getStampsQuery($this->splitLinesStamp);
-                    $ret = $lines_coll->remove($split_lines_stamps_query); // err null
-                    if (isset($ret['err']) && !is_null($ret['err'])) {
-                            return FALSE;
-                    }
-                }
-                $this->unsetTx2FromRelevantBalances($update_aids, $stamps);
-
+		}		              
 		return true;
 	}
 
         protected function unsetTx2FromRelevantBalances($aids, $stamps) {
             $balances_coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
             if (!empty($this->aids) && !empty($this->billrun_key)) {
-                $ret = $this->unsetTx2FromDefaultBalances($aids, $balances_coll, $stamps);
-                $ret = $this->unsetTx2FromExtendedBalances($aids, $balances_coll, $stamps);
+                $this->unsetTx2FromDefaultBalances($aids, $balances_coll, $stamps);               
+                $this->unsetTx2FromExtendedBalances($aids, $balances_coll, $stamps);
                   
             }
         }
         
         protected function unsetTx2FromDefaultBalances($aids, $balancesColl, $stamps) {
-            if (empty($this->balanceSubstract)) {
+                if (empty($this->balanceSubstract)) {
 			return;
 		}
 		$queryBalances = array(
 			'aid' => array('$in' => $aids),
 			'period' => 'default',
-		);
-                
-                foreach ($stamps as $stamp){
-                    $queryBalances['tx2'][$stamp] = array('$exists' =>  true);
-                }
+		);                             
 
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		$accounts = Billrun_Factory::account()->loadAccountsForQuery(['aid' => array('$in' => array_keys($this->balanceSubstract))]);
@@ -505,13 +499,16 @@ class ResetLinesModel {
 			foreach ($usageBySid as $sid => $usageByMonth) {
 				foreach ($usageByMonth as $billrunKey => $usage) {
 					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
+                                        if (empty($relevantBalances)) {
+                                                continue;
+                                        }
 					foreach ($relevantBalances as $balanceToUpdate) {
 						if (empty($balanceToUpdate)) {
 							continue;
 						}
                                                 $updateData = [];
-                                                foreach ($stamps as $stamp){
-                                                    $updateData['$unset']['tx2'][$stamp] = true;
+                                                foreach ($stamps as $stamp){//todo divide this to batch
+                                                    $updateData['$unset']['tx2.' . $stamp] = 1;
                                                 }
 						if (empty($updateData)) {
 							continue;
@@ -521,11 +518,14 @@ class ResetLinesModel {
 							'_id' => $balanceToUpdate['_id'],
 						);
 						$ret = $balancesColl->update($query, $updateData);
+                                                if (isset($ret['err']) && !is_null($ret['err'])) {
+                                                    Billrun_Factory::log('Rebalance: default balance update failed, Error: ' .$ret['err'] . ', failed_balance ' . print_r($balanceToUpdate, 1), Zend_Log::ALERT);
+                                                }
 					}
 				}
 			}
 		}
-		return $ret;
+		$this->balanceSubstract = array();
         }
         
         protected function unsetTx2FromExtendedBalances($aids, $balancesColl, $stamps) {
@@ -553,17 +553,20 @@ class ResetLinesModel {
 						continue;
 					}
                                         $updateData = [];
-                                        foreach ($stamps as $stamp){
-                                            $updateData['$unset']['tx2'][$stamp] = true;
+                                        foreach ($stamps as $stamp){//todo divide this to batch
+                                            $updateData['$unset']['tx2.' . $stamp] = 1;
                                         }
 					$query = array(
 						'_id' => new MongoId($balanceId),
 					);
 					$ret = $balancesColl->update($query, $updateData);
+                                        if (isset($ret['err']) && !is_null($ret['err'])) {
+                                            Billrun_Factory::log('Rebalance: extended balance update failed, Error: ' .$ret['err'] . ', failed_balance ' . print_r($balanceToUpdate, 1), Zend_Log::ALERT);
+                                        }
 				}
                         }
                 }
-                return $ret;
+		$this->extendedBalanceUsageSubtract = array();
         }
         
 	/**
@@ -695,7 +698,9 @@ class ResetLinesModel {
 				}
 			}
 		}
-                $update['$set']['tx2'] = $stamps;
+                foreach ($stamps as $stamp){//todo divide this to batch 
+                    $update['$set']['tx2.'. $stamp] = true;
+                }
 		return $update;
 	}
 
@@ -711,7 +716,7 @@ class ResetLinesModel {
 			'period' => array('$ne' => 'default'),
 		);
                 foreach ($stamps as $stamp){
-                    $queryBalances['tx2'][$stamp] = array('$exists' =>  false);
+                    $queryBalances['tx2.' . $stamp] = array('$exists' =>  false);
                 }
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($balancesToUpdate as $aid => $packageUsage) {
@@ -731,12 +736,14 @@ class ResetLinesModel {
 						'_id' => new MongoId($balanceId),
 					);
 					Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
-					$balancesColl->update($query, $updateData);
+					$ret = $balancesColl->update($query, $updateData);
+                                        if (isset($ret['err']) && !is_null($ret['err'])) {
+                                            Billrun_Factory::log('Rebalance: extended balance update failed, Error: ' .$ret['err'] . ', failed_balance ' . print_r($balanceToUpdate, 1), Zend_Log::ALERT);
+                                        }
 				}
 			}
 		}
 
-//		$this->extendedBalanceUsageSubtract = array();
 	}
 
 	protected function resetDefaultBalances($aids, $balancesColl, $stamps) {
@@ -749,7 +756,7 @@ class ResetLinesModel {
 		);
                 
                 foreach ($stamps as $stamp){
-                    $queryBalances['tx2'][$stamp] = array('$exists' =>  false);
+                    $queryBalances['tx2.' . $stamp] = array('$exists' =>  false);
                 }
 
 		$balances = $balancesColl->query($queryBalances)->cursor();
@@ -762,6 +769,9 @@ class ResetLinesModel {
 			foreach ($usageBySid as $sid => $usageByMonth) {
 				foreach ($usageByMonth as $billrunKey => $usage) {
 					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
+                                        if (empty($relevantBalances)) {
+                                                continue;
+                                        }
 					foreach ($relevantBalances as $balanceToUpdate) {
 						if (empty($balanceToUpdate)) {
 							continue;
@@ -779,11 +789,13 @@ class ResetLinesModel {
 						);
 						Billrun_Factory::log('Resetting default balance for sid: ' .  $sid . ', billrun: ' . $billrunKey, Zend_Log::DEBUG);
 						$ret = $balancesColl->update($query, $updateData);
+                                                if (isset($ret['err']) && !is_null($ret['err'])) {
+                                                    Billrun_Factory::log('Rebalance: default balance update failed, Error: ' .$ret['err'] . ', failed_balance ' . print_r($balanceToUpdate, 1), Zend_Log::ALERT);
+                                                }
 					}
 				}
 			}
 		}
-//		$this->balanceSubstract = array();
 		return $ret;
 	}
 
