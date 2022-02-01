@@ -59,13 +59,13 @@ class ResetLinesModel {
 	 */
 	protected $conditions;
 
-	public function __construct($aids, $billrun_key, $conditions, $stamps = array()) {
+	public function __construct($aids, $billrun_key, $conditions, $stampsByAidAndSid = array()) {
 		$this->initBalances($aids, $billrun_key);
 		$this->aids = $aids;
 		$this->billrun_key = strval($billrun_key);
 		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
 		$this->conditions = $conditions;
-                $this->stamps = $stamps;
+                $this->stampsByAidAndSid = $stampsByAidAndSid;
 	}
 
 	public function reset() {
@@ -77,12 +77,12 @@ class ResetLinesModel {
 	/**
 	 * Removes the balance doc for each of the subscribers
 	 */
-	public function resetBalances($aids, $stamps) {
+	public function resetBalances($aids) {
 		$ret = true;
 		$balances_coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
 		if (!empty($this->aids) && !empty($this->billrun_key)) {
-			$ret = $this->resetDefaultBalances($aids, $balances_coll, $stamps);
-			$this->resetExtendedBalances($aids, $balances_coll, $stamps);
+			$ret = $this->resetDefaultBalances($aids, $balances_coll);
+			$this->resetExtendedBalances($aids, $balances_coll);
 		}
 		return $ret;
 	}
@@ -264,7 +264,9 @@ class ResetLinesModel {
 		$this->aggregateLineUsage($line);
 		$queue_line['rebalance'] = array();
 		$stamps[] = $line['stamp'];
-                $this->stampsByAid[$line['aid']][] = [$line['stamp']];
+                if(isset($line['aid']) && isset($line['sid'])){
+                    $this->stampsByAidAndSid[$line['aid']][$line['sid']][] = $line['stamp'];
+                }
                 $former_exporter = $this->buildFormerExporterForLine($line);
                 $split_line = $line['split_line']?? false;
                 if($split_line){//CDR which is duplicated/split shouldn't enter the queue on a rebalance
@@ -314,14 +316,21 @@ class ResetLinesModel {
 
 		while ($update_count = count($update_aids = array_slice($this->aids, $offset, 10))) {
 			Billrun_Factory::log('Resetting lines of accounts ' . implode(',', $update_aids), Zend_Log::INFO);
-			$this->resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll);
-                        
-                        //handle lines that already reset but not finish the rebalance (crash in the midle)
-                        if(!empty($this->stamps)){
-                            $this->resetLinesByStamps($this->stamps, $update_aids, $advancedProperties, $lines_coll, $queue_coll);                          
-                        }
+			$this->resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll);                      
 			$offset += 10;
 		}
+                
+                //handle lines that already reset but not finish the rebalance (crash in the midle)
+                $stamps = [];
+                foreach ($this->stampsByAidAndSid as $aid => $sids){
+                    foreach ($sids as $sid => $sidStamps){
+                        $stamps = array_merge($stamps, $sidStamps);
+                    }
+                }
+                if(!empty($stamps)){
+                    Billrun_Factory::log('Fix rebalnce for lines with stamps ' . implode(',', $stamps), Zend_Log::INFO);
+                    $this->resetLinesByStamps($stamps, $this->aids, $advancedProperties, $lines_coll, $queue_coll); 
+                }
 
 		return TRUE;
 	}
@@ -432,11 +441,11 @@ class ResetLinesModel {
 			return FALSE;
 		}
 		Billrun_Factory::log('Starting to reset balances', Zend_Log::DEBUG);
-		$ret = $this->resetBalances($update_aids, $stamps); // err null
+		$ret = $this->resetBalances($update_aids); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
-                $this->addStampsToRebalnceQueue($update_aids, $stamps);         
+                $this->addStampsToRebalnceQueue();         
                 Billrun_Factory::log('Resetting ' . count($stamps) . ' lines', Zend_Log::DEBUG);
 		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
@@ -449,7 +458,6 @@ class ResetLinesModel {
                             return FALSE;
                     }
                 }
-                $this->unsetTx2FromRelevantBalances($update_aids, $stamps);
 		if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
 			try{
 				$ret = $queue_coll->batchInsert($queue_lines); // ok==true, nInserted==0 if w was 0
@@ -495,22 +503,26 @@ class ResetLinesModel {
                             }
 			}
                 }
-                $this->removeStampsfromRebalnceQueue($update_aids);
+                $this->removeStampsfromRebalnceQueue();
+                $this->unsetTx2FromRelevantBalances();
 		return true;
 	}
         
         protected function addStampsToRebalnceQueue(){
-            foreach ($this->stampsByAid as $aid => $stamps){
+            foreach ($this->stampsByAidAndSid as $aid => $stampsBySid){
                 $query = $this->getRebalanceQueueQuery($aid);
-                $updateData = array('$set' => array('stamps' => $stamps));
+                $updateData = array('$set' => array('stampsBySid' => $stampsBySid));
                 Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);//todo:: need to divede updateData to smaller size
             }
         }
         
         protected function removeStampsfromRebalnceQueue(){
-            foreach ($this->stampsByAid as $aid => $stamps){
+            foreach ($this->stampsByAidAndSid as $aid => $stampsBySid){
                 $query = $this->getRebalanceQueueQuery($aid);
-                $updateData = array('$unset' => array('stamps' => 1));
+                $updateData = [];
+                foreach ($stampsBySid as $sid => $stamp){
+                    $updateData['$unset']['stampsBySid'][$sid][$stamp] = 1;
+                }
                 Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);//todo:: need to divede updateData to smaller size
             }
         }
@@ -519,102 +531,27 @@ class ResetLinesModel {
             return array('aid' => $aid, 'billrun_key' => $this->billrun_key);
         }
 
-        protected function unsetTx2FromRelevantBalances($aids, $stamps) {
+        protected function unsetTx2FromRelevantBalances() {
             $balances_coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
             if (!empty($this->aids) && !empty($this->billrun_key)) {
-                $this->unsetTx2FromDefaultBalances($aids, $balances_coll, $stamps);               
-                $this->unsetTx2FromExtendedBalances($aids, $balances_coll, $stamps);
-                  
-            }
-        }
-        
-        protected function unsetTx2FromDefaultBalances($aids, $balancesColl, $stamps) {
-                if (empty($this->balanceSubstract)) {
-			return;
-		}
-		$queryBalances = array(
-			'aid' => array('$in' => $aids),
-			'period' => 'default',
-		);                             
-
-		$balances = $balancesColl->query($queryBalances)->cursor();
-		$accounts = Billrun_Factory::account()->loadAccountsForQuery(['aid' => array('$in' => array_keys($this->balanceSubstract))]);
-		foreach ($this->balanceSubstract as $aid => $usageBySid) {
-			$current_account = array_filter($accounts, function($account) use($aid) {
-				return $account['aid'] == $aid;
-			});
-			$invoicing_day = isset($current_account['invoicing_day']) ? $current_account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
-			foreach ($usageBySid as $sid => $usageByMonth) {
-				foreach ($usageByMonth as $billrunKey => $usage) {
-					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
-                                        if (empty($relevantBalances)) {
-                                                continue;
-                                        }
-					foreach ($relevantBalances as $balanceToUpdate) {
-						if (empty($balanceToUpdate)) {
-							continue;
-						}
-                                                $updateData = [];
-                                                foreach ($stamps as $stamp){//todo divide this to batch
-                                                    $updateData['$unset']['tx2.' . $stamp] = 1;
-                                                }
-						if (empty($updateData)) {
-							continue;
-						}
-						
-						$query = array(
-							'_id' => $balanceToUpdate['_id'],
-						);
-						$ret = $balancesColl->update($query, $updateData);
-                                                if (isset($ret['err']) && !is_null($ret['err'])) {
-                                                    Billrun_Factory::log('Rebalance: default balance update failed, Error: ' .$ret['err'] . ', failed_balance ' . print_r($balanceToUpdate, 1), Zend_Log::ALERT);
-                                                }
-					}
-				}
-			}
-		}
-		$this->balanceSubstract = array();
-        }
-        
-        protected function unsetTx2FromExtendedBalances($aids, $balancesColl, $stamps) {
-                if (empty($this->extendedBalanceUsageSubtract)) {
-			return;
-		}
-		$verifiedArray = Billrun_Util::verify_array($aids, 'int');
-		$aidsAsKeys = array_flip($verifiedArray);
-		$balancesToUpdate = array_intersect_key($this->extendedBalanceUsageSubtract, $aidsAsKeys);
-                $queryBalances = array(
-			'aid' => array('$in' => $aids),
-			'period' => array('$ne' => 'default'),
-		);
-		$balances = $balancesColl->query($queryBalances)->cursor();
-		foreach ($balancesToUpdate as $aid => $packageUsage) {
-			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
-			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
-			foreach ($packageUsage as $balanceId => $usageByUsaget) {
-				$relevantBalances = $this->getRelevantBalances($balances, $balanceId, [], $invoicing_day);
-                                if (empty($relevantBalances)) {
-					continue;
-				}
-				foreach ($relevantBalances as $balanceToUpdate) {
-					if (empty($balanceToUpdate)) {
-						continue;
-					}
-                                        $updateData = [];
-                                        foreach ($stamps as $stamp){//todo divide this to batch
-                                            $updateData['$unset']['tx2.' . $stamp] = 1;
-                                        }
-					$query = array(
-						'_id' => new MongoId($balanceId),
-					);
-					$ret = $balancesColl->update($query, $updateData);
-                                        if (isset($ret['err']) && !is_null($ret['err'])) {
-                                            Billrun_Factory::log('Rebalance: extended balance update failed, Error: ' .$ret['err'] . ', failed_balance ' . print_r($balanceToUpdate, 1), Zend_Log::ALERT);
-                                        }
-				}
+            foreach ($this->stampsByAidAndSid as $aid => $sids){
+                    foreach ($sids as $sid => $stamps){
+                        $query = array(
+                                'aid' => $aid,
+                                'sid' => $sid 
+                        );
+                        $updateData = [];
+                        foreach ($stamps as $stamp){
+                            $query['tx2.' . $stamp] = array('$exists' =>  true);
+                            $updateData['$unset']['tx2.' . $stamp] = 1;
                         }
-                }
-		$this->extendedBalanceUsageSubtract = array();
+                        if (empty($updateData)) {
+                                continue;
+                        }
+                        $balances_coll->update($query, $updateData);
+                    }
+                }     
+            }
         }
         
 	/**
@@ -703,7 +640,7 @@ class ResetLinesModel {
 		return !empty($ret) ? $ret : false;
 	}
 
-	protected function buildUpdateBalance($balance, $volumeToSubstract, $stamps, $totalsUsage = array(), $balanceCost = 0) {
+	protected function buildUpdateBalance($balance, $volumeToSubstract, $totalsUsage = array(), $balanceCost = 0) {
 		$isMainBlalance = isset($balance['balance']['totals']);
 		$update = array();
 		foreach ($volumeToSubstract as $group => $usaget) {
@@ -746,13 +683,10 @@ class ResetLinesModel {
 				}
 			}
 		}
-                foreach ($stamps as $stamp){//todo divide this to batch 
-                    $update['$set']['tx2.'. $stamp] = true;
-                }
 		return $update;
 	}
 
-	protected function resetExtendedBalances($aids, $balancesColl, $stamps) {
+	protected function resetExtendedBalances($aids, $balancesColl) {
 		if (empty($this->extendedBalanceUsageSubtract)) {
 			return;
 		}
@@ -762,10 +696,7 @@ class ResetLinesModel {
 		$queryBalances = array(
 			'aid' => array('$in' => $aids),
 			'period' => array('$ne' => 'default'),
-		);
-                foreach ($stamps as $stamp){
-                    $queryBalances['tx2.' . $stamp] = array('$exists' =>  false);
-                }
+		);                
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($balancesToUpdate as $aid => $packageUsage) {
 			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
@@ -779,10 +710,15 @@ class ResetLinesModel {
 					if (empty($balanceToUpdate)) {
 						continue;
 					}
-					$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget, $stamps);
+					$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
 					$query = array(
 						'_id' => new MongoId($balanceId),
 					);
+                                        $stamps = $this->stampsByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']];
+                                        foreach ($stamps as $stamp){
+                                            $query['tx2.' . $stamp] = array('$exists' =>  false);
+                                            $updateData['$set']['tx2.'. $stamp] = true;
+                                        }
 					Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
 					$ret = $balancesColl->update($query, $updateData);
                                         if (isset($ret['err']) && !is_null($ret['err'])) {
@@ -791,10 +727,10 @@ class ResetLinesModel {
 				}
 			}
 		}
-
+                $this->extendedBalanceUsageSubtract = array();
 	}
 
-	protected function resetDefaultBalances($aids, $balancesColl, $stamps) {
+	protected function resetDefaultBalances($aids, $balancesColl) {
 		if (empty($this->balanceSubstract)) {
 			return;
 		}
@@ -802,11 +738,6 @@ class ResetLinesModel {
 			'aid' => array('$in' => $aids),
 			'period' => 'default',
 		);
-                
-                foreach ($stamps as $stamp){
-                    $queryBalances['tx2.' . $stamp] = array('$exists' =>  false);
-                }
-
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		$accounts = Billrun_Factory::account()->loadAccountsForQuery(['aid' => array('$in' => array_keys($this->balanceSubstract))]);
 		foreach ($this->balanceSubstract as $aid => $usageBySid) {
@@ -827,14 +758,18 @@ class ResetLinesModel {
 						$groups = !empty($usage['groups']) ? $usage['groups'] : array();
 						$totals = !empty($usage['totals']) ? $usage['totals'] : array();
 						$cost = !empty($usage['cost']) ? $usage['cost'] : 0;
-						$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $stamps, $totals, $cost);
+						$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $totals, $cost);
 						if (empty($updateData)) {
 							continue;
 						}
-						
 						$query = array(
 							'_id' => $balanceToUpdate['_id'],
 						);
+                                                $stamps = $this->stampsByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']];
+                                                foreach ($stamps as $stamp){
+                                                    $query['tx2.' . $stamp] = array('$exists' =>  false);
+                                                    $updateData['$set']['tx2.'. $stamp] = true;
+                                                }
 						Billrun_Factory::log('Resetting default balance for sid: ' .  $sid . ', billrun: ' . $billrunKey, Zend_Log::DEBUG);
 						$ret = $balancesColl->update($query, $updateData);
                                                 if (isset($ret['err']) && !is_null($ret['err'])) {
@@ -844,6 +779,7 @@ class ResetLinesModel {
 				}
 			}
 		}
+                $this->balanceSubstract = array();
 		return $ret;
 	}
 
