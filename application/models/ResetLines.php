@@ -59,12 +59,13 @@ class ResetLinesModel {
 	 */
 	protected $conditions;
 
-	public function __construct($aids, $billrun_key, $conditions) {
+	public function __construct($aids, $billrun_key, $conditions, $stamps = array()) {
 		$this->initBalances($aids, $billrun_key);
 		$this->aids = $aids;
 		$this->billrun_key = strval($billrun_key);
 		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
 		$this->conditions = $conditions;
+                $this->stamps = $stamps;
 	}
 
 	public function reset() {
@@ -163,6 +164,25 @@ class ResetLinesModel {
 		} else {
 			$query = $basicQuery;
 		}
+		return $this->resetLinesByQuery($query, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
+	}
+        
+        /**
+	 * Reset lines based on input array of stamps
+         * @param array $stamps - Array of stamps of lines to reset.
+	 * @param array $update_aids - Array of account ID's that in the rebalance queue and have stamps inside the rebalance queue.
+	 * @param array $advancedProperties - Array of advanced properties.
+	 * @param Mongodloid_Collection $lines_coll - The lines collection.
+	 * @param Mongodloid_Collection $queue_coll - The queue colection.
+	 * @return boolean true if successful false otherwise.
+	 */
+	protected function resetLinesByStamps($stamps, $update_aids, $advancedProperties, $lines_coll, $queue_coll) {
+		$query = array('stamp' => array('$in' => $stamps));
+                return $this->resetLinesByQuery($query, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
+	}
+        
+        
+        protected function resetLinesByQuery($query, $update_aids, $advancedProperties, $lines_coll, $queue_coll) {
 		$lines = $lines_coll->query($query);
 		$rebalanceTime = new MongoDate();
 		$stamps = array();
@@ -179,7 +199,7 @@ class ResetLinesModel {
 				foreach ($archivedLines as $archivedLine){
 					unset($archivedLine["u_s"]);
 					$archivedLinesToInsert[] = $archivedLine;
-					$this->resetLineForAccounts($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
+					$this->resetLine($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
                                         // If we've reached `$batchSize` entries, perform the batched insert.
                                         if(count($archivedLinesToInsert) >= $batchSize){                                     
                                             $this->restoringArchivedLinesToLines($archivedLinesToInsert);
@@ -194,7 +214,7 @@ class ResetLinesModel {
 				Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
 				continue;
 			}
-			$this->resetLineForAccounts($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
+			$this->resetLine($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
 		}
 
 		// If there are stamps to handle.
@@ -204,8 +224,8 @@ class ResetLinesModel {
 				return false;
 			}
 		}
-	}
-        
+        }
+
         protected function restoringArchivedLinesToLines($archivedLinesToInsert){
             try{
                     $ret = Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
@@ -235,7 +255,7 @@ class ResetLinesModel {
             }
         }
 
-        protected function resetLineForAccounts($line, &$stamps, &$queue_lines, $rebalanceTime, $advancedProperties, &$former_exporter){
+        protected function resetLine($line, &$stamps, &$queue_lines, $rebalanceTime, $advancedProperties, &$former_exporter){
 		$queue_line = array(
 			'calc_name' => false,
 			'calc_time' => false,
@@ -244,6 +264,7 @@ class ResetLinesModel {
 		$this->aggregateLineUsage($line);
 		$queue_line['rebalance'] = array();
 		$stamps[] = $line['stamp'];
+                $this->stampsByAid[$line['aid']][] = [$line['stamp']];
                 $former_exporter = $this->buildFormerExporterForLine($line);
                 $split_line = $line['split_line']?? false;
                 if($split_line){//CDR which is duplicated/split shouldn't enter the queue on a rebalance
@@ -294,6 +315,11 @@ class ResetLinesModel {
 		while ($update_count = count($update_aids = array_slice($this->aids, $offset, 10))) {
 			Billrun_Factory::log('Resetting lines of accounts ' . implode(',', $update_aids), Zend_Log::INFO);
 			$this->resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll);
+                        
+                        //handle lines that already reset but not finish the rebalance (crash in the midle)
+                        if(!empty($this->stamps)){
+                            $this->resetLinesByStamps($this->stamps, $update_aids, $advancedProperties, $lines_coll, $queue_coll);                          
+                        }
 			$offset += 10;
 		}
 
@@ -410,6 +436,7 @@ class ResetLinesModel {
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
+                $this->addStampsToRebalnceQueue($update_aids, $stamps);         
                 Billrun_Factory::log('Resetting ' . count($stamps) . ' lines', Zend_Log::DEBUG);
 		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
@@ -467,9 +494,30 @@ class ResetLinesModel {
                                 }
                             }
 			}
-		}		              
+                }
+                $this->removeStampsfromRebalnceQueue($update_aids);
 		return true;
 	}
+        
+        protected function addStampsToRebalnceQueue(){
+            foreach ($this->stampsByAid as $aid => $stamps){
+                $query = $this->getRebalanceQueueQuery($aid);
+                $updateData = array('$set' => array('stamps' => $stamps));
+                Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);//todo:: need to divede updateData to smaller size
+            }
+        }
+        
+        protected function removeStampsfromRebalnceQueue(){
+            foreach ($this->stampsByAid as $aid => $stamps){
+                $query = $this->getRebalanceQueueQuery($aid);
+                $updateData = array('$unset' => array('stamps' => 1));
+                Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);//todo:: need to divede updateData to smaller size
+            }
+        }
+        
+        protected function getRebalanceQueueQuery($aid){
+            return array('aid' => $aid, 'billrun_key' => $this->billrun_key);
+        }
 
         protected function unsetTx2FromRelevantBalances($aids, $stamps) {
             $balances_coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
