@@ -139,14 +139,14 @@ class ResetLinesModel {
 		$rebalanceTime = new MongoDate();
 		$stamps = array();
 		$queue_lines = array();
-		$queue_line = array(
-			'calc_name' => false,
-			'calc_time' => false,
-			'skip_fraud' => true,
-		);
 
 		// Go through the collection's lines and fill the queue lines.
 		foreach ($lines as $line) {
+                        $queue_line = array(
+                                'calc_name' => false,
+                                'calc_time' => false,
+                                'skip_fraud' => true,
+                        );
 			Billrun_Factory::dispatcher()->trigger('beforeRebalancingLines', array(&$line));
 			$this->aggregateLineUsage($line);
 			$queue_line['rebalance'] = array();
