@@ -59,12 +59,13 @@ class ResetLinesModel {
 	 */
 	protected $conditions;
 
-	public function __construct($aids, $billrun_key, $conditions) {
+	public function __construct($aids, $billrun_key, $conditions, $stamps = array()) {
 		$this->initBalances($aids, $billrun_key);
 		$this->aids = $aids;
 		$this->billrun_key = strval($billrun_key);
 		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
 		$this->conditions = $conditions;
+                $this->stamps = $stamps;
 	}
 
 	public function reset() {
@@ -163,6 +164,25 @@ class ResetLinesModel {
 		} else {
 			$query = $basicQuery;
 		}
+		return $this->resetLinesByQuery($query, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
+	}
+        
+        /**
+	 * Reset lines based on input array of stamps
+         * @param array $stamps - Array of stamps of lines to reset.
+	 * @param array $update_aids - Array of account ID's that in the rebalance queue and have stamps inside the rebalance queue.
+	 * @param array $advancedProperties - Array of advanced properties.
+	 * @param Mongodloid_Collection $lines_coll - The lines collection.
+	 * @param Mongodloid_Collection $queue_coll - The queue colection.
+	 * @return boolean true if successful false otherwise.
+	 */
+	protected function resetLinesByStamps($stamps, $update_aids, $advancedProperties, $lines_coll, $queue_coll) {
+		$query = array('stamp' => array('$in' => $stamps));
+                return $this->resetLinesByQuery($query, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
+	}
+        
+        
+        protected function resetLinesByQuery($query, $update_aids, $advancedProperties, $lines_coll, $queue_coll) {
 		$lines = $lines_coll->query($query);
 		$rebalanceTime = new MongoDate();
 		$stamps = array();
@@ -179,23 +199,22 @@ class ResetLinesModel {
 				foreach ($archivedLines as $archivedLine){
 					unset($archivedLine["u_s"]);
 					$archivedLinesToInsert[] = $archivedLine;
-					$this->resetLineForAccounts($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
+					$this->resetLine($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
                                         // If we've reached `$batchSize` entries, perform the batched insert.
-                                        if(count($archivedLinesToInsert) >= $batchSize){
-                                            Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
+                                        if(count($archivedLinesToInsert) >= $batchSize){                                     
+                                            $this->restoringArchivedLinesToLines($archivedLinesToInsert);
                                             $archivedLinesToInsert = [];
-                                        }
-                                        
+                                        }                                       
                                 }
                                 // Finish the last batch.
                                 if (!empty($archivedLinesToInsert)){
-                                     Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
+                                     $this->restoringArchivedLinesToLines($archivedLinesToInsert);
                                 }
                                 Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
 				Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
 				continue;
 			}
-			$this->resetLineForAccounts($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
+			$this->resetLine($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
 		}
 
 		// If there are stamps to handle.
@@ -205,9 +224,38 @@ class ResetLinesModel {
 				return false;
 			}
 		}
-	}
+        }
 
-	protected function resetLineForAccounts($line, &$stamps, &$queue_lines, $rebalanceTime, $advancedProperties, &$former_exporter){
+        protected function restoringArchivedLinesToLines($archivedLinesToInsert){
+            try{
+                    $ret = Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
+                    if (isset($ret['err']) && !is_null($ret['err'])) {
+                            Billrun_Factory::log('Rebalance: batch insertion of restoring archive lines to lines failed, Insert Error: ' .$ret['err'], Zend_Log::ALERT);
+                            throw new Exception();
+                    }
+            } catch (Exception $e) {
+                    Billrun_Factory::log("Rebalance: Batch insert failed during of restoring archive lines to lines, inserting line by line, Error: " .  $e->getMessage(), Zend_Log::ERR);
+                    foreach ($archivedLinesToInsert as $archiveLine) {
+                            try{
+                                $ret = Billrun_Factory::db()->linesCollection()->insert($archiveLine); // ok==1, err null
+                                if (isset($ret['err']) && !is_null($ret['err'])) {
+                                        Billrun_Factory::log('Rebalance: line insertion of restoring archive line to lines failed, Insert Error: ' .$ret['err'] . ', failed_line ' . print_r($archiveLine, 1), Zend_Log::ALERT);
+                                        continue;
+                                }
+                            } catch (Exception $e) {
+                                if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+                                        Billrun_Factory::log('Rebalance: line insertion of restoring archive line to lines failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($archiveLine, 1), Zend_Log::NOTICE);
+                                        continue;
+                                } else {
+                                        Billrun_Factory::log('Rebalance: line insertion of restoring archive line to lines failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($archiveLine, 1), Zend_Log::ALERT);
+                                        throw $e;
+                                }
+                            }
+                    }
+            }
+        }
+
+        protected function resetLine($line, &$stamps, &$queue_lines, $rebalanceTime, $advancedProperties, &$former_exporter){
 		$queue_line = array(
 			'calc_name' => false,
 			'calc_time' => false,
@@ -216,6 +264,7 @@ class ResetLinesModel {
 		$this->aggregateLineUsage($line);
 		$queue_line['rebalance'] = array();
 		$stamps[] = $line['stamp'];
+                $this->stampsByAid[$line['aid']][] = [$line['stamp']];
                 $former_exporter = $this->buildFormerExporterForLine($line);
                 $split_line = $line['split_line']?? false;
                 if($split_line){//CDR which is duplicated/split shouldn't enter the queue on a rebalance
@@ -266,6 +315,11 @@ class ResetLinesModel {
 		while ($update_count = count($update_aids = array_slice($this->aids, $offset, 10))) {
 			Billrun_Factory::log('Resetting lines of accounts ' . implode(',', $update_aids), Zend_Log::INFO);
 			$this->resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll);
+                        
+                        //handle lines that already reset but not finish the rebalance (crash in the midle)
+                        if(!empty($this->stamps)){
+                            $this->resetLinesByStamps($this->stamps, $update_aids, $advancedProperties, $lines_coll, $queue_coll);                          
+                        }
 			$offset += 10;
 		}
 
@@ -382,6 +436,7 @@ class ResetLinesModel {
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
+                $this->addStampsToRebalnceQueue($update_aids, $stamps);         
                 Billrun_Factory::log('Resetting ' . count($stamps) . ' lines', Zend_Log::DEBUG);
 		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
@@ -405,23 +460,64 @@ class ResetLinesModel {
 			} catch (Exception $e) {
 				Billrun_Factory::log("Rebalance: Batch insert failed during insertion to queue, inserting line by line, Error: " .  $e->getMessage(), Zend_Log::ERR);
 				foreach ($queue_lines as $qline) {
-					$ret = $queue_coll->insert($qline); // ok==1, err null
-					if (isset($ret['err']) && !is_null($ret['err'])) {
-						Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$ret['err'] . ', failed_line ' . print_r($qline, 1), Zend_Log::ALERT);
-						continue;
-					}
+                                        try{
+                                            $ret = $queue_coll->insert($qline); // ok==1, err null
+                                            if (isset($ret['err']) && !is_null($ret['err'])) {
+                                                    Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$ret['err'] . ', failed_line ' . print_r($qline, 1), Zend_Log::ALERT);
+                                                    continue;
+                                            }
+                                        } catch (Exception $e) {
+                                            if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+                                                    Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($qline, 1), Zend_Log::NOTICE);
+                                                    continue;
+                                            } else {
+                                                    Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($qline, 1), Zend_Log::ALERT);
+                                                    throw $e;
+                                            }
+                                        }
 				}
 			}
 		} else {
 			foreach ($queue_lines as $qline) {
+                             try{
 				$ret = $queue_coll->insert($qline); // ok==1, err null
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;
 				}
+                            } catch (Exception $e) {
+                                if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+                                        Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($qline, 1), Zend_Log::NOTICE);
+                                        continue;
+                                } else {
+                                        Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($qline, 1), Zend_Log::ALERT);
+                                        throw $e;
+                                }
+                            }
 			}
-		}		              
+                }
+                $this->removeStampsfromRebalnceQueue($update_aids);
 		return true;
 	}
+        
+        protected function addStampsToRebalnceQueue(){
+            foreach ($this->stampsByAid as $aid => $stamps){
+                $query = $this->getRebalanceQueueQuery($aid);
+                $updateData = array('$set' => array('stamps' => $stamps));
+                Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);//todo:: need to divede updateData to smaller size
+            }
+        }
+        
+        protected function removeStampsfromRebalnceQueue(){
+            foreach ($this->stampsByAid as $aid => $stamps){
+                $query = $this->getRebalanceQueueQuery($aid);
+                $updateData = array('$unset' => array('stamps' => 1));
+                Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);//todo:: need to divede updateData to smaller size
+            }
+        }
+        
+        protected function getRebalanceQueueQuery($aid){
+            return array('aid' => $aid, 'billrun_key' => $this->billrun_key);
+        }
 
         protected function unsetTx2FromRelevantBalances($aids, $stamps) {
             $balances_coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
