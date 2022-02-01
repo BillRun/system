@@ -31,7 +31,7 @@
 {$group: {"_id":{
   cash_flow:"$cf.cash_flow", 
   BILLED_PRODUCT: "$cf.product",
-  BILLING_OPERATOR_N:"$cf.event_direction",
+  BILLING_OPERATOR_N:"$cf.operator",
   MONTH:{$concat:[{$substr:["$uf.EVENT_START_DATE",0,4]},"-",{$substr:["$uf.EVENT_START_DATE",4,2]},"-",{$substr:["$uf.EVENT_START_DATE",6,2]}]}, 
   EVENT_DIRECTION_G:"$cf.event_direction",
   RATING_SCENARIO:"$cf.scenario",
