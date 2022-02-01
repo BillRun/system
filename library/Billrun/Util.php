@@ -1706,8 +1706,8 @@ class Billrun_Util {
 	 * 
 	 * @param array $arr
 	 * @param array/string $keys  - array of keys, or string of keys separated by "."
-	 * @param any $defaultValue - returns in case one the fields is not found
-	 * @return the value in the array, default value if one of the keys is not found
+	 * @param mixed $defaultValue - returns in case one the fields is not found
+	 * @return mixed the value in the array, default value if one of the keys is not found
 	 */
 	public static function getIn($arr, $keys, $defaultValue = null) {
 		if (!$arr) {
@@ -1730,6 +1730,19 @@ class Billrun_Util {
 		}
 		
 		return $ret;
+	}
+	
+	/**
+	 * Increase the value in an array.
+	 * Also supports deep fetch (for nested arrays)
+	 * 
+	 * @param array $arr
+	 * @param array/string $keys  - array of keys, or string of keys separated by "."
+	 * @param float $value - the value to add
+	 */
+	public static function increaseIn(&$arr, $keys, $value) {
+		$currentValue = Billrun_Util::getIn($arr, $keys, 0);
+		Billrun_Util::setIn($arr, $keys, $currentValue + $value);
 	}
 	
 	/**
@@ -1952,11 +1965,36 @@ class Billrun_Util {
 		return $actualTime;
 	}
 	
+        /**
+         * Rounds a number.
+         * @param string $roundingType - round up, round down or round nearest. 
+         * @param float $number - The value to round
+         * @param int $decimals-  The optional number of decimal digits to round to
+         * @return float
+         */
+        public static function roundingNumber($number, $roundingType, $decimals = 0){
+            switch ($roundingType){
+                    case 'up': 
+                        $newNumber = ceil($number*pow(10,$decimals))/pow(10,$decimals);
+                        break;
+                    case 'down':
+                        $newNumber = floor($number*pow(10,$decimals))/pow(10,$decimals);
+                        break;
+                    case 'nearest':
+                        $newNumber = round($number, $decimals); 
+                        break;
+                    default:
+                        return;
+                }
+            return $newNumber;   
+        }
+
 	public static function addGetParameters($url, $queryData) {
 		$query = parse_url($url, PHP_URL_QUERY);	
 		$url .= ($query ? "&" : "?") . http_build_query($queryData);
 		$url = htmlspecialchars($url);
 		return $url;
 	}
+
 
 }

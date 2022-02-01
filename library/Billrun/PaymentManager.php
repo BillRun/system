@@ -383,7 +383,7 @@ class Billrun_PaymentManager {
 						}
 						$updatedBill = $postPayment->getUpdatedBill($billType, $billId);
 						if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
-							$updatedBill->attachPayingBill($payment, $amountPaid, empty($pgResponse['stage']) ? 'Completed' : $pgResponse['stage'])->save();
+							$updatedBill->attachPayingBill($payment, $amountPaid, (!empty($pgResponse) && empty($pgResponse['stage']) || ($this->isFileBasedCharge($params) && $payment->isWaiting())) ? 'Pending' : @$pgResponse['stage'])->save();
 						} else {
 							$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
 						}
@@ -422,7 +422,7 @@ class Billrun_PaymentManager {
 
 	protected function setUserFields (&$prePayment) {
 		$payment = $prePayment->getPayment();
-		$payment->setUserFields($prePayment->getData());
+		$payment->setUserFields($prePayment->getData(), true);
 	}
 
 

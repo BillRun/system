@@ -1103,6 +1103,9 @@ class Billrun_Billrun {
 					'aid' => $aid,
 					'attributes.invoice_type' => array('$in' => array(null, 'regular'))
 				];
+				if(isset($currentBillrunKey)){
+					$query['billrun_key'] = ['$lt' => $currentBillrunKey];
+				}
                 $billrun = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort(array('billrun_key' => -1))->limit(1)->current()->getRawData();
                 if (empty($billrun)) {
                     return null;

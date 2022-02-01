@@ -35,21 +35,25 @@ class Billrun_Account_External extends Billrun_Account {
 			];
 
 			if(!empty($aids)) {
-				$requestParams['aids'] = $aids;
+				$requestParams['aids'] = implode(',',$aids);
 			}
+			Billrun_Factory::log('Sending request to ' . $this->remote_billable_url . ' with params : ' . json_encode($requestParams), Zend_Log::DEBUG);
 			//Actually  do the request
-			$results = json_decode(Billrun_Util::sendRequest($this->remote_billable_url,$requestParams),true);
-
+			$results = Billrun_Util::sendRequest($this->remote_billable_url,$requestParams);
+			
+			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
+			
+			$results = json_decode($results, true);		
 			//Check for errors
 			if(empty($results)) {
-				Billrun_Factory::log('Failed to retrive valid results  for billable, remote returned no data.',Zend_Log::WARN);
+				Billrun_Factory::log('Failed to retrive valid results for billable, remote returned no data.',Zend_Log::WARN);
 				return [];
 			}
 			if( empty($results['status']) || !isset($results['data']) ) {
-				Billrun_Factory::log("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams),Zend::WARN);
+				Billrun_Factory::log("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams), Zend_Log::ALERT);
 				return [];
 			}
-
+			
 			// Preform translation if needed and return results
 			$fieldMapping = ['firstname' => 'first_name', 'lastname' => 'last_name'];
 			foreach($results['data'] as &$rev) {
@@ -76,12 +80,20 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$requestData['date'] = $globalDate;
 		}
-		$res = json_decode(Billrun_Util::sendRequest($this->remote, $requestData));
+		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
+		$res = Billrun_Util::sendRequest($this->remote,
+													 json_encode($requestData),
+													 Zend_Http_Client::POST,
+													 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);
+		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
+		$res = json_decode($res);
+		
 		$accounts = [];
 		if (!$res) {
-			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
+			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
+		
 		foreach ($res as $account) {
 			Billrun_Utils_Mongo::convertQueryMongoDates($account, static::API_DATETIME_REGEX);
 			$accounts[] = new Mongodloid_Entity($account);
@@ -96,6 +108,9 @@ class Billrun_Account_External extends Billrun_Account {
 		$externalQuery = [];
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
+			if (!isset($query['id'])) {
+				$query['id'] = Billrun_Util::generateArrayStamp($query);
+			}
 			$externalQuery['query'][] = $query;
 		}
 		if($globalLimit) {
@@ -104,9 +119,16 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
-		$results = json_decode(Billrun_Util::sendRequest($this->remote, $externalQuery), true);
+		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
+		$results = Billrun_Util::sendRequest($this->remote,
+														 json_encode($externalQuery),
+														 Zend_Http_Client::POST,
+														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);		
+		
+		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
+		$results = json_decode($results, true);
 		if (!$results) {
-			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
+			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
 		return array_reduce($results, function($acc, $currentAcc) {
@@ -137,7 +159,7 @@ class Billrun_Account_External extends Billrun_Account {
 					foreach ($value as $currKey => $currVal) {
 						$params[] = [
 						'key' => $key,
-						'operator' => $currKey,
+						'operator' => preg_replace('/^\$/', '',$currKey), // match the docs
 						'value' => $currVal
 						];
 					}
