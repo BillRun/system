@@ -572,7 +572,7 @@ class ResetLinesModel {
                         if (empty($updateData)) {
                                 continue;
                         }
-                        $balances_coll->update($query, $updateData);
+                        $balances_coll->update($query, $updateData, array('multiple' => true));
                     }
                 }     
             }
