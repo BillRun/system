@@ -85,6 +85,76 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->runReports();
 	}
 	
+	public function getConfigurationDefinitions() {
+		return [[
+			"type" => "json",
+			"field_name" => "reports",
+			"title" => "MB's reports configuration",
+			"editable" => true,
+			"display" => true,
+			"nullable" => false,
+			], [
+				"type" => "text",
+				"field_name" => "export.connection_type",
+				"title" => "MB reports - remote connection type",
+				"select_list" => true,
+				"select_options" => "ssh",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], [
+				"type" => "string",
+				"field_name" => "export.host",
+				"title" => "MB reports - export server's host",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], [
+				"type" => "string",
+				"field_name" => "export.user",
+				"title" => "MB reports - export server's user name",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], [
+				"type" => "password",
+				"field_name" => "export.password",
+				"title" => "MB reports - export server's password",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], [
+				"type" => "string",
+				"field_name" => "export.remote_directory",
+				"title" => "MB reports - report files' remote directory",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], [
+				"type" => "string",
+				"field_name" => "export.export_directory",
+				"title" => "MB reports - report files' export directory",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], [
+				"type" => "string",
+				"field_name" => "metabase_details.url",
+				"title" => "Metabase's url",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true,
+			]
+		];
+	}
+	
 	/**
 	 * Function to fetch the reports that should run in the current day and hour.
 	 */
