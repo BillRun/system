@@ -402,12 +402,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @return mixed false if not found transaction, else the transaction info
 	 */
 	protected function getTx($stamp, $balance) {
-		$tx = $balance->get('tx');
-                $tx2 = $balance->get('tx2');
+		$tx = $balance->get('tx');               
 		if (is_array($tx) && empty($tx)) {
 			$balance->set('tx', new stdClass());
 			$balance->save();
 		}
+                $tx2 = $balance->get('tx2');
                 if (is_array($tx2) && empty($tx2)) {
 			$balance->set('tx2', new stdClass());
 			$balance->save();
