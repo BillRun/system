@@ -188,7 +188,9 @@ class ResetLinesModel {
 		$stamps = array();
 		$queue_lines = array();
 		$former_exporter = array();
+                $count = 1;
 
+                $linesSizeToHandle = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.size', 100000);
 		// Go through the collection's lines and fill the queue lines.
 		foreach ($lines as $line) {
 			Billrun_Factory::dispatcher()->trigger('beforeRebalancingLines', array(&$line));
@@ -215,15 +217,28 @@ class ResetLinesModel {
 				continue;
 			}
 			$this->resetLine($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
+                        
+                        // If there are stamps to handle.
+                        if ($stamps && $count === $linesSizeToHandle) {
+                                // Handle the stamps.
+                                if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter)) {
+                                        return false;
+                                }
+                                $rebalanceTime = new MongoDate();
+                                $stamps = array();
+                                $queue_lines = array();
+                                $former_exporter = array();
+                                $count = 1;
+                        }
+                        $count++;
 		}
-
-		// If there are stamps to handle.
-		if ($stamps) {
-			// Handle the stamps.
-			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter)) {
-				return false;
-			}
-		}
+                 // If there are stamps to handle.
+                if ($stamps) {
+                        // Handle the stamps.
+                        if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter)) {
+                                return false;
+                        }
+                }
         }
 
         protected function restoringArchivedLinesToLines($archivedLinesToInsert){
@@ -265,7 +280,8 @@ class ResetLinesModel {
 		$queue_line['rebalance'] = array();
 		$stamps[] = $line['stamp'];
                 if(isset($line['aid']) && isset($line['sid'])){
-                    $this->stampsByAidAndSid[$line['aid']][$line['sid']][] = $line['stamp'];
+                    $this->stampsByAidAndSid[$line['aid']][$line['sid']] = 
+                            array_unique(array_merge($this->stampsByAidAndSid[$line['aid']][$line['sid']] ?? [], [$line['stamp']]));
                 }
                 $former_exporter = $this->buildFormerExporterForLine($line);
                 $split_line = $line['split_line']?? false;
@@ -314,12 +330,6 @@ class ResetLinesModel {
 		$configFields = array('imsi', 'msisdn', 'called_number', 'calling_number');
 		$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", $configFields);
 
-		while ($update_count = count($update_aids = array_slice($this->aids, $offset, 10))) {
-			Billrun_Factory::log('Resetting lines of accounts ' . implode(',', $update_aids), Zend_Log::INFO);
-			$this->resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll);                      
-			$offset += 10;
-		}
-                
                 //handle lines that already reset but not finish the rebalance (crash in the midle)
                 $stamps = [];
                 foreach ($this->stampsByAidAndSid as $aid => $sids){
@@ -328,9 +338,20 @@ class ResetLinesModel {
                     }
                 }
                 if(!empty($stamps)){
-                    Billrun_Factory::log('Fix rebalnce for lines with stamps ' . implode(',', $stamps), Zend_Log::INFO);
-                    $this->resetLinesByStamps($stamps, $this->aids, $advancedProperties, $lines_coll, $queue_coll); 
+                    $reset_stamps_size = Billrun_Config::getInstance()->getConfigValue('resetlines.stamps.size', 10000);  
+                    while ($update_stamps_count = count($update_stamps = array_slice($stamps, $offset, $reset_stamps_size))) {
+			Billrun_Factory::log('Fix rebalance for ' . count($update_stamps) . ' lines', Zend_Log::INFO);
+			$this->resetLinesByStamps($update_stamps, $this->aids, $advancedProperties, $lines_coll, $queue_coll);                       
+			$offset += $reset_stamps_size;
+                    }               
                 }
+                $offset = 0;
+                $reset_accounts_size = Billrun_Config::getInstance()->getConfigValue('resetlines.updated_aids.size', 10);
+		while ($update_count = count($update_aids = array_slice($this->aids, $offset, $reset_accounts_size))) {
+			Billrun_Factory::log('Resetting lines of accounts ' . implode(',', $update_aids), Zend_Log::INFO);
+			$this->resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll);                      
+			$offset += $reset_accounts_size;
+		}               
 
 		return TRUE;
 	}
@@ -435,17 +456,18 @@ class ResetLinesModel {
 		$update = $this->getUpdateQuery($rebalanceTime, $former_exporter);
 		$stamps_query = $this->getStampsQuery($stamps);
 		
-		Billrun_Factory::log('Removing ' . count($stamps) . ' records from queue', Zend_Log::DEBUG);
+		Billrun_Factory::log('Removing records from queue', Zend_Log::DEBUG);
 		$ret = $queue_coll->remove($stamps_query); // ok == 1, err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
+                Billrun_Factory::log('Removed ' . $ret['n'] . ' records from queue', Zend_Log::DEBUG);
 		Billrun_Factory::log('Starting to reset balances', Zend_Log::DEBUG);
 		$ret = $this->resetBalances($update_aids); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
-                $this->addStampsToRebalnceQueue();         
+                $this->addStampsToRebalnceQueue();
                 Billrun_Factory::log('Resetting ' . count($stamps) . ' lines', Zend_Log::DEBUG);
 		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
@@ -503,7 +525,7 @@ class ResetLinesModel {
                             }
 			}
                 }
-                $this->removeStampsfromRebalnceQueue();
+                $this->removeStampsfromRebalnceQueue();                
                 $this->unsetTx2FromRelevantBalances();
 		return true;
 	}
@@ -512,7 +534,7 @@ class ResetLinesModel {
             foreach ($this->stampsByAidAndSid as $aid => $stampsBySid){
                 $query = $this->getRebalanceQueueQuery($aid);
                 $updateData = array('$set' => array('stampsBySid' => $stampsBySid));
-                Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);//todo:: need to divede updateData to smaller size
+                Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
             }
         }
         
@@ -520,10 +542,12 @@ class ResetLinesModel {
             foreach ($this->stampsByAidAndSid as $aid => $stampsBySid){
                 $query = $this->getRebalanceQueueQuery($aid);
                 $updateData = [];
-                foreach ($stampsBySid as $sid => $stamp){
-                    $updateData['$unset']['stampsBySid'][$sid][$stamp] = 1;
+                foreach ($stampsBySid as $sid => $stamps){
+                    foreach ($stamps as $stamp){
+                        $updateData['$unset']['stampsBySid'][$sid][$stamp] = 1;
+                    }
                 }
-                Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);//todo:: need to divede updateData to smaller size
+                Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
             }
         }
         
