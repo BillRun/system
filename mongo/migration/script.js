@@ -1375,6 +1375,26 @@ runOnce(lastConfig, 'BRCD-3307', function () {
 			}
 	)
 });
+
+// BRCD-3432 add BillRun' metabase plugin
+runOnce(lastConfig, 'BRCD-3432', function () {
+    var mbPluginsSettings = {
+        "name": "metabaseReportsPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": true,
+				"configuration" : {
+					"values" : {
+						"metabase_details" : {},
+						"export" : {},
+						"added_data" : {},
+						"reports" : []
+					}
+				}
+    };
+    lastConfig['plugins'].push(mbPluginsSettings);
+});
+
 db.config.insert(lastConfig);
 //BRCD-2336: Can't "closeandnew" a prepaid bucket
 lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
