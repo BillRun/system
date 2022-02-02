@@ -40,13 +40,13 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 	}
 
 	public function getRefund(Billrun_DataTypes_CycleTime $cycle) {
-
+		// $cycle is ignored  as the custom cycle configuration  will overseed the billrun cycle  configuration
 		if (empty($this->deactivation)  ) {
 			return null;
 		}
 
 		// get a refund for a cancelled plan paid upfront
-		if ($this->activation > $cycle->start() //No refund need as it  started  in the current cycle
+		if ($this->activation > $this->cycle->start() //No refund need as it  started  in the current cycle
 			 ||
 			$this->deactivation >= $this->cycle->end() // the deactivation is in a future cycle
 			 || // deactivation is before the cycle start
@@ -60,7 +60,7 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatCycleStart,$formatCycleEnd);
 
 
-		$lastUpfrontCharge = $this->getPriceForcycle($cycle);
+		$lastUpfrontCharge = $this->getPriceForcycle($this->cycle);
 		$endActivation  = strtotime('-1 second', $this->deactivation);
 		$refundFraction = 1- Billrun_Utils_Time::getDaysSpanDiffUnix($this->cycle->start(), $endActivation, $cycleSpan);
 
