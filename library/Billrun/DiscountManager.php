@@ -270,18 +270,24 @@ class Billrun_DiscountManager {
 			$discount = $this->getDiscount($eligibleDiscount, $this->cycle->key());
 			foreach (Billrun_Util::getIn($discount, 'excludes', []) as $discountToExclude) {
 				if (isset($this->eligibleDiscounts[$discountToExclude])) {
-					$this->eligibleDiscounts[$discountToExclude]['eligibility'] = Billrun_Utils_Time::getIntervalsDifference($this->eligibleDiscounts[$discountToExclude]['eligibility'], $eligibilityData['eligibility']);
-					if (empty($this->eligibleDiscounts[$discountToExclude]['eligibility'])) {
-						unset($this->eligibleDiscounts[$discountToExclude]);
-			}
-                    $subsToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'subs'], []);
+                                        $subs = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'subs'], []);
+					foreach ($subs as $sid => $subEligibility) {
+                                            if(!empty($eligibilityData['subs'][$sid])){
+                                                $this->eligibleDiscounts[$discountToExclude]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($this->eligibleDiscounts[$discountToExclude]['eligibility'], $eligibilityData['eligibility']);
+						if (empty($this->eligibleDiscounts[$discountToExclude]['subs'][$sid])) {
+                                                        unset($this->eligibleDiscounts[$discountToExclude]['subs'][$sid]);
+                                                }
+                                            }                                               
+					}
+                                        
+                                        $subsToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'subs'], []);
 					foreach ($subsToExclude as $sid => $subEligibility) {
-						$this->eligibleDiscounts[$discountToExclude]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($subEligibility, $eligibilityData['subs'][$sid]);
+                                                $this->eligibleDiscounts[$discountToExclude]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($subEligibility, $eligibilityData['subs'][$sid]);
 						if (empty($this->eligibleDiscounts[$discountToExclude]['subs'][$sid])) {
 							unset($this->eligibleDiscounts[$discountToExclude]['subs'][$sid]);
-		}
-					}
-
+                                                }
+                                        }
+                                        
 					$servicesToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'services'], []);
 					foreach ($servicesToExclude as $sid => $services) {
 						foreach ($services as $serviceKey => $serviceEligibility) {
