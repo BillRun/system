@@ -533,7 +533,7 @@ class ResetLinesModel {
         protected function addStampsToRebalnceQueue(){
             foreach ($this->stampsByAidAndSid as $aid => $stampsBySid){
                 $query = $this->getRebalanceQueueQuery($aid);
-                $updateData = array('$set' => array('stampsBySid' => $stampsBySid));
+                $updateData = array('$set' => array('stamps_by_sid' => $stampsBySid));
                 Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
             }
         }
@@ -544,7 +544,7 @@ class ResetLinesModel {
                 $updateData = [];
                 foreach ($stampsBySid as $sid => $stamps){
                     foreach ($stamps as $stamp){
-                        $updateData['$unset']['stampsBySid'][$sid][$stamp] = 1;
+                        $updateData['$unset']['stamps_by_sid'][$sid][$stamp] = 1;
                     }
                 }
                 Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
