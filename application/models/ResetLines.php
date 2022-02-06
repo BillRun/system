@@ -181,15 +181,14 @@ class ResetLinesModel {
 					$archivedLinesToInsert[] = $archivedLine;
 					$this->resetLineForAccounts($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
                                         // If we've reached `$batchSize` entries, perform the batched insert.
-                                        if(count($archivedLinesToInsert) >= $batchSize){
-                                            Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
+                                        if(count($archivedLinesToInsert) >= $batchSize){                                     
+                                            $this->restoringArchivedLinesToLines($archivedLinesToInsert);
                                             $archivedLinesToInsert = [];
-                                        }
-                                        
+                                        }                                       
                                 }
                                 // Finish the last batch.
                                 if (!empty($archivedLinesToInsert)){
-                                     Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
+                                     $this->restoringArchivedLinesToLines($archivedLinesToInsert);
                                 }
 				Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
 				Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
@@ -206,8 +205,37 @@ class ResetLinesModel {
 			}
 		}
 	}
+        
+        protected function restoringArchivedLinesToLines($archivedLinesToInsert){
+            try{
+                    $ret = Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
+                    if (isset($ret['err']) && !is_null($ret['err'])) {
+                            Billrun_Factory::log('Rebalance: batch insertion of restoring archive lines to lines failed, Insert Error: ' .$ret['err'], Zend_Log::ALERT);
+                            throw new Exception();
+                    }
+            } catch (Exception $e) {
+                    Billrun_Factory::log("Rebalance: Batch insert failed during of restoring archive lines to lines, inserting line by line, Error: " .  $e->getMessage(), Zend_Log::ERR);
+                    foreach ($archivedLinesToInsert as $archiveLine) {
+                            try{
+                                $ret = Billrun_Factory::db()->linesCollection()->insert($archiveLine); // ok==1, err null
+                                if (isset($ret['err']) && !is_null($ret['err'])) {
+                                        Billrun_Factory::log('Rebalance: line insertion of restoring archive line to lines failed, Insert Error: ' .$ret['err'] . ', failed_line ' . print_r($archiveLine, 1), Zend_Log::ALERT);
+                                        continue;
+                                }
+                            } catch (Exception $e) {
+                                if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+                                        Billrun_Factory::log('Rebalance: line insertion of restoring archive line to lines failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($archiveLine, 1), Zend_Log::NOTICE);
+                                        continue;
+                                } else {
+                                        Billrun_Factory::log('Rebalance: line insertion of restoring archive line to lines failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($archiveLine, 1), Zend_Log::ALERT);
+                                        throw $e;
+                                }
+                            }
+                    }
+            }
+        }
 
-	protected function resetLineForAccounts($line, &$stamps, &$queue_lines, $rebalanceTime, $advancedProperties, &$former_exporter){
+        protected function resetLineForAccounts($line, &$stamps, &$queue_lines, $rebalanceTime, $advancedProperties, &$former_exporter){
 		$queue_line = array(
 			'calc_name' => false,
 			'calc_time' => false,
@@ -392,19 +420,39 @@ class ResetLinesModel {
 			} catch (Exception $e) {
 				Billrun_Factory::log("Rebalance: Batch insert failed during insertion to queue, inserting line by line, Error: " .  $e->getMessage(), Zend_Log::ERR);
 				foreach ($queue_lines as $qline) {
-					$ret = $queue_coll->insert($qline); // ok==1, err null
-					if (isset($ret['err']) && !is_null($ret['err'])) {
-						Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$ret['err'] . ', failed_line ' . print_r($qline, 1), Zend_Log::ALERT);
-						continue;
-					}
+                                        try{
+                                            $ret = $queue_coll->insert($qline); // ok==1, err null
+                                            if (isset($ret['err']) && !is_null($ret['err'])) {
+                                                    Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$ret['err'] . ', failed_line ' . print_r($qline, 1), Zend_Log::ALERT);
+                                                    continue;
+                                            }
+                                        } catch (Exception $e) {
+                                            if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+                                                    Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($qline, 1), Zend_Log::NOTICE);
+                                                    continue;
+                                            } else {
+                                                    Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($qline, 1), Zend_Log::ALERT);
+                                                    throw $e;
+                                            }
+                                        }
 				}
 			}
 		} else {
 			foreach ($queue_lines as $qline) {
+                             try{
 				$ret = $queue_coll->insert($qline); // ok==1, err null
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;
 				}
+                            } catch (Exception $e) {
+                                if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+                                        Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($qline, 1), Zend_Log::NOTICE);
+                                        continue;
+                                } else {
+                                        Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($qline, 1), Zend_Log::ALERT);
+                                        throw $e;
+                                }
+                            }
 			}
 		}		
 		Billrun_Factory::log('Resetting ' . count($stamps) . ' lines', Zend_Log::DEBUG);
