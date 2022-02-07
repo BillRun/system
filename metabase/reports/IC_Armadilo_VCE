@@ -32,7 +32,7 @@
   cash_flow:"$cf.cash_flow", 
   BILLED_PRODUCT: "$cf.product",
   BILLING_OPERATOR:"$cf.operator",
-  BILLING_OPERATOR_N:"$cf.operator",
+  BILLING_OPERATOR_N:"$cf.operator_title",
   MONTH:{$concat:[{$substr:["$uf.EVENT_START_DATE",0,4]},"-",{$substr:["$uf.EVENT_START_DATE",4,2]}]}, 
   EVENT_DIRECTION_G:"$cf.event_direction",
   RATING_SCENARIO:"$cf.scenario",
