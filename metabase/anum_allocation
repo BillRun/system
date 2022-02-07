@@ -1,0 +1,59 @@
+[
+
+    {
+			$match: {
+			   $and: [ {$and : [ { $expr: {$gt:['$urt', {
+                        $dateFromParts: {
+                            'year': {$year:{{from}}},
+                            'month': {$month:{{from}}},
+                            'day': { $dayOfMonth: {{from}} },
+                            'hour': {$hour:{{from}}},
+                            'minute': {$minute:{{from}}},
+                            'second': {$second:{{from}}},
+                            'millisecond': { $millisecond: {{from}} },
+                            'timezone' : "Asia/Nicosia"
+                        }
+                    }]}}, {$expr:{$lte:['$urt', {
+                        $dateFromParts: {
+                            'year': {$year: {{to}}},
+                            'month': {$month: {{to}}},
+                            'day': { $dayOfMonth:  {{to}} },
+                            'hour': {$hour: {{to}}},
+                            'minute': {$minute: {{to}}},
+                            'second': {$second: {{to}}},
+                            'millisecond': { $millisecond:  {{to}} },
+                            'timezone' : "Asia/Nicosia"
+                        }
+                    }
+                ]}}]}]}},
+
+{ $match: { $or: [ { "cf.cash_flow": { $eq: "R" } }, { "cf.cash_flow": { $eq: "REVENUE" } } ] } },
+{$group: {"_id":{
+MONTH:{ $dateToString: { format: "%Y-%m", date: {{from}}, timezone: "Asia/Nicosia"} }, 
+USER_SUMMARISATION:"$uf.USER_SUMMARISATION"},"AMOUNT":{$sum: "$aprice"}}},
+{$project:{_id : 0,MONTH:"$_id.MONTH",
+
+USER_TYPE:{$switch: {branches: [
+{ case: {$eq: ["$_id.USER_SUMMARISATION","TRANSIT"] }, then: "NONE" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","CALLSAT_MVNO"] }, then: "MVNO" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","FIX_BUS"] }, then: "Fix Business" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","FIX_RES"] }, then: "Fix Residential" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","IN_ROAM"] }, then: "NONE" },
+
+{ case: {$eq: ["$_id.USER_SUMMARISATION","MOB_POST_BUS"] }, then: "Mobile Business'" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","MOB_PREP_RES"] }, then: "Mobile Prepaid" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","EMERGENCY"] }, then: "Mobile Business" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","IN_ROAMER"] }, then: "NONE" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","TRANSIT1"] }, then: "NONE" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","A2PSMS"] }, then: "NONE" },
+
+{ case: {$eq: ["$_id.USER_SUMMARISATION","LCM"] }, then: "Mobile Business" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","LCR"] }, then: "Mobile Business" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","LRC"] }, then: "Mobile Business" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","LSM"] }, then: "Mobile Business" },
+{ case: {$eq: ["$_id.USER_SUMMARISATION","LSF"] }, then: "Fix Business" },
+
+],default: "Mobile Residential"}},
+
+AMOUNT:"$AMOUNT"}}
+]
