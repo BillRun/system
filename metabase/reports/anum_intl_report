@@ -1,0 +1,51 @@
+[
+    {
+			$match: {
+			   $and: [ {$and : [ { $expr: {$gt:['$urt', {
+                        $dateFromParts: {
+                            'year': {$year:{{from}}},
+                            'month': {$month:{{from}}},
+                            'day': { $dayOfMonth: {{from}} },
+                            'hour': {$hour:{{from}}},
+                            'minute': {$minute:{{from}}},
+                            'second': {$second:{{from}}},
+                            'millisecond': { $millisecond: {{from}} },
+                            'timezone' : "Asia/Nicosia"
+                        }
+                    }]}}, {$expr:{$lte:['$urt', {
+                        $dateFromParts: {
+                            'year': {$year: {{to}}},
+                            'month': {$month: {{to}}},
+                            'day': { $dayOfMonth:  {{to}} },
+                            'hour': {$hour: {{to}}},
+                            'minute': {$minute: {{to}}},
+                            'second': {$second: {{to}}},
+                            'millisecond': { $millisecond:  {{to}} },
+                            'timezone' : "Asia/Nicosia"
+                        }
+                    }
+                ]}}]}]}},
+{$group:{"_id":{
+MONTH:{ $dateToString: { format: "%Y-%m", date: {{from}}, timezone: "Asia/Nicosia"} }, 
+BILLED_PRODUCT: "$cf.product",
+USER_SUMMARISATION:"$uf.USER_SUMMARISATION",
+NAA:'$cf.anaa_group',
+NAME:'$cf.anaa_title',
+COMPONENT_DIRECTION:"$cf.call_direction",
+SETTLEMENT_OPERATOR:"$cf.settlement_operator"},
+"MINUTES": {$sum: "$usagev"}, 
+"AMOUNT":{$sum: "$aprice"}}},
+
+{$project:{
+_id:0,
+MONTH: {'$ifNull':["$_id.MONTH", ""]},
+BILLED_PRODUCT: {'$ifNull':["$_id.BILLED_PRODUCT", ""]},
+USER_SUMMARISATION: {'$ifNull':["$_id.USER_SUMMARISATION", ""]},
+NAA:  {'$ifNull':["$_id.NAA", ""]},
+NAME: {'$ifNull':["$_id.NAME", ""]},
+COMPONENT_DIRECTION:  {'$ifNull':["$_id.COMPONENT_DIRECTION", ""]},
+SETTLEMENT_OPERATOR: {'$ifNull':['$_id.SETTLEMENT_OPERATOR', ""]},
+MINUTES: {$cond:[{ $eq: ["$_id.BILLED_PRODUCT","SMS"]},"$MINUTES",{ $divide: ["$MINUTES", 60 ] }]}, 
+AMOUNT: "$AMOUNT"
+}}
+]
