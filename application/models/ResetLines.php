@@ -32,7 +32,7 @@ class ResetLinesModel {
 	 * @var string
 	 */
 	protected $process_time_offset;
-
+        
 	/**
 	 * Usage to substract from extended balance in rebalance.
 	 * @var array
@@ -44,6 +44,12 @@ class ResetLinesModel {
 	 * @var array
 	 */
 	protected $balanceSubstract = [];
+        
+        /**
+	 * Usage to substract from default balance in rebalance by line stamp.
+	 * @var array
+	 */
+	protected $balanceSubstractByLine = [];
 	
 	/**
 	 * used for rebalance multiple balances affected by the same line
@@ -260,6 +266,7 @@ class ResetLinesModel {
                             } catch (Exception $e) {
                                 if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
                                         Billrun_Factory::log('Rebalance: line insertion of restoring archive line to lines failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($archiveLine, 1), Zend_Log::NOTICE);
+                                        $this->revertBalances($archiveLine['stamp']);
                                         continue;
                                 } else {
                                         Billrun_Factory::log('Rebalance: line insertion of restoring archive line to lines failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($archiveLine, 1), Zend_Log::ALERT);
@@ -267,6 +274,67 @@ class ResetLinesModel {
                                 }
                             }
                     }
+            }
+        }
+        
+        protected function revertBalances($stamp){
+            if(isset($this->extendedBalanceSubstractByLine[$stamp])){
+                foreach ($this->extendedBalanceSubstractByLine[$stamp] as $aid => $packageUsage) {
+			foreach ($packageUsage as $balanceId => $usagetByGroups) {
+                            foreach ($usagetByGroups as $group => $usageByUsaget){
+                                foreach ($usaget as $usageType => $usagev) {                      
+                                    $this->extendedBalanceUsageSubstract[$aid][$balanceId][$group][$usageType]['usage'] -= $usagev['usage'];
+                                    $this->extendedBalanceUsageSubstract[$aid][$balanceId][$group][$usageType]['cost'] -= $usagev['cost'];
+                                }
+
+                            }
+                        }
+                }
+            }
+            if(isset($this->balanceSubstractByLine[$stamp])){
+                foreach ($this->balanceSubstractByLine[$stamp] as $aid => $sids) {
+                    foreach ($sids as $sid => $billrunKeys) {
+                        foreach ($billrunKeys as $billrunKey => $types){
+                            foreach ($types as $type => $usage){
+                                if ($type === 'groups'){
+                                    foreach ($usage as $group => $usaget) {
+                                        foreach ($usaget as $usageType => $usagev) {
+                                            if(isset($usagev['usage'])){
+                                                $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$group][$usageType]['usage'] -= $usagev['usage'];
+                                            }
+                                            if(isset($usagev['count'])){
+                                                $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$group][$usageType]['count'] -= $usagev['count'];
+                                            }
+                                        }
+                                    }
+                                } elseif ($type === 'totals') {
+                                    foreach ($usage as $usageType => $usagev) {
+                                        if(isset($usagev['out_group'])){
+                                            $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$usageType]['out_group']['usage'] -= $usagev['out_group']['usage'];
+                                        } 
+                                        if (isset($usagev['over_group'])){
+                                             $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$usageType]['over_group']['usage'] -= $usagev['over_group']['usage'];
+                                        } 
+                                        if (isset($usagev['usage'])){
+                                            $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$usageType]['usage'] -= $usagev['usage'];
+                                        }
+                                        if(isset($usagev['cost'])){
+                                            $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$usageType]['cost'] -= $usagev['cost'];
+                                        }
+                                        if(isset($usagev['count'])){
+                                            $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$usageType]['count'] -= $usagev['count'];
+                                        }
+                                    }
+                                    
+                                } elseif ($type === 'cost') {
+                                    $this->balanceSubstract[$aid][$sid][$billrunKey][$type] -= $usage;
+                                    
+                                }
+                            }
+                        }
+                        
+                    }
+                }
             }
         }
 
@@ -597,25 +665,37 @@ class ResetLinesModel {
 			$arategroupValue = isset($arategroup['usagev']) ? $arategroup['usagev'] : $arategroup['cost'];
 			$aggregatedUsage = isset($this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage']) ? $this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage'] : 0;
 			$this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage'] = $aggregatedUsage + $arategroupValue;
-			@$this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['count'] += 1;
+			$this->extendedBalanceByLine[$line['stamp']][$line['aid']][$balanceId][$group][$line['usaget']]['usage'] = $aggregatedUsage + $arategroupValue;
+                        @$this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['count'] += 1;
+                        @$this->extendedBalanceByLine[$line['stamp']][$line['aid']][$balanceId][$group][$line['usaget']]['count'] += 1;
 			$groupUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage'] : 0;
 			$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage'] = $groupUsage + $arategroupValue;
 			@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['count'] += 1;
+                        $this->balanceSubstractByLine[$line['stamp']][$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage'] = $groupUsage + $arategroupValue;
+			@$this->balanceSubstractByLine[$line['stamp']][$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['count'] += 1;
 		}
 
 		if ($this->affectsMainBalance($line)) {
 			if (!empty(($line['over_group']))) {
 				Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'over_group', 'usage'], $line['over_group']);
+                                Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'over_group', 'usage'], $line['over_group']);
 				}
 			if (!empty(($line['out_group']))) {
 				Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'out_group', 'usage'], $line['out_group']);
+                                Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'out_group', 'usage'], $line['out_group']);
 			}
 			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'usage'], $this->getMainBalanceUsage($line));
 			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'cost'], $line['aprice']);
 			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'count'], 1);
 			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'cost'], $line['aprice']);
-			}
-			}
+                        Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'usage'], $this->getMainBalanceUsage($line));
+			Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'cost'], $line['aprice']);
+			Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'count'], 1);
+			Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'cost'], $line['aprice']);
+		}
+	}
+               
+                        
 	protected function affectsMainBalance($line) {
 		$arategroups = $line['arategroups'] ?? [];
 		return empty($arategroups) ||
