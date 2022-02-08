@@ -183,6 +183,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				return $row;
 			}
 		}
+		Billrun_Factory::dispatcher()->trigger('afterGetSubscriberForRow', array(&$row, &$subscriber, $this));
 		if ($this->bulkAccounts) {
 			$this->accountsByStamp();
 			$account = isset($this->accounts[$row['stamp']]) ? $this->accounts[$row['stamp']] : FALSE;
