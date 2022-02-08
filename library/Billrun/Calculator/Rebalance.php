@@ -50,8 +50,8 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 			if (!empty($result['conditions'])) {
 				$conditions[$result['billrun_key']][$result['aid']][$result['conditions_hash']] = $result['conditions'];
 			}
-                        if(!empty($result['stampsBySid'])){
-                            $stampsByBillrunAndAid[$result['billrun_key']][$result['aid']] = $result['stampsBySid'];
+                        if(!empty($result['stamps_by_sid'])){
+                            $stampsByBillrunAndAid[$result['billrun_key']][$result['aid']] = $result['stamps_by_sid'];
                         }
 			$all_aids[] = $result['aid'];
 		}
