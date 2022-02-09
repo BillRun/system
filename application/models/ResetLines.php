@@ -218,8 +218,8 @@ class ResetLinesModel {
                                 if (!empty($archivedLinesToInsert)){
                                      $this->restoringArchivedLinesToLines($archivedLinesToInsert);
                                 }
+                                Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
                                 Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
-				Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
 				continue;
 			}
 			$this->resetLine($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
