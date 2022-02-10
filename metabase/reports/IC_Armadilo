@@ -35,7 +35,7 @@
   BILLING_OPERATOR:"$cf.operator",
   BILLING_OPERATOR_N:"$cf.operator_title",
   MONTH:{$concat:[{$substr:["$uf.EVENT_START_DATE",0,4]},"-",{$substr:["$uf.EVENT_START_DATE",4,2]}]}, 
-  EVENT_DIRECTION_G:"$cf.event_direction",
+  EVENT_DIRECTION_G:"$cf.call_direction",
   USER_SUMMARISATION_G:"$uf.USER_SUMMARISATION",
   INCOMING_OPERATOR_D:"$cf.incoming_operator",
   OUTGOING_OPERATOR_D:"$cf.outgoing_operator",
