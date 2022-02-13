@@ -2,7 +2,7 @@
 
     {
 			$match: {
-			   $and: [ {$and : [ { $expr: {$gt:['$urt', {
+			   $and: [ {$and : [ { $expr: {$gte:['$urt', {
                         $dateFromParts: {
                             'year': {$year:{{from}}},
                             'month': {$month:{{from}}},
@@ -13,7 +13,7 @@
                             'millisecond': { $millisecond: {{from}} },
                             'timezone' : "Asia/Nicosia"
                         }
-                    }]}}, {$expr:{$lte:['$urt', {
+                    }]}}, {$expr:{$lt:['$urt', {
                         $dateFromParts: {
                             'year': {$year: {{to}}},
                             'month': {$month: {{to}}},
@@ -25,9 +25,10 @@
                             'timezone' : "Asia/Nicosia"
                         }
                     }
-                ]}}]}]}},
+                ]}}]},
+                { "cf.cash_flow": { $eq: "R" } } ,
+                ]}},
 
-{ $match: { $or: [ { "cf.cash_flow": { $eq: "R" } }, { "cf.cash_flow": { $eq: "REVENUE" } } ] } },
 {$group: {"_id":{
 MONTH:{ $dateToString: { format: "%Y-%m", date: {{from}}, timezone: "Asia/Nicosia"} }, 
 USER_SUMMARISATION:"$uf.USER_SUMMARISATION"},"AMOUNT":{$sum: "$aprice"}}},
