@@ -174,6 +174,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 			$subscriber = $this->subscriber;
 		}
+		Billrun_Factory::dispatcher()->trigger('afterGetSubscriberForRow', array(&$row, &$subscriber, $this));
 		if (!$subscriber || !$subscriber->isValid()) {
 			if ($this->isOutgoingCall($row)) {
 				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::NOTICE);
@@ -183,7 +184,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				return $row;
 			}
 		}
-		Billrun_Factory::dispatcher()->trigger('afterGetSubscriberForRow', array(&$row, &$subscriber, $this));
 		if ($this->bulkAccounts) {
 			$this->accountsByStamp();
 			$account = isset($this->accounts[$row['stamp']]) ? $this->accounts[$row['stamp']] : FALSE;
