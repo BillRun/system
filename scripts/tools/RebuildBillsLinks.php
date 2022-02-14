@@ -99,8 +99,8 @@ function rebuildRejectionsAndCancelledLinks($aid) {
 					}
 				}
 				$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
-				$origPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedPayment[$complementaryPaymentField]['due'])->save();
-				$complPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedPayment[$complementaryPaymentField]['due'])->save();
+				$origPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedPayment[$complementaryPaymentField]['due'], $unpaidBill->getRawData())->save();
+				$complPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedPayment[$complementaryPaymentField]['due'], $unpaidBill->getRawData())->save();
 			} else {
 				$overPayingBill = current(Billrun_Bill::getOverPayingBills(array('aid' => $aid, 'due' => $matchedPayment[$complementaryPaymentField]['due'])));
 				if ($overPayingBill == false) {

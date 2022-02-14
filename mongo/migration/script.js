@@ -1389,6 +1389,35 @@ runOnce(lastConfig, 'BRCD-3307', function () {
 			}
 	)
 });
+// BRCD-3432 add BillRun' metabase plugin
+runOnce(lastConfig, 'BRCD-3432', function () {
+    var mbPluginsSettings = {
+        "name": "metabaseReportsPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": true,
+				"configuration" : {
+					"values" : {
+						"metabase_details" : {},
+						"export" : {},
+						"added_data" : {},
+						"reports" : []
+					}
+				}
+    };
+    lastConfig['plugins'].push(mbPluginsSettings);
+});
+
+// BRCD-3325 : Add default condition - the "rejection_required" condition doesn't exist.
+runOnce(lastConfig, 'BRCD-3325', function () {
+    var rejection_required_cond = {
+        "field": "aid",
+				"op" : "exists",
+				"value" : false
+    };
+		lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
+});
+
 runOnce(lastConfig, 'BRCD-3413', function () {
         if(lastConfig['email_templates']['invoice_ready']['placeholders'] === undefined){
             lastConfig['email_templates']['invoice_ready']['placeholders'] = [];
