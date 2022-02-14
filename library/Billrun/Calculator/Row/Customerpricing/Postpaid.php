@@ -51,7 +51,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		} else {
 			$activeBillrun = $this->activeBillrun;
 			$activeBillrunEndTime = $this->activeBillrunEndTime;
-			$nextActiveBillrun = $this->activeBillrun;
+			$nextActiveBillrun = $this->nextActiveBillrun;
 			$nextActiveBillrunEndTime = $this->nextActiveBillrunEndTime;
 		}		
 
