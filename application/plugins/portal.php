@@ -143,7 +143,7 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$authenticationField = $this->options['authentication_field'];
 			$username = $output->entity[$authenticationField];
 			$module = Portal_Actions::getInstance(array_merge($this->options, ['type' => 'registration']));
-			$res = $module->run('sendWelcomeEmail', ['username' => $username, 'website' => $this->options['website']]);
+			$res = $module->run('sendWelcomeEmail', ['username' => $username]);
 			if (!$res['status']) {
 				Billrun_Factory::log("Send Welcome Account Email failed for " . $authenticationField . ": " . $username, Zend_Log::ERR);
 			}

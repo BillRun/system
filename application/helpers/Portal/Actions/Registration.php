@@ -204,7 +204,7 @@ class Portal_Actions_Registration extends Portal_Actions {
 	
 	/**
 	 * method to get website for links send on emails
-	 * @return type
+	 * @return string
 	 */
 	protected function getWebsite() {
 		return rtrim($this->params['website'] ?? Billrun_Util::getCompanyWebsite(), '/');
