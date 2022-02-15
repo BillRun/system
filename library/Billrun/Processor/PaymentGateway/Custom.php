@@ -375,7 +375,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return [
 			'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
 			'cpg_type' => [!empty($type = $this->getType()) ? $type : ""],
-			'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""]];
+			'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""],
+			'file' => trim($this->filename, DIRECTORY_SEPARATOR)];
 	}
 
 	public function getPaymentUrt($row) {
