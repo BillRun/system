@@ -479,6 +479,9 @@ class Models_Entity {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
 		}
+                if (!$this->update || empty($this->update)) {
+			return;
+		}
 
 		$this->protectKeyField();
 
