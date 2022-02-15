@@ -24,12 +24,51 @@
                             'timezone' : "Asia/Nicosia"
                         }
                     }
-                ]}}]},
+                ]}}]}]}},
+{$match:{"cf.product" :"SMS"}},
 
-                {$match:{"cf.product" :"SMS"}},
-{$group: {"_id":{cash_flow:"$cf.cash_flow", prod: "$cf.product",operator:"$cf.operator",MONTH:{$concat:[{$substr:["$uf.EVENT_START_DATE",0,4]},"-",{$substr:["$uf.EVENT_START_DATE",4,2]},"-",{$substr:["$uf.EVENT_START_DATE",6,2]}]},call_dir:"$cf.call_direction",USER_SUMMARISATION:"$uf.USER_SUMMARISATION",incoming_operator:"$cf.incoming_operator",outgoing_operator:"$cf.outgoing_operator",
-product_group:"$cf.product_group",tier:"$cf.tier", component:"$cf.component"},"duration": {$sum: "$usagev"}, count:{$sum:1}, "aprice":{$sum: "$aprice"}}},{$addFields: {COSTY: 0,COSTX :0}},
-{$project:{_id : 0,MONTH:"$_id.MONTH",prod:"$_id.prod",operator:"$_id.operator",product_group:"$_id.product_group",call_dir:"$_id.call_dir",tier:"$_id.tier",component:"$_id.component",
-USER_SUMMARISATION:"$_id.USER_SUMMARISATION",COSTX:{$cond:[{ $eq: ["$_id.cash_flow","R"]},{$sum:"$aprice"},""]},COSTY:{$cond:[{ $eq: ["$_id.cash_flow","E"]},{$sum:"$aprice"},""]},CALL_COUNT_D:"$count",dur:"$duration",INCOMING_OPERATOR_D:"$_id.incoming_operator",OUTGOING_OPERATOR_D:"$_id.outgoing_operator"}}
+{$group: {"_id":{
+  cash_flow:"$cf.cash_flow", 
+  BILLED_PRODUCT: "$cf.product",
+  BILLING_OPERATOR:"$cf.operator",
+  BILLING_OPERATOR_N:"$cf.operator_title",
+  MONTH:{$concat:[{$substr:["$uf.EVENT_START_DATE",0,4]},"-",{$substr:["$uf.EVENT_START_DATE",4,2]}]},
+  EVENT_DIRECTION_G:"$cf.call_direction",
+  RATING_COMPONENT:"$cf.component",
+  USER_SUMMARISATION_G:"$uf.USER_SUMMARISATION",
+  INCOMING_OPERATOR_D:"$cf.incoming_operator",
+  OUTGOING_OPERATOR_D:"$cf.outgoing_operator",
+  PRODUCT_GROUP:"$cf.product_group",
+  TIER:"$cf.tier", 
+  COMPONENT:"$cf.component"},
+  "duration": {$sum: "$usagev"}, 
+  CALL_COUNT_D:{$sum:1}, 
+  "aprice":{$sum: "$aprice"}}},
 
+{$addFields: {COSTY: 0,COSTX :0}},
+
+{$project:{
+  _id : 0,
+  MONTH:"$_id.MONTH",
+  BILLED_PRODUCT:"$_id.BILLED_PRODUCT",
+  BILLING_OPERATOR:{'$ifNull':['$_id.BILLING_OPERATOR', ""]},
+  BILLING_OPERATOR_N:{'$ifNull':['$_id.BILLING_OPERATOR_N', ""]},
+  PRODUCT_GROUP:"$_id.PRODUCT_GROUP",
+  EVENT_DIRECTION_G:"$_id.EVENT_DIRECTION_G",
+  RATING_COMPONENT:{'$ifNull':["$_id.RATING_COMPONENT", ""]},
+  TIER:"$_id.TIER",
+  COMPONENT:"$_id.COMPONENT",
+  USER_SUMMARISATION_G:"$_id.USER_SUMMARISATION_G",
+  CASH_FLOW_COSTX:"REVENUE",
+  COSTX:{$cond:[{ $eq: ["$_id.cash_flow","R"]},{$sum:"$aprice"},""]},
+  COSTY:{$cond:[{ $eq: ["$_id.cash_flow","E"]},{$sum:"$aprice"},""]},
+  CASH_FLOW_COSTY:"EXPENSE",
+  CALL_COUNT_D:"$CALL_COUNT_D",
+  EVENT_DURATION_D:"$duration",
+  INCOMING_OPERATOR_D:"$_id.INCOMING_OPERATOR_D",
+  OUTGOING_OPERATOR_D:"$_id.OUTGOING_OPERATOR_D",
+  TYPE_INCOMING:"",
+  TYPE_OUTGOING:"",
+  USER_TYPE:"",
+}}
 ]
