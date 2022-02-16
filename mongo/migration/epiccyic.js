@@ -9690,16 +9690,18 @@ lastConfig = runOnce(lastConfig, 'EPICIC-137', function () {
 }
 });
 
+//EpicIC-56 - Set "billable" flag for active operators
+lastConfig = runOnce(lastConfig, 'EPICIC-56', function () {
+    billableOperatorLabels = ["MTT", "SPINT", "CABLE", "AGI", "PTL", "OTE", "CYTA", "BICS", "MT", "NCC"];
+    db.subscribers.updateMany({type: "account", operator: {$in: billableOperatorLabels}}, {$set: {billable: true}});
+    db.subscribers.updateMany({type: "account", operator: {$nin: billableOperatorLabels}}, {$set: {billable: false}});
+});
 
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
 var inactiveCustomers = db.subscribers.distinct("aid", {plan: "TEST"});
 db.subscribers.updateMany({type: "account", aid: {$in: inactiveCustomers}}, {$set: {vat_code: "VATLOS"}});
-
-//EpicIC-56 - Set "billable" flag for active operators
-billableOperatorLabels = ["MTT","SPINT","CABLE","AGI","PTL","OTE","CYTA","BICS","MT","NCC"];
-db.subscribers.updateMany({type: "account", operator: {$in: billableOperatorLabels}}, {$set: {billable: true}});
 
 //Initial plans
 db.plans.save({
