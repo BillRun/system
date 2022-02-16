@@ -130,7 +130,7 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 
 			// Optional connection specific overrides
 			if (!empty($this->clientOptions['smsNullTerminateOctetstrings'])) {
-				smpp\Client::$smsNullTerminateOctetstrings = $this->getClassConstant('smpp\Client', $this->clientOptions['clientOptions']['smsNullTerminateOctetstrings']);
+				smpp\Client::$smsNullTerminateOctetstrings = $this->getClassConstant('smpp\Client', $this->clientOptions['smsNullTerminateOctetstrings']);
 			} else {
 				smpp\Client::$smsNullTerminateOctetstrings = 0;
 			}
