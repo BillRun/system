@@ -175,7 +175,7 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 		} catch (Throwable $th) {
 			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
 		} catch (Exception $ex) {
-			Billrun_Factory::log('initialize smpp failed as they smpp layer classes not exists', Zend_Log::ERR);
+			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $ex->getCode() . ', message: ' . $ex->getMessage(), Zend_Log::WARN);
 		}
 	}
 
