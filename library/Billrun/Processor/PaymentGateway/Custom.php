@@ -79,9 +79,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$parsedData = $parser->getDataRows();
 		$rowCount = 0;
 
-		foreach ($parsedData as $line) {
-                        $line = $this->formatLine($line,$dataStructure);
-			$row = $this->getBillRunLine($line);
+		foreach ($parsedData as $index => $line) {
+			$line = $this->formatLine($line,$dataStructure);
+			$row = $this->getBillRunLine($line, $index);
 			if (!$row){
 				return false;
 			}
@@ -104,9 +104,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
             return $row;
         }
         
-	protected function getBillRunLine($rawLine) {
+	protected function getBillRunLine($rawLine, $line_index) {
 		$row = $rawLine;
-		$row['stamp'] = md5(serialize($row));
+		$row['stamp'] = md5(serialize(array_merge($row, ['line_index' => $line_index])));
 		return $row;
 	}
 
