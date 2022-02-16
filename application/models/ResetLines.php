@@ -940,8 +940,10 @@ class ResetLinesModel {
 			if (!in_array($aid, $updateAids)) {
 				continue;
 			}
-			$conditionsHashArray[key($conditions)] = current($conditions);
-			$groupedAids[key($conditions)][] = $aid;		
+                        foreach ($conditions as $conditionHash => $condition){
+                            $conditionsHashArray[$conditionHash] = $condition;
+                            $groupedAids[$conditionHash][] = $aid;
+                        }
 		}
 		foreach ($groupedAids as $conditionHash => $aids) {
 			$translatedCondition = $this->translateConditionArrayToQuery($conditionsHashArray[$conditionHash]);

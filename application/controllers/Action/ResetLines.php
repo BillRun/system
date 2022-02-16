@@ -63,17 +63,13 @@ class ResetLinesAction extends ApiAction {
 					'conditions' => !empty($conditions) ? $conditions : array(),
 					'conditions_hash' => md5(serialize($conditions)),
 					'creation_date' => new MongoDate()
-				);
-				$query = array(
-					'aid' => $aid,
-					'billrun_key' => $billrun_key,
-				);
-				$options = array('upsert' => true);
-				$rebalance_queue->update($query, array('$set' => $rebalanceLine), $options);
+				);	
+				$rebalance_queue->insert($rebalanceLine);
 			}
 		} catch (Exception $exc) {
 			Billrun_Util::logFailedResetLines($aids, $billrun_key, $invoicing_day);
-			return FALSE;
+			$this->setError($exc->getMessage());
+                        return FALSE;
 		}
 
 		$this->getController()->setOutput(array(array(
