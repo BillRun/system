@@ -9700,6 +9700,7 @@ db.subscribers.updateMany({type: "account", aid: {$in: inactiveCustomers}}, {$se
 //EpicIC-56 - Set "billable" flag for active operators
 billableOperatorLabels = ["MTT","SPINT","CABLE","AGI","PTL","OTE","CYTA","BICS","MT","NCC"];
 db.subscribers.updateMany({type: "account", operator: {$in: billableOperatorLabels}}, {$set: {billable: true}});
+db.subscribers.updateMany({type: "account", operator: {$nin: billableOperatorLabels}}, {$set: {billable: false}});
 
 //Initial plans
 db.plans.save({
