@@ -98,14 +98,15 @@ class Portal_Actions_Registration extends Portal_Actions {
 		}
 		$params['email'] = $email;
 		$token = $this->generateToken($params, self::TOKEN_TYPE_WELCOME_ACCOUNT);
-		$subject = $this->getEmailSubject('welcome_account');
+		$email_category = $params['email_category'] ?? self::TOKEN_TYPE_WELCOME_ACCOUNT;
+		$subject = $this->getEmailSubject($email_category);
 		$replaces = array_merge([
 			'[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)) . " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
 			'[[username]]' => $username,
 			'[[access_from]]' => $params['access_from'] ?? 'now', //todo ::check from where need to take this param?? from api params? config? 
 			'[[link]]' => $this->getWebsite() . '/signup?token=' . $token . '&username=' . $username,
 				], $this->BuildReplacesforCompanyInfo());
-		$body = $this->getEmailBody('welcome_account', $replaces);
+		$body = $this->getEmailBody($email_category, $replaces);
 
 		if (!Billrun_Util::sendMail($subject, $body, [$email], [], true)) {
 			$this->log("Portal_Actions_Registration::sendWelcomeEmail - failed to send Email to {$email}", Billrun_Log::ERR);
