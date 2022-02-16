@@ -20,7 +20,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $trailerRows;
 	protected $correlatedValue;
 	protected $linkToInvoice = true;
-        protected $informationArray = [];
+	protected $informationArray = [];
+	protected $ignoreDuplicates = false;
         
         
 	protected $billSavedFields = array();
@@ -29,6 +30,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->configByType = !empty($options[$options['type']]) ? $options[$options['type']] : array();
 		$this->gatewayName = $options['name']; 
 		$this->receiverSource = str_replace('_', '', ucwords($options['name'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
+		$this->ignoreDuplicates = isset(current($this->configByType)['ignore_duplicates']) ? current($this->configByType)['ignore_duplicates'] : $this->ignoreDuplicates;
 		$this->bills = Billrun_Factory::db()->billsCollection();
 		$this->log = Billrun_Factory::db()->logCollection();
 		$this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
@@ -105,8 +107,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
         }
         
 	protected function getBillRunLine($rawLine, $line_index) {
-		$row = $rawLine;
-		$row['stamp'] = md5(serialize(array_merge($row, ['line_index' => $line_index])));
+		$row = $this->ignoreDuplicates ? $rawLine : array_merge($rawLine, ['parser_record_number' => $line_index]);
+		$row['stamp'] = md5(serialize($row));
 		return $row;
 	}
 
@@ -329,10 +331,16 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return $savedFields;
 	}
 	
-	public function getCustomPaymentGatewayFields () {
-		return [
-				'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
-				'cpg_type' => [!empty($type = $this->getType()) ? $type : ""], 
-				'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""] ];
-        }
+	public function getCustomPaymentGatewayFields($row = null) {
+		$res = [
+			'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
+			'cpg_type' => [!empty($type = $this->getType()) ? $type : ""],
+			'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""]
+		];
+		if (!is_null($row) && isset($row['parser_record_number'])) {
+			$res['record_number'] = $row['parser_record_number'];
+		}
+		return $res;
+	}
+
 }
