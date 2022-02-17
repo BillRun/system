@@ -1452,6 +1452,25 @@ runOnce(lastConfig, 'BRCD-3413', function () {
             }
         );
 });
+
+//BRCD-3421: migrate webhooks from config to separate collection
+runOnce(lastConfig, 'BRCD-3421', function () {
+    // create webhooks collection
+    db.createCollection('webhooks');
+    db.webhooks.createIndex({'webhook_id': 1}, { unique: true , background: true});
+    db.webhooks.createIndex({'module' : 1, 'action' : 1 }, { unique: false , background: true});
+
+    searchIndex = lastConfig.plugins.findIndex((plugin) => plugin.name == 'webhooksPlugin');
+    if (!searchIndex && searchIndex !== 0) {
+        return;
+    }
+    var _insertWebhooks = lastConfig.plugins[searchIndex].configuration.values.config;
+    if (!_insertWebhooks || !_insertWebhooks.length) {
+        return;
+    }
+    db.webhooks.insert(_insertWebhooks);
+});
+
 db.config.insert(lastConfig);
 db.lines.createIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 //BRCD-2336: Can't "closeandnew" a prepaid bucket
