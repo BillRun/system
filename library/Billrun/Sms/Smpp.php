@@ -247,9 +247,14 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 	 * @return the constant value
 	 */
 	protected function getClassConstant($class, $var) {
-		if (is_numeric($var) || is_bool($var)) {
-			return $var;
+		if (is_numeric($var)) {
+			return (int) $var;
 		}
+		
+		if (is_bool($var)) {
+			return (bool) $var;
+		}
+		
 		return constant($class . '::' . $var);
 	}
 
