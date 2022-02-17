@@ -162,11 +162,15 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 			if (!empty($this->clientOptions['messageEncoding'])) {
 				$this->clientOptions['messageEncoding'] = $this->getClassConstant('\smpp\SMPP', $this->clientOptions['messageEncoding']);
 			} else {
-				$this->clientOptions['messageEncoding'] = \smpp\SMPP::DATA_CODING_UCS2;
+				$this->clientOptions['messageEncoding'] = \smpp\SMPP::DATA_CODING_DEFAULT;
 			}
 			
-			if (empty($this->clientOptions['utf8togsm'])) {
+			if (!isset($this->clientOptions['utf8togsm'])) {
 				$this->clientOptions['utf8togsm'] = 0;
+			}
+
+			if (!isset($this->clientOptions['pack7bit'])) {
+				$this->clientOptions['pack7bit'] = 0;
 			}
 
 			// Activate binary hex-output of server interaction
@@ -208,6 +212,8 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 
 			if ($this->clientOptions['utf8togsm']) {
 				$encodedMsg = smpp\helpers\GsmEncoderHelper::utf8_to_gsm0338($this->body);
+			} else if ($this->clientOptions['pack7bit']) {
+				$encodedMsg = smpp\helpers\GsmEncoderHelper::pack7bit($this->body);
 			} else {
 				$encodedMsg = $this->body;
 			}
