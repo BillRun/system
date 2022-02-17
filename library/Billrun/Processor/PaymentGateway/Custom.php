@@ -21,7 +21,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $trailerRows;
 	protected $correlatedValue;
 	protected $linkToInvoice = true;
-        protected $informationArray = [];
+	protected $informationArray = [];
 	protected $ignoreDuplicates = false;
         
         
@@ -31,7 +31,6 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->configByType = !empty($options[$options['type']]) ? $options[$options['type']] : array();
 		$this->gatewayName = $options['name']; 
 		$this->receiverSource = str_replace('_', '', ucwords($options['name'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
-		$this->ignoreDuplicates = isset(current($this->configByType)['ignore_duplicates']) ? current($this->configByType)['ignore_duplicates'] : $this->ignoreDuplicates;
 		$this->bills = Billrun_Factory::db()->billsCollection();
 		$this->log = Billrun_Factory::db()->logCollection();
 		$this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
@@ -65,6 +64,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
 			return false;
 		}
+		$this->ignoreDuplicates = isset($currentProcessor['ignore_duplicates']) ? $currentProcessor['ignore_duplicates'] : $this->ignoreDuplicates;
 		$this->linkToInvoice = $this->getLinkToInvoiceValue($currentProcessor['processor']);
 		$headerStructure = isset($currentProcessor['parser']['header_structure']) ? $currentProcessor['parser']['header_structure'] : array();
 		$dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
@@ -384,7 +384,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		}
 		return $res;
 	}
-	
+
 	public function getPaymentUrt($row) {
 		$date = in_array($this->dateField['source'], ['header', 'trailer']) ? $this->{$this->dateField['source'] . 'Rows'}[$this->dateField['field']] : $row[$this->dateField['field']];
 		if (!empty($date)) {
