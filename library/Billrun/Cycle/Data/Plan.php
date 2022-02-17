@@ -25,7 +25,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 	public function __construct(array $options) {
 		parent::__construct($options);
 		if (!$this->verifyConstrctionOptions($options)) {
-			Billrun_Factory::log("Invalid aggregate data for : ".get_class($this));
+			Billrun_Factory::log("Invalid aggregate data for : ".get_class($this), Zend_Log::WARN);
 			return;
 		}
 		$this->name = $options['plan'];
