@@ -7,6 +7,16 @@
  */
 class Portal_Actions_Settings extends Portal_Actions {
 
+	const ALLOWED_PORTAL_CONFIGURATION_FIELDS = [
+		"logo_url",
+		"color_main",
+		"color_main_highlight",
+		"color_second",
+		"color_second_highlight",
+		"color_text",
+		"color_text_highlight",
+	];
+
 	public function get($params = []) {
 		$categories = $params['categories'] ?? [];
 
@@ -15,11 +25,20 @@ class Portal_Actions_Settings extends Portal_Actions {
 		}
 		$allow_categories = $this->params['allow_categories'] ? array_map('trim', explode(',', $this->params['allow_categories'])) : [];
 		foreach ($categories as $category) {
-			//check if category allow
-			if (in_array($category, $allow_categories)) {
-				$res[$category] = Billrun_Factory::config()->getConfigValue($category);
+			// portal always allowed
+			if ($category === 'portal') {
+				$portal_settings = array_filter($this->params, function ($key) {
+							return in_array($key, self::ALLOWED_PORTAL_CONFIGURATION_FIELDS);
+					}, ARRAY_FILTER_USE_KEY
+				);
+				$res[$category] = $portal_settings;
 			} else {
-				throw new Portal_Exception('permission_denied', '', 'Permission denied to get category : ' . $category);
+				//check if category allow
+				if (in_array($category, $allow_categories)) {
+					$res[$category] = Billrun_Factory::config()->getConfigValue($category);
+				} else {
+					throw new Portal_Exception('permission_denied', '', 'Permission denied to get category : ' . $category);
+				}
 			}
 		}
 		return $res;
