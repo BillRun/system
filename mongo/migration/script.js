@@ -1464,6 +1464,11 @@ runOnce(lastConfig, 'BRCD-3421', function () {
     if (!searchIndex && searchIndex !== 0) {
         return;
     }
+    if (!lastConfig.plugins[searchIndex].hasOwnProperty('configuration') || 
+            !lastConfig.plugins[searchIndex].configuration.hasOwnProperty('values') ||
+            !lastConfig.plugins[searchIndex].configuration.values.hasOwnProperty('config')) {
+        return;
+    }
     var _insertWebhooks = lastConfig.plugins[searchIndex].configuration.values.config;
     if (!_insertWebhooks || !_insertWebhooks.length) {
         return;
