@@ -762,7 +762,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (!$payment->isRejected()) {
 				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
 				$rejection = $payment->getRejectionPayment($response);
-				$rejection->setConfirmationStatus(false);
+				$rejection->setConfirmationStatus(false);                               
 				$rejection->save();
 				$payment->markRejected();
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
