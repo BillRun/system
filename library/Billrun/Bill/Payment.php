@@ -768,7 +768,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (!$payment->isRejected()) {
 				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
 				$rejection = $payment->getRejectionPayment($response);
-				$rejection->setConfirmationStatus(false);                               
+				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$payment->markRejected();
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
@@ -849,30 +849,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 	}
 
-	public function setPending($pending = true, $pendinglinkedBill = false) {
+	public function setPending($pending = true) {
 		$this->data['pending'] = $pending;
-//                if($pendinglinkedBill){
-//                    foreach ($this->getPaidBills() as $bill) {
-//                            $billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
-//                            if($pending){
-//                                $billObj->setPendingLinkedBills($this->getType(), $this->getId());
-//
-//                            }else{
-//                                $billObj->unsetPendingLinkedBills($this->getType(), $this->getId());
-//                            }
-//                            $billObj->save();
-//                    }
-//                    foreach ($this->getPaidByBills() as $bill) {
-//                            $billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
-//                            if($pending){
-//                                $billObj->setPendingLinkedBills($this->getType(), $this->getId());
-//
-//                            }else{
-//                                $billObj->unsetPendingLinkedBills($this->getType(), $this->getId());
-//                            }
-//                            $billObj->save();
-//                    }
-//                }
 	}
 	
 	public function getRejectionPayments($aid) {
