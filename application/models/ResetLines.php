@@ -170,7 +170,10 @@ class ResetLinesModel {
 		} else {
 			$query = $basicQuery;
 		}
-		return $this->resetLinesByQuery($query, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
+                $linesSizeToHandle = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.size', 100000);
+                while(($count = count($lines = $lines_coll->query($query)->cursor()->limit($linesSizeToHandle))) !== 0){
+                    $this->resetLinesByQuery($lines, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
+                }
 	}
         
         /**
@@ -184,30 +187,28 @@ class ResetLinesModel {
 	 */
 	protected function resetLinesByStamps($stamps, $update_aids, $advancedProperties, $lines_coll, $queue_coll) {
 		$query = array('stamp' => array('$in' => $stamps));
-                return $this->resetLinesByQuery($query, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
+                $lines = $lines_coll->query($query);
+                return $this->resetLinesByQuery($lines, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
 	}
         
         
-        protected function resetLinesByQuery($query, $update_aids, $advancedProperties, $lines_coll, $queue_coll) {
-		$lines = $lines_coll->query($query);
-		$rebalanceTime = new MongoDate();
-		$stamps = array();
-		$queue_lines = array();
-		$former_exporter = array();
-                $count = 1;
+        protected function resetLinesByQuery($lines, $update_aids, $advancedProperties, $lines_coll, $queue_coll) {	             
+                $rebalanceTime = new MongoDate();
+                $stamps = array();
+                $queue_lines = array();
+                $former_exporter = array();
 
-                $linesSizeToHandle = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.size', 100000);
-		// Go through the collection's lines and fill the queue lines.
-		foreach ($lines as $line) {
-			Billrun_Factory::dispatcher()->trigger('beforeRebalancingLines', array(&$line));
-			if($line['source'] === 'unify'){
-				$archivedLines = Billrun_Calculator_Unify::getUnifyLines($line['stamp']);
-				$archivedLinesToInsert = [];
+                // Go through the collection's lines and fill the queue lines.
+                foreach ($lines as $line) {
+                        Billrun_Factory::dispatcher()->trigger('beforeRebalancingLines', array(&$line));
+                        if($line['source'] === 'unify'){
+                                $archivedLines = Billrun_Calculator_Unify::getUnifyLines($line['stamp']);
+                                $archivedLinesToInsert = [];
                                 $batchSize = Billrun_Config::getInstance()->getConfigValue('resetlines.archived_lines.batch_size', 1000);
-				foreach ($archivedLines as $archivedLine){
-					unset($archivedLine["u_s"]);
-					$archivedLinesToInsert[] = $archivedLine;
-					$this->resetLine($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
+                                foreach ($archivedLines as $archivedLine){
+                                        unset($archivedLine["u_s"]);
+                                        $archivedLinesToInsert[] = $archivedLine;
+                                        $this->resetLine($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
                                         // If we've reached `$batchSize` entries, perform the batched insert.
                                         if(count($archivedLinesToInsert) >= $batchSize){                                     
                                             $this->restoringArchivedLinesToLines($archivedLinesToInsert);
@@ -220,24 +221,10 @@ class ResetLinesModel {
                                 }
                                 Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
                                 Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
-				continue;
-			}
-			$this->resetLine($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
-                        
-                        // If there are stamps to handle.
-                        if ($stamps && $count === $linesSizeToHandle) {
-                                // Handle the stamps.
-                                if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter)) {
-                                        return false;
-                                }
-                                $rebalanceTime = new MongoDate();
-                                $stamps = array();
-                                $queue_lines = array();
-                                $former_exporter = array();
-                                $count = 1;
+                                continue;
                         }
-                        $count++;
-		}
+                        $this->resetLine($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
+                }
                  // If there are stamps to handle.
                 if ($stamps) {
                         // Handle the stamps.
