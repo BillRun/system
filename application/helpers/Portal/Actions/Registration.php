@@ -300,11 +300,11 @@ class Portal_Actions_Registration extends Portal_Actions {
 		switch ($hashInterval) {
 			case 'hours':
 			case 'hour':
-				$dateFormat = 'Ymdh';
+				$dateFormat = 'YmdH';
 				break;
 			case 'minutes':
 			case 'minute':
-				$dateFormat = 'Ymdhi';
+				$dateFormat = 'YmdHi';
 				break;
 			case 'days':
 			case 'day':
