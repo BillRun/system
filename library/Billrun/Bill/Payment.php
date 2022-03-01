@@ -242,7 +242,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public function getCancellationPayment() {
 		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
-		$rawData = $this->getRawData();
+                $this->unsetAllPendingLinkedBills();
+                $rawData = $this->getRawData();
 		unset($rawData['_id'], $rawData['generated_pg_file_log']);
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['cancel'] = $this->getId();
@@ -260,7 +261,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public function getRejectionPayment($response) {
 		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
-		$rawData = $this->getRawData();
+		$this->unsetAllPendingLinkedBills();
+                $rawData = $this->getRawData();
 		unset($rawData['_id']);
 		$rawData['original_txid'] = $this->getId();
 		$rawData['due'] = $rawData['due'] * -1;
@@ -269,9 +271,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (isset($response['additional_params'])) {
 			$rawData['vendor_response'] = $response['additional_params'];
 		}
+                               
 		return new $className($rawData);
 	}
-
+        
 	public function getId() {
 		if (isset($this->data['txid'])) {
 			return $this->data['txid'];
@@ -398,6 +401,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['waiting_for_confirmation'] = false;
 		$this->detachPaidBills();
 		$this->detachPayingBills();
+                $this->unsetAllPendingLinkedBills();
 		$this->save();
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
 	}
@@ -443,6 +447,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function markCancelled() {
 		$this->data['cancelled'] = true;
+                $this->unsetAllPendingLinkedBills();
                 $this->setPending(false);
                 $this->setConfirmationStatus(false);
 		return $this;
@@ -491,6 +496,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function updateConfirmation() {
 		$this->data['waiting_for_confirmation'] = false;
 		$this->data['confirmation_time'] = new MongoDate();
+                $this->unsetAllPendingLinkedBills();
 		$this->setBalanceEffectiveDate();
 		$this->save();
 	}
@@ -1181,4 +1187,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$paymentData = array_merge_recursive($paymentData, $paymentUf);
 		$this->setRawData($paymentData);
 	}
+        
+        
+        protected function unsetAllPendingLinkedBills() {
+            $pays = $this->getPaidBills();
+            foreach ($pays as $pay){
+                if(isset($pay['pending'])){
+                    $this->unsetPendingLinkedBills($pay['type'], $pay['id']);
+                }
+            }
+        }
 }

@@ -470,6 +470,7 @@ abstract class Billrun_Bill {
 			$this->updatePaidBy($paidBy, $billId, $status, $billType);
 			if ($bill->isPendingPayment()) {
 				$this->setPendingLinkedBills($billType, $billId);
+                                $bill->setPendingLinkedBills($this->getType(), $this->getId());                               
 			}
 		}
 		$this->setPendingCoveringAmount();
@@ -479,10 +480,10 @@ abstract class Billrun_Bill {
 	public function detachPayingBill($billType, $id) {
 		$paidBy = $this->getPaidByBills();
 		$index = Billrun_Bill::findRelatedBill($paidBy, $billType, $id);
-		if ($index > -1) {
-			unset($paidBy[$index]);
+		if ($index > -1) {			                       
+                        unset($paidBy[$index]);
 			$this->updatePaidBy(array_values($paidBy));
-			if ($billType == 'rec') {
+                        if ($billType == 'rec') {
 				$this->removeFromWaitingPayments($id, $billType);
 			}
 		}
