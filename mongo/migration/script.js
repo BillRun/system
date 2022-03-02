@@ -1460,8 +1460,12 @@ runOnce(lastConfig, 'BRCD-3421', function () {
     db.webhooks.createIndex({'webhook_id': 1}, { unique: true , background: true});
     db.webhooks.createIndex({'module' : 1, 'action' : 1 }, { unique: false , background: true});
 
+    if (!lastConfig.hasOwnProperty('plugins')) {
+        return;
+    }
+    
     searchIndex = lastConfig.plugins.findIndex((plugin) => plugin.name == 'webhooksPlugin');
-    if (!searchIndex && searchIndex !== 0) {
+    if (searchIndex === false || searchIndex === -1) {
         return;
     }
     if (!lastConfig.plugins[searchIndex].hasOwnProperty('configuration') || 
