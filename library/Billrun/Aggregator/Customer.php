@@ -482,6 +482,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		$result = array();
 		if (!$this->forceAccountIds) {
+			Billrun_Factory::log("No account was forced. pulling page : " . $this->page, ", size: " . $this->size , Zend_Log::DEBUG);
 			$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size, null, $this->invoicing_days);
 			$result['data'] = $data;
 			return $result;
@@ -561,7 +562,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				Billrun_Factory::log('Recevied a record form cycle aggregate with unknown type.',Zend_Log::ERR);
 			}
 		}
-
+		Billrun_Factory::log("Pulled accounts : " . print_r(implode(",", array_keys($accounts))) , Zend_Log::DEBUG);
 		$accountsToRet = array();
 		foreach($accounts as $aid => $accountData) {
 			$accountToAdd = $this->getAccount($billrunData, $accountData, intval($aid));
