@@ -93,7 +93,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			return;
 		}
 		$this->logFile->setStartProcessTime();
-		Billrun_Factory::log()->log('Parameters are valid for file type ' . $this->configByType['file_type'] . '. Starting to pull entities..', Zend_Log::INFO);
+		Billrun_Factory::log()->log('Parameters are valid for file type ' . $this->configByType['file_type'] . '. Starting to pull relevant bills..', Zend_Log::INFO);
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
 		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';
 		$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
@@ -106,17 +106,20 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			return $ele['aid'];
 		}, $this->customers);
 
+		Billrun_Factory::log()->log('Found ' . count($customersAids) . ' accounts releated to the pulled bills, trying to load their information..', Zend_Log::DEBUG);
 		$account = Billrun_Factory::account();
 		$accountQuery = array('aid' => array('$in' => $customersAids));
 		$accounts = $account->loadAccountsForQuery($accountQuery);
+		$accountsInArray = [];
 		if (is_array($accounts)) {
 			foreach ($accounts as $account) {
 				$accountsInArray[$account['aid']] = $account;
 			}
 		}
+		Billrun_Factory::log()->log('Successfully pulled ' . count($accountsInArray) . ' accounts..', Zend_Log::DEBUG);
 		$maxRecords = !empty($this->configByType['generator']['max_records']) ? $this->configByType['generator']['max_records'] : null;
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers));
-		Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::INFO);
+		Billrun_Factory::log()->log('Processing the pulled bills, trying to match each bill it\'s account..', Zend_Log::DEBUG);
 		$this->setFileMandatoryFields();
 		foreach ($this->customers as $customer) {
 			if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
@@ -139,9 +142,11 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			$accountConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['accounts']) ? $this->generatorFilters['accounts'] : array();
 			if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
+				Billrun_Factory::log()->log('Account ' . $account->getRawData()['aid'] . " didn\'t meet the configured conditions..", Zend_Log::DEBUG);
 				continue;
 			}
 			$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedLogFileStamp);
+			Billrun_Factory::log()->log('Checking if the bill needs to be charged..', Zend_Log::DEBUG);
 			if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
 				$message = "Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid'];
 				Billrun_Factory::log($message, Zend_Log::ALERT);
@@ -181,9 +186,11 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['source'] = $customer['source'];
 			$placeHoldersConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['placeholders']) ? $this->generatorFilters['placeholders'] : array();
+			Billrun_Factory::log()->log('Checking if the bill meets the configured conditions..', Zend_Log::DEBUG);
 			if (!$this->isPaymentUpholdPlaceholders($paymentParams, $placeHoldersConditions)) {
 				continue;
 			}
+			Billrun_Factory::log()->log('Trying to create debt payment to the pulled bill..', Zend_Log::DEBUG);
 			try {
 				$options['account'] = $account->getRawData();
 				if ($this->isAssumeApproved()) {
@@ -220,6 +227,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$extraFields = array_merge_recursive($this->getCustomPaymentGatewayFields(), ['pg_request' => $this->billSavedFields]);
 			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
 			Billrun_Factory::dispatcher()->trigger('beforeSavingRequestFilePayment', array(static::$type, &$currentPayment, &$params, $this));
+			Billrun_Factory::log()->log('Saving the debt payment after processing changes, and customization..', Zend_Log::DEBUG);
 			$currentPayment->save();
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
