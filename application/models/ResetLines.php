@@ -171,7 +171,7 @@ class ResetLinesModel {
 			$query = $basicQuery;
 		}
                 $linesSizeToHandle = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.size', 100000);
-                while(($count = count($lines = $lines_coll->query($query)->cursor()->limit($linesSizeToHandle))) !== 0){
+                while(!($lines = $lines_coll->query($query)->cursor()->limit($linesSizeToHandle))->current()->isEmpty()){
                     $this->resetLinesByQuery($lines, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
                 }
 	}
@@ -202,22 +202,18 @@ class ResetLinesModel {
                 foreach ($lines as $line) {
                         Billrun_Factory::dispatcher()->trigger('beforeRebalancingLines', array(&$line));
                         if($line['source'] === 'unify'){
-                                $archivedLines = Billrun_Calculator_Unify::getUnifyLines($line['stamp']);
-                                $archivedLinesToInsert = [];
-                                $batchSize = Billrun_Config::getInstance()->getConfigValue('resetlines.archived_lines.batch_size', 1000);
-                                foreach ($archivedLines as $archivedLine){
-                                        unset($archivedLine["u_s"]);
-                                        $archivedLinesToInsert[] = $archivedLine;
-                                        $this->resetLine($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
-                                        // If we've reached `$batchSize` entries, perform the batched insert.
-                                        if(count($archivedLinesToInsert) >= $batchSize){                                     
-                                            $this->restoringArchivedLinesToLines($archivedLinesToInsert);
-                                            $archivedLinesToInsert = [];
-                                        }                                       
-                                }
-                                // Finish the last batch.
-                                if (!empty($archivedLinesToInsert)){
-                                     $this->restoringArchivedLinesToLines($archivedLinesToInsert);
+                                $batchSize = Billrun_Config::getInstance()->getConfigValue('resetlines.archived_lines.batch_size', 100000);
+                                $archiveLinesSize = count(Billrun_Calculator_Unify::getUnifyLines($line['stamp']));
+                                for ($skip = 0; $skip < $archiveLinesSize; $skip += $batchSize) {
+                                    $archivedLines = Billrun_Calculator_Unify::getUnifyLines($line['stamp'], $batchSize, $skip);
+                                    $archivedLinesToInsert = [];
+
+                                    foreach ($archivedLines as $archivedLine){
+                                            unset($archivedLine["u_s"]);
+                                            $archivedLinesToInsert[] = $archivedLine;
+                                            $this->resetLine($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);                                  
+                                    }
+                                    $this->restoringArchivedLinesToLines($archivedLinesToInsert);
                                 }
                                 Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
                                 Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
