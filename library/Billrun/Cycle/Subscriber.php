@@ -262,16 +262,27 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$cycle = $this->cycleAggregator->getCycle();
 		$stumpLine = $data['line_stump'];
 
+		$services_overrides_ids = array_column(
+			array_filter($data['overrides'], function($override) {
+				return $override['type'] == 'service' && !empty($override['id']);
+			})
+		, 'id');
+		$mongoServicesWithoutOverrides = !empty($services_overrides_ids) ? $this->cycleAggregator->getServices(null,null) : [];
+		
 		Billrun_Factory::dispatcher()->trigger('beforeConstructServices',array($this,$this->mongoServices,&$services,&$stumpLine));
 		foreach ($services as &$arrService) {
 			// Service name
 			$index = $arrService['name'];
-			if(!isset($this->mongoServices[$index])) {
+			$service_id = $arrService['service_id'];
+			$mongoServices = in_array($service_id, $services_overrides_ids)
+				? $mongoServicesWithoutOverrides
+				: $this->mongoServices;
+
+			if(!isset($mongoServices[$index])) {
 				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService,1), Zend_Log::NOTICE);
 				continue;
 			}
-
-			$mongoServiceData = $this->mongoServices[$index]->getRawData();
+			$mongoServiceData = $mongoServices[$index]->getRawData();
 			unset($mongoServiceData['_id']);
 			$serviceData = array_merge($mongoServiceData, $arrService);
 			$serviceData['cycle'] = $cycle;
