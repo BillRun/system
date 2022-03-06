@@ -981,10 +981,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			]
 		]);
 		$enrichment = [];
-		if(!empty($enrichmentMapping[$var])) {
-			foreach($enrichmentMapping[$var] as $enrichKey => $enrichField) {
-				foreach(Billrun_Factory::config()->getConfigValue($enrichKey, []) as  $fieldDesc) {
+		if (!empty($enrichmentMapping[$var])) {
+			foreach ($enrichmentMapping[$var] as $enrichKey => $enrichField) {
+				foreach (Billrun_Factory::config()->getConfigValue($enrichKey, []) as $fieldDesc) {
+					if ((strpos($fieldDesc[$enrichField], ".") !== false) || !isset($enrichment[current(explode(".", $fieldDesc[$enrichField]))])) {
 						$enrichment[$fieldDesc[$enrichField]] = $fieldDesc[$enrichField];
+					}
 				}
 			}
 		}
