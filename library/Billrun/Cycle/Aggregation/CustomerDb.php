@@ -145,6 +145,11 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 			}
 		}
 		$pipelines[] = array(
+			'$sort' => array(
+				'_id.aid' => 1
+			)
+		);
+		$pipelines[] = array(
 			'$skip' => $page * $size,
 		);
 		$pipelines[] = array(
