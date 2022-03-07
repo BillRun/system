@@ -60,7 +60,7 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatCycleStart,$formatCycleEnd);
 
 
-		$lastUpfrontCharge = $this->getPriceForcycle($this->cycle);
+		$lastUpfrontCharge = $this->getPriceForCycle($this->cycle);
 		$endActivation  = strtotime('-1 second', $this->deactivation);
 		$refundFraction = 1- Billrun_Utils_Time::getDaysSpanDiffUnix($this->cycle->start(), $endActivation, $cycleSpan);
 
@@ -72,10 +72,10 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 	}
 
 
-	protected function getProrationData($price) {
+	protected function getProrationData($price, $cycle = false) {
 			$frequency = $this->recurrenceConfig['frequency'];
 			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->end() )) );
-			$nextCycle = $this->getUpfrontCycle($this->cycle);
+			$nextCycle =  $cycle ? $cycle : $this->getUpfrontCycle($this->cycle);
 			return ['start' => $this->activation,
 					'prorated_start_date' => new Mongodloid_Date($this->activation > $this->cycle->start() ? $this->activation  :  $nextCycle->start()),
 					'end' => $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end(),

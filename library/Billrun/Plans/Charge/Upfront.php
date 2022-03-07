@@ -13,12 +13,12 @@
  * @since    5.2
  */
 abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
+
+	protected $seperatedCrossCycleCharges = false;
 	
 	public function __construct($plan) {
 		parent::__construct($plan);
-		
-		// Check if a deactivation date exists.
-		
+		$this->seperatedCrossCycleCharges = Billrun_Util::getFieldVal($plan['seperate_cross_cycle_charges'],$this->seperatedCrossCycleCharges);
 	}
 
 	/**
@@ -33,24 +33,34 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 * @return int, null if no charge
 	 */
 	public function getPrice($quantity = 1) {
-		
-		$price = $this->getPriceForcycle($this->cycle);
+
 		$fraction = $this->getFractionOfMonth();
 		if($fraction === null) {
 			return null;
 		}
-
-		return array_merge($this->getProrationData($this->price),array(
-			'value'=> $price * $fraction, 
-			'full_price' => floatval($price)
-			));
+		$cycles = [['cycle'=> $this->cycle , 'fraction'=> $fraction]];
+		if($this->seperatedCrossCycleCharges && $this->activation < $cycle->end() && $this->activation >= $this->cycle->start() && $fraction > 1) {
+		$nextCycle = $this->getUpfrontCycle($this->cycle);
+		$cycles = [
+					['cycle'=> $this->cycle , 'fraction'=> $fraction  - 1],
+					['cycle'=> $nextCycle , 'fraction'=> 1 ],
+				];
+		}
+		$retCahrges = [];
+		foreach($cycles as $cycleData) {
+			$price = $this->getPriceForCycle($cycleData['cycle']);
+			$retCahrges[] = array_merge($this->getProrationData($this->price,$cycleData['cycle']),array(
+				'value'=> $price * $cycleData['fraction'],
+				'full_price' => floatval($price)
+				));
+		}
 	}
 
-	protected function getPriceForcycle($cycle) {
-		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $cycle->end()));
-		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
-		$startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
-		return $this->getPriceByOffset($startOffset);
+	protected function getPriceForCycle($cycle) {
+			$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $cycle->end()));
+			$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
+			$startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
+			return $this->getPriceByOffset($startOffset);
 	}
 	
 	/**
@@ -68,9 +78,9 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		return 0;
 	}
 
-	protected function getProrationData($price) {
+	protected function getProrationData($price,$cycle = false) {
 			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->end() )) );
-			$nextCycle = $this->getUpfrontCycle($this->cycle);
+			$nextCycle = $cycle ?  $cycle  : $this->getUpfrontCycle($this->cycle);
 			return ['start' => $this->activation,
 					'prorated_start_date' => new Mongodloid_Date($this->activation > $this->cycle->start() ? $this->activation  :  $nextCycle->start()),
 					'end' =>  $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end(),
