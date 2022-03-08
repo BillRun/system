@@ -74,14 +74,16 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 
 	protected function getProrationData($price, $cycle = false) {
 			$frequency = $this->recurrenceConfig['frequency'];
-			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->end() )) );
-			$nextCycle =  $cycle ? $cycle : $this->getUpfrontCycle($this->cycle);
+
+			$cycle = empty($cycle) ? $this->cycle : $cycle;
+			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $cycle->end() )) );
+			$nextCycle = $this->getUpfrontCycle($cycle);
 			return ['start' => $this->activation,
-					'prorated_start_date' => new Mongodloid_Date($this->activation > $this->cycle->start() ? $this->activation  :  $nextCycle->start()),
-					'end' => $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end(),
-					'prorated_end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() ? $this->deactivation : $nextCycle->end()),
+					'prorated_start_date' => new Mongodloid_Date($this->activation > $cycle->start() ? $this->activation  : ($this->seperatedCrossCycleCharges ? $cycle->start() :$nextCycle->start())),
+					'end' => $this->deactivation < $cycle->end() ? $this->deactivation : $cycle->end(),
+					'prorated_end_date' => new Mongodloid_Date($this->deactivation < $cycle->end() ? $this->deactivation : $this->seperatedCrossCycleCharges ? $cycle->end() : $nextCycle->end()),
 					'start_date' =>new Mongodloid_Date(Billrun_Plan::monthDiffToDate($startOffset,  $this->activation ,true,false,false ,$frequency )),
-					'end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end())];
+					'end_date' => new Mongodloid_Date($this->deactivation < $cycle->end() ? $this->deactivation : $cycle->end())];
 	}
 
 	protected function getUpfrontCycle($regularCycle) {
