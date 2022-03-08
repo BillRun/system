@@ -18,7 +18,9 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	
 	public function __construct($plan) {
 		parent::__construct($plan);
-		$this->seperatedCrossCycleCharges = Billrun_Util::getFieldVal($plan['seperate_cross_cycle_charges'],$this->seperatedCrossCycleCharges);
+		$this->seperatedCrossCycleCharges = Billrun_Util::getFieldVal($plan['seperate_cross_cycle_charges'],
+																		Billrun_Factory::config()->getConfigValue('billrun.seperate_cross_cycle_charges',
+																												$this->seperatedCrossCycleCharges) );
 	}
 
 	/**
@@ -39,7 +41,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 			return null;
 		}
 		$cycles = [['cycle'=> $this->cycle , 'fraction'=> $fraction]];
-		if($this->seperatedCrossCycleCharges && $this->activation < $cycle->end() && $this->activation >= $this->cycle->start() && $fraction > 1) {
+		if($this->seperatedCrossCycleCharges && $this->activation < $this->cycle->end() && $this->activation >= $this->cycle->start() && $fraction > 1) {
 		$nextCycle = $this->getUpfrontCycle($this->cycle);
 		$cycles = [
 					['cycle'=> $this->cycle , 'fraction'=> $fraction  - 1],
@@ -54,6 +56,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 				'full_price' => floatval($price)
 				));
 		}
+		return empty($retCahrges) ? null :  $retCahrges;
 	}
 
 	protected function getPriceForCycle($cycle) {
