@@ -580,7 +580,7 @@ abstract class Billrun_Bill {
 			$aidsQuery = array();
 		}
 
-		return static::getBalanceByAids($aidsQuery, true, true);
+		return static::getBalanceByAids($aidsQuery, true, true, true);
 	}
 
 	public function getDueBeforeVat() {
@@ -1159,9 +1159,10 @@ abstract class Billrun_Bill {
 	 * @param boolean $is_aids_query - true if "$aids" variable is query, true if it's a list of specific aids.
 	 * @param boolean $only_debts - true if we want to get all the accounts that are in collection, with their debts
 	 * (if they have credit balance they will not show) otherwise show also get all the accounts that are in collection that they have credit/debt
-	 * @return 
+	 * @param boolean $include_pending - true if we want to get all the accounts that are in collection include debts that are in pending. false by default to not include pending debts. 
+         * @return 
 	 */
-	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false) {
+	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false, $include_pending = false) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
 		$accountQuery = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
@@ -1204,13 +1205,6 @@ abstract class Billrun_Bill {
 								array('$eq' => array('$paid', false))))
 					)
 				),
-                                'total_pending_debt_valid_cond'=> array('$and' => array(array('$and' => array(
-								array('$eq' => array('$valid_gateway', true)),
-								array('$ne' => array('$past_rejections', false)))), array('$and' => array(
-								array('$eq' => array('$valid_due_date', true)),
-								array('$eq' => array('$pending', true))))
-					)
-				),
 				'total_debt_invalid_cond' => array('$and' => array(
 						array('$and' => array(
 								array('$eq' => array('$valid_gateway', false)),
@@ -1223,17 +1217,21 @@ abstract class Billrun_Bill {
 					),
 			)
 		);
+                if ($include_pending) {
+                    $addFields['$addFields']['total_pending_debt_valid_cond'] = array('$and' => array(array('$and' => array(
+                                                        array('$eq' => array('$valid_gateway', true)),
+                                                        array('$ne' => array('$past_rejections', false)))), array('$and' => array(
+                                                        array('$eq' => array('$valid_due_date', true)),
+                                                        array('$eq' => array('$pending', true))))
+                                )
+                        );
+                }
 		$group = array(
 			'$group' => array(
 				'_id' => '$aid',
 				'total_debt_valid' => array(
 					'$sum' => array(
 						'$cond' => array(array('$eq' => array('$total_debt_valid_cond', true)), '$left_to_pay', 0)
-					),
-				),
-                                'total_pending_debt_valid' => array(
-					'$sum' => array(
-						'$cond' => array(array('$eq' => array('$total_pending_debt_valid_cond', true)), '$pending_covering_amount', 0)
 					),
 				),
 				'total_debt_invalid' => array(
@@ -1248,14 +1246,25 @@ abstract class Billrun_Bill {
 				),
 			),
 		);
+                 if ($include_pending) {
+                    $group['$group']['total_pending_debt_valid'] = array(
+                                '$sum' => array(
+                                        '$cond' => array(array('$eq' => array('$total_pending_debt_valid_cond', true)), '$pending_covering_amount', 0)
+                                ),
+                        );
+                }
 		$project3 = array(
 			'$project' => array(
 				'_id' => 0,
 				'aid' => '$_id',
 			),
 		);
-		if ($only_debts) {
-			$project3['$project']['total'] = array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid'));
+		if ($only_debts) {			
+                        if ($include_pending) {
+                            $project3['$project']['total'] = array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid'));
+                        } else {
+                            $project3['$project']['total'] =  array('$add' => array('$total_debt_valid', '$total_debt_invalid'));
+                        }
 			$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
 			$match2 = array(
 				'$match' => array(
@@ -1264,9 +1273,13 @@ abstract class Billrun_Bill {
 					)
 				)
 			);
-		} else {
-			$project3['$project']['total'] = array('$add' => array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')), '$total_credit'));
-			$match2 = array(
+		} else {			
+			if ($include_pending) {
+                            $project3['$project']['total'] =  array('$add' => array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')), '$total_credit'));
+                        } else {
+                            $project3['$project']['total'] =  array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_credit'));
+                        }
+                        $match2 = array(
 				'$match' => array(
 					'total' => array(
 						'$ne' => 0
