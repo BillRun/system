@@ -1189,7 +1189,10 @@ abstract class Billrun_Bill {
 				'valid_due_date' => array('$cond' => array(array('$and' => array(array('$ne' => array('$due_date', null)), array('$lt' => array('$due_date', new MongoDate())))), true, false)),
 				'aid' => 1,
 				'left_to_pay' => 1,
-				'left' => 1
+				'left' => 1,
+                                'pending' => array('$cond' => array(array('$in' => array('$paid', array('2', 2))), true, false)),
+                                'pending_covering_amount' => 1
+                                
 			)
 		);
 		$addFields = array(
@@ -1199,6 +1202,13 @@ abstract class Billrun_Bill {
 								array('$ne' => array('$past_rejections', false)))), array('$and' => array(
 								array('$eq' => array('$valid_due_date', true)),
 								array('$eq' => array('$paid', false))))
+					)
+				),
+                                'total_pending_debt_valid_cond'=> array('$and' => array(array('$and' => array(
+								array('$eq' => array('$valid_gateway', true)),
+								array('$ne' => array('$past_rejections', false)))), array('$and' => array(
+								array('$eq' => array('$valid_due_date', true)),
+								array('$eq' => array('$pending', true))))
 					)
 				),
 				'total_debt_invalid_cond' => array('$and' => array(
@@ -1221,6 +1231,11 @@ abstract class Billrun_Bill {
 						'$cond' => array(array('$eq' => array('$total_debt_valid_cond', true)), '$left_to_pay', 0)
 					),
 				),
+                                'total_pending_debt_valid' => array(
+					'$sum' => array(
+						'$cond' => array(array('$eq' => array('$total_pending_debt_valid_cond', true)), '$pending_covering_amount', 0)
+					),
+				),
 				'total_debt_invalid' => array(
 					'$sum' => array(
 						'$cond' => array(array('$eq' => array('$total_debt_invalid_cond', true)), '$left_to_pay', 0)
@@ -1240,7 +1255,7 @@ abstract class Billrun_Bill {
 			),
 		);
 		if ($only_debts) {
-			$project3['$project']['total'] = array('$add' => array('$total_debt_valid', '$total_debt_invalid'));
+			$project3['$project']['total'] = array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid'));
 			$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
 			$match2 = array(
 				'$match' => array(
@@ -1250,7 +1265,7 @@ abstract class Billrun_Bill {
 				)
 			);
 		} else {
-			$project3['$project']['total'] = array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_credit'));
+			$project3['$project']['total'] = array('$add' => array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')), '$total_credit'));
 			$match2 = array(
 				'$match' => array(
 					'total' => array(
