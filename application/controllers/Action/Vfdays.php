@@ -268,7 +268,7 @@ class VfdaysAction extends Action_Base {
 				),
 			);
 			$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
-			Billrun_Factory::log("vfdays tap3 aggregate query : ".json_encode([$match, $project, $match2, $group, $group2,$sortPlans,$group33]));
+			Billrun_Factory::log("vfdays tap3 aggregate query : ".json_encode([$match, $project, $match2, $group, $group2,$sortPlans,$group3]));
 			$results = $billing_connection->aggregate($match, $project, $match2, $group, $group2,$sortPlans,$group3);
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Error to fetch to billing from fraud system. ' . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
