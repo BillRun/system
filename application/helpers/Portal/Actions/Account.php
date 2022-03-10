@@ -156,8 +156,7 @@ class Portal_Actions_Account extends Portal_Actions {
 		if (empty($aid)) {
 			return;
 		}
-		$unlimited_date = date('YmdHis', "+100 years");
-		return Billrun_Bill::getTotalDueForAccount($aid, $unlimited_date);
+		return Billrun_Bill::getTotalDueForAccount($aid);
 	}
 
 	/**
