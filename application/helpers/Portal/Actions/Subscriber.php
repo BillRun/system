@@ -106,6 +106,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 		}
 		$this->addPlanDetails($subscriber, $params);
 		$this->addServicesDetails($subscriber, $params);
+		$this->addOutGroupUsage($subscriber, $params);
 		unset($subscriber['_id']);
 		return $subscriber;
 	}
@@ -140,6 +141,26 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 		if (isset($subscriber['include']['services'])) {
 			foreach ($subscriber['include']['services'] as &$subscriberService) {
 				$this->addServiceDetails($subscriberService, $params, $subscriber);
+			}
+		}
+	}
+	
+	/**
+	 * add balance out\over group usage to subscriber
+	 *
+	 * @param  array $subscriber
+	 * @param  array $params
+	 */
+	protected function addOutGroupUsage(&$subscriber, $params) {
+		$balances = $this->getBalances($subscriber);
+		if (!empty($balances)) {
+			foreach ($balances as $balance) {
+				$balance_totals = Billrun_Util::getIn($balance, 'balance.totals', []);
+				foreach ($balance_totals as $usaget => $balance_total) {
+					if(!empty($balance_total['out_group']) || !empty($balance_total['over_group'])) {
+						$subscriber['out_group'][$usaget] = $balance_total;
+					}
+				}
 			}
 		}
 	}
