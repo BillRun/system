@@ -84,7 +84,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$rowCount = 0;
 
 		foreach ($parsedData as $index => $line) {
-                        $line = $this->formatLine($line,$dataStructure);
+			Billrun_Factory::dispatcher()->trigger('beforeFormatParsedLine', array($this, &$line));
+            $line = $this->formatLine($line,$dataStructure);
 			$row = $this->getBillRunLine($line, $index);
 			if (!$row){
 				return false;
