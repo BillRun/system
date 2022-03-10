@@ -89,16 +89,15 @@ class Billrun_Parser_Xml {
             Billrun_Factory::log('Billrun_Parser_Xml: Couldn\'t open ' . $filename . ' file. No process was made.', Zend_Log::ALERT);
             return;
         }
-
         $GivenXml->registerXPathNamespace($this->name_space_prefix, $this->name_space);
-        $xmlAsString = file_get_contents($filename);
-
+	 $xmlAsString = file_get_contents($filename);
+	 Billrun_Factory::dispatcher()->trigger('afterLoadXmlFile', array($this, &$GivenXml));
         $fixedTag = $commonPathAsArray[(count($commonPathAsArray) - 1)];
         $parentNode = $GivenXml;
         $this->getParentNode($parentNode);
         $headerRowsNum = $dataRowsNum = $trailerRowsNum = 0;
 
-        for($i = 0; $i < count($commonPathAsArray); $i++){
+        for($i = 0; $i < count($commonPathAsArray) - 1; $i++){
             $parentNode = $this->getChildren($parentNode);
         }
         $dataWasProcessed = $headerWasProcessed = $trailerWasProcessed = 0;
@@ -148,13 +147,12 @@ class Billrun_Parser_Xml {
      protected function parseNestedLine($segment, $repeatedTags, $currentChild ,$data){
         $repeatedString = implode('.', $repeatedTags[$segment]['repeatedTag']);
         $data = $this->getSegmentFixedTag($segment, $repeatedTags, $currentChild ,$data);
-        $numberOfChildren = count($this->getChildren($data));
+        $numberOfChildren = $this->numOfRecords;
         $counter = 0;
         foreach($data as $child => $childData){
             ${'Counter'.$child} = 0;
         }
         foreach($data as $child => $childData){
-            $counter++;
             if ($counter <= $numberOfChildren){
                 if (in_array($child, $repeatedTags[$segment]['repeatedTag'])){
                     $this->{$segment.'RowsNum'}++;
@@ -166,21 +164,37 @@ class Billrun_Parser_Xml {
                             $SubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
                         }
                         $ReturndValue = $data->xpath($SubPath);
-						$value = $this->getValue($ReturndValue, $segment, $i);
+			   $value = $this->getValue($ReturndValue, $segment, $i, $counter);
                         $this->{$segment.'Rows'}[$this->{$segment.'RowsNum'} - 1][$this->input_array[$segment][$i]['name']] = $value;    
                     }
                 }
             }
             ${'Counter'.$child}++;
+			$counter++;
         }
     }
     
    protected function getSegmentFixedTag($segment, $repeatedTags, $currentChild, $data) {
-		foreach ($this->getChildren($data) as $child => $childData) {
-			if ($child === $repeatedTags[$segment]['repeatedTag'][array_search($currentChild, $repeatedTags[$segment]['repeatedTag']) + 1]) {
-				return $data;
-			}
+		if(count($repeatedTags[$segment]['repeatedTag']) >= 2) {
+			array_shift($repeatedTags[$segment]['repeatedTag']);
 		}
+		$last_tag = $repeatedTags['data']['repeatedTag'][count($repeatedTags['data']['repeatedTag']) - 1];
+		$flag = 0;
+		foreach($repeatedTags['data']['repeatedTag'] as $tag) {
+		foreach ($this->getChildren($data) as $child => $childData) {
+				if (($child === $tag) && !$flag) {
+					$records = $data->xpath('//' . $tag);
+					if ($tag !== $last_tag) {
+						$data = current($records);
+					} else {
+						$this->numOfRecords = count($records);
+						$flag = 1;
+			}
+					continue;
+		}
+	}
+		}
+		return $data;
 	}
 
 	protected function parseLine($segment, $currentChild, $data) {
@@ -200,17 +214,17 @@ class Billrun_Parser_Xml {
     
     protected function preXmlBuilding() {
         foreach ($this->input_array as $segment => $indexes) {
-            for ($a = 0; $a < count($indexes); $a++) {
-                if (isset($this->input_array[$segment][$a])) {
-                    if (isset($this->input_array[$segment][$a]['path'])) {
-                        $this->pathes[] = $this->input_array[$segment][$a]['path'];
-                        $this->pathesBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
-                    } else {
-                        throw new Exception("No path for one of the " . $segment . "'s entity. No parse was made.");
-                    }
-                }
-            }
-        }
+				for ($a = 0; $a < count($indexes); $a++) {
+					if (isset($this->input_array[$segment][$a])) {
+						if (isset($this->input_array[$segment][$a]['path'])) {
+							$this->pathes[] = $this->input_array[$segment][$a]['path'];
+							$this->pathesBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
+						} else {
+							throw new Exception("No path for one of the " . $segment . "'s entity. No parse was made.");
+					}
+				}
+			}
+		}
         sort($this->pathes);
         if (count($this->pathes) > 1) {
             $commonPrefix = array_shift($this->pathes);  // take the first item as initial prefix
@@ -275,7 +289,7 @@ class Billrun_Parser_Xml {
     }
 
     protected function getParentNode(&$parentNode) {
-        $Xpath = '/' . str_replace($this->commonPath, '/', $this->pathDelimiter);
+        $Xpath = '/' . str_replace($this->pathDelimiter, '/', $this->commonPath);
         return $parentNode->xpath($Xpath);
     }
 
@@ -305,11 +319,11 @@ class Billrun_Parser_Xml {
         }
     }
 	
-	public function getValue($value, $segment, $field_index) {
+	public function getValue($value, $segment, $field_index, $counter = 0) {
 		$res = null;
 		if ($value) {
-			if (!empty($value[0]->attributes()) && !empty($this->input_array[$segment][$field_index]['attribute'])) {
-				foreach ($value[0]->attributes() as $attribute_name => $attribute_value) {
+			if (!empty($value[$counter]->attributes()) && !empty($this->input_array[$segment][$field_index]['attribute'])) {
+				foreach ($value[$counter]->attributes() as $attribute_name => $attribute_value) {
 					if ($attribute_name == $this->input_array[$segment][$field_index]['attribute']) {
 						$res = strval($attribute_value);
 					}
@@ -319,7 +333,7 @@ class Billrun_Parser_Xml {
 					$res = '';
 				}
 			} else {
-				$res = strval($value[0]);
+				$res = strval($value[$counter]);
 			}
 		} else {
 			$res = '';
