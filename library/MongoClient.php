@@ -222,7 +222,7 @@ class MongoClient
             $results[$key] = [
                 'host' => $server->getHost(),
                 'port' => $server->getPort(),
-                'health' => (int) $info['ok'],
+                'health' => 1,
                 'state' => $state,
                 'ping' => $server->getLatency(),
                 'lastPing' => null,
@@ -376,6 +376,8 @@ class MongoClient
             $keyValue = explode('=', $option);
             if ($keyValue[0] === 'readPreferenceTags') {
                 $options[$keyValue[0]][] = $this->getReadPreferenceTags($keyValue[1]);
+            } elseif (ctype_digit($keyValue[1])) {
+                $options[$keyValue[0]] = (int) $keyValue[1];
             } else {
                 $options[$keyValue[0]] = $keyValue[1];
             }

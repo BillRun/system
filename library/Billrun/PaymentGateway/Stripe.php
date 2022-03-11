@@ -76,7 +76,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		));
 		$status = $this->payResponse($result);
 
-		return $status;
+		return array ('status' => $status, 'additional_params' => [],);
 	}
 
 	protected function payResponse($result) {
@@ -235,5 +235,13 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	
 	protected function buildSinglePaymentArray($params, $options) {
 		throw new Exception("Single payment not supported in " . $this->billrunName);
+	}
+
+	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
+		return false;
+	}
+
+	public function getSecretFields() {
+		return array('secret_key');
 	}
 }

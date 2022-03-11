@@ -291,9 +291,10 @@ class Billrun_Utils_Time {
 	 * 
 	 * @param unixtimestamp $date1
 	 * @param unixtimestamp $date2
+	 * @param string $roundingType
 	 * @return int
 	 */
-	public static function getDaysDiff($date1, $date2) {
+	public static function getDaysDiff($date1, $date2, $roundingType = 'ceil') {
 		if ($date1 > $date2) {
 			$datediff = $date1 - $date2;
 		} else {
@@ -301,7 +302,16 @@ class Billrun_Utils_Time {
 		}
 		
 		
-		return round($datediff / (60 * 60 * 24));
+		$days = $datediff / (60 * 60 * 24);
+		switch ($roundingType){
+			case 'floor':
+				return floor($days);
+			case 'round':
+				return round($days);
+			case 'ceil': 
+			default:
+				return ceil($days);
+		}
 	}
 
 }

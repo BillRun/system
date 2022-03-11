@@ -34,7 +34,7 @@ class ConfigModel {
 	 */
 	protected $options;
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'pricing', 'receiver');
-	protected $ratingAlgorithms = array('match', 'longestPrefix', 'equalFalse');
+	protected $ratingAlgorithms = array('match', 'longestPrefix', 'equalFalse', 'range');
         
 	/**
 	 * reserved names of File Types.
@@ -122,10 +122,10 @@ class ConfigModel {
  				return 0;
  			}
  			if (empty($data['name'])) {
- 				return $this->_getFromConfig($currentConfig, $category, $data);
+ 				return $this->getSecurePaymentGateways($this->_getFromConfig($currentConfig, $category, $data));
  			}
  			if ($pgSettings = $this->getPaymentGatewaySettings($currentConfig, $data['name'])) {
- 				return $pgSettings;
+ 				return $this->getSecurePaymentGateway($pgSettings);
 			}
 			throw new Exception('Unknown payment gateway ' . $data['name']);
 		} else if ($category == 'export_generators') {
@@ -151,6 +151,16 @@ class ConfigModel {
 				$dispatcherChain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
 				foreach ($data['actions'] as $methodName) {
 					$plugins[$methodName] = $dispatcherChain->getImplementors($methodName);
+				}
+			}
+			return $plugins;
+		} else if ($category === 'plugins') {
+			$plugins = $this->_getFromConfig($currentConfig, $category, $data);
+			// Add configuration fields array to plugins
+			$configuration = Billrun_Factory::dispatcher()->trigger('getConfigurationDefinitions');
+			foreach ($plugins as $key => $plugin) {
+				if (!is_string($plugin) && !empty($configuration[$plugin['name']])) {
+					$plugins[$key]['configuration']['fields'] = $configuration[$plugin['name']];
 				}
 			}
 			return $plugins;
@@ -247,15 +257,19 @@ class ConfigModel {
 			if (is_null($supported) || !$supported) {
 				throw new Exception('Payment gateway is not supported');
 			}
+			$secretFields = $paymentGateway->getSecretFields();
+			$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
 			$defaultParameters = $paymentGateway->getDefaultParameters();
 			$releventParameters = array_intersect_key($defaultParameters, $data['params']); 
 			$neededParameters = array_keys($releventParameters);
+			$rawPgSettings = $this->getPaymentGatewaySettings($updatedData, $data['name']);
 			foreach ($data['params'] as $key => $value) {
 				if (!in_array($key, $neededParameters)){
 					unset($data['params'][$key]);
+				} elseif (in_array($key, $secretFields) && $value === $fakePassword && isset ($rawPgSettings['params'][$key])){
+					$data['params'][$key] = $rawPgSettings['params'][$key];
 				}
 			}
-			$rawPgSettings = $this->getPaymentGatewaySettings($updatedData, $data['name']);
 			if ($rawPgSettings) {
 				$pgSettings = array_merge($rawPgSettings, $data);
 			} else {
@@ -329,6 +343,33 @@ class ConfigModel {
 			if ($this->validateEvent($eventType, $data)) {
 				$updatedData['events'][$eventType][] = $data;
 			}
+		} else if ($category === 'plugins') {
+			throw new Exception('Only one plugin can be saved');
+		} else if ($category === 'plugin') {
+			if (empty($data['name'])) {
+				throw new Exception('Missing plugin name');
+			}
+			// Search for plugin in old structure - as array of classNames
+			$old_strucrute_plugin_index = array_search($data['name'], $updatedData['plugins']);
+			if ($old_strucrute_plugin_index !== FALSE) {
+				// allow only in this case to set all parameters to convert class_name to new plugin structure
+				$updatedData['plugins'][$old_strucrute_plugin_index] = $data;
+			} else {
+				$plugins_names = array_map(function($plugin) {
+					return is_string($plugin) ? $plugin : $plugin['name'];
+				}, $updatedData['plugins']);
+				$plugin_index = array_search($data['name'], $plugins_names);
+				if ($plugin_index === FALSE) {
+					throw new Exception("Plugin {$data['name']} not found");
+				}
+				// Allow to update only 'enabled' flag and configuration values
+				if (isset($data['enabled'])) {
+					$updatedData['plugins'][$plugin_index]['enabled'] = $data['enabled'];
+				}
+				if (isset( $data['configuration']['values'])) {
+					$updatedData['plugins'][$plugin_index]['configuration']['values'] = $data['configuration']['values'];
+				}
+			}
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -340,6 +381,12 @@ class ConfigModel {
 		if ($saveResult) {
 			// Reload timezone.
 			Billrun_Config::getInstance()->refresh();
+			if ($category === 'shared_secret') {
+				// remove previous defined clientof the same secret (in case of multiple saves or name change)
+				Billrun_Factory::oauth2()->getStorage('access_token')->unsetClientDetails(null, $data['key']);
+				// save into oauth_clients
+				Billrun_Factory::oauth2()->getStorage('access_token')->setClientDetails($data['name'], $data['key'], Billrun_Util::getForkUrl());
+			}
 		}
 
 		return $saveResult;
@@ -602,6 +649,8 @@ class ConfigModel {
 			'subscribers.subscriber.fields' => 'subscribers',
 			'subscribers.account.fields' => 'accounts',
 			'rates.fields' => 'rates',
+			'plans.fields' => 'plans',
+			'services.fields' => 'services',
 		);
 	}
 	
@@ -895,6 +944,11 @@ class ConfigModel {
  		}
  
 		$ret = $this->collection->insert($updatedData);
+		
+		if ($category === 'shared_secret') {
+			// remove into oauth_clients
+			Billrun_Factory::oauth2()->getStorage('access_token')->unsetClientDetails(null, $data['key']);
+		}
 		return !empty($ret['ok']);
 	}
 	
@@ -928,7 +982,7 @@ class ConfigModel {
  		if ($filtered = array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
  			return $pgSettings['name'] === $pg;
  		})) {
- 			return current($filtered);
+			return current($filtered);
  		}
  		return FALSE;
  	}
@@ -1204,12 +1258,12 @@ class ConfigModel {
 		$defaultParametersKeys = array_keys($defaultParameters);
 		$diff = array_diff($defaultParametersKeys, $connectionParameters);
 		if (!empty($diff)) {
-			Billrun_Factory::log("Wrong parameters for connection to ", $name);
+			Billrun_Factory::log("Wrong parameters for connection to " . $name, Zend_Log::NOTICE);
 			return false;
 		}
 		$isAuth = $paymentGateway->authenticateCredentials($pg['params']);
 		if (!$isAuth){
-			throw new Exception('Wrong credentials for connection to ', $name); 
+			throw new Exception('Wrong credentials for connection to ' . $name, Zend_Log::NOTICE); 
 		}	
 		
  		return true;
@@ -1335,7 +1389,7 @@ class ConfigModel {
 //			if ($uniqueFields != array_unique($uniqueFields)) {
 //				throw new Exception('Cannot use same field for different configurations');
 //			}
-			$billrunFields = array('type', 'usaget', 'file', 'connection_type');
+			$billrunFields = array('type', 'usaget', 'file', 'connection_type', 'urt');
 			$customFields = array_merge($customFields, array_map(function($field) {
 				return 'uf.' . $field;
 			}, $customFields));
@@ -1619,9 +1673,9 @@ class ConfigModel {
 	
 	protected function getTaxationFields() {
 		$ret = array(
-			'tax.service_code' => array('title' => 'Taxation service code' ,'mandatory' => true),
-			'tax.product_code' => array('title' => 'Taxation product code' ,'mandatory' => true),
-			'tax.safe_harbor_override_pct' => array('title' => 'Safe Horbor override string' ,'mandatory' => false),
+			'taxation.service_code' => array('title' => 'Taxation service code' ,'mandatory' => true),
+			'taxation.product_code' => array('title' => 'Taxation product code' ,'mandatory' => true),
+			'taxation.safe_harbor_override_pct' => array('title' => 'Safe Horbor override string' ,'mandatory' => false),
 		);
 		return $ret;
 	}
@@ -1726,5 +1780,31 @@ class ConfigModel {
 	protected function getPrepaidUnifyConfig() {
 		return Billrun_Factory::config()->getConfigValue('unify', []);
 	}
+	
+	protected function getSecurePaymentGateway($paymentGatewaySetting){
+		$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
+		$securePaymentGateway = $paymentGatewaySetting; 
+		$name  = Billrun_Util::getIn($paymentGatewaySetting, 'name');
+		if(!Billrun_Util::getIn($paymentGatewaySetting, 'custom', false)){
+			$paymentGateway = Billrun_Factory::paymentGateway($name);
+			if(is_null($paymentGateway)){
+				throw new Exception('Unsupported payment gateway ' . $name);
+			}
+			$secretFields = $paymentGateway->getSecretFields(); 
+			foreach ($secretFields as $secretField){
+				if(isset($securePaymentGateway['params'][$secretField])){
+					$securePaymentGateway['params'][$secretField] = $fakePassword;
+				}
+			}
+		}
+		return $securePaymentGateway;
+	}
 
+	protected function getSecurePaymentGateways($paymentGateways){
+		$securePaymentGateways = [];
+		foreach ($paymentGateways as $paymentGateway){
+			$securePaymentGateways[] = $this->getSecurePaymentGateway($paymentGateway);
+		}
+		return $securePaymentGateways;
+	}
 }

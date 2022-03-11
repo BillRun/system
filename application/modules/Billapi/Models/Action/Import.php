@@ -82,8 +82,12 @@ class Models_Action_Import extends Models_Action {
 				$result = $this->importEntity($entity);
 				// set import status for all csv_rows that build this entity
 				if(!empty($csv_rows)) {
-					foreach ($csv_rows as $row_index) {
-						$output[$row_index] = $result;
+					if (is_array($csv_rows)) {
+						foreach ($csv_rows as $row_index) {
+							$output[$row_index] = $result;
+						}
+					} else {
+						$output[$csv_rows] = $result;
 					}
 				} else {
 					$output[$key] = $result;
@@ -176,7 +180,7 @@ class Models_Action_Import extends Models_Action {
 	
 	protected function getFileData($filePath) {
 		$data = array_map('str_getcsv', file($filePath));
-		$header = $this->getHeader($data, $params);
+		$header = $this->getHeader($data);
 		if (!empty($header)) {
 			array_walk($data, function(&$row) use ($header) {
 				$row = array_combine($header, $row);

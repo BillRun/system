@@ -32,11 +32,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		} else if ($this->fixedWidth) {
 			$this->delimiter = '';
 		}
-		if (!$this->validateOptions($options)) {
-                        $message = "Missing options when generating payment gateways csv file for file type " . $options['file_type'];
-                        $this->logFile->updateLogFileField('errors', $message);
-			throw new Exception($message);
-		}
+		$this->validateOptions($options);
                 if (isset($options['local_dir'])) {
                     $this->local_dir = $options['local_dir'];
                 }
@@ -50,25 +46,16 @@ class Billrun_Generator_PaymentGateway_Csv {
 	 */
 	protected function validateOptions($options) {
 		if (isset($options['type']) && !in_array($options['type'], array('fixed', 'separator'))) {
-                        $message = "File type isn't fixed/separator. No generate was made.";
-                        Billrun_Factory::log($message, Zend_Log::ALERT);
-                        $this->logFile->updateLogFileField('errors', $message);
-			return false;
+                        throw new Exception("File type isn't fixed/separator. No generate was made.");
 		}
 		if (!isset($options['local_dir'])) {
-                        $message = "File's local_dir is undefined. No generate was made.";
-                        Billrun_Factory::log($message, Zend_Log::ALERT);
-                        $this->logFile->updateLogFileField('errors', $message);
-			return false;
+                        throw new Exception("File's local_dir is undefined. No generate was made.");
 		}
 		if ($this->fixedWidth) {
 			foreach ($this->data as $dataLine) {
 				foreach ($dataLine as $dataObj) {
 					if (!isset($dataObj['padding']['length'])) {
-                                                $message = "Missing padding length definitions for " . $options['file_type'];
-						Billrun_Factory::log($message, Zend_Log::DEBUG);
-                                                $this->logFile->updateLogFileField('errors', $message);
-						return false;
+                                                throw new Exception("Missing padding length definitions for " . $options['file_type']);
 					}
 				}
 			}
@@ -161,21 +148,25 @@ class Billrun_Generator_PaymentGateway_Csv {
 			$padChar = isset($entityObj['padding']['character']) ? $entityObj['padding']['character'] : $this->padCharDef;
                         if($this->fixedWidth){
                             $length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
-                        }else{
-                            if(isset($entityObj['padding']['length'])){
+			} else {
+				if (isset($entityObj['padding']['length'])) {
                                 $length = $entityObj['padding']['length'];
-                            }else{
+				} else {
                                 $length = strlen((isset($entityObj['value']) ? $entityObj['value'] : ''));
                             }
                         }
-                        if($this->fixedWidth){
-                            $rowContents.=str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+			if ($this->fixedWidth) {
+				$value = str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+				if ($length < strlen($value)) {
+					$value = implode("", array_slice(preg_split("//u", $value), 1, $length));
+				}
+				$rowContents .= $value;
                         }else{
                             if($flag == 0){
-                                $rowContents.=str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+					$rowContents .= str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
                                 $flag = 1;
                             }else{
-                                $rowContents.= $this->delimiter . str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+					$rowContents .= $this->delimiter . str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
                             }
                         }
 			

@@ -45,7 +45,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 		$this->connection->changeDir($path);
 		try {
 			Billrun_Factory::log()->log("Searching for files: ", Zend_Log::INFO);
-			$files = $this->connection->getListOfFiles($path, true);
+			$files = $this->connection->getListOfFiles($path, $this->recursive_mode);
 			$type = $this->source;
 			$count = 0;
 			$targetPath = $this->workspace;
@@ -54,19 +54,24 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 			}
 			foreach ($files as $file) {
 				Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file, $type));
+				if (!$this->connection->isFile($path . "/" . $file)) {
+					Billrun_Factory::log("SSH: " . $file . " is not a file", Zend_Log::DEBUG);
+					continue;
+				}
 				Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::DEBUG);
-				if (!$this->isFileValid($file)) {
-					Billrun_Factory::log()->log($file . " is not valid.", Zend_Log::DEBUG);
+				$filename = basename($file);
+				if (!$this->isFileValid($filename)) {
+					Billrun_Factory::log()->log($filename . " is not valid.", Zend_Log::DEBUG);
 					continue;
 				}
 				// Lock
 				$moreFields = !empty($this->fileType) ? array('pg_file_type' => $this->fileType) : array();
-				if (!$this->lockFileForReceive($file, $type, $moreFields)) {
-					Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
+				if (!$this->lockFileForReceive($filename, $type, $moreFields)) {
+					Billrun_Factory::log('File ' . $filename . ' has been received already', Zend_Log::INFO);
 					continue;
 				}
 				// Copy file from remote directory
-				$fileData = $this->getFileLogData($file, $type, $moreFields);
+				$fileData = $this->getFileLogData($filename, $type, $moreFields);
 				Billrun_Factory::log()->log("SSH: Download file " . $file, Zend_Log::INFO);
 				$sourcePath = $path;
 				if (substr($sourcePath, -1) != '/') {
@@ -104,9 +109,9 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 					$ret[] = $fileData['path'];
 					$count++;
 					// Delete from remote
-					if (isset($config['delete_received']) && $config['delete_received']) {
+					if ($this->delete_received) {
 						Billrun_Factory::log()->log("SSH: Deleting file {$file} from remote host ", Zend_Log::INFO);
-						if(!$this->deleteRemote($path . '/' . $fileData['file_name'])) {
+						if(!$this->deleteRemote($path . '/' . $file)) {
 							Billrun_Factory::log()->log("SSH: Failed to delete file: " . $file, Zend_Log::WARN);
 						}
 					}
@@ -134,7 +139,26 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 		if (!empty($this->connection)){
 			$local = $this->localDir . '/' . $fileName;
 			$remote = $this->remoteDir . '/' . $fileName;
-			$this->connection->put($local, $remote);
+			if (!$this->connection->connected()) {
+				Billrun_Factory::log()->log("Connecting the ssh server...", Zend_Log::DEBUG);
+				$this->connection->connect($this->username);
+				if ($this->connection->connected()) {
+					Billrun_Factory::log()->log("successfully connected to server", Zend_Log::DEBUG);
+				} else {
+					Billrun_Factory::log()->log("Couldn't connect to the server. File wasn't uploaded.", Zend_Log::ALERT);
+					return;
+				}
+			} else {
+				Billrun_Factory::log()->log("Already connected to ssh server, starting to export...", Zend_Log::DEBUG);
+			}
+			if (!$this->connection->connected()) {
+				Billrun_Factory::log()->log("Connecting the ssh server...", Zend_Log::DEBUG);
+				$this->connection->connect($this->username);
+				Billrun_Factory::log()->log("successfully connected to server", Zend_Log::DEBUG);
+			} else {
+				Billrun_Factory::log()->log("Already connected to ssh server, starting to export...", Zend_Log::DEBUG);
+			}
+			return $this->connection->put($local, $remote);
 		}
 		else {
 			if ($this->move_exported) {

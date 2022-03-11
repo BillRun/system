@@ -23,6 +23,7 @@ class Billrun_EventsManager {
 	const CONDITION_IS_GREATER_THAN_OR_EQUAL = 'is_greater_than_or_equal';
 	const CONDITION_REACHED_CONSTANT = 'reached_constant';
 	const CONDITION_REACHED_CONSTANT_RECURRING = 'reached_constant_recurring';
+	const CONDITION_REACHED_PERCENTAGE = 'reached_percentage';
 	const CONDITION_HAS_CHANGED = 'has_changed';
 	const CONDITION_HAS_CHANGED_TO = 'has_changed_to';
 	const CONDITION_HAS_CHANGED_FROM = 'has_changed_from';
@@ -72,22 +73,54 @@ class Billrun_EventsManager {
 		if (empty($eventSettings)) {
 			return;
 		}
+		
 		foreach ($eventSettings as $event) {
-			foreach ($event['conditions'] as $rawEventSettings) {
-				if (isset($rawEventSettings['entity_type']) && $rawEventSettings['entity_type'] !== $eventType) {
-					$conditionEntityAfter = $conditionEntityBefore = $additionalEntities[$rawEventSettings['entity_type']];
-				} else {
-					$conditionEntityAfter = $entityAfter;
-					$conditionEntityBefore = $entityBefore;
+			$conditionSettings = [];
+			foreach ($event['conditions'] as $rawsEventSettings) {
+				$conditionSettings = [];
+				$additionalEventData = array(
+					'unit' => $rawsEventSettings['unit'] ?? '',
+					'usaget' => $rawsEventSettings['usaget'] ?? '',
+					'property_type' => $rawsEventSettings['property_type'] ?? '',
+					'type' => $rawsEventSettings['type'] ?? '',
+					'value' => $rawsEventSettings['value'] ?? '',
+				);
+				$pathsMatched = [];
+				
+				if (!isset($rawsEventSettings['paths'])) { // BC
+					$path = isset($rawsEventSettings['path']) ? $rawsEventSettings['path'] : '';
+					$rawsEventSettings['paths'] = [
+						['path' => $path],
+					];
+					unset($rawsEventSettings['path']);
 				}
-				$extraValues = $this->getValuesPerCondition($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityAfter);
-				if ($extraValues === false) {
+				
+				foreach($rawsEventSettings['paths'] as $rawEventSettings) {
+					$rawEventSettings = array_merge($rawEventSettings, $additionalEventData);
+					if (isset($rawEventSettings['entity_type']) && $rawEventSettings['entity_type'] !== $eventType) {
+						$conditionEntityAfter = $conditionEntityBefore = $additionalEntities[$rawEventSettings['entity_type']];
+					} else {
+						$conditionEntityAfter = $entityAfter;
+						$conditionEntityBefore = $entityBefore;
+					}
+					$extraValues = $this->getValuesPerCondition($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityAfter);
+					if ($extraValues !== false) {
+						$path_data = ['event_settings' => $rawEventSettings, 'extra_values' => $extraValues];
+						$path_stamp = Billrun_Util::generateArrayStamp($path_data);
+						$pathsMatched[$path_stamp] = $path_data;
+					}
+				}
+				
+				if (empty($pathsMatched)) { // all paths failed to match
 					continue 2;
 				}
-				$conditionSettings = $rawEventSettings;
+				$conditionSettings = array_merge($conditionSettings, $pathsMatched);
 			}
-			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSettings, $extraParams, $extraValues);
+			foreach ($conditionSettings as $stamp => $path_info) {
+				$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $path_info['event_settings'], $extraParams, $path_info['extra_values']);
+			}
 		}
+
 	}
 
 	protected function getValuesPerCondition($condition, $rawEventSettings, $entityBefore, $entityAfter) {
@@ -178,6 +211,34 @@ class Billrun_EventsManager {
 				$extraValues['reached_constant'] = ($rawValueBefore < $rawValueAfter) ? $thresholdIncreasing : $thresholdIncreasing + $eventValue;
 				
 				return $extraValues;
+			case self::CONDITION_REACHED_PERCENTAGE:
+				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
+				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
+				$eventTotalValue = Billrun_Util::getIn($entityAfter, $rawEventSettings['total_path'], 0); // we need to use after in case before is empty (new balance)
+				$relatedEntities = $rawEventSettings['related_entities'] ?: [];
+				$eventPercentageValues = explode(',', $rawEventSettings['value']);
+				$eventValues = [];
+				foreach ($eventPercentageValues as $percentageValue) {
+					$eventValues[] = $percentageValue * $eventTotalValue / 100;
+				}
+
+				if ($valueBefore < $valueAfter) {
+					rsort($eventValues);
+					rsort($eventPercentageValues);
+				} else {
+					sort($eventValues);
+					sort($eventPercentageValues);
+				}			
+				foreach ($eventValues as $key => $eventVal) {
+					if (($valueBefore < $eventVal && $eventVal <= $valueAfter) || ($valueBefore > $eventVal && $valueAfter <= $eventVal)) {
+						$extraValues['reached_constant'] = $eventVal;
+						$extraValues['reached_constant_percentage'] = $eventPercentageValues[$key];
+						$extraValues['related_entities'] = $relatedEntities;
+
+						return $extraValues;
+					}
+				}
+				return false;
 			default:
 				return FALSE;
 		}
@@ -225,6 +286,7 @@ class Billrun_EventsManager {
 			$event[$key] = $value;
 		}
 		$event['stamp'] = Billrun_Util::generateArrayStamp($event);
+		Billrun_Factory::dispatcher()->trigger('beforeEventSave', array(&$event, $entityBefore, $entityAfter, $this));
 		self::$collection->insert($event);
 	}
 	
@@ -249,6 +311,7 @@ class Billrun_EventsManager {
 			} catch (Exception $e) {
 				$this->unlockNotifyEvent($event);
 			}
+			Billrun_Factory::dispatcher()->trigger('afterEventNotify', array(&$event));
 		}
 		$this->handleEmailNotification($emailNotificationEvents);
 	}

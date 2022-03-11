@@ -16,6 +16,7 @@ class Billrun_DiscountManager {
 	protected $subscribersDiscounts = [];
 	protected static $discountsDateRangeFields = [];
 	protected $discountedLinesAmounts = [];
+	protected $seqEligibility = [];
 
 	public function __construct($accountRevisions, $subscribersRevisions = [], Billrun_DataTypes_CycleTime $cycle, $params = []) {
 		$this->cycle = $cycle;
@@ -250,6 +251,7 @@ class Billrun_DiscountManager {
 			}
 
 			$eligibility = [
+				'aid' => $eligibility['aid'],
 				'eligibility' => $timeEligibility,
 				'subs' => $subsEligibility,
 				'services' => $servicesEligibility,
@@ -268,18 +270,24 @@ class Billrun_DiscountManager {
 			$discount = $this->getDiscount($eligibleDiscount, $this->cycle->key());
 			foreach (Billrun_Util::getIn($discount, 'excludes', []) as $discountToExclude) {
 				if (isset($this->eligibleDiscounts[$discountToExclude])) {
-					$this->eligibleDiscounts[$discountToExclude]['eligibility'] = Billrun_Utils_Time::getIntervalsDifference($this->eligibleDiscounts[$discountToExclude]['eligibility'], $eligibilityData['eligibility']);
-					if (empty($this->eligibleDiscounts[$discountToExclude]['eligibility'])) {
-						unset($this->eligibleDiscounts[$discountToExclude]);
-			}
-                    $subsToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'subs'], []);
+                                        $subs = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'subs'], []);
+					foreach ($subs as $sid => $subEligibility) {
+                                            if(!empty($eligibilityData['subs'][$sid])){
+                                                $this->eligibleDiscounts[$discountToExclude]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($this->eligibleDiscounts[$discountToExclude]['eligibility'], $eligibilityData['eligibility']);
+						if (empty($this->eligibleDiscounts[$discountToExclude]['subs'][$sid])) {
+                                                        unset($this->eligibleDiscounts[$discountToExclude]['subs'][$sid]);
+                                                }
+                                            }                                               
+					}
+                                        
+                                        $subsToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'subs'], []);
 					foreach ($subsToExclude as $sid => $subEligibility) {
-						$this->eligibleDiscounts[$discountToExclude]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($subEligibility, $eligibilityData['subs'][$sid]);
+                                                $this->eligibleDiscounts[$discountToExclude]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($subEligibility, $eligibilityData['subs'][$sid]);
 						if (empty($this->eligibleDiscounts[$discountToExclude]['subs'][$sid])) {
 							unset($this->eligibleDiscounts[$discountToExclude]['subs'][$sid]);
-		}
-					}
-
+                                                }
+                                        }
+                                        
 					$servicesToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'services'], []);
 					foreach ($servicesToExclude as $sid => $services) {
 						foreach ($services as $serviceKey => $serviceEligibility) {
@@ -541,6 +549,7 @@ class Billrun_DiscountManager {
 		$discountFrom = max(Billrun_Utils_Time::getTime($discount['from']), $this->cycle->start());
 		$discountTo = min(Billrun_Utils_Time::getTime($discount['to']), $this->cycle->end());
 		$conditions = Billrun_Util::getIn($discount, 'params.conditions', []);
+		$aid = Billrun_Util::getIn($accountRevisions, [0, 'aid']);
 		if (empty($conditions)) { // no conditions means apply to all entities
 			$eligibility = [
 				[
@@ -554,6 +563,7 @@ class Billrun_DiscountManager {
 				$subscribersEligibility[$sid] = $eligibility;
 			}
 			return [
+				'aid' => $aid,
 				'eligibility' => $eligibility,
 				'subs' => $subscribersEligibility,
 			];
@@ -632,6 +642,7 @@ class Billrun_DiscountManager {
 		}
 
 		return [
+			'aid' => $aid,
 			'eligibility' => $eligibility,
 			'subs' => $subsEligibility,
 			'services' => $servicesEligibility,
@@ -661,7 +672,7 @@ class Billrun_DiscountManager {
 			}
 			if ($eligibilityInterval['to'] > $discountTo) {
 				if ($eligibilityInterval['from'] >= $discountTo) {
-					unset($eligibility[$i]);
+					unset($finalEligibility[$i]);
 				} else {
 					$eligibilityInterval['to'] = $discountTo;
 				}
@@ -749,9 +760,10 @@ class Billrun_DiscountManager {
 				$eligibleSubsInDay = [];
 				$dayFrom = strtotime('midnight', $day);
 				$dayTo = strtotime('+1 day', $dayFrom);
+				$dayInterval = [['from' => $dayFrom, 'to' => $dayTo]];
 				foreach ($subsEligibility as $sid => $subEligibility) {
 					foreach ($subEligibility as $subEligibilityIntervals) {
-						if ($subEligibilityIntervals['from'] <= $day && $subEligibilityIntervals['to'] > $day) {
+						if (!empty(Billrun_Utils_Time::getIntervalsIntersections([$subEligibilityIntervals], $dayInterval))) {
 							$eligibleSubsInDay[] = $sid;
 
 							if (!is_null($maxSubscribers) && count($eligibleSubsInDay) > $maxSubscribers) { // passed max subscribers in current day
@@ -918,7 +930,7 @@ class Billrun_DiscountManager {
 				}
 				foreach (Billrun_Util::getIn($subscriberRevision, 'services', []) as $subscriberService) { // OR logic
 					$serviceFrom = Billrun_Utils_Time::getTime($subscriberRevision['from']);
-					if (isset($subscriberService['creation_time'])) {
+					if (isset($subscriberService['creation_time']) && empty($serviceFrom)) {
 						$serviceFrom = max($serviceFrom, Billrun_Utils_Time::getTime($subscriberService['creation_time']));
 			}
 					$serviceTo = Billrun_Utils_Time::getTime($subscriberRevision['to']);
@@ -1094,13 +1106,16 @@ class Billrun_DiscountManager {
 		$discountedAmount = 0;
 		
 		if ($type == 'charge' && $discount['type'] == 'monetary') { // monetary charge's subject can only be general
-			$eligibleLine = $this->getChargeEligibleLine($charge, $eligibility, $lines);
+			$eligibleLines = $this->getChargeEligibleLine($charge, $eligibility, $lines);
 			$chargeAmount = Billrun_Util::getIn($discount, 'subject.general.value', 0);
 			if ($chargeAmount > 0) {
+				foreach($eligibleLines as $eligibleLine) {
 				$cdrs[] = $this->generateCdr($type, $discount, $chargeAmount, $eligibleLine);
+			}
 			}
 			return $cdrs;
 		}
+		//if not a conditional *charge* then ...
 		
 		$amountLimit = Billrun_Util::getIn($discount, 'limit', PHP_INT_MAX);
 		
@@ -1109,12 +1124,13 @@ class Billrun_DiscountManager {
 				$this->discountedLinesAmounts[$line['stamp']] = 0;
 			}
 			$lineQuantity = Billrun_Util::getIn($line, 'usagev', 1);
-			$lineAmountLimit = $line['full_price'] * $lineQuantity;
+			$lineAmountLimit = $line['aprice'] * $lineQuantity;
 			$lineEligibility = $this->getLineEligibility($line, $discount, $eligibility);
 			if (empty($lineEligibility)) {
 				continue;
 			}
 			
+			$this->seqEligibility[$line['stamp']][$discount['key']] = $lineEligibility;
 			foreach ($lineEligibility as $eligibilityInterval) {
 				$from = $eligibilityInterval['from'];
 				$to = $eligibilityInterval['to'];
@@ -1150,30 +1166,31 @@ class Billrun_DiscountManager {
 	}
 	
 	protected function getChargeEligibleLine($charge, $eligibility, $lines) {
-		$aid = '';
-		$billrun = '';
-		$sid = 0;
-		if (!empty($eligibility['plans'])) {
-			$sid = array_keys($eligibility['plans'])[0];
+		$aid = $eligibility['aid'];
+		$billrun = $this->cycle->key();
+		$sids = [ 0 ];
+		$ret = [];
+
+		//is the  change on a specific  subscriber? because of a plan or a service or something else?
+		if (!empty($eligibility['subscribers'])) {
+			$sids = array_keys($eligibility['subscribers']);
+		} else if (!empty($eligibility['plans'])) {
+			$sids = array_keys($eligibility['plans']);
 		} else if (!empty($eligibility['services'])) {
-			$sid = array_keys($eligibility['services'])[0];
+			$sids = array_keys($eligibility['services']);
 		}
 		
-		foreach ($lines as $line) {
-			if ($line['sid'] == $sid) {
-				$aid = $line['aid'];
-				$billrun = $line['billrun'];
-				break;
-			}
-		}
-		
-		return [
+		// these are the subscribers/account that should get charged and it`s assoociated billrun?
+		foreach($sids as $sid) {
+			$ret[] = [
 			'aid' => $aid,
 			'sid' => $sid,
 			'billrun' => $billrun,
 		];
 	}
 
+		return $ret;
+	}
 	/**
 	 * get line's discount eligibility
 	 * 
@@ -1190,6 +1207,7 @@ class Billrun_DiscountManager {
 		foreach ($valuesEligibility as $valueEligibility) {
 			$value = $valueEligibility['value'];
 			$operations = $valueEligibility['operations'];
+			$sequential = $valueEligibility['sequential'];
 			$currValueEligibility = Billrun_Utils_Time::getIntervalsIntersections($lineEligibility, $valueEligibility['eligibility']);
 			$currValueEligibility = Billrun_Utils_Time::getIntervalsDifference($currValueEligibility, $ret);
 			foreach ($currValueEligibility as $currValueEligibilityInterval) {
@@ -1199,7 +1217,8 @@ class Billrun_DiscountManager {
 					$ret[] = [
 						'from' => $from,
 						'to' => $to,
-						'amount' => $this->calculateDiscountAmount($discount, $line, $value, $from, $to, $operations),
+						'amount' => $this->calculateDiscountAmount($discount, $line, $value, $from, $to, $operations, $sequential),
+						'discountDays' => Billrun_Utils_Time::getDaysDiff($from, $to),
 					];
 		}
 			}
@@ -1229,6 +1248,7 @@ class Billrun_DiscountManager {
 		if ($specificValue > 0 && !empty($lineEligibility)) {
 			$ret[] = [
 				'value' => $specificValue,
+				'sequential' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'sequential'], false),
 				'eligibility' => $lineEligibility,
 				'operations' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'operations'], []),
 			];
@@ -1240,6 +1260,7 @@ class Billrun_DiscountManager {
 		if (!empty($matchedEligibility) && $matchedValue > 0) {
 			$ret[] = [
 				'value' => $matchedValue,
+				'sequential' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'sequential'], false),
 				'eligibility' => $matchedEligibility,
 				'operations' => Billrun_Util::getIn($discount, ['subject', "matched_{$eligibilityType}", 'operations'], []),
 			];
@@ -1249,6 +1270,7 @@ class Billrun_DiscountManager {
 		if ($monthlyFeesValue > 0 && !empty($lineEligibility)) {
 			$ret[] = [
 				'value' => $monthlyFeesValue,
+				'sequential' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'sequential'], false),
 				'eligibility' => $lineEligibility,
 				'operations' => Billrun_Util::getIn($discount, ['subject', 'monthly_fees', 'operations'], []),
 			];
@@ -1271,22 +1293,36 @@ class Billrun_DiscountManager {
 	 * @param array $operations
 	 * @return float
 	 */
-	protected function calculateDiscountAmount($discount, $line, $value, $from, $to, $operations = []) {
-		$amount = $this->getDiscountAmount($discount, $line, $value, $operations);
+	protected function calculateDiscountAmount($discount, $line, $value, &$from, &$to, $operations = [], $sequential = false) {
+		$isPercentage = Billrun_Util::getIn($discount, 'type', 'percentage') === 'percentage';
+		$isSequential = $isPercentage && $sequential;
 		if ($this->isDiscountProrated($discount, $line)) {
-			if (isset($line['start'])) {
+			$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
+			$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
+			if (!$proratedStart) {
+				$from = $this->cycle->start();
+			} else if (isset($line['start'])) {
 				$from = max($from, Billrun_Utils_Time::getTime($line['start']));
 			}
-			if (isset($line['end'])) {
+			if (!$proratedEnd) {
+				$to = $this->cycle->end();
+			} else if (isset($line['end'])) {
 				$to = min($to, Billrun_Utils_Time::getTime($line['end']));
 			}
-			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to);
+		}
+		if(!$isSequential){
+			$amount = $this->getDiscountAmount($discount, $line, $value, $operations);
+			if ($this->isDiscountProrated($discount, $line)) {
+			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to, 'ceil');
 			$cycleDays = $this->cycle->days();
 			if ($discountDays < $cycleDays) {
 				$amount *= ($discountDays / $cycleDays);
 			}
 		}
 
+		} else {
+			$amount = $this->calcSeqDiscountAmount($from, $to, $line, $value);
+		}
 		return $amount;
 	}
 	
@@ -1453,7 +1489,8 @@ class Billrun_DiscountManager {
 		$discountLine['process_time'] = new MongoDate();
 		$discountLine = $this->addTaxationData($discountLine);
 		
-		$discountLine = array_merge($discountLine, $this->getForeignFields([], array_merge($eligibleLine, $discountLine), true), $addToCdr);
+		$foreignEntityKey = $isChargeLine ? 'charge' : 'discount';
+		$discountLine = array_merge($discountLine, $this->getForeignFields([$foreignEntityKey => $discount], array_merge($eligibleLine, $discountLine), true), $addToCdr);
 		return $discountLine;
 	}
 
@@ -1481,4 +1518,36 @@ class Billrun_DiscountManager {
 		return array_unique($sids);
 	}
 
+	protected function calcSeqDiscountAmount($from, $to, $line, $value){
+		$amount = 0;
+		$days = 0;
+		$cycleDays = $this->cycle->days();
+		$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to);
+		if (!empty($this->seqEligibility[$line['stamp']])){
+			for($current = $from; $current < $to; $current = strtotime("+1 day", $current)) {
+				$day = array('from' => $current, 'to' => strtotime("+1 day", $current));
+				$amount += $this->calcSeqDiscountAmountForDay($day, $line, $cycleDays);
+				$days++;
+			}	
+			if ($days < $discountDays){
+				$amount += ($discountDays - $days) / $cycleDays * $line['full_price'];
+			}
+		}else{
+			$amount = $discountDays / $cycleDays * $line['full_price'];
+		}
+		return $amount * $value;
+	}
+
+	protected function calcSeqDiscountAmountForDay($day, $line, $cycleDays){
+		$seqValue = $line['full_price'];
+		foreach ($this->seqEligibility[$line['stamp']] as $discountkey => $lineEligibility){
+			$intersaction =  Billrun_Utils_Time::getIntervalsIntersections ($lineEligibility, array($day));
+			if(!empty($intersaction)){
+				foreach ($lineEligibility as $eligibilityInterval){
+					$seqValue -= ($eligibilityInterval['amount'] * $cycleDays) / $eligibilityInterval['discountDays'];
+				}
+			}
+		}
+		return (1 / $cycleDays) * $seqValue;
+	}
 }
