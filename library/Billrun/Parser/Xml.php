@@ -328,7 +328,7 @@ class Billrun_Parser_Xml {
 	
 	public function getValue($value, $segment, $field_index, $counter = 0) {
 		$res = null;
-		if ($value) {
+		if (is_array($value) && isset($value[$counter])) {
 			if (!empty($value[$counter]->attributes()) && !empty($this->input_array[$segment][$field_index]['attribute'])) {
 				foreach ($value[$counter]->attributes() as $attribute_name => $attribute_value) {
 					if ($attribute_name == $this->input_array[$segment][$field_index]['attribute']) {
