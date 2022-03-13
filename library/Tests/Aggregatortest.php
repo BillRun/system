@@ -512,45 +512,39 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 // 					'line' => array('types' => array('flat', 'service'))),),
            /* sid 35268
 			 plan activation date 1'st of the month - invoice generated on next month (full arrears + upfront) */
-			array('test' => array('test_number' => 185, "aid" => 35267, 'sid' => 35268, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202204", "force_accounts" => array(35267))),
-            'expected' => array('billrun' => array('billrun_key' => '202204', 'aid' => 35267, 'after_vat' => array("35268" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+			array('test' => array('test_number' => 185, "aid" => 35267, 'sid' => 35268, 'function' => array('totalsPrice','basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202204", "force_accounts" => array(35267))),
+            'expected' => array('billrun' => array('billrun_key' => '202204', 'aid' => 35267, 'after_vat' => array("35268" => 234), 'total' => 234, 'vatable' => 200, 'vat' => 17),
                 'line' => array('types' => array('flat'))),),
-        //                        		/* sid 780
-		// 	  override service price with a condition, the condition isn’t met
-		// 	  Expected: the service price will not be overridden   - pass */
-		// 	array('test' => array('test_number' => 185, "aid" => 890, 'sid' => 780, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(890))),
-        //     'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 890, 'after_vat' => array("780" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
-        //         'line' => array('types' => array('flat', 'service'))),),
-        //                        		/* sid 780
-		// 	  override service price with a condition, the condition isn’t met
-		// 	  Expected: the service price will not be overridden   - pass */
-		// 	array('test' => array('test_number' => 185, "aid" => 890, 'sid' => 780, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(890))),
-        //     'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 890, 'after_vat' => array("780" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
-        //         'line' => array('types' => array('flat', 'service'))),),
-        //                        		/* sid 780
-		// 	  override service price with a condition, the condition isn’t met
-		// 	  Expected: the service price will not be overridden   - pass */
-		// 	array('test' => array('test_number' => 185, "aid" => 890, 'sid' => 780, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(890))),
-        //     'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 890, 'after_vat' => array("780" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
-        //         'line' => array('types' => array('flat', 'service'))),),
-        //                        		/* sid 780
-		// 	  override service price with a condition, the condition isn’t met
-		// 	  Expected: the service price will not be overridden   - pass */
-		// 	array('test' => array('test_number' => 185, "aid" => 890, 'sid' => 780, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(890))),
-        //     'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 890, 'after_vat' => array("780" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
-        //         'line' => array('types' => array('flat', 'service'))),),
-        //                        		/* sid 780
-		// 	  override service price with a condition, the condition isn’t met
-		// 	  Expected: the service price will not be overridden   - pass */
-		// 	array('test' => array('test_number' => 185, "aid" => 890, 'sid' => 780, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(890))),
-        //     'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 890, 'after_vat' => array("780" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
-        //         'line' => array('types' => array('flat', 'service'))),),
-        //                        		/* sid 780
-		// 	  override service price with a condition, the condition isn’t met
-		// 	  Expected: the service price will not be overridden   - pass */
-		// 	array('test' => array('test_number' => 185, "aid" => 890, 'sid' => 780, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(890))),
-        //     'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 890, 'after_vat' => array("780" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
-        //         'line' => array('types' => array('flat', 'service'))),),
+            /* sid 352610
+			plan activation date in mid month - invoice generated on next month (partial arrears + full upfront) */
+			array('test' => array('test_number' => 185, "aid" => 35269, 'sid' => 352610, 'function' => array('totalsPrice','basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202204", "force_accounts" => array(35269))),
+            'expected' => array('billrun' => array('billrun_key' => '202204', 'aid' => 35269, 'after_vat' => array("352610" => 200.03225806451613), 'total' => 200.03225806451613, 'vatable' => 170.96774193548387, 'vat' => 17),
+                'line' => array('types' => array('flat'))),),
+           /* sid 352612
+			 plan activation date last day of the month - invoice generated on next month (1 day arrears + full upfront) */
+			array('test' => array('test_number' => 185, "aid" => 352611, 'sid' => 352612, 'function' => array('totalsPrice','basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202204", "force_accounts" => array(352611))),
+            'expected' => array('billrun' => array('billrun_key' => '202204', 'aid' => 352611, 'after_vat' => array("352612" => 120.77419354838709), 'total' => 120.77419354838709, 'vatable' => 113.225806451612903, 'vat' => 17),
+                'line' => array('types' => array('flat'))),),
+            /* sid 352613
+			  plan activation date in the past few months - invoice generated on month (no arrears + full upfront)*/
+			array('test' => array('test_number' => 185, "aid" => 352613, 'sid' => 780, 'function' => array('totalsPrice','basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202204", "force_accounts" => array(352613))),
+            'expected' => array('billrun' => array('billrun_key' => '202204', 'aid' => 352613, 'after_vat' => array("352614" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+                'line' => array('types' => array('flat'))),),
+         /* sid 352616
+			 Plan change in 1'st day of the month - invoice generated on next month (refund old plan & charge new plan for arrears + new plan upfront) */
+			array('test' => array('test_number' => 185, "aid" => 352615, 'sid' => 352616, 'function' => array('totalsPrice','basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202204", "force_accounts" => array(352615))),
+            'expected' => array('billrun' => array('billrun_key' => '202204', 'aid' => 352615, 'after_vat' => array("352616" => 351), 'total' => 351, 'vatable' => 300, 'vat' => 17),
+                'line' => array('types' => array('flat'))),),
+       /* sid 352618
+			  Plan change in mid month - invoice generated on next month (refund old plan & charge new plan for arrears + new plan upfront)*/
+			array('test' => array('test_number' => 185, "aid" => 352617, 'sid' => 352618, 'function' => array('totalsPrice','basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202204", "force_accounts" => array(352617))),
+            'expected' => array('billrun' => array('billrun_key' => '202204', 'aid' => 352617, 'after_vat' => array("352618" => 317.0322580645161), 'total' => 317.0322580645161, 'vatable' => 270.9677419354839, 'vat' => 17),
+                'line' => array('types' => array('flat'))),),
+        /* sid 352620
+			  Plan change in the last day of the month - invoice generated on next month (refund old plan & charge new plan for arrears + new plan upfront) */
+			array('test' => array('test_number' => 185, "aid" => 352619, 'sid' => 352620, 'function' => array('totalsPrice','basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202204", "force_accounts" => array(352619))),
+            'expected' => array('billrun' => array('billrun_key' => '202204', 'aid' => 352619, 'after_vat' => array("352620" => 237.77419354838707), 'total' => 237.77419354838707, 'vatable' => 203.2258064516129, 'vat' => 17),
+                'line' => array('types' => array('flat'))),),
         //                        		/* sid 780
 		// 	  override service price with a condition, the condition isn’t met
 		// 	  Expected: the service price will not be overridden   - pass */
@@ -671,7 +665,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 			$this->message .= $this->fails;
          }       
          print_r($this->message);
-         $this->restoreColletions();
+       //  $this->restoreColletions();
      }
 
      /**
