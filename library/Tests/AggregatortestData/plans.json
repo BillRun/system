@@ -872,11 +872,13 @@
 					"prorated_end" : true,
 					"prorated_termination" : true,
 					"to" : "time*2171-03-10T13:43:45Z",
+					"separate_cross_cycle_charges": true,
 					"creation_time" : "time*2020-03-11T00:00:00Z"
 				},
 				{
 					"from" : "time*2002-03-11T00:00:00Z",
-					"name" : "UPFRON2",
+					"name" : "UPFRONT2",
+					"separate_cross_cycle_charges": true,
 					"price" : [
 						{
 							"price" : 200,
@@ -884,7 +886,7 @@
 							"to" : "UNLIMITED"
 						}
 					],
-					"description" : "upfron2",
+					"description" : "upfront2",
 					"recurrence" : {
 						"frequency" : 1,
 						"start" : 1
