@@ -158,7 +158,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 				$balance_totals = Billrun_Util::getIn($balance, 'balance.totals', []);
 				foreach ($balance_totals as $usaget => $balance_total) {
 					if(!empty($balance_total['out_group']) || !empty($balance_total['over_group'])) {
-						$subscriber['out_group'][$usaget] = $balance_total;
+						$subscriber['over_bundle'][$usaget] = $balance_total;
 					}
 				}
 			}
