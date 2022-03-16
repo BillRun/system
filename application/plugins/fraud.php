@@ -401,7 +401,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($recurring) {
 			return ($minimum < $after) && ($maximum < 0 || $maximum > $before) && (floor($before / $threshold) < floor($after / $threshold));
 		}
-		return ($before < $threshold) && ($threshold < $after);
+		return ($before <= $threshold) && ($threshold < $after);
 	}
 
 	/**
