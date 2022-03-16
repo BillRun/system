@@ -173,30 +173,32 @@ class Billrun_Generator_PaymentGateway_Csv {
 		foreach ($entity as $entityObj) {
 			$padDir = isset($entityObj['padding']['direction']) ? $this->getPadDirection($entityObj['padding']['direction']) : $this->padDirDef;
 			$padChar = isset($entityObj['padding']['character']) ? $entityObj['padding']['character'] : $this->padCharDef;
-                        if($this->fixedWidth){
-                            $length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
+			if ($this->fixedWidth) {
+				$length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
 			} else {
 				if (isset($entityObj['padding']['length'])) {
-                                $length = $entityObj['padding']['length'];
+					$length = $entityObj['padding']['length'];
 				} else {
-                                $length = strlen((isset($entityObj['value']) ? $entityObj['value'] : ''));
-                            }
-                        }
+					$length = strlen((isset($entityObj['value']) ? $entityObj['value'] : ''));
+				}
+			}
 			if ($this->fixedWidth) {
 				$value = str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
-				if ($length < strlen($value)) {
-					$value = implode("", array_slice(preg_split("//u", $value), 1, $length));
+				if ($length < iconv_strlen($value, 'UTF-8')) {
+					$value = iconv_substr($value, 0, $length, 'UTF-8');
+				} elseif ($length > iconv_strlen($value, 'UTF-8')) {
+					$size = $length - iconv_strlen($value, 'UTF-8');
+					$value = ($padDir == STR_PAD_RIGHT) ? $value . str_repeat($padChar, $size) : str_repeat($padChar, $size) . $value;
 				}
 				$rowContents .= $value;
-                        }else{
-                            if($flag == 0){
+			} else {
+				if ($flag == 0) {
 					$rowContents .= str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
-                                $flag = 1;
-                            }else{
+					$flag = 1;
+				} else {
 					$rowContents .= $this->delimiter . str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
-                            }
-                        }
-			
+				}
+			}
 		}
 		return $rowContents;
 	}
