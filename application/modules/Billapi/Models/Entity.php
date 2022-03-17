@@ -274,7 +274,8 @@ class Models_Entity {
 			}
 			if (!is_null($selectOptionsFields[$field])) {
 				$selectOptions = is_string($selectOptionsFields[$field]) ? explode(",", $selectOptionsFields[$field]) : $selectOptionsFields[$field];
-				if (!in_array($val, $selectOptions)) {
+				$isMultiple = Billrun_Util::getIn($customField, 'multiple', false);
+				if ((!$isMultiple && !in_array($val, $selectOptions)) || ($isMultiple && array_diff($val, $selectOptions))) {
 					if(!$mandatoryFields[$field] && empty($val)){
 						$val = null;
 					}else{
