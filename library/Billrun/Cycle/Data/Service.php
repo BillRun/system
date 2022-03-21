@@ -60,7 +60,8 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 	}
 	
 	protected function generateLineStamp($line) {
-		return md5($line['usagev'].$line['charge_op']. $line['aid'] . $line['sid'] . $this->name . $this->cycle->start() . $this->cycle->key().$this->serviceID);
+		return md5(	$line['usagev'].$line['charge_op']. $line['aid'] . $line['sid'] . $this->name . $this->cycle->start() . 
+					$this->cycle->key().$this->serviceID . @$line['prorated_start_date']);
 	}
 
 }
