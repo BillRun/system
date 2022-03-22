@@ -66,7 +66,7 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 		return Billrun_Plan::getPriceByTariff($tariff, $startOffset, $endOffset ,$activation);
 	}
 
-	protected function getProrationData($price) {
+	protected function getProrationData($price, $cycle = false) {
 		$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
 		$proratedActivation =  $this->proratedStart  || $this->startOffset ?  $this->activation :  $this->cycle->start();
 		$proratedEnding =  $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE  ;
