@@ -102,7 +102,8 @@ class Subscriber_UsageAction extends ApiAction {
 		//If this is a current balance check don't use max usage for expired
 		foreach($roamingAddons as $idx => $roamingAddon) {
 			if($horizion && strtotime($roamingAddon['to_date']) < $horizion ) {
-				$this->getActualUsagesOfPackages([$roamingAddon['service_name']=> 1], $mainBalances, $maxUsage);
+				$packageBalances = $this->getPackageBalances($params['sid'],$roamingAddon);
+				$this->getActualUsagesOfPackagesFromPackageBalance([$roamingAddon['service_name']=> 1], $packageBalances, $maxUsage);
 				@$packages[$roamingAddon['service_name']]['count'] += 1;
 				array_splice($roamingAddons,$idx,1);
 			}
@@ -188,6 +189,23 @@ class Subscriber_UsageAction extends ApiAction {
 			}
 		}
 	}
+
+	protected function getActualUsagesOfPackagesFromPackageBalance($packages, $packageBalances, &$actualUsage) {
+		$releventTypes = ['data','call','sms','mms'];
+		foreach($packages as $pkg => $count) {
+			// Sum the  usages  for the  packages / groups  the  subscriber has in it`s psecific  package balance
+			foreach ($packageBalances as $packageBalance){
+				if( $packageBalance['service_name'] == $pkg ) {
+					foreach($releventTypes as  $type ) {
+						if(!empty($packageBalance['balance']['totals'][$type]['usagev']) ) {
+							@$actualUsage[$type] += $packageBalance['balance']['totals'][$type]['usagev'];
+						}
+					}
+				}
+			}
+		}
+	}
+
 	
 	protected function getMaxUsagesOfPackages($addons, &$packages, &$maxUsage, $plan) {
 		$vfMapping = ['data' => 6442451000];
@@ -249,6 +267,14 @@ class Subscriber_UsageAction extends ApiAction {
 		}
 		return $generatedAddons;
 
+	}
+
+	protected function getPackageBalances($sid,$package) {
+		$from = empty($package['balance_from_date']) ? strtotime($package['from_date']) : $package['balance_from_date'];
+		$to = empty($package['balance_to_date']) ? strtotime($package['to_date']) : $package['balance_to_date'];
+		$billrunKey = $package['service_name'] . '_' . date("Ymd", $from) . '_' . date("Ymd", $to) . '_' . $package['id'];
+
+		return Billrun_Balance::getCollection()->query(['sid' => $sid, 'billrun_month' => $billrunKey])->cursor();
 	}
 
 	public function countDays($sid, $year = null, $plans = []) {
