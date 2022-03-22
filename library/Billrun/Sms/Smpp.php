@@ -130,7 +130,7 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 
 			// Optional connection specific overrides
 			if (!empty($this->clientOptions['smsNullTerminateOctetstrings'])) {
-				smpp\Client::$smsNullTerminateOctetstrings = $this->getClassConstant('smpp\Client', $this->clientOptions['clientOptions']['smsNullTerminateOctetstrings']);
+				smpp\Client::$smsNullTerminateOctetstrings = $this->getClassConstant('smpp\Client', $this->clientOptions['smsNullTerminateOctetstrings']);
 			} else {
 				smpp\Client::$smsNullTerminateOctetstrings = 0;
 			}
@@ -162,11 +162,15 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 			if (!empty($this->clientOptions['messageEncoding'])) {
 				$this->clientOptions['messageEncoding'] = $this->getClassConstant('\smpp\SMPP', $this->clientOptions['messageEncoding']);
 			} else {
-				$this->clientOptions['messageEncoding'] = \smpp\SMPP::DATA_CODING_UCS2;
+				$this->clientOptions['messageEncoding'] = \smpp\SMPP::DATA_CODING_DEFAULT;
 			}
 			
-			if (empty($this->clientOptions['utf8togsm'])) {
+			if (!isset($this->clientOptions['utf8togsm'])) {
 				$this->clientOptions['utf8togsm'] = 0;
+			}
+
+			if (!isset($this->clientOptions['pack7bit'])) {
+				$this->clientOptions['pack7bit'] = 0;
 			}
 
 			// Activate binary hex-output of server interaction
@@ -175,7 +179,7 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 		} catch (Throwable $th) {
 			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
 		} catch (Exception $ex) {
-			Billrun_Factory::log('initialize smpp failed as they smpp layer classes not exists', Zend_Log::ERR);
+			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $ex->getCode() . ', message: ' . $ex->getMessage(), Zend_Log::WARN);
 		}
 	}
 
@@ -208,6 +212,8 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 
 			if ($this->clientOptions['utf8togsm']) {
 				$encodedMsg = smpp\helpers\GsmEncoderHelper::utf8_to_gsm0338($this->body);
+			} else if ($this->clientOptions['pack7bit']) {
+				$encodedMsg = smpp\helpers\GsmEncoderHelper::pack7bit($this->body);
 			} else {
 				$encodedMsg = $this->body;
 			}
@@ -241,9 +247,14 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 	 * @return the constant value
 	 */
 	protected function getClassConstant($class, $var) {
-		if (is_numeric($var) || is_bool($var)) {
-			return $var;
+		if (is_numeric($var)) {
+			return (int) $var;
 		}
+		
+		if (is_bool($var)) {
+			return (bool) $var;
+		}
+		
 		return constant($class . '::' . $var);
 	}
 
