@@ -256,22 +256,26 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->records['services'] = array();
 
 		$services = Billrun_Util::getFieldVal($data["services"], array());
-		//Get services active at billing cycle date
-		$this->mongoServices = $this->cycleAggregator->getServices(null,$data);
-
 		$cycle = $this->cycleAggregator->getCycle();
 		$stumpLine = $data['line_stump'];
 
-		Billrun_Factory::dispatcher()->trigger('beforeConstructServices',array($this,$this->mongoServices,&$services,&$stumpLine));
+		Billrun_Factory::dispatcher()->trigger('beforeConstructServices',array($this,&$services,&$stumpLine));
 		foreach ($services as &$arrService) {
+			$overrideData['overrides'] = array_filter($data['overrides'], function($override) use ($arrService) {
+				return $override['type'] != 'service' || empty($override['id']) || $arrService['service_id'] == $override['id'];
+			});
+			$localMongoServices = $this->cycleAggregator->getServices(null,$overrideData);
+			
 			// Service name
-			$index = $arrService['name'];
-			if(!isset($this->mongoServices[$index])) {
+			$name = $arrService['name'];
+			if(!isset($localMongoServices[$name])) {
 				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService,1), Zend_Log::NOTICE);
 				continue;
 			}
 
-			$mongoServiceData = $this->mongoServices[$index]->getRawData();
+			$mongoServiceData = $localMongoServices[$name]->getRawData();
+			Billrun_Factory::dispatcher()->trigger('beforeConstructService',array($this, &$services, &$stumpLine, $mongoServiceData));
+
 			unset($mongoServiceData['_id']);
 			$serviceData = array_merge($mongoServiceData, $arrService);
 			$serviceData['cycle'] = $cycle;
@@ -280,9 +284,11 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				$serviceData['subscriber_fields'] = array('play' => isset($data['play']) ? $data['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
 			}
 			$this->records['services'][] = $serviceData;
+			Billrun_Factory::dispatcher()->trigger('afterConstructService',array($this, &$this->records['services'], &$cycle, $serviceData));
+
 		}
-		Billrun_Factory::dispatcher()->trigger('afterConstructServices',array($this,&$this->records['services'],&$cycle,$this->mongoServices));
-	}
+		Billrun_Factory::dispatcher()->trigger('afterConstructServices',array($this,&$this->records['services'],&$cycle));
+}
 
 	/**
 	 * Construct the plan array
