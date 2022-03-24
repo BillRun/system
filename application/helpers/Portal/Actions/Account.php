@@ -144,6 +144,20 @@ class Portal_Actions_Account extends Portal_Actions {
 
 		return $debt;
 	}
+	
+	/**
+	 * get account outstanding balance (debt and future non-due invoices)
+	 *
+	 * @param  array $params - the api params
+	 * @return array total account outstanding balance 
+	 */
+	public function outstanding($params = []) {
+		$aid = (int) $this->loggedInEntity['aid'];
+		if (empty($aid)) {
+			return;
+		}
+		return Billrun_Bill::getTotalDueForAccount($aid);
+	}
 
 	/**
 	 * Format invoice details
