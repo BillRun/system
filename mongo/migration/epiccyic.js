@@ -9697,6 +9697,18 @@ lastConfig = runOnce(lastConfig, 'EPICIC-56', function () {
     db.subscribers.updateMany({type: "account", operator: {$nin: billableOperatorLabels}}, {$set: {billable: false}});
 });
 
+lastConfig = runOnce(lastConfig, 'EPICIC-145', function () {
+    for (var i = 0; i < lastConfig.file_types.length; i++) {
+        if (lastConfig.file_types[i].file_type === "ICT") {
+            for (var j = 0; j < lastConfig.file_types[i].unify.unification_fields.fields[0].update.length; j++) {
+                if (lastConfig.file_types[i].unify.unification_fields.fields[0].update[j].operation === "$inc") {
+                    lastConfig.file_types[i].unify.unification_fields.fields[0].update[j].data.push("cusagev");
+                }
+            }
+        }
+    }
+});
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
