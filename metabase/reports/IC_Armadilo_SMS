@@ -42,6 +42,7 @@
   TIER:"$cf.tier", 
   COMPONENT:"$cf.component"},
   "duration": {$sum: "$usagev"}, 
+  "charge_duration": {$sum: "$cf.cusagev"}, 
   CALL_COUNT_D:{$sum:1}, 
   "aprice":{$sum: "$aprice"}}},
 

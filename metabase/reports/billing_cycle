@@ -46,6 +46,7 @@
         }, 
         taxes:{$sum:"$tax_data.total_amount"},
         duration: {$sum: "$usagev"},
+        charge_duration: {$sum: "$cf.cusagev"},
         amount:{$sum: "$aprice"},
 
         count:{$sum:1}, 
