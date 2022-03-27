@@ -95,6 +95,8 @@ class Subscriber_UsageAction extends ApiAction {
 			$roamingAddons = array_values(array_filter($roamingAddons, function($pkg){ return $pkg['service_name'] != 'VF';}));
 		}
 		$vfMax = 0;
+		//days_max  will be set by  the getMaxUsagesOfPackages but there is no balance logic for usage so will query the lines
+		$vfResults = $this->countDays($params['sid'], date('Y',$startTime), array_column($sortedOffers,'plan'));
 		$sortedOffers = $params['offers'];
 		usort($sortedOffers,function($a,$b){return strcmp($b['end_date'],$a['end_date']); });
 		$lastOffer = reset($sortedOffers);
@@ -105,6 +107,8 @@ class Subscriber_UsageAction extends ApiAction {
 				$packageBalances = $this->getPackageBalances($params['sid'],$roamingAddon);
 				$this->getActualUsagesOfPackagesFromPackageBalance([$roamingAddon['service_name']=> 1], $packageBalances, $maxUsage);
 				@$packages[$roamingAddon['service_name']]['count'] += 1;
+				@$packages[$roamingAddon['service_name']]['packages'] = [$roamingAddon];
+				;
 				array_splice($roamingAddons,$idx,1);
 			}
 		}
@@ -113,6 +117,7 @@ class Subscriber_UsageAction extends ApiAction {
 			if($horizion && strtotime($nationalAddon['to_date']) < $horizion ) {
 				$this->getActualUsagesOfPackages([$nationalAddon['service_name']=> 1], $mainBalances, $maxNationalUsage);
 				@$nationalPackages[$nationalAddon['service_name']]['count'] += 1;
+				@$nationalPackages[$nationalAddon['service_name']]['packages']= [$nationalAddon];
 				array_splice($roamingAddons,$idx,1);
 
 			}
@@ -169,8 +174,7 @@ class Subscriber_UsageAction extends ApiAction {
 		foreach($actualUsage as  $type => $usageVal) {
 			$output['usage_abroad'][$type.'_usage'] = $usageVal;
 		}
-		//days_max  will be set by  the getMaxUsagesOfPackages but there is no balance logic for usage so will query the lines
-		$vfResults = $this->countDays($params['sid'], date('Y',$startTime), array_column($sortedOffers,'plan'));
+
 		$output['usage_abroad']['days_usage'] = 0 + @$vfResults;
 
 		//do some beutyfing of the data
@@ -178,7 +182,14 @@ class Subscriber_UsageAction extends ApiAction {
 	}
 	
 	protected function getActualUsagesOfPackages($packages, $mainBalances, &$actualUsage) {
-		foreach($packages as $pkg => $count) {
+		foreach($packages as $pkg => $data) {
+			if(!empty($data['packages']) &&  !empty(reset($data['packages'])['id']) ) {
+				foreach($data['packages'] as $addon) {
+					$packageBalances = $this->getPackageBalances(reset($mainBalances)['sid'],$addon);
+					$this->getActualUsagesOfPackagesFromPackageBalance([$pkg => 1], $packageBalances, $actualUsage);
+				}
+				continue;
+			}
 			// Sum the  usages  for the  packages / groups  the  subscriber has
 			foreach ($mainBalances as $mainBalance){
 				if(!empty($mainBalance['balance']['groups'][$pkg])) {
@@ -225,11 +236,14 @@ class Subscriber_UsageAction extends ApiAction {
 									@$maxUsage[$type] = -1;
 							}
 						}
-						@$packages[$addon['service_name']] = [
-																'count' => Billrun_Util::getFieldVal($packages[$addon['service_name']]['count'],0) + 1,
-																'ids' => array_merge([$addon['id']],Billrun_Util::getFieldVal($packages[$addon['service_name']]['ids'],[]))
-																];
+
 					}
+					@$packages[$addon['service_name']] = [
+																'count' => Billrun_Util::getFieldVal($packages[$addon['service_name']]['count'],0) + 1,
+																'ids' => array_merge([$addon['id']],Billrun_Util::getFieldVal($packages[$addon['service_name']]['ids'],[])),
+																'packages' => array_merge([$addon],Billrun_Util::getFieldVal($packages[$addon['service_name']]['packages'],[]))
+
+						];
 					if(!empty($plan['include']['groups'][$addon['service_name']]['limits']['days'])) {
 						@$maxUsage['days'] += $plan['include']['groups'][$addon['service_name']]['limits']['days'];
 					}
