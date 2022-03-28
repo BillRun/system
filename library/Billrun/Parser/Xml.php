@@ -69,80 +69,94 @@ class Billrun_Parser_Xml {
         $parentNode = $GivenXml;
 		
 		$this->parseDataSingleFields($GivenXml);
-        $parentNode = current($this->getParentNode($parentNode));
+        $this->getParentNode($parentNode);
 
+        for($i = 0; $i < count(explode($this->pathDelimiter, $this->file_common_path)); $i++){
+            $parentNode = $this->getChildren($parentNode);
+        }
+		$headerRowsNum = $dataRowsNum = $trailerRowsNum = 0;
         $dataWasProcessed = $headerWasProcessed = $trailerWasProcessed = 0;
         foreach ($parentNode as $currentChild => $data) {
             if (isset($this->segment_info['header']['unique_tag']) && $this->segment_info['header']['unique_tag'] == $currentChild && !$headerWasProcessed) {
-                if (is_array($this->segment_info['header']['internal_common_path'])){
-					$this->parseNestedSegment('header', $currentChild, $data);
-                } else {
-                    $this->parseSegment('header', $currentChild, $data);
-                }
+				$this->parseHeaderOrTrailer('header', $currentChild, $data);
 				$headerWasProcessed = 1;
             }
             if (isset($this->segment_info['data']['unique_tag']) && $this->segment_info['data']['unique_tag'] == $currentChild && !$dataWasProcessed) {
-                if (is_array($this->segment_info['data']['internal_common_path'])){
-					$this->parseNestedSegment('data', $currentChild, $data);
-				} else {
-                    $this->parseSegment('data', $currentChild, $data);
-                }
+				$this->parseData($currentChild, $data);
 				$dataWasProcessed = 1;
             }
             if (isset($this->segment_info['trailer']['unique_tag']) && $this->segment_info['trailer']['unique_tag'] == $currentChild && !$trailerWasProcessed) {
-                if (is_array($this->segment_info['trailer']['internal_common_path'])) {
-					$this->parseNestedSegment('trailer', $currentChild, $data);
-                } else {
-                    $this->parseSegment('trailer', $currentChild, $data);
-                }
+				$this->parseHeaderOrTrailer('trailer', $currentChild, $data);
 				$trailerWasProcessed = 1;
             }
         }
     }
     
-    protected function parseNestedSegment($segment, $currentChild, $data) {
-		if (!empty($this->segment_info[$segment]['repeated_tag'])) {
-			$path = './/' . implode('/', array_slice($this->segment_info[$segment]['internal_common_path'], 0, -1));
+	public function getFileFixedTag() {
+		$common_path_as_array = explode($this->pathDelimiter, $this->file_common_path);
+		return $common_path_as_array[(count($common_path_as_array) - 1)];
+	}
+
+	protected function parseData($currentChild, $xml_data) {
+		if (!empty($this->segment_info['data']['repeated_tag'])) {
+			$path = implode('/', array_slice($this->segment_info['data']['internal_common_path'], 0, -1));
 		} else {
-			$path = './/' . implode('/', $this->segment_info[$segment]['internal_common_path']);
+			$path = implode('/', $this->segment_info['data']['internal_common_path']);
 		}
-		$xml_data = current($data->xpath($path));
+		if (!empty($path)) {
+			$xml_data = current($xml_data->xpath('.//' . $path));
+		}
+		$i = 0;
 		foreach ($xml_data as $child => $childData) {
-			if (!empty($this->segment_info[$segment]['repeated_tag']) && $child !== $this->segment_info[$segment]['repeated_tag']) {
+			if (!empty($this->segment_info['data']['repeated_tag']) && $child !== $this->segment_info['data']['repeated_tag']) {
 				continue;
 			}
-			$this->{$segment . 'RowsNum'} ++;
-			foreach ($this->input_array[$segment] as $data) {
-				$SubPath = trim(str_replace($this->segment_info[$segment]['common_path'], "", $data['path']), $this->pathDelimiter);
+			$this->dataRowsNum++;
+			foreach ($this->input_array['data'] as $data) {
+				$data_from_relative_path = 1;
+				$SubPath = trim(str_replace($this->segment_info['data']['common_path'], "", $data['path']), $this->pathDelimiter);
+				if($this->segment_info['data']['common_path'] == $data['path']) {
+					$SubPath = $this->segment_info['data']['common_path'];
+					$data_from_relative_path = 0;
+				}
 				if ($this->name_space_prefix === "") {
-					$SubPath = './/' . str_replace(".", "/", $SubPath);
+					$SubPath = ($data_from_relative_path ? './/' : '//') . str_replace(".", "/", $SubPath);
 				} else {
-					$SubPath = './/' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
+					$SubPath = ($data_from_relative_path ? './/' : '//') . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
 				}
 				$ReturndValue = $childData->xpath($SubPath);
+				if(!$data_from_relative_path && count($ReturndValue) !== 1 && isset($ReturndValue[$i])) {
+					$ReturndValue = is_array($ReturndValue[$i]) ? $ReturndValue[$i] : [$ReturndValue[$i]];
+				}	
 				$value = $this->getValue($ReturndValue, $data);
-				$this->{$segment . 'Rows'}[$this->{$segment . 'RowsNum'} - 1][$data['name']] = $value;
+				$this->dataRows[$this->dataRowsNum - 1][$data['name']] = $value;
 			}
-			$this->addSingleFieldValues($segment, $this->{$segment . 'RowsNum'} - 1);
+			$this->addSingleFieldValues($this->dataRowsNum - 1);
+			$i++;
 		}
 	}
 
-	public function addSingleFieldValues($segment, $index){
-		if($segment == 'data' && !empty($this->single_fields)) {
+	public function addSingleFieldValues($index){
+		if(!empty($this->single_fields)) {
 			$this->dataRows[$index] = array_merge($this->dataRows[$index], $this->single_fields);
 		}
 	}
 	
-	protected function parseSegment($segment, $currentChild, $xml_data) {
+	protected function parseHeaderOrTrailer($segment, $currentChild, $xml_data) {
         $this->{$segment.'RowsNum'}++;
 		foreach ($this->input_array[$segment] as $data) {
+			$data_from_relative_path = 1;
 			$SubPath = trim(str_replace(($this->file_common_path . '.' . $currentChild), "", $data['path']), $this->pathDelimiter);
-			if ($this->name_space_prefix === "") {
-				$SubPath = '//' . str_replace(".", "/", $SubPath);
-			} else {
-				$SubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
+			if(($this->file_common_path . '.' . $currentChild) == $data['path']) {
+				$SubPath = $data['path'];
+				$data_from_relative_path = 0;
 			}
-			$ReturndValue = $xml_data->xpath('.' . $SubPath);
+			if ($this->name_space_prefix === "") {
+				$SubPath = ($data_from_relative_path ? './/' : '//') . str_replace(".", "/", $SubPath);
+			} else {
+				$SubPath = ($data_from_relative_path ? './/' : '//') . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
+			}
+			$ReturndValue = $xml_data->xpath($SubPath);
 			$value = $this->getValue($ReturndValue, $data);
 			$this->{$segment . 'Rows'}[$this->{$segment . 'RowsNum'} - 1][$data['name']] = $value;
 		}
@@ -223,14 +237,14 @@ class Billrun_Parser_Xml {
 	public function getSegmentInternalPath($longest_common_path, $unique_tag) {
 		$val = trim(substr_replace($longest_common_path, "", 0, strlen($this->file_common_path . $this->pathDelimiter . $unique_tag)), $this->pathDelimiter);
 		if(strpos($val, $this->pathDelimiter) == false) {
-			return $val;
+			return [$val];
 		} else {
 			return explode($this->pathDelimiter, $val);
 		}
 	}
 
 	public function parseDataSingleFields($xml) {
-		foreach($this->input_array['data'] as $index => $data){
+		foreach ($this->input_array['data'] as $index => $data) {
 			if (!preg_match('/^' . $this->segment_info['data']['common_path'] . '/', $data['path'])) {
 				$val = $xml->xpath('/' . str_replace($this->pathDelimiter, '/', $data['path']));
 				$this->single_fields[$data['name']] = !empty($val) ? strval(current($val)) : "";
@@ -239,7 +253,7 @@ class Billrun_Parser_Xml {
 		}
 	}
 
-    protected function getParentNode(&$parentNode) {
+	protected function getParentNode(&$parentNode) {
         $Xpath = '/' . str_replace($this->pathDelimiter, '/', $this->file_common_path);
         return $parentNode->xpath($Xpath);
     }
