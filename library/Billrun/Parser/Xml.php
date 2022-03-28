@@ -9,8 +9,8 @@
 class Billrun_Parser_Xml {
 
     protected $paths = [];
-    protected $segment_info = [];
-    protected $file_common_path = "";
+	protected $segment_info = [];
+	protected $file_common_path = "";
     protected $pathDelimiter = '.';
     protected $headerStructure;
     protected $dataStructure;
@@ -32,10 +32,10 @@ class Billrun_Parser_Xml {
         $this->input_array['trailer'] = isset($options['trailer_structure']) ? $options['trailer_structure'] : null;
         $this->name_space_prefix = ((isset($options['name_space_prefix']) && $options['name_space_prefix'] !== "") ? $options['name_space_prefix'] : $this->name_space_prefix);
         $this->name_space = ((isset($options['name_space']) && $options['name_space'] !== "") ? $options['name_space'] : $this->name_space);
-	 if(isset($options['records_common_path'])) {
-	 	$this->segment_info['data']['common_path'] = $options['records_common_path'];
-	 }
-    }
+		if(isset($options['records_common_path'])) {
+			$this->segment_info['data']['common_path'] = $options['records_common_path'];
+		}
+	}
 
     public function setDataStructure($structure) {
         $this->dataStructure = $structure;
@@ -55,110 +55,124 @@ class Billrun_Parser_Xml {
 
     public function parse($fp) {
         $filename = stream_get_meta_data($fp)["uri"];	
-        try {
+		try {
 			$this->preXmlBuilding();
-        } catch (Exception $ex) {
-            Billrun_Factory::log('Billrun_Parser_Xml: ' . $ex->getMessage(), Zend_Log::ALERT);
-            return;
-        }
+		} catch (Exception $ex) {
+			Billrun_Factory::log('Billrun_Parser_Xml: ' . $ex->getMessage(), Zend_Log::ALERT);
+			return;
+		}
         if (($GivenXml = $this->loadXmlFile($filename)) === false) {
             Billrun_Factory::log('Billrun_Parser_Xml: Couldn\'t open ' . $filename . ' file. No process was made.', Zend_Log::ALERT);
             return;
         }
-	 Billrun_Factory::dispatcher()->trigger('afterLoadXmlFile', array($this, &$GivenXml));
+		Billrun_Factory::dispatcher()->trigger('afterLoadXmlFile', array($this, &$GivenXml));
         $parentNode = $GivenXml;
+		
+		$this->parseDataSingleFields($GivenXml);
+        $this->getParentNode($parentNode);
 
-	 $this->parseDataSingleFields($GivenXml);
-        $parentNode = current($this->getParentNode($parentNode));
-
+        for($i = 0; $i < count(explode($this->pathDelimiter, $this->file_common_path)); $i++){
+            $parentNode = $this->getChildren($parentNode);
+        }
+		$headerRowsNum = $dataRowsNum = $trailerRowsNum = 0;
         $dataWasProcessed = $headerWasProcessed = $trailerWasProcessed = 0;
         foreach ($parentNode as $currentChild => $data) {
             if (isset($this->segment_info['header']['unique_tag']) && $this->segment_info['header']['unique_tag'] == $currentChild && !$headerWasProcessed) {
-                if (is_array($this->segment_info['header']['internal_common_path'])){
-					$this->parseNestedSegment('header', $currentChild, $data);
-                } else {
-                    $this->parseSegment('header', $currentChild, $data);
-                }
-                            $headerWasProcessed = 1;
-                        }
-            if (isset($this->segment_info['data']['unique_tag']) && $this->segment_info['data']['unique_tag'] == $currentChild && !$dataWasProcessed) {
-                if (is_array($this->segment_info['data']['internal_common_path'])){
-					$this->parseNestedSegment('data', $currentChild, $data);
-				} else {
-                    $this->parseSegment('data', $currentChild, $data);
-                    }
-                            $dataWasProcessed = 1;
-                        }
-            if (isset($this->segment_info['trailer']['unique_tag']) && $this->segment_info['trailer']['unique_tag'] == $currentChild && !$trailerWasProcessed) {
-                if (is_array($this->segment_info['trailer']['internal_common_path'])) {
-					$this->parseNestedSegment('trailer', $currentChild, $data);
-                } else {
-                    $this->parseSegment('trailer', $currentChild, $data);
-                    }
-                            $trailerWasProcessed = 1;
-                        }
-                    }
-                }
-    
-    protected function parseNestedSegment($segment, $currentChild, $data) {
-		if (!empty($this->segment_info[$segment]['repeated_tag'])) {
-			$path = './/' . implode('/', array_slice($this->segment_info[$segment]['internal_common_path'], 0, -1));
-		} else {
-			$path = './/' . implode('/', $this->segment_info[$segment]['internal_common_path']);
-                }
-		$xml_data = current($data->xpath($path));
-		foreach ($xml_data as $child => $childData) {
-			if (!empty($this->segment_info[$segment]['repeated_tag']) && $child !== $this->segment_info[$segment]['repeated_tag']) {
-				continue;
+				$this->parseHeaderOrTrailer('header', $currentChild, $data);
+				$headerWasProcessed = 1;
             }
-                    $this->{$segment.'RowsNum'}++;
-			foreach ($this->input_array[$segment] as $data) {
-				$SubPath = trim(str_replace($this->segment_info[$segment]['common_path'], "", $data['path']), $this->pathDelimiter);
-                        if($this->name_space_prefix === ""){
-					$SubPath = './/' . str_replace(".", "/", $SubPath);
-                        }else{
-					$SubPath = './/' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
-                        }
-				$ReturndValue = $childData->xpath($SubPath);
-				$value = $this->getValue($ReturndValue, $data);
-				$this->{$segment . 'Rows'}[$this->{$segment . 'RowsNum'} - 1][$data['name']] = $value;
-                    }
-			$this->addSingleFieldValues($segment, $this->{$segment . 'RowsNum'} - 1);
+            if (isset($this->segment_info['data']['unique_tag']) && $this->segment_info['data']['unique_tag'] == $currentChild && !$dataWasProcessed) {
+				$this->parseData($currentChild, $data);
+				$dataWasProcessed = 1;
+            }
+            if (isset($this->segment_info['trailer']['unique_tag']) && $this->segment_info['trailer']['unique_tag'] == $currentChild && !$trailerWasProcessed) {
+				$this->parseHeaderOrTrailer('trailer', $currentChild, $data);
+				$trailerWasProcessed = 1;
+            }
         }
     }
     
-	public function addSingleFieldValues($segment, $index){
-		if($segment == 'data' && !empty($this->single_fields)) {
-			$this->dataRows[$index] = array_merge($this->dataRows[$index], $this->single_fields);
+	public function getFileFixedTag() {
+		$common_path_as_array = explode($this->pathDelimiter, $this->file_common_path);
+		return $common_path_as_array[(count($common_path_as_array) - 1)];
+	}
+
+	protected function parseData($currentChild, $xml_data) {
+		if (!empty($this->segment_info['data']['repeated_tag'])) {
+			$path = implode('/', array_slice($this->segment_info['data']['internal_common_path'], 0, -1));
+		} else {
+			$path = implode('/', $this->segment_info['data']['internal_common_path']);
+		}
+		if (!empty($path)) {
+			$xml_data = current($xml_data->xpath('.//' . $path));
+		}
+		$i = 0;
+		foreach ($xml_data as $child => $childData) {
+			if (!empty($this->segment_info['data']['repeated_tag']) && $child !== $this->segment_info['data']['repeated_tag']) {
+				continue;
+			}
+			$this->dataRowsNum++;
+			foreach ($this->input_array['data'] as $data) {
+				$data_from_relative_path = 1;
+				$SubPath = trim(str_replace($this->segment_info['data']['common_path'], "", $data['path']), $this->pathDelimiter);
+				if($this->segment_info['data']['common_path'] == $data['path']) {
+					$SubPath = $this->segment_info['data']['common_path'];
+					$data_from_relative_path = 0;
+				}
+				if ($this->name_space_prefix === "") {
+					$SubPath = ($data_from_relative_path ? './/' : '//') . str_replace(".", "/", $SubPath);
+				} else {
+					$SubPath = ($data_from_relative_path ? './/' : '//') . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
+				}
+				$ReturndValue = $childData->xpath($SubPath);
+				if(!$data_from_relative_path && count($ReturndValue) !== 1 && isset($ReturndValue[$i])) {
+					$ReturndValue = is_array($ReturndValue[$i]) ? $ReturndValue[$i] : [$ReturndValue[$i]];
+				}	
+				$value = $this->getValue($ReturndValue, $data);
+				$this->dataRows[$this->dataRowsNum - 1][$data['name']] = $value;
+			}
+			$this->addSingleFieldValues($this->dataRowsNum - 1);
+			$i++;
 		}
 	}
 
-	protected function parseSegment($segment, $currentChild, $xml_data) {
+	public function addSingleFieldValues($index){
+		if(!empty($this->single_fields)) {
+			$this->dataRows[$index] = array_merge($this->dataRows[$index], $this->single_fields);
+		}
+	}
+	
+	protected function parseHeaderOrTrailer($segment, $currentChild, $xml_data) {
         $this->{$segment.'RowsNum'}++;
 		foreach ($this->input_array[$segment] as $data) {
+			$data_from_relative_path = 1;
 			$SubPath = trim(str_replace(($this->file_common_path . '.' . $currentChild), "", $data['path']), $this->pathDelimiter);
-			if ($this->name_space_prefix === "") {
-				$SubPath = '//' . str_replace(".", "/", $SubPath);
-			} else {
-				$SubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
+			if(($this->file_common_path . '.' . $currentChild) == $data['path']) {
+				$SubPath = $data['path'];
+				$data_from_relative_path = 0;
 			}
-			$ReturndValue = $xml_data->xpath('.' . $SubPath);
+			if ($this->name_space_prefix === "") {
+				$SubPath = ($data_from_relative_path ? './/' : '//') . str_replace(".", "/", $SubPath);
+			} else {
+				$SubPath = ($data_from_relative_path ? './/' : '//') . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
+			}
+			$ReturndValue = $xml_data->xpath($SubPath);
 			$value = $this->getValue($ReturndValue, $data);
 			$this->{$segment . 'Rows'}[$this->{$segment . 'RowsNum'} - 1][$data['name']] = $value;
 		}
 	}
     
     protected function preXmlBuilding() {
-        foreach ($this->input_array as $segment => $indexes) {
+		foreach ($this->input_array as $segment => $indexes) {
 				for ($a = 0; $a < count($indexes); $a++) {
-						if (isset($this->input_array[$segment][$a]['path'])) {
+					if (isset($this->input_array[$segment][$a]['path'])) {
 						$this->paths[] = $this->input_array[$segment][$a]['path'];
 						$this->pathsBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
-						} else {
-							throw new Exception("No path for one of the " . $segment . "'s entity. No parse was made.");
-					}
+					} else {
+						throw new Exception("No path for one of the " . $segment . "'s entity. No parse was made.");
 				}
 			}
+		}
         
 		$this->file_common_path = $this->getLongestCommonPath($this->paths);
         foreach ($this->pathsBySegment as $segment => $paths) {
@@ -186,11 +200,11 @@ class Billrun_Parser_Xml {
                         throw new Exception("No paths in " . $segment . " segment. No parse was made.");
                     } else {
                         Billrun_Factory::log('Billrun_Parser_Xml: No paths in ' . $segment . ' segment.' . $ex, Zend_Log::WARN);
-		}
-                }
+                    }
                 }
             }
         }
+    }
 
 	public function getLongestCommonPath($paths) {
         if (count($paths) > 1) {
@@ -199,33 +213,33 @@ class Billrun_Parser_Xml {
             $length = strlen($common_prefix);
             foreach ($paths as $path) {
                 while ($length && substr($path, 0, $length) !== $common_prefix) {
-                        $length--;
+                    $length--;
                     $common_prefix = substr($common_prefix, 0, -1);
-                    }
-                    if (!$length) {
-                        break;
-                    }
                 }
-                    }
+                if (!$length) {
+                    break;
+                }
+            }
+        }
 		return rtrim($common_prefix, $this->pathDelimiter);
-                }
+	}
 
 	public function getSegmentUniqueTag($longest_common_path) {
 		$segment_path = trim(substr_replace($longest_common_path, "", 0, strlen($this->file_common_path)), $this->pathDelimiter);
 		if(strpos($segment_path, $this->pathDelimiter) !== false) {
 			return substr($segment_path, 0, strpos($segment_path, $this->pathDelimiter));
-            }
+		}
 		return $segment_path;
-        }
+	}
 
 	public function getSegmentInternalPath($longest_common_path, $unique_tag) {
 		$val = trim(substr_replace($longest_common_path, "", 0, strlen($this->file_common_path . $this->pathDelimiter . $unique_tag)), $this->pathDelimiter);
 		if(strpos($val, $this->pathDelimiter) == false) {
-			return $val;
+			return [$val];
 		} else {
 			return explode($this->pathDelimiter, $val);
 		}
-    }
+	}
 
 	public function parseDataSingleFields($xml) {
 		foreach($this->input_array['data'] as $index => $data){
@@ -235,7 +249,7 @@ class Billrun_Parser_Xml {
 				unset($this->input_array['data'][$index]);
 			}
 		}
-    }
+	}
 
     protected function getParentNode(&$parentNode) {
         $Xpath = '/' . str_replace($this->pathDelimiter, '/', $this->file_common_path);
