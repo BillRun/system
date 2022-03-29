@@ -9709,6 +9709,24 @@ lastConfig = runOnce(lastConfig, 'EPICIC-145', function () {
     }
 });
 
+lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
+    var dates = [{"from": ISODate("2022-01-01T00:00:00+0200"), "to": ISODate("2022-02-01T00:00:00+0200")},
+        {"from": ISODate("2022-02-01T00:00:00+0200"), "to": ISODate("2022-03-01T00:00:00+0200")}];
+    dates.forEach(period => {
+        var valid_archive_lines = db.archive.find({urt: {$gte: period.from, $lt: period.to}});
+        var false_field = [false, null];
+        valid_archive_lines.forEach(line => {
+            var cusagev = line.usagev;
+            if (line.is_split_row === true && false_field.includes(line.split_during_mediation)) {
+                cusagev = 0;
+            }
+            line.cusagev = cusagev;
+            db.archive.save(line);
+            db.lines.update({stamp: line.u_s}, {$inc: {'cf.cusagev': line.cf.cusagev}});
+        });
+    });
+});
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
