@@ -207,7 +207,7 @@ class Subscriber_UsageAction extends ApiAction {
 	}
 
 	protected function getActualUsagesOfPackagesFromPackageBalance($packages, $packageBalances, &$actualUsage) {
-		$releventTypes = ['data','call','sms','mms'];
+		$releventTypes = ['data','call','sms','mms','incoming_call'];
 		foreach($packages as $pkg => $count) {
 			// Sum the  usages  for the  packages / groups  the  subscriber has in it`s psecific  package balance
 			foreach ($packageBalances as $packageBalance){
@@ -249,7 +249,7 @@ class Subscriber_UsageAction extends ApiAction {
 																'packages' => array_merge([$addon],Billrun_Util::getFieldVal($packages[$addon['service_name']]['packages'],[]))
 
 						];
-					if(!empty($plan['include']['groups'][$addon['service_name']]['limits']['days'])) {
+					if(!empty($plan['include']['groups'][$addon['service_name']]['limits']['days']) && $addon['service_name'] !== 'VF') {
 						@$maxUsage['days'] += $plan['include']['groups'][$addon['service_name']]['limits']['days'];
 					}
 
