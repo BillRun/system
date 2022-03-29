@@ -532,7 +532,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (isset($line['sid'])) {
 					$line['subscriber_id'] = $line['sid'];
 				}
-
+				unset($line['roaming_balances']);
 				$line['insert_process_time'] = new MongoDate();
 			}
 			$fraud_lines_collection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->linesCollection();
@@ -563,6 +563,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$queueLine['calc_name'] = 'customer';
 				}
 				$queueLine['insert_process_time'] = new MongoDate();
+				unset($queueLine['roaming_balances']);
 				$queueLines[] = $queueLine;
 			}
 
