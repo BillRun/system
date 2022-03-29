@@ -105,7 +105,7 @@ class Subscriber_UsageAction extends ApiAction {
 		//If this is a current balance check don't use max usage for expired
 		foreach($roamingAddons as $idx => $roamingAddon) {
 			if($horizion && strtotime($roamingAddon['to_date']) < $horizion  ||
-			   $roamingAddon['service_name'] === 'VF' && (0+$vfResults) > 46 ) {
+			   $roamingAddon['service_name'] === 'VF' && (0+$vfResults) >= 46 ) {
 				if(in_array($roamingAddon['service_name'],['VF'])) {
 					$this->getActualUsagesOfPackages([$roamingAddon['service_name']=> 1], $packageBalances, $maxUsage);
 				} else {
