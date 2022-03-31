@@ -9702,7 +9702,7 @@ lastConfig = runOnce(lastConfig, 'EPICIC-145', function () {
         if (lastConfig.file_types[i].file_type === "ICT") {
             for (var j = 0; j < lastConfig.file_types[i].unify.unification_fields.fields[0].update.length; j++) {
                 if (lastConfig.file_types[i].unify.unification_fields.fields[0].update[j].operation === "$inc") {
-                    lastConfig.file_types[i].unify.unification_fields.fields[0].update[j].data.push("cusagev");
+                    lastConfig.file_types[i].unify.unification_fields.fields[0].update[j].data.push("cf.cusagev");
                 }
             }
         }
