@@ -9716,9 +9716,9 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
         {"from": ISODate("2022-03-01T00:00:00+0200"), "to": ISODate("2022-04-01T00:00:00+0200")},
         {"from": ISODate("2022-04-01T00:00:00+0200"), "to": ISODate("2022-05-01T00:00:00+0200")}
     ];
-    var counter = 0;
     dates.forEach(period => {
         var valid_archive_lines = db.archive.find({urt: {$gte: period.from, $lt: period.to}, 'cf.cusagev': {$exists: false}}).noCursorTimeout();
+        var counter = 0;
         var false_field = [false, null];
         valid_archive_lines.forEach(line => {
             var cusagev = line.usagev;
@@ -9726,9 +9726,11 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
                 cusagev = 0;
             }
             line.cusagev = cusagev;
-            print("Action " + counter + " set cusagev as " + cusagev + " for line " + line.stamp);
+            print("Iteration " + counter + " set cusagev as " + cusagev + " for archived line " + line.stamp);
             db.archive.save(line);
             db.lines.update({stamp: line.u_s}, {$inc: {'cf.cusagev': line.cf.cusagev}});
+            print("Iteration " + counter + " added " + cusagev + " to unified line " + line.u_s);
+            counter++;
         });
     });
 });
