@@ -9,6 +9,18 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->ict_configuration = !empty($options['ict']) ? $options['ict'] : [];
 	}
 
+/*
+	EPICIC-56: Invoice only customers that are flagged as "active" ones
+*/
+	public function afterAggregatorLoadData($arr, &$data){ 
+		for ($i = 0; $i < sizeof($data); $i++) {
+      $rawData_bill = $data[$i]->getInvoice()->getRawData()['attributes']['billable'];	
+      if (isset($rawData_bill) && !$rawData_bill) {
+				unset($data[$i]);	
+			}
+		}
+	}	
+
 	public function beforeImportRowFormat(&$row, $operation, $requestCollection, $update) {
 		if ($operation == "permanentchange") {
 			switch ($update['mapper_name']) {
@@ -234,6 +246,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 							$first = false;
 						} else {
                                                         $newRow["split_line"] = true;
+                                                        $newRow["cf"]["cusagev"] = 0;
                                                         //for case that line was split from medation and then the same line split from rate calaculator
                                                         if(!empty($newRow["split_during_mediation"])){
                                                             $newRow["split_during_mediation"] = false;
@@ -280,6 +293,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$current = $row->getRawData();
 		Billrun_Factory::log('Start rate mapping for stamp - ' . $current["stamp"] . ", RECORD_SEQUENCE_NUMBER - " . $current["uf"]["RECORD_SEQUENCE_NUMBER"]);
+                $current["cf"]["cusagev"] = $current["usagev"];
 		$type = $current['type'];
 		$current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
 		$current["cf"]["event_direction"] = substr($current["cf"]["call_direction"], 0, 1);
@@ -437,7 +451,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($entities) {
 			return $multiple_entities ? $entities["retail"] : $entities["retail"]->getRawData();
 		}
-		Billrun_Factory::log('Failed finding' . $parameter_name);
+		Billrun_Factory::log('Failed finding ' . $parameter_name);
 		return false;
 	}
 
