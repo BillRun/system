@@ -9719,10 +9719,9 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
     dates.forEach(period => {
         var valid_archive_lines = db.archive.find({urt: {$gte: period.from, $lt: period.to}, 'cf.cusagev': {$exists: false}}).noCursorTimeout();
         var counter = 0;
-        var false_field = [false, null];
         valid_archive_lines.forEach(line => {
             var cusagev = line.usagev;
-            if (line.split_line === true && false_field.includes(line.split_during_mediation)) {
+            if (line.split_line === true && (typeof line.split_during_mediation === "undefined" || line.split_during_mediation === false)) {
                 cusagev = 0;
             }
             line.cf.cusagev = cusagev;
