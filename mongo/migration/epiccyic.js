@@ -9697,6 +9697,44 @@ lastConfig = runOnce(lastConfig, 'EPICIC-56', function () {
     db.subscribers.updateMany({type: "account", operator: {$nin: billableOperatorLabels}}, {$set: {billable: false}});
 });
 
+lastConfig = runOnce(lastConfig, 'EPICIC-145', function () {
+    for (var i = 0; i < lastConfig.file_types.length; i++) {
+        if (lastConfig.file_types[i].file_type === "ICT") {
+            for (var j = 0; j < lastConfig.file_types[i].unify.unification_fields.fields[0].update.length; j++) {
+                if (lastConfig.file_types[i].unify.unification_fields.fields[0].update[j].operation === "$inc") {
+                    lastConfig.file_types[i].unify.unification_fields.fields[0].update[j].data.push("cusagev");
+                }
+            }
+        }
+    }
+});
+
+lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
+    var dates = [
+        {"from": ISODate("2022-02-01T00:00:00+0200"), "to": ISODate("2022-03-01T00:00:00+0200")},
+        {"from": ISODate("2022-01-01T00:00:00+0200"), "to": ISODate("2022-02-01T00:00:00+0200")},
+        {"from": ISODate("2022-03-01T00:00:00+0200"), "to": ISODate("2022-04-01T00:00:00+0200")},
+        {"from": ISODate("2022-04-01T00:00:00+0200"), "to": ISODate("2022-05-01T00:00:00+0200")}
+    ];
+    dates.forEach(period => {
+        var valid_archive_lines = db.archive.find({urt: {$gte: period.from, $lt: period.to}, 'cf.cusagev': {$exists: false}}).noCursorTimeout();
+        var counter = 0;
+        var false_field = [false, null];
+        valid_archive_lines.forEach(line => {
+            var cusagev = line.usagev;
+            if (line.is_split_row === true && false_field.includes(line.split_during_mediation)) {
+                cusagev = 0;
+            }
+            line.cusagev = cusagev;
+            print("Iteration " + counter + " set cusagev as " + cusagev + " for archived line " + line.stamp);
+            db.archive.save(line);
+            db.lines.update({stamp: line.u_s}, {$inc: {'cf.cusagev': line.cf.cusagev}});
+            print("Iteration " + counter + " added " + cusagev + " to unified line " + line.u_s);
+            counter++;
+        });
+    });
+});
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
