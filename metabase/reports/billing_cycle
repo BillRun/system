@@ -46,6 +46,7 @@
         }, 
         taxes:{$sum:"$tax_data.total_amount"},
         duration: {$sum: "$usagev"},
+        charge_duration: {$sum: "$cf.cusagev"},
         amount:{$sum: "$aprice"},
 
         count:{$sum:1}, 
@@ -61,6 +62,7 @@
       TIER_DESCRIPTION:"$_id.tier",
       PRODUCT:"$_id.prod",
       DURATION:"$duration",
+      CHARGE_DURATION:"$duration",
       AMOUNT_BEFOR_TAX:"$amount",
       CALL_COUNT_D:"$count",
       UNIT_COST_USED_G:"$_id.rate_price",

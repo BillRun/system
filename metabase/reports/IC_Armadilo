@@ -44,6 +44,7 @@
   TIER_N_G:"$foreign.rate.description",
   component:"$cf.component"},
   "EVENT_DURATION_D": {$sum: "$usagev"}, 
+  "CHARGE_EVENT_DURATION_D": {$sum: "$cf.cusagev"}, 
   CALL_COUNT_D:{$sum:1}, 
   "aprice":{$sum: "$aprice"}}},
   {$addFields: {COSTY: 0,COSTX :0}},
@@ -69,6 +70,7 @@
   CASH_FLOW_COSTY:"Expense",
   CALL_COUNT_D:"$CALL_COUNT_D",
   EVENT_DURATION_D:{$cond:[{ $eq: ["$_id.BILLED_PRODUCT","SMS"]},"$EVENT_DURATION_D",{ $divide: ["$EVENT_DURATION_D", 60 ] }]},
+  CHARGE_EVENT_DURATION_D:{$cond:[{ $eq: ["$_id.BILLED_PRODUCT","SMS"]},"$CHARGE_EVENT_DURATION_D",{ $divide: ["$CHARGE_EVENT_DURATION_D", 60 ] }]},
   INCOMING_OPERATOR_D:"$_id.INCOMING_OPERATOR_D",
   OUTGOING_OPERATOR_D:"$_id.OUTGOING_OPERATOR_D",
 }}
