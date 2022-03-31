@@ -9722,13 +9722,13 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
         var false_field = [false, null];
         valid_archive_lines.forEach(line => {
             var cusagev = line.usagev;
-            if (line.is_split_row === true && false_field.includes(line.split_during_mediation)) {
+            if (line.split_line === true && false_field.includes(line.split_during_mediation)) {
                 cusagev = 0;
             }
-            line.cusagev = cusagev;
+            line.cf.cusagev = cusagev;
             print("Iteration " + counter + " set cusagev as " + cusagev + " for archived line " + line.stamp + " from " + period.month);
             db.archive.save(line);
-            db.lines.update({stamp: line.u_s}, {$inc: {'cf.cusagev': line.cf.cusagev}});
+            db.lines.update({stamp: line.u_s}, {$inc: {'cf.cusagev': cusagev}});
             print("Iteration " + counter + " added " + cusagev + " to unified line " + line.u_s + " from " + period.month);
             counter++;
         });
