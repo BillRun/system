@@ -1310,8 +1310,18 @@ runOnce(lastConfig, 'BRCD-2772', function () {
     lastConfig['plugins'].push(_webhookPluginsSettings);
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-3527', function () {
+    var inCollectionField = 
+            {
+                    "field_name": "in_collection",
+                    "system": true,
+                    "display": false
+            };
+    lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], inCollectionField, 'account');
+		});
+
 // BRCD-3325 : Add default condition - the "rejection_required" condition doesn't exist.
-runOnce(lastConfig, 'BRCD-3325', function () {
+lastConfig = runOnce(lastConfig, 'BRCD-3325', function () {
     var rejection_required_cond = {
         "field": "aid",
 				"op" : "exists",
