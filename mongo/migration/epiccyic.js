@@ -9719,6 +9719,7 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
     dates.forEach(period => {
         var valid_archive_lines = db.archive.find({urt: {$gte: period.from, $lt: period.to}, 'cf.cusagev': {$exists: false}}).noCursorTimeout();
         var counter = 0;
+        print("Started updating archived lines from " + period.month);
         valid_archive_lines.forEach(line => {
             var cusagev = line.usagev;
             if (line.split_line === true && (typeof line.split_during_mediation === "undefined" || line.split_during_mediation === false)) {
@@ -9727,9 +9728,14 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
             line.cf.cusagev = cusagev;
             print("Iteration " + counter + " set cusagev as " + cusagev + " for archived line " + line.stamp + " from " + period.month);
             db.archive.save(line);
-            db.lines.update({stamp: line.u_s}, {$inc: {'cf.cusagev': cusagev}});
-            print("Iteration " + counter + " added " + cusagev + " to unified line " + line.u_s + " from " + period.month);
             counter++;
+        });
+        counter = 0;
+        print("Started updating unified lines from " + period.month);
+        var unified_lines_cusagev = db.archive.aggregate([{$match: {urt: {$gte: period.from, $lt: period.to}, 'cf.cusagev': {$exists: true}}}, {$group: {_id: "$u_s", total: {$sum: "$cusagev"}}}]);
+        unified_lines_cusagev.forEach(summed_line => {
+            db.lines.update({stamp: summed_line._id}, {$set: {'cf.cusagev': summed_line.total}});
+            print("Iteration " + counter + " set " + summed_line.total + " to unified line " + summed_line._id + " from " + period.month);
         });
     });
 });
