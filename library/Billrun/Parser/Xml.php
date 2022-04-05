@@ -25,6 +25,8 @@ class Billrun_Parser_Xml {
     protected $name_space_prefix = "";
     protected $name_space = "";
 	protected $single_fields = [];
+	protected $payment_sets_path = "";
+	protected $single_fields_by_payments_set = null;
 
     public function __construct($options) {
         $this->input_array['header'] = isset($options['header_structure']) ? $options['header_structure'] : null;
@@ -35,6 +37,7 @@ class Billrun_Parser_Xml {
 		if(isset($options['records_common_path'])) {
 			$this->segment_info['data']['common_path'] = $options['records_common_path'];
 		}
+		$this->payment_sets_path = isset($options['payment_sets_path']) ? $options['payment_sets_path'] : "";
 	}
 
     public function setDataStructure($structure) {
@@ -68,7 +71,7 @@ class Billrun_Parser_Xml {
 		Billrun_Factory::dispatcher()->trigger('afterLoadXmlFile', array($this, &$GivenXml));
         $parentNode = $GivenXml;
 		
-		$this->parseDataSingleFields($GivenXml);
+		$this->setSingleFields($GivenXml);
         $this->getParentNode($parentNode);
 
         for($i = 0; $i < count(explode($this->pathDelimiter, $this->file_common_path)); $i++){
@@ -82,7 +85,7 @@ class Billrun_Parser_Xml {
 				$headerWasProcessed = 1;
             }
             if (isset($this->segment_info['data']['unique_tag']) && $this->segment_info['data']['unique_tag'] == $currentChild && !$dataWasProcessed) {
-				$this->parseData($currentChild, $data);
+				$this->parseData($data);
 				$dataWasProcessed = 1;
             }
             if (isset($this->segment_info['trailer']['unique_tag']) && $this->segment_info['trailer']['unique_tag'] == $currentChild && !$trailerWasProcessed) {
@@ -97,7 +100,22 @@ class Billrun_Parser_Xml {
 		return $common_path_as_array[(count($common_path_as_array) - 1)];
 	}
 
-	protected function parseData($currentChild, $xml_data) {
+	protected function parseData($xml_data) {
+		if (!empty($this->payment_sets_path)) {
+			$set_path = explode($this->pathDelimiter, $this->payment_sets_path);
+			$set_tag = array_pop($set_path);
+			$relative_payments_set_path = ltrim(str_replace($this->file_common_path . $this->pathDelimiter . $this->segment_info['data']['unique_tag'], "", $this->payment_sets_path), $this->pathDelimiter);
+			$xml_data = $xml_data->xpath('.//' . $relative_payments_set_path);
+			unset($this->segment_info['data']['internal_common_path'][array_search($set_tag, $this->segment_info['data']['internal_common_path'])]);
+			foreach($xml_data as $index => $payments_set) {
+					$this->parsePaymentsSet($payments_set, $index);
+			}
+		} else {
+			$this->parsePaymentsSet($xml_data, 0);
+		}
+	}
+
+	public function parsePaymentsSet($xml_data, $set_index) {
 		if (!empty($this->segment_info['data']['repeated_tag'])) {
 			$path = implode('/', array_slice($this->segment_info['data']['internal_common_path'], 0, -1));
 		} else {
@@ -115,7 +133,7 @@ class Billrun_Parser_Xml {
 			foreach ($this->input_array['data'] as $data) {
 				$data_from_relative_path = 1;
 				$SubPath = trim(str_replace($this->segment_info['data']['common_path'], "", $data['path']), $this->pathDelimiter);
-				if($this->segment_info['data']['common_path'] == $data['path']) {
+				if ($this->segment_info['data']['common_path'] == $data['path']) {
 					$SubPath = $this->segment_info['data']['common_path'];
 					$data_from_relative_path = 0;
 				}
@@ -125,23 +143,28 @@ class Billrun_Parser_Xml {
 					$SubPath = ($data_from_relative_path ? './/' : '//') . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
 				}
 				$ReturndValue = $childData->xpath($SubPath);
-				if(!$data_from_relative_path && count($ReturndValue) !== 1 && isset($ReturndValue[$i])) {
+				if (!$data_from_relative_path && count($ReturndValue) !== 1 && isset($ReturndValue[$i])) {
 					$ReturndValue = is_array($ReturndValue[$i]) ? $ReturndValue[$i] : [$ReturndValue[$i]];
-				}	
+				}
 				$value = $this->getValue($ReturndValue, $data);
 				$this->dataRows[$this->dataRowsNum - 1][$data['name']] = $value;
 			}
-			$this->addSingleFieldValues($this->dataRowsNum - 1);
+			$this->addSingleFieldValues($this->dataRowsNum - 1, $set_index);
 			$i++;
 		}
 	}
 
-	public function addSingleFieldValues($index){
-		if(!empty($this->single_fields)) {
+	public function addSingleFieldValues($index, $set_index) {
+		if (!empty($this->single_fields)) {
 			$this->dataRows[$index] = array_merge($this->dataRows[$index], $this->single_fields);
 		}
+		if(!empty($this->single_fields_by_payments_set)) {
+			foreach($this->single_fields_by_payments_set as $name => $data) {
+				$this->dataRows[$index][$name] = isset($data[$set_index]) ? strval($data[$set_index]) : "";
+			}
+		}
 	}
-	
+
 	protected function parseHeaderOrTrailer($segment, $currentChild, $xml_data) {
         $this->{$segment.'RowsNum'}++;
 		foreach ($this->input_array[$segment] as $data) {
@@ -243,12 +266,18 @@ class Billrun_Parser_Xml {
 		}
 	}
 
-	public function parseDataSingleFields($xml) {
+	public function setSingleFields($xml) {
 		foreach ($this->input_array['data'] as $index => $data) {
 			if (!preg_match('/^' . $this->segment_info['data']['common_path'] . '/', $data['path'])) {
-				$val = $xml->xpath('/' . str_replace($this->pathDelimiter, '/', $data['path']));
-				$this->single_fields[$data['name']] = !empty($val) ? strval(current($val)) : "";
-				unset($this->input_array['data'][$index]);
+				if (!empty($this->payment_sets_path) && preg_match('/^' . $this->payment_sets_path . '/', $data['path'])) {
+					$val = $xml->xpath('/' . str_replace($this->pathDelimiter, '/', $data['path']));
+					$this->single_fields_by_payments_set[$data['name']] = !is_null($val) ? $val : [];
+					unset($this->input_array['data'][$index]);
+				} else {
+					$val = $xml->xpath('/' . str_replace($this->pathDelimiter, '/', $data['path']));
+					$this->single_fields[$data['name']] = !empty($val) ? strval(current($val)) : "";
+					unset($this->input_array['data'][$index]);
+				}
 			}
 		}
 	}
