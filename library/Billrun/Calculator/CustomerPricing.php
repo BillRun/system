@@ -711,6 +711,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			$row['balance_ref'] = $this->balance->createRef();
 			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $balance_totals_key);
+                        if ((isset($row['billrun_pretend']) && $row['billrun_pretend'] && $row['usaget'] === 'data')){
+                            $row['granted_usagev'] = $volume;
+                            $row['usagev'] = $volume = 0;
+                        }
 		} else {
 			$volume = $row['usagev'];
 		}
@@ -1028,7 +1032,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($row['usagev'])) {
 			$requestedVolume = $row['usagev'];
 		}
-		if ((isset($row['billrun_pretend']) && $row['billrun_pretend']) ||
+		if ((isset($row['billrun_pretend']) && $row['billrun_pretend'] && $row['usaget'] !== 'data') ||
 			(isset($row['free_call']) && $row['free_call'])) {
 			return 0;
 		}
