@@ -1184,7 +1184,7 @@ abstract class Billrun_Bill {
 				'rejection_required' => array('$cond' => array(array('$in' => array('$aid', $rejection_required_aids)), true, false)),
 				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)), array('$ne' => array('$past_rejections', [])))), true, false)),
 				'paid' => array('$cond' => array(array('$in' => array('$paid', array(false, '0', 0))), false, true)),
-				'valid_due_date' => array('$cond' => array(array('$and' => array(array('$ne' => array('$due_date', null)), array('$lt' => array('$due_date', new Mongodloid_Date())))), true, false)),
+				'valid_due_date' => array('$cond' => array(array('$and' => array(array('$ne' => array('$due_date', null)), array('$lt' => array('$due_date', new MongoDate())))), true, false)),
 				'aid' => 1,
 				'left_to_pay' => 1,
 				'left' => 1
