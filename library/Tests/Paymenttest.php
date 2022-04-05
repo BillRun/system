@@ -10,7 +10,7 @@
  * @package  pay API
  * @since    0.5
  */
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 require_once(APPLICATION_PATH . '/library/Tests/testrail.php');
 
 define('UNIT_TESTING', 'true');
@@ -717,8 +717,8 @@ class Tests_paymenttest extends UnitTestCase {
 			sleep(1);
 		$respons = json_decode(Billrun_Util::sendRequest($url, $request), true);
 		Billrun_Factory::log("response is :" . print_r($respons, 1), Zend_Log::INFO);
-//		echo '<pre>';
-//		print_r($respons);
+		echo '<pre>';
+		print_r($respons);
 		return $respons;
 	}
 

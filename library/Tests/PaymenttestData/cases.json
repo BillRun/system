@@ -4924,7 +4924,7 @@
 		"testRailId": 578
 	}
 	, {
-		"description": "get the due balance of 4 accounts, 1st account with overpaid 2nd account with paid debt 3rd account with unpaid debt 4th account with debt partially paid",
+		"description": "get the due balance of 4 accounts, 1st account with overpaid 2nd account with paid debt 3rd account with unpaid debt(rejection) 4th account with debt partially paid",
 		"test_id": 49,
 		"api": "bill",
 		"params": {
@@ -4987,61 +4987,9 @@
 						}
 					]
 				}
-			},
-			{
-				"bulidAPI": {
-					"api": "onetimeinvoice",
-					"aid": "50",
-					"step": "1",
-					"cdrs": [
-						{
-							"aid": "50",
-							"sid": "0",
-							"rate": "CALL",
-							"credit_time": "2021-03-18T17:18:56.385Z",
-							"usagev": 1,
-							"type": "credit",
-							"aprice": "20.00"
-						}
-					]
-				}
-			},
-			{
-				"bulidAPI": {
-					"api": "onetimeinvoice",
-					"aid": "43",
-					"step": "1",
-					"cdrs": [
-						{
-							"aid": "43",
-							"sid": "0",
-							"rate": "CALL",
-							"credit_time": "2021-03-18T17:18:56.385Z",
-							"usagev": 1,
-							"type": "credit",
-							"aprice": "20.00"
-						}
-					]
-				}
-			},
-			{
-				"bulidAPI": {
-					"api": "onetimeinvoice",
-					"aid": "43",
-					"step": "1",
-					"cdrs": [
-						{
-							"aid": "43",
-							"sid": "0",
-							"rate": "CALL",
-							"credit_time": "2021-03-18T17:18:56.385Z",
-							"usagev": 1,
-							"type": "credit",
-							"aprice": "-10.00"
-						}
-					]
-				}
 			}
+			
+			
 		],
 		"testFunctions": [
 			{
@@ -5052,8 +5000,8 @@
 					"details.100.total": 0,
 					"details.100.without_waiting": 0,
 					"details.100.total_pending_amount": 0,
-					"details.50.total": -23.4,
-					"details.50.without_waiting": -23.4,
+					"details.50.total": 23.4,
+					"details.50.without_waiting": 23.4,
 					"details.50.total_pending_amount": 0,
 					"details.43.total": 11.7,
 					"details.43.without_waiting": 11.7,
@@ -5122,43 +5070,23 @@
 		"testRailId": 580
 	}
 	, {
-		"description": "account with debt ,the due date is on the past   ",
+		"description": "account with debt ,the due date is on the past(with rejection)   ",
 		"test_id": 51,
 		"api": "bill",
 		"params": {
 			"action": "collection_debt",
 			"aids": [
-				1
+				51
 			]
 		},
 		"source": "api",
-		"request_method": "GET",
-		"preTest": [
-			{
-				"bulidAPI": {
-					"api": "onetimeinvoice",
-					"aid": "1",
-					"step": "1",
-					"invoice_unixtime": "past",
-					"cdrs": [
-						{
-							"aid": "1",
-							"sid": "0",
-							"rate": "CALL",
-							"credit_time": "2021-03-18T17:18:56.385Z",
-							"usagev": 1,
-							"type": "credit",
-							"aprice": "20.00"
-						}
-					]
-				}
-			}
-		],
+		"request_method": "POST",
+	
 		"testFunctions": [
 			{
 				"checkApiRespons": {
-					"details.1.total": 23.4,
-					"details.1.aid": 1
+					"details.51.total": 23.4,
+					"details.51.aid": 1
 				}
 			}
 		],

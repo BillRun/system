@@ -115,8 +115,409 @@
 					"paid": false,
 					"waiting_for_confirmation": false,
 					"txid": "0000000126975"
+				},
+
+
+				{
+					"aid" : 50,
+					"billrun_key" : "20210504210000",
+					"invoice_id" : "8100000001",
+					"type" : "inv",
+					"BIC" : null,
+					"IBAN" : null,
+					"RUM" : null,
+					"amount" : 23.4,
+					"bank_name" : null,
+					"bill_unit" : null,
+					"charge" : {
+						"not_before" : "time*2021-05-17T21:00:00Z"
+					},
+					"country_code" : null,
+					"customer_status" : "open",
+					"due" : 23.4,
+					"due_before_vat" : 20,
+					"due_date" : "time*2021-05-17T21:00:00Z",
+					"firstname" : "yossi",
+					"invoice_date" : "time*2021-05-04T21:00:00Z",
+					"invoice_file" : "/home/yossi/projects/billrun/shared/billrun/files/invoices//one_time/20210504210000/pdf/20210504210000_1_8100000001.pdf",
+					"invoice_type" : "immediate",
+					"lastname" : "yoss",
+					"left_to_pay" : 23.4,
+					"method" : "automatic",
+					"paid" : false,
+					"payer_name" : "yoss yossi",
+					"total_paid" : 0,
+					"urt" : "time*2022-04-04T13:32:38.070Z",
+					"vatable_left_to_pay" : 20,
+					"past_rejections" : [
+						"0000000000002"
+					],
+					"paid_by" : [ ],
+					"waiting_payments" : [ ],
+					"pending_covering_amount" : 0
+				},
+				{
+					"dir" : "fc",
+					"method" : "automatic",
+					"aid" : 50,
+					"type" : "rec",
+					"amount" : 23.4,
+					"due" : -23.4,
+					"gateway_details" : {
+						"name" : "CreditGuard",
+						"card_token" : "1016830771490001",
+						"card_expiration" : "1122",
+						"personal_id" : "000000000",
+						"transaction_exhausted" : true,
+						"generate_token_time" : "time*2018-10-16T11:26:55Z",
+						"auth_number" : "0082525",
+						"four_digits" : "0000",
+						"amount" : 23.4,
+						"currency" : "USD"
+					},
+					"due_date" : "time*2022-04-04T13:32:42.848Z",
+					"urt" : "time*2022-04-04T13:32:42.848Z",
+					"pays" : [
+						{
+							"type" : "inv",
+							"id" : "8100000001",
+							"amount" : 23.4
+						}
+					],
+					"left" : 0,
+					"pending_covering_amount" : 0,
+					"waiting_for_confirmation" : false,
+					"txid" : "0000000000002",
+					"pending" : false,
+					"payment_gateway" : {
+						"name" : "CreditGuard",
+						"transactionId" : "75285536"
+					},
+					"rejected" : true
+				},
+				{
+					"dir" : "fc",
+					"method" : "automatic",
+					"aid" : 50,
+					"type" : "rec",
+					"amount" : 23.4,
+					"due" : 23.4,
+					"gateway_details" : {
+						"name" : "CreditGuard",
+						"card_token" : "1016830771490001",
+						"card_expiration" : "1122",
+						"personal_id" : "000000000",
+						"transaction_exhausted" : true,
+						"generate_token_time" : "time*2018-10-16T11:26:55Z",
+						"auth_number" : "0082525",
+						"four_digits" : "0000",
+						"amount" : 23.4,
+						"currency" : "USD"
+					},
+					"due_date" : "time*2022-04-04T13:32:42.848Z",
+					"urt" : "time*2022-04-04T13:32:43.273Z",
+					"rejection" : true,
+					"original_txid" : "0000000000002",
+					"rejection_code" : "342",
+					"pays" : [
+						{
+							"type" : "inv",
+							"id" : "8100000001",
+							"amount" : 23.4
+						}
+					],
+					"vendor_response" : [ ],
+					"left_to_pay" : 23.4,
+					"total_paid" : 0,
+					"vatable_left_to_pay" : 0,
+					"paid" : false,
+					"pending_covering_amount" : 0,
+					"waiting_for_confirmation" : false,
+					"txid" : "0000000000003"
+				},
+				{
+					"_id" :"624af4ea932f1a1e7e012897",
+					"aid" : 43,
+					"billrun_key" : "20210504210000",
+					"invoice_id" : "8100000011",
+					"type" : "inv",
+					"BIC" : null,
+					"IBAN" : null,
+					"RUM" : null,
+					"amount" : 23.4,
+					"bank_name" : null,
+					"bill_unit" : null,
+					"charge" : {
+						"not_before" : "time*2021-05-17T21:00:00Z"
+					},
+					"country_code" : null,
+					"customer_status" : "open",
+					"due" : 23.4,
+					"due_before_vat" : 20,
+					"due_date" : "time*2021-05-17T21:00:00Z",
+					"firstname" : "yossi",
+					"invoice_date" : "time*2021-05-04T21:00:00Z",
+					"invoice_file" : "/home/yossi/projects/billrun/shared/billrun/files/invoices//one_time/20210504210000/pdf/20210504210000_1_8100000001.pdf",
+					"invoice_type" : "immediate",
+					"lastname" : "yoss",
+					"left_to_pay" : 11.7,
+					"method" : "automatic",
+					"paid" : false,
+					"payer_name" : "yoss yossi",
+					"total_paid" : 11.7,
+					"urt" : "time*2022-04-04T13:38:50.170Z",
+					"vatable_left_to_pay" : 11.7,
+					"paid_by" : [
+						{
+							"type" : "inv",
+							"id" : "8100000004",
+							"amount" : 11.7
+						}
+					],
+					"pending_covering_amount" : 0,
+					"past_rejections" : [
+						"0000000000006"
+					],
+					"waiting_payments" : [ ]
+				},
+				{
+					"_id" :"624af4f4932f1a1e7e0128d8",
+					"aid" : 43,
+					"billrun_key" : "20210504210002",
+					"invoice_id" : "8100000004",
+					"type" : "inv",
+					"BIC" : null,
+					"IBAN" : null,
+					"RUM" : null,
+					"amount" : 11.7,
+					"bank_name" : null,
+					"bill_unit" : null,
+					"charge" : {
+						"not_before" : "time*2021-05-17T21:00:02Z"
+					},
+					"country_code" : null,
+					"customer_status" : "open",
+					"due" : -11.7,
+					"due_before_vat" : -10,
+					"due_date" : "time*2021-05-17T21:00:02Z",
+					"firstname" : "yossi",
+					"invoice_date" : "time*2021-05-04T21:00:02Z",
+					"invoice_file" : "/home/yossi/projects/billrun/shared/billrun/files/invoices//one_time/20210504210002/pdf/20210504210002_1_8100000004.pdf",
+					"invoice_type" : "immediate",
+					"lastname" : "yoss",
+					"left" : 0,
+					"method" : "automatic",
+					"payer_name" : "yoss yossi",
+					"urt" : "time*2022-04-04T13:39:00.632Z",
+					"pays" : [
+						{
+							"type" : "inv",
+							"id" : "8100000011",
+							"amount" : 11.7
+						}
+					],
+					"pending_covering_amount" : 0
+				},
+				{
+					"_id" :"624af4fd3da0374dc2688392",
+					"dir" : "fc",
+					"method" : "automatic",
+					"aid" : 43,
+					"type" : "rec",
+					"amount" : 11.7,
+					"due" : -11.7,
+					"gateway_details" : {
+						"name" : "CreditGuard",
+						"card_token" : "1016830771490001",
+						"card_expiration" : "1122",
+						"personal_id" : "000000000",
+						"transaction_exhausted" : true,
+						"generate_token_time" : "time*2018-10-16T11:26:55Z",
+						"auth_number" : "0082525",
+						"four_digits" : "0000",
+						"amount" : 11.7,
+						"currency" : "USD"
+					},
+					"due_date" : "time*2022-04-04T13:39:09.815Z",
+					"urt" : "time*2022-04-04T13:39:09.815Z",
+					"pays" : [
+						{
+							"type" : "inv",
+							"id" : "8100000011",
+							"amount" : 11.7
+						}
+					],
+					"left" : 0,
+					"pending_covering_amount" : 0,
+					"waiting_for_confirmation" : false,
+					"txid" : "0000000000006",
+					"pending" : false,
+					"payment_gateway" : {
+						"name" : "CreditGuard",
+						"transactionId" : "75285665"
+					},
+					"rejected" : true
+				},
+				{
+					"_id" :"624af4fe3da0374dc2688394",
+					"dir" : "fc",
+					"method" : "automatic",
+					"aid" : 43,
+					"type" : "rec",
+					"amount" : 11.7,
+					"due" : 11.7,
+					"gateway_details" : {
+						"name" : "CreditGuard",
+						"card_token" : "1016830771490001",
+						"card_expiration" : "1122",
+						"personal_id" : "000000000",
+						"transaction_exhausted" : true,
+						"generate_token_time" : "time*2018-10-16T11:26:55Z",
+						"auth_number" : "0082525",
+						"four_digits" : "0000",
+						"amount" : 11.7,
+						"currency" : "USD"
+					},
+					"due_date" : "time*2022-04-04T13:39:09.815Z",
+					"urt" : "time*2022-04-04T13:39:10.090Z",
+					"rejection" : true,
+					"original_txid" : "0000000000006",
+					"rejection_code" : "342",
+					"pays" : [
+						{
+							"type" : "inv",
+							"id" : "8100000011",
+							"amount" : 11.7
+						}
+					],
+					"vendor_response" : [ ],
+					"left_to_pay" : 11.7,
+					"total_paid" : 0,
+					"vatable_left_to_pay" : 0,
+					"paid" : false,
+					"pending_covering_amount" : 0,
+					"waiting_for_confirmation" : false,
+					"txid" : "0000000000007"
+				},
+
+
+				{
+					"aid" : 51,
+					"billrun_key" : "20210504210000",
+					"invoice_id" : "8100000111",
+					"type" : "inv",
+					"BIC" : null,
+					"IBAN" : null,
+					"RUM" : null,
+					"amount" : 23.4,
+					"bank_name" : null,
+					"bill_unit" : null,
+					"charge" : {
+						"not_before" : "time*2021-05-17T21:00:00Z"
+					},
+					"country_code" : null,
+					"customer_status" : "open",
+					"due" : 23.4,
+					"due_before_vat" : 20,
+					"due_date" : "time*2021-05-17T21:00:00Z",
+					"firstname" : "yossi",
+					"invoice_date" : "time*2021-05-04T21:00:00Z",
+					"invoice_file" : "/home/yossi/projects/billrun/shared/billrun/files/invoices//one_time/20210504210000/pdf/20210504210000_1_8100000001.pdf",
+					"invoice_type" : "immediate",
+					"lastname" : "yoss",
+					"left_to_pay" : 23.4,
+					"method" : "automatic",
+					"paid" : false,
+					"payer_name" : "yoss yossi",
+					"total_paid" : 0,
+					"urt" : "time*2022-04-04T13:32:38.070Z",
+					"vatable_left_to_pay" : 20,
+					"past_rejections" : [
+						"0000000000002"
+					],
+					"paid_by" : [ ],
+					"waiting_payments" : [ ],
+					"pending_covering_amount" : 0
+				},
+				{
+					"dir" : "fc",
+					"method" : "automatic",
+					"aid" : 51,
+					"type" : "rec",
+					"amount" : 23.4,
+					"due" : -23.4,
+					"gateway_details" : {
+						"name" : "CreditGuard",
+						"card_token" : "1016830771490001",
+						"card_expiration" : "1122",
+						"personal_id" : "000000000",
+						"transaction_exhausted" : true,
+						"generate_token_time" : "time*2018-10-16T11:26:55Z",
+						"auth_number" : "0082525",
+						"four_digits" : "0000",
+						"amount" : 23.4,
+						"currency" : "USD"
+					},
+					"due_date" : "time*2022-04-04T13:32:42.848Z",
+					"urt" : "time*2022-04-04T13:32:42.848Z",
+					"pays" : [
+						{
+							"type" : "inv",
+							"id" : "8100000111",
+							"amount" : 23.4
+						}
+					],
+					"left" : 0,
+					"pending_covering_amount" : 0,
+					"waiting_for_confirmation" : false,
+					"txid" : "0000000000002",
+					"pending" : false,
+					"payment_gateway" : {
+						"name" : "CreditGuard",
+						"transactionId" : "75285536"
+					},
+					"rejected" : true
+				},
+				{
+					"dir" : "fc",
+					"method" : "automatic",
+					"aid" : 51,
+					"type" : "rec",
+					"amount" : 23.4,
+					"due" : 23.4,
+					"gateway_details" : {
+						"name" : "CreditGuard",
+						"card_token" : "1016830771490001",
+						"card_expiration" : "1122",
+						"personal_id" : "000000000",
+						"transaction_exhausted" : true,
+						"generate_token_time" : "time*2018-10-16T11:26:55Z",
+						"auth_number" : "0082525",
+						"four_digits" : "0000",
+						"amount" : 23.4,
+						"currency" : "USD"
+					},
+					"due_date" : "time*2022-04-04T13:32:42.848Z",
+					"urt" : "time*2022-04-04T13:32:43.273Z",
+					"rejection" : true,
+					"original_txid" : "0000000000022",
+					"rejection_code" : "342",
+					"pays" : [
+						{
+							"type" : "inv",
+							"id" : "8100000111",
+							"amount" : 23.4
+						}
+					],
+					"vendor_response" : [ ],
+					"left_to_pay" : 23.4,
+					"total_paid" : 0,
+					"vatable_left_to_pay" : 0,
+					"paid" : false,
+					"pending_covering_amount" : 0,
+					"waiting_for_confirmation" : false,
+					"txid" : "0000000003303"
 				}
-
-
+	
 			]
 }
