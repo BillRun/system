@@ -9713,12 +9713,13 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
     var dates = [
         {"from": ISODate("2022-02-01T00:00:00+0200"), "to": ISODate("2022-03-01T00:00:00+0200"), "month": "February"},
         {"from": ISODate("2022-01-01T00:00:00+0200"), "to": ISODate("2022-02-01T00:00:00+0200"), "month": "January"},
-        {"from": ISODate("2022-03-01T00:00:00+0200"), "to": ISODate("2022-04-01T00:00:00+0200"), "month": "March"},
-        {"from": ISODate("2022-04-01T00:00:00+0200"), "to": ISODate("2022-05-01T00:00:00+0200"), "month": "April"}
+        {"from": ISODate("2022-03-01T00:00:00+0200"), "to": ISODate("2022-04-01T00:00:00+0300"), "month": "March"},
+        {"from": ISODate("2022-04-01T00:00:00+0300"), "to": ISODate("2022-05-01T00:00:00+0300"), "month": "April"}
     ];
     dates.forEach(period => {
         var valid_archive_lines = db.archive.find({urt: {$gte: period.from, $lt: period.to}, 'cf.cusagev': {$exists: false}}).noCursorTimeout();
         var counter = 0;
+        print("Started updating archived lines from " + period.month);
         valid_archive_lines.forEach(line => {
             var cusagev = line.usagev;
             if (line.split_line === true && (typeof line.split_during_mediation === "undefined" || line.split_during_mediation === false)) {
@@ -9727,9 +9728,14 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
             line.cf.cusagev = cusagev;
             print("Iteration " + counter + " set cusagev as " + cusagev + " for archived line " + line.stamp + " from " + period.month);
             db.archive.save(line);
-            db.lines.update({stamp: line.u_s}, {$inc: {'cf.cusagev': cusagev}});
-            print("Iteration " + counter + " added " + cusagev + " to unified line " + line.u_s + " from " + period.month);
             counter++;
+        });
+        counter = 0;
+        print("Started updating unified lines from " + period.month);
+        var unified_lines_cusagev = db.archive.aggregate([{$match: {urt: {$gte: period.from, $lt: period.to}}}, {$group: {_id: "$u_s", total: {$sum: "$cf.cusagev"}}}]);
+        unified_lines_cusagev.forEach(summed_line => {
+            print("Iteration " + counter + " set " + summed_line.total + " to unified line " + summed_line._id + " from " + period.month);
+            db.lines.update({stamp: summed_line._id}, {$set: {'cf.cusagev': summed_line.total}});
         });
     });
 });
