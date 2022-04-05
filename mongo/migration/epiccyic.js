@@ -9732,7 +9732,7 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
         });
         counter = 0;
         print("Started updating unified lines from " + period.month);
-        var unified_lines_cusagev = db.archive.aggregate([{$match: {urt: {$gte: period.from, $lt: period.to}}}, {$group: {_id: "$u_s", total: {$sum: "$cusagev"}}}]);
+        var unified_lines_cusagev = db.archive.aggregate([{$match: {urt: {$gte: period.from, $lt: period.to}}}, {$group: {_id: "$u_s", total: {$sum: "$cf.cusagev"}}}]);
         unified_lines_cusagev.forEach(summed_line => {
             print("Iteration " + counter + " set " + summed_line.total + " to unified line " + summed_line._id + " from " + period.month);
             db.lines.update({stamp: summed_line._id}, {$set: {'cf.cusagev': summed_line.total}});
