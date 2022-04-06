@@ -177,7 +177,7 @@ class Tests_paymenttest extends UnitTestCase {
 		if ($this->reportTR) {
 			$this->ReportTestRail();
 		}
-		$this->restoreColletions();
+        $this->restoreColletions();
 		
 	}
 
@@ -389,10 +389,10 @@ class Tests_paymenttest extends UnitTestCase {
 				}
 				if (!is_numeric($DataField)) {
 					if ($DataField != $v) {
-						Billrun_Factory::log(" but the actual result  is : . $DataField .", Zend_Log::ERR);
-						$this->message .= '	--  but the actual result  is : ' . $DataField . $this->fail;
+						Billrun_Factory::log("  actual result  is : . $DataField .", Zend_Log::ERR);
+						$this->message .= '	--   actual result  is : ' . $DataField . $this->fail;
 						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test field   **$k** Expected is $v<br> ";
-						$this->TestRailCases[$row['testRailId']]['comment'] .= '	--  but the actual result  is : ' . $DataField . '<br>';
+						$this->TestRailCases[$row['testRailId']]['comment'] .= '	--   actual result  is : ' . $DataField . '<br>';
 						$pass = false;
 					}
 					if ($DataField == $v) {
@@ -400,10 +400,10 @@ class Tests_paymenttest extends UnitTestCase {
 					}
 				} else {
 					if (!Billrun_Util::isEqual($DataField, $v, $this->epsilon)) {
-						Billrun_Factory::log("The result is diffrents from expected : . $DataField .", Zend_Log::ERR);
-						$this->message .= '	-- the result is diffrents from expected : ' . $DataField . $this->fail;
+						Billrun_Factory::log("Actual result  : . $DataField .", Zend_Log::ERR);
+						$this->message .= '	-- Actual result : ' . $DataField . $this->fail;
 						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test field  **$k** Expected is $v<br> ";
-						$this->TestRailCases[$row['testRailId']]['comment'] .= '	--  but the actual result  is : ' . $DataField . '<br>';
+						$this->TestRailCases[$row['testRailId']]['comment'] .= '	--  actual result  is : ' . $DataField . '<br>';
 						$pass = false;
 					}
 					if (Billrun_Util::isEqual($DataField, $v, $this->epsilon)) {
@@ -717,8 +717,8 @@ class Tests_paymenttest extends UnitTestCase {
 			sleep(1);
 		$respons = json_decode(Billrun_Util::sendRequest($url, $request), true);
 		Billrun_Factory::log("response is :" . print_r($respons, 1), Zend_Log::INFO);
-		echo '<pre>';
-		print_r($respons);
+		// echo '<pre>';
+		// print_r($respons);
 		return $respons;
 	}
 
@@ -802,7 +802,7 @@ class Tests_paymenttest extends UnitTestCase {
 	public function cleanDB($row, $params = null) {
 		if ($params) {
 			foreach ($params as $key => $value) {
-				$paramToprint = "$key = $value";
+				@$paramToprint = "$key = $value";
 			}
 			Billrun_Factory::log("remove from bills collection by this query  : $paramToprint", Zend_Log::INFO);
 			$this->billsCol->remove($this->buildQuery($params));

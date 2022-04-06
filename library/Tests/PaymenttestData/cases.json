@@ -5086,7 +5086,7 @@
 			{
 				"checkApiRespons": {
 					"details.51.total": 23.4,
-					"details.51.aid": 1
+					"details.51.aid": 51
 				}
 			}
 		],
@@ -5101,7 +5101,7 @@
 		"testRailId": 581
 	}
 	, {
-		"description": "account with debt ,the due date is on the past   ",
+		"description": "account with debt ,the due date is on the past ,will not retrive the debt  ",
 		"test_id": 52,
 		"api": "bill",
 		"params": {
@@ -5155,8 +5155,7 @@
 		"testFunctions": [
 			{
 				"checkApiRespons": {
-					"details.1.total": 23.4,
-					"details.1.aid": 1
+					"details":[]
 				}
 			}
 		],
@@ -5170,62 +5169,7 @@
 		"expected": [],
 		"testRailId": 582
 	}
-	, {
-		"description": "in collection account with debt with past due date  ",
-		"test_id": 53,
-		"api": "bill",
-		"params": {
-			"action": "collection_debt",
-			"aids": [
-				1
-			]
-		},
-		"source": "api",
-		"request_method": "GET",
-		"preTest": [
-			{
-				"bulidAPI": {
-					"api": "onetimeinvoice",
-					"aid": "1",
-					"step": "1",
-					"invoice_unixtime": "past",
-					"cdrs": [
-						{
-							"aid": "1",
-							"sid": "0",
-							"rate": "CALL",
-							"credit_time": "2021-03-18T17:18:56.385Z",
-							"usagev": 1,
-							"type": "credit",
-							"aprice": "20.00"
-						}
-					]
-				}
-			}
-		],
-		"testFunctions": [
-			{
-				"checkApiRespons": {
-					"details.1.total": 23.4,
-					"details.1.aid": 1
-				}
-			}
-		],
-		"postTest": [
-			{
-				"cleanDB": {
-					"aid": {
-						"$in": [
-							1,
-							10
-						]
-					}
-				}
-			}
-		],
-		"expected": [],
-		"testRailId": 583
-	}
+
 	, {
 		"description": "retrieve debt of all accounts ",
 		"test_id": 54,
@@ -5235,47 +5179,13 @@
 		},
 		"source": "api",
 		"request_method": "GET",
-		"preTest": [
-			{
-				"bulidAPI": {
-					"api": "pay",
-					"aid": "1",
-					"method": "cash",
-					"dir": "tc",
-					"amount": "10",
-					"payments": [
-						{
-							"dir": "tc",
-							"amount": "10",
-							"aid": "1"
-						}
-					]
-				}
-			},
-			{
-				"bulidAPI": {
-					"api": "pay",
-					"aid": "10",
-					"method": "cash",
-					"dir": "tc",
-					"amount": "20",
-					"payments": [
-						{
-							"dir": "tc",
-							"amount": "20",
-							"aid": "10"
-						}
-					]
-				}
-			}
-		],
 		"testFunctions": [
 			{
 				"checkApiRespons": {
-					"details.10.total": 20,
-					"details.10.aid": 10,
-					"details.1.total": 10,
-					"details.1.aid": 1
+					"details.43.total": 11.7,
+					"details.43.aid": 43,
+					"details.51.total": 23.4,
+					"details.51.aid": 51
 				}
 			}
 		],
@@ -5303,45 +5213,12 @@
 		},
 		"source": "api",
 		"request_method": "GET",
-		"preTest": [
-			{
-				"bulidAPI": {
-					"api": "pay",
-					"aid": "1",
-					"method": "cash",
-					"dir": "fc",
-					"amount": "10",
-					"payments": [
-						{
-							"dir": "fc",
-							"amount": "10",
-							"aid": "1"
-						}
-					]
-				}
-			},
-			{
-				"bulidAPI": {
-					"api": "pay",
-					"aid": "10",
-					"method": "cash",
-					"dir": "tc",
-					"amount": "20",
-					"payments": [
-						{
-							"dir": "tc",
-							"amount": "20",
-							"aid": "10"
-						}
-					]
-				}
-			}
-		],
+	
 		"testFunctions": [
 			{
 				"checkApiRespons": {
-					"details.10.total": 20,
-					"details.10.aid": 10,
+					"details.51.total": 23.4,
+					"details.51.aid": 51,
 					"details.1.total": null,
 					"details.1.aid": null
 				}
@@ -5506,7 +5383,7 @@
 		"testRailId": 587
 	}
 	, {
-		"description": "adjust customer payments ,payment amount is positive adjust it to be negative amount",
+		"description": "adjust customer payments  ,change payment amount from 15 to 5",
 		"test_id": 58,
 		"api": "adjustpayments",
 		"params": {
@@ -5516,7 +5393,7 @@
 					"id": {
 						"amount": 15
 					},
-					"amount": 20
+					"amount": -15
 				}
 			]
 		},
@@ -5547,6 +5424,13 @@
 				"FieldComparison": {
 					"aid": 1
 				}
+			},
+			{
+				"checkApiRespons": {
+					"message": "Billrun_Bill_Payment: Wrong input. Was: Customer: 1, amount: -15.",
+					"display.code": 999,
+					"display.desc":"General error."
+				}
 			}
 		],
 		"postTest": [
@@ -5567,36 +5451,9 @@
 				"left_to_pay": 15,
 				"total_paid": 0,
 				"vatable_left_to_pay": 0,
-				"paid": false,
-				"cancelled": true,
-				"pending": false,
-				"waiting_for_confirmation": false
-			},
-			{
-				"dir": "tc",
-				"method": "cash",
-				"aid": 1,
-				"type": "rec",
-				"amount": 15,
-				"due": -15,
-				"left": 15,
-				"waiting_for_confirmation": false
-			},
-			{
-				"dir": "tc",
-				"method": "cash",
-				"aid": 1,
-				"type": "rec",
-				"amount": 10,
-				"due": 10,
-				"correction": true,
-				"source": "web",
-				"left_to_pay": 10,
-				"total_paid": 0,
-				"vatable_left_to_pay": 0,
-				"paid": false,
-				"waiting_for_confirmation": false
-			}
+				"paid": false
+						}
+		
 		],
 		"testRailId": 588
 	}
