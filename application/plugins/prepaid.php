@@ -369,21 +369,17 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 						'balance.totals.' . $balanceTotalKeys . '.usagev' => $rebalanceUsagev,
 					);
 					$balance['balance.totals.' . $balanceTotalKeys . '.usagev'] += $rebalanceUsagev;
-                                        $remain = $balance['balance.totals.' . $balanceTotalKeys . '.usagev'];
 				}
-                                
 			} else if (!is_null($balance->get('balance.totals.' . $balanceTotalKeys . '.cost'))) {
 				$balanceUpdateQuery['$inc'] = array(
 					'balance.totals.' . $balanceTotalKeys . '.cost' => $rebalanceCost,
 				);
 				$balance['balance.totals.' . $balanceTotalKeys . '.cost'] += $rebalanceCost;
-                                $remain = $balance['balance.totals.' . $balanceTotalKeys . '.cost'];
 			} else {
 				$balance['balance.cost'] += $rebalanceCost;
 				$balanceUpdateQuery['$inc'] = array(
 					'balance.cost' => $rebalanceCost,
 				);
-                                $remain = $balance['balance.cost'];
 			}
 
 			$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery, $realUsagevAfterCeiling);
@@ -414,9 +410,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$options = array('multiple' => true); // this option is added in case we have sharding key=stamp and the update cannot be done
 			$lines_coll->update($findQuery, $updateQuery, $options);
 		}
-                if(isset($remain) && $remain >= 0 && $originalRow['usaget'] === 'data' && $rebalanceUsagev > 0){
-                    Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array(&$originalRow));
-                }
+
 //		Billrun_Factory::dispatcher()->trigger('afterSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery));
 	}
 	
