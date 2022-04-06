@@ -170,12 +170,29 @@ class ResetLinesModel {
 		} else {
 			$query = $basicQuery;
 		}
+                $stamps = $this->getAllLinesStamps($lines_coll, $query);
                 $linesSizeToHandle = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.size', 100000);
-                while(!($lines = $lines_coll->query($query)->cursor()->limit($linesSizeToHandle))->current()->isEmpty()){
-                    $this->resetLinesByQuery($lines, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
+                while ($update_stamps_count = count($update_stamps = array_slice($stamps, 0, $linesSizeToHandle))) {
+                        $stampQuery = array('stamp' => array('$in' =>  $update_stamps));
+                        $lines = $lines_coll->query(array_merge($query, $stampQuery))->cursor();
+			$this->resetLinesByQuery(iterator_to_array($lines), $update_aids, $advancedProperties, $lines_coll, $queue_coll);
+                        //rempve the stamps that already used from the array (for the memory)
+                        $stamps = array_slice($stamps, $linesSizeToHandle);
                 }
 	}
         
+        protected function getAllLinesStamps($lines_coll, $query) {
+            $stampsLimit = Billrun_Config::getInstance()->getConfigValue('resetlines.stamps.limit', 100000);
+            $stamps = [];
+            $skip = 0;
+            while(!empty(($lines = $lines_coll->query($query)->cursor()->sort(array('stamp' => 1))->fields(array('stamp' => 1))->skip($skip)->limit($stampsLimit)->setRawReturn(true))->current())){
+                $stamps = array_merge($stamps, array_column(iterator_to_array($lines), 'stamp'));
+                $skip += $stampsLimit;
+            }
+            return $stamps;
+        }
+
+
         /**
 	 * Reset lines based on input array of stamps
          * @param array $stamps - Array of stamps of lines to reset.
