@@ -25,8 +25,8 @@ class Billrun_Parser_Xml {
     protected $name_space_prefix = "";
     protected $name_space = "";
 	protected $single_fields = [];
-	protected $payment_sets_path = "";
-	protected $single_fields_by_payments_set = null;
+	protected $data_sets_path = "";
+	protected $single_fields_by_data_set = null;
 
     public function __construct($options) {
         $this->input_array['header'] = isset($options['header_structure']) ? $options['header_structure'] : null;
@@ -37,7 +37,7 @@ class Billrun_Parser_Xml {
 		if(isset($options['records_common_path'])) {
 			$this->segment_info['data']['common_path'] = $options['records_common_path'];
 		}
-		$this->payment_sets_path = isset($options['payment_sets_path']) ? $options['payment_sets_path'] : "";
+		$this->data_sets_path = isset($options['data_sets_path']) ? $options['data_sets_path'] : "";
 	}
 
     public function setDataStructure($structure) {
@@ -68,7 +68,6 @@ class Billrun_Parser_Xml {
             Billrun_Factory::log('Billrun_Parser_Xml: Couldn\'t open ' . $filename . ' file. No process was made.', Zend_Log::ALERT);
             return;
         }
-		Billrun_Factory::dispatcher()->trigger('afterLoadXmlFile', array($this, &$GivenXml));
         $parentNode = $GivenXml;
 		
 		$this->setSingleFields($GivenXml);
@@ -101,21 +100,21 @@ class Billrun_Parser_Xml {
 	}
 
 	protected function parseData($xml_data) {
-		if (!empty($this->payment_sets_path)) {
-			$set_path = explode($this->pathDelimiter, $this->payment_sets_path);
+		if (!empty($this->data_sets_path)) {
+			$set_path = explode($this->pathDelimiter, $this->data_sets_path);
 			$set_tag = array_pop($set_path);
-			$relative_payments_set_path = ltrim(str_replace($this->file_common_path . $this->pathDelimiter . $this->segment_info['data']['unique_tag'], "", $this->payment_sets_path), $this->pathDelimiter);
-			$xml_data = $xml_data->xpath('.//' . $relative_payments_set_path);
+			$relative_data_set_path = ltrim(str_replace($this->file_common_path . $this->pathDelimiter . $this->segment_info['data']['unique_tag'], "", $this->data_sets_path), $this->pathDelimiter);
+			$xml_data = $xml_data->xpath('.//' . $relative_data_set_path);
 			unset($this->segment_info['data']['internal_common_path'][array_search($set_tag, $this->segment_info['data']['internal_common_path'])]);
-			foreach($xml_data as $index => $payments_set) {
-					$this->parsePaymentsSet($payments_set, $index);
+			foreach($xml_data as $index => $data_set) {
+					$this->parseDataSet($data_set, $index);
 			}
 		} else {
-			$this->parsePaymentsSet($xml_data, 0);
+			$this->parseDataSet($xml_data, 0);
 		}
 	}
 
-	public function parsePaymentsSet($xml_data, $set_index) {
+	public function parseDataSet($xml_data, $set_index) {
 		if (!empty($this->segment_info['data']['repeated_tag'])) {
 			$path = implode('/', array_slice($this->segment_info['data']['internal_common_path'], 0, -1));
 		} else {
@@ -158,8 +157,8 @@ class Billrun_Parser_Xml {
 		if (!empty($this->single_fields)) {
 			$this->dataRows[$index] = array_merge($this->dataRows[$index], $this->single_fields);
 		}
-		if(!empty($this->single_fields_by_payments_set)) {
-			foreach($this->single_fields_by_payments_set as $name => $data) {
+		if(!empty($this->single_fields_by_data_set)) {
+			foreach($this->single_fields_by_data_set as $name => $data) {
 				$this->dataRows[$index][$name] = isset($data[$set_index]) ? strval($data[$set_index]) : "";
 			}
 		}
@@ -269,9 +268,9 @@ class Billrun_Parser_Xml {
 	public function setSingleFields($xml) {
 		foreach ($this->input_array['data'] as $index => $data) {
 			if (!preg_match('/^' . $this->segment_info['data']['common_path'] . '/', $data['path'])) {
-				if (!empty($this->payment_sets_path) && preg_match('/^' . $this->payment_sets_path . '/', $data['path'])) {
+				if (!empty($this->data_sets_path) && preg_match('/^' . $this->data_sets_path . '/', $data['path'])) {
 					$val = $xml->xpath('/' . str_replace($this->pathDelimiter, '/', $data['path']));
-					$this->single_fields_by_payments_set[$data['name']] = !is_null($val) ? $val : [];
+					$this->single_fields_by_data_set[$data['name']] = !is_null($val) ? $val : [];
 					unset($this->input_array['data'][$index]);
 				} else {
 					$val = $xml->xpath('/' . str_replace($this->pathDelimiter, '/', $data['path']));
