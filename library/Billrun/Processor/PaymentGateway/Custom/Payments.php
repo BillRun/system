@@ -102,7 +102,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 					Billrun_Factory::log()->log($message, Zend_Log::INFO);
 					$this->informationArray['info'][] = $message;
 				}
-				$returned_payment->setExtraFields($customFields, array_keys($customFields));
+				$returned_payment->setExtraFields(array_merge(['pg_response' => $this->billSavedFields], $customFields), array_merge(array_keys($this->billSavedFields), array_keys($customFields)));
 			}
 		}
         $this->informationArray['transactions']['confirmed']++;

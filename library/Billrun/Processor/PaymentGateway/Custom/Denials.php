@@ -78,6 +78,7 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 			$row['urt'] = $this->getPaymentUrt($row);
 		}
 		$denial = Billrun_Bill_Payment::createDenial($row, $payment);
+		$denial->setExtraFields(array_merge(['pg_response' => $this->billSavedFields], $customFields), array_merge(array_keys($this->billSavedFields), array_keys($customFields)));
 		if (!empty($denial)) {
 			if (!is_null($payment)) {
 				$message = "Denial was created successfully for payment: " . $txid_from_file;
