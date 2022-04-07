@@ -1365,3 +1365,5 @@ runOnce(lastConfig, 'BRCD-2772', function () {
 
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
+db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
+db.lines.dropIndex("aid_1_urt_1")
