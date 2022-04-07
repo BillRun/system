@@ -267,19 +267,18 @@ class ResetLinesModel {
 
         protected function restoringArchivedLinesToLines($archivedLinesToInsert, $archivedLinesStamps){
             try{
-			Billrun_Factory::log("before lines batch insert", Zend_Log::DEBUG);
+                    Billrun_Factory::log("before lines batch insert", Zend_Log::DEBUG);
                     $ret = Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
-			Billrun_Factory::log("after lines batch insert ", Zend_Log::DEBUG);
+                    Billrun_Factory::log("after lines batch insert ", Zend_Log::DEBUG);
                     if (isset($ret['err']) && !is_null($ret['err'])) {
                             Billrun_Factory::log('Rebalance: batch insertion of restoring archive lines to lines failed, Insert Error: ' .$ret['err'], Zend_Log::ALERT);
                             throw new Exception();
                     }
             } catch (Exception $e) {
                 try{
-                    Billrun_Factory::log("Rebalance: Batch insert failed during of restoring archive lines to lines, removing archive lines from lines and retry the bulkInsert, Error: " .  $e->getMessage(), Zend_Log::ERR);
-                    $removeQuery = array('stamp' => array('$in' => $archivedLinesStamps));
-                    Billrun_Factory::db()->linesCollection()->remove($removeQuery);
-                    $ret = Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
+                    Billrun_Factory::log("Rebalance: Batch insert failed during of restoring archive lines to lines, removing duplicate archive lines and retry the bulkInsert, Error: " .  $e->getMessage(), Zend_Log::ERR);
+                    $archivedLinesWithoutDuplicates = $this->removeDuplicateFromArchivedLines($archivedLinesToInsert, $archivedLinesStamps);
+                    $ret = Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesWithoutDuplicates);
                     if (isset($ret['err']) && !is_null($ret['err'])) {
                             Billrun_Factory::log('Rebalance: batch insertion of restoring archive lines to lines failed, Insert Error: ' .$ret['err'], Zend_Log::ALERT);
                             throw new Exception();
@@ -289,6 +288,22 @@ class ResetLinesModel {
                     $this->restoringArchivedLinesLineByLine($archivedLinesToInsert);
                 }   
             }        
+        }
+        
+        /**
+         * Remove all the lines that are in $archivedLinesToInsert and also already in lines collection
+         * @param array $archivedLinesToInsert
+         * @param array $archivedLinesStamps
+         */
+        protected function removeDuplicateFromArchivedLines($archivedLinesToInsert, $archivedLinesStamps) {
+            $archivedLinesToInsertByStamp = array_combine($archivedLinesStamps, $archivedLinesToInsert);
+            $query = array('stamp' => array('$in' => $archivedLinesStamps));
+            $duplicateArchiveLines = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->fields(array('stamp' => 1))->setRawReturn(true);
+            $duplicateArchiveLinesStamps = array_column(iterator_to_array($duplicateArchiveLines), 'stamp');
+            foreach ($duplicateArchiveLinesStamps as $duplicateArchiveLineStamp){
+                unset($archivedLinesToInsertByStamp[$duplicateArchiveLineStamp]);
+            }
+            return array_values($archivedLinesToInsertByStamp);
         }
         
         protected function restoringArchivedLinesLineByLine($archivedLinesToInsert){
@@ -568,7 +583,7 @@ class ResetLinesModel {
 	 * @return boolean
 	 */
 	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter) {
-		$update = $this->getUpdateQuery($rebalanceTime, $former_exporter);
+                $update = $this->getUpdateQuery($rebalanceTime, $former_exporter);
 		$stamps_query = $this->getStampsQuery($stamps);
 		
 		Billrun_Factory::log('Removing records from queue', Zend_Log::DEBUG);
@@ -609,17 +624,17 @@ class ResetLinesModel {
 				}
 			} catch (Exception $e) {                          
                                 Billrun_Factory::log("Rebalance: Batch insert failed during insertion to queue, inserting line by line, Error: " .  $e->getMessage(), Zend_Log::ERR);
-				$this->insertQueueLinesLineByLine($queue_lines);                           	
+				$this->insertQueueLinesLineByLine($queue_coll, $queue_lines);                           	
 			}
 		} else {
-			$this->insertQueueLinesLineByLine($queue_lines);
+			$this->insertQueueLinesLineByLine($queue_coll, $queue_lines);
                 }
                $this->removeStampsfromRebalnceQueue();                
                $this->unsetTx2FromRelevantBalances();
 		return true;
 	}
         
-        protected function insertQueueLinesLineByLine($queue_lines){
+        protected function insertQueueLinesLineByLine($queue_coll, $queue_lines){
             foreach ($queue_lines as $qline) {
                     try{
                         $ret = $queue_coll->insert($qline); // ok==1, err null
