@@ -634,17 +634,48 @@ class ResetLinesModel {
 		return true;
 	}
         
-        protected function addStampsToRebalnceQueue(){
+        protected function addStampsToRebalnceQueue(){//TODO::3574
             foreach ($this->stampsByAidAndSid as $aid => $stampsBySid){
-                $query = $this->getRebalanceQueueQuery($aid);
-                $updateData = array('$set' => array('stamps_by_sid' => $stampsBySid));
-		Billrun_Factory::log("before rebalance queue update", Zend_Log::DEBUG);
-                Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
-		Billrun_Factory::log("after rebalance queue update ", Zend_Log::DEBUG);
+                $query = $this->getRebalanceQueueQuery($aid);               
+                try{
+                    //hack to file
+                    //todo::remove this!!!!!
+                    for ($i=0; $i < 500000; $i++){
+                        $stampsBySid[2120][] = "60e82488b7d1b98af82e1c20635e7b07";
+                    }
+                    if($this->checkDataSize($stampsBySid)){
+                        $updateData = array('$set' => array('stamps_by_sid' => $stampsBySid));
+                        Billrun_Factory::log("before rebalance queue update", Zend_Log::DEBUG);
+                        Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
+                        Billrun_Factory::log("after rebalance queue update ", Zend_Log::DEBUG);
+                    }else{
+                        $this->addStampsToRebalnceQueueFile($aid, $stampsBySid, $query);
+                    }
+                } catch (Exception $ex){
+                    Billrun_Factory::log("Rebalance: failed to add stamps to rebalance queue or relevant file, Error: " .  $ex->getMessage(), Zend_Log::ERR);
+                }
             }
         }
         
-        protected function removeStampsfromRebalnceQueue(){
+        protected function addStampsToRebalnceQueueFile($aid, $stampsBySid, $query){
+            $path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::$type . '.rebalance') . DIRECTORY_SEPARATOR . 'recover_stamps' . DIRECTORY_SEPARATOR . $this->billrun_key . DIRECTORY_SEPARATOR . $aid);
+            $updateData = array('$set' => array('stamps_recover_path' => $path));
+            Billrun_Factory::db()->rebalance_queueCollection()->update($query, );
+        }
+        
+        /**
+         * @param mixed $data - the data we want to store in mongodb 
+         * @param int $limit - the limit bytes that data can be. default 16MB the 
+         * @return boolean true if the data size not pass the limit
+         */
+        protected function checkDataSize($data, $limit = 16000000){//maybe need to be in mongodloid class??or util class? 
+            if(strlen(json_encode($data)) > $limit){
+                return false;
+            }
+            return true;
+        }
+        
+        protected function removeStampsfromRebalnceQueue(){//TODO::3574
             foreach ($this->stampsByAidAndSid as $aid => $stampsBySid){
                 $query = $this->getRebalanceQueueQuery($aid);
                 $updateData = [];
@@ -655,7 +686,7 @@ class ResetLinesModel {
                 }
 		Billrun_Factory::log("before rebalance queue update remove", Zend_Log::DEBUG);
                 Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
-                 Billrun_Factory::log("after rebalance queue update remove", Zend_Log::DEBUG);
+                Billrun_Factory::log("after rebalance queue update remove", Zend_Log::DEBUG);
 
             }
         }
@@ -664,7 +695,7 @@ class ResetLinesModel {
             return array('aid' => $aid, 'billrun_key' => $this->billrun_key);
         }
 
-        protected function unsetTx2FromRelevantBalances() {
+        protected function unsetTx2FromRelevantBalances() {//TODO::3574
             $balances_coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
             if (!empty($this->aids) && !empty($this->billrun_key)) {
             foreach ($this->stampsByAidAndSid as $aid => $sids){
@@ -865,7 +896,7 @@ class ResetLinesModel {
                                             $updateData['$set']['tx2.'. $stamp] = true;
                                         }
 					Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
-					$ret = $balancesColl->update($query, $updateData);
+					$ret = $balancesColl->update($query, $updateData);//TODO::3574
                                        if (isset($ret['err']) && !is_null($ret['err'])) {
                                            Billrun_Factory::log('Rebalance: extended balance update failed, Error: ' .$ret['err'] . ', failed_balance ' . print_r($balanceToUpdate, 1), Zend_Log::ALERT);
                                        }
@@ -916,7 +947,7 @@ class ResetLinesModel {
                                                     $updateData['$set']['tx2.'. $stamp] = true;
                                                 }
 						Billrun_Factory::log('Resetting default balance for sid: ' .  $sid . ', billrun: ' . $billrunKey, Zend_Log::DEBUG);
-						$ret = $balancesColl->update($query, $updateData);
+						$ret = $balancesColl->update($query, $updateData);//TODO::3574
                                                if (isset($ret['err']) && !is_null($ret['err'])) {
                                                    Billrun_Factory::log('Rebalance: default balance update failed, Error: ' .$ret['err'] . ', failed_balance ' . print_r($balanceToUpdate, 1), Zend_Log::ALERT);
                                                }
