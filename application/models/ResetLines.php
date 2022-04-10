@@ -65,13 +65,13 @@ class ResetLinesModel {
 	 */
 	protected $conditions;
 
-	public function __construct($aids, $billrun_key, $conditions, $stampsByAidAndSid = array()) {
+	public function __construct($aids, $billrun_key, $conditions, $stampsToRecoverByAidAndSid = array()) {
 		$this->initBalances($aids, $billrun_key);
 		$this->aids = $aids;
 		$this->billrun_key = strval($billrun_key);
 		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
 		$this->conditions = $conditions;
-                $this->stampsByAidAndSid = $stampsByAidAndSid;
+                $this->stampsToRecoverByAidAndSid = $stampsToRecoverByAidAndSid;
 	}
 
 	public function reset() {
@@ -296,14 +296,14 @@ class ResetLinesModel {
          * @param array $archivedLinesStamps
          */
         protected function removeDuplicateFromArchivedLines($archivedLinesToInsert, $archivedLinesStamps) {
-            $archivedLinesToInsertByStamp = array_combine($archivedLinesStamps, $archivedLinesToInsert);
+            $archivedLinesToInsert = array_combine($archivedLinesStamps, $archivedLinesToInsert);
             $query = array('stamp' => array('$in' => $archivedLinesStamps));
             $duplicateArchiveLines = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->fields(array('stamp' => 1))->setRawReturn(true);
             $duplicateArchiveLinesStamps = array_column(iterator_to_array($duplicateArchiveLines), 'stamp');
             foreach ($duplicateArchiveLinesStamps as $duplicateArchiveLineStamp){
-                unset($archivedLinesToInsertByStamp[$duplicateArchiveLineStamp]);
+                unset($archivedLinesToInsert[$duplicateArchiveLineStamp]);
             }
-            return array_values($archivedLinesToInsertByStamp);
+            return array_values($archivedLinesToInsert);
         }
         
         protected function restoringArchivedLinesLineByLine($archivedLinesToInsert){
@@ -403,7 +403,7 @@ class ResetLinesModel {
 		$stamps[] = $line['stamp'];
                 if(isset($line['aid']) && isset($line['sid'])){
                     $this->stampsByAidAndSid[$line['aid']][$line['sid']] = 
-                            array_unique(array_merge($this->stampsByAidAndSid[$line['aid']][$line['sid']] ?? [], [$line['stamp']]));
+                            array_merge($this->stampsByAidAndSid[$line['aid']][$line['sid']] ?? [], [$line['stamp']]);
                 }
                 $former_exporter = $this->buildFormerExporterForLine($line);
                 Billrun_Factory::log("after buildFormerExporterForLine", Zend_Log::DEBUG);
@@ -459,7 +459,7 @@ class ResetLinesModel {
 
                 //handle lines that already reset but not finish the rebalance (crash in the midle)
                 $stamps = [];
-                foreach ($this->stampsByAidAndSid as $aid => $sids){
+                foreach ($this->stampsToRecoverByAidAndSid as $aid => $sids){
                     foreach ($sids as $sid => $sidStamps){
                         $stamps = array_merge($stamps, $sidStamps);
                     }
@@ -879,7 +879,7 @@ class ResetLinesModel {
 					$query = array(
 						'_id' => new MongoId($balanceId),
 					);
-                                        $stamps = $this->stampsByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']];
+                                        $stamps = $this->stampsToRecoverByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']] ?? [];
                                         foreach ($stamps as $stamp){
                                             $query['tx2.' . $stamp] = array('$exists' =>  false);
                                             $updateData['$set']['tx2.'. $stamp] = true;
@@ -930,7 +930,7 @@ class ResetLinesModel {
 						$query = array(
 							'_id' => $balanceToUpdate['_id'],
 						);
-                                                $stamps = $this->stampsByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']];
+                                                $stamps = $this->stampsToRecoverByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']] ?? [];
                                                 foreach ($stamps as $stamp){
                                                     $query['tx2.' . $stamp] = array('$exists' =>  false);
                                                     $updateData['$set']['tx2.'. $stamp] = true;
