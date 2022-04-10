@@ -177,7 +177,7 @@ class Tests_paymenttest extends UnitTestCase {
 		if ($this->reportTR) {
 			$this->ReportTestRail();
 		}
-        $this->restoreColletions();
+    //  $this->restoreColletions();
 		
 	}
 
@@ -244,6 +244,9 @@ class Tests_paymenttest extends UnitTestCase {
 		Billrun_Factory::log("run buildQuery function with params : " . print_r($params, 1), Zend_Log::INFO);
 		$query = [];
 		foreach ($params as $key => $value) {
+			if(($key=='$in')) {
+				$value = ['$in'=>$value['$in']];
+			}
 			$query[$key] = $value;
 		}
 		return $query;
@@ -261,11 +264,17 @@ class Tests_paymenttest extends UnitTestCase {
 	 */
 	public function FieldComparison($row, $params = null) {
 		$pass = true;
+	 	sleep(2);
 		$bills = $this->getBills($this->buildQuery($params));
+		print_r("***params");
+		print_r( $params);
 		Billrun_Factory::log("run FieldComparison function with params : " . print_r($params, 1), Zend_Log::INFO);
 		Billrun_Factory::log(" FieldComparison function match bills : " . print_r($bills, 1), Zend_Log::INFO);
 		$this->TestRailCases[$row['testRailId']]['comment'].="run FieldComparison function with params : " . print_r($params, 1);
 		$this->TestRailCases[$row['testRailId']]['comment'].=" FieldComparison function match bills : " . print_r($bills, 1);
+		echo '<pre>';
+				print_r($row['expected']);
+				print_r($bills);
 		if (count($row['expected']) != count($bills)) {
 			$this->message .= "The number of invoices does not match the expected number of invoices" . $this->fail;
 			$this->TestRailCases[$row['testRailId']]['comment'] .= "The number of invoices does not match the expected number of invoices<br>";
@@ -277,6 +286,7 @@ class Tests_paymenttest extends UnitTestCase {
 
 
 			$fields = [
+				'aid',
 				'total_paid',
 				'left_to_pay',
 				"payment_agreement.installment_index",
@@ -401,7 +411,7 @@ class Tests_paymenttest extends UnitTestCase {
 				} else {
 					if (!Billrun_Util::isEqual($DataField, $v, $this->epsilon)) {
 						Billrun_Factory::log("Actual result  : . $DataField .", Zend_Log::ERR);
-						$this->message .= '	-- Actual result : ' . $DataField . $this->fail;
+						$this->message .=  ' ----- ' . $DataField . $this->fail;
 						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test field  **$k** Expected is $v<br> ";
 						$this->TestRailCases[$row['testRailId']]['comment'] .= '	--  actual result  is : ' . $DataField . '<br>';
 						$pass = false;
@@ -425,7 +435,7 @@ class Tests_paymenttest extends UnitTestCase {
 	public function getBills($query) {
 		$allBills = [];
 		$BillsCollection = Billrun_Factory::db()->billsCollection();
-		$bills = $BillsCollection->query($query)->cursor();
+		$bills = $BillsCollection->query($query)->cursor()->setReadPreference('RP_PRIMARY')->timeout(10800000)->sort(['aid' =>-1]);
 		foreach ($bills as $bill) {
 			$allBills[] = $bill->getRawData();
 		}
@@ -578,7 +588,10 @@ class Tests_paymenttest extends UnitTestCase {
 		} else {
 			$api = $row['api'];
 		}
-		$url = "http://$this->serverName/api/$api";
+		$baseApi =($api != 'chargeAccount') ? 'api' :'billrun';
+		$url = "http://$this->serverName/$baseApi/$api";
+		echo '<pre> URL:';
+		print_r($url);
 		$paramsToSend = !empty($params) ? $params : $row['params'];
 		foreach ($paramsToSend as $key => $val) {
 
@@ -697,10 +710,12 @@ class Tests_paymenttest extends UnitTestCase {
 		}
 		$secret = Billrun_Utils_Security::getValidSharedKey();
 		$signed = Billrun_Utils_Security::addSignature($request, $secret['key']);
+	//	$request['XDEBUG_SESSION_START'] ="VSCODE";
 		$request['_sig_'] = $signed['_sig_'];
 		$request['_t_'] = $signed['_t_'];
-//		echo '<pre>';
-//		print_r($request);
+		echo '<pre>';
+		print_r($request);
+
 		return $this->sendAPI($url, $request);
 	}
 
@@ -713,12 +728,12 @@ class Tests_paymenttest extends UnitTestCase {
 	public function sendAPI($url, $request) {
 		Billrun_Factory::log("send api API to $url with params l" . print_r($request, 1), Zend_Log::INFO);
 		$api = explode('/', $url);
-		if (in_array('onetimeinvoice', $api))
-			sleep(1);
+		//if (in_array('onetimeinvoice', $api))
+			sleep(3);
 		$respons = json_decode(Billrun_Util::sendRequest($url, $request), true);
 		Billrun_Factory::log("response is :" . print_r($respons, 1), Zend_Log::INFO);
-		// echo '<pre>';
-		// print_r($respons);
+		echo '<pre>';
+		print_r($respons);
 		return $respons;
 	}
 
