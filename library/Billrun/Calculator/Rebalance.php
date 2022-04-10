@@ -53,6 +53,12 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
                         if(!empty($result['stamps_by_sid'])){
                             $stampsByBillrunAndAid[$result['billrun_key']][$result['aid']] = $result['stamps_by_sid'];
                         }
+                        if(!empty($result['stamps_recover_path'])){
+                            $stampsBySid = $this->getStampsByStampsRecoverFile($result['stamps_recover_path']);
+                            if(!empty($stampsBySid)){
+                                $stampsByBillrunAndAid[$result['billrun_key']][$result['aid']] = $stampsBySid;
+                            }
+                        }
 			$all_aids[] = $result['aid'];
 		}
 
@@ -73,8 +79,17 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		Billrun_Factory::log("Success resetting aids " . implode(',', $all_aids), Zend_Log::INFO);
 		return true;
 	}
+        
+        protected function getStampsByStampsRecoverFile($path){
+            $ret = file_get_contents($path);
+            if(!$ret){
+                Billrun_Factory::log("Failed to get content from recover stamps file. path: " . $path, Zend_Log::ALERT);
+            }
+            return json_decode($ret, true);
+            
+        }
 
-	protected function getLines() {
+        protected function getLines() {
 		return array();
 	}
 
