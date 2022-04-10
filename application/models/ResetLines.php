@@ -636,21 +636,21 @@ class ResetLinesModel {
         
         protected function insertQueueLinesLineByLine($queue_coll, $queue_lines){
             foreach ($queue_lines as $qline) {
-                    try{
-                        $ret = $queue_coll->insert($qline); // ok==1, err null
-                        if (isset($ret['err']) && !is_null($ret['err'])) {
-                                Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$ret['err'] . ', failed_line ' . print_r($qline, 1), Zend_Log::ALERT);
-                                continue;
-                        }
-                    } catch (Exception $e) {
-                        if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
-                                Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($qline, 1), Zend_Log::NOTICE);
-                                continue;
-                        } else {
-                                Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . print_r($qline, 1), Zend_Log::ALERT);
-                                throw $e;
-                        }
+                try{
+                    $ret = $queue_coll->insert($qline); // ok==1, err null
+                    if (isset($ret['err']) && !is_null($ret['err'])) {
+                            Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$ret['err'] . ', failed_line ' . $qline['stamp'], Zend_Log::ALERT);
+                            continue;
                     }
+                } catch (Exception $e) {
+                    if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+                            Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . $qline['stamp'], Zend_Log::NOTICE);
+                            continue;
+                    } else {
+                            Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . $qline['stamp'], Zend_Log::ALERT);
+                            throw $e;
+                    }
+                }
             }
         }
         
