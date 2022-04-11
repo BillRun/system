@@ -6672,6 +6672,123 @@
 			}
 			
 		],
+		"postTest": [
+			{
+				"cleanDB": {
+					"aid": 72
+				}
+			},
+			{
+				"cleanDB": {
+					"aid": 722
+				}
+			}
+		],
+		"expected": [
+			{
+				"aid": 72,
+				"type": "inv",
+				"amount": 23.4,
+				"due": 23.4,
+				"due_before_vat": 20,
+				"invoice_type": "immediate",
+				"lastname": "yoss",
+				"method": "automatic",
+				"paid": "1",
+				"payer_name": "yoss yossi",
+				"total_paid": 23.4,
+				"left_to_pay": 0			
+			},
+			{
+					"aid": 72,
+					"type": "rec",
+					"amount": 23.4,
+					"due": -23.4,
+					"pending" : false,
+					"method": "automatic",
+				    "vendor_response.name" : "CreditGuard",
+					"vendor_response.status" : "000"
+			      
+				},
+				{
+					"aid": 722,
+					"type": "inv",
+					"amount": 46.8,
+					"due": 46.8,
+					"due_before_vat": 40,
+					"invoice_type": "immediate",
+					"lastname": "yoss",
+					"method": "automatic",
+					"paid": false,
+					"payer_name": "yoss yossi",
+					"total_paid": 0,
+					"left_to_pay": 46.8	
+				}	
+			]
+		,
+		"testRailId": 566
+	}
+	,
+	{
+		"description": "min_date, charge api account with 2 bills, 1st before the min date and 2nd after",
+		"test_id": 74,
+		"api": "chargeAccount",
+		"params": {
+			"min_invoice_date" :"01/04/2022"
+		},
+		"source": "api",
+		"request_method": "GET",
+		"preTest": [
+			{
+				"bulidAPI": {
+					"api": "onetimeinvoice",
+					"aid": "72",
+					"step": "1",
+					"invoice_unixtime": 1648796381,
+					"cdrs": [
+						{
+							"aid": "72",
+							"sid": "0",
+							"rate": "CALL",
+							"credit_time": "2021-03-18T17:18:56.385Z",
+							"usagev": 1,
+							"type": "credit",
+							"aprice": "20.00"
+						}
+					]
+				}
+			},
+			{
+				"bulidAPI": {
+					"api": "onetimeinvoice",
+					"aid": "722",
+					"step": "1",
+					"invoice_unixtime": 1647029341,
+					"cdrs": [
+						{
+							"aid": "722",
+							"sid": "0",
+							"rate": "CALL",
+							"credit_time": "2021-03-18T17:18:56.385Z",
+							"usagev": 1,
+							"type": "credit",
+							"aprice": "40.00"
+						}
+					]
+				}
+			}
+		],
+		"testFunctions": [
+		
+			{
+				"FieldComparison": {
+					"aid":{"$in":[72,722]}
+				
+					
+				}
+			}
+			
+		],
 		"apostTest": [
 			{
 				"cleanDB": {
@@ -6723,9 +6840,6 @@
 		,
 		"testRailId": 566
 	}
-
-
-
 
 ]
 
