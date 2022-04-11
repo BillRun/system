@@ -415,12 +415,14 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
 			foreach($subscriber['services'] as  $tmpService) {
-				 $serviceData = array(  'name' => $tmpService['name'],
-										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
-										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
-										'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
-										'start'=> max($tmpService['from']->sec + ($tmpService['from']->usec/ 1000000), $activationDate),
-										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000), $endTime , $deactivationDate) );
+				 $serviceData = array_merge(  $tmpService,
+											array('name' => $tmpService['name'],
+												'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
+												'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
+												'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
+												'start'=> max($tmpService['from']->sec + ($tmpService['from']->usec/ 1000000), $activationDate),
+												'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000), $endTime , $deactivationDate)));
+
 				 if($serviceData['start'] !== $serviceData['end']) {
 					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity','service_id'));
 					$currServices[$stamp] = $serviceData;
