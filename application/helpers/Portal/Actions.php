@@ -171,6 +171,10 @@ abstract class Portal_Actions {
     protected function getLoggedInEntityQuery() {
 		$authField = $this->params['authentication_field'] ?? '';		
         $authValue = $this->params['token_data']['user_id'] ?? '';
+		
+		if ($this->params['authentication_field'] == 'aid') {
+			settype($authValue, 'int');
+		}
 
         if (empty($authField) || empty($authValue)) {
             return false;

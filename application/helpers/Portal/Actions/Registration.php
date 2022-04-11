@@ -291,6 +291,10 @@ class Portal_Actions_Registration extends Portal_Actions {
 				$arr[$tokenField] = $data[$tokenField];
 			}
 		}
+		
+		if ($this->params['authentication_field'] == 'aid') {
+			settype($arr['username'], 'int');
+		}
 
 		if (empty($arr) || empty($secret)) {
 			throw new Portal_Exception('missing_parameter');
@@ -361,6 +365,9 @@ class Portal_Actions_Registration extends Portal_Actions {
 	}
 
 	protected function getFieldByAuthenticationField($field, $username) {
+		if ($this->params['authentication_field'] == 'aid') {
+			settype($username, 'int');
+		}
 		$query = [
 			$this->params['authentication_field'] => $username
 		];
