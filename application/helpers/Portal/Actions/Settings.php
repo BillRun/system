@@ -28,8 +28,8 @@ class Portal_Actions_Settings extends Portal_Actions {
 			// portal always allowed
 			if ($category === 'portal') {
 				$portal_settings = array_filter($this->params, function ($key) {
-							return in_array($key, self::ALLOWED_PORTAL_CONFIGURATION_FIELDS);
-					}, ARRAY_FILTER_USE_KEY
+					return in_array($key, self::ALLOWED_PORTAL_CONFIGURATION_FIELDS);
+				}, ARRAY_FILTER_USE_KEY
 				);
 				$res[$category] = $portal_settings;
 			} else {
