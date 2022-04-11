@@ -72,6 +72,7 @@ class ResetLinesModel {
 		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
 		$this->conditions = $conditions;
                 $this->stampsToRecoverByAidAndSid = $stampsToRecoverByAidAndSid;
+                $this->rebalnceQueueRecoverStampsPath = Billrun_Util::getBillRunSharedFolderPath('workspace' . DIRECTORY_SEPARATOR . 'rebalance' . DIRECTORY_SEPARATOR . 'rebalance_queue' . DIRECTORY_SEPARATOR . 'recover_stamps' . DIRECTORY_SEPARATOR . $this->billrun_key);
 	}
 
 	public function reset() {
@@ -170,17 +171,29 @@ class ResetLinesModel {
 		} else {
 			$query = $basicQuery;
 		}
+                $stamps = $this->getAllLinesStamps($lines_coll, $query);
                 $linesSizeToHandle = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.size', 100000);
-				Billrun_Factory::log("Rebalance lines query start. Query is: " . json_encode($query), Zend_Log::DEBUG);
-                while(!($lines = $lines_coll->query($query)->cursor()->limit($linesSizeToHandle))->current()->isEmpty()){
-					Billrun_Factory::log("Rebalance lines query end", Zend_Log::DEBUG);
-					$lines = iterator_to_array($lines);
-                    Billrun_Factory::log("Rebalance after iterator_to_array", Zend_Log::DEBUG);
-                    $this->resetLinesByQuery($lines, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
-					Billrun_Factory::log("Rebalance lines query start. Query is: " . json_encode($query), Zend_Log::DEBUG);
+		while ($update_stamps_count = count($update_stamps = array_slice($stamps, 0, $linesSizeToHandle))) {
+                        $stampQuery = array('stamp' => array('$in' =>  $update_stamps));
+			Billrun_Factory::log("Rebalance lines query start. Query is: " . json_encode($query), Zend_Log::DEBUG);                        
+			$lines = $lines_coll->query(array_merge($query, $stampQuery))->cursor();
+			Billrun_Factory::log("Rebalance lines query end", Zend_Log::DEBUG);
+			$lines = iterator_to_array($lines);
+                    Billrun_Factory::log("Rebalance after iterator_to_array", Zend_Log::DEBUG);		
+			$this->resetLinesByQuery($lines, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
+                        //rempve the stamps that already used from the array (for the memory)
+                        $stamps = array_slice($stamps, $linesSizeToHandle);
                 }
 	}
         
+        protected function getAllLinesStamps($lines_coll, $query) {
+            Billrun_Factory::log("Rebalance get all stamps query start. Query is: " . json_encode($query), Zend_Log::DEBUG);                   
+            $lines = $lines_coll->query($query)->cursor()->fields(array('stamp' => 1))->setRawReturn(true);
+            Billrun_Factory::log("Rebalance get all stamps query end", Zend_Log::DEBUG);
+            return array_column(iterator_to_array($lines), 'stamp');    
+        }
+
+
         /**
 	 * Reset lines based on input array of stamps
          * @param array $stamps - Array of stamps of lines to reset.
@@ -583,7 +596,7 @@ class ResetLinesModel {
 	 * @return boolean
 	 */
 	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter) {
-                $update = $this->getUpdateQuery($rebalanceTime, $former_exporter);
+		$update = $this->getUpdateQuery($rebalanceTime, $former_exporter);
 		$stamps_query = $this->getStampsQuery($stamps);
 		
 		Billrun_Factory::log('Removing records from queue', Zend_Log::DEBUG);
@@ -597,7 +610,7 @@ class ResetLinesModel {
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
-               $this->addStampsToRebalnceQueue();
+               $this->addStampsToRebalnceQueue($stamps);
                 Billrun_Factory::log('Resetting ' . count($stamps) . ' lines', Zend_Log::DEBUG);
 		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
 		 Billrun_Factory::log("finished resetting", Zend_Log::DEBUG);
@@ -629,12 +642,12 @@ class ResetLinesModel {
 		} else {
 			$this->insertQueueLinesLineByLine($queue_coll, $queue_lines);
                 }
-               $this->removeStampsfromRebalnceQueue();                
+               $this->removeStampsfromRebalnceQueue($stamps);                
                $this->unsetTx2FromRelevantBalances();
 		return true;
 	}
-        
-        protected function insertQueueLinesLineByLine($queue_coll, $queue_lines){
+
+	protected function insertQueueLinesLineByLine($queue_coll, $queue_lines){
             foreach ($queue_lines as $qline) {
                 try{
                     $ret = $queue_coll->insert($qline); // ok==1, err null
@@ -654,29 +667,76 @@ class ResetLinesModel {
             }
         }
         
-        protected function addStampsToRebalnceQueue(){
+        protected function addStampsToRebalnceQueue($stamps){
             foreach ($this->stampsByAidAndSid as $aid => $stampsBySid){
-                $query = $this->getRebalanceQueueQuery($aid);
-                $updateData = array('$set' => array('stamps_by_sid' => $stampsBySid));
-		Billrun_Factory::log("before rebalance queue update", Zend_Log::DEBUG);
-                Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
-		Billrun_Factory::log("after rebalance queue update ", Zend_Log::DEBUG);
+                $query = $this->getRebalanceQueueQuery($aid);               
+                try{                
+                    if($this->checkIfStampsCanStoreInDB($stamps)){
+                        $updateData = array('$set' => array('stamps_by_sid' => $stampsBySid));
+                        Billrun_Factory::log("before rebalance queue update", Zend_Log::DEBUG);
+                        Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
+                        Billrun_Factory::log("after rebalance queue update ", Zend_Log::DEBUG);
+                    }else{                   
+                        $filename = $aid;
+                        $this->addStampsToRebalnceQueueFile($this->rebalnceQueueRecoverStampsPath , $filename, $stampsBySid);
+                        $updateData = array('$set' => array('stamps_recover_path' => $this->rebalnceQueueRecoverStampsPath . DIRECTORY_SEPARATOR . $filename));
+                        Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
+                    }
+                } catch (Exception $ex){
+                    Billrun_Factory::log("Rebalance: failed to add stamps to rebalance queue or to relevant file, Error: " .  $ex->getMessage(), Zend_Log::ERR);
+                }
             }
         }
         
-        protected function removeStampsfromRebalnceQueue(){
+        protected function addStampsToRebalnceQueueFile($path,  $filename, $stampsBySid){
+            if (!file_exists($path)) {
+                    mkdir($path, 0777, true);
+            }
+            $fp = fopen($path . DIRECTORY_SEPARATOR . $filename, 'w');
+            if(!$fp){
+                throw new Exception("Failed to write stamps to recover stamps file"); 
+            }
+            $ret = fwrite($fp, json_encode($stampsBySid));
+            fclose($fp);
+            if(!$ret){
+                throw new Exception("Failed to write stamps to recover stamps file"); 
+            }
+        }
+        
+        /**
+         * @param mixed $stampsToInsert - the stamps we want to store in mongodb 
+         * @param int $limit - the size of stamps that can be store in db entity (rebalance_queue/balance) . default 250k
+         * @return boolean true if stamps can store in db. false otherwise
+         */
+        protected function checkIfStampsCanStoreInDB($stampsToInsert, $limit = 250000){           
+            if(count($stampsToInsert) >= $limit){
+                return false;
+            }
+            return true;
+        }
+        
+        protected function removeStampsfromRebalnceQueue($stamps){
             foreach ($this->stampsByAidAndSid as $aid => $stampsBySid){
                 $query = $this->getRebalanceQueueQuery($aid);
-                $updateData = [];
-                foreach ($stampsBySid as $sid => $stamps){
-                    foreach ($stamps as $stamp){
-                        $updateData['$unset']['stamps_by_sid'][$sid][$stamp] = 1;
-                    }
+                if($this->checkIfStampsCanStoreInDB($stamps)){
+                    $updateData = [];                    
+                    $updateData['$unset']['stamps_by_sid'] = 1;                       
+                    Billrun_Factory::log("before rebalance queue update remove", Zend_Log::DEBUG);
+                    Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
+                    Billrun_Factory::log("after rebalance queue update remove", Zend_Log::DEBUG);
+                }else{
+                    $this->removeStampsfromRebalnceQueueFile($aid);
+                    $updateData = array('$unset' => array('stamps_recover_path' => 1));
+                    Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
                 }
-		Billrun_Factory::log("before rebalance queue update remove", Zend_Log::DEBUG);
-                Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
-                 Billrun_Factory::log("after rebalance queue update remove", Zend_Log::DEBUG);
-
+            }
+        }
+        
+        protected function removeStampsfromRebalnceQueueFile($aid){
+            $path = $this->rebalnceQueueRecoverStampsPath . DIRECTORY_SEPARATOR . $aid;
+            $ret = unlink($path);
+            if(!$ret){
+                Billrun_Factory::log("failed to delete recover stamps file. path: " . $path , Zend_Log::ALERT);
             }
         }
         
