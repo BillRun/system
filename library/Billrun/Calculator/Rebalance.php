@@ -81,9 +81,15 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 	}
         
         protected function getStampsByStampsRecoverFile($path){
-            $ret = file_get_contents($path);
+            $myfile = fopen($path, 'r');
+            if(!$myfile){
+                Billrun_Factory::log("Failed to open file. Failed to get content from recover stamps file. path: " . $path, Zend_Log::ALERT);
+                return [];
+            }
+            $ret = fread($myfile, filesize($path));
+            fclose($myfile);
             if(!$ret){
-                Billrun_Factory::log("Failed to get content from recover stamps file. path: " . $path, Zend_Log::ALERT);
+                Billrun_Factory::log("Failed to read file. Failed to get content from recover stamps file. path: " . $path, Zend_Log::ALERT);
             }
             return json_decode($ret, true);
             
