@@ -171,17 +171,29 @@ class ResetLinesModel {
 		} else {
 			$query = $basicQuery;
 		}
+                $stamps = $this->getAllLinesStamps($lines_coll, $query);
                 $linesSizeToHandle = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.size', 100000);
-				Billrun_Factory::log("Rebalance lines query start. Query is: " . json_encode($query), Zend_Log::DEBUG);
-                while(!($lines = $lines_coll->query($query)->cursor()->limit($linesSizeToHandle))->current()->isEmpty()){
-					Billrun_Factory::log("Rebalance lines query end", Zend_Log::DEBUG);
-					$lines = iterator_to_array($lines);
-                    Billrun_Factory::log("Rebalance after iterator_to_array", Zend_Log::DEBUG);
-                    $this->resetLinesByQuery($lines, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
-					Billrun_Factory::log("Rebalance lines query start. Query is: " . json_encode($query), Zend_Log::DEBUG);
+		while ($update_stamps_count = count($update_stamps = array_slice($stamps, 0, $linesSizeToHandle))) {
+                        $stampQuery = array('stamp' => array('$in' =>  $update_stamps));
+			Billrun_Factory::log("Rebalance lines query start. Query is: " . json_encode($query), Zend_Log::DEBUG);                        
+			$lines = $lines_coll->query(array_merge($query, $stampQuery))->cursor();
+			Billrun_Factory::log("Rebalance lines query end", Zend_Log::DEBUG);
+			$lines = iterator_to_array($lines);
+                    Billrun_Factory::log("Rebalance after iterator_to_array", Zend_Log::DEBUG);		
+			$this->resetLinesByQuery($lines, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
+                        //rempve the stamps that already used from the array (for the memory)
+                        $stamps = array_slice($stamps, $linesSizeToHandle);
                 }
 	}
         
+        protected function getAllLinesStamps($lines_coll, $query) {
+            Billrun_Factory::log("Rebalance get all stamps query start. Query is: " . json_encode($query), Zend_Log::DEBUG);                   
+            $lines = $lines_coll->query($query)->cursor()->fields(array('stamp' => 1))->setRawReturn(true);
+            Billrun_Factory::log("Rebalance get all stamps query end", Zend_Log::DEBUG);
+            return array_column(iterator_to_array($lines), 'stamp');    
+        }
+
+
         /**
 	 * Reset lines based on input array of stamps
          * @param array $stamps - Array of stamps of lines to reset.
