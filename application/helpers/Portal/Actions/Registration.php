@@ -202,7 +202,7 @@ class Portal_Actions_Registration extends Portal_Actions {
 	protected function getEmailSubject($path) {
 		return Billrun_Factory::config()->getConfigValue('email_templates.' . $path . '.subject', '');
 	}
-	
+
 	/**
 	 * method to get website for links send on emails
 	 * @return string
@@ -291,7 +291,7 @@ class Portal_Actions_Registration extends Portal_Actions {
 				$arr[$tokenField] = $data[$tokenField];
 			}
 		}
-		
+
 		if ($this->params['authentication_field'] == 'aid') {
 			settype($arr['username'], 'int');
 		}

@@ -144,7 +144,7 @@ class Portal_Actions_Account extends Portal_Actions {
 
 		return $debt;
 	}
-	
+
 	/**
 	 * get account outstanding balance (debt and future non-due invoices)
 	 *
@@ -276,7 +276,7 @@ class Portal_Actions_Account extends Portal_Actions {
 					return !empty($customField['system']) || !empty($customField['show_in_list']) || !empty($customField['unique']);
 				}), 'field_name');
 	}
-	
+
 	/**
 	 * get account charges (see statement)
 	 * 
