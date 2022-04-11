@@ -186,14 +186,10 @@ class ResetLinesModel {
 	}
         
         protected function getAllLinesStamps($lines_coll, $query) {
-            $stampsLimit = Billrun_Config::getInstance()->getConfigValue('resetlines.stamps.limit', 100000);
-            $stamps = [];
-            $skip = 0;
-            while(!empty(($lines = $lines_coll->query($query)->cursor()->sort(array('stamp' => 1))->fields(array('stamp' => 1))->skip($skip)->limit($stampsLimit)->setRawReturn(true))->current())){
-                $stamps = array_merge($stamps, array_column(iterator_to_array($lines), 'stamp'));
-                $skip += $stampsLimit;
-            }
-            return $stamps;
+            Billrun_Factory::log("Rebalance get all stamps query start. Query is: " . json_encode($query), Zend_Log::DEBUG);                   
+            $lines = $lines_coll->query($query)->cursor()->fields(array('stamp' => 1))->setRawReturn(true);
+            Billrun_Factory::log("Rebalance get all stamps query end", Zend_Log::DEBUG);
+            return array_column(iterator_to_array($lines), 'stamp');    
         }
 
 
