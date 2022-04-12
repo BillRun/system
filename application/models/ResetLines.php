@@ -208,7 +208,7 @@ class ResetLinesModel {
 		Billrun_Factory::log("resetLinesByStamps before query " . json_encode($query), Zend_Log::DEBUG);
         $lines = $lines_coll->query($query);
 		Billrun_Factory::log("resetLinesByStamps after query", Zend_Log::DEBUG);
-        return $this->resetLinesByQuery($lines, $update_aids, $advancedProperties, $lines_coll, $queue_coll);
+        return $this->resetLinesByQuery(iterator_to_array($lines), $update_aids, $advancedProperties, $lines_coll, $queue_coll);
 	}
         
         
