@@ -327,74 +327,12 @@ class ResetLinesModel {
                     } catch (Exception $e) {
                         if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
                                 Billrun_Factory::log('Rebalance: line insertion of restoring archive line to lines failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . $stamp, Zend_Log::NOTICE);
-                                $this->revertBalances($stamp);
                                 continue;
                         } else {
                                 Billrun_Factory::log('Rebalance: line insertion of restoring archive line to lines failed, Insert Error: ' .$e->getMessage() . ', failed_line ' . $stamp, Zend_Log::ALERT);
                                 throw $e;
                         }
                     }
-            }
-        }
-        
-        protected function revertBalances($stamp){
-            if(isset($this->extendedBalanceSubstractByLine[$stamp])){
-                foreach ($this->extendedBalanceSubstractByLine[$stamp] as $aid => $packageUsage) {
-			foreach ($packageUsage as $balanceId => $usagetByGroups) {
-                            foreach ($usagetByGroups as $group => $usageByUsaget){
-                                foreach ($usaget as $usageType => $usagev) {                      
-                                    $this->extendedBalanceUsageSubstract[$aid][$balanceId][$group][$usageType]['usage'] -= $usagev['usage'];
-                                    $this->extendedBalanceUsageSubstract[$aid][$balanceId][$group][$usageType]['cost'] -= $usagev['cost'];
-                                }
-
-                            }
-                        }
-                }
-            }
-            if(isset($this->balanceSubstractByLine[$stamp])){
-                foreach ($this->balanceSubstractByLine[$stamp] as $aid => $sids) {
-                    foreach ($sids as $sid => $billrunKeys) {
-                        foreach ($billrunKeys as $billrunKey => $types){
-                            foreach ($types as $type => $usage){
-                                if ($type === 'groups'){
-                                    foreach ($usage as $group => $usaget) {
-                                        foreach ($usaget as $usageType => $usagev) {
-                                            if(isset($usagev['usage'])){
-                                                $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$group][$usageType]['usage'] -= $usagev['usage'];
-                                            }
-                                            if(isset($usagev['count'])){
-                                                $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$group][$usageType]['count'] -= $usagev['count'];
-                                            }
-                                        }
-                                    }
-                                } elseif ($type === 'totals') {
-                                    foreach ($usage as $usageType => $usagev) {
-                                        if(isset($usagev['out_group'])){
-                                            $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$usageType]['out_group']['usage'] -= $usagev['out_group']['usage'];
-                                        } 
-                                        if (isset($usagev['over_group'])){
-                                             $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$usageType]['over_group']['usage'] -= $usagev['over_group']['usage'];
-                                        } 
-                                        if (isset($usagev['usage'])){
-                                            $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$usageType]['usage'] -= $usagev['usage'];
-                                        }
-                                        if(isset($usagev['cost'])){
-                                            $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$usageType]['cost'] -= $usagev['cost'];
-                                        }
-                                        if(isset($usagev['count'])){
-                                            $this->balanceSubstract[$aid][$sid][$billrunKey][$type][$usageType]['count'] -= $usagev['count'];
-                                        }
-                                    }
-                                    
-                                } elseif ($type === 'cost') {
-                                    $this->balanceSubstract[$aid][$sid][$billrunKey][$type] -= $usage;
-                                    
-                                }
-                            }
-                        }
-                        
-                    }
-                }
             }
         }
 
@@ -775,9 +713,12 @@ class ResetLinesModel {
 		if (!isset($line['usagev']) || !isset($line['aprice'])) {
 			return;
 		}
+                if(!empty($this->balanceSubstractByLine[$line['stamp']])){
+                    return;
+                }
 		$lineInvoicingDay = $this->getLineInvoicingDay($line);
 		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($line['urt']->sec, $lineInvoicingDay);
-		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
+		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();              
 		foreach ($arategroups as $arategroup) {
 			$balanceId = $arategroup['balance_ref']['$id']->{'$id'};
 			$group = $arategroup['name'];
@@ -937,7 +878,7 @@ class ResetLinesModel {
 					$query = array(
 						'_id' => new MongoId($balanceId),
 					);
-                                        $stamps = $this->stampsToRecoverByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']] ?? [];
+                                        $stamps = array_merge($this->stampsToRecoverByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']] ?? [],$this->stampsByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']] ?? []);
                                         foreach ($stamps as $stamp){
                                             $query['tx2.' . $stamp] = array('$exists' =>  false);
                                             $updateData['$set']['tx2.'. $stamp] = true;
@@ -988,7 +929,7 @@ class ResetLinesModel {
 						$query = array(
 							'_id' => $balanceToUpdate['_id'],
 						);
-                                                $stamps = $this->stampsToRecoverByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']] ?? [];
+                                                $stamps = array_merge($this->stampsToRecoverByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']] ?? [],$this->stampsByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']] ?? []);
                                                 foreach ($stamps as $stamp){
                                                     $query['tx2.' . $stamp] = array('$exists' =>  false);
                                                     $updateData['$set']['tx2.'. $stamp] = true;
