@@ -315,9 +315,9 @@ class Tests_paymenttest extends UnitTestCase {
 		};
 		usort($row['expected'], $sort);
 		usort($bills, $sort);
-//		echo '<pre>';
-//		print_r($row['expected']);
-//		print_r($bills);
+		echo '<pre>';
+		print_r($row['expected']);
+		print_r($bills);
 
 		$i = 0;
 		foreach ($bills as $bill) {
@@ -434,9 +434,10 @@ class Tests_paymenttest extends UnitTestCase {
 	 */
 	public function getBills($query) {
 		$allBills = [];
+		
 		$BillsCollection = Billrun_Factory::db()->billsCollection();
-		$bills = $BillsCollection->query($query)->cursor()->setReadPreference('RP_PRIMARY')->timeout(10800000)->sort(['aid' =>-1]);
-	//	sleep(2);
+		$bills = $BillsCollection->query($query)->cursor()->setReadPreference('RP_PRIMARY')->timeout(10800000);
+		sleep(2);
 		foreach ($bills as $bill) {
 			$allBills[] = $bill->getRawData();
 		}

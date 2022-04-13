@@ -6591,10 +6591,10 @@
 					"method": "automatic",
 					"paid": "1",
 					"payer_name": "yoss yossi",
-					"total_paid":0,
-					"left_to_pay": 46.8	
+					"total_paid":46.8,
+					"left_to_pay": 	0
 				}		
-				,			{
+				,{
 					"aid": 722,
 					"type": "rec",
 					"amount": 46.8,
@@ -6906,7 +6906,7 @@
 			}
 			
 		],
-		"apostTest": [
+		"postTest": [
 			{
 				"cleanDB": {
 					"aid": 72
@@ -6940,7 +6940,7 @@
 			      
 				},
 				{
-					"aid": 722,
+					"aid": 72,
 					"type": "inv",
 					"amount": 46.8,
 					"due": 46.8,
@@ -6948,10 +6948,10 @@
 					"invoice_type": "immediate",
 					"lastname": "yoss",
 					"method": "automatic",
-					"paid": false,
+					"paid": true,
 					"payer_name": "yoss yossi",
-					"total_paid": 0,
-					"left_to_pay": 46.8	
+					"total_paid": 46.8,
+					"left_to_pay": 	0
 				}	,
 				{
 					"aid": 72,
