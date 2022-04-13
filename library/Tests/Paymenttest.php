@@ -272,9 +272,9 @@ class Tests_paymenttest extends UnitTestCase {
 		Billrun_Factory::log(" FieldComparison function match bills : " . print_r($bills, 1), Zend_Log::INFO);
 		$this->TestRailCases[$row['testRailId']]['comment'].="run FieldComparison function with params : " . print_r($params, 1);
 		$this->TestRailCases[$row['testRailId']]['comment'].=" FieldComparison function match bills : " . print_r($bills, 1);
-		echo '<pre>';
-				print_r($row['expected']);
-				print_r($bills);
+		// echo '<pre>';
+		// 		print_r($row['expected']);
+		// 		print_r($bills);
 		if (count($row['expected']) != count($bills)) {
 			$this->message .= "The number of invoices does not match the expected number of invoices" . $this->fail;
 			$this->TestRailCases[$row['testRailId']]['comment'] .= "The number of invoices does not match the expected number of invoices<br>";
@@ -436,6 +436,7 @@ class Tests_paymenttest extends UnitTestCase {
 		$allBills = [];
 		$BillsCollection = Billrun_Factory::db()->billsCollection();
 		$bills = $BillsCollection->query($query)->cursor()->setReadPreference('RP_PRIMARY')->timeout(10800000)->sort(['aid' =>-1]);
+	//	sleep(2);
 		foreach ($bills as $bill) {
 			$allBills[] = $bill->getRawData();
 		}
@@ -590,8 +591,8 @@ class Tests_paymenttest extends UnitTestCase {
 		}
 		$baseApi =($api != 'chargeAccount') ? 'api' :'billrun';
 		$url = "http://$this->serverName/$baseApi/$api";
-		echo '<pre> URL:';
-		print_r($url);
+		// echo '<pre> URL:';
+		// print_r($url);
 		$paramsToSend = !empty($params) ? $params : $row['params'];
 		foreach ($paramsToSend as $key => $val) {
 
@@ -599,7 +600,7 @@ class Tests_paymenttest extends UnitTestCase {
 			if ($key == 'invoice_unixtime') {
 				if ($val == 'future') {
 					$val = time() + 2592000;
-				} else {
+				} else if($val == 'past') {
 					$val = time() - 2592000;
 				}
 			}
@@ -713,8 +714,8 @@ class Tests_paymenttest extends UnitTestCase {
 	//	$request['XDEBUG_SESSION_START'] ="VSCODE";
 		$request['_sig_'] = $signed['_sig_'];
 		$request['_t_'] = $signed['_t_'];
-		echo '<pre>';
-		print_r($request);
+		// echo '<pre>';
+		// print_r($request);
 
 		return $this->sendAPI($url, $request);
 	}
@@ -728,12 +729,13 @@ class Tests_paymenttest extends UnitTestCase {
 	public function sendAPI($url, $request) {
 		Billrun_Factory::log("send api API to $url with params l" . print_r($request, 1), Zend_Log::INFO);
 		$api = explode('/', $url);
-		//if (in_array('onetimeinvoice', $api))
-			sleep(3);
+		if (in_array('onetimeinvoice', $api))
+	     	sleep(3);
 		$respons = json_decode(Billrun_Util::sendRequest($url, $request), true);
 		Billrun_Factory::log("response is :" . print_r($respons, 1), Zend_Log::INFO);
-		echo '<pre>';
-		print_r($respons);
+		// echo '<pre>';
+		// print_r($respons);
+		//print_r($this->getBills(['aid' =>['$in'=>[72,722]]]));
 		return $respons;
 	}
 
