@@ -592,8 +592,8 @@ class Tests_paymenttest extends UnitTestCase {
 		}
 		$baseApi =($api != 'chargeAccount') ? 'api' :'billrun';
 		$url = "http://$this->serverName/$baseApi/$api";
-		// echo '<pre> URL:';
-		// print_r($url);
+		echo '<pre> URL:';
+		print_r($url);
 		$paramsToSend = !empty($params) ? $params : $row['params'];
 		foreach ($paramsToSend as $key => $val) {
 
@@ -734,8 +734,9 @@ class Tests_paymenttest extends UnitTestCase {
 	     	sleep(3);
 		$respons = json_decode(Billrun_Util::sendRequest($url, $request), true);
 		Billrun_Factory::log("response is :" . print_r($respons, 1), Zend_Log::INFO);
-		// echo '<pre>';
-		// print_r($respons);
+		echo '<pre>';
+		print_r($$url);
+		print_r($request);
 		//print_r($this->getBills(['aid' =>['$in'=>[72,722]]]));
 		return $respons;
 	}

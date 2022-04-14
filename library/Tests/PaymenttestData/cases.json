@@ -6734,7 +6734,7 @@
 		"test_id": 74,
 		"api": "chargeAccount",
 		"params": {
-			"min_invoice_date" :"01/04/2022"
+			"min_invoice_date" :"04/01/2022"
 		},
 		"source": "api",
 		"request_method": "GET",
@@ -6789,7 +6789,7 @@
 			}
 			
 		],
-		"postTest": [
+		"6postTest": [
 			{
 				"cleanDB": {
 					"aid": 72
