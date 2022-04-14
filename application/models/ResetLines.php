@@ -535,11 +535,19 @@ class ResetLinesModel {
 		$stamps_query = $this->getStampsQuery($stamps);
 		
 		Billrun_Factory::log('Removing records from queue', Zend_Log::DEBUG);
+		$offset = 0;
+		$batch_size = Billrun_Config::getInstance()->getConfigValue('resetlines.queue.removal_size', '10000');
+		while ($stamps_batch = array_slice($stamps, $offset, $batch_size)) {
+			$stamps_query = $this->getStampsQuery($stamps_batch);
 			$ret = $queue_coll->remove($stamps_query); // ok == 1, err null
 			if (isset($ret['err']) && !is_null($ret['err'])) {
 				return FALSE;
 			}
 			Billrun_Factory::log('Removed ' . $ret['n'] . ' records from queue', Zend_Log::DEBUG);
+			$offset += $batch_size;
+		}               
+		$stamps_query = $this->getStampsQuery($stamps);
+
 		Billrun_Factory::log('Starting to reset balances', Zend_Log::DEBUG);
 		$ret = $this->resetBalances($update_aids); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
@@ -547,12 +555,16 @@ class ResetLinesModel {
 		}
                $this->addStampsToRebalnceQueue($stamps);
                 Billrun_Factory::log('Resetting ' . count($stamps) . ' lines', Zend_Log::DEBUG);
-		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
-		 Billrun_Factory::log("finished resetting", Zend_Log::DEBUG);
-
-		if (isset($ret['err']) && !is_null($ret['err'])) {
-			return FALSE;
-		}
+		$offset = 0;
+		$batch_size = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.update_size', '10000');
+				while ($stamps_batch = array_slice($stamps, $offset, $batch_size)) {
+					$stamps_query = $this->getStampsQuery($stamps_batch);
+					$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
+					if (isset($ret['err']) && !is_null($ret['err'])) {
+							return FALSE;
+					}
+					$offset += $batch_size;
+			}
                 if(!empty($this->splitLinesStamp)){
                     $split_lines_stamps_query = $this->getStampsQuery($this->splitLinesStamp);
 			Billrun_Factory::log("Removing split lines", Zend_Log::DEBUG);
