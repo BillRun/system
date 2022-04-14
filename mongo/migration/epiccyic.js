@@ -9736,6 +9736,7 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
         unified_lines_cusagev.forEach(summed_line => {
             print("Iteration " + counter + " set " + summed_line.total + " to unified line " + summed_line._id + " from " + period.month);
             db.lines.update({stamp: summed_line._id}, {$set: {'cf.cusagev': summed_line.total}});
+            counter++;
         });
     });
 });
