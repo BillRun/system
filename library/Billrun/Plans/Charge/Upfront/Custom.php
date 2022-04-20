@@ -81,7 +81,7 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 			return ['start' => $this->activation,
 					'prorated_start_date' => new Mongodloid_Date($this->activation > $cycle->start() ? $this->activation  : ($this->seperatedCrossCycleCharges ? $cycle->start() :$nextCycle->start())),
 					'end' => $this->deactivation < $cycle->end() ? $this->deactivation : $cycle->end(),
-					'prorated_end_date' => new Mongodloid_Date($this->deactivation < $cycle->end() ? $this->deactivation : $this->seperatedCrossCycleCharges ? $cycle->end() : $nextCycle->end()),
+					'prorated_end_date' => new Mongodloid_Date($this->deactivation < $cycle->end() ? $this->deactivation : ($this->seperatedCrossCycleCharges ? $cycle->end() : $nextCycle->end())),
 					'start_date' =>new Mongodloid_Date(Billrun_Plan::monthDiffToDate($startOffset,  $this->activation ,true,false,false ,$frequency )),
 					'end_date' => new Mongodloid_Date($this->deactivation < $cycle->end() ? $this->deactivation : $cycle->end())];
 	}
