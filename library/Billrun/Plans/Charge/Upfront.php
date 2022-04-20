@@ -52,7 +52,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		foreach($cycles as $cycleData) {
 			$price = $this->getPriceForCycle($cycleData['cycle']);
 			$retCahrges[] = array_merge($this->getProrationData($this->price,$cycleData['cycle']),array(
-				'value'=> $price * $cycleData['fraction'],
+				'value'=> $price * $cycleData['fraction'] * $quantity,
 				'full_price' => floatval($price)
 				));
 		}
