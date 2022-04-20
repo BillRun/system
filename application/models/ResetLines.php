@@ -350,8 +350,7 @@ class ResetLinesModel {
 		$queue_line['rebalance'] = array();
 		$stamps[] = $line['stamp'];
                 if(isset($line['aid']) && isset($line['sid'])){
-                    $this->stampsByAidAndSid[$line['aid']][$line['sid']] = 
-                            array_merge($this->stampsByAidAndSid[$line['aid']][$line['sid']] ?? [], [$line['stamp']]);
+                    $this->stampsByAidAndSid[$line['aid']][$line['sid']][] = $line['stamp'];
                 }
                 $former_exporter = $this->buildFormerExporterForLine($line);
                 Billrun_Factory::log("after buildFormerExporterForLine", Zend_Log::DEBUG);
