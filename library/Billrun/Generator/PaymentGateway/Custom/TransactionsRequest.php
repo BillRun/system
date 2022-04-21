@@ -125,8 +125,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$paymentParams = array();
 			if (isset($accountsInArray[$customer['aid']])) {
 				$account = $accountsInArray[$customer['aid']];
-				if(!$this->validateMandatoryFieldsExistence($account, 'account')){
-					$message = "One or more of the file's mandatory fields is missing for account with aid: " . $customer['aid'] . ". No payment was created. Skipping this account..";
+				$mandatory_fields_res = $this->validateMandatoryFieldsExistence($account, 'account');
+				if (!empty($mandatory_fields_res)) {
+					$message = implode(",", $mandatory_fields_res) . " fields are missing for account with aid: " . $customer['aid'] . ". No payment was created. Skipping this account..";
 					Billrun_Factory::log($message, Zend_Log::ALERT);
 					$this->logFile->updateLogFileField('errors', $message);
 					continue;
@@ -212,8 +213,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if (isset($account['payment_gateway']['active']['card_expiration'])) {
 				$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
 			}
-			if (!$this->validateMandatoryFieldsExistence($currentPayment, 'payment_request')) {
-				$message = "One or more of the file's mandatory fields is missing for the payment request that was created for aid: " . $customer['aid'] . ". The payment was creadted anyway..";
+			$mandatory_fields_res = $this->validateMandatoryFieldsExistence($currentPayment, 'payment_request');
+			if (!empty($mandatory_fields_res)) {
+				$message = implode(",", $mandatory_fields_res) . " fields are missing for the payment request that was created for aid: " . $customer['aid'] . ". The payment was creadted anyway..";
 				Billrun_Factory::log($message, Zend_Log::WARN);
 				$this->logFile->updateLogFileField('warnings', $message);
 			}
