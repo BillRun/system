@@ -418,11 +418,15 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$trans_fields = Billrun_Factory::config()->getConfigValue(self::$type . '.html_translation', array());
 		$res = [];
 		foreach ($trans_fields as $field_name) {
-			if ($field_name == 'company_name') {
-				$res = array_merge($res, [$field_name => $this->getCompanyName()]);
-			}
-			if ($field_name == 'date') {
-				$res = array_merge($res, [$field_name => date(Billrun_Base::base_datetimeformat, time())]);
+			switch ($field_name) {
+				case 'company_name':
+					$res = array_merge($res, [$field_name => $this->getCompanyName()]);
+					break;
+				case 'date':
+					$res = array_merge($res, [$field_name => date(Billrun_Base::base_datetimeformat, time())]);
+					break;
+				default:
+					break;
 			}
 		}
 		return $res;
