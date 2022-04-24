@@ -30,6 +30,7 @@ abstract class Billrun_Sms_Abstract {
 	
 	public function setTo($to) {
 		$this->to = $to;
+		return $this;
 	}
 	
 	public function getBody() {
@@ -38,6 +39,7 @@ abstract class Billrun_Sms_Abstract {
 	
 	public function setBody($body) {
 		$this->body = $body;
+		return $this;
 	}
 	
 	/**
@@ -61,7 +63,7 @@ abstract class Billrun_Sms_Abstract {
 		
 		$className = 'Billrun_Sms_' . ucfirst($params['type']);
 		if (!class_exists($className)) {
-			Billrun_Factory::log("SMS Class type is not exists. Type: " . $params['type']);
+			Billrun_Factory::log("SMS Class type is not exists. Type: " . $params['type'], Zend_Log::ERR);
 			return false;
 		}
 		

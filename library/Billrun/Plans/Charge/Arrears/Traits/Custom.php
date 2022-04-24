@@ -50,7 +50,7 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 		$this->endOffset = Billrun_Utils_Time::getDaysSpanDiff($formatActivation, $formatEnd,$cycleSpan);
 	}
 
-	protected function getProrationData($price) {
+	protected function getProrationData($price, $cycle = false) {
 		$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
 		$proratedActivation =  $this->proratedStart  || $this->startOffset ?  $this->activation :  $this->cycle->start();
 		$proratedEnding =  $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE  ;
