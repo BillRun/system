@@ -177,7 +177,7 @@ class Tests_paymenttest extends UnitTestCase {
 		if ($this->reportTR) {
 			$this->ReportTestRail();
 		}
-    //  $this->restoreColletions();
+       $this->restoreColletions();
 		
 	}
 
@@ -284,8 +284,7 @@ class Tests_paymenttest extends UnitTestCase {
 
 		$sort = function ($a, $b) {
 
-
-			$fields = [
+			$fields = (empty($row['sort']))?[
 				'aid',
 				'total_paid',
 				'left_to_pay',
@@ -298,7 +297,21 @@ class Tests_paymenttest extends UnitTestCase {
 				'left',
 				'paid',
 				'bills_merged',
-			];
+			]: $row['sort'];
+			// $fields = [
+			// 	'aid',
+			// 	'total_paid',
+			// 	'left_to_pay',
+			// 	"payment_agreement.installment_index",
+			// 	'type',
+			// 	'cancelled',
+			// 	'correction',
+			// 	'dir',
+			// 	'amount',
+			// 	'left',
+			// 	'paid',
+			// 	'bills_merged',
+			// ];
 
 			foreach ($fields as $field) {
 				if (strpos($field, '.')) {
@@ -437,7 +450,7 @@ class Tests_paymenttest extends UnitTestCase {
 		
 		$BillsCollection = Billrun_Factory::db()->billsCollection();
 		$bills = $BillsCollection->query($query)->cursor()->setReadPreference('RP_PRIMARY')->timeout(10800000);
-		sleep(2);
+		
 		foreach ($bills as $bill) {
 			$allBills[] = $bill->getRawData();
 		}
@@ -735,8 +748,8 @@ class Tests_paymenttest extends UnitTestCase {
 		$respons = json_decode(Billrun_Util::sendRequest($url, $request), true);
 		Billrun_Factory::log("response is :" . print_r($respons, 1), Zend_Log::INFO);
 		echo '<pre>';
-		print_r($$url);
-		print_r($request);
+		//print_r($$url);
+		print_r($respons);
 		//print_r($this->getBills(['aid' =>['$in'=>[72,722]]]));
 		return $respons;
 	}

@@ -6487,12 +6487,15 @@
 		"test_id": 72,
 		"api": "chargeAccount",
 		"params": {
-			"aids" :"72"
+			"fff":"fff"
 		},
 		"source": "api",
 		"request_method": "GET",
+		"sort":["aid","type"],
 		"preTest": [
+			
 			{
+				
 				"bulidAPI": {
 					"api": "onetimeinvoice",
 					"aid": "72",
@@ -6734,10 +6737,11 @@
 		"test_id": 74,
 		"api": "chargeAccount",
 		"params": {
-			"min_invoice_date" :"04/01/2022"
+			"min_invoice_date" :"03/20/2022"
 		},
 		"source": "api",
 		"request_method": "GET",
+		"sort":["amount","paid","type"],
 		"preTest": [
 			{
 				"bulidAPI": {
@@ -6761,12 +6765,12 @@
 			{
 				"bulidAPI": {
 					"api": "onetimeinvoice",
-					"aid": "722",
+					"aid": "72",
 					"step": "1",
 					"invoice_unixtime": "1648796388",
 					"cdrs": [
 						{
-							"aid": "722",
+							"aid": "72",
 							"sid": "0",
 							"rate": "CALL",
 							"credit_time": "2021-03-18T17:18:56.385Z",
@@ -6782,22 +6786,17 @@
 		
 			{
 				"FieldComparison": {
-					"aid":{"$in":[72,722]}
+					"aid":{"$in":[72]}
 				
 					
 				}
 			}
 			
 		],
-		"6postTest": [
+		"postTest": [
 			{
 				"cleanDB": {
 					"aid": 72
-				}
-			},
-			{
-				"cleanDB": {
-					"aid": 722
 				}
 			}
 		],
@@ -6805,22 +6804,22 @@
 			{
 				"aid": 72,
 				"type": "inv",
-				"amount": 23.4,
-				"due": 23.4,
-				"due_before_vat": 20,
+				"amount": 46.8,
+				"due": 46.8,
+				"due_before_vat": 40,
 				"invoice_type": "immediate",
 				"lastname": "yoss",
 				"method": "automatic",
 				"paid": "1",
 				"payer_name": "yoss yossi",
-				"total_paid": 23.4,
+				"total_paid": 46.8,
 				"left_to_pay": 0			
 			},
 			{
 					"aid": 72,
 					"type": "rec",
-					"amount": 23.4,
-					"due": -23.4,
+					"amount": 46.8,
+					"due": -46.8,
 					"pending" : false,
 					"method": "automatic",
 				    "vendor_response.name" : "CreditGuard",
@@ -6828,18 +6827,18 @@
 			      
 				},
 				{
-					"aid": 722,
+					"aid": 72,
 					"type": "inv",
-					"amount": 46.8,
-					"due": 46.8,
-					"due_before_vat": 40,
+					"amount": 23.4,
+					"due": 23.4,
+					"due_before_vat": 20,
 					"invoice_type": "immediate",
 					"lastname": "yoss",
 					"method": "automatic",
 					"paid": false,
 					"payer_name": "yoss yossi",
 					"total_paid": 0,
-					"left_to_pay": 46.8	
+					"left_to_pay":23.4
 				}	
 			]
 		,
