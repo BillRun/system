@@ -420,6 +420,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		foreach ($trans_fields as $field_name) {
 			switch ($field_name) {
 				case 'company_name':
+					//Using array_merge instead of associatively inserting to the array - due to bug in Yaf 3.2 onward
 					$res = array_merge($res, [$field_name => $this->getCompanyName()]);
 					break;
 				case 'date':
