@@ -313,6 +313,8 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 *
 	 * @param  array  $auth
 	 * @return Crypt_RSA
+	 * 
+	 * @deprecated since version 5.16
 	 */
 	protected function getKey(array $auth) {
 		$key = $this->getNewKey();
@@ -345,6 +347,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * Get a new RSA key instance.
 	 *
 	 * @return Crypt_RSA
+	 * @deprecated since version 5.16
 	 */
 	public function getNewKey() {
 		return phpseclib3\Crypt\RSA::load();
