@@ -2,6 +2,7 @@
 
 use phpseclib3\Crypt\PublicKeyLoader;
 use phpseclib3\Net\SFTP;
+use phpseclib3\System\SSH\Agent;
 
 /**
  * @package         Billing
@@ -229,7 +230,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @return size
 	 */
 	public function getFileSize($file_path) {
-		return $this->getConnection()->size($file_path);
+		return $this->getConnection()->filesize($file_path);
 	}
 
 	/**
@@ -337,7 +338,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @return System_SSH_Agent
 	 */
 	public function getAgent() {
-		return new System_SSH_Agent;
+		return new Agent();
 	}
 
 	/**
