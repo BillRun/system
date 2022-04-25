@@ -573,17 +573,23 @@ class ResetLinesModel {
                     }
                 }
 		if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
-			try{
-				Billrun_Factory::log("batchinsert " . count($queue_lines) . " queue lines start", Zend_Log::DEBUG);
-				$ret = $queue_coll->batchInsert($queue_lines); // ok==true, nInserted==0 if w was 0
-                                Billrun_Factory::log("batchinsert queue lines end", Zend_Log::DEBUG);
-				if (isset($ret['err']) && !is_null($ret['err'])) {
-					Billrun_Factory::log('Rebalance: batch insertion to queue failed, Insert Error: ' .$ret['err'], Zend_Log::ALERT);
-					throw new Exception();
+			$offset = 0;
+			$batch_size = Billrun_Config::getInstance()->getConfigValue('resetlines.queue.insert_size', '10000');
+			Billrun_Factory::log("Queue batch insert size is " . $batch_size, Zend_Log::DEBUG);
+			while ($queue_batch = array_slice($queue_lines, $offset, $batch_size)) {
+				try {
+					Billrun_Factory::log("batchinsert " . count($queue_batch) . " queue lines start", Zend_Log::DEBUG);
+					$ret = $queue_coll->batchInsert($queue_batch); // ok==true, nInserted==0 if w was 0
+					Billrun_Factory::log("batchinsert queue lines end", Zend_Log::DEBUG);
+					if (isset($ret['err']) && !is_null($ret['err'])) {
+						Billrun_Factory::log('Rebalance: batch insertion to queue failed, Insert Error: ' . $ret['err'], Zend_Log::ALERT);
+						throw new Exception();
+					}
+				} catch (Exception $e) {
+					Billrun_Factory::log("Rebalance: Batch insert failed during insertion to queue, inserting line by line, Error: " .  $e->getMessage(), Zend_Log::ERR);
+					$this->insertQueueLinesLineByLine($queue_coll, $queue_batch);
 				}
-			} catch (Exception $e) {
-                                Billrun_Factory::log("Rebalance: Batch insert failed during insertion to queue, inserting line by line, Error: " .  $e->getMessage(), Zend_Log::ERR);
-				$this->insertQueueLinesLineByLine($queue_coll, $queue_lines);                           	
+				$offset += $batch_size;
 			}
 		} else {
                         Billrun_Factory::log("foreach queue lines", Zend_Log::DEBUG);
