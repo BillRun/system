@@ -14,7 +14,7 @@
  * @since    0.5
  */
 class ResetLinesModel {
-
+    use Billrun_Traits_ConditionsCheck;
     /**
      *
      * @var array
@@ -63,8 +63,10 @@ class ResetLinesModel {
      * @var array
      */
     protected $conditions;
+    
+    protected $linesStampsByRebalanceStamp = [];
 
-    public function __construct($aids, $billrun_key, $conditions, $stampsToRecoverByAidAndSid = array()) {
+    public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps , $stampsToRecoverByAidAndSid = array()) {
         $this->initBalances($aids, $billrun_key);
         $this->aids = $aids;
         $this->billrun_key = strval($billrun_key);
@@ -72,6 +74,9 @@ class ResetLinesModel {
         $this->conditions = $conditions;
         $this->stampsToRecoverByAidAndSid = $stampsToRecoverByAidAndSid;
         $this->rebalnceQueueRecoverStampsPath = Billrun_Util::getBillRunSharedFolderPath('workspace' . DIRECTORY_SEPARATOR . 'rebalance' . DIRECTORY_SEPARATOR . 'rebalance_queue' . DIRECTORY_SEPARATOR . 'recover_stamps' . DIRECTORY_SEPARATOR . $this->billrun_key);
+        if (Billrun_Config::getInstance()->getConfigValue('resetlines.useRebalanceStamps', false)){
+            $this->rebalanceStamps = $rebalanceStamps;
+        }
     }
 
     public function reset() {
@@ -219,7 +224,7 @@ class ResetLinesModel {
         Billrun_Factory::log("Rebalance resetLinesByQuery starts iteration", Zend_Log::DEBUG);
         $i = 0;
         foreach ($lines as $line) {
-            $i++;
+            $i++;           
             Billrun_Factory::log("reached $i line", Zend_Log::DEBUG);
             Billrun_Factory::dispatcher()->trigger('beforeRebalancingLines', array(&$line));
             Billrun_Factory::log("after beforeRebalancingLines", Zend_Log::DEBUG);
@@ -368,7 +373,30 @@ class ResetLinesModel {
         $this->buildQueueLine($queue_line, $line, $advancedProperties);
         Billrun_Factory::log("after buildQueueLine", Zend_Log::DEBUG);
         $queue_lines[] = $queue_line;
+        $this->createHashForRebalanceStamps($line);
         Billrun_Factory::log("end resetLine", Zend_Log::DEBUG);
+    }
+    
+    protected function createHashForRebalanceStamps($line){
+        if(empty($this->rebalanceStamps)){
+            return;
+        }
+        //Optimization: If the rebalance works on one rebalance queue record at a time, it must match.
+        if(count($this->rebalanceStamps[$line['aid']]) === 1){
+            $rebalanceStamp = current($this->rebalanceStamps[$line['aid']]);
+            $this->linesStampsByRebalanceStamp[$rebalanceStamp][] = $line['stamp'];
+            return;
+        }
+        
+        $conditionsByHash =  $this->conditions[$line['aid']];
+        foreach ($conditionsByHash as $conditionHash => $conditions){
+            //Check if the line matches the rebalance queue record conditions (using ArrayQuery)
+            if($this->isConditionMeet($line->getRawData(), $this->translateConditionArrayToQuery($conditions))){
+                //store this information to a new hash table (key = rebalance queue stamp, value = array of matching lines)
+                $rebalanceStamp = $this->rebalanceStamps[$line['aid']][$conditionHash];
+                $this->linesStampsByRebalanceStamp[$rebalanceStamp][] = $line['stamp']; 
+            }
+        }
     }
 
     protected function buildFormerExporterForLine($line) {
@@ -524,8 +552,6 @@ class ResetLinesModel {
      */
     protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter) {
         $update = $this->getUpdateQuery($rebalanceTime, $former_exporter);
-        $stamps_query = $this->getStampsQuery($stamps);
-
         Billrun_Factory::log('Removing records from queue', Zend_Log::DEBUG);
         $offset = 0;
         $batch_size = Billrun_Config::getInstance()->getConfigValue('resetlines.queue.removal_size', '10000');
@@ -538,8 +564,6 @@ class ResetLinesModel {
             Billrun_Factory::log('Removed ' . $ret['n'] . ' records from queue', Zend_Log::DEBUG);
             $offset += $batch_size;
         }
-        $stamps_query = $this->getStampsQuery($stamps);
-
         Billrun_Factory::log('Starting to reset balances', Zend_Log::DEBUG);
         $ret = $this->resetBalances($update_aids); // err null
         if (isset($ret['err']) && !is_null($ret['err'])) {
@@ -547,16 +571,7 @@ class ResetLinesModel {
         }
         $this->addStampsToRebalnceQueue($stamps);
         Billrun_Factory::log('Resetting ' . count($stamps) . ' lines', Zend_Log::DEBUG);
-        $offset = 0;
-        $batch_size = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.update_size', '10000');
-        while ($stamps_batch = array_slice($stamps, $offset, $batch_size)) {
-            $stamps_query = $this->getStampsQuery($stamps_batch);
-            $ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
-            if (isset($ret['err']) && !is_null($ret['err'])) {
-                return FALSE;
-            }
-            $offset += $batch_size;
-        }
+        $this->updateLines($stamps, $update, $lines_coll);
         if (!empty($this->splitLinesStamp)) {
             $split_lines_stamps_query = $this->getStampsQuery($this->splitLinesStamp);
             Billrun_Factory::log("Removing split lines", Zend_Log::DEBUG);
@@ -584,7 +599,30 @@ class ResetLinesModel {
         }
         $this->removeStampsfromRebalnceQueue($stamps);
         $this->unsetTx2FromRelevantBalances();
+        foreach ($this->linesStampsByRebalanceStamp as $rebalanceStamp => $linesStamps){
+            Billrun_Factory::log('Updating rebalance stamps field ' . $rebalanceStamp . ' for  ' . count($stamps) . ' lines', Zend_Log::DEBUG);
+            $update = array('$push' => array(
+                    'rebalance_stamps' => $rebalanceStamp,
+                )
+            );
+            $this->updateLines($linesStamps, $update, $lines_coll);
+        }
+        Billrun_Factory::log('Rebalance stamps field updated for ' . count($stamps) . ' lines', Zend_Log::DEBUG);
+        $this->linesStampsByRebalanceStamp = [];
         return true;
+    }
+    
+    protected function updateLines($stamps, $update, $lines_coll){
+        $offset = 0;
+        $batch_size = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.update_size', '10000');
+        while ($stamps_batch = array_slice($stamps, $offset, $batch_size)) {
+            $stamps_query = $this->getStampsQuery($stamps_batch);
+            $ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
+            if (isset($ret['err']) && !is_null($ret['err'])) {
+                return FALSE;
+            }
+            $offset += $batch_size;
+        }
     }
 
     protected function insertQueueLinesLineByLine($queue_coll, $queue_lines) {
@@ -994,24 +1032,36 @@ class ResetLinesModel {
     }
 
     protected function buildConditionsQuery($updateAids) {
-        if (empty($this->conditions)) {
-            return array();
-        }
         $conditionsQuery = array();
         $groupedAids = array();
         $conditionsHashArray = array();
-        foreach ($this->conditions as $aid => $conditions) {
+        $rebalanceStamps = array();
+        foreach ($this->conditions as $aid => $conditionsByHash) {
             if (!in_array($aid, $updateAids)) {
                 continue;
             }
-            $conditionsHashArray[key($conditions)] = current($conditions);
-            $groupedAids[key($conditions)][] = $aid;
+            foreach ($conditionsByHash as $conditionHash => $conditions){
+                $conditionsHashArray[$conditionHash] = $conditions;
+                $groupedAids[$conditionHash][] = $aid;
+                if(!empty($this->rebalanceStamps)){
+                    $rebalanceStamps[] = $this->rebalanceStamps[$aid][$conditionHash];
+                }
+            }
+            
         }
         foreach ($groupedAids as $conditionHash => $aids) {
-            $translatedCondition = $this->translateConditionArrayToQuery($conditionsHashArray[$conditionHash]);
-            $conditionsQuery['$or'][] = array_merge(
+            if(empty($conditionsHashArray[$conditionHash])){
+                $translatedCondition  = array();
+            }else{
+                $translatedCondition = $this->translateConditionArrayToQuery($conditionsHashArray[$conditionHash]);
+            }
+            $rebalanceStampsQuery = array();
+            if(!empty($rebalanceStamps)){
+                $rebalanceStampsQuery = array('rebalance_stamps' => array('$nin' => $rebalanceStamps));
+            }
+            $conditionsQuery['$or'][] = array_merge(array_merge(
                     array('aid' => array('$in' => $aids)),
-                    $translatedCondition
+                    $translatedCondition), $rebalanceStampsQuery
             );
         }
 
