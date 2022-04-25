@@ -600,7 +600,7 @@ class ResetLinesModel {
         $this->removeStampsfromRebalnceQueue($stamps);
         $this->unsetTx2FromRelevantBalances();
         foreach ($this->linesStampsByRebalanceStamp as $rebalanceStamp => $linesStamps){
-            Billrun_Factory::log('Updating rebalance stamps field ' . $rebalanceStamp . ' for  ' . count($stamps) . ' lines', Zend_Log::DEBUG);
+            Billrun_Factory::log('Updating rebalance stamps field ' . $rebalanceStamp . ' for  ' . count($linesStamps) . ' lines', Zend_Log::DEBUG);
             $update = array('$push' => array(
                     'rebalance_stamps' => $rebalanceStamp,
                 )
