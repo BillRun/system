@@ -229,6 +229,7 @@ class ResetLinesModel {
             Billrun_Factory::log("reached $i line", Zend_Log::DEBUG);
             Billrun_Factory::dispatcher()->trigger('beforeRebalancingLines', array(&$line));
             Billrun_Factory::log("after beforeRebalancingLines", Zend_Log::DEBUG);
+            $rebalanceStamp = $this->isLineRelevantForRebalanceStampsHash($line);
             if ($line['source'] === 'unify') {
                 $batchSize = Billrun_Config::getInstance()->getConfigValue('resetlines.archived_lines.batch_size', 100000);
                 Billrun_Factory::log("before get unify lines", Zend_Log::DEBUG);
@@ -249,6 +250,7 @@ class ResetLinesModel {
                         unset($archivedLine["u_s"]);
                         $archivedLinesToInsert[$archivedLine['stamp']] = $archivedLine;
                         $this->resetLine($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
+                        $this->addLineStampToRebalanceStampsHash($archivedLine, $rebalanceStamp);
                     }
                     Billrun_Factory::log("end archived lines loop", Zend_Log::DEBUG);
                     $this->restoringArchivedLinesToLines($archivedLinesToInsert);
@@ -264,6 +266,7 @@ class ResetLinesModel {
             Billrun_Factory::log("before resetLine", Zend_Log::DEBUG);
             $this->resetLine($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
             Billrun_Factory::log("after resetLine", Zend_Log::DEBUG);
+            $this->addLineStampToRebalanceStampsHash($line, $rebalanceStamp);
             Billrun_Factory::log("end $i line", Zend_Log::DEBUG);
         }
         // If there are stamps to handle.
@@ -374,31 +377,44 @@ class ResetLinesModel {
         $this->buildQueueLine($queue_line, $line, $advancedProperties);
         Billrun_Factory::log("after buildQueueLine", Zend_Log::DEBUG);
         $queue_lines[] = $queue_line;
-        $this->createHashForRebalanceStamps($line);
         Billrun_Factory::log("end resetLine", Zend_Log::DEBUG);
     }
-
-    protected function createHashForRebalanceStamps($line) {
-        if (empty($this->rebalanceStamps)) {
-            return;
+    
+    /**
+     * Check if the line matches the rebalance queue record conditions
+     * @param array $line
+     * @return boolean|int - return the rebalance_queue stamp that line matches, false if line is not match/.
+     */
+    protected function isLineRelevantForRebalanceStampsHash($line){
+        if (!Billrun_Config::getInstance()->getConfigValue('resetlines.avoid_repeating_reset', false)){
+            return false;
         }
         //Optimization: If the rebalance works on one rebalance queue record at a time, it must match.
         if (count($this->rebalanceStamps[$line['aid']]) === 1) {
-            $rebalanceStamp = current($this->rebalanceStamps[$line['aid']]);
-            $this->linesStampsByRebalanceStamp[$rebalanceStamp][] = $line['stamp'];
-            return;
+            return current($this->rebalanceStamps[$line['aid']]);
         }
-
         $conditionsByHash = $this->conditions[$line['aid']];
         foreach ($conditionsByHash as $conditionHash => $conditions) {
             //Check if the line matches the rebalance queue record conditions (using ArrayQuery)
-            if ($this->isConditionMeet($line->getRawData(), $this->translateConditionArrayToQuery($conditions))) {
-                //store this information to a new hash table (key = rebalance queue stamp, value = array of matching lines)
-                $rebalanceStamp = $this->rebalanceStamps[$line['aid']][$conditionHash];
-                $this->linesStampsByRebalanceStamp[$rebalanceStamp][] = $line['stamp'];
+            if (empty($conditions) || $this->isConditionMeet($line->getRawData(), $this->translateConditionArrayToQuery($conditions))) {
+                return $this->rebalanceStamps[$line['aid']][$conditionHash];
             }
         }
+        return false;//I think this sould not get here (line must fit to one rebalance queue record)
     }
+
+    /**
+     * Store to a new hash table (key = rebalance queue stamp, value = array of matching lines)
+     * @param array $line - The matching line
+     * @param int $rebalanceStamp - the rebalance_queue stamp that line matches
+     */
+    protected function addLineStampToRebalanceStampsHash($line, $rebalanceStamp) {
+        if (empty($rebalanceStamp)) {
+            return;
+        }     
+        
+        $this->linesStampsByRebalanceStamp[$rebalanceStamp][] = $line['stamp'];
+    } 
 
     protected function buildFormerExporterForLine($line) {
         $former_exporter = [];
@@ -1052,7 +1068,7 @@ class ResetLinesModel {
             foreach ($conditionsByHash as $conditionHash => $conditions) {
                 $conditionsHashArray[$conditionHash] = $conditions;
                 $groupedAids[$conditionHash][] = $aid;
-                if (!empty($this->rebalanceStamps)) {
+                if (!empty($this->rebalanceStamps)) {//if avoid_repeating_reset = false must be empty
                     $rebalanceStamps[] = $this->rebalanceStamps[$aid][$conditionHash];
                 }
             }
@@ -1064,7 +1080,7 @@ class ResetLinesModel {
                 $translatedCondition = $this->translateConditionArrayToQuery($conditionsHashArray[$conditionHash]);
             }
             $rebalanceStampsQuery = array();
-            if (!empty($rebalanceStamps)) {
+            if (!empty($rebalanceStamps)) { //if avoid_repeating_reset = false must be empty
                 $rebalanceStampsQuery = array('rebalance_stamps' => array('$nin' => $rebalanceStamps));
             }
             $conditionsQuery['$or'][] = array_merge(array_merge(
