@@ -591,8 +591,11 @@ class ResetLinesModel {
                         Billrun_Factory::log("foreach queue lines", Zend_Log::DEBUG);
 			$this->insertQueueLinesLineByLine($queue_coll, $queue_lines);
                 }
-               $this->removeStampsfromRebalnceQueue($stamps);                
-               $this->unsetTx2FromRelevantBalances();
+                $this->removeStampsfromRebalnceQueue($stamps);                
+                $this->unsetTx2FromRelevantBalances();
+                $this->stampsByAidAndSid = [];
+                $this->splitLinesStamp = [];
+
 		return true;
 	}
 
