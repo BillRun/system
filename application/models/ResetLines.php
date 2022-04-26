@@ -75,7 +75,7 @@ class ResetLinesModel {
         $this->conditions = $conditions;
         $this->stampsToRecoverByAidAndSid = $stampsToRecoverByAidAndSid;
         $this->rebalnceQueueRecoverStampsPath = Billrun_Util::getBillRunSharedFolderPath('workspace' . DIRECTORY_SEPARATOR . 'rebalance' . DIRECTORY_SEPARATOR . 'rebalance_queue' . DIRECTORY_SEPARATOR . 'recover_stamps' . DIRECTORY_SEPARATOR . $this->billrun_key);
-        if (Billrun_Config::getInstance()->getConfigValue('resetlines.useRebalanceStamps', false)) {
+        if (Billrun_Config::getInstance()->getConfigValue('resetlines.avoid_repeating_reset', false)) {
             $this->rebalanceStamps = $rebalanceStamps;
         }
     }
