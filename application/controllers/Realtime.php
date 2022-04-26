@@ -158,7 +158,8 @@ class RealtimeController extends ApiController {
 		$processor = Billrun_Processor::getInstance($options);
 		if ($processor) {
 			$processor->addDataRow($this->event);
-			$processor->process($this->config);
+			$processor->setRealtimeConfig($this->config);
+			$processor->process();
 			$data = $processor->getData()['data'];
 			return current($processor->getAllLines());
 		}

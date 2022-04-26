@@ -305,29 +305,36 @@ class Billrun_Plan extends Billrun_Service {
 		$endPricing = $endOffset;
 		$startPricing = $startOffset;
 
+		settype($tariff['from'], 'int');
+
 		if ($tariff['from'] > $startOffset) {
 			$startPricing = $tariff['from'];
 			// HACK :  fix for the month length differance between the  activation and the  plan change , NOTICE will only work on monthly charges
 			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
 				$startFratcion = 1 -($startOffset-floor($startOffset));
-				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation));
-				$startPricing += ((($startFratcion * date('t',$activation)) /  $currentDays) - $startFratcion);
+				$currentDays = (int) date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation));
+				$startPricing += ((($startFratcion * (int) date('t',$activation)) /  $currentDays) - $startFratcion);
 			}
 		}
-		if (!static::isValueUnlimited($tariff['to']) && $tariff['to'] < $endOffset) {
-			$endPricing = $tariff['to'];
-			// HACK :  fix for the month length differance between the  activation and the  plan change , NOTICE will only work on monthly charges
-			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
-				$endFratcion = 1 -($startOffset - floor($startOffset));
-				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation));
-				$endPricing += (( ($endFratcion * date('t',$activation)) / $currentDays) - $endFratcion);
+		if (!static::isValueUnlimited($tariff['to'])) {
+			settype($tariff['to'], 'int');
+			//If the tariff is of expired service/plan don't charge anything
+			if($tariff['to'] <= $startPricing && $tariff['from'] < $startPricing) {
+				return 0;
+			}
+			if ($tariff['to'] < $endOffset) {
+				$endPricing = $tariff['to'];
+				// HACK :  fix for the month length differance between the  activation and the  plan change , NOTICE will only work on monthly charges
+				if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
+					$endFratcion = 1 -($startOffset - floor($startOffset));
+					$currentDays = (int) date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation));
+					$endPricing += (( ($endFratcion * (int) date('t',$activation)) / $currentDays) - $endFratcion);
+				}
 			}
 		}
-		//If the tariff is of expired service/plan don't charge anything
-		if(!static::isValueUnlimited($tariff['to']) && $tariff['to'] <= $startPricing && $tariff['from'] < $startPricing) {
-            return 0;
-		}
+
 		$fullMonth = (round(($endPricing - $startPricing), 5) == 1 || $endPricing == $startPricing);
+		settype($tariff['price'], 'double');
 		return array('start' => $fullMonth ? FALSE : $startPricing,
 			'end' => $fullMonth ? FALSE : $endPricing,
 			'price' => ($endPricing - $startPricing) * $tariff['price']);
@@ -445,8 +452,8 @@ class Billrun_Plan extends Billrun_Service {
 		$addedMonths = 0;
 
 		//add the starting month fraction
-		$addedDays = $activation->format('t') - $activation->format('d') + 1;
-		$startFraction = ( $addedDays ) / $activation->format('t');
+		$addedDays = (int) $activation->format('t') - (int) $activation->format('d') + 1;
+		$startFraction = ( $addedDays ) / (int) $activation->format('t');
 		$resultDate = new DateTime($activation->format('Y-m-d'));
 
 		if($cycleFraction - $startFraction > 0) {
@@ -466,7 +473,7 @@ class Billrun_Plan extends Billrun_Service {
 		if( $i != 0 ) {
 			//based on the starting month fraction  retrive the  current month fraction
 			$endFraction = $i;
-			$daysInMonth = $resultDate->format('t');
+			$daysInMonth = (int) $resultDate->format('t');
 			$roundedDays = floor(round($daysInMonth *  $endFraction ,6));
 			$resultDate->modify($roundedDays.' day');
 			if($resultDate->format('t') != $resultDate->format('d') && $resultDate->format('d') != "01" && empty($deactivated)) {

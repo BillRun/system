@@ -259,9 +259,13 @@ class Models_Entity {
 			$selectOptionsFields[$fieldName] = Billrun_Util::getFieldVal($customField['select_options'], null);
 		}
 
-		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
-		if (is_null($defaultFields)) {
+		if (!isset($this->config[$this->action]['update_parameters'])) {
 			$defaultFields = array();
+		} else {
+			$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
+			if (is_null($defaultFields)) {
+				$defaultFields = array();
+			}
 		}
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
@@ -372,7 +376,7 @@ class Models_Entity {
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
 			$this->fixEntityFields($this->before);
-			$this->trackChanges($this->update['_id']);
+			$this->trackChanges($this->update['_id'] ?? null);
 			return isset($status['ok']) && $status['ok'];
 		} else {
 			throw new Billrun_Exceptions_Api(0, array(), 'Entity already exists');
@@ -568,7 +572,7 @@ class Models_Entity {
 //		$oldId = $this->query['_id'];
 		unset($this->update['_id']);
 		$status = $this->insert($this->update);
-		$newId = $this->update['_id'];
+		$newId = $this->update['_id'] ?? null;
 		$this->fixEntityFields($this->before);
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
@@ -604,7 +608,7 @@ class Models_Entity {
 	 * @return unix timestamp
 	 */
 	public static function getMinimumUpdateDate($invoicing_day = null) {	
-		if (empty(self::$minUpdateDatetime)) {
+		if (empty(self::$minUpdateDatetime) || (!is_null($invoicing_day) && empty(self::$minUpdateDatetime[$invoicing_day]))) {
 			if (!Billrun_Factory::config()->isMultiDayCycle() && is_null($invoicing_day)) {
 				self::$minUpdateDatetime[0] = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle()) ? Billrun_Billingcycle::getEndTime($billrunKey) : 0;
 			} else {

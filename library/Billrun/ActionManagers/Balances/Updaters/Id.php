@@ -128,8 +128,14 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	 * @return \Billrun_DataTypes_Wallet
 	 */
 	protected function getUsagetWallet($ppPair, $valueToUseInQuery) {
-		@list($chargingBy, $chargingByValue) = each($this->balancesRecord['balance']['totals']);
-		list($chargingByValueName, $value) = each($chargingByValue);
+//		@list($chargingBy, $chargingByValue) = each($this->balancesRecord['balance']['totals']); // remove PHP 8 compat
+		$chargingBy = key($this->balancesRecord['balance']['totals']);
+		$chargingByValue = current($this->balancesRecord['balance']['totals']);
+		next($this->balancesRecord['balance']['totals']);
+//		list($chargingByValueName, $value) = each($chargingByValue); // remove PHP 8 compat
+		$chargingByValueName = key($chargingByValue);
+		$value = current($chargingByValue);
+		next($chargingByValue);
 
 		if ($valueToUseInQuery !== false) {
 			$chargingByValue[$chargingByValueName] = $valueToUseInQuery;
@@ -146,7 +152,10 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	 * @return \Billrun_DataTypes_Wallet
 	 */
 	protected function getWallet($recordToSet) {
-		@list($chargingBy, $chargingByValue) = each($this->balancesRecord['balance']);
+//		@list($chargingBy, $chargingByValue) = each($this->balancesRecord['balance']); // remove PHP 8 compat
+		$chargingBy = key($this->balancesRecord['balance']);
+		$chargingByValue = current($this->balancesRecord['balance']);
+		next($this->balancesRecord['balance']);
 
 		$valueToUseInQuery = false;
 		if (isset($recordToSet['value'])) {

@@ -16,6 +16,8 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 
 	static protected $type = 'realtime';
 	
+	protected $realtimeConfig = array();
+	
 	public function __construct($options) {
 		parent::__construct($options);
 		if (!empty($options['default_usaget'])) {
@@ -24,6 +26,10 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		if (!empty($options['usaget_mapping'])) {
 			$this->usagetMapping = $options['usaget_mapping'];
 		}
+	}
+	
+	public function setRealtimeConfig($config = array()) {
+		$this->realtimeConfig = $config;
 	}
 
 	/**
@@ -41,7 +47,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 			return false;
 		}
 		$row['stamp'] = md5(serialize(!empty($this->stampFields) ? $this->stampFields : $row));
-		$usagev = $this->getLineVolume($row, $config);
+		$usagev = $this->getLineVolume($row, $this->config);
 		if ($usagev === false) {
 			Billrun_Factory::log("Billrun_Processor: cannot get line usage volume. details: " . print_R($row, 1), Zend_Log::ERR);
 			return false;
@@ -78,10 +84,10 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		return true;
 	}
 
-	public function process($config) {
+	public function process() {
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 
-		if ($this->parse($config) === FALSE) {
+		if ($this->parse() === FALSE) {
 			Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}

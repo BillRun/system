@@ -114,7 +114,10 @@ abstract class Billrun_PaymentGateway {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
 		$this->account = Billrun_Factory::account();
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
+		$conf_filepath = APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini';
+		if (file_exists($conf_filepath)) {
+			Billrun_Factory::config()->addConfig($conf_filepath);
+		}
 	}
 
 
@@ -602,7 +605,7 @@ abstract class Billrun_PaymentGateway {
 			return $paymentGateway['name'] == $gatewayName;
 		});
 		$gatewayDetails = current($gateway);
-		return $gatewayDetails['params'];
+		return $gatewayDetails['params'] ?? false;
 	}
 	
 	/**
@@ -681,7 +684,7 @@ abstract class Billrun_PaymentGateway {
 	 * adding params that the payment gateway needs for further integraion.
 	 * 
 	 */
-	public function addAdditionalParameters() {
+	public function addAdditionalParameters($request) {
 		return array();
 	}
 	
@@ -693,7 +696,7 @@ abstract class Billrun_PaymentGateway {
 		return false;
 	}
 	
-	protected function checkIfCustomerExists () {
+	protected function checkIfCustomerExists ($aid) {
 		return false;
 	}
 	

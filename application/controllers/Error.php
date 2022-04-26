@@ -12,7 +12,7 @@ class ErrorController extends Yaf_Controller_Abstract {
 	 * you can also call to Yaf_Request_Abstract::getException to get the 
 	 * un-caught exception.
 	 */
-	public function errorAction(Exception $exception) {	
+	public function errorAction($exception) {	
 	   // Get exception output
 	   $output = $this->getExceptionOutput($exception);
 
@@ -37,7 +37,7 @@ class ErrorController extends Yaf_Controller_Abstract {
 	 * @param Exception $exception
 	 * @return json enecoded array
 	 */
-	protected function getExceptionOutput(Exception $exception) {
+	protected function getExceptionOutput($exception) {
 	   // Get exception output
 	   if($exception instanceof Billrun_Exceptions_Base) {
 		   return $this->billrunExceptionOutput($exception);
@@ -51,7 +51,7 @@ class ErrorController extends Yaf_Controller_Abstract {
 	 * @param Billrun_Exceptions_Base $exception
 	 * @return json encoded array.
 	 */
-	protected function billrunExceptionOutput(Billrun_Exceptions_Base $exception) {
+	protected function billrunExceptionOutput($exception) {
 		return $exception->output();
 	}
 
@@ -60,7 +60,7 @@ class ErrorController extends Yaf_Controller_Abstract {
 	 * @param type $exception
 	 * @return string
 	 */
-	protected function generalExceptionOutput(Exception $exception) {
+	protected function generalExceptionOutput($exception) {
 	   $output = array();
 	   $output['status'] = 0;
 	   $output['code'] = 500;
