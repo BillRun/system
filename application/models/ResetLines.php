@@ -400,7 +400,8 @@ class ResetLinesModel {
                 return $this->rebalanceStamps[$line['aid']][$conditionHash];
             }
         }
-        return false;//I think this sould not get here (line must fit to one rebalance queue record)
+        Billrun_Factory::log("No rebalance queue record was found for this line", Zend_Log::WARN);
+        return false;
     }
 
     /**
