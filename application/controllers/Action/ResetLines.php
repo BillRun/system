@@ -62,12 +62,13 @@ class ResetLinesAction extends ApiAction {
 					'billrun_key' => $billrun_key,
 					'conditions' => !empty($conditions) ? $conditions : array(),
 					'conditions_hash' => md5(serialize($conditions)),
-					'creation_date' => new MongoDate()
+					'creation_date' => new MongoDate()                                       
 				);
+                                $rebalanceLine['stamp'] =  md5(serialize($rebalanceLine));
 				$query = array(
 					'aid' => $aid,
 					'billrun_key' => $billrun_key,
-				);
+				);  
 				$options = array('upsert' => true);
 				$rebalance_queue->update($query, array('$set' => $rebalanceLine), $options);
 			}
