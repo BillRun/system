@@ -400,7 +400,7 @@ class ResetLinesModel {
                 return $this->rebalanceStamps[$line['aid']][$conditionHash];
             }
         }
-        Billrun_Factory::log("No rebalance queue record was found for this line", Zend_Log::WARN);
+        Billrun_Factory::log("No rebalance queue record was found for this line. line stamp: " . $line['satmp'] , Zend_Log::WARN);
         return false;
     }
 
