@@ -14,9 +14,11 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "PLAN_A"
+										"op": "in",
+										"value": ["PLAN_A_NEW_RECURRENCE_STRACUT","PLAN_A"]
 									}
+								
+
 								]
 							}
 						]
@@ -30,6 +32,9 @@
 			"subject": {
 				"plan": {
 					"PLAN_A": {
+						"value": 0.1
+					},
+					"PLAN_A_NEW_RECURRENCE_STRACUT": {
 						"value": 0.1
 					}
 				}
@@ -53,7 +58,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_SERVICE"
+														"DISCOUNT_SERVICE",
+														"DISCOUNT_SERVICE_NEW_RECURRENCE_STRACUT",
 													]
 												}
 											]
@@ -72,6 +78,9 @@
 			"subject": {
 				"service": {
 					"DISCOUNT_SERVICE": {
+						"value": "50"
+					},
+					"DISCOUNT_SERVICE_NEW_RECURRENCE_STRACUT": {
 						"value": "50"
 					}
 				}
@@ -95,7 +104,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"NOT_TAXABLE"
+														"NOT_TAXABLE","NOT_TAXABLE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -115,6 +124,9 @@
 				"service": {
 					"NOT_TAXABLE": {
 						"value": "10"
+					},
+					"NOT_TAXABLE_NEW_RECURRENCE_STRACUT": {
+						"value": "10"
 					}
 				}
 			}
@@ -132,8 +144,8 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "TTF"
+										"op": "in",
+										"value": ["TTF","TTF_NEW_RECURRENCE_STRACUT"]
 									}
 								]
 							}
@@ -150,6 +162,9 @@
 			"subject": {
 				"plan": {
 					"TTF": {
+						"value": 10
+					},
+					"TTF_NEW_RECURRENCE_STRACUT": {
 						"value": 10
 					}
 				}
@@ -169,8 +184,8 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "FFF"
+										"op": "in",
+										"value": ["FFF","FFF_NEW_RECURRENCE_STRACUT"]
 									}
 								]
 							}
@@ -187,6 +202,9 @@
 			"subject": {
 				"plan": {
 					"FFF": {
+						"value": 10
+					},
+					"FFF_NEW_RECURRENCE_STRACUT":{
 						"value": 10
 					}
 				}
@@ -206,8 +224,8 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "TFF"
+										"op": "in",
+										"value": ["TFF","TFF_NEW_RECURRENCE_STRACUT"]
 									}
 								]
 							}
@@ -224,6 +242,10 @@
 			"subject": {
 				"plan": {
 					"TFF": {
+						"value": 10
+					},
+					"TFF_NEW_RECURRENCE_STRACUT":
+					{
 						"value": 10
 					}
 				}
@@ -243,8 +265,8 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "FTT"
+										"op": "in",
+										"value": ["FTT","FTT_NEW_RECURRENCE_STRACUT"]
 									}
 								]
 							}
@@ -261,6 +283,9 @@
 			"subject": {
 				"plan": {
 					"FTT": {
+						"value": 10
+					},
+					"FTT_NEW_RECURRENCE_STRACUT": {
 						"value": 10
 					}
 				}
@@ -280,8 +305,8 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "TTT"
+										"op": "in",
+										"value":[ "TTT","TTT_NEW_RECURRENCE_STRACUT"]
 									}
 								]
 							}
@@ -298,6 +323,9 @@
 			"subject": {
 				"plan": {
 					"TTT": {
+						"value": 10
+					},
+					"TTT_NEW_RECURRENCE_STRACUT": {
 						"value": 10
 					}
 				}
@@ -316,8 +344,8 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "FFT"
+										"op": "in",
+										"value": ["FFT","FFT_NEW_RECURRENCE_STRACUT"]
 									}
 								]
 							}
@@ -334,6 +362,9 @@
 			"subject": {
 				"plan": {
 					"FFT": {
+						"value": 10
+					},
+					"FFT_NEW_RECURRENCE_STRACUT": {
 						"value": 10
 					}
 				}
@@ -361,7 +392,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"LEGACY_CUSTOMER"
+														"LEGACY_CUSTOMER","LEGACY_CUSTOMER_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -388,7 +419,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BOX_1"
+											"BOX_1","BOX_1_NEW_RECURRENCE_STRACUT"
 										]
 									}
 								],
@@ -400,7 +431,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"LEGACY_CUSTOMER"
+														"LEGACY_CUSTOMER","LEGACY_CUSTOMER_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -478,6 +509,9 @@
 
 					"BOX_1": {
 						"value": 16.73109244
+					},
+					"BOX_1_NEW_RECURRENCE_STRACUT": {
+						"value": 16.73109244
 					}
 				}
 			},
@@ -505,7 +539,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BOX_1"
+											"BOX_1","BOX_1_NEW_RECURRENCE_STRACUT"
 										]
 									}
 								],
@@ -517,7 +551,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"LEGACY_CUSTOMER"
+														"LEGACY_CUSTOMER","LEGACY_CUSTOMER_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -534,6 +568,9 @@
 				"plan": {
 
 					"BOX_1": {
+						"value": 8.394957983
+					},
+					"BOX_1_NEW_RECURRENCE_STRACUT":{
 						"value": 8.394957983
 					}
 				}
@@ -558,7 +595,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"PRICELEVELS"
+											"PRICELEVELS","PRICELEVELS__NEW_RECURRENCE_STRACUT"
 										]
 									}
 								]
@@ -571,6 +608,9 @@
 			"subject": {
 				"plan": {
 					"PRICELEVELS": {
+						"value": 0.2
+					},
+					"PRICELEVELS__NEW_RECURRENCE_STRACUT":{
 						"value": 0.2
 					}
 				}
@@ -599,7 +639,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"ABCD"
+														"ABCD","ABCD_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -615,6 +655,9 @@
 			"subject": {
 				"plan": {
 					"AZ": {
+						"value": 0.2
+					},
+					"AZ_NEW_RECURRENCE_STRACUT": {
 						"value": 0.2
 					}
 				}
@@ -643,7 +686,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"EFG"
+														"EFG","EFG_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -659,6 +702,9 @@
 			"subject": {
 				"plan": {
 					"AZ": {
+						"value": 0.2
+					},
+					"AZ_NEW_RECURRENCE_STRACUT":{
 						"value": 0.2
 					}
 				}
@@ -729,8 +775,8 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "PLAN_FD"
+										"op": "in",
+										"value": ["PLAN_FD","PLAN_FD_NEW_RECURRENCE_STRACUT"]
 									}
 								],
 								"service": {
@@ -741,7 +787,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_A_SERVICE"
+														"DISCOUNT_A_SERVICE","DISCOUNT_A_SERVICE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -761,6 +807,9 @@
 				"plan": {
 					"PLAN_FD": {
 						"value": 0.20829999999999999
+					},
+					"PLAN_FD_NEW_RECURRENCE_STRACUT": {
+						"value": 0.20829999999999999
 					}
 				}
 			}
@@ -779,8 +828,8 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "PLAN_MU"
+										"op": "in",
+										"value": ["PLAN_MU","PLAN_MU_NEW_RECURRENCE_STRACUT"]
 									}
 								],
 								"service": {
@@ -791,7 +840,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_A_SERVICE"
+														"DISCOUNT_A_SERVICE","DISCOUNT_A_SERVICE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -810,6 +859,9 @@
 			"subject": {
 				"plan": {
 					"PLAN_MU": {
+						"value": 0.20829999999999999
+					},
+					"PLAN_MU_NEW_RECURRENCE_STRACUT": {
 						"value": 0.20829999999999999
 					}
 				}
@@ -831,7 +883,7 @@
 										"field": "sid",
 										"op": "in",
 										"value": [
-											775
+											775,7753439
 										]
 									}
 								]
@@ -844,6 +896,9 @@
 			"subject": {
 				"plan": {
 					"PLAN_C": {
+						"value": 1
+					},
+					"PLAN_C_NEW_RECURRENCE_STRACUT": {
 						"value": 1
 					}
 				}
@@ -868,7 +923,7 @@
 										"field": "sid",
 										"op": "in",
 										"value": [
-											776
+											776,7763439
 										]
 									}
 								]
@@ -881,6 +936,9 @@
 			"subject": {
 				"plan": {
 					"PLAN_C": {
+						"value": 100
+					},
+					"PLAN_C_NEW_RECURRENCE_STRACUT": {
 						"value": 100
 					}
 				}
@@ -903,7 +961,7 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": "8GB"
+										"value": ["8GB","8GB_NEW_RECURRENCE_STRACUT"]
 									}
 								],
 								"service": {
@@ -914,7 +972,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"3_MONTHS_FREE_SERVICE"
+														"3_MONTHS_FREE_SERVICE","3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -936,11 +994,14 @@
 				"plan": {
 					"8GB": {
 						"value": 1
+					},
+					"8GB_NEW_RECURRENCE_STRACUT" : {
+						"value": 1
 					}
 				}
 			},
 			"excludes": [
-				"14P"
+				"14P","14PS_NEW_RECURRENCE_STRACUT"
 			]
 		},
 		{
@@ -956,7 +1017,7 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": "1GB"
+										"value": ["1GB","1GB_NEW_RECURRENCE_STRACUT"]
 									}
 								],
 								"service": {
@@ -967,7 +1028,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_A_SERVICE_2"
+														"DISCOUNT_A_SERVICE_2","DISCOUNT_A_SERVICE_2_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -986,6 +1047,9 @@
 			"subject": {
 				"plan": {
 					"1GB": {
+						"value": 0.2632
+					},
+					"1GB_NEW_RECURRENCE_STRACUT":{
 						"value": 0.2632
 					}
 				}
@@ -1015,7 +1079,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_A_SERVICE_3"
+														"DISCOUNT_A_SERVICE_3","DISCOUNT_A_SERVICE_3_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -1035,6 +1099,9 @@
 				"plan": {
 					"8GB": {
 						"value": 0.2632
+					},
+					"8GB_NEW_RECURRENCE_STRACUT": {
+						"value": 0.2632
 					}
 				}
 			}
@@ -1051,7 +1118,7 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": "8GB"
+										"value": ["8GB","8GB_NEW_RECURRENCE_STRACUT"]
 									}
 								],
 								"service": {
@@ -1062,7 +1129,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"14PS"
+														"14PS","14PS_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -1081,6 +1148,9 @@
 			"subject": {
 				"plan": {
 					"8GB": {
+						"value": 0.14
+					},
+					"8GB_NEW_RECURRENCE_STRACUT": {
 						"value": 0.14
 					}
 				}
