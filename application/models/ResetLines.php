@@ -216,7 +216,8 @@ class ResetLinesModel {
         $stamps = array();
         $queue_lines = array();
         $former_exporter = array();
-
+        $this->stampsByAidAndSid = [];
+        $this->splitLinesStamp = [];
         // Go through the collection's lines and fill the queue lines.
         Billrun_Factory::log("Rebalance resetLinesByQuery starts iteration", Zend_Log::DEBUG);
         $i = 0;
@@ -621,8 +622,6 @@ class ResetLinesModel {
         }
         $this->removeStampsfromRebalnceQueue($stamps);
         $this->unsetTx2FromRelevantBalances();
-        $this->stampsByAidAndSid = [];
-        $this->splitLinesStamp = [];
         foreach ($this->linesStampsByRebalanceStamp as $rebalanceStamp => $linesStamps) {
             Billrun_Factory::log('Updating rebalance stamps field ' . $rebalanceStamp . ' for ' . count($linesStamps) . ' lines', Zend_Log::DEBUG);
             $update = array('$push' => array(
