@@ -221,7 +221,8 @@
 					"prorated": true,
 					"to": "time*2167-06-14T10:15:21Z",
 					"creation_time": "time*2018-01-14T22:00:00Z"
-				}, {
+				},
+				 {
 					"OBJID": "5b333a3105e68c3b15157562",
 					"from": "time*2018-01-27T22:00:00Z",
 					"name": "IPHONEX",

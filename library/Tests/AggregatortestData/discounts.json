@@ -2,7 +2,6 @@
 	"collection": "discountsCollection",
 	"data": [
 		{
-
 			"from": "time*2018-03-31T21:00:00Z",
 			"key": "TT",
 			"description": "ttt",
@@ -15,10 +14,11 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": ["PLAN_A_NEW_RECURRENCE_STRACUT","PLAN_A"]
+										"value": [
+											"PLAN_A_NEW_RECURRENCE_STRACUT",
+											"PLAN_A"
+										]
 									}
-								
-
 								]
 							}
 						]
@@ -41,7 +41,6 @@
 			}
 		},
 		{
-
 			"from": "time*2017-12-31T22:00:00Z",
 			"key": "SER",
 			"description": "ser",
@@ -59,7 +58,7 @@
 													"op": "in",
 													"value": [
 														"DISCOUNT_SERVICE",
-														"DISCOUNT_SERVICE_NEW_RECURRENCE_STRACUT",
+														"DISCOUNT_SERVICE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -87,7 +86,6 @@
 			}
 		},
 		{
-
 			"from": "time*2018-01-28T22:00:00Z",
 			"key": "D",
 			"description": "d",
@@ -104,7 +102,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"NOT_TAXABLE","NOT_TAXABLE_NEW_RECURRENCE_STRACUT"
+														"NOT_TAXABLE",
+														"NOT_TAXABLE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -132,7 +131,6 @@
 			}
 		},
 		{
-
 			"from": "time*2018-12-31T22:00:00Z",
 			"key": "TTF",
 			"description": "TTF",
@@ -145,7 +143,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": ["TTF","TTF_NEW_RECURRENCE_STRACUT"]
+										"value": [
+											"TTF",
+											"TTF_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								]
 							}
@@ -169,10 +170,8 @@
 					}
 				}
 			}
-		}
-		,
+		},
 		{
-
 			"from": "time*2018-12-31T22:00:00Z",
 			"key": "FFF",
 			"description": "FFF",
@@ -185,7 +184,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": ["FFF","FFF_NEW_RECURRENCE_STRACUT"]
+										"value": [
+											"FFF",
+											"FFF_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								]
 							}
@@ -204,15 +206,13 @@
 					"FFF": {
 						"value": 10
 					},
-					"FFF_NEW_RECURRENCE_STRACUT":{
+					"FFF_NEW_RECURRENCE_STRACUT": {
 						"value": 10
 					}
 				}
 			}
-		}
-		,
+		},
 		{
-
 			"from": "time*2018-12-31T22:00:00Z",
 			"key": "TFF",
 			"description": "TFF",
@@ -225,7 +225,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": ["TFF","TFF_NEW_RECURRENCE_STRACUT"]
+										"value": [
+											"TFF",
+											"TFF_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								]
 							}
@@ -244,16 +247,13 @@
 					"TFF": {
 						"value": 10
 					},
-					"TFF_NEW_RECURRENCE_STRACUT":
-					{
+					"TFF_NEW_RECURRENCE_STRACUT": {
 						"value": 10
 					}
 				}
 			}
-		}
-		,
+		},
 		{
-
 			"from": "time*2018-12-31T22:00:00Z",
 			"key": "FTT",
 			"description": "FTT",
@@ -266,7 +266,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": ["FTT","FTT_NEW_RECURRENCE_STRACUT"]
+										"value": [
+											"FTT",
+											"FTT_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								]
 							}
@@ -290,10 +293,8 @@
 					}
 				}
 			}
-		}
-		,
+		},
 		{
-
 			"from": "time*2018-12-31T22:00:00Z",
 			"key": "TTT",
 			"description": "TTT",
@@ -306,7 +307,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value":[ "TTT","TTT_NEW_RECURRENCE_STRACUT"]
+										"value": [
+											"TTT",
+											"TTT_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								]
 							}
@@ -332,7 +336,6 @@
 			}
 		},
 		{
-
 			"from": "time*2018-12-31T22:00:00Z",
 			"key": "FFT",
 			"description": "FFT",
@@ -345,7 +348,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": ["FFT","FFT_NEW_RECURRENCE_STRACUT"]
+										"value": [
+											"FFT",
+											"FFT_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								]
 							}
@@ -369,9 +375,8 @@
 					}
 				}
 			}
-		}
-		, {
-
+		},
+		{
 			"from": "time*2020-04-30T22:00:00Z",
 			"key": "BOX1",
 			"description": "Box",
@@ -392,13 +397,14 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"LEGACY_CUSTOMER","LEGACY_CUSTOMER_NEW_RECURRENCE_STRACUT"
+														"LEGACY_CUSTOMER",
+														"LEGACY_CUSTOMER_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
 										}
 									]
-		},
+								},
 								"fields": [
 									{
 										"field": "plan",
@@ -419,7 +425,8 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BOX_1","BOX_1_NEW_RECURRENCE_STRACUT"
+											"BOX_1",
+											"BOX_1_NEW_RECURRENCE_STRACUT"
 										]
 									}
 								],
@@ -431,7 +438,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"LEGACY_CUSTOMER","LEGACY_CUSTOMER_NEW_RECURRENCE_STRACUT"
+														"LEGACY_CUSTOMER",
+														"LEGACY_CUSTOMER_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -506,7 +514,6 @@
 			"type": "monetary",
 			"subject": {
 				"plan": {
-
 					"BOX_1": {
 						"value": 16.73109244
 					},
@@ -520,7 +527,6 @@
 			"creation_time": "time*2020-04-30T22:00:00Z"
 		},
 		{
-
 			"from": "time*2020-11-23T22:00:00Z",
 			"key": "BOX_2",
 			"description": "Box",
@@ -530,7 +536,6 @@
 				"publication_end_date": "time*2038-06-01T00:00:00Z",
 				"publication_start_date": "time*2020-05-01T00:00:00Z",
 				"conditions": [
-
 					{
 						"subscriber": [
 							{
@@ -539,7 +544,8 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BOX_1","BOX_1_NEW_RECURRENCE_STRACUT"
+											"BOX_1",
+											"BOX_1_NEW_RECURRENCE_STRACUT"
 										]
 									}
 								],
@@ -551,7 +557,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"LEGACY_CUSTOMER","LEGACY_CUSTOMER_NEW_RECURRENCE_STRACUT"
+														"LEGACY_CUSTOMER",
+														"LEGACY_CUSTOMER_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -566,20 +573,19 @@
 			"type": "monetary",
 			"subject": {
 				"plan": {
-
 					"BOX_1": {
 						"value": 8.394957983
 					},
-					"BOX_1_NEW_RECURRENCE_STRACUT":{
+					"BOX_1_NEW_RECURRENCE_STRACUT": {
 						"value": 8.394957983
 					}
 				}
 			},
-			"proration": "inherited",			
+			"proration": "inherited",
 			"to": "time*2020-12-01T22:00:00Z",
 			"creation_time": "time*2020-11-23T22:00:00Z"
-		}, {
-
+		},
+		{
 			"from": "time*2018-01-13T00:00:00Z",
 			"key": "AAAABBB",
 			"description": "aa",
@@ -595,7 +601,8 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"PRICELEVELS","PRICELEVELS__NEW_RECURRENCE_STRACUT"
+											"PRICELEVELS",
+											"PRICELEVELS__NEW_RECURRENCE_STRACUT"
 										]
 									}
 								]
@@ -610,7 +617,7 @@
 					"PRICELEVELS": {
 						"value": 0.2
 					},
-					"PRICELEVELS__NEW_RECURRENCE_STRACUT":{
+					"PRICELEVELS__NEW_RECURRENCE_STRACUT": {
 						"value": 0.2
 					}
 				}
@@ -620,7 +627,6 @@
 			"creation_time": "time*2018-01-13T00:00:00Z"
 		},
 		{
-
 			"from": "time*2020-01-13T00:00:00Z",
 			"key": "ABCDEFG",
 			"description": "abcdefg",
@@ -639,7 +645,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"ABCD","ABCD_NEW_RECURRENCE_STRACUT"
+														"ABCD",
+														"ABCD_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -667,7 +674,6 @@
 			"creation_time": "time*2018-01-13T00:00:00Z"
 		},
 		{
-
 			"from": "time*2018-01-13T00:00:00Z",
 			"key": "EFG",
 			"description": "efg",
@@ -686,7 +692,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"EFG","EFG_NEW_RECURRENCE_STRACUT"
+														"EFG",
+														"EFG_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -704,7 +711,7 @@
 					"AZ": {
 						"value": 0.2
 					},
-					"AZ_NEW_RECURRENCE_STRACUT":{
+					"AZ_NEW_RECURRENCE_STRACUT": {
 						"value": 0.2
 					}
 				}
@@ -760,10 +767,8 @@
 					}
 				}
 			}
-		}
-		,
+		},
 		{
-
 			"from": "time*2020-04-30T22:00:00Z",
 			"key": "DISCOUNT_FD",
 			"description": "Discount FD",
@@ -776,7 +781,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": ["PLAN_FD","PLAN_FD_NEW_RECURRENCE_STRACUT"]
+										"value": [
+											"PLAN_FD",
+											"PLAN_FD_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								],
 								"service": {
@@ -787,7 +795,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_A_SERVICE","DISCOUNT_A_SERVICE_NEW_RECURRENCE_STRACUT"
+														"DISCOUNT_A_SERVICE",
+														"DISCOUNT_A_SERVICE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -813,10 +822,8 @@
 					}
 				}
 			}
-		}
-		,
+		},
 		{
-
 			"from": "time*2020-04-30T22:00:00Z",
 			"key": "DISCOUNT_MU",
 			"description": "Discount MU",
@@ -829,7 +836,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": ["PLAN_MU","PLAN_MU_NEW_RECURRENCE_STRACUT"]
+										"value": [
+											"PLAN_MU",
+											"PLAN_MU_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								],
 								"service": {
@@ -840,7 +850,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_A_SERVICE","DISCOUNT_A_SERVICE_NEW_RECURRENCE_STRACUT"
+														"DISCOUNT_A_SERVICE",
+														"DISCOUNT_A_SERVICE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -883,7 +894,8 @@
 										"field": "sid",
 										"op": "in",
 										"value": [
-											775,7753439
+											775,
+											7753439
 										]
 									}
 								]
@@ -923,7 +935,8 @@
 										"field": "sid",
 										"op": "in",
 										"value": [
-											776,7763439
+											776,
+											7763439
 										]
 									}
 								]
@@ -946,9 +959,8 @@
 			"proration": "inherited",
 			"to": "time*2170-07-28T07:08:33Z",
 			"creation_time": "time*2018-07-29T00:00:00Z"
-		}
-
-		, {
+		},
+		{
 			"from": "time*2020-03-11T23:00:00Z",
 			"key": "3_month_free",
 			"description": "3_month_free",
@@ -961,7 +973,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": ["8GB","8GB_NEW_RECURRENCE_STRACUT"]
+										"value": [
+											"8GB",
+											"8GB_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								],
 								"service": {
@@ -972,7 +987,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"3_MONTHS_FREE_SERVICE","3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT"
+														"3_MONTHS_FREE_SERVICE",
+														"3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -995,13 +1011,14 @@
 					"8GB": {
 						"value": 1
 					},
-					"8GB_NEW_RECURRENCE_STRACUT" : {
+					"8GB_NEW_RECURRENCE_STRACUT": {
 						"value": 1
 					}
 				}
 			},
 			"excludes": [
-				"14P","14PS_NEW_RECURRENCE_STRACUT"
+				"14P",
+				"14PS_NEW_RECURRENCE_STRACUT"
 			]
 		},
 		{
@@ -1017,7 +1034,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": ["1GB","1GB_NEW_RECURRENCE_STRACUT"]
+										"value": [
+											"1GB",
+											"1GB_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								],
 								"service": {
@@ -1028,7 +1048,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_A_SERVICE_2","DISCOUNT_A_SERVICE_2_NEW_RECURRENCE_STRACUT"
+														"DISCOUNT_A_SERVICE_2",
+														"DISCOUNT_A_SERVICE_2_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -1049,7 +1070,7 @@
 					"1GB": {
 						"value": 0.2632
 					},
-					"1GB_NEW_RECURRENCE_STRACUT":{
+					"1GB_NEW_RECURRENCE_STRACUT": {
 						"value": 0.2632
 					}
 				}
@@ -1069,7 +1090,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": "8GB"
-		}
+									}
 								],
 								"service": {
 									"any": [
@@ -1079,7 +1100,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_A_SERVICE_3","DISCOUNT_A_SERVICE_3_NEW_RECURRENCE_STRACUT"
+														"DISCOUNT_A_SERVICE_3",
+														"DISCOUNT_A_SERVICE_3_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -1105,7 +1127,8 @@
 					}
 				}
 			}
-		}, {
+		},
+		{
 			"from": "time*2019-05-31T22:00:00Z",
 			"key": "14P",
 			"description": "14P",
@@ -1118,7 +1141,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": ["8GB","8GB_NEW_RECURRENCE_STRACUT"]
+										"value": [
+											"8GB",
+											"8GB_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								],
 								"service": {
@@ -1129,7 +1155,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"14PS","14PS_NEW_RECURRENCE_STRACUT"
+														"14PS",
+														"14PS_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -1156,9 +1183,5 @@
 				}
 			}
 		}
-
-
-
-
 	]
 }

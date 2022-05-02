@@ -822,6 +822,97 @@
 						"taxes": []
 					}
 				}
+				,	{
+					"OBJID": "5b34a12345e68c6b68241b92",
+					"uf": {
+						"sid": 23439,
+						"date": "2018-05-18 10:10:10",
+						"usage": "call",
+						"rate": "NONVAT",
+						"volume": 100
+					},
+					"source": "realtime",
+					"type": "non",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "ceab6cf0d600262e02a6cf47d03a6b57",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 100,
+					"process_time": "time*2018-06-28T09:21:09.600Z",
+					"timezone": 10800,
+					"urt": "time*2018-05-18T07:10:10Z",
+					"eurt": "time*2018-05-18T07:10:10Z",
+					"granted_return_code": 1,
+					"realtime": true,
+					"subscriber": {
+						"aid": 13439,
+						"sid": 23439,
+						"plan": "PLAN_C",
+						"firstname": "t",
+						"lastname": "t",
+						"services": [],
+						"services_data": []
+					},
+					"aid": 13439,
+					"sid": 23439,
+					"plan": "PLAN_C",
+					"firstname": "t",
+					"lastname": "t",
+					"services": [],
+					"services_data": [],
+					"connection_type": "postpaid",
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5b34a72705e68c7f46016a12",
+						"isDbRef": true
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5b34a72705e68c7f46016a12",
+						"isDbRef": true
+					},
+					"arate_key": "NONVAT",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "NONVAT",
+							"add_to_retail": false,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5b34a72705e68c7f46016a12",
+								"isDbRef": true
+							},
+							"pricing": {
+								"out_group": 100,
+								"out_plan": 100,
+								"billrun": "201807",
+								"charge": 100
+							}
+						}
+					],
+					"usagev_offset": 0,
+					"balance_ref": {
+						"collection": "balances",
+						"ObjectId": "5b34a88592cecd0d32fea483",
+						"isDbRef": true
+					},
+					"out_group": 100,
+					"out_plan": 100,
+					"aprice": 100,
+					"billrun": "201807",
+					"retail_rate": true,
+					"final_charge": 100,
+					"tax_data": {
+						"total_amount": 0,
+						"total_tax": 0,
+						"taxes": []
+					}
+				}
 				, {
 					"OBJID": "5b34bf8505e68c2245114824",
 					"key": "D",
@@ -856,7 +947,7 @@
 						"service"
 					],
 					"aprice": -10,
-					"stamp": "97125220bf7aaf1caa3186cb69db7307",
+					"stamp": "97125220bf7aaf1caa3186cb69db7317",
 					"tax_data": {
 						"total_amount": 0,
 						"total_tax": 0,
