@@ -389,6 +389,9 @@ class ResetLinesModel {
         if (!Billrun_Config::getInstance()->getConfigValue('resetlines.avoid_repeating_reset', false)){
             return false;
         }
+        if(!isset($line['aid'])){// in case line already rested and still not finish the rebalance(recover stamp). 
+            return false;
+        }           
         //Optimization: If the rebalance works on one rebalance queue record at a time, it must match.
         if (count($this->rebalanceStamps[$line['aid']]) === 1) {
             return current($this->rebalanceStamps[$line['aid']]);
