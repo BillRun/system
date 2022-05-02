@@ -180,7 +180,7 @@ class ResetLinesModel {
         $linesSizeToHandle = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.size', 100000);
         while ($update_stamps_count = count($update_stamps = array_slice($stamps, 0, $linesSizeToHandle))) {
             $stampQuery = array('stamp' => array('$in' => $update_stamps));
-            Billrun_Factory::log("Rebalance lines query start. Query is: " . json_encode($query), Zend_Log::DEBUG);
+            Billrun_Factory::log("Rebalance lines query start. Query is: " . json_encode($stampQuery), Zend_Log::DEBUG);
             $lines = $lines_coll->query(array_merge($query, $stampQuery))->cursor();
             Billrun_Factory::log("Rebalance lines query end", Zend_Log::DEBUG);
             $lines = iterator_to_array($lines);
@@ -224,9 +224,10 @@ class ResetLinesModel {
         // Go through the collection's lines and fill the queue lines.
         Billrun_Factory::log("Rebalance resetLinesByQuery starts iteration", Zend_Log::DEBUG);
         $i = 0;
+        $totalLines = count($lines);
         foreach ($lines as $line) {
             $i++;
-            Billrun_Factory::log("reached $i line", Zend_Log::DEBUG);
+            Billrun_Factory::log("reached $i line from $totalLines. line stamp: " . $line['stamp'] , Zend_Log::DEBUG);
             Billrun_Factory::dispatcher()->trigger('beforeRebalancingLines', array(&$line));
             Billrun_Factory::log("after beforeRebalancingLines", Zend_Log::DEBUG);
             $rebalanceStamp = $this->isLineRelevantForRebalanceStampsHash($line);
@@ -235,17 +236,15 @@ class ResetLinesModel {
                 Billrun_Factory::log("before get unify lines", Zend_Log::DEBUG);
                 $archiveLinesSize = count(Billrun_Calculator_Unify::getUnifyLines($line['stamp']));
                 Billrun_Factory::log("after get unify lines", Zend_Log::DEBUG);
-                for ($skip = 0; $skip < $archiveLinesSize; $skip += $batchSize) {
+                $j = 1;
+                for ($skip = 0; $skip < $archiveLinesSize; $skip += $batchSize) {                   
                     Billrun_Factory::log("before get unify lines 2", Zend_Log::DEBUG);
-
                     $archivedLines = Billrun_Calculator_Unify::getUnifyLines($line['stamp'], $batchSize, $skip);
                     Billrun_Factory::log("after get unify lines 2", Zend_Log::DEBUG);
-
                     $archivedLinesToInsert = [];
                     Billrun_Factory::log("Before archived lines loop", Zend_Log::DEBUG);
-                    $j = 1;
                     foreach ($archivedLines as $archivedLine) {
-                        Billrun_Factory::log("reached $j archive line", Zend_Log::DEBUG);
+                        Billrun_Factory::log("reached $j archive line from $archiveLinesSize lines. archive line stamp: " . $archivedLine['stamp'], Zend_Log::DEBUG);
                         $j++;
                         unset($archivedLine["u_s"]);
                         $archivedLinesToInsert[$archivedLine['stamp']] = $archivedLine;
