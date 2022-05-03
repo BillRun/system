@@ -415,7 +415,7 @@ class Tests_Aggregator extends UnitTestCase
             			'expected' => array('billrun' => array('billrun_key' => '202012', 'aid' => 230, 'after_vat' => array("80018" => 35.778665181058486), 'total' => 35.778665181058486, 'vatable' => 30.58005571030641, 'vat' => 17),
             				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3014",
             		),
-            		array('test' => array('label' => 'test the service line created', 'test_number' => 74, "aid" => 399, 'sid' => 499, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202103", "force_accounts" => array(399))),
+            		array('test' => array('label' => 'test the service line created', 'test_number' => 746, "aid" => 399, 'sid' => 499, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202103", "force_accounts" => array(399))),
             			'expected' => array('billrun' => array('billrun_key' => '202103', 'aid' => 399, 'after_vat' => array("499" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
             				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3013",
             		),
@@ -434,11 +434,16 @@ class Tests_Aggregator extends UnitTestCase
             				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10000 => "1", 10027 => "28"]), 'postRun' => ''),
             			//allowPremature true invoicing day without  force accounts , only accounts with same day as the pass invoice day will run 
             			array('preRun' => ['allowPremature', 'removeBillruns'],
-            				'test' => array('test_number' => 74, 'aid' => 1, 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'invoicing_days' => ["26", "27"])),
-            				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10025 => "26", 10026 => "27"]), 'postRun' => ''),
-            			//allowPremature false invoicing day  all the days 1-28 , + force accounts with account from all day only acccount with invoice day <= today will run 
-            			array('preRun' => ['notallowPremature', 'removeBillruns'],
-            				'test' => array('test_number' => 75, 'aid' => 'abcd', 'function' => array('testMultiDayNotallowPremature'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
+                        'test' => array('test_number' => 74, 'aid' => 'abcd', 'function' => array('testMultiDay'),
+                        'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 
+                        'invoicing_days' => ["26", "27"])),
+                       'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
+                        "accounts" => [10025=>"26", 10026=>"27"]),
+                         'postRun' => ''),
+                   //allowPremature true invoicing day  all the days 1-28 , + force accounts with account from all day each account will run in its day 
+                   array('preRun' => ['allowPremature', 'removeBillruns'],
+                       'test' => array('test_number' => 75, 'aid' => 'abcd', 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
+       
             						'invoicing_days' => ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28"],
             						'force_accounts' => [10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009, 10010, 10011, 10012, 10013, 10014, 10015, 10016, 10017, 10018, 10019, 10020, 10021, 10022, 10023, 10024, 10025, 10026, 10027]
             					)),
@@ -3151,7 +3156,7 @@ class Tests_Aggregator extends UnitTestCase
                             "testMultiDay"
                         ],
                         "options" => [
-                            "stamp" => "202205",
+                            "stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
                             "invoicing_days" => [
                                 "26",
                                 "27"
@@ -3170,7 +3175,7 @@ class Tests_Aggregator extends UnitTestCase
                 ],
                 [
                     "preRun" => [
-                        "notallowPremature",
+                        "allowPremature",
                         "removeBillruns"
                     ],
                     "test" => [
@@ -3180,7 +3185,7 @@ class Tests_Aggregator extends UnitTestCase
                             "testMultiDayNotallowPremature"
                         ],
                         "options" => [
-                            "stamp" => "202205",
+                            'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month'))),
                             "invoicing_days" => [
                                 "1",
                                 "2",
@@ -3240,9 +3245,9 @@ class Tests_Aggregator extends UnitTestCase
                                 100253439,
                                 100263439,
                                 100273439
-                            ]
                         ]
-                    ],
+                    ]
+                ],
                     "expected" => [
                         "billrun_key" => "202207",
                         "accounts" => [
