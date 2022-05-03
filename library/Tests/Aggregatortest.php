@@ -427,30 +427,30 @@ class Tests_Aggregator extends UnitTestCase
             			'expected' => array('billrun' => array('invoice_id' => 108, 'billrun_key' => '202103', 'aid' => 145, 'after_vat' => array("245" => 207), 'total' => 207, 'vatable' => 190, 'vat' => 17),
             				'line' => array('types' => array('flat', 'credit'))),
             		),
-            		//Multi day cycle test 
-            			// //allowPremature true invoicing day + force accounts , only some of the account will run 
-            			// array('preRun' => ['allowPremature', 'removeBillruns'],
-            			// 	'test' => array('test_number' => 73, 'aid' => 1, 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [10000, 10027, 10026, 10025], 'invoicing_days' => ["1", "28"])),
-            			// 	'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10000 => "1", 10027 => "28"]), 'postRun' => ''),
-            			// //allowPremature true invoicing day without  force accounts , only accounts with same day as the pass invoice day will run 
-            			// array('preRun' => ['allowPremature', 'removeBillruns'],
-            			// 	'test' => array('test_number' => 74, 'aid' => 1, 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'invoicing_days' => ["26", "27"])),
-            			// 	'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10025 => "26", 10026 => "27"]), 'postRun' => ''),
-            			// //allowPremature false invoicing day  all the days 1-28 , + force accounts with account from all day only acccount with invoice day <= today will run 
-            			// array('preRun' => ['notallowPremature', 'removeBillruns'],
-            			// 	'test' => array('test_number' => 75, 'aid' => 'abcd', 'function' => array('testMultiDayNotallowPremature'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
-            			// 			'invoicing_days' => ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28"],
-            			// 			'force_accounts' => [10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009, 10010, 10011, 10012, 10013, 10014, 10015, 10016, 10017, 10018, 10019, 10020, 10021, 10022, 10023, 10024, 10025, 10026, 10027]
-            			// 		)),
-            			// 	'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('1 month')), 'accounts' => [
-            			// 			10000 => "1", 10001 => "2", 10002 => "3", 10003 => "4", 10004 => "5", 10005 => "6",
-            			// 			10006 => "7", 10007 => "8", 10008 => "9", 10009 => "10", 10010 => "11", 10011 => "12",
-            			// 			10012 => "13", 10013 => "14", 10014 => "15", 10015 => "16", 10016 => "17", 10017 => "18",
-            			// 			10018 => "19", 10019 => "20", 10020 => "21", 10021 => "22", 10022 => "23", 10023 => "24",
-            			// 			10024 => "25", 10025 => "26", 10026 => "27", 10027 => "28"]),
-            			// 	'line' => array('types' => array('flat', 'credit')),
-            			// 	'postRun'=>['multi_day_cycle_false']
-            			// ),
+            	//	Multi day cycle test 
+            			//allowPremature true invoicing day + force accounts , only some of the account will run 
+            			array('preRun' => ['allowPremature', 'removeBillruns'],
+            				'test' => array('test_number' => 73, 'aid' => 1, 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [10000, 10027, 10026, 10025], 'invoicing_days' => ["1", "28"])),
+            				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10000 => "1", 10027 => "28"]), 'postRun' => ''),
+            			//allowPremature true invoicing day without  force accounts , only accounts with same day as the pass invoice day will run 
+            			array('preRun' => ['allowPremature', 'removeBillruns'],
+            				'test' => array('test_number' => 74, 'aid' => 1, 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'invoicing_days' => ["26", "27"])),
+            				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10025 => "26", 10026 => "27"]), 'postRun' => ''),
+            			//allowPremature false invoicing day  all the days 1-28 , + force accounts with account from all day only acccount with invoice day <= today will run 
+            			array('preRun' => ['notallowPremature', 'removeBillruns'],
+            				'test' => array('test_number' => 75, 'aid' => 'abcd', 'function' => array('testMultiDayNotallowPremature'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
+            						'invoicing_days' => ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28"],
+            						'force_accounts' => [10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009, 10010, 10011, 10012, 10013, 10014, 10015, 10016, 10017, 10018, 10019, 10020, 10021, 10022, 10023, 10024, 10025, 10026, 10027]
+            					)),
+            				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('1 month')), 'accounts' => [
+            						10000 => "1", 10001 => "2", 10002 => "3", 10003 => "4", 10004 => "5", 10005 => "6",
+            						10006 => "7", 10007 => "8", 10008 => "9", 10009 => "10", 10010 => "11", 10011 => "12",
+            						10012 => "13", 10013 => "14", 10014 => "15", 10015 => "16", 10016 => "17", 10017 => "18",
+            						10018 => "19", 10019 => "20", 10020 => "21", 10021 => "22", 10022 => "23", 10023 => "24",
+            						10024 => "25", 10025 => "26", 10026 => "27", 10027 => "28"]),
+            				'line' => array('types' => array('flat', 'credit')),
+            				'postRun'=>['multi_day_cycle_false']
+            			),
             			//override plan and service price cases   https://billrun.atlassian.net/browse/BRCD-3183
             			/* /*sid 771
             			  override plan price for a subscriber for a whole month -
@@ -3104,189 +3104,189 @@ class Tests_Aggregator extends UnitTestCase
                     ],
                     "duplicate" => true
                 ],
-                // [
-                //     "preRun" => [
-                //         "allowPremature",
-                //         "removeBillruns"
-                //     ],
-                //     "test" => [
-                //         "test_number" => 733439,
-                //         "aid" => 13439,
-                //         "function" => [
-                //             "testMultiDay"
-                //         ],
-                //         "options" => [
-                //             "stamp" => "202205",
-                //             "force_accounts" => [
-                //                 100003439,
-                //                 100273439,
-                //                 100263439,
-                //                 100253439
-                //             ],
-                //             "invoicing_days" => [
-                //                 "1",
-                //                 "28"
-                //             ]
-                //         ]
-                //     ],
-                //     "expected" => [
-                //         "billrun_key" => "202205",
-                //         "accounts" => [
-                //             "100003439" => "1",
-                //             "100273439" => "28"
-                //         ]
-                //     ],
-                //     "postRun" => "",
-                //     "duplicate" => true
-                // ],
-                // [
-                //     "preRun" => [
-                //         "allowPremature",
-                //         "removeBillruns"
-                //     ],
-                //     "test" => [
-                //         "test_number" => 743439,
-                //         "aid" => 13439,
-                //         "function" => [
-                //             "testMultiDay"
-                //         ],
-                //         "options" => [
-                //             "stamp" => "202205",
-                //             "invoicing_days" => [
-                //                 "26",
-                //                 "27"
-                //             ]
-                //         ]
-                //     ],
-                //     "expected" => [
-                //         "billrun_key" => "202205",
-                //         "accounts" => [
-                //             "100253439" => "26",
-                //             "100263439" => "27"
-                //         ]
-                //     ],
-                //     "postRun" => "",
-                //     "duplicate" => true
-                // ],
-                // [
-                //     "preRun" => [
-                //         "notallowPremature",
-                //         "removeBillruns"
-                //     ],
-                //     "test" => [
-                //         "test_number" => 753439,
-                //         "aid" => "NaN",
-                //         "function" => [
-                //             "testMultiDayNotallowPremature"
-                //         ],
-                //         "options" => [
-                //             "stamp" => "202205",
-                //             "invoicing_days" => [
-                //                 "1",
-                //                 "2",
-                //                 "3",
-                //                 "4",
-                //                 "5",
-                //                 "6",
-                //                 "7",
-                //                 "8",
-                //                 "9",
-                //                 "10",
-                //                 "11",
-                //                 "12",
-                //                 "13",
-                //                 "14",
-                //                 "15",
-                //                 "16",
-                //                 "17",
-                //                 "18",
-                //                 "19",
-                //                 "20",
-                //                 "21",
-                //                 "22",
-                //                 "23",
-                //                 "24",
-                //                 "25",
-                //                 "26",
-                //                 "27",
-                //                 "28"
-                //             ],
-                //             "force_accounts" => [
-                //                 100003439,
-                //                 100013439,
-                //                 100023439,
-                //                 100033439,
-                //                 100043439,
-                //                 100053439,
-                //                 100063439,
-                //                 100073439,
-                //                 100083439,
-                //                 100093439,
-                //                 100103439,
-                //                 100113439,
-                //                 100123439,
-                //                 100133439,
-                //                 100143439,
-                //                 100153439,
-                //                 100163439,
-                //                 100173439,
-                //                 100183439,
-                //                 100193439,
-                //                 100203439,
-                //                 100213439,
-                //                 100223439,
-                //                 100233439,
-                //                 100243439,
-                //                 100253439,
-                //                 100263439,
-                //                 100273439
-                //             ]
-                //         ]
-                //     ],
-                //     "expected" => [
-                //         "billrun_key" => "202207",
-                //         "accounts" => [
-                //             "100003439" => "1",
-                //             "100013439" => "2",
-                //             "100023439" => "3",
-                //             "100033439" => "4",
-                //             "100043439" => "5",
-                //             "100053439" => "6",
-                //             "100063439" => "7",
-                //             "100073439" => "8",
-                //             "100083439" => "9",
-                //             "100093439" => "10",
-                //             "100103439" => "11",
-                //             "100113439" => "12",
-                //             "100123439" => "13",
-                //             "100133439" => "14",
-                //             "100143439" => "15",
-                //             "100153439" => "16",
-                //             "100163439" => "17",
-                //             "100173439" => "18",
-                //             "100183439" => "19",
-                //             "100193439" => "20",
-                //             "100203439" => "21",
-                //             "100213439" => "22",
-                //             "100223439" => "23",
-                //             "100233439" => "24",
-                //             "100243439" => "25",
-                //             "100253439" => "26",
-                //             "100263439" => "27",
-                //             "100273439" => "28"
-                //         ]
-                //     ],
-                //     "line" => [
-                //         "types" => [
-                //             "flat",
-                //             "credit"
-                //         ]
-                //     ],
-                //     "postRun" => [
-                //         "multi_day_cycle_false"
-                //     ],
-                //     "duplicate" => true
-                // ],
+                [
+                    "preRun" => [
+                        "allowPremature",
+                        "removeBillruns"
+                    ],
+                    "test" => [
+                        "test_number" => 733439,
+                        "aid" => 13439,
+                        "function" => [
+                            "testMultiDay"
+                        ],
+                        "options" => [
+                            "stamp" => "202205",
+                            "force_accounts" => [
+                                100003439,
+                                100273439,
+                                100263439,
+                                100253439
+                            ],
+                            "invoicing_days" => [
+                                "1",
+                                "28"
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun_key" => "202205",
+                        "accounts" => [
+                            "100003439" => "1",
+                            "100273439" => "28"
+                        ]
+                    ],
+                    "postRun" => "",
+                    "duplicate" => true
+                ],
+                [
+                    "preRun" => [
+                        "allowPremature",
+                        "removeBillruns"
+                    ],
+                    "test" => [
+                        "test_number" => 743439,
+                        "aid" => 13439,
+                        "function" => [
+                            "testMultiDay"
+                        ],
+                        "options" => [
+                            "stamp" => "202205",
+                            "invoicing_days" => [
+                                "26",
+                                "27"
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun_key" => "202205",
+                        "accounts" => [
+                            "100253439" => "26",
+                            "100263439" => "27"
+                        ]
+                    ],
+                    "postRun" => "",
+                    "duplicate" => true
+                ],
+                [
+                    "preRun" => [
+                        "notallowPremature",
+                        "removeBillruns"
+                    ],
+                    "test" => [
+                        "test_number" => 753439,
+                        "aid" => "NaN",
+                        "function" => [
+                            "testMultiDayNotallowPremature"
+                        ],
+                        "options" => [
+                            "stamp" => "202205",
+                            "invoicing_days" => [
+                                "1",
+                                "2",
+                                "3",
+                                "4",
+                                "5",
+                                "6",
+                                "7",
+                                "8",
+                                "9",
+                                "10",
+                                "11",
+                                "12",
+                                "13",
+                                "14",
+                                "15",
+                                "16",
+                                "17",
+                                "18",
+                                "19",
+                                "20",
+                                "21",
+                                "22",
+                                "23",
+                                "24",
+                                "25",
+                                "26",
+                                "27",
+                                "28"
+                            ],
+                            "force_accounts" => [
+                                100003439,
+                                100013439,
+                                100023439,
+                                100033439,
+                                100043439,
+                                100053439,
+                                100063439,
+                                100073439,
+                                100083439,
+                                100093439,
+                                100103439,
+                                100113439,
+                                100123439,
+                                100133439,
+                                100143439,
+                                100153439,
+                                100163439,
+                                100173439,
+                                100183439,
+                                100193439,
+                                100203439,
+                                100213439,
+                                100223439,
+                                100233439,
+                                100243439,
+                                100253439,
+                                100263439,
+                                100273439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun_key" => "202207",
+                        "accounts" => [
+                            "100003439" => "1",
+                            "100013439" => "2",
+                            "100023439" => "3",
+                            "100033439" => "4",
+                            "100043439" => "5",
+                            "100053439" => "6",
+                            "100063439" => "7",
+                            "100073439" => "8",
+                            "100083439" => "9",
+                            "100093439" => "10",
+                            "100103439" => "11",
+                            "100113439" => "12",
+                            "100123439" => "13",
+                            "100133439" => "14",
+                            "100143439" => "15",
+                            "100153439" => "16",
+                            "100163439" => "17",
+                            "100173439" => "18",
+                            "100183439" => "19",
+                            "100193439" => "20",
+                            "100203439" => "21",
+                            "100213439" => "22",
+                            "100223439" => "23",
+                            "100233439" => "24",
+                            "100243439" => "25",
+                            "100253439" => "26",
+                            "100263439" => "27",
+                            "100273439" => "28"
+                        ]
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "credit"
+                        ]
+                    ],
+                    "postRun" => [
+                        "multi_day_cycle_false"
+                    ],
+                    "duplicate" => true
+                ],
                 [
                     "test" => [
                         "test_number" => 1763439,
@@ -3692,6 +3692,7 @@ class Tests_Aggregator extends UnitTestCase
     public function TestPerform(){
 
         $this->tests = $this->test_cases();
+        // execute test cases pass by tests or all if it empty
         $request = new Yaf_Request_Http;
         $this->test_cases_to_run = $request->get('tests');
         if ($this->test_cases_to_run) {
@@ -3756,7 +3757,7 @@ class Tests_Aggregator extends UnitTestCase
             $this->message .= $this->fails;
         }
         print_r($this->message);
-        //  $this->restoreColletions();
+        $this->restoreColletions();
     }
 
     /**
@@ -4450,7 +4451,7 @@ class Tests_Aggregator extends UnitTestCase
                         }
                     }
                     if (!$find) {
-                        $this->message .= "billrun not crate for aid $aid " . $this->fail;
+                        $this->message .= "billrun not create for aid $aid " . $this->fail;
                         $this->assertTrue(0);
                     }
                 }
@@ -4474,67 +4475,65 @@ class Tests_Aggregator extends UnitTestCase
         Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
     }
 
-    // public function testMultiDay($key, $returnBillrun, $row)
-    // {
-    //     $passed = true;
+    public function testMultiDay($key, $returnBillrun, $row){
+        $passed = true;
+        $aids = [];
+        foreach ($row['expected']['accounts'] as $aid => $day) {
+            $aids[] = $aid;
+            $aid_and_days[$aid] = $day;
+        }
 
-    //     $aids = [];
-    //     foreach ($row['expected']['accounts'] as $aid => $day) {
-    //         $aids[] = $aid;
-    //         $aid_and_days[$aid] = $day;
-    //     }
+        $billruns = $this->getBillruns();
+        $billruns_ = [];
+        foreach ($billruns as $bill) {
+            $billruns_[] = $bill->getRawData();
+        }
 
-    //     $billruns = $this->getBillruns();
-    //     $billruns_ = [];
-    //     foreach ($billruns as $bill) {
-    //         $billruns_[] = $bill->getRawData();
-    //     }
+     //Checks that all the  billruns  that should have been created were created
+        $find = false;
+        foreach ($aids as $aid) {
+            $find = false;
+            foreach ($billruns_ as $bills) {
+                if ($bills['aid'] == $aid) {
+                    $this->message .= "billrun created for aid $aid  " . $this->pass;
+                    $find = true;
+                    continue 2;
+                }
+            }
+            if (!$find) {
+                $this->message .= "billrun not created for aid $aid " . $this->fail;
+                $this->assertTrue(0);
+            }
+        }
 
-    //  //Checks that all the  billruns  that should have been created were created
-        // $find = false;
-        // foreach ($aids as $aid) {
-        //     $find = false;
-        //     foreach ($billruns_ as $bills) {
-        //         if ($bills['aid'] == $aid) {
-        //             $this->message .= "billrun crate for aid $aid  " . $this->pass;
-        //             $find = true;
-        //             continue 2;
-        //         }
-        //     }
-        //     if (!$find) {
-        //         $this->message .= "billrun not crate for aid $aid " . $this->fail;
-        //         $this->assertTrue(0);
-        //     }
-        // }
+        //Checks that no  billruns have been created that should not be created
+        if (count($billruns_) > count($aids)) {
 
-        // //Checks that no  billruns have been created that should not be created
-        // if (count($billruns_) > count($aids)) {
+            $wrongBillrun = array_filter($billruns_, function (array $bill) use ($aids) {
+                return !in_array($bill['aid'], $aids);
+            });
 
-        //     $wrongBillrun = array_filter($billruns_, function (array $bill) use ($aids) {
-        //         return !in_array($bill['aid'], $aids);
-        //     });
+            foreach ($wrongBillrun as $wrong => $bill) {
+                $this->message .= "billrun  create for aid {$bill['aid']} and was not meant to be formed " . $this->fail;
+                $this->assertTrue(0);
+            }
+        }
 
-        //     foreach ($wrongBillrun as $wrong => $bill) {
-        //         $this->message .= "billrun  crate for aid {$bill['aid']} and was not meant to be formed " . $this->fail;
-        //         $this->assertTrue(0);
-        //     }
-        // }
-
-        // //Checking that invoicing day is correct
-        // foreach ($billruns_ as $bill) {
-        //     foreach ($aid_and_days as $aid => $day) {
-        //         if ($bill['aid'] == $aid) {
-        //             if ($bill['invoicing_day'] == $day) {
-        //                 $this->message .= "billrun  invoicing_day for aid $aid is correct ,day : $day" . $this->pass;
-        //                 continue 2;
-        //             } else {
-        //                 $this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  : $day , actual result is{$bill['invoicing_day']} " . $this->fail;
-        //                 $this->assertTrue(0);
-        //             }
-        //         }
-        //     }
-        // }
-    //}
+        //Checking that invoicing day is correct
+        foreach ($billruns_ as $bill) {
+            foreach ($aid_and_days as $aid => $day) {
+                if ($bill['aid'] == $aid) {
+                    if ($bill['invoicing_day'] == $day) {
+                        $this->message .= "billrun  invoicing_day for aid $aid is correct ,day : $day" . $this->pass;
+                        continue 2;
+                    } else {
+                        $this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  : $day , actual result is{$bill['invoicing_day']} " . $this->fail;
+                        $this->assertTrue(0);
+                    }
+                }
+            }
+        }
+    }
 
     public function removeBillruns()
     {
@@ -4542,43 +4541,40 @@ class Tests_Aggregator extends UnitTestCase
         $this->billrunCol->remove(['billrun_key' => ['$ne' => 'abc']]);
     }
 
-    // public function testMultiDayNotallowPremature($key, $returnBillrun, $row)
-    // {
-    //     $now = date('d');
-    //     $billruns = $this->getBillruns();
-    //     $billruns_ = [];
-    //     $aid_and_days = $row['expected']['accounts'];
-    //     foreach ($billruns as $bill) {
-    //         $billruns_[] = $bill->getRawData();
-    //     }
+    public function testMultiDayNotallowPremature($key, $returnBillrun, $row){
+        $now = date('d');
+        $billruns = $this->getBillruns();
+        $billruns_ = [];
+        $aid_and_days = $row['expected']['accounts'];
+        foreach ($billruns as $bill) {
+            $billruns_[] = $bill->getRawData();
+        }
 
-    //     foreach ($billruns_ as $bill) {
+        foreach ($billruns_ as $bill) {
 
-    //         if ($bill['invoicing_day'] == $aid_and_days[$bill['aid']]) {
-    //             $this->message .= "billrun  invoicing_day for aid $aid is correct ,day : {$aid_and_days[$bill['aid']]}" . $this->pass;
-    //         } else {
-    //             $this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  :  {$aid_and_days[$bill['aid']]} , actual result is{$bill['invoicing_day']} " . $this->fail;
-    //             $this->assertTrue(0);
-    //         }
-    //         if ($bill['invoicing_day'] <= $now) {
-    //             $this->message .= "notallowPrematurun  is corrcet now its  $now  and  invoicing day  is{$aid_and_days[$bill['aid']]} aid $aid " . $this->pass;
-    //         } else {
-    //             $this->message .= "notallowPrematurun  is not  corrcet now its  $now  and  invoicing day  is {$aid_and_days[$bill['aid']]}  aid $aid " . $this->fail;
-    //             $this->assertTrue(0);
-    //         }
-    //         $this->message .= '<br>****************************************************************<br>';
-    //     }
-    // }
+            if ($bill['invoicing_day'] == $aid_and_days[$bill['aid']]) {
+                $this->message .= "billrun  invoicing_day for aid $aid is correct ,day : {$aid_and_days[$bill['aid']]}" . $this->pass;
+            } else {
+                $this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  :  {$aid_and_days[$bill['aid']]} , actual result is{$bill['invoicing_day']} " . $this->fail;
+                $this->assertTrue(0);
+            }
+            if ($bill['invoicing_day'] <= $now) {
+                $this->message .= "notallowPrematurun  is corrcet now its  $now  and  invoicing day  is{$aid_and_days[$bill['aid']]} aid $aid " . $this->pass;
+            } else {
+                $this->message .= "notallowPrematurun  is not  corrcet now its  $now  and  invoicing day  is {$aid_and_days[$bill['aid']]}  aid $aid " . $this->fail;
+                $this->assertTrue(0);
+            }
+            $this->message .= '<br>****************************************************************<br>';
+        }
+    }
 
-    public function cleanAfterAggregate($key, $row)
-    {
+    public function cleanAfterAggregate($key, $row){
         $stamp = $row['test']['options']['stamp'];
         $account[] = $row['test']['aid'];
         Billrun_Aggregator_Customer::removeBeforeAggregate($stamp, $account);
     }
 
-    public function checkPerLine($key, $returnBillrun, $row)
-    {
+    public function checkPerLine($key, $returnBillrun, $row){
         $this->message .="<b>checkPerLine</b></br>";
         foreach ($row['expected']['lines'] as $line) {
             $cursor = Billrun_Factory::db()->linesCollection()->query($line['query'])->cursor()->limit(100000);
