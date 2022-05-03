@@ -189,7 +189,7 @@ class ResetLinesModel {
 
     protected function getAllLinesStamps($lines_coll, $query) {
         Billrun_Factory::log("Rebalance get all stamps query start. Query is: " . json_encode($query), Zend_Log::DEBUG);
-        $lines = $lines_coll->query($query)->cursor()->fields(array('stamp' => 1))->setRawReturn(true);
+        $lines = $lines_coll->query($query)->cursor()->setReadPreference('RP_PRIMARY')->fields(array('stamp' => 1))->setRawReturn(true);
         Billrun_Factory::log("Rebalance get all stamps query end", Zend_Log::DEBUG);
         return array_column(iterator_to_array($lines), 'stamp');
     }
