@@ -47,11 +47,7 @@ class ResetLinesModel {
      */
     protected $balanceSubstract = [];
 
-    /**
-     * Usage to substract from default balance in rebalance by line stamp.
-     * @var array
-     */
-    protected $balanceSubstractByLine = [];
+    protected $balanceAlreadyUpdated = [];
 
     /**
      * used for rebalance multiple balances affected by the same line
@@ -220,7 +216,8 @@ class ResetLinesModel {
         $stamps = array();
         $queue_lines = array();
         $former_exporter = array();
-
+        $this->stampsByAidAndSid = [];
+        $this->splitLinesStamp = [];
         // Go through the collection's lines and fill the queue lines.
         Billrun_Factory::log("Rebalance resetLinesByQuery starts iteration", Zend_Log::DEBUG);
         $i = 0;
@@ -233,7 +230,7 @@ class ResetLinesModel {
             if ($line['source'] === 'unify') {
                 $batchSize = Billrun_Config::getInstance()->getConfigValue('resetlines.archived_lines.batch_size', 100000);
                 Billrun_Factory::log("before get unify lines", Zend_Log::DEBUG);
-                $archiveLinesSize = count(Billrun_Calculator_Unify::getUnifyLines($line['stamp']));
+                $archiveLinesSize = $line['lcount'];
                 Billrun_Factory::log("after get unify lines", Zend_Log::DEBUG);
                 for ($skip = 0; $skip < $archiveLinesSize; $skip += $batchSize) {
                     Billrun_Factory::log("before get unify lines 2", Zend_Log::DEBUG);
@@ -781,9 +778,10 @@ class ResetLinesModel {
         if (!isset($line['usagev']) || !isset($line['aprice'])) {
             return;
         }
-        if (!empty($this->balanceSubstractByLine[$line['stamp']])) {
+        if(isset($this->balanceAlreadyUpdated[$line['stamp']])){
             return;
         }
+        $this->balanceAlreadyUpdated[$line['stamp']] =  true;
         $lineInvoicingDay = $this->getLineInvoicingDay($line);
         $billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($line['urt']->sec, $lineInvoicingDay);
         $arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
@@ -799,27 +797,19 @@ class ResetLinesModel {
             $groupUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage'] : 0;
             $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage'] = $groupUsage + $arategroupValue;
             @$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['count'] += 1;
-            $this->balanceSubstractByLine[$line['stamp']][$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage'] = $groupUsage + $arategroupValue;
-            @$this->balanceSubstractByLine[$line['stamp']][$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['count'] += 1;
         }
 
         if ($this->affectsMainBalance($line)) {
             if (!empty(($line['over_group']))) {
                 Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'over_group', 'usage'], $line['over_group']);
-                Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'over_group', 'usage'], $line['over_group']);
             }
             if (!empty(($line['out_group']))) {
                 Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'out_group', 'usage'], $line['out_group']);
-                Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'out_group', 'usage'], $line['out_group']);
             }
             Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'usage'], $this->getMainBalanceUsage($line));
             Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'cost'], $line['aprice']);
             Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'count'], 1);
             Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'cost'], $line['aprice']);
-            Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'usage'], $this->getMainBalanceUsage($line));
-            Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'cost'], $line['aprice']);
-            Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'count'], 1);
-            Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'cost'], $line['aprice']);
         }
     }
 
