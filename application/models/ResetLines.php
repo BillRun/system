@@ -461,6 +461,7 @@ class ResetLinesModel {
                 Billrun_Factory::log('Fix rebalance. iteration ' . $i . ' from ' . $totalIteration . ' iterations', Zend_Log::INFO);
                 $this->resetLinesByStamps($update_stamps, $this->aids, $advancedProperties, $lines_coll, $queue_coll);
                 $offset += $reset_stamps_size;
+                $i++;
             }
         }
         $offset = 0;
@@ -469,11 +470,12 @@ class ResetLinesModel {
         $totalIteration = ceil($totalAids/$reset_accounts_size);
         $i=1;
         while ($update_count = count($update_aids = array_slice($this->aids, $offset, $reset_accounts_size))) {
-            Billrun_Factory::log('Resetting ' . $update_count .  ' lines of accounts from ' . $totalAids . " lines", Zend_Log::INFO);
+            Billrun_Factory::log('Resetting lines of ' . $update_count .  ' accounts from ' . $totalAids . " accounts", Zend_Log::INFO);
             Billrun_Factory::log('Resetting lines of accounts ' . implode(',', $update_aids), Zend_Log::INFO);
             Billrun_Factory::log('Resetting lines of accounts.  iteration ' . $i . ' from ' . $totalIteration . ' iterations', Zend_Log::INFO);
             $this->resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll);
             $offset += $reset_accounts_size;
+            $i++;
         }
 
         return TRUE;
@@ -661,6 +663,7 @@ class ResetLinesModel {
             }
             Billrun_Factory::log('update lines. ' . $i . ' iteration from ' . $totalIteration . ' iterations', Zend_Log::DEBUG);
             $offset += $batch_size;
+            $i++;
         }
     }
 
