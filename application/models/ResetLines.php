@@ -676,23 +676,26 @@ class ResetLinesModel {
             $query = $this->getRebalanceQueueQuery($aid);
             try {
                 if ($this->checkIfStampsCanStoreInDB($stamps)) {
-                    $updateData = array('$set' => array('stamps_by_sid' => $stampsBySid));
-                    Billrun_Factory::log("before rebalance queue update", Zend_Log::DEBUG);
-                    Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
-                    Billrun_Factory::log("after rebalance queue update ", Zend_Log::DEBUG);
+                    try {
+                        $updateData = array('$set' => array('stamps_by_sid' => $stampsBySid));
+                        Billrun_Factory::log("before rebalance queue update", Zend_Log::DEBUG);
+                        Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
+                        Billrun_Factory::log("after rebalance queue update ", Zend_Log::DEBUG);
+                    } catch (Exception $ex) {
+                        Billrun_Factory::log("Rebalance: failed to add stamps to rebalance queue, Error: " . $ex->getMessage(), Zend_Log::ERR);
+                        $this->addStampsToRebalnceQueueFile($aid, $this->rebalnceQueueRecoverStampsPath, $stampsBySid, $query);          
+                    }
                 } else {
-                    $filename = $aid;
-                    $this->addStampsToRebalnceQueueFile($this->rebalnceQueueRecoverStampsPath, $filename, $stampsBySid);
-                    $updateData = array('$set' => array('stamps_recover_path' => $this->rebalnceQueueRecoverStampsPath . DIRECTORY_SEPARATOR . $filename));
-                    Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
+                    $this->addStampsToRebalnceQueueFile($aid, $this->rebalnceQueueRecoverStampsPath, $stampsBySid, $query);          
                 }
             } catch (Exception $ex) {
-                Billrun_Factory::log("Rebalance: failed to add stamps to rebalance queue or to relevant file, Error: " . $ex->getMessage(), Zend_Log::ERR);
+                Billrun_Factory::log("Error: " . $ex->getMessage(), Zend_Log::ERR);
             }
         }
     }
 
-    protected function addStampsToRebalnceQueueFile($path, $filename, $stampsBySid) {
+    protected function addStampsToRebalnceQueueFile($aid, $path, $stampsBySid, $query) {
+        $filename = $aid;
         if (!file_exists($path)) {
             mkdir($path, 0777, true);
         }
@@ -705,6 +708,8 @@ class ResetLinesModel {
         if (!$ret) {
             throw new Exception("Failed to write stamps to recover stamps file");
         }
+        $updateData = array('$set' => array('stamps_recover_path' => $this->rebalnceQueueRecoverStampsPath . DIRECTORY_SEPARATOR . $filename));
+        Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
     }
 
     /**
@@ -712,7 +717,8 @@ class ResetLinesModel {
      * @param int $limit - the size of stamps that can be store in db entity (rebalance_queue/balance) . default 250k
      * @return boolean true if stamps can store in db. false otherwise
      */
-    protected function checkIfStampsCanStoreInDB($stampsToInsert, $limit = 250000) {
+    protected function checkIfStampsCanStoreInDB($stampsToInsert) {
+        $limit = Billrun_Config::getInstance()->getConfigValue('resetlines.stamps_store_in_db.limit', 100000);
         if (count($stampsToInsert) >= $limit) {
             return false;
         }
