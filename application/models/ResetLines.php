@@ -243,7 +243,6 @@ class ResetLinesModel {
 
                     $archivedLinesToInsert = [];
                     Billrun_Factory::log("Before archived lines loop", Zend_Log::DEBUG);
-                    $j = 1;
                     foreach ($archivedLines as $archivedLine) {
                         Billrun_Factory::log("reached $j archive line from $archiveLinesSize lines. archive line stamp: " . $archivedLine['stamp'], Zend_Log::DEBUG);
                         $j++;
