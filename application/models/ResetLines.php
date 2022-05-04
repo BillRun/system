@@ -47,11 +47,7 @@ class ResetLinesModel {
      */
     protected $balanceSubstract = [];
 
-    /**
-     * Usage to substract from default balance in rebalance by line stamp.
-     * @var array
-     */
-    protected $balanceSubstractByLine = [];
+    protected $balanceAlreadyUpdated = [];
 
     /**
      * used for rebalance multiple balances affected by the same line
@@ -193,7 +189,7 @@ class ResetLinesModel {
 
     protected function getAllLinesStamps($lines_coll, $query) {
         Billrun_Factory::log("Rebalance get all stamps query start. Query is: " . json_encode($query), Zend_Log::DEBUG);
-        $lines = $lines_coll->query($query)->cursor()->fields(array('stamp' => 1))->setRawReturn(true);
+        $lines = $lines_coll->query($query)->cursor()->setReadPreference('RP_PRIMARY')->fields(array('stamp' => 1))->setRawReturn(true);
         Billrun_Factory::log("Rebalance get all stamps query end", Zend_Log::DEBUG);
         return array_column(iterator_to_array($lines), 'stamp');
     }
@@ -220,7 +216,8 @@ class ResetLinesModel {
         $stamps = array();
         $queue_lines = array();
         $former_exporter = array();
-
+        $this->stampsByAidAndSid = [];
+        $this->splitLinesStamp = [];
         // Go through the collection's lines and fill the queue lines.
         Billrun_Factory::log("Rebalance resetLinesByQuery starts iteration", Zend_Log::DEBUG);
         $i = 0;
@@ -233,7 +230,7 @@ class ResetLinesModel {
             if ($line['source'] === 'unify') {
                 $batchSize = Billrun_Config::getInstance()->getConfigValue('resetlines.archived_lines.batch_size', 100000);
                 Billrun_Factory::log("before get unify lines", Zend_Log::DEBUG);
-                $archiveLinesSize = count(Billrun_Calculator_Unify::getUnifyLines($line['stamp']));
+                $archiveLinesSize = $line['lcount'];
                 Billrun_Factory::log("after get unify lines", Zend_Log::DEBUG);
                 for ($skip = 0; $skip < $archiveLinesSize; $skip += $batchSize) {
                     Billrun_Factory::log("before get unify lines 2", Zend_Log::DEBUG);
@@ -679,23 +676,26 @@ class ResetLinesModel {
             $query = $this->getRebalanceQueueQuery($aid);
             try {
                 if ($this->checkIfStampsCanStoreInDB($stamps)) {
-                    $updateData = array('$set' => array('stamps_by_sid' => $stampsBySid));
-                    Billrun_Factory::log("before rebalance queue update", Zend_Log::DEBUG);
-                    Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
-                    Billrun_Factory::log("after rebalance queue update ", Zend_Log::DEBUG);
+                    try {
+                        $updateData = array('$set' => array('stamps_by_sid' => $stampsBySid));
+                        Billrun_Factory::log("before rebalance queue update", Zend_Log::DEBUG);
+                        Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
+                        Billrun_Factory::log("after rebalance queue update ", Zend_Log::DEBUG);
+                    } catch (Exception $ex) {
+                        Billrun_Factory::log("Rebalance: failed to add stamps to rebalance queue, Error: " . $ex->getMessage(), Zend_Log::ERR);
+                        $this->addStampsToRebalnceQueueFile($aid, $this->rebalnceQueueRecoverStampsPath, $stampsBySid, $query);          
+                    }
                 } else {
-                    $filename = $aid;
-                    $this->addStampsToRebalnceQueueFile($this->rebalnceQueueRecoverStampsPath, $filename, $stampsBySid);
-                    $updateData = array('$set' => array('stamps_recover_path' => $this->rebalnceQueueRecoverStampsPath . DIRECTORY_SEPARATOR . $filename));
-                    Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
+                    $this->addStampsToRebalnceQueueFile($aid, $this->rebalnceQueueRecoverStampsPath, $stampsBySid, $query);          
                 }
             } catch (Exception $ex) {
-                Billrun_Factory::log("Rebalance: failed to add stamps to rebalance queue or to relevant file, Error: " . $ex->getMessage(), Zend_Log::ERR);
+                Billrun_Factory::log("Error: " . $ex->getMessage(), Zend_Log::ERR);
             }
         }
     }
 
-    protected function addStampsToRebalnceQueueFile($path, $filename, $stampsBySid) {
+    protected function addStampsToRebalnceQueueFile($aid, $path, $stampsBySid, $query) {
+        $filename = $aid;
         if (!file_exists($path)) {
             mkdir($path, 0777, true);
         }
@@ -708,6 +708,8 @@ class ResetLinesModel {
         if (!$ret) {
             throw new Exception("Failed to write stamps to recover stamps file");
         }
+        $updateData = array('$set' => array('stamps_recover_path' => $this->rebalnceQueueRecoverStampsPath . DIRECTORY_SEPARATOR . $filename));
+        Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
     }
 
     /**
@@ -715,7 +717,8 @@ class ResetLinesModel {
      * @param int $limit - the size of stamps that can be store in db entity (rebalance_queue/balance) . default 250k
      * @return boolean true if stamps can store in db. false otherwise
      */
-    protected function checkIfStampsCanStoreInDB($stampsToInsert, $limit = 250000) {
+    protected function checkIfStampsCanStoreInDB($stampsToInsert) {
+        $limit = Billrun_Config::getInstance()->getConfigValue('resetlines.stamps_store_in_db.limit', 100000);
         if (count($stampsToInsert) >= $limit) {
             return false;
         }
@@ -784,9 +787,10 @@ class ResetLinesModel {
         if (!isset($line['usagev']) || !isset($line['aprice'])) {
             return;
         }
-        if (!empty($this->balanceSubstractByLine[$line['stamp']])) {
+        if(isset($this->balanceAlreadyUpdated[$line['stamp']])){
             return;
         }
+        $this->balanceAlreadyUpdated[$line['stamp']] =  true;
         $lineInvoicingDay = $this->getLineInvoicingDay($line);
         $billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($line['urt']->sec, $lineInvoicingDay);
         $arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
@@ -802,27 +806,19 @@ class ResetLinesModel {
             $groupUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage'] : 0;
             $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage'] = $groupUsage + $arategroupValue;
             @$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['count'] += 1;
-            $this->balanceSubstractByLine[$line['stamp']][$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage'] = $groupUsage + $arategroupValue;
-            @$this->balanceSubstractByLine[$line['stamp']][$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['count'] += 1;
         }
 
         if ($this->affectsMainBalance($line)) {
             if (!empty(($line['over_group']))) {
                 Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'over_group', 'usage'], $line['over_group']);
-                Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'over_group', 'usage'], $line['over_group']);
             }
             if (!empty(($line['out_group']))) {
                 Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'out_group', 'usage'], $line['out_group']);
-                Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'out_group', 'usage'], $line['out_group']);
             }
             Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'usage'], $this->getMainBalanceUsage($line));
             Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'cost'], $line['aprice']);
             Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'count'], 1);
             Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'cost'], $line['aprice']);
-            Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'usage'], $this->getMainBalanceUsage($line));
-            Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'cost'], $line['aprice']);
-            Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'count'], 1);
-            Billrun_Util::increaseIn($this->balanceSubstractByLine, [$line['stamp'], $line['aid'], $line['sid'], $billrunKey, 'cost'], $line['aprice']);
         }
     }
 
