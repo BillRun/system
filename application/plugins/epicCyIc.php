@@ -212,17 +212,22 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$row->setRawData($current);
 		}
 
-		if ($calculator->getType() == 'pricing') {
-			$current = $row->getRawData();
-			if ($current["cf"]["cash_flow"] == "E") {
-				unset($current["billrun"]);
-				for ($i = 0; $i < count($current["rates"]); $i++) {
-					unset($current["rates"][$i]["pricing"]["billrun"]);
-				}
-				$row->setRawData($current);
-			}
-		}
+//		if ($calculator->getType() == 'pricing') {
+//			$current = $row->getRawData();
+//			if ($current["cf"]["cash_flow"] == "E") {
+//				unset($current["billrun"]);
+//				for ($i = 0; $i < count($current["rates"]); $i++) {
+//					unset($current["rates"][$i]["pricing"]["billrun"]);
+//				}
+//				$row->setRawData($current);
+//			}
+//		}
 	}
+        
+        //EPICIC-153: On billing cycle use only revenue lines and ignore expense lines
+        public function beforeCycleQuerySubscribers(&$query, &$fields){
+            $query["cf.cash_flow"] = "R";
+        }
 
 	public function beforeCalculatorAddExtraLines(&$row, &$extraData, Billrun_Calculator $calculator) {
 		if ($calculator->getType() == 'rate') {
