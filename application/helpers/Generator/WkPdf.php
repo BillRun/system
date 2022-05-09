@@ -482,7 +482,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 					<tbody>
 					<tr>
 						<td><img src='" . $this->logo_path . "' alt='' style='width:100px;object-fit:contain;'>&nbsp;&nbsp;" . $this->getCompanyName() . "</div></td>
-						<td><div class='paging'>page <span class='page'></span> of <span class='topage'></span></div></td>
+						<td><div class='paging'>".Generator_Translations::stranslate('page'). " <span class='page'></span> of <span class='topage'></span></div></td>
 					</tr>
 					</tbody>
 				</table>
@@ -507,7 +507,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 					  </ul>
 					</td>
 					<td>
-					  <p class='credentials'> <span class='text'>powered by</span> <img class='billrun-logo' src='" . $this->billrun_footer_logo_path . "' alt=''></p>
+					  <p class='credentials'> <span class='text'>".Generator_Translations::stranslate('powered by')."</span> <img class='billrun-logo' src='" . $this->billrun_footer_logo_path . "' alt=''></p>
 					</td>
 				  </tr>
 				</tbody>
