@@ -225,7 +225,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
         
         //EPICIC-153: On billing cycle use only revenue lines and ignore expense lines
-        public function beforeCycleQuerySubscribers(&$query, &$fields){
+        public function beforeCycleLinesQuery(&$query, &$sort, &$fields){
             $query["cf.cash_flow"] = "R";
         }
 
