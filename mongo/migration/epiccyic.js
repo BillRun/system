@@ -9741,6 +9741,10 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
     });
 });
 
+lastConfig = runOnce(lastConfig, 'EPICIC-158', function () {
+	lastConfig.resetlines.limit.v = 1;
+})
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
