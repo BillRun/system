@@ -146,7 +146,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         
         public function afterLineMediation($calculator, $type, &$row) {
             if ($type === 'ICT') {
-                if ($row["uf"]["dateOrTimeWasEmpty"]) {
+                if (!empty($row["uf"]["dateOrTimeWasEmpty"])) {
                     $row["uf"]["EVENT_START_DATE"] = $row["uf"]["originalDate"];
                     $row["uf"]["EVENT_START_TIME"] = $row["uf"]["originalTime"];
                     unset($row["uf"]["originalDate"]);
