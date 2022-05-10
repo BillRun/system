@@ -3629,6 +3629,27 @@ class Tests_Aggregator extends UnitTestCase
                     ],
                     "duplicate" => true
                 ],
+                [
+                    "test" => [
+                        "test_number" => 13595,
+                        "aid" => 13595,
+                        "sid" => 63595,
+                        "function" => [
+                            "billrunNotCreated"
+                        ],
+                        "options" => [
+                            "stamp" => "202202",
+                            "force_accounts" => [
+                                13595
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [],
+                        "lines" => []   
+                    ],
+                    "duplicate" => false
+                ],
             
             array(
             	'preRun' => ('expected_invoice'),

@@ -1778,6 +1778,38 @@
 							"taxation" : "global"
 						}
 					]
+				},
+				{
+					
+					"from" : "time*2021-09-30T21:00:00Z",
+					"name" : "UPFRONT2_2",
+					"price" : [
+						{
+							"price" : 4,
+							"from" : 0,
+							"to" : "UNLIMITED"
+						}
+					],
+					"description" : "Upfront 2",
+					"recurrence" : {
+						"frequency" : 1,
+						"start" : 1
+					},
+					"upfront" : true,
+					"connection_type" : "postpaid",
+					"rates" : [ ],
+					"tax" : [
+						{
+							"type" : "vat",
+							"taxation" : "global"
+						}
+					],
+					"prorated_start" : true,
+					"prorated_end" : true,
+					"prorated_termination" : true,
+					"to" : "time*2171-04-27T09:00:29Z",
+					"creation_time" : "time*2021-09-30T21:00:00Z"
 				}
+				
 			]
 }
