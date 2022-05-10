@@ -35,6 +35,9 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 			'creation_date' => array(
 				'$lt' => new MongoDate(strtotime($offset . ' ago')),
 			),
+			'end_time' => array(
+				'$exists' => false,
+			)
 		);
 		$sort = array(
 			'creation_date' => 1,
@@ -63,13 +66,12 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		}
 
 		foreach ($billruns as $billrun_key => $aids) {
-			$model = new ResetLinesModel($aids, $billrun_key, $conditions[$billrun_key], $rebalanceStamps[$billrun_key], $stampsByBillrunAndAid[$billrun_key] ?? []);
+			$model = new ResetLinesModel($aids, $billrun_key, $conditions[$billrun_key], $rebalanceStamps[$billrun_key], $stampsByBillrunAndAid[$billrun_key] ?? [], iterator_to_array($results));
 			try {
 				$ret = $model->reset();
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;
 				}
-				$rebalance_queue->remove(array('aid' => array('$in' => $aids), 'billrun_key' => strval($billrun_key)));
 			} catch (Exception $exc) {
 				Billrun_Factory::log('Error resetting aids ' . implode(',', $aids) . ' of billrun ' . $billrun_key . '. Error was ' . $exc->getMessage() . ' : ' . $exc->getTraceAsString(), Zend_Log::ALERT);
 				return FALSE;

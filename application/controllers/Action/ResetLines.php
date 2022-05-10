@@ -68,6 +68,9 @@ class ResetLinesAction extends ApiAction {
 				$query = array(
 					'aid' => $aid,
 					'billrun_key' => $billrun_key,
+					'end_time' => array(
+						'$exists' => false
+					)
 				);  
 				$options = array('upsert' => true);
 				$rebalance_queue->update($query, array('$set' => $rebalanceLine), $options);

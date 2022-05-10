@@ -62,8 +62,12 @@ class ResetLinesModel {
      */
     protected $conditions;
     protected $linesStampsByRebalanceStamp = [];
+	
+	protected $rebalance_queue_records = [];
+	protected $resetStartTime;
+	protected $resetEndTime;
 
-    public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps, $stampsToRecoverByAidAndSid = array()) {
+	public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps, $stampsToRecoverByAidAndSid = array(), $rebalance_records = array()) {
         $this->initBalances($aids, $billrun_key);
         $this->aids = $aids;
         $this->billrun_key = strval($billrun_key);
@@ -74,11 +78,15 @@ class ResetLinesModel {
         if (Billrun_Config::getInstance()->getConfigValue('resetlines.avoid_repeating_reset', false)) {
             $this->rebalanceStamps = $rebalanceStamps;
         }
+		$this->rebalance_queue_records = $rebalance_records;
     }
 
     public function reset() {
         Billrun_Factory::log('Reset subscriber activated', Zend_Log::INFO);
+		$this->resetStartTime = new Mongodate();
         $ret = $this->resetLines();
+		$this->resetEndTime = new Mongodate();
+		$this->updateRebalanceQueueRecords();
         return $ret;
     }
 
@@ -1138,5 +1146,16 @@ class ResetLinesModel {
     protected function getLineInvoicingDay($line) {
         return isset($line['foregin']['account']['invoicing_day']) ? $line['foregin']['account']['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
     }
+
+	protected function updateRebalanceQueueRecords() {
+		$stamps = array_column($this->rebalance_queue_records, 'stamp');
+		$updateQuery = array(
+            '$set' => array(
+                'start_time' => $this->resetStartTime,
+				'end_time' => $this->resetEndTime
+            )
+        );
+		Billrun_Factory::db()->rebalance_queueCollection()->update(['stamp' => array('$in' => $stamps)], $updateQuery);
+	}
 
 }
