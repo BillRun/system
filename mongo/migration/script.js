@@ -1318,7 +1318,17 @@ lastConfig = runOnce(lastConfig, 'BRCD-3527', function () {
                     "display": false
             };
     lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], inCollectionField, 'account');
+		});
 
+// BRCD-3325 : Add default condition - the "rejection_required" condition doesn't exist.
+lastConfig = runOnce(lastConfig, 'BRCD-3325', function () {
+    var rejection_required_cond = {
+        "field": "aid",
+				"op" : "exists",
+				"value" : false
+    };
+		lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
 });
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
