@@ -82,6 +82,14 @@ class Portal_Exception extends Exception {
 			'code' => 4805,
 			'desc' => 'Password does not contains special character',
 		],
+		'password_old_failed_not_match' => [
+			'code' => 4901,
+			'desc' => 'Incorrect old password',
+		],
+		'password_old_failed_same' => [
+			'code' => 4902,
+			'desc' => 'New password can not be same as old',
+		],
 	];
 
 	public function __construct($error = '', $code = '', $desc = '') {
