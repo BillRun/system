@@ -120,7 +120,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 					'$first' => '$card_token'
 				),
 				'invoicing_day' => array(
-					'$first' => '$invoicing_day'
+					'$addToSet' => '$invoicing_day'
 				)
 			)),
 		);
