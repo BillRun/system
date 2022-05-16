@@ -221,7 +221,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
 			Billrun_Factory::dispatcher()->trigger('beforeSavingRequestFilePayment', array(static::$type, &$currentPayment, &$params, $this));
 			$currentPayment->save();
-			$line = $this->getDataLine($params);
+			$line = $this->getDataLine($currentPayment->getRawData());
 			$this->data[] = $line;
 		}
 		$numberOfRecordsToTreat = count($this->data);
