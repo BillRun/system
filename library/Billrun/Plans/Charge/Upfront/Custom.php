@@ -39,7 +39,7 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 		return null;
 	}
 
-	public function getRefund(Billrun_DataTypes_CycleTime $cycle) {
+	public function getRefund(Billrun_DataTypes_CycleTime $cycle, $quantity=1) {
 		// $cycle is ignored  as the custom cycle configuration  will overseed the billrun cycle  configuration
 		if (empty($this->deactivation)  ) {
 			return null;
@@ -64,7 +64,8 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 		$endActivation  = strtotime('-1 second', $this->deactivation);
 		$refundFraction = 1- Billrun_Utils_Time::getDaysSpanDiffUnix($this->cycle->start(), $endActivation, $cycleSpan);
 
-		return array( 'value' => -$lastUpfrontCharge * $refundFraction,
+		return array( 'value' => -$lastUpfrontCharge * $refundFraction * $quantity,
+			'full_price' => floatval($lastUpfrontCharge),
 			'start' => $this->activation,
 			'prorated_start_date' => new Mongodloid_Date($this->deactivation),
 			'end' => $this->deactivation,
