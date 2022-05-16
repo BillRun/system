@@ -174,7 +174,10 @@ class ResetLinesModel {
         }
         $stamps = $this->getAllLinesStamps($lines_coll, $query);
         $linesSizeToHandle = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.size', 100000);
+        $iteration = 1;
+        $totalIterations = ceil(count($stamps)/$linesSizeToHandle);
         while ($update_stamps_count = count($update_stamps = array_slice($stamps, 0, $linesSizeToHandle))) {
+            Billrun_Factory::log('resetLinesForAccounts iteration ' . $iteration++ . ' from ' . $totalIterations . ' iterations', Zend_Log::DEBUG);
             $stampQuery = array('stamp' => array('$in' => $update_stamps));
             Billrun_Factory::log("Rebalance lines query start. Query is: " . json_encode($stampQuery), Zend_Log::DEBUG);
             $lines = $lines_coll->query(array_merge($query, $stampQuery))->cursor();
