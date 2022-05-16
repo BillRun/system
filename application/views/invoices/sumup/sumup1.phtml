@@ -3,31 +3,31 @@
 		<tbody>
 			<tr>
 				<td>
-					<h1><?php echo Generator_Translations::stranslate('INVOICE');?></h1>
+					<h1><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE');?></h1>
 				</td>
 
 				<td>
 					<table class="table-inline">
 						<tbody><tr>
-								<td><?php echo Generator_Translations::stranslate('Period');?></td>
+								<td><?php echo Generator_Translations::stranslate('DEF_INV_PERIOD');?></td>
 
 								<td><strong><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format, !empty($data->get('invoicing_day')) ? $data->get('invoicing_day') : null); ?></strong></td>
 							</tr>
 
 							<tr>
-								<td><?php echo Generator_Translations::stranslate('Invoice#');?></td>
+								<td><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE_NO');?></td>
 
 								<td><?php echo $data->get('invoice_id'); ?></td>
 							</tr>
 
 							<tr>
-								<td><?php echo Generator_Translations::stranslate('Print Date');?></td>
+								<td><?php echo Generator_Translations::stranslate('DEF_INV_PRINT_DATE');?></td>
 
 								<td><?php echo date($date_format); ?></td>
 							</tr>
 							<?php if ((!array_key_exists('due_date', $invoice_display_options) || !empty($invoice_display_options['due_date'])) && $data->get('due_date') ) { ?>
 								<tr>
-									<td><?php echo Generator_Translations::stranslate('Due Date');?></td>
+									<td><?php echo Generator_Translations::stranslate('DEF_INV_DUE_DATE');?></td>
 									<td><?php echo date($date_format, $data->get('due_date')->sec); ?></td>
 								</tr>
 							<?php } ?>
@@ -41,14 +41,14 @@
 	<table class="table-info">
 		<tbody><tr>
 				<td>
-					<small><?php echo Generator_Translations::stranslate('to');?></small>
+					<small><?php echo Generator_Translations::stranslate('DEF_INV_TO');?></small>
 				</td>
 
 				<td>
 					<h2><?php echo $data->get('attributes')['firstname'] . ' ' . $data->get('attributes')['lastname']; ?></h2>
 
 					<span class="text">
-						<small><?php echo Generator_Translations::stranslate('Customer');?></small>
+						<small><?php echo Generator_Translations::stranslate('DEF_INV_CUSTOMER');?></small>
 
 						<span class="text"><?php echo $data->get('aid'); ?></span>
 					</span>
@@ -70,7 +70,7 @@
 </section>
 <div class="section section-invoice-details sumup">
 	<div class="section-head">
-		<h2 class="section-title section-title-alt"><?php echo Generator_Translations::stranslate('Invoice summary');?></h2><!-- /.section-title -->
+		<h2 class="section-title section-title-alt"><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE_SUMMARY');?></h2><!-- /.section-title -->
 	</div><!-- /.section-head -->
 
 	<div class="section-body">

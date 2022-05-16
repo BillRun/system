@@ -7,17 +7,17 @@
 			<div class="table">
 				<table>
 					<tbody><tr>
-							<td class="page-title"><h3 class="inline"><?php echo Generator_Translations::stranslate('INVOICE');?></h3></td>
+							<td class="page-title"><h3 class="inline"><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE');?></h3></td>
 							<td>
-								<span class="label"><?php echo Generator_Translations::stranslate('Customer');?></span>
+								<span class="label"><?php echo Generator_Translations::stranslate('DEF_INV_CUSTOMER');?></span>
 								<h3 class="inline"><?php echo $data->get('attributes')['firstname'] . ' ' . $data->get('attributes')['lastname']; ?></h3>
 							</td>
 							<td>
-								<span class="label"><?php echo Generator_Translations::stranslate('Invoice#');?></span>
+								<span class="label"><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE_NO');?></span>
 								<span><?php echo $data->get('invoice_id'); ?></span>
 							</td>
 							<td>
-								<span class="label"><?php echo Generator_Translations::stranslate('Period');?></span>
+								<span class="label"><?php echo Generator_Translations::stranslate('DEF_INV_PERIOD');?></span>
 								<h3 class="inline"><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format, !empty($data->get('invoicing_day')) ? $data->get('invoicing_day') : null); ?></h3>
 							</td>
 						</tr>
@@ -33,7 +33,7 @@
 
 		<div class="section section-invoice-details">
 			<div class="section-head">
-				<h2 class="section-title"><?php echo Generator_Translations::stranslate('Subscriber summary');?></h2><!-- /.section-title -->
+				<h2 class="section-title"><?php echo Generator_Translations::stranslate('DEF_INV_SUBSCRIBER_SUMMARY');?></h2><!-- /.section-title -->
 			</div><!-- /.section-head -->
 
 			<div class="section-body">
@@ -41,8 +41,8 @@
 					<table>
 						<thead>
 							<tr>
-								<th><?php echo Generator_Translations::stranslate('Description');?></th>
-								<th><?php echo Generator_Translations::stranslate('Amount');?></th>
+								<th><?php echo Generator_Translations::stranslate('DEF_INV_DESCRIPTION');?></th>
+								<th><?php echo Generator_Translations::stranslate('DEF_INV_AMOUNT');?></th>
 							</tr>
 						</thead>
 
@@ -50,18 +50,18 @@
 						<?php foreach ($details_keys as $title => $key) { ?>
 							<?php if (empty($sub['totals'][$key])) { continue; } ?>
 							<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
-								<td><?php echo Generator_Translations::stranslate(ucfirst($title)); ?></td>
+								<td><?php echo Generator_Translations::stranslate(getDefInvi18nSlug($title)); ?></td>
 								<td><?php echo $this->currencySymbol() . number_format($sub['totals'][$key]['before_vat'], 2); ?></td>
 							</tr>
 						<?php } ?>
 							<tr class="total">
-								<td><?php echo Generator_Translations::stranslate('SUBTOTAL');?></td>
+								<td><?php echo Generator_Translations::stranslate('DEF_INV_SUBTOTAL');?></td>
 								<td><strong><?php echo $this->currencySymbol() . number_format($sub['totals']['before_vat'], 2); ?></strong></td>
 							</tr>
 							<?php echo $this->render($this->tax_template,array('data' => $sub['totals']))	?>
 
 							<tr class="grand-total">
-								<td><?php echo Generator_Translations::stranslate('GRAND TOTAL');?></td>
+								<td><?php echo Generator_Translations::stranslate('DEF_INV_GRAND_TOTAL');?></td>
 								<td><?php echo $this->currencySymbol() . number_format($sub['totals']['after_vat'], 2); ?></td>
 							</tr>
 						</tbody>
@@ -75,7 +75,7 @@
 	<?php if($render_usage_details) { ?>
 		<div class="section section-invoice-details">
 			<div class="section-head">
-				<h2 class="section-title"><?php echo Generator_Translations::stranslate('Subscriber line items');?></h2><!-- /.section-title -->
+				<h2 class="section-title"><?php echo Generator_Translations::stranslate('DEF_INV_SUBSCRIBER_LINE_ITEMS');?></h2><!-- /.section-title -->
 			</div><!-- /.section-head -->
 
 			<div class="section-body">
@@ -91,7 +91,7 @@
 		
 		<div class="section section-invoice-details">
 			<div class="section-head">
-				<h2 class="section-title"><?php echo Generator_Translations::stranslate('Usage details');?></h2><!-- /.section-title -->
+				<h2 class="section-title"><?php echo Generator_Translations::stranslate('DEF_INV_USAGE_DETAILS');?></h2><!-- /.section-title -->
 			</div><!-- /.section-head -->
 
 			<div class="section-body">
