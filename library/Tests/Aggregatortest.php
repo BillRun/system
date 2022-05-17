@@ -522,7 +522,7 @@ class Tests_Aggregator extends UnitTestCase
              sid 35268
 			 plan activation date 1'st of the month - invoice generated on next month (full arrears + upfront) */
             array(
-                'test' => array('test_number' => 185, "aid" => 35267, 'sid' => 35268, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(35267))),
+                'test' => array('test_number' => '185-1', "aid" => 35267, 'sid' => 35268, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(35267))),
                 'expected' => array(
                     'billrun' => array('billrun_key' => '202204', 'aid' => 35267, 'after_vat' => array("35268" => 234), 'total' => 234, 'vatable' => 200, 'vat' => 17),
                     'line' => array('types' => array('flat')),
@@ -535,33 +535,33 @@ class Tests_Aggregator extends UnitTestCase
             /* sid 352610
 			plan activation date in mid month - invoice generated on next month (partial arrears + full upfront) */
             array(
-                'test' => array('test_number' => 185, "aid" => 35269, 'sid' => 352610, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(35269))),
+                'test' => array('test_number' => '185-2', "aid" => 35269, 'sid' => 352610, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(35269))),
                 'expected' => array(
                     'billrun' => array('billrun_key' => '202204', 'aid' => 35269, 'after_vat' => array("352610" => 200.03225806451613), 'total' => 200.03225806451613, 'vatable' => 170.96774193548387, 'vat' => 17),
                     'line' => array('types' => array('flat')),
                     'lines' => [
-                        ['query' => array('sid' => 352610,'billrun' => "202204", 'plan' => 'UPFRONT1'), 'aprice' => 100],
-                        ['query' => array('sid' => 352610,'billrun' => "202204", 'plan' => 'UPFRONT1'), 'aprice' => 70.96774193548387]
+                        ['query' => array('sid' => 352610,'billrun' => "202204", 'plan' => 'UPFRONT1', 'aprice' => 100), 'aprice' => 100],
+                        ['query' => array('sid' => 352610,'billrun' => "202204", 'plan' => 'UPFRONT1', 'aprice' => 70.96774193548387), 'aprice' => 70.96774193548387]
                     ]
                 ),
             ),
             /* sid 352612
 			 plan activation date last day of the month - invoice generated on next month (1 day arrears + full upfront) */
             array(
-                'test' => array('test_number' => 185, "aid" => 352611, 'sid' => 352612, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352611))),
+                'test' => array('test_number' => '185-3', "aid" => 352611, 'sid' => 352612, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352611))),
                 'expected' => array(
-                    'billrun' => array('billrun_key' => '202204', 'aid' => 352611, 'after_vat' => array("352612" => 120.77419354838709), 'total' => 120.77419354838709, 'vatable' => 113.225806451612903, 'vat' => 17),
+                    'billrun' => array('billrun_key' => '202204', 'aid' => 352611, 'after_vat' => array("352612" => 120.77419354838709), 'total' => 120.77419354838709, 'vatable' => 103.225806451612903, 'vat' => 17),
                     'line' => array('types' => array('flat')),
                     'lines' => [
-                        ['query' => array('sid' => 352612,'billrun' => "202204", 'plan' => 'UPFRONT1'), 'aprice' => 100],
-                        ['query' => array('sid' => 352612,'billrun' => "202204", 'plan' => 'UPFRONT1'), 'aprice' => 3.225806451612903]
+                        ['query' => array('sid' => 352612,'billrun' => "202204", 'plan' => 'UPFRONT1', 'aprice' => 100), 'aprice' => 100],
+                        ['query' => array('sid' => 352612,'billrun' => "202204", 'plan' => 'UPFRONT1','aprice' => 3.225806451612903), 'aprice' => 3.225806451612903]
                     ]
                 ),
             ),
             /* sid 352613
 			  plan activation date in the past few months - invoice generated on month (no arrears + full upfront)*/
             array(
-                'test' => array('test_number' => 185, "aid" => 352613, 'sid' => 780, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352613))),
+                'test' => array('test_number' => '185-4', "aid" => 352613, 'sid' => 780, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352613))),
                 'expected' => array(
                     'billrun' => array('billrun_key' => '202204', 'aid' => 352613, 'after_vat' => array("352614" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
                     'line' => array('types' => array('flat'))
@@ -570,35 +570,36 @@ class Tests_Aggregator extends UnitTestCase
             /* sid 352616
 			 Plan change in 1'st day of the month - invoice generated on next month (refund old plan & charge new plan for arrears + new plan upfront) */
             array(
-                'test' => array('test_number' => 185, "aid" => 352615, 'sid' => 352616, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352615))),
+                'test' => array('test_number' => '185-5', "aid" => 352615, 'sid' => 352616, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'),
+                 'options' => array("stamp" => "202204", "force_accounts" => array(352615))),
                 'expected' => array(
                     'billrun' => array('billrun_key' => '202204', 'aid' => 352615, 'after_vat' => array("352616" => 347.2258064516129), 'total' => 347.2258064516129, 'vatable' => 296.77419354838713, 'vat' => 17),
                     'line' => array('types' => array('flat')),
                     'lines' => [
-                        ['query' => array('sid' => 352616,'billrun' => '202203', 'plan' => 'UPFRONT1'), 'aprice' => -96.77419354838709],
-                        ['query' => array('sid' => 352616,'billrun' => "202204", 'plan' => 'UPFRONT2'), 'aprice' => 193.5483870967742],
-                        ['query' => array('sid' => 352616,'billrun' => "202204", 'plan' => 'UPFRONT2'), 'aprice' => 200]
+                        ['query' => array('sid' => 352616,'billrun' => '202204', 'plan' => 'UPFRONT1', 'aprice' => -96.7741935483870), 'aprice' => -96.77419354838709],
+                        ['query' => array('sid' => 352616,'billrun' => "202204", 'plan' => 'UPFRONT2','aprice' => 193.5483870967742), 'aprice' => 193.5483870967742],
+                        ['query' => array('sid' => 352616,'billrun' => "202204", 'plan' => 'UPFRONT2','aprice' => 200), 'aprice' => 200]
                     ]
                 ),
             ),
             /* sid 352618
 			  Plan change in mid month - invoice generated on next month (refund old plan & charge new plan for arrears + new plan upfront)*/
             array(
-                'test' => array('test_number' => 185, "aid" => 352617, 'sid' => 352618, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352617))),
+                'test' => array('test_number' => '185-6', "aid" => 352617, 'sid' => 352618, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352617))),
                 'expected' => array(
-                    'billrun' => array('billrun_key' => '202204', 'aid' => 352617, 'after_vat' => array("352618" => 317.0322580645161), 'total' => 317.0322580645161, 'vatable' => 270.9677419354839, 'vat' => 17),
+                    'billrun' => array('billrun_key' => '202204', 'aid' => 352617, 'after_vat' => array("352618" => 320.8064516129032326), 'total' => 320.8064516129032326, 'vatable' => 274.19354838709678, 'vat' => 17),
                     'line' => array('types' => array('flat')),
                     'lines' => [
-                        ['query' => array('sid' => 352618,'billrun' => '202203', 'plan' => 'UPFRONT1'), 'aprice' => -70.96774193548387],
-                        ['query' => array('sid' => 352618,'billrun' => "202204", 'plan' => 'UPFRONT2'), 'aprice' => 141.93548387096774],
-                        ['query' => array('sid' => 352618,'billrun' => "202204", 'plan' => 'UPFRONT2'), 'aprice' => 200]
+                        ['query' => array('sid' => 352618,'billrun' => '202204', 'plan' => 'UPFRONT1','aprice' => -67.74193548387098), 'aprice' => -67.74193548387098/*79.25806451612902*/],
+                        ['query' => array('sid' => 352618,'billrun' => "202204", 'plan' => 'UPFRONT2', 'aprice' => 141.93548387096774), 'aprice' => 141.93548387096774],
+                        ['query' => array('sid' => 352618,'billrun' => "202204", 'plan' => 'UPFRONT2', 'aprice' => 200), 'aprice' => 200]
                     ]
                 ),
             ),
             /* sid 352620
 			  Plan change in the last day of the month - invoice generated on next month (refund old plan & charge new plan for arrears + new plan upfront) */
             array(
-                'test' => array('test_number' => 185, "aid" => 352619, 'sid' => 352620, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352619))),
+                'test' => array('test_number' => '185-7', "aid" => 352619, 'sid' => 352620, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352619))),
                 'expected' => array(
                     'billrun' => array('billrun_key' => '202204', 'aid' => 352619, 'after_vat' => array("352620" => 237.77419354838707), 'total' => 237.77419354838707, 'vatable' => 203.2258064516129, 'vat' => 17),
                     'line' => array('types' => array('flat')), 
@@ -3783,7 +3784,7 @@ class Tests_Aggregator extends UnitTestCase
             $this->message .= $this->fails;
         }
         print_r($this->message);
-        $this->restoreColletions();
+        //$this->restoreColletions();
     }
 
     /**
@@ -4603,17 +4604,18 @@ class Tests_Aggregator extends UnitTestCase
     public function checkPerLine($key, $returnBillrun, $row){
         $this->message .="<b>checkPerLine</b></br>";
         foreach ($row['expected']['lines'] as $line) {
+            $lines = [];
             $cursor = Billrun_Factory::db()->linesCollection()->query($line['query'])->cursor()->limit(100000);
             foreach ($cursor as $rowData) {
                 $lines[] = $rowData->getRawData();
             }
          
-            if (is_null($lines)) {
+            if (is_null($lines) || empty($lines)) {
                 $this->message .= "no create line for this query : " . json_encode($line['query']) . $this->fail;
                 $this->assertTrue(0);
             }
             if (!is_null($lines) && !empty($lines) && $lines[0]['aprice'] != $line['aprice']) {
-                $this->message .= "expected aprice is : " . $line['aprice'] . "actually aprice is: " . $lines[0]['arice'] . $this->fail;
+                $this->message .= "expected aprice is : " . $line['aprice'] . "actually aprice is: " . $lines[0]['aprice'] . $this->fail;
                 $this->assertTrue(0);
             }
             if (!is_null($lines) && !empty($lines) && $lines[0]['aprice'] == $line['aprice']) {
