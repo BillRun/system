@@ -46,4 +46,4 @@ This Readme describes how to use docker in order to start Billrun application fo
     docker inspect billrun-mongo | grep IPAddress | grep "\."
     ```
 
-2. Edit conf/dev.ini and set db.host to <IP>:27017 where <IP> is the above IP address
+2. Edit conf/dev.ini and set db.host to \<IP\>:27017 where \<IP\> is the above IP address
