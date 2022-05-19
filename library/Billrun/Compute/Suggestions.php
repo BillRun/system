@@ -240,8 +240,8 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             $suggestion['from'] = $this->getUrtRangeFrom($suggestion['estimated_billrun']);
             $suggestion['to'] = $this->getUrtRangeTo($suggestion['estimated_billrun']);     
         }else{
-            $suggestion['from'] = new MongoDate(Billrun_Billingcycle::getStartTime($line['billrun']));
-            $suggestion['to'] = new MongoDate(Billrun_Billingcycle::getEndTime($line['billrun']));   
+            $suggestion['from'] = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($line['billrun']));
+            $suggestion['to'] = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($line['billrun']));   
         }
         $oldPrice = $line['aprice'];
         $newPrice = $this->recalculationPrice($line);

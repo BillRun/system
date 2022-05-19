@@ -203,7 +203,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 	}
 	
 	protected function buildInstallment($index, $chargeNotBefore) {
-		$cnb_date = new MongoDate(strtotime($chargeNotBefore));
+		$cnb_date = new Mongodloid_Date(strtotime($chargeNotBefore));
 		$installment['dir'] = 'tc';
 		$installment['method'] = $this->method;
 		$installment['aid'] = $this->data['aid'];
