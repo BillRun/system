@@ -74,15 +74,15 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
     
     protected function addFieldsForMatchingLines($retroactiveChange) {
         $rate =  Billrun_Rates_Util::getRateByName($retroactiveChange['key'], $retroactiveChange['new']['from']->sec);
-        return array('description' => $rate['description']);
+        return array('description' => $rate['description'], 'invoice_label' => $rate['invoice_label']);
     }
     
     protected function addForeignFieldsForSuggestion($line) {
-        return array('description' => $line['description']);
+        return array('description' => $line['description'], 'invoice_label' => $line['invoice_label']);
     }
 
     protected function addProjectsForMatchingLines() {
-        return array('plan' => '$_id.plan', 'services' => '$_id.services', 'description' => 1);
+        return array('plan' => '$_id.plan', 'services' => '$_id.services', 'description' => 1, 'invoice_label' => 1);
     }
 
     protected function checkIfValidLine($line) {

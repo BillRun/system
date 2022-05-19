@@ -64,6 +64,7 @@ class ResetLinesAction extends ApiAction {
 					'conditions_hash' => md5(serialize($conditions)),
 					'creation_date' => new Mongodloid_Date()
 				);
+                                $rebalanceLine['stamp'] =  md5(serialize($rebalanceLine));
 				$query = array(
 					'aid' => $aid,
 					'billrun_key' => $billrun_key,

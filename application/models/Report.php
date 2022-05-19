@@ -195,7 +195,7 @@ class ReportModel {
 		if($limit !== -1) {
 			$aggregate[] = array('$limit' => $limit);
 		}
-		
+                
 		$results = $collection->aggregateWithOptions($aggregate, $this->aggregateOptions);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
@@ -241,7 +241,10 @@ class ReportModel {
 		$output = array();
 		foreach ($row as $key => $value) {
 			$formats = $this->getRowsFormattersByKey($key, $formatters);
-			if(is_array($value)) {
+			$jsonFormatter = $this->isIncludeJsonFormatter($formats);
+			if ($jsonFormatter) {
+				$output[$key] = $this->formatOutputValue($value, $key, $formats);
+			} else if(is_array($value)) {
 				// array result like addToSet
 				if(count(array_filter(array_keys($value), 'is_string'))  === 0){
 					$formatedValues = array();
@@ -265,9 +268,10 @@ class ReportModel {
 	}
 	
 	protected function formatOutputValue($value, $key, $formats) {
-		if(!is_scalar($value) && (is_array($value) || get_class($value) !== 'Mongodloid_Date')){
+		$jsonFormatter = $this->isIncludeJsonFormatter($formats);
+		if (!$jsonFormatter && !is_scalar($value) && ((is_array($value) && !empty($value)) || get_class($value) !== 'Mongodloid_Date')){
 			// array result like addToSet
-			if(count(array_filter(array_keys($value), 'is_string')) === 0){
+			if(count(array_filter(array_keys($value), 'is_string')) === 0) {
 				$values = array();
 				foreach ($value as $val) {
 					$values[] = $this->formatOutputValue($val, $key, $formats);
@@ -287,6 +291,16 @@ class ReportModel {
 		return $value;
 	}
 	
+	protected function isIncludeJsonFormatter($formats) {
+		if (!empty($formats)) {
+			foreach ($formats as $format) {
+				if ($format['op'] == 'json') {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 	protected function pluckOutputValue($value, $key, $formats) {
 		$field_names = array_column($this->report['columns'], 'field_name', 'key');
 		//If value is object where value is at key 'NAME' -> pop the value
@@ -361,6 +375,10 @@ class ReportModel {
 			}
 			case 'multiplication':
 				return (is_numeric($value) && is_numeric($format['value'])) ? $value * $format['value'] : $value;
+			case 'json': {
+				$out = @json_encode($value);
+				return $out ? $out : $value;
+			}
 			case 'default_empty': {
 				if ($value !== "" && !is_null($value)){
 					$styledValue = $value;
@@ -766,6 +784,8 @@ class ReportModel {
 				return 'log';
 			case 'bills':
 				return 'bills';
+			case 'rebalance_queue':
+				return 'rebalance_queue';
 			default:
 				throw new Exception("Invalid entity type");
 		}
