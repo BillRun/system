@@ -87,11 +87,28 @@ class Portal_Actions_Account extends Portal_Actions {
 	 * @return boolean
 	 */
 	public function updatePassword($params = []) {
-		$newPassword = $params['update']['password'] ?? '';
+		$oldPassword = $params['update']['old_password'] ?? '';
+		$newPassword = $params['update']['new_password'] ?? '';
 		$userId = $this->params['token_data']['user_id'] ?? '';
+
+		if (empty($oldPassword)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "old password"');
+		}
 
 		if (empty($newPassword)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "password"');
+		}
+
+		// validate old password
+		$oldPasswordValidation = Billrun_Factory::oauth2()->getStorage('user_credentials')->checkUserCredentials($userId, $oldPassword);
+		if ($oldPasswordValidation !== TRUE) {
+			throw new Portal_Exception('password_old_failed_not_match');
+		}
+
+		// validate same old and new password
+		$samePasswordValidation = Billrun_Factory::oauth2()->getStorage('user_credentials')->checkUserCredentials($userId, $newPassword);
+		if ($samePasswordValidation == TRUE) {
+			throw new Portal_Exception('password_old_failed_same');
 		}
 
 		$passwordStrengthValidation = Billrun_Utils_Security::validatePasswordStrength($newPassword, $params['change_password']['password_strength'] ?? []);
@@ -144,7 +161,7 @@ class Portal_Actions_Account extends Portal_Actions {
 
 		return $debt;
 	}
-	
+
 	/**
 	 * get account outstanding balance (debt and future non-due invoices)
 	 *
@@ -276,7 +293,7 @@ class Portal_Actions_Account extends Portal_Actions {
 					return !empty($customField['system']) || !empty($customField['show_in_list']) || !empty($customField['unique']);
 				}), 'field_name');
 	}
-	
+
 	/**
 	 * get account charges (see statement)
 	 * 
