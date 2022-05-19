@@ -105,7 +105,7 @@ class ResetLinesModel {
 				'$nin' => array('credit', 'flat', 'service'),
 			),
 			'process_time' => array(
-				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
+				'$lt' => new Mongodloid_Date(strtotime($this->process_time_offset . ' ago')),
 			),
 		);
             //add support to multi day cycle
@@ -125,8 +125,8 @@ class ResetLinesModel {
                                                 '$exists' => FALSE,
                                         ),
                                         'urt' => array(
-                                                '$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoiceDay)),
-                                                '$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoiceDay)),
+                                                '$gte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoiceDay)),
+                                                '$lt' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoiceDay)),
                                         )
                                 );                
                 } else {
