@@ -144,7 +144,7 @@ class VfdaysAction extends Action_Base {
 		$group3 = array(
 			'$group' => array(
 				'_id' => '$_id.arategroup',
-				'count' => array('$sum' => '$count'),
+				'count' => array('$max' => '$count'),
 			),
 		);
 		Billrun_Factory::log("vfdays nrtrde aggregate query : ".json_encode([$match1, $match2, $group, $group2,$sortPlans,$group3]));
@@ -263,7 +263,7 @@ class VfdaysAction extends Action_Base {
 				'$group' => array(
 					'_id' => '$_id.arategroup',
 					'day_sum' => array(
-						'$sum' => '$day_sum',
+						'$max' => '$day_sum',
 					),
 				),
 			);

@@ -412,7 +412,7 @@ class Subscriber_UsageAction extends ApiAction {
 				'$group' => array(
 					'_id' => '$_id.arategroup',
 					'day_sum' => array(
-						'$sum' => '$day_sum',
+						'$max' => '$day_sum',
 					),
 				),
 			);
@@ -491,7 +491,7 @@ class Subscriber_UsageAction extends ApiAction {
 		$group3 = array(
 			'$group' => array(
 				'_id' => '$_id.arategroup',
-				'count' => array('$sum' => '$count'),
+				'count' => array('$max' => '$count'),
 			),
 		);
 		Billrun_Factory::log("vfdays fraud aggregate query : ".json_encode([$match1, $match2, $group, $group2,$sortPlans,$group3]));
