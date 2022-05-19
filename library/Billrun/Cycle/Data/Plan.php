@@ -24,8 +24,8 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	public function __construct(array $options) {
 		parent::__construct($options);
-		if (!isset($options['plan'], $options['cycle'])) {
-			Billrun_Factory::log("Invalid aggregate plan data!",Zend_Log::ERR);
+		if (!$this->verifyConstrctionOptions($options)) {
+			Billrun_Factory::log("Invalid aggregate data for : ".get_class($this), Zend_Log::ERR);
 		}
 		$this->name = $options['plan'];
 		$this->plan = $options['plan'];
@@ -34,6 +34,10 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		$this->start = Billrun_Util::getFieldVal($options['start'], $this->start);
 		$this->end = Billrun_Util::getFieldVal($options['end'], $this->end);
 		$this->foreignFields = $this->getForeignFields(array('plan' => $options), $this->stumpLine);
+	}
+
+	protected  function verifyConstrctionOptions($options) {
+	 return isset($options['plan'], $options['cycle']);
 	}
 
 	protected function getCharges($options) {
@@ -54,7 +58,6 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		if (isset($chargeData['cycle'])) {
 			$entry['cycle'] = $chargeData['cycle'];
 		}
-
 		$chargeFieldsToCopy = array_merge(	Billrun_Factory::config()->getConfigValue('plans.plan_charge_fields_to_copy.fields',["start_date","end_date"]),
 											self::$copyFromChargeData );
 		foreach($chargeFieldsToCopy as $field) {

@@ -321,6 +321,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
             'source' => 'export',
             'type' => static::$type,
             'export_hostname' => Billrun_Util::getHostName(),
+            'export_stamp' => $this->exportStamp,
             'export_start_time' => new Mongodloid_Date(),
             'file_name' => $this->getFilename(),
             'path' => $this->getExportFilePath(),
