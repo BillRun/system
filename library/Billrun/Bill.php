@@ -469,6 +469,7 @@ abstract class Billrun_Bill {
 			$this->updatePaidBy($paidBy, $billId, $status, $billType);
 			if ($bill->isPendingPayment()) {
 				$this->setPendingLinkedBills($billType, $billId);
+                                $bill->setPendingLinkedBills($this->getType(), $this->getId());                               
 			}
 		}
 		$this->setPendingCoveringAmount();
@@ -478,10 +479,10 @@ abstract class Billrun_Bill {
 	public function detachPayingBill($billType, $id) {
 		$paidBy = $this->getPaidByBills();
 		$index = Billrun_Bill::findRelatedBill($paidBy, $billType, $id);
-		if ($index > -1) {
-			unset($paidBy[$index]);
+		if ($index > -1) {			                       
+                        unset($paidBy[$index]);
 			$this->updatePaidBy(array_values($paidBy));
-			if ($billType == 'rec') {
+                        if ($billType == 'rec') {
 				$this->removeFromWaitingPayments($id, $billType);
 			}
 		}
@@ -1340,7 +1341,7 @@ abstract class Billrun_Bill {
 	 * @param int $date - unix timestamp to set as the process time.
 	 */
 	public function setProcessTime ($date = null) {
-		$this->data['process_time'] = new MongoDate(!empty($date)? $date : time());
+		$this->data['process_time'] = new Mongodloid_Date(!empty($date)? $date : time());
 	}
 	
 	/**
@@ -1348,7 +1349,7 @@ abstract class Billrun_Bill {
 	 * @param int $date - unix timestamp
 	 */
 	public function setDepositFreezeDate ($date = null) {
-		$this->data['freeze_date'] = new MongoDate(!empty($date)? $date : time());
+		$this->data['freeze_date'] = new Mongodloid_Date(!empty($date)? $date : time());
 	}
 	
 	/**

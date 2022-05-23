@@ -1156,22 +1156,22 @@ if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping
 	const mapping = lastConfig.import.mapping;
 	mapping.forEach((mapper, key) => {
 		if (typeof mapper.map !== 'undefined') {
-			let convertedMapper = [];
 			if (!Array.isArray(mapper.map)) {
+			let convertedMapper = [];
 				Object.keys(mapper.map).forEach((field_name) => {
 					convertedMapper.push({field: field_name,value: mapper.map[field_name]});
 				});
-			}
 			mapping[key].map = convertedMapper;
 		}
+		}
 		if (typeof mapper.multiFieldAction !== 'undefined') {
-			let convertedMultiFieldAction = [];
 			if (!Array.isArray(mapper.multiFieldAction)) {
+			let convertedMultiFieldAction = [];
 				Object.keys(mapper.multiFieldAction).forEach((field_name) => {
 					convertedMultiFieldAction.push({field: field_name,value: mapper.multiFieldAction[field_name]});
 				});
-			}
 			mapping[key].multiFieldAction = convertedMultiFieldAction;
+		}
 		}
 	});
 	lastConfig.import.mapping = mapping;
@@ -1377,6 +1377,26 @@ if (typeof lastConfig['email_templates']['email_authentication'] === 'undefined'
 	};
 }
 
+lastConfig = runOnce(lastConfig, 'BRCD-3527', function () {
+    var inCollectionField = 
+            {
+                    "field_name": "in_collection",
+                    "system": true,
+                    "display": false
+            };
+    lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], inCollectionField, 'account');
+		});
+
+// BRCD-3325 : Add default condition - the "rejection_required" condition doesn't exist.
+lastConfig = runOnce(lastConfig, 'BRCD-3325', function () {
+    var rejection_required_cond = {
+        "field": "aid",
+				"op" : "exists",
+				"value" : false
+    };
+		lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
+});
+
 db.lines.createIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 
 //BRCD-3307:Refactoring : remove "balance_effective_date" field from payments
@@ -1389,6 +1409,7 @@ runOnce(lastConfig, 'BRCD-3307', function () {
 			}
 	)
 });
+
 // BRCD-3432 add BillRun' metabase plugin
 runOnce(lastConfig, 'BRCD-3432', function () {
     var mbPluginsSettings = {
@@ -1479,7 +1500,6 @@ runOnce(lastConfig, 'BRCD-3421', function () {
     }
     db.webhooks.insert(_insertWebhooks);
 });
-
 db.config.insert(lastConfig);
 db.lines.createIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 //BRCD-2336: Can't "closeandnew" a prepaid bucket
@@ -1490,3 +1510,5 @@ lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
     db.prepaidincludes.createIndex({external_id : 1}, {unique: false});
     db.prepaidincludes.createIndex({name : 1}, {unique: false});
 });
+db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
+db.lines.dropIndex("aid_1_urt_1")

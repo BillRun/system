@@ -163,7 +163,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$linesCol = Billrun_Factory::db()->linesCollection();
 		$fields = array_merge($filter_fields, $requiredFields);
 		$limit = Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 100000);
-
+		Billrun_Factory::dispatcher()->trigger('beforeCycleLinesQuery',array(&$query,&$sort,&$fields));
+                
 		do {
 			$bufferCount += $addCount;
 			$cursor = $linesCol->query($query)->cursor()->fields($fields)
@@ -437,9 +438,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 			$removedServices  = array_udiff($previousServices, $currServices, $serviceCompare);
 			foreach($removedServices as $stamp => $removed) {
-				if($sto < $removed['end'] && $sto <= $retServices[$stamp]['end']) {
-					$retServices[$stamp]['end'] = $sto;
-				} elseif ( $sfrom < $removed['end'] ) {
+				if ( $sfrom <  $removed['end'] ) {
 					$retServices[$stamp]['end'] = $sfrom;
 				}
 			}
