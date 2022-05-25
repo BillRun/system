@@ -47,33 +47,34 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		$billruns = array();
 		$all_aids = array();
 		$conditions = array();
-                $stampsByBillrunAndAid = array();
-                $rebalanceStamps = array();
+		$stampsByBillrunAndAid = array();
+		$rebalanceStamps = array();
 		foreach ($results as $result) {
-			$billruns[$result['billrun_key']][] = $result['aid'];
-                        $rebalanceStamps[$result['billrun_key']][$result['aid']][$result['conditions_hash']] = $result['stamp'];
-                        $conditions[$result['billrun_key']][$result['aid']][$result['conditions_hash']] = $result['conditions'];
+			$billruns[$result['billrun_key']][] = ['aid' => $result['aid'], 'stamp' => $result['stamp']];
+			$rebalanceStamps[$result['billrun_key']][$result['aid']][$result['conditions_hash']] = $result['stamp'];
+			$conditions[$result['billrun_key']][$result['aid']][$result['conditions_hash']] = $result['conditions'];
                         if(!empty($result['stamps_by_sid'])){
-                            $stampsByBillrunAndAid[$result['billrun_key']][$result['aid']] = $result['stamps_by_sid'];
-                        }
+				$stampsByBillrunAndAid[$result['billrun_key']][$result['aid']] = $result['stamps_by_sid'];
+			}
                         if(!empty($result['stamps_recover_path'])){
-                            $stampsBySid = $this->getStampsByStampsRecoverFile($result['stamps_recover_path']);
+				$stampsBySid = $this->getStampsByStampsRecoverFile($result['stamps_recover_path']);
                             if(!empty($stampsBySid)){
-                                $stampsByBillrunAndAid[$result['billrun_key']][$result['aid']] = $stampsBySid;
-                            }
-                        }
+					$stampsByBillrunAndAid[$result['billrun_key']][$result['aid']] = $stampsBySid;
+				}
+			}
 			$all_aids[] = $result['aid'];
 		}
 
-		foreach ($billruns as $billrun_key => $aids) {
-			$model = new ResetLinesModel($aids, $billrun_key, $conditions[$billrun_key], $rebalanceStamps[$billrun_key], $stampsByBillrunAndAid[$billrun_key] ?? [], iterator_to_array($results));
+		foreach ($billruns as $billrun_key => $data) {
+			$model = new ResetLinesModel(array_column($data, 'aid'), $billrun_key, $conditions[$billrun_key], $rebalanceStamps[$billrun_key], $stampsByBillrunAndAid[$billrun_key] ?? []);
 			try {
 				$ret = $model->reset();
+				$this->updateResetTimes($model, $data);
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;
 				}
 			} catch (Exception $exc) {
-				Billrun_Factory::log('Error resetting aids ' . implode(',', $aids) . ' of billrun ' . $billrun_key . '. Error was ' . $exc->getMessage() . ' : ' . $exc->getTraceAsString(), Zend_Log::ALERT);
+				Billrun_Factory::log('Error resetting aids ' . implode(',', array_column($data, 'aid')) . ' of billrun ' . $billrun_key . '. Error was ' . $exc->getMessage() . ' : ' . $exc->getTraceAsString(), Zend_Log::ALERT);
 				return FALSE;
 			}
 		}
@@ -98,6 +99,17 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 
         protected function getLines() {
 		return array();
+	}
+	
+	protected function updateResetTimes($reset_lines_model, $data) {
+		$relevant_stamps = array_merge($reset_lines_model->getSuccessRecoveredStamps(), array_column($data, 'stamp'));
+		$updateQuery = array(
+            '$set' => array(
+                'start_time' => $reset_lines_model->getResetStartTime(),
+				'end_time' => $reset_lines_model->getResetEndTime()
+            )
+        );
+		Billrun_Factory::db()->rebalance_queueCollection()->update(['stamp' => array('$in' => $relevant_stamps)], $updateQuery, array('multiple' => 1));
 	}
 
 	protected function isLineLegitimate($line) {

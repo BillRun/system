@@ -63,11 +63,11 @@ class ResetLinesModel {
     protected $conditions;
     protected $linesStampsByRebalanceStamp = [];
 	
-	protected $rebalance_queue_records = [];
 	protected $resetStartTime;
 	protected $resetEndTime;
+	protected $successRecoveredStamps = [];
 
-	public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps, $stampsToRecoverByAidAndSid = array(), $rebalance_records = array()) {
+	public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps, $stampsToRecoverByAidAndSid = array()) {
         $this->initBalances($aids, $billrun_key);
         $this->aids = $aids;
         $this->billrun_key = strval($billrun_key);
@@ -78,7 +78,6 @@ class ResetLinesModel {
         if (Billrun_Config::getInstance()->getConfigValue('resetlines.avoid_repeating_reset', false)) {
             $this->rebalanceStamps = $rebalanceStamps;
         }
-		$this->rebalance_queue_records = $rebalance_records;
     }
 
     public function reset() {
@@ -86,7 +85,6 @@ class ResetLinesModel {
 		$this->resetStartTime = new Mongodate();
         $ret = $this->resetLines();
 		$this->resetEndTime = new Mongodate();
-		$this->updateRebalanceQueueRecords();
         return $ret;
     }
 
@@ -472,6 +470,7 @@ class ResetLinesModel {
                 $this->resetLinesByStamps($update_stamps, $this->aids, $advancedProperties, $lines_coll, $queue_coll);
                 $offset += $reset_stamps_size;
                 $i++;
+				$this->successRecoveredStamps = array_merge($this->successRecoveredStamps, $update_stamps);
             }
         }
         $offset = 0;
@@ -1146,16 +1145,17 @@ class ResetLinesModel {
     protected function getLineInvoicingDay($line) {
         return isset($line['foregin']['account']['invoicing_day']) ? $line['foregin']['account']['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
     }
+	
+	public function getResetStartTime() {
+		return $this->resetStartTime;
+	}
 
-	protected function updateRebalanceQueueRecords() {
-		$stamps = array_column($this->rebalance_queue_records, 'stamp');
-		$updateQuery = array(
-            '$set' => array(
-                'start_time' => $this->resetStartTime,
-				'end_time' => $this->resetEndTime
-            )
-        );
-		Billrun_Factory::db()->rebalance_queueCollection()->update(['stamp' => array('$in' => $stamps)], $updateQuery);
+	public function getResetEndTime() {
+		return $this->resetEndTime;
+	}
+	
+	public function getSuccessRecoveredStamps() {
+		return $this->successRecoveredStamps;
 	}
 
 }
