@@ -16,7 +16,7 @@ class Generator_Translations {
 	
 	public static function load() {
 		if (!static::$defaultLang) {
-			$defaultLang = Billrun_Factory::config()->getConfigValue(static::$defaultLangPath, 'en_GB');
+			$defaultLang = Billrun_Factory::config()->getConfigValue(static::$defaultLangPath, empty(locale_get_default()) ? 'en_GB' : locale_get_default() );
 				static::$defaultLang = $defaultLang;
 				static::setLanguage($defaultLang);
 		}

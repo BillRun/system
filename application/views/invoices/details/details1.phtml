@@ -26,7 +26,7 @@
 		</div><!-- /.section .section-invoice-head -->
 
 		<div class="section section-invoice-base">
-		<h2>Subscriber#<?php echo ($index + 1); ?>:</h2>
+		<h2><?php echo Generator_Translations::stranslate('DEF_INV_SUBSCRIBER_NO');?><?php echo ($index + 1); ?>:</h2>
 		<h1><?php echo $sub['firstname'] . ' ' . $sub['lastname']; ?></h1>
 		<p class="label"><?php echo (!empty($sub['desc']) ? $sub['desc'] : ''); ?></p>
 		</div><!-- /.section .section-invoice-base -->
