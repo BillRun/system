@@ -15,7 +15,7 @@
 class Billrun_Plans_Charge_Upfront_Notprorated_Month extends Billrun_Plans_Charge_Upfront_Month {
     
     //No Refunds  for non proated upfront
-    public function getRefund(Billrun_DataTypes_CycleTime $cycle) {
+    public function getRefund(Billrun_DataTypes_CycleTime $cycle, $quantity=1) {
 			return null;
 		}
 }
