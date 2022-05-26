@@ -79,12 +79,13 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 			$cycle = empty($cycle) ? $this->cycle : $cycle;
 			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $cycle->end() )) );
 			$nextCycle = $this->getUpfrontCycle($cycle);
+			//"this->deactivation < $this->cycle->end()" as the  deactivation date euqal the end of the current (and not next) cycle mean that the deactivation is in the future
 			return ['start' => $this->activation,
 					'prorated_start_date' => new Mongodloid_Date($this->activation > $cycle->start() ? $this->activation  : ($this->seperatedCrossCycleCharges ? $cycle->start() :$nextCycle->start())),
-					'end' => $this->deactivation < $cycle->end() ? $this->deactivation : $cycle->end(),
-					'prorated_end_date' => new Mongodloid_Date($this->deactivation < $cycle->end() ? $this->deactivation : ($this->seperatedCrossCycleCharges ? $cycle->end() : $nextCycle->end())),
+					'end' => $this->deactivation < $this->cycle->end() ? $this->deactivation : $cycle->end(),
+					'prorated_end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() ? $this->deactivation : ($this->seperatedCrossCycleCharges ? $cycle->end() : $nextCycle->end())),
 					'start_date' =>new Mongodloid_Date(Billrun_Plan::monthDiffToDate($startOffset,  $this->activation ,true,false,false ,$frequency )),
-					'end_date' => new Mongodloid_Date($this->deactivation < $cycle->end() ? $this->deactivation : $cycle->end())];
+					'end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() ? $this->deactivation : $cycle->end())];
 	}
 
 	protected function getUpfrontCycle($regularCycle) {
