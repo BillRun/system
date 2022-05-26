@@ -309,6 +309,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		if (empty($aids)) {
 			$linesRemoveQuery = array('aid' => array('$nin' => $protectedAids), 'billrun' => $billrunKey,
+									'source' => 'billrun',
 									'$or' => array(
 										array( 'type' => array('$in' => array('service', 'flat')) ),
 										array('$or' => array(
@@ -321,6 +322,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$aids = array_values(array_diff($aids, $protectedAids));
 			$linesRemoveQuery = array(	'aid' => array('$in' => $aids),
 										'billrun' => $billrunKey,
+										'source' => 'billrun',
 										'$or' => array(
 											array( 'type' => array('$in' => array('service', 'flat')) ),
                                                                                         array( '$or' => array(
