@@ -203,9 +203,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if ($this->isAssumeApproved()) {
 				$currentPayment->setExtraFields([static::ASSUME_APPROVED_FILE_STATE => true]);
 			}
-			$params['amount'] = $paymentParams['amount'];
-			$params['aid'] = $currentPayment->getAid();
-			$params['txid'] = $currentPayment->getId();
+			$params = $currentPayment->getRawData();
 			if (isset($account['payment_gateway']['active']['card_token'])) {
 				$params['card_token'] = $account['payment_gateway']['active']['card_token'];
 			}
