@@ -69,7 +69,7 @@ class Billrun_Bill_Invoice extends Billrun_Bill {
 		);
 		$query = array_merge($query, $mandatoryQuery);
 		if (!$sort) {
-			$sort = array('due_date' => 1);
+			$sort = array('charge.not_before' => 1);
 		}
 		return static::getBills($query, $sort);
 	}

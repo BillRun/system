@@ -68,6 +68,9 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		} else {
 			$row['final_charge']  = $row['tax_data']['total_amount'] + $row['aprice'];
 		}
+                if($this->ifLineNeedFinalChargeRounding($current)){
+                    $this->roundingFinalCharge($row);
+                }
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
@@ -174,9 +177,10 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * Update the line/row with it related taxing data.
 	 * @param array $line The line to update it data.
 	 * @param array $subscriber  the subscriber that is associated with the line
+	 * @param array $params - additional parameters to sent to the function
 	 * @return array updated line/row with the tax data
 	 */
-	abstract protected function updateRowTaxInforamtion($line, $subscriberSearchData, $accountSearchData);
+	abstract public function updateRowTaxInforamtion($line, $subscriberSearchData, $accountSearchData, $params = []);
 	/**
 	 * Update the non-taxable/pre-taxed line/row with it related taxing data.
 	 * @param array $line The line to update it data.
@@ -240,4 +244,48 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		}
 		return $rate;			
 	}
+        
+        protected function ifLineNeedFinalChargeRounding($line) {
+                return isset($line['rounding_rules']) &&
+                    !empty($line['rounding_rules']['rounding_type']) &&
+                    $line['rounding_rules']['rounding_type'] !== 'None';
+                
+	}
+        
+        protected function roundingFinalCharge(&$row) {
+                $current = $row->getRawData();
+                if($current['final_charge'] == 0){
+                    return;
+                }
+                $decimals = $current['rounding_rules']['rounding_decimals'] ?? null;
+                if(!isset($decimals)){
+                    Billrun_Factory::log("Line {$current['stamp']} rounding_decimals must supply if rounding type selected", Zend_Log::ALERT);
+                    return;
+                }
+                if(!($decimals >=0 && $decimals <= 10)){
+                    Billrun_Factory::log("Line {$current['stamp']} rounding_decimals didn't supported", Zend_Log::ALERT);
+                    return;
+                    
+                }
+                $newFinalCharge = Billrun_Util::roundingNumber($current['final_charge'], $current['rounding_rules']['rounding_type'], $decimals);             
+                //check if $newFinalCharge is not valid 
+                if(!is_numeric($newFinalCharge)){
+                    Billrun_Factory::log("Line {$current['stamp']} rounding didn't success", Zend_Log::ALERT);
+                    return;
+                }
+                $div = $newFinalCharge / $current['final_charge'];
+                $current['before_rounding']['final_charge'] = $current['final_charge'];
+                $current['final_charge'] = $newFinalCharge;
+                $current['before_rounding']['aprice'] = $current['aprice'];
+                $current['aprice'] = $current['aprice'] * $div;
+                Billrun_util::setIn($current, 'tax_data.total_amount_before_rounding', $current['tax_data']['total_amount']);
+                $current['tax_data']['total_amount'] = $current['tax_data']['total_amount'] * $div;
+                foreach ($current['tax_data']['taxes'] as $index => $tax){
+                    $current['tax_data']['taxes'][$index]['amount_before_rounding'] = $tax['amount'];
+                    $current['tax_data']['taxes'][$index]['amount'] = $tax['amount'] * $div;
+                }
+                $row->setRawData($current);
+	}
+        
+
 }

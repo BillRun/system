@@ -47,7 +47,8 @@ class CreatetenantAction extends ApiAction {
 			!$this->createConfigFile() ||
 			!$this->createDB() ||
 			!$this->createUserInTenantBillrun() ||
-			!$this->createDbConfig() ||
+			!$this->createDbConfig('create_tenant.db_base_config', $this->db->configCollection()) ||
+			!$this->createDbConfig('create_tenant.db_taxes_config', $this->db->taxesCollection()) ||
 			!$this->createTenantFolders()) {
 			Billrun_Factory::log('Create Tenant - error: ' . $this->desc, Zend_Log::INFO);
 			$this->status = false;
@@ -154,6 +155,10 @@ class CreatetenantAction extends ApiAction {
 		$options['user'] = $this->db_user;
 		$options['password'] = $this->db_pass;
 		$options['name'] = $this->db_name;
+		if (!isset($options['options'])) {
+			$options['options'] = array();
+		}
+		$options['options']['authSource'] = $this->db_name;
 		$options['host'] = "localhost:27017"; // this is a hack because mongo does not create new instance otherwise
 		$this->db = Billrun_Factory::db($options);
 		if (empty($this->db)) {
@@ -176,11 +181,11 @@ class CreatetenantAction extends ApiAction {
 	 * 
 	 * @return boolean
 	 */
-	protected function createDbConfig() {
-		Billrun_Factory::log('Create Tenant - Creating DB configuration', Zend_Log::INFO);
-		$baseDbConfigPath = Billrun_Factory::config()->getConfigValue('create_tenant.db_base_config', '');
+	protected function createDbConfig($configPathKey, $collection) {
+		Billrun_Factory::log('Create Tenant - Creating DB configuration ' . $configPathKey, Zend_Log::INFO);
+		$baseDbConfigPath = Billrun_Factory::config()->getConfigValue($configPathKey, '');
 		if (empty($baseDbConfigJson = file_get_contents($baseDbConfigPath))) {
-			$this->desc = 'Basic db config was not found in path: "' . $baseDbConfigPath . '"';
+			$this->desc = 'Basic db config ' . $configPathKey . ' was not found in path: "' . $baseDbConfigPath . '"';
 			return false;
 		}
 
@@ -188,9 +193,13 @@ class CreatetenantAction extends ApiAction {
 			$this->desc = 'Cannot parse basic DB config. Content: "' . $baseDbConfigJson . '"';
 			return false;
 		}
-		$this->addDbConfigData($dbConfig);
-		if (!$this->db->configCollection()->insert($dbConfig)) {
-			$this->desc = 'Cannot save config to DB.';
+		
+		if ($configPathKey == 'create_tenant.db_base_config') {
+			$this->addDbConfigData($dbConfig);
+		}
+		
+		if (!$collection->insert($dbConfig)) {
+			$this->desc = 'Cannot save config to DB ' . $configPathKey;
 			return false;
 		}
 		return true;

@@ -367,14 +367,8 @@ class Billrun_Billingcycle {
 			return self::$cycleStatuses[$billrunKey][$size];
 		}
 		$cycleStatus = '';
-		$currentBillrunKey = self::getBillrunKeyByTimestamp();
-		if ($billrunKey == $currentBillrunKey) {
-			$cycleStatus = 'current';
-		} else if ($billrunKey > $currentBillrunKey) {
-			$cycleStatus = 'future';
-		}
-		$cycleToRerun = self::isToRerun($billrunKey);
-		if (empty($cycleStatus) && $cycleToRerun) {
+		$currentBillrunKey = self::getBillrunKeyByTimestamp();	
+		if (empty($cycleStatus) && (self::isToRerun($billrunKey))) {
 			$cycleStatus = 'to_rerun';
 		}
 		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
@@ -385,12 +379,17 @@ class Billrun_Billingcycle {
 		if (empty($cycleStatus) && $cycleRunning) {
 			$cycleStatus = 'running';
 		}
-		$cycleConfirmed = !empty(self::getConfirmedCycles(array($billrunKey)));
+		$cycleConfirmed = empty($cycleStatus) ? !empty(self::getConfirmedCycles(array($billrunKey))) : false;
 		if (empty($cycleStatus) && !$cycleConfirmed && $cycleEnded) {
 			$cycleStatus = 'finished';
 		}
 		if (empty($cycleStatus) && $cycleEnded && $cycleConfirmed) {
 			$cycleStatus = 'confirmed';
+		}
+		if (empty($cycleStatus) && $billrunKey == $currentBillrunKey) {
+			$cycleStatus = 'current';
+		} else if (empty($cycleStatus) && $billrunKey > $currentBillrunKey) {
+			$cycleStatus = 'future';
 		}
 		self::$cycleStatuses[$billrunKey][$size] = $cycleStatus;
 		return $cycleStatus;
@@ -573,5 +572,44 @@ class Billrun_Billingcycle {
 		}
 		return $entry['billrun_key'];
 	}
+	
+	public static function getCycleTimeStatus($billrunKey) {
+		$currentBillrunKey = self::getBillrunKeyByTimestamp();
+		if ($billrunKey == $currentBillrunKey) {
+			return 'present';
+		}
+		if ($billrunKey > $currentBillrunKey) {
+			return 'future';
+		}
+	
+		return 'past';
+	}
+        
+        /**
+         * Function gets aid, start + end time, as Unix Timestamp.. 
+         * @param integer $aid
+         * @param string $startTime
+         * @param string $endTime
+         * @return array of the wanted account's immediate invoices, in the time rang.
+         */
+        public static function getImmediateInvoicesInRange($aid, $startTime, $endTime) {
+            $convertedStartTime = date('YmdHis', $startTime);
+            $convertedEndTime = date('YmdHis', $endTime);
+            $query = array(
+                        'aid' => $aid,
+                        'attributes.invoice_type' => array('$eq' => 'immediate'),
+                        'billrun_key' => array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime)
 
+		);
+            $sort = array(
+			'billrun_key' => -1,
+		); 
+            $billruns = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort);
+            $billrunsArray = iterator_to_array($billruns, true);
+            $invoicesArray = [];
+            foreach($billrunsArray as $id => $entity){
+                    $invoicesArray[] = $entity->getRawData();
+            }
+            return $invoicesArray;
+        }
 }

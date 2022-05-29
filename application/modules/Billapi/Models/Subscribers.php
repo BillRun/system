@@ -50,7 +50,9 @@ class Models_Subscribers extends Models_Entity {
 	protected function getCustomFields($update = array()) {
 		$customFields = parent::getCustomFields();
 		$subscriberFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
-		$subscriberPlay = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
+		$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+		$defaultPlayName = isset($defaultPlay['name'])? $defaultPlay['name'] : '';
+		$subscriberPlay = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', $defaultPlayName));
 		$subscriberFields = Billrun_Utils_Plays::filterCustomFields($subscriberFields, $subscriberPlay);
 		return array_merge($subscriberFields, $customFields);
 	}
@@ -76,7 +78,7 @@ class Models_Subscribers extends Models_Entity {
 			return FALSE;
 		}
 		foreach ($services_sources as &$services_source) {	
-			foreach ($services_source as &$service) {
+			foreach ($services_source as $key => &$service) {
 				if (gettype($service) == 'string') {
 					$service = array('name' => $service);
 				}
@@ -86,15 +88,29 @@ class Models_Subscribers extends Models_Entity {
 				if (empty($this->before)) { // this is new subscriber
 					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
 				}
-				//Handle custom period services
-				$serviceRate = new Billrun_Service(array('name'=>$service['name'],'time'=>$service['from']->sec));
-				if (!empty($serviceRate) && !empty($servicePeriod = @$serviceRate->get('balance_period')) && $servicePeriod !== "default") {
-					$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
+				if (!empty($service['to']) && gettype($service['to']) == 'string') {
+					$service['to'] = new MongoDate(strtotime($service['to']));
 				}
-
-				//to can't be more then the updated 'to' of the subscription
-				$entityTo = isset($this->update['to']) ? $this->update['to'] : $this->getBefore()['to'];
-				$service['to'] = !empty($service['to']) && $service['to'] <= $entityTo ? $service['to'] : $entityTo;
+				// handle custom period service or limited cycles service
+				$serviceRate = new Billrun_Service(array('name' => $service['name']));
+				// if service not found, throw exception
+				if (empty($serviceRate) || empty($serviceRate->get('_id'))) {
+					throw new Billrun_Exceptions_Api(66601, array(), "Service was not found");
+				}
+				if (!empty($servicePeriod = @$serviceRate->get('balance_period')) && $servicePeriod !== "default") {
+					$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
+				} else {
+					// Handle limited cycle services
+					$serviceAvailableCycles = $serviceRate->getServiceCyclesCount();
+					if ($serviceAvailableCycles !== Billrun_Service::UNLIMITED_VALUE) {
+						$vDate = date(Billrun_Base::base_datetimeformat, $service['from']->sec);
+						$to = strtotime('+' . $serviceAvailableCycles . ' months', Billrun_Billingcycle::getBillrunStartTimeByDate($vDate));
+						$service['to'] = new MongoDate($to);
+					}
+				}
+				if (empty($service['to'])) {
+					$service['to'] =  new MongoDate(strtotime('+149 years'));
+				}
 				if (!isset($service['service_id'])) {
 					$service['service_id'] = hexdec(uniqid());
 				}

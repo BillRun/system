@@ -26,6 +26,7 @@ class Billrun_AuditTrail_Util {
 	 * @return boolean true on success, false otherwise
 	 */
 	public static function trackChanges($type = '', $key = '', $collection = '', $old = null, $new = null, array $additionalParams = array()) {
+		Billrun_Factory::log("Track changes in audit trail", Zend_Log::DEBUG);
 		try {
 			$user = Billrun_Factory::user();
 			if ($user) {
@@ -53,6 +54,7 @@ class Billrun_AuditTrail_Util {
 			$logEntry = array_merge($basicLogEntry, $additionalParams);
 			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
 			Billrun_Factory::db()->auditCollection()->save(new Mongodloid_Entity($logEntry));
+			Billrun_Factory::dispatcher()->trigger('trackChanges', array($old, $new, $collection, $type, $trackUser));
 			return true;
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Failed on insert to audit trail. ' . $ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);

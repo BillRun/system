@@ -71,6 +71,9 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			$from = $start_period = $this->row['service_start_date'];
 			$period = $this->row['balance_period'];
 			$to = strtotime((string) $this->row['balance_period'], $from);
+		} else if ($this->isAddonBalance()) {
+			$service_id = $this->row['service_id'];
+			$service_name = $this->row['service_name'];
 		} else {
 			$service_id = 0;
 			$service_name = null;
@@ -103,6 +106,14 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 */
 	protected function isExtendedBalance() {
 		return isset($this->row['balance_period']) && $this->row['balance_period'] != "default" && isset($this->row['service_name']);
+	}
+
+	/**
+	 * method to check if balance is an add-on balance
+	 * @return boolean true if this is an add-on balance, else false
+	 */
+	protected function isAddonBalance() {
+		return !empty($this->row['add_on']);
 	}
 
 	/**
@@ -204,8 +215,8 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		list($query, $update) = parent::buildBalanceUpdateQuery($pricingData, $row, $volume);
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
 		$currentUsage = $this->getCurrentUsage($balance_totals_key);
-		if ($this->get('sid') != 0 && !$this->isExtendedBalance()) {
-			$update['$inc']['balance.totals.' . $balance_totals_key . '.usagev'] = $volume;
+		if ($this->get('sid') != 0 && !$this->isExtendedBalance() && !$this->isAddonBalance()) {
+			$update['$inc']['balance.totals.' . $balance_totals_key . '.usagev'] = $this->getTotalUsagevToUpdate($pricingData, $volume);
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
 			$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
@@ -273,11 +284,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return string
 	 */
 	public function getBalanceTotalsKey($pricingData) {
-		if (isset($pricingData['in_plan']) || isset($pricingData['over_plan']) ||
-			isset($pricingData['in_group']) || isset($pricingData['over_group'])) {
-			return $this->row['usaget'];
-		}
-		return 'out_plan_' . $this->row['usaget'];
+		return $this->row['usaget'];
 	}
 	
 	/**

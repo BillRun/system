@@ -25,6 +25,8 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	}
 	
 	protected function updatePayments($row, $payment, $currentProcessor) {
+		$customFields = $this->getCustomPaymentGatewayFields($row);
+		$payment->setExtraFields(array_merge(['pg_response' => $this->billSavedFields], $customFields), array_keys($customFields));
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
                 $this->updatePaymentAccordingTheResponse($paymentResponse, $payment);
@@ -111,7 +113,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
                                 $payment->setPending(false);
-				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
+				Billrun_Factory::log('Rejecting transaction ' . $payment->getId(), Zend_Log::INFO);
                                 $this->informationArray['info'][] = 'Rejecting transaction  ' . $payment->getId();
 				$rejection = $payment->getRejectionPayment($response);
 				$rejection->setConfirmationStatus(false);
@@ -141,6 +143,10 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 				throw new Exception('Unknown file status');
 				break;
 		}
+	}
+	
+	public function getType () {
+		return static::$type;
 	}
 
 }

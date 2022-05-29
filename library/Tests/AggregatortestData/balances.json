@@ -134,7 +134,114 @@
 					"tx": {
 
 					}
-				}
+				},
+				{
+	"OBJID" : "5e4eb5a4a7165b95bc1a2c76",
+	"aid" : 26,
+	"period" : "default",
+	"priority" : 0,
+	"sid" : 100,
+	"start_period" : "default",
+	"balance" : {
+		"cost" : 10,
+		"totals" : {
+			"call" : {
+				"cost" : 10,
+				"count" : 1,
+				"over_group" : {
+					"usagev" : 10
+				},
+				"usagev" : 100
+			}
+		}
+	},
+	"connection_type" : "postpaid",
+		
+	"DBRefcurrent_plan": {"collection": "plans","ObjectId": "5a55ca8b6d5b99344e5226c3"},
+	"from" : "time*2020-01-31T22:00:00Z",
+	"plan_description" : "free_with_nothing",
+	"to" : "time*2020-02-29T22:00:00Z",
+	"tx" : {
+		
+	}
+},
+{
+	"OBJID" : "5e4eb5a4a7165b95bc1a2c7a",
+	"aid" : 26,
+	"period" : "default",
+	"priority" : 132456,
+	"service_name" : "CALL",
+	"sid" : 100,
+	"start_period" : "default",
+	"balance" : {
+		"cost" : 0,
+		"groups" : {
+			"CALL" : {
+				"count" : 1,
+				"left" : 0,
+				"total" : 100,
+				"usagev" : 100
+			}
+		},
+		"totals" : {
+			"call" : {
+				"cost" : 0,
+				"count" : 1,
+				"over_group" : {
+					"usagev" : 0
+				},
+				"usagev" : 110
+			}
+		}
+	},
+	"connection_type" : "postpaid",
+	"DBRefcurrent_plan": {"collection": "plans","ObjectId": "5a55ca8b6d5b99344e5226c3"},
+	"from" : "time*2020-01-31T22:00:00Z",
+	"plan_description" : "free_with_nothing",
+	"to" : "time*2020-02-29T22:00:00Z",
+	"tx" : {
+		
+	}
+},
+{
+	"OBJID" : "5e4eb5a4a7165b95bc1a2c7d",
+	"aid" : 26,
+	"period" : "default",
+	"priority" : 1234567,
+	"service_name" : "CALL",
+	"sid" : 100,
+	"start_period" : "default",
+	"balance" : {
+		"cost" : 10,
+		"groups" : {
+			"CALL" : {
+				"count" : 2,
+				"left" : 0,
+				"total" : 100,
+				"usagev" : 100
+			}
+		},
+		"totals" : {
+			"call" : {
+				"cost" : 10,
+				"count" : 2,
+				"over_group" : {
+					"usagev" : 10
+				},
+				"usagev" : 210
+			}
+		}
+	},
+	"connection_type" : "postpaid",
+	"DBRefcurrent_plan": {"collection": "plans","ObjectId": "5a55ca8b6d5b99344e5226c3"},
+	"from" : "time*2020-01-31T22:00:00Z",
+	"plan_description" : "free_with_nothing",
+	"to" : "time*2020-02-29T22:00:00Z",
+	"tx" : {
+		
+	}
+}
+
 
 
 

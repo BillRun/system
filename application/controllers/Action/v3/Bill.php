@@ -32,6 +32,9 @@ class V3_billAction extends ApiAction {
 				case 'collection_debt' :
 					$response = $this->getCollectionDebt($request);
 					break;
+				case 'get_balance' :
+					$response = $this->getCollectionDebt($request, false);
+					break;
 				case 'search_invoice' :
 				default :
 					$response = $this->getBalanceFor($request);
@@ -81,7 +84,7 @@ class V3_billAction extends ApiAction {
 			$pastOnly = filter_var($request->get('past_only', FALSE), FILTER_VALIDATE_BOOLEAN);
 			$query = array('aid' => $aid);
 			if ($pastOnly) {
-				$query['due_date'] = array('$lt' => new MongoDate());
+				$query['charge.not_before'] = array('$lt' => new MongoDate());
 			}
 			$ret['unpaid_invoices'] = Billrun_Bill_Invoice::getUnpaidInvoices($query);
 		}
@@ -123,7 +126,7 @@ class V3_billAction extends ApiAction {
 		return Billrun_Bill_Invoice::getInvoices(json_decode($query, JSON_OBJECT_AS_ARRAY));
 	}
 
-	protected function getCollectionDebt($request) {
+	protected function getCollectionDebt($request, $only_debt = true) {
 		$jsonAids = $request->getPost('aids', '[]');
 		$aids = json_decode($jsonAids, TRUE);
 		if (!is_array($aids) || json_last_error()) {
@@ -134,7 +137,7 @@ class V3_billAction extends ApiAction {
 			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
 		}
-		return Billrun_Bill::getContractorsInCollection($aids);
+		return Billrun_Bill::getBalanceByAids($aids, false, $only_debt);
 	}
 	
 	protected function getPermissionLevel() {
