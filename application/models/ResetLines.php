@@ -62,10 +62,6 @@ class ResetLinesModel {
      */
     protected $conditions;
     protected $linesStampsByRebalanceStamp = [];
-	
-	protected $resetStartTime;
-	protected $resetEndTime;
-	protected $successRecoveredStamps = [];
 
 	public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps, $stampsToRecoverByAidAndSid = array()) {
         $this->initBalances($aids, $billrun_key);
@@ -82,9 +78,7 @@ class ResetLinesModel {
 
     public function reset() {
         Billrun_Factory::log('Reset subscriber activated', Zend_Log::INFO);
-		$this->resetStartTime = new Mongodate();
         $ret = $this->resetLines();
-		$this->resetEndTime = new Mongodate();
         return $ret;
     }
 
@@ -473,7 +467,6 @@ class ResetLinesModel {
                 $this->resetLinesByStamps($update_stamps, $this->aids, $advancedProperties, $lines_coll, $queue_coll);
                 $offset += $reset_stamps_size;
                 $i++;
-				$this->successRecoveredStamps = array_merge($this->successRecoveredStamps, $update_stamps);
             }
         }
         $offset = 0;
@@ -1147,18 +1140,6 @@ class ResetLinesModel {
 
     protected function getLineInvoicingDay($line) {
         return isset($line['foregin']['account']['invoicing_day']) ? $line['foregin']['account']['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
-    }
-	
-	public function getResetStartTime() {
-		return $this->resetStartTime;
-	}
-
-	public function getResetEndTime() {
-		return $this->resetEndTime;
-	}
-	
-	public function getSuccessRecoveredStamps() {
-		return $this->successRecoveredStamps;
-	}
+    }	
 
 }

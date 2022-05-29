@@ -68,8 +68,10 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		foreach ($billruns as $billrun_key => $data) {
 			$model = new ResetLinesModel(array_column($data, 'aid'), $billrun_key, $conditions[$billrun_key], $rebalanceStamps[$billrun_key], $stampsByBillrunAndAid[$billrun_key] ?? []);
 			try {
+				$resetStartTime = new Mongodate();
 				$ret = $model->reset();
-				$this->updateResetTimes($model, $data);
+				$resetEndTime = new Mongodate();
+				$this->updateResetTimes($model, $data, $resetStartTime, $resetEndTime);
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;
 				}
@@ -101,12 +103,12 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		return array();
 	}
 	
-	protected function updateResetTimes($reset_lines_model, $data) {
-		$relevant_stamps = array_merge($reset_lines_model->getSuccessRecoveredStamps(), array_column($data, 'stamp'));
+	protected function updateResetTimes($reset_lines_model, $data, $resetStartTime, $resetEndTime) {
+		$relevant_stamps = array_column($data, 'stamp');
 		$updateQuery = array(
             '$set' => array(
-                'start_time' => $reset_lines_model->getResetStartTime(),
-				'end_time' => $reset_lines_model->getResetEndTime()
+                'start_time' => $resetStartTime,
+				'end_time' => $resetEndTime
             )
         );
 		Billrun_Factory::db()->rebalance_queueCollection()->update(['stamp' => array('$in' => $relevant_stamps)], $updateQuery, array('multiple' => 1));
