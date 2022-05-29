@@ -55,10 +55,10 @@ class Models_Rates extends Models_Entity {
 				$query[$fieldName] = $data[$fieldName];
 			}
 			$query['from'] = [
-				'$gte' => $data['from']
+				'$lt' => $data['to']
 			];
 			$query['to'] = [
-				'$lte' => $data['to']
+				'$gt' => $data['from']
 			];
 			if ($ignoreIds) {
 				$query['_id'] = array(
