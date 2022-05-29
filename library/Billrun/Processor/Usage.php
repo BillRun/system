@@ -159,7 +159,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		
 		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));
 		$row['timezone'] = $datetime->getOffset();
-		$row['usaget'] = $this->getLineUsageType($row);
+		Billrun_Factory::dispatcher()->trigger('beforeGetLineUsageType', array(&$row, &$this->usagevUnit, &$this->volumeType, &$this->volumeSrc, &$this->stampFields));               
+		$row['usaget'] = $row['usaget'] ?? $this->getLineUsageType($row);
 		$usagev = $this->getLineUsageVolume($row['uf'], $row['usaget']);
 		if ($usagev === false) {
 			return false;
@@ -236,21 +237,6 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	}
 
 	protected function getLineUsageType($row) {
-                $usaget = null;
-                Billrun_Factory::dispatcher()->trigger('beforeGetLineUsageType', array($row, &$usaget));
-                if(!is_null($usaget)){
-                    foreach ($this->usagetMapping as $usagetMapping) {
-                        if($usagetMapping['usaget'] === $usaget){
-                            $this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
-                            $this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
-                            $this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
-                            $stampFields = Billrun_Util::getIn($usagetMapping, 'stamp_fields', []);
-                            $this->stampFields = $this->getStampFields($stampFields, $row);
-                            break;
-                        }
-                    }                   
-                    return $usaget;
-                }
 		$this->stampFields = [];
 		$userFields = $row['uf'];
 		if (!empty($this->usagetMapping)) {
