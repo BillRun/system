@@ -237,18 +237,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	protected function getLineUsageType($row) {
                 $usaget = null;
-                Billrun_Factory::dispatcher()->trigger('beforeGetLineUsageType', array($row, &$usaget));
-                if(!is_null($usaget)){
-                    foreach ($this->usagetMapping as $usagetMapping) {
-                        if($usagetMapping['usaget'] === $usaget){
-                            $this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
-                            $this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
-                            $this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
-                            $stampFields = Billrun_Util::getIn($usagetMapping, 'stamp_fields', []);
-                            $this->stampFields = $this->getStampFields($stampFields, $row);
-                            break;
-                        }
-                    }                   
+                Billrun_Factory::dispatcher()->trigger('beforeGetLineUsageType', array($row, &$usaget, &$this->usagevUnit, &$this->volumeType, &$this->volumeSrc, &$this->stampFields));
+                if(!is_null($usaget)){         
                     return $usaget;
                 }
 		$this->stampFields = [];
