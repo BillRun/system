@@ -68,11 +68,11 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		foreach ($billruns as $billrun_key => $data) {
 			$model = new ResetLinesModel(array_column($data, 'aid'), $billrun_key, $conditions[$billrun_key], $rebalanceStamps[$billrun_key], $stampsByBillrunAndAid[$billrun_key] ?? []);
 			try {
-				Billrun_Factory::log("Updating cycle " . $billrun_key . ' reset start time..', Zend_Log::DEBUG);
-				$this->updateResetTime($data, 'start_time');
+				Billrun_Factory::log("Updating cycle $billrun_key reset start time..", Zend_Log::DEBUG);
+				$this->updateResetTime($data);
 				$ret = $model->reset();
-				Billrun_Factory::log("Updating cycle " . $billrun_key . ' reset end time..', Zend_Log::DEBUG);
-				$this->updateResetTime($data, 'end_time');
+				Billrun_Factory::log("Updating cycle $billrun_key reset end time..", Zend_Log::DEBUG);
+				$this->updateResetTime($data, false);
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;
 				}
@@ -104,8 +104,9 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		return array();
 	}
 
-	protected function updateResetTime($data, $field_name){
+	protected function updateResetTime($data, $start = true){
 		$relevant_stamps = array_column($data, 'stamp');
+		$field_name = $start ? 'start_time' : 'end_time';
 		$updateQuery = array(
             '$set' => array(
                 $field_name => new Mongodate()
