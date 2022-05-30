@@ -407,9 +407,24 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$activationDate = @$subscriber['activation_date']->sec + (@$subscriber['activation_date']->usec/ 1000000) ?: 0;
 		$deactivationDate = @$subscriber['deactivation_date']->sec + (@$subscriber['deactivation_date']->usec/ 1000000) ?: PHP_INT_MAX;
 
+		$mongoServices = $this->cycleAggregator->getServices();
+
+		//function to merge  previous and  current services
+		$mergeServicesFunc = function ($a,$b) {
+			$retVal = $a;
+			foreach($b as $key => $srv) {
+				if(!empty($retVal[$key])) {//for  the same stamp always take the  larger qunatity
+					$retVal[$key] = floatval($retVal[$key]['quantity']) > floatval($srv['quantity']) ? $retVal[$key] : $srv;
+				} else {
+					$retVal[$key] = $srv;
+				}
+			}
+			return $retVal;
+		};
+
 		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
 			foreach($subscriber['services'] as  $tmpService) {
-				$srvStampFields =  !empty($this->mongoServices[$tmpService['name']]['prorated']) ?  ['name','start','service_id'] : ['name','start','quantity','service_id'];
+				$srvStampFields = !empty($mongoServices[$tmpService['name']]) &&  empty($mongoServices[$tmpService['name']]['prorated']) ?  ['name','service_id'] : ['name','start','quantity','service_id'];
 				 $serviceData = array(  'name' => $tmpService['name'],
 										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
 										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
@@ -436,18 +451,6 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 					$retServices[$stamp]['end'] = $sfrom;
 				}
 			}
-			//function to merge  previous and  current services
-			$mergeServicesFunc = function ($a,$b) {
-				$retVal = $a;
-				foreach($b as $key => $srv) {
-					if(!empty($retVal[$key])) {//for  the same stamp always take the  larger qunatity
-						$retVal[$key] = floatval($retVal[$key]['quantity']) > floatval($srv['quantity']) ? $retVal[$key] : $srv;
-					} else {
-						$retVal[$key] = $srv;
-					}
-				}
-				return $retVal;
-			};
 
 			$retServices = $mergeServicesFunc($retServices, $currServices);
 		}
