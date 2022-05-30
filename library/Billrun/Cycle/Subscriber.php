@@ -424,7 +424,10 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
 			foreach($subscriber['services'] as  $tmpService) {
-				$srvStampFields = !empty($mongoServices[$tmpService['name']]) &&  empty($mongoServices[$tmpService['name']]['prorated']) ?  ['name','service_id'] : ['name','start','quantity','service_id'];
+				$currentMongoSrv = $mongoServices[$tmpService['name']];
+				$srvStampFields = !empty($currentMongoSrv) &&  empty($currentMongoSrv['prorated']) && !empty($currentMongoSrv['quantitative']) ?
+											['name','service_id'] :
+											['name','start','quantity','service_id'];
 				 $serviceData = array(  'name' => $tmpService['name'],
 										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
 										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
