@@ -71,7 +71,7 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 				$resetStartTime = new Mongodate();
 				$ret = $model->reset();
 				$resetEndTime = new Mongodate();
-				$this->updateResetTimes($model, $data, $resetStartTime, $resetEndTime);
+				$this->updateResetTimes($data, $resetStartTime, $resetEndTime);
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;
 				}
@@ -103,7 +103,7 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		return array();
 	}
 	
-	protected function updateResetTimes($reset_lines_model, $data, $resetStartTime, $resetEndTime) {
+	protected function updateResetTimes($data, $resetStartTime, $resetEndTime) {
 		$relevant_stamps = array_column($data, 'stamp');
 		$updateQuery = array(
             '$set' => array(
