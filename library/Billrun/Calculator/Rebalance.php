@@ -68,10 +68,11 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		foreach ($billruns as $billrun_key => $data) {
 			$model = new ResetLinesModel(array_column($data, 'aid'), $billrun_key, $conditions[$billrun_key], $rebalanceStamps[$billrun_key], $stampsByBillrunAndAid[$billrun_key] ?? []);
 			try {
-				$resetStartTime = new Mongodate();
+				Billrun_Factory::log("Updating cycle " . $billrun_key . ' reset start time..', Zend_Log::DEBUG);
+				$this->updateResetTime($data, 'start_time');
 				$ret = $model->reset();
-				$resetEndTime = new Mongodate();
-				$this->updateResetTimes($data, $resetStartTime, $resetEndTime);
+				Billrun_Factory::log("Updating cycle " . $billrun_key . ' reset end time..', Zend_Log::DEBUG);
+				$this->updateResetTime($data, 'end_time');
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;
 				}
@@ -102,18 +103,17 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
         protected function getLines() {
 		return array();
 	}
-	
-	protected function updateResetTimes($data, $resetStartTime, $resetEndTime) {
+
+	protected function updateResetTime($data, $field_name){
 		$relevant_stamps = array_column($data, 'stamp');
 		$updateQuery = array(
             '$set' => array(
-                'start_time' => $resetStartTime,
-				'end_time' => $resetEndTime
+                $field_name => new Mongodate()
             )
         );
 		Billrun_Factory::db()->rebalance_queueCollection()->update(['stamp' => array('$in' => $relevant_stamps)], $updateQuery, array('multiple' => 1));
 	}
-
+	
 	protected function isLineLegitimate($line) {
 		return true;
 	}
