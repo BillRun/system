@@ -63,7 +63,7 @@ class ResetLinesModel {
     protected $conditions;
     protected $linesStampsByRebalanceStamp = [];
 
-    public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps, $stampsToRecoverByAidAndSid = array()) {
+	public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps, $stampsToRecoverByAidAndSid = array()) {
         $this->initBalances($aids, $billrun_key);
         $this->aids = $aids;
         $this->billrun_key = strval($billrun_key);
@@ -1140,6 +1140,6 @@ class ResetLinesModel {
 
     protected function getLineInvoicingDay($line) {
         return isset($line['foregin']['account']['invoicing_day']) ? $line['foregin']['account']['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
-    }
+    }	
 
 }
