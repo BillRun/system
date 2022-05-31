@@ -430,9 +430,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 			$removedServices  = array_udiff($previousServices, $currServices, $serviceCompare);
 			foreach($removedServices as $stamp => $removed) {
-				if($sto < $removed['end'] && $sto <= $retServices[$stamp]['end']) {
-					$retServices[$stamp]['end'] = $sto;
-				} elseif ( $sfrom < $removed['end'] ) {
+				if ( $sfrom <  $removed['end'] ) {
 					$retServices[$stamp]['end'] = $sfrom;
 				}
 			}
