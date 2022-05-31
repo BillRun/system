@@ -60,14 +60,12 @@ class ResetLinesAction extends ApiAction {
 				$query = [
 					'aid' => $aid,
 					'billrun_key' => $billrun_key,
-					'start_time' => array(
-						'$exists' => true
-					),
-					'end_time' => array(
-						'$exists' => false
+					'$or' => array(
+						array('start_time' => array('$exists' => true), 'end_time' => array('$exists' => false)),
+						array('start_time' => array('$exists' => false), 'end_time' => array('$exists' => false)),
 					)
 				];
-				$exist_rebalance_object = iterator_to_array($rebalance_queue->find($query));
+				$exist_rebalance_object = $rebalance_queue->query($query)->count();
 				if(empty($exist_rebalance_object)) {
 					$rebalanceLine = array(
 						'aid' => $aid,
