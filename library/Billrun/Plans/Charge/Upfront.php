@@ -60,20 +60,20 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	}
 
 	protected function getPriceForCycle($cycle) {
-        $formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $cycle->end()));
+        $formatStart = date(Billrun_Base::base_dateformat,  $cycle->start());
         $formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
-        $startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
-        return $this->getPriceByOffset($startOffset);
+        $cycleCount = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
+        return $this->getPriceByOffset($cycleCount);
 	}
 	
 	/**
 	 * Get the price of the current plan
-	 * @param type $startOffset
+	 * @param type $cycleCount
 	 * @return price
 	 */
-	protected function getPriceByOffset($startOffset) {
+	protected function getPriceByOffset($cycleCount) {
 		foreach ($this->price as $tariff) {
-			if ($tariff['from'] <= $startOffset && (Billrun_Plan::isValueUnlimited($tariff['to']) ? PHP_INT_MAX : $tariff['to']) > $startOffset) {
+			if ($tariff['from'] <= $cycleCount && (Billrun_Plan::isValueUnlimited($tariff['to']) ? PHP_INT_MAX : $tariff['to']) > $cycleCount) {
 				return $tariff['price'];
 			}
 		}
