@@ -1157,21 +1157,21 @@ if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping
 	mapping.forEach((mapper, key) => {
 		if (typeof mapper.map !== 'undefined') {
 			if (!Array.isArray(mapper.map)) {
-			let convertedMapper = [];
+				let convertedMapper = [];
 				Object.keys(mapper.map).forEach((field_name) => {
 					convertedMapper.push({field: field_name,value: mapper.map[field_name]});
 				});
-			mapping[key].map = convertedMapper;
-		}
+				mapping[key].map = convertedMapper;
+			}
 		}
 		if (typeof mapper.multiFieldAction !== 'undefined') {
 			if (!Array.isArray(mapper.multiFieldAction)) {
-			let convertedMultiFieldAction = [];
+				let convertedMultiFieldAction = [];
 				Object.keys(mapper.multiFieldAction).forEach((field_name) => {
 					convertedMultiFieldAction.push({field: field_name,value: mapper.multiFieldAction[field_name]});
 				});
-			mapping[key].multiFieldAction = convertedMultiFieldAction;
-		}
+				mapping[key].multiFieldAction = convertedMultiFieldAction;
+			}
 		}
 	});
 	lastConfig.import.mapping = mapping;
@@ -1423,4 +1423,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
     db.prepaidincludes.createIndex({name : 1}, {unique: false});
 });
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
-db.lines.dropIndex("aid_1_urt_1")
+db.lines.dropIndex("aid_1_urt_1");
+db.rebalance_queue.ensureIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});
+db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
+db.rebalance_queue.ensureIndex({"aid": 1, "billrun_key": 1}, {unique: false, "background": true});

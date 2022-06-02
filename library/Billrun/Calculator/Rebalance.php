@@ -35,19 +35,22 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 			'creation_date' => array(
 				'$lt' => new Mongodloid_Date(strtotime($offset . ' ago')),
 			),
+			'end_time' => array(
+				'$exists' => false,
+			)
 		);
 		$sort = array(
 			'creation_date' => 1,
 		);
 		$results = $rebalance_queue->find($query)->sort($sort)->limit($limit);
-		
+
 		$billruns = array();
 		$all_aids = array();
 		$conditions = array();
                 $stampsByBillrunAndAid = array();
                 $rebalanceStamps = array();
 		foreach ($results as $result) {
-			$billruns[$result['billrun_key']][] = $result['aid'];
+			$billruns[$result['billrun_key']][] = ['aid' => $result['aid'], 'stamp' => $result['stamp']];
                         $rebalanceStamps[$result['billrun_key']][$result['aid']][$result['conditions_hash']] = $result['stamp'];
                         $conditions[$result['billrun_key']][$result['aid']][$result['conditions_hash']] = $result['conditions'];
                         if(!empty($result['stamps_by_sid'])){
@@ -62,17 +65,20 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 			$all_aids[] = $result['aid'];
 		}
 
-		foreach ($billruns as $billrun_key => $aids) {
-			$model = new ResetLinesModel($aids, $billrun_key, $conditions[$billrun_key], $rebalanceStamps[$billrun_key], $stampsByBillrunAndAid[$billrun_key] ?? []);
+		foreach ($billruns as $billrun_key => $data) {
+			$model = new ResetLinesModel(array_column($data, 'aid'), $billrun_key, $conditions[$billrun_key], $rebalanceStamps[$billrun_key], $stampsByBillrunAndAid[$billrun_key] ?? []);
 			try {
+				Billrun_Factory::log("Updating cycle $billrun_key reset start time", Zend_Log::DEBUG);
+				$this->updateResetTime($data);
 				Billrun_Factory::dispatcher()->trigger('beforeResetLines', array($billrun_key, $aids, $model));
 				$ret = $model->reset();
+				Billrun_Factory::log("Updating cycle $billrun_key reset end time", Zend_Log::DEBUG);
+				$this->updateResetTime($data, false);
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;
 				}
-				$rebalance_queue->remove(array('aid' => array('$in' => $aids), 'billrun_key' => strval($billrun_key)));
 			} catch (Exception $exc) {
-				Billrun_Factory::log('Error resetting aids ' . implode(',', $aids) . ' of billrun ' . $billrun_key . '. Error was ' . $exc->getMessage() . ' : ' . $exc->getTraceAsString(), Zend_Log::ALERT);
+				Billrun_Factory::log('Error resetting aids ' . implode(',', array_column($data, 'aid')) . ' of billrun ' . $billrun_key . '. Error was ' . $exc->getMessage() . ' : ' . $exc->getTraceAsString(), Zend_Log::ALERT);
 				return FALSE;
 			}
 		}
@@ -97,6 +103,17 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 
         protected function getLines() {
 		return array();
+	}
+
+	protected function updateResetTime($data, $start = true){
+		$relevant_stamps = array_column($data, 'stamp');
+		$field_name = $start ? 'start_time' : 'end_time';
+		$updateQuery = array(
+            '$set' => array(
+                $field_name => new Mongodloid_Date()
+            )
+        );
+		Billrun_Factory::db()->rebalance_queueCollection()->update(['stamp' => array('$in' => $relevant_stamps)], $updateQuery, array('multiple' => 1));
 	}
 
 	protected function isLineLegitimate($line) {
