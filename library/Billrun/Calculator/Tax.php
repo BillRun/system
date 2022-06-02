@@ -204,7 +204,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @param array $line
 	 * @return array
 	 */
-	protected function getPreTaxedRowTaxData($line) {
+        public function getPreTaxedRowTaxData($line) {
 		$taxFactor = Billrun_Billrun::getVATByBillrunKey($this->active_billrun);
 		return [
 			'total_amount' => $line['aprice'] * $taxFactor,

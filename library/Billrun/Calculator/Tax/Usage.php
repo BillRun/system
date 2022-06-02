@@ -33,7 +33,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	/**
 	 * @see Billrun_Calculator_Tax::getPreTaxedRowTaxData
 	 */
-	protected function getPreTaxedRowTaxData($line) {
+	public function getPreTaxedRowTaxData($line) {
 		return $this->getRowTaxData($line);
 	}
 	
