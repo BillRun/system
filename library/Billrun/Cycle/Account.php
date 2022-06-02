@@ -158,8 +158,9 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 						foreach($fieldCuts as  $fieldCut) {
 							//should we break the revision?
 							if($activeRev['from'] < $fieldCut['from'] ) {
-								$revClosed = json_decode(json_encode($activeRev),JSON_OBJECT_AS_ARRAY);
+								$revClosed = unserialize(serialize($activeRev));
 								$revClosed['to'] = min($fieldCut['from'],$activeRev['to']);
+								$activeRev['from'] =  $fieldCut['from'];
 								$fieldsEnded[] = $revClosed;
 							}
 							//copy fields to the root of the revision if need
@@ -183,13 +184,14 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			}
 			$revCuts =  array_merge($fieldsEnded,[$activeRev]);
 			usort($revCuts,function($a,$b){ return $a['to'] - $b['to']; });
-				$fieldsEnded = usort($fieldsEnded,function($a,$b){ return $a['from'] - $b['from']; });
-				if (is_array($fieldsEnded) || is_object($fieldsEnded)) {
+			usort($fieldsEnded,function($a,$b){ return $a['from'] - $b['from']; });
+			if (is_array($fieldsEnded) || is_object($fieldsEnded)) {
 				//Create revision for all the terminated services/plans under the current "from" date
 			foreach($revCuts as $endedField) {
 					//close the current revision if its "to" has changed and open a new one.
 					if($endedField['to'] < $activeRev['to'] ) {
-						$activeRev['to'] =  $endedField['to'];
+						$activeRev['to'] =  $endedField['to']; // change the saved (closed) revision from & to  fields to match the ended revision from &  to values
+						$activeRev['from'] =  $endedField['from'];
 						$saveRevision  = $this->cleanRevisionStructure($activeRev, $subRevisionsFields, $endedField);
 						if( $saveRevision['from']->sec != $saveRevision['to']->sec ) {
 							$retRevisions[] = $saveRevision;
@@ -198,8 +200,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 						$activeRev['from'] = $endedField['to'];
 						$activeRev['to'] = $revision['to'];
 						//should services/plans be removed from the revision?
-					$activeRev = $this->clearInactiveEntries($activeRev, $subRevisionsFields,$endedField);
-				}
+						$activeRev = $this->clearInactiveEntries($activeRev, $subRevisionsFields,$endedField);
+					}
 				}
 				//close the current revision and open a new revision if the last one had altered the 'to' date to be before the  end of the cycle
 				if($activeRev['to'] < $revision['to']) {
@@ -244,12 +246,14 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 
 	protected function clearInactiveEntries($activeRev,$subRevisionsFields,$endedField) {
 		foreach($subRevisionsFields as $fieldName) {
-			if(!empty($endedField[$fieldName]) && !empty($activeRev[$fieldName])) {
+			if(!empty($endedField[$fieldName]) || !empty($activeRev[$fieldName])) {
 				$activeRev[$fieldName] =array_values (
 						array_map(function($m1) { return unserialize($m1);},
 						array_unique(
 							array_map(function($m2) { return  serialize($m2);},
-								array_filter(array_merge($activeRev[$fieldName],$endedField[$fieldName]),function($b) use ($activeRev) {
+								array_filter(array_merge(!empty($activeRev[$fieldName]) ? $activeRev[$fieldName] : [],
+														 !empty($endedField[$fieldName]) ? $endedField[$fieldName]:[]),
+											 function($b) use ($activeRev) {
 									return (!empty($b) && $b['to'] > $activeRev['from'] && $b['from'] <= $activeRev['from']);})
 							)
 						)
