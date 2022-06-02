@@ -307,6 +307,15 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		return $invoiceRawData;
 	}
+
+	/**
+	 * Add user fields data to the invoice.
+	 */
+	public function setUserFields(array $user_fields) {
+		$invoiceRawData = $this->getRawData();
+		$invoiceRawData['uf'] = $user_fields;
+		$this->data->setRawData($invoiceRawData);
+	}
 	
 	/**
 	 * Gets the current billrun document raw data
