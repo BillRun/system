@@ -1590,6 +1590,9 @@ class ConfigModel {
 				if (!Billrun_Util::isValidIPOrHost($connection['host'])) {
 					throw new Exception($connection['host'] . ' is not a valid host');
 				}
+				if (isset($connection['filename_regex']) && @preg_match($connection['filename_regex'], '') === false){
+					throw new Exception(('The file name regex \'' . $connection['filename_regex']) . '\' is not valid.');
+				}
 				$connection['passive'] = $connection['passive'] ? 1 : 0;
 				$connection['delete_received'] = $connection['delete_received'] ? 1 : 0;
 			}
