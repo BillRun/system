@@ -1217,7 +1217,7 @@ abstract class Billrun_Bill {
 		);
                 if ($include_pending) {
                     $addFields['$addFields']['total_pending_debt_valid_cond'] = array('$and' => array(array('$and' => array(
-                                                        array('$eq' => array('$valid_gateway', true)),
+                                                        array('$eq' => array('$rejection_required', true)),
                                                         array('$ne' => array('$past_rejections', false)))), array('$and' => array(
                                                         array('$eq' => array('$valid_due_date', true)),
                                                         array('$eq' => array('$pending', true))))
