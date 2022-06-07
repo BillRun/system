@@ -41,12 +41,17 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 			return null;
 		}
 		$cycles = [['cycle'=> $this->cycle , 'fraction'=> $fraction]];
-		if($this->seperatedCrossCycleCharges && $this->activation < $this->cycle->end() && $this->activation >= $this->cycle->start() && $fraction > 1) {
-		$nextCycle = $this->getUpfrontCycle($this->cycle);
-		$cycles = [
-					['cycle'=> $this->cycle , 'fraction'=> $fraction  - 1],
-					['cycle'=> $nextCycle , 'fraction'=> 1 ],
-				];
+		if($this->seperatedCrossCycleCharges ) {
+			$nextCycle = $this->getUpfrontCycle($this->cycle);
+
+			if( $this->activation < $this->cycle->end() && $this->activation >= $this->cycle->start() && $fraction > 1) {
+				$cycles = [
+							['cycle'=> $this->cycle , 'fraction'=> $fraction  - 1],
+							['cycle'=> $nextCycle , 'fraction'=> 1 ],
+						];
+			} else if ($fraction == 1 ) {
+				$cycles = [['cycle'=> $nextCycle , 'fraction'=> $fraction]];
+			}
 		}
 		$retCahrges = [];
 		foreach($cycles as $cycleData) {
