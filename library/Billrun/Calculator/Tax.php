@@ -131,6 +131,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 			$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($line['type'], true)['pricing'];
 			$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
 			$aprice = Billrun_util::getIn($userFields, $apriceField);
+                        Billrun_Factory::dispatcher()->trigger('beforeGetLinePriceToTax', array($line, &$aprice, $this));
 			if (!is_null($aprice) && is_numeric($aprice)) {
 				$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
 				if (!is_null($apriceMult) && is_numeric($apriceMult)) {
@@ -203,7 +204,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @param array $line
 	 * @return array
 	 */
-	protected function getPreTaxedRowTaxData($line) {
+        public function getPreTaxedRowTaxData($line) {
 		$taxFactor = Billrun_Billrun::getVATByBillrunKey($this->active_billrun);
 		return [
 			'total_amount' => $line['aprice'] * $taxFactor,
