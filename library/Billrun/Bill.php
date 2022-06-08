@@ -1223,6 +1223,13 @@ abstract class Billrun_Bill {
                                                         array('$eq' => array('$pending', true))))
                                 )
                         );
+                    $addFields['$addFields']['total_pending_debt_invalid_cond'] = array('$and' => array(
+						array('$and' => array(
+								array('$eq' => array('$rejection_required', false)),
+								array('$eq' => array('$valid_due_date', true)))),
+						array('$eq' => array('$pending', true))
+					)
+				);
                 }
 		$group = array(
 			'$group' => array(
@@ -1250,6 +1257,11 @@ abstract class Billrun_Bill {
                                         '$cond' => array(array('$eq' => array('$total_pending_debt_valid_cond', true)), '$pending_covering_amount', 0)
                                 ),
                         );
+                    $group['$group']['total_pending_debt_invalid'] = array(
+                                '$sum' => array(
+                                        '$cond' => array(array('$eq' => array('$total_pending_debt_invalid_cond', true)), '$pending_covering_amount', 0)
+                                ),
+                        );
                 }
 		$project3 = array(
 			'$project' => array(
@@ -1259,7 +1271,7 @@ abstract class Billrun_Bill {
 		);
 		if ($only_debts) {			
                         if ($include_pending) {
-                            $project3['$project']['total'] = array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid'));
+                            $project3['$project']['total'] = array('$add'=> array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')),'$total_pending_debt_invalid'));
                         } else {
                             $project3['$project']['total'] =  array('$add' => array('$total_debt_valid', '$total_debt_invalid'));
                         }
@@ -1273,7 +1285,7 @@ abstract class Billrun_Bill {
 			);
 		} else {			
 			if ($include_pending) {
-                            $project3['$project']['total'] =  array('$add' => array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')), '$total_credit'));
+                            $project3['$project']['total'] =  array('$add'=>array(array('$add' => array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')), '$total_pending_debt_invalid')), '$total_credit'));
                         } else {
                             $project3['$project']['total'] =  array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_credit'));
                         }
