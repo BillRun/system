@@ -808,7 +808,9 @@ db.createCollection('suggestions');
 db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculationType':1, 'estimated_billrun':1}, { unique: true , background: true});
 db.suggestions.ensureIndex({'status': 1 }, { unique: false , background: true});
 
-
+lastConfig = runOnce(lastConfig, 'BRCD-3678', function () {
+    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1");
+});
 // BRCD-1936: Migrate old discount structure to new discount structure
 function isEmpty(obj) {
     for(var key in obj) {
