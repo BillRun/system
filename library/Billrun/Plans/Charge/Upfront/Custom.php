@@ -42,7 +42,9 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 
 	public function getRefund(Billrun_DataTypes_CycleTime $cycle, $quantity=1) {
 		// $cycle is ignored  as the custom cycle configuration  will overseed the billrun cycle  configuration
-		if (empty($this->deactivation)  ) {
+		if (	empty($this->deactivation) || //dont have  deactivateion
+				!$this->proratedEnd && // dont need to be prorated on ending
+				!($this->proratedTermination && $this->isTerminated()) ) { // dont return if termination and sub actually terminate
 			return null;
 		}
 
