@@ -26,14 +26,15 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 		$formatCycleEnd = date(Billrun_Base::base_dateformat,  $this->cycle->end()-1);
 		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatCycleStart,$formatCycleEnd);
 
+		$startActivation =  ($this->proratedStart ? $this->activation : $this->cycle->start()) ;
 		// subscriber activates in the middle of the cycle and should be charged for a partial month and should be charged for the next month (upfront)
 		if ($this->activation >= $this->cycle->start() && $this->deactivation >= $this->cycle->end()) {
-			return 1 + (Billrun_Utils_Time::getDaysSpanDiffUnix($this->activation, $this->cycle->end()-1,$cycleSpan) );
+			return 1 + (Billrun_Utils_Time::getDaysSpanDiffUnix($startActivation, $this->cycle->end()-1,$cycleSpan) );
 		}
 		// subscriber activates in the middle of the cycle and should be charged for a partial month
 		if ($this->activation >= $this->cycle->start() && $this->deactivation <= $this->cycle->end()) {
-			$endActivation = strtotime('-1 second', $this->deactivation);
-			return Billrun_Utils_Time::getDaysSpanDiffUnix($this->activation, $endActivation,$cycleSpan);
+			$endActivation = ($this->proratedEnd || $this->proratedTermination && $this->isTerminated() ? $this->deactivation : $this->cycle->end())-1;
+			return Billrun_Utils_Time::getDaysSpanDiffUnix($startActivation, $endActivation,$cycleSpan);
 		}
 
 		return null;
