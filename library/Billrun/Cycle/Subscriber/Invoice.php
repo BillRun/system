@@ -248,7 +248,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		if(!empty($row['end'])) {
 			$addedData['end'] = $row['end'];
 		}
-		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes'], $addedData);
+		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],isset($row['tax_data']) ? $row['tax_data']['taxes'] : [], $addedData);
 		// TODO: apply arategroup to new billrun object
 		if (isset($row['arategroup'])) {
 			$this->addLineGroupData($counters, $row);
@@ -261,6 +261,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$priceAfterVat = $pricingData['aprice'];
 		if ($vatable) {
 			$priceAfterVat = $this->addLineVatableData($pricingData, $breakdownKey, Billrun_Util::getFieldVal($row['tax_data'],array()));
+			if ($priceAfterVat == false) {
+				Billrun_Factory::log('addLineVatableData failed: Tax data missing. Line stamp: ' . $row['stamp'], Zend_Log::CRIT);
+			}
 			if(!empty($row['tax_data']['taxes'])) {
 				foreach ($row['tax_data']['taxes'] as $tax) {
 					if(empty($tax['description'])) {
@@ -324,7 +327,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 			}
 			return $newPrice;
 		} else if( empty($taxData) ) {
-			Billrun_Factory::log('addLineVatableData failed: Tax data missing. data: ' . print_R($this->data, 1), Zend_Log::CRIT);
+			//Billrun_Factory::log('addLineVatableData failed: Tax data missing. data: ' . print_R($this->data, 1), Zend_Log::CRIT);
+			return false;
 		}
 		//else 
 		return $pricingData['aprice'];
