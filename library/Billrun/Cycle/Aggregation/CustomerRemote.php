@@ -63,6 +63,7 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 				$retResults[$revStamp]['id'] = array_filter($revision, function ($key) use ($idFields) { return in_array($key, $idFields); }, ARRAY_FILTER_USE_KEY);
 				$passthroughFields = ($revision['type'] == 'account') ? $this->passthroughFields : $this->subsPassthroughFields;
 				foreach ($passthroughFields as $passthroughField) {
+					$passthroughField = is_array($passthroughField) ? $passthroughField['value'] : $passthroughField;
 					if(isset($revision[$passthroughField])) {
 						$retResults[$revStamp]['passthrough'][$passthroughField] = $revision[$passthroughField];
 					}
