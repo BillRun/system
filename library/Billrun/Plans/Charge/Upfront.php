@@ -20,7 +20,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		parent::__construct($plan);
 		$this->seperatedCrossCycleCharges = Billrun_Util::getFieldVal(  $plan['separate_cross_cycle_charges'],
                                                                         Billrun_Factory::config()->getConfigValue('billrun.separate_cross_cycle_charges',
-                                                                                                                  $this->seperatedCrossCycleCharges) );
+																		$this->seperatedCrossCycleCharges) );
 	}
 
 	/**
@@ -78,7 +78,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 */
 	protected function getPriceByOffset($cycleCount) {
 		foreach ($this->price as $tariff) {
-			if ($tariff['from'] <= $cycleCount && (Billrun_Plan::isValueUnlimited($tariff['to']) ? PHP_INT_MAX : $tariff['to']) > $cycleCount) {
+			if ($tariff['from'] <= ceil($cycleCount) && (Billrun_Plan::isValueUnlimited($tariff['to']) ? PHP_INT_MAX : $tariff['to']) > $cycleCount) {
 				return $tariff['price'];
 			}
 		}
