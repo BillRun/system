@@ -803,12 +803,16 @@ db.taxes.createIndex({'key':1, 'from': 1, 'to': 1}, { unique: true, background: 
 db.taxes.createIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
 db.taxes.createIndex({'to': 1 }, { unique: false , sparse: true, background: true });
 
+lastConfig = runOnce(lastConfig, 'BRCD-3678', function () {
 //Suggestions Collection
 db.createCollection('suggestions');
-db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculationType':1, 'estimated_billrun':1}, { unique: true , background: true});
-db.suggestions.createIndex({'status': 1 }, { unique: false , background: true});
+    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1_estimated_billrun_1");
+    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1");
+    db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: true , background: true});
+    db.suggestions.createIndex({'status': 1 }, { unique: false , background: true});
 
 
+});
 // BRCD-1936: Migrate old discount structure to new discount structure
 function isEmpty(obj) {
     for(var key in obj) {
