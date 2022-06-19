@@ -108,6 +108,13 @@ class Billrun_Exporter extends Billrun_Generator_File {
      */
     protected $moved = false;
 
+    /**
+     * was the file created successfully
+     *
+     * @var bool
+     */
+    protected $created_successfully = true;
+
     public function __construct($options = array()) {
         parent::__construct($options);
         $this->exportTime = time();
@@ -205,9 +212,14 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $generatorOptions = $this->buildGeneratorOptions();
         $this->createLogDB($this->getLogStamp());
         $this->fileGenerator = new $className($generatorOptions);
-        $this->fileGenerator->generate();
+        $this->created_successfully = $this->fileGenerator->generate();
+        if (!$this->created_successfully) {
+            Billrun_Factory::log()->log("Export generator was faild writing to the file. File creation failed..", Zend_Log::ALERT);
+            return false;
+        }
         $transactionCounter = $this->fileGenerator->getTransactionsCounter();
         Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
+        return true;
     }
 
     /**
@@ -350,24 +362,9 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $orphanConfigTime = Billrun_Factory::config()->getConfigValue('export.orphan_wait_time', '6 hours');
         $exportStartIndex = count($this->query['$and']);
         $this->query['$and'][] = [
-            '$or' => [
-                [
-                    'export_start.' . static::$type => [
-                        '$exists' => false,
-                    ],
-                    'export_stamp.' . static::$type => [
-                        '$exists' => false,
-                    ],
-                ],
-                [
                     'exported.' . static::$type => [
                         '$exists' => false,
-                    ],
-                    'export_start.' . static::$type => [
-                        '$lt' => new MongoDate(strtotime("{$orphanConfigTime} ago")),
-                    ],
-                ],
-            ],
+                    ]
         ];
 
         $collection = $this->getCollection();
@@ -443,15 +440,15 @@ class Billrun_Exporter extends Billrun_Generator_File {
     }
 
     protected function shouldMarkAsExported() {
-        if (!$this->shouldFileBeMoved()) {
+        if (!$this->shouldFileBeMoved() && $this->created_successfully) {
             return true;
         }
 
         if ($this->config['exported_after_move'] ?? true) {
-            return $this->moved;
+            return $this->moved && $this->created_successfully;
         }
 
-        return true;
+        return true && $this->created_successfully;
     }
 
     protected function markAsExported() {
