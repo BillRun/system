@@ -440,15 +440,18 @@ class Billrun_Exporter extends Billrun_Generator_File {
     }
 
     protected function shouldMarkAsExported() {
-        if (!$this->shouldFileBeMoved() && $this->created_successfully) {
+        if (!$this->created_successfully) {
+            return false;
+        }
+        if (!$this->shouldFileBeMoved()) {
             return true;
         }
 
         if ($this->config['exported_after_move'] ?? true) {
-            return $this->moved && $this->created_successfully;
+            return $this->moved;
         }
 
-        return true && $this->created_successfully;
+        return true;
     }
 
     protected function markAsExported() {

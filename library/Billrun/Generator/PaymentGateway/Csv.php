@@ -104,8 +104,8 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if (!file_exists($this->local_dir)) {
 			mkdir($this->local_dir, 0777, true);
 		}
-		$ret = file_put_contents($this->file_path, $str, FILE_APPEND);
-		return $ret;
+		return file_put_contents($this->file_path, $str, FILE_APPEND);
+		
 	}
 
 	protected function writeHeaders() {
