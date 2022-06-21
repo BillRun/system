@@ -12,8 +12,9 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 /*
 	EPICIC-56: Invoice only customers that are flagged as "active" ones
 */
-	public function afterAggregatorLoadData($arr, &$data){ 
-		for ($i = 0; $i < sizeof($data); $i++) {
+	public function afterAggregatorLoadData($arr, &$data){
+            $dataSize =  sizeof($data);
+		for ($i = 0; $i < sizeof($dataSize); $i++) {
       $rawData_bill = $data[$i]->getInvoice()->getRawData()['attributes']['billable'];	
       if (isset($rawData_bill) && !$rawData_bill) {
 				unset($data[$i]);	
