@@ -14,7 +14,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 */
 	public function afterAggregatorLoadData($arr, &$data){
             $dataSize =  sizeof($data);
-		for ($i = 0; $i < sizeof($dataSize); $i++) {
+		for ($i = 0; $i < $dataSize; $i++) {
       $rawData_bill = $data[$i]->getInvoice()->getRawData()['attributes']['billable'];	
       if (isset($rawData_bill) && !$rawData_bill) {
 				unset($data[$i]);	
