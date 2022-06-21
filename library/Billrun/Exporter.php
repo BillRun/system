@@ -362,9 +362,24 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $orphanConfigTime = Billrun_Factory::config()->getConfigValue('export.orphan_wait_time', '6 hours');
         $exportStartIndex = count($this->query['$and']);
         $this->query['$and'][] = [
+            '$or' => [
+                [
+                    'export_start.' . static::$type => [
+                        '$exists' => false,
+                    ],
+                    'export_stamp.' . static::$type => [
+                        '$exists' => false,
+                    ],
+                ],
+                [
                     'exported.' . static::$type => [
                         '$exists' => false,
-                    ]
+                    ],
+                    'export_start.' . static::$type => [
+                        '$lt' => new MongoDate(strtotime("{$orphanConfigTime} ago")),
+                    ],
+                ],
+            ],
         ];
 
         $collection = $this->getCollection();
