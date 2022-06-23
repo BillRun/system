@@ -1188,12 +1188,13 @@ abstract class Billrun_Bill {
 				'valid_due_date' => array('$cond' => array(array('$and' => array(array('$ne' => array('$due_date', null)), array('$lt' => array('$due_date', new MongoDate())))), true, false)),
 				'aid' => 1,
 				'left_to_pay' => 1,
-				'left' => 1,
-                                'pending' => array('$cond' => array(array('$in' => array('$paid', array('2', 2))), true, false)),
-                                'pending_covering_amount' => 1
-                                
+				'left' => 1                              
 			)
 		);
+                if ($include_pending) {
+                    $project['$project']['pending'] = array('$cond' => array(array('$in' => array('$paid', array('2', 2))), true, false));
+                    $project['$project']['pending_covering_amount'] = 1;
+                }
 		$addFields = array(
 			'$addFields' => array(
 				'total_debt_valid_cond' => array('$and' => array(array('$and' => array(
