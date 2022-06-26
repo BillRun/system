@@ -290,11 +290,13 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if (isset($this->unifiedLines[$updatedRowStamp])) {
 			$existingRow = $this->unifiedLines[$updatedRowStamp];
 			$this->setMinUrt($newRow, $existingRow);
-			foreach ($typeFields['$inc'] as $field) {
-				$newVal = Billrun_Util::getIn($newRow, $field, null);
-				$exisingVal = Billrun_Util::getIn($existingRow, $field, null);
-				if (!is_null($newVal) && is_null($exisingVal)) {
-					Billrun_Util::setIn($existingRow, $field, 0);
+			if (isset($typeFields['$inc'])) {
+				foreach ($typeFields['$inc'] as $field) {
+					$newVal = Billrun_Util::getIn($newRow, $field, null);
+					$exisingVal = Billrun_Util::getIn($existingRow, $field, null);
+					if (!is_null($newVal) && is_null($exisingVal)) {
+						Billrun_Util::setIn($existingRow, $field, 0);
+					}
 				}
 			}
 		} else {
@@ -336,17 +338,20 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				Billrun_Util::setIn($serialize_array, $field, $newVal);
 			}
 		}
-
-		foreach ($typeData['stamp']['value']['custom_value'][$usaget] as $field) {
-			$newVal = Billrun_Util::getIn($newRow, $field, null);
-			if (!is_null($newVal)) {
-				Billrun_Util::setIn($serialize_array, $field, $newVal);
+		if (isset($typeData['stamp']['value']['custom_value'][$usaget])) {
+			foreach ($typeData['stamp']['value']['custom_value'][$usaget] as $field) {
+				$newVal = Billrun_Util::getIn($newRow, $field, null);
+				if (!is_null($newVal)) {
+					Billrun_Util::setIn($serialize_array, $field, $newVal);
+				}
 			}
 		}
-		foreach ($typeData['stamp']['value']['calculated_fields'][$usaget] as $field) {
-			$newVal = Billrun_Util::getIn($newRow, $field, null);
-			if (!is_null($newVal)) {
-				Billrun_Util::setIn($serialize_array, $field, $newVal);
+		if (isset($typeData['stamp']['value']['calculated_fields'][$usaget])) {
+			foreach ($typeData['stamp']['value']['calculated_fields'][$usaget] as $field) {
+				$newVal = Billrun_Util::getIn($newRow, $field, null);
+				if (!is_null($newVal)) {
+					Billrun_Util::setIn($serialize_array, $field, $newVal);
+				}
 			}
 		}
 
@@ -567,9 +572,11 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$updateFailedLines = array();
 		$incUpdate = $update;
 		unset($update['$inc']);
-		foreach ($update['$set'] as $field => $value) {
-			if ($field != 'process_time') {
-				unset($update['$set'][$field]);
+		if (isset($update['$set'])) {
+			foreach ($update['$set'] as $field => $value) {
+				if ($field != 'process_time') {
+					unset($update['$set'][$field]);
+				}
 			}
 		}
 		$update['$set']['lcount'] = $row['lcount'];
