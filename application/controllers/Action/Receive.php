@@ -32,10 +32,10 @@ class ReceiveAction extends Action_Base {
 			'workspace' => true,
 		);
 
-		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
+		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
-		$extraParams = $this->_controller->getParameters();
+		$extraParams = $this->getController()->getParameters();
 		if (!empty($extraParams)) {
 			$options = array_merge($extraParams, $options);
 		}
@@ -55,12 +55,19 @@ class ReceiveAction extends Action_Base {
 				}
 				if (empty($paymentGatewayReceiver)) {
 					$customPaymentGateways = Billrun_PaymentGateway_Connection::getReceiverSettings($options);
+					$this->getController()->addOutput("Custom payment gateways receiver action");
 					foreach ($customPaymentGateways as $fileType => $fileTypeSettings) {
-						foreach ($fileTypeSettings['connections'] as $connectionDetails) {
-							$connectionDetails['file_type'] = $fileType;
-							$connectionDetails['type'] = str_replace('_', '', ucwords($options['payment_gateway'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
-							$connection = Billrun_Factory::paymentGatewayConnection($connectionDetails);
-							$connection->receive();
+						if($fileType === $options['file_type']) {
+							$this->getController()->addOutput("Receiving file type : " . $fileType);
+							foreach ($fileTypeSettings['connections'] as $connectionDetails) {
+								$connectionDetails['file_type'] = $fileType;
+								$connectionDetails['type'] = str_replace('_', '', ucwords($options['payment_gateway'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
+								$this->getController()->addOutput("Initilazing receiver connection");
+								$connection = Billrun_Factory::paymentGatewayConnection($connectionDetails);
+								$this->getController()->addOutput("Receiving files...");
+								$files = $connection->receive();
+								$this->getController()->addOutput("Received " . count($files) . " files");
+							}
 						}
 					}
 				}

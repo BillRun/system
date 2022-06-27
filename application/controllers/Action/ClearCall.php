@@ -22,7 +22,7 @@ class ClearCallAction extends ApiAction {
 	 * and trigger clearCall event if necessary
 	 */
 	public function execute() {
-		$this->_controller->addOutput("Running ClearCall API...");
+		$this->getController()->addOutput("Running ClearCall API...");
 		$openCalls = self::getOpenCalls();
 		foreach ($openCalls as $call) {
 			$balance = $this->getBalance($call);

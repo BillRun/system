@@ -148,6 +148,10 @@ class PayAction extends ApiAction {
 	 * 
 	 */
 	protected function unfreezeDeposits($txIdArray, $request) {
+		if (!$this->idsAreDeposits($txIdArray)) {
+			$this->setError("One or more of the input IDs are not deposits");
+			return;
+		}
 		$unfreezedDeposits = array();
 		foreach ($txIdArray as $txid) {
 			$deposit = Billrun_Bill_Payment::getInstanceByid($txid);
@@ -276,12 +280,16 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 				Billrun_Bill_Payment::savePayments($cancellationPayments);
 			}
 			$succeededCancels = array();
+                        $paymentsAids = array();
 			foreach ($paymentsToCancel['payments'] as $payment) {
 				array_push($succeededCancels, $payment->getId());
 				$payment->markCancelled()->save();
 				$payment->detachPaidBills();
-				$payment->detachPayingBills();
-				Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+				$payment->detachPayingBills();	
+                                $paymentsAids = array_unique(array_merge([$payment->getAccountNo()], $paymentsAids));
+			}
+                        foreach ($paymentsAids as $aid) {				
+				Billrun_Bill::payUnpaidBillsByOverPayingBills($aid);
 			}
 		} catch (Exception $e) {
 			return $this->setError($e->getMessage(), $request->getPost());
@@ -308,7 +316,8 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 				$matchedPayment = Billrun_Bill_Payment::getInstanceByid($cancellation['txid']);
 				if (!empty($matchedPayment)) {
 					$matched = true;
-					if ($matchedPayment->isCancellation() || $matchedPayment->isCancelled() || $matchedPayment->isRejected() || $matchedPayment->isRejection()) {
+					if ($matchedPayment->isCancellation() || $matchedPayment->isCancelled() || $matchedPayment->isRejected() || $matchedPayment->isRejection() || 
+						$matchedPayment->isDeniedPayment() || $matchedPayment->isDenial()) {
 						$errors[] = "$txid cannot be cancelled";
 						$matched = false;
 					} else if (isset($cancellation['amount']) && ($cancellation['amount'] != $matchedPayment->getAmount())) {
@@ -369,4 +378,20 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 			'details' => $success ? 'merged installments successfully' : 'failed merging installments',
 		)));
 	}
+	
+	protected function idsAreDeposits($txIdArray) {
+		$query = [
+			"txid" => array('$in' => $txIdArray)
+		];
+		$bills = Billrun_Bill::getBills($query);
+		foreach($bills as $index => $bill) {
+			$bills[$index] = Billrun_Bill_Payment::getInstanceByData($bill);
+		}
+		$db_deposits = array_filter($bills, function($bill) {
+			return $bill->isDeposit();
+		});
+
+		return count($txIdArray) == count($db_deposits); 
+	}
+
 }

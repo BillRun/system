@@ -35,7 +35,7 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 	}
 	
 	protected function updatePayments($row, $payment = null) {
-		$customFields = $this->getCustomPaymentGatewayFields();
+		$customFields = $this->getCustomPaymentGatewayFields($row);
 		$payment->setExtraFields($customFields, array_keys($customFields));
 		if (is_null($payment)) {
                         $message = 'None matching payment for ' . $row['stamp'];
@@ -78,18 +78,15 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 		if (!empty($denial)) {
 			if (!is_null($payment)) {
                                 $message = "Denial was created successfully for payment: " . $row[$this->tranIdentifierField];
-				Billrun_Factory::log()->log($message, Zend_Log::NOTICE);
+				Billrun_Factory::log()->log($message, Zend_Log::INFO);
 				$this->informationArray['info'][] = $message;
-                                $payment->deny($denial);
-				$paymentSaved = $payment->save();
-                                $this->informationArray['transactions']['denied']++;
-				if (!$paymentSaved) {
-                                        $message = "Denied flagging failed for rec " . $row[$this->tranIdentifierField];
-					$this->informationArray['errors'][] = $message;
-                                        Billrun_Factory::log()->log($message, Zend_Log::ALERT);
+				$res = $payment->deny($denial);
+				$this->informationArray['transactions']['denied']++;
+				if(isset($res['status']) && !$res['status']){
+					$this->informationArray['errors'][] = $res['massage'];
 				}
 			} else {
-				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::NOTICE);
+				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::INFO);
 			}
                         $this->informationArray['total_denied_amount']+=$payment->getAmount();
 		} else {

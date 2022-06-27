@@ -24,8 +24,8 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	public function __construct(array $options) {
 		parent::__construct($options);
-		if (!isset($options['plan'], $options['cycle'])) {
-			Billrun_Factory::log("Invalid aggregate plan data!");
+		if (!$this->verifyConstrctionOptions($options)) {
+			Billrun_Factory::log("Invalid aggregate data for : ".get_class($this), Zend_Log::WARN);
 			return;
 		}
 		$this->name = $options['plan'];
@@ -35,6 +35,10 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		$this->start = Billrun_Util::getFieldVal($options['start'], $this->start);
 		$this->end = Billrun_Util::getFieldVal($options['end'], $this->end);
 		$this->foreignFields = $this->getForeignFields(array('plan' => $options), $this->stumpLine);
+	}
+
+	protected  function verifyConstrctionOptions($options) {
+	 return isset($options['plan'], $options['cycle']);
 	}
 
 	protected function getCharges($options) {
@@ -64,6 +68,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		if (!empty($chargeData['end']) && $this->cycle->end() - 1 > $chargeData['end']) {
 			$entry['end'] = new MongoDate($chargeData['end']);
 		}
+
 
 		$entry = $this->addExternalFoerignFields($entry);
 		$entry = $this->addTaxationToLine($entry);
@@ -98,7 +103,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 	}
 	
 	protected function addExternalFoerignFields($entry) {
-		return array_merge($this->getForeignFields(array(), array_merge($this->foreignFields,$entry),TRUE),$entry);
+		return array_merge($this->getForeignFields(array(), array_merge($this->foreignFields, $entry), true), $entry);
 	}
 
 	protected function generateLineStamp($line) {
@@ -112,7 +117,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			$taxCalc = Billrun_Calculator::getInstance(array('autoload' => false, 'type' => 'tax'));
 			$entryWithTax = $taxCalc->updateRow($entry);
 			if (!$entryWithTax) {
-				Billrun_Factory::log("Taxation of {$entry['name']} failed retring...", Zend_Log::WARN);
+				Billrun_Factory::log("Taxation of {$entry['name']} failed. Retrying...", Zend_Log::WARN);
 				sleep(1);
 			}
 		}

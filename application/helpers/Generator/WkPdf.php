@@ -124,6 +124,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->render_subscription_details = Billrun_Util::getFieldVal($options['subscription_details'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_subscription_details', TRUE));
 		$this->tanent_css = $this->buildTanentCss(Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_tanent_css', ''));
 		$this->is_fake_generation = Billrun_Util::getFieldVal($options['is_fake'],FALSE);
+		$this->render_detailed_quantitative_services = Billrun_Util::getFieldVal($options['detailed_quantitative_services'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_detailed_quantitative_services', FALSE));
 	}
 
 	/**
@@ -136,6 +137,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('decimal_mark', Billrun_Factory::config()->getConfigValue(self::$type . '.decimal_mark', '.'));
 		$this->view->assign('thousands_separator', Billrun_Factory::config()->getConfigValue(self::$type . '.thousands_separator', ','));
 		$this->view->assign('company_name', Billrun_Util::getCompanyName());
+		$this->view->assign('company_address', Billrun_Util::getCompanyAddress());
+		$this->view->assign('company_phone', Billrun_Util::getCompanyPhone());
+		$this->view->assign('company_email', Billrun_Util::getCompanyEmail());
 		$this->view->assign('sumup_template', APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.sumup_template', ''));
 		$this->view->assign('details_template', APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_template', ''));
 		$this->view->assign('details_table_template', APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_table_template', '/application/views/invoices/details/details_table.phtml'));
@@ -158,6 +162,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('template', $this->template);
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
 		$this->view->assign('invoice_display_options', Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_display_options', []));
+		$this->view->assign('is_onetime', $this->is_onetime);
 		$this->prepareGraphicsResources();
 	}
 
@@ -396,6 +401,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected function accountSpecificViewParams($billrunData) {
 		$this->view->assign('render_usage_details', $this->render_usage_details);
 		$this->view->assign('render_subscription_details', $this->render_subscription_details);
+		$this->view->assign('render_detailed_quantitative_services', $this->render_detailed_quantitative_services);
 
 		if (isset($billrunData['attributes']['invoice_details']['usage_details'])) {
 			$this->view->assign('render_usage_details', $billrunData['attributes']['invoice_details']['usage_details']);
@@ -526,6 +532,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$tmpdirPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . str_replace(' ', '_', static::getCompanyName()) . DIRECTORY_SEPARATOR . $stamp . DIRECTORY_SEPARATOR;
 		if (!file_exists($tmpdirPath)) {
 			mkdir($tmpdirPath, 0775, true);
+			chmod($tmpdirPath, 0775);
 		}
 		return $tmpdirPath;
 	}

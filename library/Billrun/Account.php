@@ -57,6 +57,9 @@ abstract class Billrun_Account extends Billrun_Base {
 		if (isset($options['extra_data'])) {
 			$this->customerExtraData = $options['extra_data'];
 		}
+		if (isset($options['data'])) {
+			$this->data = $options['data'];
+		}
 	}
 
 	/**
@@ -258,8 +261,9 @@ abstract class Billrun_Account extends Billrun_Base {
 			}
 			$query[$key] = $value;
 		}
-
-		$query['limit'] = $limit;
+		if($limit){
+			$query['limit'] = $limit;
+		}
 		return $query;
 	}
 	
@@ -367,5 +371,21 @@ abstract class Billrun_Account extends Billrun_Base {
 	
 	public function getData() {
 		return $this->data;
+	}
+	
+	/**
+	 * Function that returns the relevant aids for collection.
+	 * @param array $aids
+	 * @param bollean $is_aids_query
+	 * @param array $rejection_conditions
+	 * @return array of aids
+	 */
+	public static function getBalanceAccountQuery($aids, $is_aids_query, $rejection_conditions) {
+		$rejection_query = [];
+		foreach ($rejection_conditions as $condition) {
+			$rejection_query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];
+		}
+		$account_query = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
+		return array_merge($rejection_query, $account_query);
 	}
 }

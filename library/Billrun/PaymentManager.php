@@ -30,6 +30,7 @@ class Billrun_PaymentManager {
 	 * Handles payment (awaits response)
 	 */
 	public function pay($method, $paymentsData, $params = []) {
+                Billrun_Factory::dispatcher()->trigger('beforePaymentManagerPay', array(&$method, &$paymentsData, &$params));
 		if (!Billrun_Bill_Payment::validatePaymentMethod($method, $params)) {
 			return $this->handleError("Unknown payment method {$method}");
 		}
@@ -299,11 +300,11 @@ class Billrun_PaymentManager {
 					$payment->setPending(true);
 					$addonData = array('aid' => $payment->getAid(), 'txid' => $payment->getId());
 					$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails, $addonData);
+                                        $responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
 				} catch (Exception $e) {
 					$payment->setGatewayChargeFailure($e->getMessage());
 					$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
 					Billrun_Factory::log('Failed to pay bill: ' . $e->getMessage(), Zend_Log::ALERT);
-					continue;
 				}
 			} else {
 				$paymentStatus = array(
@@ -313,8 +314,8 @@ class Billrun_PaymentManager {
 				if (empty($paymentStatus['status'])) {
 					return $this->handleError("Missing status from gateway for single payment");
 				}
+                                $responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
 			}
-			$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
 			$txId = $gateway->getTransactionId();
 			$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
 			$postPayment->setTransactionId($txId);
@@ -348,17 +349,17 @@ class Billrun_PaymentManager {
 	 */
 	protected function handleSuccessPayments($postPayments, $params = []) {
 		foreach ($postPayments as $postPayment) {
-			$payment = $postPayment->getPayment();
+                        $payment = $postPayment->getPayment();
 			if (empty($payment)) {
 				return $this->handleError("Cannot get payment");
 			}
 			$paymantData = $payment->getRawData();
 			$transactionId = Billrun_Util::getIn($paymantData, 'payment_gateway.transactionId');
-			if (isset($paymantData['payment_gateway']) && empty($transactionId)) {
+                        $pgResponse = $postPayment->getPgResponse();
+			if (isset($paymantData['payment_gateway']) && empty($transactionId) && $pgResponse['stage'] != 'Rejected') {
 				return $this->handleError('Illegal transaction id for aid ' . $paymantData['aid'] . ' in response from ' . $paymantData['name']);
 			}
 
-			$pgResponse = $postPayment->getPgResponse();
 			$customerDir = $postPayment->getCustomerDirection();
 			$gatewayDetails = $payment->getPaymentGatewayDetails();
 
@@ -383,7 +384,7 @@ class Billrun_PaymentManager {
 						}
 						$updatedBill = $postPayment->getUpdatedBill($billType, $billId);
 						if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
-							$updatedBill->attachPayingBill($payment, $amountPaid, empty($pgResponse['stage']) ? 'Completed' : $pgResponse['stage'])->save();
+							$updatedBill->attachPayingBill($payment, $amountPaid, (!empty($pgResponse) && empty($pgResponse['stage']) || ($this->isFileBasedCharge($params) && $payment->isWaiting())) ? 'Pending' : @$pgResponse['stage'])->save();
 						} else {
 							$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
 						}
@@ -422,7 +423,7 @@ class Billrun_PaymentManager {
 
 	protected function setUserFields (&$prePayment) {
 		$payment = $prePayment->getPayment();
-		$payment->setUserFields($prePayment->getData());
+		$payment->setUserFields($prePayment->getData(), true);
 	}
 
 

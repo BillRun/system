@@ -10,7 +10,7 @@
  *
  * @author yossi
  */
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
 define('UNIT_TESTING', 'true');
 
@@ -21,6 +21,11 @@ class Tests_Monthsdifftest extends UnitTestCase {
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span></br>';
 	public $message;
 	public $epsilon = 0.000001;
+	/*
+	  * for calculating the expected result: the month is equal to 1,
+	 *  Exemple: subscriber from 01/03/2020 to 02/03/2020 for a month with 31 days, Divide the  month 1/31 * 2 
+	*/
+	
 	protected $tests = array(
 		array('test number' => 1, 'from' => "2019-02-11", 'to' => "2019-02-12", 'expected_result' => '0.07142857142'),
 		array('test number' => 2, 'from' => "2017-11-01", 'to' => "2018-11-01", 'expected_result' => '12.03333333333'),
@@ -33,6 +38,18 @@ class Tests_Monthsdifftest extends UnitTestCase {
 		array('test number' => 9, 'from' => "2019-01-31", 'to' => "2019-02-01", 'expected_result' => '0.067972351'),
 		array('test number' => 10, 'from' => "2019-02-1", 'to' => "2020-02-29", 'expected_result' => '13'),
 		array('test number' => 11, 'from' => "2019-02-1", 'to' => "2020-02-28", 'expected_result' => '12.96551724'),
+	        array('test number' => 12, 'from' => "2020-07-1", 'to' => "2020-07-30", 'expected_result' => '0.967741935483871'),
+		array('test number' => 13, 'from' => "2020-06-1", 'to' => "2020-07-30", 'expected_result' => '1.9677419354839'),
+		/*End = from + 1 month*/
+		array('test number' => 14, 'from' => "2019-03-01", 'to' => "2019-03-31", 'expected_result' => '1'),
+		/*End = from + 1 month - 1 day*/
+		array('test number' => 15, 'from' => "2019-03-01", 'to' => "2019-03-30", 'expected_result' => '0.967741935'),
+		/*End = from + 1 month + 1 day*/
+		array('test number' => 16, 'from' => "2019-03-01", 'to' => "2019-04-01", 'expected_result' => '1.0333333333333'),
+		/*End = from */
+		array('test number' => 17, 'from' => "2019-03-01", 'to' => "2019-03-01", 'expected_result' => '0.032258065'),
+
+		
 	);
 
 	public function __construct($label = false) {

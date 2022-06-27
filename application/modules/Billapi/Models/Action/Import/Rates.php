@@ -21,6 +21,27 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	 */
 	protected $rates_by_plan = array();
 	
+	protected $specical_field = [
+		'__MULTI_FIELD_ACTION__',
+		'__UPDATER__',
+		'__CSVROW__',
+		'__ERRORS__',
+		'price_plan',
+		'price_from',
+		'price_to',
+		'price_interval',
+		'price_value',
+		'usage_type_value',
+		'usage_type_unit',
+	];
+
+	protected $tax_fields = [
+		'tax__type',
+		'tax__taxation',
+		'tax__custom_logic',
+		'tax__custom_tax'
+	];
+	
 	/**
 	 * On Create action check for:
 	 * 1. Create Rate  - OK
@@ -31,22 +52,252 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	 * 2. Update Plan revision
 	 * 
 	 */
+	protected function runManualMappingQuery($entities) {
+		$entities = $this->combineRateLines($entities);
+		$this->rates_by_plan = $this->getRatePlans($entities);
+		return parent::runManualMappingQuery($entities);
+	}
+
+	protected function setTaxValue($data, $params) {
+		$export_config = $this->getExportMapper();
+		$type = $data[$export_config['tax.0.type']['title']];
+		$taxation = $data[$export_config['tax.0.taxation']['title']];
+		$custom_logic = $data[$export_config['tax.0.custom_logic']['title']];
+		$custom_tax = $data[$export_config['tax.0.custom_tax']['title']];
+		return [[
+			"type" => $type,
+			"taxation" => $taxation,
+			"custom_logic" => $custom_logic,
+			"custom_tax" => $custom_tax,
+		]];
+	}
 	
-	protected function runQuery() {
+	protected function setPriceValue($data, $params) {
+		$export_config = $this->getExportMapper();
+		$from = $this->fromArray($data[$export_config['price.from']['title']]);
+		$to = $this->fromArray($data[$export_config['price.to']['title']]);
+		$interval = $this->fromArray($data[$export_config['price.interval']['title']]);
+		$price = $this->fromArray($data[$export_config['price.price']['title']]);
+		$uom_range = $this->fromArray($data[$export_config['price.uom_display.range']['title']]);
+		$uom_interval = $this->fromArray($data[$export_config['price.uom_display.interval']['title']]);
+
+		$rate = [];
+		foreach ($from as $idx => $value) {
+			$rate[] = [
+				'from' => floatval($value),
+				'to' => is_numeric($to[$idx]) ? floatval($to[$idx]) : $to[$idx],
+				'interval' => floatval($interval[$idx]),
+				'price' => floatval($price[$idx]),
+				'uom_display' => [
+					'range' => $uom_range[$idx],
+					'interval' => $uom_interval[$idx],
+				]
+			];
+		}
+		return [
+			$data[$export_config['usaget']['title']] => [
+				$data[$export_config['plan']['title']] => [
+					'rate' => $rate,
+				]
+			],
+		];
+	}
+
+	protected function getRatePlans($entities) {
 		$rates = array();
-		foreach ($this->update as $rate) {
+		foreach ($entities as $rate) {
 			$keyField = !empty($rate['__UPDATER__']['value']) ? $rate['__UPDATER__']['value'] : 'key';
 			$rates[$keyField] = array();
-			if(!empty($rate['rates'])) {
+			if (!empty($rate['rates'])) {
 				foreach ($rate['rates'] as $usaget => $pricing) {
 					$rates[$keyField] = array_merge($rates[$keyField], array_keys($pricing));
 				}
 			}
 		}
-		$this->rates_by_plan = $rates;
-		return parent::runQuery();
+		return $rates;
+	}
+
+	protected function combineRateLines($entities) {
+		$operation = $this->operation;
+		$import_fields = $this->update['import_fields'];
+		$multi_value_fields = array_column(array_filter($import_fields, function($field) {
+			return $field['multiple'] === true;
+		}), 'value');
+		$revision_date_field = ($operation === 'create') ? 'from' : 'effective_date';
+		$entity_key = Billrun_Util::getIn($entities, [0, '__UPDATER__', 'value'], Billrun_Util::getIn($entities, 'key', 'key'));
+		if ($operation == 'permanentchange') {
+			$entities = array_map(function($entity) { 
+				$field = Billrun_Util::getIn($entity, ['__UPDATER__', 'field'], '');
+				$value = Billrun_Util::getIn($entity, ['__UPDATER__', 'value'], '');
+				if (empty(Billrun_Util::getIn($entity, $field, ''))){
+					Billrun_Util::setIn($entity, $field, $value);
+				}
+				return $entity;
+			}, $entities);
+		}
+		$entities_by_key = Billrun_Util::groupArrayBy($entities, [$entity_key, $revision_date_field]);
+		$combined_entities = [];
+		foreach ($entities_by_key as $key => $group_by_date) {
+			foreach ($group_by_date as $date => $rate_group) {
+				$acc = $rate_group[0];
+				foreach ($rate_group as $idx => $rate) {
+					$acc = $this->combineRate($acc, $rate, $idx, $operation, $multi_value_fields);
+				}
+				$combined_entities[] = $acc;
+			}
+		}
+		return $combined_entities;
+	}
+
+	protected function combineRate($combine_rate, $rate_line, $index, $operation, $multi_value_fields) {
+		$is_percentage = Billrun_Util::getIn($rate_line, ['rates', 'percentage'], '') !== '';
+		$is_price = Billrun_Util::getIn($rate_line, 'price_value', '') !== '';
+		$is_base = Billrun_Util::getIn($rate_line, 'price_plan', 'BASE') === 'BASE';
+
+		$csv_row = Billrun_Util::getIn($rate_line, '__CSVROW__', 'unknown');
+		$erros_path = ['__ERRORS__', $csv_row];
+		$errors = Billrun_Util::getIn($combine_rate, $erros_path, []);
+
+		if ($is_percentage && !$is_base) {
+			$usage_type = Billrun_Util::getIn($rate_line, 'usage_type_value', '_KEEP_SOURCE_USAGE_TYPE_');
+			$plan_name = Billrun_Util::getIn($rate_line, 'price_plan', 'BASE');
+			$rate_path = ['rates', $usage_type, $plan_name, 'percentage'];
+			$price_percentage = floatval(Billrun_Util::getIn($rate_line, ['rates', 'percentage'], 1));
+			Billrun_Util::setIn($combine_rate, ['rates', 'percentage'], $price_percentage);
+		} else if ($is_price) {
+			if (isset($rate_line['price_from'])
+				&& isset($rate_line['price_to'])
+				&& isset($rate_line['price_interval'])
+				&& isset($rate_line['price_value'])
+				&& ((isset($rate_line['usage_type_unit']) && isset($rate_line['usage_type_value']) && $operation === 'create')
+					|| $operation !== 'create'
+					)
+			) {
+				$usage_type = Billrun_Util::getIn($rate_line, 'usage_type_value', '_KEEP_SOURCE_USAGE_TYPE_');
+				$plan_name = Billrun_Util::getIn($rate_line, 'price_plan', 'BASE');
+				$rate_path = ['rates', $usage_type, $plan_name, 'rate'];
+				$rates = Billrun_Util::getIn($combine_rate, $rate_path, []);
+				$last_rate = end($rates);
+				if ($index == 0 || $rate_line['price_from'] != $last_rate['from']) {
+					$price_from = Billrun_Util::getIn($rate_line, 'price_from', '') !== '' ? floatval(Billrun_Util::getIn($rate_line, 'price_from', '')) : 0;
+					$price_to = Billrun_Util::getIn($rate_line, 'price_to', '') !== '' ? Billrun_Util::getIn($rate_line, 'price_to', '') : 'UNLIMITED';
+					$price_to = is_numeric($price_to) ? floatval($price_to) : $price_to;
+					$price_interval = Billrun_Util::getIn($rate_line, 'price_interval', '') !== '' ? floatval(Billrun_Util::getIn($rate_line, 'price_interval', '')) : 0;
+					$price_value = Billrun_Util::getIn($rate_line, 'price_value', '') !== '' ? floatval(Billrun_Util::getIn($rate_line, 'price_value', '')) : 0;
+					$rates[] = [
+						'from' => $price_from,
+						'to' => $price_to,
+						'interval' => $price_interval,
+						'price' => $price_value,
+						'uom_display' => [
+							'range' => Billrun_Util::getIn($rate_line, 'usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+							'interval' => Billrun_Util::getIn($rate_line, 'usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+						],
+					];
+					Billrun_Util::setIn($combine_rate, $rate_path, $rates);
+				}
+			} else {
+				$mandatory_price_fields = ['price_from', 'price_to', 'price_interval', 'price_value'];
+				if ($operation === 'create') {
+					$mandatory_price_fields[] = 'usage_type_value';
+					$mandatory_price_fields[] = 'usage_type_unit';
+				}
+				foreach ($mandatory_price_fields as $mandatory_price_field) {
+					if (!isset($rate_line[$mandatory_price_field])) {
+						$errors[] = "missing {$mandatory_price_field} data";
+						Billrun_Util::setIn($combine_rate, $erros_path, $errors);
+					}
+				}
+			}
+		}
+
+		foreach ($rate_line as $field_name => $value) {
+			// do not combine specical_field
+			if (in_array($field_name, $this->specical_field)) {
+				continue;
+			}
+			if (is_array($value)) {
+				foreach ($value as $field_key => $field_val) {
+					$combine_rate = $this->combileFieldsValues("{$field_name}.{$field_key}", $field_val, $index, $combine_rate, $multi_value_fields, $csv_row);
+				}
+			} else {
+				$combine_rate = $this->combileFieldsValues($field_name, $value, $index, $combine_rate, $multi_value_fields, $csv_row);
+			}
+		}
+			
+		// convert Price and Interval by unit
+		$converted_rates = $this->getItemConvertedRates($combine_rate);
+		if (!empty($converted_rates)) {
+			Billrun_Util::setIn($combine_rate, 'rates', $converted_rates);
+		}
+
+		// push all rows number that build combined revision
+		$csv_rows = Billrun_Util::getIn($combine_rate, '__CSVROW__', []);
+		if (!is_array($csv_rows)) {
+			$csv_rows = [$csv_rows];
+		}
+		if ($index !== 0) {
+			$csv_rows[] = $csv_row;
+		}
+		Billrun_Util::setIn($combine_rate, '__CSVROW__', $csv_rows);
+
+		// Delete all help fields that was added by UI.
+		unset($combine_rate['tax__custom_logic']);
+		unset($combine_rate['tax__custom_tax']);
+		unset($combine_rate['tax__taxation']);
+		unset($combine_rate['rates.percentage']);
+		unset($combine_rate['price_plan']);
+		unset($combine_rate['price_from']);
+		unset($combine_rate['price_to']);
+		unset($combine_rate['price_interval']);
+		unset($combine_rate['price_value']);
+		unset($combine_rate['usage_type_value']);
+		unset($combine_rate['usage_type_unit']);
+
+		return $combine_rate;
 	}
 	
+	protected function combileFieldsValues($field_name, $value, $index, $combine_rate, $multi_value_fields, $csv_row) {
+		$erros_path = ['__ERRORS__', $csv_row];
+		$errors = Billrun_Util::getIn($combine_rate, $erros_path, []);
+		// Check all other fields field with same value
+		if ($index !== 0
+			&& !in_array($field_name, $this->tax_fields)
+			&& !in_array($field_name, $multi_value_fields)
+			&& $value !== Billrun_Util::getIn($combine_rate, $field_name, '')
+		) {
+			$errors[] = "different values for {$field_name} field";
+			Billrun_Util::setIn($combine_rate, $erros_path, $errors);
+		}
+
+		// build multivalues field value
+		if (in_array($field_name, $multi_value_fields)) {
+			$prev = Billrun_Util::getIn($combine_rate, $field_name, []);
+			if (!is_array($prev)) {
+				$prev = array_map('trim', array_filter(explode(",", $prev), 'strlen'));
+			}
+			$new = array_map('trim', array_filter(explode(",", $value), 'strlen'));
+			$prev_with_new = array_unique(array_merge($prev, $new));
+			$prev_with_new = implode(",", $prev_with_new);
+			Billrun_Util::setIn($combine_rate, $field_name, $prev_with_new);
+		}
+
+		// build tax object
+		if (in_array($field_name, $this->tax_fields)) {
+			$tax_field_name_array = explode("__", $field_name);
+			$tax_field_path = [$tax_field_name_array[0], 0, $tax_field_name_array[1]];
+			$tax_value = Billrun_Util::getIn($combine_rate, $tax_field_path, '');
+			if ($index !== 0 && $value !== $tax_value) {
+				$errors[] = "different values for {$tax_field_name_array[0]} {$tax_field_name_array[1]} field";
+				Billrun_Util::setIn($combine_rate, $erros_path, $errors);
+			} else {
+				$tax_value = Billrun_Util::getIn($rate_line, $field_name, '');
+				Billrun_Util::setIn($combine_rate, [$tax_field_name_array[0], 0, $tax_field_name_array[1]], $tax_value);
+			}
+		}
+		return $combine_rate;
+	}
+
 	protected function isTaxRateExists($key, $from) {
 		$taxQuery = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($from));
 		$taxQuery['key'] = $key;
@@ -55,6 +306,62 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 			return false;
 		}
 		return true;
+	}
+	
+	protected function getValueByUnit ($usaget, $unit, $value) {
+		if ($value === 'UNLIMITED') {
+			return 'UNLIMITED';
+		}
+		if (in_array($value, [0, '0'])) {
+			return 0;
+		}
+		$uoms = Billrun_Utils_Units::getUnitsOfMeasure($usaget);
+		$uoms = array_filter($uoms, function($uom) use ($unit) {
+			return $uom['name'] == $unit;
+		});
+		$u =  Billrun_Util::getIn($uoms, [0, 'unit'], 1);
+		return implode(",", array_map(function($val) use ($u){
+			return $val * $u;
+		}, explode(",", $value)));
+	}
+	
+	protected function getItemConvertedRates($item) {
+		$rate_rates = Billrun_Util::getIn($item, 'rates', []);
+		foreach ($rate_rates as $usaget => $rates) {
+			foreach ($rates as $plan => $rate_steps) {
+				$rate = Billrun_Util::getIn($rate_steps, 'rate', []);
+				foreach ($rate as $index => $rate_step) {
+					$range_unit = Billrun_Util::getIn($rate_step, ['uom_display', 'range'], 'counter');
+					$interval_unit = Billrun_Util::getIn($rate_step, ['uom_display', 'interval'], 'counter');
+					$from = Billrun_Util::getIn($rate_step, 'from', '');
+					$converted_from = $this->getValueByUnit($usaget, $range_unit,$from);
+					$new_from = is_numeric($converted_from) ? floatval($converted_from) : $converted_from;
+					$to = Billrun_Util::getIn($rate_step, 'to', '');
+					$converted_to = $this->getValueByUnit($usaget, $range_unit, $to);
+					$new_to = is_numeric($converted_to) ? floatval($converted_to) : $converted_to;
+					$price = Billrun_Util::getIn($rate_step, 'price', '');
+					$converted_price = is_numeric($price) ? floatval($price) : $price;
+					$interval = Billrun_Util::getIn($rate_step, 'interval', '');
+					$converted_interval = $this->getValueByUnit($usaget, $interval_unit, $interval);
+					$new_interval = is_numeric($converted_interval) ? floatval($converted_interval) : $converted_interval;
+					$rate_path =  "{$usaget}.{$plan}.rate.{$index}";
+					
+					Billrun_Util::setIn($rate_rates, $rate_path . '.from', $new_from);
+					Billrun_Util::setIn($rate_rates, $rate_path . '.to', $new_to);
+					Billrun_Util::setIn($rate_rates, $rate_path . '.price', $converted_price);
+					Billrun_Util::setIn($rate_rates, $rate_path . '.interval', $new_interval);
+				}
+		
+				$percentage = Billrun_Util::getIn($rate, ['percentage'], null);
+				if (!is_null($percentage)) {
+					$rate_path = "usaget.plan";
+					$converted_percentage = $percentage / 100 ;
+					Billrun_Util::setIn($rate_rates, $rate_path . '.percentage', $converted_percentage);
+				}
+			}
+		}
+
+		return [];
 	}
 	
 	protected function importEntity($entity) {
@@ -89,13 +396,14 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 					switch ($action) {
 						case 'append':
 							$oldValues = Billrun_Util::getIn($existingRate, $path, []);
-							$newValues = $entity[$fieldName];
-							$entity[$fieldName] = array_unique(array_merge($oldValues, $newValues));
+							$newValues = Billrun_Util::getIn($entity, $path, []);
+							$mergedValues = array_unique(array_merge($oldValues, $newValues));
+							Billrun_Util::setIn($entity, $path, $mergedValues);
 							break;
 						case 'remove':
-							$entity[$fieldName] = [];
+							Billrun_Util::setIn($entity, $path, []);
 							break;
-						case 'replace':
+						case 'replace': // use new values as is
 						default:
 							break;
 					}
@@ -228,6 +536,71 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 			return $plan_updates;
 		}
 		return parent::importEntity($entity);
+	}
+
+	/**
+	 * Override the parrent methode because price can be related to Plan \ Service 
+	 * in this case we need to update Plan \ Service entity and not the Rate itself
+	 * @param type $row
+	 * @param type $mapping
+	 * @return boolean
+	 */
+	protected function importPredefinedMappingEntity($row, $mapping) {
+		$entityData = $this->getPredefinedMappingEntityData($row, $mapping);
+		$usaget = reset(array_keys(Billrun_Util::getIn($entityData, 'rates', [])));
+		$usaget = empty($usaget) ? '' : $usaget;
+		$planName = reset(array_keys(Billrun_Util::getIn($entityData, ['rates', $usaget], [])));
+		if ($planName !== 'BASE') {
+			$rateKey = Billrun_Util::getIn($entityData, 'key', '');
+			$from = Billrun_Util::getIn($entityData, 'from', '');
+			// Check if update Plan or Service by serching for plan if not exist update service
+			$planQuery = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($from));
+			$planQuery['name'] = $planName;
+			$existingPlan = Billrun_Factory::db()->plansCollection()->query($planQuery)->cursor()->current();
+			$collection = 'plans';
+			if (!$existingPlan || $existingPlan->isEmpty()) {
+				$collection = 'services';
+				$existingPlan = Billrun_Factory::db()->servicesCollection()->query($planQuery)->cursor()->current();
+			}
+			if (!$existingPlan || $existingPlan->isEmpty()) {
+				return "Not found Plan \ Service {$planName} to override price";
+			}
+			$existingRateRates = $existingPlan['rates'];
+			$query = [
+				'effective_date' => $from,
+				'name' => $planName
+			];
+			$update = [
+				'from' => $from,
+				'rates' => $existingRateRates,
+			];
+			$rates = Billrun_Util::getIn($entityData, ['rates', $usaget]);
+			if (!empty($rates[$planName]['rate'])) {
+				$update['rates'][$rateKey][$usaget]['rate'] = $rates[$planName]['rate'];
+			} else if (!empty($rates[$planName]['percentage'])) {
+				$update['rates'][$rateKey][$usaget]['percentage'] = (float)$rates[$planName]['percentage'];
+			}
+			$params = array(
+				'collection' => $collection,
+				'request' => array(
+					'action' => 'permanentchange',
+					'update' => json_encode($update),
+					'query' => json_encode($query)
+				)
+			);
+			$entityModel = $this->getEntityModel($params);
+			try {
+				$result = $entityModel->permanentchange();
+				if($result !== true) {
+					return $result;
+				}
+				return true;
+			} catch (Exception $exc) {
+				return $exc->getMessage();
+			}
+		} else {
+			return parent::importPredefinedMappingEntity($row, $mapping);
+		}
 	}
 	
 }

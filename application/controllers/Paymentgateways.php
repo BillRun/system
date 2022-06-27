@@ -42,6 +42,7 @@ class PaymentGatewaysController extends ApiController {
 			}
 			$fields = $paymentGateway->getDefaultParameters();
 			$setting['params'] = $fields;
+			$setting['secret_fields'] = $paymentGateway->getSecretFields();
 			$setting['receiver'] = $paymentGateway->getReceiverParameters();
 			$setting['export'] = $paymentGateway->getExportParameters();
 			$settings[] = $setting;

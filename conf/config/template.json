@@ -80,6 +80,12 @@
 			}
 		}
 	},
+	"suggestions" : {
+		"fields": []
+	},
+	"user" : {
+		"fields": []
+	},
 	"taxation" :{
 		"tax_type": "usage",
 		 "CSI": {
@@ -102,6 +108,9 @@
         "import": {
             "mapping": []
         },
+	"report":{
+		"fields": []
+	},
 	"taxes": {
 		"fields": [
 			{
@@ -147,6 +156,9 @@
 			}
 		]
 	},
+	"bills": {
+		"fields": []
+	},
         "discounts": {
     "fields": [
       {
@@ -170,6 +182,10 @@
     ]
   },
   "billrun" : {
+        "fields": [],
+        "multi_day_cycle":  false,
+        "invoicing_day": 1,
+        "fields": [],
         "allowances" : {
             "enabled": false,
             "included_in_allowance": false,

@@ -22,10 +22,12 @@ abstract class Billrun_PaymentGateway_Connection {
 	protected $remoteDir;
 	protected $connectionDetails;
 	protected $filenameRegex;
+	protected $recursive_mode;
 	protected $workspace;
 	protected $limit;
 	protected $fileType;
 	protected $localDir;
+	protected $delete_received;
 
 	public function __construct($options) {
 		if (!isset($options['connection_type']) || !isset($options['host'])  || !isset($options['user']) ||
@@ -37,7 +39,9 @@ abstract class Billrun_PaymentGateway_Connection {
 		$this->password = $options['password'];
 		$this->remoteDir = isset($options['remote_directory']) ? $options['remote_directory'] : '';
 		$this->localDir = isset($options['export_directory']) ? $options['export_directory'] : '';
+		$this->recursive_mode = isset($options['recursive_mode']) ? $options['recursive_mode'] : false;
 		$this->filenameRegex = !empty($options['filename_regex']) ? $options['filename_regex'] : '/.*/';
+		$this->delete_received = isset($options['delete_received']) ? $options['delete_received'] : false;
 		$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getFieldVal($options['workspace'], 'workspace'));
 		if (isset($options['backup_path'])) {
 			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath($options['backup_path']);

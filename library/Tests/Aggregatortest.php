@@ -1,22 +1,23 @@
 <?php
 
- /**
-  * @package         Billing
-  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
-  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
-  */
- /**
-  * 
-  * @package  calculator
-  * @since    0.5
-  */
- require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ */
+/**
+ * 
+ * @package  calculator
+ * @since    0.5
+ */
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
  define('UNIT_TESTING', 'true');
 
  class Tests_Aggregator extends UnitTestCase {
 
      use Tests_SetUp;
+
      protected $fails;
      protected $ratesCol;
      protected $plansCol;
@@ -44,13 +45,16 @@
      public $sumBillruns;
      protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span><br>';
      protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span><br>';
-     protected $tests = array(
+	public function test_cases() {
+
+
+		return array(
          /* check if the pagination work */
          array('test' => array('test_number' => 1, 'aid' => 0, 'function' => array('pagination',), 'options' => array("page" => 3000, "size" => 3000, "stamp" => "201805")),
              'expected' => array(),
              'postRun' => array()),
          /* test 1 Account with single subscriber with a plan (aid:3,sid:4,plan_a) */
-         array('test' => array('test_number' => 2, "aid" => 3, 'function' => array('basicCompare', 'checkInvoiceId','invoice_exist', 'lineExists', 'passthrough'), 'invoice_path' => '201805_3_101.pdf', 'options' => array('generate_pdf' => 1, "stamp" => "201805", "force_accounts" => array(3))),
+		array('test' => array('test_number' => 2, "aid" => 3, 'function' => array('basicCompare', 'checkInvoiceId', 'invoice_exist', 'lineExists', 'passthrough'), 'invoice_path' => '201805_3_101.pdf', 'options' => array('generate_pdf' => 1, "stamp" => "201805", "force_accounts" => array(3))),
              'expected' => array('billrun' => array('invoice_id' => 101, 'billrun_key' => '201805', 'aid' => 3),
                  'line' => array('types' => array('flat', 'credit'), 'final_charge' => (-10))),
              'postRun' => array()),
@@ -85,7 +89,7 @@
              'postRun' => array('saveId'),
          ),
          /* part b */
-         array('test' => array('test_number' => 10, "aid" => 21, 'sid' => 20, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201806", "force_accounts" => array(21))),
+		array('test' => array('test_number' => 10, "aid" => 21, 'sid' => 20, 'function' => array('checkForeignFileds', 'basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'checkForeignFileds' => ['discount' => ["foreign.discount.description" => 'ttt']], 'options' => array("stamp" => "201806", "force_accounts" => array(21))),
              'expected' => array('billrun' => array('invoice_id' => 108, 'billrun_key' => '201806', 'aid' => 21, 'after_vat' => array("21" => 57.745161289), 'total' => 57.745161289, 'vatable' => 49.354838709677416, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))),
          ),
@@ -335,12 +339,12 @@
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 56, "aid" => 1402, 'sid' => 402, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1402))),
-             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1402, 'after_vat' => array("402" => 75.106451612903), 'total' => 75.106451612903, 'vatable' =>  64.19354838709, 'vat' => 17),
+			'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1402, 'after_vat' => array("402" => 75.106451612903), 'total' => 75.106451612903, 'vatable' => 64.19354838709, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          //start timezone GMT+2 ent timezone GMT +3
          array('test' => array('test_number' => 57, "aid" => 1502, 'sid' => 502, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1502))),
-             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1502, 'after_vat' => array("502" =>98.50645), 'total' => 98.50645, 'vatable' =>  84.193548, 'vat' => 17),
+			'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1502, 'after_vat' => array("502" => 98.50645), 'total' => 98.50645, 'vatable' => 84.193548, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 58, "aid" => 1602, 'sid' => 602, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1602))),
@@ -369,30 +373,94 @@
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 64, "aid" => 1603, 'sid' => 603, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1603))),
-             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1603, 'after_vat' => array("603" => 40.76129119), 'total' => 40.76129119, 'vatable' => 34.83870926,  'vat' => 17),
+			'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1603, 'after_vat' => array("603" => 40.76129119), 'total' => 40.76129119, 'vatable' => 34.83870926, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 65, "aid" => 1703, 'sid' => 703, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1703))),
              'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1703, 'after_vat' => array("703" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
-   
+		  //check that the subscriber isn't charge about one more day in case he subscribr between 1/7/2020 - 30/07/2020
+		  array('test' => array('test_number' => 66, "aid" => 187501, 'sid' => 187500, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202008", "force_accounts" => array(187501))),
+			'expected' => array('billrun' => array('billrun_key' => '202008', 'aid' => 187501, 'after_vat' => array("187500" => 113.22580645161288), 'total' => 113.22580645161288, 'vatable' => 96.77419354838709, 'vat' => 17),
+                 'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2742",
+         ),
              array('test' => array('test_number' => 68, "aid" => 1770, 'sid' => 1771, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202005", "force_accounts" => array(1770))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202005', 'aid' => 1770, 'after_vat' => array("1771" => 200), 'total' => 200, 'vatable' => 200, 'vat'=>0)),
-             'line' => array('types' => array('flat', 'service')),'jiraLink' =>"https://billrun.atlassian.net/browse/BRCD-2492"
+			'expected' => array('billrun' => array('billrun_key' => '202005', 'aid' => 1770, 'after_vat' => array("1771" => 200), 'total' => 200, 'vatable' => 200, 'vat' => 0)),
+			'line' => array('types' => array('flat', 'service')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2492"
+		),
+		//BRCD-2993 with discount 
+		array('test' => array('test_number' => 69, "aid" => 2000000784, 'sid' => 290, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202101", "force_accounts" => array(2000000784))),
+			'expected' => array('billrun' => array('billrun_key' => '202101', 'aid' => 2000000784, 'after_vat' => array("290" => 29.08097389230968, "0" => 1.9565442), 'total' => 30.339039414890326, 'vatable' => 25.93080291870968, 'vat' => 0)),
+			'line' => array('types' => array('flat', 'service', 'credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2993"
+		),
+		//BRCD-2993 without discount 
+		array('test' => array('test_number' => 70, "aid" => 2000000785, 'sid' => 291, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202101", "force_accounts" => array(2000000785))),
+			'expected' => array('billrun' => array('billrun_key' => '202101', 'aid' => 2000000785, 'after_vat' => array("291" => 7.586449083870966, "0" => 1.9565442), 'total' => 9.542993283870967, 'vatable' => 7.5594141935483865, 'vat' => 0)),
+			'line' => array('types' => array('flat', 'service', 'credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2993"
+		),
+		//
+		array('test' => array('test_number' => 71, "aid" => 17975, 'sid' => 17976, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202101", "force_accounts" => array(17975))),
+			'expected' => array('billrun' => array('billrun_key' => '202101', 'aid' => 17975, 'after_vat' => array("17976" => 160.0258064516129), 'total' => 160.0258064516129, 'vatable' => 136.7741935483871, 'vat' => 0)),
+			'line' => array('types' => array('flat', 'credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2988"
+		),
+		//case for BRCD-2996 (It seems that the 'expandSubRevisions'  will not fully support  multiple termination of services  under the same  revision.)
+		array('test' => array('test_number' => 72, "aid" => 725, 'sid' => 825, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202102", "force_accounts" => array(725))),
+			'expected' => array('billrun' => array('billrun_key' => '202102', 'aid' => 725, 'after_vat' => array("825" => 213.61935483870974), 'total' => 213.61935483870974, 'vatable' => 182.5806451612904, 'vat' => 0)),
+			'line' => array('types' => array('flat', 'credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2996"
+		),
+		array('test' => array('label' => 'test the prorated discounts days is rounded down', 'test_number' => 73, "aid" => 230, 'sid' => 80018, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202012", "force_accounts" => array(230))),
+			'expected' => array('billrun' => array('billrun_key' => '202012', 'aid' => 230, 'after_vat' => array("80018" => 35.778665181058486), 'total' => 35.778665181058486, 'vatable' => 30.58005571030641, 'vat' => 17),
+				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3014",
+		),
+		array('test' => array('label' => 'test the service line created', 'test_number' => 74, "aid" => 399, 'sid' => 499, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202103", "force_accounts" => array(399))),
+			'expected' => array('billrun' => array('billrun_key' => '202103', 'aid' => 399, 'after_vat' => array("499" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3013",
+		),
+		array('test' => array('label' => 'test the Conditional charge is applied only to one subscriber under the account instead of two', 'test_number' => 75, "aid" => 3082, 'sid' => array(3083,3084), 'function' => array('basicCompare', 'sumSids', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202106", "force_accounts" => array(3082))),
+			'expected' => array('billrun' => array( 'billrun_key' => '202106', 'aid' => 3082, 'after_vat' => array("3083" => 175.5, "3084" => 175.5), 'total' => 351, 'vatable' => 300, 'vat' => 17),
+				'line' => array('types' => array('credit')))
          ),
-         array(
-             'preRun' => ('expected_invoice'),
-             'test' => array('test_number' => 66,),
-             'expected' => array(),
-         ),
-         /* run full cycle */
-         array(
-             'preRun' => ('changeConfig'),
-             'test' => array('test_number' => 67, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
-             'expected' => array(),
-         )
+		array('test' => array('test_number' => 76, "aid" => 145, 'sid' => 245, 'function' => array('checkForeignFileds', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'checkForeignFileds' => ['plan' => ["foreign.plan.name" => 'PLAN_C'], 'service' => ['foreign.service.name' => 'NOT_TAXABLE'], 'discount' => ['foreign.service.name' => 'NOT_TAXABLE', "foreign.plan.name" => 'PLAN_C']], 'options' => array("stamp" => "202103", "force_accounts" => array(145))),
+			'expected' => array('billrun' => array('invoice_id' => 108, 'billrun_key' => '202103', 'aid' => 145, 'after_vat' => array("245" => 207), 'total' => 207, 'vatable' => 190, 'vat' => 17),
+				'line' => array('types' => array('flat', 'credit'))),
+		),
+		//Multi day cycle test 
+			//allowPremature true invoicing day + force accounts , only some of the account will run 
+			array('preRun' => ['allowPremature', 'removeBillruns'],
+				'test' => array('test_number' => 73, 'aid' => 1, 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [10000, 10027, 10026,10025], 'invoicing_days' => ["1", "28"])),
+				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10000=>"1", 10027=>"28"]), 'postRun' => ''),
+			//allowPremature true invoicing day without  force accounts , only accounts with same day as the pass invoice day will run 
+			array('preRun' => ['allowPremature', 'removeBillruns'],
+				'test' => array('test_number' => 74, 'aid' => 1, 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),  'invoicing_days' => ["26", "27"])),
+				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10025=>"26", 10026=>"27"]), 'postRun' => ''),
+			//allowPremature false invoicing day  all the days 1-28 , + force accounts with account from all day only acccount with invoice day <= today will run 
+			array('preRun' => ['notallowPremature', 'removeBillruns'],
+				'test' => array('test_number' => 75, 'aid' => 'abcd', 'function' => array('testMultiDayNotallowPremature'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
+						'invoicing_days' => ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28"],
+						'force_accounts' => [10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009, 10010, 10011, 10012, 10013, 10014, 10015, 10016, 10017, 10018, 10019, 10020, 10021, 10022, 10023, 10024, 10025, 10026, 10027]
+					)),
+				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('1 month')), 'accounts' => [
+						10000 => "1", 10001 => "2", 10002 => "3", 10003 => "4", 10004 => "5", 10005 => "6",
+						10006 => "7", 10007 => "8", 10008 => "9", 10009 => "10", 10010 => "11", 10011 => "12",
+						10012 => "13", 10013 => "14", 10014 => "15", 10015 => "16", 10016 => "17", 10017 => "18",
+						10018 => "19", 10019 => "20", 10020 => "21", 10021 => "22", 10022 => "23", 10023 => "24",
+						10024 => "25", 10025 => "26", 10026 => "27", 10027 => "28"]),
+				'line' => array('types' => array('flat', 'credit')),
+			),
+		array(
+			'preRun' => ('expected_invoice'),
+			'test' => array('test_number' => 67,),
+			'expected' => array(),
+		),
+		/* run full cycle */
+		array(
+			'preRun' => ('changeConfig'),
+			'test' => array('test_number' => 67, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
+			'expected' => array(),
+		)
      );
+	}
 
      public function __construct($label = false) {
          parent::__construct("test Aggregatore");
@@ -403,6 +471,7 @@
          $this->discountsCol = Billrun_Factory::db()->discountsCollection();
          $this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
          $this->balancesCol = Billrun_Factory::db()->discountsCollection();
+	 $this->billingCyclr = Billrun_Factory::db()->billing_cycleCollection();
          $this->billrunCol = Billrun_Factory::db()->billrunCollection();
          $this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes']);
          $this->setColletions();
@@ -440,10 +509,14 @@
       */
      public function TestPerform() {
 
+		$this->tests = $this->test_cases();
          foreach ($this->tests as $key => $row) {
 
              $aid = $row['test']['aid'];
-             $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'].'</span><br>';
+			$this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
+			if (isset($row['test']['label'])) {
+				$this->message .= '<br>test label :  ' . $row['test']['label'];
+			}
              // run fenctions before the test begin 
              if (isset($row['preRun']) && !empty($row['preRun'])) {
                  $preRun = $row['preRun'];
@@ -466,8 +539,8 @@
                  }
                  foreach ($function as $func) {
                     $testFail = $this->assertTrue($this->$func($key, $returnBillrun, $row));
-                    if(!$testFail){
-                        $this->fails.="|---|<a href='#{$row['test']['test_number']}'>{$row['test']['test_number']}</a>";
+					if (!$testFail) {
+						$this->fails .= "|---|<a href='#{$row['test']['test_number']}'>{$row['test']['test_number']}</a>";
                     }
                  }
              }
@@ -485,8 +558,8 @@
              }
              $this->message .= '<p style="border-top: 1px dashed black;"></p>';
          }
-         if ($this->fails){
-             $this->message.=$this->fails;
+		if ($this->fails) {
+			$this->message .= $this->fails;
          }       
          print_r($this->message);
          $this->restoreColletions();
@@ -537,26 +610,32 @@
              $passed = false;
              $this->message .= 'aid :' . $retun_aid . $this->fail;
          }
+		return $passed;
+	}
 
-         return $passed;
-     }
-	 public function checkInvoiceId($key, $returnBillrun, $row) {
-		 $passed = TRUE;
-         $invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
-         $retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
+	public function checkInvoiceId($key, $returnBillrun, $row) {
+		$passed = TRUE;
+		$invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
+		$retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
          if (isset($invoice_id)) {
-
+             
              if (!empty($retun_invoice_id) && $retun_invoice_id == $invoice_id) {
                  $this->message .= 'invoice_id :' . $retun_invoice_id . $this->pass;
              } else {
                  $passed = false;
-				 '<br> — invoice_id: ' . $invoice_id . 
-                 $this->message .=  'invoice_id expected to be : ' .$invoice_id. ' result is '.$retun_invoice_id . $this->fail;
+                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->fail;
              }
-         } 
-	 }
-		 
-	 
+         } else {
+			if (!empty($retun_invoice_id) && $retun_invoice_id == $this->LatestResults[0][0]['invoice_id'] + 1) {
+                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->pass;
+             } else {
+                 $passed = false;
+                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->fail;
+             }
+         }
+
+         return $passed;
+	}
 
      /**
       * check if all subscribers was calculeted
@@ -661,6 +740,7 @@
          }
          return $allLines;
      }
+        
 
      /**
       * check if all the lines was created 
@@ -953,7 +1033,6 @@
          return $passed;
      }
 
-
      /**
       * Check override mode using passthrough_fields 
       * @param int $key number of the test case
@@ -1096,7 +1175,7 @@
              foreach ($returnBillrun['subs'] as $sub) {
                  if ($sid == $sub['sid']) {
                      if (!array_key_exists('plan', $sub)) {
-                         $this->message .= "plan filed NOT exists in billrun object" . $this->fail;
+                         $this->message .= "plan filed does NOT exist in billrun object" . $this->fail;
                          $passed = false;
                      } else {
                          $this->message .= "plan filed exists in billrun object" . $this->pass;
@@ -1108,5 +1187,192 @@
          return $passed;
      }
 
+	/**
+	 *  check if  Foreign Fileds create correctly
+	 * 
+	 * @param int $key number of the test case
+	 * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param array $row current test case current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
+	public function checkForeignFileds($key, $returnBillrun, $row) {
+		$passed = TRUE;
+		$this->message .= "<b> Foreign Fileds :</b> <br>";
+		$entitys = $row['test']['checkForeignFileds'];
+		$lines = $this->getLines($row);
+		foreach ($lines as $line) {
+			if ($line['usaget'] == 'discount') {
+				$lines_['discount'][] = $line;
+			}
+			if ($line['type'] == 'service') {
+				$lines_['service'][] = $line;
+			}
+			if ($line['type'] == 'flat') {
+				$lines_['plan'][] = $line;
+			}
  }
+		$billruns = $this->getBillruns();
+		$billruns_ = [];
+		foreach ($billruns as $bill) {
+			$billruns_[] = $bill->getRawData();
+		}
  
+		foreach ($row['test']['checkForeignFileds'] as $key => $val) {
+			foreach ($val as $path => $value) {
+				for ($i = 0; $i <= count($lines_[$key]); $i++) {
+					if ($lineValue = Billrun_Util::getIn($lines_[$key][$i], $path)) {
+						if ($lineValue == $value) {
+							$this->message .= "Foreign Fileds exists  line type $key ,</br> path : " . $path . "</br>value : " . $value . $this->pass;
+							continue 2;
+						}
+			}
+			if (!$find) {
+				$this->message .= "billrun not crate for aid $aid " . $this->fail;
+				$this->assertTrue(0);
+			}
+		}}}
+
+		//Checks that no  billruns have been created that should not be created
+		if (count($billruns_) > count($aids)) {
+
+			$wrongBillrun = array_filter($billruns_, function(array $bill) use ($aids) {
+				return !in_array($bill['aid'], $aids);
+			});
+
+			foreach ($wrongBillrun as $wrong => $bill) {
+				$this->message .= "billrun  crate for aid {$bill['aid']} and was not meant to be formed " . $this->fail;
+				$this->assertTrue(0);
+			}
+		}
+
+		//Checking that invoicing day is correct
+		foreach ($billruns_ as $bill) {
+			foreach ($aid_and_days as $aid => $day) {
+				if ($bill['aid'] == $aid) {
+					if ($bill['invoicing_day'] == $day) {
+						$this->message .= "billrun  invoicing_day for aid $aid is correct ,day : $day" . $this->pass;
+						continue 2;
+					} else {
+						$this->message .= "Foreign Fileds not created  line type $key ,</br> path : " . $path . "</br>value : " . $value . $this->fail;
+						$passed = FALSE;
+						continue 2;
+					}
+				}
+			}
+		}
+		return $passed;
+	}
+
+ public function allowPremature($param) {
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/allow_premature_run.ini');
+}
+	public function notallowPremature($param) {
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
+	}
+
+	public function testMultiDay($key, $returnBillrun, $row) {
+		$passed = true;
+		
+		$aids = [];
+		foreach ($row['expected']['accounts'] as $aid => $day) {
+			$aids[] = $aid;
+			$aid_and_days[$aid] = $day;
+		}
+
+		$billruns = $this->getBillruns();
+		$billruns_ = [];
+		foreach ($billruns as $bill) {
+			$billruns_[] = $bill->getRawData();
+		}
+
+		//Checks that all the  billruns  that should have been created were created
+		$find = false;
+		foreach ($aids as $aid) {
+			$find = false;
+			foreach ($billruns_ as $bills) {
+				if ($bills['aid'] == $aid) {
+					$this->message .= "billrun crate for aid $aid  " . $this->pass;
+					$find = true;
+					continue 2;
+				}
+			}
+			if (!$find) {
+				$this->message .= "billrun not crate for aid $aid " . $this->fail;
+				$this->assertTrue(0);
+			}
+		}
+
+		//Checks that no  billruns have been created that should not be created
+		if (count($billruns_) > count($aids)) {
+
+			$wrongBillrun = array_filter($billruns_, function(array $bill) use ($aids) {
+				return !in_array($bill['aid'], $aids);
+			});
+
+			foreach ($wrongBillrun as $wrong => $bill) {
+				$this->message .= "billrun  crate for aid {$bill['aid']} and was not meant to be formed " . $this->fail;
+				$this->assertTrue(0);
+			}
+		}
+
+		//Checking that invoicing day is correct
+		foreach ($billruns_ as $bill) {
+			foreach ($aid_and_days as $aid => $day) {
+				if ($bill['aid'] == $aid) {
+					if ($bill['invoicing_day'] == $day) {
+						$this->message .= "billrun  invoicing_day for aid $aid is correct ,day : $day" . $this->pass;
+						continue 2;
+					} else {
+						$this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  : $day , actual result is{$bill['invoicing_day'] } " . $this->fail;
+						$this->assertTrue(0);
+					}
+				}
+			}
+		}
+	}
+
+	public function removeBillruns() {
+		$this->billingCyclr->remove(['billrun_key' => ['$ne' => 'abc']]);
+		$this->billrunCol->remove(['billrun_key' => ['$ne' => 'abc']]);
+	}
+
+	public function testMultiDayNotallowPremature($key, $returnBillrun, $row) {
+		$now = date('d');
+		$billruns = $this->getBillruns();
+		$billruns_ = [];
+		$aid_and_days = $row['expected']['accounts'];
+		foreach ($billruns as $bill) {
+			$billruns_[] = $bill->getRawData();
+		}
+
+		foreach ($billruns_ as $bill) {
+			
+					if ($bill['invoicing_day'] == $aid_and_days[$bill['aid']]) {
+						$this->message .= "billrun  invoicing_day for aid $aid is correct ,day : {$aid_and_days[$bill['aid']]}" . $this->pass;
+					} else {
+						$this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  :  {$aid_and_days[$bill['aid']]} , actual result is{$bill['invoicing_day'] } " . $this->fail;
+						 $this->assertTrue(0);
+					}
+					if ($bill['invoicing_day'] <= $now) {
+						$this->message .= "notallowPrematurun  is corrcet now its  $now  and  invoicing day  is{$aid_and_days[$bill['aid']]} aid $aid " . $this->pass;
+					} else {
+						$this->message .= "notallowPrematurun  is not  corrcet now its  $now  and  invoicing day  is {$aid_and_days[$bill['aid']]}  aid $aid " . $this->fail;
+						$this->assertTrue(0);
+					}
+					$this->message .= '<br>****************************************************************<br>';
+
+			
+			
+		}
+	}
+
+	public function cleanAfterAggregate($key, $row) {
+		$stamp = $row['test']['options']['stamp'];
+		$account[] = $row['test']['aid'];
+		Billrun_Aggregator_Customer::removeBeforeAggregate($stamp, $account);
+	}
+
+	
+
+ 
+ }

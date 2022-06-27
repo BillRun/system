@@ -192,6 +192,45 @@ class Billrun_Util {
 	}
 	
 	/**
+	 * method to remove prefix from string
+	 * 
+	 * @param string $str the string to remove prefix
+	 * @param string $prefix the prefix
+	 * @return string the $str without prefix
+	 */
+	public static function removePrefix($str, $prefix) {
+		if(0 === strpos($str, $prefix)) {
+			$str = substr($str, strlen($prefix));
+		}
+		return $str;
+	}
+	
+	/**
+	 * Recursive group array of object by key(s)
+	 * 
+	 * @param type $array_of_objects
+	 * @param array $keys to group by
+	 * @return array of objects grouped by key(s) 
+	 */
+	public static function groupArrayBy($array_of_objects, $keys) {
+		$out = array();
+		$key = array_shift($keys);
+		foreach ($array_of_objects as $array_object){
+			$group_key = $array_object[$key];
+			if (!array_key_exists($array_object[$key], $out)) {
+				$out[$group_key] = [];
+			}
+			$out[$group_key][] = $array_object;
+		}
+		if (!empty($keys)) {
+			foreach ($out as $key => $group) {
+				$out[$key] = self::groupArrayBy($group, $keys);
+			}
+		}
+		return $out;
+	}
+	
+	/**
 	 * Returns a readable date from billrun key.
 	 * example: converts "201607" to : "July 2016"
 	 * 
@@ -208,10 +247,15 @@ class Billrun_Util {
 	 * example: converts "201607" to : "July 2016"
 	 * 
 	 * @param type $billrunKey
+	 * @param string $format - returned date format
+	 * @param string $invoicing_day - custom invoicing day - in case multi day cycle system's mode on.
 	 * @return type
 	 */
-	public static function billrunKeyToPeriodSpan($billrunKey,$format) {
-		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+	public static function billrunKeyToPeriodSpan($billrunKey, $format, $invoicing_day = null) {
+		if (Billrun_Factory::config()->isMultiDayCycle() && empty($invoicing_day)) {
+			$invoicing_day = Billrun_Factory::config()->getConfigChargingDay();
+		} 
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey, $invoicing_day);
 		return date($format, $cycleData->start()) .' - '. date($format, $cycleData->end()-1);
 	}
 
@@ -980,9 +1024,13 @@ class Billrun_Util {
 		fclose($fd);
 	}
 
-	public static function logFailedResetLines($sids, $billrun_key) {
+	public static function logFailedResetLines($sids, $billrun_key, $invoicing_day = null) {
 		$fd = fopen(Billrun_Factory::config()->getConfigValue('resetlines.failed_sids_file', './files/failed_resetlines.json'), 'a+');
-		fwrite($fd, json_encode(array('sids' => $sids, 'billrun_key' => $billrun_key)) . PHP_EOL);
+		$output = array('sids' => $sids, 'billrun_key' => $billrun_key);
+		if (!is_null($invoicing_day)) {
+			$output['invoicing_day'] = $invoicing_day;
+		}
+		fwrite($fd, json_encode($output) . PHP_EOL);
 		fclose($fd);
 	}
 
@@ -1569,7 +1617,7 @@ class Billrun_Util {
 		foreach ($translations as $key => $trans) {
 			$sourceKey = Billrun_Util::getIn($trans, array('translation', 'source_key'), $key);
 			if (!isset($source[$sourceKey])&& empty($trans['nullable'])) {
-				Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
+				Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::DEBUG);
 			} else if(is_string($trans) && isset($source[$sourceKey])){
 				//Handle s simple field copy  translation
 				$retData[$trans] =  $source[$sourceKey];
@@ -1586,8 +1634,7 @@ class Billrun_Util {
 							$val = call_user_func_array($trans['translation']['function'], array(@$source[$sourceKey],
 																										   $userData) );
 						} else {
-							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
-							continue;
+							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::DEBUG);
 						}
 						break;
 					//Handle regex translation
@@ -1599,13 +1646,11 @@ class Billrun_Util {
 						} else if(isset($trans['translation'])) {
 							$val = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
 						} else {
-							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
-							continue;
+							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::DEBUG);
 						}
 						break;
 					default :
 							Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
-							continue;
 						break;
 				}
 				if (!is_null($val) || empty($trans['ignore_null'])) {
@@ -1641,6 +1686,39 @@ class Billrun_Util {
 		$current = $value;
 	}
 	
+
+	/**
+	 * Deeply unset an array values by path.
+	 *
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
+	 * @param type $clean_tree - if TRUE, all empty branches  in in keys will be removed
+	 */
+	public static function unsetInPath(&$arr, $keys, $clean_tree = false) {
+		if (empty($keys)) {
+			return;
+		}
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		$prev_el = NULL;
+		$el = &$arr;
+		foreach ($keys as &$key) {
+			$prev_el = &$el;
+			$el = &$el[$key];
+		}
+		if ($prev_el !== NULL) {
+			unset($prev_el[$key]);
+		}
+		if ($clean_tree) {
+			array_pop($keys);
+			$prev_branch = static::getIn($arr, $keys);
+			if (empty($prev_branch)) {
+				static::unsetInPath($arr, $keys, true);
+			}
+		}
+	}
+
 	/**
 	 * Deeply unsets an array value.
 	 * 
@@ -1673,8 +1751,8 @@ class Billrun_Util {
 	 * 
 	 * @param array $arr
 	 * @param array/string $keys  - array of keys, or string of keys separated by "."
-	 * @param any $defaultValue - returns in case one the fields is not found
-	 * @return the value in the array, default value if one of the keys is not found
+	 * @param mixed $defaultValue - returns in case one the fields is not found
+	 * @return mixed the value in the array, default value if one of the keys is not found
 	 */
 	public static function getIn($arr, $keys, $defaultValue = null) {
 		if (!$arr) {
@@ -1697,6 +1775,19 @@ class Billrun_Util {
 		}
 		
 		return $ret;
+	}
+	
+	/**
+	 * Increase the value in an array.
+	 * Also supports deep fetch (for nested arrays)
+	 * 
+	 * @param array $arr
+	 * @param array/string $keys  - array of keys, or string of keys separated by "."
+	 * @param float $value - the value to add
+	 */
+	public static function increaseIn(&$arr, $keys, $value) {
+		$currentValue = Billrun_Util::getIn($arr, $keys, 0);
+		Billrun_Util::setIn($arr, $keys, $currentValue + $value);
 	}
 	
 	/**
@@ -1874,32 +1965,6 @@ class Billrun_Util {
 
 		return $retVal;
 	}
-
-	/**
-	 *  Get all user fields that are used in calculator and rating stages.
-	 * @param string $type - input processor name
-	 * @return array - user fields names
-	 */
-	public static function getCustomerAndRateUf($type) {
-		$fieldNames = array();
-		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
-		$customerIdentificationFields = $fileTypeConfig['customer_identification_fields'];
-		foreach ($customerIdentificationFields as $fields) {
-			$customerFieldNames = array_column($fields, 'src_key');
-			$fieldNames = array_merge($fieldNames, $customerFieldNames);
-		}
-		$rateCalculators = $fileTypeConfig['rate_calculators'];
-		foreach ($rateCalculators as $rateByUsaget) {
-			foreach ($rateByUsaget as $priorityByUsaget) {
-				foreach ($priorityByUsaget as $priority) {
-					$rateFieldNames = array_column($priority, 'line_key');
-					$fieldNames = array_merge($fieldNames, $rateFieldNames);
-				}
-			}
-		}
-
-		return array_unique($fieldNames);
-	}
 	
 	/**
 	 * Aggregate strings representing time from some start point
@@ -1919,11 +1984,36 @@ class Billrun_Util {
 		return $actualTime;
 	}
 	
+        /**
+         * Rounds a number.
+         * @param string $roundingType - round up, round down or round nearest. 
+         * @param float $number - The value to round
+         * @param int $decimals-  The optional number of decimal digits to round to
+         * @return float
+         */
+        public static function roundingNumber($number, $roundingType, $decimals = 0){
+            switch ($roundingType){
+                    case 'up': 
+                        $newNumber = ceil($number*pow(10,$decimals))/pow(10,$decimals);
+                        break;
+                    case 'down':
+                        $newNumber = floor($number*pow(10,$decimals))/pow(10,$decimals);
+                        break;
+                    case 'nearest':
+                        $newNumber = round($number, $decimals); 
+                        break;
+                    default:
+                        return;
+                }
+            return $newNumber;   
+        }
+
 	public static function addGetParameters($url, $queryData) {
 		$query = parse_url($url, PHP_URL_QUERY);	
 		$url .= ($query ? "&" : "?") . http_build_query($queryData);
 		$url = htmlspecialchars($url);
 		return $url;
 	}
+
 
 }

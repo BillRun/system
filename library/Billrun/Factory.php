@@ -133,6 +133,13 @@ class Billrun_Factory {
 	protected static $auth = null;
 	
 	/**
+	 * Oauth container for oauth2
+	 * 
+	 * @var Oauth2\Server
+	 */
+	protected static $oauth2 = array();
+	
+	/**
 	 * Collection instance
 	 * 
 	 * @var Billrun_Billrun Collection
@@ -565,5 +572,35 @@ class Billrun_Factory {
 	public static function paymentGatewayConnection($connectionDetails) {
 		return Billrun_PaymentGateway_Connection::getInstance($connectionDetails);
 	}
+	
+	/**
+	 * method to receive the oauth2 authenticator instance
+	 * 
+	 * @param array $params oauth2 server params; see OAuth2\Server constructor
+	 * 
+	 * @return OAuth2\Server
+	 */
+	public static function oauth2($params = array()) {
+		$stamp = Billrun_Util::generateArrayStamp($params);
+		if (!isset(self::$oauth2[$stamp])) {
+			$configParams = Billrun_Factory::config()->getConfigValue('oauth2', array()); // see OAuth2\Server constructor for available options
+			forEach ($configParams as $key => $value) {
+				if (!isset($params[$key])) {
+					$params[$key] = is_numeric($value) ? (int) $value : $value;
+				}
+			}
+			OAuth2\Autoloader::register();
+			$storage = new Billrun_OAuth2_Storage_MongoDB(Billrun_Factory::db()->getDb()->getDb());
+			self::$oauth2[$stamp] = new OAuth2\Server($storage, $params);
+			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\ClientCredentials($storage));
+			// Future compatibility
+//			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\AuthorizationCode($storage));
+//			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\JwtBearer($storage));
+//			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\RefreshToken($storage));
+//			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\UserCredentials($storage));
+		}
+		return self::$oauth2[$stamp];
+	}
+
 
 }

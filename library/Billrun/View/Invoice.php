@@ -51,6 +51,10 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$typeMapping = array('flat' => array('rate'=> 'description','line'=>'name'), 
 							 'service' => array('rate'=> 'description','line' => 'name'));
 		
+		if (isset($rate['invoice_description'])) {
+			return $rate['invoice_description'];
+		}
+		
 		if(in_array($line['type'],array_keys($typeMapping))) {			
 			$usageName = isset($typeMapping[$line['type']]['rate']) ? 
 								$rate[$typeMapping[$line['type']]['rate']] :
@@ -143,14 +147,14 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	
 	protected function getLineAggregationKey($line,$rate,$name) {
 		$key = $name;
-		if($line['type'] == 'service' && $rate['quantitative']) {
+		if(!empty($this->render_detailed_quantitative_services) && $line['type'] == 'service' && $rate['quantitative']) {
 			$key .= $line['usagev']. $line['sid'];
 		}
 		if(!empty($line['start'])) {
 			$key .= date('ymd',$line['start']->sec);
 		}
 		if(!empty($line['end'])) {
-			$key .=  date('ymd',$line['end']->sec);
+			$key .=  '_'.date('ymd',$line['end']->sec);
 		}
 		if(!empty($line['cycle'])) {
 			$key .= $line['cycle'];
@@ -241,9 +245,15 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function getSubscriberServices($sid) {
 		if(!isset($this->subServices[$sid])) {
 			$this->subServices[$sid] = [];
+			//Get  only relevent subscriber revisions
 			$query = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $this->data['start_date']->sec,$this->data['end_date']->sec);
 			$query['sid'] = $sid;
-			$aggrgatePipeline = [['$match'=>$query],['$unwind'=>'$services'],['$group'=>['_id'=>null,'services'=>['$addToSet'=>'$services']]]];
+			//Get only services relevent to the  current billrun
+			$filterServices = Billrun_Utils_Mongo::getOverlappingWithRange('services.from', 'services.to', $this->data['start_date']->sec,$this->data['end_date']->sec);
+			$aggrgatePipeline = [['$match'=>$query],
+								['$unwind'=>'$services'],
+								['$match'=>$filterServices],
+								['$group'=>['_id'=>null,'services'=>['$addToSet'=>'$services']]]];
 			$subservs = Billrun_Factory::db()->subscribersCollection()->aggregate($aggrgatePipeline)->current();
 			foreach($subservs['services'] as $service) {
 				$this->subServices[$sid][] = $service;
@@ -256,7 +266,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$query['time'] = date(Billrun_Base::base_datetimeformat, $this->data['invoice_date']->sec);
 		$query['sid'] = $sid;
 		$subData = Billrun_Factory::subscriber()->loadSubscriberForQuery($query);
-		$msgs = !$subData->isEmpty() && !empty($subData['invoice_messages']) ? $subData['invoice_messages'] : [];
+		$msgs = !empty($subData) && !$subData->isEmpty() && !empty($subData['invoice_messages']) ? $subData['invoice_messages'] : [];
 		$retMsgs = [];
 		foreach($msgs as $msg) {
 			$entryTime = strtotime(is_array($msg['entry_time']) ? $msg['entry_time']['sec'] : $msg['entry_time']);

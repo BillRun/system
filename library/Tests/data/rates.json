@@ -998,7 +998,7 @@
 					"creation_time": "time*2017-03-28T00:00:00Z"
 				},
 				{
-					
+
 					"from": "time*2017-04-11T21:00:00Z",
 					"key": "I_CALL",
 					"rates": {
@@ -1030,6 +1030,299 @@
 					"tariff_category": "retail",
 					"to": "time*2167-04-11T13:35:36Z",
 					"creation_time": "time*2017-04-11T21:00:00Z"
+				}, {
+
+					"from": "time*2010-08-03T00:00:00Z",
+					"key": "pricing_method_volume",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 1,
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "pricing_method_volume",
+					"pricing_method": "volume",
+					"tariff_category": "retail",
+					"add_to_retail": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2169-08-02T16:33:39Z",
+					"creation_time": "time*2010-08-03T00:00:00Z"
+				}
+
+				, {
+					"from": "time*2021-03-10T00:00:00Z",
+					"key": "CORPORATE_CUSTOMER_RELATIONSHIP_SERVICE",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 0,
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "Corporate customer relationship service",
+					"params": {
+						"prefix": [
+							"8990"
+						],
+						"msc_address": [
+							"689",
+							"+689"
+						],
+						"vlr_number": [
+							"689",
+							"+689"
+						]
+					},
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"add_to_retail": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2170-03-16T07:25:55Z",
+					"creation_time": "time*2021-03-10T00:00:00Z"
+				},
+				{
+					"from": "time*2021-03-10T00:00:00Z",
+					"key": "ROAMING_CALLS",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 0.01,
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "Roaming Calls",
+					"params": {
+						"prefix": [
+							"0",
+							"1",
+							"2",
+							"3",
+							"4",
+							"5",
+							"6",
+							"7",
+							"8",
+							"9"
+						],
+						"msc_address": [
+							"0",
+							"1",
+							"2",
+							"3",
+							"4",
+							"5",
+							"6",
+							"7",
+							"8",
+							"9"
+						],
+						"vlr_number": [
+							"0",
+							"1",
+							"2",
+							"3",
+							"4",
+							"5",
+							"6",
+							"7",
+							"8",
+							"9"
+						]
+					},
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"add_to_retail": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2170-03-17T14:14:20Z",
+					"creation_time": "time*2021-03-10T00:00:00Z"
+				},
+				{
+
+					"from": "time*2010-10-21T00:00:00Z",
+					"key": "CALL_OVERRIDE_A",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 1,
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "call overide",
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"add_to_retail": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2169-10-20T15:49:08Z",
+					"creation_time": "time*2010-10-21T00:00:00Z"
+				},
+				{
+
+					"from": "time*2010-10-21T00:00:00Z",
+					"key": "CALL_OVERRIDE_B",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 1,
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "CALL OVERRIDE B",
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"add_to_retail": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2169-10-20T15:50:11Z",
+					"creation_time": "time*2010-10-21T00:00:00Z"
+				},
+				{
+					"from": "time*2010-10-21T00:00:00Z",
+					"key": "CALL_OVERRIDE_SERVICE_A",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 1,
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "CALL_OVERRIDE_SERVICE_A",
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"add_to_retail": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2169-10-20T15:49:08Z",
+					"creation_time": "time*2010-10-21T00:00:00Z"
+				},
+				{
+
+					"from": "time*2010-10-21T00:00:00Z",
+					"key": "CALL_OVERRIDE_SERVICE_B",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 1,
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "CALL_OVERRIDE_SERVICE_B",
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"add_to_retail": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2169-10-20T15:50:11Z",
+					"creation_time": "time*2010-10-21T00:00:00Z"
 				}
 
 

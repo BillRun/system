@@ -22,6 +22,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 
 	protected $subInvoiceType = 'regular';
 	protected $invoicingConfig = array();
+	protected $customer_uf = array();
 	
 	
 	public function __construct($options = array()) {
@@ -38,6 +39,9 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		}
 		if(!empty($options['invoice_subtype'])) {
 			$this->subInvoiceType = Billrun_Util::getFieldVal($options['invoice_subtype'], 'regular'); 
+		}
+		if(!empty($options['uf'])){
+			$this->customer_uf = $options['uf'];
 		}
 		$this->invoicingConfig = Billrun_Factory::config()->getConfigValue('onetimeinvoice.invoice_type_config', array());
 		$this->min_invoice_id = intval(Billrun_Util::getFieldVal($this->invoicingConfig[$this->subInvoiceType]['min_invoice_id'], $this->min_invoice_id ));
@@ -63,6 +67,8 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 				$this->saveLines($aggregatedResults);
 				//Save Account discounts.
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
+				//Save Customer user fields
+				$aggregatedEntity->setUserFields($this->customer_uf);
 				//Save the billrun document
 				$aggregatedEntity->save();
 			} else {
@@ -90,29 +96,30 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		foreach ($outputArr as $subscriberPlan) {
 			$aid = (string)$subscriberPlan['id']['aid'];
 			$type = $subscriberPlan['id']['type'];
-			$invalidAccountFunctions = ['getActivePlan','getPlanNextTeirDate','getPlay'];
+			$invalidAccountFunctions = Billrun_Factory::config()->getConfigValue('customeronetime.aggregate.invalid_account_functions',['getActivePlan','getPlanNextTeirDate','getPlay']);
+			$invalidFields = Billrun_Factory::config()->getConfigValue('customeronetime.aggregate.invalid_fields',['services']);
 			if ($type === 'account') {
 				$accounts[$aid]['attributes'] = $this->constructAccountAttributes($subscriberPlan);
-				$raw = $subscriberPlan['id'];
+				$raw = array_diff_key($subscriberPlan['id'] ,array_flip($invalidFields));
 				foreach($this->getAggregatorConfig('subscriber.passthrough_data', array()) as $dstField => $srcField) {
 					if(is_array($srcField) && method_exists($this, $srcField['func']) && !in_array($srcField['func'],$invalidAccountFunctions)) {
 						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
-					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {
+					} else if(!empty($subscriberPlan['passthrough'][$srcField]) && !in_array($srcField, $invalidFields)) {
 						$raw[$srcField] = $subscriberPlan['passthrough'][$srcField];
 					}
 				}
-				$raw['sid']=0;
+				$raw['sid'] = 0;
 				$accounts[$aid]['subscribers'][$raw['sid']][] = $raw;
 			} else if (($type === 'subscriber')) {
 				if( !empty($this->affectedSids) && !in_array($subscriberPlan['id']['sid'],$this->affectedSids) ) { 
 					continue;
 				}
 
-				$raw = $subscriberPlan['id'];
+				$raw = array_diff_key($subscriberPlan['id'] ,array_flip($invalidFields));
 				foreach($this->getAggregatorConfig('subscriber.passthrough_data', array()) as $dstField => $srcField) {
 					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
 						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
-					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {
+					} else if(!empty($subscriberPlan['passthrough'][$srcField]) && !in_array($srcField, $invalidFields)) {
 						$raw[$srcField] = $subscriberPlan['passthrough'][$srcField];
 					}
 				}

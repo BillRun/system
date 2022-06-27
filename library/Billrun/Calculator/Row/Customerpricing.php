@@ -121,7 +121,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * This holds the services used when pricing the row.
 	 */
 	protected $servicesUsed = array();
-
+	
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
 		if ($this->row['sid'] == 0 && $this->row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
@@ -160,7 +160,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$volume = $this->usagev;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'flat', 'service'));
 		if (in_array($this->row['type'], $typesWithoutBalance)) {
-			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);			$pricingData = array($this->pricingField => $charges);
+			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
 			$pricingData = array($this->pricingField => $charges);
 		} else {
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
@@ -333,21 +333,28 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$balancePricingData = $pricingData;
 			unset($balancePricingData['arategroups']);
 			Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $this->row['sid'], Zend_Log::DEBUG);
-			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $volume);
-
+			$notInGroupVolume = $balancePricingData['out_group'] ?? ($balancePricingData['over_group'] ?? 0);
+			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $notInGroupVolume);
 			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$pricingData, &$query, &$update, $rate, $this));
 			$ret = $this->balance->update($query, $update);
 			if ($ret === FALSE) {
 				Billrun_Factory::log('Update subscriber balance failed on updated existing document.' . PHP_EOL . 'Query: ' . print_R($query, 1) . PHP_EOL . 'Update: ' . print_R($update, 1), Zend_Log::NOTICE);
 				return false;
 			}
+			
+			$updatedPricingData = $this->getLineIncludedPricingData($pricingData);
+			$volume -= $notInGroupVolume;
 			Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $this->row['sid'], Zend_Log::DEBUG);
 			$this->row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 //			return $pricingData;
 		}
 			
 		if (isset($pricingData['arategroups'])) {
-			$balancePricingData = array_diff_key($pricingData, array('arategroups' => 'val')); // clone issue
+			if (isset($updatedPricingData)) {
+				$balancePricingData = array_diff_key($updatedPricingData, array('arategroups' => 'val')); // clone issue
+			} else {
+				$balancePricingData = array_diff_key($pricingData, array('arategroups' => 'val')); // clone issue
+			}
 			$pricingData['arategroups'] = $pricingData['arategroups'];
 			$arategroups = array(); // will used to flat the structure of pricingData['arategroups'] item
 			foreach ($pricingData['arategroups'] as /* $balance_key => */ &$balanceData) {
@@ -395,9 +402,14 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @return mixed false if not found transaction, else the transaction info
 	 */
 	protected function getTx($stamp, $balance) {
-		$tx = $balance->get('tx');
+		$tx = $balance->get('tx');               
 		if (is_array($tx) && empty($tx)) {
 			$balance->set('tx', new stdClass());
+			$balance->save();
+		}
+                $tx2 = $balance->get('tx2');
+                if (is_array($tx2) && empty($tx2)) {
+			$balance->set('tx2', new stdClass());
 			$balance->save();
 		}
 		if (!empty($tx) && array_key_exists($stamp, $tx)) { // we're after a crash
@@ -405,6 +417,20 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			return $pricingData;
 		}
 		return false;
+	}
+	
+	/**
+	 * "clean" pricing data from over group/plan charges and keep only included pricing data.
+	 * removes pricing data that is relevant for monthly balance
+	 * 
+	 * @param array $pricingData
+	 * @return array
+	 */
+	protected function getLineIncludedPricingData($pricingData) {
+		$pricingData['aprice'] = 0;
+		unset($pricingData['over_group']);
+		unset($pricingData['over_plan']);
+		return $pricingData;
 	}
 
 	/**
@@ -613,6 +639,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$serviceName = $service->getName();
 			$serviceQuantity = 1;
 			$serviceGroups = $service->getRateGroups($rate, $usageType);
+			$aid = $this->row->getRawData()['aid'];
 			foreach ($serviceGroups as $serviceGroup) {
 				$serviceSettings = array(
 					'service_name' => $serviceName,
@@ -621,6 +648,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					'service_start_date' => $service->get('service_start_date'),
 				);
 				$isGroupShared = $service->isGroupAccountShared($rate, $usageType, $serviceGroup);
+				$isGroupQuantityAffected = $service->isGroupQuantityAffected($serviceGroup);
 				// pre-check if need to switch to other balance with the new service
 				if ($isGroupShared && $this->balance['sid'] != 0) { // if need to switch to shared balance (from plan)
 					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
@@ -650,7 +678,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				if (!$isGroupShared || ($isGroupShared && $service->isGroupAccountPool($serviceGroup))) {
 					$serviceQuantity = $this->getServiceQuantity($this->row['services_data'], $serviceName);
 				}
-				$groupVolume = $service->usageLeftInEntityGroup($balance, $rate, $usageType, $serviceGroup, $this->row['urt']->sec, $serviceQuantity);
+				$serviceMaximumQuantity = 1;
+				if($isGroupShared && !$service->isGroupAccountPool($serviceGroup) && $isGroupQuantityAffected) {
+					$serviceMaximumQuantity = $service->getServiceMaximumQuantityByAid($aid, $this->row['urt']->sec);
+				}
+				
+				$groupVolume = $service->usageLeftInEntityGroup($balance, $rate, $usageType, $serviceGroup, $this->row['urt']->sec, $serviceQuantity, $serviceMaximumQuantity);
 				$balanceType = key($groupVolume); // usagev or cost
 				$value = current($groupVolume);
 
@@ -671,7 +704,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 						'name' => $serviceGroup,
 						$balanceType => $valueRequired,
 						'left' => $value - $valueRequired,
-						'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup, null, $serviceQuantity),
+						'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup, null, $serviceQuantity, $serviceMaximumQuantity),
 						'balance' => $balance,
 					);
 					$this->servicesUsed[] = $service;
@@ -681,7 +714,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					'name' => $serviceGroup,
 					$balanceType => $value,
 					'left' => 0,
-					'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup, null, $serviceQuantity),
+					'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup, null, $serviceQuantity, $serviceMaximumQuantity),
 					'balance' => $balance,
 				);
 				if ($keyRequired != $balanceType) {
@@ -1045,7 +1078,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	public function isPrepriced() {
 		return isset($this->row['prepriced']) ? $this->row['prepriced'] : false;
 	}
-	
+
 	protected function getServiceQuantity($servicesData = array(), $serviceName) {
 		$quantity = 1;
 		foreach ($servicesData as $service) {
@@ -1055,4 +1088,5 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 		return $quantity;
 	}
+
 }

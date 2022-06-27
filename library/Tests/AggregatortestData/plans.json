@@ -553,6 +553,105 @@
 					"creation_time": "time*2018-07-31T00:00:00Z"
 				},
 				{
+
+					"from": "time*2018-12-31T22:00:00Z",
+					"name": "TTT2",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "st",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2168-07-30T12:35:34Z",
+					"creation_time": "time*2018-07-31T00:00:00Z"
+				},
+				{
+					"from": "time*2020-04-30T22:00:00Z",
+					"name": "PLAN_FD",
+					"price": [
+						{
+							"price": 44.56824512534819,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "PLAN_FD",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"to": "time*2169-05-25T17:16:38Z",
+					"creation_time": "time*2020-04-30T22:00:00Z",
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true
+				},
+				{
+
+					"from": "time*2019-11-30T22:00:00Z",
+					"name": "BOX_1",
+					"price": [
+						{
+							"price": 25.12606,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": " 60",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"key": "_BOX_1",
+					"provisioning": [],
+					"to": "time*2169-06-04T13:50:59Z",
+					"creation_time": "time*2019-10-17T22:00:00Z",
+					"optional": {
+						"services": [
+							"LEGACY_CUSTOMER",
+							"TOP_UP_1",
+							"PAPER_INVOICE"
+						]
+					},
+					"include": {
+						"services": [
+							"COMMITMENT_24_MONTHS",
+							"BP1"
+						]
+					},
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": false
+				
+				},
+				{
 					"OBJID": "5ea1a2d4cd4acc4e0d336bc3",
 					"from": "time*2018-04-24T00:00:00Z",
 					"name": "NOT_TAXABLE_PLAN",
@@ -581,6 +680,170 @@
 					"prorated_termination": true,
 					"to": "time*2169-04-23T14:14:44Z",
 					"creation_time": "time*2018-04-24T00:00:00Z"
+				},
+				{
+					"from": "time*2018-01-12T22:00:00Z",
+					"name": "PRICELEVELS",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": 12
+						},
+						{
+							"price": 200,
+							"from": 12,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "priceLevels",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2170-01-12T13:57:39Z",
+					"creation_time": "time*2018-01-12T22:00:00Z"
+				},
+				{
+					"from": "time*2020-04-30T22:00:00Z",
+					"name": "PLAN_MU",
+					"price": [
+						{
+							"price": 44.56824512534819,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "Md",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+				
+					"to": "time*2169-05-25T17:15:02Z",
+					"creation_time": "time*2020-04-30T22:00:00Z",
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true
+				},
+				{
+
+					"from": "time*2018-01-13T00:00:00Z",
+					"name": "AZ",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "a",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2170-01-12T14:04:21Z",
+					"creation_time": "time*2018-01-13T00:00:00Z"
+				},
+				{
+					"from": "time*2019-06-03T00:00:00Z",
+					"name": "CONDITIONAL_CHARGES_PLAN",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "Conditional Charges",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2170-06-02T15:54:52Z",
+					"creation_time": "time*2019-06-03T00:00:00Z"
+				}
+
+
+
+				, {
+					"from": "time*2019-05-31T22:00:00Z",
+					"name": "8GB",
+					"price": [
+						{
+							"price": "63.1383472609",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "m Unlimited",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"to": "time*2166-10-16T13:29:20Z",
+					"creation_time": "time*2017-07-01T04:00:00Z",
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true
+				},
+				{
+					"from": "time*2019-05-31T22:00:00Z",
+					"name": "1GB",
+					"price": [
+						{
+							"price": "63.1383472609",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": " Unlimited",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"to": "time*2166-10-16T13:29:20Z",
+					"creation_time": "time*2017-07-01T04:00:00Z",
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true
 				}
 
 

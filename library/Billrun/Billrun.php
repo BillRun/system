@@ -42,6 +42,8 @@ class Billrun_Billrun {
 	 */
 	static protected $rates = array();
 	static protected $plans = array();
+	static protected $activatedBillrunsByInvoicingDay = array();
+	
 
 	/**
 	 * billrun collection
@@ -313,7 +315,7 @@ class Billrun_Billrun {
 	/**
 	 * Gets a subscriber entry from the current billrun
 	 * @param int $sid the subscriber id
-	 * @return mixed the subscriber entry (array) or false if the subscriber does not exists in the billrun
+	 * @return mixed the subscriber entry (array) or false if the subscriber does not exist in the billrun
 	 */
 	protected function getSubRawData($sid) {
 		foreach ($this->data['subs'] as $sub_entry) {
@@ -734,18 +736,22 @@ class Billrun_Billrun {
 
 	/**
 	 * Load all rates from db into memory
+	 * 
+	 * @deprecated since version 5.12
 	 */
 	public static function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		self::loadFromDB($rates_coll);
+		self::loadFromDB($rates_coll, 'rates');
 	}
 
 	/**
 	 * Load all plans from db into memory
+	 * 
+	 * @deprecated since version 5.12
 	 */
 	public static function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		self::loadFromDB($plans_coll);
+		self::loadFromDB($plans_coll, 'plans');
 	}
 
 	/**
@@ -754,11 +760,15 @@ class Billrun_Billrun {
 	 * find a beter place to put it, or receive as strategy a Billrun_DBProxy type
 	 * @param type $colls - Collums of the DB.
 	 */
-	protected static function loadFromDB($colls) {
+	protected static function loadFromDB($colls, $type) {
 		$data = $colls->query()->cursor();
 		foreach ($data as $record) {
 			$record->collection($colls);
-			self::$plans[strval($record->getId())] = $record;
+			if ($type == 'plans') {
+				self::$plans[strval($record->getId())] = $record;
+			} else if ($type == 'rates') {
+				self::$rates[strval($record->getId())] = $record;
+			}
 		}
 	}
 
@@ -961,10 +971,23 @@ class Billrun_Billrun {
 	 * @return string billrun_key
 	 * @todo create an appropriate index on billrun collection
 	 */
-	public static function getActiveBillrun() {
+	public static function getActiveBillrun($invoicing_day = null) {
+		$config = Billrun_Factory::config();
+		if ($config->isMultiDayCycle() && !is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[$invoicing_day])) {
+			return self::$activatedBillrunsByInvoicingDay[$invoicing_day];
+		} else {
+			if (is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[0])) {
+				return self::$activatedBillrunsByInvoicingDay[0];
+			}
+		}
 		$query = array(
 			'billrun_key' => array('$regex' => '^\d{6}$'),
 		);
+		if ($config->isMultiDayCycle() && !is_null($invoicing_day)) {
+			$query = array(
+				'attributes.invoicing_day' => $invoicing_day,
+		);
+		}
 		$now = time();
 		$sort = array(
 			'billrun_key' => -1,
@@ -972,17 +995,23 @@ class Billrun_Billrun {
 		$fields = array(
 			'billrun_key' => 1,
 		);
-		$runtime_billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp($now);
+		$config = Billrun_Factory::config();
+		$runtime_billrun_key = (!is_null($invoicing_day) && $config->isMultiDayCycle()) ? Billrun_Billingcycle::getBillrunKeyByTimestamp($now, $invoicing_day) : Billrun_Billingcycle::getBillrunKeyByTimestamp($now);
 		$last = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
 			$active_billrun = $runtime_billrun_key;
 		} else {
 			$active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($last['billrun_key']);
-			$billrun_start_time = Billrun_Billingcycle::getStartTime($active_billrun);
+			$billrun_start_time = !is_null($invoicing_day) ? Billrun_Billingcycle::getStartTime($active_billrun, $invoicing_day) : Billrun_Billingcycle::getStartTime($active_billrun);
 			// TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
 			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
 				$active_billrun = $runtime_billrun_key;
 			}
+		}
+		if ($config->isMultiDayCycle() && !is_null($invoicing_day)) {
+			self::$activatedBillrunsByInvoicingDay[$invoicing_day] = $active_billrun;
+		} else {
+			self::$activatedBillrunsByInvoicingDay[0] = $active_billrun;
 		}
 		return $active_billrun;
 	}
@@ -1029,9 +1058,9 @@ class Billrun_Billrun {
 	public function populateBillrunWithAccountData($account, $optionLines = array()) {
 		$attr = array();
 		foreach (Billrun_Factory::config()->getConfigValue('billrun.passthrough_data', array()) as $key => $remoteKey) {
-			if (isset($account['attributes'][$remoteKey])) {
-				$attr[$key] = $account['attributes'][$remoteKey];
-			}
+				if (isset($account['attributes'][$remoteKey])) {
+					$attr[$key] = $account['attributes'][$remoteKey];
+				}
 		}
 		if (isset($account['attributes']['first_name']) && isset($account['attributes']['last_name'])) {
 			$attr['full_name'] = $account['attributes']['first_name'] . ' ' . $account['attributes']['last_name'];
@@ -1085,13 +1114,19 @@ class Billrun_Billrun {
 	}
 	
         /**
-         * Function that brings back account last billrun object
+         * Function that brings back account last monthly billrun object
          * @param type $aid
          * @param type $currentBillrunKey
-         * @return array last billrun object
+         * @return array last monthly billrun object
          */
-	public static function getAccountLastBillrun($aid, $currentBillrunKey) {
-                $query['aid'] = $aid;
+	public static function getAccountLastMonthlyBillrun($aid, $currentBillrunKey) {
+                $query = [
+					'aid' => $aid,
+					'attributes.invoice_type' => array('$in' => array(null, 'regular'))
+				];
+				if(isset($currentBillrunKey)){
+					$query['billrun_key'] = ['$lt' => $currentBillrunKey];
+				}
                 $billrun = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort(array('billrun_key' => -1))->limit(1)->current()->getRawData();
                 if (empty($billrun)) {
                     return null;
@@ -1099,7 +1134,3 @@ class Billrun_Billrun {
                 return $billrun;
 	}
 }
-
-// TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.
-Billrun_Billrun::loadRates();
-Billrun_Billrun::loadPlans();

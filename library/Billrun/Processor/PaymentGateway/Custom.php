@@ -20,7 +20,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $trailerRows;
 	protected $correlatedValue;
 	protected $linkToInvoice = true;
-        protected $informationArray = [];
+	protected $informationArray = [];
+	protected $ignoreDuplicates = false;
         
         
 	protected $billSavedFields = array();
@@ -49,18 +50,19 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	 */
 	protected function processLines() {
 		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
-			return $settingsByType['file_type'] === $this->fileType;
-		}));
+				return $settingsByType['file_type'] === $this->fileType;
+			}));
 		if (isset($currentProcessor['parser']) && $currentProcessor['parser'] != 'none') {
 			$this->setParser($currentProcessor['parser']);
 		} else {
-                        $message = "Parser definition missing";
-                        $this->informationArray['errors'][] = $message;
+			$message = "Parser definition missing";
+			$this->informationArray['errors'][] = $message;
 			throw new Exception($message);
 		}
 		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
 			return false;
 		}
+		$this->ignoreDuplicates = isset($currentProcessor['ignore_duplicates']) ? $currentProcessor['ignore_duplicates'] : $this->ignoreDuplicates;
 		$this->linkToInvoice = isset($currentProcessor['processor']['link_to_invoice']) ? $currentProcessor['processor']['link_to_invoice'] : $this->linkToInvoice;
 		$headerStructure = isset($currentProcessor['parser']['header_structure']) ? $currentProcessor['parser']['header_structure'] : array();
 		$dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
@@ -79,9 +81,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$parsedData = $parser->getDataRows();
 		$rowCount = 0;
 
-		foreach ($parsedData as $line) {
-                        $line = $this->formatLine($line,$dataStructure);
-			$row = $this->getBillRunLine($line);
+		foreach ($parsedData as $index => $line) {
+			$line = $this->formatLine($line,$dataStructure);
+			$row = $this->getBillRunLine($line, $index);
 			if (!$row){
 				return false;
 			}
@@ -104,8 +106,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
             return $row;
         }
         
-	protected function getBillRunLine($rawLine) {
-		$row = $rawLine;
+	protected function getBillRunLine($rawLine, $line_index) {
+		$row = $this->ignoreDuplicates ? $rawLine : array_merge($rawLine, ['parser_record_number' => $line_index]);
 		$row['stamp'] = md5(serialize($row));
 		return $row;
 	}
@@ -143,6 +145,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                 }
 				$this->informationArray = array_merge($this->informationArray, $this->getCustomPaymentGatewayFields());
 		$this->updatePaymentsByRows($data, $currentProcessor);
+		$this->informationArray['process_time'] = new MongoDate(time());
                 $this->updateLogFile();
 	}
 
@@ -203,7 +206,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$bill->setPending(false);
 				$bill->updateConfirmation();
 				$bill->save();
-                                $this->informationArray['transactions']['confirmed']++;
+                $this->informationArray['transactions']['confirmed']++;
 				$billData = $bill->getRawData();
 				if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
 					Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
@@ -212,6 +215,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 					Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
 				}
 			} else if ($fileStatus == 'only_acceptance') {
+				$billData = $bill->getRawData();
 				$billData['method'] = isset($billData['payment_method']) ? $billData['payment_method'] : (isset($billData['method']) ? $billData['method'] : 'automatic');
 				$billToReject = Billrun_Bill_Payment::getInstanceByData($billData);
 				$customFields = $this->getCustomPaymentGatewayFields();
@@ -221,7 +225,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$billToReject->markRejected();
-                                $this->informationArray['transactions']['rejected']++;
+				Billrun_Factory::dispatcher()->trigger('afterRejection', array($billToReject->getRawData()));
+                $this->informationArray['transactions']['rejected']++;
+				$this->informationArray['process_time'] = new MongoDate(time());
 			}
 		}
 	}
@@ -285,6 +291,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$query = array(
 			'generated_pg_file_log' => $fileStamp,
+			'confirmation_time' => array('$exists' => false)
 		);
 		$query = array_merge($query, $nonRejectedOrCanceled);
 		return $this->bills->query($query)->cursor();
@@ -327,10 +334,16 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return $savedFields;
 	}
 	
-	public function getCustomPaymentGatewayFields () {
-		return [
-				'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
-				'cpg_type' => [!empty($type = $this->getType()) ? $type : ""], 
-				'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""] ];
-        }
+	public function getCustomPaymentGatewayFields($row = null) {
+		$res = [
+			'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
+			'cpg_type' => [!empty($type = $this->getType()) ? $type : ""],
+			'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""]
+		];
+		if (!is_null($row) && isset($row['parser_record_number'])) {
+			$res['record_number'] = $row['parser_record_number'];
+		}
+		return $res;
+	}
+
 }
