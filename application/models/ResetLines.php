@@ -711,6 +711,7 @@ class ResetLinesModel {
                 }
             } catch (Exception $ex) {
                 Billrun_Factory::log("Error: " . $ex->getMessage(), Zend_Log::ERR);
+                throw $ex;
             }
         }
     }
