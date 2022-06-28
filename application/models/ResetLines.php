@@ -699,9 +699,9 @@ class ResetLinesModel {
                 if ($this->checkIfStampsCanStoreInDB($stamps)) {
                     try {
                         $updateData = array('$set' => array('stamps_by_sid' => $stampsBySid));
-                    Billrun_Factory::log("before update rebalance queue recover stamps", Zend_Log::DEBUG);
+                        Billrun_Factory::log("before update rebalance queue recover stamps", Zend_Log::DEBUG);
                         Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
-                    Billrun_Factory::log("after update rebalance queue recover stamps", Zend_Log::DEBUG);
+                        Billrun_Factory::log("after update rebalance queue recover stamps", Zend_Log::DEBUG);
                     } catch (Exception $ex) {
                         Billrun_Factory::log("Rebalance: failed to add stamps to rebalance queue, Error: " . $ex->getMessage(), Zend_Log::ERR);
                         $this->addStampsToRebalnceQueueFile($aid, $this->rebalnceQueueRecoverStampsPath, $stampsBySid, $query);          
