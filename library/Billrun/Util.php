@@ -192,6 +192,45 @@ class Billrun_Util {
 	}
 	
 	/**
+	 * method to remove prefix from string
+	 * 
+	 * @param string $str the string to remove prefix
+	 * @param string $prefix the prefix
+	 * @return string the $str without prefix
+	 */
+	public static function removePrefix($str, $prefix) {
+		if(0 === strpos($str, $prefix)) {
+			$str = substr($str, strlen($prefix));
+		}
+		return $str;
+	}
+	
+	/**
+	 * Recursive group array of object by key(s)
+	 * 
+	 * @param type $array_of_objects
+	 * @param array $keys to group by
+	 * @return array of objects grouped by key(s) 
+	 */
+	public static function groupArrayBy($array_of_objects, $keys) {
+		$out = array();
+		$key = array_shift($keys);
+		foreach ($array_of_objects as $array_object){
+			$group_key = $array_object[$key];
+			if (!array_key_exists($array_object[$key], $out)) {
+				$out[$group_key] = [];
+			}
+			$out[$group_key][] = $array_object;
+		}
+		if (!empty($keys)) {
+			foreach ($out as $key => $group) {
+				$out[$key] = self::groupArrayBy($group, $keys);
+			}
+		}
+		return $out;
+	}
+	
+	/**
 	 * Returns a readable date from billrun key.
 	 * example: converts "201607" to : "July 2016"
 	 * 
@@ -208,10 +247,15 @@ class Billrun_Util {
 	 * example: converts "201607" to : "July 2016"
 	 * 
 	 * @param type $billrunKey
+	 * @param string $format - returned date format
+	 * @param string $invoicing_day - custom invoicing day - in case multi day cycle system's mode on.
 	 * @return type
 	 */
-	public static function billrunKeyToPeriodSpan($billrunKey,$format) {
-		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+	public static function billrunKeyToPeriodSpan($billrunKey, $format, $invoicing_day = null) {
+		if (Billrun_Factory::config()->isMultiDayCycle() && empty($invoicing_day)) {
+			$invoicing_day = Billrun_Factory::config()->getConfigChargingDay();
+		} 
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey, $invoicing_day);
 		return date($format, $cycleData->start()) .' - '. date($format, $cycleData->end()-1);
 	}
 
@@ -859,7 +903,7 @@ class Billrun_Util {
 		}
 
 		$credit_time = new Zend_Date($filtered_request['credit_time']);
-		$filtered_request['urt'] = new MongoDate($credit_time->getTimestamp());
+		$filtered_request['urt'] = new Mongodloid_Date($credit_time->getTimestamp());
 		unset($filtered_request['credit_time']);
 
 		$filtered_request['vatable'] = filter_var($filtered_request['vatable'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
@@ -888,7 +932,7 @@ class Billrun_Util {
 	public static function parseServiceRow($service_row, $billrun_key) {
 		$service_row['source'] = 'api';
 		$service_row['usaget'] = $service_row['type'] = 'service';
-		$service_row['urt'] = new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key));
+		$service_row['urt'] = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrun_key));
 		ksort($service_row);
 		$service_row['stamp'] = Billrun_Util::generateArrayStamp($service_row);
 		return $service_row;
@@ -980,9 +1024,13 @@ class Billrun_Util {
 		fclose($fd);
 	}
 
-	public static function logFailedResetLines($sids, $billrun_key) {
+	public static function logFailedResetLines($sids, $billrun_key, $invoicing_day = null) {
 		$fd = fopen(Billrun_Factory::config()->getConfigValue('resetlines.failed_sids_file', './files/failed_resetlines.json'), 'a+');
-		fwrite($fd, json_encode(array('sids' => $sids, 'billrun_key' => $billrun_key)) . PHP_EOL);
+		$output = array('sids' => $sids, 'billrun_key' => $billrun_key);
+		if (!is_null($invoicing_day)) {
+			$output['invoicing_day'] = $invoicing_day;
+		}
+		fwrite($fd, json_encode($output) . PHP_EOL);
 		fclose($fd);
 	}
 
@@ -1473,13 +1521,13 @@ class Billrun_Util {
 	}
 	
 	public static function getCompanyLogo($base64 = true) {
-		$gridFsColl = Billrun_Factory::db()->getDb()->getGridFS();
+		$gridFsColl = Billrun_Factory::db()->getGridFS();
 		$logo = $gridFsColl->find(array('billtype' => 'logo'))->sort(array('uploadDate' => -1))->limit(1)->getNext();
 		if (!$logo) {
 			return '';
 		}
-		if (!($logo instanceof MongoGridFSFile)) {
-			$logo = new MongoGridFSFile($gridFsColl, $logo);
+		if (!($logo instanceof Mongodloid_GridFSFile)) {
+			$logo = new Mongodloid_GridFSFile($gridFsColl, $logo);
 		}
 		$bytes = $logo->getBytes();
 		if ($base64) {
@@ -1569,7 +1617,7 @@ class Billrun_Util {
 		foreach ($translations as $key => $trans) {
 			$sourceKey = Billrun_Util::getIn($trans, array('translation', 'source_key'), $key);
 			if (!isset($source[$sourceKey])&& empty($trans['nullable'])) {
-				Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
+				Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::DEBUG);
 			} else if(is_string($trans) && isset($source[$sourceKey])){
 				//Handle s simple field copy  translation
 				$retData[$trans] =  $source[$sourceKey];
@@ -1586,8 +1634,7 @@ class Billrun_Util {
 							$val = call_user_func_array($trans['translation']['function'], array(@$source[$sourceKey],
 																										   $userData) );
 						} else {
-							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
-							continue;
+							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::DEBUG);
 						}
 						break;
 					//Handle regex translation
@@ -1599,13 +1646,11 @@ class Billrun_Util {
 						} else if(isset($trans['translation'])) {
 							$val = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
 						} else {
-							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
-							continue;
+							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::DEBUG);
 						}
 						break;
 					default :
 							Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
-							continue;
 						break;
 				}
 				if (!is_null($val) || empty($trans['ignore_null'])) {
@@ -1919,32 +1964,6 @@ class Billrun_Util {
 		}
 
 		return $retVal;
-	}
-
-	/**
-	 *  Get all user fields that are used in calculator and rating stages.
-	 * @param string $type - input processor name
-	 * @return array - user fields names
-	 */
-	public static function getCustomerAndRateUf($type) {
-		$fieldNames = array();
-		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
-		$customerIdentificationFields = $fileTypeConfig['customer_identification_fields'];
-		foreach ($customerIdentificationFields as $fields) {
-			$customerFieldNames = array_column($fields, 'src_key');
-			$fieldNames = array_merge($fieldNames, $customerFieldNames);
-		}
-		$rateCalculators = $fileTypeConfig['rate_calculators'];
-		foreach ($rateCalculators as $rateByUsaget) {
-			foreach ($rateByUsaget as $priorityByUsaget) {
-				foreach ($priorityByUsaget as $priority) {
-					$rateFieldNames = array_column($priority, 'line_key');
-					$fieldNames = array_merge($fieldNames, $rateFieldNames);
-				}
-			}
-		}
-
-		return array_unique($fieldNames);
 	}
 	
 	/**

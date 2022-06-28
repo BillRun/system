@@ -339,7 +339,7 @@
 				}
 			}
 		}
-						,{
+		, {
 
 			"from": "time*2020-04-30T22:00:00Z",
 			"key": "BOX1",
@@ -496,7 +496,7 @@
 				"publication_end_date": "time*2038-06-01T00:00:00Z",
 				"publication_start_date": "time*2020-05-01T00:00:00Z",
 				"conditions": [
-		
+
 					{
 						"subscriber": [
 							{
@@ -532,7 +532,7 @@
 			"type": "monetary",
 			"subject": {
 				"plan": {
-				
+
 					"BOX_1": {
 						"value": 8.394957983
 					}
@@ -814,6 +814,80 @@
 					}
 				}
 			}
+		},
+		{
+			"from": "time*2018-07-29T00:00:00Z",
+			"key": "100",
+			"description": "100",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "sid",
+										"op": "in",
+										"value": [
+											775
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			"type": "percentage",
+			"subject": {
+				"plan": {
+					"PLAN_C": {
+						"value": 1
+					}
+				}
+			},
+			"proration": "inherited",
+			"to": "time*2170-07-28T07:03:41Z",
+			"creation_time": "time*2018-07-29T00:00:00Z"
+		},
+		{
+			"from": "time*2018-07-29T00:00:00Z",
+			"key": "100MONITERY",
+			"description": "100monitery",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "sid",
+										"op": "in",
+										"value": [
+											776
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			"type": "monetary",
+			"subject": {
+				"plan": {
+					"PLAN_C": {
+						"value": 100
+					}
+				}
+			},
+			"proration": "inherited",
+			"to": "time*2170-07-28T07:08:33Z",
+			"creation_time": "time*2018-07-29T00:00:00Z"
 		}
 
 		, {
@@ -1012,6 +1086,8 @@
 				}
 			}
 		}
+
+
 
 
 	]

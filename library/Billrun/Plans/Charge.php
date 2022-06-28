@@ -41,7 +41,7 @@ class Billrun_Plans_Charge {
 
 		// Check if has refund
 		if ($chargeObj instanceof Billrun_Plans_Charge_Upfront) {
-			$refund = $chargeObj->getRefund($cycle);
+			$refund = $chargeObj->getRefund($cycle,empty($entityData['quantity']) ?  1 : $entityData['quantity']);
 			if ($refund !== null) {
 				$results['refund'] = $refund;
 			}
@@ -64,9 +64,12 @@ class Billrun_Plans_Charge {
 			//Should the charge  be unprorated?
 			$object .=!isset($plan['prorated']) || !empty($plan['prorated']) ? '' : '_Notprorated';
 			//Should we  use  a diffrent peroid  then monthly charge?
-			$object .= isset($plan['recurrence']['periodicity']) ? '_' . ucfirst($plan['recurrence']['periodicity']) : '_Month';
+			$object .= isset($plan['recurrence']) 	? '_' . (empty($plan['recurrence']['frequency'])		?
+																ucfirst($plan['recurrence']['periodicity']) :
+																'Custom')
+													: '_Month';
 		} else {
-			$object .=  "_Custom";
+			$object .=  "_Singleperiod";
 		}
 		// Check if exists
 		if (!class_exists($object)) {

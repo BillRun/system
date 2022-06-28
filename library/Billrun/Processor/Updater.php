@@ -77,7 +77,7 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
 		$row['log_stamp'] = $this->getFileStamp();
-		$row['process_time'] = new MongoDate();
+		$row['process_time'] = new Mongodloid_Date();
 		return $row;
 	}
 	
@@ -108,7 +108,7 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 				$resource->set('trailer', $trailer, true);
 			}
 			$resource->set('process_hostname', Billrun_Util::getHostName(), true);
-			$resource->set('process_time', new MongoDate(), true);
+			$resource->set('process_time', new Mongodloid_Date(), true);
 			return $log->save($resource);
 		} else {
 			// backward compatibility

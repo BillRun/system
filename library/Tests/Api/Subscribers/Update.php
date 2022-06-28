@@ -13,7 +13,7 @@
  * @subpackage      API
  * @since           5.1
  */
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 //require_once(APPLICATION_PATH . '/library/Billrun/ActionManagers/Services/Create.php');
 
 class Tests_Api_Subscribers_Update extends Tests_Api_Base_Update {
@@ -34,7 +34,7 @@ class Tests_Api_Subscribers_Update extends Tests_Api_Base_Update {
 		
 		foreach ($data as $key => &$value) {
 			if(is_string($value) && in_array($key, array('to', 'from'))) {
-				$value = new MongoDate(strtotime($value));
+				$value = new Mongodloid_Date(strtotime($value));
 			}
 		}
 		

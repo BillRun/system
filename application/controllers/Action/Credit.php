@@ -167,7 +167,7 @@ class CreditAction extends ApiAction {
 	protected function parse($credit_row) {
 		$ret = $this->validateFields($credit_row);
 		$ret['skip_calc'] = $this->getSkipCalcs($ret);
-		$ret['process_time'] = new MongoDate();
+		$ret['process_time'] = new Mongodloid_Date();
 		$ret['usaget'] = $this->getCreditUsaget($ret);
 		$rate = Billrun_Rates_Util::getRateByName($credit_row['rate']);
 		if ($rate->isEmpty()) {
@@ -261,6 +261,23 @@ class CreditAction extends ApiAction {
 			}
 		}
 		
+		// credit custom fields
+		if (isset($credit_row['uf'])) {
+			if (!isset($ret['uf'])) {
+				$ret['uf'] = array();
+			}
+			$entry = json_decode($credit_row['uf'], JSON_OBJECT_AS_ARRAY);
+			$ufFields = Billrun_Factory::config()->getConfigValue('lines.credit.fields', array());
+			foreach ($ufFields as $field) {
+				$key = $field['field_name'];
+				if (!empty($field['mandatory']) && !isset($entry[$key])) {
+					$this->setError('Following field is missing: uf.' . $key);
+				} else if (isset($entry[$key])) {
+					$ret['uf'][$key] = $entry[$key];
+				}
+			}
+		}
+
 		return $ret;
 	}
 	

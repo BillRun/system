@@ -13,7 +13,7 @@
  * @subpackage      
  * @since           5.2
  */
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
 class Tests_Tariff extends UnitTestCase {
 	protected $getAccessPriceTests = array(

@@ -25,19 +25,20 @@ class ResetLinesAction extends ApiAction {
 		if (empty($request['aid'])) {
 			return $this->setError('Please supply at least one aid', $request);
 		}
-
+		
 		// remove the aids from current balance cache - on next current balance it will be recalculated and avoid to take it from cache
 		if (isset($request['aid'])) {
 			$this->cleanAccountCache($request['aid']);
 		}
-
-		$billrun_key = empty($request['billrun_key'])  ? Billrun_Billingcycle::getBillrunKeyByTimestamp() : $request['billrun_key'];
+		$invoicing_day = null;
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => (int)$request['aid']));
+			$invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+		}
+		$billrun_key = empty($request['billrun_key'])  ? Billrun_Billingcycle::getBillrunKeyByTimestamp(time(), $invoicing_day) : $request['billrun_key'];
 
 		if(!Billrun_Util::isBillrunKey($billrun_key)) {
 			return $this->setError('Illegal billrun key', $request);
-		}
-		if($billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle()) {
-			return $this->setError("Billrun {$billrun_key} already closed", $request);
 		}
 		
 		// Warning: will convert half numeric strings / floats to integers
@@ -56,22 +57,29 @@ class ResetLinesAction extends ApiAction {
 		try {
 			$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
 			foreach ($aids as $aid) {
+				$query = [
+					'aid' => $aid,
+					'billrun_key' => $billrun_key,
+					'$or' => array(
+						array('start_time' => array('$exists' => true), 'end_time' => array('$exists' => false)),
+						array('start_time' => array('$exists' => false), 'end_time' => array('$exists' => false)),
+					)
+				];
+				$exist_rebalance_object = $rebalance_queue->query($query)->count();
+				if(empty($exist_rebalance_object)) {
 				$rebalanceLine = array(
 					'aid' => $aid,
 					'billrun_key' => $billrun_key,
 					'conditions' => !empty($conditions) ? $conditions : array(),
 					'conditions_hash' => md5(serialize($conditions)),
-					'creation_date' => new MongoDate()
+					'creation_date' => new Mongodloid_Date()
 				);
-				$query = array(
-					'aid' => $aid,
-					'billrun_key' => $billrun_key,
-				);
-				$options = array('upsert' => true);
-				$rebalance_queue->update($query, array('$set' => $rebalanceLine), $options);
+                                $rebalanceLine['stamp'] =  md5(serialize($rebalanceLine));
+					$rebalance_queue->insert($rebalanceLine);
+				}
 			}
 		} catch (Exception $exc) {
-			Billrun_Util::logFailedResetLines($aids, $billrun_key);
+			Billrun_Util::logFailedResetLines($aids, $billrun_key, $invoicing_day);
 			return FALSE;
 		}
 

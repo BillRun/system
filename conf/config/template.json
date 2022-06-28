@@ -80,6 +80,15 @@
 			}
 		}
 	},
+	"suggestions" : {
+		"fields": []
+	},
+	"prepaid_plan" : {
+		"fields": []
+	},
+	"user" : {
+		"fields": []
+	},
 	"taxation" :{
 		"tax_type": "usage",
 		 "CSI": {
@@ -102,6 +111,9 @@
         "import": {
             "mapping": []
         },
+	"report":{
+		"fields": []
+	},
 	"taxes": {
 		"fields": [
 			{
@@ -173,6 +185,10 @@
     ]
   },
   "billrun" : {
+        "fields": [],
+        "multi_day_cycle":  false,
+        "invoicing_day": 1,
+        "fields": [],
         "allowances" : {
             "enabled": false,
             "included_in_allowance": false,

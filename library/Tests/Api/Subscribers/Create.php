@@ -13,7 +13,7 @@
  * @subpackage      API
  * @since           5.1
  */
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 //require_once(APPLICATION_PATH . '/library/Billrun/ActionManagers/Services/Create.php');
 
 class Tests_Api_Subscribers_Create extends Tests_Api_Base_Create {
@@ -54,8 +54,8 @@ class Tests_Api_Subscribers_Create extends Tests_Api_Base_Create {
 		$dataForDB = $this->getDataForDB($case);
 		$cloned = array_merge($dataForDB);
 		$cloned['type'] = 'account';
-		$cloned['to'] = new MongoDate(strtotime('+1 year'));
-		$cloned['from'] = new MongoDate(strtotime('-1 year'));
+		$cloned['to'] = new Mongodloid_Date(strtotime('+1 year'));
+		$cloned['from'] = new Mongodloid_Date(strtotime('-1 year'));
 		$cloned['test'] = 1;
 		$this->coll->insert($cloned);
 	}

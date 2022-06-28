@@ -11,7 +11,7 @@
  * @package  calculator
  * @since    0.5
  */
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
 define('UNIT_TESTING', 'true');
 
@@ -212,9 +212,9 @@ class Tests_Ratetest extends UnitTestCase {
 	protected function fixRow($row, $key) {
 
 		if (!array_key_exists('urt', $row)) {
-			$row['urt'] = new MongoDate(time() + $key);
+			$row['urt'] = new Mongodloid_Date(time() + $key);
 		} else {
-			$row['urt'] = new MongoDate(strtotime($row['urt']));
+			$row['urt'] = new Mongodloid_Date(strtotime($row['urt']));
 		}
 		if (!isset($row['aid'])) {
 			$row['aid'] = 1234;
@@ -232,16 +232,16 @@ class Tests_Ratetest extends UnitTestCase {
 					);
 				}
 				if (isset($service['from'])) {
-					$row['services_data'][$key]['from'] = new MongoDate(strtotime($service['from']));
+					$row['services_data'][$key]['from'] = new Mongodloid_Date(strtotime($service['from']));
 				}
 				if (isset($service['to'])) {
-					$row['services_data'][$key]['to'] = new MongoDate(strtotime($service['to']));
+					$row['services_data'][$key]['to'] = new Mongodloid_Date(strtotime($service['to']));
 				}
 			}
 		}
 
 		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();
-		$row['plan_ref'] = MongoDBRef::create('plans', (new MongoId((string) $plan['_id'])));
+		$row['plan_ref'] = Mongodloid_Ref::create('plans', (new Mongodloid_Id((string) $plan['_id'])));
 		return $row;
 	}
 

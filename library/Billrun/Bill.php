@@ -235,12 +235,11 @@ abstract class Billrun_Bill {
 	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false) {
 		$query = array('aid' => $aid);
 		if (!empty($date)) {
-			$relative_date = new MongoDate(strtotime($date));
+			$relative_date = new Mongodloid_Date(strtotime($date));
 			$query['$or'] = array(
 				array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date)),
-				array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => true, '$lte' => $relative_date)),
-				array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
-				array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => false), 'urt' => array('$exists' => false))
+				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
+				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => false))
 			);
 		}
 		$results = static::getTotalDue($query, $notFormatted);
@@ -470,6 +469,7 @@ abstract class Billrun_Bill {
 			$this->updatePaidBy($paidBy, $billId, $status, $billType);
 			if ($bill->isPendingPayment()) {
 				$this->setPendingLinkedBills($billType, $billId);
+                                $bill->setPendingLinkedBills($this->getType(), $this->getId());                               
 			}
 		}
 		$this->setPendingCoveringAmount();
@@ -479,10 +479,10 @@ abstract class Billrun_Bill {
 	public function detachPayingBill($billType, $id) {
 		$paidBy = $this->getPaidByBills();
 		$index = Billrun_Bill::findRelatedBill($paidBy, $billType, $id);
-		if ($index > -1) {
-			unset($paidBy[$index]);
+		if ($index > -1) {			                       
+                        unset($paidBy[$index]);
 			$this->updatePaidBy(array_values($paidBy));
-			if ($billType == 'rec') {
+                        if ($billType == 'rec') {
 				$this->removeFromWaitingPayments($id, $billType);
 			}
 		}
@@ -517,6 +517,9 @@ abstract class Billrun_Bill {
 
 	public function attachPaidBill($billType, $billId, $amount) {
 		$paymentRawData = $this->data->getRawData();
+		if(!isset($paymentRawData['pays'])){
+			$paymentRawData['pays'] = [];
+		}
 		$relatedBillId = Billrun_Bill::findRelatedBill($paymentRawData['pays'], $billType, $billId);
 		if ($relatedBillId == -1) {
 			Billrun_Bill::addRelatedBill($paymentRawData['pays'], $billType, $billId, $amount);
@@ -989,7 +992,7 @@ abstract class Billrun_Bill {
 		}
 		$match['$match']['$or'] = array(
 				array('charge.not_before' => array('$exists' => false)),
-				array('charge.not_before' => array('$lt' => new MongoDate())),
+				array('charge.not_before' => array('$lt' => new Mongodloid_Date())),
 		);
 		$pipelines[] = $match;
 		$pipelines[] = array(
@@ -1131,9 +1134,9 @@ abstract class Billrun_Bill {
 		$query['method'] = 'installment_agreement';
 		$query['type'] = $type;
 		$query['aid'] = $aid;
-		$query['urt'] = array('$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($urtStartBillrunKey)),
-                              '$lte' => new MongoDate(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
-		$query['due_date'] = array('$gte' => new MongoDate($startBillrun->start()), '$lt' => new MongoDate($endBillrun->start()));
+		$query['urt'] = array('$gte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtStartBillrunKey)),
+                              '$lte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
+		$query['due_date'] = array('$gte' => new Mongodloid_Date($startBillrun->start()), '$lt' => new Mongodloid_Date($endBillrun->start()));
 		return self::getBills($query);
 	}
 	
@@ -1163,14 +1166,12 @@ abstract class Billrun_Bill {
 	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
-		$accountQuery = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
+		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
+		$accountQuery = Billrun_Account::getBalanceAccountQuery($aids, $is_aids_query, $rejection_required_conditions);
 		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
-		$validGatewaysAids = array();
-		foreach ($currentAccounts as $activeAccount) {
-			if (!empty($activeAccount['payment_gateway']['active'])) {
-				$validGatewaysAids[] = $activeAccount['aid'];
-			}
-		}
+		$rejection_required_aids = array_column(array_map(function($account) {
+				return $account->getRawData();
+			}, $currentAccounts), 'aid');
 
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$match = array(
@@ -1182,10 +1183,10 @@ abstract class Billrun_Bill {
 		}
 		$project = array(
 			'$project' => array(
-				'valid_gateway' => array('$cond' => array(array('$in' => array('$aid', $validGatewaysAids)), true, false)),
+				'rejection_required' => array('$cond' => array(array('$in' => array('$aid', $rejection_required_aids)), true, false)),
 				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)), array('$ne' => array('$past_rejections', [])))), true, false)),
 				'paid' => array('$cond' => array(array('$in' => array('$paid', array(false, '0', 0))), false, true)),
-				'valid_due_date' => array('$cond' => array(array('$and' => array(array('$ne' => array('$due_date', null)), array('$lt' => array('$due_date', new MongoDate())))), true, false)),
+				'valid_due_date' => array('$cond' => array(array('$and' => array(array('$ne' => array('$due_date', null)), array('$lt' => array('$due_date', new Mongodloid_Date())))), true, false)),
 				'aid' => 1,
 				'left_to_pay' => 1,
 				'left' => 1
@@ -1194,7 +1195,7 @@ abstract class Billrun_Bill {
 		$addFields = array(
 			'$addFields' => array(
 				'total_debt_valid_cond' => array('$and' => array(array('$and' => array(
-								array('$eq' => array('$valid_gateway', true)),
+								array('$eq' => array('$rejection_required', true)),
 								array('$ne' => array('$past_rejections', false)))), array('$and' => array(
 								array('$eq' => array('$valid_due_date', true)),
 								array('$eq' => array('$paid', false))))
@@ -1202,14 +1203,14 @@ abstract class Billrun_Bill {
 				),
 				'total_debt_invalid_cond' => array('$and' => array(
 						array('$and' => array(
-								array('$eq' => array('$valid_gateway', false)),
+								array('$eq' => array('$rejection_required', false)),
 								array('$eq' => array('$valid_due_date', true)))),
 						array('$eq' => array('$paid', false))
 					)
 				),
 				'total_credit_cond' => array(
-						'$cond' => array(array('$and'=> array(array('$ne' => array('$left', null)), array('$eq' => array('$valid_due_date', true)))), true, false)
-					),
+					'$cond' => array(array('$and' => array(array('$ne' => array('$left', null)), array('$eq' => array('$valid_due_date', true)))), true, false)
+				),
 			)
 		);
 		$group = array(
@@ -1292,8 +1293,8 @@ abstract class Billrun_Bill {
 		$startUrt = new Billrun_DataTypes_CycleTime($urtStartBillrunKey);
 		$endUrt = new Billrun_DataTypes_CycleTime($urtEndBillrunKey);
 		$query['aid'] = $aid;
-		$query['urt'] = array('$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($urtStartBillrunKey)),
-                              '$lte' => new MongoDate(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
+		$query['urt'] = array('$gte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtStartBillrunKey)),
+                              '$lte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
 		$query['method'] = array('$ne' => 'installment_agreement');
 		$query['type'] = 'rec';
 		if (!empty($method)) {
@@ -1326,11 +1327,27 @@ abstract class Billrun_Bill {
 	}
 	
 	/**
-	 * Function that sets balance effective date, in every payment's bill.
-	 * @param int $date - unix timestamp to set as the balance effective date.
+	 * Function that sets payment urt
+	 * @param int $date - unix timestamp
 	 */
-	public function setBalanceEffectiveDate ($date = null) {
-		$this->data['balance_effective_date'] = new MongoDate(!empty($date)? $date : time());
+	public function setUrt($date = null) {
+		$this->data['urt'] = new Mongodloid_Date(!empty($date)? $date : time());
+	}
+
+	/**
+	 * Function that sets payment process time
+	 * @param int $date - unix timestamp to set as the process time.
+	 */
+	public function setProcessTime ($date = null) {
+		$this->data['process_time'] = new Mongodloid_Date(!empty($date)? $date : time());
+	}
+	
+	/**
+	 * Function that sets deposit's freeze date
+	 * @param int $date - unix timestamp
+	 */
+	public function setDepositFreezeDate ($date = null) {
+		$this->data['freeze_date'] = new Mongodloid_Date(!empty($date)? $date : time());
 	}
 	
 	/**

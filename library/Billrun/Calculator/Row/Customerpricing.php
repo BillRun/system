@@ -160,7 +160,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$volume = $this->usagev;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'flat', 'service'));
 		if (in_array($this->row['type'], $typesWithoutBalance)) {
-			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);			$pricingData = array($this->pricingField => $charges);
+			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
 			$pricingData = array($this->pricingField => $charges);
 		} else {
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
@@ -402,9 +402,14 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @return mixed false if not found transaction, else the transaction info
 	 */
 	protected function getTx($stamp, $balance) {
-		$tx = $balance->get('tx');
+		$tx = $balance->get('tx');               
 		if (is_array($tx) && empty($tx)) {
 			$balance->set('tx', new stdClass());
+			$balance->save();
+		}
+                $tx2 = $balance->get('tx2');
+                if (is_array($tx2) && empty($tx2)) {
+			$balance->set('tx2', new stdClass());
 			$balance->save();
 		}
 		if (!empty($tx) && array_key_exists($stamp, $tx)) { // we're after a crash

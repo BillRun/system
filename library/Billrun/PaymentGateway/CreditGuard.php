@@ -148,7 +148,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'card_expiration' => (string) $this->saveDetails['card_expiration'],
 				'personal_id' => (string) $this->saveDetails['personal_id'],
 				'transaction_exhausted' => true,
-				'generate_token_time' => new MongoDate(time()),
+				'generate_token_time' => new Mongodloid_Date(time()),
 				'auth_number' => (string) $this->saveDetails['auth_number'],
 				'four_digits' => (string) $this->saveDetails['four_digits'],
 			)
@@ -312,7 +312,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function validateStructureForCharge($structure) {
-		return !empty($structure['card_token']) && !empty($structure['card_expiration']) && !empty($structure['personal_id']);
+		return !empty($structure['card_token']) && !empty($structure['card_expiration']);
 	}
 	
 	protected function handleTokenRequestError($response, $params) {

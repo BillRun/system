@@ -43,6 +43,16 @@ class ReportModel {
 				'target_field' => 'aid',
 			),
 		),
+		'usage_archive' => array(
+			'subscription' => array(
+				'source_field' => 'sid',
+				'target_field' => 'sid',
+			),
+			'customer' => array(
+				'source_field' => 'aid',
+				'target_field' => 'aid',
+			),
+		),
 		'subscription' => array(
 			'usage' => array(
 				'source_field' => 'sid',
@@ -231,7 +241,10 @@ class ReportModel {
 		$output = array();
 		foreach ($row as $key => $value) {
 			$formats = $this->getRowsFormattersByKey($key, $formatters);
-			if(is_array($value)) {
+			$jsonFormatter = $this->isIncludeJsonFormatter($formats);
+			if ($jsonFormatter) {
+				$output[$key] = $this->formatOutputValue($value, $key, $formats);
+			} else if(is_array($value)) {
 				// array result like addToSet
 				if(count(array_filter(array_keys($value), 'is_string'))  === 0){
 					$formatedValues = array();
@@ -255,9 +268,10 @@ class ReportModel {
 	}
 	
 	protected function formatOutputValue($value, $key, $formats) {
-		if(!is_scalar($value) && (is_array($value) || get_class($value) !== 'MongoDate')){
+		$jsonFormatter = $this->isIncludeJsonFormatter($formats);
+		if (!$jsonFormatter && !is_scalar($value) && ((is_array($value) && !empty($value)) || get_class($value) !== 'Mongodloid_Date')){
 			// array result like addToSet
-			if(count(array_filter(array_keys($value), 'is_string')) === 0){
+			if(count(array_filter(array_keys($value), 'is_string')) === 0) {
 				$values = array();
 				foreach ($value as $val) {
 					$values[] = $this->formatOutputValue($val, $key, $formats);
@@ -277,6 +291,16 @@ class ReportModel {
 		return $value;
 	}
 	
+	protected function isIncludeJsonFormatter($formats) {
+		if (!empty($formats)) {
+			foreach ($formats as $format) {
+				if ($format['op'] == 'json') {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 	protected function pluckOutputValue($value, $key, $formats) {
 		$field_names = array_column($this->report['columns'], 'field_name', 'key');
 		//If value is object where value is at key 'NAME' -> pop the value
@@ -305,9 +329,9 @@ class ReportModel {
 		switch ($format['op']) {
 			case 'date_override': {
 				if (!empty($value->sec) || is_numeric($value)) {
-					$styledValue = new MongoDate(strtotime("+{$format['value']}", $value->sec));
+					$styledValue = new Mongodloid_Date(strtotime("+{$format['value']}", $value->sec));
 				} elseif (is_string($value) && $value !== ""){
-					$styledValue = new MongoDate(strtotime("{$value} {$format['value']}" ));
+					$styledValue = new Mongodloid_Date(strtotime("{$value} {$format['value']}" ));
 				} else {
 					$styledValue = $value;
 				}
@@ -319,11 +343,11 @@ class ReportModel {
 					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $value;
 					return $value;
 				} else if ($format['value'] === 'start') {
-					$styledValue = new MongoDate(Billrun_Billingcycle::getStartTime($value));
+					$styledValue = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($value));
 					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
 					return $styledValue;
 				}
-				$styledValue = new MongoDate(Billrun_Billingcycle::getEndTime($value));
+				$styledValue = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($value));
 				$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
 				return $styledValue;
 			}
@@ -351,6 +375,10 @@ class ReportModel {
 			}
 			case 'multiplication':
 				return (is_numeric($value) && is_numeric($format['value'])) ? $value * $format['value'] : $value;
+			case 'json': {
+				$out = @json_encode($value);
+				return $out ? $out : $value;
+			}
 			case 'default_empty': {
 				if ($value !== "" && !is_null($value)){
 					$styledValue = $value;
@@ -451,7 +479,7 @@ class ReportModel {
 		$value = $condition['value'];
 		$op = $condition['op'];
 		if ($type === 'daterange') {
-			return new MongoDate(strtotime($value));
+			return new Mongodloid_Date(strtotime($value));
 		}
 		// search by op
 		switch ($op) {
@@ -543,13 +571,13 @@ class ReportModel {
 				case 'crashed':
 					return array(
 						array('start_process_time' =>array('$exists' => true)),
-						array('start_process_time' => array('$lt' => new MongoDate(strtotime("-6 hours")))),
+						array('start_process_time' => array('$lt' => new Mongodloid_Date(strtotime("-6 hours")))),
 						array('process_time' => array('$exists' => false)),
 					);
 				case 'processing':
 					return array(
 						array('start_process_time' =>array('$exists' => true)),
-						array('start_process_time' => array('$gt' => new MongoDate(strtotime("-6 hours")))),
+						array('start_process_time' => array('$gt' => new Mongodloid_Date(strtotime("-6 hours")))),
 						array('process_time' => array('$exists' => false)),
 					);
 				default:
@@ -738,6 +766,8 @@ class ReportModel {
 		switch ($entity) {
 			case 'usage':
 				return 'lines';
+			case 'usage_archive':
+				return 'archive';
 			case 'subscription':
 				return 'subscribers';
 			case 'customer':
@@ -754,6 +784,8 @@ class ReportModel {
 				return 'log';
 			case 'bills':
 				return 'bills';
+			case 'rebalance_queue':
+				return 'rebalance_queue';
 			default:
 				throw new Exception("Invalid entity type");
 		}
@@ -938,16 +970,16 @@ class ReportModel {
 					$gteDate = ($op === 'eq') ? $beginOfDay : $endOfDay;
 					$ltDate = ($op === 'eq') ? $endOfDay : $beginOfDay;
 					$formatedExpression = array(
-						'$gte' => new MongoDate($gteDate),
-						'$lt' => new MongoDate($ltDate),
+						'$gte' => new Mongodloid_Date($gteDate),
+						'$lt' => new Mongodloid_Date($ltDate),
 					);
 				} elseif ($type === 'datetime') {
                                         $date = (!empty($value->sec)) ? $value->sec : strtotime($value);
 					$gteDate = ($op === 'eq') ? $date : $date + 59;
 					$ltDate = ($op === 'eq') ? $date + 59 : $date;
 					$formatedExpression = array(
-						'$gte' => new MongoDate($gteDate),
-						'$lt' => new MongoDate($ltDate),
+						'$gte' => new Mongodloid_Date($gteDate),
+						'$lt' => new Mongodloid_Date($ltDate),
 					);
 				} elseif ($type === 'number') {
 					$formatedExpression = array(
@@ -968,8 +1000,8 @@ class ReportModel {
 					$from = (!empty($value['from']->sec)) ? $value['from']->sec : strtotime($value['from']);
 					$to = (!empty($value['to']->sec)) ? $value['to']->sec : strtotime($value['to']);
 					$formatedExpression = array(
-						'$gte' => new MongoDate($from),
-						'$lt' => new MongoDate($to + 60), // to last minute second
+						'$gte' => new Mongodloid_Date($from),
+						'$lt' => new Mongodloid_Date($to + 60), // to last minute second
 					);
 				} elseif ($type === 'number') {
 					$formatedExpression = array(
@@ -991,13 +1023,13 @@ class ReportModel {
 					$date = (!empty($value->sec)) ? $value->sec : strtotime($value);
 					$queryDate = ($op === 'gt' || $op === 'lte') ? strtotime("tomorrow", $date) - 1 : strtotime("midnight", $date);
 					$formatedExpression = array(
-						"\${$op}" => new MongoDate($queryDate),
+						"\${$op}" => new Mongodloid_Date($queryDate),
 					);
 				} elseif ($type === 'datetime') {
 					$date = (!empty($value->sec)) ? $value->sec : strtotime($value);
 					$queryDate = ($op === 'gt' || $op === 'lte') ? $date + 59 : $date;
 					$formatedExpression = array(
-						"\${$op}" => new MongoDate($queryDate),
+						"\${$op}" => new Mongodloid_Date($queryDate),
 					);
 				} elseif ($type === 'number') {
 					$formatedExpression = array(

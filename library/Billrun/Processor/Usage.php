@@ -150,14 +150,15 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	public function getBillRunLine($rawLine) {
 		$row['uf'] = $this->filterFields($rawLine);
-
+                $row['cf'] = $this->getCalculatedFields($row['uf'], static::$type);
+                
 		$datetime = $this->getRowDateTime($row);
 		if (!$datetime) {
 			Billrun_Factory::log('Cannot set urt for line. Data: ' . print_R($row, 1), Zend_Log::ALERT);
 			return false;
 		}
 		
-		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));
+		$row['eurt'] = $row['urt'] = new Mongodloid_Date($datetime->format('U'));
 		$row['timezone'] = $datetime->getOffset();
 		$row['usaget'] = $this->getLineUsageType($row);
 		$usagev = $this->getLineUsageVolume($row['uf'], $row['usaget']);
@@ -175,7 +176,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
 		$row['log_stamp'] = $this->getFileStamp();
-		$row['process_time'] = new MongoDate();
+		$row['process_time'] = new Mongodloid_Date();
 		return $row;
 	}
 	
@@ -211,6 +212,23 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 		return $row;
 	}
+        
+        /**
+         * According to the configuration get computed fields (cf)
+         * @param Array     $uf - all the user-defined fields in the input processor
+         * @param string    $type - Input processor name
+         * @return Array    computed fields (cf)
+         */
+        protected function getCalculatedFields($uf, $type) {
+                $row = array();
+		$configurations = Billrun_Util::getIn(Billrun_Factory::config()-> getFileTypeSettings($type,true),'processor.calculated_fields');
+                foreach ($configurations as $calculatedConf){ 
+                    $filter = new Billrun_EntityGetter_Filters_Base(array('computed' => $calculatedConf));
+                    $targetFieldName = $calculatedConf['target_field'];
+                    Billrun_Util::setIn($row, $targetFieldName, $filter->getComputedValue($uf));
+                }
+                return $row;
+	}
 
 //	protected function buildHeader($line) {
 //		$this->parser->setStructure($this->header_structure);
@@ -231,7 +249,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = new MongoDate();
+		$trailer['process_time'] = new Mongodloid_Date();
 		return $trailer;
 	}
 

@@ -68,7 +68,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			return;
 		}
 		if (isset($ret['payment'])) {
-			$customFields = $this->getCustomPaymentGatewayFields();
+			$customFields = $this->getCustomPaymentGatewayFields($row);
 			foreach ($ret['payment'] as $index => $returned_payment) {
 				$returned_payment->setExtraFields($customFields, array_keys($customFields));
 			}

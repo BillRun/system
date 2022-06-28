@@ -139,7 +139,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array_merge(parent::getPossiblyUpdatedFields(), array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField, 'rates' ));
+		return array_merge(parent::getPossiblyUpdatedFields(), array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField, 'rates', 'cf' ));
 	}
 	
 	protected static function getRateCalculatorClassName($type) {
@@ -297,7 +297,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 
  		$rawData = $matchedRate->getRawData();
- 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
+ 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof Mongodloid_Id)) {
  			return false;	
  		}
  		$idQuery = array(

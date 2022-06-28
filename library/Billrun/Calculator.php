@@ -14,8 +14,10 @@
  */
 abstract class Billrun_Calculator extends Billrun_Base {
 
-	use Billrun_Traits_ForeignFields;
-	
+	use Billrun_Traits_ForeignFields {
+		getForeignFieldsFromConfig as baseGetForeignFieldsFromConfig;
+	}
+
 	/**
 	 * the type of the object
 	 *
@@ -161,26 +163,71 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	public function calc() {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data));
-		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$lines = $this->pullLines($this->lines);
 		$this->prepareData($lines);
 		foreach ($lines as $line) {
-			if ($line) {
-				Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
-				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
-				$line->collection($lines_coll);
-				if ($this->isLineLegitimate($line)) {
-					if ($this->updateRow($line) === FALSE) {
-						unset($this->lines[$line['stamp']]);
-						continue;
-					}
-					$this->data[$line['stamp']] = $line;
-				}
-				Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
-			}
+                    $extraLines = $this->addExtraLines($line);
+                    $this->calculateDataRow($line);
+                    foreach ($extraLines as $extraLine){
+                        $extraLine = ($extraLine instanceof Mongodloid_Entity) ? $extraLine : new Mongodloid_Entity($extraLine);
+                        $this->calculateDataRow($extraLine);
+                    }
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
 	}
+	
+        protected function calculateDataRow($line) {
+            $lines_coll = Billrun_Factory::db()->linesCollection();
+            if ($line) {
+                Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
+                Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
+                $line->collection($lines_coll);
+                if ($this->isLineLegitimate($line)) {
+                        if ($this->updateRow($line) === FALSE) {
+                                unset($this->lines[$line['stamp']]);
+                                return;
+                        }
+                        $this->data[$line['stamp']] = $line;
+                }
+                Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
+            }
+        }
+
+        /**
+         * Adding extra lines to calculated lines. 
+         * @param Mongodloid_Entity $line- that we want to check if generate extra lines (inside the trigger)
+         * @param array $extraData - the extra lines we need to add to the calculator data. 
+         * @return array $extraData - the extra lines we need to add to the calculator data. 
+         */
+	protected function addExtraLines($line, $extraData = []){
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $this));
+		if(!empty($extraData)){
+			$queue_lines_to_insert = [];
+			$lines_to_insert = [];
+			foreach ($extraData as $originalStamp => $extraDataByStamp){
+				foreach ($extraDataByStamp as $newStamp => $extraRow){
+					$newQueueLine = $this->pullQueueLineByStamp($originalStamp);
+					$saveProperties = $this->getPossiblyUpdatedFields();
+					foreach ($saveProperties as $p) {
+                                            if (!is_null($val = Billrun_Util::getIn($extraRow, $p, null))) {
+                                                    $newQueueLine[$p] = $val;
+                                            }
+					}
+					unset($newQueueLine['_id']);
+					$newQueueLine['stamp'] = $newStamp;
+					$queue_lines_to_insert[] = $newQueueLine;
+					$lines_to_insert[] = $extraRow;
+                                        $this->lines[$newStamp] = $newQueueLine;
+				}
+				
+			}
+			Billrun_Factory::db()->linesCollection()->batchInsert($lines_to_insert);
+                        Billrun_Factory::db()->queueCollection()->batchInsert($queue_lines_to_insert);
+		}
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $this));
+		return $extraData[$line['stamp']] ?? [];
+	}
+	
 
 	/**
 	 * Execute write the calculation output into DB
@@ -246,6 +293,17 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$line->collection(Billrun_Factory::db()->linesCollection());
 		return $line;
 	}
+	
+	protected function pullQueueLineByStamp($stamp) {
+		$queue_line = Billrun_Factory::db()->queueCollection()->query('stamp', $stamp)
+				->cursor()->current();
+		if ($queue_line->isEmpty()) {
+			return false;
+		}
+		$queue_line->collection(Billrun_Factory::db()->queueCollection());
+		return $queue_line;
+	}
+
 
 	/**
 	 * Mark the calculation as finished in the queue.
@@ -291,7 +349,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$query['$and'][0]['$or'] = array(
 			array('calc_time' => false),
 			array('calc_time' => array(
-					'$ne' => true, '$lt' => $orphand_time
+					'$ne' => true, '$lt' => new Mongodloid_Date($orphand_time)
 				)),
 		);
 //		$queryData['hint'] = $current_calculator_queue_tag;
@@ -304,7 +362,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return array
 	 */
 	protected function getBaseUpdate() {
-		$this->signedMicrotime = microtime(true);
+		$this->signedMicrotime = new Mongodloid_Date();
 		$update = array(
 			'$set' => array(
 				'calc_time' => $this->signedMicrotime,
@@ -409,8 +467,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			$update['$set']['hash'] = $this->workHash;
-			//Billrun_Factory::log(print_r($query,1),Zend_Log::DEBUG);
-			$queue->update(array_merge($query, array('$isolated' => 1)), $update, array('multiple' => true));
+
+			if ($this->applyQueueHash($query, $update, $queue) === FALSE) {
+				continue;
+			}
 
 			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
 
@@ -423,6 +483,38 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$retLines[$line['stamp']] = $line;
 		}
 		return $retLines;
+	}
+
+	/**
+	 * method to apply query update hash
+	 * 
+	 * @param array $query the query to filter
+	 * @param array $update the update to be applied
+	 * @param Collection $queue the mongodb collection
+	 * 
+	 * @return boolean true on success else false
+	 */
+	protected function applyQueueHash($query, $update, $queue) {
+		if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=')) {
+			$session = Billrun_Factory::db()->startSession();
+			if ($session !== false) {
+				$session->startTransaction();
+				try {
+					$queue->update($query, $update, array('multiple' => true, 'session' => $session));
+					$session->commitTransaction();
+					return true;
+				} catch (Exception $ex) {
+					$session->abortTransaction();
+					return false;
+				}
+			}
+			Billrun_Factory::log("No support for transactions as you're running on mongodb standalone", Zend_Log::NOTICE);
+		} else {
+			Billrun_Factory::log("No support for transactions or \$isolated; Please upgrade MongoDB server or client", Zend_Log::WARN);
+		}
+		
+		$queue->update($query, $update, array('multiple' => true));
+		return true;
 	}
 
 	/**

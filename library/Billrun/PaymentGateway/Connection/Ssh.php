@@ -109,7 +109,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 					$ret[] = $fileData['path'];
 					$count++;
 					// Delete from remote
-					if (isset($config['delete_received']) && $config['delete_received']) {
+					if ($this->delete_received) {
 						Billrun_Factory::log()->log("SSH: Deleting file {$file} from remote host ", Zend_Log::INFO);
 						if(!$this->deleteRemote($path . '/' . $file)) {
 							Billrun_Factory::log()->log("SSH: Failed to delete file: " . $file, Zend_Log::WARN);
@@ -221,7 +221,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 
 		$addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => new MongoDate()
+			'received_time' => new Mongodloid_Date()
 		);
 
 		$update = array(

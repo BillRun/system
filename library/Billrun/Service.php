@@ -62,7 +62,7 @@ class Billrun_Service {
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
 		} else if (isset($params['id'])) {
-			$this->load(new MongoId($params['id']));
+			$this->load(new Mongodloid_Id($params['id']));
 		} else if (isset($params['name'])) {
 			$this->load($params['name'], $time, 'name');
 		}
@@ -92,9 +92,9 @@ class Billrun_Service {
 	 */
 	protected function load($param, $time = null, $loadByField = '_id') {
 		if (is_null($time)) {
-			$queryTime = new MongoDate();
+			$queryTime = new Mongodloid_Date();
 		} else {
-			$queryTime = new MongoDate($time);
+			$queryTime = new Mongodloid_Date($time);
 		}
 		
 		switch ($loadByField) {
@@ -119,9 +119,9 @@ class Billrun_Service {
 	 */
 	protected function loadFromDb($param, $time = null, $loadByField = '_id') {
 		if (is_null($time)) {
-			$queryTime = new MongoDate();
-		} else if (!$time instanceof MongoDate) {
-			$queryTime = new MongoDate($time);
+			$queryTime = new Mongodloid_Date();
+		} else if (!$time instanceof Mongodloid_Date) {
+			$queryTime = new Mongodloid_Date($time);
 		}
 		$serviceQuery = array(
 			$loadByField => $param,
@@ -177,7 +177,7 @@ class Billrun_Service {
 		return static::$cache;
 	}
 	
-	public function initCacheItems() {
+	public static function initCacheItems() {
 		$coll = Billrun_Factory::db()->{static::$cacheType . 'Collection'}();
 		$items = $coll->query()->cursor();
 		foreach ($items as $item) {
@@ -201,7 +201,7 @@ class Billrun_Service {
 	 * @return boolean true if exhausted, else false
 	 */
 	public function isExhausted($serviceStartDate, $rowTime = null) {
-		if ($serviceStartDate instanceof MongoDate) {
+		if ($serviceStartDate instanceof Mongodloid_Date) {
 			$serviceStartDate = $serviceStartDate->sec;
 		}
 		
@@ -536,8 +536,8 @@ class Billrun_Service {
 		$query = array(
 			'aid' => $aid,
 			'type' => 'subscriber',
-			'to' => array('$gt' => new MongoDate($time)),
-			'from' => array('$lt' => new MongoDate($time)),
+			'to' => array('$gt' => new Mongodloid_Date($time)),
+			'from' => array('$lt' => new Mongodloid_Date($time)),
 		);
 		$isPlan = $this instanceof Billrun_Plan;
 		$isService = $this instanceof Billrun_Service;

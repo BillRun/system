@@ -30,6 +30,7 @@ class Billrun_PaymentManager {
 	 * Handles payment (awaits response)
 	 */
 	public function pay($method, $paymentsData, $params = []) {
+                Billrun_Factory::dispatcher()->trigger('beforePaymentManagerPay', array(&$method, &$paymentsData, &$params));
 		if (!Billrun_Bill_Payment::validatePaymentMethod($method, $params)) {
 			return $this->handleError("Unknown payment method {$method}");
 		}

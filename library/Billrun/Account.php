@@ -300,7 +300,7 @@ abstract class Billrun_Account extends Billrun_Base {
 			foreach ($updateCollectionStateChanged['in_collection'] as $aid => $item) {
 				$params = array('aid' => $aid, 'time' => date('c'));
 				if ($this->loadAccountForQuery($params)) {
-					$new_values = array('in_collection' => true, 'in_collection_from' => new MongoDate());
+					$new_values = array('in_collection' => true, 'in_collection_from' => new Mongodloid_Date());
 					$collectionSteps->createCollectionSteps($aid);
 					if ($this->closeAndNew($new_values)) {
 						$result['in_collection'][] = $aid;
@@ -371,5 +371,21 @@ abstract class Billrun_Account extends Billrun_Base {
 	
 	public function getData() {
 		return $this->data;
+	}
+	
+	/**
+	 * Function that returns the relevant aids for collection.
+	 * @param array $aids
+	 * @param bollean $is_aids_query
+	 * @param array $rejection_conditions
+	 * @return array of aids
+	 */
+	public static function getBalanceAccountQuery($aids, $is_aids_query, $rejection_conditions) {
+		$rejection_query = [];
+		foreach ($rejection_conditions as $condition) {
+			$rejection_query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];
+		}
+		$account_query = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
+		return array_merge($rejection_query, $account_query);
 	}
 }

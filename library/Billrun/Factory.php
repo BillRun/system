@@ -590,7 +590,7 @@ class Billrun_Factory {
 				}
 			}
 			OAuth2\Autoloader::register();
-			$storage = new OAuth2\Storage\MongoDB(Billrun_Factory::db()->getDb()->getDb());
+			$storage = new Billrun_OAuth2_Storage_MongoDB(Billrun_Factory::db()->getDb());
 			self::$oauth2[$stamp] = new OAuth2\Server($storage, $params);
 			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\ClientCredentials($storage));
 			// Future compatibility

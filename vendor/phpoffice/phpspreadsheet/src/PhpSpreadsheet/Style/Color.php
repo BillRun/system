@@ -2,8 +2,6 @@
 
 namespace PhpOffice\PhpSpreadsheet\Style;
 
-use PhpOffice\PhpSpreadsheet\Exception as PhpSpreadsheetException;
-
 class Color extends Supervisor
 {
     const NAMED_COLORS = [
@@ -73,14 +71,14 @@ class Color extends Supervisor
      */
     public function getSharedComponent()
     {
-        switch ($this->parentPropertyName) {
-            case 'endColor':
-                return $this->parent->getSharedComponent()->getEndColor();
-            case 'color':
-                return $this->parent->getSharedComponent()->getColor();
-            case 'startColor':
-                return $this->parent->getSharedComponent()->getStartColor();
+        if ($this->parentPropertyName === 'endColor') {
+            return $this->parent->getSharedComponent()->getEndColor();
         }
+        if ($this->parentPropertyName === 'startColor') {
+            return $this->parent->getSharedComponent()->getStartColor();
+        }
+
+        return $this->parent->getSharedComponent()->getColor();
     }
 
     /**
@@ -103,8 +101,6 @@ class Color extends Supervisor
      * </code>
      *
      * @param array $pStyles Array containing style information
-     *
-     * @throws PhpSpreadsheetException
      *
      * @return $this
      */
@@ -266,6 +262,7 @@ class Color extends Supervisor
     public static function changeBrightness($hex, $adjustPercentage)
     {
         $rgba = (strlen($hex) === 8);
+        $adjustPercentage = max(-1.0, min(1.0, $adjustPercentage));
 
         $red = self::getRed($hex, false);
         $green = self::getGreen($hex, false);
@@ -278,22 +275,6 @@ class Color extends Supervisor
             $red += $red * $adjustPercentage;
             $green += $green * $adjustPercentage;
             $blue += $blue * $adjustPercentage;
-        }
-
-        if ($red < 0) {
-            $red = 0;
-        } elseif ($red > 255) {
-            $red = 255;
-        }
-        if ($green < 0) {
-            $green = 0;
-        } elseif ($green > 255) {
-            $green = 255;
-        }
-        if ($blue < 0) {
-            $blue = 0;
-        } elseif ($blue > 255) {
-            $blue = 255;
         }
 
         $rgb = strtoupper(
@@ -407,5 +388,13 @@ class Color extends Supervisor
             $this->argb .
             __CLASS__
         );
+    }
+
+    protected function exportArray1(): array
+    {
+        $exportedArray = [];
+        $this->exportArray2($exportedArray, 'argb', $this->getARGB());
+
+        return $exportedArray;
     }
 }
