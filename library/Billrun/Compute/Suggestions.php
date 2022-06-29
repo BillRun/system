@@ -14,6 +14,7 @@
 abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
 
     protected $suggestions;
+    protected $validRetroactiveChangesStamps;
 
     public function compute() {
         if (!$this->isRecalculateEnabled()) {
@@ -50,19 +51,13 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'type' => array('$in' => ['update', 'closeandnew', 'permanentchange']),
             //retroactive change
             '$where' => 'this.new.from < this.urt'
-        );
-        $update = array(
-            '$set' => array(
-                'suggest_recalculations' => true
-            )
-        );
-        //check if can be done in one command. 
+        );       
         $retroactiveChanges = iterator_to_array(Billrun_Factory::db()->auditCollection()->find($query)->sort(array('_id' => 1)));
-        Billrun_Factory::db()->auditCollection()->update($query, $update, array('multiple' => true));
+        Billrun_Factory::log()->log("found " . count($retroactiveChanges) . " retroactive " . $this->getRecalculateType() . " changes", Zend_Log::INFO);
 
         $validRetroactiveChanges = $this->getValidRetroactiveChanges($retroactiveChanges);
+        Billrun_Factory::log()->log(count($validRetroactiveChanges) . " valid retroactive " . $this->getRecalculateType() . " changes", Zend_Log::INFO);
 
-        Billrun_Factory::log()->log("found " . count($retroactiveChanges) . " retroactive " . $this->getRecalculateType() . " changes", Zend_Log::INFO);
         return $validRetroactiveChanges;
     }
 
@@ -281,6 +276,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         foreach ($retroactiveChanges as $retroactiveChange) {
             if ($this->checkIfValidRetroactiveChange($retroactiveChange)) {
                 $validRetroactiveChanges[] = $retroactiveChange;
+                $this->validRetroactiveChangesStamps[] = $retroactiveChange['stamp'];
             }
         }
         return $validRetroactiveChanges;
@@ -304,6 +300,15 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                     }
                 }
             }
+        }
+        if (!empty($this->validRetroactiveChangesStamps)) {
+            $query = array('stamp' => array('$in' => $this->validRetroactiveChangesStamps));
+            $update = array(
+                '$set' => array(
+                    'suggest_recalculations' => true
+                )
+            );
+            Billrun_Factory::db()->auditCollection()->update($query, $update, array('multiple' => true));
         }
     }
 
