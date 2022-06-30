@@ -195,7 +195,9 @@ class ReportModel {
 		if($limit !== -1) {
 			$aggregate[] = array('$limit' => $limit);
 		}
-                
+
+		// Uncommet to debuge report query
+		//error_log("Report aggregate query: " . print_r(json_encode($aggregate), 1));
 		$results = $collection->aggregateWithOptions($aggregate, $this->aggregateOptions);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
@@ -380,6 +382,22 @@ class ReportModel {
 				$out = @json_encode($value);
 				return $out ? $out : $value;
 			}
+			case 'rename_false': {
+				if (in_array($value, [false, 'false', 'FALSE'], true)) {
+					$styledValue = $format['value'];
+					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
+					return $styledValue;
+				}
+				return $value;
+			}
+			case 'rename_true':  {
+				if (in_array($value, [true, 'true', 'TRUE'], true)) {
+					$styledValue = $format['value'];
+					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
+					return $styledValue;
+				}
+				return $value;
+			}
 			case 'default_empty': {
 				if ($value !== "" && !is_null($value)){
 					$styledValue = $value;
@@ -444,6 +462,13 @@ class ReportModel {
 			case 'last_days':
 				return 'between';
 		}
+		if ($op == 'is_false') {
+			return $value ? 'eq' : 'ne';
+		}
+		if ($op == 'is_true') {
+			return $value ? 'ne' : 'eq';
+		}
+
 		// search by field_name
 		if($field === 'billrun') {
 			switch ($value) {
@@ -496,6 +521,10 @@ class ReportModel {
 					'from' => date("c", strtotime("{$days} day midnight")),
 					'to' => date("c", strtotime("today") - 1)
 				);
+			case 'is_false':
+				return false;
+			case 'is_true':
+				return true;
 		}
 		// If subscriber.play doesn't exists in line we need to check for default play
 		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
@@ -561,6 +590,9 @@ class ReportModel {
 			}
 		}
 		if($field === 'calc_name' && $value === 'false') {
+			return false;
+		}
+		if($field === 'paid' && in_array($value, ['0', 0])) {
 			return false;
 		}
 		if($condition['field'] === 'logfile_status') {
@@ -702,6 +734,14 @@ class ReportModel {
 			return $field['entity'];
 		}
 		return $this->getReportEntity();
+	}
+
+	protected function getFieldType($condition) {
+		$op = $condition['op'];
+		if (in_array($op, ['is_false', 'is_true'])) {
+			return 'boolean';
+		}
+		return $condition['type'];
 	}
 	
 	protected function getDefaultEntityMatch() {
@@ -906,7 +946,7 @@ class ReportModel {
 	
 	protected function parseMatchCondition($condition) {
 		$condition_entity = $this->getFieldEntity($condition);
-		$type = $condition['type'];
+		$type = $this->getFieldType($condition);
 		$field = $this->formatInputMatchField($condition, $condition_entity);
 		$op = $this->formatInputMatchOp($condition, $field);
 		$value = $this->formatInputMatchValue($condition, $field, $type);
@@ -950,13 +990,27 @@ class ReportModel {
 			case 'in':
 			case 'nin':
 				//TODO: add support for dates
-				if ($type === 'number') {
-					$values = array_map('floatval', explode(',', $value));
-				} else {
+				if (is_bool($value)) {
+					$values = [$value];
+				} else if (is_string($value)) {
 					$values = explode(',', $value);
+				} else { //is_array($value)
+					$values = $value;
 				}
-				if ($field == 'paid' && in_array('0', $values)) {
-					$values[] = false;
+				
+				if ($type === 'number') {
+					$values = array_map('floatval', $values);
+				} else {
+					// fix bool
+					$values = array_map(function($val) {
+						if (in_array($val, ['true', 'TRUE'])) {
+							return true;
+						}
+						if (in_array($val, ['false', 'FALSE'])) {
+							return false;
+						}
+						return $val;
+					}, $values);
 				}
 				$formatedExpression = array(
 					"\${$op}" => $values
