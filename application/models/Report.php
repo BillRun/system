@@ -195,7 +195,9 @@ class ReportModel {
 		if($limit !== -1) {
 			$aggregate[] = array('$limit' => $limit);
 		}
-                
+
+		// Uncommet to debuge report query
+		//error_log("Report aggregate query: " . print_r(json_encode($aggregate), 1));
 		$results = $collection->aggregateWithOptions($aggregate, $this->aggregateOptions);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
@@ -588,6 +590,9 @@ class ReportModel {
 			}
 		}
 		if($field === 'calc_name' && $value === 'false') {
+			return false;
+		}
+		if($field === 'paid' && in_array($value, ['0', 0])) {
 			return false;
 		}
 		if($condition['field'] === 'logfile_status') {
@@ -985,13 +990,27 @@ class ReportModel {
 			case 'in':
 			case 'nin':
 				//TODO: add support for dates
-				if ($type === 'number') {
-					$values = array_map('floatval', explode(',', $value));
-				} else {
+				if (is_bool($value)) {
+					$values = [$value];
+				} else if (is_string($value)) {
 					$values = explode(',', $value);
+				} else { //is_array($value)
+					$values = $value;
 				}
-				if ($field == 'paid' && in_array('0', $values)) {
-					$values[] = false;
+				
+				if ($type === 'number') {
+					$values = array_map('floatval', $values);
+				} else {
+					// fix bool
+					$values = array_map(function($val) {
+						if (in_array($val, ['true', 'TRUE'])) {
+							return true;
+						}
+						if (in_array($val, ['false', 'FALSE'])) {
+							return false;
+						}
+						return $val;
+					}, $values);
 				}
 				$formatedExpression = array(
 					"\${$op}" => $values
