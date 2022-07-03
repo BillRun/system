@@ -14,12 +14,14 @@
 abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
 
     protected $suggestions;
+    protected $groupingKeys = array();
 
     public function compute() {
         if (!$this->isRecalculateEnabled()) {
             Billrun_Factory::log()->log('suggest recalculations ' . $this->getRecalculateType() . ' mode is off', Zend_Log::INFO);
             return;
         }
+        $this->groupingKeys =  $this->getGroupingFields();
         Billrun_Factory::log()->log('Starting to search suggestions for ' . $this->getRecalculateType(), Zend_Log::INFO);
         $retroactiveChanges = $this->findAllTheRetroactiveChanges();
         $this->suggestions = $this->getSuggestions($retroactiveChanges);
@@ -39,6 +41,45 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             }
         }
         return $suggestions;
+    }
+    
+    protected function unifyLines($lines){
+        $unifyLinesByStamp = [];
+        foreach ($lines as $line){
+            $unifyLinesKeys = array('aid' => $line['aid'], 'sid'=> $line['sid'], 'billrun' => $line['billrun'], 'estimated_billrun'=> $line['estimated_billrun'], 'key' => $line['key']);
+            $unifyLinesStamp = Billrun_Util::generateArrayStamp($unifyLinesKeys);
+            $unifyLinesByStamp[$unifyLinesStamp][] = $line;
+        }
+        $unifyLines = [];
+        foreach ($unifyLinesByStamp as $stamp => $lines){ 
+            foreach ($lines as $line){
+                if(isset($unifyLines[$stamp])){
+                    $unifyLines[$stamp]['grouping'][] = $this->buildGroupingForUnifyLine($line);
+                    $unifyLines[$stamp]['min_urt_line'] = min($unifyLines[$stamp]['min_urt_line'], $line['min_urt_line']);
+                    $unifyLines[$stamp]['max_urt_line'] = max($unifyLines[$stamp]['max_urt_line'], $line['max_urt_line']);
+                    $unifyLines[$stamp]['aprice'] += $line['aprice'];
+                    $unifyLines[$stamp]['usagev'] += $line['usagev'];
+                    $unifyLines[$stamp]['total_lines'] += $line['total_lines'];
+                }else{
+                    $unifyLines[$stamp] = $line;
+                    $unifyLines[$stamp]['grouping'][] = $this->buildGroupingForUnifyLine($line);
+                }
+            }
+        }
+        return array_values($unifyLines);
+    }
+    
+    protected function buildGroupingForUnifyLine($line){
+        $grouping = [];
+        foreach ($this->groupingKeys as $groupingKey){
+            $grouping[$groupingKey] = $line[$groupingKey] ?? null;
+        }
+        $grouping['min_urt_line'] = $line['min_urt_line'];
+        $grouping['max_urt_line'] = $line['max_urt_line'];
+        $grouping['aprice'] = $line['aprice'];
+        $grouping['usagev'] = $line['usagev'];
+        $grouping['total_lines'] = $line['total_lines'];
+        return $grouping;
     }
 
     protected function findAllTheRetroactiveChanges() {
@@ -160,6 +201,9 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                 ),
             );
             $lines = iterator_to_array(Billrun_Factory::db()->linesCollection()->aggregate($query));
+            if(!empty($this->groupingKeys)){
+                $lines = $this->unifyLines($lines);
+            }
             $matchingLines = array_merge($matchingLines, $lines);
         }
         return $matchingLines;
@@ -219,7 +263,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $this->cases = $cases;
     }
 
-    protected function buildSuggestion($line) {
+    protected function buildSuggestion($line) {     
         //params to search the suggestions and params to for creating onetimeinvoice/rebalance.  
         $suggestion = array_merge(array(
             'recalculation_type' => $this->getRecalculateType(),
@@ -243,6 +287,9 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         }else{
             $suggestion['from'] = new MongoDate(Billrun_Billingcycle::getStartTime($line['billrun']));
             $suggestion['to'] = new MongoDate(Billrun_Billingcycle::getEndTime($line['billrun']));   
+        }
+        if(isset($line['grouping'])){
+            $suggestion['grouping'] = $line['grouping'];
         }
         $oldPrice = $line['aprice'];
         $newPrice = $this->recalculationPrice($line);
@@ -423,11 +470,19 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     }
 
     protected function addGroupsIdsForMatchingLines() {
-        return array();
+        $groupsIds = [];
+        foreach ($this->groupingKeys as $groupingKey){
+            $groupsIds[$groupingKey] = '$' . $groupingKey;
+        }
+        return $groupsIds;
     }
 
     protected function addProjectsForMatchingLines() {
-        return array();
+        $projectsIds = [];
+        foreach ($this->groupingKeys as $groupingKey){
+            $projectsIds[$groupingKey] = '$_id.' . $groupingKey;
+        }
+        return$projectsIds;
     }
 
     protected function addForeignFieldsForSuggestion($line) {
@@ -440,6 +495,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
 
     protected function checkIfValidLine($line) {
         return true;
+    }
+    
+    protected function getGroupingFields() {
+        return array();
     }
     
     static protected function getOptions() {
