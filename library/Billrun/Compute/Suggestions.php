@@ -61,8 +61,11 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                     $unifyLines[$stamp]['usagev'] += $line['usagev'];
                     $unifyLines[$stamp]['total_lines'] += $line['total_lines'];
                 }else{
-                    $unifyLines[$stamp] = $line;
+                    $unifyLines[$stamp] = $line->getRawData();
                     $unifyLines[$stamp]['grouping'][] = $this->buildGroupingForUnifyLine($line);
+                    foreach ($this->groupingKeys as $groupingKey){  
+                        unset($unifyLines[$stamp][$groupingKey]);
+                    }
                 }
             }
         }
@@ -76,7 +79,13 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         }
         $grouping['min_urt_line'] = $line['min_urt_line'];
         $grouping['max_urt_line'] = $line['max_urt_line'];
-        $grouping['aprice'] = $line['aprice'];
+        $oldPrice = $line['aprice'];
+        $newPrice = $this->recalculationPrice($line);
+        $grouping['old_charge'] = $oldPrice;
+        $grouping['new_charge'] = $newPrice;
+        $amount = $newPrice - $oldPrice;
+        $grouping['amount'] = abs($amount);
+        $grouping['type'] = $amount > 0 ? 'debit' : 'credit';
         $grouping['usagev'] = $line['usagev'];
         $grouping['total_lines'] = $line['total_lines'];
         return $grouping;
@@ -452,7 +461,6 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             }
             $newSuggestion['grouping'] = array_merge($suggestion['grouping'], $newSuggestion['grouping']);
         }
-        $newSuggestion['new_charge'] += $suggestion['new_charge'];
     }
 
     protected function getSuggestionStamp($suggestion) {
@@ -489,7 +497,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function addProjectsForMatchingLines() {
         $projectsIds = [];
         foreach ($this->groupingKeys as $groupingKey){
-            $projectsIds[str_replace(".", "_", $groupingKey)] = '$_id.' . str_replace(".", "_", $groupingKey);
+            $projectsIds[$groupingKey] = '$_id.' . str_replace(".", "_", $groupingKey);
         }
         return$projectsIds;
     }
