@@ -442,6 +442,9 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                 $this->unifyOverlapSuggestion($newSuggestion, $suggestion);
             }
         }
+        if(isset($newSuggestion['grouping'])){
+            $newSuggestion['grouping'] = $this->unifyOverlapGrouping($newSuggestion['grouping']);
+        }
         $newSuggestion['type'] = $aprice < 0 ? 'credit' : 'debit';
         $newSuggestion['amount'] = abs($aprice);
         return $newSuggestion;
@@ -458,9 +461,35 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         if(isset($suggestion['grouping'])){
             if(empty($newSuggestion['grouping'])){
                 $newSuggestion['grouping'] = array();
-            }
+            }           
             $newSuggestion['grouping'] = array_merge($suggestion['grouping'], $newSuggestion['grouping']);
         }
+    }
+
+    protected function unifyOverlapGrouping($unifyGrouping) {
+        $unifyGroupingByStamps = [];
+        foreach ($unifyGrouping as $unifyGroup){
+            $unifyGroupingStampsKeys = [];
+            foreach ($this->groupingKeys as $groupingKey){
+                $unifyGroupingStampsKeys[]= $unifyGroup[$groupingKey];
+            }
+            $stamp = Billrun_Util::generateArrayStamp($unifyGroupingStampsKeys);
+            if(isset($unifyGroupingByStamps[$stamp])){
+                $unifyGroupingByStamps[$stamp]['min_urt_line'] = min($unifyGroup['min_urt_line'], $unifyGroupingByStamps[$stamp]['min_urt_line']);
+                $unifyGroupingByStamps[$stamp]['max_urt_line'] = max($unifyGroup['max_urt_line'], $unifyGroupingByStamps[$stamp]['max_urt_line']);
+                $oldPrice = $unifyGroupingByStamps[$stamp]['old_charge'] += $unifyGroup['old_charge'];
+                $newPrice = $unifyGroupingByStamps[$stamp]['new_charge'] += $unifyGroup['new_charge'];
+                $amount = $newPrice - $oldPrice;
+                $unifyGroupingByStamps[$stamp]['amount'] = abs($amount);
+                $unifyGroupingByStamps[$stamp]['type'] = $amount > 0 ? 'debit' : 'credit';
+                $unifyGroupingByStamps[$stamp]['usagev'] += $unifyGroup['usagev'];
+                $unifyGroupingByStamps[$stamp]['total_lines'] += $unifyGroup['total_lines'];
+            }else{
+                $unifyGroupingByStamps[$stamp] = $unifyGroup;
+            }
+        }
+        return array_values($unifyGroupingByStamps);
+        
     }
 
     protected function getSuggestionStamp($suggestion) {
