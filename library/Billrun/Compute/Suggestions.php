@@ -425,6 +425,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $newSuggestion['total_lines'] = 0;
         $newSuggestion['old_charge'] = 0;
         $newSuggestion['new_charge'] = 0;
+        unset($newSuggestion['grouping']);
         $aprice = 0;
         foreach ($suggestions as $suggestion) {
             if (!Billrun_Util::isEqual($suggestion['amount'], 0, Billrun_Bill::precision)) {
@@ -445,11 +446,19 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $newSuggestion['retroactive_changes_info'] = array_unique(array_merge($suggestion['retroactive_changes_info'], $newSuggestion['retroactive_changes_info']), SORT_REGULAR);
         $newSuggestion['old_charge'] += $suggestion['old_charge'];
         $newSuggestion['new_charge'] += $suggestion['new_charge'];
+        if(isset($suggestion['grouping'])){
+            if(empty($newSuggestion['grouping'])){
+                $newSuggestion['grouping'] = array();
+            }
+            $newSuggestion['grouping'] = array_merge($suggestion['grouping'], $newSuggestion['grouping']);
+        }
+        $newSuggestion['new_charge'] += $suggestion['new_charge'];
     }
 
     protected function getSuggestionStamp($suggestion) {
         unset($suggestion['urt']);
         unset($suggestion['stamp']);
+        unset($suggestion['grouping']);
         return Billrun_Util::generateArrayStamp($suggestion);
     }
 
@@ -472,7 +481,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function addGroupsIdsForMatchingLines() {
         $groupsIds = [];
         foreach ($this->groupingKeys as $groupingKey){
-            $groupsIds[$groupingKey] = '$' . $groupingKey;
+            $groupsIds[str_replace(".", "_", $groupingKey)] = '$' . $groupingKey .'';
         }
         return $groupsIds;
     }
@@ -480,7 +489,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function addProjectsForMatchingLines() {
         $projectsIds = [];
         foreach ($this->groupingKeys as $groupingKey){
-            $projectsIds[$groupingKey] = '$_id.' . $groupingKey;
+            $projectsIds[str_replace(".", "_", $groupingKey)] = '$_id.' . str_replace(".", "_", $groupingKey);
         }
         return$projectsIds;
     }
