@@ -159,7 +159,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		
 		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));
 		$row['timezone'] = $datetime->getOffset();
-		Billrun_Factory::dispatcher()->trigger('beforeGetLineUsageType', array(&$row, &$this->usagevUnit, &$this->volumeType, &$this->volumeSrc, &$this->stampFields));               
+		Billrun_Factory::dispatcher()->trigger('beforeGetLineUsageType', array(&$row, &$this->usagevUnit, &$this->volumeType, &$this->volumeSrc, &$this->stampFields, static::$type));               
 		$row['usaget'] = $row['usaget'] ?? $this->getLineUsageType($row);
 		$usagev = $this->getLineUsageVolume($row['uf'], $row['usaget']);
 		if ($usagev === false) {
