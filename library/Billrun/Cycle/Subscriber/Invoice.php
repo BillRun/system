@@ -261,9 +261,6 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$priceAfterVat = $pricingData['aprice'];
 		if ($vatable) {
 			$priceAfterVat = $this->addLineVatableData($pricingData, $breakdownKey, Billrun_Util::getFieldVal($row['tax_data'],array()));
-			if ($priceAfterVat == false) {
-				Billrun_Factory::log('addLineVatableData failed: Tax data missing. Line stamp: ' . $row['stamp'], Zend_Log::CRIT);
-			}
 			if(!empty($row['tax_data']['taxes'])) {
 				foreach ($row['tax_data']['taxes'] as $tax) {
 					if(empty($tax['description'])) {
@@ -327,7 +324,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			}
 			return $newPrice;
 		} else if( empty($taxData) ) {
-			return false;
+			Billrun_Factory::log('addLineVatableData failed: Tax data missing. aid: ' . $this->data['aid'] . ", sid: " . $this->data['sid'] . ", billrun: " . $this->data['key'], Zend_Log::CRIT);
 		}
 		//else 
 		return $pricingData['aprice'];
