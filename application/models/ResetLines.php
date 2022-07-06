@@ -250,7 +250,7 @@ class ResetLinesModel {
                         Billrun_Factory::log("reached $j archive line from $archiveLinesSize lines. archive line stamp: " . $archivedLine['stamp'], Zend_Log::DEBUG);
                         $j++;
                         unset($archivedLine["u_s"]);
-                        unset($archivedLine["_id"]);
+                        unset($archivedLine["_id"]);//in case already exist line with this _id but different (rare case) - can cause lose this archive line 
                         $archivedLinesToInsert[$archivedLine['stamp']] = $archivedLine;
                         $this->resetLine($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
                         $this->addLineStampToRebalanceStampsHash($archivedLine, $rebalanceStamp);
