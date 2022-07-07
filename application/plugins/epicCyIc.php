@@ -469,13 +469,13 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$params['category'] = $category;
 			$params['filters'] = Billrun_Util::getIn($categoryFilters, [$usaget, 'priorities'], Billrun_Util::getIn($categoryFilters, $usaget, []));
 			$filters = Billrun_Util::getIn($params, 'filters', $matchFilters);
-			foreach ($filters as $priority) {
+			foreach ($filters as $priorityIndex => $priority) {
 				$currentPriorityFilters = Billrun_Util::getIn($priority, 'filters', $priority);
 				$params['cache_db_queries'] = Billrun_Util::getIn($priority, 'cache_db_queries', false);
 				$query = $calculator->getEntityQuery($row, $currentPriorityFilters, $category, $params);
 
 				if (!$query) {
-					Billrun_Factory::log('Cannot get query for row ' . $row['stamp'] . '. filters: ' . print_R($currentPriorityFilters, 1) . ', params: ' . print_R($params, 1), Billrun_Log::DEBUG);
+					Billrun_Factory::log('Cannot get query for row ' . $row['stamp'] . '. priority ' . $priorityIndex, Billrun_Log::DEBUG);
 					continue;
 				}
 
