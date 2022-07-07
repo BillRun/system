@@ -49,9 +49,21 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			'allow_bill' => ['$ne' => 0],
 		);
 		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
+		$pulled_invoices_count = $invoices->count(true);
 
-		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
+		Billrun_Factory::log()->log('generator entities loaded: ' . $pulled_invoices_count, Zend_Log::INFO);
 
+		if (($pulled_invoices_count == 0) && $this->sendEmail) {
+				Billrun_Factory::log()->log("No relevant invoices were found. Checking if there are cycle' invoices for which an email should be sent..", Zend_Log::DEBUG);
+				$email_query = [
+						'billrun_key' => (string) $this->stamp,
+						'billed' => array('$eq' => 1),
+						'email_sent' => array('$exists' => false)
+				];
+				$this->only_email_invoices = $this->billrunColl->distinct('invoice_id', $email_query);
+				Billrun_Factory::log()->log('Found ' . count($this->only_email_invoices) . " invoices for which an email should be sent..", Zend_Log::DEBUG);
+		}
+		
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 
 		$this->data = $invoices;
@@ -77,8 +89,10 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		}
 		Billrun_Factory::dispatcher()->trigger('afterInvoicesConfirmation', array($invoices, (string) $this->stamp));
-		if (count($invoicesIds) > 0) {
-			$this->handleSendInvoicesByMail($invoicesIds);
+		if (count($invoicesIds) > 0 || count($this->only_email_invoices) > 0) {
+			$merged_invoices_ids = array_merge($invoicesIds, $this->only_email_invoices);
+			Billrun_Factory::log()->log('Handling email sending for ' . count($merged_invoices_ids) . ' invoices', Zend_Log::DEBUG);
+			$this->handleSendInvoicesByMail($merged_invoices_ids);
 		} else {
 			Billrun_Factory::log()->log('There are no invoices to send by email. No mail was sent.', Zend_Log::INFO);
 		}
