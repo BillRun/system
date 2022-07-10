@@ -590,4 +590,56 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         }
     }
 
+    static public function getCreditRequests($suggestionStamp) {//maybe need to be in new class? 
+        $requests = [];
+        $creditSuggestion = Billrun_Factory::db()->suggestionsCollection()->query(array('stamp' => $suggestionStamp))->cursor()->current();
+        if($creditSuggestion->isEmpty()){
+            return $requests;
+        }
+        $groupingSuggestionsInfo = $creditSuggestion['grouping'] ?? [];
+        if(!empty($groupingSuggestionsInfo)){
+            foreach ($groupingSuggestionsInfo as $groupingInfo){
+                $requests = array_merge($requests, static::getCreditSuggestionRequests($creditSuggestion, $groupingInfo));
+            }
+        }else{
+            $requests = array_merge($requests, static::getCreditSuggestionRequests($creditSuggestion));
+
+        }
+        return $requests;
+    }
+    
+    static public function getCreditSuggestionRequests($creditSuggestion, $groupingInfo = array()) {
+        $apriceFields = array('old_charge' => 'refund', 'new_charge' => 'charge');
+        foreach ($apriceFields as $apriceField => $type){
+            $requests[] = static::getCreditRequest($creditSuggestion, $apriceField, $type, $groupingInfo);
+        }
+        return $requests;
+
+    }
+    
+    static public function getCreditRequest($creditSuggestion, $apriceField, $type, $groupingInfo){
+        $mult = ($type === 'charge' ? 1 : ($type === 'refund' ? -1 : 0));
+        $newRequest =  array(
+            'aid' => $creditSuggestion['aid'],
+            'sid' => $creditSuggestion['sid'],
+            'aprice' => $mult * ($groupingInfo[$apriceField] ?? $creditSuggestion[$apriceField]),
+            'usagev' => 1,
+            'credit_time' => date("Y-m-d\TH:i:s\Z"),
+            'label' => $creditSuggestion['invoice_label'] ?? $creditSuggestion['description'] . ' - correction',
+
+        );
+        $recalculation_type = $creditSuggestion['recalculation_type'];
+        $groupingKeys = [];
+        if($recalculation_type === 'rates'){
+            $groupingKeys = Billrun_Factory::config()->getConfigValue('billrun.compute.suggestions.rate_recalculations.grouping.fields', array());
+            $newRequest = array_merge($newRequest, array('rate' => $creditSuggestion['key']));
+        }
+        if(!empty($groupingInfo)){
+            foreach ($groupingKeys as $groupingKey){
+                $newRequest = array_merge($newRequest, array($groupingKey => Billrun_Util::getIn($groupingInfo, $groupingKey)));
+            }
+        }
+        return $newRequest;
+    }
+
 }

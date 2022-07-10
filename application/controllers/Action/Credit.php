@@ -68,12 +68,24 @@ class CreditAction extends ApiAction {
 	}
 	
 	protected function setEventsData() {
-		$basicEvent = $this->setEventData();
-		$this->events[] = $basicEvent;
-		
-		if ($this->hasInstallments()) {
-			$this->setInstallmentsData();
-		}
+		$requests = [];
+                $this->originRequest = $this->request;
+                if(isset($this->request['suggestion_stamp'])){
+                    $requests = Billrun_Compute_Suggestions::getCreditRequests($this->request['suggestion_stamp']);          
+                }
+                if(empty($requests)){
+                    $requests[] = $this->request;
+                }
+                foreach ($requests as $request){
+                    $this->request = $request;
+                    $basicEvent = $this->setEventData();
+                    $this->events[] = $basicEvent;
+
+                    if ($this->hasInstallments()) {
+                            $this->setInstallmentsData();
+                    }
+                }
+
 	}
 	
 	protected function setEventData() {
@@ -286,7 +298,7 @@ class CreditAction extends ApiAction {
 		$ret = [
 			'status' => $this->status,
 			'desc' => $this->desc,
-			'input' => $this->request,
+			'input' => $this->originRequest,
 		];
 		
 		$stamps = array_column($this->events, 'stamp');
