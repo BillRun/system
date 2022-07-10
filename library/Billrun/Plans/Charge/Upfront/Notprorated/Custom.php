@@ -18,17 +18,17 @@ class Billrun_Plans_Charge_Upfront_Notprorated_Custom extends Billrun_Plans_Char
 
 	protected function getFractionOfMonth() {
 
-		if ((empty($this->deactivation) || $this->deactivation > $this->cycle->end() ) && $this->activation <= $this->cycle->start()  ) {
+		if ((empty($this->deactivation) || $this->deactivation > $this->cycle->end() ) && $this->activation < $this->cycle->start()  ) {
 			return 1;
 		}
 		$frequency = $this->recurrenceConfig['frequency'];
 		// subscriber activates in the middle of the cycle and should be charged for a partial month and should be charged for the next month (upfront)
-		if ($this->activation > $this->cycle->start() && $this->deactivation > $this->cycle->end()) {
+		if ($this->activation >= $this->cycle->start() && $this->deactivation > $this->cycle->end()) {
 			$endActivation = strtotime('-1 second', $this->deactivation);
 			return 1 + 1;
 		}
 		// subscriber activates in the middle of the cycle and should be charged for a partial month
-		if ($this->activation > $this->cycle->start() && $this->deactivation <= $this->cycle->end()) {
+		if ($this->activation >= $this->cycle->start() && $this->deactivation <= $this->cycle->end()) {
 			return 1;
 		}
 

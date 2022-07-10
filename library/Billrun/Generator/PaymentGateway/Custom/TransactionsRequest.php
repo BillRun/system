@@ -40,7 +40,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		if (isset($options['backup_path'])) {
 			$this->localDir = Billrun_Util::getBillRunSharedFolderPath($options['backup_path']);
 		} elseif (isset($this->configByType['export']['export_directory'])) {
-			$this->localDir = $this->configByType['export']['export_directory'];
+		$this->localDir = $this->configByType['export']['export_directory'];
 		} else {
 			$this->localDir = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', './backups/' . $this->getType()));
 		}
@@ -49,40 +49,39 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}
 		$this->extraParamsDef = !empty($this->configByType['parameters']) ? $this->configByType['parameters'] : [];
 		$parametersString = "";
-		foreach ($this->extraParamsDef as $index => $param) {
+		foreach ($this->extraParamsDef as $index => $param) { 
 			$field_name = !empty($param['field_name']) ? $param['field_name'] : $param['name'];
 			if (!empty($options[$field_name])) {
 				if ($param['type'] === "string") {
 					$value = !empty($param['regex']) ? (preg_match($param['regex'], $options[$field_name]) ? $options[$field_name] : "") : $options[$field_name];
 					$parametersString .= $field_name . "=" . $options[$field_name] . ",";
-				}
+		}
 			}
 		}
 		$parametersString = trim($parametersString, ",");
 		$this->options = $options;
-		$className = $this->getGeneratorClassName();
-		$generatorOptions = $this->buildGeneratorOptions();
+                $className = $this->getGeneratorClassName();
+                $generatorOptions = $this->buildGeneratorOptions();
 		$this->createLogFile();
 		$extraFields = $this->getCustomPaymentGatewayFields();
 		$this->logFile->updateLogFileField(null, null, $extraFields);
 		try {
-			$this->fileGenerator = new $className($generatorOptions);
+                $this->fileGenerator = new $className($generatorOptions);
 		} catch (Exception $ex) {
-			$this->logFile->updateLogFileField('errors', $ex->getMessage());
+                    $this->logFile->updateLogFileField('errors', $ex->getMessage());
 			$this->logFile->save();
-			throw new Exception($ex->getMessage());
-		}
-		$this->initLogFile();
-		if (!empty($options['created_by'])) {
-			$this->logFile->updateLogFileField('created_by', $options['created_by']);
-		}
+                    throw new Exception($ex->getMessage());
+                }
+                $this->initLogFile();
+				if (!empty($options['created_by'])) {
+					$this->logFile->updateLogFileField('created_by', $options['created_by']);
+				}
 		$this->logFile->updateLogFileField('file_status', Billrun_Util::getFieldVal($options['file_status'], Billrun_Util::getFieldVal($this->configByType['file_status'], static::INITIAL_FILE_STATE)));
-		$this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
-		$this->logFile->updateLogFileField('type', 'custom_payment_gateway');
-		$this->logFile->updateLogFileField('payments_file_type', $options['type']);
+                $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
+                $this->logFile->updateLogFileField('type', 'custom_payment_gateway');
+                $this->logFile->updateLogFileField('payments_file_type', $options['type']);
 		$this->logFile->updateLogFileField('backed_to', [$this->localDir]);
-		$this->logFile->updateLogFileField('parameters_string', $parametersString);
-		
+                $this->logFile->updateLogFileField('parameters_string', $parametersString);
 		$this->affects_bills = Billrun_Util::getIn($this->configByType, 'affects_bills', true);
 		$this->logFile->updateLogFileField('affects_bills', $this->affects_bills);
 	}
@@ -194,10 +193,31 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if ($params == FALSE) {
 				continue;
 			}
+			$currentPayment = $payment[0];
+			//If payment is pre-approved don't wait for confirmation and lfag it as such
+			if ($this->isAssumeApproved()) {
+				$currentPayment->setExtraFields([static::ASSUME_APPROVED_FILE_STATE => true]);
+			}
+			$params = $currentPayment->getRawData();
+			if (isset($account['payment_gateway']['active']['card_token'])) {
+				$params['card_token'] = $account['payment_gateway']['active']['card_token'];
+			}
+			if (isset($account['payment_gateway']['active']['card_expiration'])) {
+				$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
+			}
+			if (!$this->validateMandatoryFieldsExistence($currentPayment, 'payment_request')) {
+				$message = "One or more of the file's mandatory fields is missing for the payment request that was created for aid: " . $customer['aid'] . ". The payment was creadted anyway..";
+				Billrun_Factory::log($message, Zend_Log::WARN);
+				$this->logFile->updateLogFileField('warnings', $message);
+			}
+			$extraFields = array_merge_recursive($this->getCustomPaymentGatewayFields(), ['pg_request' => $this->billSavedFields]);
+			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
+			Billrun_Factory::dispatcher()->trigger('beforeSavingRequestFilePayment', array(static::$type, &$currentPayment, &$params, $this));
+			$currentPayment->save();
 			$line = $this->getDataLine($params);
 			if (!empty($line)) {
-				$this->data[] = $line;
-			}
+			$this->data[] = $line;
+		}
 		}
 		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;
@@ -330,7 +350,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				'cpg_file_type' => [!empty($this->options['file_type']) ? $this->options['file_type'] : ""]
 			];
         }
-		
 	public function handlePayment($account, $paymentParams, $customer, $options) {
 		$res_params = ['amount' => $paymentParams['amount'], 'aid' => $paymentParams['aid']];
 		if (isset($account['payment_gateway']['active']['card_token'])) {
@@ -374,5 +393,4 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		
 		return $res_params;
 	}
-
 }
