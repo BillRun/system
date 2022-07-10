@@ -250,6 +250,7 @@ class ResetLinesModel {
                         Billrun_Factory::log("reached $j archive line from $archiveLinesSize lines. archive line stamp: " . $archivedLine['stamp'], Zend_Log::DEBUG);
                         $j++;
                         unset($archivedLine["u_s"]);
+                        unset($archivedLine["_id"]);//in case already exist line with this _id but different (rare case) - can cause lose this archive line 
                         $archivedLinesToInsert[$archivedLine['stamp']] = $archivedLine;
                         $this->resetLine($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
                         $this->addLineStampToRebalanceStampsHash($archivedLine, $rebalanceStamp);
@@ -329,7 +330,7 @@ class ResetLinesModel {
                 $ret = Billrun_Factory::db()->linesCollection()->insert($archiveLine); // ok==1, err null
                 if (isset($ret['err']) && !is_null($ret['err'])) {
                     Billrun_Factory::log('Rebalance: line insertion of restoring archive line to lines failed, Insert Error: ' . $ret['err'] . ', failed_line ' . $stamp, Zend_Log::ALERT);
-                    continue;
+                    throw new Exception($ret['err']);
                 }
             } catch (Exception $e) {
                 if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
