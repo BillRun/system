@@ -376,6 +376,7 @@ class ResetLinesModel {
             $queue_line['rebalance'] = $line['rebalance'];
         }
         $queue_line['rebalance'][] = $rebalanceTime;
+        $queue_line['in_queue_since'] = new MongoDate();
         $this->buildQueueLine($queue_line, $line, $advancedProperties);
         Billrun_Factory::log("after buildQueueLine", Zend_Log::DEBUG);
         $queue_lines[] = $queue_line;
