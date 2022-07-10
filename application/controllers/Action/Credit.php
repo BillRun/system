@@ -196,6 +196,16 @@ class CreditAction extends ApiAction {
 		} else {
 			$this->parseCreditByUsagev($ret);
 		}
+                if(isset($credit_row['recalculation_type'])){
+                    $grouping_keys = Billrun_Compute_Suggestions::getGroupingFieldsByRecalculationType($credit_row['recalculation_type']);
+                    foreach ($grouping_keys as $grouping_key){
+                        $value = Billrun_util::getIn($credit_row, $grouping_key);
+                        if(isset($value)){
+                            Billrun_Util::setIn($ret, $grouping_key, $value);
+                        }
+                    }                   
+                }
+                
 		return $ret;
 	}
 	

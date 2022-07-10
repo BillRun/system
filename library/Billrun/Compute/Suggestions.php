@@ -626,12 +626,11 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'usagev' => 1,
             'credit_time' => date("Y-m-d\TH:i:s\Z"),
             'label' => $creditSuggestion['invoice_label'] ?? $creditSuggestion['description'] . ' - correction',
-
+//            'recalculation_type' => $creditSuggestion['recalculation_type']
         );
         $recalculation_type = $creditSuggestion['recalculation_type'];
-        $groupingKeys = [];
+        $groupingKeys = static::getGroupingFieldsByRecalculationType($recalculation_type);
         if($recalculation_type === 'rates'){
-            $groupingKeys = Billrun_Factory::config()->getConfigValue('billrun.compute.suggestions.rate_recalculations.grouping.fields', array());
             $newRequest = array_merge($newRequest, array('rate' => $creditSuggestion['key']));
         }
         if(!empty($groupingInfo)){
@@ -641,5 +640,11 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         }
         return $newRequest;
     }
-
+    
+    static public function getGroupingFieldsByRecalculationType($recalculationType) {
+        if($recalculationType === 'rates'){
+            return Billrun_Factory::config()->getConfigValue('billrun.compute.suggestions.rate_recalculations.grouping.fields', array());
+        }
+        return [];
+    }
 }
