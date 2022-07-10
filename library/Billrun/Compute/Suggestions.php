@@ -624,9 +624,9 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'sid' => $creditSuggestion['sid'],
             'aprice' => $mult * ($groupingInfo[$apriceField] ?? $creditSuggestion[$apriceField]),
             'usagev' => 1,
-            'credit_time' => date("Y-m-d\TH:i:s\Z"),
+            'credit_time' => date("Y-m-d\TH:i:s\Z", $groupingInfo['max_urt_line']->sec ?? $creditSuggestion['max_urt_line']->sec),
             'label' => $creditSuggestion['invoice_label'] ?? $creditSuggestion['description'] . ' - correction',
-//            'recalculation_type' => $creditSuggestion['recalculation_type']
+            'recalculation_type' => $creditSuggestion['recalculation_type']
         );
         $recalculation_type = $creditSuggestion['recalculation_type'];
         $groupingKeys = static::getGroupingFieldsByRecalculationType($recalculation_type);
