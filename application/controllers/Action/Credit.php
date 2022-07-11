@@ -77,15 +77,22 @@ class CreditAction extends ApiAction {
                     $requests[] = $this->request;
                 }
                 foreach ($requests as $request){
-                    $this->request = $request;
-                    $basicEvent = $this->setEventData();
-                    $this->events[] = $basicEvent;
+                    try {
+                        $this->request = $request;
+                        $basicEvent = $this->setEventData();
+                        $this->events[] = $basicEvent;
 
-                    if ($this->hasInstallments()) {
-                            $this->setInstallmentsData();
-                    }
+                        if ($this->hasInstallments()) {
+                                $this->setInstallmentsData();
+                        }
+                    } catch (Exception $ex) {
+                        if(count($requests) === 1){// single event
+                            throw $ex;
+                        }else{// multiple events
+                            Billrun_Factory::log($ex->getMessage() ." for credit api. request: " . print_r($this->request, 1). ", origin request: " . print_r($this->originRequest, 1), Zend_Log::CRIT);
+                        }
+                    }                   
                 }
-
 	}
 	
 	protected function setEventData() {
