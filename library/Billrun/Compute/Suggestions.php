@@ -14,7 +14,7 @@
 abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
 
     protected $suggestions;
-    protected $validRetroactiveChangesStamps;
+    protected $retroactiveChangesStamps;
 
     public function compute() {
         if (!$this->isRecalculateEnabled()) {
@@ -274,9 +274,9 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function getValidRetroactiveChanges($retroactiveChanges) {
         $validRetroactiveChanges = [];
         foreach ($retroactiveChanges as $retroactiveChange) {
+            $this->retroactiveChangesStamps[] = $retroactiveChange['stamp'];
             if ($this->checkIfValidRetroactiveChange($retroactiveChange)) {
                 $validRetroactiveChanges[] = $retroactiveChange;
-                $this->validRetroactiveChangesStamps[] = $retroactiveChange['stamp'];
             }
         }
         return $validRetroactiveChanges;
@@ -301,8 +301,8 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                 }
             }
         }
-        if (!empty($this->validRetroactiveChangesStamps)) {
-            $query = array('stamp' => array('$in' => $this->validRetroactiveChangesStamps));
+        if (!empty($this->retroactiveChangesStamps)) {
+            $query = array('stamp' => array('$in' => $this->retroactiveChangesStamps));
             $update = array(
                 '$set' => array(
                     'suggest_recalculations' => true
