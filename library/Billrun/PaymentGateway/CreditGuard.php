@@ -35,6 +35,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$credentials = $this->getGatewayCredentials();
 		$xmlParams['version'] = $credentials['version'] ?? '2000';
 		$xmlParams['mpiValidation'] = 'Verify';
+		$xmlParams['transactionType'] = 'RecurringDebit';
 		$xmlParams['userData2'] = '';
 		$xmlParams['aid'] = $aid;
 		$xmlParams['ok_page'] = $okPage;
@@ -441,7 +442,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
 										  <total>' . $xmlParams['amount'] . '</total>
-										  <transactionType>Debit</transactionType>
+										  <transactionType>' . $xmlParams['transactionType'] ?? 'Debit' . '</transactionType>
 										  <creditType>RegularCredit</creditType>
 										  <currency>ILS</currency>
 										  <transactionCode>Phone</transactionCode>
@@ -453,7 +454,13 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <dealerNumber/>
 										  <mid>' . (int) $credentials['mid'] . '</mid>
 										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
-										  <mpiValidation>' . $xmlParams['mpiValidation'] . '</mpiValidation>
+										  <mpiValidation>' . $xmlParams['mpiValidation'] . '</mpiValidation>'
+											($xmlParams['transactionType'] == 'RecurringDebit' ? '
+										  <ashraitEmvData>
+											<recurringTotalNo>999</recurringTotalNo>
+											<recurringTotalSum></recurringTotalSum>
+											<recurringFrequency>04</recurringFrequency>' : '' ) . 
+										  '</ashraitEmvData>
 										  <customerData>
 										   <userData1>' . $xmlParams['aid'] . '</userData1>
 										   <userData2>' . $xmlParams['userData2'] . '</userData2>
