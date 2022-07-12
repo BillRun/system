@@ -194,7 +194,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	public function pay($gatewayDetails, $addonData) {
-		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Debit', $addonData);
+		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'RecurringDebit', $addonData);
 		return $this->sendPaymentRequest($paymentArray);
 	}
 
