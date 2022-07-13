@@ -315,7 +315,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function validateStructureForCharge($structure) {
-		return !empty($structure['card_token']) && !empty($structure['card_expiration']) && !empty($structure['personal_id']);
+		return !empty($structure['card_token']) && !empty($structure['card_expiration']);
 	}
 	
 	protected function handleTokenRequestError($response, $params) {

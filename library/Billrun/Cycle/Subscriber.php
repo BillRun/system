@@ -407,8 +407,27 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$activationDate = @$subscriber['activation_date']->sec + (@$subscriber['activation_date']->usec/ 1000000) ?: 0;
 		$deactivationDate = @$subscriber['deactivation_date']->sec + (@$subscriber['deactivation_date']->usec/ 1000000) ?: PHP_INT_MAX;
 
+		$mongoServices = $this->cycleAggregator->getServices();
+
+		//function to merge  previous and  current services
+		$mergeServicesFunc = function ($a,$b) {
+			$retVal = $a;
+			foreach($b as $key => $srv) {
+				if(!empty($retVal[$key])) {//for  the same stamp always take the  larger qunatity
+					$retVal[$key] = floatval($retVal[$key]['quantity']) > floatval($srv['quantity']) ? $retVal[$key] : $srv;
+				} else {
+					$retVal[$key] = $srv;
+				}
+			}
+			return $retVal;
+		};
+
 		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
 			foreach($subscriber['services'] as  $tmpService) {
+				$currentMongoSrv = $mongoServices[$tmpService['name']];
+				$srvStampFields = !empty($currentMongoSrv) &&  empty($currentMongoSrv['prorated']) && !empty($currentMongoSrv['quantitative']) ?
+											['name','service_id'] :
+											['name','start','quantity','service_id'];
 				 $serviceData = array(  'name' => $tmpService['name'],
 										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
 										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
@@ -416,26 +435,25 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 										'start'=> max($tmpService['from']->sec + ($tmpService['from']->usec/ 1000000), $activationDate),
 										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000), $endTime , $deactivationDate) );
 				 if($serviceData['start'] !== $serviceData['end']) {
-					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity','service_id'));
+					$stamp = Billrun_Util::generateArrayStamp($serviceData,$srvStampFields);
 					$currServices[$stamp] = $serviceData;
 				 }
 			}
 			// Function to Check for removed services in the current subscriber record.
-			$serviceCompare = function  ($a, $b)  {
-				$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start','quantity','service_id'));
-				$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start','quantity','service_id'));
+			$serviceCompare = function  ($a, $b) use($srvStampFields)  {
+				$aStamp = Billrun_Util::generateArrayStamp($a ,$srvStampFields);
+				$bStamp = Billrun_Util::generateArrayStamp($b ,$srvStampFields);
 				return strcmp($aStamp , $bStamp);
 			};
 
 			$removedServices  = array_udiff($previousServices, $currServices, $serviceCompare);
 			foreach($removedServices as $stamp => $removed) {
-				if($sto < $removed['end'] && $sto <= $retServices[$stamp]['end']) {
-					$retServices[$stamp]['end'] = $sto;
-				} elseif ( $sfrom < $removed['end'] ) {
+				if ( $sfrom <  $removed['end'] ) {
 					$retServices[$stamp]['end'] = $sfrom;
 				}
 			}
-			$retServices = array_merge($retServices, $currServices);
+
+			$retServices = $mergeServicesFunc($retServices, $currServices);
 		}
 		Billrun_Factory::dispatcher()->trigger('afterBuildServicesSubAggregator',array($this,&$retServices));
 		return $retServices;

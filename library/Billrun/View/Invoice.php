@@ -150,7 +150,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			$key .= date('ymd',$line['start']->sec);
 		}
 		if(!empty($line['end'])) {
-			$key .=  date('ymd',$line['end']->sec);
+			$key .=  '_'.date('ymd',$line['end']->sec);
 		}
 		if(!empty($line['cycle'])) {
 			$key .= $line['cycle'];
