@@ -47,12 +47,15 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 		if (empty($this->deactivation)  ) {
 			return null;
 		}
-		
+		$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
 		// get a refund for a cancelled plan paid upfront
-		if ($this->activation > $cycle->start() //No refund need as it  started  in the current cycle
+		if ($this->activation >= $cycle->start() //No refund need as it  started  in the current cycle
 			 || 
-			$this->deactivation > $this->cycle->end() // the deactivation is in a future cycle
-			) { 
+			$this->deactivation > $this->cycle->end()  // the deactivation is in a future cycle
+			 || // deactivation is before the cycle start
+			$this->deactivation < $this->cycle->start() // the deactivation is in a future cycle
+			 || // When termination the plan the is no proration (so no refund)
+			!$endProration ) {
 			return null;
 		}
 		
@@ -65,6 +68,8 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 			'start' => $this->activation,
 			'prorated_start_date' => new Mongodloid_Date($this->deactivation),
 			'end' => $this->deactivation,
-			'prorated_end_date' =>  new Mongodloid_Date($this->cycle->end()));
+			'prorated_end_date' =>  new Mongodloid_Date($this->cycle->end()),
+			'prorated_end' => true,
+			'is_upfront' => true);
 	}
 }

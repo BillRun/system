@@ -13,7 +13,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	use Billrun_Traits_ForeignFields;
 	
-	protected  static $copyFromChargeData = ['prorated_start','prorated_end','prorated_start_date'];
+	protected static $copyFromChargeData = ['prorated_start', 'prorated_end', 'prorated_start_date', 'is_upfront'];
 	protected $plan = null;
 	protected $name = null;
 	protected $start = 0;

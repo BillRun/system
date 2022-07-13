@@ -41,7 +41,7 @@ class Billrun_Plans_Charge {
 
 		// Check if has refund
 		if ($chargeObj instanceof Billrun_Plans_Charge_Upfront) {
-			$refund = $chargeObj->getRefund($cycle,$entityData['quantity']);
+			$refund = $chargeObj->getRefund($cycle,Billrun_Util::getFieldVal($entityData['quantity'], 1));
 			if ($refund !== null) {
 				$results['refund'] = $refund;
 			}
