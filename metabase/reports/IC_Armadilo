@@ -45,7 +45,7 @@
   component:"$cf.component"},
   "EVENT_DURATION_D": {$sum: "$usagev"}, 
   "CHARGE_EVENT_DURATION_D": {$sum: "$cf.cusagev"}, 
-  CALL_COUNT_D:{$sum:1}, 
+  CALL_COUNT_D:{$sum:"$lcount"}, 
   "aprice":{$sum: "$aprice"}}},
   {$addFields: {COSTY: 0,COSTX :0}},
 
