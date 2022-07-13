@@ -215,6 +215,7 @@ class ResetLinesModel {
     }
 
     protected function resetLinesByQuery($lines, $update_aids, $advancedProperties, $lines_coll, $queue_coll) {
+        Billrun_Factory::dispatcher()->trigger('beforeResetLinesByQuery', array(&$lines));
         $rebalanceTime = new MongoDate();
         $stamps = array();
         $queue_lines = array();
