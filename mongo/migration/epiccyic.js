@@ -9604,6 +9604,15 @@ lastConfig = runOnce(lastConfig, 'EPICIC-120', function () {
 	}
 });
 
+//EPICIC-166: Unify stamp should include the rate_price
+lastConfig = runOnce(lastConfig, 'EPICIC-166', function () {
+	for (var i = 0; i < lastConfig.file_types.length; i++) {
+		if (lastConfig.file_types[i].file_type === "ICT") {
+			lastConfig["file_types"][i]["unify"]["unification_fields"]["stamp"]["value"].push('cf.rate_price');
+		}
+	}
+});
+
 //EPICIC-66: user_summ/event_start_time position error in export generator
 lastConfig = runOnce(lastConfig, 'EPICIC-66', function () {
 	for (var i = 0; i < lastConfig.export_generators.length; i++) {
