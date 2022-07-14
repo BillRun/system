@@ -9758,7 +9758,13 @@ lastConfig = runOnce(lastConfig, 'EPICIC-167', function () {
 							"value": [
 								"credit"
 							]
-						}
+						},{
+                                                    "field": "source",
+                                                    "op": "in",
+                                                    "value": [
+                                                            "credit"
+                                                    ]
+                                                }
 					],
 					"time_range": "-1 year"
 				}
@@ -9779,7 +9785,14 @@ lastConfig = runOnce(lastConfig, 'EPICIC-167', function () {
 								"value": [
 									"credit"
 								]
-							}
+							},
+                                                        {
+                                                                "field": "source",
+                                                                "op": "in",
+                                                                "value": [
+                                                                        "credit"
+                                                                ]
+                                                            }
 						]
 					}
 				],
