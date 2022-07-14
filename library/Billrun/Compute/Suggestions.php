@@ -609,21 +609,21 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     }
     
     static public function getCreditSuggestionRequests($creditSuggestion, $groupingInfo = array()) {
-        $apriceFields = array('old_charge' => 'refund', 'new_charge' => 'charge');
-        foreach ($apriceFields as $apriceField => $type){
-            $requests[] = static::getCreditRequest($creditSuggestion, $apriceField, $type, $groupingInfo);
+        $apriceFields = array('old_charge', 'new_charge');
+        foreach ($apriceFields as $apriceField){
+            $requests[] = static::getCreditRequest($creditSuggestion, $apriceField, $groupingInfo);
         }
         return $requests;
 
     }
     
-    static public function getCreditRequest($creditSuggestion, $apriceField, $type, $groupingInfo){
-        $mult = ($type === 'charge' ? 1 : ($type === 'refund' ? -1 : 0));
+    static public function getCreditRequest($creditSuggestion, $apriceField, $groupingInfo){
+        $mult = ($apriceField === 'old_charge' ? -1 : ($apriceField === 'new_charge' ? 1 : 0));
         $newRequest =  array(
             'aid' => $creditSuggestion['aid'],
             'sid' => $creditSuggestion['sid'],
             'aprice' => $mult * ($groupingInfo[$apriceField] ?? $creditSuggestion[$apriceField]),
-            'usagev' => 1,
+            'usagev' => $groupingInfo['usagev'] ?? $creditSuggestion['usagev'],
             'credit_time' => date("Y-m-d\TH:i:s\Z", $groupingInfo['max_urt_line']->sec ?? $creditSuggestion['max_urt_line']->sec),
             'label' => $creditSuggestion['invoice_label'] ?? $creditSuggestion['description'] . ' - correction',
             'recalculation_type' => $creditSuggestion['recalculation_type']

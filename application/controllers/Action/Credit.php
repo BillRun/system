@@ -89,7 +89,8 @@ class CreditAction extends ApiAction {
                         if(count($requests) === 1){// single event
                             throw $ex;
                         }else{// multiple events
-                            Billrun_Factory::log($ex->getMessage() ." for credit api. request: " . print_r($this->request, 1). ", origin request: " . print_r($this->originRequest, 1), Zend_Log::CRIT);
+                            $this->status = 2;
+                            Billrun_Factory::log($ex->getMessage() ." for credit api. request: " . print_r($this->request, 1). ", origin request: " . print_r($this->originRequest, 1), Zend_Log::NOTICE);
                         }
                     }                   
                 }
