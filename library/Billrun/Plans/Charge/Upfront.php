@@ -35,6 +35,10 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 * @return int, null if no charge
 	 */
 	public function getPrice($quantity = 1) {
+		//Is the  activation/deactivation outside the current cycle?
+		if( $this->activation > $this->cycle->end() || $this->deactivation < $this->cycle->start()) {
+			return null;
+		}
 
 		$fraction = $this->getFractionOfMonth();
 		if($fraction === null) {
@@ -49,7 +53,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 							['cycle'=> $this->cycle , 'fraction'=> $fraction  - 1],
 							['cycle'=> $nextCycle , 'fraction'=> 1 ],
 						];
-			} else if ($fraction == 1 ) {
+			} else if ($fraction == 1 && $this->activation <= $this->cycle->start() ) {
 				$cycles = [['cycle'=> $nextCycle , 'fraction'=> $fraction]];
 			}
 		}
