@@ -447,7 +447,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
 										  <total>' . $xmlParams['amount'] . '</total>
-										  <transactionType>' . $xmlParams['transactionType'] ?? 'Debit' . '</transactionType>
+										  <transactionType>' . ($xmlParams['transactionType'] ?? 'Debit') . '</transactionType>
 										  <creditType>RegularCredit</creditType>
 										  <currency>ILS</currency>
 										  <transactionCode>Phone</transactionCode>
