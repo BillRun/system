@@ -422,6 +422,11 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected function getXmlStructureByParams($credentials, $xmlParams, $addonData = array()) {
 		$XParameter = !empty($addonData['txid']) ? '<user>' . $addonData['txid']  . '</user>' : '';
 		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
+		$ashraitEmvData = '<ashraitEmvData>
+						<recurringTotalNo>999</recurringTotalNo>
+						<recurringTotalSum></recurringTotalSum>
+						<recurringFrequency>04</recurringFrequency>
+					</ashraitEmvData>';
 	
 		return array(
 			'user' => $credentials['user'],
@@ -455,12 +460,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <mid>' . (int) $credentials['mid'] . '</mid>
 										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
 										  <mpiValidation>' . $xmlParams['mpiValidation'] . '</mpiValidation>'
-											($xmlParams['transactionType'] == 'RecurringDebit' ? '
-										  <ashraitEmvData>
-											<recurringTotalNo>999</recurringTotalNo>
-											<recurringTotalSum></recurringTotalSum>
-											<recurringFrequency>04</recurringFrequency>' : '' ) . 
-										  '</ashraitEmvData>
+											($xmlParams['transactionType'] == 'RecurringDebit' ?  $ashraitEmvData : '' ) . '
 										  <customerData>
 										   <userData1>' . $xmlParams['aid'] . '</userData1>
 										   <userData2>' . $xmlParams['userData2'] . '</userData2>
