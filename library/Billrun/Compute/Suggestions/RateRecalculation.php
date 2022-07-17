@@ -65,24 +65,30 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
         }
     }
 
-    protected function addGroupsIdsForMatchingLines() {
-        return array(
+    protected function addGroupsIdsForMatchingLines() {       
+        $groupsIds = parent::addGroupsIdsForMatchingLines();
+        return array_merge(array(
             'plan' => '$plan',
             'services' => '$services'
-        );
+        ), $groupsIds);
     }
     
     protected function addFieldsForMatchingLines($retroactiveChange) {
         $rate =  Billrun_Rates_Util::getRateByName($retroactiveChange['key'], $retroactiveChange['new']['from']->sec);
-        return array('description' => $rate['description']);
+        return array('description' => $rate['description'], 'invoice_label' => $rate['invoice_label']);
     }
     
     protected function addForeignFieldsForSuggestion($line) {
-        return array('description' => $line['description']);
+        return array('description' => $line['description'], 'invoice_label' => $line['invoice_label']);
+    }
+
+    protected function getGroupingFields(){
+        return Billrun_Factory::config()->getConfigValue('billrun.compute.suggestions.rate_recalculations.grouping.fields', array());
     }
 
     protected function addProjectsForMatchingLines() {
-        return array('plan' => '$_id.plan', 'services' => '$_id.services', 'description' => 1);
+        $projectsIds = parent::addProjectsForMatchingLines();        
+        return array_merge(array('plan' => '$_id.plan', 'services' => '$_id.services', 'description' => 1, 'invoice_label' => 1), $projectsIds);
     }
 
     protected function checkIfValidLine($line) {

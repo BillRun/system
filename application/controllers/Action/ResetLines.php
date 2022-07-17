@@ -57,19 +57,31 @@ class ResetLinesAction extends ApiAction {
 		try {
 			$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
 			foreach ($aids as $aid) {
-				$rebalanceLine = array(
+				$query = [
 					'aid' => $aid,
 					'billrun_key' => $billrun_key,
-					'conditions' => !empty($conditions) ? $conditions : array(),
-					'conditions_hash' => md5(serialize($conditions)),
-					'creation_date' => new MongoDate()
-				);	
-				$rebalance_queue->insert($rebalanceLine);
+					'$or' => array(
+						array('start_time' => array('$exists' => true), 'end_time' => array('$exists' => false)),
+						array('start_time' => array('$exists' => false), 'end_time' => array('$exists' => false)),
+					)
+				];
+				$exist_rebalance_object = $rebalance_queue->query($query)->count();
+				if(empty($exist_rebalance_object)) {
+					$rebalanceLine = array(
+						'aid' => $aid,
+						'billrun_key' => $billrun_key,
+						'conditions' => !empty($conditions) ? $conditions : array(),
+						'conditions_hash' => md5(serialize($conditions)),
+						'creation_date' => new MongoDate()                                       
+					);
+					$rebalanceLine['stamp'] =  md5(serialize($rebalanceLine));
+					$rebalance_queue->insert($rebalanceLine);
+				}
 			}
 		} catch (Exception $exc) {
 			Billrun_Util::logFailedResetLines($aids, $billrun_key, $invoicing_day);
-			$this->setError($exc->getMessage());
-                        return FALSE;
+						$this->setError($exc->getMessage());				
+			return FALSE;
 		}
 
 		$this->getController()->setOutput(array(array(

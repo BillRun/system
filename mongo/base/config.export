@@ -216,6 +216,10 @@
                 "editable": true,
                 "display": true,
                 "title": "Salutation"
+            }, {
+                "field_name": "in_collection",
+                "system": true,
+                "display": false
             }]
         }
     },

@@ -82,15 +82,21 @@ class Billrun_Generator_PaymentGateway_Csv {
 	
 	public function generate() {
 		if (count($this->data) || $this->forceHeader){
-			$this->writeHeaders();
+			if (!$this->writeHeaders()) {
+				return false;
+			}
 		}
 		if (count($this->data)) {
-			$this->writeRows();
+			if (!$this->writeRows()) {
+				return false;
+			}
 		}
 		if (count($this->data)|| $this->forceFooter){
-			$this->writeTrailers();
+			if (!$this->writeTrailers()) {
+				return false;
+			}
 		}
-		return;
+		return true;
 	}
 	
 	protected function writeToFile($str) {
@@ -99,6 +105,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 			mkdir($this->local_dir, 0777, true);
 		}
 		return file_put_contents($this->file_path, $str, FILE_APPEND);
+		
 	}
 
 	protected function writeHeaders() {
@@ -112,12 +119,17 @@ class Billrun_Generator_PaymentGateway_Csv {
 			$fileContents .= $this->getRowContent($entity);
 			$fileContents .= PHP_EOL;
 			if ($counter == 50000) {
-				$this->writeToFile($fileContents);
+				if (!$this->writeToFile($fileContents)) {
+					return false;
+				}				
 				$fileContents = '';
 				$counter = 0;
 			}
 		}
-		$this->writeToFile($fileContents);
+		if (!$this->writeToFile($fileContents)) {
+			return false;
+		}
+		return true;
 	}
 	
 	protected function writeTrailers() {
@@ -131,12 +143,17 @@ class Billrun_Generator_PaymentGateway_Csv {
 			$fileContents .= $this->getRowContent($entity);
 			$fileContents .= PHP_EOL;
 			if ($counter == 50000) {
-				$this->writeToFile($fileContents);
+				if (!$this->writeToFile($fileContents)) {
+					return false;
+				}
 				$fileContents = '';
 				$counter = 0;
 			}
 		}
-		$this->writeToFile($fileContents);
+		if (!$this->writeToFile($fileContents)) {
+			return false;
+		}
+		return true;
 	}
 		
 	protected function writeRows() {
@@ -154,7 +171,9 @@ class Billrun_Generator_PaymentGateway_Csv {
 			}
 			if ($counter == 50000) {
 				Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - writing bulk to file", Zend_Log::DEBUG);
-				$this->writeToFile($fileContents);
+				if (!$this->writeToFile($fileContents)) {
+					return false;
+				}
 				$fileContents = '';
 				$counter = 0;
 			}
@@ -163,8 +182,11 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if (!empty($this->trailers)) {
 			$fileContents.= PHP_EOL;
 		}
-		$this->writeToFile($fileContents);
+		if (!$this->writeToFile($fileContents)) {
+			return false;
+		}
 		Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - done writing rows to file", Zend_Log::DEBUG);
+		return true;
 	}
 	
 	protected function getRowContent($entity) {

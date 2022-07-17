@@ -50,11 +50,16 @@ class Models_Rates extends Models_Entity {
 		// to allow create revisions - if OK can be moved to the parrent
 		if ($this->is_import) {
 			$duplicate_check_fields = Billrun_Util::getFieldVal($this->config['duplicate_check'], []);
-			$duplicate_check_fields['date'] = 'from';
 			$query = array();
 			foreach ($duplicate_check_fields as $fieldName) {
 				$query[$fieldName] = $data[$fieldName];
 			}
+			$query['from'] = [
+				'$lt' => $data['to']
+			];
+			$query['to'] = [
+				'$gt' => $data['from']
+			];
 			if ($ignoreIds) {
 				$query['_id'] = array(
 					'$nin' => $ignoreIds,

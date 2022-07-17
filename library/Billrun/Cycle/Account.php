@@ -66,6 +66,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		return $this->discounts;
 	}
 
+	public function setUserFields(array $user_fields){
+		$this->invoice->setUserFields($user_fields);
+	}
+
 	public function applyDiscounts($flatLines) {
 		Billrun_Factory::log('Applying discounts.', Zend_Log::DEBUG);
 

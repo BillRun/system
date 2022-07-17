@@ -587,7 +587,15 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		return $updateFailedLines;
 	}
 	
-	public static function getUnifyLines($rowStamp){
-		return Billrun_Factory::db()->archiveCollection()->query(array('u_s' => $rowStamp));
+	public static function getUnifyLines($rowStamp, $limit = false, $skip = false){
+
+		$unifyLines = Billrun_Factory::db()->archiveCollection()->query(array('u_s' => $rowStamp))->cursor();
+                if($skip){
+                    $unifyLines = $unifyLines->skip($skip);
+                }
+                if ($limit) {
+                    $unifyLines = $unifyLines->limit($limit);
+                }
+                return $unifyLines;
 	}
 }

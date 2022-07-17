@@ -807,12 +807,14 @@ db.taxes.ensureIndex({'key':1, 'from': 1, 'to': 1}, { unique: true, background: 
 db.taxes.ensureIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
 db.taxes.ensureIndex({'to': 1 }, { unique: false , sparse: true, background: true });
 
-//Suggestions Collection
-db.createCollection('suggestions');
-db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculationType':1, 'estimated_billrun':1}, { unique: true , background: true});
-db.suggestions.ensureIndex({'status': 1 }, { unique: false , background: true});
-
-
+lastConfig = runOnce(lastConfig, 'BRCD-3678', function () {
+    //Suggestions Collection
+    db.createCollection('suggestions');
+    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1_estimated_billrun_1");
+    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1");
+    db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: true , background: true});
+    db.suggestions.ensureIndex({'status': 1 }, { unique: false , background: true});
+});
 // BRCD-1936: Migrate old discount structure to new discount structure
 function isEmpty(obj) {
     for(var key in obj) {
@@ -1160,22 +1162,22 @@ if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping
 	const mapping = lastConfig.import.mapping;
 	mapping.forEach((mapper, key) => {
 		if (typeof mapper.map !== 'undefined') {
-			let convertedMapper = [];
 			if (!Array.isArray(mapper.map)) {
+				let convertedMapper = [];
 				Object.keys(mapper.map).forEach((field_name) => {
 					convertedMapper.push({field: field_name,value: mapper.map[field_name]});
 				});
+				mapping[key].map = convertedMapper;
 			}
-			mapping[key].map = convertedMapper;
 		}
 		if (typeof mapper.multiFieldAction !== 'undefined') {
-			let convertedMultiFieldAction = [];
 			if (!Array.isArray(mapper.multiFieldAction)) {
+				let convertedMultiFieldAction = [];
 				Object.keys(mapper.multiFieldAction).forEach((field_name) => {
 					convertedMultiFieldAction.push({field: field_name,value: mapper.multiFieldAction[field_name]});
 				});
+				mapping[key].multiFieldAction = convertedMultiFieldAction;
 			}
-			mapping[key].multiFieldAction = convertedMultiFieldAction;
 		}
 	});
 	lastConfig.import.mapping = mapping;
@@ -1366,6 +1368,30 @@ runOnce(lastConfig, 'BRCD-2772', function () {
     lastConfig['plugins'].push(_webhookPluginsSettings);
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-3527', function () {
+    var inCollectionField = 
+            {
+                    "field_name": "in_collection",
+                    "system": true,
+                    "display": false
+            };
+    lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], inCollectionField, 'account');
+		});
+
+// BRCD-3325 : Add default condition - the "rejection_required" condition doesn't exist.
+lastConfig = runOnce(lastConfig, 'BRCD-3325', function () {
+    var rejection_required_cond = {
+        "field": "aid",
+				"op" : "exists",
+				"value" : false
+    };
+		lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
+});
 
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
+db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
+db.lines.dropIndex("aid_1_urt_1");
+db.rebalance_queue.ensureIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});
+db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
+db.rebalance_queue.ensureIndex({"aid": 1, "billrun_key": 1}, {unique: false, "background": true});
