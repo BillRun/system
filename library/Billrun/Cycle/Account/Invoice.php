@@ -146,11 +146,13 @@ class Billrun_Cycle_Account_Invoice {
 			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet(array('invoice_type' => $invoiceType), $option['conditions'])) { //TODO: transfer the entity instead of just array with invoice_type
 				 return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));										  // once BRCD-2351 is fixed
 			}
-			if (!empty($this->data[$option['anchor_field']]) && $this->data[$option['anchor_field']] instanceof Mongodloid_Date && $this->isConditionsMeet(array('invoice_type' => $invoiceType), $option['conditions'])) {
-				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $this->data[$option['anchor_field']]->sec));
+			if (!empty($initData[$option['anchor_field']]) && $initData[$option['anchor_field']] instanceof Mongodloid_Date &&
+				$this->isConditionsMeet(array('invoice_type' => $invoiceType), $option['conditions'])) {
+					return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $initData[$option['anchor_field']]->sec));
 			}
-			if (!empty($initData[$option['anchor_field']]) && $initData[$option['anchor_field']] instanceof Mongodloid_Date && $this->isConditionsMeet(array('invoice_type' => $invoiceType), $option['conditions'])) {
-				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $initData[$option['anchor_field']]->sec));
+			if (!empty($this->data[$option['anchor_field']]) && $this->data[$option['anchor_field']] instanceof Mongodloid_Date &&
+				$this->isConditionsMeet(array('invoice_type' => $invoiceType), $option['conditions'])) {
+					return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $this->data[$option['anchor_field']]->sec));
 			}
 		}
 		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
