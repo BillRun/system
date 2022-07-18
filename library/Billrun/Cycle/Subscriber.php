@@ -361,13 +361,13 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			if($name === null) {
 				$name = $subPlan['plan'];
 				$from = $subPlan['plan_activation']->sec;
-				$to = $subPlan['to']->sec;
+				$to = empty($subPlan['plan_deactivation']) ? $subPlan['to']->sec : $subPlan['plan_deactivation']->sec;
 				continue;
 			}
 			$currName = $subPlan['plan'];
 			// If it is the same plan name, continue
-			if($name == $currName) {
-				$to = $subPlan['to']->sec;
+			if($name == $currName && $from == $subPlan['plan_activation']->sec) {
+				$to = empty($subPlan['plan_deactivation']) ? $subPlan['to']->sec : $subPlan['plan_deactivation']->sec;
 				continue;
 			}
 
@@ -404,38 +404,56 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$retServices = &$previousServices;
 		$sto = $subscriber['sto'];
 		$sfrom = $subscriber['sfrom'];
-		$activationDate = @$subscriber['activation_date']->sec ?: 0;
-		$deactivationDate = @$subscriber['deactivation_date']->sec ?: PHP_INT_MAX;
+		$activationDate = @$subscriber['activation_date']->sec + (@$subscriber['activation_date']->usec/ 1000000) ?: 0;
+		$deactivationDate = @$subscriber['deactivation_date']->sec + (@$subscriber['deactivation_date']->usec/ 1000000) ?: PHP_INT_MAX;
+
+		$mongoServices = $this->cycleAggregator->getServices();
+
+		//function to merge  previous and  current services
+		$mergeServicesFunc = function ($a,$b) {
+			$retVal = $a;
+			foreach($b as $key => $srv) {
+				if(!empty($retVal[$key])) {//for  the same stamp always take the  larger qunatity
+					$retVal[$key] = floatval($retVal[$key]['quantity']) > floatval($srv['quantity']) ? $retVal[$key] : $srv;
+				} else {
+					$retVal[$key] = $srv;
+				}
+			}
+			return $retVal;
+		};
 
 		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
 			foreach($subscriber['services'] as  $tmpService) {
+				$currentMongoSrv = $mongoServices[$tmpService['name']];
+				$srvStampFields = !empty($currentMongoSrv) &&  empty($currentMongoSrv['prorated']) && !empty($currentMongoSrv['quantitative']) ?
+											['name','service_id'] :
+											['name','start','quantity','service_id'];
 				 $serviceData = array(  'name' => $tmpService['name'],
 										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
 										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
-										'plan' => $subscriber['plan'],
-										'start'=> max($tmpService['from']->sec, $activationDate),
-										'end'=> min($tmpService['to']->sec, $endTime , $deactivationDate) );
+										'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
+										'start'=> max($tmpService['from']->sec + ($tmpService['from']->usec/ 1000000), $activationDate),
+										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000), $endTime , $deactivationDate) );
 				 if($serviceData['start'] !== $serviceData['end']) {
-					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity','service_id'));
+					$stamp = Billrun_Util::generateArrayStamp($serviceData,$srvStampFields);
 					$currServices[$stamp] = $serviceData;
 				 }
 			}
 			// Function to Check for removed services in the current subscriber record.
-			$serviceCompare = function  ($a, $b)  {
-				$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start','quantity','service_id'));
-				$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start','quantity','service_id'));
+			$serviceCompare = function  ($a, $b) use($srvStampFields)  {
+				$aStamp = Billrun_Util::generateArrayStamp($a ,$srvStampFields);
+				$bStamp = Billrun_Util::generateArrayStamp($b ,$srvStampFields);
 				return strcmp($aStamp , $bStamp);
 			};
 
 			$removedServices  = array_udiff($previousServices, $currServices, $serviceCompare);
 			foreach($removedServices as $stamp => $removed) {
-				if($sto < $removed['end'] && $sto <= $retServices[$stamp]['end']) {
-					$retServices[$stamp]['end'] = $sto;
-				} elseif ( $sfrom < $removed['end'] ) {
+				if ( $sfrom <  $removed['end'] ) {
 					$retServices[$stamp]['end'] = $sfrom;
 				}
 			}
-			$retServices = array_merge($retServices, $currServices);
+
+			$retServices = $mergeServicesFunc($retServices, $currServices);
 		}
 		Billrun_Factory::dispatcher()->trigger('afterBuildServicesSubAggregator',array($this,&$retServices));
 		return $retServices;
@@ -476,16 +494,16 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$services = array();
 		$subend = 0;
 		foreach ($current as $subscriber) {
+			$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
+			$subend = max($subscriber['sto'], $subend);
+			// Get the services for the subscriber.
+			$services = $this->buildServicesSubAggregator($subscriber, $services, $endTime);
 			if(!$this->hasPlans($subscriber)) {
 				continue;
 			}
-			$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
-			$subend = max($subscriber['sto'], $subend);
 			// Get the plans
 			$subscriberPlans= array_merge($subscriberPlans,Billrun_Util::getFieldVal($subscriber['plans'],array()));
 
-			// Get the services for the subscriber.
-			$services = $this->buildServicesSubAggregator($subscriber, $services, $endTime);
 
 		}
 
@@ -517,9 +535,14 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 
 	protected function handleSubscriberDates($subscriber, $endTime) {
+		if (!empty($subscriber['from']->sec)) {
+			$to = $subscriber['to']->sec;
+			$from = $subscriber['from']->sec;
+		} else {
 		$to = $subscriber['to'];
 		$from = $subscriber['from'];
 
+		}
 		if($to > $endTime) {
 			$to = $endTime;
 			Billrun_Factory::log("Taking the end time! " . $endTime);

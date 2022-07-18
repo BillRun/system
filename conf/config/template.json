@@ -134,8 +134,21 @@
 				"type": "percentage",
 				"editable": true,
 				"display": true
+			},
+			{
+				"field_name": "embed_tax",
+				"system": true,
+				"title": "Embed Tax",
+				"mandatory": true,
+				"type": "boolean",
+				"editable": true,
+				"display": true,
+				"description": "In case the tax should be embedded (included in the customer price), please check the box"
 			}
 		]
+	},
+	"bills": {
+		"fields": []
 	},
         "discounts": {
     "fields": [

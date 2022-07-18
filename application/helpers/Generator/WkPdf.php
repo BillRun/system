@@ -27,7 +27,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
 	protected $exporterFlags = null;
+	protected $invoice_extra_params = [];
 	
+
 
 	/**
 	 *
@@ -124,6 +126,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->render_subscription_details = Billrun_Util::getFieldVal($options['subscription_details'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_subscription_details', TRUE));
 		$this->tanent_css = $this->buildTanentCss(Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_tanent_css', ''));
 		$this->is_fake_generation = Billrun_Util::getFieldVal($options['is_fake'],FALSE);
+		$this->render_detailed_quantitative_services = Billrun_Util::getFieldVal($options['detailed_quantitative_services'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_detailed_quantitative_services', FALSE));
 	}
 
 	/**
@@ -157,6 +160,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('servicesColl', $this->servicesColl);
 		$this->view->assign('template', $this->template);
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
+		$this->view->assign('invoice_display_options', Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_display_options', []));
 		$this->prepareGraphicsResources();
 	}
 
@@ -167,15 +171,147 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 
 	public function generate($lines = FALSE) {
-
 		$this->prepereView();
-
+		$customizedFileName = 0;
+                if(!empty($fileNameConfig = $this->getFileNameConfig())){
+                    $customizedFileName = 1;
+                }
+                if(count($this->getExportPaths()) > 0){
+                    $exportPaths = $this->getExportPaths();
+                }
 		foreach ($this->billrun_data as $object) {
+		    $defaultFileName = $object['billrun_key'] . "_" . $object['aid'] . "_" . $object['invoice_id'] . ".pdf";
+                    if($customizedFileName){
+                        $fileName = $this->getFileName($object, $fileNameConfig, $defaultFileName);
+                    }else{
+                        $fileName = $defaultFileName;
+                    }
+                    $this->setFileName($object, $fileName);
+                    if(!$this->isOnetime()){
+                        if(count($this->getExportPaths()) > 0){
+                            $paths = $this->getBillrunExportPath($object, $exportPaths);
+                            $this->setBillrunExportPath($object, $paths);
+                	}
+		     }
 			if (isset($object['invoice_id'])) {
 				$this->generateAccountInvoices($object, $lines);
 			}
 		}
 	}
+/**
+         * 
+         * @param Mongodloid_Entity $billrunObject 
+         * @param type $exportPaths array - contains 'path' => [conditions to get this path]
+         * @return $path - invoice export path
+         */
+
+        public function getBillrunExportPath($billrunObject, $exportPaths) {
+            if ($billrunObject instanceof Mongodloid_Entity) {
+                    $meetConditions = 0;
+                    $billrun = $billrunObject->getRawData();
+                    foreach ($exportPaths as $path => $conditions){
+                        foreach($conditions as $condition){
+                            if (Billrun_Util::isConditionMet ($billrun, $condition)){
+                                $meetConditions = 1;
+                            }
+                        }
+                    if($meetConditions && !$this->is_fake_generation){
+                        $relative_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::$type . '.export') . DIRECTORY_SEPARATOR . $this->stamp . DIRECTORY_SEPARATOR . $path);
+                        $this->paths['pdf'] = $relative_path . "pdf/";
+                        $this->paths['html'] = $relative_path . "html/";
+                        return $this->paths;
+                    }
+                }
+                return $this->paths;
+            }
+        }
+		
+        public function getFileName($billrunObject, $fileNameConfig, $defaultFileName) {
+            if ($billrunObject instanceof Mongodloid_Entity){
+                $meetConditions = 0;
+                $billrun = $billrunObject->getRawData();
+                foreach ($fileNameConfig as $index => $currentConfig){
+                    foreach ($currentConfig['conditions'] as $condition){
+                        if (Billrun_Util::isConditionMet($billrun, $condition)){
+                            $meetConditions = 1;
+                        }
+                    }
+                    if ($meetConditions){
+                        foreach ($currentConfig['params'] as $paramObj){
+                            $translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $billrun);
+                            if(empty($translations[$paramObj['param']])){
+                                $translations[$paramObj['param']] = "No_" . $paramObj['linked_entity']['field_name'];
+                            }
+                        }
+                        if (!in_array(-1, $translations)){
+                            return Billrun_Util::translateTemplateValue($currentConfig['pattern'], $translations, null, true);
+                        }else{
+                            return $defaultFileName;
+                        }
+                    }
+                }
+                return $defaultFileName;
+            }
+        }
+        
+        public function setFileName($billrunObject, $fileName) {
+            $billrunObject->set('file_name', $fileName);
+        }
+        
+        public function getTranslationValue($paramObj, $billrunObject) {
+            if(isset($paramObj['linked_entity'])){
+                if(isset($paramObj['type']) && $paramObj['type'] === "date"){
+                    $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
+                    $date = $billrunObject[$paramObj['linked_entity']['field_name']];
+                    if($date instanceof MongoDate){
+                        $date = $date->sec;
+                        if (isset($paramObj['offset'])){
+                            $date = $this->getDateWithOffset($paramObj['offset'], $date);
+                        }
+                        return date($dateFormat, $date);
+                    }else{
+                        Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". Wanted field isn't a date field. 'now' was chosen instead.", Zend_Log::ERR);
+                        return date($dateFormat, time());
+                    }
+                }else{
+                    if(isset($paramObj['type']) && $paramObj['type'] === "string"){
+                        return trim(Billrun_Util::getIn($billrunObject, $paramObj['linked_entity']['field_name']));
+                    }else{
+                        Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". type is'nt string/date. None customized file name was chosen.", Zend_Log::ERR);
+                    }
+                }
+            } else{
+                if((isset($paramObj['type']) && $paramObj['type'] === "date") && !(isset($paramObj['linked_entity']))){
+                    if($paramObj['value'] === "now"){
+                        $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
+                        if (isset($paramObj['offset'])){
+                            $date = $this->getDateWithOffset($paramObj['offset'], "now");
+                        }
+                        return date($dateFormat, time());
+                    }else{
+                        Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". Date's value isn't 'now'. 'now' was chsen.", Zend_Log::ERR);
+                        return date($dateFormat, time());
+                    }
+                }else{
+                    if((isset($paramObj['type']) && $paramObj['type'] === "string") && !(isset($paramObj['linked_entity']))){
+                        return trim($paramObj['value']);
+                    }else{
+                        Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". Missing 'linked entity, and the type isn't date/string.  None customized file name was chosen.", Zend_Log::ERR);
+                        return -1;
+                    }
+                }
+            }
+        }
+        
+        public function getDateWithOffset($offset, $date){
+            try{
+                $shiftedDate = strtotime($offset, $date);
+                $date = $shiftedDate;
+            }catch(Exception $ex){
+                Billrun_Factory::log($offset . " - wrong offset syntex. Date was taken without offset.", Zend_Log::ERR);  
+            }
+            return $date;
+        }
 
 	/*
 	 * load billrun objects from billrun collection  
@@ -209,6 +345,10 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->addFolder($this->paths['tmp']);
 		$this->view->assign('data', $account);
 		$this->view->assign('details_keys', $this->getDetailsKeys());
+		$this->view->assign('invoice_extra_params', @$this->invoice_extra_params);
+
+		$this->addExtraParamsToCurrentView($this->invoice_extra_params);
+
 		if (empty($lines)) {
 			$this->view->loadLines();
 		} else {
@@ -221,18 +361,28 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		);
 		
 		$file_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".html";
+                if(isset($account['file_name']) & !empty($account['file_name']) && !$this->is_fake_generation){
+                    $pdf_name = $account['file_name'];
+                }else{
 		$pdf_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".pdf";
+                }
 		$html = $this->paths['html'] . $file_name;
 		$pdf = $this->paths['pdf'] . $pdf_name;
 
 		$this->accountSpecificViewParams($account);
-
-		file_put_contents($html, $this->view->render($this->view_path . 'invoice.phtml'));
+		
+		Generator_Translations::load();
+		Generator_Translations::setLanguage(isset($account['attributes']['invoice_language'])? $account['attributes']['invoice_language'] : null);
+		
+		$invoice_html =  $this->view->render($this->view_path . 'invoice.phtml');
+		Billrun_Factory::dispatcher()->trigger('beforeInvoiceHTMLCommit',array(&$invoice_html,$this,$account));
+		file_put_contents($html, $invoice_html);
 		chmod($html, $this->filePermissions);
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceHTMLCommit',array(&$invoice_html,$this,$account));
 
 		$this->updateHtmlDynamicData($account);
 		//$ExporterFlagsString = Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type');
-		Billrun_Factory::log('Generating invoice ' . $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . " to : $pdf", Zend_Log::INFO);
+		Billrun_Factory::log('Generating invoice ' . $pdf_name . " to : $pdf", Zend_Log::INFO);
 		exec($this->wkpdf_exec . " {$this->exporterFlags} --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 
 		if (Billrun_Factory::config()->getConfigValue(self::$type . '.exclude_pages')) {
@@ -242,19 +392,23 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 
 		chmod($pdf, $this->filePermissions);
-		$this->updateInvoicePropertyToBillrun($account, $pdf);
+		$this->updateInvoicePropertyToBillrun($account, $pdf, $html);
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorEntity',array($this, &$account,&$lines));
 	}
 
 	protected function accountSpecificViewParams($billrunData) {
 		$this->view->assign('render_usage_details', $this->render_usage_details);
 		$this->view->assign('render_subscription_details', $this->render_subscription_details);
+		$this->view->assign('render_detailed_quantitative_services', $this->render_detailed_quantitative_services);
 
 		if (isset($billrunData['attributes']['invoice_details']['usage_details'])) {
 			$this->view->assign('render_usage_details', $billrunData['attributes']['invoice_details']['usage_details']);
 		}
 		if (isset($billrunData['attributes']['invoice_details']['subscription_details'])) {
 			$this->view->assign('render_subscription_details', $billrunData['attributes']['invoice_details']['subscription_details']);
+		}
+		if (!empty($billrunData['attributes']['invoice_display_options'])) {
+			$this->view->assign('invoice_display_options', $billrunData['attributes']['invoice_display_options']);
 		}
 	}
 
@@ -376,6 +530,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$tmpdirPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . str_replace(' ', '_', static::getCompanyName()) . DIRECTORY_SEPARATOR . $stamp . DIRECTORY_SEPARATOR;
 		if (!file_exists($tmpdirPath)) {
 			mkdir($tmpdirPath, 0775, true);
+			chmod($tmpdirPath, 0775);
 		}
 		return $tmpdirPath;
 	}
@@ -415,10 +570,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 	}
 
-	protected function updateInvoicePropertyToBillrun($account, $pdfPath) {
-		$account['invoice_file'] = $pdfPath;
+	protected function updateInvoicePropertyToBillrun($account, $pdfPath, $htmlPath = false) {
+		$update = ['invoice_file' => $pdfPath ];
+		if($htmlPath) {
+			$update['invoice_html'] = $htmlPath;
+		}
 		if(!$this->is_fake_generation) {
-			$this->billrunColl->save($account);
+			$this->billrunColl->update(["_id"=>$account['_id']->getMongoID(),"invoice_id"=>$account['invoice_id'], "aid"=>$account['aid'], 'billrun_key' => $account['billrun_key']], ['$set' => $update ]);
 		}
 	}
 
@@ -443,5 +601,25 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		//exec("pdftk  $pdf $lastPagePdf cat output $merged");
 		chmod($merged, $this->filePermissions);
 	}
+
+	/**
+	* Function that sets the extra param's value, in the relevant key of $invoice_extra_params.
+	* @param sring $key
+	* @param type $value
+	*/
+	public function setInvoiceExtraParams($key, $value) {
+		$this->invoice_extra_params[$key] = $value;
+	}
+
+	public function addExtraParamsToCurrentView($extraParams) {
+		if(!empty($extraParams)) {
+			foreach($extraParams as $paramKey => $paramVal) {
+				$this->view->assign('extra_'.$paramKey, $paramVal);
+			}
+		}
+	}
+        public function setBillrunExportPath($object, $paths) {
+            $object->set('export_path', $paths);
+        }
 
 }

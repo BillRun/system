@@ -14,31 +14,28 @@ class Billrun_Utils_Usage {
 
 	static public function retriveEntityFromUsage($row, $entityType, $foreignFieldConfig = array()) {
 		$entityQueryData = array();
-		$isSingleEntity = true;
 		if (!self::conditionsMet($foreignFieldConfig, $row)) {
 			return null;
 		}
 //		TODO  added the cache after complete testing is done for the cache
 //		$cache = Billrun_Factory::cache();
-		
+
 		switch ($entityType) {
 			case 'subscriber' :
 				if(empty($row['sid'])) {
 					return null;
 				}
-				$entityQueryData['collection'] = 'subscribers';
-				$entityQueryData['query'] = array('sid' => $row['sid'], 'aid'=> $row['aid']);
-				$entityQueryData['sort'] = array('from' => -1);
-				break;
+				$subscriber = Billrun_Factory::subscriber();
+				$query = array('sid' => $row['sid'], 'aid' => $row['aid']);
+				return $subscriber->loadSubscriberForQuery($query);
 			case 'account' :
 				if(empty($row['aid'])) {
 					return null;
 				}
-				$entityQueryData['collection'] = 'subscribers';
-				$entityQueryData['query'] = array('aid' => $row['aid'],'type' => 'account' );
-				$entityQueryData['sort'] = array('from' => -1);
-				break;			
-			
+				$account = Billrun_Factory::account();
+				$query = array('aid' => $row['aid']);
+				return $account->loadAccountForQuery($query);
+
 			case 'plan' :
 				if(empty($row['plan'])) {
 					return null;
@@ -48,10 +45,15 @@ class Billrun_Utils_Usage {
 				$entityQueryData['sort'] = array('from' => -1);
 
 				break;
-//			case 'service' :
-//				TODO find what to do with multiple possible values
-//				break;
+			case 'service' :
+				if(empty($row['service'])) {
+					return null;
+				}
+				$entityQueryData['collection'] = 'services';
+				$entityQueryData['query'] = array('name' => $row['service']);
+				break;
 			case 'product' :
+			case 'rate':
 				if(empty($row['arate'])) {
 					return null;
 				}
@@ -60,17 +62,22 @@ class Billrun_Utils_Usage {
 				break;
 				
 			case 'account_subscribers':
-				$entityQueryData['collection'] = 'subscribers';
-				$entityQueryData['query'] = array('type' => 'subscriber', 'aid' => $row['aid'], 'sid' => array('$ne' => $row['sid']),
-											'from' => array('$lt' => new MongoDate()), 'to' => array('$gt' => new MongoDate()));
-				$isSingleEntity = false;
-				break;
-
+				$subscriber = Billrun_Factory::subscriber();
+				$query = array('aid' => $row['aid'], 'sid' => array('$ne' => $row['sid']),
+					'from' => array('$lt' => new MongoDate()), 'to' => array('$gt' => new MongoDate()));
+				$entity = array();
+				$documents = $subscriber->loadSubscriberForQueries([$query]);
+				foreach ($documents as $subs) {
+					foreach ($subs as $sub) {
+						$entity[] = $sub;
+					}
+				}
+				return $entity;
 			default:
 				Billrun_Factory::log("Foreign entity type {$entityType} isn't supported.", Zend_Log::DEBUG);
 				return null;
 		}
-		$cachHash = Billrun_Util::generateArrayStamp($entityQueryData);
+//		$cachHash = Billrun_Util::generateArrayStamp($entityQueryData);
 //		TODO  added the cache after  complete testing is done
 //		if (!empty($cache) && ($cachedValue = Billrun_Factory::cache()->get($cachHash)) ) {
 //			return $cachedValue;
@@ -81,24 +88,17 @@ class Billrun_Utils_Usage {
 		$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query(array_merge($entityQueryData['query'],$timeBoundingQuery))->cursor();
 		if (!empty($entityQueryData['sort'])) {
 			$cursor->sort($entityQueryData['sort']);
-		}
-		if ($isSingleEntity) {
-			$cursor = $cursor->limit(1);
+		}	
+		$cursor = $cursor->limit(1);
+		$entity = $cursor->current();
+		//fall back to none time bounded query if no entity found.
+		if( (empty($entity) || $entity->isEmpty()) 
+			&& !empty($foreignFieldConfig['no_time_bounding'])) {
+				$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query($entityQueryData['query'])->cursor()->limit(1);
+			if (!empty($entityQueryData['sort'])) {
+				$cursor->sort($entityQueryData['sort']);
+			}
 			$entity = $cursor->current();
-			//fall back to none time bounded query if no entity found.
-			if( (empty($entity) || $entity->isEmpty()) 
-				&& !empty($foreignFieldConfig['no_time_bounding'])) {
-					$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query($entityQueryData['query'])->cursor()->limit(1);
-				if (!empty($entityQueryData['sort'])) {
-					$cursor->sort($entityQueryData['sort']);
-				}
-				$entity = $cursor->current();
-			}
-		}
-		else {
-			foreach (iterator_to_array($cursor) as $document) {
-				$entity[] = $document;
-			}
 		}
 //		if ($entity && !empty($cache)) {
 //			Billrun_Factory::cache()->set($cachHash, $entity);

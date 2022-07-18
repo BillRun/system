@@ -1,4 +1,4 @@
-version: '2'
+version: '3.7'
 
 services:
     web:
@@ -8,61 +8,41 @@ services:
             - "8080:80"
         restart: always
         volumes:
-            - ${BILLRUN_DIR}:/billrun
-            - ./nginx.conf:/etc/nginx/nginx.conf
+            - ${PWD}/../..:/billrun:ro
+            - ${PWD}/nginx.conf:/etc/nginx/nginx.conf
         depends_on:
             - "php"
             - "mongodb"
-        networks:
-            - core-network
+        environment:
+        - "APPLICATION_ENV=container"    
     php:
-        build: ./billrun-php7.1
-        image: billrun-php7.1
+        build: 
+            context: ./billrun-php7
+            dockerfile: Dockerfile
+        image: billrun-php71
         container_name: billrun
         restart: always
+        environment:
+        - "APPLICATION_ENV=container"
+        - "XDEBUG_CONFIG=remote_host=10.103.0.1 remote_port=9090 remote_enable=1 xdebug.idekey=${XDEBUG_CONFIG:-netbeans-xdebug}"
         volumes:
-            - ${BILLRUN_DIR}:/billrun
-        networks:
-            - core-network
+            - ${PWD}/../..:/billrun
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongo
         restart: always
         volumes:
-            - ${BILLRUN_DIR}:/billrun
-            - ../persist/data/db/mongo-3.6:/data/db
-            - ../persist/backup:/backup
-            - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
-        networks:
-            - core-network
+            - ${PWD}/../..:/billrun:ro
+            # - ${PWD}/../persist/data/db/mongo-3.6:/data/db
+            # - ${PWD}/../persist/backup:/backup
+            - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
         ports:
             - 27018:27017
-#        command: 
-#            - "mongo billing_cloud /billrun/mongo/create.ini"
-#    memcache:
-#        image: memcached
-#        container_name: memcache
-#        restart: always
-#        networks:
-#            - core-network
-#    smtp:
-#        image: python:2.7
-#        container_name: smtp
-#        restart: always
-#        command:
-#            - python 
-#            - -m 
-#            - smtpd 
-#            - -n 
-#            - -c 
-#            - DebuggingServer 
-#            - 0.0.0.0:25
-#        networks:
-#            - core-network
 
 networks:
-    core-network:
-        driver: bridge
-        ipam:
-            config:
-            - subnet: 172.177.0.0/29
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet:  10.103.0.1/16

@@ -38,10 +38,12 @@ class OnetimeinvoiceAction extends ApiAction {
 		$step = isset($request['step']) ? intval($request['step']) : self::STEP_FULL;
 		$sendEmail = isset($request['send_email']) ? intval($request['send_email']) : true;
 		$allowBill = isset($request['allow_bill']) ? intval($request['allow_bill']) : 1;
+		$uf = isset($request['uf']) ? json_decode($request['uf'],JSON_OBJECT_AS_ARRAY) : [];
         $cdrs = [];
         $this->aid = intval($request['aid']);
+		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''),JSON_OBJECT_AS_ARRAY);
         $affectedSids = [];
-        
+        Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($this->aid, $inputCdrs, $paymentData, $allowBill, $step, $oneTimeStamp, $sendEmail));
 		Billrun_Factory::log('One time invoice action running for account ' . $this->aid, Zend_Log::INFO);
         //Verify the cdrs data
         foreach($inputCdrs as &$cdr) {
@@ -59,7 +61,12 @@ class OnetimeinvoiceAction extends ApiAction {
         }
 
         // run aggregate on cdrs generate invoice
-        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  'stamp' => $oneTimeStamp , 'force_accounts' => [$this->aid], 'invoice_subtype' => Billrun_Util::getFieldVal($request['type'], 'regular'),'affected_sids' => $affectedSids ]);
+        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  
+														'stamp' => $oneTimeStamp , 
+														'force_accounts' => [$this->aid], 
+														'invoice_subtype' => Billrun_Util::getFieldVal($request['type'], 'regular'),
+														'affected_sids' => $affectedSids,
+														'uf' => $uf]);
         $aggregator->aggregate();
 
 
@@ -70,16 +77,9 @@ class OnetimeinvoiceAction extends ApiAction {
 		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill','stamp' => $oneTimeStamp,'invoices'=> [$this->invoice->getInvoiceID()], 'send_email' => $sendEmail]);
 		
 		if ($step >= self::STEP_PDF_AND_BILL) {
-			if (!$billrunToBill->lock()) {
-				Billrun_Factory::log("BillrunToBill is already running", Zend_Log::NOTICE);
-				return;
-			}
 			$billrunToBill->load();
-			$billrunToBill->generate();
-			if (!$billrunToBill->release()) {
-				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-				return;
-			}
+			$result = $billrunToBill->generate();
+			$this->isValidGenerateResult($result, $billrunToBill);
 		} else {
 			$invoiceData = $this->invoice->getRawData();
 			$invoiceData['allow_bill'] = $allowBill;
@@ -94,7 +94,14 @@ class OnetimeinvoiceAction extends ApiAction {
 			}
 
 			Billrun_Factory::log('One time invoice action paying invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
-			Billrun_Bill_Payment::makePayment([ 'aids' => [$this->aid], 'invoices' => [$this->invoice->getInvoiceID()] ]);
+			$chargeOptions = [
+				'aids' => [$this->aid],
+				'invoices' => [$this->invoice->getInvoiceID()],
+				'payment_data' => [
+					$this->aid => $paymentData,
+				],
+			];
+            Billrun_Bill_Payment::makePayment($chargeOptions);
 			if (!$this->release()) {
 				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
 				return;
@@ -152,6 +159,16 @@ class OnetimeinvoiceAction extends ApiAction {
             if(empty($request[$key]) /*|| !Billrun_Util::verify_array($request[$key], $type)*/ ) {
                 $msg  .= "Required input '{$key}' is missing or of incorrect type.\n";
             }
+        }
+          //Validate the uf data
+        if(!empty($request['uf'])) {
+			$uf = json_decode($request['uf'],JSON_OBJECT_AS_ARRAY);
+			$uf_config = Billrun_Factory::config()->getConfigValue('billrun.immediate_invoice.uf', array());
+			foreach($uf as $uf_key => $uf_val) {
+					if (!in_array($uf_key, $uf_config)){
+							$msg .= "Field '{$uf_key}' is not configured as a valid user field\n";
+					}
+			}
         }
         if(!empty($msg)) {
             $this->setError($msg,$request);
@@ -327,5 +344,18 @@ class OnetimeinvoiceAction extends ApiAction {
 	
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
+	}
+	
+	protected function isValidGenerateResult($result, $billrunToBill) {
+		$tries = 0;
+		while($result['alreadyRunning']){
+			if ($tries >= 3) {	
+				throw new Exception("BillrunToBill is already running after " . $tries . " tries");
+			}
+			$tries++;
+			sleep(1);
+			Billrun_Factory::log('BillrunToBill is already running, try to generate again. Try number: '. $tries, Zend_Log::DEBUG);
+			$result = $billrunToBill->generate();
+		}
 	}
 }

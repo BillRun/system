@@ -2,59 +2,1015 @@
 	"collection": "discountsCollection",
 	"data": [
 		{
-			"OBJID": "5aeeb4c105e68c6d4d758032",
+
 			"from": "time*2018-03-31T21:00:00Z",
 			"key": "TT",
 			"description": "ttt",
 			"params": {
-				"plan": "PLAN_A"
-			},
-			"discount_type": "percentage",
-			"discount_subject": {
-				"plan": {
-					"PLAN_A": 0.1
-				}
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "PLAN_A"
+									}
+								]
+							}
+						]
+					}
+				]
 			},
 			"to": "time*2167-05-06T08:54:41Z",
-			"creation_time": "time*2018-03-31T21:00:00Z"
+			"creation_time": "time*2018-03-31T21:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"PLAN_A": {
+						"value": 0.1
+					}
+				}
+			}
 		},
 		{
-			"OBJID": "5af452a805e68c420108665f",
+
 			"from": "time*2017-12-31T22:00:00Z",
 			"key": "SER",
 			"description": "ser",
 			"params": {
-				"service": [
-					"DISCOUNT_SERVICE"
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_SERVICE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
 				]
 			},
-			"discount_type": "monetary",
-			"discount_subject": {
-				"service": {
-					"DISCOUNT_SERVICE": "50"
-				}
-			},
 			"to": "time*2167-05-10T15:09:44Z",
-			"creation_time": "time*2017-12-31T22:00:00Z"
+			"creation_time": "time*2017-12-31T22:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"service": {
+					"DISCOUNT_SERVICE": {
+						"value": "50"
+					}
+				}
+			}
 		},
 		{
-			"OBJID":"5b34bee305e68c7fa55cb902",
+
 			"from": "time*2018-01-28T22:00:00Z",
 			"key": "D",
 			"description": "d",
 			"params": {
-				"service": [
-					"NOT_TAXABLE"
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"NOT_TAXABLE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
 				]
 			},
-			"discount_type": "monetary",
-			"discount_subject": {
+			"to": "time*2167-06-28T11:56:35Z",
+			"creation_time": "time*2018-01-28T22:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
 				"service": {
-					"NOT_TAXABLE": "10"
+					"NOT_TAXABLE": {
+						"value": "10"
+					}
+				}
+			}
+		},
+		{
+
+			"from": "time*2018-12-31T22:00:00Z",
+			"key": "TTF",
+			"description": "TTF",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "TTF"
+									}
+								]
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2167-01-10T08:26:34Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"TTF": {
+						"value": 10
+					}
+				}
+			}
+		}
+		,
+		{
+
+			"from": "time*2018-12-31T22:00:00Z",
+			"key": "FFF",
+			"description": "FFF",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "FFF"
+									}
+								]
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2167-01-10T08:26:34Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"FFF": {
+						"value": 10
+					}
+				}
+			}
+		}
+		,
+		{
+
+			"from": "time*2018-12-31T22:00:00Z",
+			"key": "TFF",
+			"description": "TFF",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "TFF"
+									}
+								]
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2167-01-10T08:26:34Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"TFF": {
+						"value": 10
+					}
+				}
+			}
+		}
+		,
+		{
+
+			"from": "time*2018-12-31T22:00:00Z",
+			"key": "FTT",
+			"description": "FTT",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "FTT"
+									}
+								]
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2167-01-10T08:26:34Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"FTT": {
+						"value": 10
+					}
+				}
+			}
+		}
+		,
+		{
+
+			"from": "time*2018-12-31T22:00:00Z",
+			"key": "TTT",
+			"description": "TTT",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "TTT"
+									}
+								]
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2167-01-10T08:26:34Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"TTT": {
+						"value": 10
+					}
+				}
+			}
+		},
+		{
+
+			"from": "time*2018-12-31T22:00:00Z",
+			"key": "FFT",
+			"description": "FFT",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "FFT"
+									}
+								]
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2167-01-10T08:26:34Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"FFT": {
+						"value": 10
+					}
+				}
+			}
+		}
+						,{
+
+			"from": "time*2020-04-30T22:00:00Z",
+			"key": "BOX1",
+			"description": "Box",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"publication_end_date": "time*2038-06-01T00:00:00Z",
+				"publication_start_date": "time*2020-05-01T00:00:00Z",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+		},
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BOX_2"
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BOX_1"
+										]
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					},
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BOX_4"
+										]
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					},
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BOX_3"
+										]
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"type": "monetary",
+			"subject": {
+				"plan": {
+
+					"BOX_1": {
+						"value": 16.73109244
+					}
 				}
 			},
-			"to": "time*2167-06-28T11:56:35Z",
-			"creation_time": "time*2018-01-28T22:00:00Z"
+			"proration": "inherited",
+			"to": "time*2169-06-04T14:31:32Z",
+			"creation_time": "time*2020-04-30T22:00:00Z"
+		},
+		{
+
+			"from": "time*2020-11-23T22:00:00Z",
+			"key": "BOX_2",
+			"description": "Box",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"publication_end_date": "time*2038-06-01T00:00:00Z",
+				"publication_start_date": "time*2020-05-01T00:00:00Z",
+				"conditions": [
+		
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BOX_1"
+										]
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"type": "monetary",
+			"subject": {
+				"plan": {
+				
+					"BOX_1": {
+						"value": 8.394957983
+					}
+				}
+			},
+			"proration": "inherited",			
+			"to": "time*2020-12-01T22:00:00Z",
+			"creation_time": "time*2020-11-23T22:00:00Z"
+		}, {
+
+			"from": "time*2018-01-13T00:00:00Z",
+			"key": "AAAABBB",
+			"description": "aa",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"PRICELEVELS"
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			"type": "percentage",
+			"subject": {
+				"plan": {
+					"PRICELEVELS": {
+						"value": 0.2
+					}
+				}
+			},
+			"proration": "inherited",
+			"to": "time*2170-01-12T14:17:55Z",
+			"creation_time": "time*2018-01-13T00:00:00Z"
+		},
+		{
+
+			"from": "time*2020-01-13T00:00:00Z",
+			"key": "ABCDEFG",
+			"description": "abcdefg",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"ABCD"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"type": "percentage",
+			"subject": {
+				"plan": {
+					"AZ": {
+						"value": 0.2
+					}
+				}
+			},
+			"proration": "inherited",
+			"to": "time*2170-01-12T15:54:26Z",
+			"creation_time": "time*2018-01-13T00:00:00Z"
+		},
+		{
+
+			"from": "time*2018-01-13T00:00:00Z",
+			"key": "EFG",
+			"description": "efg",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"EFG"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"type": "percentage",
+			"subject": {
+				"plan": {
+					"AZ": {
+						"value": 0.2
+					}
+				}
+			},
+			"proration": "inherited",
+			"to": "time*2170-01-12T16:58:43Z",
+			"creation_time": "time*2018-01-13T00:00:00Z"
+		},
+		{
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "SOFT",
+			"description": "SOFT",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "PLAN_MOB"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"PLAN_MOB": {
+						"value": 0.2632
+					}
+				}
+			}
+		}
+		,
+		{
+
+			"from": "time*2020-04-30T22:00:00Z",
+			"key": "DISCOUNT_FD",
+			"description": "Discount FD",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "PLAN_FD"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2169-05-25T17:19:34Z",
+			"creation_time": "time*2020-04-30T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"PLAN_FD": {
+						"value": 0.20829999999999999
+					}
+				}
+			}
+		}
+		,
+		{
+
+			"from": "time*2020-04-30T22:00:00Z",
+			"key": "DISCOUNT_MU",
+			"description": "Discount MU",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "PLAN_MU"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2169-05-25T17:18:20Z",
+			"creation_time": "time*2020-04-30T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"PLAN_MU": {
+						"value": 0.20829999999999999
+					}
+				}
+			}
+		}
+
+		, {
+			"from": "time*2020-03-11T23:00:00Z",
+			"key": "3_month_free",
+			"description": "3_month_free",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": "8GB"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"3_MONTHS_FREE_SERVICE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2169-03-11T19:22:47Z",
+			"creation_time": "time*2020-03-11T23:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"8GB": {
+						"value": 1
+					}
+				}
+			},
+			"excludes": [
+				"14P"
+			]
+		},
+		{
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "SOFT2",
+			"description": "SOFT",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": "1GB"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE_2"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"1GB": {
+						"value": 0.2632
+					}
+				}
+			}
+		},
+		{
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "SOFT3",
+			"description": "SOFT3",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": "8GB"
+		}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE_3"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"8GB": {
+						"value": 0.2632
+					}
+				}
+			}
+		}, {
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "14P",
+			"description": "14P",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": "8GB"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"14PS"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"8GB": {
+						"value": 0.14
+					}
+				}
+			}
 		}
 
 

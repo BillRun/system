@@ -498,7 +498,7 @@ class Mongodloid_Collection {
 		while (1) {
 			// get last seq
 			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->setReadPreference('RP_PRIMARY')->sort(array('seq' => -1))->limit(1)->current()->get('seq');
-			if (is_null($lastSeq)) {
+			if (is_null($lastSeq) || $lastSeq < $init_id) {
 				$lastSeq = $init_id;
 			} else {
 				$lastSeq++;

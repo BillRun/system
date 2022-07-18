@@ -15,6 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  */
 class PayAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
+	use Billrun_Traits_ForeignFields;
 	
 	public function execute() {
 		$this->allowed();
@@ -25,6 +26,11 @@ class PayAction extends ApiAction {
 		$txIdArray = json_decode($request->get('txid'), TRUE);
 		$deposits = array();
 		$jsonPayments = $request->get('payments');
+		$account = Billrun_Factory::account();
+		$uf = $request->get('uf');
+		if (!empty($uf)) {
+			$params['forced_uf'] = json_decode($uf, true);
+		}
 		if (!$method && !in_array($action, array('cancel_payments', 'use_deposit'))) {
 			return $this->setError('No method found', $request->getPost());
 		}
@@ -41,6 +47,9 @@ class PayAction extends ApiAction {
 					return;
 				case 'cancel_payments': 
 					$this->cancelPayments($request);
+					return;					
+				case 'merge_installments': 
+					$this->mergeInstallments($request);
 					return;
 				default:
 					break;
@@ -49,11 +58,18 @@ class PayAction extends ApiAction {
 				throw new Exception("Method installment_agreement must be transferred with action split_bill");
 			}
 			foreach ($paymentsArr as $key => $inputPayment) {
+				$current_account = $account->loadAccountForQuery(['aid' => $inputPayment['aid']]);
 				if (empty($inputPayment['deposit'])) {
 					continue;
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
-				$deposit = new $className($inputPayment);
+				$this->processPaymentUf($inputPayment);
+				$deposit = new $className($inputPayment, $params);
+				$deposit->setUserFields($deposit->getRawData(), true);
+				$foreignData = $this->getForeignFields(array('account' => $current_account));
+				if (!is_null($current_account)) {
+					$deposit->setForeignFields($foreignData);
+				}
 				$deposits[] = $deposit;
 				$deposit->save();
 				unset($paymentsArr[$key]);
@@ -69,10 +85,13 @@ class PayAction extends ApiAction {
 				)));
 				return;
 			}
-			$payments = Billrun_Bill::pay($method, $paymentsArr);
+			$params['account'] = $current_account;
+			$payResponse = Billrun_PaymentManager::getInstance()->pay($method, $paymentsArr, $params);
+			$payments = $payResponse['payment'];
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
 				$method = $payment->getBillMethod();
+				$payment->setBalanceEffectiveDate();
 				if (in_array($method, array('wire_transfer', 'cheque')) && $payment->getDir() == 'tc') {
 					if (!isset($emailsToSend[$method])) {
 						$emailsToSend[$method] = array(
@@ -90,6 +109,7 @@ class PayAction extends ApiAction {
 					);
 					$emailsToSend[$method]['entities'][] = $entity;
 				}
+				$payment->save();
 			}
 			if ($emailsToSend) {
 				$subscriber = Billrun_Factory::subscriber();
@@ -128,6 +148,10 @@ class PayAction extends ApiAction {
 	 * 
 	 */
 	protected function unfreezeDeposits($txIdArray, $request) {
+		if (!$this->idsAreDeposits($txIdArray)) {
+			$this->setError("One or more of the input IDs are not deposits");
+			return;
+		}
 		$unfreezedDeposits = array();
 		foreach ($txIdArray as $txid) {
 			$deposit = Billrun_Bill_Payment::getInstanceByid($txid);
@@ -156,9 +180,17 @@ class PayAction extends ApiAction {
 	 * 
 	 */
 	protected function executeSplitBill($request) {
+		$params['aid'] = !empty($request->get('aid')) ? intval($request->get('aid')) : '';
+		$account = Billrun_Factory::account();
+		$params['account'] = $account->loadAccountForQuery(['aid' => $params['aid']]);
+		$executeSplitBill = true;
 		$params['amount'] = !empty($request->get('amount')) ? floatval($request->get('amount')) : 0;
 		$params['installments_num'] = !empty($request->get('installments_num')) ?  $request->get('installments_num') : 0;
 		$params['first_due_date'] = !empty($request->get('first_due_date')) ?  $request->get('first_due_date') : '';
+		$uf = $request->get('uf');
+		if (!empty($uf)) {
+			$params['forced_uf'] = json_decode($uf, true);
+		}
 		$installments = !empty($request->get('installments')) ?  $request->get('installments') : array();
 		if(!empty($installments)) {
 			$params['installments_agreement'] = json_decode($installments, true);
@@ -166,8 +198,11 @@ class PayAction extends ApiAction {
 			if (!empty($amountsArray) && !Billrun_Util::isEqual(array_sum($amountsArray), $params['amount'], Billrun_Bill::precision)) {				
 				throw new Exception('Sum of amounts in installments array must be equal to total amount');
 			}
+			$dueDateArray = array_column($params['installments_agreement'], 'due_date');
+			if (count($dueDateArray) != count($params['installments_agreement'])) {
+				throw new Exception('Due date field is mandatory for all installments');
+			}
 		}
-		$params['aid'] = !empty($request->get('aid')) ? intval($request->get('aid')) : '';
 		$note = $request->get('note');
 		if (!empty($note)) {
 			$params['note'] = $note;
@@ -178,9 +213,12 @@ class PayAction extends ApiAction {
 		if (!empty($params['installments_agreement']) && (!empty($params['installments_num']) || !empty($params['first_due_date']))) {
 			throw new Exception('Passed parameters in contradiction');
 		}
-		if ((!empty($params['installments_num']) && empty($params['first_due_date'])) || (empty($params['installments_num']) && !empty($params['first_due_date']))) {
-			throw new Exception("installment_num and first_due_date parameters must be passed together");
+		if (empty($params['installments_num']) && !empty($params['first_due_date'])) {
+			throw new Exception("Can't pass first_due_date withouh passing installments_num");
 		}
+		if (!empty($params['installments_num']) && $params['installments_num'] > $params['amount']) {
+			throw new Exception("Number of installments can't be larger than the passed amount");
+		}	
 		if (!empty($params['installments_num']) && ($params['installments_num'] > $params['amount'])) {
 			throw new Exception('Number of installments must be lower than passed amount');
 		}
@@ -188,13 +226,21 @@ class PayAction extends ApiAction {
 		if ($params['amount'] > $customerDebt['without_waiting']) {
 			throw new Exception("Passed amount is bigger than the customer debt");
 		}
-		$success = Billrun_Bill_Payment::createInstallmentAgreement($params);
+		if (!empty($request->get('first_charge_date'))) {
+			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
+			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
+		}
+Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
+		if (!$executeSplitBill) {
+			throw new Exception("Failed executing split debt for aid: " . $params['aid']);
+		}
+		$ret = Billrun_Bill_Payment::createInstallmentAgreement($params);
 		
 		$this->getController()->setOutput(array(array(
-			'status' => $success ? 1 : 0,
-			'desc' => $success ? '' : 'failure',
+			'status' => $ret['status'] ? 1 : 0,
+			'desc' => $ret['status'] ? '' : 'failure',
 			'input' => $request->getPost(),
-			'details' => $success ? 'created installments successfully' : 'failed creating installments',
+			'details' => $ret['status'] ? 'created installments successfully . parameters: ' . json_encode($ret['payment_agreement'], true) : 'failed creating installments',
 		)));
 
 	}
@@ -234,12 +280,16 @@ class PayAction extends ApiAction {
 				Billrun_Bill_Payment::savePayments($cancellationPayments);
 			}
 			$succeededCancels = array();
+                        $paymentsAids = array();
 			foreach ($paymentsToCancel['payments'] as $payment) {
 				array_push($succeededCancels, $payment->getId());
 				$payment->markCancelled()->save();
 				$payment->detachPaidBills();
-				$payment->detachPayingBills();
-				Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+				$payment->detachPayingBills();	
+                                $paymentsAids = array_unique(array_merge([$payment->getAccountNo()], $paymentsAids));
+			}
+                        foreach ($paymentsAids as $aid) {				
+				Billrun_Bill::payUnpaidBillsByOverPayingBills($aid);
 			}
 		} catch (Exception $e) {
 			return $this->setError($e->getMessage(), $request->getPost());
@@ -266,7 +316,8 @@ class PayAction extends ApiAction {
 				$matchedPayment = Billrun_Bill_Payment::getInstanceByid($cancellation['txid']);
 				if (!empty($matchedPayment)) {
 					$matched = true;
-					if ($matchedPayment->isCancellation() || $matchedPayment->isCancelled() || $matchedPayment->isRejected() || $matchedPayment->isRejection()) {
+					if ($matchedPayment->isCancellation() || $matchedPayment->isCancelled() || $matchedPayment->isRejected() || $matchedPayment->isRejection() || 
+						$matchedPayment->isDeniedPayment() || $matchedPayment->isDenial()) {
 						$errors[] = "$txid cannot be cancelled";
 						$matched = false;
 					} else if (isset($cancellation['amount']) && ($cancellation['amount'] != $matchedPayment->getAmount())) {
@@ -291,4 +342,56 @@ class PayAction extends ApiAction {
 		}
 		return array('payments' => $payments, 'errors' => $errors);
 	}
+	
+	public function processPaymentUf(&$payment) {
+		if (!empty($payment['uf'])) {
+			foreach ($payment['uf'] as $name => $value) {
+				$payment['uf'][$name] = $value;
+			}
+		}
+	}
+	
+	protected function getForeignFieldsEntity () {
+		return 'bills';
+	}
+	
+	protected function mergeInstallments($request) {
+		$params['split_bill_id'] = !empty($request->get('split_bill_id')) ? intval($request->get('split_bill_id')) : '';
+		$params['aid'] = !empty($request->get('aid')) ? intval($request->get('aid')) : '';
+		if (empty($params['split_bill_id']) || empty($params['aid'])) {
+			throw new Exception('In action merge_installments must transfer split_bill_id and aid parameters');
+		}
+		if (!empty($request->get('due_date'))) {
+			$params['due_date'] = new MongoDate(strtotime($request->get('due_date')));
+		}
+		if (!empty($request->get('first_charge_date'))) {
+			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
+			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
+		}
+		$params['autoload'] = true;
+		$success = Billrun_Bill_Payment::mergeSpllitedInstallments($params);
+		
+		$this->getController()->setOutput(array(array(
+			'status' => $success ? 1 : 0,
+			'desc' => $success ? '' : 'failure',
+			'input' => $request->getPost(),
+			'details' => $success ? 'merged installments successfully' : 'failed merging installments',
+		)));
+	}
+	
+	protected function idsAreDeposits($txIdArray) {
+		$query = [
+			"txid" => array('$in' => $txIdArray)
+		];
+		$bills = Billrun_Bill::getBills($query);
+		foreach($bills as $index => $bill) {
+			$bills[$index] = Billrun_Bill_Payment::getInstanceByData($bill);
+		}
+		$db_deposits = array_filter($bills, function($bill) {
+			return $bill->isDeposit();
+		});
+
+		return count($txIdArray) == count($db_deposits); 
+	}
+
 }

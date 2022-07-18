@@ -39,7 +39,7 @@ class Billrun_Plans_Util {
 			if ($price['to'] == 'UNLIMITED') {
 				$price['to'] = PHP_INT_MAX;
 			}
-			if($price['from']  <= $endOffset &&  $startOffset < $price['to'] ) {
+			if($price['from']  <= $endOffset &&  $startOffset <= $price['to'] ) {
 				return TRUE;
 			}
 		}
