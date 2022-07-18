@@ -351,9 +351,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			if (!empty($voucherNumber)) {
 				$additionalParams['payment_identifier'] = $voucherNumber;
 			}
-			$additionalParams['card_acquirer'] = $xmlObj->response->doDeal->cardAcquirer ?? '';
-			$additionalParams['card_brand'] = $xmlObj->response->doDeal->cardBrand ?? '';
-			$additionalParams['credit_company'] = $xmlObj->response->doDeal->creditCompany ?? '';
+			$additionalParams['card_acquirer'] = $xmlObj->response->doDeal->cardAcquirer ? current($xmlObj->response->doDeal->cardAcquirer->attributes()->code) : '';
+			$additionalParams['card_brand'] = $xmlObj->response->doDeal->cardBrand ? current($xmlObj->response->doDeal->cardBrand->attributes()->code) : '';
+			$additionalParams['credit_company'] = $xmlObj->response->doDeal->creditCompany ? current($xmlObj->response->doDeal->creditCompany->attributes()->code) : '';
 		}	
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
