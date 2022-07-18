@@ -334,7 +334,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$codeResult = '';
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {
+			Billrun_Factory::log("Creditguard payment request: " . print_R($paymentArray, 1), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Creditguard payment response: " . print_R($result, 1), Zend_Log::DEBUG);
 		}
 		if (strpos(strtoupper($result), 'HEB')) {
 			$result = iconv("utf-8", "iso-8859-8", $result);
@@ -349,6 +351,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			if (!empty($voucherNumber)) {
 				$additionalParams['payment_identifier'] = $voucherNumber;
 			}
+			$additionalParams['card_acquirer'] = $xmlObj->response->doDeal->cardAcquirer ?? '';
+			$additionalParams['card_brand'] = $xmlObj->response->doDeal->cardBrand ?? '';
+			$additionalParams['credit_company'] = $xmlObj->response->doDeal->creditCompany ?? '';
 		}	
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
