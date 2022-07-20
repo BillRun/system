@@ -76,8 +76,8 @@ class CreditAction extends ApiAction {
                 }
                 if(empty($requests)){
                     $requests[] = $this->request;
+                    $singleEvent = true; 
                 }
-                $singleEvent= count($requests) === 1 ?? false; 
                 foreach ($requests as $request){
                     try {
                         $this->request = $request;
