@@ -680,7 +680,15 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"display" => true,
 				"nullable" => false,
 				"mandatory" => true,
-			]
+			],  [
+                                "type" => "number",
+				"field_name" => "ict.resetlines.disk_free_space.limit",
+				"title" => "Limit disk free space (by bytes) (in rebalance process)",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true,
+                        ]
 		];
 	}
 
@@ -697,7 +705,44 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			unset($update['$set']);
 		}
 	}
+        
+        public function beforeResetLinesByQuery(&$lines, &$update_aids, &$advancedProperties) {
+            $this->exitIfDiskIsAlmostFull();
+        }
+        
+        protected function exitIfDiskIsAlmostFull(){
+            $path = null;
+            $remain = null;
+            if($this->checkIfDiskIsAlmostFull($path, $remain)){
+                Billrun_Factory::log("The disk is almost full. remain " . $remain . " bytes in " . $path, Zend_Log::ALERT);
+                die();
+            }
+        }
 
+
+        protected function checkIfDiskIsAlmostFull(&$path, &$remain){
+            $diskFreeSpaceLimit = Billrun_Util::getIn($this->ict_configuration, 'resetlines.disk_free_space.limit', pow(1024, 3) * 3);// default 3 Gib
+            $logFile = Billrun_Config::getInstance()->getConfigValue("log.debug.writerParams.stream");  
+            if(!$logFile){
+               $logDir = Billrun_Util::getBillRunPath("logs"); 
+            }else{
+               $logDir = dirname($logFile);
+            }
+            $logsDirDiskFreeSpace = disk_free_space($logDir);
+            if($logsDirDiskFreeSpace <= $diskFreeSpaceLimit){
+                $remain = $logsDirDiskFreeSpace;
+                $path = $logDir;
+                return true;
+            }
+            $billrunDir = APPLICATION_PATH;
+            $billrunDirDiskFreeSpace = disk_free_space($billrunDir);
+            if($billrunDirDiskFreeSpace <= $diskFreeSpaceLimit){
+                $remain = $billrunDirDiskFreeSpace;
+                $path = $billrunDir;
+                return true;
+            }
+            return false;
+        }
 }
 
 class ICT_Reports_Manager {
