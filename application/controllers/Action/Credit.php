@@ -69,6 +69,7 @@ class CreditAction extends ApiAction {
 	
 	protected function setEventsData() {
 		$requests = [];
+                $reportResult = [];
                 $this->originRequest = $this->request;
                 if(isset($this->request['suggestion_stamp'])){
                     $requests = Billrun_Compute_Suggestions::getCreditRequests($this->request['suggestion_stamp']);          
@@ -76,6 +77,7 @@ class CreditAction extends ApiAction {
                 if(empty($requests)){
                     $requests[] = $this->request;
                 }
+                $singleEvent= count($requests) === 1 ?? false; 
                 foreach ($requests as $request){
                     try {
                         $this->request = $request;
@@ -85,14 +87,20 @@ class CreditAction extends ApiAction {
                         if ($this->hasInstallments()) {
                                 $this->setInstallmentsData();
                         }
+                        $reportResult[] = "Succeeded credit request : " .  json_encode($this->request);
                     } catch (Exception $ex) {
-                        if(count($requests) === 1){// single event
+                        if($singleEvent){// single event
                             throw $ex;
                         }else{// multiple events
                             $this->status = 2;
-                            Billrun_Factory::log($ex->getMessage() ." for credit api. request: " . print_r($this->request, 1). ", origin request: " . print_r($this->originRequest, 1), Zend_Log::NOTICE);
+                            $message = "Failed credit request: " . json_encode($this->request) .", " . $ex->getMessage();
+                            $reportResult[] = $message;
+                            Billrun_Factory::log($message . ", origin request: " . json_encode($this->originRequest), Zend_Log::NOTICE);
                         }
                     }                   
+                }
+                if(!$singleEvent){
+                    $this->desc = $reportResult;
                 }
 	}
 	

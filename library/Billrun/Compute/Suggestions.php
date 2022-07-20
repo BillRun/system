@@ -594,7 +594,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $requests = [];
         $creditSuggestion = Billrun_Factory::db()->suggestionsCollection()->query(array('stamp' => $suggestionStamp))->cursor()->current();
         if($creditSuggestion->isEmpty()){
-            return $requests;
+            throw new Exception("Failed to found suggestion with this stamp: " . $suggestionStamp);
         }
         $groupingSuggestionsInfo = $creditSuggestion['grouping'] ?? [];
         if(!empty($groupingSuggestionsInfo)){
