@@ -16,6 +16,9 @@ use Payrexx\PayrexxException;
  * @since    5.13
  */
 class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
+
+	const DEFAULT_CURRENCY = 'CHF';
+
 	/**
 	 * @inheritDoc
 	 */
@@ -60,36 +63,63 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 * @inheritDoc
 	 */
 	protected function needRequestForToken() {
+		return true;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $options, $maxTries = 10) {
+		$account = Billrun_Factory::account();
+		$account->loadAccountForQuery(array('aid' => (int) $aid));
+
+		$request = $this->omnipayGateway->purchase([
+			'amount' => 1, // TODO set from config
+//			'vatRate' => 7.7, // TODO ask about vat rate
+			'currency' => self::DEFAULT_CURRENCY,
+			'sku' => 'P01122000', // TODO no sku?
+			'preAuthorization' => 1,
+			'pm' => ['visa', 'mastercard'],
+//			'referenceId' => $aid, // TODO use reference?
+			'forename' => $account->firstname,
+			'surname' => $account->lastname,
+			'email' => $account->email,
+			'successRedirectUrl' => $okPage,
+			'failedRedirectUrl' => $failPage,
+			'buttonText' => 'Add Card'
+		]);
+
+		return $request->send();
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function isUrlRedirect() {
+		return true;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function isHtmlRedirect() {
+		return false;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function updateRedirectUrl($result) {
+		$this->redirectUrl = $result->getRedirectUrl();
+		// TODO move it to updateSessionTransactionId()?
+		$this->transactionId = $result->getTransactionReference();
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	function updateSessionTransactionId() {
+		// it's updated in updateRedirectUrl()
 	}
 
 	/**
