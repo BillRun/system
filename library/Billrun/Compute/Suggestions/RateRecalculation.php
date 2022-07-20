@@ -98,7 +98,7 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
         $planData = Billrun_Plan::getByNameAndTime($line['plan'], $line['min_urt_line']);
         if (Billrun_Rates_Util::checkIfRateInclude($rate_key, $planData) ||
                 Billrun_Rates_Util::checkIfRateOverride($rate_key, $planData)) {
-            Billrun_Factory::log()->log("line is invalid. Rate include/overrride in plan" . print_r($line, 1), Zend_Log::DEBUG);
+            Billrun_Factory::log()->log("line is invalid. Rate " . $rate_key . " include/overrride in plan " . $line['plan'], Zend_Log::DEBUG);
             return false;
         }
         $services = $line['services'] ?? [];
@@ -107,7 +107,7 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
             $serviceData = Billrun_Service::getByNameAndTime($service, $line['min_urt_line']);
             if (Billrun_Rates_Util::checkIfRateInclude($rate_key, $serviceData) ||
                     Billrun_Rates_Util::checkIfRateOverride($rate_key, $serviceData)) {
-                Billrun_Factory::log()->log("line is invalid. Rate include/overrride in services" . print_r($line, 1), Zend_Log::DEBUG);
+                Billrun_Factory::log()->log("line is invalid. Rate " . $rate_key . " include/overrride in service" . $service, Zend_Log::DEBUG);
                 return false;
             }
         }
