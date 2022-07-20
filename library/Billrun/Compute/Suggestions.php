@@ -121,7 +121,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         if(!empty($retroactiveChanges)){
             $this->buildUrtRanges();
         }
-        foreach ($retroactiveChanges as $retroactiveChange) {
+        foreach ($retroactiveChanges as $retroactiveChange) {           
             $isFake = $retroactiveChange['is_fake'] ?? false;
             $filters = array_merge(
                     array(
@@ -340,7 +340,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             $this->retroactiveChangesStamps[] = $retroactiveChange['stamp'];
             if ($this->checkIfValidRetroactiveChange($retroactiveChange)) {
                 $validRetroactiveChanges[] = $retroactiveChange;
+            }else{
+                Billrun_Factory::log()->log("Invalid retroactive change " . $retroactiveChange['stamp'], Zend_Log::DEBUG);
             }
+            
         }
         return $validRetroactiveChanges;
     }
