@@ -103,7 +103,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             //retroactive change
             '$where' => 'this.new.from < this.urt'
         );
-        Billrun_Factory::log()->log("Searching all the retroactive " . $this->getRecalculateType() . " changes. query: " . print_r(json_encode($query), 1), Zend_Log::INFO);
+        Billrun_Factory::log()->log("Searching all the retroactive " . $this->getRecalculateType() . " changes.", Zend_Log::INFO);
         $retroactiveChanges = iterator_to_array(Billrun_Factory::db()->auditCollection()->find($query)->sort(array('_id' => 1)));
         Billrun_Factory::log()->log("found " . count($retroactiveChanges) . " retroactive " . $this->getRecalculateType() . " changes", Zend_Log::INFO);
 
@@ -136,7 +136,14 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                 $filters['aid'] = $retroactiveChange['aid'];
                 $filters['sid'] = $retroactiveChange['sid'];
             }
-            $group_ids = array_merge(
+            $query = array(
+                array(
+                    '$match' => $filters
+                ),
+                array(
+                    '$group' => array_merge(
+                            array(
+                                '_id' => array_merge(
                                         array(
                                             'aid' => '$aid',
                                             'sid' => '$sid',
@@ -146,15 +153,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                             ),
                                             'key' => '$' . $this->getFieldNameOfLine(),
                                         ), $this->addGroupsIdsForMatchingLines()
-                                );
-            $query = array(
-                array(
-                    '$match' => $filters
-                ),
-                array(
-                    '$group' => array_merge(
-                            array(
-                                '_id' => $group_ids,
+                                ),
                                 'firstname' => array(
                                     '$first' => '$firstname'
                                 ),
@@ -315,7 +314,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         return $suggestion;
     }
 
-    protected function getRetroactiveChangesInfo($retroactiveChangesInfo) {//todo:: no need to query every time to db.
+    protected function getRetroactiveChangesInfo($retroactiveChangesInfo) {//todo:: need to improve this. no need to query every time to db.
         $info = [];
         foreach ($retroactiveChangesInfo as $retroactiveChange) {
             if (isset($retroactiveChange['audit_stamp'])) {
