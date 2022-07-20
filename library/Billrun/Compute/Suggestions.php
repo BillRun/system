@@ -36,11 +36,13 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function getSuggestions($retroactiveChanges) {
         $suggestions = [];
         $lines = $this->findAllMatchingLines($retroactiveChanges);
+        Billrun_Factory::log()->log("Creating suggestions for lines." , Zend_Log::DEBUG);
         foreach ($lines as $line) {
             if ($this->checkIfValidLine($line)) {
                 $suggestions[] = $this->buildSuggestion($line);
             }
         }
+        Billrun_Factory::log()->log("created " . count($suggestions). " suggestions for lines." , Zend_Log::DEBUG);
         return $suggestions;
     }
     
@@ -93,7 +95,6 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     }
 
     protected function findAllTheRetroactiveChanges() {
-        Billrun_Factory::log()->log("Searching all the retroactive " . $this->getRecalculateType() . " changes", Zend_Log::INFO);
         $query = array(
             'collection' => $this->getCollectionName(),
             'suggest_recalculations' => array('$ne' => true),
@@ -102,6 +103,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             //retroactive change
             '$where' => 'this.new.from < this.urt'
         );
+        Billrun_Factory::log()->log("Searching all the retroactive " . $this->getRecalculateType() . " changes.", Zend_Log::INFO);
         $retroactiveChanges = iterator_to_array(Billrun_Factory::db()->auditCollection()->find($query)->sort(array('_id' => 1)));
         Billrun_Factory::log()->log("found " . count($retroactiveChanges) . " retroactive " . $this->getRecalculateType() . " changes", Zend_Log::INFO);
 
@@ -119,7 +121,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         if(!empty($retroactiveChanges)){
             $this->buildUrtRanges();
         }
-        foreach ($retroactiveChanges as $retroactiveChange) {
+        foreach ($retroactiveChanges as $retroactiveChange) {           
             $isFake = $retroactiveChange['is_fake'] ?? false;
             $filters = array_merge(
                     array(
@@ -203,15 +205,20 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                             ), $this->addProjectsForMatchingLines()
                     )
                 ),
-            );
+            );            
+            Billrun_Factory::log()->log("Group all the lines that match to retroactive change " . (!$isFake ? $retroactiveChange['stamp'] :  json_encode($retroactiveChange)) , Zend_Log::DEBUG);
             $lines = iterator_to_array(Billrun_Factory::db()->linesCollection()->aggregate($query));
+            Billrun_Factory::log()->log("Found " . count($lines) . " grouped lines that match to the ". (!$isFake ? "" : "fake ") . "retroactive change" . (!$isFake ? " " . $retroactiveChange['stamp'] :  ""), Zend_Log::DEBUG);
             if(!empty($this->groupingKeys)){
+                Billrun_Factory::log()->log("Unify lines with grouping field", Zend_Log::DEBUG);
                 $lines = $this->unifyLines($lines);
+                Billrun_Factory::log()->log(count($lines) . " unified lines with grouping field", Zend_Log::DEBUG);
+
             }
             $matchingLines = array_merge($matchingLines, $lines);
         }
         return $matchingLines;
-    }
+    }   
     
     protected function getUrtRanges() { 
         return array('$switch' => array(
@@ -307,7 +314,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         return $suggestion;
     }
 
-    protected function getRetroactiveChangesInfo($retroactiveChangesInfo) {
+    protected function getRetroactiveChangesInfo($retroactiveChangesInfo) {//todo:: need to improve this. no need to query every time to db.
         $info = [];
         foreach ($retroactiveChangesInfo as $retroactiveChange) {
             if (isset($retroactiveChange['audit_stamp'])) {
@@ -333,26 +340,36 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             $this->retroactiveChangesStamps[] = $retroactiveChange['stamp'];
             if ($this->checkIfValidRetroactiveChange($retroactiveChange)) {
                 $validRetroactiveChanges[] = $retroactiveChange;
+            }else{
+                Billrun_Factory::log()->log("Invalid retroactive change " . $retroactiveChange['stamp'], Zend_Log::DEBUG);
             }
+            
         }
         return $validRetroactiveChanges;
     }
 
     public function write() {
-        if (!empty($this->suggestions)) {
-            foreach ($this->suggestions as $suggestion) {
-
+        if (!empty($this->suggestions)) {           
+            foreach ($this->suggestions as $index => $suggestion) {
+                Billrun_Factory::log()->log('Writing the ' . ($index + 1) . ' suggestion', Zend_Log::DEBUG);
                 $overlapSuggestion = $this->getOverlap($suggestion);
                 if (!$overlapSuggestion->isEmpty()) {
                     $overlapSuggestion = $overlapSuggestion->getRawData();
+                    Billrun_Factory::log()->log("Found overlap between suggestions. \n Existing suggestion : \n". print_r(json_encode($overlapSuggestion), 1) . "\n New suggestion: \n" . print_r(json_encode($suggestion), 1), Zend_Log::DEBUG);                       
                     if ($this->checkIfTheSameSuggestion($overlapSuggestion, $suggestion)) {
+                        Billrun_Factory::log()->log('The same suggestion. Do nothing.', Zend_Log::DEBUG);
                         continue;
                     } else {
+                        Billrun_Factory::log()->log('Handling overlap suggestions', Zend_Log::DEBUG);
                         $this->handleOverlapSuggestion($overlapSuggestion, $suggestion);
                     }
                 } else {
+                    Billrun_Factory::log()->log("Not found overlap suggestion.", Zend_Log::DEBUG);
                     if (!Billrun_Util::isEqual($suggestion['amount'], 0, Billrun_Bill::precision)) {
+                        Billrun_Factory::log()->log('Inserting suggestion', Zend_Log::DEBUG);
                         Billrun_Factory::db()->suggestionsCollection()->insert($suggestion);
+                    }else{
+                        Billrun_Factory::log()->log('Suggestion correction amount is 0. No need to insert suggestion.', Zend_Log::DEBUG);
                     }
                 }
             }
@@ -364,6 +381,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                     'suggest_recalculations' => true
                 )
             );
+            Billrun_Factory::log()->log('Updating audit collection. query: ' . json_encode($query) . ' update: ' . json_encode($update), Zend_Log::DEBUG);
             Billrun_Factory::db()->auditCollection()->update($query, $update, array('multiple' => true));
         }
     }
@@ -378,7 +396,8 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'status' => 'open',
             'recalculation_type' => $suggestion['recalculation_type']
         );
-        return Billrun_Factory::db()->suggestionsCollection()->query($query)->cursor()->limit(1)->current();
+        Billrun_Factory::log()->log('Searching overlap suggestion in db.', Zend_Log::DEBUG);
+        return  Billrun_Factory::db()->suggestionsCollection()->query($query)->cursor()->limit(1)->current();
     }
 
     protected function checkIfTheSameSuggestion($overlapSuggestion, $suggestion) {
@@ -391,9 +410,13 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $newSuggestions = $this->getSuggestions($fakeRetroactiveChanges);
         $newSuggestion = $this->unifyOverlapSuggestions($newSuggestions);
         //TODO:: consider update instead of remove and insert
+        Billrun_Factory::log()->log('Removing overlap suggestion.', Zend_Log::DEBUG);
         Billrun_Factory::db()->suggestionsCollection()->remove($overlapSuggestion);
         if (!Billrun_Util::isEqual($newSuggestion['amount'], 0, Billrun_Bill::precision)) {
+            Billrun_Factory::log()->log("Inserting new suggestion. \n" . print_r(json_encode($newSuggestion), 1), Zend_Log::DEBUG);
             Billrun_Factory::db()->suggestionsCollection()->insert($newSuggestion);
+        } else {
+            Billrun_Factory::log()->log('Suggestion correction amount is 0. No need to insert the new suggestion.', Zend_Log::DEBUG);
         }
     }
 
@@ -434,6 +457,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     }
 
     protected function unifyOverlapSuggestions($suggestions) {
+        Billrun_Factory::log()->log('Unify suggestions', Zend_Log::DEBUG);
         $newSuggestion = $suggestions[0];
         $newSuggestion['usagev'] = 0;
         $newSuggestion['total_lines'] = 0;
