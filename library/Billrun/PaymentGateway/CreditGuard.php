@@ -45,7 +45,11 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$account->loadAccountForQuery(array('aid' => (int)$aid));
 		$xmlParams['language'] = isset($account->pay_page_lang) ? $account->pay_page_lang : "ENG";
 		$xmlParams['addFailPage'] = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
-		return $this->getXmlStructureByParams($credentials, $xmlParams);
+
+		$customParams = $this->getGatewayCustomParams();
+
+
+		return $this->getXmlStructureByParams($credentials, $xmlParams, ( !empty($customParams['passthrough_config']) ? $customParams['passthrough_config'] : [])) ;
 	}
 
 	protected function updateRedirectUrl($result) {
@@ -421,6 +425,12 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$installmentParams['first_payment'] = $installmentParams['amount'] - ($installmentParams['number_of_payments'] * $installmentParams['periodical_payments']);
 			return $this->getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams, $addonData);
 		}
+
+		//add spesific  configration that to  be applies on each new payment page
+		if(!empty($customParams['passthrough_config']) && is_array($customParams['passthrough_config'])) {
+			$addonData = array_merge($customParams['passthrough_config'],$addonData);
+		}
+
 		return $this->getXmlStructureByParams($credentials, $xmlParams, $addonData);
 	}
 	
@@ -432,7 +442,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 						<recurringTotalSum></recurringTotalSum>
 						<recurringFrequency>04</recurringFrequency>
 					</ashraitEmvData>';
-	
+
 		return array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -478,6 +488,16 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										   <userData9/>
 										   <userData10/>
 										  </customerData>
+										  '. (!empty($addonData['paymentPageData']) ?
+										  '<paymentPageData>
+											'.(!empty($addonData['paymentPageData']['ppsJSONConfig']) &&
+												null != json_encode($addonData['paymentPageData']['ppsJSONConfig']) ?
+											'<ppsJSONConfig>
+												'. json_encode($addonData['paymentPageData']['ppsJSONConfig'],JSON_PRETTY_PRINT| JSON_UNESCAPED_LINE_TERMINATORS | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).'
+											</ppsJSONConfig>' : '') . '
+										  </paymentPageData>
+										  ' : '')
+										  .'
 								 </doDeal>
 							</request>
 						   </ashrait>'
