@@ -62,6 +62,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 			return false;
 		}
 		return array_reduce($results, function($acc, $currentSub) {
+			Billrun_Utils_Mongo::convertQueryMongodloidDates($currentSub,'/^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}:\d{2}(\.\d{3}|)?(Z|[+-]\d\d\:?\d\d|)$/');
 			$acc[] = new Mongodloid_Entity($currentSub);
 			return $acc;
 		}, []);
