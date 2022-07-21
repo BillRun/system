@@ -9604,6 +9604,14 @@ lastConfig = runOnce(lastConfig, 'EPICIC-120', function () {
 	}
 });
 
+//EPICIC-166: Unify stamp should include the rate_price
+lastConfig = runOnce(lastConfig, 'EPICIC-166', function () {
+	for (var i = 0; i < lastConfig.file_types.length; i++) {
+		if (lastConfig.file_types[i].file_type === "ICT") {
+			lastConfig["file_types"][i]["unify"]["unification_fields"]["stamp"]["value"].push('cf.rate_price');
+		}
+	}
+});
 //EPICIC-66: user_summ/event_start_time position error in export generator
 lastConfig = runOnce(lastConfig, 'EPICIC-66', function () {
 	for (var i = 0; i < lastConfig.export_generators.length; i++) {
@@ -9744,6 +9752,620 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
 lastConfig = runOnce(lastConfig, 'EPICIC-158', function () {
 	lastConfig.resetlines.limit.v = 1;
 })
+lastConfig = runOnce(lastConfig, 'EPICIC-167', function () {
+	lastConfig.export_generators.push(
+            {
+			"filtration": [
+				{
+					"collection": "lines",
+					"query": [
+						{
+							"field": "type",
+							"op": "in",
+							"value": [
+								"credit"
+							]
+						},{
+                                                    "field": "source",
+                                                    "op": "in",
+                                                    "value": [
+                                                            "credit"
+                                                    ]
+                                                }
+					],
+					"time_range": "-1 year"
+				}
+			],
+			"name": "MANUAL_LINES",
+			"generator": {
+				"type": "separator",
+				"separator": ",",
+				"force_header" : true,
+				"force_footer" : true,
+				"record_type_mapping": [
+					{
+						"record_type": "CREDIT",
+						"conditions": [
+							{
+								"field": "type",
+								"op": "in",
+								"value": [
+									"credit"
+								]
+							},
+                                                        {
+                                                                "field": "source",
+                                                                "op": "in",
+                                                                "value": [
+                                                                        "credit"
+                                                                ]
+                                                            }
+						]
+					}
+				],
+				"header_structure": [
+					{
+						"name": "EVENT_START_TIME",
+						"type": "string",
+						"path": 1,
+						"hard_coded_value": "EVENT_START_TIME"
+					},
+					{
+						"name": "USER_SUMMARISATION",
+						"type": "string",
+						"hard_coded_value": "USER_SUMMARISATION",
+						"path": 2
+					},
+					{
+						"name": "RATING_COMPONENT",
+						"type": "string",
+						"hard_coded_value": "RATING_COMPONENT",
+						"path": 3
+					},
+					{
+						"name": "CASH_FLOW",
+						"type": "string",
+						"hard_coded_value": "CASH_FLOW",
+						"path": 4
+					},
+					{
+						"name": "PRODUCT_GROUP",
+						"type": "string",
+						"hard_coded_value": "PRODUCT_GROUP",
+						"path": 5
+					},
+					{
+						"name": "EVENT_DIRECTION",
+						"type": "string",
+						"hard_coded_value": "EVENT_DIRECTION",
+						"path": 6
+					},
+					{
+						"name": "ANUM",
+						"type": "string",
+						"hard_coded_value": "ANUM",
+						"path": 7
+					},
+					{
+						"name": "BNUM",
+						"type": "string",
+						"hard_coded_value": "BNUM",
+						"path": 8
+					},
+					{
+						"name": "OUTGOING_PRODUCT",
+						"type": "string",
+						"hard_coded_value": "OUTGOING_PRODUCT",
+						"path": 9
+					},
+					{
+						"name": "INCOMING_PRODUCT",
+						"type": "string",
+						"hard_coded_value": "INCOMING_PRODUCT",
+						"path": 10
+					},
+					{
+						"name": "SETTLEMENT_OPERATOR",
+						"type": "string",
+						"hard_coded_value": "SETTLEMENT_OPERATOR",
+						"path": 11
+					},
+					{
+						"name": "BILLED_PRODUCT",
+						"type": "string",
+						"hard_coded_value": "BILLED_PRODUCT",
+						"path": 12
+					},
+					{
+						"name": "NETWORK_ADDRESS_AGGR_ANUM",
+						"type": "string",
+						"hard_coded_value": "NETWORK_ADDRESS_AGGR_ANUM",
+						"path": 13
+					},
+					{
+						"name": "NETWORK_ADDRESS_AGGR_BNUM",
+						"type": "string",
+						"hard_coded_value": "NETWORK_ADDRESS_AGGR_BNUM",
+						"path": 14
+					},
+					{
+						"name": "USER_DATA",
+						"type": "string",
+						"hard_coded_value": "USER_DATA",
+						"path": 15
+					},
+					{
+						"name": "USER_DATA_2",
+						"type": "string",
+						"hard_coded_value": "USER_DATA_2",
+						"path": 16
+					},
+					{
+						"name": "USER_DATA_3",
+						"type": "string",
+						"hard_coded_value": "USER_DATA_3",
+						"path": 17
+					},
+					{
+						"name": "COMPONENT_DIRECTION",
+						"type": "string",
+						"hard_coded_value": "COMPONENT_DIRECTION",
+						"path": 18
+					},
+					{
+						"name": "CURRENCY",
+						"type": "string",
+						"hard_coded_value": "CURRENCY",
+						"path": 19
+					},
+					{
+						"name": "ACTUAL_USAGE",
+						"type": "string",
+						"hard_coded_value": "ACTUAL_USAGE",
+						"path": 20
+					},
+					{
+						"name": "APPORTIONED_DURATION_SECONDS",
+						"type": "string",
+						"hard_coded_value": "APPORTIONED_DURATION_SECONDS",
+						"path": 21
+					},
+					{
+						"name": "AMOUNT",
+						"type": "string",
+						"hard_coded_value": "AMOUNT",
+						"path": 22
+					},
+					{
+						"name": "BILLING_METHOD",
+						"type": "string",
+						"hard_coded_value": "BILLING_METHOD",
+						"path": 23
+					},
+					{
+						"name": "INCOMING_NODE",
+						"type": "string",
+						"hard_coded_value": "INCOMING_NODE",
+						"path": 24
+					},
+					{
+						"name": "OUTGOING_NODE",
+						"type": "string",
+						"hard_coded_value": "OUTGOING_NODE",
+						"path": 25
+					},
+					{
+						"name": "INCOMING_POI",
+						"type": "string",
+						"hard_coded_value": "INCOMING_POI",
+						"path": 26
+					},
+					{
+						"name": "OUTGOING_POI",
+						"type": "string",
+						"hard_coded_value": "OUTGOING_POI",
+						"path": 27
+					},
+					{
+						"name": "TIER",
+						"type": "string",
+						"hard_coded_value": "TIER",
+						"path": 28
+					},
+					{
+						"name": "RECORD_SEQUENCE_NUMBER",
+						"type": "string",
+						"hard_coded_value": "RECORD_SEQUENCE_NUMBER",
+						"path": 29
+					},
+					{
+						"name": "PROCESS_DATE",
+						"type": "string",
+						"hard_coded_value": "PROCESS_DATE",
+						"path": 30
+					},
+					{
+						"name": "FILENAME",
+						"type": "string",
+						"hard_coded_value": "FILENAME",
+						"path": 31
+					},
+					{
+						"name": "MESSAGE_DATE",
+						"type": "string",
+						"hard_coded_value": "MESSAGE_DATE",
+						"path": 32
+					},
+					{
+						"name": "BILLING_DATE",
+						"type": "string",
+						"hard_coded_value": "BILLING_DATE",
+						"path": 33
+					},
+					{
+						"name": "ADJUSTED_DATE",
+						"type": "string",
+						"hard_coded_value": "ADJUSTED_DATE",
+						"path": 34
+					},
+					{
+						"name": "BILLRUN_UNIQUE_RECORD_ID",
+						"type": "string",
+						"hard_coded_value": "BILLRUN_UNIQUE_RECORD_ID",
+						"path": 35
+					},
+					{
+						"name": "LAST_RECALCULATION",
+						"type": "string",
+						"hard_coded_value": "LAST_RECALCULATION",
+						"path": 36
+					}
+				],
+				"data_structure": {
+					"CREDIT": [
+						{
+							"name": "USER_SUMMARISATION",
+							"type": "string",
+							"format": "",
+							"path": 1,
+							"linked_entity": {
+								"field_name": "uf.USER_SUMMARISATION",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "EVENT_START_TIME",
+							"type": "string",
+							"path": 2,
+							"linked_entity": {
+								"field_name": "uf.EVENT_START_TIME",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "RATING_COMPONENT",
+							"type": "string",
+							"path": 3,
+							"linked_entity": {
+								"field_name": "cf.component",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "CASH_FLOW",
+							"type": "string",
+							"path": 4,
+							"linked_entity": {
+								"field_name": "cf.cash_flow",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "PRODUCT_GROUP",
+							"type": "string",
+							"path": 5,
+							"linked_entity": {
+								"field_name": "cf.product_group",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "EVENT_DIRECTION",
+							"type": "string",
+							"path": 6,
+							"linked_entity": {
+								"field_name": "cf.event_direction",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "ANUM",
+							"type": "string",
+							"path": 7,
+							"linked_entity": {
+								"field_name": "uf.ANUM",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "BNUM",
+							"type": "string",
+							"path": 8,
+							"linked_entity": {
+								"field_name": "uf.BNUM",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "OUTGOING_PRODUCT",
+							"type": "string",
+							"path": 9,
+							"linked_entity": {
+								"field_name": "cf.product",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "INCOMING_PRODUCT",
+							"type": "string",
+							"path": 10,
+							"linked_entity": {
+								"field_name": "cf.product",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "SETTLEMENT_OPERATOR",
+							"type": "string",
+							"path": 11,
+							"linked_entity": {
+								"field_name": "cf.operator",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "BILLED_PRODUCT",
+							"type": "string",
+							"path": 12,
+							"linked_entity": {
+								"field_name": "cf.product",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "NETWORK_ADDRESS_AGGR_ANUM",
+							"type": "string",
+							"path": 13,
+							"linked_entity": {
+								"field_name": "cf.anaa",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "NETWORK_ADDRESS_AGGR_BNUM",
+							"type": "string",
+							"path": 14,
+							"linked_entity": {
+								"field_name": "cf.bnaa",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "USER_DATA",
+							"type": "string",
+							"path": 15,
+							"linked_entity": {
+								"field_name": "uf.USER_DATA",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "USER_DATA_2",
+							"type": "string",
+							"path": 16,
+							"linked_entity": {
+								"field_name": "uf.USER_DATA2",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "USER_DATA_3",
+							"type": "string",
+							"path": 17,
+							"linked_entity": {
+								"field_name": "uf.USER_DATA3",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "COMPONENT_DIRECTION",
+							"type": "string",
+							"path": 18,
+							"linked_entity": {
+								"field_name": "cf.call_direction",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "CURRENCY",
+							"type": "string",
+							"hard_coded_value": "EUR",
+							"path": 19
+						},
+						{
+							"name": "ACTUAL_USAGE",
+							"type": "string",
+							"path": 20,
+							"linked_entity": {
+								"field_name": "usagev",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "APPORTIONED_DURATION_SECONDS",
+							"type": "string",
+							"path": 21,
+							"linked_entity": {
+								"field_name": "usagev",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "AMOUNT",
+							"type": "string",
+							"path": 22,
+							"linked_entity": {
+								"field_name": "aprice",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "BILLING_METHOD",
+							"type": "string",
+							"hard_coded_value": "I",
+							"path": 23
+						},
+						{
+							"name": "INCOMING_NODE",
+							"type": "string",
+							"path": 24,
+							"linked_entity": {
+								"field_name": "uf.INCOMING_NODE",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "OUTGOING_NODE",
+							"type": "string",
+							"path": 25,
+							"linked_entity": {
+								"field_name": "uf.OUTGOING_NODE",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "INCOMING_POI",
+							"type": "string",
+							"path": 26,
+							"linked_entity": {
+								"field_name": "cf.incoming_poin",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "OUTGOING_POI",
+							"type": "string",
+							"path": 27,
+							"linked_entity": {
+								"field_name": "cf.outgoing_poin",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "TIER",
+							"type": "string",
+							"path": 28,
+							"linked_entity": {
+								"field_name": "cf.tier",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "RECORD_SEQUENCE_NUMBER",
+							"type": "string",
+							"path": 29,
+							"linked_entity": {
+								"field_name": "uf.RECORD_SEQUENCE_NUMBER",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "PROCESS_DATE",
+							"type": "date",
+							"path": 30,
+							"linked_entity": {
+								"field_name": "process_time",
+								"entity": "line"
+							},
+							"format": "YmdHis"
+						},
+						{
+							"name": "FILENAME",
+							"type": "string",
+							"path": 31,
+							"linked_entity": {
+								"field_name": "file",
+								"entity": "line"
+							}
+						},
+						{
+							"name": "MESSAGE_DATE",
+							"type": "date",
+							"path": 32,
+							"linked_entity": {
+								"field_name": "urt",
+								"entity": "line"
+							},
+							"format": "YmdHis"
+						},
+						{
+							"name": "BILLING_DATE",
+							"type": "date",
+							"path": 33,
+							"linked_entity": {
+								"field_name": "urt",
+								"entity": "line"
+							},
+							"format": "YmdHis"
+						},
+						{
+							"name": "ADJUSTED_DATE",
+							"type": "date",
+							"path": 34,
+							"linked_entity": {
+								"field_name": "urt",
+								"entity": "line"
+							},
+							"format": "YmdHis"
+						},
+						{
+							"name": "BILLRUN_UNIQUE_RECORD_ID",
+							"type": "string",
+							"path": 35,
+							"linked_entity": {
+								"field_name": "stamp",
+								"entity": "line"
+							}
+						},
+						{
+							"name" : "LAST_RECALCULATION",
+							"type" : "date",
+							"path" : 36,
+							"linked_entity" : {
+								"field_name" : "rebalance",
+								"entity" : "line"
+							},
+							"format": "YmdHis"
+						}
+					]
+				}
+			},
+			"senders": {
+				"connections": [
+					{
+						"connection_type": "",
+						"name": "",
+						"host": "",
+						"password": "",
+						"user": "",
+						"remote_directory": ""
+					}
+				]
+			}
+		}
+        );
+        
+});
 
 lastConfig = runOnce(lastConfig, 'EPICIC-155', function () {
     if(typeof lastConfig.billrun.compute.suggestions.rate_recalculations.grouping === 'undefined') {
@@ -9753,7 +10375,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-155', function () {
         "uf.USER_SUMMARISATION", "uf.EVENT_START_TIME", "cf.component", "cf.cash_flow", "cf.product_group", "cf.event_direction", "uf.ANUM", "uf.BNUM", "cf.product", "cf.operator", "cf.anaa", "cf.bnaa", "uf.USER_DATA", "uf.USER_DATA2", "uf.USER_DATA3", "cf.call_direction", "uf.INCOMING_NODE", "uf.OUTGOING_NODE", "cf.incoming_poin", "cf.outgoing_poin", "cf.tier", "uf.RECORD_SEQUENCE_NUMBER"
     ];
 });
-
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
