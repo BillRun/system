@@ -9741,6 +9741,19 @@ lastConfig = runOnce(lastConfig, 'EPICIC-147', function () {
     });
 });
 
+lastConfig = runOnce(lastConfig, 'EPICIC-158', function () {
+	lastConfig.resetlines.limit.v = 1;
+})
+
+lastConfig = runOnce(lastConfig, 'EPICIC-155', function () {
+    if(typeof lastConfig.billrun.compute.suggestions.rate_recalculations.grouping === 'undefined') {
+	lastConfig.billrun.compute.suggestions.rate_recalculations['grouping'] = {};    
+    }
+    lastConfig.billrun.compute.suggestions.rate_recalculations.grouping.fields = [
+        "uf.USER_SUMMARISATION", "uf.EVENT_START_TIME", "cf.component", "cf.cash_flow", "cf.product_group", "cf.event_direction", "uf.ANUM", "uf.BNUM", "cf.product", "cf.operator", "cf.anaa", "cf.bnaa", "uf.USER_DATA", "uf.USER_DATA2", "uf.USER_DATA3", "cf.call_direction", "uf.INCOMING_NODE", "uf.OUTGOING_NODE", "cf.incoming_poin", "cf.outgoing_poin", "cf.tier", "uf.RECORD_SEQUENCE_NUMBER"
+    ];
+});
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
