@@ -227,7 +227,9 @@ class CreditAction extends ApiAction {
 	
 	protected function parseCreditByPrice(&$row) {
 		$row['credit']['aprice'] = $row['aprice'];
-		$row['aprice'] = $row['aprice'] * $row['usagev'];
+		if (!isset($row['multiply_charge_by_volume']) || boolval($row['multiply_charge_by_volume'])) {
+			$row['aprice'] = $row['aprice'] * $row['usagev'];
+		}
 		$row['prepriced'] = true;
 	}
 	
