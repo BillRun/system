@@ -16,6 +16,8 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	
 	protected $remote;
 	protected $remote_authentication;
+
+	const API_DATETIME_REGEX='/^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}:\d{2}(\.\d{3}|)?(Z|[+-]\d\d\:?\d\d|)$/';
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -62,7 +64,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 			return false;
 		}
 		return array_reduce($results, function($acc, $currentSub) {
-			Billrun_Utils_Mongo::convertQueryMongodloidDates($currentSub,'/^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}:\d{2}(\.\d{3}|)?(Z|[+-]\d\d\:?\d\d|)$/');
+			Billrun_Utils_Mongo::convertQueryMongodloidDates($currentSub,static::API_DATETIME_REGEX);
 			$acc[] = new Mongodloid_Entity($currentSub);
 			return $acc;
 		}, []);
