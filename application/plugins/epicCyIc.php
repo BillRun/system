@@ -226,7 +226,8 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         
         //EPICIC-153: On billing cycle use only revenue lines and ignore expense lines
         public function beforeCycleLinesQuery(&$query, &$sort, &$fields){
-            $query["cf.cash_flow"] = "R";
+			$query['$or'] = array(array("cf.cash_flow" => "R"),array("type" => "credit"));
+			Billrun_Factory::log('EpicCy Plugin - Query only revenue CDRs and credit lines');
         }
 
 	public function beforeCalculatorAddExtraLines(&$row, &$extraData, Billrun_Calculator $calculator) {
