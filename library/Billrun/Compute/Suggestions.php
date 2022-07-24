@@ -655,7 +655,8 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'usagev' => $groupingInfo['usagev'] ?? $creditSuggestion['usagev'],
             'credit_time' => date("Y-m-d\TH:i:s\Z", $groupingInfo['max_urt_line']->sec ?? $creditSuggestion['max_urt_line']->sec),
             'label' => $creditSuggestion['invoice_label'] ?? $creditSuggestion['description'] . ' - correction',
-            'recalculation_type' => $creditSuggestion['recalculation_type']
+            'recalculation_type' => $creditSuggestion['recalculation_type'],
+            'multiply_charge_by_volume' => false,
         );
         $recalculation_type = $creditSuggestion['recalculation_type'];
         $groupingKeys = static::getGroupingFieldsByRecalculationType($recalculation_type);
