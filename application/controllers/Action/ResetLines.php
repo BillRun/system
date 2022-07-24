@@ -60,6 +60,7 @@ class ResetLinesAction extends ApiAction {
 				$query = [
 					'aid' => $aid,
 					'billrun_key' => $billrun_key,
+                                        'conditions_hash' => md5(serialize($conditions)),
 					'$or' => array(
 						array('start_time' => array('$exists' => true), 'end_time' => array('$exists' => false)),
 						array('start_time' => array('$exists' => false), 'end_time' => array('$exists' => false)),
