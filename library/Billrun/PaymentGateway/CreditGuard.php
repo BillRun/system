@@ -233,7 +233,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										<transactionCode>Phone</transactionCode>
 										<transactionType>' . $transactionType . '</transactionType>
 										<total>' . abs($gatewayDetails['amount']) . '</total>
-										' . (!empty($gatewayDetails['auth_number']) ? '<authNumber>' . $gatewayDetails['auth_number'] . '</authNumber>' : '') . '
+										' . ((!empty($gatewayDetails['auth_number']) && $gatewayDetails['amount'] > 0) ? '<authNumber>' . $gatewayDetails['auth_number'] . '</authNumber>' : '') . '
 										<user>' . $this->transactionId . '</user>
 										 ' . $ZParameter . '
 										<validation>AutoComm</validation>
