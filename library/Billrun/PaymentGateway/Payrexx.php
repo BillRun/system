@@ -73,6 +73,8 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$account = Billrun_Factory::account();
 		$account->loadAccountForQuery(array('aid' => (int) $aid));
 
+		$this->transactionId  = Billrun_Util::generateRandomNum();
+
 		$request = $this->omnipayGateway->purchase([
 			'amount' => 1, // TODO set from config
 //			'vatRate' => 7.7, // TODO ask about vat rate
@@ -84,12 +86,22 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 			'forename' => $account->firstname,
 			'surname' => $account->lastname,
 			'email' => $account->email,
-			'successRedirectUrl' => $okPage,
-			'failedRedirectUrl' => $failPage,
+			'successRedirectUrl' => $this->adjustRedirectUrl($okPage, $this->transactionId),
+			'failedRedirectUrl' => $this->adjustRedirectUrl($failPage, $this->transactionId),
 			'buttonText' => 'Add Card'
 		]);
 
 		return $request->send();
+	}
+
+	protected function adjustRedirectUrl($url, $txId): string {
+
+		$params = http_build_query([
+			'name' => $this->billrunName,
+			'txId' => $txId
+		]);
+
+		return $url . (strpos($url, '?') !== false ? '&' : '?') . $params;
 	}
 
 	/**
@@ -111,8 +123,8 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 */
 	protected function updateRedirectUrl($result) {
 		$this->redirectUrl = $result->getRedirectUrl();
-		// TODO move it to updateSessionTransactionId()?
-		$this->transactionId = $result->getTransactionReference();
+		// TODO move it to updateSessionTransactionId()
+		$this->saveDetails['ref'] = $result->getTransactionReference();
 	}
 
 	/**
@@ -120,6 +132,112 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 */
 	function updateSessionTransactionId() {
 		// it's updated in updateRedirectUrl()
+	}
+
+	protected function signalStartingProcess($aid, $timestamp) {
+		parent::signalStartingProcess($aid, $timestamp);
+
+		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
+		$query = array("name" => $this->billrunName, "tx" => (string) $this->transactionId, "stamp" => md5($timestamp . $this->transactionId), "aid" => (int)$aid);
+
+		$paymentRow = $paymentColl->query($query)->cursor()->sort(array('t' => -1))->limit(1)->current();
+		if ($paymentRow->isEmpty()) {
+			return;
+		}
+
+		$paymentRow['ref'] = $this->saveDetails['ref'];
+
+		$paymentColl->updateEntity($paymentRow);
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function getTransactionIdName() {
+		return 'txId';
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function handleOkPageData($txId) {
+		return true;
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function saveTransactionDetails($txId, $additionalParams) {
+		$this->saveDetails['aid'] = $this->getAidFromProxy($txId);
+		// TODO tenant URL?
+		$tenantUrl = $this->getTenantReturnUrl($this->saveDetails['aid']);
+		$this->updateReturnUrlOnEror($tenantUrl);
+
+		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
+		$query = array("name" => $this->billrunName, "tx" => (string) $txId);
+		$paymentRow = $paymentColl->query($query)->cursor()->current();
+
+		$request = $this->omnipayGateway->completePurchase(['transactionReference' => $paymentRow['ref']]);
+
+		$result = $request->send();
+
+		if (($retParams = $this->getResponseDetails($result)) === FALSE) {
+			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
+			throw new Exception('Operation Failed. Try Again...');
+		}
+
+		if (!$this->validatePaymentProcess($txId)) {
+			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: Too much time passed', Zend_Log::ALERT);
+			throw new Exception('Too much time passed');
+		}
+
+		$this->savePaymentGateway();
+
+		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date']);
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	protected function getResponseDetails($result) {
+		if (!isset($result->getData()->getInvoices()[0]["transactions"][0])) {
+			throw new Exception('Wrong response from payment gateway');
+		}
+		$transaction = $result->getData()->getInvoices()[0]["transactions"][0];
+
+		$this->saveDetails['card_token'] = $transaction['id'];
+		$this->saveDetails['four_digits'] = !empty($transaction['payment']['cardNumber'])
+			? substr($transaction['payment']['cardNumber'], -4) : '';
+		$this->saveDetails['card_expiration'] = $transaction['payment']['expiry'];
+
+		// TODO format four_digits and expiration_date properly
+		return [
+			'four_digits' => $this->saveDetails['four_digits'],
+			'expiration_date' => $this->saveDetails['card_expiration']
+		];
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	protected function buildSetQuery() {
+		return array(
+			'active' => array(
+				'name' => $this->billrunName,
+				'card_token' => (string) $this->saveDetails['card_token'],
+				'card_expiration' => (string) $this->saveDetails['card_expiration'],
+				'transaction_exhausted' => true,
+				'generate_token_time' => new MongoDate(time()),
+				'four_digits' => (string) $this->saveDetails['four_digits'],
+			)
+		);
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	protected function validateStructureForCharge($structure) {
+		return !empty($structure['card_token']);
 	}
 
 	/**
@@ -136,38 +254,6 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected function buildTransactionPost($txId, $additionalParams) {
 		throw new Exception("Method " . __METHOD__);
 		// TODO: Implement buildTransactionPost() method.
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	public function getTransactionIdName() {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement getTransactionIdName() method.
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	public function handleOkPageData($txId) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement handleOkPageData() method.
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	protected function getResponseDetails($result) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement getResponseDetails() method.
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	protected function buildSetQuery() {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement buildSetQuery() method.
 	}
 
 	/**
@@ -208,14 +294,6 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected function isNeedAdjustingRequest() {
 		throw new Exception("Method " . __METHOD__);
 		// TODO: Implement isNeedAdjustingRequest() method.
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	protected function validateStructureForCharge($gatewayDetails) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement validateStructureForCharge() method.
 	}
 
 	/**
