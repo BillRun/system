@@ -104,7 +104,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	protected $htmlForm;
 	
-	protected function __construct() {
+	protected function __construct($newName =  null) {
 
 		if ($this->supportsOmnipay()) {
 			$this->omnipayGateway = Omnipay\Omnipay::create($this->getOmnipayName());
@@ -113,6 +113,9 @@ abstract class Billrun_PaymentGateway {
 		if (empty($this->returnUrl)) {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
+                if(isset($newName)){
+                    $this->billrunName = $newName;
+                }
 		$this->account = Billrun_Factory::account();
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
 	}
@@ -137,7 +140,7 @@ abstract class Billrun_PaymentGateway {
 			$paymentGatewayName = explode(" ", $name)[0];
 			$subClassName = __CLASS__ . '_' . $paymentGatewayName;
 			if (@class_exists($subClassName)) {
-				$paymentGateway = new $subClassName();
+				$paymentGateway = new $subClassName($name);
 				self::$paymentGateways[$name] = $paymentGateway;
 			}
 		}
