@@ -32,11 +32,12 @@ class PaymentGatewaysController extends ApiController {
 		$settings = array();
 		foreach ($gateways as $name) {
 			$setting = array();
-			$newName = explode($instance_separator, $name)[0];
-			$setting['name'] = $name;
+                        $type = explode($instance_separator, $name)[0];
+			$newName = explode($instance_separator, $name)[1];
+			$setting['name'] = $type . (isset($newName)? " (" . $newName  . ")" : "");
 			$setting['supported'] = true;
-			$setting['image_url'] = $imagesUrl[$newName];
-			$paymentGateway = Billrun_Factory::paymentGateway($name);
+			$setting['image_url'] = $imagesUrl[$newName] ?? $imagesUrl[$type];
+			$paymentGateway = Billrun_Factory::paymentGateway($type);
 			if (is_null($paymentGateway)) {
 				$setting['supported'] = false;
 				$settings[] = $setting;

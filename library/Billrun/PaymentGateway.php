@@ -134,9 +134,8 @@ abstract class Billrun_PaymentGateway {
 		if (isset(self::$paymentGateways[$name])) {
 			$paymentGateway = self::$paymentGateways[$name];
 		} else {
-			$instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator');
-			$newName = explode($instance_separator, $name)[0];
-			$subClassName = __CLASS__ . '_' . $newName;
+			$paymentGatewayName = explode(" ", $name)[0];
+			$subClassName = __CLASS__ . '_' . $paymentGatewayName;
 			if (@class_exists($subClassName)) {
 				$paymentGateway = new $subClassName();
 				self::$paymentGateways[$name] = $paymentGateway;
