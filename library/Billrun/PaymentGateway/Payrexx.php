@@ -7,6 +7,7 @@
  */
 
 use Payrexx\Models\Request\SignatureCheck;
+use Payrexx\Models\Request\Transaction;
 use Payrexx\Payrexx;
 use Payrexx\PayrexxException;
 
@@ -25,6 +26,9 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected $omnipayName = "Payrexx";
 
 	protected $billrunName = "Payrexx";
+
+	protected $pendingCodes = '/^authorized$/';
+	protected $completionCodes = '/^confirmed$/';
 
 	public function __construct() {
 		parent::__construct();
@@ -75,10 +79,14 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 		$this->transactionId  = Billrun_Util::generateRandomNum();
 
+		if (!empty($singlePaymentParams)) {
+			$this->saveDetails['charge'] = 1;
+		}
+
 		$request = $this->omnipayGateway->purchase([
-			'amount' => 1, // TODO set from config
+			'amount' => $singlePaymentParams['amount'] ?? 0.5, // TODO set from config
 //			'vatRate' => 7.7, // TODO ask about vat rate
-			'currency' => self::DEFAULT_CURRENCY,
+			'currency' => Billrun_Factory::config()->getConfigValue('pricing.currency', self::DEFAULT_CURRENCY),
 			'sku' => 'P01122000', // TODO no sku?
 			'preAuthorization' => 1,
 			'pm' => ['visa', 'mastercard'],
@@ -146,6 +154,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		}
 
 		$paymentRow['ref'] = $this->saveDetails['ref'];
+		$paymentRow['charge'] = $this->saveDetails['charge'];
 
 		$paymentColl->updateEntity($paymentRow);
 	}
@@ -181,7 +190,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 		$result = $request->send();
 
-		if (($retParams = $this->getResponseDetails($result)) === FALSE) {
+		if (($paymentInfo = $this->getResponseDetails($result)) === FALSE) {
 			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
 			throw new Exception('Operation Failed. Try Again...');
 		}
@@ -193,27 +202,40 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 		$this->savePaymentGateway();
 
-		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date']);
+		if ($paymentRow['charge']) {
+			$this->paySinglePayment($paymentInfo);
+		}
+
+		return array(
+			'tenantUrl' => $tenantUrl,
+			'creditCard' => $paymentInfo['four_digits'],
+			'expirationDate' => $paymentInfo['expiration_date']
+		);
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function getResponseDetails($result) {
-		if (!isset($result->getData()->getInvoices()[0]["transactions"][0])) {
+		$gatewayInfo = $result->getData();
+		if (!isset($gatewayInfo->getInvoices()[0]["transactions"][0])) {
 			throw new Exception('Wrong response from payment gateway');
 		}
-		$transaction = $result->getData()->getInvoices()[0]["transactions"][0];
+		$transaction = $gatewayInfo->getInvoices()[0]["transactions"][0];
 
 		$this->saveDetails['card_token'] = $transaction['id'];
 		$this->saveDetails['four_digits'] = !empty($transaction['payment']['cardNumber'])
 			? substr($transaction['payment']['cardNumber'], -4) : '';
 		$this->saveDetails['card_expiration'] = $transaction['payment']['expiry'];
+		$amount = $gatewayInfo->getAmount() / 100;
 
-		// TODO format four_digits and expiration_date properly
 		return [
+			'card_token' => $this->saveDetails['card_token'],
 			'four_digits' => $this->saveDetails['four_digits'],
-			'expiration_date' => $this->saveDetails['card_expiration']
+			'expiration_date' => $this->saveDetails['card_expiration'],
+			'transferred_amount' => $amount,
+			'amount' => $amount,
+			"transaction_status" => $gatewayInfo->getStatus()
 		];
 	}
 
@@ -240,6 +262,64 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		return !empty($structure['card_token']);
 	}
 
+	protected function paySinglePayment($retParams) {
+		$options = array('collect' => true, 'payment_gateway' => true);
+		$gatewayDetails = $this->saveDetails;
+		$gatewayDetails['name'] = $this->billrunName;
+		$accountId = $this->saveDetails['aid'];
+		if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
+			Billrun_Factory::log("Non valid payment gateway for aid = " . $accountId, Zend_Log::NOTICE);
+		}
+		if (!isset($retParams['transferred_amount'])) {
+			throw new Exception("Missing amount for single payment, aid = " . $accountId);
+		}
+		$cashAmount = $retParams['transferred_amount'];
+		$paymentParams['aid'] = $accountId;
+		$paymentParams['billrun_key'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
+		$paymentParams['amount'] = abs($cashAmount);
+		$gatewayDetails['amount'] = $cashAmount;
+		$gatewayDetails['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');
+		$paymentParams['gateway_details'] = $retParams;
+		$paymentParams['gateway_details']['name'] = !empty($gatewayDetails['name']) ? $gatewayDetails['name'] : $this->billrunName;
+		$paymentParams['transaction_status'] = $retParams['transaction_status'];
+		if (isset($retParams['installments'])) {
+			$paymentParams['installments'] = $retParams['installments'];
+		}
+		$paymentParams['dir'] = 'fc';
+		if (isset($retParams['payment_identifier'])) {
+			$options['additional_params']['payment_identifier'] = $retParams['payment_identifier'];
+		}
+		Billrun_Factory::log("Creating bill for single payment: Account id=" . $accountId . ", Amount=" . $cashAmount, Zend_Log::INFO);
+		Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $options);
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	protected function pay($gatewayDetails, $addonData) {
+		$credentials = $this->getGatewayCredentials();
+
+		try {
+			$payrexx = new Payrexx($credentials['instance_name'], $credentials['instance_api_secret']);
+
+			$transaction = new Transaction();
+			$transaction->setId($gatewayDetails['card_token']);
+			$transaction->setAmount($gatewayDetails['amount']);
+			$response = $payrexx->charge($transaction);
+		} catch (PayrexxException $e) {
+			Billrun_Factory::log('Payrexx credentials validation failed with message: ' . $e->getMessage(), Zend_Log::DEBUG);
+			return false;
+		}
+
+
+		$this->transactionId = $response->getId();
+
+		return [
+			'status' => $response->getStatus(),
+			'additional_params' => []
+		];
+	}
+
 	/**
 	 * @inheritDoc
 	 */
@@ -254,14 +334,6 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected function buildTransactionPost($txId, $additionalParams) {
 		throw new Exception("Method " . __METHOD__);
 		// TODO: Implement buildTransactionPost() method.
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	protected function pay($gatewayDetails, $addonData) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement pay() method.
 	}
 
 	/**
