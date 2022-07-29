@@ -233,7 +233,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 			'card_token' => $this->saveDetails['card_token'],
 			'four_digits' => $this->saveDetails['four_digits'],
 			'expiration_date' => $this->saveDetails['card_expiration'],
-			'transferred_amount' => $amount,
+			'transferred_amount' => $amount, // TODO check if it's necessary
 			'amount' => $amount,
 			"transaction_status" => $gatewayInfo->getStatus()
 		];
@@ -304,7 +304,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 			$transaction = new Transaction();
 			$transaction->setId($gatewayDetails['card_token']);
-			$transaction->setAmount($gatewayDetails['amount']);
+			$transaction->setAmount($gatewayDetails['amount'] * 100); // convert to cents
 			$response = $payrexx->charge($transaction);
 		} catch (PayrexxException $e) {
 			Billrun_Factory::log('Payrexx credentials validation failed with message: ' . $e->getMessage(), Zend_Log::DEBUG);
