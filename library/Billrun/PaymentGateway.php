@@ -58,6 +58,12 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $billrunName;
+        
+        /**
+	 * Instance name for the payment gateway.
+	 * @var string
+	 */
+	protected $instanceName;
 	
 	/**
 	 * identifier for the transaction. 
@@ -104,7 +110,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	protected $htmlForm;
 	
-	protected function __construct($newName =  null) {
+	protected function __construct($instanceName =  null) {
 
 		if ($this->supportsOmnipay()) {
 			$this->omnipayGateway = Omnipay\Omnipay::create($this->getOmnipayName());
@@ -113,8 +119,10 @@ abstract class Billrun_PaymentGateway {
 		if (empty($this->returnUrl)) {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
-                if(isset($newName)){
-                    $this->billrunName = $newName;
+                if(isset($instanceName)){
+                    $this->instanceName = $instanceName;
+                    $instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator');                   
+                    $this->pgName = $this->billrunName . $instance_separator . $this->instanceName;
                 }
 		$this->account = Billrun_Factory::account();
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
@@ -133,14 +141,18 @@ abstract class Billrun_PaymentGateway {
 	 * @param string $name the payment gateway name
 	 * @return Billrun_PaymentGateway
 	 */
-	public static function getInstance($name) {
+	public static function getInstance($name, $instanceName = null) {
+            	$instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator');
+                $type = explode($instance_separator, $name)[0];
+                if(!isset($instanceName)){
+                    $instanceName = explode($instance_separator, $name)[1];
+                }
 		if (isset(self::$paymentGateways[$name])) {
 			$paymentGateway = self::$paymentGateways[$name];
 		} else {
-			$paymentGatewayName = explode(" ", $name)[0];
-			$subClassName = __CLASS__ . '_' . $paymentGatewayName;
+			$subClassName = __CLASS__ . '_' . $type;
 			if (@class_exists($subClassName)) {
-				$paymentGateway = new $subClassName($name);
+				$paymentGateway = new $subClassName($instanceName);
 				self::$paymentGateways[$name] = $paymentGateway;
 			}
 		}
@@ -236,7 +248,11 @@ abstract class Billrun_PaymentGateway {
 		$okTemplate = Billrun_Factory::config()->getConfigValue('PaymentGateways.ok_page');
 		$pageRoot = $request->getServer()['HTTP_HOST'];
 		$protocol = empty($request->getServer()['HTTPS']) ? 'http' : 'https';
-		$okPage = sprintf($okTemplate, $protocol, $pageRoot, $this->billrunName);
+                $name =  $this->billrunName;
+                if(isset($this->instanceName)){
+                    $name = urlencode($this->pgName);
+                }
+		$okPage = sprintf($okTemplate, $protocol, $pageRoot, $name);
 
 		return $okPage;
 	}
@@ -607,6 +623,9 @@ abstract class Billrun_PaymentGateway {
 	protected function getGateway(){
 		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
 		$gatewayName = $this->billrunName;
+                if(isset($this->instanceName)){
+                    $gatewayName = $this->pgName;
+                }
 		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
 			return $paymentGateway['name'] == $gatewayName;
 		});

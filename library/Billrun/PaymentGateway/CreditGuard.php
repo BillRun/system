@@ -141,7 +141,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	protected function buildSetQuery() {
-		return array(
+		$setQuery = array(
 			'active' => array(
 				'name' => $this->billrunName,
 				'card_token' => (string) $this->saveDetails['card_token'],
@@ -153,6 +153,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'four_digits' => (string) $this->saveDetails['four_digits'],
 			)
 		);
+                if(isset($this->instanceName)){
+                    $setQuery['active']['instance_name'] =  $this->instanceName;
+                }
+                return $setQuery;
 	}
 
 	public function getDefaultParameters() {

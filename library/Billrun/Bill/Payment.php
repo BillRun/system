@@ -674,6 +674,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$paymentParams['billrun_key'] = $billDetails['billrun_key'];
 				$gatewayDetails['currency'] = !empty($billDetails['currency']) ? $billDetails['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 				$gatewayName = $gatewayDetails['name'];
+                                $gatewayInstanceName = $gatewayDetails['instance_name'];
 				$paymentParams['gateway_details'] = $gatewayDetails;
 				if ((self::isChargeMode($chargeOptions) && $gatewayDetails['amount'] < 0) || (self::isRefundMode($chargeOptions) && $gatewayDetails['amount'] > 0)) {
 					continue;
@@ -713,7 +714,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					}
 					
 					if ($paymentResponse['response'][$transactionId]['stage'] == 'Rejected') {
-						$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+						$gateway = Billrun_PaymentGateway::getInstance($gatewayName, $gatewayInstanceName);
 						$newPaymentParams['amount'] = $paymentData['amount'];
 						$newPaymentParams['aid'] = $paymentData['aid'];
 						$newPaymentParams['gateway_details'] = $paymentData['gateway_details'];
@@ -785,7 +786,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$pendingPayments = self::loadPending();
 		foreach ($pendingPayments as $payment) {
 			$gatewayName = $payment->getPaymentGatewayName();
-			$paymentGateway = Billrun_PaymentGateway::getInstance($gatewayName);
+                        $gatewayInstanceName = $payment->getPaymentGatewayInstanceName();
+			$paymentGateway = Billrun_PaymentGateway::getInstance($gatewayName, $gatewayInstanceName);//todo::need to be checked
 			if (is_null($paymentGateway) || !$paymentGateway->hasPendingStatus()) {
 				continue;
 			}
@@ -826,6 +828,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			
 	protected function getPaymentGatewayName(){
 		return $this->data['payment_gateway']['name'];
+	}
+        
+        protected function getPaymentGatewayInstanceName(){
+		return $this->data['payment_gateway']['instance_name'];
 	}
 	
 	public function setGatewayChargeFailure($message){
@@ -970,7 +976,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public static function payAndUpdateStatus($paymentMethod, $paymentParams, $options = array()) {
 		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($paymentMethod, array($paymentParams), $options);
 		$gatewayName = $paymentParams['gateway_details']['name'];
-		$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+                $gatewayInstanceName = $paymentParams['gateway_details']['instance_name'];//todo ::need to be checked
+		$gateway = Billrun_PaymentGateway::getInstance($gatewayName, $gatewayInstanceName);
 		foreach ($paymentResponse['payment'] as $payment) {
 			$paymentData = $payment->getRawData();
 			$transactionId = $paymentData['payment_gateway']['transactionId'];

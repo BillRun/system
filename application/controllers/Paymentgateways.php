@@ -32,12 +32,15 @@ class PaymentGatewaysController extends ApiController {
 		$settings = array();
 		foreach ($gateways as $name) {
 			$setting = array();
-                        $type = explode($instance_separator, $name)[0];
-			$newName = explode($instance_separator, $name)[1];
-			$setting['name'] = $type . (isset($newName)? " (" . $newName  . ")" : "");
+                        $setting['name'] = $name;
 			$setting['supported'] = true;
-			$setting['image_url'] = $imagesUrl[$newName] ?? $imagesUrl[$type];
-			$paymentGateway = Billrun_Factory::paymentGateway($type);
+			$setting['image_url'] = $imagesUrl[$name];
+                        $type = explode($instance_separator, $name)[0];
+			$instanceName = explode($instance_separator, $name)[1];
+                        if(isset($instanceName)){
+                            $setting['title'] = $type .  " (" . $instanceName  . ")"; //TODO ::FE task - display this title instead name 
+                        }    
+                        $paymentGateway = Billrun_Factory::paymentGateway($name);                      
 			if (is_null($paymentGateway)) {
 				$setting['supported'] = false;
 				$settings[] = $setting;
@@ -72,6 +75,9 @@ class PaymentGatewaysController extends ApiController {
 		$originalRequestData = $requestData = json_decode($request->get('data'), true);
 		if (isset($requestData['return_url'])) {
 			$requestData['return_url'] = urlencode($requestData['return_url']);
+		}
+                if (isset($requestData['name'])) {
+			$requestData['name'] = urlencode($requestData['name']);
 		}
 		if (isset($requestData['ok_page'])) {
 			$requestData['ok_page'] = urlencode($requestData['ok_page']);
@@ -196,7 +202,7 @@ class PaymentGatewaysController extends ApiController {
 	 */
 	public function OkPageAction() {
 		$request = $this->getRequest();
-		$name = $request->get("name");
+		$name = urldecode($request->get("name"));
 		if (is_null($name)) {
 			return $this->setError("Missing payment gateway name", $request);
 		}

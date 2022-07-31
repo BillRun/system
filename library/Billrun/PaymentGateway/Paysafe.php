@@ -53,7 +53,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	}
 
 	protected function buildSetQuery() {
-		return array(
+		$setQuery = array(
 			'active' => array(
 				'name' => $this->billrunName,
 				'card_token' => $this->saveDetails['card_token'],
@@ -62,6 +62,10 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 				'customer_id' => $this->saveDetails['customer_id'],
 			)
 		);
+                if(isset($this->instanceName)){
+                    $setQuery['active']['instance_name'] =  $this->instanceName;
+                }
+                return $setQuery;
 	}
 
 	public function getDefaultParameters() {

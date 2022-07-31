@@ -144,7 +144,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 
 	protected function buildSetQuery() {
-		return array(
+		$setQuery = array(
 			'active' => array(
 				'name' => $this->billrunName,
 				'customer_profile_id' => $this->saveDetails['customer_profile_id'],
@@ -153,6 +153,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				'generate_token_time' => new MongoDate(time())
 			)
 		);
+                if(isset($this->instanceName)){
+                    $setQuery['active']['instance_name'] =  $this->instanceName;
+                }
+                return $setQuery;
 	}
 
 	public function pay($gatewayDetails, $addonData) {
