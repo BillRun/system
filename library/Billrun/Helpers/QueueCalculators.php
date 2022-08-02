@@ -85,6 +85,7 @@ class Billrun_Helpers_QueueCalculators {
                 if ($calc->updateRow($entity) !== FALSE) {
                     if ($this->isLastCalc($calc_name, $last_calc)) {
                         $processor->unsetQueueRow($entity['stamp']);
+						$processor->setFullCalculationTime($entity);
                     } else {
                         $processor->setQueueRowStep($entity['stamp'], $calc_name);
                         $processor->addAdvancedPropertiesToQueueRow($line);
@@ -97,6 +98,7 @@ class Billrun_Helpers_QueueCalculators {
             } else {
                 if ($this->isLastCalc($calc_name, $last_calc)) {
                     $processor->unsetQueueRow($entity['stamp']);
+					$processor->setFullCalculationTime($entity);
                 } else {
                     $processor->setQueueRowStep($entity['stamp'], $calc_name);
                 }

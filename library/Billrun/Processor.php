@@ -837,4 +837,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function setPgFileType($fileType) {
 		return;
 	}
+
+	public function setFullCalculationTime(&$entity) {
+		$entity['full_calculation'] = new MongoDate();
+	}
 }
