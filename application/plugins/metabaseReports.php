@@ -288,9 +288,18 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function upload($report) {
 		$hostAndPort = $this->export_details['host'] . ':'. $this->port;
-		$auth = array(
-			'password' => $this->export_details['password'],
-		);
+		// Check if private key exist
+		if (isset($this->export_details['key'])) {
+			$key_file_name = $this->export_details['key'];
+			$key_file_path = Billrun_Util::getBillRunPath('application/plugins/metabaseReports/keys/');
+			$auth = array(
+				'key' => $key_file_path . $key_file_name,
+			);
+		} else {
+			$auth = array(
+				'password' => $this->export_details['password'],
+			);
+		}
 		$connection = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
 		Billrun_Factory::log()->log("Connecting to SFTP server: " . $connection->getHost() , Zend_Log::INFO);
 		$connected = $connection->connect($this->export_details['user']);
