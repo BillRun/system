@@ -125,8 +125,16 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"title" => "MB reports - export server's password",
 				"editable" => true,
 				"display" => true,
-				"nullable" => false,
-				"mandatory" => true
+				"nullable" => true,
+				"mandatory" => false
+			], [
+				"type" => "text",
+				"field_name" => "export.key_file_name",
+				"title" => "MB reports - export server's key file name",
+				"editable" => true,
+				"display" => true,
+				"nullable" => true,
+				"mandatory" => false
 			], [
 				"type" => "string",
 				"field_name" => "export.remote_directory",
@@ -289,8 +297,8 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function upload($report) {
 		$hostAndPort = $this->export_details['host'] . ':'. $this->port;
 		// Check if private key exist
-		if (isset($this->export_details['key'])) {
-			$key_file_name = $this->export_details['key'];
+		if (isset($this->export_details['key_file_name'])) {
+			$key_file_name = $this->export_details['key_file_name'];
 			$key_file_path = Billrun_Util::getBillRunPath('application/plugins/metabaseReports/keys/');
 			$auth = array(
 				'key' => $key_file_path . $key_file_name,
