@@ -49,7 +49,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$customParams = $this->getGatewayCustomParams();
 
 
-		return $this->getXmlStructureByParams($credentials, $xmlParams, ( !empty($customParams['passthrough_config']) ? $customParams['passthrough_config'] : [])) ;
+		return $this->getXmlStructureByParams($credentials, $xmlParams, ( !empty($customParams) ? $customParams : [])) ;
 	}
 
 	protected function updateRedirectUrl($result) {
@@ -427,8 +427,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 
 		//add spesific  configration that to  be applies on each new payment page
-		if(!empty($customParams['passthrough_config']) && is_array($customParams['passthrough_config'])) {
-			$addonData = array_merge($customParams['passthrough_config'],$addonData);
+		if(!empty($customParams) && is_array($customParams)) {
+			$addonData = array_merge($customParams,$addonData);
 		}
 
 		return $this->getXmlStructureByParams($credentials, $xmlParams, $addonData);
