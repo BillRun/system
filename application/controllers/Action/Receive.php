@@ -90,7 +90,6 @@ class ReceiveAction extends Action_Base {
 
 		$this->getController()->addOutput("Starting to receive. This action can take a while...");
 		$files = $receiver->receive();
-		$receiver->isConnected();
 		$this->getController()->addOutput("Received " . count($files) . " files");
 	}
 	
