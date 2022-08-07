@@ -42,8 +42,6 @@ class PasswordRetrievalAction extends ApiAction {
 			Billrun_Factory::log("Request to change password from " . $email,  Zend_Log::INFO);
 				Billrun_Util::sendMail("BillRun(R) Cloud Password Reset", $resetMessage, array($email), array(), true);
 			}
-		} else {
-			Billrun_Factory::log("User not found for password reset.",Zend_Log::INFO);
 		}
 
 		$this->getController()->setOutput(array(array(
