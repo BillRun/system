@@ -197,13 +197,13 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			try {
 				Billrun_Factory::log("Saving " . $report->name . " report." , Zend_Log::DEBUG);
 				$this->save($report);
-				Billrun_Factory::log("Uploading " . $report->name . " report." , Zend_Log::INFO);
+				Billrun_Factory::log("Uploading " . $report->name . " report." , Zend_Log::INFO); 
 				$this->upload($report);
 			} catch (Exception $e) {
 				Billrun_Factory::log("Report: " . $report_settings['name'] . " saving ERR: " . $e->getMessage(), Zend_Log::ALERT);
 				continue;
 			}
-		}
+		} 
 	}
 
 	/**
@@ -296,12 +296,24 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function upload($report) {
 		$hostAndPort = $this->export_details['host'] . ':'. $this->port;
+		$fileName = $report->getFileName();
 		// Check if private key exist
-		if (isset($this->export_details['key_file_name'])) {
+		if (isset($this->export_details['key_file_name'])) {			
+			Billrun_Factory::log("Found key file name configuration" , Zend_Log::DEBUG);
 			$key_file_name = $this->export_details['key_file_name'];
-			$key_file_path = Billrun_Util::getBillRunPath('application/plugins/metabaseReports/keys/');
+			Billrun_Factory::log("Checking key file name' validation" , Zend_Log::DEBUG);
+			if (!preg_match("/^([-\.\_\w]+)$/", $key_file_name)) {
+				throw new Exception("Key file name isn't valid : " . $key_file_name . ". Couldn't upload " . $fileName . " report' file");
+			}
+			Billrun_Factory::log("Key file name : " .  $key_file_name . " is valid" , Zend_Log::DEBUG);
+			Billrun_Factory::log("Checking if the key file exists" , Zend_Log::DEBUG);
+			$key_file_path = Billrun_Util::getBillRunPath('application/plugins/metabaseReports/keys/' . $key_file_name);
+			if (!file_exists($key_file_path)) {
+				throw new Exception("Couldn't find key file in: " . $key_file_path . ". Couldn't upload " . $fileName . " report' file");
+			}
+			Billrun_Factory::log("Found key file under : " . $key_file_path , Zend_Log::DEBUG);
 			$auth = array(
-				'key' => $key_file_path . $key_file_name,
+				'key' => $key_file_path,
 			);
 		} else {
 			$auth = array(
@@ -316,7 +328,6 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			 return;
 		 }
 		Billrun_Factory::log()->log("Success: Connected to: " . $connection->getHost() , Zend_Log::INFO);
-        $fileName = $report->getFileName();
 		Billrun_Factory::log("Uploading " . $fileName . " to " . $this->export_details['remote_directory'], Zend_Log::INFO);
 		if (!empty($connection)){
 			try {
