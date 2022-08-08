@@ -13,7 +13,8 @@ use Psr\Http\Message\StreamInterface;
 class DeflateStream extends FilteredStream
 {
     /**
-     * @param int $level
+     * @param StreamInterface $stream
+     * @param int             $level
      */
     public function __construct(StreamInterface $stream, $level = -1)
     {

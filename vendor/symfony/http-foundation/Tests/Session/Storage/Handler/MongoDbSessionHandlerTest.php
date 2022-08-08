@@ -11,19 +11,17 @@
 
 namespace Symfony\Component\HttpFoundation\Tests\Session\Storage\Handler;
 
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Session\Storage\Handler\MongoDbSessionHandler;
 
 /**
  * @author Markus Bachmann <markus.bachmann@bachi.biz>
  * @group time-sensitive
- * @group legacy
  */
 class MongoDbSessionHandlerTest extends TestCase
 {
     /**
-     * @var MockObject
+     * @var \PHPUnit_Framework_MockObject_MockObject
      */
     private $mongo;
     private $storage;
@@ -33,11 +31,11 @@ class MongoDbSessionHandlerTest extends TestCase
     {
         parent::setUp();
 
-        if (\extension_loaded('mongodb')) {
+        if (extension_loaded('mongodb')) {
             if (!class_exists('MongoDB\Client')) {
                 $this->markTestSkipped('The mongodb/mongodb package is required.');
             }
-        } elseif (!\extension_loaded('mongo')) {
+        } elseif (!extension_loaded('mongo')) {
             $this->markTestSkipped('The Mongo or MongoDB extension is required.');
         }
 
@@ -51,28 +49,32 @@ class MongoDbSessionHandlerTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $this->options = [
+        $this->options = array(
             'id_field' => '_id',
             'data_field' => 'data',
             'time_field' => 'time',
             'expiry_field' => 'expires_at',
             'database' => 'sf2-test',
             'collection' => 'session-test',
-        ];
+        );
 
         $this->storage = new MongoDbSessionHandler($this->mongo, $this->options);
     }
 
+    /**
+     * @expectedException \InvalidArgumentException
+     */
     public function testConstructorShouldThrowExceptionForInvalidMongo()
     {
-        $this->expectException('InvalidArgumentException');
         new MongoDbSessionHandler(new \stdClass(), $this->options);
     }
 
+    /**
+     * @expectedException \InvalidArgumentException
+     */
     public function testConstructorShouldThrowExceptionForMissingOptions()
     {
-        $this->expectException('InvalidArgumentException');
-        new MongoDbSessionHandler($this->mongo, []);
+        new MongoDbSessionHandler($this->mongo, array());
     }
 
     public function testOpenMethodAlwaysReturnTrue()
@@ -92,7 +94,7 @@ class MongoDbSessionHandlerTest extends TestCase
         $this->mongo->expects($this->once())
             ->method('selectCollection')
             ->with($this->options['database'], $this->options['collection'])
-            ->willReturn($collection);
+            ->will($this->returnValue($collection));
 
         // defining the timeout before the actual method call
         // allows to test for "greater than" values in the $criteria
@@ -100,9 +102,9 @@ class MongoDbSessionHandlerTest extends TestCase
 
         $collection->expects($this->once())
             ->method('findOne')
-            ->willReturnCallback(function ($criteria) use ($testTimeout) {
+            ->will($this->returnCallback(function ($criteria) use ($testTimeout) {
                 $this->assertArrayHasKey($this->options['id_field'], $criteria);
-                $this->assertEquals('foo', $criteria[$this->options['id_field']]);
+                $this->assertEquals($criteria[$this->options['id_field']], 'foo');
 
                 $this->assertArrayHasKey($this->options['expiry_field'], $criteria);
                 $this->assertArrayHasKey('$gte', $criteria[$this->options['expiry_field']]);
@@ -115,9 +117,9 @@ class MongoDbSessionHandlerTest extends TestCase
                     $this->assertGreaterThanOrEqual($criteria[$this->options['expiry_field']]['$gte']->sec, $testTimeout);
                 }
 
-                $fields = [
+                $fields = array(
                     $this->options['id_field'] => 'foo',
-                ];
+                );
 
                 if (phpversion('mongodb')) {
                     $fields[$this->options['data_field']] = new \MongoDB\BSON\Binary('bar', \MongoDB\BSON\Binary::TYPE_OLD_BINARY);
@@ -128,7 +130,7 @@ class MongoDbSessionHandlerTest extends TestCase
                 }
 
                 return $fields;
-            });
+            }));
 
         $this->assertEquals('bar', $this->storage->read('foo'));
     }
@@ -140,25 +142,25 @@ class MongoDbSessionHandlerTest extends TestCase
         $this->mongo->expects($this->once())
             ->method('selectCollection')
             ->with($this->options['database'], $this->options['collection'])
-            ->willReturn($collection);
+            ->will($this->returnValue($collection));
 
-        $data = [];
+        $data = array();
 
         $methodName = phpversion('mongodb') ? 'updateOne' : 'update';
 
         $collection->expects($this->once())
             ->method($methodName)
-            ->willReturnCallback(function ($criteria, $updateData, $options) use (&$data) {
-                $this->assertEquals([$this->options['id_field'] => 'foo'], $criteria);
+            ->will($this->returnCallback(function ($criteria, $updateData, $options) use (&$data) {
+                $this->assertEquals(array($this->options['id_field'] => 'foo'), $criteria);
 
                 if (phpversion('mongodb')) {
-                    $this->assertEquals(['upsert' => true], $options);
+                    $this->assertEquals(array('upsert' => true), $options);
                 } else {
-                    $this->assertEquals(['upsert' => true, 'multiple' => false], $options);
+                    $this->assertEquals(array('upsert' => true, 'multiple' => false), $options);
                 }
 
                 $data = $updateData['$set'];
-            });
+            }));
 
         $expectedExpiry = time() + (int) ini_get('session.gc_maxlifetime');
         $this->assertTrue($this->storage->write('foo', 'bar'));
@@ -178,14 +180,14 @@ class MongoDbSessionHandlerTest extends TestCase
 
     public function testWriteWhenUsingExpiresField()
     {
-        $this->options = [
+        $this->options = array(
             'id_field' => '_id',
             'data_field' => 'data',
             'time_field' => 'time',
             'database' => 'sf2-test',
             'collection' => 'session-test',
             'expiry_field' => 'expiresAt',
-        ];
+        );
 
         $this->storage = new MongoDbSessionHandler($this->mongo, $this->options);
 
@@ -194,25 +196,25 @@ class MongoDbSessionHandlerTest extends TestCase
         $this->mongo->expects($this->once())
             ->method('selectCollection')
             ->with($this->options['database'], $this->options['collection'])
-            ->willReturn($collection);
+            ->will($this->returnValue($collection));
 
-        $data = [];
+        $data = array();
 
         $methodName = phpversion('mongodb') ? 'updateOne' : 'update';
 
         $collection->expects($this->once())
             ->method($methodName)
-            ->willReturnCallback(function ($criteria, $updateData, $options) use (&$data) {
-                $this->assertEquals([$this->options['id_field'] => 'foo'], $criteria);
+            ->will($this->returnCallback(function ($criteria, $updateData, $options) use (&$data) {
+                $this->assertEquals(array($this->options['id_field'] => 'foo'), $criteria);
 
                 if (phpversion('mongodb')) {
-                    $this->assertEquals(['upsert' => true], $options);
+                    $this->assertEquals(array('upsert' => true), $options);
                 } else {
-                    $this->assertEquals(['upsert' => true, 'multiple' => false], $options);
+                    $this->assertEquals(array('upsert' => true, 'multiple' => false), $options);
                 }
 
                 $data = $updateData['$set'];
-            });
+            }));
 
         $this->assertTrue($this->storage->write('foo', 'bar'));
 
@@ -234,17 +236,17 @@ class MongoDbSessionHandlerTest extends TestCase
         $this->mongo->expects($this->once())
             ->method('selectCollection')
             ->with($this->options['database'], $this->options['collection'])
-            ->willReturn($collection);
+            ->will($this->returnValue($collection));
 
-        $data = [];
+        $data = array();
 
         $methodName = phpversion('mongodb') ? 'updateOne' : 'update';
 
         $collection->expects($this->exactly(2))
             ->method($methodName)
-            ->willReturnCallback(function ($criteria, $updateData, $options) use (&$data) {
+            ->will($this->returnCallback(function ($criteria, $updateData, $options) use (&$data) {
                 $data = $updateData;
-            });
+            }));
 
         $this->storage->write('foo', 'bar');
         $this->storage->write('foo', 'foobar');
@@ -263,13 +265,13 @@ class MongoDbSessionHandlerTest extends TestCase
         $this->mongo->expects($this->once())
             ->method('selectCollection')
             ->with($this->options['database'], $this->options['collection'])
-            ->willReturn($collection);
+            ->will($this->returnValue($collection));
 
         $methodName = phpversion('mongodb') ? 'deleteOne' : 'remove';
 
         $collection->expects($this->once())
             ->method($methodName)
-            ->with([$this->options['id_field'] => 'foo']);
+            ->with(array($this->options['id_field'] => 'foo'));
 
         $this->assertTrue($this->storage->destroy('foo'));
     }
@@ -281,13 +283,13 @@ class MongoDbSessionHandlerTest extends TestCase
         $this->mongo->expects($this->once())
             ->method('selectCollection')
             ->with($this->options['database'], $this->options['collection'])
-            ->willReturn($collection);
+            ->will($this->returnValue($collection));
 
-        $methodName = phpversion('mongodb') ? 'deleteMany' : 'remove';
+        $methodName = phpversion('mongodb') ? 'deleteOne' : 'remove';
 
         $collection->expects($this->once())
             ->method($methodName)
-            ->willReturnCallback(function ($criteria) {
+            ->will($this->returnCallback(function ($criteria) {
                 if (phpversion('mongodb')) {
                     $this->assertInstanceOf('MongoDB\BSON\UTCDateTime', $criteria[$this->options['expiry_field']]['$lt']);
                     $this->assertGreaterThanOrEqual(time() - 1, round((string) $criteria[$this->options['expiry_field']]['$lt'] / 1000));
@@ -295,7 +297,7 @@ class MongoDbSessionHandlerTest extends TestCase
                     $this->assertInstanceOf('MongoDate', $criteria[$this->options['expiry_field']]['$lt']);
                     $this->assertGreaterThanOrEqual(time() - 1, $criteria[$this->options['expiry_field']]['$lt']->sec);
                 }
-            });
+            }));
 
         $this->assertTrue($this->storage->gc(1));
     }

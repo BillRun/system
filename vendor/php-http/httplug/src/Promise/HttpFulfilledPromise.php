@@ -13,6 +13,9 @@ final class HttpFulfilledPromise implements Promise
      */
     private $response;
 
+    /**
+     * @param ResponseInterface $response
+     */
     public function __construct(ResponseInterface $response)
     {
         $this->response = $response;

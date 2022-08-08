@@ -17,23 +17,16 @@ class FullHttpMessageFormatter implements Formatter
     /**
      * The maximum length of the body.
      *
-     * @var int|null
+     * @var int
      */
     private $maxBodyLength;
 
     /**
-     * @var string
+     * @param int $maxBodyLength
      */
-    private $binaryDetectionRegex;
-
-    /**
-     * @param int|null $maxBodyLength
-     * @param string   $binaryDetectionRegex By default, this is all non-printable ASCII characters and <DEL> except for \t, \r, \n
-     */
-    public function __construct($maxBodyLength = 1000, string $binaryDetectionRegex = '/([\x00-\x09\x0C\x0E-\x1F\x7F])/')
+    public function __construct($maxBodyLength = 1000)
     {
         $this->maxBodyLength = $maxBodyLength;
-        $this->binaryDetectionRegex = $binaryDetectionRegex;
     }
 
     /**
@@ -75,42 +68,24 @@ class FullHttpMessageFormatter implements Formatter
     }
 
     /**
-     * Formats a response in context of its request.
-     *
-     * @return string
-     */
-    public function formatResponseForRequest(ResponseInterface $response, RequestInterface $request)
-    {
-        return $this->formatResponse($response);
-    }
-
-    /**
      * Add the message body if the stream is seekable.
      *
-     * @param string $message
+     * @param MessageInterface $request
+     * @param string           $message
      *
      * @return string
      */
     private function addBody(MessageInterface $request, $message)
     {
-        $message .= "\n";
         $stream = $request->getBody();
         if (!$stream->isSeekable() || 0 === $this->maxBodyLength) {
             // Do not read the stream
-            return $message;
+            $message .= "\n";
+        } else {
+            $message .= "\n".mb_substr($stream->__toString(), 0, $this->maxBodyLength);
+            $stream->rewind();
         }
 
-        $data = $stream->__toString();
-        $stream->rewind();
-
-        if (preg_match($this->binaryDetectionRegex, $data)) {
-            return $message.'[binary stream omitted]';
-        }
-
-        if (null === $this->maxBodyLength) {
-            return $message.$data;
-        }
-
-        return $message.mb_substr($data, 0, $this->maxBodyLength);
+        return $message;
     }
 }

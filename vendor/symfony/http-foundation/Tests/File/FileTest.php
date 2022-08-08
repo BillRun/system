@@ -64,7 +64,7 @@ class FileTest extends TestCase
 
     public function testConstructWhenFileNotExists()
     {
-        $this->expectException('Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException');
+        $this->{method_exists($this, $_ = 'expectException') ? $_ : 'setExpectedException'}('Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException');
 
         new File(__DIR__.'/Fixtures/not_here');
     }
@@ -83,7 +83,7 @@ class FileTest extends TestCase
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\File\File', $movedFile);
 
         $this->assertFileExists($targetPath);
-        $this->assertFileDoesNotExist($path);
+        $this->assertFileNotExists($path);
         $this->assertEquals(realpath($targetPath), $movedFile->getRealPath());
 
         @unlink($targetPath);
@@ -102,7 +102,7 @@ class FileTest extends TestCase
         $movedFile = $file->move($targetDir, 'test.newname.gif');
 
         $this->assertFileExists($targetPath);
-        $this->assertFileDoesNotExist($path);
+        $this->assertFileNotExists($path);
         $this->assertEquals(realpath($targetPath), $movedFile->getRealPath());
 
         @unlink($targetPath);
@@ -110,14 +110,14 @@ class FileTest extends TestCase
 
     public function getFilenameFixtures()
     {
-        return [
-            ['original.gif', 'original.gif'],
-            ['..\\..\\original.gif', 'original.gif'],
-            ['../../original.gif', 'original.gif'],
-            ['файлfile.gif', 'файлfile.gif'],
-            ['..\\..\\файлfile.gif', 'файлfile.gif'],
-            ['../../файлfile.gif', 'файлfile.gif'],
-        ];
+        return array(
+            array('original.gif', 'original.gif'),
+            array('..\\..\\original.gif', 'original.gif'),
+            array('../../original.gif', 'original.gif'),
+            array('файлfile.gif', 'файлfile.gif'),
+            array('..\\..\\файлfile.gif', 'файлfile.gif'),
+            array('../../файлfile.gif', 'файлfile.gif'),
+        );
     }
 
     /**
@@ -137,7 +137,7 @@ class FileTest extends TestCase
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\File\File', $movedFile);
 
         $this->assertFileExists($targetPath);
-        $this->assertFileDoesNotExist($path);
+        $this->assertFileNotExists($path);
         $this->assertEquals(realpath($targetPath), $movedFile->getRealPath());
 
         @unlink($targetPath);
@@ -157,7 +157,7 @@ class FileTest extends TestCase
         $movedFile = $file->move($targetDir);
 
         $this->assertFileExists($targetPath);
-        $this->assertFileDoesNotExist($sourcePath);
+        $this->assertFileNotExists($sourcePath);
         $this->assertEquals(realpath($targetPath), $movedFile->getRealPath());
 
         @unlink($sourcePath);
@@ -172,7 +172,7 @@ class FileTest extends TestCase
             ->expects($this->once())
             ->method('guess')
             ->with($this->equalTo($path))
-            ->willReturn($mimeType)
+            ->will($this->returnValue($mimeType))
         ;
 
         return $guesser;

@@ -2,9 +2,6 @@
 
 namespace Http\Client\Exception;
 
-use Psr\Http\Client\NetworkExceptionInterface as PsrNetworkException;
-use Psr\Http\Message\RequestInterface;
-
 /**
  * Thrown when the request cannot be completed because of network issues.
  *
@@ -12,17 +9,6 @@ use Psr\Http\Message\RequestInterface;
  *
  * @author Márk Sági-Kazár <mark.sagikazar@gmail.com>
  */
-class NetworkException extends TransferException implements PsrNetworkException
+class NetworkException extends RequestException
 {
-    use RequestAwareTrait;
-
-    /**
-     * @param string $message
-     */
-    public function __construct($message, RequestInterface $request, \Exception $previous = null)
-    {
-        $this->setRequest($request);
-
-        parent::__construct($message, 0, $previous);
-    }
 }

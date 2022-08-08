@@ -1,12 +1,9 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Http\Adapter\Guzzle6;
 
 use GuzzleHttp\Exception as GuzzleExceptions;
 use GuzzleHttp\Promise\PromiseInterface;
-use Http\Adapter\Guzzle6\Exception\UnexpectedValueException;
 use Http\Client\Exception as HttplugException;
 use Http\Promise\Promise as HttpPromise;
 use Psr\Http\Message\RequestInterface;
@@ -17,7 +14,7 @@ use Psr\Http\Message\ResponseInterface;
  *
  * @author Joel Wurtz <joel.wurtz@gmail.com>
  */
-final class Promise implements HttpPromise
+class Promise implements HttpPromise
 {
     /**
      * @var PromiseInterface
@@ -44,6 +41,10 @@ final class Promise implements HttpPromise
      */
     private $request;
 
+    /**
+     * @param PromiseInterface $promise
+     * @param RequestInterface $request
+     */
     public function __construct(PromiseInterface $promise, RequestInterface $request)
     {
         $this->request = $request;
@@ -60,10 +61,10 @@ final class Promise implements HttpPromise
                 $this->exception = $reason;
             } elseif ($reason instanceof GuzzleExceptions\GuzzleException) {
                 $this->exception = $this->handleException($reason, $request);
-            } elseif ($reason instanceof \Throwable) {
-                $this->exception = new HttplugException\TransferException('Invalid exception returned from Guzzle6', 0, $reason);
+            } elseif ($reason instanceof \Exception) {
+                $this->exception = new \RuntimeException('Invalid exception returned from Guzzle6', 0, $reason);
             } else {
-                $this->exception = new UnexpectedValueException('Reason returned from Guzzle6 must be an Exception');
+                $this->exception = new \UnexpectedValueException('Reason returned from Guzzle6 must be an Exception', 0, $reason);
             }
 
             throw $this->exception;
@@ -94,7 +95,7 @@ final class Promise implements HttpPromise
         $this->promise->wait(false);
 
         if ($unwrap) {
-            if (self::REJECTED == $this->getState()) {
+            if ($this->getState() == self::REJECTED) {
                 throw $this->exception;
             }
 
@@ -104,8 +105,13 @@ final class Promise implements HttpPromise
 
     /**
      * Converts a Guzzle exception into an Httplug exception.
+     *
+     * @param GuzzleExceptions\GuzzleException $exception
+     * @param RequestInterface                 $request
+     *
+     * @return HttplugException
      */
-    private function handleException(GuzzleExceptions\GuzzleException $exception, RequestInterface $request): HttplugException
+    private function handleException(GuzzleExceptions\GuzzleException $exception, RequestInterface $request)
     {
         if ($exception instanceof GuzzleExceptions\SeekException) {
             return new HttplugException\RequestException($exception->getMessage(), $request, $exception);

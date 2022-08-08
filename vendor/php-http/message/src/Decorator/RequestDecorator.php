@@ -17,6 +17,8 @@ trait RequestDecorator
     /**
      * Exchanges the underlying request with another.
      *
+     * @param RequestInterface $request
+     *
      * @return self
      */
     public function withRequest(RequestInterface $request)

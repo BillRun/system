@@ -2,7 +2,6 @@
 
 namespace Http\Client\Exception;
 
-use Psr\Http\Client\RequestExceptionInterface as PsrRequestException;
 use Psr\Http\Message\RequestInterface;
 
 /**
@@ -13,17 +12,32 @@ use Psr\Http\Message\RequestInterface;
  *
  * @author Márk Sági-Kazár <mark.sagikazar@gmail.com>
  */
-class RequestException extends TransferException implements PsrRequestException
+class RequestException extends TransferException
 {
-    use RequestAwareTrait;
+    /**
+     * @var RequestInterface
+     */
+    private $request;
 
     /**
-     * @param string $message
+     * @param string           $message
+     * @param RequestInterface $request
+     * @param \Exception|null  $previous
      */
     public function __construct($message, RequestInterface $request, \Exception $previous = null)
     {
-        $this->setRequest($request);
+        $this->request = $request;
 
         parent::__construct($message, 0, $previous);
+    }
+
+    /**
+     * Returns the request.
+     *
+     * @return RequestInterface
+     */
+    public function getRequest()
+    {
+        return $this->request;
     }
 }

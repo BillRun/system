@@ -14,7 +14,7 @@ installed with composer, it can be run like so:
 
 ``` sh
 cd /project/to/migrate/src
-php /project/to/migrate/vendor/phpoffice/phpspreadsheet/bin/migrate-from-phpexcel
+/project/to/migrate/vendor/phpoffice/phpspreadsheet/bin/migrate-from-phpexcel
 ```
 
 **Important** The tool will irreversibly modify your sources, be sure to

@@ -3,7 +3,6 @@
 namespace Http\Message\Authentication;
 
 use Http\Message\Authentication;
-use InvalidArgumentException;
 use Psr\Http\Message\RequestInterface;
 
 /**
@@ -24,23 +23,13 @@ final class Wsse implements Authentication
     private $password;
 
     /**
-     * @var string
-     */
-    private $hashAlgorithm;
-
-    /**
      * @param string $username
      * @param string $password
-     * @param string $hashAlgorithm To use a better hashing algorithm than the weak sha1, pass the algorithm to use, e.g. "sha512"
      */
-    public function __construct($username, $password, $hashAlgorithm = 'sha1')
+    public function __construct($username, $password)
     {
         $this->username = $username;
         $this->password = $password;
-        if (false === in_array($hashAlgorithm, hash_algos())) {
-            throw new InvalidArgumentException(sprintf('Unaccepted hashing algorithm: %s', $hashAlgorithm));
-        }
-        $this->hashAlgorithm = $hashAlgorithm;
     }
 
     /**
@@ -48,9 +37,10 @@ final class Wsse implements Authentication
      */
     public function authenticate(RequestInterface $request)
     {
+        // TODO: generate better nonce?
         $nonce = substr(md5(uniqid(uniqid().'_', true)), 0, 16);
         $created = date('c');
-        $digest = base64_encode(hash($this->hashAlgorithm, base64_decode($nonce).$created.$this->password, true));
+        $digest = base64_encode(sha1(base64_decode($nonce).$created.$this->password, true));
 
         $wsse = sprintf(
             'UsernameToken Username="%s", PasswordDigest="%s", Nonce="%s", Created="%s"',

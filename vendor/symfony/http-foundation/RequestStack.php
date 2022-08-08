@@ -21,7 +21,7 @@ class RequestStack
     /**
      * @var Request[]
      */
-    private $requests = [];
+    private $requests = array();
 
     /**
      * Pushes a Request on the stack.
@@ -47,7 +47,7 @@ class RequestStack
     public function pop()
     {
         if (!$this->requests) {
-            return null;
+            return;
         }
 
         return array_pop($this->requests);
@@ -73,7 +73,7 @@ class RequestStack
     public function getMasterRequest()
     {
         if (!$this->requests) {
-            return null;
+            return;
         }
 
         return $this->requests[0];
@@ -92,10 +92,10 @@ class RequestStack
      */
     public function getParentRequest()
     {
-        $pos = \count($this->requests) - 2;
+        $pos = count($this->requests) - 2;
 
         if (!isset($this->requests[$pos])) {
-            return null;
+            return;
         }
 
         return $this->requests[$pos];

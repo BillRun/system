@@ -1,7 +1,0 @@
-.php-cs-fixer.php
-.php-cs-fixer.cache
-/build/
-/composer.lock
-/phpspec.yml
-/phpunit.xml
-/vendor/

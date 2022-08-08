@@ -150,7 +150,7 @@ abstract class Pdf extends Html
      *
      * @param string $fontName
      *
-     * @return $this
+     * @return Pdf
      */
     public function setFont($fontName)
     {

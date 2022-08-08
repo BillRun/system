@@ -19,9 +19,16 @@ namespace Symfony\Component\HttpFoundation\Session\Attribute;
  */
 class NamespacedAttributeBag extends AttributeBag
 {
+    /**
+     * Namespace character.
+     *
+     * @var string
+     */
     private $namespaceCharacter;
 
     /**
+     * Constructor.
+     *
      * @param string $storageKey         Session storage key
      * @param string $namespaceCharacter Namespace character to use in keys
      */
@@ -44,7 +51,7 @@ class NamespacedAttributeBag extends AttributeBag
             return false;
         }
 
-        return \array_key_exists($name, $attributes);
+        return array_key_exists($name, $attributes);
     }
 
     /**
@@ -60,7 +67,7 @@ class NamespacedAttributeBag extends AttributeBag
             return $default;
         }
 
-        return \array_key_exists($name, $attributes) ? $attributes[$name] : $default;
+        return array_key_exists($name, $attributes) ? $attributes[$name] : $default;
     }
 
     /**
@@ -81,7 +88,7 @@ class NamespacedAttributeBag extends AttributeBag
         $retval = null;
         $attributes = &$this->resolveAttributePath($name);
         $name = $this->resolveKey($name);
-        if (null !== $attributes && \array_key_exists($name, $attributes)) {
+        if (null !== $attributes && array_key_exists($name, $attributes)) {
             $retval = $attributes[$name];
             unset($attributes[$name]);
         }
@@ -97,12 +104,12 @@ class NamespacedAttributeBag extends AttributeBag
      * @param string $name         Key name
      * @param bool   $writeContext Write context, default false
      *
-     * @return array|null
+     * @return array
      */
     protected function &resolveAttributePath($name, $writeContext = false)
     {
         $array = &$this->attributes;
-        $name = (0 === strpos($name, $this->namespaceCharacter)) ? substr($name, 1) : $name;
+        $name = (strpos($name, $this->namespaceCharacter) === 0) ? substr($name, 1) : $name;
 
         // Check if there is anything to do, else return
         if (!$name) {
@@ -110,27 +117,21 @@ class NamespacedAttributeBag extends AttributeBag
         }
 
         $parts = explode($this->namespaceCharacter, $name);
-        if (\count($parts) < 2) {
+        if (count($parts) < 2) {
             if (!$writeContext) {
                 return $array;
             }
 
-            $array[$parts[0]] = [];
+            $array[$parts[0]] = array();
 
             return $array;
         }
 
-        unset($parts[\count($parts) - 1]);
+        unset($parts[count($parts) - 1]);
 
         foreach ($parts as $part) {
-            if (null !== $array && !\array_key_exists($part, $array)) {
-                if (!$writeContext) {
-                    $null = null;
-
-                    return $null;
-                }
-
-                $array[$part] = [];
+            if (null !== $array && !array_key_exists($part, $array)) {
+                $array[$part] = $writeContext ? array() : null;
             }
 
             $array = &$array[$part];

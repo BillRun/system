@@ -2,19 +2,17 @@
 
 namespace Http\Message\MessageFactory;
 
-use Http\Message\MessageFactory;
 use Http\Message\StreamFactory\SlimStreamFactory;
 use Http\Message\UriFactory\SlimUriFactory;
-use Slim\Http\Headers;
+use Http\Message\MessageFactory;
 use Slim\Http\Request;
 use Slim\Http\Response;
+use Slim\Http\Headers;
 
 /**
  * Creates Slim 3 messages.
  *
  * @author Mika Tuupola <tuupola@appelsiini.net>
- *
- * @deprecated This will be removed in php-http/message2.0. Consider using the official Slim PSR-17 factory
  */
 final class SlimMessageFactory implements MessageFactory
 {

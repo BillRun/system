@@ -11,8 +11,8 @@
 
 namespace Symfony\Component\HttpFoundation\File\MimeType;
 
-use Symfony\Component\HttpFoundation\File\Exception\AccessDeniedException;
 use Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException;
+use Symfony\Component\HttpFoundation\File\Exception\AccessDeniedException;
 
 /**
  * Guesses the mime type using the PECL extension FileInfo.
@@ -24,9 +24,11 @@ class FileinfoMimeTypeGuesser implements MimeTypeGuesserInterface
     private $magicFile;
 
     /**
+     * Constructor.
+     *
      * @param string $magicFile A magic file to use with the finfo instance
      *
-     * @see https://php.net/finfo-open
+     * @see http://www.php.net/manual/en/function.finfo-open.php
      */
     public function __construct($magicFile = null)
     {
@@ -40,7 +42,7 @@ class FileinfoMimeTypeGuesser implements MimeTypeGuesserInterface
      */
     public static function isSupported()
     {
-        return \function_exists('finfo_open');
+        return function_exists('finfo_open');
     }
 
     /**
@@ -57,19 +59,13 @@ class FileinfoMimeTypeGuesser implements MimeTypeGuesserInterface
         }
 
         if (!self::isSupported()) {
-            return null;
+            return;
         }
 
-        if (!$finfo = new \finfo(\FILEINFO_MIME_TYPE, $this->magicFile)) {
-            return null;
-        }
-        $mimeType = $finfo->file($path);
-
-        if ($mimeType && 0 === (\strlen($mimeType) % 2)) {
-            $mimeStart = substr($mimeType, 0, \strlen($mimeType) >> 1);
-            $mimeType = $mimeStart.$mimeStart === $mimeType ? $mimeStart : $mimeType;
+        if (!$finfo = new \finfo(FILEINFO_MIME_TYPE, $this->magicFile)) {
+            return;
         }
 
-        return $mimeType;
+        return $finfo->file($path);
     }
 }

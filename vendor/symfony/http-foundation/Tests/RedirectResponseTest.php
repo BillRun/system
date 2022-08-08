@@ -20,19 +20,26 @@ class RedirectResponseTest extends TestCase
     {
         $response = new RedirectResponse('foo.bar');
 
-        $this->assertMatchesRegularExpression('#<meta http-equiv="refresh" content="\d+;url=\'foo\.bar\'" />#', preg_replace('/\s+/', ' ', $response->getContent()));
+        $this->assertEquals(1, preg_match(
+            '#<meta http-equiv="refresh" content="\d+;url=foo\.bar" />#',
+            preg_replace(array('/\s+/', '/\'/'), array(' ', '"'), $response->getContent())
+        ));
     }
 
+    /**
+     * @expectedException \InvalidArgumentException
+     */
     public function testRedirectResponseConstructorNullUrl()
     {
-        $this->expectException('InvalidArgumentException');
-        new RedirectResponse(null);
+        $response = new RedirectResponse(null);
     }
 
+    /**
+     * @expectedException \InvalidArgumentException
+     */
     public function testRedirectResponseConstructorWrongStatusCode()
     {
-        $this->expectException('InvalidArgumentException');
-        new RedirectResponse('foo.bar', 404);
+        $response = new RedirectResponse('foo.bar', 404);
     }
 
     public function testGenerateLocationHeader()
@@ -58,9 +65,11 @@ class RedirectResponseTest extends TestCase
         $this->assertEquals('baz.beep', $response->getTargetUrl());
     }
 
+    /**
+     * @expectedException \InvalidArgumentException
+     */
     public function testSetTargetUrlNull()
     {
-        $this->expectException('InvalidArgumentException');
         $response = new RedirectResponse('foo.bar');
         $response->setTargetUrl(null);
     }
@@ -78,11 +87,7 @@ class RedirectResponseTest extends TestCase
         $response = new RedirectResponse('foo.bar', 301);
         $this->assertFalse($response->headers->hasCacheControlDirective('no-cache'));
 
-        $response = new RedirectResponse('foo.bar', 301, ['cache-control' => 'max-age=86400']);
-        $this->assertFalse($response->headers->hasCacheControlDirective('no-cache'));
-        $this->assertTrue($response->headers->hasCacheControlDirective('max-age'));
-
-        $response = new RedirectResponse('foo.bar', 301, ['Cache-Control' => 'max-age=86400']);
+        $response = new RedirectResponse('foo.bar', 301, array('cache-control' => 'max-age=86400'));
         $this->assertFalse($response->headers->hasCacheControlDirective('no-cache'));
         $this->assertTrue($response->headers->hasCacheControlDirective('max-age'));
 

@@ -20,6 +20,9 @@ final class QueryParam implements Authentication
      */
     private $params = [];
 
+    /**
+     * @param array $params
+     */
     public function __construct(array $params)
     {
         $this->params = $params;
@@ -38,7 +41,7 @@ final class QueryParam implements Authentication
 
         $params = array_merge($params, $this->params);
 
-        $query = http_build_query($params, '', '&');
+        $query = http_build_query($params, null, '&');
 
         $uri = $uri->withQuery($query);
 

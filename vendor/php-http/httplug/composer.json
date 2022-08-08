@@ -1,12 +1,9 @@
 {
     "name": "php-http/httplug",
     "description": "HTTPlug, the HTTP client abstraction for PHP",
-    "keywords": [
-        "http",
-        "client"
-    ],
-    "homepage": "http://httplug.io",
     "license": "MIT",
+    "keywords": ["http", "client"],
+    "homepage": "http://httplug.io",
     "authors": [
         {
             "name": "Eric GELOEN",
@@ -14,24 +11,17 @@
         },
         {
             "name": "Márk Sági-Kazár",
-            "email": "mark.sagikazar@gmail.com",
-            "homepage": "https://sagikazarmark.hu"
+            "email": "mark.sagikazar@gmail.com"
         }
     ],
     "require": {
-        "php": "^7.1 || ^8.0",
-        "php-http/promise": "^1.1",
-        "psr/http-client": "^1.0",
-        "psr/http-message": "^1.0"
+        "php": ">=5.4",
+        "psr/http-message": "^1.0",
+        "php-http/promise": "^1.0"
     },
     "require-dev": {
-        "friends-of-phpspec/phpspec-code-coverage": "^4.1",
-        "phpspec/phpspec": "^5.1 || ^6.0"
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "2.x-dev"
-        }
+        "phpspec/phpspec": "^2.4",
+        "henrikbjorn/phpspec-code-coverage" : "^1.0"
     },
     "autoload": {
         "psr-4": {
@@ -41,5 +31,10 @@
     "scripts": {
         "test": "vendor/bin/phpspec run",
         "test-ci": "vendor/bin/phpspec run -c phpspec.ci.yml"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.1-dev"
+        }
     }
 }

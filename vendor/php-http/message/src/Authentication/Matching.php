@@ -27,6 +27,10 @@ final class Matching implements Authentication
      */
     private $matcher;
 
+    /**
+     * @param Authentication $authentication
+     * @param callable|null  $matcher
+     */
     public function __construct(Authentication $authentication, callable $matcher = null)
     {
         if (is_null($matcher)) {
@@ -54,7 +58,8 @@ final class Matching implements Authentication
     /**
      * Creates a matching authentication for an URL.
      *
-     * @param string $url
+     * @param Authentication $authentication
+     * @param string         $url
      *
      * @return self
      */
