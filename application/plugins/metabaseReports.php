@@ -305,8 +305,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!preg_match("/^([-\.\_\w]+)$/", $key_file_name)) {
 				throw new Exception("Key file name isn't valid : " . $key_file_name . ". Couldn't upload " . $fileName . " report' file");
 			}
-			Billrun_Factory::log("Key file name : " .  $key_file_name . " is valid" , Zend_Log::DEBUG);
-			Billrun_Factory::log("Checking if the key file exists" , Zend_Log::DEBUG);
+			Billrun_Factory::log("Key file name : " .  $key_file_name . " is valid. Checking if the key file exists" , Zend_Log::DEBUG);
 			$key_file_path = Billrun_Util::getBillRunPath('application/plugins/metabaseReports/keys/' . $key_file_name);
 			if (!file_exists($key_file_path)) {
 				throw new Exception("Couldn't find key file in: " . $key_file_path . ". Couldn't upload " . $fileName . " report' file");
