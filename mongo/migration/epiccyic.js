@@ -10369,7 +10369,18 @@ lastConfig = runOnce(lastConfig, 'EPICIC-167', function () {
         
 });
 
+//EPICIC-173: Add user data field to products
+var user_data = 			{
+	"field_name" : "params.user_data",
+	"title" : "User Data",
+	"editable" : true,
+	"display" : true
+}
+lastConfig['subscribers'] = addFieldToConfig(lastConfig, user_data, 'rates');
 
+lastConfig = runOnce(lastConfig, 'EPICIC-173', function () {
+	db.rates.updateMany({'rates.incoming_sms': {$exists: true}, 'params.user_data': {$exists: false}}, {$set: {'params.user_data': "SMS"}})
+});
 
 db.config.insert(lastConfig);
 
