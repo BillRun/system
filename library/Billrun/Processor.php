@@ -839,6 +839,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 
 	public function setFullCalculationTime(&$entity) {
-		$entity['full_calculation'] = new MongoDate();
+		if (Billrun_Factory::config()->getConfigValue('lines.full_calculation', true)) {
+			$entity['full_calculation'] = new MongoDate();
+		}
 	}
 }
