@@ -63,7 +63,7 @@ class ResetLinesModel {
     protected $conditions;
     protected $linesStampsByRebalanceStamp = [];
 
-    public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps, $stampsToRecoverByAidAndSid = array()) {
+	public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps, $stampsToRecoverByAidAndSid = array()) {
         $this->initBalances($aids, $billrun_key);
         $this->aids = $aids;
         $this->billrun_key = strval($billrun_key);
@@ -215,6 +215,7 @@ class ResetLinesModel {
     }
 
     protected function resetLinesByQuery($lines, $update_aids, $advancedProperties, $lines_coll, $queue_coll) {
+        Billrun_Factory::dispatcher()->trigger('beforeResetLinesByQuery', array(&$lines, &$update_aids, &$advancedProperties));
 		$rebalanceTime = new Mongodloid_Date();
         $stamps = array();
         $queue_lines = array();
@@ -250,6 +251,7 @@ class ResetLinesModel {
                         Billrun_Factory::log("reached $j archive line from $archiveLinesSize lines. archive line stamp: " . $archivedLine['stamp'], Zend_Log::DEBUG);
                         $j++;
                         unset($archivedLine["u_s"]);
+                        unset($archivedLine["_id"]);//in case already exist line with this _id but different (rare case) - can cause lose this archive line 
                         $archivedLinesToInsert[$archivedLine['stamp']] = $archivedLine;
                         $this->resetLine($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
                         $this->addLineStampToRebalanceStampsHash($archivedLine, $rebalanceStamp);
@@ -329,7 +331,7 @@ class ResetLinesModel {
                 $ret = Billrun_Factory::db()->linesCollection()->insert($archiveLine); // ok==1, err null
                 if (isset($ret['err']) && !is_null($ret['err'])) {
                     Billrun_Factory::log('Rebalance: line insertion of restoring archive line to lines failed, Insert Error: ' . $ret['err'] . ', failed_line ' . $stamp, Zend_Log::ALERT);
-                    continue;
+                    throw new Exception($ret['err']);
                 }
             } catch (Exception $e) {
                 if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
@@ -376,7 +378,7 @@ class ResetLinesModel {
             $queue_line['rebalance'] = $line['rebalance'];
         }
         $queue_line['rebalance'][] = $rebalanceTime;
-        $queue_line['in_queue_since'] = new MongoDate();
+        $queue_line['in_queue_since'] = new Mongodloid_Date();
         $this->buildQueueLine($queue_line, $line, $advancedProperties);
         Billrun_Factory::log("after buildQueueLine", Zend_Log::DEBUG);
         $queue_lines[] = $queue_line;
@@ -712,6 +714,7 @@ class ResetLinesModel {
                 }
             } catch (Exception $ex) {
                 Billrun_Factory::log("Error: " . $ex->getMessage(), Zend_Log::ERR);
+                throw $ex;
             }
         }
     }
@@ -1141,6 +1144,6 @@ class ResetLinesModel {
 
     protected function getLineInvoicingDay($line) {
         return isset($line['foregin']['account']['invoicing_day']) ? $line['foregin']['account']['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
-    }
+    }	
 
 }
