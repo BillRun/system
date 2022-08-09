@@ -414,6 +414,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$options = array('multiple' => true); // this option is added in case we have sharding key=stamp and the update cannot be done
 			$lines_coll->update($findQuery, $updateQuery, $options);
 		}
+                if($rebalanceUsagev > 0 && $originalRow['usaget'] === 'data'){
+                    Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberAfterBalance', array($originalRow, $balance, $remain - $rebalanceUsagev, $remain));
+                }
                 if(isset($remain) && $remain >= 0 && $originalRow['usaget'] === 'data' && $rebalanceUsagev > 0){
                     Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array(&$originalRow));
                 }
