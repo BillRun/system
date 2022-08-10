@@ -91,7 +91,7 @@ class Models_Action_Get extends Models_Action {
 			$revision_info = true;
 			$project = array();
 		}
-
+		Billrun_Factory::log("Billapi get controller runs query: " .json_encode($this->query), Zend_Log::DEBUG);
 		$ret = $this->collectionHandler->find($this->query, $project);
 
 		if ($this->size != 0) {
