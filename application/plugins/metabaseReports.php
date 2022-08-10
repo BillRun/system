@@ -305,7 +305,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!file_exists($key_file_path)) {
 				throw new Exception("Couldn't find " . $key_file_name . " key file under: " . $key_file_path . ". Couldn't upload " . $fileName . " report' file");
 			}
-			Billrun_Factory::log("Found key file under : " . $key_file_path , Zend_Log::DEBUG);
+			Billrun_Factory::log("Found " . $key_file_name . " key file under : " . $key_file_path , Zend_Log::DEBUG);
 			$auth = array(
 				'key' => $key_file_path,
 			);
