@@ -121,7 +121,7 @@ abstract class Billrun_PaymentGateway {
 		}
                 if(isset($instanceName)){
                     $this->instanceName = $instanceName;
-                    $instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator');                   
+                    $instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator', '#');                   
                     $this->pgName = $this->billrunName . $instance_separator . $this->instanceName;
                 }
 		$this->account = Billrun_Factory::account();
@@ -142,7 +142,7 @@ abstract class Billrun_PaymentGateway {
 	 * @return Billrun_PaymentGateway
 	 */
 	public static function getInstance($name, $instanceName = null) {
-            	$instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator');
+            	$instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator', '#');
                 $type = explode($instance_separator, $name)[0];
                 if(!isset($instanceName)){
                     $instanceName = explode($instance_separator, $name)[1];

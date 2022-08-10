@@ -28,7 +28,7 @@ class PaymentGatewaysController extends ApiController {
 		$this->allowed();
 		$gateways = Billrun_Factory::config()->getConfigValue('PaymentGateways.potential');
 		$imagesUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.images');
-		$instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator');
+		$instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator', '#');
 		$settings = array();
 		foreach ($gateways as $name) {
 			$setting = array();
