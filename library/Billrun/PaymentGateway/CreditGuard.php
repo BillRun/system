@@ -590,4 +590,58 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	public function getSecretFields() {
 		return array('password');
 	}
+
+	public function sendRecurringMigrationRequest($aid, $gatewayDetails){
+		$credentials = $this->getGatewayCredentials();
+		$xmlParams['version'] = $credentials['version'] ?? '2000';
+		$postArray = $this->getRecurringMigrationXml($credentials, $xmlParams, $gatewayDetails);
+		$postString = http_build_query($postArray);
+		if (function_exists("curl_init")) {
+			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::INFO);
+			Billrun_Factory::log("Payment gateway token request: " . print_R($postArray, 1), Zend_Log::DEBUG);
+			$response = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Payment gateway token response: " . print_R($response, 1), Zend_Log::DEBUG);
+		}
+		return $response;
+	}
+
+
+	protected function getRecurringMigrationXml($credentials, $xmlParams, $gatewayDetails) {
+		return array(
+			'user' => $credentials['user'],
+			'password' => $credentials['password'],
+			/* Build Ashrait XML to post */
+			'int_in' => '<ashrait>                                      
+							<request>
+								 <version>' . ($xmlParams['version'] ?? '2000') . '</version>
+								 <dateTime>' . ($xmlParams['date'] ?? date('Y-m-d H:i:s')) . '</dateTime>
+								 <command>doDeal</command>
+								 <requestId></requestId>
+								 <doDeal>
+										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
+										  <validation>verify</validation>
+										  <total>100</total>
+										  <groupId></groupId>
+										  <currency>ILS</currency>
+										  <creditType>RegularCredit</creditType>
+										  <transactionCode>Phone</transactionCode>
+										  <transactionType>RecurringMigration</transactionType>
+										  <user></user>
+										  <externalId></externalId>
+										  <cardExpiration>' . $gatewayDetails['card_expiration'] . '</cardExpiration>
+										  <cardNo></cardNo>
+										  <cgUid></cgUid>
+										  <cardId>' . $gatewayDetails['card_token'] . '</cardId>
+										  <authNumber>' . $gatewayDetails['auth_number'] . '</authNumber>
+										  <ashraitEmvData>
+										 		 <recurringTotalNo>999</recurringTotalNo>
+										 		 <recurringTotalSum></recurringTotalSum>
+										 		 <recurringFrequency>04</recurringFrequency>
+										  </ashraitEmvData>
+										  <updateGroupId></updateGroupId>
+								 </doDeal>
+							</request>
+						 </ashrait>'
+		);
+	}
 }
