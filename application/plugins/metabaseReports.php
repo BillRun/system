@@ -299,10 +299,15 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$fileName = $report->getFileName();
 		// Check if private key exist
 		if (isset($this->export_details['key_file_name'])) {		
-			Billrun_Factory::log("Found key file name configuration, validating input value, and trying to connect.." , Zend_Log::DEBUG);
+			Billrun_Factory::log("Found key file name configuration.." , Zend_Log::DEBUG);
 			$key_file_name = basename($this->export_details['key_file_name']);
+			Billrun_Factory::log("Validating key file name.." , Zend_Log::DEBUG);
+			if (!preg_match("/^([-\.\_\w]+)$/", $key_file_name)) {
+				throw new Exception("Key file name isn't valid : " . $key_file_name . ". Couldn't upload " . $fileName . " report' file");
+			}
+			Billrun_Factory::log("Key file name : " .  $key_file_name . " is valid. Checking if the key file exists" , Zend_Log::DEBUG);
 			$key_file_path = Billrun_Util::getBillRunPath('application/plugins/metabaseReports/keys/' . $key_file_name);
-			if (!file_exists($key_file_path)) {
+			if (!file_exists($key_file_path) || !is_file($key_file_path)) {
 				throw new Exception("Couldn't find " . $key_file_name . " key file under: " . $key_file_path . ". Couldn't upload " . $fileName . " report' file");
 			}
 			Billrun_Factory::log("Found " . $key_file_name . " key file under : " . $key_file_path , Zend_Log::DEBUG);
