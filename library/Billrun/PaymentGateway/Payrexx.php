@@ -238,10 +238,19 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected function getResponseDetails($result) {
 		$amount = $result->getAmount() / 100;
 
+		$payrexx = $this->getPayrexxClient();
+		$transaction = new Transaction();
+		$transaction->setId($result->getId());
+
+		$transactionResponse = $payrexx->getOne($transaction);
+
+		$payrexxFee = $transactionResponse->getPayrexxFee() / 100;
+
 		return [
 			'payment_identifier' => (string) $result->getId(),
 			'transferred_amount' => $amount,
-			"transaction_status" => $result->getStatus()
+			'fee' => $payrexxFee,
+			'transaction_status' => $result->getStatus()
 		];
 	}
 
@@ -313,15 +322,28 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 * @throws PayrexxException
 	 */
 	private function chargeCard($cardToken, $amountCents) {
-		$credentials = $this->getGatewayCredentials();
-
-		$payrexx = new Payrexx($credentials['instance_name'], $credentials['instance_api_secret']);
-
 		$transaction = new Transaction();
 		$transaction->setId($cardToken);
 		$transaction->setAmount($amountCents); // convert to cents
-		$response = $payrexx->charge($transaction);
+		$response = $this->getPayrexxClient()->charge($transaction);
 		return $response;
+	}
+
+	/**
+	 * @return Payrexx
+	 * @throws PayrexxException
+	 */
+	private function getPayrexxClient(): Payrexx {
+		$credentials = $this->getGatewayCredentials();
+
+		$payrexx = new Payrexx(
+			$credentials['instance_name'],
+			$credentials['instance_api_secret'],
+			'',
+			\Payrexx\Communicator::API_URL_BASE_DOMAIN,
+			'1.1'
+		);
+		return $payrexx;
 	}
 
 	/**
