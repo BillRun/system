@@ -198,7 +198,7 @@ abstract class Billrun_PaymentGateway {
 			$response = $updateOkPage;
 		}
 		$this->updateRedirectUrl($response);
-		$this->updateSessionTransactionId();
+		$this->updateSessionTransactionId($response);
 
 		// Signal starting process.
 		$this->signalStartingProcess($aid, $timestamp);
@@ -239,9 +239,10 @@ abstract class Billrun_PaymentGateway {
 
 	/**
 	 * Updates the current transactionId.
-	 * 
+	 *
+	 * @param $result - response to request to get billing agreement from the payment gateway.
 	 */
-	abstract function updateSessionTransactionId();
+	abstract function updateSessionTransactionId($result);
 	
 	/**
 	 * Get the Redirect url of the payment gateway.

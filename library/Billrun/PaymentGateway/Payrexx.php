@@ -19,6 +19,8 @@ use Payrexx\PayrexxException;
 class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 	const DEFAULT_CURRENCY = 'CHF';
+	const DEFAULT_PAYMENT_METHODS = ['visa', 'mastercard'];
+	const DEFAULT_AMOUNT = 0.5;
 
 	/**
 	 * @inheritDoc
@@ -85,13 +87,10 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		}
 
 		$request = $this->omnipayGateway->purchase([
-			'amount' => $singlePaymentParams['amount'] ?? 0.5, // TODO set from config
-//			'vatRate' => 7.7, // TODO ask about vat rate
+			'amount' => $singlePaymentParams['amount'] ?? self::DEFAULT_AMOUNT,
 			'currency' => Billrun_Factory::config()->getConfigValue('pricing.currency', self::DEFAULT_CURRENCY),
-			'sku' => 'P01122000', // TODO no sku?
-			'preAuthorization' => 1,
-			'pm' => ['visa', 'mastercard'],
-//			'referenceId' => $aid, // TODO use reference?
+			'preAuthorization' => 1, // indicate tokenization procedure
+			'pm' => self::DEFAULT_PAYMENT_METHODS,
 			'forename' => $account->firstname,
 			'surname' => $account->lastname,
 			'email' => $account->email,
@@ -132,15 +131,13 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 */
 	protected function updateRedirectUrl($result) {
 		$this->redirectUrl = $result->getRedirectUrl();
-		// TODO move it to updateSessionTransactionId()
-		$this->saveDetails['ref'] = $result->getTransactionReference();
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	function updateSessionTransactionId() {
-		// it's updated in updateRedirectUrl()
+	function updateSessionTransactionId($result) {
+		$this->saveDetails['ref'] = $result->getTransactionReference();
 	}
 
 	protected function signalStartingProcess($aid, $timestamp) {
@@ -184,7 +181,6 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 */
 	public function saveTransactionDetails($txId, $additionalParams) {
 		$aid = $this->getAidFromProxy($txId);
-		// TODO tenant URL?
 		$tenantUrl = $this->getTenantReturnUrl($aid);
 		$this->updateReturnUrlOnEror($tenantUrl);
 
@@ -236,7 +232,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 * @return array
 	 */
 	protected function getResponseDetails($result) {
-		$amount = $result->getAmount() / 100;
+		$amount = $this->convertReceivedAmount($result->getAmount());
 
 		$payrexx = $this->getPayrexxClient();
 		$transaction = new Transaction();
@@ -244,7 +240,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 		$transactionResponse = $payrexx->getOne($transaction);
 
-		$payrexxFee = $transactionResponse->getPayrexxFee() / 100;
+		$payrexxFee =  $this->convertReceivedAmount($transactionResponse->getPayrexxFee());
 
 		return [
 			'payment_identifier' => (string) $result->getId(),
@@ -305,7 +301,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected function pay($gatewayDetails, $addonData) {
 		$response = $this->chargeCard(
 			$gatewayDetails['card_token'],
-			$gatewayDetails['amount']  * 100 // in cents
+			$this->convertAmountToSend($gatewayDetails['amount'])
 		);
 
 		$this->transactionId = $response->getId(); // for outside use
@@ -349,73 +345,71 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	/**
 	 * @inheritDoc
 	 */
+	protected function convertAmountToSend($amount) {
+		$amount = round($amount, 2);
+		return $amount * 100;
+	}
+
+	protected function convertReceivedAmount($amount) {
+		return $amount / 100;
+	}
+
+	/**
+	 * @inheritDoc
+	 */
 	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement buildPostArray() method.
+		// not applicable for Payrexx client
+		return [];
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function buildTransactionPost($txId, $additionalParams) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement buildTransactionPost() method.
+		return [];
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	public function verifyPending($txId) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement verifyPending() method.
+		return '';
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	public function hasPendingStatus() {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement hasPendingStatus() method.
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	protected function convertAmountToSend($amount) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement convertAmountToSend() method.
+		return false;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function isNeedAdjustingRequest() {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement isNeedAdjustingRequest() method.
+		return false;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function handleTokenRequestError($response, $params) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement handleTokenRequestError() method.
+		return false;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function buildSinglePaymentArray($params, $options) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement buildSinglePaymentArray() method.
+		// not applicable for Payrexx client
+		return [];
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement createRecurringBillingProfile() method.
+		return '';
 	}
 
 }
