@@ -1384,6 +1384,12 @@ lastConfig = runOnce(lastConfig, 'BRCD-3325', function () {
 		lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-3806', function () {
+    //Suggestions Collection
+    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculation_type_1_estimated_billrun_1");
+	db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
+});
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
