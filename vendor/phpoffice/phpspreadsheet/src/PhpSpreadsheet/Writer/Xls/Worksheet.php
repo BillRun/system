@@ -281,10 +281,6 @@ class Worksheet extends BIFFwriter
     {
         $phpSheet = $this->phpSheet;
 
-        // Storing selected cells and active sheet because it changes while parsing cells with formulas.
-        $selectedCells = $this->phpSheet->getSelectedCells();
-        $activeSheetIndex = $this->phpSheet->getParent()->getActiveSheetIndex();
-
         // Write BOF record
         $this->storeBof(0x0010);
 
@@ -445,29 +441,7 @@ class Worksheet extends BIFFwriter
                     case DataType::TYPE_FORMULA:
                         $calculatedValue = $this->preCalculateFormulas ?
                             $cell->getCalculatedValue() : null;
-                        if (self::WRITE_FORMULA_EXCEPTION == $this->writeFormula($row, $column, $cVal, $xfIndex, $calculatedValue)) {
-                            if ($calculatedValue === null) {
-                                $calculatedValue = $cell->getCalculatedValue();
-                            }
-                            $calctype = gettype($calculatedValue);
-                            switch ($calctype) {
-                                case 'integer':
-                                case 'double':
-                                    $this->writeNumber($row, $column, $calculatedValue, $xfIndex);
-
-                                    break;
-                                case 'string':
-                                    $this->writeString($row, $column, $calculatedValue, $xfIndex);
-
-                                    break;
-                                case 'boolean':
-                                    $this->writeBoolErr($row, $column, $calculatedValue, 0, $xfIndex);
-
-                                    break;
-                                default:
-                                    $this->writeString($row, $column, $cVal, $xfIndex);
-                            }
-                        }
+                        $this->writeFormula($row, $column, $cVal, $xfIndex, $calculatedValue);
 
                         break;
                     case DataType::TYPE_BOOL:
@@ -485,9 +459,6 @@ class Worksheet extends BIFFwriter
         // Append
         $this->writeMsoDrawing();
 
-        // Restoring active sheet.
-        $this->phpSheet->getParent()->setActiveSheetIndex($activeSheetIndex);
-
         // Write WINDOW2 record
         $this->writeWindow2();
 
@@ -500,9 +471,6 @@ class Worksheet extends BIFFwriter
             $this->writePanes();
         }
 
-        // Restoring selected cells.
-        $this->phpSheet->setSelectedCells($selectedCells);
-
         // Write SELECTION record
         $this->writeSelection();
 
@@ -511,7 +479,7 @@ class Worksheet extends BIFFwriter
 
         // Hyperlinks
         foreach ($phpSheet->getHyperLinkCollection() as $coordinate => $hyperlink) {
-            [$column, $row] = Coordinate::coordinateFromString($coordinate);
+            list($column, $row) = Coordinate::coordinateFromString($coordinate);
 
             $url = $hyperlink->getUrl();
 
@@ -796,20 +764,14 @@ class Worksheet extends BIFFwriter
         return 0;
     }
 
-    const WRITE_FORMULA_NORMAL = 0;
-    const WRITE_FORMULA_ERRORS = -1;
-    const WRITE_FORMULA_RANGE = -2;
-    const WRITE_FORMULA_EXCEPTION = -3;
-
     /**
      * Write a formula to the specified row and column (zero indexed).
      * The textual representation of the formula is passed to the parser in
      * Parser.php which returns a packed binary string.
      *
-     * Returns  0 : WRITE_FORMULA_NORMAL  normal termination
-     *         -1 : WRITE_FORMULA_ERRORS formula errors (bad formula)
-     *         -2 : WRITE_FORMULA_RANGE  row or column out of range
-     *         -3 : WRITE_FORMULA_EXCEPTION parse raised exception, probably due to definedname
+     * Returns  0 : normal termination
+     *         -1 : formula errors (bad formula)
+     *         -2 : row or column out of range
      *
      * @param int $row Zero indexed row
      * @param int $col Zero indexed column
@@ -867,7 +829,7 @@ class Worksheet extends BIFFwriter
             // Error handling
             $this->writeString($row, $col, 'Unrecognised character for formula', 0);
 
-            return self::WRITE_FORMULA_ERRORS;
+            return -1;
         }
 
         // Parse the formula using the parser in Parser.php
@@ -890,9 +852,9 @@ class Worksheet extends BIFFwriter
                 $this->writeStringRecord($stringValue);
             }
 
-            return self::WRITE_FORMULA_NORMAL;
+            return 0;
         } catch (PhpSpreadsheetException $e) {
-            return self::WRITE_FORMULA_EXCEPTION;
+            // do nothing
         }
     }
 
@@ -1260,6 +1222,7 @@ class Worksheet extends BIFFwriter
         $fFrozenNoSplit = 0; // 0 - bit
         // no support in PhpSpreadsheet for selected sheet, therefore sheet is only selected if it is the active sheet
         $fSelected = ($this->phpSheet === $this->phpSheet->getParent()->getActiveSheet()) ? 1 : 0;
+        $fPaged = 1; // 2
         $fPageBreakPreview = $this->phpSheet->getSheetView()->getView() === SheetView::SHEETVIEW_PAGE_BREAK_PREVIEW;
 
         $grbit = $fDspFmla;
@@ -1271,8 +1234,8 @@ class Worksheet extends BIFFwriter
         $grbit |= $fArabic << 6;
         $grbit |= $fDspGuts << 7;
         $grbit |= $fFrozenNoSplit << 8;
-        $grbit |= $fSelected << 9; // Selected sheets.
-        $grbit |= $fSelected << 10; // Active sheet.
+        $grbit |= $fSelected << 9;
+        $grbit |= $fPaged << 10;
         $grbit |= $fPageBreakPreview << 11;
 
         $header = pack('vv', $record, $length);
@@ -1392,17 +1355,17 @@ class Worksheet extends BIFFwriter
         $selectedCells = Coordinate::splitRange($this->phpSheet->getSelectedCells());
         $selectedCells = $selectedCells[0];
         if (count($selectedCells) == 2) {
-            [$first, $last] = $selectedCells;
+            list($first, $last) = $selectedCells;
         } else {
             $first = $selectedCells[0];
             $last = $selectedCells[0];
         }
 
-        [$colFirst, $rwFirst] = Coordinate::coordinateFromString($first);
+        list($colFirst, $rwFirst) = Coordinate::coordinateFromString($first);
         $colFirst = Coordinate::columnIndexFromString($colFirst) - 1; // base 0 column index
         --$rwFirst; // base 0 row index
 
-        [$colLast, $rwLast] = Coordinate::coordinateFromString($last);
+        list($colLast, $rwLast) = Coordinate::coordinateFromString($last);
         $colLast = Coordinate::columnIndexFromString($colLast) - 1; // base 0 column index
         --$rwLast; // base 0 row index
 
@@ -1431,11 +1394,11 @@ class Worksheet extends BIFFwriter
 
         // Swap last row/col for first row/col as necessary
         if ($rwFirst > $rwLast) {
-            [$rwFirst, $rwLast] = [$rwLast, $rwFirst];
+            list($rwFirst, $rwLast) = [$rwLast, $rwFirst];
         }
 
         if ($colFirst > $colLast) {
-            [$colFirst, $colLast] = [$colLast, $colFirst];
+            list($colFirst, $colLast) = [$colLast, $colFirst];
         }
 
         $header = pack('vv', $record, $length);
@@ -1477,9 +1440,9 @@ class Worksheet extends BIFFwriter
 
             // extract the row and column indexes
             $range = Coordinate::splitRange($mergeCell);
-            [$first, $last] = $range[0];
-            [$firstColumn, $firstRow] = Coordinate::coordinateFromString($first);
-            [$lastColumn, $lastRow] = Coordinate::coordinateFromString($last);
+            list($first, $last) = $range[0];
+            list($firstColumn, $firstRow) = Coordinate::coordinateFromString($first);
+            list($lastColumn, $lastRow) = Coordinate::coordinateFromString($last);
 
             $recordData .= pack('vvvv', $firstRow - 1, $lastRow - 1, Coordinate::columnIndexFromString($firstColumn) - 1, Coordinate::columnIndexFromString($lastColumn) - 1);
 
@@ -1626,11 +1589,11 @@ class Worksheet extends BIFFwriter
     {
         $panes = [];
         if ($this->phpSheet->getFreezePane()) {
-            [$column, $row] = Coordinate::coordinateFromString($this->phpSheet->getFreezePane());
+            list($column, $row) = Coordinate::coordinateFromString($this->phpSheet->getFreezePane());
             $panes[0] = Coordinate::columnIndexFromString($column) - 1;
             $panes[1] = $row - 1;
 
-            [$leftMostColumn, $topRow] = Coordinate::coordinateFromString($this->phpSheet->getTopLeftCell());
+            list($leftMostColumn, $topRow) = Coordinate::coordinateFromString($this->phpSheet->getTopLeftCell());
             //Coordinates are zero-based in xls files
             $panes[2] = $topRow - 1;
             $panes[3] = Coordinate::columnIndexFromString($leftMostColumn) - 1;
@@ -1639,10 +1602,10 @@ class Worksheet extends BIFFwriter
             return;
         }
 
-        $x = $panes[0] ?? null;
-        $y = $panes[1] ?? null;
-        $rwTop = $panes[2] ?? null;
-        $colLeft = $panes[3] ?? null;
+        $x = isset($panes[0]) ? $panes[0] : null;
+        $y = isset($panes[1]) ? $panes[1] : null;
+        $rwTop = isset($panes[2]) ? $panes[2] : null;
+        $colLeft = isset($panes[3]) ? $panes[3] : null;
         if (count($panes) > 4) { // if Active pane was received
             $pnnAct = $panes[4];
         } else {
@@ -2252,7 +2215,7 @@ class Worksheet extends BIFFwriter
     public function insertBitmap($row, $col, $bitmap, $x = 0, $y = 0, $scale_x = 1, $scale_y = 1)
     {
         $bitmap_array = (is_resource($bitmap) ? $this->processBitmapGd($bitmap) : $this->processBitmap($bitmap));
-        [$width, $height, $size, $data] = $bitmap_array;
+        list($width, $height, $size, $data) = $bitmap_array;
 
         // Scale the frame of the image.
         $width *= $scale_x;

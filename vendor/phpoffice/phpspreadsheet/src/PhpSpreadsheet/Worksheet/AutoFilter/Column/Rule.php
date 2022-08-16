@@ -262,7 +262,7 @@ class Rule
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Rule
      */
     public function setRuleType($pRuleType)
     {
@@ -292,7 +292,7 @@ class Rule
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Rule
      */
     public function setValue($pValue)
     {
@@ -336,7 +336,7 @@ class Rule
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Rule
      */
     public function setOperator($pOperator)
     {
@@ -369,7 +369,7 @@ class Rule
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Rule
      */
     public function setGrouping($pGrouping)
     {
@@ -393,7 +393,7 @@ class Rule
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Rule
      */
     public function setRule($pOperator, $pValue, $pGrouping = null)
     {
@@ -424,7 +424,7 @@ class Rule
      *
      * @param Column $pParent
      *
-     * @return $this
+     * @return Rule
      */
     public function setParent(Column $pParent = null)
     {
