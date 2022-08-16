@@ -25,16 +25,18 @@ class Payrexx
      * @param string $apiSecret            The API secret which can be found in the Payrexx administration.
      * @param string $communicationHandler The preferred communication handler. Default is cURL.
      * @param string $apiBaseDomain        The base domain of the API URL.
+     * @param string $version              The version of the API to use.
      *
      * @throws PayrexxException
      */
-    public function __construct($instance, $apiSecret, $communicationHandler = '', $apiBaseDomain = Communicator::API_URL_BASE_DOMAIN)
+    public function __construct($instance, $apiSecret, $communicationHandler = '', $apiBaseDomain = Communicator::API_URL_BASE_DOMAIN, $version = null)
     {
         $this->communicator = new Communicator(
             $instance,
             $apiSecret,
             $communicationHandler ?: Communicator::DEFAULT_COMMUNICATION_HANDLER,
-            $apiBaseDomain
+            $apiBaseDomain,
+            $version
         );
     }
 

@@ -24,7 +24,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
 	}
 
-	public function updateSessionTransactionId() {
+	public function updateSessionTransactionId($result) {
 		$url_array = parse_url($this->redirectUrl);
 		$str_response = array();
 		parse_str($url_array['query'], $str_response);
