@@ -161,7 +161,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	public function getDefaultParameters() {
-		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url", "version","custom_style","custom_text");
+		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url", "version",'custom_style','custom_text','ancestor_urls');
 		return $this->rearrangeParametres($params);
 	}
 	
@@ -604,6 +604,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			return null;
 		}
 		$ppsConfig = $customParams['paymentPageData']['ppsJSONConfig'];
+
+		if(!empty($basicParams['ancestor_urls']) && trim($basicParams['ancestor_urls'])) {
+			$ppsConfig['frameAncestorURLs'] = $basicParams['ancestor_urls'];
+		}
 
 		if(!empty($basicParams['custom_style']) && trim($basicParams['custom_style'])) {
 			$ppsConfig['uiCustomData']['customStyle'] = $basicParams['custom_style'];
