@@ -30,8 +30,8 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected $pendingCodes = '/^authorized$/';
 	protected $completionCodes = '/^confirmed$/';
 
-	public function __construct() {
-		parent::__construct();
+	public function __construct($instanceName =  null) {
+		parent::__construct($instanceName);
 		$credentials = $this->getGatewayCredentials();
 		$this->omnipayGateway->setApiKey($credentials['instance_api_secret']);
 		$this->omnipayGateway->setInstance($credentials['instance_name']);
@@ -105,7 +105,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected function adjustRedirectUrl($url, $txId): string {
 
 		$params = http_build_query([
-			'name' => $this->billrunName,
+			'name' => $this->instanceName,
 			'txId' => $txId
 		]);
 
@@ -246,6 +246,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		return array(
 			'active' => array(
 				'name' => $this->billrunName,
+				'instance_name' => $this->instanceName,
 				'card_token' => (string) $this->saveDetails['card_token'],
 				'card_expiration' => (string) $this->saveDetails['card_expiration'],
 				'transaction_exhausted' => true,

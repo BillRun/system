@@ -53,19 +53,16 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	}
 
 	protected function buildSetQuery() {
-		$setQuery = array(
+		return array(
 			'active' => array(
 				'name' => $this->billrunName,
+				'instance_name' => $this->instanceName,
 				'card_token' => $this->saveDetails['card_token'],
 				'transaction_exhausted' => true,
 				'generate_token_time' => new MongoDate(time()),
 				'customer_id' => $this->saveDetails['customer_id'],
 			)
 		);
-                if(isset($this->instanceName)){
-                    $setQuery['active']['instance_name'] =  $this->instanceName;
-                }
-                return $setQuery;
 	}
 
 	public function getDefaultParameters() {
