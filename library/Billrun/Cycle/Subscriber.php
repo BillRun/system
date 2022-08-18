@@ -442,7 +442,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 										'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
 										'start'=> max($tmpService['from']->sec + ($tmpService['from']->usec/ 1000000), $activationDate),
 										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000), $endTime , $deactivationDate),
-										'compareFields' => $srvStampFields
+										'compareFields' => $srvStampFields)
 									  );
 				 if($serviceData['start'] !== $serviceData['end']) {
 					$stamp = Billrun_Util::generateArrayStamp($serviceData,$srvStampFields);
