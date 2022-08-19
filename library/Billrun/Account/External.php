@@ -97,7 +97,7 @@ class Billrun_Account_External extends Billrun_Account {
 		];
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
-		$request->setParameterPost($requestData);
+		$request->setRawData(json_encode($requestData));
 		$res = $request->request(Billrun_Http_Request::POST)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
 		$res = json_decode($res);
