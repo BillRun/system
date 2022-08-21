@@ -53,9 +53,10 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	}
 
 	protected function buildSetQuery() {
-		$setQuery = array(
+		return array(
 			'active' => array(
 				'name' => $this->billrunName,
+				'instance_name' => $this->instanceName,
 				'customer_id' => $this->saveDetails['customer_id'],
 				'stripe_email' => $this->saveDetails['email'],
 				'token' => $this->saveDetails['token'],
@@ -63,10 +64,6 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 				'generate_token_time' => new MongoDate(time())
 			)
 		);
-                if(isset($this->instanceName)){
-                    $setQuery['active']['instance_name'] =  $this->instanceName;
-                }
-                return $setQuery;
 	}
 
 	public function pay($gatewayDetails, $addonData) {

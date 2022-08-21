@@ -30,8 +30,8 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected $pendingCodes = '/^authorized$/';
 	protected $completionCodes = '/^confirmed$/';
 
-	public function __construct() {
-		parent::__construct();
+	public function __construct($instanceName =  null) {
+		parent::__construct($instanceName);
 		$credentials = $this->getGatewayCredentials();
 		$this->omnipayGateway->setApiKey($credentials['instance_api_secret']);
 		$this->omnipayGateway->setInstance($credentials['instance_name']);
@@ -105,7 +105,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected function adjustRedirectUrl($url, $txId): string {
 
 		$params = http_build_query([
-			'name' => $this->billrunName,
+			'name' => $this->instanceName,
 			'txId' => $txId
 		]);
 
@@ -146,7 +146,13 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		parent::signalStartingProcess($aid, $timestamp);
 
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "tx" => (string) $this->transactionId, "stamp" => md5($timestamp . $this->transactionId), "aid" => (int)$aid);
+		$query = array(
+			"name" => $this->billrunName,
+			"instance_name" => $this->instanceName,
+			"tx" => (string) $this->transactionId,
+			"stamp" => md5($timestamp . $this->transactionId),
+			"aid" => (int) $aid
+		);
 
 		$paymentRow = $paymentColl->query($query)->cursor()->sort(array('t' => -1))->limit(1)->current();
 		if ($paymentRow->isEmpty()) {
@@ -183,7 +189,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$this->updateReturnUrlOnEror($tenantUrl);
 
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "tx" => (string) $txId);
+		$query = array("name" => $this->billrunName, "instance_name" => $this->instanceName, "tx" => (string) $txId);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
 
 		$request = $this->omnipayGateway->completePurchase(['transactionReference' => $paymentRow['ref']]);
@@ -246,6 +252,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		return array(
 			'active' => array(
 				'name' => $this->billrunName,
+				'instance_name' => $this->instanceName,
 				'card_token' => (string) $this->saveDetails['card_token'],
 				'card_expiration' => (string) $this->saveDetails['card_expiration'],
 				'transaction_exhausted' => true,
@@ -277,10 +284,9 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$paymentParams['aid'] = $accountId;
 		$paymentParams['billrun_key'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 		$paymentParams['amount'] = abs($cashAmount);
-		$gatewayDetails['amount'] = $cashAmount;
-		$gatewayDetails['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');
 		$paymentParams['gateway_details'] = $retParams;
-		$paymentParams['gateway_details']['name'] = !empty($gatewayDetails['name']) ? $gatewayDetails['name'] : $this->billrunName;
+		$paymentParams['gateway_details']['name'] = $this->billrunName;
+		$paymentParams['gateway_details']['instance_name'] = $this->instanceName;
 		$paymentParams['transaction_status'] = $retParams['transaction_status'];
 		if (isset($retParams['installments'])) {
 			$paymentParams['installments'] = $retParams['installments'];

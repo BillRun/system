@@ -286,8 +286,8 @@ class Billrun_PaymentManager {
 			$payment = $prePayment->getPayment();
 			$gatewayDetails = $payment->getPaymentGatewayDetails();
 			$gatewayName = $gatewayDetails['name'];
-                        $gatewayInstanceName = $gatewayDetails['instance_name'];
-			$gateway = Billrun_PaymentGateway::getInstance($gatewayName, $gatewayInstanceName);
+			$gatewayInstanceName = $gatewayDetails['instance_name'];
+			$gateway = Billrun_PaymentGateway::getInstance($gatewayInstanceName);
 
 			if (is_null($gateway)) {
 				Billrun_Factory::log("Illegal payment gateway object", Zend_Log::ALERT);

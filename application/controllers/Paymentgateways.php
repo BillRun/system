@@ -30,17 +30,15 @@ class PaymentGatewaysController extends ApiController {
 		$imagesUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.images');
 		$instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator', '#');
 		$settings = array();
-		foreach ($gateways as $name) {
+		foreach ($gateways as $gatewayInstanceName) {
 			$setting = array();
-                        $setting['name'] = $name;
+			$setting['name'] = $gatewayInstanceName; // TODO instance_name?
 			$setting['supported'] = true;
-			$setting['image_url'] = $imagesUrl[$name];
-                        $type = explode($instance_separator, $name)[0];
-			$instanceName = explode($instance_separator, $name)[1];
-                        if(isset($instanceName)){
-                            $setting['title'] = $type .  " (" . $instanceName  . ")"; //TODO ::FE task - display this title instead name 
-                        }    
-                        $paymentGateway = Billrun_Factory::paymentGateway($name);                      
+			$setting['image_url'] = $imagesUrl[$gatewayInstanceName];
+			$type = explode($instance_separator, $gatewayInstanceName)[0];
+			$instanceId = explode($instance_separator, $gatewayInstanceName)[1];
+			$setting['title'] = $type . ($instanceId ? " (" . $instanceId  . ")" : ''); //TODO ::FE task - display this title instead name
+			$paymentGateway = Billrun_Factory::paymentGateway($gatewayInstanceName);
 			if (is_null($paymentGateway)) {
 				$setting['supported'] = false;
 				$settings[] = $setting;

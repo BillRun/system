@@ -19,8 +19,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $completionCodes = "/^000$/";
 	protected $account;
         
-	protected function __construct() {
-		parent::__construct();
+	protected function __construct($instanceName =  null) {
+		parent::__construct($instanceName);
 		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
 	}
 
@@ -142,9 +142,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	protected function buildSetQuery() {
-		$setQuery = array(
+		return array(
 			'active' => array(
 				'name' => $this->billrunName,
+				'instance_name' => $this->instanceName,
 				'card_token' => (string) $this->saveDetails['card_token'],
 				'card_expiration' => (string) $this->saveDetails['card_expiration'],
 				'personal_id' => (string) $this->saveDetails['personal_id'],
@@ -154,10 +155,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'four_digits' => (string) $this->saveDetails['four_digits'],
 			)
 		);
-                if(isset($this->instanceName)){
-                    $setQuery['active']['instance_name'] =  $this->instanceName;
-                }
-                return $setQuery;
 	}
 
 	public function getDefaultParameters() {
