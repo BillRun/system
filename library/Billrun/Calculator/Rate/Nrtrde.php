@@ -62,14 +62,19 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 		$number_to_rate = $this->number_to_rate($row);
 		$call_number_prefixes = Billrun_Util::getPrefixes($number_to_rate);
 		$call_number_prefixes[] = null;
+		$matchOrArray =  [
+							[ 'params.serving_networks' => "/.*/"]
+						];
+		if(!empty($sender)) {
+			$matchOrArray[] = [ 'params.serving_networks' => $sender ];
+		} else if( Billrun_Factory::config()->getConfigValue('nrtrde.calculator.use_alpha3_for_rating',true) &&
+					!empty($alpha) && preg_match('/\w{3}/',$alpha)) {
+			$matchOrArray[] = [ 'params.serving_networks' => new MongoRegex("/^$alpha/")];
+		}
 		$aggregateBaseMatch = array(
 			array(
 				'$match' => array(
-					 '$or' => [
-							[ 'params.serving_networks' => new MongoRegex("/^$alpha/")],
-							[ 'params.serving_networks' => $sender ],
-							[ 'params.serving_networks' => "/.*/"]
-						],
+					 '$or' => $matchOrArray,
 					'to' => array(
 						'$gt' => $line_time,
 					),
