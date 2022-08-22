@@ -791,8 +791,13 @@ abstract class Billrun_PaymentGateway {
 		return false;
 	}
 	
-	protected function paySinglePayment($retParams) {
-		$options = array('collect' => true, 'payment_gateway' => true, 'single_payment_gateway' => true);
+	protected function paySinglePayment($retParams, $additionalParams = []) {
+		$options = array(
+			'collect' => true,
+			'payment_gateway' => true,
+			'single_payment_gateway' => true,
+			'additional_params' => $additionalParams
+		);
 		$gatewayDetails = $this->saveDetails;
 		$gatewayDetails['name'] = $this->billrunName;
 		$accountId = $this->saveDetails['aid'];

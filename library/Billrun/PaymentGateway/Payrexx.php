@@ -6,6 +6,7 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+use Omnipay\Common\Message\ResponseInterface;
 use Payrexx\Models\Request\SignatureCheck;
 use Payrexx\Models\Request\Transaction;
 use Payrexx\Payrexx;
@@ -209,13 +210,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$this->savePaymentGateway();
 
 		if ($paymentRow['charge']) {
-			$amountCents = $tokenizationResult->getData()->getAmount(); // in cents
-			$paymentResult = $this->chargeCard($cardDetails['card_token'], $amountCents);
-			$paymentDetails = $this->getResponseDetails($paymentResult);
-
-			$this->transactionId = $paymentDetails['payment_identifier']; // for paySinglePayment()
-			$this->saveDetails['card_token'] = $cardDetails['card_token']; // for paySinglePayment()
-			$this->paySinglePayment($cardDetails + $paymentDetails);
+			$this->chargeOnTokenization($tokenizationResult, $cardDetails);
 		}
 
 		return array(
@@ -234,18 +229,9 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected function getResponseDetails($result) {
 		$amount = $this->convertReceivedAmount($result->getAmount());
 
-		$payrexx = $this->getPayrexxClient();
-		$transaction = new Transaction();
-		$transaction->setId($result->getId());
-
-		$transactionResponse = $payrexx->getOne($transaction);
-
-		$payrexxFee =  $this->convertReceivedAmount($transactionResponse->getPayrexxFee());
-
 		return [
 			'payment_identifier' => (string) $result->getId(),
 			'transferred_amount' => $amount,
-			'fee' => $payrexxFee,
 			'transaction_status' => $result->getStatus()
 		];
 	}
@@ -296,6 +282,30 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	}
 
 	/**
+	 * @param ResponseInterface $tokenizationResult
+	 * @param array $cardDetails
+	 * @return void
+	 * @throws PayrexxException
+	 */
+	private function chargeOnTokenization(ResponseInterface $tokenizationResult, array $cardDetails) {
+		// do charge
+		$amountCents = $tokenizationResult->getData()->getAmount(); // in cents
+		$paymentResult = $this->chargeCard($cardDetails['card_token'], $amountCents);
+
+		// get standard payment details
+		$paymentDetails = $this->getResponseDetails($paymentResult);
+
+		// get charge fee
+		$additionalParams = ['fee' => $this->getPayrexxFee($paymentResult->getId())];
+
+		// complete payment flow
+		$this->transactionId = $paymentDetails['payment_identifier']; // for paySinglePayment()
+		$this->saveDetails['card_token'] = $cardDetails['card_token']; // for paySinglePayment()
+		$this->paySinglePayment($cardDetails + $paymentDetails, $additionalParams);
+	}
+
+
+	/**
 	 * @inheritDoc
 	 */
 	protected function pay($gatewayDetails, $addonData) {
@@ -308,8 +318,19 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 		return [
 			'status' => $response->getStatus(),
-			'additional_params' => []
+			'additional_params' => [ 'fee' => $this->getPayrexxFee($response->getId())]
 		];
+	}
+
+	/**
+	 * @param int $transactionId
+	 * @return float|int
+	 * @throws PayrexxException
+	 */
+	private function getPayrexxFee(int $transactionId) {
+		$transactionResponse = $this->requestTransaction($transactionId);
+		$payrexxFee = $this->convertReceivedAmount($transactionResponse->getPayrexxFee());
+		return $payrexxFee;
 	}
 
 	/**
@@ -323,6 +344,20 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$transaction->setAmount($amountCents); // convert to cents
 		$response = $this->getPayrexxClient()->charge($transaction);
 		return $response;
+	}
+
+	/**
+	 * @param int $id
+	 * @return mixed
+	 * @throws PayrexxException
+	 */
+	private function requestTransaction(int $id) {
+		$payrexx = $this->getPayrexxClient();
+		$transaction = new Transaction();
+		$transaction->setId($id);
+
+		$transactionResponse = $payrexx->getOne($transaction);
+		return $transactionResponse;
 	}
 
 	/**
