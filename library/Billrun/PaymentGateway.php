@@ -107,14 +107,22 @@ abstract class Billrun_PaymentGateway {
 	protected function __construct() {
 
 		if ($this->supportsOmnipay()) {
-			$this->omnipayGateway = Omnipay\Omnipay::create($this->getOmnipayName());
+			$client = new Omnipay\Common\Http\Client(
+				new Http\Adapter\Guzzle6\Client(),						// set dependencies explicitly to avoid
+				new Http\Message\MessageFactory\GuzzleMessageFactory()	// Yaf_Loader::autoload() warning
+			);
+			$this->omnipayGateway = Omnipay\Omnipay::create($this->getOmnipayName(), $client);
 		}
 
 		if (empty($this->returnUrl)) {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
 		$this->account = Billrun_Factory::account();
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
+
+		$configFilePath = APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini';
+		if (file_exists($configFilePath)) {
+			Billrun_Factory::config()->addConfig($configFilePath);
+		}
 	}
 
 
