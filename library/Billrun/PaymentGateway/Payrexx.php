@@ -89,7 +89,6 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$gateway->setFailedRedirectUrl($this->adjustRedirectUrl($failPage, $this->transactionId));
 		$gateway->setPm(self::DEFAULT_PAYMENT_METHODS);
 		$gateway->setPreAuthorization(1);// indicate tokenization procedure
-		$gateway->setButtonText(['Add Card']);
 
 		$gateway->addField('forename', $account->firstname);
 		$gateway->addField('surname', $account->lastname);
