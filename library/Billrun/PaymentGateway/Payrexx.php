@@ -34,7 +34,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected $rejectionCodes = '/^(cancelled|declined)$/';
 
 	public function getDefaultParameters() {
-		$params = array("instance_name", "instance_api_secret");
+		$params = array('instance_name', 'instance_api_secret', 'custom_api_domain');
 		return $this->rearrangeParametres($params);
 	}
 
@@ -331,14 +331,12 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 */
 	private function getPayrexxClient(array $credentials = []): Payrexx {
 		$credentials = $credentials ?: $this->getGatewayCredentials();
-		$config = Billrun_Factory::config()->getConfigValue('payrexx');
-		$domain = $config['custom_api_domain'] ?? Communicator::API_URL_BASE_DOMAIN;
 
 		$payrexx = new Payrexx(
 			$credentials['instance_name'],
 			$credentials['instance_api_secret'],
 			'',
-			$domain,
+			$credentials['custom_api_domain'] ?? Communicator::API_URL_BASE_DOMAIN,
 			self::API_VERSION
 		);
 		return $payrexx;
