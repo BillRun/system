@@ -6,8 +6,12 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+use Payrexx\Communicator;
+use Payrexx\Models\Request\Gateway as GatewayRequest;
 use Payrexx\Models\Request\SignatureCheck;
 use Payrexx\Models\Request\Transaction;
+use Payrexx\Models\Response\Gateway as GatewayResponse;
+use Payrexx\Models\Response\Transaction as TransactionResponse;
 use Payrexx\Payrexx;
 use Payrexx\PayrexxException;
 
@@ -21,24 +25,13 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	const DEFAULT_CURRENCY = 'CHF';
 	const DEFAULT_PAYMENT_METHODS = ['visa', 'mastercard'];
 	const DEFAULT_AMOUNT = 0.5;
-
-	/**
-	 * @inheritDoc
-	 */
-	protected $omnipayName = "Payrexx";
+	const API_VERSION = '1.1';
 
 	protected $billrunName = "Payrexx";
 
 	protected $pendingCodes = '/^(waiting|refund_pending)$/';
 	protected $completionCodes = '/^(authorized|confirmed|reserved|refunded|partially-refunded)/';
 	protected $rejectionCodes = '/^(cancelled|declined)$/';
-
-	public function __construct() {
-		parent::__construct();
-		$credentials = $this->getGatewayCredentials();
-		$this->omnipayGateway->setApiKey($credentials['instance_api_secret']);
-		$this->omnipayGateway->setInstance($credentials['instance_name']);
-	}
 
 	public function getDefaultParameters() {
 		$params = array("instance_name", "instance_api_secret");
@@ -54,7 +47,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 */
 	public function authenticateCredentials($params) {
 		try {
-			$payrexx = new Payrexx($params['instance_name'], $params['instance_api_secret']);
+			$payrexx = $this->getPayrexxClient($params);
 
 			$signatureCheck = new SignatureCheck();
 			$payrexx->getOne($signatureCheck);
@@ -75,6 +68,8 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 	/**
 	 * @inheritDoc
+	 * @return GatewayResponse
+	 * @throws PayrexxException
 	 */
 	protected function getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $options, $maxTries = 10) {
 		$account = Billrun_Factory::account();
@@ -86,20 +81,21 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 			$this->saveDetails['charge'] = 1;
 		}
 
-		$request = $this->omnipayGateway->purchase([
-			'amount' => $singlePaymentParams['amount'] ?? self::DEFAULT_AMOUNT,
-			'currency' => Billrun_Factory::config()->getConfigValue('pricing.currency', self::DEFAULT_CURRENCY),
-			'preAuthorization' => 1, // indicate tokenization procedure
-			'pm' => self::DEFAULT_PAYMENT_METHODS,
-			'forename' => $account->firstname,
-			'surname' => $account->lastname,
-			'email' => $account->email,
-			'successRedirectUrl' => $this->adjustRedirectUrl($okPage, $this->transactionId),
-			'failedRedirectUrl' => $this->adjustRedirectUrl($failPage, $this->transactionId),
-			'buttonText' => 'Add Card'
-		]);
+		$gateway = new GatewayRequest();
 
-		return $request->send();
+		$gateway->setAmount($this->convertAmountToSend($singlePaymentParams['amount'] ?? self::DEFAULT_AMOUNT));
+		$gateway->setCurrency(Billrun_Factory::config()->getConfigValue('pricing.currency', self::DEFAULT_CURRENCY));
+		$gateway->setSuccessRedirectUrl($this->adjustRedirectUrl($okPage, $this->transactionId));
+		$gateway->setFailedRedirectUrl($this->adjustRedirectUrl($failPage, $this->transactionId));
+		$gateway->setPm(self::DEFAULT_PAYMENT_METHODS);
+		$gateway->setPreAuthorization(1);// indicate tokenization procedure
+		$gateway->setButtonText(['Add Card']);
+
+		$gateway->addField('forename', $account->firstname);
+		$gateway->addField('surname', $account->lastname);
+		$gateway->addField('email', $account->email);
+
+		return $this->getPayrexxClient()->create($gateway);
 	}
 
 	protected function adjustRedirectUrl($url, $txId): string {
@@ -128,16 +124,18 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 	/**
 	 * @inheritDoc
+	 * @param GatewayResponse $result
 	 */
 	protected function updateRedirectUrl($result) {
-		$this->redirectUrl = $result->getRedirectUrl();
+		$this->redirectUrl = $result->getLink();
 	}
 
 	/**
 	 * @inheritDoc
+	 * @param GatewayRequest $result
 	 */
 	function updateSessionTransactionId($result) {
-		$this->saveDetails['ref'] = $result->getTransactionReference();
+		$this->saveDetails['ref'] = $result->getId();
 	}
 
 	protected function signalStartingProcess($aid, $timestamp) {
@@ -188,9 +186,10 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$query = array("name" => $this->billrunName, "tx" => (string) $txId);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
 
-		$request = $this->omnipayGateway->completePurchase(['transactionReference' => $paymentRow['ref']]);
-
-		$tokenizationResult = $request->send();
+		$gateway = new GatewayRequest();
+		$gateway->setId($paymentRow['ref']);
+		/** @var GatewayResponse $tokenizationResult */
+		$tokenizationResult = $this->getPayrexxClient()->getOne($gateway);
 
 		if (($cardDetails = $this->getCardDetails($tokenizationResult)) === FALSE) {
 			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
@@ -209,7 +208,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$this->savePaymentGateway();
 
 		if ($paymentRow['charge']) {
-			$amountCents = $tokenizationResult->getData()->getAmount(); // in cents
+			$amountCents = $tokenizationResult->getAmount(); // in cents
 			$paymentResult = $this->chargeCard($cardDetails['card_token'], $amountCents);
 			$paymentDetails = $this->getResponseDetails($paymentResult);
 
@@ -228,7 +227,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	/**
 	 * Query the response to getting needed details.
 	 *
-	 * @param \Payrexx\Models\Response\Transaction $result
+	 * @param TransactionResponse $result
 	 * @return array
 	 */
 	protected function getResponseDetails($result) {
@@ -251,16 +250,15 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	}
 
 	/**
-	 * @param \Omnipay\Payrexx\Message\Response\CompletePurchaseResponse $result
+	 * @param GatewayResponse $result
 	 * @return array
 	 * @throws Exception
 	 */
 	protected function getCardDetails($result) {
-		$gatewayInfo = $result->getData();
-		if (!isset($gatewayInfo->getInvoices()[0]["transactions"][0])) {
+		if (!isset($result->getInvoices()[0]["transactions"][0])) {
 			throw new Exception('Wrong response from payment gateway');
 		}
-		$transaction = $gatewayInfo->getInvoices()[0]["transactions"][0];
+		$transaction = $result->getInvoices()[0]["transactions"][0];
 
 		$lastDigits = !empty($transaction['payment']['cardNumber'])
 			? substr($transaction['payment']['cardNumber'], -4) : '';
@@ -313,31 +311,35 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	}
 
 	/**
-	 * @param array $gatewayDetails
-	 * @return \Payrexx\Models\Response\Transaction
+	 * @param $cardToken
+	 * @param $amountCents
+	 * @return TransactionResponse
 	 * @throws PayrexxException
 	 */
-	private function chargeCard($cardToken, $amountCents) {
+	private function chargeCard($cardToken, $amountCents): TransactionResponse {
 		$transaction = new Transaction();
 		$transaction->setId($cardToken);
-		$transaction->setAmount($amountCents); // convert to cents
+		$transaction->setAmount($amountCents);
 		$response = $this->getPayrexxClient()->charge($transaction);
 		return $response;
 	}
 
 	/**
+	 * @param array $credentials
 	 * @return Payrexx
 	 * @throws PayrexxException
 	 */
-	private function getPayrexxClient(): Payrexx {
-		$credentials = $this->getGatewayCredentials();
+	private function getPayrexxClient(array $credentials = []): Payrexx {
+		$credentials = $credentials ?: $this->getGatewayCredentials();
+		$config = Billrun_Factory::config()->getConfigValue('payrexx');
+		$domain = $config['custom_api_domain'] ?? Communicator::API_URL_BASE_DOMAIN;
 
 		$payrexx = new Payrexx(
 			$credentials['instance_name'],
 			$credentials['instance_api_secret'],
 			'',
-			\Payrexx\Communicator::API_URL_BASE_DOMAIN,
-			'1.1'
+			$domain,
+			self::API_VERSION
 		);
 		return $payrexx;
 	}
