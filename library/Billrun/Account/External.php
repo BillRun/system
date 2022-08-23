@@ -49,7 +49,7 @@ class Billrun_Account_External extends Billrun_Account {
 			Billrun_Factory::log('Sending request to ' . $this->remote_billable_url . ' with params : ' . json_encode($requestParams), Zend_Log::DEBUG);
 			//Actually  do the request
 			$request = new Billrun_Http_Request($this->remote_billable_url, ['authentication' => $this->remote_billable_authentication]);
-			$request->setRawData(json_encode($requestParams));
+			$request->setParameterPost($requestParams);
 			$results = $request->request(Billrun_Http_Request::POST)->getBody();
 
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
