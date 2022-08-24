@@ -25,23 +25,41 @@ class Billrun_Utils_Usage {
 				if(empty($row['sid'])) {
 					return null;
 				}
+				$retSub = null;
 				$subscriber = Billrun_Factory::subscriber();
-				$query = array(	'sid' => $row['sid'],
+				$possibleTimeFields =['prorated_end_date','end','end_date','urt','prorated_start_date','start','start_date'];
+				foreach ($possibleTimeFields as  $timeField) {
+					if(empty($row[$timeField])) {continue;}
+					$query = [	'sid' => $row['sid'],
 								'aid' => $row['aid'],
-								'time'=> date(Billrun_Base::base_datetimeformat, @Billrun_Util::getFieldVal(
-												@Billrun_Util::getFieldVal($row['prorated_end_date'],
-															@Billrun_Util::getFieldVal($row['end'],$row['urt'])),new MongoDate())->sec-1));
-				return $subscriber->loadSubscriberForQuery($query);
+								'time'=> date(Billrun_Base::base_datetimeformat,
+												@Billrun_Util::getFieldVal($row[$timeField],
+												new MongoDate())->sec-1) ];
+					if($retSub = $subscriber->loadSubscriberForQuery($query)) {
+						break;
+					}
+
+				};
+				return $retSub;
 			case 'account' :
 				if(empty($row['aid'])) {
 					return null;
 				}
+				$retAcc=null;
 				$account = Billrun_Factory::account();
-				$query = array(	'aid' => $row['aid'],
-								'time'=> date(Billrun_Base::base_datetimeformat, @Billrun_Util::getFieldVal(
-												@Billrun_Util::getFieldVal($row['prorated_end_date'],
-															@Billrun_Util::getFieldVal($row['end'],$row['urt'])),new MongoDate())->sec-1));
-				return $account->loadAccountForQuery($query);
+				$possibleTimeFields = ['prorated_end_date','end','end_date','urt','prorated_start_date','start','start_date'];
+				foreach ($possibleTimeFields as  $timeField) {
+					if(empty($row[$timeField])) {continue;}
+					$query = [	'aid' => $row['aid'],
+								'time'=> date(Billrun_Base::base_datetimeformat,
+												@Billrun_Util::getFieldVal($row[$timeField],
+												new MongoDate())->sec-1) ];
+					if($retAcc = $account->loadAccountForQuery($query)) {
+						break;
+					}
+
+				};
+				return $retAcc;
 
 			case 'plan' :
 				if(empty($row['plan'])) {
