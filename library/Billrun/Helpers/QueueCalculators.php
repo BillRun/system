@@ -50,6 +50,9 @@ class Billrun_Helpers_QueueCalculators {
             $calc_options = $this->getCalcOptions($calc_name);
             if ($this->isUnify($calc_name)) {
                 $this->unifyCalc($processor, $data);
+				foreach ($data['data'] as $line) {
+					$processor->setFullCalculationTime($line);
+				}
                 continue;
             }
             $queue_data = $processor->getQueueData();
