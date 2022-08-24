@@ -174,10 +174,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public function save() {
 //		$this->coverInvoices();
-		Billrun_Factory::dispatcher()->trigger('beforeSavingPayment', array(&$this->data));
 		if (!isset($this->data['txid'])) {
 			$this->setTxid();
 		}
+		Billrun_Factory::dispatcher()->trigger('beforeSavingPayment', array(&$this->data));
 		return parent::save();
 	}
 
