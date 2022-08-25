@@ -1330,5 +1330,22 @@ lastConfig = runOnce(lastConfig, 'BRCD-3325', function () {
 		lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
 });
 
+var invoice_lang_field = {
+	"select_list": true,
+	"display": true,
+	"editable": true,
+	"system": false,
+	"field_name": "invoice_language",
+	"default_value": "en_GB",
+	"show_in_list": true,
+	"title": "Invoice language",
+	"mandatory": true,
+	"changeable_props": [
+		"select_options"
+	],
+	"select_options": "en_GB,fn,de"
+};
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoice_lang_field, 'account');
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
