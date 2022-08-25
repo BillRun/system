@@ -239,10 +239,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 * @throws Exception
 	 */
 	protected function getCardDetails($result) {
-		if (!isset($result->getInvoices()[0]["transactions"][0])) {
-			throw new Exception('Wrong response from payment gateway');
-		}
-		$transaction = $result->getInvoices()[0]["transactions"][0];
+		$transaction = $this->getAuthorizedTransactionFromGatewayResponse($result);
 
 		$lastDigits = !empty($transaction['payment']['cardNumber'])
 			? substr($transaction['payment']['cardNumber'], -4) : '';
@@ -252,6 +249,25 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 			'four_digits' => (string) $lastDigits,
 			'expiration_date' => (string) $transaction['payment']['expiry']
 		];
+	}
+
+	/**
+	 * @param GatewayResponse $result
+	 * @return mixed
+	 * @throws Exception
+	 */
+	private function getAuthorizedTransactionFromGatewayResponse(GatewayResponse $result): array {
+		foreach ($result->getInvoices() as $invoice) {
+			if (!isset($invoice["transactions"][0])) {
+				throw new Exception('Wrong response from payment gateway');
+			}
+			$transaction = $invoice["transactions"][0];
+
+			if ($transaction['status'] == 'authorized') {
+				return $transaction;
+			}
+		}
+		throw new Exception('No authorized transactions in the gateway response');
 	}
 
 	/**
