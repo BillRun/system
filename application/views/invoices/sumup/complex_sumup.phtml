@@ -1,11 +1,11 @@
 <table class="complex-sumup">
 	<thead>
 		<tr>
-			<th>Description</th>
-			<th>Qty</th>
-			<th>Rate</th>
+			<th><?php echo Generator_Translations::stranslate('DEF_INV_DESCRIPTION');?></th>
+			<th><?php echo Generator_Translations::stranslate('DEF_INV_QTY');?></th>
+			<th><?php echo Generator_Translations::stranslate('DEF_INV_RATE');?></th>
 			<th></th>
-			<th>Amount</th>
+			<th><?php echo Generator_Translations::stranslate('DEF_INV_AMOUNT');?></th>
 		</tr>
 	</thead>
 
@@ -34,7 +34,7 @@
 			?>
 			<?php if (empty($data->get('totals')[$key]) || in_array($key,$this->flat_line_types)) { continue; } ?>
 			<tr class="<?php echo ( $endKey === $key ? 'last' : '') ?>">
-				<td colspan="4"><?php echo ucfirst($title); ?></td>
+				<td colspan="4"><?php echo Generator_Translations::stranslate(getDefInvi18nSlug($title)); ?></td>
 				<td><?php echo $this->currencySymbol() . number_format($data->get('totals')[$key]['before_vat'], 2); ?></td>
 			</tr>
 		<?php } ?>			
@@ -42,7 +42,7 @@
 		<?php echo $this->render($this->discount_template,array('data' => array('totals'=> $data['totals'],'discounts'=> $this->getAllDiscount($this->lines)), 'col_count' => 5)); ?>
 		
 		<tr class="total subtotal">
-			<td colspan="4">SUBTOTAL</td>
+			<td colspan="4"><?php echo Generator_Translations::stranslate('DEF_INV_SUBTOTAL');?></td>
 			<td><?php echo $this->currencySymbol() . number_format($data->get('totals')['before_vat'], 2); ?></td>
 		</tr>		
 		
@@ -50,12 +50,12 @@
 
 		<?php if (!empty($invoice_display_options['past_balance']) && $data->get('totals')['past_balance']['after_vat'] < -0.005) { ?>
 			<tr class="total">
-				<td colspan="4">PAST BALANCE / REIMBURSEMENTS</td>
+				<td colspan="4"><?php echo Generator_Translations::stranslate('DEF_INV_PAST_BALANCE_REIMBURSEMENTS');?></td>
 				<td><?php echo $this->currencySymbol() . number_format($data->get('totals')['past_balance']['after_vat'], 2); ?></td>
 			</tr>
 		<?php } ?>
 		<tr class="grand-total">
-			<td colspan="4">GRAND TOTAL</td>
+			<td colspan="4"><?php echo Generator_Translations::stranslate('DEF_INV_GRAND_TOTAL');?></td>
 			<td><?php echo $this->currencySymbol() . number_format($data->get('totals')['after_vat'] + (!empty($invoice_display_options['past_balance']) ? $data->get('totals')['past_balance']['after_vat'] : 0 ), 2); ?></td>
 		</tr>
 	</tbody>
