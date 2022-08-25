@@ -1,5 +1,5 @@
 <?php foreach ($data->get('subs') as $index => $sub) { 
-	if(empty($sub['sid']) && empty($sub['totals']['after_vat'])) { continue; }
+	if(empty($sub['sid']) && (empty($sub['totals']['after_vat']) || $this->hide_account_subscriber)) { continue; }
 ?>
 	<div class="break"></div>
 	<div class="container">
@@ -7,17 +7,17 @@
 			<div class="table">
 				<table>
 					<tbody><tr>
-							<td class="page-title"><h3 class="inline">INVOICE</h3></td>
+							<td class="page-title"><h3 class="inline"><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE');?></h3></td>
 							<td>
-								<span class="label">Customer</span>
+								<span class="label"><?php echo Generator_Translations::stranslate('DEF_INV_CUSTOMER');?></span>
 								<h3 class="inline"><?php echo $data->get('attributes')['firstname'] . ' ' . $data->get('attributes')['lastname']; ?></h3>
 							</td>
 							<td>
-								<span class="label">Invoice#</span>
+								<span class="label"><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE_NO');?></span>
 								<span><?php echo $data->get('invoice_id'); ?></span>
 							</td>
 							<td>
-								<span class="label">Period</span>
+								<span class="label"><?php echo Generator_Translations::stranslate('DEF_INV_PERIOD');?></span>
 								<h3 class="inline"><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format); ?></h3>
 							</td>
 						</tr>
@@ -26,14 +26,14 @@
 		</div><!-- /.section .section-invoice-head -->
 
 		<div class="section section-invoice-base">
-		<h2>Subscriber#<?php echo ($index + 1); ?>:</h2>
+		<h2><?php echo Generator_Translations::stranslate('DEF_INV_SUBSCRIBER_NO');?><?php echo ($index + 1); ?>:</h2>
 		<h1><?php echo $sub['firstname'] . ' ' . $sub['lastname']; ?></h1>
 		<p class="label"><?php echo (!empty($sub['desc']) ? $sub['desc'] : ''); ?></p>
 		</div><!-- /.section .section-invoice-base -->
 
 		<div class="section section-invoice-details">
 			<div class="section-head">
-				<h2 class="section-title">Subscriber summary</h2><!-- /.section-title -->
+				<h2 class="section-title"><?php echo Generator_Translations::stranslate('DEF_INV_SUBSCRIBER_SUMMARY');?></h2><!-- /.section-title -->
 			</div><!-- /.section-head -->
 
 			<div class="section-body">
@@ -41,8 +41,8 @@
 					<table>
 						<thead>
 							<tr>
-								<th>Description</th>
-								<th>Amount</th>
+								<th><?php echo Generator_Translations::stranslate('DEF_INV_DESCRIPTION');?></th>
+								<th><?php echo Generator_Translations::stranslate('DEF_INV_AMOUNT');?></th>
 							</tr>
 						</thead>
 
@@ -50,18 +50,18 @@
 						<?php foreach ($details_keys as $title => $key) { ?>
 							<?php if (empty($sub['totals'][$key])) { continue; } ?>
 							<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
-								<td><?php echo ucfirst($title); ?></td>
+								<td><?php echo Generator_Translations::stranslate(getDefInvi18nSlug($title)); ?></td>
 								<td><?php echo $this->currencySymbol() . number_format($sub['totals'][$key]['before_vat'], 2); ?></td>
 							</tr>
 						<?php } ?>
 							<tr class="total">
-								<td>SUBTOTAL</td>
+								<td><?php echo Generator_Translations::stranslate('DEF_INV_SUBTOTAL');?></td>
 								<td><strong><?php echo $this->currencySymbol() . number_format($sub['totals']['before_vat'], 2); ?></strong></td>
 							</tr>
 							<?php echo $this->render($this->tax_template,array('data' => $sub['totals']))	?>
 
 							<tr class="grand-total">
-								<td>GRAND TOTAL</td>
+								<td><?php echo Generator_Translations::stranslate('DEF_INV_GRAND_TOTAL');?></td>
 								<td><?php echo $this->currencySymbol() . number_format($sub['totals']['after_vat'], 2); ?></td>
 							</tr>
 						</tbody>
@@ -75,7 +75,7 @@
 	<?php if($render_usage_details) { ?>
 		<div class="section section-invoice-details">
 			<div class="section-head">
-				<h2 class="section-title">Subscriber line items</h2><!-- /.section-title -->
+				<h2 class="section-title"><?php echo Generator_Translations::stranslate('DEF_INV_SUBSCRIBER_LINE_ITEMS');?></h2><!-- /.section-title -->
 			</div><!-- /.section-head -->
 
 			<div class="section-body">
@@ -91,7 +91,7 @@
 		
 		<div class="section section-invoice-details">
 			<div class="section-head">
-				<h2 class="section-title">Usage details</h2><!-- /.section-title -->
+				<h2 class="section-title"><?php echo Generator_Translations::stranslate('DEF_INV_USAGE_DETAILS');?></h2><!-- /.section-title -->
 			</div><!-- /.section-head -->
 
 			<div class="section-body">
