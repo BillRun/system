@@ -13,19 +13,18 @@
  */
 class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGateway {
 
-	protected $omnipayName = 'PayPal_Express';
 	protected $conf;
 	protected $billrunName = "PayPal_ExpressCheckout";
 	protected $pendingCodes = "/^Pending$/";
 	protected $completionCodes = "/^Completed$|^Processed$/";
 
 	protected function __construct($instanceName =  null) {
+		parent::__construct($instanceName);
 		if (Billrun_Factory::config()->isProd()) {
 			$this->EndpointUrl = "https://api-3t.paypal.com/nvp";
 		} else { // test/dev environment
 			$this->EndpointUrl = "https://api-3t.sandbox.paypal.com/nvp";
 		}
-		$this->initInstanceName($instanceName);
 	}
 
 	public function updateSessionTransactionId() {
