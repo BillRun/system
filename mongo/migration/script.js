@@ -1334,7 +1334,7 @@ var invoice_lang_field = {
 	"select_list": true,
 	"display": true,
 	"editable": true,
-	"system": false,
+	"system": true,
 	"field_name": "invoice_language",
 	"default_value": "en_GB",
 	"show_in_list": true,
@@ -1343,7 +1343,7 @@ var invoice_lang_field = {
 	"changeable_props": [
 		"select_options"
 	],
-	"select_options": "en_GB,fn,de"
+	"select_options": "en_GB,fr_CH,de_CH"
 };
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoice_lang_field, 'account');
 
