@@ -18,6 +18,11 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 
 	protected function getFractionOfMonth() {
 
+		//got a future subscriber for  some reason.
+		if( $this->activation >= $this->cycle->end()) {
+			return null;
+		}
+
 		if ((empty($this->deactivation) || $this->deactivation >= $this->cycle->end() ) && $this->activation < $this->cycle->start()  ) {
 			return 1;
 		}
