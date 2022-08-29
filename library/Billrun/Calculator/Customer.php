@@ -143,9 +143,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$row[$key] = $subscriber_field;
 				if ($key == 'last_vlr') { // also it's possible to add alpha3 only if daily_ird_plan is true
 					if ($subscriber->{$key}) {
-						$rate = $this->ratesModel->getRateByVLR($subscriber->{$key});
-						if ($rate) {
-							$row['alpha3'] = $rate['alpha3'];
+						if( preg_match('/^\d+$/',$subscriber->{$key}) ) {
+							$rate = $this->ratesModel->getRateByVLR($subscriber->{$key});
+							if ($rate) {
+								$row['alpha3'] = $rate['alpha3'];
+							}
+						} else if( preg_match('/^\w{3}$/',$subscriber->{$key}) ) {
+							$row['alpha3'] = $subscriber->{$key};
+						} else {
+							Billrun_Factory::log("Invalid VLR value provided for line  with stamp : {$row['stamp']}, got {$subscriber->{$key}}",Zend_Log::WARN);
 						}
 					}
 				}
