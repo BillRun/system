@@ -31,7 +31,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		}
 	}
 
-	public function updateSessionTransactionId() {
+	public function updateSessionTransactionId($result) {
 		$this->transactionId = $this->customerId;
 	}
 

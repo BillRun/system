@@ -21,7 +21,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	protected $rejectionCodes = "/^failed$/";
 	protected $billrunToken;
 
-	public function updateSessionTransactionId() {
+	public function updateSessionTransactionId($result) {
 		$this->transactionId = $this->billrunToken;
 	}
 

@@ -119,9 +119,9 @@
             'dev_requirement' => false,
         ),
         'payrexx/payrexx' => array(
-            'pretty_version' => 'v1.7.5',
-            'version' => '1.7.5.0',
-            'reference' => 'bf048ef93b76bb4c73cc079a7fd8d2b3e7371c5b',
+            'pretty_version' => 'v1.7.6',
+            'version' => '1.7.6.0',
+            'reference' => 'e20791854ce344dbf20ab85d3668cfff7ebc9cca',
             'type' => 'library',
             'install_path' => __DIR__ . '/../payrexx/payrexx',
             'aliases' => array(),

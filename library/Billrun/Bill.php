@@ -872,7 +872,7 @@ abstract class Billrun_Bill {
 
 			case 'Completed':
 				$pending = $this->data['waiting_payments'];
-				if (count($pending)) {
+				if (!empty($pending)) {
 					$this->removeFromWaitingPayments($billId, $billType);
 					$result = count($this->data['waiting_payments']) ? '2' : ($this->isPaid() ? '1' : '0');
 				}

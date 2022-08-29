@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e20efe8d69424be0bc4b63d4bb957d34",
+    "content-hash": "18b8bc1d9f93b9307a793a2b08b7c385",
     "packages": [
         {
             "name": "clue/stream-filter",
@@ -891,16 +891,16 @@
         },
         {
             "name": "payrexx/payrexx",
-            "version": "v1.7.5",
+            "version": "v1.7.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/payrexx/payrexx-php.git",
-                "reference": "bf048ef93b76bb4c73cc079a7fd8d2b3e7371c5b"
+                "reference": "e20791854ce344dbf20ab85d3668cfff7ebc9cca"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/payrexx/payrexx-php/zipball/bf048ef93b76bb4c73cc079a7fd8d2b3e7371c5b",
-                "reference": "bf048ef93b76bb4c73cc079a7fd8d2b3e7371c5b",
+                "url": "https://api.github.com/repos/payrexx/payrexx-php/zipball/e20791854ce344dbf20ab85d3668cfff7ebc9cca",
+                "reference": "e20791854ce344dbf20ab85d3668cfff7ebc9cca",
                 "shasum": ""
             },
             "require": {
@@ -930,9 +930,9 @@
             ],
             "support": {
                 "issues": "https://github.com/payrexx/payrexx-php/issues",
-                "source": "https://github.com/payrexx/payrexx-php/tree/v1.7.5"
+                "source": "https://github.com/payrexx/payrexx-php/tree/v1.7.6"
             },
-            "time": "2022-06-08T12:25:09+00:00"
+            "time": "2022-08-11T05:24:38+00:00"
         },
         {
             "name": "php-http/discovery",

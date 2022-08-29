@@ -88,8 +88,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->logo_path = $this->getLogoPath();
 		$this->billrun_footer_logo_path = APPLICATION_PATH . "/application/views/invoices/theme/logo.png";
 		$this->wkpdf_exec = Billrun_Util::getFieldVal($options['exec'], Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf'));
-		$view_type = empty($options['is_onetime']) ? 'view_path' : 'onetime_view_path';
-		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . Billrun_Factory::config()->getConfigValue(self::$type . '.'.$view_type, '/views/invoices/') ;
+		$this->view_path =  Billrun_Factory::config()->getConfigValue('application.directory') .
+								( empty($options['is_onetime']) ?
+									Billrun_Factory::config()->getConfigValue(self::$type . '.view_path', '/views/invoices/')  :
+									Billrun_Factory::config()->getConfigValue(self::$type . '.onetime_view_path', '/views/invoices/onetime/'));
+		 ;
 		$this->linesColl = Billrun_Factory::db()->linesCollection();
 		$this->plansColl = Billrun_Factory::db()->plansCollection();
 		$this->ratesColl = Billrun_Factory::db()->ratesCollection();
@@ -478,7 +481,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 					<tbody>
 					<tr>
 						<td><img src='" . $this->logo_path . "' alt='' style='width:100px;object-fit:contain;'>&nbsp;&nbsp;" . $this->getCompanyName() . "</div></td>
-						<td><div class='paging'>page <span class='page'></span> of <span class='topage'></span></div></td>
+						<td><div class='paging'>".Generator_Translations::stranslate('DEF_INV_PAGE'). " <span class='page'></span> of <span class='topage'></span></div></td>
 					</tr>
 					</tbody>
 				</table>
@@ -503,7 +506,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 					  </ul>
 					</td>
 					<td>
-					  <p class='credentials'> <span class='text'>powered by</span> <img class='billrun-logo' src='" . $this->billrun_footer_logo_path . "' alt=''></p>
+					  <p class='credentials'> <span class='text'>".Generator_Translations::stranslate('DEF_INV_POWERED_BY')."</span> <img class='billrun-logo' src='" . $this->billrun_footer_logo_path . "' alt=''></p>
 					</td>
 				  </tr>
 				</tbody>

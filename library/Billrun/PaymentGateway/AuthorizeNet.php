@@ -36,7 +36,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		}
 	}
 
-	public function updateSessionTransactionId() {
+	public function updateSessionTransactionId($result) {
 		$this->transactionId = $this->customerId;
 	}
 

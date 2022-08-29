@@ -6,8 +6,12 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+use Payrexx\Communicator;
+use Payrexx\Models\Request\Gateway as GatewayRequest;
 use Payrexx\Models\Request\SignatureCheck;
 use Payrexx\Models\Request\Transaction;
+use Payrexx\Models\Response\Gateway as GatewayResponse;
+use Payrexx\Models\Response\Transaction as TransactionResponse;
 use Payrexx\Payrexx;
 use Payrexx\PayrexxException;
 
@@ -19,26 +23,18 @@ use Payrexx\PayrexxException;
 class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 	const DEFAULT_CURRENCY = 'CHF';
-
-	/**
-	 * @inheritDoc
-	 */
-	protected $omnipayName = "Payrexx";
+	const DEFAULT_PAYMENT_METHODS = ['visa', 'mastercard'];
+	const DEFAULT_AMOUNT = 0.5;
+	const API_VERSION = '1.1';
 
 	protected $billrunName = "Payrexx";
 
-	protected $pendingCodes = '/^authorized$/';
-	protected $completionCodes = '/^confirmed$/';
-
-	public function __construct($instanceName =  null) {
-		parent::__construct($instanceName);
-		$credentials = $this->getGatewayCredentials();
-		$this->omnipayGateway->setApiKey($credentials['instance_api_secret']);
-		$this->omnipayGateway->setInstance($credentials['instance_name']);
-	}
+	protected $pendingCodes = '/^(waiting|refund_pending)$/';
+	protected $completionCodes = '/^(authorized|confirmed|reserved|refunded|partially-refunded)/';
+	protected $rejectionCodes = '/^(cancelled|declined)$/';
 
 	public function getDefaultParameters() {
-		$params = array("instance_name", "instance_api_secret");
+		$params = array('instance_name', 'instance_api_secret', 'custom_api_domain');
 		return $this->rearrangeParametres($params);
 	}
 
@@ -51,7 +47,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 */
 	public function authenticateCredentials($params) {
 		try {
-			$payrexx = new Payrexx($params['instance_name'], $params['instance_api_secret']);
+			$payrexx = $this->getPayrexxClient($params);
 
 			$signatureCheck = new SignatureCheck();
 			$payrexx->getOne($signatureCheck);
@@ -72,6 +68,8 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 	/**
 	 * @inheritDoc
+	 * @return GatewayResponse
+	 * @throws PayrexxException
 	 */
 	protected function getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $options, $maxTries = 10) {
 		$account = Billrun_Factory::account();
@@ -83,23 +81,20 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 			$this->saveDetails['charge'] = 1;
 		}
 
-		$request = $this->omnipayGateway->purchase([
-			'amount' => $singlePaymentParams['amount'] ?? 0.5, // TODO set from config
-//			'vatRate' => 7.7, // TODO ask about vat rate
-			'currency' => Billrun_Factory::config()->getConfigValue('pricing.currency', self::DEFAULT_CURRENCY),
-			'sku' => 'P01122000', // TODO no sku?
-			'preAuthorization' => 1,
-			'pm' => ['visa', 'mastercard'],
-//			'referenceId' => $aid, // TODO use reference?
-			'forename' => $account->firstname,
-			'surname' => $account->lastname,
-			'email' => $account->email,
-			'successRedirectUrl' => $this->adjustRedirectUrl($okPage, $this->transactionId),
-			'failedRedirectUrl' => $this->adjustRedirectUrl($failPage, $this->transactionId),
-			'buttonText' => 'Add Card'
-		]);
+		$gateway = new GatewayRequest();
 
-		return $request->send();
+		$gateway->setAmount($this->convertAmountToSend($singlePaymentParams['amount'] ?? self::DEFAULT_AMOUNT));
+		$gateway->setCurrency(Billrun_Factory::config()->getConfigValue('pricing.currency', self::DEFAULT_CURRENCY));
+		$gateway->setSuccessRedirectUrl($this->adjustRedirectUrl($okPage, $this->transactionId));
+		$gateway->setFailedRedirectUrl($this->adjustRedirectUrl($failPage, $this->transactionId));
+		$gateway->setPm(self::DEFAULT_PAYMENT_METHODS);
+		$gateway->setPreAuthorization(1);// indicate tokenization procedure
+
+		$gateway->addField('forename', $account->firstname);
+		$gateway->addField('surname', $account->lastname);
+		$gateway->addField('email', $account->email);
+
+		return $this->getPayrexxClient()->create($gateway);
 	}
 
 	protected function adjustRedirectUrl($url, $txId): string {
@@ -128,18 +123,18 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 	/**
 	 * @inheritDoc
+	 * @param GatewayResponse $result
 	 */
 	protected function updateRedirectUrl($result) {
-		$this->redirectUrl = $result->getRedirectUrl();
-		// TODO move it to updateSessionTransactionId()
-		$this->saveDetails['ref'] = $result->getTransactionReference();
+		$this->redirectUrl = $result->getLink();
 	}
 
 	/**
 	 * @inheritDoc
+	 * @param GatewayRequest $result
 	 */
-	function updateSessionTransactionId() {
-		// it's updated in updateRedirectUrl()
+	function updateSessionTransactionId($result) {
+		$this->saveDetails['ref'] = $result->getId();
 	}
 
 	protected function signalStartingProcess($aid, $timestamp) {
@@ -180,69 +175,105 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	}
 
 	/**
-	 * @inheritDoc
+	 * Saving Details to Subscribers collection and redirect to our success page or the merchant page if supplied.
+	 *
+	 * @param $txId
+	 * @param $additionalParams
+	 * @return array
+	 * @throws PayrexxException
 	 */
 	public function saveTransactionDetails($txId, $additionalParams) {
-		$this->saveDetails['aid'] = $this->getAidFromProxy($txId);
-		// TODO tenant URL?
-		$tenantUrl = $this->getTenantReturnUrl($this->saveDetails['aid']);
+		$aid = $this->getAidFromProxy($txId);
+		$tenantUrl = $this->getTenantReturnUrl($aid);
 		$this->updateReturnUrlOnEror($tenantUrl);
 
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
 		$query = array("name" => $this->billrunName, "instance_name" => $this->instanceName, "tx" => (string) $txId);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
 
-		$request = $this->omnipayGateway->completePurchase(['transactionReference' => $paymentRow['ref']]);
+		$gateway = new GatewayRequest();
+		$gateway->setId($paymentRow['ref']);
+		/** @var GatewayResponse $tokenizationResult */
+		$tokenizationResult = $this->getPayrexxClient()->getOne($gateway);
 
-		$result = $request->send();
-
-		if (($paymentInfo = $this->getResponseDetails($result)) === FALSE) {
+		if (($cardDetails = $this->getCardDetails($tokenizationResult)) === FALSE) {
 			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
 			throw new Exception('Operation Failed. Try Again...');
 		}
 
+		$this->saveDetails['aid'] = $aid; // for validatePaymentProcess(), savePaymentGateway() and paySinglePayment()
 		if (!$this->validatePaymentProcess($txId)) {
 			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: Too much time passed', Zend_Log::ALERT);
 			throw new Exception('Too much time passed');
 		}
 
+		$this->saveDetails['card_token'] = $cardDetails['card_token'];
+		$this->saveDetails['four_digits'] = $cardDetails['four_digits'];
+		$this->saveDetails['card_expiration'] = $cardDetails['expiration_date'];
 		$this->savePaymentGateway();
 
 		if ($paymentRow['charge']) {
-			$this->paySinglePayment($paymentInfo);
+			$this->chargeOnTokenization($tokenizationResult, $cardDetails);
 		}
 
 		return array(
 			'tenantUrl' => $tenantUrl,
-			'creditCard' => $paymentInfo['four_digits'],
-			'expirationDate' => $paymentInfo['expiration_date']
+			'creditCard' => $cardDetails['four_digits'],
+			'expirationDate' => $cardDetails['expiration_date']
 		);
 	}
 
 	/**
-	 * @inheritDoc
+	 * Query the response to getting needed details.
+	 *
+	 * @param TransactionResponse $result
+	 * @return array
 	 */
 	protected function getResponseDetails($result) {
-		$gatewayInfo = $result->getData();
-		if (!isset($gatewayInfo->getInvoices()[0]["transactions"][0])) {
-			throw new Exception('Wrong response from payment gateway');
-		}
-		$transaction = $gatewayInfo->getInvoices()[0]["transactions"][0];
-
-		$this->saveDetails['card_token'] = $transaction['id'];
-		$this->saveDetails['four_digits'] = !empty($transaction['payment']['cardNumber'])
-			? substr($transaction['payment']['cardNumber'], -4) : '';
-		$this->saveDetails['card_expiration'] = $transaction['payment']['expiry'];
-		$amount = $gatewayInfo->getAmount() / 100;
+		$amount = $this->convertReceivedAmount($result->getAmount());
 
 		return [
-			'card_token' => $this->saveDetails['card_token'],
-			'four_digits' => $this->saveDetails['four_digits'],
-			'expiration_date' => $this->saveDetails['card_expiration'],
-			'transferred_amount' => $amount, // TODO check if it's necessary
-			'amount' => $amount,
-			"transaction_status" => $gatewayInfo->getStatus()
+			'payment_identifier' => (string) $result->getId(),
+			'transferred_amount' => $amount,
+			'transaction_status' => $result->getStatus()
 		];
+	}
+
+	/**
+	 * @param GatewayResponse $result
+	 * @return array
+	 * @throws Exception
+	 */
+	protected function getCardDetails($result) {
+		$transaction = $this->getAuthorizedTransactionFromGatewayResponse($result);
+
+		$lastDigits = !empty($transaction['payment']['cardNumber'])
+			? substr($transaction['payment']['cardNumber'], -4) : '';
+
+		return [
+			'card_token' => (string) $transaction['id'],
+			'four_digits' => (string) $lastDigits,
+			'expiration_date' => (string) $transaction['payment']['expiry']
+		];
+	}
+
+	/**
+	 * @param GatewayResponse $result
+	 * @return mixed
+	 * @throws Exception
+	 */
+	private function getAuthorizedTransactionFromGatewayResponse(GatewayResponse $result): array {
+		foreach ($result->getInvoices() as $invoice) {
+			if (!isset($invoice["transactions"][0])) {
+				throw new Exception('Wrong response from payment gateway');
+			}
+			$transaction = $invoice["transactions"][0];
+
+			if ($transaction['status'] == 'authorized') {
+				return $transaction;
+			}
+		}
+		throw new Exception('No authorized transactions in the gateway response');
 	}
 
 	/**
@@ -269,133 +300,171 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		return !empty($structure['card_token']);
 	}
 
-	protected function paySinglePayment($retParams) {
-		$options = array('collect' => true, 'payment_gateway' => true);
-		$gatewayDetails = $this->saveDetails;
-		$gatewayDetails['name'] = $this->billrunName;
-		$accountId = $this->saveDetails['aid'];
-		if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
-			Billrun_Factory::log("Non valid payment gateway for aid = " . $accountId, Zend_Log::NOTICE);
-		}
-		if (!isset($retParams['transferred_amount'])) {
-			throw new Exception("Missing amount for single payment, aid = " . $accountId);
-		}
-		$cashAmount = $retParams['transferred_amount'];
-		$paymentParams['aid'] = $accountId;
-		$paymentParams['billrun_key'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
-		$paymentParams['amount'] = abs($cashAmount);
-		$paymentParams['gateway_details'] = $retParams;
-		$paymentParams['gateway_details']['name'] = $this->billrunName;
-		$paymentParams['gateway_details']['instance_name'] = $this->instanceName;
-		$paymentParams['transaction_status'] = $retParams['transaction_status'];
-		if (isset($retParams['installments'])) {
-			$paymentParams['installments'] = $retParams['installments'];
-		}
-		$paymentParams['dir'] = 'fc';
-		if (isset($retParams['payment_identifier'])) {
-			$options['additional_params']['payment_identifier'] = $retParams['payment_identifier'];
-		}
-		Billrun_Factory::log("Creating bill for single payment: Account id=" . $accountId . ", Amount=" . $cashAmount, Zend_Log::INFO);
-		Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $options);
+	/**
+	 * @param GatewayResponse $tokenizationResult
+	 * @param array $cardDetails
+	 * @return void
+	 * @throws PayrexxException
+	 */
+	private function chargeOnTokenization(GatewayResponse $tokenizationResult, array $cardDetails) {
+		// do charge
+		$amountCents = $tokenizationResult->getAmount(); // in cents
+		$paymentResult = $this->chargeCard($cardDetails['card_token'], $amountCents);
+
+		// get standard payment details
+		$paymentDetails = $this->getResponseDetails($paymentResult);
+
+		// get charge fee
+		$additionalParams = ['fee' => $this->getPayrexxFee($paymentResult->getId())];
+
+		// complete payment flow
+		$this->transactionId = $paymentDetails['payment_identifier']; // for paySinglePayment()
+		$this->saveDetails['card_token'] = $cardDetails['card_token']; // for paySinglePayment()
+		$this->paySinglePayment($cardDetails + $paymentDetails, $additionalParams);
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function pay($gatewayDetails, $addonData) {
-		$credentials = $this->getGatewayCredentials();
+		$response = $this->chargeCard(
+			$gatewayDetails['card_token'],
+			$this->convertAmountToSend($gatewayDetails['amount'])
+		);
 
-		try {
-			$payrexx = new Payrexx($credentials['instance_name'], $credentials['instance_api_secret']);
-
-			$transaction = new Transaction();
-			$transaction->setId($gatewayDetails['card_token']);
-			$transaction->setAmount($gatewayDetails['amount'] * 100); // convert to cents
-			$response = $payrexx->charge($transaction);
-		} catch (PayrexxException $e) {
-			Billrun_Factory::log('Payrexx credentials validation failed with message: ' . $e->getMessage(), Zend_Log::DEBUG);
-			return false;
-		}
-
-
-		$this->transactionId = $response->getId();
+		$this->transactionId = $response->getId(); // for outside use
 
 		return [
 			'status' => $response->getStatus(),
-			'additional_params' => []
+			'additional_params' => [ 'fee' => $this->getPayrexxFee($response->getId())]
 		];
 	}
 
 	/**
-	 * @inheritDoc
+	 * @param int $transactionId
+	 * @return float|int
+	 * @throws PayrexxException
 	 */
-	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement buildPostArray() method.
+	private function getPayrexxFee(int $transactionId) {
+		$transactionResponse = $this->requestTransaction($transactionId);
+		$payrexxFee = $this->convertReceivedAmount($transactionResponse->getPayrexxFee());
+		return $payrexxFee;
 	}
 
 	/**
-	 * @inheritDoc
+	 * @param $cardToken
+	 * @param $amountCents
+	 * @return TransactionResponse
+	 * @throws PayrexxException
 	 */
-	protected function buildTransactionPost($txId, $additionalParams) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement buildTransactionPost() method.
+	private function chargeCard($cardToken, $amountCents): TransactionResponse {
+		$transaction = new Transaction();
+		$transaction->setId($cardToken);
+		$transaction->setAmount($amountCents);
+		$response = $this->getPayrexxClient()->charge($transaction);
+		return $response;
 	}
 
 	/**
-	 * @inheritDoc
+	 * @param int $id
+	 * @return mixed
+	 * @throws PayrexxException
 	 */
-	public function verifyPending($txId) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement verifyPending() method.
+	private function requestTransaction(int $id) {
+		$payrexx = $this->getPayrexxClient();
+		$transaction = new Transaction();
+		$transaction->setId($id);
+
+		$transactionResponse = $payrexx->getOne($transaction);
+		return $transactionResponse;
 	}
 
 	/**
-	 * @inheritDoc
+	 * @param array $credentials
+	 * @return Payrexx
+	 * @throws PayrexxException
 	 */
-	public function hasPendingStatus() {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement hasPendingStatus() method.
+	private function getPayrexxClient(array $credentials = []): Payrexx {
+		$credentials = $credentials ?: $this->getGatewayCredentials();
+
+		$payrexx = new Payrexx(
+			$credentials['instance_name'],
+			$credentials['instance_api_secret'],
+			'',
+			$credentials['custom_api_domain'] ?? Communicator::API_URL_BASE_DOMAIN,
+			self::API_VERSION
+		);
+		return $payrexx;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function convertAmountToSend($amount) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement convertAmountToSend() method.
+		$amount = round($amount, 2);
+		return $amount * 100;
+	}
+
+	protected function convertReceivedAmount($amount) {
+		return $amount / 100;
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
+		// not applicable for Payrexx client
+		return [];
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	protected function buildTransactionPost($txId, $additionalParams) {
+		return [];
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function verifyPending($txId) {
+		return '';
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function hasPendingStatus() {
+		return false;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function isNeedAdjustingRequest() {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement isNeedAdjustingRequest() method.
+		return false;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function handleTokenRequestError($response, $params) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement handleTokenRequestError() method.
+		return false;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	protected function buildSinglePaymentArray($params, $options) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement buildSinglePaymentArray() method.
+		// not applicable for Payrexx client
+		return [];
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
-		throw new Exception("Method " . __METHOD__);
-		// TODO: Implement createRecurringBillingProfile() method.
+		return '';
 	}
 
 }

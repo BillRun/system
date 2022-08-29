@@ -113,7 +113,11 @@ abstract class Billrun_PaymentGateway {
 	protected function __construct($instanceName =  null) {
 
 		if ($this->supportsOmnipay()) {
-			$this->omnipayGateway = Omnipay\Omnipay::create($this->getOmnipayName());
+			$client = new Omnipay\Common\Http\Client(
+				new Http\Adapter\Guzzle6\Client(),						// set dependencies explicitly to avoid
+				new Http\Message\MessageFactory\GuzzleMessageFactory()	// Yaf_Loader::autoload() warning
+			);
+			$this->omnipayGateway = Omnipay\Omnipay::create($this->getOmnipayName(), $client);
 		}
 
 		if (empty($this->returnUrl)) {
@@ -121,7 +125,11 @@ abstract class Billrun_PaymentGateway {
 		}
 		$this->initInstanceName($instanceName);
 		$this->account = Billrun_Factory::account();
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
+
+		$configFilePath = APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini';
+		if (file_exists($configFilePath)) {
+			Billrun_Factory::config()->addConfig($configFilePath);
+		}
 	}
 
 
@@ -221,7 +229,7 @@ abstract class Billrun_PaymentGateway {
 			$response = $updateOkPage;
 		}
 		$this->updateRedirectUrl($response);
-		$this->updateSessionTransactionId();
+		$this->updateSessionTransactionId($response);
 
 		// Signal starting process.
 		$this->signalStartingProcess($aid, $timestamp);
@@ -262,9 +270,10 @@ abstract class Billrun_PaymentGateway {
 
 	/**
 	 * Updates the current transactionId.
-	 * 
+	 *
+	 * @param $result - response to request to get billing agreement from the payment gateway.
 	 */
-	abstract function updateSessionTransactionId();
+	abstract function updateSessionTransactionId($result);
 	
 	/**
 	 * Get the Redirect url of the payment gateway.
@@ -810,8 +819,13 @@ abstract class Billrun_PaymentGateway {
 		return false;
 	}
 	
-	protected function paySinglePayment($retParams) {
-		$options = array('collect' => true, 'payment_gateway' => true, 'single_payment_gateway' => true);
+	protected function paySinglePayment($retParams, $additionalParams = []) {
+		$options = array(
+			'collect' => true,
+			'payment_gateway' => true,
+			'single_payment_gateway' => true,
+			'additional_params' => $additionalParams
+		);
 		$gatewayDetails = $this->saveDetails;
 		$gatewayDetails['name'] = $this->billrunName;
 		$accountId = $this->saveDetails['aid'];
