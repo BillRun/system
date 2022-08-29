@@ -119,15 +119,23 @@ abstract class Billrun_PaymentGateway {
 		if (empty($this->returnUrl)) {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
-		if(!empty($instanceName)){
-			$this->instanceName = $instanceName;
-		} else {
-			$this->instanceName = $this->billrunName;
-		}
+		$this->initInstanceName($instanceName);
 		$this->account = Billrun_Factory::account();
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
 	}
 
+
+	/**
+	 * @param $instanceName
+	 * @return void
+	 */
+	protected function initInstanceName($instanceName) {
+		if (!empty($instanceName)) {
+			$this->instanceName = $instanceName;
+		} else {
+			$this->instanceName = $this->billrunName;
+		}
+	}
 
 	public function __call($name, $arguments) {
 		if ($this->supportsOmnipay()) {

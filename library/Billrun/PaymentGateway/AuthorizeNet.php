@@ -25,7 +25,8 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	const APPLE_PAY_PAYMENT = 'COMMON.APPLE.INAPP.PAYMENT';
 	const GOOGLE_PAY_PAYMENT = 'COMMON.GOOGLE.INAPP.PAYMENT';
 
-	protected function __construct() {
+	protected function __construct($instanceName =  null) {
+		parent::__construct($instanceName);
 		if (Billrun_Factory::config()->isProd()) {
 			$this->EndpointUrl = "https://api2.authorize.net/xml/v1/request.api";
 			$this->actionUrl = 'https://secure.authorize.net';
