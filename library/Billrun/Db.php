@@ -98,10 +98,14 @@ class Billrun_Db extends Mongodloid_Db {
 		if (substr($name, (-1) * strlen($suffix)) == $suffix) {
 			$collectionName = substr($name, 0, (strpos($name, $suffix)));
 			if (!empty($this->collections[$collectionName])) {
-				return $this->getCollection($this->collections[$collectionName]);
-			}
-		} else if ($arguments['force']) {
-			return $this->getCollection($name);
+                            $name = $this->collections[$collectionName];
+			}else if ($arguments[0]['force']){
+                            $name = $collectionName;
+                        } else {
+                            Billrun_Factory::log('Collection or property ' . $name . ' did not found in the DB layer', Zend_Log::ALERT);
+                            return false;
+                        }
+                        return $this->getCollection($name);
 		}
 
 		Billrun_Factory::log('Collection or property ' . $name . ' did not found in the DB layer', Zend_Log::ALERT);
