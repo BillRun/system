@@ -58,6 +58,12 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $billrunName;
+        
+        /**
+	 * Instance name for the payment gateway.
+	 * @var string
+	 */
+	protected $instanceName;
 	
 	/**
 	 * identifier for the transaction. 
@@ -103,8 +109,8 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $htmlForm;
-
-	protected function __construct() {
+	
+	protected function __construct($instanceName =  null) {
 
 		if ($this->supportsOmnipay()) {
 			$client = new Omnipay\Common\Http\Client(
@@ -117,6 +123,7 @@ abstract class Billrun_PaymentGateway {
 		if (empty($this->returnUrl)) {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
+		$this->initInstanceName($instanceName);
 		$this->account = Billrun_Factory::account();
 
 		$configFilePath = APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini';
@@ -125,6 +132,18 @@ abstract class Billrun_PaymentGateway {
 		}
 	}
 
+
+	/**
+	 * @param $instanceName
+	 * @return void
+	 */
+	protected function initInstanceName($instanceName) {
+		if (!empty($instanceName)) {
+			$this->instanceName = $instanceName;
+		} else {
+			$this->instanceName = $this->billrunName;
+		}
+	}
 
 	public function __call($name, $arguments) {
 		if ($this->supportsOmnipay()) {
@@ -138,14 +157,18 @@ abstract class Billrun_PaymentGateway {
 	 * @param string $name the payment gateway name
 	 * @return Billrun_PaymentGateway
 	 */
-	public static function getInstance($name) {
-		if (isset(self::$paymentGateways[$name])) {
-			$paymentGateway = self::$paymentGateways[$name];
+	public static function getInstance($instanceName) {
+
+		if (isset(self::$paymentGateways[$instanceName])) {
+			$paymentGateway = self::$paymentGateways[$instanceName];
 		} else {
-			$subClassName = __CLASS__ . '_' . $name;
+			$instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator', '#');
+			$type = explode($instance_separator, $instanceName)[0];
+
+			$subClassName = __CLASS__ . '_' . $type;
 			if (@class_exists($subClassName)) {
-				$paymentGateway = new $subClassName();
-				self::$paymentGateways[$name] = $paymentGateway;
+				$paymentGateway = new $subClassName($instanceName);
+				self::$paymentGateways[$instanceName] = $paymentGateway;
 			}
 		}
 		return isset($paymentGateway) ? $paymentGateway : NULL;
@@ -240,7 +263,7 @@ abstract class Billrun_PaymentGateway {
 		$okTemplate = Billrun_Factory::config()->getConfigValue('PaymentGateways.ok_page');
 		$pageRoot = $request->getServer()['HTTP_HOST'];
 		$protocol = empty($request->getServer()['HTTPS']) ? 'http' : 'https';
-		$okPage = sprintf($okTemplate, $protocol, $pageRoot, $this->billrunName);
+		$okPage = sprintf($okTemplate, $protocol, $pageRoot, urlencode($this->instanceName));
 
 		return $okPage;
 	}
@@ -513,7 +536,13 @@ abstract class Billrun_PaymentGateway {
 
 	protected function signalStartingProcess($aid, $timestamp) {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "tx" => (string) $this->transactionId, "stamp" => md5($timestamp . $this->transactionId), "aid" => (int)$aid);
+		$query = array(
+			"name" => $this->billrunName,
+			"instance_name" => $this->instanceName,
+			"tx" => (string) $this->transactionId,
+			"stamp" => md5($timestamp . $this->transactionId),
+			"aid" => (int) $aid
+		);
 		$textualQuery = json_encode($query);
 		Billrun_Factory::log('Querying creditproxy with ' . $textualQuery, Zend_Log::DEBUG);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
@@ -542,7 +571,12 @@ abstract class Billrun_PaymentGateway {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
 
 		// Get is started
-		$query = array("name" => $this->billrunName, "tx" => (string) $txId, "aid" => (int)$this->saveDetails['aid']);
+		$query = array(
+			"name" => $this->billrunName,
+			"instance_name" => $this->instanceName,
+			"tx" => (string) $txId,
+			"aid" => (int)$this->saveDetails['aid']
+		);
 		$paymentRow = $paymentColl->query($query)->cursor()->sort(array('t' => -1))->limit(1)->current();
 		if ($paymentRow->isEmpty()) {
 			// Received message for completed charge, 
@@ -577,7 +611,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	protected function getAidFromProxy($txId) {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "tx" => (string) $txId);
+		$query = array("name" => $this->billrunName, "instance_name" => $this->instanceName, "tx" => (string) $txId);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
 		return $paymentRow['aid'];
 	}
@@ -607,13 +641,17 @@ abstract class Billrun_PaymentGateway {
 	 * @return Array - the status and stage of the payment.
 	 */
 	public function getGatewayCredentials() {
+		$gatewayDetails = $this->getGateway();
+		return $gatewayDetails['params'];
+	}
+	
+	protected function getGateway(){
 		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
-		$gatewayName = $this->billrunName;
+		$gatewayName = $this->instanceName;
 		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
 			return $paymentGateway['name'] == $gatewayName;
 		});
-		$gatewayDetails = current($gateway);
-		return $gatewayDetails['params'];
+		return current($gateway);
 	}
 	
 	/**
@@ -622,12 +660,7 @@ abstract class Billrun_PaymentGateway {
 	 * @return Array - the status and stage of the payment.
 	 */
 	public function getGatewayExport() {
-		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
-		$gatewayName = $this->billrunName;
-		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
-			return $paymentGateway['name'] == $gatewayName;
-		});
-		$gatewayDetails = current($gateway);
+		$gatewayDetails = $this->getGateway();
 		return $gatewayDetails['export'];
 	}
 	
@@ -637,12 +670,7 @@ abstract class Billrun_PaymentGateway {
 	 * @return Array - the status and stage of the payment.
 	 */
 	public function getGatewayReceiver($type) {
-		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
-		$gatewayName = $this->billrunName;
-		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
-			return $paymentGateway['name'] == $gatewayName;
-		});
-		$gatewayDetails = current($gateway);
+		$gatewayDetails = $this->getGateway();
 		return $gatewayDetails[$type]['receiver'];
 	}
 
@@ -811,10 +839,9 @@ abstract class Billrun_PaymentGateway {
 		$paymentParams['aid'] = $accountId;
 		$paymentParams['billrun_key'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 		$paymentParams['amount'] = abs($cashAmount);
-		$gatewayDetails['amount'] = $cashAmount;
-		$gatewayDetails['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');	
 		$paymentParams['gateway_details'] = $retParams;
-		$paymentParams['gateway_details']['name'] = !empty($gatewayDetails['name']) ? $gatewayDetails['name'] : $this->billrunName;
+		$paymentParams['gateway_details']['name'] = $this->billrunName;
+		$paymentParams['gateway_details']['instance_name'] = $this->instanceName;
 		$paymentParams['transaction_status'] = $retParams['transaction_status'];
 		if (isset($retParams['installments'])) {
 			$paymentParams['installments'] = $retParams['installments'];
@@ -837,12 +864,7 @@ abstract class Billrun_PaymentGateway {
 	 * @return Array - the status and stage of the payment.
 	 */
 	public function getGatewayCustomParams() {
-		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
-		$gatewayName = $this->billrunName;
-		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
-			return $paymentGateway['name'] == $gatewayName;
-		});
-		$gatewayDetails = current($gateway);
+		$gatewayDetails = $this->getGateway();
 		$customParams = !empty($gatewayDetails['custom_params']) ? $gatewayDetails['custom_params'] : array();
 		return $customParams;
 	}

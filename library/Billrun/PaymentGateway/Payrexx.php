@@ -100,7 +100,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	protected function adjustRedirectUrl($url, $txId): string {
 
 		$params = http_build_query([
-			'name' => $this->billrunName,
+			'name' => $this->instanceName,
 			'txId' => $txId
 		]);
 
@@ -141,7 +141,13 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		parent::signalStartingProcess($aid, $timestamp);
 
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "tx" => (string) $this->transactionId, "stamp" => md5($timestamp . $this->transactionId), "aid" => (int)$aid);
+		$query = array(
+			"name" => $this->billrunName,
+			"instance_name" => $this->instanceName,
+			"tx" => (string) $this->transactionId,
+			"stamp" => md5($timestamp . $this->transactionId),
+			"aid" => (int) $aid
+		);
 
 		$paymentRow = $paymentColl->query($query)->cursor()->sort(array('t' => -1))->limit(1)->current();
 		if ($paymentRow->isEmpty()) {
@@ -182,7 +188,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$this->updateReturnUrlOnEror($tenantUrl);
 
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "tx" => (string) $txId);
+		$query = array("name" => $this->billrunName, "instance_name" => $this->instanceName, "tx" => (string) $txId);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
 
 		$gateway = new GatewayRequest();
@@ -277,6 +283,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		return array(
 			'active' => array(
 				'name' => $this->billrunName,
+				'instance_name' => $this->instanceName,
 				'card_token' => (string) $this->saveDetails['card_token'],
 				'card_expiration' => (string) $this->saveDetails['card_expiration'],
 				'transaction_exhausted' => true,
@@ -315,7 +322,6 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$this->saveDetails['card_token'] = $cardDetails['card_token']; // for paySinglePayment()
 		$this->paySinglePayment($cardDetails + $paymentDetails, $additionalParams);
 	}
-
 
 	/**
 	 * @inheritDoc

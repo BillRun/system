@@ -28,13 +28,17 @@ class PaymentGatewaysController extends ApiController {
 		$this->allowed();
 		$gateways = Billrun_Factory::config()->getConfigValue('PaymentGateways.potential');
 		$imagesUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.images');
+		$instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator', '#');
 		$settings = array();
-		foreach ($gateways as $name) {
+		foreach ($gateways as $gatewayInstanceName) {
 			$setting = array();
-			$setting['name'] = $name;
+			$setting['name'] = $gatewayInstanceName; // TODO instance_name?
 			$setting['supported'] = true;
-			$setting['image_url'] = $imagesUrl[$name];
-			$paymentGateway = Billrun_Factory::paymentGateway($name);
+			$setting['image_url'] = $imagesUrl[$gatewayInstanceName];
+			$type = explode($instance_separator, $gatewayInstanceName)[0];
+			$instanceId = explode($instance_separator, $gatewayInstanceName)[1];
+			$setting['title'] = $type . ($instanceId ? " (" . $instanceId  . ")" : ''); //TODO ::FE task - display this title instead name
+			$paymentGateway = Billrun_Factory::paymentGateway($gatewayInstanceName);
 			if (is_null($paymentGateway)) {
 				$setting['supported'] = false;
 				$settings[] = $setting;
@@ -69,6 +73,9 @@ class PaymentGatewaysController extends ApiController {
 		$originalRequestData = $requestData = json_decode($request->get('data'), true);
 		if (isset($requestData['return_url'])) {
 			$requestData['return_url'] = urlencode($requestData['return_url']);
+		}
+                if (isset($requestData['name'])) {
+			$requestData['name'] = urlencode($requestData['name']);
 		}
 		if (isset($requestData['ok_page'])) {
 			$requestData['ok_page'] = urlencode($requestData['ok_page']);
@@ -193,7 +200,7 @@ class PaymentGatewaysController extends ApiController {
 	 */
 	public function OkPageAction() {
 		$request = $this->getRequest();
-		$name = $request->get("name");
+		$name = urldecode($request->get("name"));
 		if (is_null($name)) {
 			return $this->setError("Missing payment gateway name", $request);
 		}

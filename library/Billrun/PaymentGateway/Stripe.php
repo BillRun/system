@@ -56,6 +56,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		return array(
 			'active' => array(
 				'name' => $this->billrunName,
+				'instance_name' => $this->instanceName,
 				'customer_id' => $this->saveDetails['customer_id'],
 				'stripe_email' => $this->saveDetails['email'],
 				'token' => $this->saveDetails['token'],
