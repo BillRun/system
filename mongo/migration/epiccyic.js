@@ -10386,7 +10386,7 @@ var user_data = 			{
 	"editable" : true,
 	"display" : true
 }
-lastConfig['subscribers'] = addFieldToConfig(lastConfig, user_data, 'rates');
+lastConfig = addFieldToConfig(lastConfig, user_data, 'rates');
 
 lastConfig = runOnce(lastConfig, 'EPICIC-173', function () {
 	db.rates.updateMany({'rates.incoming_sms': {$exists: true}, 'params.user_data': {$exists: false}}, {$set: {'params.user_data': "SMS"}})
