@@ -19,8 +19,8 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	protected $completionCodes = "/^COMPLETED$/";
 	protected $customerId;
 
-	protected function __construct() {
-		parent::__construct();
+	protected function __construct($instanceName =  null) {
+		parent::__construct($instanceName);
 		$credentials = $this->getGatewayCredentials();
 		if (Billrun_Factory::config()->isProd()) {
 			$this->EndpointUrl = "https://api.paysafe.com/cardpayments/" . $credentials['Version'] . "/accounts/" . $credentials['Account'] . "/auths";
@@ -56,6 +56,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		return array(
 			'active' => array(
 				'name' => $this->billrunName,
+				'instance_name' => $this->instanceName,
 				'card_token' => $this->saveDetails['card_token'],
 				'transaction_exhausted' => true,
 				'generate_token_time' => new MongoDate(time()),
