@@ -352,6 +352,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$name = null;
 		$from = null;
 		$to = null;
+		$activationResolutionSec = Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.activation_minimum_resolution',1);
 		$aggregatorData = array();
 		//sort plans history by date
 		usort($plans, function($a, $b){ return $a['to']->sec - $b['to']->sec;});
@@ -366,7 +367,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			}
 			$currName = $subPlan['plan'];
 			// If it is the same plan name, continue
-			if($name == $currName && $from == $subPlan['plan_activation']->sec) {
+			if($name == $currName && floor($from/$activationResolutionSec) == floor($subPlan['plan_activation']->sec/$activationResolutionSec)) {
 				$to = empty($subPlan['plan_deactivation']) ? $subPlan['to']->sec : $subPlan['plan_deactivation']->sec;
 				continue;
 			}
