@@ -602,6 +602,7 @@ class Billrun_Util {
 		$descriptorspec = array(
 			2 => STDERR,
 		);
+		Billrun_Factory::log("About to run CLI command: " . $syscmd,Zend_Log::DEBUG);
 		$process = proc_open($syscmd, $descriptorspec, $pipes);
 		if ($process === FALSE) {
 			Billrun_Factory::log('Can\'t execute CLI command',Zend_Log::ERR);

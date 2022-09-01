@@ -434,7 +434,10 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
 										'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
 										'start'=> max($tmpService['from']->sec + ($tmpService['from']->usec/ 1000000), $activationDate),
-										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000), $endTime , $deactivationDate) );
+										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000), $endTime , $deactivationDate),
+										'compareFields' => $srvStampFields
+									  );
+
 				 if($serviceData['start'] !== $serviceData['end']) {
 					$stamp = Billrun_Util::generateArrayStamp($serviceData,$srvStampFields);
 					$currServices[$stamp] = $serviceData;
@@ -442,14 +445,14 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			}
 			// Function to Check for removed services in the current subscriber record.
 			$serviceCompare = function  ($a, $b) use($srvStampFields)  {
-				$aStamp = Billrun_Util::generateArrayStamp($a ,$srvStampFields);
-				$bStamp = Billrun_Util::generateArrayStamp($b ,$srvStampFields);
+				$aStamp = Billrun_Util::generateArrayStamp($a ,$a['compareFields']);
+				$bStamp = Billrun_Util::generateArrayStamp($b ,$b['compareFields']);
 				return strcmp($aStamp , $bStamp);
 			};
 
 			$removedServices  = array_udiff($previousServices, $currServices, $serviceCompare);
 			foreach($removedServices as $stamp => $removed) {
-				if ( $sfrom <  $removed['end'] ) {
+				if ( $sfrom < $removed['end'] ) {
 					$retServices[$stamp]['end'] = $sfrom;
 				}
 			}
