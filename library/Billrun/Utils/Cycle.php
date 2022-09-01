@@ -1,4 +1,4 @@
-<?php
+\<?php
 
 /* 
  * To change this license header, choose License Headers in Project Properties.
@@ -11,5 +11,23 @@ class Billrun_Utils_Cycle {
 		$cycle = new Billrun_DataTypes_CycleTime($cycleKey);
 		$timestamp = $time instanceof MongoDate ? $time->sec : $time;
 		return $cycle->start() <= $timestamp && $timestamp <= $cycle->end();
+	}
+
+	/**
+	 * Merge subscriber revisions into one revision  by a given  rules
+	 **/
+	public function mergeSubRevisions($mainRevision, $revisionsToMerge, $mergeRules = []) {
+		$generalMergeRules = [
+				'plan_activation' => ['$min'],
+				'plan_deactivation' => ['$max'],
+				'from' => ['$min'],
+				'to' => ['$max'],
+				'services' => ['$addToSet']
+				];
+		$mergeRules = empty($mappingRules) ? $generalMergeRules : $mergeRules;
+		foreach($revisionsToMerge as  $secRevision) {
+			$mainRevision = Billrun_Util::mergeArrayByRules($mainRevision,$secRevision, $mergeRules);
+		}
+		return $mainRevision;
 	}
 }
