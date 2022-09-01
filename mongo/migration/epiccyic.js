@@ -10392,6 +10392,15 @@ lastConfig = runOnce(lastConfig, 'EPICIC-173', function () {
 	db.rates.updateMany({'rates.incoming_sms': {$exists: true}, 'params.user_data': {$exists: false}}, {$set: {'params.user_data': "SMS"}})
 });
 
+lastConfig = runOnce(lastConfig, 'EPICIC-175', function () {
+    if(typeof lastConfig.billrun.compute.suggestions.rate_recalculations.grouping === 'undefined') {
+	lastConfig.billrun.compute.suggestions.rate_recalculations['grouping'] = {};    
+}
+    lastConfig.billrun.compute.suggestions.rate_recalculations.grouping.fields = [
+        "uf.USER_SUMMARISATION", "cf.component", "cf.cash_flow", "cf.product_group", "cf.product", "cf.operator", "cf.anaa", "cf.tier", "cf.anaa_group", "cf.anaa_title", "cf.operator_title", "cf.product_title", "cf.scenario", "cf.settlement_operator", "cf.rate_type"
+    ];
+});
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
