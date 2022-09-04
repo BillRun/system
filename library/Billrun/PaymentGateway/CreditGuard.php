@@ -198,7 +198,12 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	public function pay($gatewayDetails, $addonData) {
-		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'RecurringDebit', $addonData);
+		$debitType = 'RecurringDebit';
+		if (false) { // Check if direct
+			$debitType = 'Debit';
+			$addonData['is_direct'] = true;
+		}
+		$paymentArray = $this->buildPaymentRequset($gatewayDetails, $debitType, $addonData);
 		return $this->sendPaymentRequest($paymentArray);
 	}
 
@@ -206,6 +211,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$credentials = $this->getGatewayCredentials();
 		$customParams = $this->getGatewayCustomParams();
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
+		$terminal = isset($addonData['is_direct']) && $addonData['is_direct']? $gatewayDetails['direct_terminal'] : $gatewayDetails['charging_terminal'];
 		$ZParameter = '';
 		if (!empty($customParams['send_z_param'])) {
 			$aidStringVal = strval($addonData['aid']);
@@ -229,7 +235,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								<language>Eng</language>
 								<mayBeDuplicate>0</mayBeDuplicate>
 									<doDeal>
-										<terminalNumber>' . $credentials['charging_terminal'] . '</terminalNumber>
+										<terminalNumber>' . $terminal . '</terminalNumber>
 										<cardId>' . $gatewayDetails['card_token'] . '</cardId>
 										<cardExpiration>' . $gatewayDetails['card_expiration'] . '</cardExpiration>
 										<creditType>RegularCredit</creditType>
