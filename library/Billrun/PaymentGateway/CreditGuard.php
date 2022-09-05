@@ -110,6 +110,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['aid'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
 			$this->saveDetails['personal_id'] = (string) $xmlObj->response->inquireTransactions->row->personalId;
 			$this->saveDetails['auth_number'] = (string) $xmlObj->response->inquireTransactions->row->authNumber;
+			$this->saveDetails['card_type'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardType;
+			$this->saveDetails['credit_company'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->creditCompany;
+			$this->saveDetails['card_brand'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardBrand;
+			$this->saveDetails['card_acquirer'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardAcquirer;
 			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
 			$retParams['action'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
 			$retParams['transferred_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
@@ -156,6 +160,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'generate_token_time' => new MongoDate(time()),
 				'auth_number' => (string) $this->saveDetails['auth_number'],
 				'four_digits' => (string) $this->saveDetails['four_digits'],
+				'card_acquirer' => (string) $this->saveDetails['card_acquirer'],
+				'card_brand' => (string) $this->saveDetails['card_brand'],
+				'credit_company' => (string) $this->saveDetails['credit_company'],
+				'card_type' => (string) $this->saveDetails['card_type'],
 			)
 		);
 	}
@@ -199,7 +207,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	public function pay($gatewayDetails, $addonData) {
 		$debitType = 'RecurringDebit';
-		if (false) { // Check if direct
+		if (isset($gatewayDetails['card_type']) && isset($gatewayDetails['credit_company']) &&
+			strcmp($gatewayDetails['card_type'], 'Debit') == 0 && strcmp($gatewayDetails['card_company'], 'Isracard') == 0) {
 			$debitType = 'Debit';
 			$addonData['is_direct'] = true;
 		}
