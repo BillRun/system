@@ -27,10 +27,12 @@ class Billrun_Rates_Util {
 		$refStr= $rate_ref['$ref'].$rate_ref['$id'];
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 
-		if($useCache && !isset(static::$ratesCache[$refStr])) {
-			static::$ratesCache[$refStr] = $rates_coll->getRef($rate_ref);
-		} else {
+		if(!$useCache) {
 			return $rates_coll->getRef($rate_ref);
+		}
+
+		if(!isset(static::$ratesCache[$refStr])) {
+			static::$ratesCache[$refStr] = $rates_coll->getRef($rate_ref);
 		}
 
 		return static::$ratesCache[$refStr];
