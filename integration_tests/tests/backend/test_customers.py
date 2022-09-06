@@ -1,13 +1,13 @@
 import pytest
 
-from conftest import add_skip_mark
+from conftest import skip_test
 from steps.backend_steps.customers_steps import Customers, CustomerAssertionSteps
 
 
 @pytest.mark.parametrize('optional_params', [
     {'invoice_detailed': False, 'invoice_shipping_method': 'email'},
-    add_skip_mark(case={'invoice_detailed': True, 'invoice_shipping_method': None},
-                  reason='https://billrun.atlassian.net/browse/BRCD-3826')
+    skip_test(case={'invoice_detailed': True, 'invoice_shipping_method': None},
+              reason='https://billrun.atlassian.net/browse/BRCD-3826')
 ])
 @pytest.mark.smoke
 def test_create_customer(optional_params):
