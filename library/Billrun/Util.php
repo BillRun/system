@@ -1996,36 +1996,40 @@ class Billrun_Util {
 		return $url;
 	}
 
-	public function mergeArrayByRules($mainArr, $secArr, $rules) {
-		$mainArr = arrya_merge($secArr,$mainArr);
+	public static function mergeArrayByRules($mainArr, $secArr, $rules) {
+		//$mainArr = array_merge($secArr,$mainArr);
 		foreach($rules as $srcFieldKey => $fieldRules) {
-			foreach($fieldRules as $rule)
-			switch($rule) {
-				case '$push' :
-							static::setIn( $mainArr, $srcFieldKey, array_merge(static::getIn($secArr, $srcFieldKey, null),
-																				static::getIn($mainArr,$srcFieldKey, null))
-										  );
-					break;
-				case '$addToSet' :
-					static::setIn( $mainArr, $srcFieldKey, array_merge(array_diff(	static::getIn($secArr, $srcFieldKey, null),
-																					static::getIn($mainArr,$srcFieldKey, null)),
-																	   static::getIn($mainArr,$srcFieldKey, null))
-								);
-					break;
-				default :
-					$cleanRule = str_replace('$','',$rule);
-					if(function_exists($cleanRule)) {
-						static::setIn( $mainArr, $srcFieldKey, call_user_func_array($cleanRule,[
-																					static::getIn($secArr, $srcFieldKey, null),
-																					static::getIn($mainArr,$srcFieldKey, null)])
-									  );
-					} else {
-						static::setIn( $mainArr, $srcFieldKey,
-							   static::getIn($secArr, $srcFieldKey,
-									 static::getIn($mainArr,$srcFieldKey,null)));
-					}
-					;
+			foreach($fieldRules as $rule) {
+				if(null === static::getIn($secArr, $srcFieldKey, null) && null === static::getIn($mainArr,$srcFieldKey, null)) {
+					continue;
+				}
+				switch($rule) {
+					case '$push' :
+								static::setIn( $mainArr, $srcFieldKey, array_merge(static::getIn($secArr, $srcFieldKey, null),
+																					static::getIn($mainArr,$srcFieldKey, null))
+											);
+						break;
+					case '$addToSet' :
+						static::setIn( $mainArr, $srcFieldKey, array_merge(@array_udiff(	static::getIn($secArr, $srcFieldKey, null),
+																						static::getIn($mainArr,$srcFieldKey, null),function($a,$b) {return strcmp(md5(json_encode($a)),md5(json_encode($b)));}),
+																		static::getIn($mainArr,$srcFieldKey, null))
+									);
+						break;
+					default :
+						$cleanRule = str_replace('$','',$rule);
+						if(function_exists($cleanRule)) {
+							static::setIn( $mainArr, $srcFieldKey, call_user_func_array($cleanRule,[
+																						static::getIn($secArr, $srcFieldKey, null),
+																						static::getIn($mainArr,$srcFieldKey, null)])
+										);
+						} else {
+							static::setIn( $mainArr, $srcFieldKey,
+								static::getIn($secArr, $srcFieldKey,
+										static::getIn($mainArr,$srcFieldKey,null)));
+						}
+						;
 
+				}
 			}
 		}
 		return $mainArr;
