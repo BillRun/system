@@ -18,33 +18,26 @@ class Billrun_Utils_Cycle {
 	 **/
 	public static function mergeCycleRevisions($mainRevision, $revisionsToMerge, $mergeRules = []) {
 		$generalMergeRules = [
-				'base' => [
-					'plan_activation' => ['$min'],
-					'plan_deactivation' => ['$max'],
-					'from' => ['$min'],
-					'to' => ['$max'],
-					'services' => ['$addToSet']
-					],
-				'plans' => [
-						'plan_activation' => ['$min'],
-						'plan_deactivation' => ['$max'],
-						'from' => ['$min'],
-						'to' => ['$max'],
+				'plan_activation' => ['$min'=>1],
+				'plan_deactivation' => ['$max' => 1],
+				'from' => ['$min' => 1],
+				'to' => ['$max' => 1],
+				'services' => ['$addToSet' => 1],
 
+				'plans' => [
+							'$mergeMultiArraysByRules' =>
+								[
+								'plan_activation' => ['$min' => 1],
+								'plan_deactivation' => ['$max' => 1],
+								'from' => ['$min' => 1],
+								'to' => ['$max' => 1],
+								]
 					]
 				];
 
 		$mergeRules = empty($mappingRules) ? $generalMergeRules : $mergeRules;
 		foreach($revisionsToMerge as  $secRevision) {
-			//Merge the main revisions porperties
-			$mainRevision = Billrun_Util::mergeArrayByRules($mainRevision,$secRevision, $mergeRules['base']);
-			//Merge the  resion  plans dates  entries
-			if((!empty($mainRevision['plans'])  || !empty($secRevision['plans'])) && !empty($mergeRules['plans'])) {
-				$mergedPlans = array_merge($mainRevision['plans'],$secRevision['plans']);
-				for($planIdx=0; $planIdx < count($mergedPlans); $planIdx++ ) {
-					$mainRevision['plans'] = [ Billrun_Util::mergeArrayByRules($mainRevision['plans'][0],$mergedPlans[$planIdx], $mergeRules['plans']) ] ;
-				}
-			}
+			$mainRevision = Billrun_Util::mergeArrayByRules($mainRevision,$secRevision, $mergeRules);
 		}
 		return $mainRevision;
 	}

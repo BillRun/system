@@ -1997,13 +1997,13 @@ class Billrun_Util {
 	}
 
 	public static function mergeArrayByRules($mainArr, $secArr, $rules) {
-		//$mainArr = array_merge($secArr,$mainArr);
+
 		foreach($rules as $srcFieldKey => $fieldRules) {
-			foreach($fieldRules as $rule) {
+			foreach($fieldRules as $ruleKey => $ruleVal) {
 				if(null === static::getIn($secArr, $srcFieldKey, null) && null === static::getIn($mainArr,$srcFieldKey, null)) {
 					continue;
 				}
-				switch($rule) {
+				switch($ruleKey) {
 					case '$push' :
 								static::setIn( $mainArr, $srcFieldKey, array_merge(static::getIn($secArr, $srcFieldKey, null),
 																					static::getIn($mainArr,$srcFieldKey, null))
@@ -2015,20 +2015,39 @@ class Billrun_Util {
 																		static::getIn($mainArr,$srcFieldKey, null))
 									);
 						break;
+					case '$mergeArrayByRules' :
+						//recursivly call current function  to  dive into  nested structure
+						static::setIn( $mainArr, $srcFieldKey, static::mergeArrayByRules(
+																						static::getIn($mainArr, $srcFieldKey, []),
+																						static::getIn($secArr,$srcFieldKey, []),
+																						$ruleVal) );
+						break;
+
+					case '$mergeMultiArraysByRules' :
+						//Merge multiple arrays  enteries to a single one based on  specific rules
+
+						foreach(array_merge(static::getIn($mainArr, $srcFieldKey, []),static::getIn($secArr,$srcFieldKey, [])) as $subSecArr)  {
+							static::setIn( $mainArr, $srcFieldKey, [static::mergeArrayByRules(
+																						@reset(static::getIn($mainArr, $srcFieldKey, [])),
+																						$subSecArr,
+																						$ruleVal)] );
+						}
+
+						break;
 					default :
-						$cleanRule = str_replace('$','',$rule);
-						if(function_exists($cleanRule)) {
+						//use native functions to run operations
+						$cleanRule = str_replace('$','',$ruleKey);
+						if(function_exists($cleanRule) && in_array($cleanRule,Billrun_Factory::config()->getConfigValue('billrun.runnble_functions',['min','max','array_merge','array_diff']))) {
 							static::setIn( $mainArr, $srcFieldKey, call_user_func_array($cleanRule,[
-																						static::getIn($secArr, $srcFieldKey, null),
-																						static::getIn($mainArr,$srcFieldKey, null)])
+																						static::getIn($mainArr, $srcFieldKey, null),
+																						static::getIn($secArr,$srcFieldKey, null)])
 										);
 						} else {
+							//  just  copy the  secondary array value if it exists
 							static::setIn( $mainArr, $srcFieldKey,
-								static::getIn($secArr, $srcFieldKey,
-										static::getIn($mainArr,$srcFieldKey,null)));
+								static::getIn($mainArr, $srcFieldKey,
+										static::getIn($secArr,$srcFieldKey,null)));
 						}
-						;
-
 				}
 			}
 		}
