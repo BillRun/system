@@ -4,6 +4,7 @@ from datetime import date, timedelta, datetime
 from json import dumps
 from typing import Callable
 
+import pytest
 from faker import Faker
 from pytz import utc
 from requests import Response
@@ -151,3 +152,8 @@ def find_item_by_id(response: Response, id_: str) -> dict:
 
 def get_true_or_false() -> bool:
     return random.choice([True, False])
+
+
+def skip_test(case, reason):
+    """use inside parametrization"""
+    return pytest.param(case, marks=pytest.mark.skip(reason=reason))

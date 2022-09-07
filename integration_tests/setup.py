@@ -11,7 +11,7 @@ INSTALL_REQUIRES = [
     'faker',
     'addict',
     'pytz',
-    'json_schema_matchers'
+    'json_schema_matchers',
 ]
 
 setup(

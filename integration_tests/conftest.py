@@ -28,8 +28,3 @@ def driver():
         LOGGER.info(f'Driver quit')
     except WebDriverException:
         LOGGER.info(f'Driver is already closed by exception interact hook')
-
-@pytest.fixture(scope='function')
-def skip_test(case, reason):
-    """use inside parametrization"""
-    return pytest.param(case, marks=pytest.mark.skip(reason=reason))
