@@ -90,3 +90,4 @@ class APIAssertionSteps(ABC):
     def check_json_schema_and_http_code_and_status(schema, actual_response):
         check_http_code_and_status(actual_response)
         check_json_schema(actual_response, schema)
+
