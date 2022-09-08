@@ -169,7 +169,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	public function getDefaultParameters() {
-		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url", "version");
+		$params = array("user", "password", "redirect_terminal", "charging_terminal", "onetime_terminal", "mid", "endpoint_url", "version");
 		return $this->rearrangeParametres($params);
 	}
 	
@@ -210,7 +210,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		if (isset($gatewayDetails['card_type']) && isset($gatewayDetails['credit_company']) &&
 			strcmp($gatewayDetails['card_type'], 'Debit') == 0 && strcmp($gatewayDetails['card_company'], 'Isracard') == 0) {
 			$debitType = 'Debit';
-			$addonData['is_direct'] = true;
+			$addonData['terminal_type'] = 'onetime_terminal';
 		}
 		$paymentArray = $this->buildPaymentRequset($gatewayDetails, $debitType, $addonData);
 		return $this->sendPaymentRequest($paymentArray);
@@ -220,7 +220,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$credentials = $this->getGatewayCredentials();
 		$customParams = $this->getGatewayCustomParams();
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
-		$terminal = isset($addonData['is_direct']) && $addonData['is_direct']? $gatewayDetails['direct_terminal'] : $gatewayDetails['charging_terminal'];
+		$terminal_type = isset($addonData['terminal_type']) ? $addonData['terminal_type'] : 'charging_terminal';
 		$ZParameter = '';
 		if (!empty($customParams['send_z_param'])) {
 			$aidStringVal = strval($addonData['aid']);
@@ -244,7 +244,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								<language>Eng</language>
 								<mayBeDuplicate>0</mayBeDuplicate>
 									<doDeal>
-										<terminalNumber>' . $terminal . '</terminalNumber>
+										<terminalNumber>' . $credentials[$terminal_type] . '</terminalNumber>
 										<cardId>' . $gatewayDetails['card_token'] . '</cardId>
 										<cardExpiration>' . $gatewayDetails['card_expiration'] . '</cardExpiration>
 										<creditType>RegularCredit</creditType>
@@ -415,6 +415,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlParams['aid'] = $addonData['aid'] = $params['aid'];
 		$xmlParams['version'] = $credentials['version'] ?? '2000';
 		$xmlParams['mpiValidation'] = 'AutoComm';
+		$xmlParams['terminal_type'] = 'onetime_terminal';
 		$xmlParams['userData2'] = 'SinglePayment';
 		if (!empty($customParams['send_z_param'])) {
 			$aidStringVal = strval($addonData['aid']);
@@ -452,6 +453,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected function getXmlStructureByParams($credentials, $xmlParams, $addonData = array()) {
 		$XParameter = !empty($addonData['txid']) ? '<user>' . $addonData['txid']  . '</user>' : '';
 		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
+		$terminal_type = isset($xmlParams['terminal_type']) ? $xmlParams['terminal_type'] : 'redirect_termianl';
 		$ashraitEmvData = '<ashraitEmvData>
 						<recurringTotalNo>999</recurringTotalNo>
 						<recurringTotalSum></recurringTotalSum>
@@ -471,7 +473,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								 <doDeal>
 										  <successUrl>' . $xmlParams['ok_page'] . '</successUrl>
 										  '. $xmlParams['addFailPage']  .'
-										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
+										  <terminalNumber>' . $credentials[$terminal_type] . '</terminalNumber>
 										 ' . $XParameter . '
 										 ' . $ZParameter . '
 										  <mainTerminalNumber/>
@@ -520,6 +522,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams, $addonData) {
+		$terminal_type = isset($xmlParams['terminal_type']) ? $xmlParams['terminal_type'] : 'redirect_termianl';
 		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
 		return array(
 			'user' => $credentials['user'],
@@ -534,7 +537,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								 <doDeal>
 										  <successUrl>' . $xmlParams['ok_page'] . '</successUrl>
 										  ' . $xmlParams['addFailPage'] . '
-										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
+										  <terminalNumber>' . $credentials[$terminal_type] . '</terminalNumber>
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
 										  <total>' . $installmentParams['amount'] . '</total>
