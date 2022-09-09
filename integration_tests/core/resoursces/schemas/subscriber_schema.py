@@ -317,21 +317,7 @@ SUBSCRIBER_GET_SCHEMA = {
                                 "usec"
                             ]
                         },
-                        "revision_info": {
-                            "type": "object",
-                            "properties": REVISION_INFO_SCHEMA['properties'],
-                            "required": [
-                                "status",
-                                "is_last",
-                                "early_expiration",
-                                "updatable",
-                                "closeandnewable",
-                                "movable",
-                                "removable",
-                                "movable_from",
-                                "movable_to"
-                            ]
-                        }
+                        "revision_info": REVISION_INFO_SCHEMA
                     },
                     "required": [
                         "_id",

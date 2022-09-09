@@ -107,21 +107,7 @@ PRODUCT_GET_SCHEMA = {
                 }
               },
             },
-            "revision_info": {
-              "type": "object",
-              "properties": REVISION_INFO_SCHEMA['properties'],
-              "required": [
-                "closeandnewable",
-                "early_expiration",
-                "is_last",
-                "movable",
-                "movable_from",
-                "movable_to",
-                "removable",
-                "status",
-                "updatable"
-              ]
-            },
+            "revision_info": REVISION_INFO_SCHEMA,
             "tariff_category": {
               "type": "string"
             },

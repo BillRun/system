@@ -28,5 +28,16 @@ REVISION_INFO_SCHEMA = {
         "movable_to": {
             "type": "boolean"
         }
-    }
+    },
+    "required": [
+        "status",
+        "is_last",
+        "early_expiration",
+        "updatable",
+        "closeandnewable",
+        "movable",
+        "removable",
+        "movable_from",
+        "movable_to"
+    ]
 }
