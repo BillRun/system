@@ -1,15 +1,14 @@
 import pytest
+from pytest_testrail.plugin import pytestrail
 
 from core.common.entities import RevisionStatus
-from core.common.utils import get_id_from_response
+from core.common.utils import get_id_from_response, skip_test
 from steps.backend_steps.plans_steps import Plans, PlansAssertionSteps
 
 
+@pytestrail.case('C2679')
 @pytest.mark.smoke
-@pytest.mark.parametrize('connection_type', [
-    'postpaid'
-    # 'prepaid' not full implemented
-])
+@pytest.mark.parametrize('connection_type', ['postpaid'])
 def test_create_plan(connection_type):
     plan = Plans()
 
@@ -20,11 +19,9 @@ def test_create_plan(connection_type):
     PlansAssertionSteps(plan).validate_get_response_is_correct()
 
 
+@pytestrail.case('C2680')
 @pytest.mark.smoke
-@pytest.mark.parametrize('connection_type', [
-    'postpaid'
-    # 'prepaid' not full implemented
-])
+@pytest.mark.parametrize('connection_type', ['postpaid'])
 def test_update_plan(connection_type):
     plan = Plans()
 
@@ -39,11 +36,9 @@ def test_update_plan(connection_type):
         expected_response=plan.generate_expected_response_after_updating())
 
 
+@pytestrail.case('C2681', 'C2689', 'C2690')
 @pytest.mark.smoke
-@pytest.mark.parametrize('connection_type', [
-    'postpaid'
-    # 'prepaid' not full implemented
-])
+@pytest.mark.parametrize('connection_type', ['postpaid'])
 @pytest.mark.parametrize('to', [
     True,  # set random future date
     False,  # w/o to param
@@ -66,11 +61,9 @@ def test_close_plan(connection_type, to):
         expected_response=plan.generate_expected_response_after_close())
 
 
+@pytestrail.case('C2682')
 @pytest.mark.smoke
-@pytest.mark.parametrize('connection_type', [
-    'postpaid'
-    # 'prepaid' not full implemented
-])
+@pytest.mark.parametrize('connection_type', ['postpaid'])
 def test_close_and_new_plan(connection_type):
     plan = Plans()
 
@@ -88,11 +81,9 @@ def test_close_and_new_plan(connection_type):
         expected_response=plan.generate_expected_response_after_close_and_new())
 
 
+@pytestrail.case('C2683')
 @pytest.mark.smoke
-@pytest.mark.parametrize('connection_type', [
-    'postpaid'
-    # 'prepaid' not full implemented
-])
+@pytest.mark.parametrize('connection_type', ['postpaid'])
 def test_delete_plan(connection_type):
     plan = Plans()
 

@@ -12,6 +12,7 @@ INSTALL_REQUIRES = [
     'addict',
     'pytz',
     'json_schema_matchers',
+    'pytest-testrail @ https://github.com/Serhii2205/pytest-testrail-extended/tarball/master'
 ]
 
 setup(

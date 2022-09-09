@@ -1,9 +1,11 @@
 import pytest
+from pytest_testrail.plugin import pytestrail
 
-from conftest import skip_test
+from core.common.utils import skip_test
 from steps.backend_steps.customers_steps import Customers, CustomerAssertionSteps
 
 
+@pytestrail.case('C2672', 'C2693')
 @pytest.mark.parametrize('optional_params', [
     {'invoice_detailed': False, 'invoice_shipping_method': 'email'},
     skip_test(case={'invoice_detailed': True, 'invoice_shipping_method': None},
@@ -20,6 +22,7 @@ def test_create_customer(optional_params):
     CustomerAssertionSteps(customer).validate_get_response_is_correct()
 
 
+@pytestrail.case('C2673')
 @pytest.mark.smoke
 def test_delete_customer():
     customer = Customers()
