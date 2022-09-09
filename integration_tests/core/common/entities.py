@@ -11,6 +11,7 @@ class APIPath:
     CUSTOMERS = 'billapi/accounts'
     PLANS = 'billapi/plans'
     SUBSCRIBERS = 'billapi/subscribers'
+    SERVICES = 'billapi/services'
 
 
 class RevisionStatus:

@@ -10,6 +10,7 @@ from core.common.utils import (
     get_details, get_entity, get_true_or_false, convert_date_fields_to_expected,
     remove_keys_if_value_is_none
 )
+from core.resoursces.price_obj import create_price_obj
 from core.resoursces.schemas import PLANS_GET_SCHEMA, PLANS_POST_SCHEMA
 from core.testlib.API.base_api import BaseAPI
 from steps.backend_assertion_steps.base_api_assertion_steps import APIAssertionSteps
@@ -31,7 +32,7 @@ class Plans(BaseAPI):
             form_date_price=None,
             to_date_price=None,
             description=None,
-            include: list = None,  # services : SMS, CALL
+            include: list = None,  # services i.e. SMS, CALL
             upfront=None,
             recurrence_frequency=None,
             recurrence_start=None,
@@ -45,7 +46,7 @@ class Plans(BaseAPI):
             "connection_type": connection_type,  # "prepaid", "postpaid",
             "charging_type": charging_type or connection_type,  # "prepaid", "postpaid"
             "to": to or convert_date_to_str(get_random_past_or_future_date(past=False)),
-            "price": self.compose_price(price, form_date_price, to_date_price),
+            "price": create_price_obj(price, form_date_price, to_date_price),
             "from": from_date or convert_date_to_str(get_random_past_or_future_date()),
             "name": name or get_random_str().upper(),  # KEY on UI
             "upfront": upfront or get_true_or_false(),
@@ -63,16 +64,6 @@ class Plans(BaseAPI):
         }
         return self
 
-    @staticmethod
-    def compose_price(price=None, form_date_price=None, to_date_price=None):
-        return [
-            {
-                "price": price or 0,
-                "from": form_date_price or 0,
-                "to": to_date_price or "UNLIMITED"
-            }
-        ]
-
     def compose_update_payload(
             self,
             price=None,
@@ -89,7 +80,7 @@ class Plans(BaseAPI):
     ):
         self.update_payload = {
             # "to": to or convert_date_to_str(get_random_past_or_future_date(past=False)), ToDo is updatable ?
-            "price": self.compose_price(price, form_date_price, to_date_price),
+            "price": create_price_obj(price, form_date_price, to_date_price),
             "upfront": upfront or get_true_or_false(),
             "recurrence": {
                 "frequency": recurrence_frequency or random.choice(Recurrence.as_list()),
