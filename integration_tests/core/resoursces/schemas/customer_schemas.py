@@ -163,20 +163,7 @@ CUSTOMER_GET_SCHEMA = {
                         "to": {
                             "type": "string"
                         },
-                        "revision_info": {
-                            "type": "object",
-                            "properties": REVISION_INFO_SCHEMA['properties'],
-                            "required": [
-                                "status",
-                                "early_expiration",
-                                "updatable",
-                                "closeandnewable",
-                                "movable",
-                                "removable",
-                                "movable_from",
-                                "movable_to"
-                            ]
-                        }
+                        "revision_info": REVISION_INFO_SCHEMA
                     },
                     "required": [
                         "_id",

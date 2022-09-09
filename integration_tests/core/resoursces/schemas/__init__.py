@@ -2,3 +2,4 @@ from .product_schemas import PRODUCT_GET_SCHEMA
 from .customer_schemas import CUSTOMER_GET_SCHEMA, CUSTOMER_POST_SCHEMA
 from .plans_schemas import PLANS_GET_SCHEMA, PLANS_POST_SCHEMA
 from .subscriber_schema import SUBSCRIBER_POST_SCHEMA, SUBSCRIBER_GET_SCHEMA
+from .services_schemas import SERVICES_POST_SCHEMA, SERVICES_GET_SHEMA
