@@ -143,6 +143,9 @@ class Subscribers(BaseAPI):
 
     def generate_expected_response(self, payload: dict = None, id_: str = None):
         payload = payload or self.create_payload
+        # From - To > the subscriber configuration revision (subscriber can have many revisions)
+        # Activation date - deactivation date > this is the time the subscriber is active
+        # Plan activation date - plan deactivation date > the time range that the plan was/is set for the subscriber
         self.expected_response = {
             "_id": {
                 "$id": id_ or get_id_from_response(self.create_response)
@@ -183,7 +186,11 @@ class SubscribersAssertionSteps(APIAssertionSteps):
 
         for response in (actual, expected_response):
             response.pop('revision_info', None)  # can't be predicted for now
-            # response.pop('to') if not expected_response.get('to') else None
+            # for close method w/o to param
+            if not expected_response.get('to'):
+                response.pop('to')
+                response.pop('deactivation_date')
+                response.pop('plan_deactivation')
 
         convert_date_fields_to_expected(expected_response, ['from', 'to'], method)
 

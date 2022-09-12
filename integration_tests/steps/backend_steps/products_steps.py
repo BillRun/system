@@ -211,7 +211,7 @@ class ProductAssertionSteps(APIAssertionSteps):
         for response in (actual, expected_response):
             response.pop('revision_info', None)  # can't be predicted for now
             # we can not predict to param if it is not presented in payload
-            response.pop('to', None) if not expected_response.get('to') else None
+            response.pop('to', None) if not expected_response.get('to') else None   # for close method w/o to param
 
         convert_date_fields_to_expected(expected_response, fields=['from', 'to'], method='GET')
 
