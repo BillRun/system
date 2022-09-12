@@ -804,14 +804,12 @@ db.taxes.createIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, back
 db.taxes.createIndex({'to': 1 }, { unique: false , sparse: true, background: true });
 
 lastConfig = runOnce(lastConfig, 'BRCD-3678', function () {
-//Suggestions Collection
-db.createCollection('suggestions');
+    //Suggestions Collection
+    db.createCollection('suggestions');
     db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1_estimated_billrun_1");
     db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1");
     db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: true , background: true});
     db.suggestions.createIndex({'status': 1 }, { unique: false , background: true});
-
-
 });
 // BRCD-1936: Migrate old discount structure to new discount structure
 function isEmpty(obj) {
@@ -1385,7 +1383,6 @@ lastConfig = runOnce(lastConfig, 'BRCD-3325', function () {
     };
 		lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
 });
-
 db.lines.createIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 
 //BRCD-3307:Refactoring : remove "balance_effective_date" field from payments
@@ -1397,6 +1394,12 @@ runOnce(lastConfig, 'BRCD-3307', function () {
 				db.bills.save(obj);
 			}
 	)
+});
+
+lastConfig = runOnce(lastConfig, 'BRCD-3806', function () {
+    //Suggestions Collection
+    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculation_type_1_estimated_billrun_1");
+	db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
 });
 
 // BRCD-3432 add BillRun' metabase plugin
