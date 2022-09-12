@@ -89,7 +89,7 @@ class Products(BaseAPI):
             pricing_method=None
     ):
         self.update_payload = {
-            "invoice_label": invoice_label or get_random_str(),
+            # "invoice_label": invoice_label or get_random_str(),  #  should it be updatable ?
             "tax": [
                 {
                     "type": tax_type or None,
@@ -97,7 +97,7 @@ class Products(BaseAPI):
                 }
             ],
             "description": description or get_random_str(),
-            "pricing_method": pricing_method or None
+            "pricing_method": pricing_method or 'new_method'
         }
         remove_keys_for_missing_values(self.update_payload)
 
@@ -211,7 +211,7 @@ class ProductAssertionSteps(APIAssertionSteps):
         for response in (actual, expected_response):
             response.pop('revision_info', None)  # can't be predicted for now
             # we can not predict to param if it is not presented in payload
-            response.pop('to', None) if not expected_response.get('to') else None   # for close method w/o to param
+            response.pop('to', None) if not expected_response.get('to') else None  # for close method w/o to param
 
         convert_date_fields_to_expected(expected_response, fields=['from', 'to'], method='GET')
 
