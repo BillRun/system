@@ -96,7 +96,7 @@ class Products(BaseAPI):
                     "taxation": tax_taxation or None
                 }
             ],
-            "description": description or None,
+            "description": description or get_random_str(),
             "pricing_method": pricing_method or None
         }
         remove_keys_for_missing_values(self.update_payload)
@@ -128,7 +128,7 @@ class Products(BaseAPI):
             pricing_method=pricing_method
         ).update_payload
 
-        self.close_and_new_payload['form'] = from_date or convert_date_to_str(
+        self.close_and_new_payload['from'] = from_date or convert_date_to_str(
             get_random_past_or_future_date(range_nearest_days=5, past=False)
         )
 
