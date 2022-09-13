@@ -6,12 +6,16 @@ class APIStatus:
     FAILED = 0
 
 
+BILL_API_PREFIX = 'billapi'
+
+
 class APIPath:
-    PRODUCTS = 'billapi/rates'
-    CUSTOMERS = 'billapi/accounts'
-    PLANS = 'billapi/plans'
-    SUBSCRIBERS = 'billapi/subscribers'
-    SERVICES = 'billapi/services'
+    PRODUCTS = f'{BILL_API_PREFIX}/rates'
+    CUSTOMERS = f'{BILL_API_PREFIX}/accounts'
+    PLANS = f'{BILL_API_PREFIX}/plans'
+    SUBSCRIBERS = f'{BILL_API_PREFIX}/subscribers'
+    SERVICES = f'{BILL_API_PREFIX}/services'
+    TAX_RATES = f'{BILL_API_PREFIX}/taxes'
 
 
 class RevisionStatus:
