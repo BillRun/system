@@ -14,21 +14,23 @@ from steps.backend_steps.customers_steps import Customers, CustomerAssertionStep
 @pytest.mark.smoke
 def test_create_customer(optional_params):
     customer = Customers()
+    assertion_steps = CustomerAssertionSteps(customer)
 
     customer.compose_create_payload(**optional_params).create()
-    CustomerAssertionSteps(customer).validate_post_response_is_correct()
+    assertion_steps.validate_post_response_is_correct()
 
     customer.get_by_id()
-    CustomerAssertionSteps(customer).validate_get_response_is_correct()
+    assertion_steps.validate_get_response_is_correct()
 
 
 @pytestrail.case('C2673')
 @pytest.mark.smoke
 def test_delete_customer():
     customer = Customers()
+    assertion_steps = CustomerAssertionSteps(customer)
 
     customer.compose_create_payload().create()
-    CustomerAssertionSteps(customer).validate_post_response_is_correct()
+    assertion_steps.validate_post_response_is_correct()
 
     customer.delete()
-    CustomerAssertionSteps(customer).check_object_is_deleted_successfully()
+    assertion_steps.check_object_is_deleted_successfully()
