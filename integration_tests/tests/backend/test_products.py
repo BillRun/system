@@ -13,7 +13,7 @@ def test_create_product():
     assertion_steps = ProductAssertionSteps(product)
 
     product.compose_create_payload().create()
-    assertion_steps.check_post_response_is_successfully()
+    assertion_steps.check_post_response_is_successful()
 
     product.get_by_id()
     assertion_steps.validate_get_response_is_correct()
@@ -26,20 +26,20 @@ def test_update_product():
     assertion_steps = ProductAssertionSteps(product)
 
     product.compose_create_payload().create()
-    ProductAssertionSteps(product).check_post_response_is_successfully()
+    ProductAssertionSteps(product).check_post_response_is_successful()
 
     params_to_update = {
         'invoice_label': get_random_str(), 'description':get_random_str(), 'pricing_method': 'volume'
     }
     product.compose_update_payload(**params_to_update).update()
-    assertion_steps.check_update_response_is_successfully()
+    assertion_steps.check_update_response_is_successful()
 
     product.get_by_id()
     assertion_steps.validate_get_response_is_correct(
         expected_response=product.generate_expected_response_after_updating())
 
 
-@pytestrail.case('C2686')
+@pytestrail.case('C2686', 'C2709', 'C2710')
 @pytest.mark.smoke
 @pytest.mark.parametrize('to', [
     True,  # set random future date
@@ -51,7 +51,7 @@ def test_close_product(to):
     assertion_steps = ProductAssertionSteps(product)
 
     product.compose_create_payload().create()
-    assertion_steps.check_post_response_is_successfully()
+    assertion_steps.check_post_response_is_successful()
 
     product.compose_close_payload(
         to=to, date_in_past=False if to != 'past_date' else True).close()
@@ -71,7 +71,7 @@ def test_close_and_new_product():
     assertion_steps = ProductAssertionSteps(product)
 
     get_id_from_response(product.compose_create_payload().create())  # init revision
-    assertion_steps.check_post_response_is_successfully()
+    assertion_steps.check_post_response_is_successful()
 
     product.get_by_id()
     assertion_steps.validate_get_response_is_correct()
@@ -79,7 +79,7 @@ def test_close_and_new_product():
     new_revision_id = get_id_from_response(product.compose_close_and_new_payload().close_and_new())
     assertion_steps.check_object_has_new_to_date_after_close_and_new()
 
-    product.get_by_id(id_=new_revision_id)
+    product.get_by_id(new_revision_id)
     assertion_steps.validate_get_response_is_correct(
         expected_response=product.generate_expected_response_after_close_and_new())
 
@@ -91,7 +91,7 @@ def test_delete_product():
     assertion_steps = ProductAssertionSteps(product)
 
     product.compose_create_payload().create()
-    assertion_steps.check_post_response_is_successfully()
+    assertion_steps.check_post_response_is_successful()
 
     product.delete()
     assertion_steps.check_object_is_deleted_successfully()

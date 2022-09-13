@@ -31,7 +31,7 @@ def test_update_plan(connection_type):
     assertion_steps.validate_post_response_is_correct()
 
     plan.compose_update_payload().update()
-    assertion_steps.check_update_response_is_successfully()
+    assertion_steps.check_update_response_is_successful()
 
     plan.get_by_id()
     assertion_steps.validate_get_response_is_correct(
@@ -58,7 +58,7 @@ def test_close_plan(connection_type, to):
     assertion_steps.check_close_response_is_successful()
 
     assertion_steps.check_object_revision_status(
-        status=RevisionStatus.EXPIRED if to in [False, "past_date"] else RevisionStatus.ACTIVE)
+        RevisionStatus.EXPIRED if to in [False, "past_date"] else RevisionStatus.ACTIVE)
 
     assertion_steps.validate_get_response_is_correct(
         expected_response=plan.generate_expected_response_after_close())
@@ -80,7 +80,7 @@ def test_close_and_new_plan(connection_type):
     new_revision_id = get_id_from_response(plan.compose_close_and_new_payload().close_and_new())
     assertion_steps.check_object_has_new_to_date_after_close_and_new()
 
-    plan.get_by_id(id_=new_revision_id)
+    plan.get_by_id(new_revision_id)
     assertion_steps.validate_get_response_is_correct(
         expected_response=plan.generate_expected_response_after_close_and_new())
 
@@ -93,7 +93,7 @@ def test_delete_plan(connection_type):
     assertion_steps = PlansAssertionSteps(plan)
 
     plan.compose_create_payload(connection_type=connection_type).create()
-    assertion_steps.check_post_response_is_successfully()
+    assertion_steps.check_post_response_is_successful()
 
     plan.delete()
     assertion_steps.check_object_is_deleted_successfully()

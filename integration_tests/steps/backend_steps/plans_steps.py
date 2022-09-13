@@ -154,7 +154,7 @@ class Plans(BaseAPI):
     def generate_expected_response_after_close_and_new(self, payload=None):
         payload = payload or self.create_payload
         payload.update(self.close_and_new_payload)
-        #  after close and new product we receive product with new id in response
+        #  after close and new product we receive plan with new id in response
         return self.generate_expected_response(
             payload=payload, id_=get_id_from_response(self.close_and_new_response))
 

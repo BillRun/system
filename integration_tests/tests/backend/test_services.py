@@ -33,7 +33,7 @@ def test_update_services():
     assertion_steps.validate_post_response_is_correct()
 
     service.compose_update_payload(**params_to_upd).update()
-    assertion_steps.check_update_response_is_successfully()
+    assertion_steps.check_update_response_is_successful()
 
     service.get_by_id()
     assertion_steps.validate_get_response_is_correct(
