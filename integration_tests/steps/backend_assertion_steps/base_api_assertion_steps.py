@@ -35,10 +35,10 @@ class APIAssertionSteps(ABC):
             method='POST'
         )
 
-    def check_post_response_is_successfully(self):
+    def check_post_response_is_successful(self):
         check_http_code_and_status(self.instance.create_response)
 
-    def check_update_response_is_successfully(self):
+    def check_update_response_is_successful(self):
         check_http_code_and_status(self.instance.update_response)
 
     def check_close_response_is_successful(self):
