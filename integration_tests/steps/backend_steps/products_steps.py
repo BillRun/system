@@ -7,8 +7,8 @@ from hamcrest import has_entries, assert_that
 from core.common.entities import APIPath
 from core.common.utils import (
     get_random_str, get_id_from_response, get_details,
-    dumps_values, get_random_past_or_future_date, convert_date_to_str,
-    remove_keys_for_missing_values, convert_date_fields_to_expected
+    dumps_values, remove_keys_for_missing_values, convert_date_fields_to_expected,
+    get_random_past_or_future_date_str
 )
 from core.resoursces.schemas import PRODUCT_GET_SCHEMA
 from core.testlib.API.base_api import BaseAPI
@@ -38,14 +38,13 @@ class Products(BaseAPI):
         self.create_payload = {
             "invoice_label": invoice_label or get_random_str(),
             "add_to_retail": add_to_retail or True,
-            "from": from_date or convert_date_to_str(get_random_past_or_future_date()),
+            "from": from_date or get_random_past_or_future_date_str(),
             "tariff_category": tariff_category or random.choice(["retail", 'tariff']),
             "pricing_method": pricing_method or "tiered",
             "description": description or get_random_str(),
             "key": key or get_random_str().upper(),
-            "to": to or convert_date_to_str(
-                get_random_past_or_future_date(range_nearest_days=100, past=False, start_range_from=6)
-            )
+            "to": to or get_random_past_or_future_date_str(
+                range_nearest_days=100, past=False, start_range_from=6),
         }
         tax = {
             "tax": [
@@ -105,8 +104,7 @@ class Products(BaseAPI):
 
     def compose_close_payload(self, to=False, date_in_past=False):
         self.close_payload = {
-            'to': convert_date_to_str(
-                get_random_past_or_future_date(past=date_in_past)) if to else None
+            'to': get_random_past_or_future_date_str(past=date_in_past) if to else None
         }
 
         return self
@@ -128,10 +126,9 @@ class Products(BaseAPI):
             pricing_method=pricing_method
         ).update_payload
 
-        self.close_and_new_payload['from'] = from_date or convert_date_to_str(
-            get_random_past_or_future_date(range_nearest_days=5, past=False)
+        self.close_and_new_payload['from'] = from_date or get_random_past_or_future_date_str(
+            range_nearest_days=5, past=False
         )
-
         return self
 
     def create_activity_type(self):

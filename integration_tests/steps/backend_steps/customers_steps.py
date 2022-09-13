@@ -4,9 +4,8 @@ from hamcrest import assert_that, has_entries
 
 from core.common.entities import APIPath
 from core.common.utils import (
-    get_random_str, FAKE, convert_date_to_str,
-    get_random_past_or_future_date, get_details,
-    get_id_from_response, get_entity, convert_date_fields_to_expected
+    get_random_str, FAKE, get_details,
+    get_id_from_response, get_entity, convert_date_fields_to_expected, get_random_past_or_future_date_str
 )
 from core.resoursces.schemas import CUSTOMER_GET_SCHEMA, CUSTOMER_POST_SCHEMA
 from core.testlib.API.base_api import BaseAPI
@@ -40,8 +39,8 @@ class Customers(BaseAPI):
         self.create_payload = {
             "lastname": lastname,
             "firstname": firstname,
-            "from": from_date or convert_date_to_str(get_random_past_or_future_date()),
-            "to": to_date or convert_date_to_str(get_random_past_or_future_date(past=False)),
+            "from": from_date or get_random_past_or_future_date_str(),
+            "to": to_date or get_random_past_or_future_date_str(past=False),
             "zip_code": zip_code or FAKE.zipcode(),
             "address": address or FAKE.street_address(),
             "country": country or FAKE.country(),

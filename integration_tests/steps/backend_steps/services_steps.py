@@ -5,10 +5,10 @@ from hamcrest import assert_that, has_entries
 
 from core.common.entities import APIPath
 from core.common.utils import (
-    convert_date_to_str,
-    get_random_past_or_future_date, get_details,
+    get_details,
     get_id_from_response, get_entity, convert_date_fields_to_expected,
-    remove_keys_if_value_is_none, get_random_str, get_random_int, get_true_or_false
+    remove_keys_if_value_is_none, get_random_str, get_random_int,
+    get_true_or_false, get_random_past_or_future_date_str
 )
 from core.resoursces.price_obj import create_price_obj
 from core.resoursces.schemas import SERVICES_POST_SCHEMA, SERVICES_GET_SHEMA
@@ -39,8 +39,8 @@ class Services(BaseAPI):
             'name': name or get_random_str().upper(),
             'price': price or create_price_obj(price=get_random_int(start=10, stop=10000)),
             'tax': tax,
-            'from_date': from_date or convert_date_to_str(get_random_past_or_future_date()),
-            'to': to or convert_date_to_str(get_random_past_or_future_date(past=False)),
+            'from_date': from_date or get_random_past_or_future_date_str(),
+            'to': to or get_random_past_or_future_date_str(past=False),
             'prorated': prorated or get_true_or_false(),
             'quantitative': quantitative or get_true_or_false(),
         }
@@ -68,8 +68,7 @@ class Services(BaseAPI):
 
     def compose_close_payload(self, to=False, date_in_past=False):
         self.close_payload = {
-            'to': convert_date_to_str(
-                get_random_past_or_future_date(past=date_in_past)) if to else None
+            'to': get_random_past_or_future_date_str(past=date_in_past) if to else None
         }
 
         return self
@@ -91,8 +90,8 @@ class Services(BaseAPI):
             quantitative=quantitative
         ).update_payload
 
-        self.close_and_new_payload['from'] = from_date or convert_date_to_str(
-            get_random_past_or_future_date(range_nearest_days=5, past=False)
+        self.close_and_new_payload['from'] = from_date or get_random_past_or_future_date_str(
+            range_nearest_days=5, past=False
         )
 
         return self

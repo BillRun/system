@@ -5,10 +5,9 @@ from hamcrest import assert_that, has_entries
 
 from core.common.entities import APIPath, Recurrence
 from core.common.utils import (
-    get_random_str, convert_date_to_str,
-    get_random_past_or_future_date, get_id_from_response,
+    get_random_str, get_id_from_response,
     get_details, get_entity, get_true_or_false, convert_date_fields_to_expected,
-    remove_keys_if_value_is_none
+    remove_keys_if_value_is_none, get_random_past_or_future_date_str
 )
 from core.resoursces.price_obj import create_price_obj
 from core.resoursces.schemas import PLANS_GET_SCHEMA, PLANS_POST_SCHEMA
@@ -45,9 +44,9 @@ class Plans(BaseAPI):
         self.create_payload = {
             "connection_type": connection_type,  # "prepaid", "postpaid",
             "charging_type": charging_type or connection_type,  # "prepaid", "postpaid"
-            "to": to or convert_date_to_str(get_random_past_or_future_date(past=False)),
+            "to": to or get_random_past_or_future_date_str(past=False),
             "price": create_price_obj(price, form_date_price, to_date_price),
-            "from": from_date or convert_date_to_str(get_random_past_or_future_date()),
+            "from": from_date or get_random_past_or_future_date_str(),
             "name": name or get_random_str().upper(),  # KEY on UI
             "upfront": upfront or get_true_or_false(),
             "recurrence": {
@@ -100,8 +99,7 @@ class Plans(BaseAPI):
 
     def compose_close_payload(self, to=False, date_in_past=False):
         self.close_payload = {
-            'to': convert_date_to_str(
-                get_random_past_or_future_date(past=date_in_past)) if to else None
+            'to': get_random_past_or_future_date_str(past=date_in_past) if to else None
         }
 
         return self
@@ -135,8 +133,8 @@ class Plans(BaseAPI):
             prorated_termination=prorated_termination
         ).update_payload
 
-        self.close_and_new_payload['from'] = from_date or convert_date_to_str(
-            get_random_past_or_future_date(range_nearest_days=5, past=False)
+        self.close_and_new_payload['from'] = from_date or get_random_past_or_future_date_str(
+            range_nearest_days=5, past=False
         )
 
         return self

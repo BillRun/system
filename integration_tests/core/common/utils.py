@@ -75,6 +75,33 @@ def get_random_past_or_future_date(
             days=random.randint(1, range_nearest_days))
 
 
+def get_random_past_or_future_date_str(
+        range_nearest_days: int = 10,
+        past: bool = True,
+        start_range_from: int = None,
+        pattern: str = DATE_PATTERN,
+) -> str:
+    return convert_date_to_str(
+        get_random_past_or_future_date(range_nearest_days, past, start_range_from), pattern
+    )
+
+
+def get_random_date_between_dates(
+        start_date: str = None, end_date: str = None, pattern: str = DATE_PATTERN
+) -> date:
+    start_date = (
+        datetime.strptime(start_date, pattern)
+        if start_date else datetime.now()
+    )
+    end_date = (
+        datetime.strptime(end_date, pattern)
+        if end_date else datetime.now() + timedelta(days=365)
+    )
+    return datetime.fromtimestamp(get_random_int(
+        start=int(start_date.timestamp()), stop=int(end_date.timestamp()))
+    )
+
+
 def convert_date_to_str(date_: date, pattern: str = DATE_PATTERN) -> str:
     return date_.strftime(pattern)
 
