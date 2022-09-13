@@ -28,7 +28,7 @@ class BaseAPI(APIClient):
     def create(self, payload: dict = None) -> Response:
         payload = payload or self.create_payload
         if payload:
-            payload = self.__add_update_key(payload)
+            payload = self._add_update_key(payload)
         self.create_response = self.post(f'{self.path}/create', data=dumps_values(payload))
 
         return self.create_response
@@ -54,7 +54,7 @@ class BaseAPI(APIClient):
 
     def update(self, id_: str = None, payload: dict = None) -> Response:
         payload = payload or self.update_payload
-        payload = self.__modify_payload(payload, id_)
+        payload = self._modify_payload(payload, id_)
 
         self.update_response = self.post(f'{self.path}/update', data=payload)
 
@@ -69,7 +69,7 @@ class BaseAPI(APIClient):
 
     def close(self, id_: str = None, payload: dict = None) -> Response:
         payload = payload or self.close_payload
-        payload = self.__modify_payload(payload, id_)
+        payload = self._modify_payload(payload, id_)
 
         self.close_response = self.post(f'{self.path}/close', data=payload)
 
@@ -77,18 +77,18 @@ class BaseAPI(APIClient):
 
     def close_and_new(self, id_: str = None, payload: dict = None) -> Response:
         payload = payload or self.close_and_new_payload
-        payload = self.__modify_payload(payload, id_)
+        payload = self._modify_payload(payload, id_)
 
         self.close_and_new_response = self.post(f'{self.path}/closeandnew', data=payload)
 
         return self.close_and_new_response
 
-    def __modify_payload(self, payload: Union[dict, None], id_: str) -> dict:
+    def _modify_payload(self, payload: Union[dict, None], id_: str) -> dict:
         if payload:
-            payload = self.__add_update_key(payload)
-        return self.__add_id_to_data_payload(id_, payload)
+            payload = self._add_update_key(payload)
+        return self._add_id_to_data_payload(id_, payload)
 
-    def __add_id_to_data_payload(self, id_: str = None, payload: dict = None) -> dict:
+    def _add_id_to_data_payload(self, id_: str = None, payload: dict = None) -> dict:
         id_ = id_ or get_id_from_response(self.create_response)
         if not payload:
             payload = {}
@@ -98,6 +98,6 @@ class BaseAPI(APIClient):
         return payload
 
     @staticmethod
-    def __add_update_key(payload: dict) -> dict:
+    def _add_update_key(payload: dict) -> dict:
         result = {'update': payload}
         return result
