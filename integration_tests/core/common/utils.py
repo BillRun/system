@@ -4,9 +4,10 @@ from contextlib import suppress
 from copy import deepcopy
 from datetime import date, timedelta, datetime
 from json import dumps
-from typing import Callable
+from typing import Callable, Union, Any
 
 import pytest
+from _pytest.mark import ParameterSet
 from faker import Faker
 from pytz import utc
 from requests import Response
@@ -187,12 +188,12 @@ def get_true_or_false() -> bool:
     return random.choice([True, False])
 
 
-def skip_test(case, reason):
+def skip_test(case: Any, reason: str) -> ParameterSet:
     """use inside parametrization"""
     return pytest.param(case, marks=pytest.mark.skip(reason=reason))
 
 
-def api_repeater(func, timeout=1, polling=0.1):
+def api_repeater(func: Callable, timeout: int = 1, polling: Union[int, float] = 0.1) -> Response:
     end_time = time.time() + timeout
     while True:
         result = func()
