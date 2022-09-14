@@ -4,11 +4,11 @@ from copy import deepcopy
 from hamcrest import assert_that, has_entries
 
 from core.common.entities import APIPath
-from core.common.utils import (
-    get_details,
-    get_id_from_response, get_entity, convert_date_fields_to_expected,
+from core.common.helpers.utils import (
+    convert_date_fields_to_expected,
     get_random_past_or_future_date_str, get_true_or_false, get_random_str
 )
+from core.common.helpers.api_helpers import get_id_from_response, get_details, get_entity
 from core.resoursces.schemas import TAX_RATES_GET_SCHEMA, TAX_RATES_POST_SCHEMA
 from core.testlib.API.base_api import BaseAPI
 from steps.backend_assertion_steps.base_api_assertion_steps import APIAssertionSteps

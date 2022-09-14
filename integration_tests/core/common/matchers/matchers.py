@@ -1,7 +1,7 @@
 from hamcrest.core.base_matcher import BaseMatcher
 from requests import Response
 
-from core.common.utils import find_item_by_id
+from core.common.helpers.api_helpers import find_item_by_id
 
 
 class HasStatus(BaseMatcher):

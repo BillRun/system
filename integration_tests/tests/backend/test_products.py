@@ -2,7 +2,8 @@ import pytest
 from pytest_testrail.plugin import pytestrail
 
 from core.common.entities import RevisionStatus
-from core.common.utils import get_random_str, get_id_from_response
+from core.common.helpers.utils import get_random_str
+from core.common.helpers.api_helpers import get_id_from_response
 from steps.backend_steps.products_steps import Products, ProductAssertionSteps
 
 

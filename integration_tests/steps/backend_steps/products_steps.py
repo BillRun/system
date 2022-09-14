@@ -5,11 +5,11 @@ from json import loads
 from hamcrest import has_entries, assert_that
 
 from core.common.entities import APIPath
-from core.common.utils import (
-    get_random_str, get_id_from_response, get_details,
-    dumps_values, remove_keys_for_missing_values, convert_date_fields_to_expected,
+from core.common.helpers.utils import (
+    get_random_str, dumps_values, remove_keys_for_missing_values, convert_date_fields_to_expected,
     get_random_past_or_future_date_str
 )
+from core.common.helpers.api_helpers import get_id_from_response, get_details
 from core.resoursces.schemas import PRODUCT_GET_SCHEMA
 from core.testlib.API.base_api import BaseAPI
 from steps.backend_assertion_steps.base_api_assertion_steps import APIAssertionSteps

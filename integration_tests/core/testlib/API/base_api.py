@@ -2,7 +2,8 @@ from typing import Union
 
 from requests import Response
 
-from core.common.utils import dumps_values, get_id_from_response
+from core.common.helpers.utils import dumps_values
+from core.common.helpers.api_helpers import get_id_from_response
 from core.connectors.api_client import APIClient
 
 

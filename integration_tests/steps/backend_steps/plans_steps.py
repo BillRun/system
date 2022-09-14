@@ -4,11 +4,11 @@ from copy import deepcopy
 from hamcrest import assert_that, has_entries
 
 from core.common.entities import APIPath, Recurrence
-from core.common.utils import (
-    get_random_str, get_id_from_response,
-    get_details, get_entity, get_true_or_false, convert_date_fields_to_expected,
+from core.common.helpers.utils import (
+    get_random_str, get_true_or_false, convert_date_fields_to_expected,
     remove_keys_if_value_is_none, get_random_past_or_future_date_str
 )
+from core.common.helpers.api_helpers import get_id_from_response, get_details, get_entity
 from core.resoursces.price_obj import create_price_obj
 from core.resoursces.schemas import PLANS_GET_SCHEMA, PLANS_POST_SCHEMA
 from core.testlib.API.base_api import BaseAPI

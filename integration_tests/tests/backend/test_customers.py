@@ -1,7 +1,7 @@
 import pytest
 from pytest_testrail.plugin import pytestrail
 
-from core.common.utils import skip_test
+from core.common.helpers.utils import skip_test
 from steps.backend_steps.customers_steps import Customers, CustomerAssertionSteps
 
 

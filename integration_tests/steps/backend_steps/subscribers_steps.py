@@ -4,14 +4,14 @@ from hamcrest import assert_that, has_entries
 from addict import Dict
 
 from core.common.entities import APIPath
-from core.common.utils import (
+from core.common.helpers.utils import (
     FAKE, convert_date_to_str,
-    get_details,
-    get_id_from_response, get_entity, convert_date_fields_to_expected,
+    convert_date_fields_to_expected,
     convert_date_to_date_obj, remove_keys_if_value_is_none,
     get_random_date_between_dates, get_random_past_or_future_date_str,
-    dumps_values, api_repeater, get_id_from_obj, remove_keys_in_nested_dict
+    dumps_values, remove_keys_in_nested_dict
 )
+from core.common.helpers.api_helpers import get_id_from_response, get_id_from_obj, get_details, get_entity, api_repeater
 from core.resoursces.schemas import SUBSCRIBER_GET_SCHEMA, SUBSCRIBER_POST_SCHEMA
 from core.testlib.API.base_api import BaseAPI
 from core.testlib.common_assertions import check_http_code_and_status

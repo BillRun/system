@@ -2,7 +2,7 @@ import requests
 
 from config.env import ENV
 from core.common.logger import LOGGER
-from core.common.utils import api_logger
+from core.common.helpers.api_helpers import api_logger
 
 
 class APIClient:

@@ -1,34 +1,18 @@
 import random
-import time
 from contextlib import suppress
 from copy import deepcopy
 from datetime import date, timedelta, datetime
 from json import dumps
-from typing import Callable, Union, Any
+from typing import Any
 
 import pytest
 from _pytest.mark import ParameterSet
 from faker import Faker
 from pytz import utc
-from requests import Response
 
 from core.common.entities import DATE_PATTERN, DATE_TIME_PATTERN
-from core.common.logger import LOGGER
 
 FAKE = Faker()
-
-
-def api_logger(func: Callable):
-    def inner(*args, **kwargs):
-        response = func(*args, **kwargs)
-        LOGGER.info(f"REQUEST: {response.request.method}: {response.request.url}")
-        if response.request.method in ["POST", "PUT", "PATCH"]:
-            LOGGER.info(f"REQUEST_DATA: {response.request.body}")
-        LOGGER.info(f'CONTENT: {response.status_code}":" {response.content}')
-
-        return response
-
-    return inner
 
 
 def get_random_str(n: int = 10) -> str:
@@ -46,29 +30,6 @@ def dumps_values(init_dict: dict) -> dict:
             if isinstance(v, (list, dict)):
                 result_dict[k] = dumps(v)
         return result_dict
-
-
-def get_id_from_response(response: Response) -> str:
-    return get_id_from_obj(response.json().get('entity'))
-
-
-def get_id_from_obj(obj: dict) -> str:
-    return obj.get("_id").get('$id')
-
-
-def get_details(response: Response) -> list:
-    """
-    :param response: GET
-    """
-    return response.json().get('details')
-
-
-def get_entity(response: Response) -> dict:
-    """
-    :rtype: object
-    :param response: POST
-    """
-    return response.json().get('entity')
 
 
 def get_random_past_or_future_date(
@@ -175,15 +136,6 @@ def remove_keys_if_value_is_none(raw_dict: dict) -> dict:
     return raw_dict
 
 
-def find_item_by_id(response: Response, id_: str) -> dict:
-    """
-    response: GET
-    """
-    for item in get_details(response):
-        if id_ == item['_id']['$id']:
-            return item
-
-
 def get_true_or_false() -> bool:
     return random.choice([True, False])
 
@@ -191,17 +143,6 @@ def get_true_or_false() -> bool:
 def skip_test(case: Any, reason: str) -> ParameterSet:
     """use inside parametrization"""
     return pytest.param(case, marks=pytest.mark.skip(reason=reason))
-
-
-def api_repeater(func: Callable, timeout: int = 1, polling: Union[int, float] = 0.1) -> Response:
-    end_time = time.time() + timeout
-    while True:
-        result = func()
-        if result.json().get('status') == 1:
-            return result
-        if time.time() > end_time:
-            return result
-        time.sleep(polling)
 
 
 def remove_keys_in_nested_dict(initial_dict: dict, key_to_remove: list):

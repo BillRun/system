@@ -4,10 +4,11 @@ from datetime import datetime
 from hamcrest import assert_that, less_than_or_equal_to, equal_to
 
 from core.common.matchers import check_that, has_not_existing_entity
-from core.common.utils import (
-    get_details, to_float_date_obj_form_get, get_entity, convert_datetime_str_to_timestamp,
-    convert_date_str_to_datetime_str, get_id_from_response
+from core.common.helpers.utils import (
+    to_float_date_obj_form_get, convert_datetime_str_to_timestamp,
+    convert_date_str_to_datetime_str
 )
+from core.common.helpers.api_helpers import get_id_from_response, get_details, get_entity
 from core.testlib.common_assertions import check_http_code_and_status, check_json_schema
 
 
