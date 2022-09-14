@@ -29,7 +29,7 @@ def test_update_subscriber():
     assertion_steps.validate_post_response_is_correct()
 
     subscriber.compose_update_payload().update()
-    assertion_steps.check_update_response_is_successfully()
+    assertion_steps.check_update_response_is_successful()
 
     subscriber.get_by_id()
     assertion_steps.validate_get_response_is_correct(
@@ -48,7 +48,7 @@ def test_close_subscriber(to):
     assertion_steps = SubscribersAssertionSteps(subscriber)
 
     subscriber.compose_create_payload().create()
-    assertion_steps.check_post_response_is_successfully()
+    assertion_steps.check_post_response_is_successful()
 
     subscriber.compose_close_payload(
         to=to, date_in_past=False if to != 'past_date' else True).close()
@@ -89,10 +89,21 @@ def test_delete_subscriber():
     assertion_steps = SubscribersAssertionSteps(subscriber)
 
     subscriber.compose_create_payload().create()
-    assertion_steps.check_post_response_is_successfully()
+    assertion_steps.check_post_response_is_successful()
 
     subscriber.delete()
     assertion_steps.check_object_is_deleted_successfully()
 
-# def test_permanentchange_subscriber():
-#     pass
+
+@pytestrail.case('C2711')
+@pytest.mark.smoke
+def test_permanentchange_subscriber():
+    subscriber = Subscribers()
+    assertion_steps = SubscribersAssertionSteps(subscriber)
+
+    subscriber.compose_create_payload().create()
+    assertion_steps.validate_post_response_is_correct()
+
+    subscriber.compose_permanent_change_payload().do_permanent_change()
+    assertion_steps.check_permanent_change_is_successful(
+        expected_objects=subscriber.generate_expected_objects_after_permanent_change())

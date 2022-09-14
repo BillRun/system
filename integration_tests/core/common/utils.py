@@ -1,4 +1,6 @@
 import random
+import time
+from contextlib import suppress
 from copy import deepcopy
 from datetime import date, timedelta, datetime
 from json import dumps
@@ -46,7 +48,11 @@ def dumps_values(init_dict: dict) -> dict:
 
 
 def get_id_from_response(response: Response) -> str:
-    return response.json().get('entity').get("_id").get('$id')
+    return get_id_from_obj(response.json().get('entity'))
+
+
+def get_id_from_obj(obj: dict) -> str:
+    return obj.get("_id").get('$id')
 
 
 def get_details(response: Response) -> list:
@@ -184,3 +190,30 @@ def get_true_or_false() -> bool:
 def skip_test(case, reason):
     """use inside parametrization"""
     return pytest.param(case, marks=pytest.mark.skip(reason=reason))
+
+
+def api_repeater(func, timeout=1, polling=0.1):
+    end_time = time.time() + timeout
+    while True:
+        result = func()
+        if result.json().get('status') == 1:
+            return result
+        if time.time() > end_time:
+            return result
+        time.sleep(polling)
+
+
+def remove_keys_in_nested_dict(initial_dict: dict, key_to_remove: list):
+    """Use for case where we need to get-rid of some keys which we can't predict
+    or any other cases where we need to remove keys regardless of how deeply it nested"""
+    if not key_to_remove or not isinstance(initial_dict, dict):
+        return
+    for key in key_to_remove:
+        with suppress(KeyError):
+            del initial_dict[key]
+    for value in initial_dict.values():
+        if isinstance(value, dict):
+            remove_keys_in_nested_dict(value, key_to_remove)
+        if isinstance(value, list):
+            for nested in value:
+                remove_keys_in_nested_dict(nested, key_to_remove)
