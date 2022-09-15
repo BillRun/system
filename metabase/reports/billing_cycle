@@ -36,7 +36,7 @@
       AID:"$_id.AID",
       TIER_DESCRIPTION:"$_id.tier",
       PRODUCT:"$_id.prod",
-      DURATION:{ $divide: [ "$duration", 60 ] },
+      DURATION:{$cond:[{ $eq: ["$_id.prod","SMS"]},"$duration",{ $divide: [ "$duration", 60 ] }]},
       CHARGE_DURATION:"$charge_duration",
       AMOUNT_BEFOR_TAX:"$amount",
       CALL_COUNT_D:"$count",
