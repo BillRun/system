@@ -23,7 +23,7 @@ use Payrexx\PayrexxException;
 class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 	const DEFAULT_CURRENCY = 'CHF';
-	const DEFAULT_PAYMENT_METHODS = ['visa', 'mastercard'];
+	const DEFAULT_PAYMENT_METHODS = [];
 	const DEFAULT_AMOUNT = 0.5;
 	const API_VERSION = '1.1';
 
@@ -315,13 +315,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$paymentDetails = $this->getResponseDetails($paymentResult);
 
 		// get charge fee
-		try {
-			$fee = $this->getPayrexxFee($paymentResult->getId());
-		} catch (Throwable $e) {
-			$fee = null;
-		}
-
-		$additionalParams = ['fee' => $fee];
+		$additionalParams = $this->getVendorResponseDetails($paymentResult->getId());
 
 		// complete payment flow
 		$this->transactionId = $paymentDetails['payment_identifier']; // for paySinglePayment()
@@ -340,15 +334,9 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 		$this->transactionId = $response->getId(); // for outside use
 
-		try {
-			$fee = $this->getPayrexxFee($response->getId());
-		} catch (Throwable $e) {
-			$fee = null;
-		}
-
 		return [
 			'status' => $response->getStatus(),
-			'additional_params' => [ 'fee' => $fee ]
+			'additional_params' => $this->getVendorResponseDetails($response->getId())
 		];
 	}
 
@@ -357,10 +345,18 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 * @return float|int
 	 * @throws PayrexxException
 	 */
-	private function getPayrexxFee(int $transactionId) {
+	private function getVendorResponseDetails(int $transactionId) {
 		$transactionResponse = $this->requestTransaction($transactionId);
-		$payrexxFee = $this->convertReceivedAmount($transactionResponse->getPayrexxFee());
-		return $payrexxFee;
+		try {
+			$payrexxFee = $this->convertReceivedAmount($transactionResponse->getPayrexxFee());
+		} catch (Throwable $e) {
+			$payrexxFee = null;
+		}
+		
+		$psp = $transactionResponse->getPsp();
+		$paymentMethod = $transactionResponse->getPayment()['brand'];
+
+		return ['fee' => $payrexxFee, 'psp' => $psp, 'pm' => $paymentMethod];
 	}
 
 	/**
