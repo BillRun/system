@@ -321,6 +321,7 @@ class Billrun_PaymentManager {
 			$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
 			$postPayment->setTransactionId($txId);
 			$postPayment->setPgResponse($responseFromGateway);
+			Billrun_Factory::dispatcher()->trigger('afterPaymentHandeled', array(&$postPayment, $gateway));
 			$ret[] = $postPayment;
 		}
 

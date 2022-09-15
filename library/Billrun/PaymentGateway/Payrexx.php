@@ -315,7 +315,13 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$paymentDetails = $this->getResponseDetails($paymentResult);
 
 		// get charge fee
-		$additionalParams = ['fee' => $this->getPayrexxFee($paymentResult->getId())];
+		try {
+			$fee = $this->getPayrexxFee($paymentResult->getId());
+		} catch (Throwable $e) {
+			$fee = null;
+		}
+
+		$additionalParams = ['fee' => $fee];
 
 		// complete payment flow
 		$this->transactionId = $paymentDetails['payment_identifier']; // for paySinglePayment()
@@ -334,9 +340,15 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 
 		$this->transactionId = $response->getId(); // for outside use
 
+		try {
+			$fee = $this->getPayrexxFee($response->getId());
+		} catch (Throwable $e) {
+			$fee = null;
+		}
+
 		return [
 			'status' => $response->getStatus(),
-			'additional_params' => [ 'fee' => $this->getPayrexxFee($response->getId())]
+			'additional_params' => [ 'fee' => $fee ]
 		];
 	}
 
