@@ -24,7 +24,7 @@
         charge_duration: {$sum: "$cf.cusagev"},
         amount:{$sum: "$aprice"},
 
-        count:{$sum:1}, 
+        count:{$sum: "$lcount"}, 
         final_charge:{$sum: "$final_charge"}
     }
   },
@@ -36,7 +36,7 @@
       AID:"$_id.AID",
       TIER_DESCRIPTION:"$_id.tier",
       PRODUCT:"$_id.prod",
-      DURATION:"$duration",
+      DURATION:{$cond:[{ $eq: ["$_id.prod","SMS"]},"$duration",{ $divide: [ "$duration", 60 ] }]},
       CHARGE_DURATION:"$charge_duration",
       AMOUNT_BEFOR_TAX:"$amount",
       CALL_COUNT_D:"$count",
