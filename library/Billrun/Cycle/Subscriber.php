@@ -209,7 +209,6 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 
 	protected function constructRecords($data) {
-
 		$this->mongoPlans = $this->cycleAggregator->getPlans(null,$data['subscriber_info']);
 		$constructedData = $this->constructSubscriberData($data['history'], $this->cycleAggregator->getCycle()->end());
 		$dataForAggration = $data['subscriber_info'];
@@ -306,18 +305,18 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		$cycle = $this->cycleAggregator->getCycle();
 		$stumpLine = $data['line_stump'];
-
 		foreach ($plans as &$value) {
+			$mongoPlans = $this->cycleAggregator->getPlans(null,$value);
 			// Plan name
 			$index = $value['plan'];
-			if(!isset($this->mongoPlans[$index])) {
+			if(!isset($mongoPlans[$index])) {
 				if(!empty($value['sid'])) {
 				Billrun_Factory::log("Ignoring inactive plan: " . print_r($value,1));
 				}
 				continue;
 			}
 
-			$rawMongo = $this->mongoPlans[$index]->getRawData();
+			$rawMongo = $mongoPlans[$index]->getRawData();
 			unset($rawMongo['_id']);
 			$planData = array_merge($value, $rawMongo);
 			$planData['cycle'] = $cycle;
@@ -325,7 +324,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				$planData['subscriber_fields'] = array('play' => isset($data['play']) ? $data['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
 			} 
 			$planData['line_stump'] = $stumpLine;
-			$planData['deactivation_date'] = $data['deactivation_date'];
+			$planData['deactivation_date'] = @$data['deactivation_date'];
 			$this->records['plans'][] = $planData;
 		}
 	}
@@ -360,32 +359,41 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$from = null;
 		$to = null;
 		$aggregatorData = array();
+		$addedData =[];
+		$lastStamp = null;
 		//sort plans history by date
 		usort($plans, function($a, $b){ return $a['to']->sec - $b['to']->sec;});
+
+		Billrun_Factory::dispatcher()->trigger('beforeBuildPlansSubAggregator',array($this,&$plans,&$endTime));
+
 		// Go through the plans
+		$planStampFields = array_merge(Billrun_Factory::config()->getConfigValue('customer.aggregator.plan_identification_fields',[]),['plan','plan_activation']);
 		foreach ($plans as $subPlan) {
+
+			$currentStamp = Billrun_Util::generateArrayStamp($subPlan, $planStampFields);
 			// First iteration.
-			if($name === null) {
-				$name = $subPlan['plan'];
-				$from = $subPlan['plan_activation']->sec;
-				$to = empty($subPlan['plan_deactivation']) ? $subPlan['to']->sec : $subPlan['plan_deactivation']->sec;
-				continue;
+			if($lastStamp === null) {
+				$lastStamp = $currentStamp;
 			}
 			$currName = $subPlan['plan'];
 			// If it is the same plan name, continue
-			if($name == $currName && $from == $subPlan['plan_activation']->sec) {
+			if($lastStamp == $currentStamp) {
+				$name = $subPlan['plan'];
+				$from = $subPlan['plan_activation']->sec;
 				$to = empty($subPlan['plan_deactivation']) ? $subPlan['to']->sec : $subPlan['plan_deactivation']->sec;
+				$addedData = $subPlan;
 				continue;
 			}
 
 			// It is a different plan name, construct the aggregator plan record
 			$toAdd = array("plan" => $name, "start" => $from, "end" => $to);
-			$aggregatorData["$to"]['plans'][] = $toAdd;
+			$aggregatorData["$to"]['plans'][] = array_merge($addedData,$toAdd);
 
 			// Update all the details.
 			$name = $subPlan['plan'];
 			$from = max($subPlan['plan_activation']->sec, $subPlan['from']->sec);
 			$to = $subPlan['to']->sec;
+			$addedData = $subPlan;
 		}
 		// Add the last value.
 		$toAdd = array("plan" => $name,'name'=>$name, "start" => $from, "end" => $to);
@@ -394,8 +402,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$to = $endTime;
 			Billrun_Factory::log("buildPlansSubAggregator : Taking the end time! " . $endTime);
 		}
-		$aggregatorData["$to"]['plans'][] = $toAdd;
-
+		$aggregatorData["$to"]['plans'][] = array_merge($addedData,$toAdd);
+		Billrun_Factory::dispatcher()->trigger('afterBuildPlansSubAggregator',array($this,&$aggregatorData));
 		return $aggregatorData;
 	}
 
@@ -415,7 +423,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$deactivationDate = @$subscriber['deactivation_date']->sec + (@$subscriber['deactivation_date']->usec/ 1000000) ?: PHP_INT_MAX;
 
 		$mongoServices = $this->cycleAggregator->getServices();
-
+		$customSrvStampFields = Billrun_Factory::config()->getConfigValue('customer.aggregator.service_identification_fields',[]);
 		//function to merge  previous and  current services
 		$mergeServicesFunc = function ($a,$b) {
 			$retVal = $a;
@@ -432,9 +440,12 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
 			foreach($subscriber['services'] as  $tmpService) {
 				$currentMongoSrv = $mongoServices[$tmpService['name']];
-				$srvStampFields = !empty($currentMongoSrv) &&  empty($currentMongoSrv['prorated']) && !empty($currentMongoSrv['quantitative']) ?
-											['name','service_id'] :
-											['name','start','quantity','service_id'];
+				//TODO add  configurable fields
+				$srvStampFields = array_merge($customSrvStampFields,
+											  (!empty($currentMongoSrv) &&  empty($currentMongoSrv['prorated']) && !empty($currentMongoSrv['quantitative']) ?
+												['name','service_id'] :
+												['name','start','quantity','service_id'])
+											  );
 				 $serviceData = array_merge(  $tmpService,
 											array('name' => $tmpService['name'],
 										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
@@ -502,6 +513,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$subscriberPlans = array();
 		$services = array();
 		$subend = 0;
+		$customPlanFields = Billrun_Factory::config()->getConfigValue('customer.aggregator.plan_identification_fields',[]);
 		foreach ($current as $subscriber) {
 			$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
 			$subend = max($subscriber['sto'], $subend);
@@ -511,9 +523,10 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				continue;
 			}
 			// Get the plans
-			$subscriberPlans= array_merge($subscriberPlans,Billrun_Util::getFieldVal($subscriber['plans'],array()));
-
-
+			foreach($subscriber['plans'] as $plan) {
+				$planPassthroughData = array_intersect_key(	$subscriber,array_flip(array_merge($customPlanFields,['overrides'])));
+				$subscriberPlans[] = array_merge($planPassthroughData,$plan);
+			}
 		}
 
 		foreach($services as $service) {
