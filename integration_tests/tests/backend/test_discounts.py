@@ -1,9 +1,11 @@
 import pytest
+from pytest_testrail.plugin import pytestrail
 
 from core.common.helpers.api_helpers import get_id_from_response
 from steps.backend_steps.discounts_steps import Discounts, DiscountAssertionSteps
 
 
+@pytestrail.case('C2712', 'C2713')
 @pytest.mark.smoke
 @pytest.mark.parametrize('discount_type', [
     "monetary",
@@ -20,6 +22,7 @@ def test_create_discount(discount_type):
     assertion_steps.validate_get_response_is_correct()
 
 
+@pytestrail.case('C2714')
 @pytest.mark.smoke
 def test_update_discount():
     discount = Discounts()
@@ -36,6 +39,7 @@ def test_update_discount():
         expected_response=discount.generate_expected_response_after_updating())
 
 
+@pytestrail.case('C2715', 'C2716', 'C2717')
 @pytest.mark.smoke
 @pytest.mark.parametrize('to', [
     True,  # set random future date
@@ -59,6 +63,7 @@ def test_close_discount(to):
         expected_response=discount.generate_expected_response_after_close())
 
 
+@pytestrail.case('C2718')
 @pytest.mark.smoke
 def test_close_and_new_discount():
     discount = Discounts()
@@ -79,6 +84,7 @@ def test_close_and_new_discount():
     )
 
 
+@pytestrail.case('C2719')
 @pytest.mark.smoke
 def test_delete_product():
     discount = Discounts()

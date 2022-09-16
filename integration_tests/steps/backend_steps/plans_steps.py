@@ -199,9 +199,6 @@ class PlansAssertionSteps(APIAssertionSteps):
         )
         expected_response = expected_response or self.instance.generate_expected_response()
 
-        for response in (actual, expected_response):
-            pass
-
         convert_date_fields_to_expected(expected_response, ['to', 'from'], method)
 
         assert_that(
