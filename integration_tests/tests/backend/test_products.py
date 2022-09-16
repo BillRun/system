@@ -75,10 +75,11 @@ def test_close_and_new_product():
     product.get_by_id()
     assertion_steps.validate_get_response_is_correct()
 
-    new_revision_id = get_id_from_response(product.compose_close_and_new_payload().close_and_new())
-    assertion_steps.check_object_has_new_to_date_after_close_and_new()
+    product.compose_close_and_new_payload().close_and_new()
+    assertion_steps.check_revision_has_new_to_date_after_close_and_new()
+    assertion_steps.check_close_and_new_response_is_successful()
 
-    product.get_by_id(new_revision_id)
+    product.get_by_id(get_id_from_response(product.close_and_new_response))
     assertion_steps.validate_get_response_is_correct(
         expected_response=product.generate_expected_response_after_close_and_new()
     )

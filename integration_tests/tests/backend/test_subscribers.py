@@ -71,11 +71,11 @@ def test_close_and_new_subscriber():
     subscriber.get_by_id()
     assertion_steps.validate_get_response_is_correct()
 
-    new_revision_id = get_id_from_response(
-        subscriber.compose_close_and_new_payload().close_and_new())
-    assertion_steps.check_object_has_new_to_date_after_close_and_new()
+    subscriber.compose_close_and_new_payload().close_and_new()
+    assertion_steps.check_revision_has_new_to_date_after_close_and_new()
+    assertion_steps.check_close_and_new_response_is_successful()
 
-    subscriber.get_by_id(id_=new_revision_id)
+    subscriber.get_by_id(get_id_from_response(subscriber.close_and_new_response))  # new revision
     assertion_steps.validate_get_response_is_correct(
         expected_response=subscriber.generate_expected_response_after_close_and_new())
 

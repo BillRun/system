@@ -75,10 +75,11 @@ def test_close_and_new_plan(connection_type):
     plan.get_by_id()
     assertion_steps.validate_get_response_is_correct()
 
-    new_revision_id = get_id_from_response(plan.compose_close_and_new_payload().close_and_new())
-    assertion_steps.check_object_has_new_to_date_after_close_and_new()
+    plan.compose_close_and_new_payload().close_and_new()
+    assertion_steps.check_revision_has_new_to_date_after_close_and_new()
+    assertion_steps.check_close_and_new_response_is_successful()
 
-    plan.get_by_id(new_revision_id)
+    plan.get_by_id(get_id_from_response(plan.close_and_new_response))  # new revision
     assertion_steps.validate_get_response_is_correct(
         expected_response=plan.generate_expected_response_after_close_and_new())
 

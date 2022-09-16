@@ -72,10 +72,11 @@ def test_close_and_new_tax_rate():
     tax_rate.get_by_id()
     assertion_steps.validate_post_response_is_correct()
 
-    new_revision_id = get_id_from_response(tax_rate.compose_close_and_new_payload().close_and_new())
-    assertion_steps.check_object_has_new_to_date_after_close_and_new()
+    tax_rate.compose_close_and_new_payload().close_and_new()
+    assertion_steps.check_revision_has_new_to_date_after_close_and_new()
+    assertion_steps.check_close_and_new_response_is_successful()
 
-    tax_rate.get_by_id(new_revision_id)
+    tax_rate.get_by_id(get_id_from_response(tax_rate.close_and_new_response))  # new revision
     assertion_steps.validate_get_response_is_correct(
         expected_response=tax_rate.generate_expected_response_after_close_and_new())
 

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from hamcrest import assert_that, less_than_or_equal_to, equal_to
+from hamcrest import assert_that, less_than_or_equal_to, equal_to, not_none
 
 from core.common.entities import RevisionStatus, DATE_PATTERN
 from core.common.matchers import check_that, has_not_existing_entity
@@ -64,7 +64,14 @@ class APIAssertionSteps(ABC):
                 f"to param should be equal to {to_from_payload}"
             )
 
-    def check_object_has_new_to_date_after_close_and_new(self):
+    def check_close_and_new_response_is_successful(self):
+        check_http_code_and_status(self.instance.close_and_new_response)
+        assert_that(get_entity(
+            self.instance.close_and_new_response),
+            not_none(),
+            f"Close and New response is incorrect with {self.instance.close_and_new_response.json()} content")
+
+    def check_revision_has_new_to_date_after_close_and_new(self):
         assert_that(
             get_details(self.instance.get_by_id())[0].get('to'),
             equal_to(
@@ -101,4 +108,3 @@ class APIAssertionSteps(ABC):
     def check_json_schema_and_http_code_and_status(schema, actual_response):
         check_http_code_and_status(actual_response)
         check_json_schema(actual_response, schema)
-
