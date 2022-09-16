@@ -66,20 +66,16 @@ PLANS_GET_SCHEMA = {
                         "recurrence": {
                             "type": "object",
                             "properties": {
-                                "unit": {
-                                    "type": "integer"
-                                },
                                 "frequency": {
                                     "type": "integer"
                                 },
-                                "periodicity": {
-                                    "type": "string"
+                                "start": {
+                                    "type": "integer"
                                 }
                             },
                             "required": [
-                                "unit",
                                 "frequency",
-                                "periodicity"
+                                "start"
                             ]
                         },
                         "upfront": {
@@ -91,6 +87,15 @@ PLANS_GET_SCHEMA = {
                         "rates": {
                             "type": "array",
                             "items": {}
+                        },
+                        "prorated_start": {
+                            "type": "boolean"
+                        },
+                        "prorated_end": {
+                            "type": "boolean"
+                        },
+                        "prorated_termination": {
+                            "type": "boolean"
                         },
                         "charging_type": {
                             "type": "string"
@@ -110,6 +115,10 @@ PLANS_GET_SCHEMA = {
                         "recurrence",
                         "upfront",
                         "connection_type",
+                        "rates",
+                        "prorated_start",
+                        "prorated_end",
+                        "prorated_termination",
                         "charging_type",
                         "creation_time",
                         "revision_info"
@@ -126,132 +135,164 @@ PLANS_GET_SCHEMA = {
 }
 
 PLANS_POST_SCHEMA = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "status": {
-      "type": "integer"
-    },
-    "details": {
-      "type": "boolean"
-    },
-    "entity": {
-      "type": "object",
-      "properties": {
-        "_id": {
-          "type": "object",
-          "properties": {
-            "$id": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "$id"
-          ]
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "status": {
+            "type": "integer"
         },
-        "name": {
-          "type": "string"
+        "details": {
+            "type": "boolean"
         },
-        "price": {
-          "type": "object",
-          "properties": {
-            "$in": {
-              "type": "array",
-              "items": [
-                {
-                  "type": "string"
+        "entity": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "object",
+                    "properties": {
+                        "$id": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "$id"
+                    ]
+                },
+                "from": {
+                    "type": "object",
+                    "properties": {
+                        "sec": {
+                            "type": "integer"
+                        },
+                        "usec": {
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "sec",
+                        "usec"
+                    ]
+                },
+                "to": {
+                    "type": "object",
+                    "properties": {
+                        "sec": {
+                            "type": "integer"
+                        },
+                        "usec": {
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "sec",
+                        "usec"
+                    ]
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "array",
+                    "items": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "price": {
+                                    "type": "integer"
+                                },
+                                "from": {
+                                    "type": "integer"
+                                },
+                                "to": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "price",
+                                "from",
+                                "to"
+                            ]
+                        }
+                    ]
+                },
+                "description": {
+                    "type": "string"
+                },
+                "recurrence": {
+                    "type": "object",
+                    "properties": {
+                        "frequency": {
+                            "type": "integer"
+                        },
+                        "start": {
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "frequency",
+                        "start"
+                    ]
+                },
+                "upfront": {
+                    "type": "boolean"
+                },
+                "connection_type": {
+                    "type": "string"
+                },
+                "rates": {
+                    "type": "array",
+                    "items": {}
+                },
+                "prorated_start": {
+                    "type": "boolean"
+                },
+                "prorated_end": {
+                    "type": "boolean"
+                },
+                "prorated_termination": {
+                    "type": "boolean"
+                },
+                "charging_type": {
+                    "type": "string"
+                },
+                "creation_time": {
+                    "type": "object",
+                    "properties": {
+                        "sec": {
+                            "type": "integer"
+                        },
+                        "usec": {
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "sec",
+                        "usec"
+                    ]
                 }
-              ]
-            }
-          },
-          "required": [
-            "$in"
-          ]
-        },
-        "recurrence": {
-          "type": "object",
-          "properties": {
-            "$in": {
-              "type": "array",
-              "items": [
-                {
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "required": [
-            "$in"
-          ]
-        },
-        "upfront": {
-          "type": "boolean"
-        },
-        "connection_type": {
-          "type": "string"
-        },
-        "from": {
-          "type": "object",
-          "properties": {
-            "sec": {
-              "type": "integer"
             },
-            "usec": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "sec",
-            "usec"
-          ]
-        },
-        "to": {
-          "type": "object",
-          "properties": {
-            "sec": {
-              "type": "integer"
-            },
-            "usec": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "sec",
-            "usec"
-          ]
-        },
-        "creation_time": {
-          "type": "object",
-          "properties": {
-            "sec": {
-              "type": "integer"
-            },
-            "usec": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "sec",
-            "usec"
-          ]
+            "required": [
+                "_id",
+                "from",
+                "to",
+                "name",
+                "price",
+                "description",
+                "recurrence",
+                "upfront",
+                "connection_type",
+                "rates",
+                "prorated_start",
+                "prorated_end",
+                "prorated_termination",
+                "charging_type",
+                "creation_time"
+            ]
         }
-      },
-      "required": [
-        "_id",
-        "name",
-        "price",
-        "recurrence",
-        "upfront",
-        "connection_type",
-        "from",
-        "to",
-        "creation_time"
-      ]
-    }
-  },
-  "required": [
-    "status",
-    "details",
-    "entity"
-  ]
+    },
+    "required": [
+        "status",
+        "details",
+        "entity"
+    ]
 }
