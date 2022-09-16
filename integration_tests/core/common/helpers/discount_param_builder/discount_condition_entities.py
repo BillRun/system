@@ -1,4 +1,7 @@
-class Operators:
+from core.common.helpers.mixins import GetAttributes
+
+
+class Operators(GetAttributes):
     EQUALS = 'in'
     NOT_EQUALS = 'nin'
     EXISTS = 'exists'
@@ -9,14 +12,14 @@ class Operators:
     GTE = 'gte'
 
 
-class ServiceConditionFields:
+class ServiceConditionFields(GetAttributes):
     FROM = 'from'
     QUANTITY = 'quantity'
     NAME = 'name'
     TO = 'to'
 
 
-class CustomerConditionFields:
+class CustomerConditionFields(GetAttributes):
     AID = 'aid'
     FIRST_NAME = 'firstname'
     LAST_NAME = 'lastname'
@@ -34,7 +37,7 @@ class CustomerConditionFields:
     ALLOWANCES = 'allowances'
 
 
-class SubscriberConditionFields:
+class SubscriberConditionFields(GetAttributes):
     ACTIVATION_DATE = 'activation_date'
     ADDRESS = 'address'
     COUNTRY = 'country'

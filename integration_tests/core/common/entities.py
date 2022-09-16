@@ -10,8 +10,9 @@ BILL_API_PREFIX = 'billapi'
 
 
 class APIPath:
-    PRODUCTS = f'{BILL_API_PREFIX}/rates'
     CUSTOMERS = f'{BILL_API_PREFIX}/accounts'
+    DISCOUNTS = f'{BILL_API_PREFIX}/discounts'
+    PRODUCTS = f'{BILL_API_PREFIX}/rates'
     PLANS = f'{BILL_API_PREFIX}/plans'
     SUBSCRIBERS = f'{BILL_API_PREFIX}/subscribers'
     SERVICES = f'{BILL_API_PREFIX}/services'
