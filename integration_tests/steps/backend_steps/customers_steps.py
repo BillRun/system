@@ -69,7 +69,6 @@ class Customers(BaseAPI):
             "salutation": payload.get('salutation'),
             "email": payload.get('email'),
             "type": "account",
-            # "revision_info": REVISION_INFO[revision_info]  # can't predict for now
         }
 
         return self.expected_response
@@ -89,9 +88,6 @@ class CustomerAssertionSteps(APIAssertionSteps):
         )
         expected_response = expected_response or self.instance.generate_expected_response()
         convert_date_fields_to_expected(expected_response, ['from', 'to'], method)
-
-        for response in (actual, expected_response):
-            response.pop('revision_info', None)  # can't be predicted for now
 
         assert_that(
             actual, has_entries(expected_response), "Response is not corresponded to expected"

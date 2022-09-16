@@ -4,3 +4,4 @@ from .plans_schemas import PLANS_GET_SCHEMA, PLANS_POST_SCHEMA
 from .subscriber_schema import SUBSCRIBER_POST_SCHEMA, SUBSCRIBER_GET_SCHEMA
 from .services_schemas import SERVICES_POST_SCHEMA, SERVICES_GET_SHEMA
 from .tax_rates_schemas import TAX_RATES_POST_SCHEMA, TAX_RATES_GET_SCHEMA
+from .discount_schemas import DISCOUNT_POST_SCHEMAS, DISCOUNT_GET_SCHEMAS

@@ -1,9 +1,8 @@
 import pytest
 from pytest_testrail.plugin import pytestrail
 
-from core.common.entities import RevisionStatus
-from core.common.helpers.utils import get_random_str, get_true_or_false
 from core.common.helpers.api_helpers import get_id_from_response
+from core.common.helpers.utils import get_random_str, get_true_or_false
 from steps.backend_steps.services_steps import Services, ServicesAssertionSteps
 
 
@@ -59,9 +58,8 @@ def test_close_service(to):
         to=to, date_in_past=False if to != 'past_date' else True).close()
     assertion_steps.check_close_response_is_successful()
 
-    assertion_steps.check_object_revision_status(
-        RevisionStatus.EXPIRED if to in [False, "past_date"] else RevisionStatus.ACTIVE
-    )
+    assertion_steps.check_object_revision_status()
+
     assertion_steps.validate_get_response_is_correct(
         expected_response=service.generate_expected_response_after_close()
     )

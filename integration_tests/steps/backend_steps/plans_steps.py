@@ -189,7 +189,7 @@ class PlansAssertionSteps(APIAssertionSteps):
         super().__init__(instance=instance)
 
     def check_response(self, actual_response, expected_response, schema, method):
-        super().check_response(actual_response, expected_response, schema, method)
+        self.check_json_schema_and_http_code_and_status(schema, actual_response)
 
         # response GET details  has type array, so we should get 0 elem from array
         actual = (
@@ -200,7 +200,7 @@ class PlansAssertionSteps(APIAssertionSteps):
         expected_response = expected_response or self.instance.generate_expected_response()
 
         for response in (actual, expected_response):
-            response.pop('revision_info', None)  # can't be predicted for now
+            pass
 
         convert_date_fields_to_expected(expected_response, ['to', 'from'], method)
 

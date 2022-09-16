@@ -5,11 +5,11 @@ from json import loads
 from hamcrest import has_entries, assert_that
 
 from core.common.entities import APIPath
+from core.common.helpers.api_helpers import get_id_from_response, get_details
 from core.common.helpers.utils import (
     get_random_str, dumps_values, remove_keys_for_missing_values, convert_date_fields_to_expected,
     get_random_past_or_future_date_str
 )
-from core.common.helpers.api_helpers import get_id_from_response, get_details
 from core.resoursces.schemas import PRODUCT_GET_SCHEMA
 from core.testlib.API.base_api import BaseAPI
 from steps.backend_assertion_steps.base_api_assertion_steps import APIAssertionSteps
@@ -157,7 +157,7 @@ class Products(BaseAPI):
     def generate_expected_response_after_close_and_new(self, payload=None):
         payload = payload or self.create_payload
         payload.update(self.close_and_new_payload)
-        #  after close and new product we receive product with new id in response
+        #  after close and new product we receive new product's revision
         return self.generate_expected_response(
             payload=payload, id_=get_id_from_response(self.close_and_new_response))
 
@@ -186,7 +186,6 @@ class Products(BaseAPI):
             "key": payload.get('key'),
             "pricing_method": payload.get('pricing_method'),
             "rates": payload.get('rates'),
-            # "revision_info": REVISION_INFO[revision_info]  # can't predict for now
             "tariff_category": payload.get('tariff_category'),
             "tax": payload.get('tax'),
             "to": payload.get('to')
@@ -205,10 +204,10 @@ class ProductAssertionSteps(APIAssertionSteps):
         actual = deepcopy(get_details(actual_response))[0]  # fix
         expected_response = expected_response or self.instance.generate_expected_response()
 
-        for response in (actual, expected_response):
-            response.pop('revision_info', None)  # can't be predicted for now
-            # we can not predict to param if it is not presented in payload
-            response.pop('to', None) if not expected_response.get('to') else None  # for close method w/o to param
+        # we can not predict to param if it is not presented in payload
+        if not expected_response.get('to'):
+            for response in (actual, expected_response):
+                response.pop('to', None)  # for close method w/o to param
 
         convert_date_fields_to_expected(expected_response, fields=['from', 'to'], method='GET')
 

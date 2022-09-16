@@ -3,6 +3,7 @@ from datetime import datetime
 
 from hamcrest import assert_that, less_than_or_equal_to, equal_to
 
+from core.common.entities import RevisionStatus, DATE_PATTERN
 from core.common.matchers import check_that, has_not_existing_entity
 from core.common.helpers.utils import (
     to_float_date_obj_form_get, convert_datetime_str_to_timestamp,
@@ -72,9 +73,18 @@ class APIAssertionSteps(ABC):
             '"to" param is not changed to "from" param from new revision'
         )
 
-    def check_object_revision_status(self, status):
+    def check_object_revision_status(self, status=None):
+        if not status:
+            to = self.instance.close_payload.get('to')
+
+            if not to or datetime.strptime(to, DATE_PATTERN) < datetime.now():
+                status = RevisionStatus.EXPIRED
+            else:
+                status = RevisionStatus.ACTIVE
+
         check_that(
-            lambda: get_details(self.instance.get_by_id())[0].get('revision_info').get('status'),
+            lambda: get_details(
+                self.instance.get_by_id())[0].get('revision_info').get('status'),
             equal_to(status),
             f"revision status should be {status}", timeout=3
         )
