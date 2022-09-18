@@ -18,7 +18,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $pendingCodes = "/$^/";
 	protected $completionCodes = "/^000$/";
 	protected $account;
-	protected $cardTypes = array("Regular" => 0, "Debit" => 1, "Rechargeable" => 6);
+	protected $cardTypes = array("Regular" => "00", "Debit" => "01", "Rechargeable" => "06");
 
 	protected function __construct() {
 		parent::__construct();
@@ -111,10 +111,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['aid'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
 			$this->saveDetails['personal_id'] = (string) $xmlObj->response->inquireTransactions->row->personalId;
 			$this->saveDetails['auth_number'] = (string) $xmlObj->response->inquireTransactions->row->authNumber;
-			$this->saveDetails['card_type'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardType->attributes()->code;
-			$this->saveDetails['credit_company'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->creditCompany->attributes()->code;
-			$this->saveDetails['card_brand'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardBrand->attributes()->code;
-			$this->saveDetails['card_acquirer'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardAcquirer->attributes()->code;
+			$this->saveDetails['card_type'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardType->attributes()->code;
+			$this->saveDetails['credit_company'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->creditCompany->attributes()->code;
+			$this->saveDetails['card_brand'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardBrand->attributes()->code;
+			$this->saveDetails['card_acquirer'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardAcquirer->attributes()->code;
 			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
 			$retParams['action'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
 			$retParams['transferred_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
@@ -165,10 +165,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'generate_token_time' => new MongoDate(time()),
 				'auth_number' => (string) $this->saveDetails['auth_number'],
 				'four_digits' => (string) $this->saveDetails['four_digits'],
-				'card_acquirer' => (int) $this->saveDetails['card_acquirer'],
-				'card_brand' => (int) $this->saveDetails['card_brand'],
-				'credit_company' => (int) $this->saveDetails['credit_company'],
-				'card_type' => (int) $this->saveDetails['card_type'],
+				'card_acquirer' => (string) $this->saveDetails['card_acquirer'],
+				'card_brand' => (string) $this->saveDetails['card_brand'],
+				'credit_company' => (string) $this->saveDetails['credit_company'],
+				'card_type' => (string) $this->saveDetails['card_type'],
 			)
 		);
 	}
@@ -213,8 +213,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	public function pay($gatewayDetails, $addonData) {
 		$debitType = 'RecurringDebit';
 		if (isset($gatewayDetails['card_type']) && 
-			$gatewayDetails['card_type'] == $this->cardTypes['Debit'] 
-			|| $gatewayDetails['card_type'] == $this->cardTypes['Rechargeable']) {
+			strcmp($gatewayDetails['card_type'], $this->cardTypes['Debit']) == 0 
+			|| strcmp($gatewayDetails['card_type'], $this->cardTypes['Rechargeable']) == 0) {
 			$debitType = 'Debit';
 			$addonData['terminal_type'] = 'onetime_terminal';
 		}
@@ -379,6 +379,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$additionalParams['card_acquirer'] = $xmlObj->response->doDeal->cardAcquirer ? current($xmlObj->response->doDeal->cardAcquirer->attributes()->code) : '';
 			$additionalParams['card_brand'] = $xmlObj->response->doDeal->cardBrand ? current($xmlObj->response->doDeal->cardBrand->attributes()->code) : '';
 			$additionalParams['credit_company'] = $xmlObj->response->doDeal->creditCompany ? current($xmlObj->response->doDeal->creditCompany->attributes()->code) : '';
+			$additionalParams['card_type'] = $xmlObj->response->doDeal->cardType ? current($xmlObj->response->doDeal->cardType->attributes()->code) : '';
 		}	
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
@@ -459,7 +460,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected function getXmlStructureByParams($credentials, $xmlParams, $addonData = array()) {
 		$XParameter = !empty($addonData['txid']) ? '<user>' . $addonData['txid']  . '</user>' : '';
 		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
-		$terminal_type = isset($xmlParams['terminal_type']) ? $xmlParams['terminal_type'] : 'redirect_termianl';
+		$terminal_type = isset($xmlParams['terminal_type']) ? $xmlParams['terminal_type'] : 'redirect_terminal';
 		$ashraitEmvData = '<ashraitEmvData>
 						<recurringTotalNo>999</recurringTotalNo>
 						<recurringTotalSum></recurringTotalSum>
@@ -528,7 +529,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams, $addonData) {
-		$terminal_type = isset($xmlParams['terminal_type']) ? $xmlParams['terminal_type'] : 'redirect_termianl';
+		$terminal_type = isset($xmlParams['terminal_type']) ? $xmlParams['terminal_type'] : 'redirect_terminal';
 		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
 		return array(
 			'user' => $credentials['user'],
