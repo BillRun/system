@@ -64,7 +64,7 @@ class PayAction extends ApiAction {
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 				$this->processPaymentUf($inputPayment);
-				$deposit = new $className($inputPayment, $params);
+				$deposit = new $className(array_merge_recursive($inputPayment, $params));
 				$deposit->setUserFields($deposit->getRawData(), true);
 				$foreignData = $this->getForeignFields(array('account' => $current_account));
 				if (!is_null($current_account)) {
