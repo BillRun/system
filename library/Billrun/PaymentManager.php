@@ -276,7 +276,9 @@ class Billrun_PaymentManager {
 		$ret = [];
 		if (!$this->hasPaymentGateway($params)) { // no payment gateway - all payments are considered as successful
 			foreach ($prePayments as $prePayment) {
-				$ret[] = new Billrun_DataTypes_PostPayment($prePayment);
+				$postPayment = new Billrun_DataTypes_PostPayment($prePayment);
+				Billrun_Factory::dispatcher()->trigger('afterPaymentHandeled', array(&$postPayment));
+				$ret[] = $postPayment;
 			}
 			return $ret;
 		}
@@ -321,6 +323,7 @@ class Billrun_PaymentManager {
 			$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
 			$postPayment->setTransactionId($txId);
 			$postPayment->setPgResponse($responseFromGateway);
+			Billrun_Factory::dispatcher()->trigger('afterPaymentHandeled', array(&$postPayment, $gateway));
 			$ret[] = $postPayment;
 		}
 

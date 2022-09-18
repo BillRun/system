@@ -347,7 +347,12 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	 */
 	private function getVendorResponseDetails(int $transactionId) {
 		$transactionResponse = $this->requestTransaction($transactionId);
-		$payrexxFee = $this->convertReceivedAmount($transactionResponse->getPayrexxFee());
+		try {
+			$payrexxFee = $this->convertReceivedAmount($transactionResponse->getPayrexxFee());
+		} catch (Throwable $e) {
+			$payrexxFee = null;
+		}
+		
 		$psp = $transactionResponse->getPsp();
 		$paymentMethod = $transactionResponse->getPayment()['brand'];
 
