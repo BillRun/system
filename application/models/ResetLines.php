@@ -546,6 +546,7 @@ class ResetLinesModel {
                 'export_stamp' => 1,
                 'export_start' => 1,
                 'exported' => 1,
+                'full_calculation' => 1
             ),
             '$set' => array(
                 'in_queue' => true,
