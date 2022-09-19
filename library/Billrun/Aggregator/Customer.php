@@ -295,10 +295,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 	public function getRates($account=null, $subscriber=null) {
 		if(empty($this->ratesCache)) {
+			Billrun_Factory::log("Preparing rates cache", Zend_Log::DEBUG);
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->ratesCollection();
 			$res = $this->aggregatePipelines($pipelines,$coll);
 			$this->ratesCache = $this->toKeyHashedArray($res, '_id');
+			Billrun_Factory::log("Finished preparing rates cache", Zend_Log::DEBUG);
 		}
 
 		$localRates = $this->overrideEntityValues($this->ratesCache,@$account['overrides'],'rate');
@@ -316,6 +318,16 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$localDiscounts = $this->overrideEntityValues($this->discountsCache,@$account['overrides'],'discount');
 		return $this->overrideEntityValues($localDiscounts,@$subscriber['overrides'],'discount');;
 	}
+        
+        public function &getCharges() {
+		if(empty($this->chargesCache)) {
+			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
+			$coll = Billrun_Factory::db()->chargesCollection();
+			$res = $this->aggregatePipelines($pipelines,$coll);
+			$this->chargesCache = $this->toKeyHashedArray($res, '_id');
+		}
+		return $this->chargesCache;
+	}
 
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
@@ -330,7 +342,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$linesRemoveQuery = array('aid' => array('$nin' => $billedAids), 'billrun' => $billrunKey, 
 									'$or' => array(
 										array( 'type' => array('$in' => array('service', 'flat')) ),
-										array( 'type'=>'credit','usaget'=>'discount' )
+										array('$or' => array(
+                                                                                    array( 'type'=>'credit','usaget'=>'discount' ),
+                                                                                    array( 'type'=>'credit','usaget'=>'conditional_charge' )
+                                                                                ))
 									));
 			$billrunRemoveQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));;
 		} else {
@@ -339,7 +354,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 										'billrun' => $billrunKey,
 										'$or' => array(
 											array( 'type' => array('$in' => array('service', 'flat')) ),
-											array( 'type'=>'credit','usaget'=>'discount' )
+                                                                                        array( '$or' => array(
+                                                                                                array( 'type'=>'credit','usaget'=>'discount' ),
+                                                                                                array( 'type'=>'credit','usaget'=>'conditional_charge' )
+                                                                                            ))
 											));
 			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		}
@@ -427,14 +445,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $accounts;
 	}
 
-	protected function afterLoad($data) {
+	protected function afterLoad(&$data) {
 		if (!$this->recreateInvoices && $this->isCycle){
 			$this->handleInvoices($data);
 		}
 
 		Billrun_Factory::log("Account entities loaded: " . count($data), Zend_Log::INFO);
 
-		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this, 'data' => $data));
+		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this, 'data' => &$data));
 
 		if ($this->bulkAccountPreload) {
 			$this->clearForAccountPreload($data);
@@ -1049,10 +1067,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			]
 		]);
 		$enrichment = [];
-		if(!empty($enrichmentMapping[$var])) {
-			foreach($enrichmentMapping[$var] as $enrichKey => $enrichField) {
-				foreach(Billrun_Factory::config()->getConfigValue($enrichKey, []) as  $fieldDesc) {
+		if (!empty($enrichmentMapping[$var])) {
+			foreach ($enrichmentMapping[$var] as $enrichKey => $enrichField) {
+				foreach (Billrun_Factory::config()->getConfigValue($enrichKey, []) as $fieldDesc) {
+					if ((strpos($fieldDesc[$enrichField], ".") !== false) || !isset($enrichment[current(explode(".", $fieldDesc[$enrichField]))])) {
 						$enrichment[$fieldDesc[$enrichField]] = $fieldDesc[$enrichField];
+					}
 				}
 			}
 		}

@@ -66,6 +66,8 @@ class PayAction extends ApiAction {
 				$this->processPaymentUf($inputPayment);
 				$deposit = new $className($inputPayment, $params);
 				$deposit->setUserFields($deposit->getRawData(), true);
+				$deposit->setDepositFreezeDate();
+				$deposit->setProcessTime();
 				$foreignData = $this->getForeignFields(array('account' => $current_account));
 				if (!is_null($current_account)) {
 					$deposit->setForeignFields($foreignData);
@@ -91,7 +93,7 @@ class PayAction extends ApiAction {
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
 				$method = $payment->getBillMethod();
-				$payment->setBalanceEffectiveDate();
+				$payment->setProcessTime();
 				if (in_array($method, array('wire_transfer', 'cheque')) && $payment->getDir() == 'tc') {
 					if (!isset($emailsToSend[$method])) {
 						$emailsToSend[$method] = array(
@@ -158,7 +160,8 @@ class PayAction extends ApiAction {
 			if (empty($deposit)) {
 				continue;
 			}
-			$depositUnfreezed = $deposit->unfreezeDeposit();
+			$deposit->setProcessTime();
+			$depositUnfreezed = $deposit->unfreezeDeposit(!empty($request->get('urt')) ? strtotime($request->get('urt')) : time());
 			if ($depositUnfreezed) {
 				$unfreezedDeposits[] = $txid;
 			}
@@ -280,12 +283,16 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 				Billrun_Bill_Payment::savePayments($cancellationPayments);
 			}
 			$succeededCancels = array();
+                        $paymentsAids = array();
 			foreach ($paymentsToCancel['payments'] as $payment) {
 				array_push($succeededCancels, $payment->getId());
 				$payment->markCancelled()->save();
 				$payment->detachPaidBills();
-				$payment->detachPayingBills();
-				Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+				$payment->detachPayingBills();	
+                                $paymentsAids = array_unique(array_merge([$payment->getAccountNo()], $paymentsAids));
+			}
+                        foreach ($paymentsAids as $aid) {				
+				Billrun_Bill::payUnpaidBillsByOverPayingBills($aid);
 			}
 		} catch (Exception $e) {
 			return $this->setError($e->getMessage(), $request->getPost());

@@ -22,6 +22,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 
 	protected $subInvoiceType = 'regular';
 	protected $invoicingConfig = array();
+	protected $customer_uf = array();
 	
 	
 	public function __construct($options = array()) {
@@ -38,6 +39,9 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		}
 		if(!empty($options['invoice_subtype'])) {
 			$this->subInvoiceType = Billrun_Util::getFieldVal($options['invoice_subtype'], 'regular'); 
+		}
+		if(!empty($options['uf'])){
+			$this->customer_uf = $options['uf'];
 		}
 		$this->invoicingConfig = Billrun_Factory::config()->getConfigValue('onetimeinvoice.invoice_type_config', array());
 		$this->min_invoice_id = intval(Billrun_Util::getFieldVal($this->invoicingConfig[$this->subInvoiceType]['min_invoice_id'], $this->min_invoice_id ));
@@ -63,6 +67,8 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 				$this->saveLines($aggregatedResults);
 				//Save Account discounts.
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
+				//Save Customer user fields
+				$aggregatedEntity->setUserFields($this->customer_uf);
 				//Save the billrun document
 				$aggregatedEntity->save();
 			} else {

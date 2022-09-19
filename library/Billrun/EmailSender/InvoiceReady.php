@@ -54,6 +54,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 			'[[company_name]]' => Billrun_Factory::config()->getConfigValue('tenant.name', ''),
 		);
 
+		Billrun_Factory::dispatcher()->trigger('alterMessageTranslations',[&$replaces, $data, $this]);
 //		This is currently disabled because email with embedded base64 images is not supported, but we might want it in the future
 //		// handle company logo
 //		if (is_null($this->logo)) {
