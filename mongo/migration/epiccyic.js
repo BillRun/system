@@ -10401,6 +10401,32 @@ lastConfig = runOnce(lastConfig, 'EPICIC-175', function () {
     ];
 });
 
+lastConfig = runOnce(lastConfig, 'EPICIC-162', function () {
+	lastConfig['notifications_settings']=
+	 [
+        {
+            "file_type" : "ICT",
+            "monitoring" : {
+                "enabled" : true,
+                "receive_alert_after" : 100000,
+                "recurrence" : {
+                    "type" : "minutely",
+                    "value" : 30
+                },
+                "files_num" : 1,
+                "process_alert_after" : 1,
+                "notify_by_email" : {
+                    "use_global_addresses" : true,
+                    "additional_addresses" : [
+                        "TD-BILIN@epic.com.cy",
+                    ]
+                },
+            }
+        }
+    ]
+});
+
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
