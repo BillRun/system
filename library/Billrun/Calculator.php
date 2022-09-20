@@ -272,26 +272,26 @@ abstract class Billrun_Calculator extends Billrun_Base {
         }
         return array_values($linesToInsert);
     }
-
+	
 	protected function restoringLinesLineByLine($linesToInsert, $collection) {
-        foreach ($linesToInsert as $stamp => $line) {
-            try {
-                $ret = $collection->insert($line); // ok==1, err null
-                if (isset($ret['err']) && !is_null($ret['err'])) {
-                    Billrun_Factory::log("Calculator " . $this->getType() . ": line insertion of adding extra line to lines failed, Insert Error: " . $ret['err'] . ", failed_line " . $stamp, Zend_Log::ALERT);
-                    throw new Exception($ret['err']);
-                }
-            } catch (Exception $e) {
-                if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
-                    Billrun_Factory::log("Calculator " . $this->getType() . ": line insertion of adding extra line to lines failed, Insert Error: " . $e->getMessage() . ", failed_line " . $stamp, Zend_Log::NOTICE);
-                    continue;
-                } else {
-                    Billrun_Factory::log("Calculator " . $this->getType() . ": line insertion of adding extra line to lines failed, Insert Error: " . $e->getMessage() . ", failed_line " . $stamp, Zend_Log::ALERT);
-                    throw $e;
-                }
-            }
-        }
-    }
+		foreach ($linesToInsert as $stamp => $line) {
+			try {
+				$ret = $collection->insert($line); // ok==1, err null
+				if (isset($ret['err']) && !is_null($ret['err'])) {
+					Billrun_Factory::log("Calculator " . $this->getType() . ": line insertion of adding extra line to lines failed, Insert Error: " . $ret['err'] . ", failed_line " . $stamp, Zend_Log::ALERT);
+					throw new Exception($ret['err']);
+				}
+			} catch (Exception $e) {
+				if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+					Billrun_Factory::log("Calculator " . $this->getType() . ": line insertion of adding extra line to lines failed, Insert Error: " . $e->getMessage() . ", failed_line " . $stamp, Zend_Log::NOTICE);
+					continue;
+				} else {
+					Billrun_Factory::log("Calculator " . $this->getType() . ": line insertion of adding extra line to lines failed, Insert Error: " . $e->getMessage() . ", failed_line " . $stamp, Zend_Log::ALERT);
+					throw $e;
+				}
+			}
+		}
+	}
 
 	/**
 	 * Execute write the calculation output into DB
