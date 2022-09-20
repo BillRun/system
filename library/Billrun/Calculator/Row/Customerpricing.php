@@ -823,7 +823,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected function isReblanceOnLastRequestOnly() {
 		$config = $this->getConfig($this->row);
-		return (isset($config['realtime']['rebalance_on_final']) && $config['realtime']['rebalance_on_final']);
+		return Billrun_Utils_Realtime::getRealtimeConfigValue($config, 'rebalance_on_final', $this->row['usaget'], false);
 	}
 
 	/**
@@ -891,7 +891,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function getRealUsagev($lineToRebalance) {
 		$config = $this->getConfig();
 		$usagev = 0;
-		$usedUsagevFields = is_array($config['realtime']['used_usagev_field']) ? $config['realtime']['used_usagev_field'] : array($config['realtime']['used_usagev_field']);
+		$usedUsagevFields = Billrun_Utils_Realtime::getRealtimeConfigValue($config, 'used_usagev_field', $this->row['usaget'], []);
+		if (!is_array($usedUsagevFields)) {
+			$usedUsagevFields = [$usedUsagevFields];
+		}
+
 		foreach ($usedUsagevFields as $usedUsagevField) {
 			$usedUsage = Billrun_util::getIn($this->row['uf'], $usedUsagevField);
 			$usagev += !is_null($usedUsage) ? $usedUsage : 0;

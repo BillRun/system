@@ -1771,7 +1771,7 @@ class ConfigModel {
 	 * @return array
 	 */
 	protected function getUnifyConfig($config, $unifyConfig) {
-		if (empty($unifyConfig) && !empty($config['realtime']) && empty($config['realtime']['postpay_charge'])) { // prepaid request
+		if (empty($unifyConfig) && !empty($config['realtime']) && empty(Billrun_Utils_Realtime::getRealtimeConfigValue($config, 'postpay_charge'))) { // prepaid request
 			$unifyConfig = $this->getPrepaidUnifyConfig();
 		}
 		

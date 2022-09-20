@@ -127,7 +127,15 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 				return false;
 			}
 
-
+		if (!empty($row['realtime'])) {
+			foreach ($rates as $rate) {
+				if ($this->isRateBlockedByPlan($row, $rate)) {
+					$row['blocked_rate'] = true;
+					return false;
+				}
+			}
+		}
+		
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}

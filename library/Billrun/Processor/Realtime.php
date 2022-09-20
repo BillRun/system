@@ -111,25 +111,19 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		if ($row['request_type'] == Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST') || $requestedUsagev !== false) {
 			return $requestedUsagev;
 		}
-		
-		if (isset($config['realtime']['default_values'][$row['usaget']][$row['record_type']])) {
-			return floatval($config['realtime']['default_values'][$row['usaget']][$row['record_type']]);
-		}
-		
-		if (isset($config['realtime']['default_values'][$row['record_type']])) {
-			return floatval($config['realtime']['default_values'][$row['record_type']]);
+
+		$defaultValue = Billrun_Utils_Realtime::getRealtimeConfigValue($config, ['default_values', $row['record_type']], $row['usaget']);
+		if (!is_null($defaultValue)) {
+			return floatval($defaultValue);
 		}
 		
 		if ($row['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.FINAL_REQUEST'))) {
 			return 0;
 		}
 		
-		if (isset($config['realtime']['default_values'][$row['usaget']]['default'])) {
-			return floatval($config['realtime']['default_values'][$row['usaget']]['default']);
-		}
-		
-		if (isset($config['realtime']['default_values']['default'])) {
-			return floatval($config['realtime']['default_values']['default']);
+		$defaultValue = Billrun_Utils_Realtime::getRealtimeConfigValue($config, ['default_values', 'default'], $row['usaget']);
+		if (!is_null($defaultValue)) {
+			return floatval($defaultValue);
 		}
 		
 		return floatval(Billrun_Factory::config()->getConfigValue('realtimeevent.' . $row['request_type'] .'.defaultValue', Billrun_Factory::config()->getConfigValue('realtimeevent.defaultValue', 0)));

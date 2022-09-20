@@ -34,16 +34,38 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 	 */
 	protected function getServiceRating() {
 		$ret = [];
+		$unitsField = in_array($this->row['usaget'], ['call', 'incoming_call']) ? 'time' : 'totalVolume';
+
 		foreach ($this->row['service_rating'] ?? [] as $serviceRating) {
-			$ret[] = [
-				'serviceContextId' => $serviceRating['serviceContextId'] ?? '',
-				'serviceId' => $serviceRating['serviceId'] ?? '',
-				'ratingGroup' => intval($serviceRating['ratingGroup'] ?? ''),
-				'grantedUnit' => [
-					'totalVolume' => $serviceRating['usagev'] ?? 0,
-				],
-				'resultCode' => $this->getResultCode($serviceRating['return_code']),
+			$serviceRatingRes = [
+				'resultCode' => $this->getResultCode($serviceRating),
 			];
+
+			if (isset($serviceRating['serviceContextId'])) {
+				$serviceRatingRes['serviceContextId'] =  $serviceRating['serviceContextId'];
+			}
+
+			if (isset($serviceRating['serviceId'])) {
+				$serviceRatingRes['serviceId'] =  $serviceRating['serviceId'];
+			}
+
+			if (isset($serviceRating['ratingGroup'])) {
+				$serviceRatingRes['ratingGroup'] =  intval($serviceRating['ratingGroup']);
+			}
+			
+			if ($serviceRating['reservation_required'] ?? false) {
+				$serviceRatingRes['grantedUnit'] = [
+					$unitsField => $serviceRating['usagev'] ?? 0,
+				];
+			}
+			
+			if ($serviceRating['rebalance_required'] ?? false) {
+				$serviceRatingRes['consumedUnit'] = [
+					$unitsField => $serviceRating['consumedUnit'][$unitsField] ?? 0,
+				];
+			}
+			
+			$ret[] = $serviceRatingRes;
 		}
 
 		return $ret;
@@ -54,12 +76,20 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 	 * 
 	 * @return string
 	 */
-	protected function getResultCode($returnCode) {
+	protected function getResultCode($serviceRating) {
+		if (empty($serviceRating['reservation_required'])) {
+			return 'SUCCESS';
+		}
+		
+		$returnCode = $serviceRating['return_code'];
 		$returnCodes = Billrun_Factory::config()->getConfigValue('realtime.granted_code', []);
 		switch ($returnCode) {
 			case $returnCodes['no_available_balances']:
 				return 'QUOTA_LIMIT_REACHED';
 			case $returnCodes['failed_calculator']['rate']:
+				if (!empty($serviceRating['blocked_rate'])) {
+					return 'END_USER_SERVICE_REJECTED';
+				}
 				return 'END_USER_SERVICE_DENIED';
 			case $returnCodes['failed_calculator']['customer']:
 				return 'USER_UNKNOWN';
@@ -68,7 +98,7 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 			case $returnCodes['ok']:
 				return 'SUCCESS';
 			default:
-				return 'END_USER_SERVICE_REJECTED';
+				return 'QUOTA_MANAGEMENT_NOT_APPLICABLE';
 		}
 	}
 

@@ -15,6 +15,8 @@
  */
 class OpenapiController extends RealtimeController {
 
+	const LOCATION = '/ratingdata';
+
 	const RECORD_TYPES = [
 		'initial' => [
 			'record_type' => 'initial_request',
@@ -115,7 +117,7 @@ class OpenapiController extends RealtimeController {
 			$this->setHttpStatusCode(Billrun_Utils_HttpStatusCodes::HTTP_CREATED);
 			$this->requestType = 'initial';
 			$this->sessionId = uniqid();
-			$location = $this->getRequest()->getRequestUri() . "/{$this->sessionId}";
+			$location = self::LOCATION . "/{$this->sessionId}";
 			$this->getResponse()->setHeader('Location', $location);
 		} else {
 			$this->sessionId = array_keys($params)[0];
@@ -190,7 +192,9 @@ class OpenapiController extends RealtimeController {
 		$requestId = uniqid();
 		$origRow = $this->event;
 		$this->event = [];
-		foreach ($origRow['uf']['serviceRating'] as $serviceRating) {
+		$serviceRatings = $origRow['uf']['serviceRating'] ?? [];
+
+		foreach ($serviceRatings as $serviceRating) {
 			$requestSubType = $serviceRating['requestSubType'] ?? '';
 			if (!in_array($requestSubType, [self::RATING_ACTION_DEBIT, self::RATING_ACTION_RELEASE, self::RATING_ACTION_RESERVE])) {
 				continue;
@@ -206,6 +210,10 @@ class OpenapiController extends RealtimeController {
 			$row['request_id'] = $requestId;
 			$this->event[] = $row;
 		}
+
+		if (empty($this->event)) {
+			$this->event[] = $origRow;
+		}
 	}
 	
 	/**
@@ -219,9 +227,14 @@ class OpenapiController extends RealtimeController {
 		$ret = current($lines);
 		$ret['service_rating'] = [];
 		foreach ($lines as $line) {
-			$serviceRating = $line['uf']['serviceRating'];
+			if (empty($serviceRating = $line['uf']['serviceRating'])) {
+				continue;
+			}
 			$serviceRating['usagev'] = $line['usagev'];
 			$serviceRating['return_code'] = $line['granted_return_code'];
+			$serviceRating['rebalance_required'] = $line['rebalance_required'];
+			$serviceRating['reservation_required'] = $line['reservation_required'];
+			$serviceRating['blocked_rate'] = $line['blocked_rate'] ?? false;
 			$ret['service_rating'][] = $serviceRating;
 		}
 
