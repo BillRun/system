@@ -257,21 +257,21 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			}
 		}
 	}
-
+	
 	/**
-     * Remove all the lines that are in $archivedLinesToInsert and also already in lines collection
-     * @param array $archivedLinesToInsert
-     * @param array $archivedLinesStamps
-     */
-    protected function removeDuplicateLines($linesToInsert, $collection) {
-        $query = array('stamp' => array('$in' => array_keys($linesToInsert)));
-        $duplicateLines = $collection->query($query)->cursor()->fields(array('stamp' => 1))->setRawReturn(true);
-        $duplicateLinesStamps = array_column(iterator_to_array($duplicateLines), 'stamp');
-        foreach ($duplicateLinesStamps as $duplicateLineStamp) {
-            unset($linesToInsert[$duplicateLineStamp]);
-        }
-        return array_values($linesToInsert);
-    }
+	 * Remove all the lines that are in $archivedLinesToInsert and also already in lines collection
+	 * @param array $archivedLinesToInsert
+	 * @param array $archivedLinesStamps
+	 */
+	protected function removeDuplicateLines($linesToInsert, $collection) {
+		$query = array('stamp' => array('$in' => array_keys($linesToInsert)));
+		$duplicateLines = $collection->query($query)->cursor()->fields(array('stamp' => 1))->setRawReturn(true);
+		$duplicateLinesStamps = array_column(iterator_to_array($duplicateLines), 'stamp');
+		foreach ($duplicateLinesStamps as $duplicateLineStamp) {
+			unset($linesToInsert[$duplicateLineStamp]);
+		}
+		return array_values($linesToInsert);
+	}
 	
 	protected function restoringLinesLineByLine($linesToInsert, $collection) {
 		foreach ($linesToInsert as $stamp => $line) {
