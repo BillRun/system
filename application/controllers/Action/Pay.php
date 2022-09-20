@@ -28,6 +28,7 @@ class PayAction extends ApiAction {
 		$jsonPayments = $request->get('payments');
 		$account = Billrun_Factory::account();
 		$uf = $request->get('uf');
+		$params = [];
 		if (!empty($uf)) {
 			$params['forced_uf'] = json_decode($uf, true);
 		}
