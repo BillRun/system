@@ -260,10 +260,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $package['id'], $package['service_name']);
 		}
 		$usageTypes = array_keys($localUsageTypes);
-		foreach($usageTypes as  $uType) {
-			$roamingQuery['$or'][] = array('balance.totals.' . $uType . '.exhausted' => array('$exists' => false));
-			$roamingQuery['$or'][] = array('balance.totals.' . $uType . '.exhausted' => array('$ne' => true));
-		}
+
 		$roamingQuery = array(
 			'sid' => $subscriberBalance['sid'],
 			'$and' => array(
@@ -275,6 +272,11 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'$or' => array(	),
 			'service_id' => array('$in' => $matchedIds),
 		);
+
+		foreach($usageTypes as  $uType) {
+			$roamingQuery['$or'][] = array('balance.totals.' . $uType . '.exhausted' => array('$exists' => false));
+			$roamingQuery['$or'][] = array('balance.totals.' . $uType . '.exhausted' => array('$ne' => true));
+		}
 
 		$roamingBalances = $this->balances->query($roamingQuery)->cursor();
 		if ($roamingBalances->current()->isEmpty()) {
