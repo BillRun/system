@@ -237,6 +237,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$UsageIncluded = 0;
 		$subscriberSpent = 0;
 		$matchedIds = [];
+		$usageTypes = $localUsageTypes = [];
 		foreach ($matchedPackages as $package) {
 
 			$from = empty($package['balance_from_date']) ? strtotime($package['from_date']) : $package['balance_from_date'];
@@ -254,11 +255,15 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 			$matchedIds[] = $package['id'];
 
-			$usageType = $this->getTransformedUsageType($package['service_name'], $plan, $usageType);
+			$localUsageTypes[$this->getTransformedUsageType($package['service_name'], $plan, $usageType)] = 1;
 			$billrunKey = $package['service_name'] . '_' . date("Ymd", $from) . '_' . date("Ymd", $to) . '_' . $package['id'];
 			$this->createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $package['id'], $package['service_name']);
 		}
-		
+		$usageTypes = array_keys($localUsageTypes);
+		foreach($usageTypes as  $uType) {
+			$roamingQuery['$or'][] = array('balance.totals.' . $uType . '.exhausted' => array('$exists' => false));
+			$roamingQuery['$or'][] = array('balance.totals.' . $uType . '.exhausted' => array('$ne' => true));
+		}
 		$roamingQuery = array(
 			'sid' => $subscriberBalance['sid'],
 			'$and' => array(
@@ -267,12 +272,10 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				array('from' => array('$exists' => true)),
 				array('from' => array('$lte' => new MongoDate($this->lineTime)))
 			),
-			'$or' => array(
-				array('balance.totals.' . $usageType . '.exhausted' => array('$exists' => false)),
-				array('balance.totals.' . $usageType . '.exhausted' => array('$ne' => true)),
-			),
+			'$or' => array(	),
 			'service_id' => array('$in' => $matchedIds),
 		);
+
 		$roamingBalances = $this->balances->query($roamingQuery)->cursor();
 		if ($roamingBalances->current()->isEmpty()) {
 			if(!empty($matchedIds)) {
