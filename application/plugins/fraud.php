@@ -325,19 +325,39 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$after = $before + $row['usagev'];
 
-		$threshold = $rule['threshold'];
-		$recurring = isset($rule['recurring']) && $rule['recurring'];
-		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
-		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
-		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
-			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
-			if (isset($rule['priority'])) {
-				$priority = (int) $rule['priority'];
+		if ($rule['threshold'] === 'from_plan' && !empty($rule['limitGroups'])) {
+			$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
+			$percentage = isset($rule['percentage']) ? $rule['percentage'] : 1;
+			if (!empty($row['arategroup']) && in_array($row['arategroup'], $rule['limitGroups'])) {
+				$groupName = $row['arategroup'];
+				if(!empty($plan->get('include.groups.' . $groupName)[$row['usaget']])) {
+					$threshold = (float) floor($plan->get('include.groups.' . $groupName)[$row['usaget']] * $percentage);
+				} else {
+					Billrun_Factory::log("Missing  group ${row['arategroup']} in  plan : ${row['plan']}",Zend_Log::ERR);
+				}
 			} else {
-				$priority = null;
+				Billrun_Log::getInstance()->log("Missing group at rule where threshold is taken from plan group", Zend_log::ERR);
 			}
-			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring);
-			return $rule;
+		} else {
+			$threshold = $rule['threshold'];
+		}
+		if(!empty($threshold)) {
+			$recurring = isset($rule['recurring']) && $rule['recurring'];
+			$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
+			$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
+			if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
+				Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
+				if (isset($rule['priority'])) {
+					$priority = (int) $rule['priority'];
+				} else {
+					$priority = null;
+				}
+				$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring);
+				return $rule;
+			}
+		} else {
+			Billrun_Factory::log("Threshold is empty/invalid!. Ignoring rule ${rule['name']}",Zend_Log::WARN);
+			return false;
 		}
 	}
 
