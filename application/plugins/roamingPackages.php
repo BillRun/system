@@ -270,14 +270,15 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				array('from' => array('$exists' => true)),
 				array('from' => array('$lte' => new MongoDate($this->lineTime)))
 			),
-			'$or' => array(
-			),
+			'$or' => array(	),
 			'service_id' => array('$in' => $matchedIds),
 		);
+
 		foreach($usageTypes as  $uType) {
-			$roamingQuery['$or'][] = array('balance.totals.' . $uType . '.exhausted' => array('$exists' => false));
-			$roamingQuery['$or'][] = array('balance.totals.' . $uType . '.exhausted' => array('$ne' => true));
+			$roamingQuery['$or'][] = ['balance.totals.' . $uType => ['$exists' => true], 'balance.totals.' . $uType . '.exhausted' => ['$exists' => false]];
+			$roamingQuery['$or'][] = ['balance.totals.' . $uType => ['$exists' => true], 'balance.totals.' . $uType . '.exhausted' => ['$ne' => true]];
 		}
+
 		$roamingBalances = $this->balances->query($roamingQuery)->cursor();
 		if ($roamingBalances->current()->isEmpty()) {
 			if(!empty($matchedIds)) {
