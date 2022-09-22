@@ -10401,6 +10401,10 @@ lastConfig = runOnce(lastConfig, 'EPICIC-175', function () {
     ];
 });
 
+lastConfig = runOnce(lastConfig, 'EPICIC-179', function () {
+	lastConfig.log.debug.filterParams.priority.v = 7;
+});	
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
