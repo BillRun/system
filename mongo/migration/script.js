@@ -1390,6 +1390,11 @@ lastConfig = runOnce(lastConfig, 'BRCD-3806', function () {
 	db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
 });
 
+// BRCD-3618 configure full_calculation date field
+lastConfig = runOnce(lastConfig, 'BRCD-3618', function () {
+	lastConfig['lines']['reference_fields'] = ['full_calculation'];
+});
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });

@@ -766,7 +766,30 @@
 			"taxation" : "global"
 		}
 	]
+},{
+
+	"from" : "time*2020-11-30T22:00:00Z",
+	"name" : "Q",
+	"price" : [
+		{
+			"from" : 0,
+			"to" : "UNLIMITED",
+			"price" : 0.9
+		}
+	],
+	"description" : "q",
+	"prorated" : true,
+	"quantitative" : true,
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	],
+	"to" : "time*2170-01-11T16:55:17Z",
+	"creation_time" : "time*2020-11-30T22:00:00Z"
 }
+
 
 
 
