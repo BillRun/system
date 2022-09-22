@@ -83,7 +83,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		if ($line['usaget'] == 'flat') { // plan/service line
 			$entity = $line;
 		} else {
-			$entity = Billrun_Rates_Util::getRateByRef($line['arate'] ?: null, true);
+			$entity = Billrun_Rates_Util::getRateByRef($line['arate'] ?: null);
 		}
 		
 		$taxHints = !empty($entity['tax']) ? $entity['tax'] : $this->getDefaultTaxHint();
