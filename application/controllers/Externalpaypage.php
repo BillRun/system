@@ -56,7 +56,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract { // CAUTIOUS WH
 		$this->getView()->assign('company_image', $imageEncode);
 		$this->getView()->assign('account_config', $config['subscribers']['account']['fields']);
 		$this->getView()->assign('subscriber_config', $config['subscribers']['subscriber']['fields']);
-		$this->getView()->assign('payment_gateways', $config['payment_gateways']);
+		$this->getView()->assign('payment_gateways', $this->filterAllowedPaymentGateways($config['payment_gateways']));
 		$this->getView()->assign('planNames', $planNames);
 		$this->getView()->assign('serviceNames', $serviceNames);
 		$this->getView()->assign('plans', $plans);
@@ -130,6 +130,18 @@ class ExternalPaypageController extends Yaf_Controller_Abstract { // CAUTIOUS WH
 		}
 		return $ret;
 
+	}
+
+	/**
+	 * @param array $paymentGateways
+	 * @return array
+	 */
+	private function filterAllowedPaymentGateways($paymentGateways) {
+		$allowedGateways = Billrun_Factory::config()->getConfigValue('PaymentGateways.potential');
+
+		return array_filter($paymentGateways, function ($payment) use ($allowedGateways) {
+			return in_array($payment['name'], $allowedGateways);
+		});
 	}
 
 }
