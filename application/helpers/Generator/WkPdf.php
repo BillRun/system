@@ -328,6 +328,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		if (!empty($this->accountsToInvoice)) {
 			$query['aid'] = array('$in' => $this->accountsToInvoice);
 		}
+		Billrun_Factory::dispatcher()->trigger("beforeLoadWkpdf", array(&$query, $this->accountsToInvoice));
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
 	}
 
