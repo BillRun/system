@@ -213,8 +213,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	public function pay($gatewayDetails, $addonData) {
 		$debitType = 'RecurringDebit';
 		if (isset($gatewayDetails['card_type']) && 
-			strcmp($gatewayDetails['card_type'], $this->cardTypes['Debit']) == 0 
-			|| strcmp($gatewayDetails['card_type'], $this->cardTypes['Rechargeable']) == 0) {
+			$gatewayDetails['card_type'] == $this->cardTypes['Debit'] || 
+			$gatewayDetails['card_type'] == $this->cardTypes['Rechargeable']) {
 			$debitType = 'Debit';
 			$addonData['terminal_type'] = 'onetime_terminal';
 		}
