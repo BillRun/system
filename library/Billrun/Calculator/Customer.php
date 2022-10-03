@@ -190,6 +190,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}else{
 			$row = $this->enrichWithSubscriberInformation($row, $subscriber);
 		}
+		if (!isset($row['plan'])) {
+			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'] . ', line ' . $row['stamp'], Zend_Log::ALERT);
+			return false;
+		}
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
@@ -569,6 +573,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @return array - services names array if $addServiceData is false, services names and data otherwise
 	 */
 	protected function getPlanIncludedServices($planName, $time, $addServiceData, $subscriberData) {
+		if (is_null($planName)) {
+			return array();
+		}
+
 		if ($time instanceof MongoDate) {
 			$time = $time->sec;
 		}
