@@ -1420,6 +1420,12 @@ runOnce(lastConfig, 'BRCD-3432', function () {
     };
     lastConfig['plugins'].push(mbPluginsSettings);
 });
+
+// BRCD-3618 configure full_calculation date field
+lastConfig = runOnce(lastConfig, 'BRCD-3618', function () {
+	lastConfig['lines']['reference_fields'] = ['full_calculation'];
+});
+
 db.config.insert(lastConfig);
 //BRCD-2336: Can't "closeandnew" a prepaid bucket
 lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
