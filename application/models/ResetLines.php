@@ -261,10 +261,10 @@ class ResetLinesModel {
                     Billrun_Factory::log("after restoringArchivedLinesToLines", Zend_Log::DEBUG);
                 }
                 Billrun_Factory::log("before lines remove", Zend_Log::DEBUG);
-                Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
-                Billrun_Factory::log("before archive remove", Zend_Log::DEBUG);
-                Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
-                Billrun_Factory::log("after archive remove", Zend_Log::DEBUG);
+                $ret1 = Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
+                Billrun_Factory::log("Removed " . $ret1['n'] . " lines", Zend_Log::DEBUG);
+                $ret2 = Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
+                Billrun_Factory::log("Removed " . $ret2['n'] . " archive lines", Zend_Log::DEBUG);
                 continue;
             }
             Billrun_Factory::log("before resetLine", Zend_Log::DEBUG);
@@ -366,10 +366,9 @@ class ResetLinesModel {
         $split_line = $line['split_line'] ?? false;
         if ($split_line) {//CDR which is duplicated/split shouldn't enter the queue on a rebalance
             $addToQueue = false;
-            Billrun_Factory::log("before beforSplitLineNotAddedToQueue", Zend_Log::DEBUG);
             Billrun_Factory::dispatcher()->trigger('beforSplitLineNotAddedToQueue', array($line, &$addToQueue));
-            Billrun_Factory::log("after beforSplitLineNotAddedToQueue", Zend_Log::DEBUG);
             if (!$addToQueue) {
+				Billrun_Factory::log("Adding line ". $line['stamp'] . " to splitLinesStamp", Zend_Log::DEBUG);
                 $this->splitLinesStamp[] = $line['stamp'];
                 return;
             }
@@ -547,6 +546,7 @@ class ResetLinesModel {
                 'export_stamp' => 1,
                 'export_start' => 1,
                 'exported' => 1,
+                'full_calculation' => 1
             ),
             '$set' => array(
                 'in_queue' => true,
