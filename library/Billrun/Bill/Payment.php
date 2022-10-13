@@ -44,6 +44,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	protected static $aids;
         
         const txIdLength = 13;
+
 	/**
 	 * 
 	 * @param type $options
@@ -176,6 +177,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!isset($this->data['txid'])) {
 			$this->setTxid();
 		}
+		Billrun_Factory::dispatcher()->trigger('beforeSavingPayment', array(&$this->data));
 		return parent::save();
 	}
 

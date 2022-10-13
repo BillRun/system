@@ -23,7 +23,7 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 			foreach ($this->price as $tariff) {
 				$price = $this->getTariffForMonthCover($tariff, $this->startOffset, $this->endOffset );
 				if (!empty($price)) {
-					$charges[] = array('value' => $price['price'] * $quantity, 'cycle' => $tariff['from'], 'full_price' => floatval($tariff['price']) ,'prorated_start' =>false,'prorated_end' =>false ,'start_date'=> new Mongodloid_Date($this->cycle->start()), 'end_date' => new Mongodloid_Date($this->cycle->end()));
+					$charges[] = array('value' => $price['price'] * $quantity, 'cycle' => $tariff['from'], 'full_price' => floatval($tariff['price']) ,'prorated_start' =>false,'prorated_end' =>false, "start"=>$this->cycle->start(),'end'=> $this->cycle->end() ,'start_date'=> new Mongodloid_Date($this->cycle->start()), 'end_date' => new Mongodloid_Date($this->cycle->end()));
 				}
 			}
 		}

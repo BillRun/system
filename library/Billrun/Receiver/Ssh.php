@@ -176,7 +176,9 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				}
 			} catch (Exception $e) {
 				Billrun_Factory::log()->log("SSH: Fail when downloading. with exception : " . $e, Zend_Log::DEBUG);
-				return array();
+				$ret = array();
+			} finally {
+				$this->ssh->disconnect();
 			}
 		}
 

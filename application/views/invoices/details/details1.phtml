@@ -1,5 +1,5 @@
 <?php foreach ($data->get('subs') as $index => $sub) { 
-	if(empty($sub['sid']) && empty($sub['totals']['after_vat'])) { continue; }
+	if(empty($sub['sid']) && (empty($sub['totals']['after_vat']) || $this->hide_account_subscriber)) { continue; }
 ?>
 	<div class="break"></div>
 	<div class="container">

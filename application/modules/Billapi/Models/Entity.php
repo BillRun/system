@@ -418,7 +418,7 @@ class Models_Entity {
 				return false;
 			}
 			if($this->before === null){
-				throw new Exception('No entity before the change was found. stack:' . print_r(debug_backtrace(), 1));
+				throw new Exception('No entity before the change was found. Query: ' . json_encode($this->query));
 			}
                         $newRevision = $this->before->getRawData();
                         $newRevision['to'] = $this->update['from'];
@@ -440,10 +440,10 @@ class Models_Entity {
 			
 			$key = $oldRevision[$field];
 			if($oldRevision === null){
-				throw new Exception('No old Revision was found. stack:' . print_r(debug_backtrace(), 1));
+				throw new Exception('No old Revision was found. Query: ' . json_encode($permanentQuery));
 			}
 			if ($newRevision === null){
-				throw new Exception('No new Revision was found. stack:' . print_r(debug_backtrace(), 1));
+				throw new Exception('No new Revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate));
 			}
 			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
 		}
