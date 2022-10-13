@@ -59,14 +59,9 @@ var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 var fields = lastConfig['rates']['fields'];
 var found = false;
-var invoice_label_found = false;
 for (var field_key in fields) {
 	if (fields[field_key].field_name === "tariff_category") {
 		found = true;
-	}
-	if (fields[field_key].field_name === "invoice_label") {
-		invoice_label_found = true;
-		fields[field_key].default_value = "";
 	}
 }
 if(!found) {
@@ -84,17 +79,7 @@ if(!found) {
 		"changeable_props": ["select_options"]
 	});
 }
-if(!invoice_label_found) {
-	fields.push({
-		"system":true,
-		"display":true,
-		"editable":true,
-		"field_name":"invoice_label",
-		"default_value":"",
-		"show_in_list":true,
-		"title":"Invoice label"
-	});
-}
+
 lastConfig['rates']['fields'] = fields;
 
 var invoice_language_field = {
@@ -1346,6 +1331,15 @@ var invoice_lang_field = {
 	"select_options": "en_GB,fr_CH,de_CH"
 };
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoice_lang_field, 'account');
+
+// BRCD-3890 Remove invoice_label' core field
+lastConfig = runOnce(lastConfig, 'BRCD-3890', function () {
+	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'rates');
+	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'plans');
+	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'services');
+	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'discounts');
+	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'charges');
+});
 
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
