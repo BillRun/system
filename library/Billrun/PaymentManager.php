@@ -89,7 +89,7 @@ class Billrun_PaymentManager {
 			$paymentData['generated_pg_file_log'] = $params['generated_pg_file_log'];
 		}
 
-		$payment = Billrun_Bill_Payment::getInstance($method, $paymentData);
+		$payment = Billrun_Bill_Payment::getInstance($method, array_merge_recursive($paymentData, $params));
 		if (!$payment) {
 			return $this->handleError("Cannot get payment for {$method}. Payment data: " . print_R($paymentData, 1));
 		}

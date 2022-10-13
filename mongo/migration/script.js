@@ -1279,6 +1279,7 @@ db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEa
 		db.billrun.save(obj);
 	}
 )
+
 //BRCD-2452 reformat paid_by and pays objects to array format
 var bills = db.bills.find({
 	$or: [
@@ -1382,17 +1383,6 @@ lastConfig = runOnce(lastConfig, 'BRCD-3325', function () {
 				"value" : false
     };
 		lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
-});
-
-lastConfig = runOnce(lastConfig, 'BRCD-3806', function () {
-    //Suggestions Collection
-    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculation_type_1_estimated_billrun_1");
-	db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
-});
-
-// BRCD-3618 configure full_calculation date field
-lastConfig = runOnce(lastConfig, 'BRCD-3618', function () {
-	lastConfig['lines']['reference_fields'] = ['full_calculation'];
 });
 
 db.config.insert(lastConfig);

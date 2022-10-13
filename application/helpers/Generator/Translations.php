@@ -16,7 +16,7 @@ class Generator_Translations {
 	
 	public static function load() {
 		if (!static::$defaultLang) {
-			$defaultLang = Billrun_Factory::config()->getConfigValue(static::$defaultLangPath, 'en_GB');
+			$defaultLang = Billrun_Factory::config()->getConfigValue(static::$defaultLangPath, 'en_GB' );
 				static::$defaultLang = $defaultLang;
 				static::setLanguage($defaultLang);
 		}
@@ -55,4 +55,15 @@ class Generator_Translations {
 		$translation = $currentLangTranslation ?: $defaultLangTranslation ?: $slug;
 		call_user_func_array('printf',array_merge([$translation], $args));
 	}
+
+	public static function stranslate($slug, $args = []) {
+		if (!is_array($args)) {
+			$args = [$args];
+		}
+		$currentLangTranslation = static::$translations[static::$currentLang][$slug];
+		$defaultLangTranslation = static::$translations[static::getDefaultLanguage()][$slug];
+		$translation = $currentLangTranslation ?: $defaultLangTranslation ?: $slug;
+		return call_user_func_array('sprintf',array_merge([$translation], $args));
+	}
+
 }
