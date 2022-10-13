@@ -27,17 +27,8 @@ class Billrun_Utils_Usage {
 				}
 				$retSub = null;
 				$subscriber = Billrun_Factory::subscriber();
-				$possibleTimeFields = [	'prorated_end_date' => -1,'end'=> -1,'end_date'=>-1,
-										'urt'=>0,'prorated_start_date'=>1,'start'=>1,'start_date'=>1];
-				foreach ($possibleTimeFields as  $timeField =>  $offset) {
-					if(empty($row[$timeField])) {continue;}
-					$timeValue = $row[$timeField] instanceof MongoDate ?
-									$row[$timeField]->sec :
-									@Billrun_Util::getFieldVal($row[$timeField],time());
-					$query = [	'sid' => $row['sid'],
-								'aid' => $row['aid'],
-								'time'=> date(Billrun_Base::base_datetimeformat,
-												$timeValue + $offset) ];
+				$queries = static::getQueryForAccountForeignData($row);
+				foreach ($queries as  $query) {
 					if($retSub = $subscriber->loadSubscriberForQuery($query)) {
 						break;
 					}
@@ -51,17 +42,8 @@ class Billrun_Utils_Usage {
 				}
 				$retAcc=null;
 				$account = Billrun_Factory::account();
-				$possibleTimeFields = [	'prorated_end_date' => -1,'end'=> -1,'end_date'=>-1,
-										'urt'=>0,'prorated_start_date'=>1,'start'=>1,'start_date'=>1];
-
-				foreach ($possibleTimeFields as  $timeField => $offset) {
-					if(empty($row[$timeField])) {continue;}
-					$timeValue = $row[$timeField] instanceof MongoDate ?
-									$row[$timeField]->sec :
-									@Billrun_Util::getFieldVal($row[$timeField],time());
-					$query = [	'aid' => $row['aid'],
-								'time'=> date(Billrun_Base::base_datetimeformat,
-												$timeValue + $offset) ];
+				$queries = static::getQueryForAccountForeignData($row);
+				foreach ($queries as  $query) {
 					if($retAcc = $account->loadAccountForQuery($query)) {
 						break;
 					}
@@ -148,6 +130,33 @@ class Billrun_Utils_Usage {
 			}
 		}
 		return $conditionsMet;
+	}
+
+	//=============================  protected  helper functions =============================
+
+	protected static function getQueryForAccountForeignData($row)   {
+			$retQueries = [];
+			$possibleTimeFields = Billrun_Factory::config()->getConfigValue('billrun.core.foreign_fields.subscribers.time_fields_mapping',[
+																					'prorated_end_date' => -1,'end'=> -1,'end_date'=>-1,
+																   					'urt'=>0,
+																					'prorated_start_date'=>1,'start'=>1,'start_date'=>1]);
+			$defaultTime = Billrun_Billingcycle::getStartTime(Billrun_Billingcycle::getBillrunKeyByTimestamp($row['urt']->sec-1));
+			foreach ($possibleTimeFields as  $timeField =>  $offset) {
+				if(empty($row[$timeField])) {continue;}
+				$timeValue = $row[$timeField] instanceof MongoDate ?
+								$row[$timeField]->sec :
+								@Billrun_Util::getFieldVal($row[$timeField],$defaultTime);
+				$retQueries[] = [	'sid' => $row['sid'],
+							'aid' => $row['aid'],
+							'time'=> date(Billrun_Base::base_datetimeformat,
+											$timeValue + $offset) ];
+			};
+			$retQueries[] =  [	'sid' => $row['sid'],
+							'aid' => $row['aid'],
+							'time'=> $defaultTime
+							];
+
+			return  $retQueries;
 	}
 
 }
