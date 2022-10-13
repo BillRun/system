@@ -2016,5 +2016,63 @@ class Billrun_Util {
 		return $url;
 	}
 
+	public static function mergeArrayByRules($mainArr, $secArr, $rules) {
+
+		foreach($rules as $srcFieldKey => $fieldRules) {
+			foreach($fieldRules as $ruleKey => $ruleVal) {
+				if(null === static::getIn($secArr, $srcFieldKey, null) && null === static::getIn($mainArr,$srcFieldKey, null)) {
+					continue;
+				}
+				switch($ruleKey) {
+					case '$push' :
+								static::setIn( $mainArr, $srcFieldKey, array_merge(static::getIn($secArr, $srcFieldKey, null),
+																					static::getIn($mainArr,$srcFieldKey, null))
+											);
+						break;
+					case '$addToSet' :
+						static::setIn( $mainArr, $srcFieldKey, array_merge(@array_udiff(	static::getIn($secArr, $srcFieldKey, null),
+																						static::getIn($mainArr,$srcFieldKey, null),function($a,$b) {return strcmp(md5(json_encode($a)),md5(json_encode($b)));}),
+																		static::getIn($mainArr,$srcFieldKey, null))
+									);
+						break;
+					case '$mergeArrayByRules' :
+						//recursivly call current function  to  dive into  nested structure
+						static::setIn( $mainArr, $srcFieldKey, static::mergeArrayByRules(
+																						static::getIn($mainArr, $srcFieldKey, []),
+																						static::getIn($secArr,$srcFieldKey, []),
+																						$ruleVal) );
+						break;
+
+					case '$mergeMultiArraysByRules' :
+						//Merge multiple arrays  enteries to a single one based on  specific rules
+
+						foreach(array_merge(static::getIn($mainArr, $srcFieldKey, []),static::getIn($secArr,$srcFieldKey, [])) as $subSecArr)  {
+							static::setIn( $mainArr, $srcFieldKey, [static::mergeArrayByRules(
+																						@reset(static::getIn($mainArr, $srcFieldKey, [])),
+																						$subSecArr,
+																						$ruleVal)] );
+						}
+
+						break;
+					default :
+						//use native functions to run operations
+						$cleanRule = str_replace('$','',$ruleKey);
+						if(function_exists($cleanRule) && in_array($cleanRule,Billrun_Factory::config()->getConfigValue('billrun.runnble_functions',['min','max','array_merge','array_diff']))) {
+							static::setIn( $mainArr, $srcFieldKey, call_user_func_array($cleanRule,[
+																						static::getIn($mainArr, $srcFieldKey, null),
+																						static::getIn($secArr,$srcFieldKey, null)])
+										);
+						} else {
+							//  just  copy the  secondary array value if it exists
+							static::setIn( $mainArr, $srcFieldKey,
+								static::getIn($mainArr, $srcFieldKey,
+										static::getIn($secArr,$srcFieldKey,null)));
+						}
+				}
+			}
+		}
+		return $mainArr;
+
+	}
 
 }

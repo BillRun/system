@@ -1329,12 +1329,12 @@ lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
     db.createCollection("oauth_jwt");
 
     // create indexes
-    db.oauth_clients.createIndex({'client_id': 1 });
-    db.oauth_access_tokens.createIndex({'access_token': 1 });
-    db.oauth_authorization_codes.createIndex({'authorization_code': 1 });
-    db.oauth_refresh_tokens.createIndex({'refresh_token': 1 });
-    db.oauth_users.createIndex({'username': 1 });
-    db.oauth_scopes.createIndex({'oauth_scopes': 1 });
+    db.oauth_clients.ensureIndex({'client_id': 1 });
+    db.oauth_access_tokens.ensureIndex({'access_token': 1 });
+    db.oauth_authorization_codes.ensureIndex({'authorization_code': 1 });
+    db.oauth_refresh_tokens.ensureIndex({'refresh_token': 1 });
+    db.oauth_users.ensureIndex({'username': 1 });
+    db.oauth_scopes.ensureIndex({'oauth_scopes': 1 });
     
     var _obj;
     for (var secretKey in lastConfig.shared_secret) {
@@ -1402,6 +1402,11 @@ lastConfig = runOnce(lastConfig, 'BRCD-3806', function () {
 	db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
 });
 
+// BRCD-3618 configure full_calculation date field
+lastConfig = runOnce(lastConfig, 'BRCD-3618', function () {
+	lastConfig['lines']['reference_fields'] = ['full_calculation'];
+});
+
 // BRCD-3432 add BillRun' metabase plugin
 runOnce(lastConfig, 'BRCD-3432', function () {
     var mbPluginsSettings = {
@@ -1421,12 +1426,6 @@ runOnce(lastConfig, 'BRCD-3432', function () {
     lastConfig['plugins'].push(mbPluginsSettings);
 });
 
-// BRCD-3618 configure full_calculation date field
-lastConfig = runOnce(lastConfig, 'BRCD-3618', function () {
-	lastConfig['lines']['reference_fields'] = ['full_calculation'];
-});
-
-db.config.insert(lastConfig);
 //BRCD-2336: Can't "closeandnew" a prepaid bucket
 lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
 
@@ -1435,6 +1434,9 @@ lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
     db.prepaidincludes.createIndex({external_id : 1}, {unique: false});
     db.prepaidincludes.createIndex({name : 1}, {unique: false});
 });
+
+db.config.insert(lastConfig);
+
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.dropIndex("aid_1_urt_1");
 db.rebalance_queue.ensureIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});
