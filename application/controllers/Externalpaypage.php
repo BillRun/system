@@ -56,7 +56,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract { // CAUTIOUS WH
 		$this->getView()->assign('company_image', $imageEncode);
 		$this->getView()->assign('account_config', $config['subscribers']['account']['fields']);
 		$this->getView()->assign('subscriber_config', $config['subscribers']['subscriber']['fields']);
-		$this->getView()->assign('payment_gateways', $this->filterAllowedPaymentGateways($config['payment_gateways']));
+		$this->getView()->assign('payment_gateways', $this->getPaymentGatewaysInfo($config['payment_gateways']));
 		$this->getView()->assign('planNames', $planNames);
 		$this->getView()->assign('serviceNames', $serviceNames);
 		$this->getView()->assign('plans', $plans);
@@ -133,15 +133,30 @@ class ExternalPaypageController extends Yaf_Controller_Abstract { // CAUTIOUS WH
 	}
 
 	/**
-	 * @param array $paymentGateways
-	 * @return array
+	 * @param array $configPaymentGateways
+	 * @return array list of items containing fields
+	 * 		'name' - gateway name or instance name
+	 * 		'title' - title
+	 * 		'image_url' - logo URL
 	 */
-	private function filterAllowedPaymentGateways($paymentGateways) {
+	private function getPaymentGatewaysInfo(array $configPaymentGateways): array {
 		$allowedGateways = Billrun_Factory::config()->getConfigValue('PaymentGateways.potential');
+		$imageUrls = Billrun_Factory::config()->getConfigValue('PaymentGateways.images');
 
-		return array_filter($paymentGateways, function ($payment) use ($allowedGateways) {
-			return in_array($payment['name'], $allowedGateways);
+		// get list of payment gateways that are set both in DB and ini config
+		$allowedConfigPaymentGateways = array_filter($configPaymentGateways, function ($gateway) use ($allowedGateways) {
+			return in_array($gateway['name'], $allowedGateways);
 		});
+
+		return array_map(function($gatewayConfig) use ($imageUrls) {
+			$paymentGateway = Billrun_Factory::paymentGateway($gatewayConfig['name']);
+
+			return [
+				'name' => $gatewayConfig['name'],
+				'title' => $paymentGateway ? $paymentGateway->getTitle() : $gatewayConfig['name'],
+				'image_url' => $imageUrls[$gatewayConfig['name']] ?? ''
+			];
+		}, $allowedConfigPaymentGateways);
 	}
 
 }
