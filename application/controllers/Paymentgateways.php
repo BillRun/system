@@ -28,22 +28,21 @@ class PaymentGatewaysController extends ApiController {
 		$this->allowed();
 		$gateways = Billrun_Factory::config()->getConfigValue('PaymentGateways.potential');
 		$imagesUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.images');
-		$instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator', '#');
 		$settings = array();
 		foreach ($gateways as $gatewayInstanceName) {
 			$setting = array();
-			$setting['name'] = $gatewayInstanceName; // TODO instance_name?
+			$setting['name'] = $gatewayInstanceName;
 			$setting['supported'] = true;
 			$setting['image_url'] = $imagesUrl[$gatewayInstanceName];
-			$type = explode($instance_separator, $gatewayInstanceName)[0];
-			$instanceId = explode($instance_separator, $gatewayInstanceName)[1];
-			$setting['title'] = $type . ($instanceId ? " (" . $instanceId  . ")" : ''); //TODO ::FE task - display this title instead name
+
 			$paymentGateway = Billrun_Factory::paymentGateway($gatewayInstanceName);
 			if (is_null($paymentGateway)) {
 				$setting['supported'] = false;
 				$settings[] = $setting;
 				continue;
 			}
+
+			$setting['title'] = $paymentGateway->getTitle();
 			$fields = $paymentGateway->getDefaultParameters();
 			$setting['params'] = $fields;
 			$setting['secret_fields'] = $paymentGateway->getSecretFields();

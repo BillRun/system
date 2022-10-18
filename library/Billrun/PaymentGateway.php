@@ -162,8 +162,7 @@ abstract class Billrun_PaymentGateway {
 		if (isset(self::$paymentGateways[$instanceName])) {
 			$paymentGateway = self::$paymentGateways[$instanceName];
 		} else {
-			$instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator', '#');
-			$type = explode($instance_separator, $instanceName)[0];
+			$type = explode(self::getInstanceSeparator(), $instanceName)[0];
 
 			$subClassName = __CLASS__ . '_' . $type;
 			if (@class_exists($subClassName)) {
@@ -174,12 +173,29 @@ abstract class Billrun_PaymentGateway {
 		return isset($paymentGateway) ? $paymentGateway : NULL;
 	}
 
+	/**
+	 * @return mixed|Yaf_Config
+	 */
+	private static function getInstanceSeparator() {
+		return Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator', '#');
+	}
+
 	public function supportsOmnipay() {
 		return !is_null($this->omnipayName);
 	}
 
 	public function getOmnipayName() {
 		return $this->omnipayName;
+	}
+
+	/**
+	 * Returns a human-readable title
+	 *
+	 * @return string
+	 */
+	public function getTitle() {
+		list($type, $instanceId) = explode(self::getInstanceSeparator(), $this->instanceName);
+		return $type . ($instanceId ? " (" . $instanceId  . ")" : '');
 	}
 
 	/**
