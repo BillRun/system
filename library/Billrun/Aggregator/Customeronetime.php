@@ -52,7 +52,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 	}
 	
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
-		Billrun_Factory::log("Doesn't  remove anything  in one time invoice");
+		Billrun_Factory::log("Doesn't remove anything in one time invoice");
 		return ;
 	}
 	

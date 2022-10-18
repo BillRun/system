@@ -1055,6 +1055,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($this->row['type'], true)['pricing'];
 		$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
 		$aprice = Billrun_util::getIn($userFields, $apriceField);
+                		Billrun_Factory::dispatcher()->trigger('beforeGetLineAprice', array($this->row, &$aprice));
 		if (!is_null($aprice) && is_numeric($aprice)) {
 			$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
 			if (!is_null($apriceMult) && is_numeric($apriceMult)) {

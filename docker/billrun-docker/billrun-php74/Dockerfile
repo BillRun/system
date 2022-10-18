@@ -4,7 +4,7 @@ from php:7.4-fpm
 RUN apt-get update && apt-get install -y \
         wkhtmltopdf \
     && pecl install yaf-3.1.4 \
-    && pecl install mongodb \
+    && pecl install mongodb-1.11.1 \
     && pecl install xdebug \
     && docker-php-ext-enable yaf mongodb xdebug \
     && docker-php-ext-install pcntl bcmath
