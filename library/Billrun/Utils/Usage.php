@@ -158,7 +158,7 @@ class Billrun_Utils_Usage {
 				$retQueries[] =array_merge( $baseQuery , ['time'=> date(Billrun_Base::base_datetimeformat,$timeValue + $offset) ]);
 			};
 			$retQueries[] = array_merge( $baseQuery ,[	'time'=> $defaultTime ]);
-			print(json_encode($retQueries,JSON_PRETTY_PRINT));
+
 			return  $retQueries;
 	}
 
