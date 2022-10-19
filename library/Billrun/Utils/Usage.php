@@ -139,7 +139,10 @@ class Billrun_Utils_Usage {
 			$possibleTimeFields = Billrun_Factory::config()->getConfigValue('billrun.core.foreign_fields.subscribers.time_fields_mapping',[
 																					'prorated_end_date' => -1,'end'=> -1,'end_date'=>-1,
 																   					'urt'=>0,
-																					'prorated_start_date'=>1,'start'=>1,'start_date'=>1]);
+																					'prorated_start_date'=>1,'start'=>1,'start_date'=>1,
+																					'deactivation_date' => -1,
+																					'activation_date' => 1
+  																																		]);
 			$defaultTime = Billrun_Billingcycle::getStartTime(Billrun_Billingcycle::getBillrunKeyByTimestamp($row['urt']->sec-1));
 
 			$baseQuery = [];
