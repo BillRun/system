@@ -16,7 +16,7 @@
 								<span class="label"><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE_NO');?></span>
 								<span><?php echo $data->get('invoice_id'); ?></span>
 							</td>
-							<?php if (strcmp($data['attributes']['invoice_type'], 'immediate') != 0) { ?>
+							<?php if (!isset($data['attributes']['invoice_type']) || strcmp($data['attributes']['invoice_type'], 'immediate') != 0) { ?>
 							<td>
 								<span class="label"><?php echo Generator_Translations::stranslate('DEF_INV_PERIOD');?></span>
 								<h3 class="inline"><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format); ?></h3>
