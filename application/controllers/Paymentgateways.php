@@ -33,7 +33,7 @@ class PaymentGatewaysController extends ApiController {
 			$setting = array();
 			$setting['name'] = $gatewayInstanceName;
 			$setting['supported'] = true;
-			$setting['image_url'] = $imagesUrl[$gatewayInstanceName];
+			$setting['image_url'] = $imagesUrl[$gatewayInstanceName] ?? '';
 
 			$paymentGateway = Billrun_Factory::paymentGateway($gatewayInstanceName);
 			if (is_null($paymentGateway)) {
