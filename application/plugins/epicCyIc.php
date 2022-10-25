@@ -9,6 +9,18 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->ict_configuration = !empty($options['ict']) ? $options['ict'] : [];
 	}
 
+/*
+	EPICIC-56: Invoice only customers that are flagged as "active" ones
+*/
+	public function afterAggregatorLoadData($arr, &$data){ 
+		for ($i = 0; $i < sizeof($data); $i++) {
+      $rawData_bill = $data[$i]->getInvoice()->getRawData()['attributes']['billable'];	
+      if (isset($rawData_bill) && !$rawData_bill) {
+				unset($data[$i]);	
+			}
+		}
+	}	
+
 	public function beforeImportRowFormat(&$row, $operation, $requestCollection, $update) {
 		if ($operation == "permanentchange") {
 			switch ($update['mapper_name']) {
@@ -134,7 +146,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         
         public function afterLineMediation($calculator, $type, &$row) {
             if ($type === 'ICT') {
-                if ($row["uf"]["dateOrTimeWasEmpty"]) {
+                if (!empty($row["uf"]["dateOrTimeWasEmpty"])) {
                     $row["uf"]["EVENT_START_DATE"] = $row["uf"]["originalDate"];
                     $row["uf"]["EVENT_START_TIME"] = $row["uf"]["originalTime"];
                     unset($row["uf"]["originalDate"]);
@@ -200,17 +212,23 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$row->setRawData($current);
 		}
 
-		if ($calculator->getType() == 'pricing') {
-			$current = $row->getRawData();
-			if ($current["cf"]["cash_flow"] == "E") {
-				unset($current["billrun"]);
-				for ($i = 0; $i < count($current["rates"]); $i++) {
-					unset($current["rates"][$i]["pricing"]["billrun"]);
-				}
-				$row->setRawData($current);
-			}
-		}
+//		if ($calculator->getType() == 'pricing') {
+//			$current = $row->getRawData();
+//			if ($current["cf"]["cash_flow"] == "E") {
+//				unset($current["billrun"]);
+//				for ($i = 0; $i < count($current["rates"]); $i++) {
+//					unset($current["rates"][$i]["pricing"]["billrun"]);
+//				}
+//				$row->setRawData($current);
+//			}
+//		}
 	}
+        
+        //EPICIC-153: On billing cycle use only revenue lines and ignore expense lines
+        public function beforeCycleLinesQuery(&$query, &$sort, &$fields){
+			$query['$or'] = array(array("cf.cash_flow" => "R"),array("type" => "credit"));
+			Billrun_Factory::log('EpicCy Plugin - Query only revenue CDRs and credit lines');
+        }
 
 	public function beforeCalculatorAddExtraLines(&$row, &$extraData, Billrun_Calculator $calculator) {
 		if ($calculator->getType() == 'rate') {
@@ -234,6 +252,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 							$first = false;
 						} else {
                                                         $newRow["split_line"] = true;
+                                                        $newRow["cf"]["cusagev"] = 0;
                                                         //for case that line was split from medation and then the same line split from rate calaculator
                                                         if(!empty($newRow["split_during_mediation"])){
                                                             $newRow["split_during_mediation"] = false;
@@ -280,6 +299,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$current = $row->getRawData();
 		Billrun_Factory::log('Start rate mapping for stamp - ' . $current["stamp"] . ", RECORD_SEQUENCE_NUMBER - " . $current["uf"]["RECORD_SEQUENCE_NUMBER"]);
+                $current["cf"]["cusagev"] = $current["usagev"];
 		$type = $current['type'];
 		$current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
 		$current["cf"]["event_direction"] = substr($current["cf"]["call_direction"], 0, 1);
@@ -437,7 +457,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($entities) {
 			return $multiple_entities ? $entities["retail"] : $entities["retail"]->getRawData();
 		}
-		Billrun_Factory::log('Failed finding' . $parameter_name);
+		Billrun_Factory::log('Failed finding ' . $parameter_name);
 		return false;
 	}
 
@@ -661,7 +681,15 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"display" => true,
 				"nullable" => false,
 				"mandatory" => true,
-			]
+			],  [
+                                "type" => "number",
+				"field_name" => "ict.resetlines.disk_free_space.limit",
+				"title" => "Limit disk free space (by bytes) (in rebalance process)",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true,
+                        ]
 		];
 	}
 
@@ -678,7 +706,44 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			unset($update['$set']);
 		}
 	}
+        
+        public function beforeResetLinesByQuery(&$lines, &$update_aids, &$advancedProperties) {
+            $this->exitIfDiskIsAlmostFull();
+        }
+        
+        protected function exitIfDiskIsAlmostFull(){
+            $path = null;
+            $remain = null;
+            if($this->checkIfDiskIsAlmostFull($path, $remain)){
+                Billrun_Factory::log("The disk is almost full. remain " . $remain . " bytes in " . $path, Zend_Log::ALERT);
+                die();
+            }
+        }
 
+
+        protected function checkIfDiskIsAlmostFull(&$path, &$remain){
+            $diskFreeSpaceLimit = Billrun_Util::getIn($this->ict_configuration, 'resetlines.disk_free_space.limit', pow(1024, 3) * 3);// default 3 Gib
+            $logFile = Billrun_Config::getInstance()->getConfigValue("log.debug.writerParams.stream");  
+            if(!$logFile){
+               $logDir = Billrun_Util::getBillRunPath("logs"); 
+            }else{
+               $logDir = dirname($logFile);
+            }
+            $logsDirDiskFreeSpace = disk_free_space($logDir);
+            if($logsDirDiskFreeSpace <= $diskFreeSpaceLimit){
+                $remain = $logsDirDiskFreeSpace;
+                $path = $logDir;
+                return true;
+            }
+            $billrunDir = APPLICATION_PATH;
+            $billrunDirDiskFreeSpace = disk_free_space($billrunDir);
+            if($billrunDirDiskFreeSpace <= $diskFreeSpaceLimit){
+                $remain = $billrunDirDiskFreeSpace;
+                $path = $billrunDir;
+                return true;
+            }
+            return false;
+        }
 }
 
 class ICT_Reports_Manager {

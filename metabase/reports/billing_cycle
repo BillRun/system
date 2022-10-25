@@ -1,33 +1,8 @@
 [
   {
     $match: {
-      $and: [ {
-        $and : [ {
-          $expr: {$gte:['$urt', {
-                        $dateFromParts: {
-                            'year': {$year:{{from}}},
-                            'month': {$month:{{from}}},
-                            'day': { $dayOfMonth: {{from}} },
-                            'hour': {$hour:{{from}}},
-                            'minute': {$minute:{{from}}},
-                            'second': {$second:{{from}}},
-                            'millisecond': { $millisecond: {{from}} },
-                            'timezone' : "Asia/Nicosia"
-                        }
-                    }]}}, {
-            $expr: {$lt:['$urt', {
-                        $dateFromParts: {
-                            'year': {$year: {{to}}},
-                            'month': {$month: {{to}}},
-                            'day': { $dayOfMonth:  {{to}} },
-                            'hour': {$hour: {{to}}},
-                            'minute': {$minute: {{to}}},
-                            'second': {$second: {{to}}},
-                            'millisecond': { $millisecond:  {{to}} },
-                            'timezone' : "Asia/Nicosia"
-                        }
-                    }
-                ]}}]}]}},
+      billrun : {{billing_cycle}}
+}},
   {$match:{
      'in_queue':{ 
        $ne : true
@@ -46,9 +21,10 @@
         }, 
         taxes:{$sum:"$tax_data.total_amount"},
         duration: {$sum: "$usagev"},
+        charge_duration: {$sum: "$cf.cusagev"},
         amount:{$sum: "$aprice"},
 
-        count:{$sum:1}, 
+        count:{$sum: "$lcount"}, 
         final_charge:{$sum: "$final_charge"}
     }
   },
@@ -60,7 +36,8 @@
       AID:"$_id.AID",
       TIER_DESCRIPTION:"$_id.tier",
       PRODUCT:"$_id.prod",
-      DURATION:"$duration",
+      DURATION:{$cond:[{ $eq: ["$_id.prod","SMS"]},"$duration",{ $divide: [ "$duration", 60 ] }]},
+      CHARGE_DURATION:"$charge_duration",
       AMOUNT_BEFOR_TAX:"$amount",
       CALL_COUNT_D:"$count",
       UNIT_COST_USED_G:"$_id.rate_price",
