@@ -28,6 +28,7 @@
                 ]}}]},
                 { "cf.cash_flow": { $eq: "R" } } ,
                 ]}},
+{$match:{'cf.anaa_group':{ $regex: /^(?!357).*/}}},
 
 {$group: {"_id":{
 MONTH:{ $dateToString: { format: "%Y-%m", date: {{from}}, timezone: "Asia/Nicosia"} }, 
