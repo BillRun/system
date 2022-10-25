@@ -1177,10 +1177,17 @@ lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
     //                    print("add months: " + cycleCount);
                         if (cycleCount != 'UNLIMITED' && !(serviceObj.hasOwnProperty('balance_period'))) {
 //                            print("to before: " + obj.services[subServiceObj].to);
+							var origToDay =  obj.services[subServiceObj].to.getDate();
                             obj.services[subServiceObj].to = new Date(obj.services[subServiceObj].from);
-                            obj.services[subServiceObj].to.setMonth(obj.services[subServiceObj].to.getMonth()+parseInt(cycleCount));
-                            obj.services[subServiceObj].to.setDate(lastConfig.billrun.charging_day.v)
-                            obj.services[subServiceObj].to.setHours(0,0,0,0);
+                            obj.services[subServiceObj].to.setMonth(obj.services[subServiceObj].from.getMonth()+parseInt(cycleCount));
+							//did  we  rolled  over to the next month
+							if(origToDay -1 >   obj.services[subServiceObj].to.getDate() ) {
+								 obj.services[subServiceObj].to.setMonth(obj.services[subServiceObj].from.getMonth()+parseInt(cycleCount)+1);
+								 obj.services[subServiceObj].to.setDate(lastConfig.billrun.charging_day.v)
+								 obj.services[subServiceObj].to.setHours(0,0,0,0);
+							}
+                            //obj.services[subServiceObj].to.setDate(lastConfig.billrun.charging_day.v)
+                            //obj.services[subServiceObj].to.setHours(0,0,0,0);
     //                        print("to after: " + obj.services[subServiceObj].to);
                         }
                     }
