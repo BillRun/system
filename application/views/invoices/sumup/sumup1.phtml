@@ -8,12 +8,14 @@
 
 				<td>
 					<table class="table-inline">
-						<tbody><tr>
+						<tbody>
+							<?php if (!isset($data['attributes']['invoice_type']) || strcmp($data['attributes']['invoice_type'], 'immediate') != 0) { ?>
+							<tr>
 								<td><?php echo Generator_Translations::stranslate('DEF_INV_PERIOD');?></td>
 
 								<td><strong><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format); ?></strong></td>
 							</tr>
-
+							<?php } ?>
 							<tr>
 								<td><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE_NO');?></td>
 
