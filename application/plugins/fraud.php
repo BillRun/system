@@ -343,9 +343,10 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$before = $balance['totals'][$usaget]['usagev'];
 		}
 		if (isset($rule['inPlanThreshold']) && $rule['inPlanThreshold']) {
-			$overPlan = isset($row['over_plan']) ? $row['over_plan'] : 0;
+			$overPlan = isset($row['over_plan']) && empty($rule['only_in_plan_threshold']) ? $row['over_plan'] : 0;
 			$inPlan = isset($row['in_plan']) ? $row['in_plan'] : 0;
-			$after = $before + $inPlan + $overPlan;
+			$adjustAfter = isset($rule['in_plan_after_adjustment']) ? $rule['in_plan_after_adjustment'] : 0;
+			$after = $before + $inPlan + $overPlan + $adjustAfter;
 		} else {
 			$after = $before + $row['usagev'];
 		}
