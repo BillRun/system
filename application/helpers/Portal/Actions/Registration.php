@@ -202,7 +202,7 @@ class Portal_Actions_Registration extends Portal_Actions {
 	protected function getEmailSubject($path) {
 		return Billrun_Factory::config()->getConfigValue('email_templates.' . $path . '.subject', '');
 	}
-	
+
 	/**
 	 * method to get website for links send on emails
 	 * @return string
@@ -292,6 +292,10 @@ class Portal_Actions_Registration extends Portal_Actions {
 			}
 		}
 
+		if ($this->params['authentication_field'] == 'aid') {
+			settype($arr['username'], 'int');
+		}
+
 		if (empty($arr) || empty($secret)) {
 			throw new Portal_Exception('missing_parameter');
 		}
@@ -361,6 +365,9 @@ class Portal_Actions_Registration extends Portal_Actions {
 	}
 
 	protected function getFieldByAuthenticationField($field, $username) {
+		if ($this->params['authentication_field'] == 'aid') {
+			settype($username, 'int');
+		}
 		$query = [
 			$this->params['authentication_field'] => $username
 		];

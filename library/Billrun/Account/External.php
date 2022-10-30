@@ -56,7 +56,7 @@ class Billrun_Account_External extends Billrun_Account {
 
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
 			
-			$results = json_decode($results, true);	
+			$results = json_decode($results, true);		
 			Billrun_Factory::dispatcher()->trigger('afterGetExternalBillableDetails', array(&$results));
 			//Check for errors
 			if(empty($results)) {
@@ -102,7 +102,7 @@ class Billrun_Account_External extends Billrun_Account {
 		];
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
-		$request->setParameterPost($requestData);
+		$request->setRawData(json_encode($requestData));
 		$res = $request->request($request_type)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
 		$res = json_decode($res);
@@ -145,7 +145,7 @@ class Billrun_Account_External extends Billrun_Account {
 		];
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
-		$request->setParameterPost($externalQuery);
+		$request->setRawData(json_encode($externalQuery));
 		$results = $request->request($request_type)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
 		$results = json_decode($results, true);

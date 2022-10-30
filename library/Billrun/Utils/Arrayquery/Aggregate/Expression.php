@@ -100,7 +100,7 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 	}
 	
 	protected function _push($data, $expression, $pastValue = FALSE) {
-		$result = empty($pastValue) ? array() : is_array($pastValue)  ? $pastValue : [$pastValue];
+		$result = (empty($pastValue) ? array() : (is_array($pastValue)  ? $pastValue : [$pastValue]));
 		if(is_array($expression)) {
 			foreach($expression as $dstKey => $subExpression) {
 				$addedData[$dstKey] = $this->evaluate($data, $subExpression);

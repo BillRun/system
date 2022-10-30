@@ -144,7 +144,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 			}
 		}
 	}
-	
+
 	/**
 	 * add balance out\over group usage to subscriber
 	 *
@@ -157,7 +157,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 			foreach ($balances as $balance) {
 				$balance_totals = Billrun_Util::getIn($balance, 'balance.totals', []);
 				foreach ($balance_totals as $usaget => $balance_total) {
-					if(!empty($balance_total['out_group']) || !empty($balance_total['over_group'])) {
+					if (!empty($balance_total['out_group']) || !empty($balance_total['over_group'])) {
 						$subscriber['over_bundle'][$usaget] = $balance_total;
 					}
 				}

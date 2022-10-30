@@ -136,7 +136,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             } catch(Exception $ex){
                 Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
                 continue;
-        }
+            }
+            Billrun_Factory::dispatcher()->trigger('afterPreparingCpfDataField', array(static::$type, $dataField, &$dataLine, &$attributes, $this));
         }
         if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
             ksort($dataLine);

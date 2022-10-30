@@ -28,6 +28,7 @@ class PayAction extends ApiAction {
 		$jsonPayments = $request->get('payments');
 		$account = Billrun_Factory::account();
 		$uf = $request->get('uf');
+		$params = [];
 		if (!empty($uf)) {
 			$params['forced_uf'] = json_decode($uf, true);
 		}
@@ -64,7 +65,7 @@ class PayAction extends ApiAction {
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 				$this->processPaymentUf($inputPayment);
-				$deposit = new $className($inputPayment, $params);
+				$deposit = new $className(array_merge_recursive($inputPayment, $params));
 				$deposit->setUserFields($deposit->getRawData(), true);
 				$deposit->setDepositFreezeDate();
 				$deposit->setProcessTime();
@@ -283,12 +284,16 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 				Billrun_Bill_Payment::savePayments($cancellationPayments);
 			}
 			$succeededCancels = array();
+                        $paymentsAids = array();
 			foreach ($paymentsToCancel['payments'] as $payment) {
 				array_push($succeededCancels, $payment->getId());
 				$payment->markCancelled()->save();
 				$payment->detachPaidBills();
-				$payment->detachPayingBills();
-				Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+				$payment->detachPayingBills();	
+                                $paymentsAids = array_unique(array_merge([$payment->getAccountNo()], $paymentsAids));
+			}
+                        foreach ($paymentsAids as $aid) {				
+				Billrun_Bill::payUnpaidBillsByOverPayingBills($aid);
 			}
 		} catch (Exception $e) {
 			return $this->setError($e->getMessage(), $request->getPost());
