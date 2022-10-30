@@ -6036,7 +6036,7 @@ lastConfig["export_generators"][0] =
 var conf = {
     //EPICIC-52
     'billrun.compute.suggestions.rate_recalculations.enabled': 1,
-	'log.debug.filterParams.priority.v': 5
+	'log.debug.filterParams.priority.v': 7
 
 };
 lastConfig = addToConfig(conf, lastConfig);
