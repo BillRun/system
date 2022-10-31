@@ -269,7 +269,6 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				array('from' => array('$exists' => true)),
 				array('from' => array('$lte' => new MongoDate($this->lineTime)))
 			),
-			'$or' => array(	),
 			'service_id' => array('$in' => $matchedIds),
 		);
 
