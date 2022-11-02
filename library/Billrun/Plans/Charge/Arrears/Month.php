@@ -13,8 +13,7 @@
  * @since    5.2
  */
 class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
-	
-	protected $isTerminated = FALSE;
+
 
 	public function __construct($plan) {
 		parent::__construct($plan);
@@ -50,9 +49,8 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 										date(Billrun_Base::base_dateformat,Billrun_Billingcycle::getBillrunStartTimeByDate(date(Billrun_Base::base_dateformat,$this->activation)));
 
 		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
-		$fakeSubDeactivation = (empty($this->subscriberDeactivation) ? PHP_INT_MAX : $this->subscriberDeactivation);
-		$this->isTerminated =  ($fakeSubDeactivation <= $this->deactivation || empty($this->deactivation) && $fakeSubDeactivation < $this->cycle->end());
-		$adjustedDeactivation = (empty($this->deactivation) || (!$this->proratedEnd && !$this->isTerminated || !$this->proratedTermination && $this->isTerminated ) ? $this->cycle->end() : $this->deactivation - 1);
+
+		$adjustedDeactivation = (empty($this->deactivation) || (!$this->proratedEnd && !$this->isTerminated() || !$this->proratedTermination && $this->isTerminated() ) ? $this->cycle->end() : $this->deactivation - 1);
 		$formatEnd = date(Billrun_Base::base_dateformat, min( $adjustedDeactivation, $this->cycle->end() - 1) );
 
 		$this->startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
@@ -66,8 +64,8 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 		return Billrun_Plan::getPriceByTariff($tariff, $startOffset, $endOffset ,$activation);
 	}
 
-	protected function getProrationData($price) {
-		$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
+	protected function getProrationData($price, $cycle = false) {
+		$endProration =  $this->proratedEnd && !$this->isTerminated() || ($this->proratedTermination && $this->isTerminated());
 		$proratedActivation =  $this->proratedStart  || $this->startOffset ?  $this->activation :  $this->cycle->start();
 		$proratedEnding =  $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE  ;
 		return [	'start_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['start'],  $this->activation )),
@@ -79,6 +77,17 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 					'end_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['end'],  $this->activation , FALSE, $this->deactivation ,$this->deactivation && $this->cycle->end() > $this->deactivation)),
 					'prorated_end' =>  $endProration
 				];
+	}
+
+	/**
+	 * Is the the subscriber hold  the plan  has terminated it subscription or is it just a plan change?
+	 */
+	protected function isTerminated() {
+
+		$fakeSubDeactivation = (empty($this->subscriberDeactivation) ? PHP_INT_MAX : $this->subscriberDeactivation);
+
+		return (	$fakeSubDeactivation <= $this->deactivation || empty($this->deactivation) &&
+					$fakeSubDeactivation < $this->cycle->end() 	);
 	}
 	
 }

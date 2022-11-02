@@ -44,6 +44,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	protected static $aids;
         
         const txIdLength = 13;
+
 	/**
 	 * 
 	 * @param type $options
@@ -176,6 +177,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!isset($this->data['txid'])) {
 			$this->setTxid();
 		}
+		Billrun_Factory::dispatcher()->trigger('beforeSavingPayment', array(&$this->data));
 		return parent::save();
 	}
 
@@ -242,6 +244,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public function getCancellationPayment() {
 		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
+                $this->unsetAllPendingLinkedBills();
 		$rawData = $this->getRawData();
 		unset($rawData['_id'], $rawData['generated_pg_file_log']);
 		$rawData['due'] = $rawData['due'] * -1;
@@ -260,6 +263,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public function getRejectionPayment($response) {
 		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
+		$this->unsetAllPendingLinkedBills();
 		$rawData = $this->getRawData();
 		unset($rawData['_id']);
 		$rawData['original_txid'] = $this->getId();
@@ -398,6 +402,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['waiting_for_confirmation'] = false;
 		$this->detachPaidBills();
 		$this->detachPayingBills();
+                $this->unsetAllPendingLinkedBills();
 		$this->save();
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
 	}
@@ -443,6 +448,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function markCancelled() {
 		$this->data['cancelled'] = true;
+                $this->unsetAllPendingLinkedBills();
                 $this->setPending(false);
                 $this->setConfirmationStatus(false);
 		return $this;
@@ -491,6 +497,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function updateConfirmation() {
 		$this->data['waiting_for_confirmation'] = false;
 		$this->data['confirmation_time'] = new Mongodloid_Date();
+                $this->unsetAllPendingLinkedBills();
 		$this->setUrt();
 		$this->save();
 	}
@@ -1181,5 +1188,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		$paymentData = array_merge_recursive($paymentData, $paymentUf);
 		$this->setRawData($paymentData);
+	}
+        
+        
+        protected function unsetAllPendingLinkedBills() {
+            $pays = $this->getPaidBills();
+            foreach ($pays as $pay){
+                if(isset($pay['pending'])){
+                    $this->unsetPendingLinkedBills($pay['type'], $pay['id']);
+                }
+            }
 	}
 }

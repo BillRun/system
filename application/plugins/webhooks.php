@@ -24,11 +24,11 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $name = 'webhooks';
 
 	/**
-	 * webhooks config
+	 * webhooks collection
 	 * 
 	 * @var string
 	 */
-	protected $config;
+	protected $collection;
 
 	/**
 	 * plugin constructor
@@ -36,27 +36,23 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param void
 	 */
 	public function __construct($options = array()) {
-		$flatConfig = $options['config'] ?? [];
-		
-		foreach ($flatConfig as $webhook) {
-			if (!isset($this->config[$webhook['webhook_module']])) {
-				$this->config[$webhook['webhook_module']] = array();
-			}
-			if (!isset($this->config[$webhook['webhook_module']][$webhook['webhook_action']])) {
-				$this->config[$webhook['webhook_module']][$webhook['webhook_action']] = array();
-			}
-			$this->config[$webhook['webhook_module']][$webhook['webhook_action']][] = $webhook['webhook_url'];
-			$this->config['_byid_'][$webhook['webhook_id']] = $webhook;
-		}
+		$this->collection = Billrun_Factory::db()->getCollection('webhooks');
 	}
-	
-	protected function triggerWebhook($data, $urls) {
+
+	/**
+	 * trigger webhook(s) to 3rd party (webhook based system)
+	 * 
+	 * @param array $data the data to be sent
+	 * @param array $webhooks the webhooks details to trigger by http(s)
+	 * @return array list of results of the webhooks triggered
+	 */
+	protected function triggerWebhook($data, $webhooks) {
 		$ret = [];
-		foreach ($urls as $url) {
-			$url = urldecode($url);
+		foreach ($webhooks as $webhook) {
+			$url = urldecode($webhook['webhook_url']);
 			$ret[] = Billrun_Util::sendRequest($url, $data) !== FALSE;
 		}
-		
+
 		return $ret;
 	}
 
@@ -75,7 +71,8 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 			unset($after['password']);
 		}
 
-		if (!isset($this->config[$entityName][$action])) {
+		$webhooks = $this->fetchWebhookByModuleAndAction($entityName, $action, true);
+		if (!$webhooks) {
 			return true;
 		}
 		$data = array(
@@ -85,9 +82,9 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'after' => $after,
 			'modifiedUser' => $modifiedUser['name'] ?? '',
 		);
-		return $this->triggerWebhook($data, $this->config[$entityName][$action]);
+		return $this->triggerWebhook($data, $webhooks);
 	}
-	
+
 	/**
 	 * afterChargeSuccess webhook
 	 * 
@@ -96,17 +93,18 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if success to trigger request, else false
 	 */
 	public function afterChargeSuccess($bill) {
-		if (!isset($this->config['bills'][__METHOD__])) {
+		$webhooks = $this->fetchWebhookByModuleAndAction('bills', __FUNCTION__, true);
+		if (!$webhooks) {
 			return true;
 		}
 		$data = array(
 			'module' => 'bills',
-			'action' => 'afterChargeSuccess',
+			'action' => __FUNCTION__,
 			'bill' => $bill,
 		);
-		return $this->triggerWebhook($data, $this->config['bills'][__METHOD__]);
+		return $this->triggerWebhook($data, $webhooks);
 	}
-	
+
 	/**
 	 * afterPaymentAdjusted webhook
 	 * 
@@ -115,19 +113,20 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if success to trigger request, else false
 	 */
 	public function afterPaymentAdjusted($oldAmount, $newAmount, $aid) {
-		if (!isset($this->config['bills'][__METHOD__])) {
+		$webhooks = $this->fetchWebhookByModuleAndAction('bills', __FUNCTION__, true);
+		if (!$webhooks) {
 			return true;
 		}
 		$data = array(
 			'module' => 'bills',
-			'action' => 'afterPaymentAdjusted',
+			'action' => __FUNCTION__,
 			'old' => $oldAmount,
 			'new' => $newAmount,
 			'aid' => $aid,
 		);
-		return $this->triggerWebhook($data, $this->config['bills'][__METHOD__]);
+		return $this->triggerWebhook($data, $webhooks);
 	}
-	
+
 	/**
 	 * afterRefundSuccess webhook
 	 * 
@@ -136,17 +135,18 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if success to trigger request, else false
 	 */
 	public function afterRefundSuccess($refund) {
-		if (!isset($this->config['bills'][__METHOD__])) {
+		$webhooks = $this->fetchWebhookByModuleAndAction('bills', __FUNCTION__, true);
+		if (!$webhooks) {
 			return true;
 		}
 		$data = array(
 			'module' => 'bills',
-			'action' => 'afterRefundSuccess',
+			'action' => __FUNCTION__,
 			'bill' => $refund,
 		);
-		return $this->triggerWebhook($data, $this->config['bills'][__METHOD__]);
+		return $this->triggerWebhook($data, $webhooks);
 	}
-	
+
 	/**
 	 * afterInvoiceConfirmed webhook
 	 * 
@@ -155,17 +155,18 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if success to trigger request, else false
 	 */
 	public function afterInvoiceConfirmed($invoice) {
-		if (!isset($this->config['bills'][__METHOD__])) {
+		$webhooks = $this->fetchWebhookByModuleAndAction('bills', __FUNCTION__, true);
+		if (!$webhooks) {
 			return true;
 		}
 		$data = array(
 			'module' => 'bills',
-			'action' => 'afterInvoiceConfirmed',
+			'action' => __FUNCTION__,
 			'bill' => $invoice,
 		);
-		return $this->triggerWebhook($data, $this->config['bills'][__METHOD__]);
+		return $this->triggerWebhook($data, $webhooks);
 	}
-	
+
 	/**
 	 * afterRejection webhook
 	 * 
@@ -174,17 +175,18 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if success to trigger request, else false
 	 */
 	public function afterRejection($bill) {
-		if (!isset($this->config['bills'][__METHOD__])) {
+		$webhooks = $this->fetchWebhookByModuleAndAction('bills', __FUNCTION__, true);
+		if (!$webhooks) {
 			return true;
 		}
 		$data = array(
 			'module' => 'bills',
-			'action' => 'afterRejection',
+			'action' => __FUNCTION__,
 			'bill' => $bill,
 		);
-		return $this->triggerWebhook($data, $this->config['bills'][__METHOD__]);
+		return $this->triggerWebhook($data, $webhooks);
 	}
-	
+
 	/**
 	 * afterDenial webhook
 	 * 
@@ -193,17 +195,18 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if success to trigger request, else false
 	 */
 	public function afterDenial($denial) {
-		if (!isset($this->config['bills'][__METHOD__])) {
+		$webhooks = $this->fetchWebhookByModuleAndAction('bills', __FUNCTION__, true);
+		if (!$webhooks) {
 			return true;
 		}
 		$data = array(
 			'module' => 'bills',
-			'action' => 'afterDenial',
+			'action' => __FUNCTION__,
 			'bill' => $denial,
 		);
-		return $this->triggerWebhook($data, $this->config['bills'][__METHOD__]);
+		return $this->triggerWebhook($data, $webhooks);
 	}
-	
+
 	/**
 	 * afterBalanceUpdate event
 	 * 
@@ -213,25 +216,27 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if success to trigger request, else false
 	 */
 	public function afterBalanceUpdate($before, $after) {
-		if (!isset($this->config['balances'][__METHOD__])) {
+		$webhooks = $this->fetchWebhookByModuleAndAction('balances', __FUNCTION__, true);
+		if (!$webhooks) {
 			return true;
 		}
 		$data = array(
 			'module' => 'balances',
-			'action' => 'tx_update',
+			'action' => __FUNCTION__,
 			'before' => $before,
 			'after' => $after,
 		);
-		return $this->triggerWebhook($data, $this->config['balances'][__METHOD__]);
+		return $this->triggerWebhook($data, $webhooks);
 	}
-	
+
 	/**
 	 * beforeEventSave event
 	 * 
 	 * @return boolean true if success to trigger request, else false
 	 */
 	public function beforeEventSave($event, $entityBefore, $entityAfter, $eventsManager) {
-		if (!isset($this->config['events'][__METHOD__])) {
+		$webhooks = $this->fetchWebhookByModuleAndAction('events', 'create', true);
+		if (!$webhooks) {
 			return true;
 		}
 		$data = array(
@@ -241,7 +246,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'before' => $entityBefore,
 			'after' => $entityAfter,
 		);
-		return $this->triggerWebhook($data, $this->config['events'][__METHOD__]);
+		return $this->triggerWebhook($data, $webhooks);
 	}
 
 	/**
@@ -250,7 +255,8 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if success to trigger request, else false
 	 */
 	public function afterEventNotify($event) {
-		if (!isset($this->config['events'][__METHOD__])) {
+		$webhooks = $this->fetchWebhookByModuleAndAction('events', 'notify', true);
+		if (!$webhooks) {
 			return true;
 		}
 		$data = array(
@@ -258,7 +264,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'action' => 'notify',
 			'event' => $event,
 		);
-		return $this->triggerWebhook($data, $this->config['events'][__METHOD__]);
+		return $this->triggerWebhook($data, $webhooks);
 	}
 
 	/**
@@ -268,20 +274,20 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function beforeCollectionStepRun($step) {
 		$action = $this->getCollectionAction($step);
-		if (!isset($this->config['collection'][$action])) {
+		$webhooks = $this->fetchWebhookByModuleAndAction('collection', $action, true);
+		if (!$webhooks) {
 			return true;
 		}
-		
+
 		$data = array(
 			'module' => 'collection',
 			'action' => $action,
 			'step' => $step,
 		);
-		
-		return $this->triggerWebhook($data, $this->config['collection'][$action]);
+
+		return $this->triggerWebhook($data, $webhooks);
 	}
-	
-	
+
 	/**
 	 * method to get action name
 	 * 
@@ -297,7 +303,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		return $action;
 	}
-	
+
 	/**
 	 * method to define the api response
 	 * 
@@ -307,7 +313,9 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return null
 	 */
 	protected function apiResponse($ret, $response) {
-		$response->setBody(json_encode($ret));
+		$body = json_encode($ret);
+		Billrun_Factory::log()->debug('webhooks api response with: ' . $body);
+		$response->setBody($body);
 		$response->setHeader('Content-Type', 'application/json');
 		return true;
 	}
@@ -325,23 +333,23 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($params['plugin'] != $this->getName()) {
 			return true;
 		}
-		
+		Billrun_Factory::log()->debug("REQUEST: " . print_R($request, 1));
 		$webhook = array(
 			'webhook_module' => $request->get('webhook_module'),
 			'webhook_action' => $request->get('webhook_action'),
 			'webhook_url' => $request->get('webhook_url'),
 			'webhook_id' => $request->get('webhook_id') ?? uniqid(),
 		);
-		
-		$this->config['_byid_'][$webhook['webhook_id']] = $webhook;
-		
-		$this->saveWebhooksConfig();
-		
+
+		Billrun_Factory::log()->debug("WEBHOOK: " . print_R($webhook, 1));
+
+		$this->saveWebhooksColl($webhook);
+
 		$ret = array(
 			'status' => 1,
 			'webhook' => $webhook,
 		);
-		
+
 		$response->setBody(json_encode($ret));
 		return true;
 	}
@@ -359,19 +367,26 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($params['plugin'] != $this->getName()) {
 			return true;
 		}
-		
+
+		Billrun_Factory::log()->debug("REQUEST: " . print_R($request, 1));
+
 		$id = $params['id'] ?? $request->get('webhook_id');
-		if (isset($this->config['_byid_'][$id])) {
+
+		$webhook = $this->fetchWebhookByWebhookId($id);
+
+		Billrun_Factory::log()->debug("WEBHOOK: " . print_R($webhook, 1));
+
+		if ($webhook) {
 			$ret = array(
-				'status' => 1, 
-				'webhook' => $this->config['_byid_'][$id],
+				'status' => 1,
+				'webhook' => $webhook,
 			);
 		} else {
 			$ret = array(
-				'status' => 0
+				'status' => 0,
 			);
 		}
-		
+
 		$this->apiResponse($ret, $response);
 		return true;
 	}
@@ -389,7 +404,9 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($params['plugin'] != $this->getName()) {
 			return true;
 		}
-		
+
+		Billrun_Factory::log()->debug("REQUEST: " . print_R($request, 1));
+
 		$id = $params['id'] ?? $request->get('webhook_id');
 		$webhook = array(
 			'webhook_module' => $request->get('webhook_module'),
@@ -397,12 +414,12 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'webhook_url' => $request->get('webhook__url'),
 			'webhook_id' => $id,
 		);
-		
-		if (isset($this->config['_byid_'][$id])) {
-			$this->config['_byid_'][$id] = $webhook;
 
-			$this->saveWebhooksConfig();
+		Billrun_Factory::log()->debug("WEBHOOK: " . print_R($webhook, 1));
 
+		$this->deleteWebhookByWebhookId($id);
+
+		if ($this->saveWebhooksColl($webhook)) {
 			$ret = array(
 				'status' => 1,
 				'webhook' => $webhook,
@@ -412,11 +429,11 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'status' => 0
 			);
 		}
-		
+
 		$this->apiResponse($ret, $response);
 		return true;
 	}
-	
+
 	/**
 	 * apiDelete triggered from url 
 	 * 
@@ -430,14 +447,14 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($params['plugin'] != $this->getName()) {
 			return true;
 		}
-		
+
+		Billrun_Factory::log()->debug("REQUEST: " . print_R($request, 1));
+
 		$id = $params['id'] ?? $request->get('webhook_id');
-		
-		if (isset($this->config['_byid_'][$id])) {
-			unset($this->config['_byid_'][$id]);
 
-			$this->saveWebhooksConfig();
+		Billrun_Factory::log()->debug("WEBHOOK ID: " . print_R($id, 1));
 
+		if ($this->deleteWebhookByWebhookId($id)) {
 			$ret = array(
 				'status' => 1,
 				'webhook_id' => $id,
@@ -447,46 +464,99 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'status' => 0
 			);
 		}
-		
+
 		$this->apiResponse($ret, $response);
 		return true;
 	}
 
 	/**
-	 * internal method to save webhooks config to the global config
+	 * internal method to save webhooks config to the webhooks collection
 	 * 
 	 * @return boolean true if success else false
 	 */
-	protected function saveWebhooksConfig() {
-		$configModel = new ConfigModel();
-		$configData = array(
-			'name' => get_class(),
-			'configuration' => array(
-				'values' => array(
-					'config' => array_values($this->config['_byid_']),
-				),
-			),
-		);
-		$configModel->updateConfig('plugin', $configData);
+	protected function saveWebhooksColl($data) {
+		if (is_array($data)) {
+			$entity = new Mongodloid_Entity($data);
+		} elseif ($data instanceof Mongodloid_Entity) {
+			$entity = $data;
+		} else {
+			return false;
+		}
+		$this->collection->save($entity);
 		return true;
 	}
-	
+
 	/**
-	 * setup plugin input
+	 * method to fetch webhook by webhook id
 	 * 
-	 * @return void
+	 * @param string $webhookid the id to fetch by
+	 * 
+	 * @return mixed webhook record if found, else false
 	 */
-	public function getConfigurationDefinitions() {
-		return [
-				[
-					"type" => "json",
-					"field_name" => "webhooks.config",
-					"title" => "Webhook plugin",
-					"editable" => true,
-					"display" => true,
-					"nullable" => false,
-				],
-			];
+	protected function fetchWebhookByWebhookId($webhookid) {
+		$query = array(
+			'webhook_id' => $webhookid,
+		);
+		return $this->fetchWebhookByQuery($query, false);
+	}
+
+	/**
+	 * method to delete webhook by by webhook id
+	 * 
+	 * @param string $webhookid the id to fetch by
+	 * 
+	 * @return mixed the record if found, else false
+	 */
+	protected function deleteWebhookByWebhookId($webhookid) {
+		$webhook = $this->fetchWebhookByWebhookId($webhookid);
+		if (!$webhook) {
+			return false;
+		}
+		return $this->collection->removeEntity($webhook);
+	}
+
+	/**
+	 * find webhook(s) by module and action
+	 * 
+	 * @param string $module module name
+	 * @param string $action action name
+	 * @param bool $multiple find multiple records or only one record
+	 * 
+	 * @return type
+	 */
+	protected function fetchWebhookByModuleAndAction($module, $action, $multiple = true) {
+		$query = array(
+			'webhook_module' => $module,
+			'webhook_action' => $action,
+		);
+		return $this->fetchWebhookByQuery($query, $multiple);
+	}
+
+	/**
+	 * method to query webhooks collection
+	 * 
+	 * @param array $query query to run
+	 * @param bool $multiple find multiple records or only one record
+	 * 
+	 * @return boolean
+	 */
+	protected function fetchWebhookByQuery($query, $multiple = true) {
+		$cursor = $this->collection->query($query)->cursor();
+		if ($multiple) {
+			$webhooks = array();
+			foreach ($cursor as $webhook) {
+				$webhooks[] = $webhook;
+			}
+			if (!count($webhooks)) {
+				return false;
+			}
+		} else {
+			$webhooks = $cursor->current();
+			if ($webhooks->isEmpty()) {
+				return false;
+			}
+		}
+		return $webhooks;
 	}
 
 }

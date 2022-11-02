@@ -16,7 +16,7 @@ class Generator_Translations {
 	
 	public static function load() {
 		if (!static::$defaultLang) {
-			$defaultLang = Billrun_Factory::config()->getConfigValue(static::$defaultLangPath, 'en_GB');
+			$defaultLang = Billrun_Factory::config()->getConfigValue(static::$defaultLangPath, 'en_GB' );
 				static::$defaultLang = $defaultLang;
 				static::setLanguage($defaultLang);
 		}
@@ -59,4 +59,5 @@ class Generator_Translations {
 		$translation = $currentLangTranslation ?: $defaultLangTranslation ?: $slug;
 		return call_user_func_array('sprintf',array_merge([$translation], $args));
 	}
+
 }
