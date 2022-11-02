@@ -416,4 +416,12 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 		return $this->getConnection()->is_file($path);
 	}
 
+	/**
+	 * Disconnect from gateway
+	 */
+	public function disconnect() {
+		if ($this->connected()) {
+			$this->getConnection()->disconnect();
+		}
+	}
 }

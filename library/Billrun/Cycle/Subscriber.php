@@ -207,7 +207,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 
 	protected function constructRecords($data) {
-
+		Billrun_Factory::dispatcher()->trigger('beforeConstructSubscriberRecords',[&$data, $this]);
 		$constructedData = $this->constructSubscriberData($data['history'], $this->cycleAggregator->getCycle()->end());
 		$dataForAggration = $data['subscriber_info'];
 		$dataForAggration['plans'] = $constructedData['plans'];
@@ -223,6 +223,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->constructServices($dataForAggration);
 		$this->constructPlans($dataForAggration);
 		$this->constructInvoice($dataForAggration);
+		Billrun_Factory::dispatcher()->trigger('afterConstructSubscriberRecords',[&$data, $dataForAggration, $this]);
 	}
 
 	protected function constructInvoice($data) {
@@ -353,6 +354,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$name = null;
 		$from = null;
 		$to = null;
+		$activationResolutionSec = Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.activation_minimum_resolution',1);
 		$aggregatorData = array();
 		//sort plans history by date
 		usort($plans, function($a, $b){ return $a['to']->sec - $b['to']->sec;});
@@ -367,7 +369,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			}
 			$currName = $subPlan['plan'];
 			// If it is the same plan name, continue
-			if($name == $currName && $from == $subPlan['plan_activation']->sec) {
+			if($name == $currName && floor($from/$activationResolutionSec) == floor($subPlan['plan_activation']->sec/$activationResolutionSec)) {
 				$to = empty($subPlan['plan_deactivation']) ? $subPlan['to']->sec : $subPlan['plan_deactivation']->sec;
 				continue;
 			}

@@ -25,16 +25,49 @@ class Billrun_Utils_Usage {
 				if(empty($row['sid'])) {
 					return null;
 				}
+				$retSub = null;
 				$subscriber = Billrun_Factory::subscriber();
-				$query = array('sid' => $row['sid'], 'aid' => $row['aid']);
-				return $subscriber->loadSubscriberForQuery($query);
+				$possibleTimeFields = [	'prorated_end_date' => -1,'end'=> -1,'end_date'=>-1,
+										'urt'=>0,'prorated_start_date'=>1,'start'=>1,'start_date'=>1];
+				foreach ($possibleTimeFields as  $timeField =>  $offset) {
+					if(empty($row[$timeField])) {continue;}
+					$timeValue = $row[$timeField] instanceof MongoDate ?
+									$row[$timeField]->sec :
+									@Billrun_Util::getFieldVal($row[$timeField],time());
+					$query = [	'sid' => $row['sid'],
+								'aid' => $row['aid'],
+								'time'=> date(Billrun_Base::base_datetimeformat,
+												$timeValue + $offset) ];
+					if($retSub = $subscriber->loadSubscriberForQuery($query)) {
+						break;
+					}
+
+				};
+				return $retSub;
+
 			case 'account' :
 				if(empty($row['aid'])) {
 					return null;
 				}
+				$retAcc=null;
 				$account = Billrun_Factory::account();
-				$query = array('aid' => $row['aid']);
-				return $account->loadAccountForQuery($query);
+				$possibleTimeFields = [	'prorated_end_date' => -1,'end'=> -1,'end_date'=>-1,
+										'urt'=>0,'prorated_start_date'=>1,'start'=>1,'start_date'=>1];
+
+				foreach ($possibleTimeFields as  $timeField => $offset) {
+					if(empty($row[$timeField])) {continue;}
+					$timeValue = $row[$timeField] instanceof MongoDate ?
+									$row[$timeField]->sec :
+									@Billrun_Util::getFieldVal($row[$timeField],time());
+					$query = [	'aid' => $row['aid'],
+								'time'=> date(Billrun_Base::base_datetimeformat,
+												$timeValue + $offset) ];
+					if($retAcc = $account->loadAccountForQuery($query)) {
+						break;
+					}
+
+				};
+				return $retAcc;
 
 			case 'plan' :
 				if(empty($row['plan'])) {
