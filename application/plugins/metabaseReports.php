@@ -452,20 +452,67 @@ class Report {
 						$dateFormat = isset($param['format']) ? $param['format'] : 'Y-m-d';
 						if (isset($param['value']) && is_array($param['value'])) {
 							$date = Billrun_Util::calcRelativeTime($param['value'],time());
-							$params[$param['template_tag']]['value'] = date($dateFormat, $date);
+							$params[$param['template_tag']] = [
+								'value' => date($dateFormat, $date),
+								'template-tag' => $param['template_tag'],
+								'type' => $param['type']
+							];
 						} else { throw new Exception("Invalid params for 'date' type, in parameter" . $param['template_tag']); }
 					break;
-					case "string" || "number" : 
-						$params[$param['template_tag']]['value'] = $param['value'];
+					case "string":
+					case "number":
+						$params[$param['template_tag']] = [
+							'value' => $param['value'],
+							'template-tag' => $param['template_tag'],
+							'type' => $param['type']
+						];
+					break;
+					case "billrun_key" :
+						$dateFormat = isset($param['format']) ? $param['format'] : 'Y-m-d';
+						$billrun_key = Billrun_Util::isBillrunKey($param['value']) ? $param['value'] : $this->getRelevantBillrunKey($param['value']);
+						if ($billrun_key !== false) {
+								Billrun_Factory::log("Creating params query for billrun key: " . $billrun_key . ", for report: " . $this->name, Zend_Log::DEBUG);
+						} else {
+								throw new Exception("Unsupported billrun key input: " . $param['value'] . ", for report: " . $this->name);
+						}
+						$params['from'] = [
+							'value' => date($dateFormat, Billrun_Billingcycle::getStartTime($billrun_key)),
+							'template-tag' => 'from',
+							'type' => 'date'
+						];
+						$params['to'] = [
+							'value' => date($dateFormat, Billrun_Billingcycle::getEndTime($billrun_key)),
+							'template-tag' => 'to',
+							'type' => 'date'
+						];
 					break;
 					default : 
-						throw new Exception("Invalid param type, in parameter" . $param['template_tag']);
+						throw new Exception("Invalid param type, in parameter " . $param['template_tag']);
 				endswitch;
-				$params[$param['template_tag']]['template-tag'] = $param['template_tag'];
-				$params[$param['template_tag']]['type'] = $param['type'];
 			}
 		}
 		return $params;
+	}
+
+	public function getRelevantBillrunKey($billrun_key) {
+		switch ($billrun_key) {
+			case 'current':
+				return Billrun_Billrun::getActiveBillrun();
+			case 'first_unconfirmed':
+				if (($last = Billrun_Billingcycle::getLastConfirmedBillingCycle()) != Billrun_Billingcycle::getFirstTheoreticalBillingCycle()) {
+						return Billrun_Billingcycle::getFollowingBillrunKey($last);
+				}
+				if (is_null($lastStarted = Billrun_Billingcycle::getFirstStartedBillingCycle())) {
+						return $last;
+				}
+				return $lastStarted;
+			case 'last_confirmed':
+				return Billrun_Billingcycle::getLastConfirmedBillingCycle();
+			case 'last_cycle':
+				return Billrun_Billingcycle::getPreviousBillrunKey(Billrun_Billingcycle::getBillrunKeyByTimestamp(time()));
+			default:
+				return false;
+		}
 	}
 	
 	public function getData() {
