@@ -341,6 +341,24 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 	}
 
 	/**
+	 * @inheritDoc
+	 */
+	protected function credit($gatewayDetails, $addonData) {
+		$response = $this->refundTransaction(
+			$gatewayDetails['card_token'],
+			// convert from positive amount value
+			$this->convertAmountToSend(-$gatewayDetails['amount'])
+		);
+
+		$this->transactionId = $response->getId(); // for outside use
+
+		return [
+			'status' => $response->getStatus(),
+			'additional_params' => $this->getVendorResponseDetails($response->getId())
+		];
+	}
+
+	/**
 	 * @param int $transactionId
 	 * @return float|int
 	 * @throws PayrexxException
@@ -370,6 +388,20 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$transaction->setId($cardToken);
 		$transaction->setAmount($amountCents);
 		$response = $this->getPayrexxClient()->charge($transaction);
+		return $response;
+	}
+
+	/**
+	 * @param $cardToken
+	 * @param $amountCents
+	 * @return TransactionResponse
+	 * @throws PayrexxException
+	 */
+	private function refundTransaction($transactionId, $amountCents): TransactionResponse {
+		$transaction = new Transaction();
+		$transaction->setId($transactionId);
+		$transaction->setAmount($amountCents);
+		$response = $this->getPayrexxClient()->refund($transaction);
 		return $response;
 	}
 
