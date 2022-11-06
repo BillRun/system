@@ -265,15 +265,16 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$cdrLine = false;
 		$isVoLTE = false;
 
-		if (isset($this->ggsnConfig[$type]) && !$isVoLTE) {
+		if ( isset($this->ggsnConfig[$type]) ) {
 			$cdrLine = $this->getASNDataByConfig($asnObject, $this->ggsnConfig[$type], $this->ggsnConfig['fields']);
 			if ($cdrLine && !isset($cdrLine['record_type'])) {
 				$cdrLine['record_type'] = $type;
 			}
 
-			$isVoLTE = in_array($cdrLine['apnni'],['ims']);
+			$isVoLTE = in_array($cdrLine['apnni'],Billrun_Factory::config()->getConfigValue('ggsn.processor.apnni_to_ignore',['ims']));
 
 			if($isVoLTE) {
+				Billrun_Factory::log('Skipping CDR  with  APN : '.$cdrLine['apnni'],Zend_Log::DEBUG );
 				return false;
 			}
 
