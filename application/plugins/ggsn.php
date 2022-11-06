@@ -263,12 +263,20 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 
 		$type = $asnObject->getType();
 		$cdrLine = false;
+		$isVoLTE = false;
 
-		if (isset($this->ggsnConfig[$type])) {
+		if (isset($this->ggsnConfig[$type]) && !$isVoLTE) {
 			$cdrLine = $this->getASNDataByConfig($asnObject, $this->ggsnConfig[$type], $this->ggsnConfig['fields']);
 			if ($cdrLine && !isset($cdrLine['record_type'])) {
 				$cdrLine['record_type'] = $type;
 			}
+
+			$isVoLTE = in_array($cdrLine['apnni'],['ims']);
+
+			if($isVoLTE) {
+				return false;
+			}
+
 			//convert to unified time GMT  time.
 			$timeOffset =  date('P');
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['record_opening_time'], $timeOffset));
