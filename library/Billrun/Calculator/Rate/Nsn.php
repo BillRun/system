@@ -80,8 +80,11 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$icg = $row->get('in_circuit_group');
 		$line_time = $row->get('urt');
 		$matchedRate = false;
-                
-		if ($record_type == "01" || //MOC call
+
+
+		if($this->isCDRVoLTE($row)) {
+			$matchedRate = $this->getIntlRoamingRateByParams($called_number, $usage_type, $line_time, $row['in_mgw_name']);
+		} else if ($record_type == "01" || //MOC call
 				(in_array($record_type, array("11","30")) && in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
 			$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
 		) {
@@ -133,6 +136,34 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		}
 		return $matchedRate;
 	}
+
+	/**
+	 * Get a matching rate by the supplied params
+	 * @param string $called_number the number called
+	 * @param string $usage_type the usage type (call / sms ...)
+	 * @param MongoDate $urt the time of the event
+	 * @param string $imgwn the PLMN code that  the CDR was generated under (for VoLTE calls only )
+	 * @return Mongodloid_Entity the matched rate or UNRATED rate if none found
+	 */
+	protected function getIntlRoamingRateByParams($called_number, $usage_type, $urt, $imgwn) {
+		$matchedRate = $this->rates['UNRATED'];
+		$called_number_prefixes = Billrun_Util::getPrefixes($called_number);
+		foreach ($called_number_prefixes as $prefix) {
+			if (isset($this->rates[$prefix])) {
+				foreach ($this->rates[$prefix] as $rate) {
+					if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
+						if ($rate['from'] <= $urt && $rate['to'] >= $urt) {
+							if (!empty($rate['params']['serving_networks']) && in_array($imgwn, $rate['params']['serving_networks'])) {
+								$matchedRate = $rate;
+								break 2;
+							}
+						}
+					}
+				}
+			}
+		}
+		return $matchedRate;
+	}
 	//todo: move the regex and rate keys to config
 	protected function getLineAdditionalValues($row) {
 		$circuit_groups = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.whloesale_incoming_rate_key');
@@ -174,6 +205,12 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 				}
 			}
 			return FALSE;
+	}
+
+	protected function isCDRVoLTE($cdr) {
+		return( in_array($cdr['record_type'],['01','11','30']) && ($cdr['in_circuit_group'] == '5000' && $cdr['in_circuit_group_name'] == 'VOLT' ))
+					||
+				(in_array($cdr['record_type'],['02','12','31']) && ($cdr['out_circuit_group'] == '5000' && $cdr['out_circuit_group_name'] == 'VOLT' ) );
 	}
 		
 }
