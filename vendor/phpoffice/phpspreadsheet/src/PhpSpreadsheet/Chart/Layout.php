@@ -151,7 +151,7 @@ class Layout
      *
      * @param string $value
      *
-     * @return $this
+     * @return Layout
      */
     public function setLayoutTarget($value)
     {
@@ -175,7 +175,7 @@ class Layout
      *
      * @param string $value
      *
-     * @return $this
+     * @return Layout
      */
     public function setXMode($value)
     {
@@ -199,7 +199,7 @@ class Layout
      *
      * @param string $value
      *
-     * @return $this
+     * @return Layout
      */
     public function setYMode($value)
     {
@@ -223,7 +223,7 @@ class Layout
      *
      * @param float $value
      *
-     * @return $this
+     * @return Layout
      */
     public function setXPosition($value)
     {
@@ -247,7 +247,7 @@ class Layout
      *
      * @param float $value
      *
-     * @return $this
+     * @return Layout
      */
     public function setYPosition($value)
     {
@@ -271,7 +271,7 @@ class Layout
      *
      * @param float $value
      *
-     * @return $this
+     * @return Layout
      */
     public function setWidth($value)
     {
@@ -295,7 +295,7 @@ class Layout
      *
      * @param float $value
      *
-     * @return $this
+     * @return Layout
      */
     public function setHeight($value)
     {
@@ -320,7 +320,7 @@ class Layout
      *
      * @param bool $value Show legend key
      *
-     * @return $this
+     * @return Layout
      */
     public function setShowLegendKey($value)
     {
@@ -345,7 +345,7 @@ class Layout
      *
      * @param bool $value Show val
      *
-     * @return $this
+     * @return Layout
      */
     public function setShowVal($value)
     {
@@ -370,7 +370,7 @@ class Layout
      *
      * @param bool $value Show cat name
      *
-     * @return $this
+     * @return Layout
      */
     public function setShowCatName($value)
     {
@@ -395,7 +395,7 @@ class Layout
      *
      * @param bool $value Show series name
      *
-     * @return $this
+     * @return Layout
      */
     public function setShowSerName($value)
     {
@@ -420,7 +420,7 @@ class Layout
      *
      * @param bool $value Show percentage
      *
-     * @return $this
+     * @return Layout
      */
     public function setShowPercent($value)
     {
@@ -445,7 +445,7 @@ class Layout
      *
      * @param bool $value Show bubble size
      *
-     * @return $this
+     * @return Layout
      */
     public function setShowBubbleSize($value)
     {
@@ -470,7 +470,7 @@ class Layout
      *
      * @param bool $value Show leader lines
      *
-     * @return $this
+     * @return Layout
      */
     public function setShowLeaderLines($value)
     {

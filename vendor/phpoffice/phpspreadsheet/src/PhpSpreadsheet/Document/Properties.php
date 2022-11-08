@@ -122,7 +122,7 @@ class Properties
      *
      * @param string $creator
      *
-     * @return $this
+     * @return Properties
      */
     public function setCreator($creator)
     {
@@ -146,7 +146,7 @@ class Properties
      *
      * @param string $pValue
      *
-     * @return $this
+     * @return Properties
      */
     public function setLastModifiedBy($pValue)
     {
@@ -170,7 +170,7 @@ class Properties
      *
      * @param int|string $time
      *
-     * @return $this
+     * @return Properties
      */
     public function setCreated($time)
     {
@@ -204,7 +204,7 @@ class Properties
      *
      * @param int|string $time
      *
-     * @return $this
+     * @return Properties
      */
     public function setModified($time)
     {
@@ -238,7 +238,7 @@ class Properties
      *
      * @param string $title
      *
-     * @return $this
+     * @return Properties
      */
     public function setTitle($title)
     {
@@ -262,7 +262,7 @@ class Properties
      *
      * @param string $description
      *
-     * @return $this
+     * @return Properties
      */
     public function setDescription($description)
     {
@@ -286,7 +286,7 @@ class Properties
      *
      * @param string $subject
      *
-     * @return $this
+     * @return Properties
      */
     public function setSubject($subject)
     {
@@ -310,7 +310,7 @@ class Properties
      *
      * @param string $keywords
      *
-     * @return $this
+     * @return Properties
      */
     public function setKeywords($keywords)
     {
@@ -334,7 +334,7 @@ class Properties
      *
      * @param string $category
      *
-     * @return $this
+     * @return Properties
      */
     public function setCategory($category)
     {
@@ -358,7 +358,7 @@ class Properties
      *
      * @param string $company
      *
-     * @return $this
+     * @return Properties
      */
     public function setCompany($company)
     {
@@ -382,7 +382,7 @@ class Properties
      *
      * @param string $manager
      *
-     * @return $this
+     * @return Properties
      */
     public function setManager($manager)
     {
@@ -453,7 +453,7 @@ class Properties
      *   'd' : Date/Time
      *   'b' : Boolean
      *
-     * @return $this
+     * @return Properties
      */
     public function setCustomProperty($propertyName, $propertyValue = '', $propertyType = null)
     {

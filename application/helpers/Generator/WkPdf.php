@@ -331,6 +331,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		if (!empty($this->accountsToInvoice)) {
 			$query['aid'] = array('$in' => $this->accountsToInvoice);
 		}
+		Billrun_Factory::dispatcher()->trigger("beforeLoadWkpdf", array(&$query, $this->accountsToInvoice));
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
 	}
 
@@ -484,7 +485,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 					<tbody>
 					<tr>
 						<td><img src='" . $this->logo_path . "' alt='' style='width:100px;object-fit:contain;'>&nbsp;&nbsp;" . $this->getCompanyName() . "</div></td>
-						<td><div class='paging'>".Generator_Translations::stranslate('DEF_INV_PAGE'). " <span class='page'></span> of <span class='topage'></span></div></td>
+						<td><div class='paging'> ".Generator_Translations::stranslate('DEF_INV_PAGE'). " <span class='page'></span>  " . Generator_Translations::stranslate('DEF_INV_OF') . " <span class='topage'></span></div></td>
 					</tr>
 					</tbody>
 				</table>

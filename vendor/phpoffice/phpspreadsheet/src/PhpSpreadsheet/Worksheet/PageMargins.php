@@ -68,7 +68,7 @@ class PageMargins
      *
      * @param float $pValue
      *
-     * @return $this
+     * @return PageMargins
      */
     public function setLeft($pValue)
     {
@@ -92,7 +92,7 @@ class PageMargins
      *
      * @param float $pValue
      *
-     * @return $this
+     * @return PageMargins
      */
     public function setRight($pValue)
     {
@@ -116,7 +116,7 @@ class PageMargins
      *
      * @param float $pValue
      *
-     * @return $this
+     * @return PageMargins
      */
     public function setTop($pValue)
     {
@@ -140,7 +140,7 @@ class PageMargins
      *
      * @param float $pValue
      *
-     * @return $this
+     * @return PageMargins
      */
     public function setBottom($pValue)
     {
@@ -164,7 +164,7 @@ class PageMargins
      *
      * @param float $pValue
      *
-     * @return $this
+     * @return PageMargins
      */
     public function setHeader($pValue)
     {
@@ -188,7 +188,7 @@ class PageMargins
      *
      * @param float $pValue
      *
-     * @return $this
+     * @return PageMargins
      */
     public function setFooter($pValue)
     {

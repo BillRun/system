@@ -1092,8 +1092,8 @@ class Xls extends BaseReader
                     }
 
                     // calculate the width and height of the shape
-                    [$startColumn, $startRow] = Coordinate::coordinateFromString($spContainer->getStartCoordinates());
-                    [$endColumn, $endRow] = Coordinate::coordinateFromString($spContainer->getEndCoordinates());
+                    list($startColumn, $startRow) = Coordinate::coordinateFromString($spContainer->getStartCoordinates());
+                    list($endColumn, $endRow) = Coordinate::coordinateFromString($spContainer->getEndCoordinates());
 
                     $startOffsetX = $spContainer->getStartOffsetX();
                     $startOffsetY = $spContainer->getStartOffsetY();
@@ -1178,7 +1178,7 @@ class Xls extends BaseReader
             // treat SHAREDFMLA records
             if ($this->version == self::XLS_BIFF8) {
                 foreach ($this->sharedFormulaParts as $cell => $baseCell) {
-                    [$column, $row] = Coordinate::coordinateFromString($cell);
+                    list($column, $row) = Coordinate::coordinateFromString($cell);
                     if (($this->getReadFilter() !== null) && $this->getReadFilter()->readCell($column, $row, $this->phpSheet->getTitle())) {
                         $formula = $this->getFormulaFromStructure($this->sharedFormulas[$baseCell], $cell);
                         $this->phpSheet->getCell($cell)->setValueExplicit('=' . $formula, DataType::TYPE_FORMULA);
@@ -1254,8 +1254,8 @@ class Xls extends BaseReader
 
                                     $coordinateStrings = explode(':', $extractedRange);
                                     if (count($coordinateStrings) == 2) {
-                                        [$firstColumn, $firstRow] = Coordinate::coordinateFromString($coordinateStrings[0]);
-                                        [$lastColumn, $lastRow] = Coordinate::coordinateFromString($coordinateStrings[1]);
+                                        list($firstColumn, $firstRow) = Coordinate::coordinateFromString($coordinateStrings[0]);
+                                        list($lastColumn, $lastRow) = Coordinate::coordinateFromString($coordinateStrings[1]);
 
                                         if ($firstColumn == 'A' && $lastColumn == 'IV') {
                                             // then we have repeating rows
@@ -3827,7 +3827,7 @@ class Xls extends BaseReader
                 }
             }
 
-            if (!$this->readDataOnly && !$emptyCell && isset($this->mapCellXfIndex[$xfIndex])) {
+            if (!$this->readDataOnly && !$emptyCell) {
                 // add style information
                 $cell->setXfIndex($this->mapCellXfIndex[$xfIndex]);
             }
@@ -5293,10 +5293,12 @@ class Xls extends BaseReader
             $nextIdentifier = self::getUInt2d($this->data, $this->pos);
         } while ($nextIdentifier == self::XLS_TYPE_CONTINUE);
 
-        return [
+        $splicedData = [
             'recordData' => $data,
             'spliceOffsets' => $spliceOffsets,
         ];
+
+        return $splicedData;
     }
 
     /**
@@ -5367,12 +5369,12 @@ class Xls extends BaseReader
         $formulaStrings = [];
         foreach ($tokens as $token) {
             // initialize spaces
-            $space0 = $space0 ?? ''; // spaces before next token, not tParen
-            $space1 = $space1 ?? ''; // carriage returns before next token, not tParen
-            $space2 = $space2 ?? ''; // spaces before opening parenthesis
-            $space3 = $space3 ?? ''; // carriage returns before opening parenthesis
-            $space4 = $space4 ?? ''; // spaces before closing parenthesis
-            $space5 = $space5 ?? ''; // carriage returns before closing parenthesis
+            $space0 = isset($space0) ? $space0 : ''; // spaces before next token, not tParen
+            $space1 = isset($space1) ? $space1 : ''; // carriage returns before next token, not tParen
+            $space2 = isset($space2) ? $space2 : ''; // spaces before opening parenthesis
+            $space3 = isset($space3) ? $space3 : ''; // carriage returns before opening parenthesis
+            $space4 = isset($space4) ? $space4 : ''; // spaces before closing parenthesis
+            $space5 = isset($space5) ? $space5 : ''; // carriage returns before closing parenthesis
 
             switch ($token['name']) {
                 case 'tAdd': // addition
@@ -7156,7 +7158,7 @@ class Xls extends BaseReader
      */
     private function readBIFF8CellAddressB($cellAddressStructure, $baseCell = 'A1')
     {
-        [$baseCol, $baseRow] = Coordinate::coordinateFromString($baseCell);
+        list($baseCol, $baseRow) = Coordinate::coordinateFromString($baseCell);
         $baseCol = Coordinate::columnIndexFromString($baseCol) - 1;
 
         // offset: 0; size: 2; index to row (0... 65535) (or offset (-32768... 32767))
@@ -7335,7 +7337,7 @@ class Xls extends BaseReader
      */
     private function readBIFF8CellRangeAddressB($subData, $baseCell = 'A1')
     {
-        [$baseCol, $baseRow] = Coordinate::coordinateFromString($baseCell);
+        list($baseCol, $baseRow) = Coordinate::coordinateFromString($baseCell);
         $baseCol = Coordinate::columnIndexFromString($baseCol) - 1;
 
         // TODO: if cell range is just a single cell, should this funciton

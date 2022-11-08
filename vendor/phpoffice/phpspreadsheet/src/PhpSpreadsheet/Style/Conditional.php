@@ -12,7 +12,6 @@ class Conditional implements IComparable
     const CONDITION_CONTAINSTEXT = 'containsText';
     const CONDITION_EXPRESSION = 'expression';
     const CONDITION_CONTAINSBLANKS = 'containsBlanks';
-    const CONDITION_NOTCONTAINSBLANKS = 'notContainsBlanks';
 
     // Operator types
     const OPERATOR_NONE = '';
@@ -95,7 +94,7 @@ class Conditional implements IComparable
      *
      * @param string $pValue Condition type, see self::CONDITION_*
      *
-     * @return $this
+     * @return Conditional
      */
     public function setConditionType($pValue)
     {
@@ -119,7 +118,7 @@ class Conditional implements IComparable
      *
      * @param string $pValue Conditional operator type, see self::OPERATOR_*
      *
-     * @return $this
+     * @return Conditional
      */
     public function setOperatorType($pValue)
     {
@@ -143,7 +142,7 @@ class Conditional implements IComparable
      *
      * @param string $value
      *
-     * @return $this
+     * @return Conditional
      */
     public function setText($value)
     {
@@ -167,7 +166,7 @@ class Conditional implements IComparable
      *
      * @param bool $value
      *
-     * @return $this
+     * @return Conditional
      */
     public function setStopIfTrue($value)
     {
@@ -191,7 +190,7 @@ class Conditional implements IComparable
      *
      * @param string[] $pValue Condition
      *
-     * @return $this
+     * @return Conditional
      */
     public function setConditions($pValue)
     {
@@ -208,7 +207,7 @@ class Conditional implements IComparable
      *
      * @param string $pValue Condition
      *
-     * @return $this
+     * @return Conditional
      */
     public function addCondition($pValue)
     {
@@ -232,7 +231,7 @@ class Conditional implements IComparable
      *
      * @param Style $pValue
      *
-     * @return $this
+     * @return Conditional
      */
     public function setStyle(?Style $pValue = null)
     {

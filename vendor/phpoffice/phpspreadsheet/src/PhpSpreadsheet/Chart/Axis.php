@@ -354,7 +354,7 @@ class Axis extends Properties
      *
      * @param int $shadow_presets
      *
-     * @return $this
+     * @return Axis
      */
     private function setShadowPresetsProperties($shadow_presets)
     {
@@ -369,7 +369,7 @@ class Axis extends Properties
      *
      * @param mixed &$reference
      *
-     * @return $this
+     * @return Axis
      */
     private function setShadowProperiesMapValues(array $properties_map, &$reference = null)
     {
@@ -401,7 +401,7 @@ class Axis extends Properties
      * @param int $alpha
      * @param string $type
      *
-     * @return $this
+     * @return Axis
      */
     private function setShadowColor($color, $alpha, $type)
     {
@@ -415,7 +415,7 @@ class Axis extends Properties
      *
      * @param float $blur
      *
-     * @return $this
+     * @return Axis
      */
     private function setShadowBlur($blur)
     {
@@ -431,7 +431,7 @@ class Axis extends Properties
      *
      * @param int $angle
      *
-     * @return $this
+     * @return Axis
      */
     private function setShadowAngle($angle)
     {
@@ -447,7 +447,7 @@ class Axis extends Properties
      *
      * @param float $distance
      *
-     * @return $this
+     * @return Axis
      */
     private function setShadowDistance($distance)
     {
@@ -505,7 +505,7 @@ class Axis extends Properties
      *
      * @param float $size
      *
-     * @return $this
+     * @return Axis
      */
     private function setGlowSize($size)
     {
@@ -523,7 +523,7 @@ class Axis extends Properties
      * @param int $alpha
      * @param string $type
      *
-     * @return $this
+     * @return Axis
      */
     private function setGlowColor($color, $alpha, $type)
     {

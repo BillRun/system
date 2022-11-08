@@ -40,7 +40,8 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation) : $this->cycle->end(),
 					'end_date' => new MongoDate(Billrun_Plan::monthDiffToDate($price['end'],  $this->activation , FALSE, $this->deactivation ,$this->deactivation && $this->cycle->end() > $this->deactivation)),
 					'prorated_end' =>  $endProration,
-
+					'deactivation_date'=>  $this->deactivation,
+					'activation_date'=>  $this->activation,
 					'cycle' => $tariff['from'],
 					'full_price' => floatval($tariff['price']) );
 					

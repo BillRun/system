@@ -67,7 +67,7 @@ abstract class Coordinate
         }
 
         // Split out any worksheet name from the reference
-        [$worksheet, $pCoordinateString] = Worksheet::extractSheetTitle($pCoordinateString, true);
+        list($worksheet, $pCoordinateString) = Worksheet::extractSheetTitle($pCoordinateString, true);
         if ($worksheet > '') {
             $worksheet .= '!';
         }
@@ -96,13 +96,13 @@ abstract class Coordinate
         }
 
         // Split out any worksheet name from the coordinate
-        [$worksheet, $pCoordinateString] = Worksheet::extractSheetTitle($pCoordinateString, true);
+        list($worksheet, $pCoordinateString) = Worksheet::extractSheetTitle($pCoordinateString, true);
         if ($worksheet > '') {
             $worksheet .= '!';
         }
 
         // Create absolute coordinate
-        [$column, $row] = self::coordinateFromString($pCoordinateString);
+        list($column, $row) = self::coordinateFromString($pCoordinateString);
         $column = ltrim($column, '$');
         $row = ltrim($row, '$');
 
@@ -179,7 +179,7 @@ abstract class Coordinate
         if (strpos($pRange, ':') === false) {
             $rangeA = $rangeB = $pRange;
         } else {
-            [$rangeA, $rangeB] = explode(':', $pRange);
+            list($rangeA, $rangeB) = explode(':', $pRange);
         }
 
         // Calculate range outer borders
@@ -203,7 +203,7 @@ abstract class Coordinate
     public static function rangeDimension($pRange)
     {
         // Calculate range outer borders
-        [$rangeStart, $rangeEnd] = self::rangeBoundaries($pRange);
+        list($rangeStart, $rangeEnd) = self::rangeBoundaries($pRange);
 
         return [($rangeEnd[0] - $rangeStart[0] + 1), ($rangeEnd[1] - $rangeStart[1] + 1)];
     }
@@ -230,7 +230,7 @@ abstract class Coordinate
         if (strpos($pRange, ':') === false) {
             $rangeA = $rangeB = $pRange;
         } else {
-            [$rangeA, $rangeB] = explode(':', $pRange);
+            list($rangeA, $rangeB) = explode(':', $pRange);
         }
 
         return [self::coordinateFromString($rangeA), self::coordinateFromString($rangeB)];
@@ -395,9 +395,9 @@ abstract class Coordinate
             }
 
             // Range...
-            [$rangeStart, $rangeEnd] = $range;
-            [$startColumn, $startRow] = self::coordinateFromString($rangeStart);
-            [$endColumn, $endRow] = self::coordinateFromString($rangeEnd);
+            list($rangeStart, $rangeEnd) = $range;
+            list($startColumn, $startRow) = self::coordinateFromString($rangeStart);
+            list($endColumn, $endRow) = self::coordinateFromString($rangeEnd);
             $startColumnIndex = self::columnIndexFromString($startColumn);
             $endColumnIndex = self::columnIndexFromString($endColumn);
             ++$endColumnIndex;
@@ -451,7 +451,7 @@ abstract class Coordinate
                 continue;
             }
 
-            [$column, $row] = self::coordinateFromString($coord);
+            list($column, $row) = self::coordinateFromString($coord);
             $row = (int) (ltrim($row, '$'));
             $hashCode = $column . '-' . (is_object($value) ? $value->getHashCode() : $value);
 

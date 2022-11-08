@@ -423,7 +423,7 @@ class Xlsx extends BaseWriter
      *
      * @param Spreadsheet $spreadsheet PhpSpreadsheet object
      *
-     * @return $this
+     * @return Xlsx
      */
     public function setSpreadsheet(Spreadsheet $spreadsheet)
     {
@@ -527,7 +527,7 @@ class Xlsx extends BaseWriter
      *
      * @param bool $pValue Office2003 compatibility?
      *
-     * @return $this
+     * @return Xlsx
      */
     public function setOffice2003Compatibility($pValue)
     {

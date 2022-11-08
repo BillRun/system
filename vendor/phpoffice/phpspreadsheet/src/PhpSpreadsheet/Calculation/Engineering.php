@@ -783,7 +783,7 @@ class Engineering
      *                                If $ord is nonnumeric, BESSELI returns the #VALUE! error value.
      *                                If $ord < 0, BESSELI returns the #NUM! error value.
      *
-     * @return float|string Result, or a string containing an error
+     * @return float
      */
     public static function BESSELI($x, $ord)
     {
@@ -835,7 +835,7 @@ class Engineering
      *                                If $ord is nonnumeric, BESSELJ returns the #VALUE! error value.
      *                                If $ord < 0, BESSELJ returns the #NUM! error value.
      *
-     * @return float|string Result, or a string containing an error
+     * @return float
      */
     public static function BESSELJ($x, $ord)
     {
@@ -926,7 +926,7 @@ class Engineering
      *                                If $ord is nonnumeric, BESSELK returns the #VALUE! error value.
      *                                If $ord < 0, BESSELK returns the #NUM! error value.
      *
-     * @return float|string Result, or a string containing an error
+     * @return float
      */
     public static function BESSELK($x, $ord)
     {
@@ -1013,7 +1013,7 @@ class Engineering
      *                                If $ord is nonnumeric, BESSELK returns the #VALUE! error value.
      *                                If $ord < 0, BESSELK returns the #NUM! error value.
      *
-     * @return float|string Result, or a string containing an error
+     * @return float
      */
     public static function BESSELY($x, $ord)
     {
@@ -2664,7 +2664,7 @@ class Engineering
      * @param string $fromUOM the units for value
      * @param string $toUOM the units for the result
      *
-     * @return float|string
+     * @return float
      */
     public static function CONVERTUOM($value, $fromUOM, $toUOM)
     {
