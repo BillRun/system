@@ -33,7 +33,7 @@ use stdClass;
 use Symfony\Bridge\PhpUnit\ConstraintTrait;
 use function array_values;
 use function get_class;
-use function gettype;
+use function get_debug_type;
 use function in_array;
 use function is_array;
 use function is_object;
@@ -97,7 +97,7 @@ class DocumentsMatchConstraint extends Constraint
         $this->comparatorFactory = Factory::getInstance();
     }
 
-    public function evaluate($other, $description = '', $returnResult = false)
+    private function doEvaluate($other, $description = '', $returnResult = false)
     {
         /* TODO: If ignoreExtraKeys and sortKeys are both false, then we may be
          * able to skip preparation, convert both documents to extended JSON,
@@ -314,8 +314,8 @@ class DocumentsMatchConstraint extends Constraint
                 continue;
             }
 
-            $expectedType = is_object($expectedValue) ? get_class($expectedValue) : gettype($expectedValue);
-            $actualType = is_object($actualValue) ? get_class($actualValue) : gettype($actualValue);
+            $expectedType = get_debug_type($expectedValue);
+            $actualType = get_debug_type($actualValue);
 
             // Workaround for ObjectComparator printing the whole actual object
             if ($expectedType !== $actualType) {

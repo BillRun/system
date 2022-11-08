@@ -122,12 +122,18 @@ class Helper
      *      PayPal\Express      => \Omnipay\PayPal\ExpressGateway
      *      PayPal_Express      => \Omnipay\PayPal\ExpressGateway
      *
-     * @param  string  $shortName The short gateway name
+     * @param  string  $shortName The short gateway name or the FQCN
      * @return string  The fully namespaced gateway class name
      */
     public static function getGatewayClassName($shortName)
     {
-        if (0 === strpos($shortName, '\\')) {
+        // If the class starts with \ or Omnipay\, assume it's a FQCN
+        if (0 === strpos($shortName, '\\') || 0 === strpos($shortName, 'Omnipay\\')) {
+            return $shortName;
+        }
+
+        // Check if the class exists and implements the Gateway Interface, if so -> FCQN
+        if (is_subclass_of($shortName, GatewayInterface::class, true)) {
             return $shortName;
         }
 

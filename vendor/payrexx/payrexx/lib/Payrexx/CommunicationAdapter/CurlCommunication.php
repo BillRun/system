@@ -33,13 +33,13 @@ class CurlCommunication extends AbstractCommunication
     /**
      * {@inheritdoc}
      */
-    public function requestApi($apiUrl, $params = array(), $method = 'POST')
+    public function requestApi($apiUrl, $params = array(), $method = 'POST', $httpHeader = array())
     {
         $curlOpts = array(
             CURLOPT_URL => $apiUrl,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_USERAGENT => 'payrexx-php/1.0.0',
+            CURLOPT_USERAGENT => 'payrexx-php/1.8.0',
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_CAINFO => dirname(__DIR__) . '/certs/ca.pem',
         );
@@ -63,7 +63,13 @@ class CurlCommunication extends AbstractCommunication
             $curlOpts[CURLOPT_URL] .= strpos($curlOpts[CURLOPT_URL], '?') === false ? '?' : '&';
             $curlOpts[CURLOPT_URL] .= 'instance=' . $params['instance'];
         }
-
+        if ($httpHeader) {
+            $header = [];
+            foreach ($httpHeader as $name => $value) {
+                $header[] = $name . ': ' . $value;
+            }
+            $curlOpts[CURLOPT_HTTPHEADER] = $header;
+        }
         $hasFile = false;
         $hasCurlFile = class_exists('CURLFile', false);
         foreach ($params as $param) {
@@ -76,7 +82,7 @@ class CurlCommunication extends AbstractCommunication
             }
         }
         if ($hasFile) {
-            $curlOpts[CURLOPT_HTTPHEADER] = ['Content-type: multipart/form-data'];
+            $curlOpts[CURLOPT_HTTPHEADER][] = 'Content-type: multipart/form-data';
             if (empty($params['id'])) {
                 unset($params['id']);
             }

@@ -33,23 +33,46 @@ final class Versions
      * @internal
      */
     const VERSIONS          = array (
-  'alcaeus/mongo-php-adapter' => '1.2.0@b828ebc06cd3c270997b13c97dadc94731b36354',
-  'bshaffer/oauth2-server-php' => 'v1.11.1@5a0c8000d4763b276919e2106f54eddda6bc50fa',
-  'composer/package-versions-deprecated' => '1.11.99.1@7413f0b55a051e89485c5cb9f765fe24bb02a7b6',
-  'jean85/pretty-package-versions' => '1.5.1@a917488320c20057da87f67d0d40543dd9427f7a',
+  'alcaeus/mongo-php-adapter' => '1.2.2@0e99bf5ea15f8e9b7ddb3a6dc38c11aa95330ca1',
+  'bshaffer/oauth2-server-php' => 'v1.13.0@cd11527b29ceb340f24015b6df868c22908bcf12',
+  'clue/stream-filter' => 'v1.6.0@d6169430c7731d8509da7aecd0af756a5747b78e',
+  'composer/package-versions-deprecated' => '1.11.99.5@b4f54f74ef3453349c24a845d22392cd31e65f1d',
+  'ezyang/htmlpurifier' => 'v4.16.0@523407fb06eb9e5f3d59889b3978d5bfe94299c8',
+  'guzzlehttp/guzzle' => '6.5.8@a52f0440530b54fa079ce76e8c5d196a42cad981',
+  'guzzlehttp/promises' => '1.5.2@b94b2807d85443f9719887892882d0329d1e2598',
+  'guzzlehttp/psr7' => '1.9.0@e98e3e6d4f86621a9b75f623996e6bbdeb4b9318',
+  'jean85/pretty-package-versions' => '1.6.0@1e0104b46f045868f11942aea058cd7186d6c303',
+  'league/omnipay' => 'v3.0.2@9e10d91cbf84744207e13d4483e79de39b133368',
   'maennchen/zipstream-php' => '2.1.0@c4c5803cc1f93df3d2448478ef79394a5981cc58',
-  'markbaker/complex' => '2.0.0@9999f1432fae467bc93c53f357105b4c31bb994c',
-  'markbaker/matrix' => '2.0.0@9567d9c4c519fbe40de01dbd1e4469dbbb66f46a',
-  'mongodb/mongodb' => '1.7.2@38b685191c047a57275d6ccd2ea5c50f23638485',
-  'myclabs/php-enum' => '1.7.7@d178027d1e679832db9f38248fcc7200647dc2b7',
-  'phpoffice/phpspreadsheet' => '1.15.0@a8e8068b31b8119e1daa5b1eb5715a3a8ea8305f',
+  'markbaker/complex' => '3.0.1@ab8bc271e404909db09ff2d5ffa1e538085c0f22',
+  'markbaker/matrix' => '3.0.0@c66aefcafb4f6c269510e9ac46b82619a904c576',
+  'moneyphp/money' => 'v3.3.3@0dc40e3791c67e8793e3aa13fead8cf4661ec9cd',
+  'mongodb/mongodb' => '1.8.0@953dbc19443aa9314c44b7217a16873347e6840d',
+  'myclabs/php-enum' => '1.8.4@a867478eae49c9f59ece437ae7f9506bfaa27483',
+  'omnipay/common' => 'v3.2.0@e278ff00676c05cd0f4aaaf6189a226f26ae056e',
+  'payrexx/omnipay-payrexx' => 'v1.1@ce601e53e53ea78e8ac4630abf270598c94e6115',
+  'payrexx/payrexx' => 'v1.8.3@4141a1f982e7f4ba5e7c7b1866f2dc7af0518165',
+  'php-http/discovery' => '1.14.3@31d8ee46d0215108df16a8527c7438e96a4d7735',
+  'php-http/guzzle6-adapter' => 'v2.0.2@9d1a45eb1c59f12574552e81fb295e9e53430a56',
+  'php-http/httplug' => '2.3.0@f640739f80dfa1152533976e3c112477f69274eb',
+  'php-http/message' => '1.13.0@7886e647a30a966a1a8d1dad1845b71ca8678361',
+  'php-http/message-factory' => 'v1.0.2@a478cb11f66a6ac48d8954216cfed9aa06a501a1',
+  'php-http/promise' => '1.1.0@4c4c1f9b7289a2ec57cde7f1e9762a5789506f88',
+  'phpoffice/phpspreadsheet' => '1.25.2@a317a09e7def49852400a4b3eca4a4b0790ceeb5',
   'psr/http-client' => '1.0.1@2dfb5f6c5eff0e91e20e913f8c5452ed95b86621',
   'psr/http-factory' => '1.0.1@12ac7fcd07e5b077433f5f2bee95b3a771bf61be',
   'psr/http-message' => '1.0.1@f6561bf28d520154e4b0ec72be95418abe6d9363',
   'psr/simple-cache' => '1.0.1@408d5eafb83c57f6365a3ca330ff23aa4a5fa39b',
-  'symfony/polyfill-mbstring' => 'v1.20.0@39d483bdf39be819deabf04ec872eb0b2410b531',
+  'ralouphie/getallheaders' => '3.0.3@120b605dfeb996808c31b6477290a714d356e822',
+  'symfony/deprecation-contracts' => 'v2.5.2@e8b495ea28c1d97b5e0c121748d6f9b53d075c66',
+  'symfony/http-foundation' => 'v5.4.15@75bd663ff2db90141bfb733682459d5bbe9e29c3',
+  'symfony/polyfill-intl-idn' => 'v1.26.0@59a8d271f00dd0e4c2e518104cc7963f655a1aa8',
+  'symfony/polyfill-intl-normalizer' => 'v1.26.0@219aa369ceff116e673852dce47c3a41794c14bd',
+  'symfony/polyfill-mbstring' => 'v1.26.0@9344f9cb97f3b19424af1a21a3b0e75b0a7d8d7e',
+  'symfony/polyfill-php72' => 'v1.26.0@bf44a9fd41feaac72b074de600314a93e2ae78e2',
+  'symfony/polyfill-php80' => 'v1.26.0@cfa0ae98841b9e461207c13ab093d76b0fa7bace',
   'simpletest/simpletest' => 'v1.2.0@4fb6006517a1428785a0ea704fbedcc675421ec4',
-  '__root__' => 'dev-master@d8c1f2edd6018d2bbe9366178cbd4c8e4cdb5135',
+  '__root__' => 'dev-master@f8a34512d08d316d1b325237cdff4dbe8fad8d8b',
 );
 
     private function __construct()
@@ -64,7 +87,7 @@ final class Versions
      */
     public static function rootPackageName() : string
     {
-        if (!class_exists(InstalledVersions::class, false) || !InstalledVersions::getRawData()) {
+        if (!self::composer2ApiUsable()) {
             return self::ROOT_PACKAGE_NAME;
         }
 
@@ -82,7 +105,7 @@ final class Versions
      */
     public static function getVersion(string $packageName): string
     {
-        if (class_exists(InstalledVersions::class, false) && InstalledVersions::getRawData()) {
+        if (self::composer2ApiUsable()) {
             return InstalledVersions::getPrettyVersion($packageName)
                 . '@' . InstalledVersions::getReference($packageName);
         }
@@ -94,5 +117,26 @@ final class Versions
         throw new OutOfBoundsException(
             'Required package "' . $packageName . '" is not installed: check your ./vendor/composer/installed.json and/or ./composer.lock files'
         );
+    }
+
+    private static function composer2ApiUsable(): bool
+    {
+        if (!class_exists(InstalledVersions::class, false)) {
+            return false;
+        }
+
+        if (method_exists(InstalledVersions::class, 'getAllRawData')) {
+            $rawData = InstalledVersions::getAllRawData();
+            if (count($rawData) === 1 && count($rawData[0]) === 0) {
+                return false;
+            }
+        } else {
+            $rawData = InstalledVersions::getRawData();
+            if ($rawData === null || $rawData === []) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

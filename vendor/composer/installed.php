@@ -1,175 +1,410 @@
-<?php return array (
-  'root' => 
-  array (
-    'pretty_version' => 'dev-master',
-    'version' => 'dev-master',
-    'aliases' => 
-    array (
+<?php return array(
+    'root' => array(
+        'pretty_version' => 'dev-master',
+        'version' => 'dev-master',
+        'type' => 'library',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'reference' => 'f8a34512d08d316d1b325237cdff4dbe8fad8d8b',
+        'name' => '__root__',
+        'dev' => true,
     ),
-    'reference' => 'd8c1f2edd6018d2bbe9366178cbd4c8e4cdb5135',
-    'name' => '__root__',
-  ),
-  'versions' => 
-  array (
-    '__root__' => 
-    array (
-      'pretty_version' => 'dev-master',
-      'version' => 'dev-master',
-      'aliases' => 
-      array (
-      ),
-      'reference' => 'd8c1f2edd6018d2bbe9366178cbd4c8e4cdb5135',
+    'versions' => array(
+        '__root__' => array(
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'reference' => 'f8a34512d08d316d1b325237cdff4dbe8fad8d8b',
+            'dev_requirement' => false,
+        ),
+        'alcaeus/mongo-php-adapter' => array(
+            'pretty_version' => '1.2.2',
+            'version' => '1.2.2.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../alcaeus/mongo-php-adapter',
+            'aliases' => array(),
+            'reference' => '0e99bf5ea15f8e9b7ddb3a6dc38c11aa95330ca1',
+            'dev_requirement' => false,
+        ),
+        'bshaffer/oauth2-server-php' => array(
+            'pretty_version' => 'v1.13.0',
+            'version' => '1.13.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../bshaffer/oauth2-server-php',
+            'aliases' => array(),
+            'reference' => 'cd11527b29ceb340f24015b6df868c22908bcf12',
+            'dev_requirement' => false,
+        ),
+        'clue/stream-filter' => array(
+            'pretty_version' => 'v1.6.0',
+            'version' => '1.6.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../clue/stream-filter',
+            'aliases' => array(),
+            'reference' => 'd6169430c7731d8509da7aecd0af756a5747b78e',
+            'dev_requirement' => false,
+        ),
+        'composer/package-versions-deprecated' => array(
+            'pretty_version' => '1.11.99.5',
+            'version' => '1.11.99.5',
+            'type' => 'composer-plugin',
+            'install_path' => __DIR__ . '/./package-versions-deprecated',
+            'aliases' => array(),
+            'reference' => 'b4f54f74ef3453349c24a845d22392cd31e65f1d',
+            'dev_requirement' => false,
+        ),
+        'ezyang/htmlpurifier' => array(
+            'pretty_version' => 'v4.16.0',
+            'version' => '4.16.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../ezyang/htmlpurifier',
+            'aliases' => array(),
+            'reference' => '523407fb06eb9e5f3d59889b3978d5bfe94299c8',
+            'dev_requirement' => false,
+        ),
+        'guzzlehttp/guzzle' => array(
+            'pretty_version' => '6.5.8',
+            'version' => '6.5.8.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../guzzlehttp/guzzle',
+            'aliases' => array(),
+            'reference' => 'a52f0440530b54fa079ce76e8c5d196a42cad981',
+            'dev_requirement' => false,
+        ),
+        'guzzlehttp/promises' => array(
+            'pretty_version' => '1.5.2',
+            'version' => '1.5.2.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../guzzlehttp/promises',
+            'aliases' => array(),
+            'reference' => 'b94b2807d85443f9719887892882d0329d1e2598',
+            'dev_requirement' => false,
+        ),
+        'guzzlehttp/psr7' => array(
+            'pretty_version' => '1.9.0',
+            'version' => '1.9.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../guzzlehttp/psr7',
+            'aliases' => array(),
+            'reference' => 'e98e3e6d4f86621a9b75f623996e6bbdeb4b9318',
+            'dev_requirement' => false,
+        ),
+        'jean85/pretty-package-versions' => array(
+            'pretty_version' => '1.6.0',
+            'version' => '1.6.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../jean85/pretty-package-versions',
+            'aliases' => array(),
+            'reference' => '1e0104b46f045868f11942aea058cd7186d6c303',
+            'dev_requirement' => false,
+        ),
+        'league/omnipay' => array(
+            'pretty_version' => 'v3.0.2',
+            'version' => '3.0.2.0',
+            'type' => 'metapackage',
+            'install_path' => NULL,
+            'aliases' => array(),
+            'reference' => '9e10d91cbf84744207e13d4483e79de39b133368',
+            'dev_requirement' => false,
+        ),
+        'maennchen/zipstream-php' => array(
+            'pretty_version' => '2.1.0',
+            'version' => '2.1.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../maennchen/zipstream-php',
+            'aliases' => array(),
+            'reference' => 'c4c5803cc1f93df3d2448478ef79394a5981cc58',
+            'dev_requirement' => false,
+        ),
+        'markbaker/complex' => array(
+            'pretty_version' => '3.0.1',
+            'version' => '3.0.1.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../markbaker/complex',
+            'aliases' => array(),
+            'reference' => 'ab8bc271e404909db09ff2d5ffa1e538085c0f22',
+            'dev_requirement' => false,
+        ),
+        'markbaker/matrix' => array(
+            'pretty_version' => '3.0.0',
+            'version' => '3.0.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../markbaker/matrix',
+            'aliases' => array(),
+            'reference' => 'c66aefcafb4f6c269510e9ac46b82619a904c576',
+            'dev_requirement' => false,
+        ),
+        'moneyphp/money' => array(
+            'pretty_version' => 'v3.3.3',
+            'version' => '3.3.3.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../moneyphp/money',
+            'aliases' => array(),
+            'reference' => '0dc40e3791c67e8793e3aa13fead8cf4661ec9cd',
+            'dev_requirement' => false,
+        ),
+        'mongodb/mongodb' => array(
+            'pretty_version' => '1.8.0',
+            'version' => '1.8.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../mongodb/mongodb',
+            'aliases' => array(),
+            'reference' => '953dbc19443aa9314c44b7217a16873347e6840d',
+            'dev_requirement' => false,
+        ),
+        'myclabs/php-enum' => array(
+            'pretty_version' => '1.8.4',
+            'version' => '1.8.4.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../myclabs/php-enum',
+            'aliases' => array(),
+            'reference' => 'a867478eae49c9f59ece437ae7f9506bfaa27483',
+            'dev_requirement' => false,
+        ),
+        'ocramius/package-versions' => array(
+            'dev_requirement' => false,
+            'replaced' => array(
+                0 => '1.11.99',
+            ),
+        ),
+        'omnipay/common' => array(
+            'pretty_version' => 'v3.2.0',
+            'version' => '3.2.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../omnipay/common',
+            'aliases' => array(),
+            'reference' => 'e278ff00676c05cd0f4aaaf6189a226f26ae056e',
+            'dev_requirement' => false,
+        ),
+        'payrexx/omnipay-payrexx' => array(
+            'pretty_version' => 'v1.1',
+            'version' => '1.1.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../payrexx/omnipay-payrexx',
+            'aliases' => array(),
+            'reference' => 'ce601e53e53ea78e8ac4630abf270598c94e6115',
+            'dev_requirement' => false,
+        ),
+        'payrexx/payrexx' => array(
+            'pretty_version' => 'v1.8.3',
+            'version' => '1.8.3.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../payrexx/payrexx',
+            'aliases' => array(),
+            'reference' => '4141a1f982e7f4ba5e7c7b1866f2dc7af0518165',
+            'dev_requirement' => false,
+        ),
+        'php-http/async-client-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '1.0',
+            ),
+        ),
+        'php-http/client-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '1.0',
+            ),
+        ),
+        'php-http/discovery' => array(
+            'pretty_version' => '1.14.3',
+            'version' => '1.14.3.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../php-http/discovery',
+            'aliases' => array(),
+            'reference' => '31d8ee46d0215108df16a8527c7438e96a4d7735',
+            'dev_requirement' => false,
+        ),
+        'php-http/guzzle6-adapter' => array(
+            'pretty_version' => 'v2.0.2',
+            'version' => '2.0.2.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../php-http/guzzle6-adapter',
+            'aliases' => array(),
+            'reference' => '9d1a45eb1c59f12574552e81fb295e9e53430a56',
+            'dev_requirement' => false,
+        ),
+        'php-http/httplug' => array(
+            'pretty_version' => '2.3.0',
+            'version' => '2.3.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../php-http/httplug',
+            'aliases' => array(),
+            'reference' => 'f640739f80dfa1152533976e3c112477f69274eb',
+            'dev_requirement' => false,
+        ),
+        'php-http/message' => array(
+            'pretty_version' => '1.13.0',
+            'version' => '1.13.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../php-http/message',
+            'aliases' => array(),
+            'reference' => '7886e647a30a966a1a8d1dad1845b71ca8678361',
+            'dev_requirement' => false,
+        ),
+        'php-http/message-factory' => array(
+            'pretty_version' => 'v1.0.2',
+            'version' => '1.0.2.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../php-http/message-factory',
+            'aliases' => array(),
+            'reference' => 'a478cb11f66a6ac48d8954216cfed9aa06a501a1',
+            'dev_requirement' => false,
+        ),
+        'php-http/message-factory-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '1.0',
+            ),
+        ),
+        'php-http/promise' => array(
+            'pretty_version' => '1.1.0',
+            'version' => '1.1.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../php-http/promise',
+            'aliases' => array(),
+            'reference' => '4c4c1f9b7289a2ec57cde7f1e9762a5789506f88',
+            'dev_requirement' => false,
+        ),
+        'phpoffice/phpspreadsheet' => array(
+            'pretty_version' => '1.25.2',
+            'version' => '1.25.2.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../phpoffice/phpspreadsheet',
+            'aliases' => array(),
+            'reference' => 'a317a09e7def49852400a4b3eca4a4b0790ceeb5',
+            'dev_requirement' => false,
+        ),
+        'psr/http-client' => array(
+            'pretty_version' => '1.0.1',
+            'version' => '1.0.1.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../psr/http-client',
+            'aliases' => array(),
+            'reference' => '2dfb5f6c5eff0e91e20e913f8c5452ed95b86621',
+            'dev_requirement' => false,
+        ),
+        'psr/http-client-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '1.0',
+            ),
+        ),
+        'psr/http-factory' => array(
+            'pretty_version' => '1.0.1',
+            'version' => '1.0.1.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../psr/http-factory',
+            'aliases' => array(),
+            'reference' => '12ac7fcd07e5b077433f5f2bee95b3a771bf61be',
+            'dev_requirement' => false,
+        ),
+        'psr/http-message' => array(
+            'pretty_version' => '1.0.1',
+            'version' => '1.0.1.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../psr/http-message',
+            'aliases' => array(),
+            'reference' => 'f6561bf28d520154e4b0ec72be95418abe6d9363',
+            'dev_requirement' => false,
+        ),
+        'psr/http-message-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '1.0',
+            ),
+        ),
+        'psr/simple-cache' => array(
+            'pretty_version' => '1.0.1',
+            'version' => '1.0.1.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../psr/simple-cache',
+            'aliases' => array(),
+            'reference' => '408d5eafb83c57f6365a3ca330ff23aa4a5fa39b',
+            'dev_requirement' => false,
+        ),
+        'ralouphie/getallheaders' => array(
+            'pretty_version' => '3.0.3',
+            'version' => '3.0.3.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../ralouphie/getallheaders',
+            'aliases' => array(),
+            'reference' => '120b605dfeb996808c31b6477290a714d356e822',
+            'dev_requirement' => false,
+        ),
+        'simpletest/simpletest' => array(
+            'pretty_version' => 'v1.2.0',
+            'version' => '1.2.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../simpletest/simpletest',
+            'aliases' => array(),
+            'reference' => '4fb6006517a1428785a0ea704fbedcc675421ec4',
+            'dev_requirement' => true,
+        ),
+        'symfony/deprecation-contracts' => array(
+            'pretty_version' => 'v2.5.2',
+            'version' => '2.5.2.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/deprecation-contracts',
+            'aliases' => array(),
+            'reference' => 'e8b495ea28c1d97b5e0c121748d6f9b53d075c66',
+            'dev_requirement' => false,
+        ),
+        'symfony/http-foundation' => array(
+            'pretty_version' => 'v5.4.15',
+            'version' => '5.4.15.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/http-foundation',
+            'aliases' => array(),
+            'reference' => '75bd663ff2db90141bfb733682459d5bbe9e29c3',
+            'dev_requirement' => false,
+        ),
+        'symfony/polyfill-intl-idn' => array(
+            'pretty_version' => 'v1.26.0',
+            'version' => '1.26.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/polyfill-intl-idn',
+            'aliases' => array(),
+            'reference' => '59a8d271f00dd0e4c2e518104cc7963f655a1aa8',
+            'dev_requirement' => false,
+        ),
+        'symfony/polyfill-intl-normalizer' => array(
+            'pretty_version' => 'v1.26.0',
+            'version' => '1.26.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/polyfill-intl-normalizer',
+            'aliases' => array(),
+            'reference' => '219aa369ceff116e673852dce47c3a41794c14bd',
+            'dev_requirement' => false,
+        ),
+        'symfony/polyfill-mbstring' => array(
+            'pretty_version' => 'v1.26.0',
+            'version' => '1.26.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/polyfill-mbstring',
+            'aliases' => array(),
+            'reference' => '9344f9cb97f3b19424af1a21a3b0e75b0a7d8d7e',
+            'dev_requirement' => false,
+        ),
+        'symfony/polyfill-php72' => array(
+            'pretty_version' => 'v1.26.0',
+            'version' => '1.26.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/polyfill-php72',
+            'aliases' => array(),
+            'reference' => 'bf44a9fd41feaac72b074de600314a93e2ae78e2',
+            'dev_requirement' => false,
+        ),
+        'symfony/polyfill-php80' => array(
+            'pretty_version' => 'v1.26.0',
+            'version' => '1.26.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/polyfill-php80',
+            'aliases' => array(),
+            'reference' => 'cfa0ae98841b9e461207c13ab093d76b0fa7bace',
+            'dev_requirement' => false,
+        ),
     ),
-    'alcaeus/mongo-php-adapter' => 
-    array (
-      'pretty_version' => '1.2.0',
-      'version' => '1.2.0.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => 'b828ebc06cd3c270997b13c97dadc94731b36354',
-    ),
-    'bshaffer/oauth2-server-php' => 
-    array (
-      'pretty_version' => 'v1.11.1',
-      'version' => '1.11.1.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '5a0c8000d4763b276919e2106f54eddda6bc50fa',
-    ),
-    'composer/package-versions-deprecated' => 
-    array (
-      'pretty_version' => '1.11.99.1',
-      'version' => '1.11.99.1',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '7413f0b55a051e89485c5cb9f765fe24bb02a7b6',
-    ),
-    'jean85/pretty-package-versions' => 
-    array (
-      'pretty_version' => '1.5.1',
-      'version' => '1.5.1.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => 'a917488320c20057da87f67d0d40543dd9427f7a',
-    ),
-    'maennchen/zipstream-php' => 
-    array (
-      'pretty_version' => '2.1.0',
-      'version' => '2.1.0.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => 'c4c5803cc1f93df3d2448478ef79394a5981cc58',
-    ),
-    'markbaker/complex' => 
-    array (
-      'pretty_version' => '2.0.0',
-      'version' => '2.0.0.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '9999f1432fae467bc93c53f357105b4c31bb994c',
-    ),
-    'markbaker/matrix' => 
-    array (
-      'pretty_version' => '2.0.0',
-      'version' => '2.0.0.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '9567d9c4c519fbe40de01dbd1e4469dbbb66f46a',
-    ),
-    'mongodb/mongodb' => 
-    array (
-      'pretty_version' => '1.7.2',
-      'version' => '1.7.2.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '38b685191c047a57275d6ccd2ea5c50f23638485',
-    ),
-    'myclabs/php-enum' => 
-    array (
-      'pretty_version' => '1.7.7',
-      'version' => '1.7.7.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => 'd178027d1e679832db9f38248fcc7200647dc2b7',
-    ),
-    'ocramius/package-versions' => 
-    array (
-      'replaced' => 
-      array (
-        0 => '1.11.99',
-      ),
-    ),
-    'phpoffice/phpspreadsheet' => 
-    array (
-      'pretty_version' => '1.15.0',
-      'version' => '1.15.0.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => 'a8e8068b31b8119e1daa5b1eb5715a3a8ea8305f',
-    ),
-    'psr/http-client' => 
-    array (
-      'pretty_version' => '1.0.1',
-      'version' => '1.0.1.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '2dfb5f6c5eff0e91e20e913f8c5452ed95b86621',
-    ),
-    'psr/http-factory' => 
-    array (
-      'pretty_version' => '1.0.1',
-      'version' => '1.0.1.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '12ac7fcd07e5b077433f5f2bee95b3a771bf61be',
-    ),
-    'psr/http-message' => 
-    array (
-      'pretty_version' => '1.0.1',
-      'version' => '1.0.1.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => 'f6561bf28d520154e4b0ec72be95418abe6d9363',
-    ),
-    'psr/simple-cache' => 
-    array (
-      'pretty_version' => '1.0.1',
-      'version' => '1.0.1.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '408d5eafb83c57f6365a3ca330ff23aa4a5fa39b',
-    ),
-    'simpletest/simpletest' => 
-    array (
-      'pretty_version' => 'v1.2.0',
-      'version' => '1.2.0.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '4fb6006517a1428785a0ea704fbedcc675421ec4',
-    ),
-    'symfony/polyfill-mbstring' => 
-    array (
-      'pretty_version' => 'v1.20.0',
-      'version' => '1.20.0.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '39d483bdf39be819deabf04ec872eb0b2410b531',
-    ),
-  ),
 );

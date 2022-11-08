@@ -20,17 +20,17 @@ class Properties
         $docProps = $this->spreadsheet->getProperties();
         $officeProperty = $xml->children($namespacesMeta['office']);
         foreach ($officeProperty as $officePropertyData) {
-            /** @var \SimpleXMLElement $officePropertyData */
-            $officePropertiesDC = (object) [];
+            // @var \SimpleXMLElement $officePropertyData
             if (isset($namespacesMeta['dc'])) {
                 $officePropertiesDC = $officePropertyData->children($namespacesMeta['dc']);
+                $this->setCoreProperties($docProps, $officePropertiesDC);
             }
-            $this->setCoreProperties($docProps, $officePropertiesDC);
 
-            $officePropertyMeta = (object) [];
+            $officePropertyMeta = null;
             if (isset($namespacesMeta['dc'])) {
                 $officePropertyMeta = $officePropertyData->children($namespacesMeta['meta']);
             }
+            $officePropertyMeta = $officePropertyMeta ?? [];
             foreach ($officePropertyMeta as $propertyName => $propertyValue) {
                 $this->setMetaProperties($namespacesMeta, $propertyValue, $propertyName, $docProps);
             }
@@ -56,9 +56,7 @@ class Properties
 
                     break;
                 case 'date':
-                    $creationDate = strtotime($propertyValue);
-                    $docProps->setCreated($creationDate);
-                    $docProps->setModified($creationDate);
+                    $docProps->setModified($propertyValue);
 
                     break;
                 case 'description':
@@ -87,8 +85,7 @@ class Properties
 
                 break;
             case 'creation-date':
-                $creationDate = strtotime($propertyValue);
-                $docProps->setCreated($creationDate);
+                $docProps->setCreated($propertyValue);
 
                 break;
             case 'user-defined':

@@ -4,69 +4,23 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
+class ComposerStaticInit29566db855439114bef9bd21a07efecb
 {
     public static $files = array (
-        '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
+        '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
+        'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
+        '9c67151ae59aff4788964ce8eb2a0f43' => __DIR__ . '/..' . '/clue/stream-filter/src/functions_include.php',
+        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
+        '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
+        '25072dd6e2470089de65ae7bf11d3109' => __DIR__ . '/..' . '/symfony/polyfill-php72/bootstrap.php',
+        'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
-        'abede361264e2ae69ec1eee813a101af' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/abs.php',
-        '21a5860fbef5be28db5ddfbc3cca67c4' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acos.php',
-        '1546e3f9d127f2a9bb2d1b6c31c26ef1' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acosh.php',
-        'd2516f7f4fba5ea5905f494b4a8262e0' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acot.php',
-        '4511163d560956219b96882c0980b65e' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acoth.php',
-        'c361f5616dc2a8da4fa3e137077cd4ea' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acsc.php',
-        '02d68920fc98da71991ce569c91df0f6' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acsch.php',
-        '88e19525eae308b4a6aa3419364875d3' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/argument.php',
-        '60e8e2d0827b58bfc904f13957e51849' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/asec.php',
-        '13d2f040713999eab66c359b4d79871d' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/asech.php',
-        '838ab38beb32c68a79d3cd2c007d5a04' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/asin.php',
-        'bb28eccd0f8f008333a1b3c163d604ac' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/asinh.php',
-        '9e483de83558c98f7d3feaa402c78cb3' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/atan.php',
-        '36b74b5b765ded91ee58c8ee3c0e85e3' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/atanh.php',
-        '05c15ee9510da7fd6bf6136f436500c0' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/conjugate.php',
-        'd3208dfbce2505e370788f9f22f6785f' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/cos.php',
-        '141cf1fb3a3046f8b64534b0ebab33ca' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/cosh.php',
-        'be660df75fd0dbe7fa7c03b7434b3294' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/cot.php',
-        '01e31ea298a51bc9e91517e3ce6b9e76' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/coth.php',
-        '803ddd97f7b1da68982a7b087c3476f6' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/csc.php',
-        '3001cdfd101ec3c32da34ee43c2e149b' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/csch.php',
-        '77b2d7629ef2a93fabb8c56754a91051' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/exp.php',
-        '4a4471296dec796c21d4f4b6552396a9' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/inverse.php',
-        'c3e9897e1744b88deb56fcdc39d34d85' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/ln.php',
-        'a83cacf2de942cff288de15a83afd26d' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/log2.php',
-        '6a861dacc9ee2f3061241d4c7772fa21' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/log10.php',
-        '4d2522d968c8ba78d6c13548a1b4200e' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/negative.php',
-        'fd587ca933fc0447fa5ab4843bdd97f7' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/pow.php',
-        '383ef01c62028fc78cd4388082fce3c2' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/rho.php',
-        '150fbd1b95029dc47292da97ecab9375' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/sec.php',
-        '549abd9bae174286d660bdaa07407c68' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/sech.php',
-        '6bfbf5eaea6b17a0ed85cb21ba80370c' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/sin.php',
-        '22efe13f1a497b8e199540ae2d9dc59c' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/sinh.php',
-        'e90135ab8e787795a509ed7147de207d' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/sqrt.php',
-        'bb0a7923ffc6a90919cd64ec54ff06bc' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/tan.php',
-        '2d302f32ce0fd4e433dd91c5bb404a28' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/tanh.php',
-        '24dd4658a952171a4ee79218c4f9fd06' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/theta.php',
-        'e49b7876281d6f5bc39536dde96d1f4a' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/add.php',
-        '47596e02b43cd6da7700134fd08f88cf' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/subtract.php',
-        '883af48563631547925fa4c3b48ead07' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/multiply.php',
-        'f190e3308e6ca23234a2875edc985c03' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/divideby.php',
-        'ac9e33ce6841aa5bf5d16d465a2f03a7' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/divideinto.php',
-        '9d8e013a5160a09477beb8e44f8ae97b' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/adjoint.php',
-        '6e78d1bdea6248d6aa117229efae50f2' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/antidiagonal.php',
-        '4623d87924d94f5412fe5afbf1cef31d' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/cofactors.php',
-        '901fd1f6950a637ca85f66b701a45e13' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/determinant.php',
-        '83057abc0e4acc99ba80154ee5d02a49' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/diagonal.php',
-        '07b7fd7a434451149b4fd477fca0ce06' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/identity.php',
-        'c8d43b340583e07ae89f2a3baef2cf89' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/inverse.php',
-        '499bb10ed7a3aee2ba4c09a31a85e8d1' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/minors.php',
-        '1cad2e6414d652e8b1c64e8967f6f37d' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/trace.php',
-        '95a7f134ac17161d07def442b3b737e8' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/transpose.php',
-        'b3a6bc628377118d4b4b8ba08d1eb949' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/add.php',
-        '5fef6d0e407f3f8887266dfa4a6c534c' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/directsum.php',
-        '684ba247e1385946e3babdaa054119de' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/subtract.php',
-        'aa53dcba601214d17ad405b7c291b7e8' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/multiply.php',
-        '75c79eb1b25749b05a47976f32b0d8a2' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/divideby.php',
-        '6ab8ad87a734f276a6bcd5a0fe1289be' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/divideinto.php',
+        'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
+        'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
+        '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
+        '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
+        '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
+        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
         '06dd8487319ccd8403765f5b8c9f2d61' => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Mongo/functions.php',
     );
 
@@ -77,7 +31,12 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         ),
         'S' => 
         array (
+            'Symfony\\Polyfill\\Php80\\' => 23,
+            'Symfony\\Polyfill\\Php72\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
+            'Symfony\\Polyfill\\Intl\\Normalizer\\' => 33,
+            'Symfony\\Polyfill\\Intl\\Idn\\' => 26,
+            'Symfony\\Component\\HttpFoundation\\' => 33,
         ),
         'P' => 
         array (
@@ -87,19 +46,40 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
             'PhpOffice\\PhpSpreadsheet\\' => 25,
             'PackageVersions\\' => 16,
         ),
+        'O' => 
+        array (
+            'Omnipay\\Payrexx\\' => 16,
+            'Omnipay\\Common\\' => 15,
+        ),
         'M' => 
         array (
             'MyCLabs\\Enum\\' => 13,
             'MongoDB\\' => 8,
+            'Money\\' => 6,
             'Matrix\\' => 7,
         ),
         'J' => 
         array (
             'Jean85\\' => 7,
         ),
+        'H' => 
+        array (
+            'Http\\Promise\\' => 13,
+            'Http\\Message\\' => 13,
+            'Http\\Discovery\\' => 15,
+            'Http\\Client\\' => 12,
+            'Http\\Adapter\\Guzzle6\\' => 21,
+        ),
+        'G' => 
+        array (
+            'GuzzleHttp\\Psr7\\' => 16,
+            'GuzzleHttp\\Promise\\' => 19,
+            'GuzzleHttp\\' => 11,
+        ),
         'C' => 
         array (
             'Complex\\' => 8,
+            'Clue\\StreamFilter\\' => 18,
         ),
         'A' => 
         array (
@@ -112,9 +92,29 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         array (
             0 => __DIR__ . '/..' . '/maennchen/zipstream-php/src',
         ),
+        'Symfony\\Polyfill\\Php80\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
+        ),
+        'Symfony\\Polyfill\\Php72\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php72',
+        ),
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
+        ),
+        'Symfony\\Polyfill\\Intl\\Normalizer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer',
+        ),
+        'Symfony\\Polyfill\\Intl\\Idn\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-intl-idn',
+        ),
+        'Symfony\\Component\\HttpFoundation\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/http-foundation',
         ),
         'Psr\\SimpleCache\\' => 
         array (
@@ -137,6 +137,14 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         array (
             0 => __DIR__ . '/..' . '/composer/package-versions-deprecated/src/PackageVersions',
         ),
+        'Omnipay\\Payrexx\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/payrexx/omnipay-payrexx/src',
+        ),
+        'Omnipay\\Common\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/omnipay/common/src/Common',
+        ),
         'MyCLabs\\Enum\\' => 
         array (
             0 => __DIR__ . '/..' . '/myclabs/php-enum/src',
@@ -144,6 +152,10 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'MongoDB\\' => 
         array (
             0 => __DIR__ . '/..' . '/mongodb/mongodb/src',
+        ),
+        'Money\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/moneyphp/money/src',
         ),
         'Matrix\\' => 
         array (
@@ -153,9 +165,46 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         array (
             0 => __DIR__ . '/..' . '/jean85/pretty-package-versions/src',
         ),
+        'Http\\Promise\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/promise/src',
+        ),
+        'Http\\Message\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/message-factory/src',
+            1 => __DIR__ . '/..' . '/php-http/message/src',
+        ),
+        'Http\\Discovery\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/discovery/src',
+        ),
+        'Http\\Client\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/httplug/src',
+        ),
+        'Http\\Adapter\\Guzzle6\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/guzzle6-adapter/src',
+        ),
+        'GuzzleHttp\\Psr7\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/psr7/src',
+        ),
+        'GuzzleHttp\\Promise\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/promises/src',
+        ),
+        'GuzzleHttp\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
+        ),
         'Complex\\' => 
         array (
             0 => __DIR__ . '/..' . '/markbaker/complex/classes/src',
+        ),
+        'Clue\\StreamFilter\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/clue/stream-filter/src',
         ),
         'Alcaeus\\MongoDbAdapter\\' => 
         array (
@@ -164,6 +213,13 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
     );
 
     public static $prefixesPsr0 = array (
+        'P' => 
+        array (
+            'Payrexx' => 
+            array (
+                0 => __DIR__ . '/..' . '/payrexx/payrexx/lib',
+            ),
+        ),
         'O' => 
         array (
             'OAuth2' => 
@@ -176,6 +232,13 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
             'Mongo' => 
             array (
                 0 => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Mongo',
+            ),
+        ),
+        'H' => 
+        array (
+            'HTMLPurifier' => 
+            array (
+                0 => __DIR__ . '/..' . '/ezyang/htmlpurifier/library',
             ),
         ),
     );
@@ -202,6 +265,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'AnyOldSubclass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
         'AnyOldTypeHintedClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
         'AnythingExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
+        'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'BadTestCases' => __DIR__ . '/..' . '/simpletest/simpletest/test/bad_test_suite.php',
         'BadTestSuite' => __DIR__ . '/..' . '/simpletest/simpletest/test_case.php',
         'CallCountExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/mock_objects.php',
@@ -233,7 +297,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'DerivedOpaqueContainer' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
         'DetachedTestCase' => __DIR__ . '/..' . '/simpletest/simpletest/detached.php',
         'DomTestCase' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/dom_tester.php',
-        'Dummy' => __DIR__ . '/..' . '/simpletest/simpletest/test/mock_objects_test.php',
+        'Dummy' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual_test.php',
         'DummyInterface' => __DIR__ . '/..' . '/simpletest/simpletest/test/interfaces_test.php',
         'DummyReferencedObject' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
         'DummyResource' => __DIR__ . '/..' . '/simpletest/simpletest/test/simpletest_test.php',
@@ -284,9 +348,11 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'NoPatternExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'NoSkipsReporter' => __DIR__ . '/..' . '/simpletest/simpletest/reporter.php',
         'NoTextExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/web_tester.php',
+        'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
         'NotAExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'NotEqualExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'NotIdenticalExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
+        'Omnipay\\Omnipay' => __DIR__ . '/..' . '/omnipay/common/src/Omnipay.php',
         'OpaqueContainer' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
         'OtherTestException' => __DIR__ . '/..' . '/simpletest/simpletest/test/exceptions_test.php',
         'OutsideMarginExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
@@ -299,6 +365,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'PassingUnitTestCaseOutput' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual_test.php',
         'PathEqualExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/test/collector_test.php',
         'PatternExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
+        'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
         'Recorder' => __DIR__ . '/..' . '/simpletest/simpletest/recorder.php',
         'RecursiveNasty' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
         'ReferenceExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
@@ -417,6 +484,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'SimpleUrl' => __DIR__ . '/..' . '/simpletest/simpletest/url.php',
         'SimpleUserAgent' => __DIR__ . '/..' . '/simpletest/simpletest/user_agent.php',
         'SimpleWidget' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
+        'Stringable' => __DIR__ . '/..' . '/myclabs/php-enum/stubs/Stringable.php',
         'TestCaseWithParseError' => __DIR__ . '/..' . '/simpletest/simpletest/test/test_with_parse_error.php',
         'TestDisplayClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual_test.php',
         'TestDoxReporter' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/testdox.php',
@@ -492,7 +560,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'TestOfLiveAuthentication' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfLiveBrowser' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfLiveCookies' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
-        'TestOfLiveCssSelectors' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/dom_tester/test/dom_tester_test.php',
+        'TestOfLiveCssSelectors' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/dom_tester/test/dom_tester_doc_test.php',
         'TestOfLiveFetching' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfLiveFrontControllerEmulation' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfLiveHeaders' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
@@ -592,8 +660,10 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'TreemapReporter' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/treemap_reporter.php',
         'TreemapStack' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/treemap_reporter/treemap_recorder.php',
         'TrueExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
+        'UnhandledMatchError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/UnhandledMatchError.php',
         'UnitTestCase' => __DIR__ . '/..' . '/simpletest/simpletest/unit_tester.php',
         'UnitTests' => __DIR__ . '/..' . '/simpletest/simpletest/test/unit_tests.php',
+        'ValueError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/ValueError.php',
         'VisualTestOfErrors' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual/visual_errors.php',
         'VisualTestOfExceptions' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual/visual_errors.php',
         'VisualTestOfObjectComparison' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual/visual_errors.php',
@@ -609,10 +679,10 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit29566db855439114bef9bd21a07efecb::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit29566db855439114bef9bd21a07efecb::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit29566db855439114bef9bd21a07efecb::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit29566db855439114bef9bd21a07efecb::$classMap;
 
         }, null, ClassLoader::class);
     }
