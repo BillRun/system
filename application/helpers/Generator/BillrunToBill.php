@@ -129,6 +129,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		if (!empty($invoice['invoicing_day'])) {
 			$bill['invoicing_day'] = $invoice['invoicing_day'];
 		}
+		if (!empty($invoice['uf'])) {
+			$bill['uf'] = $invoice['uf'];
+		}
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];
 		}
