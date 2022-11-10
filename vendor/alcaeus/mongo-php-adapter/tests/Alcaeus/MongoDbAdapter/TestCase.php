@@ -32,7 +32,7 @@ abstract class TestCase extends BaseTestCase
      */
     protected function getCheckClient()
     {
-        return new Client(MONGODB_URI, ['connect' => true]);
+        return new Client('mongodb://localhost', ['connect' => true]);
     }
 
     /**
@@ -48,7 +48,7 @@ abstract class TestCase extends BaseTestCase
      * @param array|null $options
      * @return \MongoClient
      */
-    protected function getClient($options = null, $uri = MONGODB_URI)
+    protected function getClient($options = null, $uri = 'mongodb://localhost')
     {
         $args = [$uri];
         if ($options !== null) {

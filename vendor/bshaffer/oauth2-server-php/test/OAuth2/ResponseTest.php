@@ -14,7 +14,7 @@ class ResponseTest extends TestCase
         ));
 
         $string = $response->getResponseBody('xml');
-        $this->assertStringContainsString('<response><foo>bar</foo><halland>oates</halland></response>', $string);
+        $this->assertContains('<response><foo>bar</foo><halland>oates</halland></response>', $string);
     }
 
     public function testSetRedirect()

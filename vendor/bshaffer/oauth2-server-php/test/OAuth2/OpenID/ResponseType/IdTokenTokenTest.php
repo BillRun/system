@@ -31,7 +31,7 @@ class IdTokenTokenTest extends TestCase
 
         $this->assertEquals($response->getStatusCode(), 302);
         $location = $response->getHttpHeader('Location');
-        $this->assertStringNotContainsString('error', $location);
+        $this->assertNotContains('error', $location);
 
         $parts = parse_url($location);
         $this->assertArrayHasKey('fragment', $parts);

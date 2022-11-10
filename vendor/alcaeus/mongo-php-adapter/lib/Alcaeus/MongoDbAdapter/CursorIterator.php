@@ -5,7 +5,6 @@ namespace Alcaeus\MongoDbAdapter;
 use IteratorIterator;
 use MongoDB\BSON\ObjectID;
 use Traversable;
-use ReturnTypeWillChange;
 
 /**
  * @internal
@@ -22,7 +21,6 @@ final class CursorIterator extends IteratorIterator
         $this->useIdAsKey = $useIdAsKey;
     }
 
-    #[ReturnTypeWillChange]
     public function key()
     {
         if (!$this->useIdAsKey) {

@@ -8,6 +8,7 @@ use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\WriteConcern;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
+use MongoDB\Tests\Compat\PolyfillAssertTrait;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use ReflectionClass;
 use stdClass;
@@ -20,7 +21,6 @@ use function getenv;
 use function hash;
 use function is_array;
 use function is_object;
-use function is_string;
 use function iterator_to_array;
 use function MongoDB\BSON\fromPHP;
 use function MongoDB\BSON\toJSON;
@@ -31,6 +31,8 @@ use const E_USER_DEPRECATED;
 
 abstract class TestCase extends BaseTestCase
 {
+    use PolyfillAssertTrait;
+
     /**
      * Return the connection URI.
      *
@@ -110,16 +112,6 @@ abstract class TestCase extends BaseTestCase
             array_map($normalizeRootDocuments, $expectedDocuments),
             array_map($normalizeRootDocuments, $actualDocuments)
         );
-    }
-
-    /**
-     * Compatibility method as PHPUnit 9 no longer includes this method.
-     */
-    public function dataDescription() : string
-    {
-        $dataName = $this->dataName();
-
-        return is_string($dataName) ? $dataName : '';
     }
 
     public function provideInvalidArrayValues()

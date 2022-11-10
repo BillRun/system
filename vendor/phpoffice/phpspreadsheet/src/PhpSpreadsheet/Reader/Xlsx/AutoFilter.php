@@ -9,10 +9,8 @@ use SimpleXMLElement;
 
 class AutoFilter
 {
-    /** @var Worksheet */
     private $worksheet;
 
-    /** @var SimpleXMLElement */
     private $worksheetXml;
 
     public function __construct(Worksheet $workSheet, SimpleXMLElement $worksheetXml)
@@ -24,13 +22,13 @@ class AutoFilter
     public function load(): void
     {
         // Remove all "$" in the auto filter range
-        $autoFilterRange = (string) preg_replace('/\$/', '', $this->worksheetXml->autoFilter['ref'] ?? '');
+        $autoFilterRange = preg_replace('/\$/', '', $this->worksheetXml->autoFilter['ref']);
         if (strpos($autoFilterRange, ':') !== false) {
             $this->readAutoFilter($autoFilterRange, $this->worksheetXml);
         }
     }
 
-    private function readAutoFilter(string $autoFilterRange, SimpleXMLElement $xmlSheet): void
+    private function readAutoFilter($autoFilterRange, $xmlSheet): void
     {
         $autoFilter = $this->worksheet->getAutoFilter();
         $autoFilter->setRange($autoFilterRange);
@@ -41,15 +39,15 @@ class AutoFilter
             if ($filterColumn->filters) {
                 $column->setFilterType(Column::AUTOFILTER_FILTERTYPE_FILTER);
                 $filters = $filterColumn->filters;
-                if ((isset($filters['blank'])) && ((int) $filters['blank'] == 1)) {
+                if ((isset($filters['blank'])) && ($filters['blank'] == 1)) {
                     //    Operator is undefined, but always treated as EQUAL
-                    $column->createRule()->setRule('', '')->setRuleType(Rule::AUTOFILTER_RULETYPE_FILTER);
+                    $column->createRule()->setRule(null, '')->setRuleType(Rule::AUTOFILTER_RULETYPE_FILTER);
                 }
                 //    Standard filters are always an OR join, so no join rule needs to be set
                 //    Entries can be either filter elements
                 foreach ($filters->filter as $filterRule) {
                     //    Operator is undefined, but always treated as EQUAL
-                    $column->createRule()->setRule('', (string) $filterRule['val'])->setRuleType(Rule::AUTOFILTER_RULETYPE_FILTER);
+                    $column->createRule()->setRule(null, (string) $filterRule['val'])->setRuleType(Rule::AUTOFILTER_RULETYPE_FILTER);
                 }
 
                 //    Or Date Group elements
@@ -63,7 +61,6 @@ class AutoFilter
             //    Check for dynamic filters
             $this->readTopTenAutoFilter($filterColumn, $column);
         }
-        $autoFilter->setEvaluated(true);
     }
 
     private function readDateRangeAutoFilter(SimpleXMLElement $filters, Column $column): void
@@ -71,7 +68,7 @@ class AutoFilter
         foreach ($filters->dateGroupItem as $dateGroupItem) {
             //    Operator is undefined, but always treated as EQUAL
             $column->createRule()->setRule(
-                '',
+                null,
                 [
                     'year' => (string) $dateGroupItem['year'],
                     'month' => (string) $dateGroupItem['month'],
@@ -85,14 +82,14 @@ class AutoFilter
         }
     }
 
-    private function readCustomAutoFilter(?SimpleXMLElement $filterColumn, Column $column): void
+    private function readCustomAutoFilter(SimpleXMLElement $filterColumn, Column $column): void
     {
-        if (isset($filterColumn, $filterColumn->customFilters)) {
+        if ($filterColumn->customFilters) {
             $column->setFilterType(Column::AUTOFILTER_FILTERTYPE_CUSTOMFILTER);
             $customFilters = $filterColumn->customFilters;
             //    Custom filters can an AND or an OR join;
             //        and there should only ever be one or two entries
-            if ((isset($customFilters['and'])) && ((string) $customFilters['and'] === '1')) {
+            if ((isset($customFilters['and'])) && ($customFilters['and'] == 1)) {
                 $column->setJoin(Column::AUTOFILTER_COLUMN_JOIN_AND);
             }
             foreach ($customFilters->customFilter as $filterRule) {
@@ -104,15 +101,15 @@ class AutoFilter
         }
     }
 
-    private function readDynamicAutoFilter(?SimpleXMLElement $filterColumn, Column $column): void
+    private function readDynamicAutoFilter(SimpleXMLElement $filterColumn, Column $column): void
     {
-        if (isset($filterColumn, $filterColumn->dynamicFilter)) {
+        if ($filterColumn->dynamicFilter) {
             $column->setFilterType(Column::AUTOFILTER_FILTERTYPE_DYNAMICFILTER);
             //    We should only ever have one dynamic filter
             foreach ($filterColumn->dynamicFilter as $filterRule) {
                 //    Operator is undefined, but always treated as EQUAL
                 $column->createRule()->setRule(
-                    '',
+                    null,
                     (string) $filterRule['val'],
                     (string) $filterRule['type']
                 )->setRuleType(Rule::AUTOFILTER_RULETYPE_DYNAMICFILTER);
@@ -126,21 +123,19 @@ class AutoFilter
         }
     }
 
-    private function readTopTenAutoFilter(?SimpleXMLElement $filterColumn, Column $column): void
+    private function readTopTenAutoFilter(SimpleXMLElement $filterColumn, Column $column): void
     {
-        if (isset($filterColumn, $filterColumn->top10)) {
+        if ($filterColumn->top10) {
             $column->setFilterType(Column::AUTOFILTER_FILTERTYPE_TOPTENFILTER);
             //    We should only ever have one top10 filter
             foreach ($filterColumn->top10 as $filterRule) {
                 $column->createRule()->setRule(
-                    (
-                        ((isset($filterRule['percent'])) && ((string) $filterRule['percent'] === '1'))
+                    (((isset($filterRule['percent'])) && ($filterRule['percent'] == 1))
                         ? Rule::AUTOFILTER_COLUMN_RULE_TOPTEN_PERCENT
                         : Rule::AUTOFILTER_COLUMN_RULE_TOPTEN_BY_VALUE
                     ),
                     (string) $filterRule['val'],
-                    (
-                        ((isset($filterRule['top'])) && ((string) $filterRule['top'] === '1'))
+                    (((isset($filterRule['top'])) && ($filterRule['top'] == 1))
                         ? Rule::AUTOFILTER_COLUMN_RULE_TOPTEN_TOP
                         : Rule::AUTOFILTER_COLUMN_RULE_TOPTEN_BOTTOM
                     )

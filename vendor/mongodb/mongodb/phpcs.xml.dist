@@ -109,10 +109,9 @@
     <rule ref="PSR1.Methods.CamelCapsMethodName.NotCamelCaps">
         <exclude-pattern>/src/GridFS/StreamWrapper</exclude-pattern>
         <exclude-pattern>/tests/DocumentationExamplesTest.php</exclude-pattern>
-        <exclude-pattern>/tests/GridFS/UnusableStream.php</exclude-pattern>
     </rule>
 
     <rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
-        <exclude-pattern>/tests/PHPUnit/ConstraintTrait.php</exclude-pattern>
+        <exclude-pattern>/tests/Compat/PolyfillAssertTrait.php</exclude-pattern>
     </rule>
 </ruleset>

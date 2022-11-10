@@ -5,7 +5,6 @@
  * @copyright 2014 Payrexx AG
  * @since     v1.0
  */
-
 namespace Payrexx;
 
 /**
@@ -14,15 +13,4 @@ namespace Payrexx;
  */
 class PayrexxException extends \Exception
 {
-    private $reason = '';
-
-    public function getReason()
-    {
-        return $this->reason;
-    }
-
-    public function setReason($reason = '')
-    {
-        $this->reason = $reason;
-    }
 }

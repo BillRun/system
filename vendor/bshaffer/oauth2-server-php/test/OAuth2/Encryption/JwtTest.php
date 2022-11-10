@@ -9,7 +9,7 @@ class JwtTest extends TestCase
 {
     private $privateKey;
 
-    public function setUp(): void
+    public function setUp()
     {
         $this->privateKey = <<<EOD
 -----BEGIN RSA PRIVATE KEY-----

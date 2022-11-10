@@ -18,9 +18,9 @@ namespace PhpOffice\PhpSpreadsheet\Shared\JAMA;
  *    conditioned, or even singular, so the validity of the equation
  *    A = V*D*inverse(V) depends upon V.cond().
  *
- * @author  Paul Meagher
+ *    @author  Paul Meagher
  *
- * @version 1.1
+ *    @version 1.1
  */
 class EigenvalueDecomposition
 {
@@ -71,11 +71,6 @@ class EigenvalueDecomposition
     private $cdivi;
 
     /**
-     * @var array
-     */
-    private $A;
-
-    /**
      * Symmetric Householder reduction to tridiagonal form.
      */
     private function tred2(): void
@@ -85,7 +80,6 @@ class EigenvalueDecomposition
         //  Auto. Comp., Vol.ii-Linear Algebra, and the corresponding
         //  Fortran subroutine in EISPACK.
         $this->d = $this->V[$this->n - 1];
-        $j = 0;
         // Householder reduction to tridiagonal form.
         for ($i = $this->n - 1; $i > 0; --$i) {
             $i_ = $i - 1;
@@ -415,7 +409,7 @@ class EigenvalueDecomposition
         $norm = 0.0;
 
         for ($i = 0; $i < $nn; ++$i) {
-            if ($i > $high) {
+            if (($i < $low) || ($i > $high)) {
                 $this->d[$i] = $this->H[$i][$i];
                 $this->e[$i] = 0.0;
             }
@@ -495,7 +489,7 @@ class EigenvalueDecomposition
                         $this->V[$i][$n - 1] = $q * $z + $p * $this->V[$i][$n];
                         $this->V[$i][$n] = $q * $this->V[$i][$n] - $p * $z;
                     }
-                // Complex pair
+                    // Complex pair
                 } else {
                     $this->d[$n - 1] = $x + $p;
                     $this->d[$n] = $x + $p;
@@ -671,7 +665,7 @@ class EigenvalueDecomposition
                             } else {
                                 $this->H[$i][$n] = -$r / ($eps * $norm);
                             }
-                        // Solve real equations
+                            // Solve real equations
                         } else {
                             $x = $this->H[$i][$i + 1];
                             $y = $this->H[$i + 1][$i];
@@ -693,7 +687,7 @@ class EigenvalueDecomposition
                         }
                     }
                 }
-            // Complex vector
+                // Complex vector
             } elseif ($q < 0) {
                 $l = $n - 1;
                 // Last vector component imaginary so matrix is triangular
@@ -762,7 +756,7 @@ class EigenvalueDecomposition
 
         // Vectors of isolated roots
         for ($i = 0; $i < $nn; ++$i) {
-            if ($i > $high) {
+            if ($i < $low | $i > $high) {
                 for ($j = $i; $j < $nn; ++$j) {
                     $this->V[$i][$j] = $this->H[$i][$j];
                 }
@@ -787,9 +781,9 @@ class EigenvalueDecomposition
     /**
      * Constructor: Check for symmetry, then construct the eigenvalue decomposition.
      *
-     * @param Matrix $Arg A Square matrix
+     * @param mixed $Arg A Square matrix
      */
-    public function __construct(Matrix $Arg)
+    public function __construct($Arg)
     {
         $this->A = $Arg->getArray();
         $this->n = $Arg->getColumnDimension();
@@ -854,7 +848,6 @@ class EigenvalueDecomposition
      */
     public function getD()
     {
-        $D = [];
         for ($i = 0; $i < $this->n; ++$i) {
             $D[$i] = array_fill(0, $this->n, 0.0);
             $D[$i][$i] = $this->d[$i];

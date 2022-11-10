@@ -126,7 +126,7 @@ class ModifyCollection implements Executable
     /**
      * Create options for executing the command.
      *
-     * @see http://php.net/manual/en/mongodb-driver-server.executewritecommand.php
+     * @see http://php.net/manual/en/mongodb-driver-server.executereadwritecommand.php
      * @return array
      */
     private function createOptions()

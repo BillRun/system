@@ -15,6 +15,8 @@
 
 namespace Alcaeus\MongoDbAdapter;
 
+use MongoDB\BSON\Type;
+
 interface TypeInterface
 {
     /**

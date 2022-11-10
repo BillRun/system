@@ -29,8 +29,6 @@ class IndexInfoFunctionalTest extends FunctionalTestCase
         }
 
         $this->collection->drop();
-
-        parent::tearDown();
     }
 
     public function testIs2dSphere()

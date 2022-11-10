@@ -42,8 +42,6 @@ class DocumentationExamplesTest extends FunctionalTestCase
         }
 
         $this->dropCollection();
-
-        parent::tearDown();
     }
 
     public function testExample_1_2()

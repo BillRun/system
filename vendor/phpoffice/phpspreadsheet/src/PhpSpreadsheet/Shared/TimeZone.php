@@ -17,26 +17,26 @@ class TimeZone
     /**
      * Validate a Timezone name.
      *
-     * @param string $timezoneName Time zone (e.g. 'Europe/London')
+     * @param string $timezone Time zone (e.g. 'Europe/London')
      *
      * @return bool Success or failure
      */
-    private static function validateTimeZone(string $timezoneName): bool
+    private static function validateTimeZone($timezone)
     {
-        return in_array($timezoneName, DateTimeZone::listIdentifiers(DateTimeZone::ALL_WITH_BC), true);
+        return in_array($timezone, DateTimeZone::listIdentifiers(DateTimeZone::ALL_WITH_BC));
     }
 
     /**
      * Set the Default Timezone used for date/time conversions.
      *
-     * @param string $timezoneName Time zone (e.g. 'Europe/London')
+     * @param string $timezone Time zone (e.g. 'Europe/London')
      *
      * @return bool Success or failure
      */
-    public static function setTimeZone(string $timezoneName): bool
+    public static function setTimeZone($timezone)
     {
-        if (self::validateTimezone($timezoneName)) {
-            self::$timezone = $timezoneName;
+        if (self::validateTimezone($timezone)) {
+            self::$timezone = $timezone;
 
             return true;
         }
@@ -49,7 +49,7 @@ class TimeZone
      *
      * @return string Timezone (e.g. 'Europe/London')
      */
-    public static function getTimeZone(): string
+    public static function getTimeZone()
     {
         return self::$timezone;
     }
@@ -58,20 +58,24 @@ class TimeZone
      *    Return the Timezone offset used for date/time conversions to/from UST
      * This requires both the timezone and the calculated date/time to allow for local DST.
      *
-     * @param ?string $timezoneName The timezone for finding the adjustment to UST
-     * @param float|int $timestamp PHP date/time value
+     * @param string $timezone The timezone for finding the adjustment to UST
+     * @param int $timestamp PHP date/time value
      *
      * @return int Number of seconds for timezone adjustment
      */
-    public static function getTimeZoneAdjustment(?string $timezoneName, $timestamp): int
+    public static function getTimeZoneAdjustment($timezone, $timestamp)
     {
-        $timezoneName = $timezoneName ?? self::$timezone;
-        $dtobj = Date::dateTimeFromTimestamp("$timestamp");
-        if (!self::validateTimezone($timezoneName)) {
-            throw new PhpSpreadsheetException("Invalid timezone $timezoneName");
+        if ($timezone !== null) {
+            if (!self::validateTimezone($timezone)) {
+                throw new PhpSpreadsheetException('Invalid timezone ' . $timezone);
+            }
+        } else {
+            $timezone = self::$timezone;
         }
-        $dtobj->setTimeZone(new DateTimeZone($timezoneName));
 
-        return $dtobj->getOffset();
+        $objTimezone = new DateTimeZone($timezone);
+        $transitions = $objTimezone->getTransitions($timestamp, $timestamp);
+
+        return (count($transitions) > 0) ? $transitions[0]['offset'] : 0;
     }
 }

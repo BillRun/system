@@ -140,10 +140,11 @@ class Response implements ResponseInterface
     }
 
     /**
+     * @param int $statusCode
      * @param string $text
      * @throws InvalidArgumentException
      */
-    public function setStatusCode(int $statusCode, $text = null)
+    public function setStatusCode($statusCode, $text = null)
     {
         $this->statusCode = (int) $statusCode;
         if ($this->isInvalid()) {

@@ -654,6 +654,10 @@ final class Operation
                 return null;
             case 'assertSessionTransactionState':
                 $test->assertInstanceOf(Session::class, $args['session']);
+                /* PHPC currently does not expose the exact session state, but
+                 * instead exposes a bool to let us know whether a transaction
+                 * is currently in progress. This code may fail down the line
+                 * and should be adjusted once PHPC-1438 is implemented. */
                 $test->assertSame($this->arguments['state'], $args['session']->getTransactionState());
 
                 return null;

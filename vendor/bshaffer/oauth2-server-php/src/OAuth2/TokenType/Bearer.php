@@ -109,7 +109,7 @@ class Bearer implements TokenTypeInterface
             }
 
             $contentType = $request->server('CONTENT_TYPE');
-            if (false !== $pos = strpos((string) $contentType, ';')) {
+            if (false !== $pos = strpos($contentType, ';')) {
                 $contentType = substr($contentType, 0, $pos);
             }
 

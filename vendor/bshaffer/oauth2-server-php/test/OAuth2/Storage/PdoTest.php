@@ -2,12 +2,8 @@
 
 namespace OAuth2\Storage;
 
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
-
 class PdoTest extends BaseTest
 {
-    use ExpectPHPException;
-
     public function testCreatePdoStorageUsingPdoClass()
     {
         $dsn = sprintf('sqlite:%s', Bootstrap::getInstance()->getSqliteDir());
@@ -34,9 +30,11 @@ class PdoTest extends BaseTest
         $this->assertNotNull($storage->getClientDetails('oauth_test_client'));
     }
 
+    /**
+     * @expectedException InvalidArgumentException dsn
+     */
     public function testCreatePdoStorageWithoutDSNThrowsException()
     {
-        $this->expectErrorMessage('dsn');
         $config = array('username' => 'brent', 'password' => 'brentisaballer');
         $storage = new Pdo($config);
     }

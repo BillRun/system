@@ -20,7 +20,10 @@ interface ResponseInterface
      */
     public function addHttpHeaders(array $httpHeaders);
 
-    public function setStatusCode(int $statusCode);
+    /**
+     * @param int $statusCode
+     */
+    public function setStatusCode($statusCode);
 
     /**
      * @param int    $statusCode

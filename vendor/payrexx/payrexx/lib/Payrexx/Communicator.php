@@ -15,7 +15,7 @@ use Payrexx\Models\Request\PaymentMethod;
  */
 class Communicator
 {
-    const VERSIONS = [1.0, 1.1, 1.2];
+    const VERSIONS = [1.0, 1.1];
     const API_URL_FORMAT = 'https://api.%s/%s/%s/%s/%s';
     const API_URL_BASE_DOMAIN = 'payrexx.com';
     const DEFAULT_COMMUNICATION_HANDLER = '\Payrexx\CommunicationAdapter\CurlCommunication';
@@ -28,7 +28,6 @@ class Communicator
         'charge'  => 'POST',
         'refund'  => 'POST',
         'capture' => 'POST',
-        'receipt' => 'POST',
         'cancel'  => 'DELETE',
         'delete'  => 'DELETE',
         'update'  => 'PUT',
@@ -55,19 +54,15 @@ class Communicator
      * @var string The version to use
      */
     protected $version;
-    /**
-     * @var array The HTTP Headers
-     */
-    public $httpHeaders;
 
     /**
      * Generates a communicator object with a communication handler like cURL.
      *
-     * @param string $instance The instance name, needed for the generation of the API url.
-     * @param string $apiSecret The API secret which is the key to hash all the parameters passed to the API server.
+     * @param string $instance             The instance name, needed for the generation of the API url.
+     * @param string $apiSecret            The API secret which is the key to hash all the parameters passed to the API server.
      * @param string $communicationHandler The preferred communication handler. Default is cURL.
-     * @param string $apiBaseDomain The base domain of the API URL.
-     * @param float $version The version of the API to query.
+     * @param string $apiBaseDomain        The base domain of the API URL.
+     * @param float $version               The version of the API to query.
      *
      * @throws PayrexxException
      */
@@ -119,7 +114,7 @@ class Communicator
         $params['instance'] = $this->instance;
 
         $id = isset($params['id']) ? $params['id'] : 0;
-        $act = in_array($method, ['refund', 'capture', 'receipt']) ? $method : '';
+        $act = in_array($method, ['refund', 'capture']) ? $method : '';
         $apiUrl = sprintf(self::API_URL_FORMAT, $this->apiBaseDomain, 'v' . $this->version, $params['model'], $id, $act);
 
         $httpMethod = $this->getHttpMethod($method) === 'PUT' && $params['model'] === 'Design'
@@ -128,8 +123,7 @@ class Communicator
         $response = $this->communicationHandler->requestApi(
             $apiUrl,
             $params,
-            $httpMethod,
-            $this->httpHeaders
+            $httpMethod
         );
 
         $convertedResponse = array();
@@ -137,11 +131,7 @@ class Communicator
             if (!isset($response['body']['message'])) {
                 throw new \Payrexx\PayrexxException('Payrexx PHP: Configuration is wrong! Check instance name and API secret', $response['info']['http_code']);
             }
-            $exception = new \Payrexx\PayrexxException($response['body']['message'], $response['info']['http_code']);
-            if (!empty($response['body']['reason'])) {
-                $exception->setReason($response['body']['reason']);
-            }
-            throw $exception;
+            throw new \Payrexx\PayrexxException($response['body']['message'], $response['info']['http_code']);
         }
 
         $data = $response['body']['data'];

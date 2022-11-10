@@ -2,6 +2,7 @@
 
 namespace Alcaeus\MongoDbAdapter\Tests\Mongo;
 
+use Alcaeus\MongoDbAdapter\Tests\Constraint\Matches;
 use Alcaeus\MongoDbAdapter\Tests\TestCase;
 use Countable;
 

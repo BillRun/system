@@ -17,9 +17,6 @@ $instanceName = 'YOUR_INSTANCE_NAME';
 $secret = 'YOUR_SECRET';
 
 $payrexx = new \Payrexx\Payrexx($instanceName, $secret);
-$payrexx->setHttpHeaders([
-    'Shop-ID' => 1,
-]);
 
 $signatureCheck = new \Payrexx\Models\Request\SignatureCheck();
 try {
