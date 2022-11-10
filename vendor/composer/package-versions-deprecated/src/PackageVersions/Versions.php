@@ -71,7 +71,7 @@ final class Versions
   'symfony/polyfill-php72' => 'v1.27.0@869329b1e9894268a8a61dabb69153029b7a8c97',
   'symfony/polyfill-php80' => 'v1.27.0@7a6ff3f1959bb01aefccb463a0f2cd3d3d2fd936',
   'simpletest/simpletest' => 'v1.2.0@4fb6006517a1428785a0ea704fbedcc675421ec4',
-  '__root__' => 'dev-master@bd566ddd265292d0e2b6301eb8f9d7c31e752c77',
+  '__root__' => 'dev-master@51c22cc275bb6d92db7e90ccd03e1334f25b571a',
 );
 
     private function __construct()

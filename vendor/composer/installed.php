@@ -5,7 +5,7 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'bd566ddd265292d0e2b6301eb8f9d7c31e752c77',
+        'reference' => '51c22cc275bb6d92db7e90ccd03e1334f25b571a',
         'name' => '__root__',
         'dev' => true,
     ),
@@ -16,7 +16,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'bd566ddd265292d0e2b6301eb8f9d7c31e752c77',
+            'reference' => '51c22cc275bb6d92db7e90ccd03e1334f25b571a',
             'dev_requirement' => false,
         ),
         'alcaeus/mongo-php-adapter' => array(
