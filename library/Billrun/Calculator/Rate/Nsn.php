@@ -153,7 +153,11 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 				foreach ($this->rates[$prefix] as $rate) {
 					if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
 						if ($rate['from'] <= $urt && $rate['to'] >= $urt) {
-							if (!empty($rate['params']['serving_networks']) && in_array($imgwn, $rate['params']['serving_networks'])) {
+							if (!empty($rate['params']['serving_networks']) && (
+								( is_array($rate['params']['serving_networks']) && in_array($imgwn, $rate['params']['serving_networks']))
+								 ||
+								( is_string($rate['params']['serving_networks']) && preg_match($rate['params']['serving_networks'],$imgwn))
+							)) {
 								$matchedRate = $rate;
 								break 2;
 							}
