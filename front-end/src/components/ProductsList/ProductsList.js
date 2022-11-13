@@ -4,8 +4,10 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import Immutable from 'immutable';
 import changeCase from 'change-case';
+import Field from '@/components/Field';
 import EntityList from '../EntityList';
 import { LoadingItemPlaceholder } from '@/components/Elements';
+import { usageTypesDataSelector } from '@/selectors/settingsSelector';
 import {
   getSettings,
 } from '@/actions/settingsActions';
@@ -18,6 +20,7 @@ class ProductsList extends Component {
     fields: PropTypes.instanceOf(Immutable.List),
     defaultListFields: PropTypes.arrayOf(PropTypes.string),
     isPlaysEnabled: PropTypes.bool,
+    usageTypesOptions: PropTypes.array,
     router: PropTypes.shape({
       push: PropTypes.func.isRequired,
     }).isRequired,
@@ -27,6 +30,7 @@ class ProductsList extends Component {
   static defaultProps = {
     fields: null,
     isPlaysEnabled: false,
+    usageTypesOptions: [],
     defaultListFields: ['description', 'key', 'rates'],
   }
 
@@ -35,14 +39,26 @@ class ProductsList extends Component {
     { type: 'view' },
   ]
 
-  // TODO: get values field.get('searchable', false) when it will be ready
-  // depend on database index
   static filterFields = [
     { id: 'key', placeholder: 'Key' },
+    { id: 'description', placeholder: 'Title' },
   ]
+
+  state = {
+    selectedType: '',
+  }
 
   componentWillMount() {
     this.props.dispatch(getSettings('rates.fields'));
+  }
+
+  onSelectFilterField = (value) => {
+    const newVal= (value) ? value : '';
+    this.setState(() => ({ selectedType: newVal }));
+  }
+
+  onClearFilters = () => {
+    this.setState(() => ({ selectedType: '' }));
   }
 
   parserUsegt = (item) => {
@@ -65,6 +81,11 @@ class ProductsList extends Component {
       .reduce((acc, field) => acc.set(field.get('field_name'), 1), Immutable.Map({}))
       .toJS();
   };
+
+  getCustomFilters = () => [{
+    id: 'usage_type',
+    renderFunction: this.renderUsageTypeFilter,
+  }];
 
   getFields = () => {
     const { fields, defaultListFields } = this.props;
@@ -89,6 +110,28 @@ class ProductsList extends Component {
       .toArray();
   };
 
+  getBaseFilter = () => {
+    const { selectedType } = this.state;
+    if (selectedType) {
+      return {[`rates.${selectedType}`]: { '$exists': true }};
+    } 
+    return {};
+  }
+
+  renderUsageTypeFilter = () => {
+    const { selectedType } = this.state;
+    const { usageTypesOptions } = this.props;
+    return (
+      <Field
+        fieldType="select"
+        options={usageTypesOptions}
+        value={selectedType}
+        onChange={this.onSelectFilterField}
+        placeholder="Select Activity Type..."
+      />
+    );
+  }
+
   render() {
     const { fields } = this.props;
     if (fields === null) {
@@ -104,15 +147,26 @@ class ProductsList extends Component {
         projectFields={this.getProjectFields()}
         showRevisionBy="key"
         actions={ProductsList.rowActions}
+        customFilters={this.getCustomFilters()}
+        baseFilter={this.getBaseFilter()}
+        onClearFilters={this.onClearFilters}
       />
     );
   }
 
 }
 
-const mapStateToProps = (state, props) => ({
-  fields: state.settings.getIn(['rates', 'fields']) || undefined,
-  isPlaysEnabled: isPlaysEnabledSelector(state, props),
-});
+const mapStateToProps = (state, props) => {
+  const usageTypesData = usageTypesDataSelector(state, props);
+  const usageTypesOptions = usageTypesData.map(usaget => ({
+    value: usaget.get('usage_type', ''),
+    label: usaget.get('label', ''),
+  })).toJS();
+  return ({
+    fields: state.settings.getIn(['rates', 'fields']) || undefined,
+    isPlaysEnabled: isPlaysEnabledSelector(state, props),
+    usageTypesOptions,
+  });
+}
 
 export default withRouter(connect(mapStateToProps)(ProductsList));

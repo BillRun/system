@@ -20,6 +20,6 @@ export default {
   billrunLogo: 'billRun-logo.png',
   queue_calculators: ['customer', 'rate', 'pricing', 'tax'],
   logoMaxSize: 2,
-  importMaxSize: 8,
+  importMaxSize: 100,
   chargingBufferDays: 5,
 }

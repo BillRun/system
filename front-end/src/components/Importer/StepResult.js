@@ -14,7 +14,7 @@ const StepResult = (props) => {
   const fileContent = item.get('fileContent', []) || [];
   const fileName = item.get('fileName', 'errors');
   const entity = item.get('entity', '');
-  const result = item.get('importType', '') === 'manual_mapping'
+  const result = ['predefined_mapping', 'manual_mapping'].includes(item.get('importType', ''))
     ? item.getIn(['result'], Immutable.Map())
     : (item.getIn(['result', 'imported_entities'], Immutable.List()) || Immutable.List());
 
@@ -36,31 +36,35 @@ const StepResult = (props) => {
 
   const rendeDetails = () => result
     .sortBy((status, key) => parseInt(key))
-    .map((status, key) => (
-      <dl className="mb5" key={`status_${key}`}>
-        <dt>
-          {isNumber(key) ? `row ${key}` : key}
-          {status === true && <Label bsStyle="success" className="ml10">Success</Label>}
-          {status === false && <Label bsStyle="info" className="ml10">No errors</Label>}
-          {status !== false && status !== true && !Immutable.Iterable.isIterable(status) && <Label bsStyle="danger" className="ml10">{status}</Label>}
-        </dt>
-        { Immutable.Iterable.isIterable(status) && status.map((message, type) => {
-          let messageStyle = 'default';
-          if (type === 'warning') {
-            messageStyle = 'warning';
-          } else if (type === 'error') {
-            messageStyle = 'danger';
+    .map((status, key) => {
+      if (status === true) {
+        return null;
+      }
+      return (
+        <dl className="mb5" key={`status_${key}`}>
+          <dt>
+            {isNumber(key) ? `row ${key}` : key}
+            {status === true && <Label bsStyle="success" className="ml10">Success</Label>}
+            {status === false && <Label bsStyle="info" className="ml10">No errors</Label>}
+            {status !== false && status !== true && !Immutable.Iterable.isIterable(status) && <Label bsStyle="danger" className="ml10">{status}</Label>}
+          </dt>
+          { Immutable.Iterable.isIterable(status) && status.map((message, type) => {
+            let messageStyle = 'default';
+            if (type === 'warning') {
+              messageStyle = 'warning';
+            } else if (type === 'error') {
+              messageStyle = 'danger';
+            }
+            return (
+              <dd className="ml10" key={`status_error_${key}_${type}`}>
+                - <Label bsStyle={messageStyle}>{message}</Label>
+              </dd>
+            )})
+            .toList()
+            .toArray()
           }
-          return (
-            <dd className="ml10" key={`status_error_${key}_${type}`}>
-              - <Label bsStyle={messageStyle}>{message}</Label>
-            </dd>
-          )})
-          .toList()
-          .toArray()
-        }
-      </dl>
-    ))
+        </dl>
+    )})
     .toList()
     .toArray()
 
@@ -122,7 +126,7 @@ const StepResult = (props) => {
         </div>
       );
     }
-    // All rows was faild imported
+    // All imported rows fail
     const allFails = result.every(status => status !== true);
     if (allFails) {
       return (
@@ -131,7 +135,7 @@ const StepResult = (props) => {
         </div>
       );
     }
-    // Mixed, some pased some fails
+    // Mixed, some passed some fails
     const success = result.filter(status => status === true);
     let downlodCsvWithErrors = null;
     if (item.get('importType', ',') === 'manual_mapping') {

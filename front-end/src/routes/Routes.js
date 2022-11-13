@@ -20,8 +20,7 @@ import Charge from '@/components/Charge';
 import ServicesList from '@/components/ServicesList';
 import Service from '@/components/Service';
 import InputProcessorsList from '@/components/InputProcessorsList';
-import ExportGenerator from '@/components/ExportGenerator';
-import ExportGeneratorsList from '@/components/ExportGeneratorsList';
+import { ExportGenerator, ExportGeneratorsList } from '@/components/ExportGenerator';
 import InputProcessor from '@/components/InputProcessor';
 import UsageList from '@/components/UsageList';
 import RunCycle from '@/components/Cycle';
@@ -49,6 +48,8 @@ import Events from '@/components/Events';
 import PaymentFiles from '@/components/PaymentFiles/PaymentFiles';
 import { ImporterSetup } from '../components/Importer';
 import { ExporterSetup } from '../components/Exporter';
+import { ImmediateInvoiceSetup } from '../components/ImmediateInvoice';
+import SuggestionsSetup, { SuggestionsList } from '../components/Suggestions';
 import { TaxList, TaxSetup, TaxMapping } from '@/components/Tax';
 
 
@@ -140,7 +141,7 @@ const routes = () => (
 
         <Route path="/input_processor" component={Authentication(InputProcessor)} />
         <Route path="/input_processors" component={Authentication(InputProcessorsList)} title="Input Processors" />
-        <Route path="/export_generator" component={Authentication(ExportGenerator)} title="Export Generator" />
+        <Route path="/export_generator(/:name)" component={Authentication(ExportGenerator)} title="Export Generator" />
         <Route path="/export_generators" component={Authentication(ExportGeneratorsList)} title="Export Generators" />
         <Route path="/usage" component={Authentication(UsageList)} title="Usage" />
         <Route path="/run_cycle" component={Authentication(RunCycle)} title="Billing Cycle" />
@@ -162,6 +163,11 @@ const routes = () => (
         <Route path="/changepassword(/:itemId)" component={ChangePassword} title="Change Password" />
         <Route path="/import(/:itemType)" component={Authentication(ImporterSetup)} />
         <Route path="/export(/:itemType)" component={Authentication(ExporterSetup)} />
+        <Route path="/immediate-invoice" component={Authentication(ImmediateInvoiceSetup)} title="Immediate Invoice" />
+        <Route path="suggestions" >
+          <IndexRoute component={Authentication(SuggestionsSetup)} title="Repricing Suggestions" />
+          <Route path=":itemId" component={Authentication(SuggestionsList)} title="Customer Repricing Suggestions" />
+        </Route>
         <Route path="*" component={PageNotFound404} title=" " />
       </Route>
     </Router>

@@ -261,7 +261,7 @@ export default class Plan extends Component {
               </FormGroup>
 
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>Proration‎</Col>
+                <Col componentClass={ControlLabel} sm={3} lg={2}>Proration</Col>
                 <Col sm={8} lg={9} className="pt5">
                   <Field
                     fieldType="checkbox"
