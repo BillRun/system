@@ -1,0 +1,190 @@
+{
+  "service": {
+    "collection": "services",
+    "audited": true,
+    "uniqueField": "name",
+    "itemName": "service",
+    "itemsName": "services",
+    "itemType": "service",
+    "itemsType": "services",
+    "settingsKey": "services"
+  },
+  "plan": {
+    "collection": "plans",
+    "audited": true,
+    "uniqueField": "name",
+    "itemName": "plan",
+    "itemsName": "plans",
+    "itemType": "plan",
+    "itemsType": "plans",
+    "settingsKey": "plans"
+  },
+  "charging_plan": {
+    "collection": "prepaidgroups",
+    "audited": true,
+    "uniqueField": "name",
+    "itemName": "buckets group",
+    "itemsName": "buckets groups",
+    "itemType": "charging_plan",
+    "itemsType": "charging_plans"
+  },
+  "prepaid_plan": {
+    "collection": "plans",
+    "audited": true,
+    "uniqueField": "name",
+    "itemName": "prepaid plan",
+    "itemsName": "prepaid plans",
+    "itemType": "prepaid_plan",
+    "itemsType": "prepaid_plans"
+  },
+  "prepaid_include": {
+    "collection": "prepaidincludes",
+    "audited": true,
+    "uniqueField": "name",
+    "itemName": "prepaid bucket",
+    "itemsName": "prepaid buckets",
+    "itemType": "prepaid_include",
+    "itemsType": "prepaid_includes"
+  },
+  "product": {
+    "collection": "rates",
+    "audited": true,
+    "uniqueField": "key",
+    "itemName": "product",
+    "itemsName": "products",
+    "itemType": "product",
+    "itemsType": "products",
+    "settingsKey": "rates"
+  },
+  "discount": {
+    "collection": "discounts",
+    "audited": true,
+    "uniqueField": "key",
+    "itemName": "discount",
+    "itemsName": "discounts",
+    "itemType": "discount",
+    "itemsType": "discounts",
+    "settingsKey": "discounts"
+  },
+  "charge": {
+    "collection": "charges",
+    "audited": true,
+    "uniqueField": "key",
+    "itemName": "conditional charge",
+    "itemsName": "conditional charges",
+    "itemType": "charge",
+    "itemsType": "charges",
+    "settingsKey": "charges"
+  },
+  "subscription": {
+    "collection": "subscribers",
+    "audited": true,
+    "uniqueField": ["sid", "aid"],
+    "itemName": "subscriber",
+    "itemsName": "subscribers",
+    "itemType": "subscription",
+    "itemsType": "subscriptions",
+    "settingsKey": "subscribers.subscriber"
+  },
+  "customer": {
+    "collection": "accounts",
+    "audited": true,
+    "uniqueField": "aid",
+    "itemName": "customer",
+    "itemsName": "customers",
+    "itemType": "customer",
+    "itemsType": "customers",
+    "settingsKey": "subscribers.account"
+  },
+  "report": {
+    "collection": "reports",
+    "audited": true,
+    "uniqueField": "key",
+    "itemName": "report",
+    "itemsName": "reports",
+    "itemType": "report",
+    "itemsType": "reports"
+  },
+  "usage": {
+    "collection": "lines",
+    "settingsKey": "lines",
+    "uniqueField": "stamp",
+    "itemName": "usage",
+    "itemsName": "usages",
+    "itemType": "usage",
+    "itemsType": "usages"
+  },
+  "queue": {
+    "collection": "queue",
+    "uniqueField": "stamp",
+    "itemName": "queue",
+    "itemsName": "queues",
+    "itemType": "queue",
+    "itemsType": "queues"
+  },
+  "tax": {
+    "collection": "taxes",
+    "audited": true,
+    "uniqueField": "key",
+    "itemName": "tax",
+    "itemsName": "tax rates",
+    "itemType": "tax",
+    "itemsType": "taxes",
+    "settingsKey": "taxes"
+  },
+  "logFile": {
+    "collection": "log",
+    "uniqueField": "stamp",
+    "itemName": "received files",
+    "itemsName": "received files",
+    "itemType": "logFile",
+    "itemsType": "logFiles"
+  },
+  "paymentsTransactionsRequest": {
+    "collection": "log",
+    "uniqueField": "stamp",
+    "itemName": "payments transactions request files",
+    "itemsName": "payments transactions request files",
+    "itemType": "payment_transactions_request_files",
+    "itemsType": "payments_transactions_request_files"
+  },
+  "paymentsTransactionsResponse": {
+    "collection": "log",
+    "uniqueField": "stamp",
+    "itemName": "payments transactions response files",
+    "itemsName": "payments transactions response files",
+    "itemType": "payment_transactions_response_files",
+    "itemsType": "payments_transactions_response_files"
+  },
+  "paymentDenials": {
+    "collection": "log",
+    "uniqueField": "stamp",
+    "itemName": "payment denials files",
+    "itemsName": "payment denials files",
+    "itemType": "payment_denials_files",
+    "itemsType": "payments_denials_files"
+  },
+  "paymentsFiles" : {
+    "collection": "log",
+    "uniqueField": "stamp",
+    "itemName": "transactions request file",
+    "itemsName": "transactions request file",
+    "itemType": "payment_files",
+    "itemsType": "payments_files"
+  },
+  "event": {
+    "collection": "events",
+    "uniqueField": "stamp",
+    "itemName": "events",
+    "itemsName": "events",
+    "itemType": "event",
+    "itemsType": "events"
+  },
+  "auto_renew": {
+    "collection": "autorenew",
+    "itemName": "recurring charge",
+    "itemsName": "recurring charges",
+    "itemType": "auto_renew",
+    "itemsType": "auto_renews"
+  }
+}
