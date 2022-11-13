@@ -22,6 +22,7 @@ import PriorityMapping from './PriorityMapping';
 import Conditions from './Conditions';
 import SubscriberAsyncSearch from './SubscriberAsyncSearch';
 import RateAsyncSearch from './RateAsyncSearch';
+import RecurrenceFrequency from './RecurrenceFrequency';
 
 export {
   WithEntityLink,
@@ -49,4 +50,5 @@ export {
   Conditions,
   SubscriberAsyncSearch,
   RateAsyncSearch,
+  RecurrenceFrequency,
 };

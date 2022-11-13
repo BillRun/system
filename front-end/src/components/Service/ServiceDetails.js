@@ -8,6 +8,7 @@ import { Form, FormGroup, ControlLabel, HelpBlock, Col, InputGroup, DropdownButt
 import { ServiceDescription } from '../../language/FieldDescriptions';
 import Help from '../Help';
 import Field from '@/components/Field';
+import { RecurrenceFrequency } from '@/components/Elements';
 import { EntityFields } from '../Entity';
 import PlaysSelector from '../Plays/PlaysSelector';
 import {
@@ -21,6 +22,7 @@ export default class ServiceDetails extends Component {
 
   static propTypes = {
     item: PropTypes.instanceOf(Immutable.Map).isRequired,
+    sourceItem: PropTypes.instanceOf(Immutable.Map),
     mode: PropTypes.string.isRequired,
     updateItem: PropTypes.func.isRequired,
     onFieldRemove: PropTypes.func.isRequired,
@@ -114,7 +116,7 @@ export default class ServiceDetails extends Component {
 
   render() {
     const { errors } = this.state;
-    const { item, mode } = this.props;
+    const { item, mode, sourceItem } = this.props;
     const serviceCycleUnlimitedValue = getConfig('serviceCycleUnlimitedValue', 'UNLIMITED');
     const editable = (mode !== 'view');
     const balancePeriodUnit = item.getIn(['balance_period', 'unit'], '');
@@ -156,6 +158,15 @@ export default class ServiceDetails extends Component {
             </Col>
           </FormGroup>
         }
+
+        <RecurrenceFrequency
+          item={item}
+          sourceItem={sourceItem}
+          itemName="service"
+          editable={editable}
+          onChange={this.props.updateItem}
+          onRemove={this.props.onFieldRemove}
+        />
 
         <FormGroup>
           <Col componentClass={ControlLabel} sm={3} lg={2}>

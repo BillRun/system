@@ -107,9 +107,7 @@ const StepResult = (props) => {
       );
     }
 
-
-    const result = item.getIn(['result'], Immutable.Map());
-    // No resolts -> no imports
+    // No results -> no imports
     if (result.size === 0) {
       return (
         <div className="ml10">

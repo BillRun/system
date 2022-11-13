@@ -29,13 +29,14 @@ import {
 import { showSuccess } from '@/actions/alertsActions';
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
 import { clearItems, getRevisions, clearRevisions } from '@/actions/entityListActions';
-import { modeSelector, itemSelector, idSelector, tabSelector, revisionsSelector } from '@/selectors/entitySelector';
+import { modeSelector, itemSelector, idSelector, tabSelector, revisionsSelector, itemSourceSelector } from '@/selectors/entitySelector';
 
 class ServiceSetup extends Component {
 
   static propTypes = {
     itemId: PropTypes.string,
     item: PropTypes.instanceOf(Immutable.Map),
+    sourceItem: PropTypes.instanceOf(Immutable.Map),
     revisions: PropTypes.instanceOf(Immutable.List),
     mode: PropTypes.string,
     activeTab: PropTypes.oneOfType([
@@ -50,6 +51,7 @@ class ServiceSetup extends Component {
 
   static defaultProps = {
     item: Immutable.Map(),
+    sourceItem: Immutable.Map(),
     revisions: Immutable.List(),
     activeTab: 1,
   };
@@ -193,7 +195,7 @@ class ServiceSetup extends Component {
 
   render() {
     const { progress, activeTab } = this.state;
-    const { item, mode, revisions } = this.props;
+    const { item, sourceItem, mode, revisions } = this.props;
     if (mode === 'loading') {
       return (<LoadingItemPlaceholder onClick={this.handleBack} />);
     }
@@ -224,6 +226,7 @@ class ServiceSetup extends Component {
             <Panel style={{ borderTop: 'none' }}>
               <ServiceDetails
                 item={item}
+                sourceItem={sourceItem}
                 mode={mode}
                 updateItem={this.onUpdateItem}
                 onFieldRemove={this.onRemoveFieldValue}
@@ -286,6 +289,7 @@ class ServiceSetup extends Component {
 
 const mapStateToProps = (state, props) => ({
   itemId: idSelector(state, props, 'service'),
+  sourceItem: itemSourceSelector(state, props, 'service'),
   item: itemSelector(state, props, 'service'),
   mode: modeSelector(state, props, 'service'),
   activeTab: tabSelector(state, props, 'service'),

@@ -126,6 +126,10 @@
   "plan": {
     "description": "Title",
     "name": "Key",
+    "proration": "Proration",
+    "prorated_start": "Prorated start",
+    "prorated_end": "Prorate old plan charge on plan change",
+    "prorated_termination": "Prorate charge on termination",
     "upfront": "Charging Mode"
   },
   "product": {
@@ -258,5 +262,12 @@
   "sid": "Subscriber ID",
   "from": "From",
   "to": "To",
+  "billing_frequency": "Billing Frequency",
+  "fixed_cycle_months": "Fixed cycle months",
+  "recurrence.periodicity.1": "Monthly",
+  "recurrence.periodicity.2": "Bimonthly",
+  "recurrence.periodicity.3": "Quarterly",
+  "recurrence.periodicity.6": "Semiannual",
+  "recurrence.periodicity.12": "Annual",
   "effective_date": "Effective Date"
 }
