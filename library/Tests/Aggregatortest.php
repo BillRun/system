@@ -515,7 +515,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 			  Expected: the service price will not be overridden   - pass */
 			array('test' => array('test_number' => 185, "aid" => 890, 'sid' => 780, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(890))),
 				'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 890, 'after_vat' => array("780" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
-					'line' => array('types' => array('flat', 'service'))),)
+					'line' => array('types' => array('flat', 'service'))),),
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 67,),
@@ -541,7 +541,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          $this->balancesCol = Billrun_Factory::db()->discountsCollection();
 	 $this->billingCyclr = Billrun_Factory::db()->billing_cycleCollection();
          $this->billrunCol = Billrun_Factory::db()->billrunCollection();
-         $this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes']);
+         $this->construct(basename(__FILE__, '.php'), ['bills','charges', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes']);
          $this->setColletions();
          $this->loadDbConfig();
      }

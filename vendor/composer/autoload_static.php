@@ -4,25 +4,84 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
+class ComposerStaticInit29566db855439114bef9bd21a07efecb
 {
     public static $files = array (
+        '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
+        'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
+        '9c67151ae59aff4788964ce8eb2a0f43' => __DIR__ . '/..' . '/clue/stream-filter/src/functions_include.php',
+        '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
+        'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
+        '25072dd6e2470089de65ae7bf11d3109' => __DIR__ . '/..' . '/symfony/polyfill-php72/bootstrap.php',
+        'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
+        'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
+        '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
+        '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
-        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
         '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
+        'abede361264e2ae69ec1eee813a101af' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/abs.php',
+        '21a5860fbef5be28db5ddfbc3cca67c4' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acos.php',
+        '1546e3f9d127f2a9bb2d1b6c31c26ef1' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acosh.php',
+        'd2516f7f4fba5ea5905f494b4a8262e0' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acot.php',
+        '4511163d560956219b96882c0980b65e' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acoth.php',
+        'c361f5616dc2a8da4fa3e137077cd4ea' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acsc.php',
+        '02d68920fc98da71991ce569c91df0f6' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acsch.php',
+        '88e19525eae308b4a6aa3419364875d3' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/argument.php',
+        '60e8e2d0827b58bfc904f13957e51849' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/asec.php',
+        '13d2f040713999eab66c359b4d79871d' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/asech.php',
+        '838ab38beb32c68a79d3cd2c007d5a04' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/asin.php',
+        'bb28eccd0f8f008333a1b3c163d604ac' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/asinh.php',
+        '9e483de83558c98f7d3feaa402c78cb3' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/atan.php',
+        '36b74b5b765ded91ee58c8ee3c0e85e3' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/atanh.php',
+        '05c15ee9510da7fd6bf6136f436500c0' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/conjugate.php',
+        'd3208dfbce2505e370788f9f22f6785f' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/cos.php',
+        '141cf1fb3a3046f8b64534b0ebab33ca' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/cosh.php',
+        'be660df75fd0dbe7fa7c03b7434b3294' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/cot.php',
+        '01e31ea298a51bc9e91517e3ce6b9e76' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/coth.php',
+        '803ddd97f7b1da68982a7b087c3476f6' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/csc.php',
+        '3001cdfd101ec3c32da34ee43c2e149b' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/csch.php',
+        '77b2d7629ef2a93fabb8c56754a91051' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/exp.php',
+        '4a4471296dec796c21d4f4b6552396a9' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/inverse.php',
+        'c3e9897e1744b88deb56fcdc39d34d85' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/ln.php',
+        'a83cacf2de942cff288de15a83afd26d' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/log2.php',
+        '6a861dacc9ee2f3061241d4c7772fa21' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/log10.php',
+        '4d2522d968c8ba78d6c13548a1b4200e' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/negative.php',
+        'fd587ca933fc0447fa5ab4843bdd97f7' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/pow.php',
+        '383ef01c62028fc78cd4388082fce3c2' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/rho.php',
+        '150fbd1b95029dc47292da97ecab9375' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/sec.php',
+        '549abd9bae174286d660bdaa07407c68' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/sech.php',
+        '6bfbf5eaea6b17a0ed85cb21ba80370c' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/sin.php',
+        '22efe13f1a497b8e199540ae2d9dc59c' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/sinh.php',
+        'e90135ab8e787795a509ed7147de207d' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/sqrt.php',
+        'bb0a7923ffc6a90919cd64ec54ff06bc' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/tan.php',
+        '2d302f32ce0fd4e433dd91c5bb404a28' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/tanh.php',
+        '24dd4658a952171a4ee79218c4f9fd06' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/theta.php',
+        'e49b7876281d6f5bc39536dde96d1f4a' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/add.php',
+        '47596e02b43cd6da7700134fd08f88cf' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/subtract.php',
+        '883af48563631547925fa4c3b48ead07' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/multiply.php',
+        'f190e3308e6ca23234a2875edc985c03' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/divideby.php',
+        'ac9e33ce6841aa5bf5d16d465a2f03a7' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/divideinto.php',
+        '3af723442581d6c310bf44543f9f5c60' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/adjoint.php',
+        'd803221834c8b57fec95debb5406a797' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/antidiagonal.php',
+        '4714cafbd3be4c72c274a25eae9396bb' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/cofactors.php',
+        '89719dc7c77436609d1c1c31f0797b8f' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/determinant.php',
+        'c28af79ec7730859d83f2d4310b8dd0b' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/diagonal.php',
+        'c5d82bf1ac485e445f911e55789ab4e6' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/identity.php',
+        '0d2d594de24a247f7a33499e933aa21e' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/inverse.php',
+        'f37c25880804a014ef40c8bffbab1b10' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/minors.php',
+        'd6e4e42171df0dbea253b3067fefda38' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/trace.php',
+        '2c9b19fa954fd3e6fcc7e7a1383caddd' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/transpose.php',
+        '0a538fc9b897450ec362480ebbebe94f' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operations/add.php',
+        'f0843f7f4089ec2343c7445544356385' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operations/directsum.php',
+        'ad3e8c29aa16d134661a414265677b61' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operations/subtract.php',
+        '8d37dad4703fab45bfec9dd0bbf3278e' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operations/multiply.php',
+        '4888a6f58c08148ebe17682f9ce9b2a8' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operations/divideby.php',
+        'eef6fa3879d3efa347cd24d5eb348f85' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operations/divideinto.php',
+        '06dd8487319ccd8403765f5b8c9f2d61' => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Mongo/functions.php',
     );
 
     public static $prefixLengthsPsr4 = array (
-        's' => 
-        array (
-            'smpp\\' => 5,
-        ),
-        'c' => 
-        array (
-            'chillerlan\\Settings\\' => 20,
-            'chillerlan\\QRCode\\' => 18,
-        ),
         'Z' => 
         array (
             'ZipStream\\' => 10,
@@ -30,7 +89,11 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'S' => 
         array (
             'Symfony\\Polyfill\\Php80\\' => 23,
+            'Symfony\\Polyfill\\Php72\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
+            'Symfony\\Polyfill\\Intl\\Normalizer\\' => 33,
+            'Symfony\\Polyfill\\Intl\\Idn\\' => 26,
+            'Symfony\\Component\\HttpFoundation\\' => 33,
         ),
         'P' => 
         array (
@@ -38,36 +101,50 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
             'Psr\\Http\\Message\\' => 17,
             'Psr\\Http\\Client\\' => 16,
             'PhpOffice\\PhpSpreadsheet\\' => 25,
+            'PackageVersions\\' => 16,
+        ),
+        'O' => 
+        array (
+            'Omnipay\\Payrexx\\' => 16,
+            'Omnipay\\Common\\' => 15,
         ),
         'M' => 
         array (
             'MyCLabs\\Enum\\' => 13,
             'MongoDB\\' => 8,
+            'Money\\' => 6,
             'Matrix\\' => 7,
         ),
         'J' => 
         array (
             'Jean85\\' => 7,
         ),
+        'H' => 
+        array (
+            'Http\\Promise\\' => 13,
+            'Http\\Message\\' => 13,
+            'Http\\Discovery\\' => 15,
+            'Http\\Client\\' => 12,
+            'Http\\Adapter\\Guzzle6\\' => 21,
+        ),
+        'G' => 
+        array (
+            'GuzzleHttp\\Psr7\\' => 16,
+            'GuzzleHttp\\Promise\\' => 19,
+            'GuzzleHttp\\' => 11,
+        ),
         'C' => 
         array (
             'Complex\\' => 8,
+            'Clue\\StreamFilter\\' => 18,
+        ),
+        'A' => 
+        array (
+            'Alcaeus\\MongoDbAdapter\\' => 23,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'smpp\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/alexandr-mironov/php-smpp/src',
-        ),
-        'chillerlan\\Settings\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/chillerlan/php-settings-container/src',
-        ),
-        'chillerlan\\QRCode\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/chillerlan/php-qrcode/src',
-        ),
         'ZipStream\\' => 
         array (
             0 => __DIR__ . '/..' . '/maennchen/zipstream-php/src',
@@ -76,9 +153,25 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
         ),
+        'Symfony\\Polyfill\\Php72\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php72',
+        ),
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
+        ),
+        'Symfony\\Polyfill\\Intl\\Normalizer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer',
+        ),
+        'Symfony\\Polyfill\\Intl\\Idn\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-intl-idn',
+        ),
+        'Symfony\\Component\\HttpFoundation\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/http-foundation',
         ),
         'Psr\\SimpleCache\\' => 
         array (
@@ -97,6 +190,18 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         array (
             0 => __DIR__ . '/..' . '/phpoffice/phpspreadsheet/src/PhpSpreadsheet',
         ),
+        'PackageVersions\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/composer/package-versions-deprecated/src/PackageVersions',
+        ),
+        'Omnipay\\Payrexx\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/payrexx/omnipay-payrexx/src',
+        ),
+        'Omnipay\\Common\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/omnipay/common/src/Common',
+        ),
         'MyCLabs\\Enum\\' => 
         array (
             0 => __DIR__ . '/..' . '/myclabs/php-enum/src',
@@ -104,6 +209,10 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'MongoDB\\' => 
         array (
             0 => __DIR__ . '/..' . '/mongodb/mongodb/src',
+        ),
+        'Money\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/moneyphp/money/src',
         ),
         'Matrix\\' => 
         array (
@@ -113,13 +222,61 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         array (
             0 => __DIR__ . '/..' . '/jean85/pretty-package-versions/src',
         ),
+        'Http\\Promise\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/promise/src',
+        ),
+        'Http\\Message\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/message/src',
+            1 => __DIR__ . '/..' . '/php-http/message-factory/src',
+        ),
+        'Http\\Discovery\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/discovery/src',
+        ),
+        'Http\\Client\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/httplug/src',
+        ),
+        'Http\\Adapter\\Guzzle6\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/guzzle6-adapter/src',
+        ),
+        'GuzzleHttp\\Psr7\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/psr7/src',
+        ),
+        'GuzzleHttp\\Promise\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/promises/src',
+        ),
+        'GuzzleHttp\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
+        ),
         'Complex\\' => 
         array (
             0 => __DIR__ . '/..' . '/markbaker/complex/classes/src',
         ),
+        'Clue\\StreamFilter\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/clue/stream-filter/src',
+        ),
+        'Alcaeus\\MongoDbAdapter\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Alcaeus/MongoDbAdapter',
+        ),
     );
 
     public static $prefixesPsr0 = array (
+        'P' => 
+        array (
+            'Payrexx' => 
+            array (
+                0 => __DIR__ . '/..' . '/payrexx/payrexx/lib',
+            ),
+        ),
         'O' => 
         array (
             'OAuth2' => 
@@ -127,35 +284,36 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
                 0 => __DIR__ . '/..' . '/bshaffer/oauth2-server-php/src',
             ),
         ),
-        'H' => 
+        'M' => 
         array (
-            'HTMLPurifier' => 
+            'Mongo' => 
             array (
-                0 => __DIR__ . '/..' . '/ezyang/htmlpurifier/library',
+                0 => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Mongo',
             ),
         ),
     );
 
     public static $classMap = array (
+        'AcceptanceTest' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'AllTests' => __DIR__ . '/..' . '/simpletest/simpletest/test/all_tests.php',
-        'AnotherOldAbstractClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyAbstractImplementation' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyDescendentImplementation' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyDescendentInterface' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyOldAbstractClassWithAbstractMethods' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyOldArgumentClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyOldArgumentImplementation' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyOldArgumentInterface' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyOldClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyOldClassWithStaticMethods' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyOldImplementation' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyOldInterface' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyOldLeafClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyOldLeafClassWithAFinal' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyOldOverloadedClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
+        'AnotherOldAbstractClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyAbstractImplementation' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyDescendentImplementation' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyDescendentInterface' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyOldAbstractClassWithAbstractMethods' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyOldArgumentClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyOldArgumentImplementation' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyOldArgumentInterface' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyOldClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyOldClassWithStaticMethods' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyOldImplementation' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyOldInterface' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyOldLeafClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyOldLeafClassWithAFinal' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyOldOverloadedClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
         'AnyOldSignal' => __DIR__ . '/..' . '/simpletest/simpletest/test/xml_test.php',
-        'AnyOldSubclass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'AnyOldTypeHintedClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
+        'AnyOldSubclass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'AnyOldTypeHintedClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
         'AnythingExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'BadTestCases' => __DIR__ . '/..' . '/simpletest/simpletest/test/bad_test_suite.php',
@@ -182,13 +340,14 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'CoverageUtils' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/coverage/coverage_utils.php',
         'CoverageUtilsTest' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/coverage/test/coverage_utils_test.php',
         'CoverageWriter' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/coverage/coverage_writer.php',
+        'CoverageWriterTest' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/coverage/test/coverage_writer_test.php',
         'CssSelector' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/dom_tester/css_selector.php',
         'CssSelectorExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/dom_tester.php',
         'DefaultReporter' => __DIR__ . '/..' . '/simpletest/simpletest/default_reporter.php',
         'DerivedOpaqueContainer' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
         'DetachedTestCase' => __DIR__ . '/..' . '/simpletest/simpletest/detached.php',
         'DomTestCase' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/dom_tester.php',
-        'Dummy' => __DIR__ . '/..' . '/simpletest/simpletest/test/mock_objects_test.php',
+        'Dummy' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual_test.php',
         'DummyInterface' => __DIR__ . '/..' . '/simpletest/simpletest/test/interfaces_test.php',
         'DummyReferencedObject' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
         'DummyResource' => __DIR__ . '/..' . '/simpletest/simpletest/test/simpletest_test.php',
@@ -211,6 +370,8 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'IdenticalExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'ImplementsDummy' => __DIR__ . '/..' . '/simpletest/simpletest/test/interfaces_test.php',
         'IsAExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
+        'Issue29' => __DIR__ . '/..' . '/simpletest/simpletest/test/issues/test_issue29.php',
+        'Issue34' => __DIR__ . '/..' . '/simpletest/simpletest/test/issues/test_issue34.php',
         'IteratorAggregateImplementation' => __DIR__ . '/..' . '/simpletest/simpletest/test/support/spl_examples.php',
         'IteratorImplementation' => __DIR__ . '/..' . '/simpletest/simpletest/test/support/spl_examples.php',
         'JUnitXMLReporter' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/junit_xml_reporter.php',
@@ -229,22 +390,23 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'MultipleReporter' => __DIR__ . '/..' . '/simpletest/simpletest/scorer.php',
         'MultipleSelectionTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'MyTestException' => __DIR__ . '/..' . '/simpletest/simpletest/test/exceptions_test.php',
-        'NestingCaseTag' => __DIR__ . '/..' . '/simpletest/simpletest/xml.php',
-        'NestingGroupTag' => __DIR__ . '/..' . '/simpletest/simpletest/xml.php',
-        'NestingMethodTag' => __DIR__ . '/..' . '/simpletest/simpletest/xml.php',
-        'NestingXmlTag' => __DIR__ . '/..' . '/simpletest/simpletest/xml.php',
+        'NestedCaseTag' => __DIR__ . '/..' . '/simpletest/simpletest/xml.php',
+        'NestedGroupTag' => __DIR__ . '/..' . '/simpletest/simpletest/xml.php',
+        'NestedMethodTag' => __DIR__ . '/..' . '/simpletest/simpletest/xml.php',
+        'NestedXmlTag' => __DIR__ . '/..' . '/simpletest/simpletest/xml.php',
         'NoHttpHeaderExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/web_tester.php',
         'NoPatternExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'NoSkipsReporter' => __DIR__ . '/..' . '/simpletest/simpletest/reporter.php',
         'NoTextExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/web_tester.php',
+        'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
         'NotAExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'NotEqualExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'NotIdenticalExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
+        'Omnipay\\Omnipay' => __DIR__ . '/..' . '/omnipay/common/src/Omnipay.php',
         'OpaqueContainer' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
         'OtherTestException' => __DIR__ . '/..' . '/simpletest/simpletest/test/exceptions_test.php',
         'OutsideMarginExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
-        'PHPUnit_TestCase' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/pear_test_case.php',
-        'PackagingSynchronisation' => __DIR__ . '/..' . '/simpletest/simpletest/packages/simpletest.org/package.php',
+        'PHPUnitTestCase' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/phpunit/PHPUnitTestCase.php',
         'PageRequest' => __DIR__ . '/..' . '/simpletest/simpletest/test/site/page_request.php',
         'ParallelRegex' => __DIR__ . '/..' . '/simpletest/simpletest/php_parser.php',
         'ParametersExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/mock_objects.php',
@@ -253,16 +415,22 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'PassingUnitTestCaseOutput' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual_test.php',
         'PathEqualExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/test/collector_test.php',
         'PatternExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
+        'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
         'Recorder' => __DIR__ . '/..' . '/simpletest/simpletest/recorder.php',
         'RecursiveNasty' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
         'ReferenceExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'ReferenceForTesting' => __DIR__ . '/..' . '/simpletest/simpletest/test/unit_tester_test.php',
         'RemoteTestCase' => __DIR__ . '/..' . '/simpletest/simpletest/remote.php',
-        'SameTestClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/adapter_test.php',
+        'SameTestClass' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/phpunit/tests/adapter_test.php',
         'SampleInterfaceWithClone' => __DIR__ . '/..' . '/simpletest/simpletest/test/interfaces_test.php',
-        'SampleInterfaceWithHintInSignature' => __DIR__ . '/..' . '/simpletest/simpletest/test/interfaces_test_php5_1.php',
+        'SampleInterfaceWithHintInSignature' => __DIR__ . '/..' . '/simpletest/simpletest/test/interfaces_test.php',
         'SampleTestForRecorder' => __DIR__ . '/..' . '/simpletest/simpletest/test/support/recorder_sample.php',
+        'SelectById' => __DIR__ . '/..' . '/simpletest/simpletest/selector.php',
+        'SelectByLabel' => __DIR__ . '/..' . '/simpletest/simpletest/selector.php',
+        'SelectByLabelOrName' => __DIR__ . '/..' . '/simpletest/simpletest/selector.php',
+        'SelectByName' => __DIR__ . '/..' . '/simpletest/simpletest/selector.php',
         'SelectiveReporter' => __DIR__ . '/..' . '/simpletest/simpletest/reporter.php',
+        'SelectorInterface' => __DIR__ . '/..' . '/simpletest/simpletest/selector.php',
         'SeleneseTestCase' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/selenese_tester.php',
         'SeleniumTestCase' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/selenium.php',
         'ShellTestCase' => __DIR__ . '/..' . '/simpletest/simpletest/shell_tester.php',
@@ -276,10 +444,6 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'SimpleBrowser' => __DIR__ . '/..' . '/simpletest/simpletest/browser.php',
         'SimpleBrowserHistory' => __DIR__ . '/..' . '/simpletest/simpletest/browser.php',
         'SimpleButtonTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
-        'SimpleById' => __DIR__ . '/..' . '/simpletest/simpletest/selector.php',
-        'SimpleByLabel' => __DIR__ . '/..' . '/simpletest/simpletest/selector.php',
-        'SimpleByLabelOrName' => __DIR__ . '/..' . '/simpletest/simpletest/selector.php',
-        'SimpleByName' => __DIR__ . '/..' . '/simpletest/simpletest/selector.php',
         'SimpleByReference' => __DIR__ . '/..' . '/simpletest/simpletest/mock_objects.php',
         'SimpleByValue' => __DIR__ . '/..' . '/simpletest/simpletest/mock_objects.php',
         'SimpleCallSchedule' => __DIR__ . '/..' . '/simpletest/simpletest/mock_objects.php',
@@ -289,8 +453,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'SimpleCommandLineParser' => __DIR__ . '/..' . '/simpletest/simpletest/default_reporter.php',
         'SimpleCookie' => __DIR__ . '/..' . '/simpletest/simpletest/cookies.php',
         'SimpleCookieJar' => __DIR__ . '/..' . '/simpletest/simpletest/cookies.php',
-        'SimpleCoverageWriter' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/coverage/simple_coverage_writer.php',
-        'SimpleCoverageWriterTest' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/coverage/test/simple_coverage_writer_test.php',
+        'SimpleDateTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'SimpleDeleteEncoding' => __DIR__ . '/..' . '/simpletest/simpletest/encoding.php',
         'SimpleDumper' => __DIR__ . '/..' . '/simpletest/simpletest/dumper.php',
         'SimpleEncodedPair' => __DIR__ . '/..' . '/simpletest/simpletest/encoding.php',
@@ -304,15 +467,12 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'SimpleExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'SimpleFileLoader' => __DIR__ . '/..' . '/simpletest/simpletest/test_case.php',
         'SimpleFileSocket' => __DIR__ . '/..' . '/simpletest/simpletest/socket.php',
-        'SimpleFlickrStreamXMLElement' => __DIR__ . '/..' . '/simpletest/simpletest/docs/simpletest.org/views/photos_stream.php',
         'SimpleForm' => __DIR__ . '/..' . '/simpletest/simpletest/form.php',
         'SimpleFormTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'SimpleFrameTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'SimpleFrameset' => __DIR__ . '/..' . '/simpletest/simpletest/frames.php',
         'SimpleGetEncoding' => __DIR__ . '/..' . '/simpletest/simpletest/encoding.php',
         'SimpleHeadEncoding' => __DIR__ . '/..' . '/simpletest/simpletest/encoding.php',
-        'SimpleHeartBeat' => __DIR__ . '/..' . '/simpletest/simpletest/docs/simpletest.org/views/heartbeat.php',
-        'SimpleHeartBeatLog' => __DIR__ . '/..' . '/simpletest/simpletest/docs/simpletest.org/views/heartbeat.php',
         'SimpleHelp' => __DIR__ . '/..' . '/simpletest/simpletest/arguments.php',
         'SimpleHtmlLexer' => __DIR__ . '/..' . '/simpletest/simpletest/php_parser.php',
         'SimpleHtmlSaxParser' => __DIR__ . '/..' . '/simpletest/simpletest/php_parser.php',
@@ -320,7 +480,6 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'SimpleHttpRequest' => __DIR__ . '/..' . '/simpletest/simpletest/http.php',
         'SimpleHttpResponse' => __DIR__ . '/..' . '/simpletest/simpletest/http.php',
         'SimpleImageSubmitTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
-        'SimpleIntegration' => __DIR__ . '/..' . '/simpletest/simpletest/packages/simpletest.org/integration.php',
         'SimpleInvoker' => __DIR__ . '/..' . '/simpletest/simpletest/invoker.php',
         'SimpleInvokerDecorator' => __DIR__ . '/..' . '/simpletest/simpletest/invoker.php',
         'SimpleLabelTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
@@ -337,7 +496,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'SimpleRadioButtonTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'SimpleRadioGroup' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'SimpleRealm' => __DIR__ . '/..' . '/simpletest/simpletest/authentication.php',
-        'SimpleReflection' => __DIR__ . '/..' . '/simpletest/simpletest/reflection_php5.php',
+        'SimpleReflection' => __DIR__ . '/..' . '/simpletest/simpletest/reflection.php',
         'SimpleReporter' => __DIR__ . '/..' . '/simpletest/simpletest/scorer.php',
         'SimpleReporterDecorator' => __DIR__ . '/..' . '/simpletest/simpletest/scorer.php',
         'SimpleResult' => __DIR__ . '/..' . '/simpletest/simpletest/recorder.php',
@@ -361,27 +520,26 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'SimpleTagBuilder' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'SimpleTagGroup' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'SimpleTest' => __DIR__ . '/..' . '/simpletest/simpletest/simpletest.php',
-        'SimpleTestAcceptanceTest' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'SimpleTestCase' => __DIR__ . '/..' . '/simpletest/simpletest/test_case.php',
         'SimpleTestCompatibility' => __DIR__ . '/..' . '/simpletest/simpletest/compatibility.php',
         'SimpleTestContext' => __DIR__ . '/..' . '/simpletest/simpletest/simpletest.php',
-        'SimpleTestXMLElement' => __DIR__ . '/..' . '/simpletest/simpletest/packages/simpletest.org/package.php',
         'SimpleTestXmlParser' => __DIR__ . '/..' . '/simpletest/simpletest/xml.php',
         'SimpleTextAreaTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'SimpleTextTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'SimpleThrower' => __DIR__ . '/..' . '/simpletest/simpletest/mock_objects.php',
         'SimpleTidyPageBuilder' => __DIR__ . '/..' . '/simpletest/simpletest/tidy_parser.php',
+        'SimpleTimeTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'SimpleTitleTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'SimpleUploadTag' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
         'SimpleUrl' => __DIR__ . '/..' . '/simpletest/simpletest/url.php',
         'SimpleUserAgent' => __DIR__ . '/..' . '/simpletest/simpletest/user_agent.php',
         'SimpleWidget' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
-        'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
+        'Stringable' => __DIR__ . '/..' . '/myclabs/php-enum/stubs/Stringable.php',
         'TestCaseWithParseError' => __DIR__ . '/..' . '/simpletest/simpletest/test/test_with_parse_error.php',
         'TestDisplayClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual_test.php',
         'TestDoxReporter' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/testdox.php',
         'TestOfAbsoluteUrls' => __DIR__ . '/..' . '/simpletest/simpletest/test/url_test.php',
-        'TestOfAbstractsWithAbstractMethods' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
+        'TestOfAbstractsWithAbstractMethods' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
         'TestOfAdditionalHeaders' => __DIR__ . '/..' . '/simpletest/simpletest/test/user_agent_test.php',
         'TestOfAnythingExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/test/mock_objects_test.php',
         'TestOfAuthenticator' => __DIR__ . '/..' . '/simpletest/simpletest/test/authentication_test.php',
@@ -399,7 +557,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'TestOfCommandLineArgumentParsing' => __DIR__ . '/..' . '/simpletest/simpletest/test/arguments_test.php',
         'TestOfCommandLineParsing' => __DIR__ . '/..' . '/simpletest/simpletest/test/command_line_test.php',
         'TestOfCompatibility' => __DIR__ . '/..' . '/simpletest/simpletest/test/compatibility_test.php',
-        'TestOfContentTransformationFromXMLToHTML' => __DIR__ . '/..' . '/simpletest/simpletest/packages/simpletest.org/test/package_test.php',
+        'TestOfConstructorCreation' => __DIR__ . '/..' . '/simpletest/simpletest/test/mock_objects_test.php',
         'TestOfContext' => __DIR__ . '/..' . '/simpletest/simpletest/test/simpletest_test.php',
         'TestOfCookie' => __DIR__ . '/..' . '/simpletest/simpletest/test/cookies_test.php',
         'TestOfCookieJar' => __DIR__ . '/..' . '/simpletest/simpletest/test/cookies_test.php',
@@ -419,10 +577,8 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'TestOfExpectExceptionWithSetUp' => __DIR__ . '/..' . '/simpletest/simpletest/test/exceptions_test.php',
         'TestOfFetchingUrlParameters' => __DIR__ . '/..' . '/simpletest/simpletest/test/user_agent_test.php',
         'TestOfFieldExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/test/web_tester_test.php',
-        'TestOfFileUploads' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfFileUrl' => __DIR__ . '/..' . '/simpletest/simpletest/test/url_test.php',
         'TestOfForm' => __DIR__ . '/..' . '/simpletest/simpletest/test/form_test.php',
-        'TestOfFrameAuthentication' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfFrameNavigation' => __DIR__ . '/..' . '/simpletest/simpletest/test/frames_test.php',
         'TestOfFrameUrl' => __DIR__ . '/..' . '/simpletest/simpletest/test/url_test.php',
         'TestOfFrameset' => __DIR__ . '/..' . '/simpletest/simpletest/test/frames_test.php',
@@ -443,7 +599,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'TestOfIgnoringExceptions' => __DIR__ . '/..' . '/simpletest/simpletest/test/exceptions_test.php',
         'TestOfImplementations' => __DIR__ . '/..' . '/simpletest/simpletest/test/interfaces_test.php',
         'TestOfInequality' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
-        'TestOfInterfaceMocksWithHintInSignature' => __DIR__ . '/..' . '/simpletest/simpletest/test/interfaces_test_php5_1.php',
+        'TestOfInterfaceMocksWithHintInSignature' => __DIR__ . '/..' . '/simpletest/simpletest/test/interfaces_test.php',
         'TestOfIsA' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
         'TestOfLabelTag' => __DIR__ . '/..' . '/simpletest/simpletest/test/tag_test.php',
         'TestOfLeftOverErrors' => __DIR__ . '/..' . '/simpletest/simpletest/test/errors_test.php',
@@ -454,7 +610,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'TestOfLiveAuthentication' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfLiveBrowser' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfLiveCookies' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
-        'TestOfLiveCssSelectors' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/dom_tester/test/dom_tester_test.php',
+        'TestOfLiveCssSelectors' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/dom_tester/test/dom_tester_doc_test.php',
         'TestOfLiveFetching' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfLiveFrontControllerEmulation' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfLiveHeaders' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
@@ -481,6 +637,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'TestOfNotEnoughErrors' => __DIR__ . '/..' . '/simpletest/simpletest/test/errors_test.php',
         'TestOfPHP5AbstractMethodMocking' => __DIR__ . '/..' . '/simpletest/simpletest/test/mock_objects_test.php',
         'TestOfPHP5StaticMethodMocking' => __DIR__ . '/..' . '/simpletest/simpletest/test/mock_objects_test.php',
+        'TestOfPHPUnitAdapter' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/phpunit/tests/adapter_test.php',
         'TestOfPageHeaders' => __DIR__ . '/..' . '/simpletest/simpletest/test/page_test.php',
         'TestOfPageInterface' => __DIR__ . '/..' . '/simpletest/simpletest/test/page_test.php',
         'TestOfParallelRegex' => __DIR__ . '/..' . '/simpletest/simpletest/test/php_parser_test.php',
@@ -493,15 +650,14 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'TestOfPastBugs' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual_test.php',
         'TestOfPatternCollector' => __DIR__ . '/..' . '/simpletest/simpletest/test/collector_test.php',
         'TestOfPatterns' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
-        'TestOfPearAdapter' => __DIR__ . '/..' . '/simpletest/simpletest/test/adapter_test.php',
         'TestOfProtectedMethodPartialMocks' => __DIR__ . '/..' . '/simpletest/simpletest/test/mock_objects_test.php',
         'TestOfProxyRoute' => __DIR__ . '/..' . '/simpletest/simpletest/test/http_test.php',
         'TestOfRadioGroup' => __DIR__ . '/..' . '/simpletest/simpletest/test/tag_test.php',
         'TestOfRealm' => __DIR__ . '/..' . '/simpletest/simpletest/test/authentication_test.php',
         'TestOfRecorder' => __DIR__ . '/..' . '/simpletest/simpletest/test/recorder_test.php',
         'TestOfReference' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
-        'TestOfReflection' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
-        'TestOfReflectionWithTypeHints' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_php5_test.php',
+        'TestOfReflection' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
+        'TestOfReflectionWithTypeHints' => __DIR__ . '/..' . '/simpletest/simpletest/test/reflection_test.php',
         'TestOfRequestMethods' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfSampleInterfaceWithClone' => __DIR__ . '/..' . '/simpletest/simpletest/test/interfaces_test.php',
         'TestOfSelection' => __DIR__ . '/..' . '/simpletest/simpletest/test/tag_test.php',
@@ -521,7 +677,6 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'TestOfSpl' => __DIR__ . '/..' . '/simpletest/simpletest/test/interfaces_test.php',
         'TestOfStackTrace' => __DIR__ . '/..' . '/simpletest/simpletest/test/simpletest_test.php',
         'TestOfStateStack' => __DIR__ . '/..' . '/simpletest/simpletest/test/php_parser_test.php',
-        'TestOfSynchronisationCheck' => __DIR__ . '/..' . '/simpletest/simpletest/packages/simpletest.org/test/package_test.php',
         'TestOfTag' => __DIR__ . '/..' . '/simpletest/simpletest/test/tag_test.php',
         'TestOfTagGroup' => __DIR__ . '/..' . '/simpletest/simpletest/test/tag_test.php',
         'TestOfTestDoxReporter' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/testdox/test.php',
@@ -574,10 +729,10 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit29566db855439114bef9bd21a07efecb::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit29566db855439114bef9bd21a07efecb::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit29566db855439114bef9bd21a07efecb::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit29566db855439114bef9bd21a07efecb::$classMap;
 
         }, null, ClassLoader::class);
     }

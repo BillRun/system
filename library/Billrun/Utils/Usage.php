@@ -27,19 +27,29 @@ class Billrun_Utils_Usage {
 				}
 				$retSub = null;
 				$subscriber = Billrun_Factory::subscriber();
-				$query = array(	'sid' => $row['sid'],
-								'aid' => $row['aid'],
-								'time'=> date(Billrun_Base::base_datetimeformat, @Billrun_Util::getFieldVal(Billrun_Util::getFieldVal($row['prorated_end_date'],$row['urt']),new Mongodloid_Date())->sec-1));
-				return $subscriber->loadSubscriberForQuery($query);
+				$queries = static::getQueryForAccountForeignData($row);
+				foreach ($queries as  $query) {
+					if($retSub = $subscriber->loadSubscriberForQuery($query, ['sid'=> 'sid','aid' => 'aid'])) {
+						break;
+					}
+
+				};
+				return $retSub;
+
 			case 'account' :
 				if(empty($row['aid'])) {
 					return null;
 				}
 				$retAcc=null;
 				$account = Billrun_Factory::account();
-				$query = array(	'aid' => $row['aid'],
-								'time'=> date(Billrun_Base::base_datetimeformat, @Billrun_Util::getFieldVal(Billrun_Util::getFieldVal($row['prorated_end_date'],$row['urt']),new Mongodloid_Date())->sec-1));
-				return $account->loadAccountForQuery($query);
+				$queries = static::getQueryForAccountForeignData($row, ['aid' => 'aid']);
+				foreach ($queries as  $query) {
+					if($retAcc = $account->loadAccountForQuery($query)) {
+						break;
+					}
+
+				};
+				return $retAcc;
 
 			case 'plan' :
 				if(empty($row['plan'])) {
@@ -120,6 +130,36 @@ class Billrun_Utils_Usage {
 			}
 		}
 		return $conditionsMet;
+	}
+
+	//=============================  protected  helper functions =============================
+
+	protected static function getQueryForAccountForeignData($row, $rowQueryFields = ['sid'=> 'sid','aid' => 'aid'])   {
+			$retQueries = [];
+			$possibleTimeFields = Billrun_Factory::config()->getConfigValue('billrun.core.foreign_fields.subscribers.time_fields_mapping',[
+																					'prorated_end_date' => -1,'end'=> -1,'end_date'=>-1,
+																   					'urt'=>0,
+																					'prorated_start_date'=>1,'start'=>1,'start_date'=>1,
+																					'deactivation_date' => -1,
+																					'activation_date' => 1
+  																																		]);
+			$defaultTime = Billrun_Billingcycle::getStartTime(Billrun_Billingcycle::getBillrunKeyByTimestamp($row['urt']->sec-1));
+
+			$baseQuery = [];
+			foreach($rowQueryFields as  $qField =>  $rField)  {
+				$baseQuery[$qField] = $row[$rField];
+			}
+
+			foreach ($possibleTimeFields as  $timeField =>  $offset) {
+				if(empty($row[$timeField])) {continue;}
+				$timeValue = $row[$timeField] instanceof Mongodloid_Date ?
+								$row[$timeField]->sec :
+								@Billrun_Util::getFieldVal($row[$timeField],$defaultTime);
+				$retQueries[] =array_merge( $baseQuery , ['time'=> date(Billrun_Base::base_datetimeformat,$timeValue + $offset) ]);
+			};
+			$retQueries[] = array_merge( $baseQuery ,[	'time'=> $defaultTime ]);
+
+			return  $retQueries;
 	}
 
 }
