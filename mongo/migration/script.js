@@ -1347,5 +1347,23 @@ var invoice_lang_field = {
 };
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoice_lang_field, 'account');
 
+// BRCD-3942
+for (var i = 0; i < lastConfig.plugins.length; i++) {
+	if (lastConfig.plugins[i]['name'] === "debtCollectionPlugin") {
+		if (lastConfig.plugins[i]['configuration'] !== undefined){
+			lastConfig.plugins[i]['configuration'] = {};
+		}
+		if (lastConfig.plugins[i]['configuration']['values'] !== undefined){
+			lastConfig.plugins[i]['configuration']['values'] = {};
+		}
+		if (lastConfig.plugins[i]['configuration']['values']['immediateEnter'] === undefined){
+			lastConfig.plugins[i]['configuration']['values']['immediateEnter'] = false;
+		}
+		if (lastConfig.plugins[i]['configuration']['values']['immediateExit'] === undefined){
+			lastConfig.plugins[i]['configuration']['values']['immediateExit'] = true;
+		}
+	}
+}
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
