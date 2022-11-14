@@ -112,4 +112,11 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 		return  new Billrun_DataTypes_CustomCycleTime($nextCycleKey, $this->recurrenceConfig,$regularCycle->invoicingDay(),$this->activation);
 	}
 
+	protected function getPriceForCycle($cycle) {
+        $formatStart = date(Billrun_Base::base_dateformat,  $cycle->start());
+        $formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
+        $cycleCount = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart)/$this->recurrenceConfig['frequency'];
+        return $this->getPriceByOffset($cycleCount);
+	}
+
 }
