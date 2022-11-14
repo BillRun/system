@@ -1350,10 +1350,10 @@ lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoice_
 // BRCD-3942
 for (var i = 0; i < lastConfig.plugins.length; i++) {
 	if (lastConfig.plugins[i]['name'] === "debtCollectionPlugin") {
-		if (lastConfig.plugins[i]['configuration'] !== undefined){
+		if (lastConfig.plugins[i]['configuration'] === undefined){
 			lastConfig.plugins[i]['configuration'] = {};
 		}
-		if (lastConfig.plugins[i]['configuration']['values'] !== undefined){
+		if (lastConfig.plugins[i]['configuration']['values'] === undefined){
 			lastConfig.plugins[i]['configuration']['values'] = {};
 		}
 		if (lastConfig.plugins[i]['configuration']['values']['immediateEnter'] === undefined){
