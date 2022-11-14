@@ -72,7 +72,7 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 
 
 		$lastUpfrontCharge = $this->getPriceForCycle($this->cycle);
-		$endActivation  = strtotime('-1 second', $this->deactivation);
+		$endActivation  =  $this->deactivation;
 		$refundFraction = 1- Billrun_Utils_Time::getDaysSpanDiffUnix($this->cycle->start(), $endActivation, $cycleSpan);
 
 
