@@ -54,6 +54,7 @@
 	{ case: {$eq: ["$_id.INCOMING_OPERATOR_D","BICS"] }, then: "HUB" },
 	{ case: {$eq: ["$_id.INCOMING_OPERATOR_D","MONTY"] }, then: "HUB" },
 	{ case: {$eq: ["$_id.INCOMING_OPERATOR_D","SYN"] }, then: "HUB" },
+	{ case: {$eq: ["$_id.INCOMING_OPERATOR_D","SAP"] }, then: "SAP" },
 	{ case: {$eq: ["$_id.INCOMING_OPERATOR_D",null] }, then: "" }
 ],default: "IW"}},
 TYPE_OUTGOING:{$switch: {branches: [
@@ -64,6 +65,7 @@ TYPE_OUTGOING:{$switch: {branches: [
 	{ case: {$eq: ["$_id.OUTGOING_OPERATOR_D","BICS"] }, then: "HUB" },
 	{ case: {$eq: ["$_id.OUTGOING_OPERATOR_D","MONTY"] }, then: "HUB" },
 	{ case: {$eq: ["$_id.OUTGOING_OPERATOR_D","SYN"] }, then: "HUB" },
+	{ case: {$eq: ["$_id.OUTGOING_OPERATOR_D","SAP"] }, then: "SAP" },
 	{ case: {$eq: ["$_id.OUTGOING_OPERATOR_D",null] }, then: "" }
 ],default: "IW"}},
 USER_TYPE:{$switch: {branches: [
@@ -76,7 +78,8 @@ USER_TYPE:{$switch: {branches: [
 	{ case: {$eq: ["$_id.USER_SUMMARISATION_G","LCM"] }, then: "Residential" },
 	{ case: {$eq: ["$_id.USER_SUMMARISATION_G","LCR"] }, then: "Residential" },
 	{ case: {$eq: ["$_id.USER_SUMMARISATION_G","LRC"] }, then: "Residential" },
-	{ case: {$eq: ["$_id.USER_SUMMARISATION_G","MOB_PREP_RES"] }, then: "MVNO" },
+	{ case: {$eq: ["$_id.USER_SUMMARISATION_G","MOB_PREP_RES"] }, then: "Prepaid" },
+	{ case: {$eq: ["$_id.USER_SUMMARISATION_G","CALLSAT_MVNO"] }, then: "MVNO" },
 	{ case: {$eq: ["$_id.USER_SUMMARISATION_G","MOB_POST_BUS"] }, then: "Business" },
 	{ case: {$eq: ["$_id.USER_SUMMARISATION_G","FIX_BUS"] }, then: "Business" },
 	{ case: {$eq: ["$_id.USER_SUMMARISATION_G","LSM"] }, then: "Business" },
