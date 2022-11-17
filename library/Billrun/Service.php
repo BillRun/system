@@ -158,11 +158,18 @@ class Billrun_Service {
 		return $this->data;
 	}
 	
+	/**
+	 * 
+	 * @param string $name the property name;
+	 * @param Mongodloid_Date $time the property time
+	 * 
+	 * @return mixed the property value
+	 */
 	public static function getByNameAndTime($name, $time) {
 		$items = self::getCacheItems();
 		if (isset($items['by_name'][$name])) {
 			foreach ($items['by_name'][$name] as $itemTimes) {
-				if ($itemTimes['from'] <= $time && (!isset($itemTimes['to']) || is_null($itemTimes['to']) || $itemTimes['to'] >= $time)) {
+				if ($itemTimes['from']->sec <= $time->sec && (!isset($itemTimes['to']) || is_null($itemTimes['to']) || $itemTimes['to']->sec >= $time->sec)) {
 					return $itemTimes['plan'];
 				}
 			}
