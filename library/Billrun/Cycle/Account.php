@@ -67,6 +67,15 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		return $this->discounts;
 	}
 
+	public function &getSubscriber($sid) {
+		foreach ($this->records as &$subscriber) {
+			if($subscriber->getSid() == $sid) {
+				return $subscriber;
+			}
+		}
+		return null;
+	}
+
 	public function setUserFields(array $user_fields){
 		$this->invoice->setUserFields($user_fields);
 	}

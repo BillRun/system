@@ -861,16 +861,31 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
+			$externalCharges = [];
 			if(!$this->isFakeCycle()) {
 				Billrun_Factory::log('Finalizing the invoice', Zend_Log::DEBUG);
 				$aggregatedEntity->writeInvoice( $this->min_invoice_id , $aggregatedResults);
 				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
+				//Get external charges / credits fromm plugins
+				Billrun_Factory::dispatcher()->trigger('beforeAggregateAccountSaveLines', array(&$aggregatedEntity, &$externalCharges, $aggregatedResults, $aggregatedEntity->getAppliedDiscounts()));
+
 				//Save Account services / plans
 				Billrun_Factory::log('Save Account services / plans', Zend_Log::DEBUG);
 				$this->saveLines($aggregatedResults);
 				//Save Account discounts.
 				Billrun_Factory::log('Save Account discounts.', Zend_Log::DEBUG);
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
+				//Save external charges provided by the plugin
+				Billrun_Factory::log('Save Account external charges', Zend_Log::DEBUG);
+				foreach($externalCharges as $externalCharge) {
+					$sub = $aggregatedEntity->getSubscriber($externalCharges['sid']);
+					if(!empty($sub)) {
+						$sub->getInvoice()->addLines([$externalCharge]);
+					} else {
+						Billrun_Factory::log("Cloud not  find subscriber for external charge with stamp {$externalCharge['stamp']}, check the plugin logic!",Zend_Log::ERR);
+					}
+				}
+				$this->saveLines($externalCharges);
 				//Save configurable data
 				$aggregatedEntity->addConfigurableData();
 				//Save the billrun document
@@ -882,9 +897,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				//Save configurable data
 				$aggregatedEntity->addConfigurableData();
 			}
-                        if(!empty($aggregatedResults)){
-                                    array_push($this->successfulAccounts, $aggregatedEntity->getInvoice()->getAid());
-                        }
+			if(!empty($aggregatedResults)){
+						array_push($this->successfulAccounts, $aggregatedEntity->getInvoice()->getAid());
+			}
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;
 	}
