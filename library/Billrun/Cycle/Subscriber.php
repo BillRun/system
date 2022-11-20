@@ -209,6 +209,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 
 	protected function constructRecords($data) {
+
+		Billrun_Factory::dispatcher()->trigger('beforeConstructSubscriberRecords',[&$data, $this]);
 		$this->mongoPlans = $this->cycleAggregator->getPlans(null,$data['subscriber_info']);
 		$constructedData = $this->constructSubscriberData($data['history'], $this->cycleAggregator->getCycle()->end());
 		$dataForAggration = $data['subscriber_info'];
@@ -225,6 +227,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->constructServices($dataForAggration);
 		$this->constructPlans($dataForAggration);
 		$this->constructInvoice($dataForAggration);
+		Billrun_Factory::dispatcher()->trigger('afterConstructSubscriberRecords',[&$data, $dataForAggration, $this]);
 	}
 
 	protected function constructInvoice($data) {
@@ -305,6 +308,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		$cycle = $this->cycleAggregator->getCycle();
 		$stumpLine = $data['line_stump'];
+
 		foreach ($plans as &$value) {
 			$mongoPlans = $this->cycleAggregator->getPlans(null,$value);
 			// Plan name
@@ -358,18 +362,16 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$name = null;
 		$from = null;
 		$to = null;
+		$activationResolutionSec = Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.activation_minimum_resolution',1);
 		$aggregatorData = array();
 		$addedData =[];
 		$lastStamp = null;
 		//sort plans history by date
 		usort($plans, function($a, $b){ return $a['to']->sec - $b['to']->sec;});
-
 		Billrun_Factory::dispatcher()->trigger('beforeBuildPlansSubAggregator',array($this,&$plans,&$endTime));
-
 		// Go through the plans
 		$planStampFields = array_merge(Billrun_Factory::config()->getConfigValue('customer.aggregator.plan_identification_fields',[]),['plan','plan_activation']);
 		foreach ($plans as $subPlan) {
-
 			$currentStamp = Billrun_Util::generateArrayStamp($subPlan, $planStampFields);
 			// First iteration.
 			if($lastStamp === null) {
@@ -404,6 +406,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		}
 		$aggregatorData["$to"]['plans'][] = array_merge($addedData,$toAdd);
 		Billrun_Factory::dispatcher()->trigger('afterBuildPlansSubAggregator',array($this,&$aggregatorData));
+
 		return $aggregatorData;
 	}
 
@@ -423,6 +426,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$deactivationDate = @$subscriber['deactivation_date']->sec + (@$subscriber['deactivation_date']->usec/ 1000000) ?: PHP_INT_MAX;
 
 		$mongoServices = $this->cycleAggregator->getServices();
+
 		$customSrvStampFields = Billrun_Factory::config()->getConfigValue('customer.aggregator.service_identification_fields',[]);
 		//function to merge  previous and  current services
 		$mergeServicesFunc = function ($a,$b) {
@@ -443,7 +447,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				//TODO add  configurable fields
 				$srvStampFields = array_merge($customSrvStampFields,
 											  (!empty($currentMongoSrv) &&  empty($currentMongoSrv['prorated']) && !empty($currentMongoSrv['quantitative']) ?
-												['name','service_id'] :
+											['name','service_id'] :
 												['name','start','quantity','service_id'])
 											  );
 				 $serviceData = array_merge(  $tmpService,
@@ -455,6 +459,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000), $endTime , $deactivationDate),
 										'compareFields' => $srvStampFields)
 									  );
+
 				 if($serviceData['start'] !== $serviceData['end']) {
 					$stamp = Billrun_Util::generateArrayStamp($serviceData,$srvStampFields);
 					$currServices[$stamp] = $serviceData;
@@ -527,6 +532,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				$planPassthroughData = array_intersect_key(	$subscriber,array_flip(array_merge($customPlanFields,['overrides'])));
 				$subscriberPlans[] = array_merge($planPassthroughData,$plan);
 			}
+
+
 		}
 
 		foreach($services as $service) {
