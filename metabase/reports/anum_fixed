@@ -26,13 +26,13 @@
                     }
                 ]}}]}]}},
 			
-{$match:{'cf.anaa_group':{ $regex: /^(?!357).*/}}},
+{$match:{'uf.BNUM':{ $regex: /^(?!357).*/}}},
 
 {$group:{"_id":{
   MONTH_YEAR:{ $dateToString: { format: "%Y-%m", date: {{from}}, timezone: "Asia/Nicosia"} }, 
   USER_SUMMARISATION:"$uf.USER_SUMMARISATION",
   BILLED_PRODUCT:"$cf.product",
-  UNIT_COST:"$aprice"
+  UNIT_COST:"$cf.rate_price",
   }, 
   "EVENT_DURATION": {$sum: "$usagev"},
   "AMOUNT":{$sum: "$aprice"}
@@ -40,10 +40,10 @@
 
 {$project:{
   _id:0,
-  MONTH_YEAR:"$_id.MONTH_YEAR",
-  USER_SUMMARISATION:"$_id.USER_SUMMARISATION",
-  EVENT_DURATION: {$cond:[{ $eq: ["$_id.BILLED_PRODUCT","SMS"]},"$EVENT_DURATION",{ $divide: ["$EVENT_DURATION", 60 ] }]}, 
-  AMOUNT: "$AMOUNT",
+  MONTH_YEAR:{ $ifNull: ["$_id.MONTH_YEAR",""]},
+  USER_SUMMARISATION:{ $ifNull: ["$_id.USER_SUMMARISATION",""]},
+  EVENT_DURATION: { $ifNull: [{$cond:[{ $eq: ["$_id.BILLED_PRODUCT","SMS"]},"$EVENT_DURATION",{ $divide: ["$EVENT_DURATION", 60 ] }]}, ""]},
+  AMOUNT: { $ifNull: ["$AMOUNT",""]},
   USER_TYPE:{$switch: {branches: [
     { case: {$eq: ["$_id.USER_SUMMARISATION","TRANSIT"] }, then: "NONE" },
     { case: {$eq: ["$_id.USER_SUMMARISATION","CALLSAT_MVNO"] }, then: "MVNO" },
@@ -63,6 +63,6 @@
     { case: {$eq: ["$_id.USER_SUMMARISATION","LSF"] }, then: "Fix Business" },
 
     ],default: "Mobile Residential"}},
-  UNIT_COST:"$_id.UNIT_COST"
+  UNIT_COST:{ $ifNull: ["$_id.UNIT_COST",""]},
 }}
 ]
