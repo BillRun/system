@@ -6036,7 +6036,7 @@ lastConfig["export_generators"][0] =
 var conf = {
     //EPICIC-52
     'billrun.compute.suggestions.rate_recalculations.enabled': 1,
-	'log.debug.filterParams.priority.v': 5
+	'log.debug.filterParams.priority.v': 7
 
 };
 lastConfig = addToConfig(conf, lastConfig);
@@ -10401,6 +10401,10 @@ lastConfig = runOnce(lastConfig, 'EPICIC-175', function () {
     ];
 });
 
+lastConfig = runOnce(lastConfig, 'EPICIC-179', function () {
+	lastConfig.log.debug.filterParams.priority.v = 7;
+});
+
 lastConfig = runOnce(lastConfig, 'EPICIC-162', function () {
 	lastConfig['notifications_settings']=
 	 [
@@ -10425,8 +10429,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-162', function () {
         }
     ]
 });
-
-
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
