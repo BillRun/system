@@ -452,43 +452,30 @@ class Report {
 						$dateFormat = isset($param['format']) ? $param['format'] : 'Y-m-d';
 						if (isset($param['value']) && is_array($param['value'])) {
 							$date = Billrun_Util::calcRelativeTime($param['value'],time());
-							$params[$param['template_tag']] = [
-								'value' => date($dateFormat, $date),
-								'template-tag' => $param['template_tag'],
-								'type' => $param['type']
-							];
+							$value = date($dateFormat, $date);
 						} else { throw new Exception("Invalid params for 'date' type, in parameter" . $param['template_tag']); }
 					break;
 					case "string":
 					case "number":
-						$params[$param['template_tag']] = [
-							'value' => $param['value'],
-							'template-tag' => $param['template_tag'],
-							'type' => $param['type']
-						];
-					break;
-					case "billrun_key" :
-						$dateFormat = isset($param['format']) ? $param['format'] : 'Y-m-d';
-						$billrun_key = Billrun_Util::isBillrunKey($param['value']) ? $param['value'] : $this->getRelevantBillrunKey($param['value']);
-						if ($billrun_key !== false) {
-								Billrun_Factory::log("Creating params query for billrun key: " . $billrun_key . ", for report: " . $this->name, Zend_Log::DEBUG);
-						} else {
-								throw new Exception("Unsupported billrun key input: " . $param['value'] . ", for report: " . $this->name);
+						$value = $param['value'];
+						if ($param['type'] == 'string' && $param['format'] == 'billrun_key') {
+							$billrun_key = Billrun_Util::isBillrunKey($param['value']) ? $param['value'] : $this->getRelevantBillrunKey($param['value']);
+							if ($billrun_key !== false) {
+									Billrun_Factory::log("Creating params query for billrun key: " . $billrun_key . ", for report: " . $this->name, Zend_Log::DEBUG);
+							} else {
+									throw new Exception("Unsupported billrun key input: " . $param['value'] . ", for report: " . $this->name);
+							}
+							$value = $billrun_key;
 						}
-						$params['from'] = [
-							'value' => date($dateFormat, Billrun_Billingcycle::getStartTime($billrun_key)),
-							'template-tag' => 'from',
-							'type' => 'date'
-						];
-						$params['to'] = [
-							'value' => date($dateFormat, Billrun_Billingcycle::getEndTime($billrun_key)),
-							'template-tag' => 'to',
-							'type' => 'date'
-						];
 					break;
 					default : 
 						throw new Exception("Invalid param type, in parameter " . $param['template_tag']);
 				endswitch;
+				$params[$param['template_tag']] = [
+					'value' => $value,
+					'template-tag' => $param['template_tag'],
+					'type' => $param['type']
+				];
 			}
 		}
 		return $params;
