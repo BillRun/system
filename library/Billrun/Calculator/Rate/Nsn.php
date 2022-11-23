@@ -212,9 +212,9 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	}
 
 	protected function isCDRVoLTE($cdr) {
-		return( in_array($cdr['record_type'],['01','11','30']) && ($cdr['in_circuit_group'] == '5000' && $cdr['in_circuit_group_name'] == 'VOLT' ))
+		return( in_array($cdr['record_type'],['01']) && ($cdr['in_circuit_group'] == '5000' && $cdr['in_circuit_group_name'] == 'VOLT' ))
 					||
-				(in_array($cdr['record_type'],['02','12','31']) && ($cdr['out_circuit_group'] == '5000' && $cdr['out_circuit_group_name'] == 'VOLT' ) );
+				(in_array($cdr['record_type'],['02']) && ($cdr['out_circuit_group'] == '5000' && $cdr['out_circuit_group_name'] == 'VOLT' ) );
 	}
 		
 }
