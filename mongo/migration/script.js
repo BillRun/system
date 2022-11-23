@@ -1342,8 +1342,10 @@ var invoice_lang_field = {
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoice_lang_field, 'account');
 
 // BRCD-3942
+var debtCollectionPluginFound = false;
 for (var i = 0; i < lastConfig.plugins.length; i++) {
 	if (lastConfig.plugins[i]['name'] === "debtCollectionPlugin") {
+		debtCollectionPluginFound = true;
 		if (lastConfig.plugins[i]['configuration'] === undefined){
 			lastConfig.plugins[i]['configuration'] = {};
 		}
@@ -1357,6 +1359,16 @@ for (var i = 0; i < lastConfig.plugins.length; i++) {
 			lastConfig.plugins[i]['configuration']['values']['immediateExit'] = true;
 		}
 	}
+}
+
+if (!debtCollectionPluginFound) {
+	lastConfig.plugins.push({
+		'name' : 'debtCollectionPlugin',
+		'enabled' : true,
+		'system' : true,
+		'hide_from_ui' : false,
+		'configuration' : {'values' : {'immediateEnter' : false, 'immediateExit' : true}}
+	})
 }
 
 // BRCD-3890 Remove invoice_label' core field
