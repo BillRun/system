@@ -864,11 +864,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$externalCharges = [];
 			if(!$this->isFakeCycle()) {
 				Billrun_Factory::log('Finalizing the invoice', Zend_Log::DEBUG);
-				$aggregatedEntity->writeInvoice( $this->min_invoice_id , $aggregatedResults);
 				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
-				//Get external charges / credits fromm plugins
+				$aggregatedEntity->writeInvoice( $this->min_invoice_id , $aggregatedResults);
+				Billrun_Factory::log('Get external charges / credits from plugins', Zend_Log::DEBUG);
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateAccountSaveLines', array(&$aggregatedEntity, &$externalCharges, $aggregatedResults, $aggregatedEntity->getAppliedDiscounts()));
-
 				//Save Account services / plans
 				Billrun_Factory::log('Save Account services / plans', Zend_Log::DEBUG);
 				$this->saveLines($aggregatedResults);
@@ -886,7 +885,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 					}
 				}
 				$this->saveLines($externalCharges);
-				//Save configurable data
+				//Save configurable/aggretaion data
 				$aggregatedEntity->addConfigurableData();
 				//Save the billrun document
 				Billrun_Factory::log('Save the billrun document', Zend_Log::DEBUG);
@@ -894,7 +893,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			} else {
 				Billrun_Factory::log('Faking finalization of the invoice', Zend_Log::DEBUG);
 				$aggregatedEntity->writeInvoice( 0 , $aggregatedResults, $this->isFakeCycle() );
-				//Save configurable data
+				Billrun_Factory::log('Get external charges / credits from plugins', Zend_Log::DEBUG);
+				Billrun_Factory::dispatcher()->trigger('beforeAggregateAccountSaveLines', array(&$aggregatedEntity, &$externalCharges, $aggregatedResults, $aggregatedEntity->getAppliedDiscounts()));
+				//Save configurable/aggretaion data
 				$aggregatedEntity->addConfigurableData();
 			}
 			if(!empty($aggregatedResults)){
