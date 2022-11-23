@@ -142,7 +142,7 @@ class DataValidation
      *
      * @param string $value
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setFormula1($value)
     {
@@ -166,7 +166,7 @@ class DataValidation
      *
      * @param string $value
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setFormula2($value)
     {
@@ -190,7 +190,7 @@ class DataValidation
      *
      * @param string $value
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setType($value)
     {
@@ -214,7 +214,7 @@ class DataValidation
      *
      * @param string $value see self::STYLE_*
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setErrorStyle($value)
     {
@@ -238,7 +238,7 @@ class DataValidation
      *
      * @param string $value
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setOperator($value)
     {
@@ -262,7 +262,7 @@ class DataValidation
      *
      * @param bool $value
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setAllowBlank($value)
     {
@@ -286,7 +286,7 @@ class DataValidation
      *
      * @param bool $value
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setShowDropDown($value)
     {
@@ -310,7 +310,7 @@ class DataValidation
      *
      * @param bool $value
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setShowInputMessage($value)
     {
@@ -334,7 +334,7 @@ class DataValidation
      *
      * @param bool $value
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setShowErrorMessage($value)
     {
@@ -358,7 +358,7 @@ class DataValidation
      *
      * @param string $value
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setErrorTitle($value)
     {
@@ -382,7 +382,7 @@ class DataValidation
      *
      * @param string $value
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setError($value)
     {
@@ -406,7 +406,7 @@ class DataValidation
      *
      * @param string $value
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setPromptTitle($value)
     {
@@ -430,7 +430,7 @@ class DataValidation
      *
      * @param string $value
      *
-     * @return $this
+     * @return DataValidation
      */
     public function setPrompt($value)
     {

@@ -7,6 +7,7 @@
 						<?php 
 						foreach ($payment_gateways as $pg) : 
 							$gpName = htmlspecialchars($pg['name']);
+							$gpTitle = htmlspecialchars($pg['title']);
 						?>
 							<li>
 								<div class="radio radio-cards">
@@ -21,11 +22,9 @@
 											<i class="material-icons">check_circle</i>
 										</span>
 										<?php if (!empty($pg['image_url'])) : ?>
-										<img src='<?php echo urlencode($pg['image_url']); ?>' />
-										<?php else : ?>
-										<span><?php echo $gpName; ?></span>
+										<img alt="<?php echo $gpName; ?>" src='<?php echo urlencode($pg['image_url']); ?>' />
 										<?php endif; ?>
-										<!--<img src="css/images/card-1.png" alt="" />-->
+										<span><?php echo $gpTitle; ?></span>
 									</label>
 								</div><!-- /.radio -->
 							</li>

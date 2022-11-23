@@ -370,7 +370,8 @@ tr { page-break-inside: avoid; }
 /* ------------------------------------------------------------ *\
 	Table Inline
 \* ------------------------------------------------------------ */
-.table-inline { width:300px; text-align:left; margin-left:auto; }
+.table-inline { width:400px; text-align:left; margin-left:auto; }
+.table-inline td { min-width:200px; }
 .table-inline td:first-child { color: #818285; }
 .table-inline strong { font-weight:300; font-size:40px; }
 /* ------------------------------------------------------------ *\
