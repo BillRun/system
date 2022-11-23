@@ -1012,6 +1012,7 @@ class ResetLinesModel {
             foreach ($usageBySid as $sid => $usageByMonth) {
                 foreach ($usageByMonth as $billrunKey => $usage) {
                     $relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
+                    $balances->reset();
                     if (empty($relevantBalances)) {
                         continue;
                     }
