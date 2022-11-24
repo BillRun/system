@@ -169,7 +169,10 @@ class Billrun_Service {
 		$items = self::getCacheItems();
 		if (isset($items['by_name'][$name])) {
 			foreach ($items['by_name'][$name] as $itemTimes) {
-				if ($itemTimes['from']->sec <= $time->sec && (!isset($itemTimes['to']) || is_null($itemTimes['to']) || $itemTimes['to']->sec >= $time->sec)) {
+				$time = $time->sec ?? $time;
+				$from = $itemTimes['from']->sec ?? $itemTimes['from'];
+				$to = isset($itemTimes['to']) ? ($itemTimes['to']->sec ?? $itemTimes['to']) : null;
+				if ($from <= $time && (is_null($to) || $to >= $time)) {
 					return $itemTimes['plan'];
 				}
 			}
