@@ -2,8 +2,13 @@
 # https://github.com/sebastianbergmann/phpunit/blob/master/.github/workflows/ci.yml
 
 on:
-  - pull_request
-  - push
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
 
 name: "CI"
 
@@ -20,7 +25,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: "Install PHP"
         uses: shivammathur/setup-php@v2
@@ -36,6 +41,33 @@ jobs:
       - name: "Run phan"
         run: php vendor/bin/phan
 
+  build-docs:
+    name: "Build and publish Docs"
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout sources"
+        uses: actions/checkout@v3
+
+      - name: "Install PHP"
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          coverage: none
+          tools: phpDocumentor
+          extensions: json
+
+      - name: "Build Docs"
+        run: phpdoc --config=phpdoc.xml
+
+      - name: "Publish Docs to gh-pages"
+        uses: JamesIves/github-pages-deploy-action@v4.3.4
+        with:
+          branch: gh-pages
+          folder: docs
+          clean: true
+
   tests:
     name: "Unit Tests"
 
@@ -50,15 +82,11 @@ jobs:
         php-version:
           - "7.4"
           - "8.0"
-#          - "8.1"
+          - "8.1"
 
     steps:
-      - name: "Configure git to avoid issues with line endings"
-        if: matrix.os == 'windows-latest'
-        run: git config --global core.autocrlf false
-
       - name: "Checkout"
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: "Install PHP with extensions"
         uses: shivammathur/setup-php@v2
@@ -74,6 +102,4 @@ jobs:
         run: php vendor/phpunit/phpunit/phpunit --configuration=phpunit.xml
 
       - name: "Send code coverage report to Codecov.io"
-        uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+        uses: codecov/codecov-action@v3
