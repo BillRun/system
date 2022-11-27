@@ -1435,6 +1435,19 @@ lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
     db.prepaidincludes.createIndex({name : 1}, {unique: false});
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
+	var overridesField = {
+		"field_name": "overrides",
+		"title": "Overrides",
+		"mandatory": false,
+		"editable": true,
+		"type" : "json"
+	};
+	
+	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], overridesField, 'account');
+	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], overridesField, 'subscriber');
+});
+
 db.config.insert(lastConfig);
 
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
