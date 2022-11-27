@@ -1,0 +1,24 @@
+{
+  "default_new_step_status": false,
+  "step_types": {
+    "mail": {
+      "label": "Mail",
+      "icon": "fa-envelope-o",
+      "enable": true
+    },
+    "sms": {
+      "label": "SMS",
+      "icon": "fa-commenting-o",
+      "enable": false
+    },
+    "http": {
+      "label": "HTTP",
+      "icon": "fa-link",
+      "enable": true
+    }
+  },
+  "http":{
+    "mthods": ["get","post"],
+    "decoders": ["json", "xml"]
+  }
+}

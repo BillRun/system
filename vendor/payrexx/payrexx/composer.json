@@ -1,0 +1,25 @@
+{
+    "name": "payrexx/payrexx",
+    "type": "library",
+    "description": "Payrexx PHPLib",
+    "keywords": [
+        "payment",
+        "gateway"
+    ],
+    "license": "MIT",
+    "homepage": "https://www.payrexx.com",
+    "authors": [
+        {
+            "name": "Payrexx AG",
+            "homepage": "https://www.payrexx.com"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "Payrexx": "lib/"
+        }
+    },
+    "require": {
+        "php": ">=5.4"
+    }
+}
