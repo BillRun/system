@@ -59,7 +59,7 @@ class AutoFilter
      *
      * @param Worksheet $pSheet
      *
-     * @return $this
+     * @return AutoFilter
      */
     public function setParent(Worksheet $pSheet = null)
     {
@@ -85,12 +85,12 @@ class AutoFilter
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return AutoFilter
      */
     public function setRange($pRange)
     {
         // extract coordinate
-        [$worksheet, $pRange] = Worksheet::extractSheetTitle($pRange, true);
+        list($worksheet, $pRange) = Worksheet::extractSheetTitle($pRange, true);
 
         if (strpos($pRange, ':') !== false) {
             $this->range = $pRange;
@@ -105,7 +105,7 @@ class AutoFilter
             $this->columns = [];
         } else {
             //    Discard any column rules that are no longer valid within this range
-            [$rangeStart, $rangeEnd] = Coordinate::rangeBoundaries($this->range);
+            list($rangeStart, $rangeEnd) = Coordinate::rangeBoundaries($this->range);
             foreach ($this->columns as $key => $value) {
                 $colIndex = Coordinate::columnIndexFromString($key);
                 if (($rangeStart[0] > $colIndex) || ($rangeEnd[0] < $colIndex)) {
@@ -143,7 +143,7 @@ class AutoFilter
         }
 
         $columnIndex = Coordinate::columnIndexFromString($column);
-        [$rangeStart, $rangeEnd] = Coordinate::rangeBoundaries($this->range);
+        list($rangeStart, $rangeEnd) = Coordinate::rangeBoundaries($this->range);
         if (($rangeStart[0] > $columnIndex) || ($rangeEnd[0] < $columnIndex)) {
             throw new PhpSpreadsheetException('Column is outside of current autofilter range.');
         }
@@ -196,7 +196,7 @@ class AutoFilter
      */
     public function getColumnByOffset($pColumnOffset)
     {
-        [$rangeStart, $rangeEnd] = Coordinate::rangeBoundaries($this->range);
+        list($rangeStart, $rangeEnd) = Coordinate::rangeBoundaries($this->range);
         $pColumn = Coordinate::stringFromColumnIndex($rangeStart[0] + $pColumnOffset);
 
         return $this->getColumn($pColumn);
@@ -210,7 +210,7 @@ class AutoFilter
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return AutoFilter
      */
     public function setColumn($pColumn)
     {
@@ -241,7 +241,7 @@ class AutoFilter
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return AutoFilter
      */
     public function clearColumn($pColumn)
     {
@@ -264,7 +264,7 @@ class AutoFilter
      * @param string $fromColumn Column name (e.g. A)
      * @param string $toColumn Column name (e.g. B)
      *
-     * @return $this
+     * @return AutoFilter
      */
     public function shiftColumn($fromColumn, $toColumn)
     {
@@ -357,7 +357,7 @@ class AutoFilter
     {
         $dataSet = $ruleSet['filterRules'];
         $join = $ruleSet['join'];
-        $customRuleForBlanks = $ruleSet['customRuleForBlanks'] ?? false;
+        $customRuleForBlanks = isset($ruleSet['customRuleForBlanks']) ? $ruleSet['customRuleForBlanks'] : false;
 
         if (!$customRuleForBlanks) {
             //    Blank cells are always ignored, so return a FALSE
@@ -617,11 +617,11 @@ class AutoFilter
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return AutoFilter
      */
     public function showHideRows()
     {
-        [$rangeStart, $rangeEnd] = Coordinate::rangeBoundaries($this->range);
+        list($rangeStart, $rangeEnd) = Coordinate::rangeBoundaries($this->range);
 
         //    The heading row should always be visible
         $this->workSheet->getRowDimension($rangeStart[1])->setVisible(true);

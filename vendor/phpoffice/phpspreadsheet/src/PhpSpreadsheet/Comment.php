@@ -96,7 +96,7 @@ class Comment implements IComparable
      *
      * @param string $author
      *
-     * @return $this
+     * @return Comment
      */
     public function setAuthor($author)
     {
@@ -120,7 +120,7 @@ class Comment implements IComparable
      *
      * @param RichText $pValue
      *
-     * @return $this
+     * @return Comment
      */
     public function setText(RichText $pValue)
     {
@@ -144,7 +144,7 @@ class Comment implements IComparable
      *
      * @param string $width
      *
-     * @return $this
+     * @return Comment
      */
     public function setWidth($width)
     {
@@ -168,7 +168,7 @@ class Comment implements IComparable
      *
      * @param string $value
      *
-     * @return $this
+     * @return Comment
      */
     public function setHeight($value)
     {
@@ -192,7 +192,7 @@ class Comment implements IComparable
      *
      * @param string $value
      *
-     * @return $this
+     * @return Comment
      */
     public function setMarginLeft($value)
     {
@@ -216,7 +216,7 @@ class Comment implements IComparable
      *
      * @param string $value
      *
-     * @return $this
+     * @return Comment
      */
     public function setMarginTop($value)
     {
@@ -240,7 +240,7 @@ class Comment implements IComparable
      *
      * @param bool $value
      *
-     * @return $this
+     * @return Comment
      */
     public function setVisible($value)
     {
@@ -264,7 +264,7 @@ class Comment implements IComparable
      *
      * @param string $alignment see Style\Alignment::HORIZONTAL_*
      *
-     * @return $this
+     * @return Comment
      */
     public function setAlignment($alignment)
     {

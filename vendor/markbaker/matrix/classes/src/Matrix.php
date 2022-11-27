@@ -10,6 +10,10 @@
 
 namespace Matrix;
 
+use Generator;
+use Matrix\Decomposition\LU;
+use Matrix\Decomposition\QR;
+
 /**
  * Matrix object.
  *
@@ -33,6 +37,7 @@ namespace Matrix;
  * @method Matrix multiply(...$matrices)
  * @method Matrix divideby(...$matrices)
  * @method Matrix divideinto(...$matrices)
+ * @method Matrix directsum(...$matrices)
  */
 class Matrix
 {
@@ -270,9 +275,9 @@ class Matrix
 
     /**
      * Returns a Generator that will yield each row of the matrix in turn as a vector matrix
-     *     or the value of each cell if the matrix is a vector
+     *     or the value of each cell if the matrix is a column vector
      *
-     * @return \Generator|Matrix[]|mixed[]
+     * @return Generator|Matrix[]|mixed[]
      */
     public function rows()
     {
@@ -285,9 +290,9 @@ class Matrix
 
     /**
      * Returns a Generator that will yield each column of the matrix in turn as a vector matrix
-     *     or the value of each cell if the matrix is a vector
+     *     or the value of each cell if the matrix is a row vector
      *
-     * @return \Generator|Matrix[]|mixed[]
+     * @return Generator|Matrix[]|mixed[]
      */
     public function columns()
     {
@@ -328,6 +333,24 @@ class Matrix
     public function toArray()
     {
         return $this->grid;
+    }
+
+    /**
+     * Solve A*X = B.
+     *
+     * @param Matrix $B Right hand side
+     *
+     * @throws Exception
+     *
+     * @return Matrix ... Solution if A is square, least squares solution otherwise
+     */
+    public function solve(Matrix $B)
+    {
+        if ($this->columns === $this->rows) {
+            return (new LU($this))->solve($B);
+        }
+
+        return (new QR($this))->solve($B);
     }
 
     protected static $getters = [
@@ -388,7 +411,7 @@ class Matrix
     {
         $functionName = strtolower(str_replace('_', '', $functionName));
 
-        if (in_array($functionName, self::$functions) || in_array($functionName, self::$operations)) {
+        if (in_array($functionName, self::$functions, true) || in_array($functionName, self::$operations, true)) {
             $functionName = "\\" . __NAMESPACE__ . "\\{$functionName}";
             if (is_callable($functionName)) {
                 $arguments = array_values(array_merge([$this], $arguments));
