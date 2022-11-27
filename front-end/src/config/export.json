@@ -1,0 +1,7 @@
+{
+  "allowed_entities": [
+    "product",
+    "discount",
+    "charge"
+  ]
+}
