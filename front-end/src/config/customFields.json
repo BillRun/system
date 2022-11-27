@@ -1,0 +1,101 @@
+{
+  "entities": {
+    "customer": "account",
+    "subscription":"subscriber",
+    "product": "rate",
+    "service": "service",
+    "plan":"plan",
+    "tax":"tax",
+    "discount":"discount",
+    "usage": "usage"
+  },
+
+  "defaultDisabledFields": {
+    "discount": ["key", "description"],
+    "customer": ["first_name", "last_name", "firstname", "lastname", "address"],
+    "subscription": ["firstname", "lastname", "plan", "services"]
+  },
+  "defaultHiddenFields": {
+    "customer": ["aid", "payment_gateway", "allowances"],
+    "subscription": ["sid", "aid", "plan_activation", "play"],
+    "product": ["from", "to", "play", "tax"],
+    "service": ["from", "to", "include", "play", "tax"],
+    "tax": ["from", "to"],
+    "discount": ["from", "to"],
+    "plan": ["from", "to", "play", "tax"]
+  },
+  "unReorderFields": {
+    "product": ["key", "description", "rates"],
+    "service": ["name", "description", "price"],
+    "tax": ["key", "description"],
+    "discount": ["key", "description"],
+    "plan": ["name", "description", "price", "upfront"]
+  },
+  "saveAsParams": [
+    "discount",
+    "tax"
+  ],
+  "fields": [
+    {
+      "id": "text",
+      "type": "string",
+      "title": "Text"
+    }, {
+      "id": "boolean",
+      "title": "Boolean",
+      "type": "boolean",
+      "defaultValue": false,
+      "exclude": ["unique", "mandatory", "searchable", "multiple", "select_options", "select_list"]
+    }, {
+      "id": "textarea",
+      "type": "string",
+      "title": "Text Area",
+      "exclude": ["multiple", "select_options", "select_list"]
+    }, {
+      "id": "percentage",
+      "type": "number",
+      "title": "Percentage",
+      "exclude": ["multiple", "select_options", "select_list"]
+    }, {
+      "id": "date",
+      "type": "date",
+      "title": "Date",
+      "exclude": ["multiple", "select_options", "select_list"]
+    }, {
+      "id": "daterange",
+      "type": "array",
+      "title": "Date Range",
+      "exclude": ["select_options", "select_list"]
+    }, {
+      "id": "ranges",
+      "type": "array",
+      "title": "Range",
+      "exclude": ["select_options", "select_list"],
+      "includeEntity": ["subscription", "product"]
+    }
+  ],
+  "foreignFields": {
+    "entities": {
+      "usage": ["customer", "subscription", "product", "service", "plan", "account_subscribers", "tax"]
+    },
+    "translate": {
+      "unixTimeToString" : {
+        "title": "Unix time To string",
+        "options": ["Y-m-d H:i:s"]
+      },
+      "unixTimeToMongoDate" : {
+        "title": "Unix time to date"
+      }
+    },
+    "conditions": [
+      { "id": "$nin", "title": "Does Not Equal" },
+      { "id": "$in", "title": "Equal" },
+      { "id": "$lt", "title": "Is Less Than", "type": "number" },
+      { "id": "$lte", "title": "Is Less Than Or Equal", "type": "number" },
+      { "id": "$gt", "title": "Is Greater Than",  "type": "number" },
+      { "id": "$gte", "title": "Is Greater Than Or Equal", "type": "number" },
+      { "id": "$regex", "title": "Matches regular expression" }
+    ]
+  }
+
+}
