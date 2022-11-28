@@ -7,6 +7,7 @@
  */
 
 class Billrun_Subscriber_External extends Billrun_Subscriber {
+	use Billrun_Subscriber_External_Cacheable;
 	
 	static $queriesLoaded = false;
 	
@@ -44,13 +45,19 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
-		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
-		$results = Billrun_Util::sendRequest($this->remote,
+
+		$results = $this->loadCache($externalQuery, function($externalQuery) {
+			Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);
+
+			$results = Billrun_Util::sendRequest($this->remote,
 														 json_encode($externalQuery),
 														 Zend_Http_Client::POST,
 														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);
-		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results, Zend_Log::DEBUG);
-		$results = json_decode($results, true);
+
+			Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results, Zend_Log::DEBUG);
+			return json_decode($results, true);
+		});
+
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
@@ -89,6 +96,5 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		$query['params'] = $params;
 		return $query;
 	}
-	
 }
 

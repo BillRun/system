@@ -7,6 +7,7 @@
  */
 
 class Billrun_Account_External extends Billrun_Account {
+	use Billrun_Subscriber_External_Cacheable;
 	
 	protected static $type = 'external';
 	
@@ -22,6 +23,7 @@ class Billrun_Account_External extends Billrun_Account {
 		$this->remote = Billrun_Factory::config()->getConfigValue(	'subscribers.account.external_url',
 																	Billrun_Util::getFieldVal($options['external_url'],	''));
 		$this->remote_billable_url = Billrun_Factory::config()->getConfigValue('subscribers.billable.url', '');
+		$this->cachePrefix = 'external_account_';
 	}
 	
 
@@ -80,13 +82,16 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$requestData['date'] = $globalDate;
 		}
-		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
-		$res = Billrun_Util::sendRequest($this->remote,
+
+		$res = $this->loadCache($requestData, function($requestData) {
+			Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
+			$res = Billrun_Util::sendRequest($this->remote,
 													 json_encode($requestData),
 													 Zend_Http_Client::POST,
 													 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);
-		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
-		$res = json_decode($res);
+			Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
+			return json_decode($res);
+		});
 		
 		$accounts = [];
 		if (!$res) {
@@ -119,14 +124,19 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
-		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
-		$results = Billrun_Util::sendRequest($this->remote,
+
+		$results = $this->loadCache($externalQuery, function($externalQuery) {
+			Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);
+			$results = Billrun_Util::sendRequest($this->remote,
 														 json_encode($externalQuery),
 														 Zend_Http_Client::POST,
 														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);		
 		
-		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
-		$results = json_decode($results, true);
+			Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
+
+			return json_decode($results, true);
+		});
+
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
