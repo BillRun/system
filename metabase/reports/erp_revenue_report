@@ -89,5 +89,7 @@ PROD_SERV:{'$ifNull':['$_id.PROD_SERV', ""]},
 QUANTITY:"1",
 UNIT_PRICE:{'$ifNull':["$NET_AMOUNT", ""]},
 TAX_CODE:{'$ifNull':["$_id.TAX_CODE", ""]},
-OBJ_REVENUE_ACCOUNT:{'$ifNull':["$_id.OBJ_REVENUE_ACCOUNT", ""]} }}
+OBJ_REVENUE_ACCOUNT:{'$ifNull':["$_id.OBJ_REVENUE_ACCOUNT", ""]} }},
+
+{ $sort : { 'IFS_CUST_CODE' : 1,'PROD_SERV' : 1,'OBJECT_ID' : 1 } },
 ]
