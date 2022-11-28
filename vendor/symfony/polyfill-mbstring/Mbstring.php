@@ -69,17 +69,18 @@ final class Mbstring
 {
     public const MB_CASE_FOLD = \PHP_INT_MAX;
 
-    private static $encodingList = ['ASCII', 'UTF-8'];
-    private static $language = 'neutral';
-    private static $internalEncoding = 'UTF-8';
-    private static $caseFold = [
+    private const CASE_FOLD = [
         ['µ', 'ſ', "\xCD\x85", 'ς', "\xCF\x90", "\xCF\x91", "\xCF\x95", "\xCF\x96", "\xCF\xB0", "\xCF\xB1", "\xCF\xB5", "\xE1\xBA\x9B", "\xE1\xBE\xBE"],
         ['μ', 's', 'ι',        'σ', 'β',        'θ',        'φ',        'π',        'κ',        'ρ',        'ε',        "\xE1\xB9\xA1", 'ι'],
     ];
 
+    private static $encodingList = ['ASCII', 'UTF-8'];
+    private static $language = 'neutral';
+    private static $internalEncoding = 'UTF-8';
+
     public static function mb_convert_encoding($s, $toEncoding, $fromEncoding = null)
     {
-        if (\is_array($fromEncoding) || false !== strpos($fromEncoding, ',')) {
+        if (\is_array($fromEncoding) || (null !== $fromEncoding && false !== strpos($fromEncoding, ','))) {
             $fromEncoding = self::mb_detect_encoding($s, $fromEncoding);
         } else {
             $fromEncoding = self::getEncoding($fromEncoding);
@@ -139,7 +140,7 @@ final class Mbstring
 
     public static function mb_decode_numericentity($s, $convmap, $encoding = null)
     {
-        if (null !== $s && !is_scalar($s) && !(\is_object($s) && method_exists($s, '__toString'))) {
+        if (null !== $s && !\is_scalar($s) && !(\is_object($s) && method_exists($s, '__toString'))) {
             trigger_error('mb_decode_numericentity() expects parameter 1 to be string, '.\gettype($s).' given', \E_USER_WARNING);
 
             return null;
@@ -149,7 +150,7 @@ final class Mbstring
             return false;
         }
 
-        if (null !== $encoding && !is_scalar($encoding)) {
+        if (null !== $encoding && !\is_scalar($encoding)) {
             trigger_error('mb_decode_numericentity() expects parameter 3 to be string, '.\gettype($s).' given', \E_USER_WARNING);
 
             return '';  // Instead of null (cf. mb_encode_numericentity).
@@ -199,7 +200,7 @@ final class Mbstring
 
     public static function mb_encode_numericentity($s, $convmap, $encoding = null, $is_hex = false)
     {
-        if (null !== $s && !is_scalar($s) && !(\is_object($s) && method_exists($s, '__toString'))) {
+        if (null !== $s && !\is_scalar($s) && !(\is_object($s) && method_exists($s, '__toString'))) {
             trigger_error('mb_encode_numericentity() expects parameter 1 to be string, '.\gettype($s).' given', \E_USER_WARNING);
 
             return null;
@@ -209,13 +210,13 @@ final class Mbstring
             return false;
         }
 
-        if (null !== $encoding && !is_scalar($encoding)) {
+        if (null !== $encoding && !\is_scalar($encoding)) {
             trigger_error('mb_encode_numericentity() expects parameter 3 to be string, '.\gettype($s).' given', \E_USER_WARNING);
 
             return null;  // Instead of '' (cf. mb_decode_numericentity).
         }
 
-        if (null !== $is_hex && !is_scalar($is_hex)) {
+        if (null !== $is_hex && !\is_scalar($is_hex)) {
             trigger_error('mb_encode_numericentity() expects parameter 4 to be boolean, '.\gettype($s).' given', \E_USER_WARNING);
 
             return null;
@@ -300,7 +301,7 @@ final class Mbstring
                 $map = $upper;
             } else {
                 if (self::MB_CASE_FOLD === $mode) {
-                    $s = str_replace(self::$caseFold[0], self::$caseFold[1], $s);
+                    $s = str_replace(self::CASE_FOLD[0], self::CASE_FOLD[1], $s);
                 }
 
                 static $lower = null;
@@ -540,7 +541,7 @@ final class Mbstring
 
     public static function mb_str_split($string, $split_length = 1, $encoding = null)
     {
-        if (null !== $string && !is_scalar($string) && !(\is_object($string) && method_exists($string, '__toString'))) {
+        if (null !== $string && !\is_scalar($string) && !(\is_object($string) && method_exists($string, '__toString'))) {
             trigger_error('mb_str_split() expects parameter 1 to be string, '.\gettype($string).' given', \E_USER_WARNING);
 
             return null;
@@ -549,6 +550,7 @@ final class Mbstring
         if (1 > $split_length = (int) $split_length) {
             if (80000 > \PHP_VERSION_ID) {
                 trigger_error('The length of each segment must be greater than zero', \E_USER_WARNING);
+
                 return false;
             }
 
@@ -567,7 +569,7 @@ final class Mbstring
             }
             $rx .= '.{'.$split_length.'})/us';
 
-            return preg_split($rx, $string, null, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY);
+            return preg_split($rx, $string, -1, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY);
         }
 
         $result = [];
@@ -599,6 +601,9 @@ final class Mbstring
             return true;
         }
         if (80000 > \PHP_VERSION_ID) {
+            return false;
+        }
+        if (\is_int($c) || 'long' === $c || 'entity' === $c) {
             return false;
         }
 
