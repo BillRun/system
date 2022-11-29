@@ -1428,19 +1428,6 @@ lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
     db.prepaidincludes.createIndex({name : 1}, {unique: false});
 });
 
-lastConfig = runOnce(lastConfig, 'BRCD-3968', function () {
-	var overridesField = {
-		"field_name": "overrides",
-		"title": "Overrides",
-		"mandatory": false,
-		"editable": true,
-		"type" : "json"
-	};
-	
-	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], overridesField, 'account');
-	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], overridesField, 'subscriber');
-});
-
 var invoice_lang_field = {
 	"select_list": true,
 	"display": true,
