@@ -15,7 +15,7 @@ def test_create_subscriber():
     assertion_steps = SubscribersAssertionSteps(subscriber)
 
     subscriber.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     subscriber.get_by_id()
     assertion_steps.validate_get_response_is_correct()
@@ -30,7 +30,7 @@ def test_update_subscriber():
     assertion_steps = SubscribersAssertionSteps(subscriber)
 
     subscriber.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     subscriber.compose_update_payload().update()
     assertion_steps.check_update_response_is_successful()
@@ -75,7 +75,7 @@ def test_close_and_new_subscriber():
     assertion_steps = SubscribersAssertionSteps(subscriber)
 
     get_id_from_response(subscriber.compose_create_payload().create())  # init revision
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     subscriber.get_by_id()
     assertion_steps.validate_get_response_is_correct()
@@ -114,7 +114,7 @@ def test_permanentchange_subscriber():
     assertion_steps = SubscribersAssertionSteps(subscriber)
 
     subscriber.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     subscriber.compose_permanent_change_payload().do_permanent_change()
     assertion_steps.check_permanent_change_is_successful(

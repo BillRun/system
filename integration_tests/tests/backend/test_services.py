@@ -16,7 +16,7 @@ def test_create_services():
     assertion_steps = ServicesAssertionSteps(service)
 
     service.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     service.get_by_id()
     assertion_steps.validate_get_response_is_correct()
@@ -35,7 +35,7 @@ def test_update_services():
         'quantitative': get_true_or_false()
     }
     service.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     service.compose_update_payload(**params_to_upd).update()
     assertion_steps.check_update_response_is_successful()
@@ -59,7 +59,7 @@ def test_close_service(to):
     assertion_steps = ServicesAssertionSteps(service)
 
     service.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     service.compose_close_payload(
         to=to, date_in_past=False if to != 'past_date' else True).close()
@@ -81,7 +81,7 @@ def test_close_and_new_service():
     assertion_steps = ServicesAssertionSteps(service)
 
     get_id_from_response(service.compose_create_payload().create())  # init revision
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     service.get_by_id()
     assertion_steps.validate_get_response_is_correct()
@@ -105,7 +105,7 @@ def test_delete_service():
     assertion_steps = ServicesAssertionSteps(service)
 
     service.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     service.delete()
     assertion_steps.check_object_is_deleted_successfully()

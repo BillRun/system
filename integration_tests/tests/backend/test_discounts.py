@@ -19,7 +19,7 @@ def test_create_discount(discount_type):
     assertion_steps = DiscountAssertionSteps(discount)
 
     discount.compose_create_payload(discount_type=discount_type).create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     discount.get_by_id()
     assertion_steps.validate_get_response_is_correct()
@@ -34,7 +34,7 @@ def test_update_discount():
     assertion_steps = DiscountAssertionSteps(discount)
 
     discount.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     discount.compose_update_payload().update()
     assertion_steps.check_update_response_is_successful()
@@ -58,7 +58,7 @@ def test_close_discount(to):
     assertion_steps = DiscountAssertionSteps(discount)
 
     discount.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     discount.compose_close_payload(
         to=to, date_in_past=False if to != 'past_date' else True).close()

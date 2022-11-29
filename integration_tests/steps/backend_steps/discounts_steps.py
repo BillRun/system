@@ -225,8 +225,8 @@ class DiscountAssertionSteps(APIAssertionSteps):
             actual, has_entries(expected_response), "Response is not corresponded to expected"
         )
 
-    def validate_post_response_is_correct(self, schema=DISCOUNT_POST_SCHEMAS, expected_response=None):
-        super().validate_post_response_is_correct(
+    def validate_create_response_is_correct(self, schema=DISCOUNT_POST_SCHEMAS, expected_response=None):
+        super().validate_create_response_is_correct(
             schema=schema, expected_response=expected_response)
 
     def validate_get_response_is_correct(self, schema=DISCOUNT_GET_SCHEMAS, expected_response=None):

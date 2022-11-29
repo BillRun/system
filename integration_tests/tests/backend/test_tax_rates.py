@@ -15,7 +15,7 @@ def test_create_tax_rate():
     assertion_steps = TaxRatesAssertionSteps(tax_rate)
 
     tax_rate.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     tax_rate.get_by_id()
     assertion_steps.validate_get_response_is_correct()
@@ -30,7 +30,7 @@ def test_update_tax_rate():
     assertion_steps = TaxRatesAssertionSteps(tax_rate)
 
     tax_rate.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     tax_rate.compose_update_payload().update()
     assertion_steps.check_update_response_is_successful()
@@ -55,7 +55,7 @@ def test_close_tax_rate(to):
     assertion_steps = TaxRatesAssertionSteps(tax_rate)
 
     tax_rate.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     tax_rate.compose_close_payload(
         to=to, date_in_past=False if to != 'past_date' else True).close()
@@ -76,10 +76,10 @@ def test_close_and_new_tax_rate():
     assertion_steps = TaxRatesAssertionSteps(tax_rate)
 
     get_id_from_response(tax_rate.compose_create_payload().create())  # init revision
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     tax_rate.get_by_id()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     tax_rate.compose_close_and_new_payload().close_and_new()
     assertion_steps.check_revision_has_new_to_date_after_close_and_new()

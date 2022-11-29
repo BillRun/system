@@ -16,7 +16,7 @@ def test_create_plan(connection_type):
     assertion_steps = PlansAssertionSteps(plan)
 
     plan.compose_create_payload(connection_type=connection_type).create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     plan.get_by_id()
     assertion_steps.validate_get_response_is_correct()
@@ -32,7 +32,7 @@ def test_update_plan(connection_type):
     assertion_steps = PlansAssertionSteps(plan)
 
     plan.compose_create_payload(connection_type=connection_type).create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     plan.compose_update_payload().update()
     assertion_steps.check_update_response_is_successful()
@@ -57,7 +57,7 @@ def test_close_plan(connection_type, to):
     assertion_steps = PlansAssertionSteps(plan)
 
     plan.compose_create_payload(connection_type=connection_type).create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     plan.compose_close_payload(
         to=to, date_in_past=False if to != 'past_date' else True).close()
@@ -79,7 +79,7 @@ def test_close_and_new_plan(connection_type):
     assertion_steps = PlansAssertionSteps(plan)
 
     get_id_from_response(plan.compose_create_payload(connection_type=connection_type).create())  # init revision
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     plan.get_by_id()
     assertion_steps.validate_get_response_is_correct()

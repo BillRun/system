@@ -148,5 +148,5 @@ class TaxRatesAssertionSteps(APIAssertionSteps):
     def validate_get_response_is_correct(self, schema=TAX_RATES_GET_SCHEMA, expected_response=None):
         super().validate_get_response_is_correct(schema, expected_response)
 
-    def validate_post_response_is_correct(self, schema=TAX_RATES_POST_SCHEMA, expected_response=None):
-        super().validate_post_response_is_correct(schema, expected_response)
+    def validate_create_response_is_correct(self, schema=TAX_RATES_POST_SCHEMA, expected_response=None):
+        super().validate_create_response_is_correct(schema, expected_response)

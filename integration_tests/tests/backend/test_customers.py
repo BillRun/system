@@ -20,7 +20,7 @@ def test_create_customer(optional_params):
     assertion_steps = CustomerAssertionSteps(customer)
 
     customer.compose_create_payload(**optional_params).create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     customer.get_by_id()
     assertion_steps.validate_get_response_is_correct()
@@ -35,7 +35,7 @@ def test_delete_customer():
     assertion_steps = CustomerAssertionSteps(customer)
 
     customer.compose_create_payload().create()
-    assertion_steps.validate_post_response_is_correct()
+    assertion_steps.validate_create_response_is_correct()
 
     customer.delete()
     assertion_steps.check_object_is_deleted_successfully()
