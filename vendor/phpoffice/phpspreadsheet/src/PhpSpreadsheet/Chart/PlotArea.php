@@ -94,7 +94,7 @@ class PlotArea
      *
      * @param DataSeries[] $plotSeries
      *
-     * @return $this
+     * @return PlotArea
      */
     public function setPlotSeries(array $plotSeries)
     {

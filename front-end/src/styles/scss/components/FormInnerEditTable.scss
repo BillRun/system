@@ -1,0 +1,64 @@
+.form-inner-edit-row {
+  margin-bottom: 10px;
+
+  .btn-link {
+    padding: 0;
+  }
+
+  > div.actions {
+    > button {
+      margin-right: 3px;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+
+  > div {
+    padding-right: 0;
+    padding-left: 5px;
+
+    &:first-child {
+      padding-left: 0;
+    }
+
+    label {
+      padding: 0 0 0 5px;
+    }
+  }
+
+  @media (max-width: 767px) {
+    > div {
+      padding-left: 0;
+      margin-bottom: 5px;
+
+      label {
+        padding: 0;
+        margin: 0;
+      }
+    }
+
+    > div.actions {
+      padding-left: 0;
+      margin-top: 5px;
+      display: inline-block;
+    }
+  }
+}
+
+.table-row {
+  line-height: 30px;
+
+  > div.actions {
+    padding-left: 10px;
+
+    .actions-buttons {
+      .action-button {
+        button.btn {
+          padding: 0;
+        }
+      }
+    }
+  }
+}

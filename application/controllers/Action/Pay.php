@@ -28,6 +28,7 @@ class PayAction extends ApiAction {
 		$jsonPayments = $request->get('payments');
 		$account = Billrun_Factory::account();
 		$uf = $request->get('uf');
+		$params = [];
 		if (!empty($uf)) {
 			$params['forced_uf'] = json_decode($uf, true);
 		}
@@ -64,7 +65,7 @@ class PayAction extends ApiAction {
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 				$this->processPaymentUf($inputPayment);
-				$deposit = new $className($inputPayment, $params);
+				$deposit = new $className(array_merge($inputPayment, $params));
 				$deposit->setUserFields($deposit->getRawData(), true);
 				$foreignData = $this->getForeignFields(array('account' => $current_account));
 				if (!is_null($current_account)) {
@@ -271,9 +272,9 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 			$cancellationPayments = array();
 			foreach ($paymentsToCancel['payments'] as $payment) {
 				$id = $payment->getId();
-				$currentUf = isset($ufPerTxid[$id]) ? $ufPerTxid[$id] : array();
-				$payment->addUserFields($currentUf);
+				$cancellationUf = isset($ufPerTxid[$id]) ? $ufPerTxid[$id] : array();
 				$cancellationPayment = $payment->getCancellationPayment();
+				$cancellationPayment->addUserFields($cancellationUf);
 				$cancellationPayments[] = $cancellationPayment;
 			}
 			if ($cancellationPayments) {

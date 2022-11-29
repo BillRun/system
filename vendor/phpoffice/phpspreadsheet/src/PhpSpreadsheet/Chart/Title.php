@@ -45,7 +45,7 @@ class Title
      *
      * @param string $caption
      *
-     * @return $this
+     * @return Title
      */
     public function setCaption($caption)
     {

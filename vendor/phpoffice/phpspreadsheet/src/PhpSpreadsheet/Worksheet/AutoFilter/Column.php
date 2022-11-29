@@ -101,7 +101,7 @@ class Column
     }
 
     /**
-     * Get AutoFilter column index as string eg: 'A'.
+     * Get AutoFilter Column Index.
      *
      * @return string
      */
@@ -111,13 +111,13 @@ class Column
     }
 
     /**
-     * Set AutoFilter column index as string eg: 'A'.
+     * Set AutoFilter Column Index.
      *
      * @param string $pColumn Column (e.g. A)
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Column
      */
     public function setColumnIndex($pColumn)
     {
@@ -147,7 +147,7 @@ class Column
      *
      * @param AutoFilter $pParent
      *
-     * @return $this
+     * @return Column
      */
     public function setParent(AutoFilter $pParent = null)
     {
@@ -173,7 +173,7 @@ class Column
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Column
      */
     public function setFilterType($pFilterType)
     {
@@ -203,7 +203,7 @@ class Column
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Column
      */
     public function setJoin($pJoin)
     {
@@ -223,7 +223,7 @@ class Column
      *
      * @param string[] $attributes
      *
-     * @return $this
+     * @return Column
      */
     public function setAttributes(array $attributes)
     {
@@ -238,7 +238,7 @@ class Column
      * @param string $pName Attribute Name
      * @param string $pValue Attribute Value
      *
-     * @return $this
+     * @return Column
      */
     public function setAttribute($pName, $pValue)
     {
@@ -316,7 +316,7 @@ class Column
      *
      * @param Column\Rule $pRule
      *
-     * @return $this
+     * @return Column
      */
     public function addRule(Column\Rule $pRule)
     {
@@ -332,7 +332,7 @@ class Column
      *
      * @param int $pIndex Rule index in the ruleset array
      *
-     * @return $this
+     * @return Column
      */
     public function deleteRule($pIndex)
     {
@@ -350,7 +350,7 @@ class Column
     /**
      * Delete all AutoFilter Column Rules.
      *
-     * @return $this
+     * @return Column
      */
     public function clearRules()
     {
