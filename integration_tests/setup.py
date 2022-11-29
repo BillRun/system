@@ -21,5 +21,6 @@ setup(
     version='0.1',
     description='Tests for BillRun\'s applications',
     packages=find_packages(),
+    author_email='sergiygres@gmail.com',
     install_requires=INSTALL_REQUIRES
 )
