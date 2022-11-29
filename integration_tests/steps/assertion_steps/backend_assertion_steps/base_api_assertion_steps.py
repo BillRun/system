@@ -29,7 +29,7 @@ class APIAssertionSteps(ABC):
             method='GET'
         )
 
-    def validate_post_response_is_correct(self, schema, expected_response=None):
+    def validate_create_response_is_correct(self, schema, expected_response=None):
         self.check_response(
             actual_response=self.instance.create_response,
             expected_response=expected_response,
