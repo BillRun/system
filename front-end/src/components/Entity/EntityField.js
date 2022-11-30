@@ -319,6 +319,7 @@ class EntityField extends Component {
           value={value}
           onChange={this.onChangeValue}
           disabled={disabled}
+          editable={editable}
         />
       );
     }

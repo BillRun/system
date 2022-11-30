@@ -52,6 +52,11 @@
       "title": "Text Area",
       "exclude": ["multiple", "select_options", "select_list"]
     }, {
+      "id": "json",
+      "type": "json",
+      "title": "JSON",
+      "exclude": ["unique", "multiple", "select_options", "select_list", "searchable"]
+    }, {
       "id": "percentage",
       "type": "number",
       "title": "Percentage",
