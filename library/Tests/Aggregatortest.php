@@ -541,7 +541,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          $this->balancesCol = Billrun_Factory::db()->discountsCollection();
 	 $this->billingCyclr = Billrun_Factory::db()->billing_cycleCollection();
          $this->billrunCol = Billrun_Factory::db()->billrunCollection();
-         $this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes']);
+         $this->construct(basename(__FILE__, '.php'), ['bills','charges', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes']);
          $this->setColletions();
          $this->loadDbConfig();
      }
