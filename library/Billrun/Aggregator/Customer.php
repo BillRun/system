@@ -876,8 +876,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
 				//Save external charges provided by the plugin
 				Billrun_Factory::log('Save Account external charges', Zend_Log::DEBUG);
-				foreach($externalCharges as $externalCharge) {
-					$sub = $aggregatedEntity->getSubscriber($externalCharges['sid']);
+				foreach($externalCharges as &$externalCharge) {
+					$externalCharge['billrun'] = $this->getCycle()->key();
+					$sub = $aggregatedEntity->getSubscriber($externalCharge['sid']);
 					if(!empty($sub)) {
 						$sub->getInvoice()->addLines([$externalCharge]);
 					} else {
