@@ -289,7 +289,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * Get a matching rate by config params
 	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
-	protected function getRateByParams($row) {
+	protected function getRateByParams($row, $usaget, $type, $tariffCategory, $filters) {
 		$query = $this->getRateQuery($row);
 		Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
