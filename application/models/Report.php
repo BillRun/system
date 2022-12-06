@@ -185,7 +185,7 @@ class ReportModel {
 		if($limit !== -1) {
 			$aggregate[] = array('$limit' => $limit);
 		}
-                
+
 		$results = $collection->aggregateWithOptions($aggregate, $this->aggregateOptions);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
@@ -989,7 +989,7 @@ class ReportModel {
 			case 'gte_constant': 
 			case 'eq_constant':
 				if ($value == "current_time") {
-					$expressionValue = new MongoDate();
+					$expressionValue = time();
 				} else if ($value == "current_start") {
 					$expressionValue = Billrun_Billingcycle::getStartTime(Billrun_Billrun::getActiveBillrun());
 				} else if ($value == "current_end") {
@@ -1015,7 +1015,7 @@ class ReportModel {
 				$expressionOop = explode("_", $op);
 				$expressionOop = $expressionOop[0];
 				$formatedExpression = array(
-					"\${$expressionOop}" => $expressionValue,
+					"\${$expressionOop}" => new MongoDate($expressionValue),
 				);
 				break;
 			case 'lt':
