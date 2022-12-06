@@ -1,7 +1,51 @@
 <?php
 
 trait Billrun_Subscriber_External_Cacheable {
+	protected $enableCaching = true;
 	protected $cachePrefix = 'external_subscriber_';
+	protected $cachingTTL = 300;
+
+	/**
+	 * @return bool
+	 */
+	public function isEnableCaching(): bool {
+		return $this->enableCaching;
+	}
+
+	/**
+	 * @param bool $enableCaching
+	 */
+	public function setEnableCaching(bool $enableCaching) {
+		$this->enableCaching = $enableCaching;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getCachePrefix(): string {
+		return $this->cachePrefix;
+	}
+
+	/**
+	 * @param string $cachePrefix
+	 */
+	public function setCachePrefix(string $cachePrefix) {
+		$this->cachePrefix = $cachePrefix;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getCachingTTL(): int {
+		return $this->cachingTTL;
+	}
+
+	/**
+	 * @param int $cachingTTL
+	 */
+	public function setCachingTTL(int $cachingTTL) {
+		$this->cachingTTL = $cachingTTL;
+	}
 
 	private function buildExternalDataCacheKey(array $query): string {
 		$keyFields = $query['params'];
@@ -70,7 +114,7 @@ trait Billrun_Subscriber_External_Cacheable {
 		return $queryResults;
 	}
 
-	private function cacheExternalData(array $externalQuery, array $results, int $ttl) {
+	private function cacheExternalData(array $externalQuery, array $results) {
 		$cache = Billrun_Factory::cache();
 
 		$queries = $externalQuery['query'] ?? [];
@@ -97,7 +141,7 @@ trait Billrun_Subscriber_External_Cacheable {
 				$cachedEntries = [];
 			}
 
-			$expireTime = time() + $ttl;
+			$expireTime = time() + $this->cachingTTL;
 
 			foreach($queryResults as &$entry){
 				$entry['expire_time'] = $expireTime;
@@ -131,16 +175,19 @@ trait Billrun_Subscriber_External_Cacheable {
 	}
 
 	private function loadCache(array $requestParams, callable $fallback) {
+		if (!$this->enableCaching) {
+			return $fallback($requestParams);
+		}
+
 		list($cachedEntries, $requestParams) = $this->getCachedExternalEntries($requestParams);
 
-		$ttl = 600;
 		$results = [];
 
 		if (!empty($requestParams['query'])) {
 
 			$results = $fallback($requestParams);
 
-			$this->cacheExternalData($requestParams, $results, $ttl);
+			$this->cacheExternalData($requestParams, $results);
 		}
 
 		return array_merge($results, $cachedEntries);

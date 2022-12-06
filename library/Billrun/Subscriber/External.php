@@ -20,6 +20,8 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url', '');
+		$this->setEnableCaching(Billrun_Factory::config()->getConfigValue('subscribers.subscriber.enable_caching', false));
+		$this->setCachingTTL(Billrun_Factory::config()->getConfigValue('subscribers.subscriber.caching_ttl', 300));
 	}
 	
 	public function delete() {
