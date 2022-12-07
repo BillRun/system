@@ -865,7 +865,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			if(!$this->isFakeCycle()) {
 				Billrun_Factory::log('Finalizing the invoice', Zend_Log::DEBUG);
 				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
-				$aggregatedEntity->writeInvoice( $this->min_invoice_id , $aggregatedResults);
+				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
 				Billrun_Factory::log('Get external charges / credits from plugins', Zend_Log::DEBUG);
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateAccountSaveLines', array(&$aggregatedEntity, &$externalCharges, $aggregatedResults, $aggregatedEntity->getAppliedDiscounts()));
 				//Save Account services / plans
@@ -886,6 +886,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 					}
 				}
 				$this->saveLines($externalCharges);
+				// Close the invoice (no changes to subscribers allowed )
+				$aggregatedEntity->closeInvoice($this->min_invoice_id );
 				//Save configurable/aggretaion data
 				$aggregatedEntity->addConfigurableData();
 				//Save the billrun document
@@ -893,9 +895,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				$aggregatedEntity->save();
 			} else {
 				Billrun_Factory::log('Faking finalization of the invoice', Zend_Log::DEBUG);
-				$aggregatedEntity->writeInvoice( 0 , $aggregatedResults, $this->isFakeCycle() );
+				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
 				Billrun_Factory::log('Get external charges / credits from plugins', Zend_Log::DEBUG);
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateAccountSaveLines', array(&$aggregatedEntity, &$externalCharges, $aggregatedResults, $aggregatedEntity->getAppliedDiscounts()));
+				// Close the invoice (no changes to subscribers allowed )
+				$aggregatedEntity->closeInvoice( 0 , $this->isFakeCycle());
 				//Save configurable/aggretaion data
 				$aggregatedEntity->addConfigurableData();
 			}
