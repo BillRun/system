@@ -225,9 +225,7 @@ abstract class Billrun_PaymentGateway {
 			if (isset($data['installments']) && ($data['amount'] != $data['installments']['total_amount'])) {
 				throw new Exception("Single payment amount different from installments amount");
 			}
-			$account = Billrun_Factory::account();
-			$query = array('aid' => intval($aid));
-			if (!$account->loadAccountForQuery($query)) {
+			if (!$this->getActiveAccount($aid)) {
 				throw new Exception("The account is not active");
 			}
 			$singlePaymentParams['amount'] = floatval($data['amount']);
@@ -836,15 +834,17 @@ abstract class Billrun_PaymentGateway {
 	}
 	
 	protected function paySinglePayment($retParams, $additionalParams = []) {
+		$accountId = $this->saveDetails['aid'];
+		$account = $this->getActiveAccount($accountId);
 		$options = array(
 			'collect' => true,
 			'payment_gateway' => true,
 			'single_payment_gateway' => true,
+			'account' => $account,
 			'additional_params' => $additionalParams
 		);
 		$gatewayDetails = $this->saveDetails;
 		$gatewayDetails['name'] = $this->billrunName;
-		$accountId = $this->saveDetails['aid'];
 		if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
 			Billrun_Factory::log("Non valid payment gateway for aid = " . $accountId, Zend_Log::NOTICE);
 		}
@@ -884,6 +884,19 @@ abstract class Billrun_PaymentGateway {
 		$customParams = !empty($gatewayDetails['custom_params']) ? $gatewayDetails['custom_params'] : array();
 		return $customParams;
 	}
-	
+
+	/**
+	 * @param Int $aid
+	 * @return Billrun_Account|null
+	 */
+	private function getActiveAccount(int $aid) {
+		$account = Billrun_Factory::account();
+		$query = array('aid' => intval($aid));
+		if (!$account->loadAccountForQuery($query)) {
+			return null;
+		}
+		return $account;
+	}
+
 
 }
