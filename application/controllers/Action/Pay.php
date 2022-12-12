@@ -28,6 +28,7 @@ class PayAction extends ApiAction {
 		$jsonPayments = $request->get('payments');
 		$account = Billrun_Factory::account();
 		$uf = $request->get('uf');
+		$params = [];
 		if (!empty($uf)) {
 			$params['forced_uf'] = json_decode($uf, true);
 		}
@@ -64,7 +65,7 @@ class PayAction extends ApiAction {
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 				$this->processPaymentUf($inputPayment);
-				$deposit = new $className($inputPayment, $params);
+				$deposit = new $className(array_merge_recursive($inputPayment, $params));
 				$deposit->setUserFields($deposit->getRawData(), true);
 				$deposit->setDepositFreezeDate();
 				$deposit->setProcessTime();
