@@ -380,7 +380,10 @@ class Zend_Http_Client_Adapter_Curl implements Zend_Http_Client_Adapter_Interfac
          * Make sure POSTFIELDS is set after $curlMethod is set:
          * @link http://de2.php.net/manual/en/function.curl-setopt.php#81161
          */
-        if ($method == Zend_Http_Client::POST) {
+        if($method == Zend_Http_Client::GET && !empty($body)) {
+            curl_setopt( $this->_curl, CURLOPT_CUSTOMREQUEST, 'GET' );
+            curl_setopt($this->_curl, CURLOPT_POSTFIELDS, $body);
+        } elseif ($method == Zend_Http_Client::POST) {
             curl_setopt($this->_curl, CURLOPT_POSTFIELDS, $body);
         } elseif ($curlMethod == CURLOPT_PUT) {
             // this covers a PUT by file-handle:
