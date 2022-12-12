@@ -36,7 +36,11 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 	protected function setSpanCover() {
 		$formatActivation = $this->proratedStart  ?
 										date(Billrun_Base::base_dateformat, $this->activation) :
-										date(Billrun_Base::base_dateformat,Billrun_Billingcycle::getBillrunStartTimeByDate(date(Billrun_Base::base_dateformat,$this->activation)));
+										date(Billrun_Base::base_dateformat,Billrun_Billingcycle::getBillrunStartTimeByDate(
+																									date(Billrun_Base::base_dateformat,$this->activation),
+																									null,
+																									Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1)
+																								));
 
 		$formatCycleStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
 		$formatCycleEnd = date(Billrun_Base::base_dateformat,  $this->cycle->end()-1);
