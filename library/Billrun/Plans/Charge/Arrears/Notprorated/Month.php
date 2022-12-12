@@ -35,10 +35,14 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 	 * Get the price of the current plan.
 	 */
 	protected function setMonthlyCover() {
-		$formatActivation = date('Y-m-01', $this->activation);
+		$formatActivation = date(Billrun_Base::base_dateformat,Billrun_Billingcycle::getBillrunStartTimeByDate(
+																									date(Billrun_Base::base_dateformat,$this->activation),
+																									null,
+																									Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1)
+																								));;
 		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
 		$formatEnd = date(Billrun_Base::base_dateformat,  $this->cycle->end() - 1 );
-		$this->startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
-		$this->endOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatEnd);
+		$this->startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart,$this->midMonthCycleHack);
+		$this->endOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatEnd,$this->midMonthCycleHack);
 	}
 }
