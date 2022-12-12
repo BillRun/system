@@ -50,8 +50,13 @@ class Billrun_Account_External extends Billrun_Account {
 			Billrun_Factory::dispatcher()->trigger('beforeGetExternalBillableDetails', array(&$requestParams, &$request_type, &$this));
 			Billrun_Factory::log('Sending request to ' . $this->remote_billable_url . ' with params : ' . json_encode($requestParams), Zend_Log::DEBUG);
 			//Actually  do the request
-			$request = new Billrun_Http_Request($this->remote_billable_url, ['authentication' => $this->remote_billable_authentication]);
+			$request = new Billrun_Http_Request($this->remote_billable_url, ['authentication' => $this->remote_billable_authentication,
+																			 'timeout' => Billrun_Factory::config()->getConfigValue('external_api.timeout',600)]);
+			if($request_type == Billrun_Http_Request::POST) {
 			$request->setParameterPost($requestParams);
+			} else {
+				$request->setParameterGet($requestParams);
+			}
 			$results = $request->request($request_type)->getBody();
 
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
@@ -99,6 +104,7 @@ class Billrun_Account_External extends Billrun_Account {
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
 		$params = [
 			'authentication' => $this->remote_authentication,
+			'timeout' => Billrun_Factory::config()->getConfigValue('external_api.timeout',600)
 		];
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
@@ -142,10 +148,12 @@ class Billrun_Account_External extends Billrun_Account {
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
 		$params = [
 			'authentication' => $this->remote_authentication,
+			'timeout' => Billrun_Factory::config()->getConfigValue('external_api.timeout',600)
 		];
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
 		$request->setRawData(json_encode($externalQuery));
+
 		$results = $request->request($request_type)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
 		$results = json_decode($results, true);
