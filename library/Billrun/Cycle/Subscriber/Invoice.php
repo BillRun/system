@@ -447,13 +447,13 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected function processLine($line) {
 		$pricingData = $this->getPricingData($line);
 
-		if ($line['type'] == 'flat') {
+		if ($line['type'] == 'flat' || $line['usaget'] == 'flat') {
 			if(!$this->processFlatLine($line)) {
 				return false;
 			}
 		} else {
 			$rate = $this->getRowRate($line);
-			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable)) || isset($line['tax_data']);
+			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable)) || !empty($line['tax_data']['total_tax']);
 			$this->updateInvoice(array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable);
 		} 
 		
