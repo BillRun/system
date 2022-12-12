@@ -480,4 +480,10 @@ class Models_Subscribers extends Models_Entity {
 		unset($this->update['type']);
 		parent::permanentChange();
 	}
+
+	public function clearexternaldatacache() {
+		$subscriber = new Billrun_Subscriber_External();
+		$id = $this->query[$subscriber->getCachingEntityIdKey()];
+		$subscriber->cleanExternalCache($id);
+	}
 }

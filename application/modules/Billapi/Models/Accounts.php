@@ -89,4 +89,10 @@ class Models_Accounts extends Models_Entity {
 		return true;
 	}
 
+	public function clearexternaldatacache() {
+		$account = new Billrun_Account_External();
+		$id = $this->query[$account->getCachingEntityIdKey()];
+		$account->cleanExternalCache($id);
+	}
+
 }

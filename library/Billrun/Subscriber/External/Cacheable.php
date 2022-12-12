@@ -47,6 +47,53 @@ trait Billrun_Subscriber_External_Cacheable {
 		$this->cachingTTL = $cachingTTL;
 	}
 
+	public function getCachingEntityIdKey() {
+		return 'sid';
+	}
+
+	public function cleanExternalCache($id) {
+		$tagKey = $this->buildCacheTagKey($id);
+		$cache = Billrun_Factory::cache();
+		$cacheKeysList = $cache->get($tagKey, $this->getCacheTagPrefix());
+
+		foreach ($cacheKeysList as $cacheKey) {
+			$cache->remove($cacheKey, $this->cachePrefix);
+		}
+
+		$cache->remove($tagKey, $this->getCacheTagPrefix());
+	}
+
+	private function getCacheTagPrefix() {
+		return $this->cachePrefix . '_tag_';
+	}
+
+	private function buildCacheTagKey($entityId) {
+		return md5(serialize([$this->getCachingEntityIdKey() => $entityId]));
+	}
+
+	private function tagCache($cacheKey, $cachedEntries) {
+		$cache = Billrun_Factory::cache();
+		foreach ($cachedEntries as $cachedEntry) {
+			$id = $cachedEntry[$this->getCachingEntityIdKey()];
+
+			if (!$id) {
+				continue;
+			}
+
+			$tagKey = $this->buildCacheTagKey($id);
+			$cacheKeysList = $cache->get($tagKey, $this->getCacheTagPrefix());
+
+			if (!is_array($cacheKeysList)) {
+				$cacheKeysList = [];
+			}
+
+			if (!in_array($cacheKey, $cacheKeysList)) {
+				$cacheKeysList[] = $cacheKey;
+			}
+			$cache->set($tagKey, $cacheKeysList, $this->getCacheTagPrefix());
+		}
+	}
+
 	private function buildExternalDataCacheKey(array $query): string {
 		$keyFields = $query['params'];
 		uasort($keyFields, function($a, $b) {
@@ -150,6 +197,7 @@ trait Billrun_Subscriber_External_Cacheable {
 			$cachedEntries = array_merge($cachedEntries, $queryResults);
 
 			$cache->set($cacheKey, $cachedEntries, $this->cachePrefix);
+			$this->tagCache($cacheKey, $cachedEntries);
 		}
 	}
 

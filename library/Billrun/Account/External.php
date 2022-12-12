@@ -27,7 +27,10 @@ class Billrun_Account_External extends Billrun_Account {
 		$this->setCachingTTL(Billrun_Factory::config()->getConfigValue('subscribers.account.caching_ttl', 300));
 		$this->setCachePrefix('external_account_');
 	}
-	
+
+	public function getCachingEntityIdKey() {
+		return 'aid';
+	}
 
 	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = []) {
 			// Prepare request
