@@ -348,9 +348,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 									'$or' => array(
 										array( 'type' => array('$in' => array('service', 'flat')) ),
 										array('$or' => array(
-                                                                                    array( 'type'=>'credit','usaget'=>'discount' ),
-                                                                                    array( 'type'=>'credit','usaget'=>'conditional_charge' )
-                                                                                ))
+																array( 'type'=>'credit','usaget'=>'discount' ),
+																array( 'type'=>'credit','usaget'=>'conditional_charge' ),
+																array( 'type'=>'credit','billrun_cycle_credit' => true )
+															))
 									));
 			$billrunRemoveQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));;
 		} else {
@@ -360,10 +361,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 										'source' => 'billrun',
 										'$or' => array(
 											array( 'type' => array('$in' => array('service', 'flat')) ),
-                                                                                        array( '$or' => array(
-                                                                                                array( 'type'=>'credit','usaget'=>'discount' ),
-                                                                                                array( 'type'=>'credit','usaget'=>'conditional_charge' )
-                                                                                            ))
+											array( '$or' => array(
+													array( 'type'=>'credit','usaget'=>'discount' ),
+													array( 'type'=>'credit','usaget'=>'conditional_charge' ),
+													array( 'type'=>'credit','billrun_cycle_credit' => true )
+												))
 											));
 			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		}
@@ -878,6 +880,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				Billrun_Factory::log('Save Account external charges', Zend_Log::DEBUG);
 				foreach($externalCharges as &$externalCharge) {
 					$externalCharge['billrun'] = $this->getCycle()->key();
+					$externalCharge['source'] = 'billrun';
+					$externalCharge['billrun_cycle_credit'] = true;
 					$sub = $aggregatedEntity->getSubscriber($externalCharge['sid']);
 					if(!empty($sub)) {
 						$sub->getInvoice()->addLines([$externalCharge]);
