@@ -454,6 +454,12 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 				'line' => array('types' => array('flat', 'credit')),
 				'postRun'=>['multi_day_cycle_false']
 			),
+               //BRCD-3798 automatic test - Service cost is not being calculate correctly for service with no 'end date' in multi revisions in a cycle
+         array('test' => array('test_number' => 3798, "aid" => 3798, 'sid' => 37981, 'function' => array( 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'),
+         'options' => array("stamp" => "202208", "force_accounts" => array(3798))),
+         'expected' => array('billrun' => array('invoice_id' => 109, 'billrun_key' => '202208', 'aid' => 3798, 'after_vat' => array("3798" => 117.936), 'total' => 117.936, 'vatable' => 100.8, 'vat' => 17),
+         ),
+        ),
 			//override plan and service price cases   https://billrun.atlassian.net/browse/BRCD-3183
 			/* /*sid 771
 			  override plan price for a subscriber for a whole month -
