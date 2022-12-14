@@ -1,70 +1,72 @@
 <?php
 
 trait Billrun_Subscriber_External_Cacheable {
-	protected $enableCaching = true;
-	protected $cachePrefix = 'external_subscriber_';
-	protected $cachingTTL = 300;
-
-	/**
-	 * @return bool
-	 */
-	public function isEnableCaching(): bool {
-		return $this->enableCaching;
-	}
-
-	/**
-	 * @param bool $enableCaching
-	 */
-	public function setEnableCaching(bool $enableCaching) {
-		$this->enableCaching = $enableCaching;
-	}
+	private $cacheEnabled = true;
+	private $cachingTTL = 300;
 
 	/**
 	 * @return string
 	 */
-	public function getCachePrefix(): string {
-		return $this->cachePrefix;
-	}
-
-	/**
-	 * @param string $cachePrefix
-	 */
-	public function setCachePrefix(string $cachePrefix) {
-		$this->cachePrefix = $cachePrefix;
-	}
-
-	/**
-	 * @return int
-	 */
-	public function getCachingTTL(): int {
-		return $this->cachingTTL;
-	}
-
-	/**
-	 * @param int $cachingTTL
-	 */
-	public function setCachingTTL(int $cachingTTL) {
-		$this->cachingTTL = $cachingTTL;
-	}
-
 	public function getCachingEntityIdKey() {
 		return 'sid';
 	}
 
+	/**
+	 * @param $id
+	 * @return void
+	 */
 	public function cleanExternalCache($id) {
 		$tagKey = $this->buildCacheTagKey($id);
 		$cache = Billrun_Factory::cache();
 		$cacheKeysList = $cache->get($tagKey, $this->getCacheTagPrefix());
 
 		foreach ($cacheKeysList as $cacheKey) {
-			$cache->remove($cacheKey, $this->cachePrefix);
+			$cache->remove($cacheKey, $this->getCachePrefix());
 		}
 
 		$cache->remove($tagKey, $this->getCacheTagPrefix());
 	}
 
+	/**
+	 * @return bool
+	 */
+	protected function isCacheEnabled(): bool {
+		return $this->cacheEnabled;
+	}
+
+	/**
+	 * @param bool $cacheEnabled
+	 */
+	protected function setCacheEnabled(bool $cacheEnabled) {
+		$this->cacheEnabled = $cacheEnabled;
+	}
+
+	/**
+	 * @return int
+	 */
+	protected function getCachingTTL(): int {
+		return $this->cachingTTL;
+	}
+
+	/**
+	 * @param int $cachingTTL
+	 */
+	protected function setCachingTTL(int $cachingTTL) {
+		$this->cachingTTL = $cachingTTL;
+	}
+
+	/**
+	 * @return string
+	 */
+	protected function getCachePrefix(): string {
+		return 'external_subscriber_';
+	}
+
+	/**
+	 * @return string
+	 */
 	private function getCacheTagPrefix() {
-		return $this->cachePrefix . '_tag_';
+		return $this->getCachePrefix() . '_tag_';
 	}
 
 	private function buildCacheTagKey($entityId) {
@@ -116,7 +118,7 @@ trait Billrun_Subscriber_External_Cacheable {
 	private function getCachedExternalEntry(string $cacheKey, int $time) {
 		$cache = Billrun_Factory::cache();
 
-		$cachedEntries = $cache->get($cacheKey, $this->cachePrefix);
+		$cachedEntries = $cache->get($cacheKey, $this->getCachePrefix());
 
 		if (!is_array($cachedEntries)) {
 			return null;
@@ -144,7 +146,7 @@ trait Billrun_Subscriber_External_Cacheable {
 		}
 
 		if ($needToUpdateCache) {
-			$cache->set($cacheKey, $cachedEntries, $this->cachePrefix);
+			$cache->set($cacheKey, $cachedEntries, $this->getCachePrefix());
 		}
 
 		return $returnEntry;
@@ -182,7 +184,7 @@ trait Billrun_Subscriber_External_Cacheable {
 			}
 
 			$cacheKey = $this->buildExternalDataCacheKey($query);
-			$cachedEntries = $cache->get($cacheKey, $this->cachePrefix);
+			$cachedEntries = $cache->get($cacheKey, $this->getCachePrefix());
 
 			if (!is_array($cachedEntries)) {
 				$cachedEntries = [];
@@ -196,7 +198,7 @@ trait Billrun_Subscriber_External_Cacheable {
 
 			$cachedEntries = array_merge($cachedEntries, $queryResults);
 
-			$cache->set($cacheKey, $cachedEntries, $this->cachePrefix);
+			$cache->set($cacheKey, $cachedEntries, $this->getCachePrefix());
 			$this->tagCache($cacheKey, $cachedEntries);
 		}
 	}
@@ -213,7 +215,7 @@ trait Billrun_Subscriber_External_Cacheable {
 				$cachedEntry = $time ? $this->getCachedExternalEntry($cacheKey, strtotime($time)) : null;
 
 				if ($cachedEntry !== null) {
-					$cachedEntries[] = $cachedEntry;
+ 					$cachedEntries[] = $cachedEntry;
 					unset($externalQuery['query'][$key]);
 				}
 			}
@@ -223,7 +225,7 @@ trait Billrun_Subscriber_External_Cacheable {
 	}
 
 	private function loadCache(array $requestParams, callable $fallback) {
-		if (!$this->enableCaching) {
+		if (!$this->cacheEnabled) {
 			return $fallback($requestParams);
 		}
 
