@@ -163,6 +163,26 @@ trait Billrun_Subscriber_External_Cacheable {
 		return $queryResults;
 	}
 
+	private function removeCacheDuplicates($queryResults, $cachedEntries) {
+		$filteredResults = [];
+
+		foreach($queryResults as $entry) {
+			unset($entry['id']); // clean up from the query ID before the check
+			$unique = true;
+
+			foreach($cachedEntries as $cachedEntry) {
+				unset($cachedEntry['expire_time']);
+				if ($entry === $cachedEntry) {
+					$unique = false;
+				}
+			}
+			if ($unique) {
+				$filteredResults[] = $entry;
+			}
+		}
+		return $filteredResults;
+	}
+
 	private function cacheExternalData(array $externalQuery, array $results) {
 		$cache = Billrun_Factory::cache();
 
@@ -190,9 +210,15 @@ trait Billrun_Subscriber_External_Cacheable {
 				$cachedEntries = [];
 			}
 
+			$queryResults = $this->removeCacheDuplicates($queryResults, $cachedEntries);
+
+			if (empty($queryResults)) {
+				continue;
+			}
+
 			$expireTime = time() + $this->cachingTTL;
 
-			foreach($queryResults as &$entry){
+			foreach($queryResults as &$entry) {
 				$entry['expire_time'] = $expireTime;
 			};
 
@@ -215,7 +241,9 @@ trait Billrun_Subscriber_External_Cacheable {
 				$cachedEntry = $time ? $this->getCachedExternalEntry($cacheKey, strtotime($time)) : null;
 
 				if ($cachedEntry !== null) {
- 					$cachedEntries[] = $cachedEntry;
+					// set the query ID to match the cached result with the query
+					$cachedEntry['id'] = $query['id'];
+					$cachedEntries[] = $cachedEntry;
 					unset($externalQuery['query'][$key]);
 				}
 			}
