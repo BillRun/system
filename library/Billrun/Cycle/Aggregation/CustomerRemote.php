@@ -77,8 +77,15 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 			}
 		}
 
-		usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
-		//usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
+		usort($retResults, function($a, $b){
+			return ($a['from']  && $b['from'] ?
+						($a['from']->sec - $b['from']->sec) :
+						($a['from'] < $b['from'] ?
+							-1 :
+							($a['from'] > $b['from'] ?
+								1 : 0
+							)
+						) ); });
 		return ["data" => array_map(function($item){ return new Mongodloid_Entity($item);}, array_values($retResults)), "options" => $result['options']];
 
 	}

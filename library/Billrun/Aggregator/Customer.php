@@ -1008,7 +1008,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected function getPlanNextTeirDate($planDates) {
 		$currentTime = new Mongodloid_Date($this->getCycle()->end());
 		foreach($planDates as  $planData) {
-			if($planData['to'] < $currentTime) {
+			if( $planData['to'] < $currentTime || empty($planData['plan']) ) {
 				continue;
 			}
 

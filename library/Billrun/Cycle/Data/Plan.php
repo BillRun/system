@@ -98,8 +98,10 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			'usagev' => 1
 		);
 
-		if (FALSE !== $this->vatable) {
+		if (FALSE !== $this->vatable && 0 !== $this->vatable ) {
 			$flatEntry['vatable'] = TRUE;
+		} else {
+			$flatEntry['vatable'] = FALSE;
 		}
 
 		
