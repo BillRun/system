@@ -7,7 +7,27 @@ class Billrun_Http_Request extends Zend_Http_Client {
 
     public function request($method = null) {
         $this->authenticate();
-        return parent::request($method);
+        $retries = 0;
+        $shouldRetry = Billrun_Factory::config()->getConfigValue('network.http_retry',false);
+        do {
+            try {
+                $retValue = parent::request($method);
+            } catch ( \Exception $e ) {
+                Billrun_Factory::log("Billrun_Http_Request::request : Request to - {$this->uri} Failed, with {$e->getCode()} : {$e->getMessage()}");
+            }
+        } while(    $shouldRetry &&
+                    !$this->evaluateResponseValidity($retValue, $method) &&
+                    ($retries++ < Billrun_Factory::config()->getConfigValue('network.http_retry_max',10)) );
+
+        return $retValue;
+    }
+
+    protected function evaluateResponseValidity($response, $method)  {
+        if( $response->getStatus() == 202 ) {
+            sleep(Billrun_Factory::config()->getConfigValue('network.http_retry_wait',10));
+            return false;
+        }
+        return  true;
     }
     
     /**
