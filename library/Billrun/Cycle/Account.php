@@ -54,7 +54,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 
 	}
 
-	public function closeInvoice($min_id, $isFake = FALSE, $customCollName = FALS0E) {
+	public function closeInvoice($min_id, $isFake = FALSE, $customCollName = FALSE) {
 		$this->invoice->updateTotals();
 		$this->invoice->close($min_id, $isFake, $customCollName);
 	}
