@@ -85,15 +85,21 @@ class Billrun_Generator_PaymentGateway_Csv {
 	
 	public function generate() {
 		if (count($this->data) || $this->forceHeader){
-			$this->writeHeaders();
+			if (!$this->writeHeaders()) {
+				return false;
+			}
 		}
 		if (count($this->data)) {
-			$this->writeRows();
+			if (!$this->writeRows()) {
+				return false;
+			}
 		}
 		if (count($this->data)|| $this->forceFooter){
-			$this->writeTrailers();
+			if (!$this->writeTrailers()) {
+				return false;
+			}
 		}
-		return;
+		return true;
 	}
 	
 	protected function writeToFile($str) {
@@ -102,6 +108,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 			mkdir($this->local_dir, 0777, true);
 		}
 		return file_put_contents($this->file_path, $str, FILE_APPEND);
+		
 	}
 
 	protected function writeHeaders() {
@@ -121,12 +128,17 @@ class Billrun_Generator_PaymentGateway_Csv {
 				}
 			}
 			if ($counter == 50000) {
-				$this->writeToFile($fileContents);
+				if (!$this->writeToFile($fileContents)) {
+					return false;
+				}				
 				$fileContents = '';
 				$counter = 0;
 			}
 		}
-		$this->writeToFile($fileContents);
+		if (!$this->writeToFile($fileContents)) {
+			return false;
+		}
+		return true;
 	}
 	
 	protected function writeTrailers() {
@@ -142,12 +154,17 @@ class Billrun_Generator_PaymentGateway_Csv {
 				$fileContents .= $this->row_separator;
 			}
 			if ($counter == 50000) {
-				$this->writeToFile($fileContents);
+				if (!$this->writeToFile($fileContents)) {
+					return false;
+				}
 				$fileContents = '';
 				$counter = 0;
 			}
 		}
-		$this->writeToFile($fileContents);
+		if (!$this->writeToFile($fileContents)) {
+			return false;
+		}
+		return true;
 	}
 		
 	protected function writeRows() {
@@ -165,7 +182,9 @@ class Billrun_Generator_PaymentGateway_Csv {
 			}
 			if ($counter == 50000) {
 				Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - writing bulk to file", Zend_Log::DEBUG);
-				$this->writeToFile($fileContents);
+				if (!$this->writeToFile($fileContents)) {
+					return false;
+				}
 				$fileContents = '';
 				$counter = 0;
 			}
@@ -174,8 +193,11 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if (!empty($this->trailers)) {
 			$fileContents.= $this->row_separator;
 		}
-		$this->writeToFile($fileContents);
+		if (!$this->writeToFile($fileContents)) {
+			return false;
+		}
 		Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - done writing rows to file", Zend_Log::DEBUG);
+		return true;
 	}
 	
 	protected function getRowContent($entity) {
@@ -184,30 +206,32 @@ class Billrun_Generator_PaymentGateway_Csv {
 		foreach ($entity as $entityObj) {
 			$padDir = isset($entityObj['padding']['direction']) ? $this->getPadDirection($entityObj['padding']['direction']) : $this->padDirDef;
 			$padChar = isset($entityObj['padding']['character']) ? $entityObj['padding']['character'] : $this->padCharDef;
-                        if($this->fixedWidth){
-                            $length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
+			if ($this->fixedWidth) {
+				$length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
 			} else {
 				if (isset($entityObj['padding']['length'])) {
-                                $length = $entityObj['padding']['length'];
+					$length = $entityObj['padding']['length'];
 				} else {
-                                $length = strlen((isset($entityObj['value']) ? $entityObj['value'] : ''));
-                            }
-                        }
+					$length = strlen((isset($entityObj['value']) ? $entityObj['value'] : ''));
+				}
+			}
 			if ($this->fixedWidth) {
 				$value = str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
-				if ($length < strlen($value)) {
-					$value = implode("", array_slice(preg_split("//u", $value), 1, $length));
+				if ($length < iconv_strlen($value, 'UTF-8')) {
+					$value = iconv_substr($value, 0, $length, 'UTF-8');
+				} elseif ($length > iconv_strlen($value, 'UTF-8')) {
+					$size = $length - iconv_strlen($value, 'UTF-8');
+					$value = ($padDir == STR_PAD_RIGHT) ? $value . str_repeat($padChar, $size) : str_repeat($padChar, $size) . $value;
 				}
 				$rowContents .= $value;
-                        }else{
-                            if($flag == 0){
+			} else {
+				if ($flag == 0) {
 					$rowContents .= str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
-                                $flag = 1;
-                            }else{
+					$flag = 1;
+				} else {
 					$rowContents .= $this->delimiter . str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
-                            }
-                        }
-			
+				}
+			}
 		}
 		return $rowContents;
 	}

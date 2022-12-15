@@ -332,6 +332,7 @@ class Models_Action_Import extends Models_Action {
 	protected function getHeader(&$data, $params = []) {
 		$header = $data[0];
 		array_shift($data); // remove column header
+		$header = array_map('trim', $header);
 		return $header;
 	}
 

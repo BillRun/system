@@ -132,7 +132,7 @@ abstract class Billrun_EmailSender_Base {
                         continue; 
                     }
                     $value = Billrun_Util::getIn($data, $placeholder['path']);
-                    if(!empty($value)){
+                    if(!empty($value) || is_numeric($value)){
                         $warningMessages = [];
                         $replaces["[[". $name ."]]"] = Billrun_Util::formattingValue($placeholder, $value, $warningMessages, Billrun_Base::base_dateformat);
                     }

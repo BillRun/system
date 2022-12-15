@@ -29,7 +29,7 @@ class Billrun_Rates_Util {
 
 		if($useCache && !isset(static::$ratesCache[$refStr])) {
 			static::$ratesCache[$refStr] = $rates_coll->getRef($rate_ref);
-		} else {
+		} else if(!$useCache) {
 			return $rates_coll->getRef($rate_ref);
 		}
 

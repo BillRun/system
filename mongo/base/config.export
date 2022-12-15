@@ -216,6 +216,10 @@
                 "editable": true,
                 "display": true,
                 "title": "Salutation"
+            }, {
+                "field_name": "in_collection",
+                "system": true,
+                "display": false
             }]
         }
     },
@@ -385,6 +389,7 @@
         },
     "invoice_export": {
       "export": "files/invoices/",
+	  "onetime_view_path" : "/views/invoices/onetime/",
       "generator": {
         "type": "WkPdf"
       },

@@ -364,11 +364,17 @@ class Billrun_Utils_Time {
 	 * @param type $to
 	 * @return type
 	 */
-	public static function getMonthsDiff($from, $to) {
+	public static function getMonthsDiff($from, $to,$monthDayCount=false, $cycleDay=1) {
+
 		$minDate = new DateTime($from);
 		$maxDate = new DateTime($to);
+
+		$cycleStart = new DateTime($to);
+		$cycleStart->sub(new DateInterval('P'.$cycleDay.'D'));
+		$monthDayCount = empty($monthDayCount) ? $cycleStart->format('t') : $monthDayCount;
+
 		if ($minDate->format('Y') == $maxDate->format('Y') && $minDate->format('m') == $maxDate->format('m')) {
-			return ($maxDate->format('d') - $minDate->format('d') + 1) / $minDate->format('t');
+			return ($maxDate->format('d') - $minDate->format('d') + 1) / $monthDayCount;
 		}
 		$yearDiff = $maxDate->format('Y') - $minDate->format('Y');
 		switch ($yearDiff) {
@@ -379,7 +385,12 @@ class Billrun_Utils_Time {
 				$months = $maxDate->format('m') + 11 - $minDate->format('m') + ($yearDiff - 1) * 12;
 				break;
 		}
-		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + $maxDate->format('d') / $maxDate->format('t') + $months;
+
+		$partialMonthCalc  =  (  min(1,($monthDayCount - $minDate->format('d') + 1) / $monthDayCount)
+									+
+								min(1,$maxDate->format('d') / $monthDayCount)
+							) ;
+		return $partialMonthCalc + $months;
 	}
 
 

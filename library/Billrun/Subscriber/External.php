@@ -17,6 +17,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	protected $remote;
 	protected $remote_authentication;
 		
+	const API_DATETIME_REGEX='/^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}:\d{2}(\.\d{3}|)?(Z|[+-]\d\d\:?\d\d|)$/';
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->setRemoteDetails(Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url', ''));
@@ -52,10 +53,16 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
 		$params = [
 			'authentication' => $this->remote_authentication,
+			'timeout' => Billrun_Factory::config()->getConfigValue('external_api.timeout',600),
 		];
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
-		$request->setParameterPost($externalQuery);
+
+		if($request_type == Billrun_Http_Request::POST) {
+			$request->setParameterPost($externalQuery);
+		} else {
+		$request->setRawData(json_encode($externalQuery));
+		}
 		$results = $request->request($request_type)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results, Zend_Log::DEBUG);
 		$results = json_decode($results, true);
@@ -65,6 +72,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 			return false;
 		}
 		return array_reduce($results, function($acc, $currentSub) {
+			Billrun_Utils_Mongo::convertQueryMongodloidDates($currentSub,static::API_DATETIME_REGEX);
 			$acc[] = new Mongodloid_Entity($currentSub);
 			return $acc;
 		}, []);

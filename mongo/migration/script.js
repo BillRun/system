@@ -803,12 +803,16 @@ db.taxes.createIndex({'key':1, 'from': 1, 'to': 1}, { unique: true, background: 
 db.taxes.createIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
 db.taxes.createIndex({'to': 1 }, { unique: false , sparse: true, background: true });
 
+lastConfig = runOnce(lastConfig, 'BRCD-3678', function () {
 //Suggestions Collection
 db.createCollection('suggestions');
-db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculationType':1, 'estimated_billrun':1}, { unique: true , background: true});
-db.suggestions.createIndex({'status': 1 }, { unique: false , background: true});
+    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1_estimated_billrun_1");
+    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1");
+    db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: true , background: true});
+    db.suggestions.createIndex({'status': 1 }, { unique: false , background: true});
 
 
+});
 // BRCD-1936: Migrate old discount structure to new discount structure
 function isEmpty(obj) {
     for(var key in obj) {
@@ -1156,22 +1160,22 @@ if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping
 	const mapping = lastConfig.import.mapping;
 	mapping.forEach((mapper, key) => {
 		if (typeof mapper.map !== 'undefined') {
-			let convertedMapper = [];
 			if (!Array.isArray(mapper.map)) {
+				let convertedMapper = [];
 				Object.keys(mapper.map).forEach((field_name) => {
 					convertedMapper.push({field: field_name,value: mapper.map[field_name]});
 				});
+				mapping[key].map = convertedMapper;
 			}
-			mapping[key].map = convertedMapper;
 		}
 		if (typeof mapper.multiFieldAction !== 'undefined') {
-			let convertedMultiFieldAction = [];
 			if (!Array.isArray(mapper.multiFieldAction)) {
+				let convertedMultiFieldAction = [];
 				Object.keys(mapper.multiFieldAction).forEach((field_name) => {
 					convertedMultiFieldAction.push({field: field_name,value: mapper.multiFieldAction[field_name]});
 				});
+				mapping[key].multiFieldAction = convertedMultiFieldAction;
 			}
-			mapping[key].multiFieldAction = convertedMultiFieldAction;
 		}
 	});
 	lastConfig.import.mapping = mapping;
@@ -1327,12 +1331,12 @@ lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
     db.createCollection("oauth_jwt");
 
     // create indexes
-    db.oauth_clients.createIndex({'client_id': 1 });
-    db.oauth_access_tokens.createIndex({'access_token': 1 });
-    db.oauth_authorization_codes.createIndex({'authorization_code': 1 });
-    db.oauth_refresh_tokens.createIndex({'refresh_token': 1 });
-    db.oauth_users.createIndex({'username': 1 });
-    db.oauth_scopes.createIndex({'oauth_scopes': 1 });
+    db.oauth_clients.ensureIndex({'client_id': 1 });
+    db.oauth_access_tokens.ensureIndex({'access_token': 1 });
+    db.oauth_authorization_codes.ensureIndex({'authorization_code': 1 });
+    db.oauth_refresh_tokens.ensureIndex({'refresh_token': 1 });
+    db.oauth_users.ensureIndex({'username': 1 });
+    db.oauth_scopes.ensureIndex({'oauth_scopes': 1 });
     
     var _obj;
     for (var secretKey in lastConfig.shared_secret) {
@@ -1376,6 +1380,25 @@ if (typeof lastConfig['email_templates']['email_authentication'] === 'undefined'
 		]
 	};
 }
+lastConfig = runOnce(lastConfig, 'BRCD-3527', function () {
+    var inCollectionField = 
+            {
+                    "field_name": "in_collection",
+                    "system": true,
+                    "display": false
+            };
+    lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], inCollectionField, 'account');
+		});
+
+// BRCD-3325 : Add default condition - the "rejection_required" condition doesn't exist.
+lastConfig = runOnce(lastConfig, 'BRCD-3325', function () {
+    var rejection_required_cond = {
+        "field": "aid",
+				"op" : "exists",
+				"value" : false
+    };
+		lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
+});
 
 db.lines.createIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 
@@ -1388,6 +1411,17 @@ runOnce(lastConfig, 'BRCD-3307', function () {
 				db.bills.save(obj);
 			}
 	)
+});
+
+lastConfig = runOnce(lastConfig, 'BRCD-3806', function () {
+    //Suggestions Collection
+    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculation_type_1_estimated_billrun_1");
+	db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
+});
+
+// BRCD-3618 configure full_calculation date field
+lastConfig = runOnce(lastConfig, 'BRCD-3618', function () {
+	lastConfig['lines']['reference_fields'] = ['full_calculation'];
 });
 // BRCD-3432 add BillRun' metabase plugin
 runOnce(lastConfig, 'BRCD-3432', function () {
@@ -1407,7 +1441,6 @@ runOnce(lastConfig, 'BRCD-3432', function () {
     };
     lastConfig['plugins'].push(mbPluginsSettings);
 });
-
 // BRCD-3325 : Add default condition - the "rejection_required" condition doesn't exist.
 runOnce(lastConfig, 'BRCD-3325', function () {
     var rejection_required_cond = {
@@ -1452,7 +1485,33 @@ runOnce(lastConfig, 'BRCD-3413', function () {
             }
         );
 });
-db.config.insert(lastConfig);
+
+//BRCD-3421: migrate webhooks from config to separate collection
+runOnce(lastConfig, 'BRCD-3421', function () {
+    // create webhooks collection
+    db.createCollection('webhooks');
+    db.webhooks.createIndex({'webhook_id': 1}, { unique: true , background: true});
+    db.webhooks.createIndex({'module' : 1, 'action' : 1 }, { unique: false , background: true});
+
+    if (!lastConfig.hasOwnProperty('plugins')) {
+        return;
+    }
+    
+    searchIndex = lastConfig.plugins.findIndex((plugin) => plugin.name == 'webhooksPlugin');
+    if (searchIndex === false || searchIndex === -1) {
+        return;
+    }
+    if (!lastConfig.plugins[searchIndex].hasOwnProperty('configuration') || 
+            !lastConfig.plugins[searchIndex].configuration.hasOwnProperty('values') ||
+            !lastConfig.plugins[searchIndex].configuration.values.hasOwnProperty('config')) {
+        return;
+    }
+    var _insertWebhooks = lastConfig.plugins[searchIndex].configuration.values.config;
+    if (!_insertWebhooks || !_insertWebhooks.length) {
+        return;
+    }
+    db.webhooks.insert(_insertWebhooks);
+});
 db.lines.createIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 //BRCD-2336: Can't "closeandnew" a prepaid bucket
 lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
@@ -1462,3 +1521,9 @@ lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
     db.prepaidincludes.createIndex({external_id : 1}, {unique: false});
     db.prepaidincludes.createIndex({name : 1}, {unique: false});
 });
+db.config.insert(lastConfig);
+db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
+db.lines.dropIndex("aid_1_urt_1");
+db.rebalance_queue.ensureIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});
+db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
+db.rebalance_queue.ensureIndex({"aid": 1, "billrun_key": 1}, {unique: false, "background": true});

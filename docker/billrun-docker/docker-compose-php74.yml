@@ -30,7 +30,7 @@ services:
         volumes:
             - ./../..:/billrun
     mongodb:
-        image: mongo:4.2
+        image: mongo:3.6
         container_name: billrun-mongodb
         restart: always
         volumes:

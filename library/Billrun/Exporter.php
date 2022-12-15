@@ -108,6 +108,13 @@ class Billrun_Exporter extends Billrun_Generator_File {
      */
     protected $moved = false;
 
+    /**
+     * was the file created successfully
+     *
+     * @var bool
+     */
+    protected $created_successfully = true;
+
     public function __construct($options = array()) {
         parent::__construct($options);
         $this->exportTime = time();
@@ -205,9 +212,14 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $generatorOptions = $this->buildGeneratorOptions();
         $this->createLogDB($this->getLogStamp());
         $this->fileGenerator = new $className($generatorOptions);
-        $this->fileGenerator->generate();
+        $this->created_successfully = $this->fileGenerator->generate();
+        if (!$this->created_successfully) {
+            Billrun_Factory::log()->log("Export generator was faild writing to the file. File creation failed..", Zend_Log::ALERT);
+            return false;
+        }
         $transactionCounter = $this->fileGenerator->getTransactionsCounter();
         Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
+        return true;
     }
 
     /**
@@ -321,6 +333,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
             'source' => 'export',
             'type' => static::$type,
             'export_hostname' => Billrun_Util::getHostName(),
+            'export_stamp' => $this->exportStamp,
             'export_start_time' => new Mongodloid_Date(),
             'file_name' => $this->getFilename(),
             'path' => $this->getExportFilePath(),
@@ -442,6 +455,9 @@ class Billrun_Exporter extends Billrun_Generator_File {
     }
 
     protected function shouldMarkAsExported() {
+        if (!$this->created_successfully) {
+            return false;
+        }
         if (!$this->shouldFileBeMoved()) {
             return true;
         }

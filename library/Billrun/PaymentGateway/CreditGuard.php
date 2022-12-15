@@ -18,7 +18,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $pendingCodes = "/$^/";
 	protected $completionCodes = "/^000$/";
 	protected $account;
-
+        
 	protected function __construct() {
 		parent::__construct();
 		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
@@ -33,8 +33,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
 		$credentials = $this->getGatewayCredentials();
-		$xmlParams['version'] = '1000';
+		$xmlParams['version'] = $credentials['version'] ?? '2000';
 		$xmlParams['mpiValidation'] = 'Verify';
+		$xmlParams['transactionType'] = 'RecurringDebit';
 		$xmlParams['userData2'] = '';
 		$xmlParams['aid'] = $aid;
 		$xmlParams['ok_page'] = $okPage;
@@ -44,7 +45,11 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$account->loadAccountForQuery(array('aid' => (int)$aid));
 		$xmlParams['language'] = isset($account->pay_page_lang) ? $account->pay_page_lang : "ENG";
 		$xmlParams['addFailPage'] = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
-		return $this->getXmlStructureByParams($credentials, $xmlParams);
+
+		$customParams = $this->getGatewayCustomParams();
+
+
+		return $this->getXmlStructureByParams($credentials, $xmlParams, ( !empty($customParams) ? $customParams : [])) ;
 	}
 
 	protected function updateRedirectUrl($result) {
@@ -156,7 +161,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	public function getDefaultParameters() {
-		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url");
+		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url", "version");
 		return $this->rearrangeParametres($params);
 	}
 	
@@ -193,7 +198,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	public function pay($gatewayDetails, $addonData) {
-		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Debit', $addonData);
+		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'RecurringDebit', $addonData);
 		return $this->sendPaymentRequest($paymentArray);
 	}
 
@@ -211,6 +216,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
 		}
 		$this->transactionId = $addonData['txid'];
+                $version = $credentials['version'] ?? '2000';
 		return $post_array = array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -219,7 +225,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								<request>
 								<command>doDeal</command>
 								<requestId>23468</requestId>
-								<version>1001</version>
+								<version>' . $version . '</version>
 								<language>Eng</language>
 								<mayBeDuplicate>0</mayBeDuplicate>
 									<doDeal>
@@ -231,6 +237,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										<transactionCode>Phone</transactionCode>
 										<transactionType>' . $transactionType . '</transactionType>
 										<total>' . abs($gatewayDetails['amount']) . '</total>
+										' . ((!empty($gatewayDetails['auth_number']) && $gatewayDetails['amount'] > 0) ? '<authNumber>' . $gatewayDetails['auth_number'] . '</authNumber>' : '') . '
 										<user>' . $this->transactionId . '</user>
 										 ' . $ZParameter . '
 										<validation>AutoComm</validation>
@@ -252,6 +259,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function buildInquireQuery($params){
+                $version = $params['version'] ?? '2000';
 		return array(
 			'user' => $params['user'],
 			'password' => $params['password'],
@@ -259,6 +267,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			'int_in' => '<ashrait>
 							<request>
 							 <language>HEB</language>
+                                                         <version>' . $version . '</version>
 							 <command>inquireTransactions</command>
 							 <inquireTransactions>
 							  <terminalNumber>' . $params['redirect_terminal'] . '</terminalNumber>
@@ -312,7 +321,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function validateStructureForCharge($structure) {
-		return !empty($structure['card_token']) && !empty($structure['card_expiration']) && !empty($structure['personal_id']);
+		return !empty($structure['card_token']) && !empty($structure['card_expiration']);
 	}
 	
 	protected function handleTokenRequestError($response, $params) {
@@ -329,7 +338,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$codeResult = '';
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {
+			Billrun_Factory::log("Creditguard payment request: " . print_R($paymentArray, 1), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Creditguard payment response: " . print_R($result, 1), Zend_Log::DEBUG);
 		}
 		if (strpos(strtoupper($result), 'HEB')) {
 			$result = iconv("utf-8", "iso-8859-8", $result);
@@ -344,6 +355,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			if (!empty($voucherNumber)) {
 				$additionalParams['payment_identifier'] = $voucherNumber;
 			}
+			$additionalParams['card_acquirer'] = $xmlObj->response->doDeal->cardAcquirer ? current($xmlObj->response->doDeal->cardAcquirer->attributes()->code) : '';
+			$additionalParams['card_brand'] = $xmlObj->response->doDeal->cardBrand ? current($xmlObj->response->doDeal->cardBrand->attributes()->code) : '';
+			$additionalParams['credit_company'] = $xmlObj->response->doDeal->creditCompany ? current($xmlObj->response->doDeal->creditCompany->attributes()->code) : '';
 		}	
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
@@ -384,7 +398,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$customParams = $this->getGatewayCustomParams();
 		$addonData = array();
 		$xmlParams['aid'] = $addonData['aid'] = $params['aid'];
-		$xmlParams['version'] = '1001';
+		$xmlParams['version'] = $credentials['version'] ?? '2000';
 		$xmlParams['mpiValidation'] = 'AutoComm';
 		$xmlParams['userData2'] = 'SinglePayment';
 		if (!empty($customParams['send_z_param'])) {
@@ -411,13 +425,24 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$installmentParams['first_payment'] = $installmentParams['amount'] - ($installmentParams['number_of_payments'] * $installmentParams['periodical_payments']);
 			return $this->getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams, $addonData);
 		}
+
+		//add spesific  configration that to  be applies on each new payment page
+		if(!empty($customParams) && is_array($customParams)) {
+			$addonData = array_merge($customParams,$addonData);
+		}
+
 		return $this->getXmlStructureByParams($credentials, $xmlParams, $addonData);
 	}
 	
 	protected function getXmlStructureByParams($credentials, $xmlParams, $addonData = array()) {
 		$XParameter = !empty($addonData['txid']) ? '<user>' . $addonData['txid']  . '</user>' : '';
 		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
-	
+		$ashraitEmvData = '<ashraitEmvData>
+						<recurringTotalNo>999</recurringTotalNo>
+						<recurringTotalSum></recurringTotalSum>
+						<recurringFrequency>04</recurringFrequency>
+					</ashraitEmvData>';
+
 		return array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -437,7 +462,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
 										  <total>' . $xmlParams['amount'] . '</total>
-										  <transactionType>Debit</transactionType>
+										  <transactionType>' . ($xmlParams['transactionType'] ? $xmlParams['transactionType'] : 'Debit') . '</transactionType>
 										  <creditType>RegularCredit</creditType>
 										  <currency>ILS</currency>
 										  <transactionCode>Phone</transactionCode>
@@ -449,7 +474,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <dealerNumber/>
 										  <mid>' . (int) $credentials['mid'] . '</mid>
 										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
-										  <mpiValidation>' . $xmlParams['mpiValidation'] . '</mpiValidation>
+										  <mpiValidation>' . $xmlParams['mpiValidation'] . '</mpiValidation>' .
+											($xmlParams['transactionType'] == 'RecurringDebit' ?  $ashraitEmvData : '' ) . '
 										  <customerData>
 										   <userData1>' . $xmlParams['aid'] . '</userData1>
 										   <userData2>' . $xmlParams['userData2'] . '</userData2>
@@ -462,6 +488,16 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										   <userData9/>
 										   <userData10/>
 										  </customerData>
+										  '. (!empty($addonData['paymentPageData']) ?
+										  '<paymentPageData>
+											'.(!empty($addonData['paymentPageData']['ppsJSONConfig']) &&
+												null != json_encode($addonData['paymentPageData']['ppsJSONConfig']) ?
+											'<ppsJSONConfig>
+												'. json_encode($addonData['paymentPageData']['ppsJSONConfig'],JSON_PRETTY_PRINT| JSON_UNESCAPED_LINE_TERMINATORS | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).'
+											</ppsJSONConfig>' : '') . '
+										  </paymentPageData>
+										  ' : '')
+										  .'
 								 </doDeal>
 							</request>
 						   </ashrait>'
@@ -573,5 +609,59 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	public function getSecretFields() {
 		return array('password');
+	}
+
+	public function sendRecurringMigrationRequest($aid, $gatewayDetails){
+		$credentials = $this->getGatewayCredentials();
+		$xmlParams['version'] = $credentials['version'] ?? '2000';
+		$postArray = $this->getRecurringMigrationXml($credentials, $xmlParams, $gatewayDetails);
+		$postString = http_build_query($postArray);
+		if (function_exists("curl_init")) {
+			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::INFO);
+			Billrun_Factory::log("Payment gateway token request: " . print_R($postArray, 1), Zend_Log::DEBUG);
+			$response = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Payment gateway token response: " . print_R($response, 1), Zend_Log::DEBUG);
+		}
+		return $response;
+	}
+
+
+	protected function getRecurringMigrationXml($credentials, $xmlParams, $gatewayDetails) {
+		return array(
+			'user' => $credentials['user'],
+			'password' => $credentials['password'],
+			/* Build Ashrait XML to post */
+			'int_in' => '<ashrait>                                      
+							<request>
+								 <version>' . ($xmlParams['version'] ?? '2000') . '</version>
+								 <dateTime>' . ($xmlParams['date'] ?? date('Y-m-d H:i:s')) . '</dateTime>
+								 <command>doDeal</command>
+								 <requestId></requestId>
+								 <doDeal>
+										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
+										  <validation>verify</validation>
+										  <total>100</total>
+										  <groupId></groupId>
+										  <currency>ILS</currency>
+										  <creditType>RegularCredit</creditType>
+										  <transactionCode>Phone</transactionCode>
+										  <transactionType>RecurringMigration</transactionType>
+										  <user></user>
+										  <externalId></externalId>
+										  <cardExpiration>' . $gatewayDetails['card_expiration'] . '</cardExpiration>
+										  <cardNo></cardNo>
+										  <cgUid></cgUid>
+										  <cardId>' . $gatewayDetails['card_token'] . '</cardId>
+										  <authNumber>' . $gatewayDetails['auth_number'] . '</authNumber>
+										  <ashraitEmvData>
+										 		 <recurringTotalNo>999</recurringTotalNo>
+										 		 <recurringTotalSum></recurringTotalSum>
+										 		 <recurringFrequency>04</recurringFrequency>
+										  </ashraitEmvData>
+										  <updateGroupId></updateGroupId>
+								 </doDeal>
+							</request>
+						 </ashrait>'
+		);
 	}
 }

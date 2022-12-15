@@ -202,32 +202,96 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	protected function addExtraLines($line, $extraData = []){
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $this));
 		if(!empty($extraData)){
-			$queue_lines_to_insert = [];
-			$lines_to_insert = [];
+			$queueLinesToInsert = [];
+			$linesToInsert = [];
 			foreach ($extraData as $originalStamp => $extraDataByStamp){
 				foreach ($extraDataByStamp as $newStamp => $extraRow){
 					$newQueueLine = $this->pullQueueLineByStamp($originalStamp);
 					$saveProperties = $this->getPossiblyUpdatedFields();
 					foreach ($saveProperties as $p) {
-                                            if (!is_null($val = Billrun_Util::getIn($extraRow, $p, null))) {
-                                                    $newQueueLine[$p] = $val;
-                                            }
+						if (!is_null($val = Billrun_Util::getIn($extraRow, $p, null))) {
+							$newQueueLine[$p] = $val;
+						}
 					}
 					unset($newQueueLine['_id']);
 					$newQueueLine['stamp'] = $newStamp;
-					$queue_lines_to_insert[] = $newQueueLine;
-					$lines_to_insert[] = $extraRow;
-                                        $this->lines[$newStamp] = $newQueueLine;
+					$queueLinesToInsert[$newStamp] = $newQueueLine;
+					$linesToInsert[$newStamp] = $extraRow;
+					$this->lines[$newStamp] = $newQueueLine;
 				}
-				
 			}
-			Billrun_Factory::db()->linesCollection()->batchInsert($lines_to_insert);
-                        Billrun_Factory::db()->queueCollection()->batchInsert($queue_lines_to_insert);
+			Billrun_Factory::log("Calculator " . $this->getType() . ": before lines batch insert to lines collection", Zend_Log::DEBUG);
+			$this->batchInsertLines($linesToInsert, Billrun_Factory::db()->linesCollection());
+			Billrun_Factory::log("Calculator " . $this->getType() . ": before lines batch insert to queue collection", Zend_Log::DEBUG);
+			$this->batchInsertLines($queueLinesToInsert, Billrun_Factory::db()->queueCollection());
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $this));
 		return $extraData[$line['stamp']] ?? [];
 	}
+
+	/**
+	 * Batch inserting lines to collection
+	 * @param array $linesToInsert
+	 * @param type $collection 
+	 */
+	protected function batchInsertLines($linesToInsert, $collection) {
+		try {
+			$ret = $collection->batchInsert($linesToInsert);
+			Billrun_Factory::log("Calculator " . $this->getType() . ": after lines batch insert", Zend_Log::DEBUG);
+			if (isset($ret['err']) && !is_null($ret['err'])) {
+				Billrun_Factory::log("Calculator " . $this->getType() . ": batch insertion of adding extra lines to lines failed, Insert Error: " . $ret['err'], Zend_Log::ALERT);
+				throw new Exception();
+			}
+		} catch (Exception $e) {
+			try {
+				Billrun_Factory::log("Calculator " . $this->getType() . ": Batch insert failed during of adding extra lines to lines, removing duplicate lines and retry the bulkInsert, Error: " . $e->getMessage(), Zend_Log::ERR);
+				$linesWithoutDuplicates = $this->removeDuplicateLines($linesToInsert, $collection);
+				$ret = $collection->batchInsert($linesWithoutDuplicates);
+				if (isset($ret['err']) && !is_null($ret['err'])) {
+					Billrun_Factory::log("Calculator " . $this->getType() . ": batch insertion of adding extra lines to lines failed, Insert Error: " . $ret['err'], Zend_Log::ALERT);
+					throw new Exception();
+				}
+			} catch (Exception $ex) {
+				Billrun_Factory::log("Calculator " . $this->getType() . ": Batch insert failed during of adding extra lines to lines, inserting line by line, Error: " . $ex->getMessage(), Zend_Log::ERR);
+				$this->restoringLinesLineByLine($linesToInsert, $collection);
+			}
+		}
+	}
 	
+	/**
+	 * Remove all the lines that are in $archivedLinesToInsert and also already in lines collection
+	 * @param array $archivedLinesToInsert
+	 * @param array $archivedLinesStamps
+	 */
+	protected function removeDuplicateLines($linesToInsert, $collection) {
+		$query = array('stamp' => array('$in' => array_keys($linesToInsert)));
+		$duplicateLines = $collection->query($query)->cursor()->fields(array('stamp' => 1))->setRawReturn(true);
+		$duplicateLinesStamps = array_column(iterator_to_array($duplicateLines), 'stamp');
+		foreach ($duplicateLinesStamps as $duplicateLineStamp) {
+			unset($linesToInsert[$duplicateLineStamp]);
+		}
+		return array_values($linesToInsert);
+	}
+	
+	protected function restoringLinesLineByLine($linesToInsert, $collection) {
+		foreach ($linesToInsert as $stamp => $line) {
+			try {
+				$ret = $collection->insert($line); // ok==1, err null
+				if (isset($ret['err']) && !is_null($ret['err'])) {
+					Billrun_Factory::log("Calculator " . $this->getType() . ": line insertion of adding extra line to lines failed, Insert Error: " . $ret['err'] . ", failed_line " . $stamp, Zend_Log::ALERT);
+					throw new Exception($ret['err']);
+				}
+			} catch (Exception $e) {
+				if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+					Billrun_Factory::log("Calculator " . $this->getType() . ": line insertion of adding extra line to lines failed, Insert Error: " . $e->getMessage() . ", failed_line " . $stamp, Zend_Log::NOTICE);
+					continue;
+				} else {
+					Billrun_Factory::log("Calculator " . $this->getType() . ": line insertion of adding extra line to lines failed, Insert Error: " . $e->getMessage() . ", failed_line " . $stamp, Zend_Log::ALERT);
+					throw $e;
+				}
+			}
+		}
+	}
 
 	/**
 	 * Execute write the calculation output into DB

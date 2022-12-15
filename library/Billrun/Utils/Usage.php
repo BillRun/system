@@ -25,15 +25,20 @@ class Billrun_Utils_Usage {
 				if(empty($row['sid'])) {
 					return null;
 				}
+				$retSub = null;
 				$subscriber = Billrun_Factory::subscriber();
-				$query = array('sid' => $row['sid'], 'aid' => $row['aid']);
+				$query = array(	'sid' => $row['sid'],
+								'aid' => $row['aid'],
+								'time'=> date(Billrun_Base::base_datetimeformat, @Billrun_Util::getFieldVal(Billrun_Util::getFieldVal($row['prorated_end_date'],$row['urt']),new Mongodloid_Date())->sec-1));
 				return $subscriber->loadSubscriberForQuery($query);
 			case 'account' :
 				if(empty($row['aid'])) {
 					return null;
 				}
+				$retAcc=null;
 				$account = Billrun_Factory::account();
-				$query = array('aid' => $row['aid']);
+				$query = array(	'aid' => $row['aid'],
+								'time'=> date(Billrun_Base::base_datetimeformat, @Billrun_Util::getFieldVal(Billrun_Util::getFieldVal($row['prorated_end_date'],$row['urt']),new Mongodloid_Date())->sec-1));
 				return $account->loadAccountForQuery($query);
 
 			case 'plan' :

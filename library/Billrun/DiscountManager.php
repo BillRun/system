@@ -1140,13 +1140,15 @@ class Billrun_DiscountManager {
 				];
 				$discountAmount = $eligibilityInterval['amount'];
 
-				if (($discountedAmount + $discountAmount > $amountLimit) ||
-						($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) { // current discount reached limit
+				if ($discountAmount >= 0  && (($discountedAmount + $discountAmount > $amountLimit) ||
+						($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) ) { // current discount reached limit
 					$addToCdr['orig_discount_amount'] = -$discountAmount;
 					$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $this->discountedLinesAmounts[$line['stamp']]);
 				}
 				
 				if ($discountAmount > 0) {
+					$cdrs[] = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+				} else if($line['is_upfront'] && $discountAmount < 0 ) {
 					$cdrs[] = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
 				}
 				
@@ -1311,12 +1313,19 @@ class Billrun_DiscountManager {
 			}
 		}
 		if(!$isSequential){
-			$amount = $this->getDiscountAmount($discount, $line, $value, $operations);
+			$flatAmount = $amount = $this->getDiscountAmount($discount, $line, $value, $operations);
 			if ($this->isDiscountProrated($discount, $line)) {
 			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to, 'ceil');
 			$cycleDays = $this->cycle->days();
 			if ($discountDays < $cycleDays) {
 				$amount *= ($discountDays / $cycleDays);
+			}
+			if($line['is_upfront'] ) {
+				if(!$proratedEnd) {
+					$amount += $flatAmount;
+				} else if($from == $this->cycle->start()) {
+					$amount -= $flatAmount;
+				}
 			}
 		}
 

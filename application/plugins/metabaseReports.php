@@ -125,8 +125,16 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"title" => "MB reports - export server's password",
 				"editable" => true,
 				"display" => true,
-				"nullable" => false,
-				"mandatory" => true
+				"nullable" => true,
+				"mandatory" => false
+			], [
+				"type" => "text",
+				"field_name" => "export.key_file_name",
+				"title" => "MB reports - export server's key file name",
+				"editable" => true,
+				"display" => true,
+				"nullable" => true,
+				"mandatory" => false
 			], [
 				"type" => "string",
 				"field_name" => "export.remote_directory",
@@ -288,9 +296,29 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function upload($report) {
 		$hostAndPort = $this->export_details['host'] . ':'. $this->port;
-		$auth = array(
-			'password' => $this->export_details['password'],
-		);
+		$fileName = $report->getFileName();
+		// Check if private key exist
+		if (isset($this->export_details['key_file_name'])) {		
+			Billrun_Factory::log("Found key file name configuration.." , Zend_Log::DEBUG);
+			$key_file_name = basename($this->export_details['key_file_name']);
+			Billrun_Factory::log("Validating key file name.." , Zend_Log::DEBUG);
+			if (!preg_match("/^([-\.\_\w]+)$/", $key_file_name)) {
+				throw new Exception("Key file name isn't valid : " . $key_file_name . ". Couldn't upload " . $fileName . " report' file");
+			}
+			Billrun_Factory::log("Key file name : " .  $key_file_name . " is valid. Checking if the key file exists" , Zend_Log::DEBUG);
+			$key_file_path = Billrun_Util::getBillRunPath('application/plugins/metabaseReports/keys/' . $key_file_name);
+			if (!file_exists($key_file_path) || !is_file($key_file_path)) {
+				throw new Exception("Couldn't find " . $key_file_name . " key file under: " . $key_file_path . ". Couldn't upload " . $fileName . " report' file");
+			}
+			Billrun_Factory::log("Found " . $key_file_name . " key file under : " . $key_file_path , Zend_Log::DEBUG);
+			$auth = array(
+				'key' => $key_file_path,
+			);
+		} else {
+			$auth = array(
+				'password' => $this->export_details['password'],
+			);
+		}
 		$connection = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
 		Billrun_Factory::log()->log("Connecting to SFTP server: " . $connection->getHost() , Zend_Log::INFO);
 		$connected = $connection->connect($this->export_details['user']);
@@ -299,7 +327,6 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			 return;
 		 }
 		Billrun_Factory::log()->log("Success: Connected to: " . $connection->getHost() , Zend_Log::INFO);
-        $fileName = $report->getFileName();
 		Billrun_Factory::log("Uploading " . $fileName . " to " . $this->export_details['remote_directory'], Zend_Log::INFO);
 		if (!empty($connection)){
 			try {

@@ -34,7 +34,8 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 		$billableResults = $this->filterConfirmedAccounts($result['data'], $cycle);
 		usort($billableResults, function($a, $b){ return strcmp($a['from'],$b['from']);});
 		$retResults = [];
-		$idFields = ['aid','sid','plan','play','first_name','last_name','type','email','address','services'];
+		$customIDFields =Billrun_Factory::config()->getConfigValue('customer.aggregator.revision_identification_fields',[]);
+		$idFields = array_merge($customIDFields, ['aid','sid','plan','play','first_name','last_name','type','email','address','services']);
 		foreach($billableResults as $revision) {
 			if(!in_array($revision['aid'],$this->exclusionQuery)) {
 				$revStamp = @Billrun_Util::generateArrayStamp($revision, $idFields);
@@ -51,6 +52,11 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 						$planDate['plan'] = $revision['plan'];
 						$planDate['plan_activation'] = @$revision['plan_activation'];
 						$planDate['plan_deactivation'] = @$revision['plan_deactivation'];
+						foreach($customIDFields as $CIDF) {
+							 if(!empty($revision[$CIDF]) ) {
+								 $planDate[$CIDF] = $revision[$CIDF];
+							 }
+						}
 
 					$retResults[$revStamp]['plan_dates'][] = $planDate;
 				} else {
@@ -63,6 +69,7 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 				$retResults[$revStamp]['id'] = array_filter($revision, function ($key) use ($idFields) { return in_array($key, $idFields); }, ARRAY_FILTER_USE_KEY);
 				$passthroughFields = ($revision['type'] == 'account') ? $this->passthroughFields : $this->subsPassthroughFields;
 				foreach ($passthroughFields as $passthroughField) {
+					$passthroughField = is_array($passthroughField) ? $passthroughField['value'] : $passthroughField;
 					if(isset($revision[$passthroughField])) {
 						$retResults[$revStamp]['passthrough'][$passthroughField] = $revision[$passthroughField];
 					}
@@ -70,8 +77,15 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 			}
 		}
 
-		usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
-		//usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
+		usort($retResults, function($a, $b){
+			return ($a['from']  && $b['from'] ?
+						($a['from']->sec - $b['from']->sec) :
+						($a['from'] < $b['from'] ?
+							-1 :
+							($a['from'] > $b['from'] ?
+								1 : 0
+							)
+						) ); });
 		return ["data" => array_map(function($item){ return new Mongodloid_Entity($item);}, array_values($retResults)), "options" => $result['options']];
 
 	}

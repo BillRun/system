@@ -35,6 +35,7 @@ abstract class Billrun_Plans_Charge_Base {
 		$this->proratedTermination = !isset($plan['prorated_termination']) || $plan['prorated_termination'] != FALSE;
 		$this->subscriberDeactivation = !empty($plan['deactivation_date']) &&  $plan['deactivation_date'] instanceof Mongodloid_Date ?
 											$plan['deactivation_date']->sec : FALSE ;
+		$this->midMonthCycleHack =  Billrun_Factory::config()->getConfigValue('billrun.mid_month_cycle_hack',false);
 		
 		$this->setSpan($plan);
 	}

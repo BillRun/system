@@ -100,7 +100,6 @@ trait Billrun_Traits_EntityGetter {
 
 		if (empty($entity)) {
 			Billrun_Factory::log('Entity not found for row ' . $row['stamp'], Billrun_Log::WARN);
-			Billrun_Factory::log('Params for not found entity, row ' . $row['stamp'] . ': ' . print_R($params, 1), Billrun_Log::DEBUG);
 			return $this->afterEntityNotFound($row, $params);
 		}
 
@@ -136,7 +135,7 @@ trait Billrun_Traits_EntityGetter {
 				continue;
 			}
 			
-			Billrun_Factory::dispatcher()->trigger('extendEntityParamsQuery', [&$query, &$row, &$this, $params]);
+			Billrun_Factory::dispatcher()->trigger('extendEntityParamsQuery', [&$query, &$row, &$this, &$params]);
 			$result = $this->getEntities($row, $query, $params);
 			$matchedEntity = is_array($result) ? current($result) : false;
 			if ($matchedEntity && !$matchedEntity->isEmpty()) {
