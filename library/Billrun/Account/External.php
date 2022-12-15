@@ -23,8 +23,8 @@ class Billrun_Account_External extends Billrun_Account {
 		$this->remote = Billrun_Factory::config()->getConfigValue(	'subscribers.account.external_url',
 																	Billrun_Util::getFieldVal($options['external_url'],	''));
 		$this->remote_billable_url = Billrun_Factory::config()->getConfigValue('subscribers.billable.url', '');
-		$this->setCacheEnabled(Billrun_Factory::config()->getConfigValue('subscribers.account.enable_caching', false));
-		$this->setCachingTTL(Billrun_Factory::config()->getConfigValue('subscribers.account.caching_ttl', 300));
+		$this->setCacheEnabled(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_enabled', false));
+		$this->setCachingTTL(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_ttl', 300));
 	}
 
 	public function getCachingEntityIdKey() {
