@@ -247,6 +247,7 @@ trait Billrun_Subscriber_External_Cacheable {
 					unset($externalQuery['query'][$key]);
 				}
 			}
+			$externalQuery['query'] = array_values($externalQuery['query']); // reset indexes
 		}
 
 		return [$cachedEntries, $externalQuery];
