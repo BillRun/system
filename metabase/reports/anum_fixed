@@ -26,7 +26,7 @@
                     }
                 ]}}]}]}},
 			
-{$match:{'uf.BNUM':{ $regex: /^(?!357).*/}}},
+{$match:{'cf.anaa_group':{ $regex: /^(?!357).*/}}},
 
 {$group:{"_id":{
   MONTH_YEAR:{ $dateToString: { format: "%Y-%m", date: {{from}}, timezone: "Asia/Nicosia"} }, 
