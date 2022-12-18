@@ -1121,7 +1121,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 
 	public function addUserFields($fields = array()) {
-		$this->data['uf'] = $fields;
+		$this->data['uf'] = !empty($fields) ? $fields : new stdClass();
 	}
 	
 	/**
