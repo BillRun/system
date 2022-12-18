@@ -35,7 +35,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * 
 	 * @param Billrun_Balance
 	 */
-	protected $balance;
+	public $balance;
 
 	/**
 	 * prepaid minimum balance volume

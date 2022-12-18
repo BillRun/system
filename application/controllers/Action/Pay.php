@@ -65,7 +65,7 @@ class PayAction extends ApiAction {
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 				$this->processPaymentUf($inputPayment);
-				$deposit = new $className(array_merge_recursive($inputPayment, $params));
+				$deposit = new $className(array_merge($inputPayment, $params));
 				$deposit->setUserFields($deposit->getRawData(), true);
 				$deposit->setDepositFreezeDate();
 				$deposit->setProcessTime();
@@ -275,9 +275,9 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 			$cancellationPayments = array();
 			foreach ($paymentsToCancel['payments'] as $payment) {
 				$id = $payment->getId();
-				$currentUf = isset($ufPerTxid[$id]) ? $ufPerTxid[$id] : array();
-				$payment->addUserFields($currentUf);
+				$cancellationUf = isset($ufPerTxid[$id]) ? $ufPerTxid[$id] : array();
 				$cancellationPayment = $payment->getCancellationPayment();
+				$cancellationPayment->addUserFields($cancellationUf);
 				$cancellationPayments[] = $cancellationPayment;
 			}
 			if ($cancellationPayments) {
