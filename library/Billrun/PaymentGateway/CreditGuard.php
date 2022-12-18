@@ -162,7 +162,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	public function getDefaultParameters() {
-		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url", "version");
+		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url", "version",'custom_style','custom_text','ancestor_urls');
 		return $this->rearrangeParametres($params);
 	}
 	
@@ -436,6 +436,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function getXmlStructureByParams($credentials, $xmlParams, $addonData = array()) {
+		$ppsConfig  = $this->getPPSConfigJSON();
 		$XParameter = !empty($addonData['txid']) ? '<user>' . $addonData['txid']  . '</user>' : '';
 		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
 		$ashraitEmvData = '<ashraitEmvData>
@@ -489,13 +490,11 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										   <userData9/>
 										   <userData10/>
 										  </customerData>
-										  '. (!empty($addonData['paymentPageData']) ?
+										  '. (!empty($ppsConfig) ?
 										  '<paymentPageData>
-											'.(!empty($addonData['paymentPageData']['ppsJSONConfig']) &&
-												null != json_encode($addonData['paymentPageData']['ppsJSONConfig']) ?
-											'<ppsJSONConfig>
-												'. json_encode($addonData['paymentPageData']['ppsJSONConfig'],JSON_PRETTY_PRINT| JSON_UNESCAPED_LINE_TERMINATORS | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).'
-											</ppsJSONConfig>' : '') . '
+											<ppsJSONConfig>
+												'.$ppsConfig.'
+											</ppsJSONConfig>
 										  </paymentPageData>
 										  ' : '')
 										  .'
@@ -597,6 +596,33 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			return false;
 		}
 		return true;
+	}
+
+	protected function getPPSConfigJSON() {
+		$customParams = $this->getGatewayCustomParams();
+		$basicParams = $this->getGatewayCredentials();
+		if(empty($customParams['paymentPageData']['ppsJSONConfig'])) {
+			return null;
+		}
+		$ppsConfig = $customParams['paymentPageData']['ppsJSONConfig'];
+
+		if(!empty($basicParams['ancestor_urls']) && trim($basicParams['ancestor_urls'])) {
+			$ppsConfig['frameAncestorURLs'] = $basicParams['ancestor_urls'];
+		}
+
+		if(!empty($basicParams['custom_style']) && trim($basicParams['custom_style'])) {
+			$ppsConfig['uiCustomData']['customStyle'] = $basicParams['custom_style'];
+		}
+		if(!empty($basicParams['custom_text'])) {
+			if(json_decode($basicParams['custom_text'])) {
+				$ppsConfig['uiCustomData']['customText'] = json_decode($basicParams['custom_text']);
+			} else {
+				Billrun_Factory::log('Billrun_PaymentGateway_CreditGuard::getPPSConfigJSON -  customText json cannot  be parsed  correctly',Zend_Log::WARN);
+			}
+		}
+
+		 return json_encode($ppsConfig,JSON_PRETTY_PRINT| JSON_UNESCAPED_LINE_TERMINATORS | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
 	}
 	
 	public function extendCardExpiration($paymentParams, $gatewayDetails){
