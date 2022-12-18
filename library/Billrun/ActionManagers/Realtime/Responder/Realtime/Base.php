@@ -71,11 +71,29 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 		return $ret;
 	}
 	
+	/**
+	 * method to get the granted unit
+	 * in postpaid this the leftover of the group
+	 * in prepaid is the predefined volume stored in usagev field
+	 * 
+	 * @param array $serviceRating service rating container
+	 * @return int the granted volume
+	 */
 	protected function getGrantedUnit($serviceRating) {
-		if ($this->config['realtime']['postpay_charge'] && $this->config['realtime']['block_over_group']) {
+		if ($this->requirePostpaidOverGroupBlock()) {
 			return $this->getRateGroupLeft();
 		}
 		return $serviceRating['usagev'] ?? 0;
+	}
+	
+	/**
+	 * method to check if we need postpaid block over group
+	 * 
+	 * @return boolean true if required to block over group on postpaid
+	 */
+	protected function requirePostpaidOverGroupBlock() {
+		return Billrun_Utils_Realtime::getRealtimeConfigValue($this->config, 'postpay_charge') && 
+				Billrun_Utils_Realtime::getRealtimeConfigValue($this->config, 'block_over_group');
 	}
 	
 	/**
@@ -104,7 +122,7 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 		$returnCode = $serviceRating['return_code'];
 		$returnCodes = Billrun_Factory::config()->getConfigValue('realtime.granted_code', []);
 
-		if ($returnCode == $returnCodes['ok'] && $this->config['realtime']['postpay_charge'] && $this->config['realtime']['block_over_group'] && $this->getRateGroupLeft() == 0) {
+		if ($returnCode == $returnCodes['ok'] && $this->requirePostpaidOverGroupBlock() && $this->getRateGroupLeft() == 0) {
 			$returnCode = $returnCodes['no_available_balances'];
 		}
 		
