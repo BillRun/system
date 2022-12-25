@@ -243,26 +243,50 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 	
 	protected function updatePaymentsByRows($data, $currentProcessor) {
-                $no_txid_counter = 0;
+		$no_txid_counter = 0;
 		$billSavedFieldsNames = $this->getBillSavedFieldsNames($currentProcessor['parser']);
-		foreach ($data['data'] as $row) {
-                    if(isset($this->tranIdentifierField)){
-                        if(($row[$this->tranIdentifierField] === "") && (static::$type != 'payments')){
-                            $no_txid_counter++;
-                            continue;
-                        }
-                    }
-			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
+		foreach ($data['data'] as $index => $row) {
+			$bill = null;
+			if(!is_null($this->tranIdentifierField)){
+				if(($row[$this->tranIdentifierField] === "") && (static::$type != 'payments')){
+					$no_txid_counter++;
+					continue;
+				}
+				Billrun_Factory::log("Searching for bill with txid: " . $row[$this->tranIdentifierField] , Zend_Log::DEBUG);
+				$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
+			} else if (!is_null($this->tranIdentifierFields) && (static::$type != 'payments')) {
+				Billrun_Factory::log("Searching for bills using configured query, for line number " . $row['row_number'] , Zend_Log::DEBUG);
+				$query = $this->processIdentifierFields($row);
+				$bills = Billrun_Bill_Payment::queryPayments($query);
+				if (!empty($bills)) {
+					Billrun_Factory::log("Found " . count($bills) . " relevant bills" , Zend_Log::DEBUG);
+					if (count($bills) > 1) {
+						Billrun_Factory::log("Found more than one bill, taking 1 or none, according to the configuration" , Zend_Log::DEBUG);
+						$bill = $this->take_first ? Billrun_Bill_Payment::getInstanceByData(current(Billrun_Bill_Payment::queryPayments($query))) : null;
+					} else {
+						$bill = Billrun_Bill_Payment::getInstanceByData(current(Billrun_Bill_Payment::queryPayments($query)));
+					}
+				}
+			}
 			if (is_null($bill) && static::$type != 'payments') {
-				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
+				Billrun_Factory::log("No bill was found for line " . $index , Zend_Log::ALERT);
 				continue;
 			}
 			$this->billSavedFields = $this->getBillSavedFields($row, $billSavedFieldsNames);
 			$this->updatePayments($row, $bill, $currentProcessor);
 		}
-                if($no_txid_counter > 0){
-                    Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
-                }
+		if($no_txid_counter > 0){
+			Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
+		}
+	}
+
+	public function processIdentifierFields($row) {
+		$res = [];
+		foreach($this->tranIdentifierFields as $field_conf) {
+			$row_val = Billrun_Util::getIn($row, $field_conf['value'], "");
+			$res[$field_conf['field']] = [$field_conf['op'] => ($field_conf['type'] == 'int') ? intval($row_val) : (($field_conf['type'] == 'float') ? floatval($row_val) : $row_val)];
+		}
+		return $res;
 	}
 	
 	protected function updateLogCollection($fileCorrelation) {
