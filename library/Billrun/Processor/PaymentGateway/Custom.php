@@ -283,7 +283,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	public function processIdentifierFields($row) {
 		$res = [];
 		foreach($this->tranIdentifierFields as $field_conf) {
-			$row_val = Billrun_Util::getIn($row, $field_conf['value'], "");
+			$row_val = Billrun_Util::getIn($row, $field_conf['file_field'], "");
 			$res[$field_conf['field']] = [$field_conf['op'] => ($field_conf['type'] == 'int') ? intval($row_val) : (($field_conf['type'] == 'float') ? floatval($row_val) : $row_val)];
 		}
 		return $res;
