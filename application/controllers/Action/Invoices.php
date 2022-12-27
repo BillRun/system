@@ -105,14 +105,23 @@ class AccountInvoicesAction extends ApiAction {
                         Billrun_Factory::log('Invoice file ' . $pdf . ' does not exist', Zend_Log::NOTICE);
 			echo "Invoice not found";
 		} else {
-			$cont = file_get_contents($pdf);
+			$params = [];
+			Billrun_Factory::dispatcher()->trigger('onInvoiceDownload', array(&$params, $invoiceData));
+			if (!isset($params['content_type'],
+				$params['content_disposition'],
+				$params['filename'])) {
+				$params['content_type'] = 'Content-Type: application/pdf';
+				$params['content_disposition'] = 'inline';
+				$params['filename'] = $pdf;
+			}
+			$cont = file_get_contents($params['filename']);
 			if ($cont) {
-				header('Content-disposition: inline; filename="'.$file_name.'"');
+				header('Content-disposition: ' . $params['content_disposition'] . '; filename="' . basename($params['filename']) . '"');
 				header('Cache-Control: public, must-revalidate, max-age=0');
 				header('Pragma: public');
 				header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
-				header('Content-Type: application/pdf');
-				Billrun_Factory::log('Transfering invoice content from : '.$pdf .' to http connection');
+				header($params['content_type']);
+				Billrun_Factory::log('Transfering invoice content from : ' . $params['filename'] . ' to http connection');
 				echo $cont;
 			} 
 		}
