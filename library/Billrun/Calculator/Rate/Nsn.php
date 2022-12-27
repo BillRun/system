@@ -171,6 +171,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	//todo: move the regex and rate keys to config
 	protected function getLineAdditionalValues($row) {
 		$circuit_groups = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.whloesale_incoming_rate_key');
+		$retArr = [];
 		$rate_key = null;
 		if( in_array($row['record_type'],array('30','11')) &&  $this->valueWithinRanges($row['in_circuit_group'], $circuit_groups['icg']) ) {
 			if(preg_match('/^(997|972)?1800/',$row['called_number'])) {
@@ -185,9 +186,14 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		}
 		$additional_properties = $this->getAdditionalProperties();
 		if(isset($rate_key)){
-			return array($additional_properties['wholesale_rate_key'] => $rate_key);
+			$retArr = array($additional_properties['wholesale_rate_key'] => $rate_key);
 		}
-		return array();
+		if($this->isCDRVoLTE($row)) {
+			$retArr['sending_source'] = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.default_volte_sending_source','ISRCL');
+			$retArr['serving_network'] = $row['in_mgw_name'];
+
+		}
+		return $retArr;
 	}
 		
 	protected function getAdditionalProperties() {
