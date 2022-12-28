@@ -105,15 +105,13 @@ class AccountInvoicesAction extends ApiAction {
                         Billrun_Factory::log('Invoice file ' . $pdf . ' does not exist', Zend_Log::NOTICE);
 			echo "Invoice not found";
 		} else {
-			$params = [];
+			$params = array(
+				'content_type' => 'Content-Type: application/pdf',
+				'content_disposition' => 'inline',
+				'filename' => $pdf,
+			);
 			Billrun_Factory::dispatcher()->trigger('onInvoiceDownload', array(&$params, $invoiceData));
-			if (!isset($params['content_type'],
-				$params['content_disposition'],
-				$params['filename'])) {
-				$params['content_type'] = 'Content-Type: application/pdf';
-				$params['content_disposition'] = 'inline';
-				$params['filename'] = $pdf;
-			}
+
 			$cont = file_get_contents($params['filename']);
 			if ($cont) {
 				header('Content-disposition: ' . $params['content_disposition'] . '; filename="' . basename($params['filename']) . '"');
