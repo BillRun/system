@@ -140,7 +140,7 @@ class Alignment extends Supervisor
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Alignment
      */
     public function applyFromArray(array $pStyles)
     {
@@ -193,7 +193,7 @@ class Alignment extends Supervisor
      *
      * @param string $pValue see self::HORIZONTAL_*
      *
-     * @return $this
+     * @return Alignment
      */
     public function setHorizontal($pValue)
     {
@@ -230,7 +230,7 @@ class Alignment extends Supervisor
      *
      * @param string $pValue see self::VERTICAL_*
      *
-     * @return $this
+     * @return Alignment
      */
     public function setVertical($pValue)
     {
@@ -269,7 +269,7 @@ class Alignment extends Supervisor
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Alignment
      */
     public function setTextRotation($pValue)
     {
@@ -312,7 +312,7 @@ class Alignment extends Supervisor
      *
      * @param bool $pValue
      *
-     * @return $this
+     * @return Alignment
      */
     public function setWrapText($pValue)
     {
@@ -348,7 +348,7 @@ class Alignment extends Supervisor
      *
      * @param bool $pValue
      *
-     * @return $this
+     * @return Alignment
      */
     public function setShrinkToFit($pValue)
     {
@@ -384,7 +384,7 @@ class Alignment extends Supervisor
      *
      * @param int $pValue
      *
-     * @return $this
+     * @return Alignment
      */
     public function setIndent($pValue)
     {
@@ -424,7 +424,7 @@ class Alignment extends Supervisor
      *
      * @param int $pValue
      *
-     * @return $this
+     * @return Alignment
      */
     public function setReadOrder($pValue)
     {

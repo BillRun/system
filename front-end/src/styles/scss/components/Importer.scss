@@ -1,0 +1,38 @@
+/* Importer */
+.Importer .form-group{
+  margin-left: 0;
+  margin-right: 0;
+}
+.Importer .form-group.rangesField {
+    padding: 0;
+}
+.Importer .panel,
+.Importer .Select-control {
+  /* set select input transparent to not hide wrapper div shadows */
+  background-color: transparent;
+}
+.Importer .StepUpload,
+.Importer .StepMapper,
+.Importer .StepValidate .row-fields{
+  padding: 25px;
+}
+.Importer .StepUpload,
+.Importer .StepMapper,
+.Importer .StepValidate,
+.Importer .StepResult {
+  min-height: 200px;
+}
+.Importer .StepMapper {
+  max-height: 50vh;
+}
+.Importer .StepValidate .row-fields {
+  max-height: 50vh;
+  margin: 0;
+}
+.Importer .StepResult ol {
+  /*max-height: 200px;*/
+  margin: 0;
+  padding-bottom: 10px;
+  padding-top: 10px;
+}
+/* ~Importer */
