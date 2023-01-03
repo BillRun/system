@@ -254,7 +254,6 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if(!$legitimate) {	continue;	}
 
 			$matchedIds[] = $package['id'];
-
 			$localUsageTypes[$this->getTransformedUsageType($package['service_name'], $plan, $usageType)] = 1;
 
 			$billrunKey = $package['service_name'] . '_' . date("Ymd", $from) . '_' . date("Ymd", $to) . '_' . $package['id'];
@@ -270,7 +269,6 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				array('from' => array('$exists' => true)),
 				array('from' => array('$lte' => new MongoDate($this->lineTime)))
 			),
-			'$or' => array(	),
 			'service_id' => array('$in' => $matchedIds),
 		);
 
