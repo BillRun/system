@@ -186,6 +186,7 @@ class Billrun_Parser_Xml {
     
     protected function preXmlBuilding() {
 		foreach ($this->input_array as $segment => $indexes) {
+			if(!is_null($indexes)) {
 				for ($a = 0; $a < count($indexes); $a++) {
 					if (isset($this->input_array[$segment][$a]['path'])) {
 						$this->paths[] = $this->input_array[$segment][$a]['path'];
@@ -195,6 +196,7 @@ class Billrun_Parser_Xml {
 				}
 			}
 		}
+	}
         
 		$this->file_common_path = $this->getLongestCommonPath($this->paths);
         foreach ($this->pathsBySegment as $segment => $paths) {
