@@ -14,12 +14,14 @@
  * @since       1.0
  */
 class UploadFileAction extends Action_Base {
+	use Billrun_Traits_Api_UserPermissions;
 
 	/**
 	 * method to execute the receive process
 	 * it's called automatically by the cli main controller
 	 */
 	public function execute() {
+		$this->allowed();
 		$status = false;
 		$options["payment_gateway"] = ""; // "payment_gateway" name. E.g. Direct_Debit
 		$options["type"] = ""; // transactions_response etc.
@@ -70,6 +72,10 @@ class UploadFileAction extends Action_Base {
 			);
 		}
 		return $connection;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 
 }
