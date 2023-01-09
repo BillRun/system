@@ -191,7 +191,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		if($this->isCDRVoLTE($row)) {
 			$retArr['sending_source'] = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.default_volte_sending_source','ISRCL');
 			$retArr['serving_network'] = $row['in_mgw_name'];
-
+			$retArr['roaming'] = !empty($row['in_mgw_name']) && $row['in_mgw_name'] !== Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.volte_local_plmn','ISRCL');
 		}
 		return $retArr;
 	}
