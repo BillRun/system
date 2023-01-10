@@ -96,35 +96,35 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return true;
 	}
         
-	protected function formatLine($row, $dataStructure) {
-		foreach ($dataStructure as $index => $paramObj) {
-			if (isset($paramObj['value_mult'])) {
-				$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
+        protected function formatLine($row,$dataStructure) {
+            foreach ($dataStructure as $index => $paramObj) {
+		if (isset($paramObj['value_mult'])) {
+			$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
+		}
+         	if (isset($paramObj['decimals'])) {
+	         	$value = floatval($row[$paramObj['name']]);
+			$row[$paramObj['name']] = number_format($value, $paramObj['decimals']);
+		}
+		if (isset($paramObj['type']) && $paramObj['type'] == "date") {
+			if (!isset($paramObj['format'])) {
+				$message = $paramObj['name'] . ' field was defined as date field, but without date format. Default BillRun format was taken';
+				Billrun_Factory::log($message, Zend_Log::WARN);
+				$this->informationArray['warnings'][] = $message;
+				$paramObj['format'] = Billrun_Base::base_datetimeformat;
 			}
-			if (isset($paramObj['decimals'])) {
-                $value = floatval($row[$paramObj['name']]);
-				$row[$paramObj['name']] = number_format($value, $paramObj['decimals']);
+			$row[$paramObj['name']] = Billrun_Processor_Util::getRowDateTime($row, $paramObj['name'], $paramObj['format'])->format(Billrun_Base::base_datetimeformat);
+		}
+		if (isset($paramObj['substring'])) {
+			if (!isset($paramObj['substring']['offset']) || !isset($paramObj['substring']['length'])) {
+				$message = "Field name " . $paramObj['name'] . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
+				$this->logFile->updateLogFileField('errors', $message);
+				throw new Exception($message);
 			}
-			if (isset($paramObj['type']) && $paramObj['type'] == "date") {
-				if (!isset($paramObj['format'])) {
-					$message = $paramObj['name'] . ' field was defined as date field, but without date format. Default BillRun format was taken';
-					Billrun_Factory::log($message, Zend_Log::WARN);
-					$this->informationArray['warnings'][] = $message;
-					$paramObj['format'] = Billrun_Base::base_datetimeformat;
-				}
-				$row[$paramObj['name']] = Billrun_Processor_Util::getRowDateTime($row, $paramObj['name'], $paramObj['format'])->format(Billrun_Base::base_datetimeformat);
-			}
-			if (isset($paramObj['substring'])) {
-				if (!isset($paramObj['substring']['offset']) || !isset($paramObj['substring']['length'])) {
-					$message = "Field name " . $paramObj['name'] . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
-					$this->logFile->updateLogFileField('errors', $message);
-					throw new Exception($message);
-				}
-				$row[$paramObj['name']] = substr($row[$paramObj['name']], $paramObj['substring']['offset'], $paramObj['substring']['length']);
+			$row[$paramObj['name']] = substr($row[$paramObj['name']], $paramObj['substring']['offset'], $paramObj['substring']['length']);
+                }
             }
+            return $row;
         }
-        return $row;
-    }
 
         
 	protected function getBillRunLine($rawLine, $line_index) {
