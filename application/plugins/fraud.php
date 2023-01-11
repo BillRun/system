@@ -343,9 +343,10 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$before = $balance['totals'][$usaget]['usagev'];
 		}
 		if (isset($rule['inPlanThreshold']) && $rule['inPlanThreshold']) {
-			$overPlan = isset($row['over_plan']) ? $row['over_plan'] : 0;
+			$overPlan = isset($row['over_plan']) && empty($rule['only_in_plan_threshold']) ? $row['over_plan'] : 0;
 			$inPlan = isset($row['in_plan']) ? $row['in_plan'] : 0;
-			$after = $before + $inPlan + $overPlan;
+			$adjustAfter = isset($rule['in_plan_after_adjustment']) ? $rule['in_plan_after_adjustment'] : 0;
+			$after = $before + $inPlan + $overPlan + $adjustAfter;
 		} else {
 			$after = $before + $row['usagev'];
 		}
@@ -532,7 +533,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (isset($line['sid'])) {
 					$line['subscriber_id'] = $line['sid'];
 				}
-
+				unset($line['roaming_balances']);
 				$line['insert_process_time'] = new MongoDate();
 			}
 			$fraud_lines_collection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->linesCollection();
@@ -563,6 +564,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$queueLine['calc_name'] = 'customer';
 				}
 				$queueLine['insert_process_time'] = new MongoDate();
+				unset($queueLine['roaming_balances']);
 				$queueLines[] = $queueLine;
 			}
 
@@ -582,7 +584,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$roamingLines = array();
 		foreach ($lines as $line) {
 // 			if (!preg_match('/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|176\.12\.158\.|80\.246\.131|80\.246\.132|37\.142\.167|91\.135\.96\.|91\.135\.99\.(19[2-9]|2))/', $line['sgsn_address'])) {
-			if (!preg_match('/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|172\.16\.24\.|172\.17\.224\.|172\.25\.81\.|176\.12\.158\.|80\.246\.131|80\.246\.132|37\.142\.167|91\.135\.96\.|91\.135\.99\.(19[2-9]|2)|10\.224\.213|10\.192\.213)/', $line['sgsn_address'])) {
+			if (!preg_match('/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|172\.16\.24\.|172\.17\.224\.|172\.25\.|176\.12\.158\.|80\.246\.131|80\.246\.132|37\.142\.167|91\.135\.96\.|91\.135\.99\.(19[2-9]|2)|10\.224\.213|10\.192\.213)/', $line['sgsn_address'])) {
 				$roamingLines[] = $line;
 			}
 		}

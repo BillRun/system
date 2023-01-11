@@ -313,6 +313,8 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			}
 			if ($data_volume_5g !== 0) {
 				$cdrLine['data_volume_5g'] = $data_volume_5g;
+				$cdrLine['data_flag_5g'] = true;
+
 			}
 		} else {
 			Billrun_Factory::log()->log("couldn't find  definition for {$type}", Zend_Log::INFO);
