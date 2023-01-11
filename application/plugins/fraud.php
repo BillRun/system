@@ -547,7 +547,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Save lines reference to the fraud DB queue to be priced by fruad.
 	 * @param type $lines
 	 */
-	public function insertToFraudQueue($lines) {
+	public function insertToFraudQueue($lines, $keepRate = FALSE) {
 		try {
 			Billrun_Factory::log()->log('Fraud plugin - Inserting ' . count($lines) . ' Lines to fraud lines collection', Zend_Log::INFO);
 			$queueLines = array();
@@ -562,6 +562,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$queueLine['aid'] = $line['aid'];
 					$queueLine['sid'] = $line['sid'];
 					$queueLine['calc_name'] = 'customer';
+				}
+				if($keepRate && $queueLine['calc_name'] === 'customer' && !empty($line['arate'])) {
+					$queueLine['calc_name'] = 'rate';
 				}
 				$queueLine['insert_process_time'] = new MongoDate();
 				unset($queueLine['roaming_balances']);
@@ -595,19 +598,28 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function insertIntlNsn($lines) {
-		$roamingLines = array();
+		$intlLines = array();
+		$roamingLines = [];
 		$circuit_groups = Billrun_Util::getIntlCircuitGroups();
 		$record_types = array('01', '11', '30');
 		$rates_ref_list = Billrun_Util::getIntlRateRefs();
 		foreach ($lines as $line) {
 			if (isset($line['out_circuit_group']) && in_array($line['out_circuit_group'], $circuit_groups) && in_array($line['record_type'], $record_types)) {
-				$roamingLines[] = $line;
+				$intlLines[] = $line;
 			} else if (!empty($line['arate']) && in_array($line['arate']['$id']->{'$id'}, $rates_ref_list)) {
+				$intlLines[] = $line;
+			}
+			if(isset($line['roaming']) && $line['roaming'] === TRUE) {
 				$roamingLines[] = $line;
 			}
 		}
+		if (!empty($intlLines)) {
+			$this->insertToFraudLines($intlLines);
+		}
+
 		if (!empty($roamingLines)) {
 			$this->insertToFraudLines($roamingLines);
+			$this->insertToFraudQueue($roamingLines, TRUE);
 		}
 	}
 
