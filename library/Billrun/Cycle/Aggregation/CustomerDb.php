@@ -22,7 +22,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 	 * @param int $aids - Account ids, null by deafault
 	 * @return array 
 	 */
-	public function getCustomerAggregationForPage($cycle, $page, $size, $aids = null) {
+	public function getCustomerAggregationForPage($cycle, $page, $size, $aids = null, $invoicing_days = null) {
 		if (is_null($page)) {
 			$page = 0;
 		}
@@ -33,7 +33,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 			$pipelines[count($pipelines) - 1]['$match']['$and'][] = array('aid' => array('$in' => $aids));
 		}
 		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
-		$mainAggregationLogic = $this->getCycleAggregationPipeline($addedPassthroughFields,$page,$size);
+		$mainAggregationLogic = $this->getCycleAggregationPipeline($addedPassthroughFields,$page,$size, $invoicing_days);
 		if(!empty($this->generalOptions['is_onetime_invoice'])) {
 			$mainAggregationLogic = $this->alterMainLogicForOnetime($mainAggregationLogic);
 		}
@@ -44,7 +44,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$pipelines[] = $this->getSortPipeline();
 
 		$pipelines[] = $this->getFinalProject($addedPassthroughFields);
-
+			
 		$collection = Billrun_Factory::db()->subscribersCollection();
 		return ["data" => $this->aggregatePipelines($pipelines,$collection), "options" => Billrun_Factory::config()->getConfigValue("customer.aggregator.options", [])];
 	}
@@ -93,7 +93,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 	/**
 	 * get the main  aggreation and paging logic query that is to be sent to the DB
 	 */
-	protected function getCycleAggregationPipeline($addedPassthroughFields, $page, $size) {
+	protected function getCycleAggregationPipeline($addedPassthroughFields, $page, $size, $invoicing_days = null) {
 		$pipelines[] = array(
 			'$group' => array_merge($addedPassthroughFields['group'],array(
 				'_id' => array(
@@ -119,7 +119,34 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 				'card_token' => array(
 					'$first' => '$card_token'
 				),
+				'invoicing_day' => array(
+					'$first' => '$invoicing_day'
+				)
 			)),
+		);
+		if (!empty($invoicing_days)) {
+			$config = Billrun_Factory::config();
+			/*if one of the searched "invoicing_day" is the default one, then we'll search for all the accounts with "invoicing_day"
+			field that is different from all the undeclared invoicing_days. */
+			if (in_array(strval($config->getConfigChargingDay()), $invoicing_days)) {
+				$nin = array_diff(array_map('strval', range(1, 28)), $invoicing_days);
+				$pipelines[] = array(
+					'$match' => [
+						'invoicing_day' => ['$nin' => array_values($nin)]
+					]
+				);
+			} else {
+				$pipelines[] = array(
+					'$match' => [
+						'invoicing_day' => ['$in' => $invoicing_days]
+					]
+				);
+			}
+		}
+		$pipelines[] = array(
+			'$sort' => array(
+				'_id.aid' => 1
+			)
 		);
 		$pipelines[] = array(
 			'$skip' => $page * $size,
@@ -198,10 +225,19 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$passthroughFields = array_merge($this->subsPassthroughFields, $this->passthroughFields);
 		
 		foreach ($passthroughFields as $subscriberField) {
-			$srcField = is_array($subscriberField) ? $subscriberField['value'] : $subscriberField;
+			if (!is_array($subscriberField) && strpos($subscriberField, ".") !== false) {
+				$project_val = '$' . $subscriberField;
+				foreach($reversed = array_reverse(explode(".", $subscriberField)) as $sub_key) {
+					$project_val = [$sub_key => $project_val];
+				}
+				$srcField = end($reversed);
+				$project = array_merge($project, $project_val);
+			} else {
+				$srcField = is_array($subscriberField) ? $subscriberField['value'] : $subscriberField;
+				$project[$srcField] ='$' . $srcField;
+			}
 			$sub_push[$srcField] =  '$' . $srcField;
 			$group2[$srcField] = array('$first' => '$sub_plans.' . $srcField);
-			$project[$srcField] ='$' . $srcField;
 		}
 		if (!$project) {
 			$project = 1;

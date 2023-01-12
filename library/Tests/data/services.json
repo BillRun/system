@@ -866,6 +866,45 @@
 					],
 					"to": "time*2169-10-29T10:17:29Z",
 					"creation_time": "time*2010-10-29T22:00:00Z"
+				},
+				{
+					"from" : "time*2020-02-22T00:00:00Z",
+					"name" : "A",
+					"price" : [
+						{
+							"from" : 0,
+							"to" : "UNLIMITED",
+							"price" : 10
+						}
+					],
+					"description" : "a",
+					"include" : {
+						"groups" : {
+							"AAABBB" : {
+								"account_shared" : false,
+								"account_pool" : false,
+								"quantity_affected" : false,
+								"rates" : [
+									"CALL"
+								],
+								"value" : 100,
+								"usage_types" : {
+									"call" : {
+										"unit" : "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated" : true,
+					"tax" : [
+						{
+							"type" : "vat",
+							"taxation" : "global"
+						}
+					],
+					"to" : "time*2171-02-21T11:56:27Z",
+					"creation_time" : "time*2020-02-22T00:00:00Z"
 				}
 
 

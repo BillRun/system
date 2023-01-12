@@ -141,6 +141,9 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 			if (is_array($balance['tx']) && empty($balance['tx'])) { //TODO: this is a hack because tx is saved as [] instead of {}
 				$balance['tx'] = new stdClass();
 			}
+                        if (is_array($balance['tx2']) && empty($balance['tx2'])) { //TODO: this is a hack because tx2 is saved as [] instead of {}
+				$balance['tx2'] = new stdClass();
+			}
 			$balance->collection($balances_coll);
 			$balance_totals_key =  $this->balance->getBalanceTotalsKey($lineToRebalance);
 			

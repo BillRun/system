@@ -45,7 +45,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 			$newData = $this->updateNonTaxableRowTaxInformation($current);
 		} else {
 			if( $problemField = $this->isLineDataComplete($current) ) {
-				Billrun_Factory::log("Line {$current['stamp']} is missing/has illigeal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
+				Billrun_Factory::log("Line {$current['stamp']} is missing/has illegal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
 				return FALSE;
 			}
 			$subscriberSearchData = ['sid'=>$current['sid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)];
@@ -68,6 +68,9 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		} else {
 			$row['final_charge']  = $row['tax_data']['total_amount'] + $row['aprice'];
 		}
+                if($this->ifLineNeedFinalChargeRounding($current)){
+                    $this->roundingFinalCharge($row);
+                }
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
@@ -128,6 +131,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 			$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($line['type'], true)['pricing'];
 			$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
 			$aprice = Billrun_util::getIn($userFields, $apriceField);
+                        Billrun_Factory::dispatcher()->trigger('beforeGetLinePriceToTax', array($line, &$aprice, $this));
 			if (!is_null($aprice) && is_numeric($aprice)) {
 				$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
 				if (!is_null($apriceMult) && is_numeric($apriceMult)) {
@@ -201,7 +205,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @param array $line
 	 * @return array
 	 */
-	protected function getPreTaxedRowTaxData($line) {
+        public function getPreTaxedRowTaxData($line) {
 		$taxFactor = Billrun_Billrun::getVATByBillrunKey($this->active_billrun);
 		return [
 			'total_amount' => $line['aprice'] * $taxFactor,
@@ -241,4 +245,48 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		}
 		return $rate;
 	}
+        
+        protected function ifLineNeedFinalChargeRounding($line) {
+                return isset($line['rounding_rules']) &&
+                    !empty($line['rounding_rules']['rounding_type']) &&
+                    $line['rounding_rules']['rounding_type'] !== 'None';
+                
+	}
+        
+        protected function roundingFinalCharge(&$row) {
+                $current = $row->getRawData();
+                if($current['final_charge'] == 0){
+                    return;
+                }
+                $decimals = $current['rounding_rules']['rounding_decimals'] ?? null;
+                if(!isset($decimals)){
+                    Billrun_Factory::log("Line {$current['stamp']} rounding_decimals must supply if rounding type selected", Zend_Log::ALERT);
+                    return;
+                }
+                if(!($decimals >=0 && $decimals <= 10)){
+                    Billrun_Factory::log("Line {$current['stamp']} rounding_decimals didn't supported", Zend_Log::ALERT);
+                    return;
+                    
+                }
+                $newFinalCharge = Billrun_Util::roundingNumber($current['final_charge'], $current['rounding_rules']['rounding_type'], $decimals);             
+                //check if $newFinalCharge is not valid 
+                if(!is_numeric($newFinalCharge)){
+                    Billrun_Factory::log("Line {$current['stamp']} rounding didn't success", Zend_Log::ALERT);
+                    return;
+                }
+                $div = $newFinalCharge / $current['final_charge'];
+                $current['before_rounding']['final_charge'] = $current['final_charge'];
+                $current['final_charge'] = $newFinalCharge;
+                $current['before_rounding']['aprice'] = $current['aprice'];
+                $current['aprice'] = $current['aprice'] * $div;
+                Billrun_util::setIn($current, 'tax_data.total_amount_before_rounding', $current['tax_data']['total_amount']);
+                $current['tax_data']['total_amount'] = $current['tax_data']['total_amount'] * $div;
+                foreach ($current['tax_data']['taxes'] as $index => $tax){
+                    $current['tax_data']['taxes'][$index]['amount_before_rounding'] = $tax['amount'];
+                    $current['tax_data']['taxes'][$index]['amount'] = $tax['amount'] * $div;
+                }
+                $row->setRawData($current);
+	}
+        
+
 }

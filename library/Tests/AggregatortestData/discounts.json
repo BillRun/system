@@ -338,12 +338,12 @@
 					}
 				}
 			}
-		},
-		{
+		}
+		, {
 
 			"from": "time*2020-04-30T22:00:00Z",
-			"key": "BHB_MONTHLY_CYCLE_FEES_DSC_1",
-			"description": "Monthly Cycle Discount on Broadband Home Box",
+			"key": "BOX1",
+			"description": "Box",
 			"params": {
 				"min_subscribers": "",
 				"max_subscribers": "",
@@ -367,13 +367,13 @@
 											]
 										}
 									]
-								},
+		},
 								"fields": [
 									{
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_2"
+											"BOX_2"
 										]
 									}
 								]
@@ -388,7 +388,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_1"
+											"BOX_1"
 										]
 									}
 								],
@@ -418,7 +418,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_4"
+											"BOX_4"
 										]
 									}
 								],
@@ -448,7 +448,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_3"
+											"BOX_3"
 										]
 									}
 								],
@@ -475,72 +475,28 @@
 			"type": "monetary",
 			"subject": {
 				"plan": {
-					"BROADBAND_HOME_BOX_4": {
-						"value": 12.60504202
-					},
-					"BROADBAND_HOME_BOX_3": {
+
+					"BOX_1": {
 						"value": 16.73109244
-					},
-					"BROADBAND_HOME_BOX_1": {
-						"value": 16.73109244
-					},
-					"BROADBAND_HOME_BOX_2": {
-						"value": 12.60504202
 					}
 				}
 			},
 			"proration": "inherited",
-			"erp_fis_msisdn_label": "",
-			"object_id": "",
-			"fis_descr": "",
-			"management_reporting": "",
-			"gl_account": "10500211",
-			"epic_description": "",
-			"erp_fis_mapping_label": "Monthly Cycle Discount on Broadband Home Box",
 			"to": "time*2169-06-04T14:31:32Z",
 			"creation_time": "time*2020-04-30T22:00:00Z"
 		},
 		{
 
 			"from": "time*2020-11-23T22:00:00Z",
-			"key": "BHB_MONTHLY_CYCLE_FEES_DSC_2",
-			"description": "Monthly Cycle Discount on Broadband Home Box",
+			"key": "BOX_2",
+			"description": "Box",
 			"params": {
 				"min_subscribers": "",
 				"max_subscribers": "",
 				"publication_end_date": "time*2038-06-01T00:00:00Z",
 				"publication_start_date": "time*2020-05-01T00:00:00Z",
 				"conditions": [
-					{
-						"subscriber": [
-							{
-								"service": {
-									"any": [
-										{
-											"fields": [
-												{
-													"field": "name",
-													"op": "in",
-													"value": [
-														"LEGACY_CUSTOMER"
-													]
-												}
-											]
-										}
-									]
-								},
-								"fields": [
-									{
-										"field": "plan",
-										"op": "in",
-										"value": [
-											"BROADBAND_HOME_BOX_2"
-										]
-									}
-								]
-							}
-						]
-					},
+
 					{
 						"subscriber": [
 							{
@@ -549,67 +505,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_1"
-										]
-									}
-								],
-								"service": {
-									"any": [
-										{
-											"fields": [
-												{
-													"field": "name",
-													"op": "in",
-													"value": [
-														"LEGACY_CUSTOMER"
-													]
-												}
-											]
-										}
-									]
-								}
-							}
-						]
-					},
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "in",
-										"value": [
-											"BROADBAND_HOME_BOX_4"
-										]
-									}
-								],
-								"service": {
-									"any": [
-										{
-											"fields": [
-												{
-													"field": "name",
-													"op": "in",
-													"value": [
-														"LEGACY_CUSTOMER"
-													]
-												}
-											]
-										}
-									]
-								}
-							}
-						]
-					},
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "in",
-										"value": [
-											"BROADBAND_HOME_BOX_3"
+											"BOX_1"
 										]
 									}
 								],
@@ -636,28 +532,13 @@
 			"type": "monetary",
 			"subject": {
 				"plan": {
-					"BROADBAND_HOME_BOX_4": {
-						"value": 8.394957983
-					},
-					"BROADBAND_HOME_BOX_3": {
-						"value": 8.394957983
-					},
-					"BROADBAND_HOME_BOX_1": {
-						"value": 8.394957983
-					},
-					"BROADBAND_HOME_BOX_2": {
+
+					"BOX_1": {
 						"value": 8.394957983
 					}
 				}
 			},
-			"proration": "inherited",
-			"erp_fis_msisdn_label": "",
-			"object_id": "",
-			"fis_descr": "",
-			"management_reporting": "",
-			"gl_account": "10500211",
-			"epic_description": "",
-			"erp_fis_mapping_label": "Monthly Cycle Discount on Broadband Home Box",
+			"proration": "inherited",			
 			"to": "time*2020-12-01T22:00:00Z",
 			"creation_time": "time*2020-11-23T22:00:00Z"
 		}, {
@@ -785,6 +666,425 @@
 			"proration": "inherited",
 			"to": "time*2170-01-12T16:58:43Z",
 			"creation_time": "time*2018-01-13T00:00:00Z"
+		},
+		{
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "SOFT",
+			"description": "SOFT",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "PLAN_MOB"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"PLAN_MOB": {
+						"value": 0.2632
+					}
+				}
+			}
+		}
+		,
+		{
+
+			"from": "time*2020-04-30T22:00:00Z",
+			"key": "DISCOUNT_FD",
+			"description": "Discount FD",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "PLAN_FD"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2169-05-25T17:19:34Z",
+			"creation_time": "time*2020-04-30T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"PLAN_FD": {
+						"value": 0.20829999999999999
+					}
+				}
+			}
+		}
+		,
+		{
+
+			"from": "time*2020-04-30T22:00:00Z",
+			"key": "DISCOUNT_MU",
+			"description": "Discount MU",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "PLAN_MU"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2169-05-25T17:18:20Z",
+			"creation_time": "time*2020-04-30T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"PLAN_MU": {
+						"value": 0.20829999999999999
+					}
+				}
+			}
+		},
+		{
+			"from": "time*2018-07-29T00:00:00Z",
+			"key": "100",
+			"description": "100",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "sid",
+										"op": "in",
+										"value": [
+											775
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			"type": "percentage",
+			"subject": {
+				"plan": {
+					"PLAN_C": {
+						"value": 1
+					}
+				}
+			},
+			"proration": "inherited",
+			"to": "time*2170-07-28T07:03:41Z",
+			"creation_time": "time*2018-07-29T00:00:00Z"
+		},
+		{
+			"from": "time*2018-07-29T00:00:00Z",
+			"key": "100MONITERY",
+			"description": "100monitery",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "sid",
+										"op": "in",
+										"value": [
+											776
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			"type": "monetary",
+			"subject": {
+				"plan": {
+					"PLAN_C": {
+						"value": 100
+					}
+				}
+			},
+			"proration": "inherited",
+			"to": "time*2170-07-28T07:08:33Z",
+			"creation_time": "time*2018-07-29T00:00:00Z"
+		}
+
+		, {
+			"from": "time*2020-03-11T23:00:00Z",
+			"key": "3_month_free",
+			"description": "3_month_free",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": "8GB"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"3_MONTHS_FREE_SERVICE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2169-03-11T19:22:47Z",
+			"creation_time": "time*2020-03-11T23:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"8GB": {
+						"value": 1
+					}
+				}
+			},
+			"excludes": [
+				"14P"
+			]
+		},
+		{
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "SOFT2",
+			"description": "SOFT",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": "1GB"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE_2"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"1GB": {
+						"value": 0.2632
+					}
+				}
+			}
+		},
+		{
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "SOFT3",
+			"description": "SOFT3",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": "8GB"
+		}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE_3"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"8GB": {
+						"value": 0.2632
+					}
+				}
+			}
+		}, {
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "14P",
+			"description": "14P",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": "8GB"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"14PS"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"8GB": {
+						"value": 0.14
+					}
+				}
+			}
 		}
 
 

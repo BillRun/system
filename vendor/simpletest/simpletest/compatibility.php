@@ -1,16 +1,21 @@
 <?php
 /**
- * Static methods for compatibility between different PHP versions.
+ *  base include file for SimpleTest
+ *  @package    SimpleTest
+ */
+
+/**
+ *  Static methods for compatibility between different PHP versions.
+ *  @package    SimpleTest
  */
 class SimpleTestCompatibility
 {
     /**
-     * Recursive type test.
-     *
-     * @param mixed $first    Test subject.
-     * @param mixed $second   Comparison object.
-     *
-     * @return bool        True if same type.
+     *    Recursive type test.
+     *    @param mixed $first    Test subject.
+     *    @param mixed $second   Comparison object.
+     *    @return boolean        True if same type.
+     *    @access private
      */
     public static function isIdentical($first, $second)
     {
@@ -21,28 +26,25 @@ class SimpleTestCompatibility
             if (get_class($first) != get_class($second)) {
                 return false;
             }
-
-            return self::isArrayOfIdenticalTypes(
+            return SimpleTestCompatibility::isArrayOfIdenticalTypes(
                     (array) $first,
                     (array) $second);
         }
         if (is_array($first) && is_array($second)) {
-            return self::isArrayOfIdenticalTypes($first, $second);
+            return SimpleTestCompatibility::isArrayOfIdenticalTypes($first, $second);
         }
         if ($first !== $second) {
             return false;
         }
-
         return true;
     }
 
     /**
-     * Recursive type test for each element of an array.
-     *
-     * @param mixed $first    Test subject.
-     * @param mixed $second   Comparison object.
-     *
-     * @return bool        True if identical.
+     *    Recursive type test for each element of an array.
+     *    @param mixed $first    Test subject.
+     *    @param mixed $second   Comparison object.
+     *    @return boolean        True if identical.
+     *    @access private
      */
     protected static function isArrayOfIdenticalTypes($first, $second)
     {
@@ -50,38 +52,39 @@ class SimpleTestCompatibility
             return false;
         }
         foreach (array_keys($first) as $key) {
-            $is_identical = self::isIdentical(
+            $is_identical = SimpleTestCompatibility::isIdentical(
                     $first[$key],
                     $second[$key]);
             if (! $is_identical) {
                 return false;
             }
         }
-
         return true;
     }
 
     /**
-     * Test for two variables being aliases.
-     *
-     * @param mixed $first    Test subject.
-     * @param mixed $second   Comparison object.
-     *
-     * @return bool        True if same.
+     *    Test for two variables being aliases.
+     *    @param mixed $first    Test subject.
+     *    @param mixed $second   Comparison object.
+     *    @return boolean        True if same.
+     *    @access public
      */
     public static function isReference(&$first, &$second)
     {
-        if($first !== $second){
-            return false;
+        if (is_object($first)) {
+            return ($first === $second);
         }
-        $temp_first = $first;
-        // modify $first
-        $first = ($first === true) ? false : true;
-        // after modifying $first, $second will not be equal to $first,
-        // unless $second and $first points to the same variable.
+        if (is_object($first) && is_object($second)) {
+            $id = uniqid(mt_rand());
+            $first->$id = true;
+            $is_ref = isset($second->$id);
+            unset($first->$id);
+            return $is_ref;
+        }
+        $temp = $first;
+        $first = uniqid(mt_rand());
         $is_ref = ($first === $second);
-         // unmodify $first
-        $first = $temp_first;
+        $first = $temp;
         return $is_ref;
     }
 }

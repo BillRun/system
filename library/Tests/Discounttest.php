@@ -11,8 +11,8 @@
  * @package  calculator
  * @since    0.5
  */
-require_once( APPLICATION_PATH .'/library/Tests/discounttestData/discountData.php');
-require_once(APPLICATION_PATH .'/library/Tests/discounttestData/discountTestCases.php');
+require_once( APPLICATION_PATH . '/library/Tests/discounttestData/discountData.php');
+require_once(APPLICATION_PATH . '/library/Tests/discounttestData/discountTestCases.php');
 require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 define('UNIT_TESTING', 'true');
 
@@ -34,7 +34,7 @@ class Tests_Discounttest extends UnitTestCase {
 		$this->discounts = (array) $this->discountData->Discount;
 		$this->conditions = (array) $this->discountData->conditions;
 		//list of indexs to run a subset of tests
-//		$this->subsetTests($this->Tests ,[]);
+		//$this->subsetTests($this->Tests ,[66]);
 	}
 
 	public function TestPerform() {
@@ -45,7 +45,7 @@ class Tests_Discounttest extends UnitTestCase {
 			$expectedEligibility = '<b>expected </b> </br>';
 
 			foreach ($row['expected'] as $Dname => $dates) {
-				$expectedEligibility .= "<b>Eligibility for discount : <br>$Dname</b>";
+				$expectedEligibility .= "<b>Eligibility for discount : <br>$Dname</b><br>";
 				foreach ($dates['eligibility'] as $date) {
 					$expectedEligibility .= ' from ' . date("Y-m-d H:i:s", strtotime($date['from']));
 					$expectedEligibility .= ' to ' . date("Y-m-d H:i:s", strtotime($date['to'])) . '</br>';
@@ -58,8 +58,8 @@ class Tests_Discounttest extends UnitTestCase {
 
 			$this->message .= $expectedEligibility;
 
-			//convert dates of revisions  To MongoDates
-			$this->convertToMongoDates($row);
+			//convert dates of revisions  To MongodloidDates
+			$this->convertToMongodloidDates($row);
 			$discounts = $this->discountBuilder($row['test']['discounts']);
 			if (isset($row['SubscribersDiscount'])) {
 				$this->subscribersDiscount($row);
@@ -82,8 +82,8 @@ class Tests_Discounttest extends UnitTestCase {
 					Billrun_DiscountManager::setDiscounts($discounts, $row['test']['options']['stamp']);
 				}
 				$cycle = new Billrun_DataTypes_CycleTime($row['test']['options']['stamp']);
-				$from = new MongoDate($cycle->start());
-				$to = new MongoDate($cycle->end());
+				$from = new Mongodloid_Date($cycle->start());
+				$to = new Mongodloid_Date($cycle->end());
 				$row['test']['subsAccount'][0]['from'] = $from;
 				$row['test']['subsAccount'][0]['to'] = $to;
 				$dm = new Billrun_DiscountManager($row['test']['subsAccount'], $row['test']['subsRevisions'], $cycle);
@@ -115,12 +115,12 @@ class Tests_Discounttest extends UnitTestCase {
 		foreach ($cdrs as &$cdr) {
 			if (empty($cdr['tax_data'])) {
 				$cdr['tax_data'] = [
-					"total_amount" => $cdr['full_price'],
+					"total_amount" => $cdr['aprice'],
 					"total_tax" => 0.17,
 					"taxes" => [
 						[
 							"tax" => 0.17,
-							"amount" => $cdr['full_price'],
+							"amount" => $cdr['aprice'],
 							"description" => "Vat",
 							"pass_to_customer" => 1
 						]
@@ -171,19 +171,43 @@ class Tests_Discounttest extends UnitTestCase {
 						$this->message .= "$discountName worng 'from' eligibility expected : " . date("Y-m-d H:i:s", $dates['eligibility'][$i]['from']->sec) .
 							"result : " . date("Y-m-d H:i:s", $returnEligibal[$i]['from']) . $this->fail;
 					} else {
-						$this->message .= "$discountName  '<b>from</b>' " . date("Y-m-d H:i:s", $returnEligibal[$i]['from']) . $this->pass;
+						$this->message .= "$discountName </br> '<b>from</b>' " . date("Y-m-d H:i:s", $returnEligibal[$i]['from']) . $this->pass;
 					}
 					if ($dates['eligibility'][$i]['to']->sec != $returnEligibal[$i]['to']) {
 						$pass = false;
 						$this->message .= "$discountName worng 'to' eligibility expected : " . date("Y-m-d H:i:s", $dates['eligibility'][$i]['to']->sec) .
 							"result : " . date("Y-m-d H:i:s", $returnEligibal[$i]['to']) . $this->fail;
 					} else {
-						$this->message .= "$discountName  '<b>to</b>' " . date("Y-m-d H:i:s", $returnEligibal[$i]['to']) . $this->pass;
+						$this->message .= "$discountName </br> '<b>to</b>' " . date("Y-m-d H:i:s", $returnEligibal[$i]['to']) . $this->pass;
 					}
 				}
 			} else {
 				$pass = false;
 				$this->message .= "$discountName missing eligibility" . $this->fail;
+			}
+			if (isset($dates['subs'])) {
+				$subs = $eligibility[$discountName]['subs'];
+				$subsMissing = array_diff(array_keys($dates['subs']), array_keys($subs));
+				if (!empty($subsMissing)) {
+					$pass = false;
+					$this->message .= "the following eligible subscriber revision are missed: " . implode(', ', $subsMissing) . $this->fail . '<br/>';
+				}
+				$subsNotExpected = array_diff(array_keys($subs), array_keys($dates['subs']));
+				if (!empty($subsNotExpected)) {
+					$pass = false;
+					$this->message .= "the following eligible subscriber revision are not expected: " . implode(', ', $subsNotExpected) . $this->fail . '<br/>';
+				}
+				foreach ($dates['subs'] as $sid => $expectedSub) {
+					$from = $expectedSub[0]['from'];
+					$to = $expectedSub[0]['to'];
+					if (isset($subs[$sid]) && $subs[$sid][0]['from'] == $from->sec && $subs[$sid][0]['to'] == $to->sec) {
+						$this->message .= "$discountName subscriber revision <b>$sid</b> </br> '<b>from</b>' " . date("Y-m-d H:i:s", $from->sec)
+							. " '<b>to</b>' " . date("Y-m-d H:i:s", $to->sec) . $this->pass;
+					} else {
+						$this->message .= "$discountName subscriber revision <b>$sid</b> </br> '<b>from</b>' " . date("Y-m-d H:i:s", $from->sec)
+							. " '<b>to</b>' " . date("Y-m-d H:i:s", $to->sec) . $this->fail;
+					}
+				}
 			}
 		}
 		return $pass;
@@ -196,8 +220,9 @@ class Tests_Discounttest extends UnitTestCase {
 			$fields = [
 				'sid',
 				'aprice',
-				'key',
 				'final_charge',
+				'full_price',
+				'key',
 				'type'
 			];
 
@@ -206,6 +231,11 @@ class Tests_Discounttest extends UnitTestCase {
 					if (isset($a['aprice'])) {
 						if ($a['aprice'] != $b['aprice']) {
 							return $a['aprice'] < $b['aprice'];
+						}
+					}
+					if (isset($a['final_charge'])) {
+						if ($a['final_charge'] != $b['final_charge']) {
+							return $a['final_charge'] < $b['final_charge'];
 						}
 					}
 					if ($a['full_price'] != $b['full_price']) {
@@ -229,22 +259,22 @@ class Tests_Discounttest extends UnitTestCase {
 			$this->message .= "the number of cdrs isn't equel to expected number of cdrs" . $this->fail;
 		}
 		for ($i = 0; $i <= count($expected) - 1; $i++) {
-			$this->message .= 'cdr for discount <b>' . $expected[$i]['key'] .'</b><br>';
+			$this->message .= 'cdr for discount <b>' . $expected[$i]['key'] . '</b><br>';
 			if (isset($expected[$i]['sid'])) {
 				//$this->message .= " sid {$expected[$i]['sid']}";
-				if($expected[$i]['sid']== $returndCdrs[$i]['sid']){
-					$this->message.="the eligibale subscriber is: {$expected[$i]['sid']}".$this->pass;
-				} else {
-					$pass= false;
-					$this->message.="the eligibale subscriber is: {$expected[$i]['sid']} NOT  {$returndCdrs[$i]['sid']}".$this->fail;
-				}
-			}$this->message .= '</b>';
-			if (isset($expected[$i]['full_price'])) {
-				if (Billrun_Util::isEqual($expected[$i]['full_price'], $returndCdrs[$i]['aprice'], $epsilon)) {
-					$this->message .= 'the aprice is ' . $expected[$i]['full_price'] . $this->pass;
+				if ($expected[$i]['sid'] == $returndCdrs[$i]['sid']) {
+					$this->message .= "the eligibale subscriber is: {$expected[$i]['sid']}" . $this->pass;
 				} else {
 					$pass = false;
-					$this->message .= 'the aprice worng!!! expected is ' . $expected[$i]['full_price'] . ' result is' . $returndCdrs[$i]['aprice'] . $this->fail;
+					$this->message .= "the eligibale subscriber is: {$expected[$i]['sid']} NOT  {$returndCdrs[$i]['sid']}" . $this->fail;
+				}
+			}$this->message .= '</b>';
+			if (isset($expected[$i]['aprice'])) {
+				if (Billrun_Util::isEqual($expected[$i]['aprice'], $returndCdrs[$i]['aprice'], $epsilon)) {
+					$this->message .= 'the aprice is ' . $expected[$i]['aprice'] . $this->pass;
+				} else {
+					$pass = false;
+					$this->message .= 'the aprice worng!!! expected is ' . $expected[$i]['aprice'] . ' result is' . $returndCdrs[$i]['aprice'] . $this->fail;
 				}
 			}
 			if (isset($expected[$i]['final_charge'])) {
@@ -280,16 +310,16 @@ class Tests_Discounttest extends UnitTestCase {
 		return $pass;
 	}
 
-	public function convertToMongoDates(&$row) {
+	public function convertToMongodloidDates(&$row) {
 		foreach ($row as $key => &$valus) {
 
-			if (is_array($valus) ) {
-				$this->convertToMongoDates($valus);
+			if (is_array($valus)) {
+				$this->convertToMongodloidDates($valus);
 			}
-			$valusList = ['from' ,'to','deactivation_date','plan_activation','service_activation','start' ,'end'];
-			foreach ($valusList as $field){
-				if(isset($valus[$field])){
-					$valus[$field] = new MongoDate(strtotime($valus[$field]));
+			$valusList = ['from', 'to', 'deactivation_date', 'plan_activation', 'service_activation', 'start', 'end'];
+			foreach ($valusList as $field) {
+				if (isset($valus[$field])) {
+					$valus[$field] = new Mongodloid_Date(strtotime($valus[$field]));
 				}
 			}
 		}
@@ -354,7 +384,7 @@ class Tests_Discounttest extends UnitTestCase {
 
 	public function getParam($type, $values = null, $field = null, $op = '$eq') {
 		if ($field == 'plan_activation') {
-			$values = new MongoDate(strtotime($values));
+			$values = new Mongodloid_Date(strtotime($values));
 		}
 		switch ($type) {
 			case 'subscriber':

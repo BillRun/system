@@ -20,7 +20,7 @@ class Billrun_Cards_Handler {
 	protected function getExpiredQuery() {
 		$query = array(
 			'status' => array('$in' => array("Active", "Idle")), // TODO: What should be in this array? It shouldn't be hard coded.
-			'to' => array('$lt' => new MongoDate()),
+			'to' => array('$lt' => new Mongodloid_Date()),
 		);
 		
 		return $query;
@@ -34,7 +34,7 @@ class Billrun_Cards_Handler {
 		$query = array();
 		$query['$set'] = array(
 			'status' => 'Expired',
-			'expired_on' => new MongoDate(),
+			'expired_on' => new Mongodloid_Date(),
 		);
 		return $query;
 	}

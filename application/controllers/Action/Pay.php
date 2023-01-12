@@ -28,6 +28,7 @@ class PayAction extends ApiAction {
 		$jsonPayments = $request->get('payments');
 		$account = Billrun_Factory::account();
 		$uf = $request->get('uf');
+		$params = [];
 		if (!empty($uf)) {
 			$params['forced_uf'] = json_decode($uf, true);
 		}
@@ -64,8 +65,10 @@ class PayAction extends ApiAction {
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 				$this->processPaymentUf($inputPayment);
-				$deposit = new $className($inputPayment, $params);
+				$deposit = new $className(array_merge($inputPayment, $params));
 				$deposit->setUserFields($deposit->getRawData(), true);
+				$deposit->setDepositFreezeDate();
+				$deposit->setProcessTime();
 				$foreignData = $this->getForeignFields(array('account' => $current_account));
 				if (!is_null($current_account)) {
 					$deposit->setForeignFields($foreignData);
@@ -91,7 +94,7 @@ class PayAction extends ApiAction {
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
 				$method = $payment->getBillMethod();
-				$payment->setBalanceEffectiveDate();
+				$payment->setProcessTime();
 				if (in_array($method, array('wire_transfer', 'cheque')) && $payment->getDir() == 'tc') {
 					if (!isset($emailsToSend[$method])) {
 						$emailsToSend[$method] = array(
@@ -158,7 +161,8 @@ class PayAction extends ApiAction {
 			if (empty($deposit)) {
 				continue;
 			}
-			$depositUnfreezed = $deposit->unfreezeDeposit();
+			$deposit->setProcessTime();
+			$depositUnfreezed = $deposit->unfreezeDeposit(!empty($request->get('urt')) ? strtotime($request->get('urt')) : time());
 			if ($depositUnfreezed) {
 				$unfreezedDeposits[] = $txid;
 			}
@@ -228,7 +232,7 @@ class PayAction extends ApiAction {
 		}
 		if (!empty($request->get('first_charge_date'))) {
 			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
-			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
+			$params['charge']['not_before'] = new Mongodloid_Date($chargeNotBefore);
 		}
 Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
 		if (!$executeSplitBill) {
@@ -271,21 +275,25 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 			$cancellationPayments = array();
 			foreach ($paymentsToCancel['payments'] as $payment) {
 				$id = $payment->getId();
-				$currentUf = isset($ufPerTxid[$id]) ? $ufPerTxid[$id] : array();
-				$payment->addUserFields($currentUf);
+				$cancellationUf = isset($ufPerTxid[$id]) ? $ufPerTxid[$id] : array();
 				$cancellationPayment = $payment->getCancellationPayment();
+				$cancellationPayment->addUserFields($cancellationUf);
 				$cancellationPayments[] = $cancellationPayment;
 			}
 			if ($cancellationPayments) {
 				Billrun_Bill_Payment::savePayments($cancellationPayments);
 			}
 			$succeededCancels = array();
+                        $paymentsAids = array();
 			foreach ($paymentsToCancel['payments'] as $payment) {
 				array_push($succeededCancels, $payment->getId());
 				$payment->markCancelled()->save();
 				$payment->detachPaidBills();
-				$payment->detachPayingBills();
-				Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+				$payment->detachPayingBills();	
+                                $paymentsAids = array_unique(array_merge([$payment->getAccountNo()], $paymentsAids));
+			}
+                        foreach ($paymentsAids as $aid) {				
+				Billrun_Bill::payUnpaidBillsByOverPayingBills($aid);
 			}
 		} catch (Exception $e) {
 			return $this->setError($e->getMessage(), $request->getPost());
@@ -358,11 +366,11 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 			throw new Exception('In action merge_installments must transfer split_bill_id and aid parameters');
 		}
 		if (!empty($request->get('due_date'))) {
-			$params['due_date'] = new MongoDate(strtotime($request->get('due_date')));
+			$params['due_date'] = new Mongodloid_Date(strtotime($request->get('due_date')));
 		}
 		if (!empty($request->get('first_charge_date'))) {
 			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
-			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
+			$params['charge']['not_before'] = new Mongodloid_Date($chargeNotBefore);
 		}
 		$params['autoload'] = true;
 		$success = Billrun_Bill_Payment::mergeSpllitedInstallments($params);

@@ -24,7 +24,9 @@ class ApiController extends Yaf_Controller_Abstract {
 	protected $output;
 	
 	protected $start_time = 0;
-		
+	
+	protected $opencors = false;
+	
 	/**
 	 * initialize method for yaf controller (instead of constructor)
 	 */
@@ -39,14 +41,9 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->setActions();
 		$this->setOutputMethod();
 		
-		//TODO add security configuration
-		if( isset($_SERVER['HTTP_ORIGIN']) ) {
-			header('Access-Control-Allow-Origin: '.$_SERVER['HTTP_ORIGIN']); // cross domain
-			header('Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS');
-			header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
-			header('Access-Control-Allow-Credentials: true');
+		if ($this->opencors) {
+			Billrun_Utils_Security::openCrossDomain();
 		}
-		
 	}
 	
 	/**
@@ -104,7 +101,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		} else {
 			$var = $args;
 		}
-		$readable = Billrun_Utils_Mongo::convertMongoDatesToReadable($var);
+		$readable = Billrun_Utils_Mongo::convertMongodloidDatesToReadable($var);
 		$ret = $this->setOutputVar($readable);
 		$this->apiLogAction();
 		return $ret;
@@ -199,7 +196,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		$saveData = array(
 			'source' => $this->sourceToLog(),
 			'type' => $request->action,
-			'process_time' => new MongoDate(),
+			'process_time' => new Mongodloid_Date(),
 			'request' => $this->getRequest()->getRequest(),
 			'response' => $this->outputToLog(),
 			'request_php_input' => $php_input,

@@ -35,7 +35,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * 
 	 * @param Billrun_Balance
 	 */
-	protected $balance;
+	public $balance;
 
 	/**
 	 * prepaid minimum balance volume
@@ -402,9 +402,14 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @return mixed false if not found transaction, else the transaction info
 	 */
 	protected function getTx($stamp, $balance) {
-		$tx = $balance->get('tx');
+		$tx = $balance->get('tx');               
 		if (is_array($tx) && empty($tx)) {
 			$balance->set('tx', new stdClass());
+			$balance->save();
+		}
+                $tx2 = $balance->get('tx2');
+                if (is_array($tx2) && empty($tx2)) {
+			$balance->set('tx2', new stdClass());
 			$balance->save();
 		}
 		if (!empty($tx) && array_key_exists($stamp, $tx)) { // we're after a crash
@@ -1068,6 +1073,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($this->row['type'], true)['pricing'];
 		$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
 		$aprice = Billrun_util::getIn($userFields, $apriceField);
+                		Billrun_Factory::dispatcher()->trigger('beforeGetLineAprice', array($this->row, &$aprice));
 		if (!is_null($aprice) && is_numeric($aprice)) {
 			$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
 			if (!is_null($apriceMult) && is_numeric($apriceMult)) {

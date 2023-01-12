@@ -64,7 +64,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 	
 	/**
 	 * expiration date
-	 * @var MongoDate
+	 * @var Mongodloid_Date
 	 */
 	protected $to = null;
 
@@ -108,15 +108,15 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 
 	protected function setTo($expirationDate = null) {
 		if (isset($this->data['unlimited']) && $this->data['unlimited']) {
-			$this->to = new MongoDate(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
-		} else if ($expirationDate instanceof MongoDate) {
+			$this->to = new Mongodloid_Date(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
+		} else if ($expirationDate instanceof Mongodloid_Date) {
 			$this->to = $expirationDate;
 		} else if (is_numeric($expirationDate)) {
-			$this->to = new MongoDate($expirationDate);
+			$this->to = new Mongodloid_Date($expirationDate);
 		} else if (is_string($expirationDate)) {
-			$this->to = new MongoDate(strtotime($expirationDate));
+			$this->to = new Mongodloid_Date(strtotime($expirationDate));
 		} else { // fallback to 30 days charge (@TODO move to config)
-			$this->to = new MongoDate(strtotime('tomorrow +1 month') - 1);
+			$this->to = new Mongodloid_Date(strtotime('tomorrow +1 month') - 1);
 		}
 	}
 	
@@ -144,6 +144,8 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		$this->query['aid'] = $this->subscriber['aid'];
 		if (!$this->sharedBalance) {
 			$this->query['sid'] = $this->subscriber['sid'];
+		} else {
+			$this->query['sid'] = 0;
 		}
 		$this->preload();
 	}
@@ -154,9 +156,9 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		} else if (isset($params['pp_includes_name'])) {
 			return array('name' => $params['pp_includes_name']);
 		} else if (isset($params['id'])) {
-			return array('_id' => new MongoId($params['id']));
+			return array('_id' => new Mongodloid_Id($params['id']));
 		} else if (isset($params['_id'])) {
-			return array('_id' => new MongoId($params['_id']));
+			return array('_id' => new Mongodloid_Id($params['_id']));
 		} else {
 			throw new Billrun_Exceptions_Api(0, array(), 'Prepaid include not defined in input');
 		}
@@ -202,7 +204,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 	public function update() {
 		$update = array(
 			'$setOnInsert' => array(
-				'from' => new MongoDate(),
+				'from' => new Mongodloid_Date(),
 				'aid' => $this->subscriber['aid'],
 //				'charging_type' => 'prepaid',
 				'connection_type' => 'prepaid',
@@ -349,7 +351,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 			'type' => 'balance',
 			'usaget' => 'balance',
 			'charging_type' => $this->updateType,
-			'urt' => new MongoDate(),
+			'urt' => new Mongodloid_Date(),
 			'source_ref' => Billrun_Factory::db()->prepaidincludesCollection()->createRefByEntity($this->data),
 			'aid' => $this->subscriber['aid'],
 			'sid' => isset($this->subscriber['sid']) ? $this->subscriber['sid'] : 0,

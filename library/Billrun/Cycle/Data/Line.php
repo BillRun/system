@@ -15,14 +15,15 @@ abstract class Billrun_Cycle_Data_Line {
 	protected $vatable = null;
 	protected $charges = array();
 	protected $subscriberFields = array();
+	protected $constructionOptions = [];
 
 	public function __construct($options) {
 		$this->constructOptions($options);
-		;
 	}
 
 	public function getBillableLines() {
 		$results = array();
+		$this->charges = $this->getCharges($this->constructionOptions);
 		foreach ($this->charges as $key => $charges) {
 			$chargesArr = is_array($charges) && isset($charges[0]) || count($charges) == 0 ? $charges : array($charges);
 			foreach ($chargesArr as $charge) {
@@ -58,7 +59,7 @@ abstract class Billrun_Cycle_Data_Line {
 			$this->subscriberFields = $options['subscriber_fields'];
 		}
 
-		$this->charges = $this->getCharges($options);
+		$this->constructionOptions = $options;
 	}
 
 }

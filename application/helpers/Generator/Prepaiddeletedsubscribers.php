@@ -23,7 +23,7 @@ class Generator_Prepaiddeletedsubscribers extends Generator_Prepaidsubscribers {
 
 	public function __construct($options) {
 		parent::__construct($options);
-		$this->startMongoTime = new MongoDate($this->startTime);
+		$this->startMongoTime = new Mongodloid_Date($this->startTime);
 		$this->releventTransactionTimeStamp =  strtotime(Billrun_Factory::config()->getConfigValue('prepaiddeletedsubscribers.transaction_horizion','-48 hours'));
 		$this->loadPlans();
 	}

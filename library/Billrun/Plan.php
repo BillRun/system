@@ -53,7 +53,7 @@ class Billrun_Plan extends Billrun_Service {
 	protected function constructWithID($id) {
 		if ($id instanceof Mongodloid_Id) {
 			$filter_id = strval($id->getMongoId());
-		} else if ($id instanceof MongoId) {
+		} else if ($id instanceof Mongodloid_Id) {
 			$filter_id = strval($id);
 		} else {
 			// probably a string
@@ -75,7 +75,7 @@ class Billrun_Plan extends Billrun_Service {
 	 * @todo use load method
 	 */
 	protected function constructWithActivePlan($params) {
-		$date = new MongoDate($params['time']);
+		$date = new Mongodloid_Date($params['time']);
 		$plan = static::getByNameAndTime($params['name'], $date);
 		if ($plan) {
 			$this->data = $plan;
@@ -229,8 +229,8 @@ class Billrun_Plan extends Billrun_Service {
 			$firstActivation = $this->getActivation();
 		}
 
-		$startOffset = static::getMonthsDiff($firstActivation, date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($from))));
-		$endOffset = static::getMonthsDiff($firstActivation, $to);
+		$startOffset = Billrun_Utils_Time::getMonthsDiff($firstActivation, date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($from))));
+		$endOffset = Billrun_Utils_Time::getMonthsDiff($firstActivation, $to);
 		$charges = array();
 		if ($this->isUpfrontPayment()) {
 			return $this->getPriceForUpfrontPayment($startOffset);
@@ -249,7 +249,7 @@ class Billrun_Plan extends Billrun_Service {
 	}
 
 	public function getNextTierDate($firstActivation,  $currentDate) {
-		$startOffset = static::getMonthsDiff( date(Billrun_Base::base_dateformat,$firstActivation ), date(Billrun_Base::base_dateformat, strtotime('-1 day', $currentDate)));
+		$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat,$firstActivation ), date(Billrun_Base::base_dateformat, strtotime('-1 day', $currentDate)));
 		foreach ($this->data['price'] as $tariff) {
 			if($tariff['from'] > $startOffset) {
 				return static::monthDiffToDate($tariff['from'], $firstActivation);
@@ -274,17 +274,17 @@ class Billrun_Plan extends Billrun_Service {
 		}
 
 		if ($startOffset > $endOffset) {
-			Billrun_Factory::log("getPriceByTariff received invalid offset values.", Zend_Log::CRIT);
+			Billrun_Factory::log("getPriceByTariff received invalid offset values.", Zend_Log::WARN);
 			return false;
 		}
 
 		if ($startOffset > $tariff['to'] && !static::isValueUnlimited($tariff['to'])) {
-			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.", Zend_Log::CRIT);
+			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.", Zend_Log::WARN);
 			return false;
 		}
 
 		if ($endOffset < $tariff['from']) {
-			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.", Zend_Log::CRIT);
+			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.", Zend_Log::WARN);
 			return false;
 		}
 		return true;
@@ -355,14 +355,34 @@ class Billrun_Plan extends Billrun_Service {
 		return $this->data['recurrence']['unit'];
 	}
 
+	/**
+	 * @deprecated
+	 * (replaced by non-monthly plans)
+	 * Get the plan periodicity value
+	 */
 	public function getPeriodicity() {
 		return $this->data['recurrence']['periodicity'];
 	}
 
 	/**
+	 * get the plan  recurence (frequency/start month) configuration
+	 * @returns the plan recurence configuration (frequency/start month)
+	 */
+	public function getRecurrenceConfig() {
+		return $this->data['recurrence'];
+	}
+
+	/**
+	 * Is the current plan is a non monthly/quertely plan
+	 * @returns  true if the plan is configred to be a non-monthly plan false otherwise
+	 */
+	public function isNonMonthly() {
+		return !empty($this->data['recurrence']['frequency']) && $this->data['recurrence']['frequency'] != 1;
+	}
+	/**
 	 * create  a DB reference to the current plan
 	 * @param type $collection (optional) the collection to use to create the reference.
-	 * @return MongoDBRef the refernce to current plan.
+	 * @return Mongodloid_Ref the refernce to current plan.
 	 * @todo Should the collection here really be false by default? I think it's safer
 	 * if the user of this function will have to specify a collection.
 	 */
@@ -413,45 +433,14 @@ class Billrun_Plan extends Billrun_Service {
 	}
 
 	/**
-	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
-	 * @param type $from
-	 * @param type $to
-	 * @return type
-	 */
-	public static function getMonthsDiff($from, $to) {
-		$minDate = new DateTime($from);
-		$maxDate = new DateTime($to);
-//		if ($minDate->format('d') - 1 == $maxDate->format('d')) {
-//			return $maxDate->diff($minDate)->m + round($maxDate->diff($minDate)->d / 30);
-//		}
-// BRCD-2742 : Commented out as this cause werid edge cases as exampled in :  https://billrun.atlassian.net/browse/BRCD-2742 ,  https://billrun.atlassian.net/browse/BRCD-2741
-// 		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
-// 			$diff = $maxDate->diff((new DateTime($from))->modify('-1 day'));
-// 			return $diff->m + ($diff->y * 12);
-// 		}
-		if ($minDate->format('Y') == $maxDate->format('Y') && $minDate->format('m') == $maxDate->format('m')) {
-			return ($maxDate->format('d') - $minDate->format('d') + 1) / $minDate->format('t');
-		}
-		$yearDiff = $maxDate->format('Y') - $minDate->format('Y');
-		switch ($yearDiff) {
-			case 0:
-				$months = $maxDate->format('m') - $minDate->format('m') - 1;
-				break;
-			default :
-				$months = $maxDate->format('m') + 11 - $minDate->format('m') + ($yearDiff - 1) * 12;
-				break;
-		}
-		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + $maxDate->format('d') / $maxDate->format('t') + $months;
-	}
-
-	/**
 	 * calcualte the date based on monthly difference from activation.
 	 * @return the unix time of the  monthly fraction from activation.
 	 */
-	public static function monthDiffToDate($cycleFraction , $activationTime , $isStart = TRUE, $deactivationTime = FALSE,$deactivated = FALSE) {
+	public static function monthDiffToDate($cycleFraction , $activationTime , $isStart = TRUE, $deactivationTime = FALSE,$deactivated = FALSE,$cycleDuration = 1) {
 		if(empty($cycleFraction) ) {
 			return $isStart ? $activationTime : $deactivationTime;
 		}
+		$cycleFraction = $cycleFraction * $cycleDuration;
 		$activation  =  new DateTime(date('Y-m-d 00:00:00', $activationTime));
 		$addedMonths = 0;
 

@@ -99,9 +99,9 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			}
 
 			$oneCard['secret'] = hash('sha512', $oneCard['secret']);
-			$oneCard['from'] = new MongoDate();
-			$oneCard['to'] = new MongoDate(strtotime($oneCard['to']));
-			$oneCard['creation_time'] = new MongoDate(strtotime($oneCard['creation_time']));
+			$oneCard['from'] = new Mongodloid_Date();
+			$oneCard['to'] = new Mongodloid_Date(strtotime($oneCard['to']));
+			$oneCard['creation_time'] = new Mongodloid_Date(strtotime($oneCard['creation_time']));
 			$oneCard['inner_hash'] = $this->inner_hash;
 
 			$this->secrets[] = $oneCard['secret'];

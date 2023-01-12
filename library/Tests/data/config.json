@@ -59,7 +59,7 @@
 							"invoice_uom": "seconds",
 							"input_uom": "seconds"
 						},
-							{
+						{
 							"usage_type": "gr",
 							"label": "gr",
 							"property_type": "time",
@@ -1099,6 +1099,237 @@
 							"enabled": true
 						},
 						{
+							"file_type": "2longest_prefix",
+							"parser": {
+								"type": "separator",
+								"separator": ",",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "rate"
+									},
+									{
+										"name": "prefix"
+									}
+								],
+								"csv_has_header": true,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"rate",
+									"prefix"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Usage",
+								"date_field": "date",
+								"default_usaget": "call",
+								"default_unit": "seconds",
+								"default_volume_src": [
+									"volume"
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"call": [
+										[
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.prefix",
+												"line_key": "number"
+											},
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.vlr_number",
+												"line_key": "vlr"
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"call": []
+							},
+							"receiver": {
+								"type": "ftp",
+								"connections": [
+									{
+									
+									}
+								],
+								"limit": 3
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
+						},
+						{
+							"file_type": "2longest_prefix_realtime",
+							"type": "realtime",
+							"parser": {
+								"type": "json",
+								"separator": "",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "rate"
+									},
+									{
+										"name": "d.m"
+									}
+								],
+								"csv_has_header": false,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"rate",
+									"d.m"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Realtime",
+								"date_field": "date",
+								"usaget_mapping": [
+									{
+										"src_field": "usage",
+										"pattern": "call",
+										"usaget": "call",
+										"unit": "seconds",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									}
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"call": [
+										[
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.prefix",
+												"line_key": "number"
+											},
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.vlr_number",
+												"line_key": "vlr"
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"call": []
+							},
+							"realtime": {
+								"postpay_charge": true
+							},
+							"response": {
+								"encode": "json",
+								"fields": [
+									{
+										"response_field_name": "requestNum",
+										"row_field_name": "request_num"
+									},
+									{
+										"response_field_name": "requestType",
+										"row_field_name": "request_type"
+									},
+									{
+										"response_field_name": "sessionId",
+										"row_field_name": "session_id"
+									},
+									{
+										"response_field_name": "returnCode",
+										"row_field_name": "granted_return_code"
+									},
+									{
+										"response_field_name": "sid",
+										"row_field_name": "sid"
+									},
+									{
+										"response_field_name": "grantedVolume",
+										"row_field_name": "usagev"
+									}
+								]
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
+						},
+						{
 							"file_type": "longest_prefix",
 							"parser": {
 								"type": "separator",
@@ -1886,6 +2117,10 @@
 														"on_true": {
 															"key": "rate",
 															"regex": "/123/"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -1956,6 +2191,10 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -1983,6 +2222,10 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2010,6 +2253,10 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2071,6 +2318,11 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},
+															"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2399,11 +2651,6 @@
 															"key": "rate",
 															"regex": "",
 															"value": ""
-														},
-														"on_false": {
-															"key": "condition_result",
-															"regex": "",
-															"value": ""
 														}
 													}
 												}
@@ -2430,12 +2677,8 @@
 															"key": "rate",
 															"regex": "",
 															"value": ""
-														},
-														"on_false": {
-															"key": "condition_result",
-															"regex": "",
-															"value": ""
 														}
+														
 													}
 												}
 											}
@@ -2753,18 +2996,13 @@
 					],
 					"taxation": {
 						"tax_type": "usage",
-						"CSI": {
-							"taxation_mapping": [],
-							"provider": "",
-							"auth_code": "",
-							"apply_optional_charges": true
+						"default": {
+							"key": "DEFAULT_VAT"
 						},
-						"vat": {
-							"v": 0.17,
-							"t": "Float",
-							"range": {
-								"max": 1,
-								"min": 0
+						"mapping": {
+							"vat": {
+								"priorities": [],
+								"default_fallback": true
 							}
 						}
 					},
@@ -3017,7 +3255,11 @@
 						"closed_cycle_changes": false
 					},
 					"plays": [
-						{ "name": "Default", "enabled": true, "default": true }
+						{
+							"name": "Default",
+							"enabled": true,
+							"default": true
+						}
 					],
 					"lines": {
 						"fields": [
