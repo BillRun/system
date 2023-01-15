@@ -397,14 +397,14 @@ class LinesModel extends TableModel {
 		foreach ($cursor as $row) {
 			$ret[] = array(
 				'date' => date(Billrun_Base::base_datetimeformat, $row['urt']->sec),
-				'called_number' => $row['called_number'],
-				'calling_number' => $row['calling_number'],
+				'called_number' => $row['uf.called_number'],
+				'calling_number' => $row['uf.calling_number'],
 				'usagev' => $row['usagev'],
 				'usaget' => $row['usaget'],
-				'calling_subs_first_ci' => $row['calling_subs_first_ci'],
-				'called_subs_first_ci' => $row['called_subs_first_ci'],
-				'calling_subs_first_lac' => $row['calling_subs_first_lac'],
-				'called_subs_first_lac' => $row['called_subs_first_lac'],
+				'calling_subs_first_ci' => $row['uf.calling_subs_first_ci'],
+				'called_subs_first_ci' => $row['uf.called_subs_first_ci'],
+				'calling_subs_first_lac' => $row['uf.calling_subs_first_lac'],
+				'called_subs_first_lac' => $row['uf.called_subs_first_lac'],
 			);
 		}
 
