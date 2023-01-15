@@ -88,7 +88,8 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 
 
 		if($this->isCDRVoLTE($row)) {
-			$matchedRate = $this->getIntlRoamingRateByParams($called_number, $usage_type, $line_time, $row['in_mgw_name']);
+			$plmn = preg_match('/^incoming_/',$usage_type) ? $row['out_mgw_name'] : $row['in_mgw_name'] ;
+			$matchedRate = $this->getIntlRoamingRateByParams($called_number, $usage_type, $line_time, $plmn);
 		} else if ($processNoneVoLTE && $record_type == "01" || //MOC call
 				(in_array($record_type, array("11","30")) && in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
 				$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
@@ -195,8 +196,9 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		}
 		if($this->isCDRVoLTE($row)) {
 			$retArr['sending_source'] = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.default_volte_sending_source','ISRCL');
-			$retArr['serving_network'] = $row['in_mgw_name'];
-			$retArr['roaming'] = !empty($row['in_mgw_name']) && $row['in_mgw_name'] !== Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.volte_local_plmn','ISRCL');
+			$retArr['serving_network'] = preg_match('/^incoming_/',$this->getLineUsageType($row)) ? $row['out_mgw_name'] : $row['in_mgw_name'] ;
+			$retArr['roaming'] = 	!empty($retArr['serving_network']) &&
+									$retArr['serving_network'] !== Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.volte_local_plmn','ISRCL');
 		}
 		return $retArr;
 	}

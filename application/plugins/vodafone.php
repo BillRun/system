@@ -32,7 +32,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				$timestamp = $row['urt']->sec;
 				$this->line_type = $row['type'];
 				$this->line_time = date("YmdHis",  $timestamp);
-				if (isset($row['roaming'])) {
+				if (isset($row['roaming']) && preg_match('/sms/',$row['usaget'])) {
 					$this->roamingSms = true;
 				}
 			} else {
