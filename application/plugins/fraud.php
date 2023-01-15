@@ -547,7 +547,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Save lines reference to the fraud DB queue to be priced by fruad.
 	 * @param type $lines
 	 */
-	public function insertToFraudQueue($lines, $keepRate = FALSE) {
+	public function insertToFraudQueue($lines, $keepRate = FALSE,$extraFields = []) {
 		try {
 			Billrun_Factory::log()->log('Fraud plugin - Inserting ' . count($lines) . ' Lines to fraud lines collection', Zend_Log::INFO);
 			$queueLines = array();
@@ -565,6 +565,11 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 				if($keepRate && $queueLine['calc_name'] === 'customer' && !empty($line['arate'])) {
 					$queueLine['calc_name'] = 'rate';
+				}
+				if(!empty($extraFields)) {
+					foreach ($extraFields as $fieldName ) if( isset($line[$fieldName]) && !isset($queueLine[$fieldName])) {
+						$queueLine[$fieldName] = $line[$fieldName];
+					}
 				}
 				$queueLine['insert_process_time'] = new MongoDate();
 				unset($queueLine['roaming_balances']);
@@ -619,7 +624,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		if (!empty($roamingLines)) {
 			$this->insertToFraudLines($roamingLines);
-			$this->insertToFraudQueue($roamingLines, TRUE);
+			$this->insertToFraudQueue($roamingLines, TRUE,[	'in_circuit_group_name', 'in_circuit_group',
+															'out_circuit_group_name','out_circuit_group',
+															'in_mgw_name','out_mgw_name','roaming']);
 		}
 	}
 
