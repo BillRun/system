@@ -456,7 +456,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
 										'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
 										'start'=> max($tmpService['from']->sec + ($tmpService['from']->usec/ 1000000), $activationDate),
-										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000), $endTime , $deactivationDate),
+										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000),  $deactivationDate),
 										'compareFields' => $srvStampFields)
 									  );
 
@@ -538,7 +538,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		foreach($services as $service) {
 				//Adjust serives that mistakenly started before the subscriber existed to start at the  same time  of the subscriber creation
-				$service['end'] =  min($subend, $service['end']);
+				$service['end'] =  empty($service['end']) ? $subend : $service['end'];
 				$service['start'] =  max($subscriber['activation_date']->sec, $service['start']);
 				$servicesAggregatorData[$service['end']][] = $service;
 		}
