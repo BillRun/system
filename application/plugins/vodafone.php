@@ -182,6 +182,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'$or' => array(
 					array('type' => "tap3"),
 					array('type' => "smsc"),
+					array('type' => "nsn","roaming"=>true),
 				),
 				'plan' => $plan->getData()->get('name'),
 				'$or' => [
