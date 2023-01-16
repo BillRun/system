@@ -185,6 +185,7 @@ class VfdaysAction extends Action_Base {
 					'$or' => array(
 						array('type' => 'tap3'),
 						array('type' => 'smsc'),
+						array('type' => "nsn","roaming"=>true),
 					),
 					'plan' => array('$in' => $this->plans),
 					'arategroup' => ['$in'=> $vfRateGroups ],
