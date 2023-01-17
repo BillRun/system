@@ -688,6 +688,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				}
 				Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 				try {
+					$options['account'] = $subscriber;
 					$paymentResponse = Billrun_PaymentManager::getInstance()->pay($billDetails['payment_method'], array($paymentParams), $options);
 					if (empty($paymentResponse['response'])) {
 						$paymentResponses['completed'] = 0;
