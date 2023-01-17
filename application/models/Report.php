@@ -185,7 +185,7 @@ class ReportModel {
 		if($limit !== -1) {
 			$aggregate[] = array('$limit' => $limit);
 		}
-                
+
 		$results = $collection->aggregateWithOptions($aggregate, $this->aggregateOptions);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
@@ -963,9 +963,9 @@ class ReportModel {
 					);
 				}
 				break;
-			case 'between':
-				if (in_array($type, ['date', 'datetime'])) {
-					$from = (!empty($value['from']->sec)) ? $value['from']->sec : strtotime($value['from']);
+				case 'between':
+					if (in_array($type, ['date', 'datetime'])) {
+						$from = (!empty($value['from']->sec)) ? $value['from']->sec : strtotime($value['from']);
 					$to = (!empty($value['to']->sec)) ? $value['to']->sec : strtotime($value['to']);
 					$formatedExpression = array(
 						'$gte' => new MongoDate($from),
@@ -982,6 +982,41 @@ class ReportModel {
 						'$lte' => $value['to'],
 					);
 				}
+				break;
+			case 'lt_constant': 
+			case 'lte_constant': 
+			case 'gt_constant': 
+			case 'gte_constant': 
+			case 'eq_constant':
+				if ($value == "current_time") {
+					$expressionValue = time();
+				} else if ($value == "current_start") {
+					$expressionValue = Billrun_Billingcycle::getStartTime(Billrun_Billrun::getActiveBillrun());
+				} else if ($value == "current_end") {
+					$expressionValue = Billrun_Billingcycle::getEndTime(Billrun_Billrun::getActiveBillrun());
+				} else  if (in_array($value, ['first_unconfirmed_start', 'first_unconfirmed_end'])) {
+					$last = Billrun_Billingcycle::getLastConfirmedBillingCycle();
+					if ($last != Billrun_Billingcycle::getFirstTheoreticalBillingCycle()) {
+						$cycle = Billrun_Billingcycle::getFollowingBillrunKey($last);
+					} else {
+						$lastStarted = Billrun_Billingcycle::getFirstStartedBillingCycle();
+						$cycle = !is_null($lastStarted) ? $lastStarted : $last; 
+					}
+					if ($value == 'first_unconfirmed_start') {
+						$expressionValue = Billrun_Billingcycle::getStartTime($cycle);
+					} else {
+						$expressionValue = Billrun_Billingcycle::getEndTime($cycle);
+					}
+				} else if ($value == "last_confirmed_start") {
+					$expressionValue = Billrun_Billingcycle::getStartTime(Billrun_Billingcycle::getLastConfirmedBillingCycle());
+				} else if ($value == "last_confirmed_end") {
+					$expressionValue = Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getLastConfirmedBillingCycle());
+				}
+				$expressionOop = explode("_", $op);
+				$expressionOop = $expressionOop[0];
+				$formatedExpression = array(
+					"\${$expressionOop}" => new MongoDate($expressionValue),
+				);
 				break;
 			case 'lt':
 			case 'lte':
