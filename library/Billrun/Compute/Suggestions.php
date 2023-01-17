@@ -14,12 +14,15 @@
 abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
 
     protected $suggestions;
+    protected $groupingKeys = array();
+    protected $retroactiveChangesStamps;
 
     public function compute() {
         if (!$this->isRecalculateEnabled()) {
             Billrun_Factory::log()->log('suggest recalculations ' . $this->getRecalculateType() . ' mode is off', Zend_Log::INFO);
             return;
         }
+        $this->groupingKeys =  $this->getGroupingFields();
         Billrun_Factory::log()->log('Starting to search suggestions for ' . $this->getRecalculateType(), Zend_Log::INFO);
         $retroactiveChanges = $this->findAllTheRetroactiveChanges();
         $this->suggestions = $this->getSuggestions($retroactiveChanges);
@@ -33,16 +36,64 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function getSuggestions($retroactiveChanges) {
         $suggestions = [];
         $lines = $this->findAllMatchingLines($retroactiveChanges);
+        Billrun_Factory::log()->log("Creating suggestions for lines." , Zend_Log::DEBUG);
         foreach ($lines as $line) {
             if ($this->checkIfValidLine($line)) {
                 $suggestions[] = $this->buildSuggestion($line);
             }
         }
+        Billrun_Factory::log()->log("created " . count($suggestions). " suggestions for lines." , Zend_Log::DEBUG);
         return $suggestions;
     }
 
+    protected function unifyLines($lines){
+        $unifyLinesByStamp = [];
+        foreach ($lines as $line){
+            $unifyLinesKeys = array('aid' => $line['aid'], 'sid'=> $line['sid'], 'billrun' => $line['billrun'], 'estimated_billrun'=> $line['estimated_billrun'], 'key' => $line['key']);
+            $unifyLinesStamp = Billrun_Util::generateArrayStamp($unifyLinesKeys);
+            $unifyLinesByStamp[$unifyLinesStamp][] = $line;
+        }
+        $unifyLines = [];
+        foreach ($unifyLinesByStamp as $stamp => $lines){ 
+            foreach ($lines as $line){
+                if(isset($unifyLines[$stamp])){
+                    $unifyLines[$stamp]['grouping'][] = $this->buildGroupingForUnifyLine($line);
+                    $unifyLines[$stamp]['min_urt_line'] = min($unifyLines[$stamp]['min_urt_line'], $line['min_urt_line']);
+                    $unifyLines[$stamp]['max_urt_line'] = max($unifyLines[$stamp]['max_urt_line'], $line['max_urt_line']);
+                    $unifyLines[$stamp]['aprice'] += $line['aprice'];
+                    $unifyLines[$stamp]['usagev'] += $line['usagev'];
+                    $unifyLines[$stamp]['total_lines'] += $line['total_lines'];
+                }else{
+                    $unifyLines[$stamp] = $line->getRawData();
+                    $unifyLines[$stamp]['grouping'][] = $this->buildGroupingForUnifyLine($line);
+                    foreach ($this->groupingKeys as $groupingKey){  
+                        unset($unifyLines[$stamp][$groupingKey]);
+                    }
+                }
+            }
+        }
+        return array_values($unifyLines);
+    }
+    
+    protected function buildGroupingForUnifyLine($line){
+        $grouping = [];
+        foreach ($this->groupingKeys as $groupingKey){
+            $grouping[$groupingKey] = $line[$groupingKey] ?? null;
+        }
+        $grouping['min_urt_line'] = $line['min_urt_line'];
+        $grouping['max_urt_line'] = $line['max_urt_line'];
+        $oldPrice = $line['aprice'];
+        $newPrice = $this->recalculationPrice($line);
+        $grouping['old_charge'] = $oldPrice;
+        $grouping['new_charge'] = $newPrice;
+        $amount = $newPrice - $oldPrice;
+        $grouping['amount'] = abs($amount);
+        $grouping['type'] = $amount > 0 ? 'debit' : 'credit';
+        $grouping['usagev'] = $line['usagev'];
+        $grouping['total_lines'] = $line['total_lines'];
+        return $grouping;
+    }
     protected function findAllTheRetroactiveChanges() {
-        Billrun_Factory::log()->log("Searching all the retroactive " . $this->getRecalculateType() . " changes", Zend_Log::INFO);
         $query = array(
             'collection' => $this->getCollectionName(),
             'suggest_recalculations' => array('$ne' => true),
@@ -51,30 +102,30 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             //retroactive change
             '$where' => 'this.new.from < this.urt'
         );
-        $update = array(
-            '$set' => array(
-                'suggest_recalculations' => true
-            )
-        );
-        //check if can be done in one command. 
+        Billrun_Factory::log()->log("Searching all the retroactive " . $this->getRecalculateType() . " changes.", Zend_Log::INFO);
         $retroactiveChanges = iterator_to_array(Billrun_Factory::db()->auditCollection()->find($query)->sort(array('_id' => 1)));
-        Billrun_Factory::db()->auditCollection()->update($query, $update, array('multiple' => true));
+        Billrun_Factory::log()->log("found " . count($retroactiveChanges) . " retroactive " . $this->getRecalculateType() . " changes", Zend_Log::INFO);
 
         $validRetroactiveChanges = $this->getValidRetroactiveChanges($retroactiveChanges);
+        Billrun_Factory::log()->log(count($validRetroactiveChanges) . " valid retroactive " . $this->getRecalculateType() . " changes", Zend_Log::INFO);
 
-        Billrun_Factory::log()->log("found " . count($retroactiveChanges) . " retroactive " . $this->getRecalculateType() . " changes", Zend_Log::INFO);
         return $validRetroactiveChanges;
     }
 
     protected function findAllMatchingLines($retroactiveChanges) {
         $matchingLines = array();
         $now = new Mongodloid_Date();
+        $monthsLimit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 3);
+	$billrunLowerBoundTimestamp = new Mongodloid_Date(strtotime($monthsLimit . " months ago"));
+        if(!empty($retroactiveChanges)){
+            $this->buildUrtRanges();
+        }
         foreach ($retroactiveChanges as $retroactiveChange) {
             $isFake = $retroactiveChange['is_fake'] ?? false;
             $filters = array_merge(
                     array(
                         'urt' => array(
-                            '$gte' => $retroactiveChange['new']['from'],
+                            '$gte' => $retroactiveChange['new']['from'] > $billrunLowerBoundTimestamp ? $retroactiveChange['new']['from'] : $billrunLowerBoundTimestamp,
                             '$lt' => $retroactiveChange['new']['to'] < $now ? $retroactiveChange['new']['to'] : $now
                         ),
                         $this->getFieldNameOfLine() => $retroactiveChange['key'],
@@ -96,7 +147,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                             'aid' => '$aid',
                                             'sid' => '$sid',
                                             'billrun' => '$billrun',
-                                            'key' => '$' . $this->getFieldNameOfLine()
+                                            'estimated_billrun' => array(
+                                                '$ifNull' => array('$billrun', $this->getUrtRanges()) 
+                                            ),
+                                            'key' => '$' . $this->getFieldNameOfLine(),
                                         ), $this->addGroupsIdsForMatchingLines()
                                 ),
                                 'firstname' => array(
@@ -105,10 +159,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                 'lastname' => array(
                                     '$first' => '$lastname'
                                 ),
-                                'from' => array(
+                                'min_urt_line' => array(
                                     '$min' => '$urt'
                                 ),
-                                'to' => array(
+                                'max_urt_line' => array(
                                     '$max' => '$urt'
                                 ),
                                 'aprice' => array(
@@ -137,11 +191,12 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                 'aid' => '$_id.aid',
                                 'sid' => '$_id.sid',
                                 'billrun' => '$_id.billrun',
+                                'estimated_billrun' => '$_id.estimated_billrun',
                                 'key' => '$_id.key',
                                 'firstname' => 1,
                                 'lastname' => 1,
-                                'from' => 1,
-                                'to' => 1,
+                                'min_urt_line' => 1,
+                                'max_urt_line' => 1,
                                 'aprice' => 1,
                                 'usagev' => 1,
                                 'total_lines' => 1,
@@ -150,10 +205,72 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                     )
                 ),
             );
+            Billrun_Factory::log()->log("Group all the lines that match to retroactive change " . (!$isFake ? $retroactiveChange['stamp'] :  json_encode($retroactiveChange)) , Zend_Log::DEBUG);
             $lines = iterator_to_array(Billrun_Factory::db()->linesCollection()->aggregate($query));
+            Billrun_Factory::log()->log("Found " . count($lines) . " grouped lines that match to the ". (!$isFake ? "" : "fake ") . "retroactive change" . (!$isFake ? " " . $retroactiveChange['stamp'] :  ""), Zend_Log::DEBUG);
+            if(!empty($this->groupingKeys)){
+                Billrun_Factory::log()->log("Unify lines with grouping field", Zend_Log::DEBUG);
+                $lines = $this->unifyLines($lines);
+                Billrun_Factory::log()->log(count($lines) . " unified lines with grouping field", Zend_Log::DEBUG);
+
+            }
             $matchingLines = array_merge($matchingLines, $lines);
         }
         return $matchingLines;
+    }
+    
+    protected function getUrtRanges() { 
+        return array('$switch' => array(
+                        'branches' => $this->cases
+            ));
+    }
+    
+    protected function getUrtRange($billrunKey){
+        foreach ($this->cases  as $case){
+            if($case['then'] === $billrunKey){
+                return $case['case'];
+            }
+        }
+    }
+
+    protected function getUrtRangeFrom($billrunKey){
+        $urtRange = $this->getUrtRange($billrunKey);
+        return $urtRange['$and'][0]['$gte'][1];
+    }
+    
+    protected function getUrtRangeTo($billrunKey){
+        $urtRange = $this->getUrtRange($billrunKey);
+        return $urtRange['$and'][1]['$lt'][1];
+    }
+
+    protected function buildUrtRanges() {
+        $dayofmonth = Billrun_Factory::config()->getConfigChargingDay();
+        $monthsLimit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 3);
+	$startUrt = new Mongodloid_Date(strtotime($monthsLimit . " months ago"));
+        $firstChargingDayUrt = new Mongodloid_Date(strtotime(date('Y-m-'.$dayofmonth.' 00:00:00', $startUrt->sec)));
+        $now = new Mongodloid_Date();
+        if($firstChargingDayUrt > $startUrt){
+            $initial_case = array(
+                'case' => array('$and'=> array(array('$gte' => array('$urt', $startUrt)), array('$lt'=> array('$urt', $firstChargingDayUrt)))),
+                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($startUrt->sec)
+            );
+        }else{
+            $firstChargingDayUrt = new Mongodloid_Date(strtotime('+1 month', $firstChargingDayUrt->sec));
+            $initial_case = array(
+                'case' =>  array('$and'=> array(array('$gte' => array('$urt', $startUrt)),array('$lt'=> array('$urt', $firstChargingDayUrt)))),
+                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($startUrt->sec)
+            );
+        }        
+        $cases[] = $initial_case;
+        for($urtStartRange = $firstChargingDayUrt; $urtStartRange <= $now; $urtStartRange = new Mongodloid_Date(strtotime('+1 month', $urtStartRange->sec))){
+            $urtEndRange = new Mongodloid_Date(strtotime('+1 month', $urtStartRange->sec));
+            $case = array(
+                'case' => array('$and'=> array(array('$gte' => array('$urt', $urtStartRange)), array('$lt'=> array('$urt', $urtEndRange)))),
+                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($urtStartRange->sec)
+            );
+            $cases[] = $case;
+        }
+        $this->cases = $cases;
     }
 
     protected function buildSuggestion($line) {
@@ -165,14 +282,25 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'firstname' => $line['firstname'],
             'lastname' => $line['lastname'],
             'billrun_key' => $line['billrun'],
-            'from' => $line['from'],
-            'to' => new Mongodloid_Date(strtotime('+1 sec', $line['to']->sec)),
+            'estimated_billrun' => $line['billrun'] === null ? $line['estimated_billrun'] : false,
+            'min_urt_line' => $line['min_urt_line'],
+            'max_urt_line' => $line['max_urt_line'],
             'usagev' => $line['usagev'],
             'key' => $line['key'],
             'status' => 'open',
             'total_lines' => $line['total_lines'],
             'retroactive_changes_info' => $this->getRetroactiveChangesInfo($line['retroactive_changes_info'])
                 ), $this->addForeignFieldsForSuggestion($line));
+        if($suggestion['estimated_billrun']){
+            $suggestion['from'] = $this->getUrtRangeFrom($suggestion['estimated_billrun']);
+            $suggestion['to'] = $this->getUrtRangeTo($suggestion['estimated_billrun']);     
+        }else{
+            $suggestion['from'] = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($line['billrun']));
+            $suggestion['to'] = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($line['billrun']));   
+        }
+        if(isset($line['grouping'])){
+            $suggestion['grouping'] = $line['grouping'];
+        }
         $oldPrice = $line['aprice'];
         $newPrice = $this->recalculationPrice($line);
         $suggestion['old_charge'] = $oldPrice;
@@ -185,7 +313,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         return $suggestion;
     }
 
-    protected function getRetroactiveChangesInfo($retroactiveChangesInfo) {
+    protected function getRetroactiveChangesInfo($retroactiveChangesInfo) {//todo:: need to improve this. no need to query every time to db.
         $info = [];
         foreach ($retroactiveChangesInfo as $retroactiveChange) {
             if (isset($retroactiveChange['audit_stamp'])) {
@@ -208,8 +336,11 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function getValidRetroactiveChanges($retroactiveChanges) {
         $validRetroactiveChanges = [];
         foreach ($retroactiveChanges as $retroactiveChange) {
+            $this->retroactiveChangesStamps[] = $retroactiveChange['stamp'];
             if ($this->checkIfValidRetroactiveChange($retroactiveChange)) {
                 $validRetroactiveChanges[] = $retroactiveChange;
+            }else{
+                Billrun_Factory::log()->log("Invalid retroactive change " . $retroactiveChange['stamp'], Zend_Log::DEBUG);
             }
         }
         return $validRetroactiveChanges;
@@ -217,22 +348,40 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
 
     public function write() {
         if (!empty($this->suggestions)) {
-            foreach ($this->suggestions as $suggestion) {
+            foreach ($this->suggestions as $index => $suggestion) {
+                Billrun_Factory::log()->log('Writing the ' . ($index + 1) . ' suggestion', Zend_Log::DEBUG);
 
                 $overlapSuggestion = $this->getOverlap($suggestion);
                 if (!$overlapSuggestion->isEmpty()) {
                     $overlapSuggestion = $overlapSuggestion->getRawData();
+                    Billrun_Factory::log()->log("Found overlap between suggestions. \n Existing suggestion : \n". print_r(json_encode($overlapSuggestion), 1) . "\n New suggestion: \n" . print_r(json_encode($suggestion), 1), Zend_Log::DEBUG);                       
                     if ($this->checkIfTheSameSuggestion($overlapSuggestion, $suggestion)) {
+                        Billrun_Factory::log()->log('The same suggestion. Do nothing.', Zend_Log::DEBUG);
                         continue;
                     } else {
+                        Billrun_Factory::log()->log('Handling overlap suggestions', Zend_Log::DEBUG);
                         $this->handleOverlapSuggestion($overlapSuggestion, $suggestion);
                     }
                 } else {
+                    Billrun_Factory::log()->log("Not found overlap suggestion.", Zend_Log::DEBUG);
                     if (!Billrun_Util::isEqual($suggestion['amount'], 0, Billrun_Bill::precision)) {
+                        Billrun_Factory::log()->log('Inserting suggestion', Zend_Log::DEBUG);
                         Billrun_Factory::db()->suggestionsCollection()->insert($suggestion);
+                    }else{
+                        Billrun_Factory::log()->log('Suggestion correction amount is 0. No need to insert suggestion.', Zend_Log::DEBUG);
                     }
                 }
             }
+        }
+        if (!empty($this->retroactiveChangesStamps)) {
+            $query = array('stamp' => array('$in' => $this->retroactiveChangesStamps));
+            $update = array(
+                '$set' => array(
+                    'suggest_recalculations' => true
+                )
+            );
+            Billrun_Factory::log()->log('Updating audit collection. query: ' . json_encode($query) . ' update: ' . json_encode($update), Zend_Log::DEBUG);
+            Billrun_Factory::db()->auditCollection()->update($query, $update, array('multiple' => true));
         }
     }
 
@@ -241,11 +390,13 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'aid' => $suggestion['aid'],
             'sid' => $suggestion['sid'],
             'billrun_key' => $suggestion['billrun_key'],
+            'estimated_billrun' => $suggestion['estimated_billrun'],
             'key' => $suggestion['key'],
             'status' => 'open',
             'recalculation_type' => $suggestion['recalculation_type']
         );
-        return Billrun_Factory::db()->suggestionsCollection()->query($query)->cursor()->limit(1)->current();
+        Billrun_Factory::log()->log('Searching overlap suggestion in db.', Zend_Log::DEBUG);
+        return  Billrun_Factory::db()->suggestionsCollection()->query($query)->cursor()->limit(1)->current();
     }
 
     protected function checkIfTheSameSuggestion($overlapSuggestion, $suggestion) {
@@ -258,10 +409,14 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $newSuggestions = $this->getSuggestions($fakeRetroactiveChanges);
         $newSuggestion = $this->unifyOverlapSuggestions($newSuggestions);
         //TODO:: consider update instead of remove and insert
-        if (!Billrun_Util::isEqual($newSuggestion['amount'], 0, Billrun_Bill::precision)) {
-            Billrun_Factory::db()->suggestionsCollection()->insert($newSuggestion);
-        }
+        Billrun_Factory::log()->log('Removing overlap suggestion.', Zend_Log::DEBUG);
         Billrun_Factory::db()->suggestionsCollection()->remove($overlapSuggestion);
+        if (!Billrun_Util::isEqual($newSuggestion['amount'], 0, Billrun_Bill::precision)) {
+            Billrun_Factory::log()->log("Inserting new suggestion. \n" . print_r(json_encode($newSuggestion), 1), Zend_Log::DEBUG);
+            Billrun_Factory::db()->suggestionsCollection()->insert($newSuggestion);
+        } else {
+            Billrun_Factory::log()->log('Suggestion correction amount is 0. No need to insert the new suggestion.', Zend_Log::DEBUG);
+        }
     }
 
     protected function buildFakeRetroactiveChanges($overlapSuggestion, $suggestion) {
@@ -276,10 +431,12 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                     return array('audit_stamp' => $retroactive_change['audit_stamp']);
                 }, $suggestion['retroactive_changes_info']));
         
-        $oldFrom = min($overlapSuggestion['from'], $suggestion['from']);
-        $newFrom = max($overlapSuggestion['from'], $suggestion['from']);
-        $oldTo = min($overlapSuggestion['to'], $suggestion['to']);
-        $newTo = max($overlapSuggestion['to'], $suggestion['to']);
+        $oldFrom = min($overlapSuggestion['min_urt_line'], $suggestion['min_urt_line']);
+        $newFrom = max($overlapSuggestion['min_urt_line'], $suggestion['min_urt_line']);
+        $oldTo = min($overlapSuggestion['max_urt_line'], $suggestion['max_urt_line']);
+        $oldTo =  new Mongodloid_Date(strtotime('+1 sec', $oldTo->sec));
+        $newTo = max($overlapSuggestion['max_urt_line'], $suggestion['max_urt_line']);
+        $newTo = new Mongodloid_Date(strtotime('+1 sec', $newTo->sec));
         if ($oldFrom !== $newFrom) {
             $fakeRetroactiveChange['new']['from'] = $oldFrom;
             $fakeRetroactiveChange['new']['to'] = new Mongodloid_Date(strtotime('-1 sec', $newFrom->sec));
@@ -299,11 +456,13 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     }
 
     protected function unifyOverlapSuggestions($suggestions) {
+        Billrun_Factory::log()->log('Unify suggestions', Zend_Log::DEBUG);
         $newSuggestion = $suggestions[0];
         $newSuggestion['usagev'] = 0;
         $newSuggestion['total_lines'] = 0;
         $newSuggestion['old_charge'] = 0;
         $newSuggestion['new_charge'] = 0;
+        unset($newSuggestion['grouping']);
         $aprice = 0;
         foreach ($suggestions as $suggestion) {
             if (!Billrun_Util::isEqual($suggestion['amount'], 0, Billrun_Bill::precision)) {
@@ -311,24 +470,59 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                 $this->unifyOverlapSuggestion($newSuggestion, $suggestion);
             }
         }
+        if(isset($newSuggestion['grouping'])){
+            $newSuggestion['grouping'] = $this->unifyOverlapGrouping($newSuggestion['grouping']);
+        }
         $newSuggestion['type'] = $aprice < 0 ? 'credit' : 'debit';
         $newSuggestion['amount'] = abs($aprice);
         return $newSuggestion;
     }
 
     protected function unifyOverlapSuggestion(&$newSuggestion, $suggestion) {
-        $newSuggestion['from'] = min($suggestion['from'], $newSuggestion['from']);
-        $newSuggestion['to'] = max($suggestion['to'], $newSuggestion['to']);
+        $newSuggestion['min_urt_line'] = min($suggestion['min_urt_line'], $newSuggestion['min_urt_line']);
+        $newSuggestion['max_urt_line'] = max($suggestion['max_urt_line'], $newSuggestion['max_urt_line']);
         $newSuggestion['usagev'] += $suggestion['usagev'];
         $newSuggestion['total_lines'] += $suggestion['total_lines'];
         $newSuggestion['retroactive_changes_info'] = array_unique(array_merge($suggestion['retroactive_changes_info'], $newSuggestion['retroactive_changes_info']), SORT_REGULAR);
         $newSuggestion['old_charge'] += $suggestion['old_charge'];
         $newSuggestion['new_charge'] += $suggestion['new_charge'];
+        if(isset($suggestion['grouping'])){
+            if(empty($newSuggestion['grouping'])){
+                $newSuggestion['grouping'] = array();
+            }           
+            $newSuggestion['grouping'] = array_merge($suggestion['grouping'], $newSuggestion['grouping']);
+        }
+    }
+
+    protected function unifyOverlapGrouping($unifyGrouping) {
+        $unifyGroupingByStamps = [];
+        foreach ($unifyGrouping as $unifyGroup){
+            $unifyGroupingStampsKeys = [];
+            foreach ($this->groupingKeys as $groupingKey){
+                $unifyGroupingStampsKeys[]= $unifyGroup[$groupingKey];
+            }
+            $stamp = Billrun_Util::generateArrayStamp($unifyGroupingStampsKeys);
+            if(isset($unifyGroupingByStamps[$stamp])){
+                $unifyGroupingByStamps[$stamp]['min_urt_line'] = min($unifyGroup['min_urt_line'], $unifyGroupingByStamps[$stamp]['min_urt_line']);
+                $unifyGroupingByStamps[$stamp]['max_urt_line'] = max($unifyGroup['max_urt_line'], $unifyGroupingByStamps[$stamp]['max_urt_line']);
+                $oldPrice = $unifyGroupingByStamps[$stamp]['old_charge'] += $unifyGroup['old_charge'];
+                $newPrice = $unifyGroupingByStamps[$stamp]['new_charge'] += $unifyGroup['new_charge'];
+                $amount = $newPrice - $oldPrice;
+                $unifyGroupingByStamps[$stamp]['amount'] = abs($amount);
+                $unifyGroupingByStamps[$stamp]['type'] = $amount > 0 ? 'debit' : 'credit';
+                $unifyGroupingByStamps[$stamp]['usagev'] += $unifyGroup['usagev'];
+                $unifyGroupingByStamps[$stamp]['total_lines'] += $unifyGroup['total_lines'];
+            }else{
+                $unifyGroupingByStamps[$stamp] = $unifyGroup;
+            }
+        }
+        return array_values($unifyGroupingByStamps);
     }
 
     protected function getSuggestionStamp($suggestion) {
         unset($suggestion['urt']);
         unset($suggestion['stamp']);
+        unset($suggestion['grouping']);
         return Billrun_Util::generateArrayStamp($suggestion);
     }
 
@@ -349,11 +543,19 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     }
 
     protected function addGroupsIdsForMatchingLines() {
-        return array();
+        $groupsIds = [];
+        foreach ($this->groupingKeys as $groupingKey){
+            $groupsIds[str_replace(".", "_", $groupingKey)] = '$' . $groupingKey .'';
+        }
+        return $groupsIds;
     }
 
     protected function addProjectsForMatchingLines() {
-        return array();
+        $projectsIds = [];
+        foreach ($this->groupingKeys as $groupingKey){
+            $projectsIds[$groupingKey] = '$_id.' . str_replace(".", "_", $groupingKey);
+        }
+        return$projectsIds;
     }
 
     protected function addForeignFieldsForSuggestion($line) {
@@ -368,6 +570,9 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         return true;
     }
     
+    protected function getGroupingFields() {
+        return array();
+    }
     static protected function getOptions() {
         return array('type' => 'suggestions');
     }
@@ -411,4 +616,62 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         }
     }
 
+    static public function getCreditRequests($suggestionStamp) {//maybe need to be in new class? 
+        $requests = [];
+        $creditSuggestion = Billrun_Factory::db()->suggestionsCollection()->query(array('stamp' => $suggestionStamp))->cursor()->current();
+        if($creditSuggestion->isEmpty()){
+            throw new Exception("Failed to found suggestion with this stamp: " . $suggestionStamp);
+        }
+        $groupingSuggestionsInfo = $creditSuggestion['grouping'] ?? [];
+        if(!empty($groupingSuggestionsInfo)){
+            foreach ($groupingSuggestionsInfo as $groupingInfo){
+                $requests = array_merge($requests, static::getCreditSuggestionRequests($creditSuggestion, $groupingInfo));
+            }
+        }else{
+            $requests = array_merge($requests, static::getCreditSuggestionRequests($creditSuggestion));
+
+        }
+        return $requests;
+    }
+    
+    static public function getCreditSuggestionRequests($creditSuggestion, $groupingInfo = array()) {
+        $apriceFields = array('old_charge', 'new_charge');
+        foreach ($apriceFields as $apriceField){
+            $requests[] = static::getCreditRequest($creditSuggestion, $apriceField, $groupingInfo);
+        }
+        return $requests;
+
+    }
+    
+    static public function getCreditRequest($creditSuggestion, $apriceField, $groupingInfo){
+        $mult = ($apriceField === 'old_charge' ? -1 : ($apriceField === 'new_charge' ? 1 : 0));
+        $newRequest =  array(
+            'aid' => $creditSuggestion['aid'],
+            'sid' => $creditSuggestion['sid'],
+            'aprice' => $mult * ($groupingInfo[$apriceField] ?? $creditSuggestion[$apriceField]),
+            'usagev' => $groupingInfo['usagev'] ?? $creditSuggestion['usagev'],
+            'credit_time' => date("Y-m-d\TH:i:s\Z", $groupingInfo['max_urt_line']->sec ?? $creditSuggestion['max_urt_line']->sec),
+            'label' => $creditSuggestion['invoice_label'] ?? $creditSuggestion['description'] . ' - correction',
+            'recalculation_type' => $creditSuggestion['recalculation_type'],
+            'multiply_charge_by_volume' => false,
+        );
+        $recalculation_type = $creditSuggestion['recalculation_type'];
+        $groupingKeys = static::getGroupingFieldsByRecalculationType($recalculation_type);
+        if($recalculation_type === 'rates'){
+            $newRequest = array_merge($newRequest, array('rate' => $creditSuggestion['key']));
+        }
+        if(!empty($groupingInfo)){
+            foreach ($groupingKeys as $groupingKey){
+                $newRequest = array_merge($newRequest, array($groupingKey => Billrun_Util::getIn($groupingInfo, $groupingKey)));
+            }
+        }
+        return $newRequest;
+    }
+    
+    static public function getGroupingFieldsByRecalculationType($recalculationType) {
+        if($recalculationType === 'rates'){
+            return Billrun_Factory::config()->getConfigValue('billrun.compute.suggestions.rate_recalculations.grouping.fields', array());
+        }
+        return [];
+    }
 }

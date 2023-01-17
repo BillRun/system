@@ -231,7 +231,7 @@ class Models_Action_Import extends Models_Action {
 				}
 			}
 		}
-                Billrun_Factory::dispatcher()->trigger('afterRunManualMappingQuery', array(&$output, $this->request['collection'], $this->update));
+		Billrun_Factory::dispatcher()->trigger('afterRunManualMappingQuery', array(&$output, $this->request['collection'], $this->update));
 		return $output;
 	}
 
@@ -332,6 +332,7 @@ class Models_Action_Import extends Models_Action {
 	protected function getHeader(&$data, $params = []) {
 		$header = $data[0];
 		array_shift($data); // remove column header
+		$header = array_map('trim', $header);
 		return $header;
 	}
 

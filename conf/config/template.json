@@ -60,9 +60,16 @@
 		},
 		"email_authentication": {
 			"subject": "BillRun Customer Portal - Email Address Verification",
-			"content": "<pre>\nHello [[name]],\n\nPlease verify your E-mail address by clicking on the link below:\nhttp://billrun/callback?token=[[token]]\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
-			"html_translation": ["name", "token", "verification_link", "company_email", "company_name"]
-		}
+			"content": "<pre>\nHello [[name]],\n\nPlease verify your E-mail address by clicking on the link below:\n[[email_authentication_link]]\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"	
+		},
+                "reset_password": {
+                        "subject": "BillRun Customer Portal - Reset Password",
+                        "content": "<pre>\nHello [[name]],\n\nYou recently requested a password reset.\nTo change your password, please click here:\n[[reset_password_link]]\n\nThe link will expire in [[link_expire]]\n\nIf you ignore this message, your password won't be changed.\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
+                },
+                "welcome_account": {
+                    "subject": "BillRun Customer Portal - Welcome Account",
+                    "content": "<pre>\nHello [[name]],\n\na new online account has been created for you.\nFor access please use the following link:\n[[link]].\nAfter sign up, you can access various information on your online account, including the current consumption overview and invoices, as well as update your personal data.\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
+                }
 	},
 	"menu" : {
 		"t" : "menu",
@@ -190,6 +197,7 @@
     ]
   },
   "billrun" : {
+        "fields": [],
         "multi_day_cycle":  false,
         "invoicing_day": 1,
         "fields": [],

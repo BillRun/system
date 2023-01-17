@@ -221,7 +221,7 @@ class Socket
      */
     public function isOpen()
     {
-        if (!is_resource($this->socket) && !$this->socket instanceof \Socket) return false;
+        if (!is_resource($this->socket)) return false;
         $r = null;
         $w = null;
         $e = array($this->socket);

@@ -295,10 +295,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 	public function getRates($account=null, $subscriber=null) {
 		if(empty($this->ratesCache)) {
+			Billrun_Factory::log("Preparing rates cache", Zend_Log::DEBUG);
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->ratesCollection();
 			$res = $this->aggregatePipelines($pipelines,$coll);
 			$this->ratesCache = $this->toKeyHashedArray($res, '_id');
+			Billrun_Factory::log("Finished preparing rates cache", Zend_Log::DEBUG);
 		}
 
 		$localRates = $this->overrideEntityValues($this->ratesCache,@$account['overrides'],'rate');
@@ -316,30 +318,54 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$localDiscounts = $this->overrideEntityValues($this->discountsCache,@$account['overrides'],'discount');
 		return $this->overrideEntityValues($localDiscounts,@$subscriber['overrides'],'discount');;
 	}
+        
+        public function &getCharges() {
+		if(empty($this->chargesCache)) {
+			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
+			$coll = Billrun_Factory::db()->chargesCollection();
+			$res = $this->aggregatePipelines($pipelines,$coll);
+			$this->chargesCache = $this->toKeyHashedArray($res, '_id');
+		}
+		return $this->chargesCache;
+	}
 
-	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
+	public static function removeBeforeAggregate($billrunKey, $aids = array(),$override = true) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$eq' => 1));
+		$billrunQuery = array('billrun_key' => $billrunKey, 'aid' => ['$in' => $aids]);
+		//if in overirde mode only protect billed account if not then protect any invoiced account
+		if($override) {
+			$billrunQuery['billed'] = array('$eq' => 1) ;
+		}
 		$billed = $billrunColl->query($billrunQuery)->cursor();
-		$billedAids = array();
+		$protectedAids = array();
 		foreach ($billed as $account) {
-			$billedAids[] = $account['aid'];
+			$protectedAids[] = $account['aid'];
 		}
 		if (empty($aids)) {
-			$linesRemoveQuery = array('aid' => array('$nin' => $billedAids), 'billrun' => $billrunKey, 
+			$linesRemoveQuery = array('aid' => array('$nin' => $protectedAids), 'billrun' => $billrunKey,
+									'source' => 'billrun',
 									'$or' => array(
 										array( 'type' => array('$in' => array('service', 'flat')) ),
-										array( 'type'=>'credit','usaget'=>'discount' )
+										array('$or' => array(
+																array( 'type'=>'credit','usaget'=>'discount' ),
+																array( 'type'=>'credit','usaget'=>'conditional_charge' ),
+																array( 'type'=>'credit','billrun_cycle_credit' => true )
+															))
 									));
 			$billrunRemoveQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));;
 		} else {
-			$aids = array_values(array_diff($aids, $billedAids));
+			$aids = array_values(array_diff($aids, $protectedAids));
 			$linesRemoveQuery = array(	'aid' => array('$in' => $aids),
 										'billrun' => $billrunKey,
+										'source' => 'billrun',
 										'$or' => array(
 											array( 'type' => array('$in' => array('service', 'flat')) ),
-											array( 'type'=>'credit','usaget'=>'discount' )
+											array( '$or' => array(
+													array( 'type'=>'credit','usaget'=>'discount' ),
+													array( 'type'=>'credit','usaget'=>'conditional_charge' ),
+													array( 'type'=>'credit','billrun_cycle_credit' => true )
+												))
 											));
 			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		}
@@ -421,20 +447,20 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		$rawResults = $this->loadRawData($this->getCycle());
 		$data = $rawResults['data'];
-
+		Billrun_Factory::log('No data loaded by customer aggregator', Zend_Log::DEBUG);
 		$accounts = $this->parseToAccounts($data, $this);
 		
 		return $accounts;
 	}
 
-	protected function afterLoad($data) {
+	protected function afterLoad(&$data) {
 		if (!$this->recreateInvoices && $this->isCycle){
 			$this->handleInvoices($data);
 		}
 
 		Billrun_Factory::log("Account entities loaded: " . count($data), Zend_Log::INFO);
 
-		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this, 'data' => $data));
+		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this, 'data' => &$data));
 
 		if ($this->bulkAccountPreload) {
 			$this->clearForAccountPreload($data);
@@ -656,13 +682,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 	protected function beforeAggregate($accounts) {
 		if (!$this->fakeCycle) {
-			if ($this->overrideMode && $accounts) {
+			if ($accounts) {
 				$aids = array();
 				foreach ($accounts as $account) {
 					$aids[] = $account->getInvoice()->getAid();
 				}
 				$billrunKey = $this->billrun->key();
-				self::removeBeforeAggregate($billrunKey, $aids);
+
+				self::removeBeforeAggregate($billrunKey, $aids, $this->overrideMode);
 			}
 			$accountsToPrepone = [];
 			if (Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
@@ -836,30 +863,53 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
+			$externalCharges = [];
 			if(!$this->isFakeCycle()) {
 				Billrun_Factory::log('Finalizing the invoice', Zend_Log::DEBUG);
-				$aggregatedEntity->writeInvoice( $this->min_invoice_id , $aggregatedResults);
 				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
+				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
+				Billrun_Factory::log('Get external charges / credits from plugins', Zend_Log::DEBUG);
+				Billrun_Factory::dispatcher()->trigger('beforeAggregateAccountSaveLines', array(&$aggregatedEntity, &$externalCharges, $aggregatedResults, $aggregatedEntity->getAppliedDiscounts()));
 				//Save Account services / plans
 				Billrun_Factory::log('Save Account services / plans', Zend_Log::DEBUG);
 				$this->saveLines($aggregatedResults);
 				//Save Account discounts.
 				Billrun_Factory::log('Save Account discounts.', Zend_Log::DEBUG);
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
-				//Save configurable data
+				//Save external charges provided by the plugin
+				Billrun_Factory::log('Save Account external charges', Zend_Log::DEBUG);
+				foreach($externalCharges as &$externalCharge) {
+					$externalCharge['billrun'] = $this->getCycle()->key();
+					$externalCharge['source'] = 'billrun';
+					$externalCharge['billrun_cycle_credit'] = true;
+					$sub = $aggregatedEntity->getSubscriber($externalCharge['sid']);
+					if(!empty($sub)) {
+						$sub->getInvoice()->addLines([$externalCharge]);
+					} else {
+						Billrun_Factory::log("Cloud not  find subscriber for external charge with stamp {$externalCharge['stamp']}, check the plugin logic!",Zend_Log::ERR);
+					}
+				}
+				$this->saveLines($externalCharges);
+				// Close the invoice (no changes to subscribers allowed )
+				$aggregatedEntity->closeInvoice($this->min_invoice_id );
+				//Save configurable/aggretaion data
 				$aggregatedEntity->addConfigurableData();
 				//Save the billrun document
 				Billrun_Factory::log('Save the billrun document', Zend_Log::DEBUG);
 				$aggregatedEntity->save();
 			} else {
 				Billrun_Factory::log('Faking finalization of the invoice', Zend_Log::DEBUG);
-				$aggregatedEntity->writeInvoice( 0 , $aggregatedResults, $this->isFakeCycle() );
-				//Save configurable data
+				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
+				Billrun_Factory::log('Get external charges / credits from plugins', Zend_Log::DEBUG);
+				Billrun_Factory::dispatcher()->trigger('beforeAggregateAccountSaveLines', array(&$aggregatedEntity, &$externalCharges, $aggregatedResults, $aggregatedEntity->getAppliedDiscounts()));
+				// Close the invoice (no changes to subscribers allowed )
+				$aggregatedEntity->closeInvoice( 0 , $this->isFakeCycle());
+				//Save configurable/aggretaion data
 				$aggregatedEntity->addConfigurableData();
 			}
-                        if(!empty($aggregatedResults)){
-                                    array_push($this->successfulAccounts, $aggregatedEntity->getInvoice()->getAid());
-                        }
+			if(!empty($aggregatedResults)){
+						array_push($this->successfulAccounts, $aggregatedEntity->getInvoice()->getAid());
+			}
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;
 	}
@@ -1049,10 +1099,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			]
 		]);
 		$enrichment = [];
-		if(!empty($enrichmentMapping[$var])) {
-			foreach($enrichmentMapping[$var] as $enrichKey => $enrichField) {
-				foreach(Billrun_Factory::config()->getConfigValue($enrichKey, []) as  $fieldDesc) {
+		if (!empty($enrichmentMapping[$var])) {
+			foreach ($enrichmentMapping[$var] as $enrichKey => $enrichField) {
+				foreach (Billrun_Factory::config()->getConfigValue($enrichKey, []) as $fieldDesc) {
+					if ((strpos($fieldDesc[$enrichField], ".") !== false) || !isset($enrichment[current(explode(".", $fieldDesc[$enrichField]))])) {
 						$enrichment[$fieldDesc[$enrichField]] = $fieldDesc[$enrichField];
+					}
 				}
 			}
 		}

@@ -144,6 +144,11 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 			}
 		}
 		$pipelines[] = array(
+			'$sort' => array(
+				'_id.aid' => 1
+			)
+		);
+		$pipelines[] = array(
 			'$skip' => $page * $size,
 		);
 		$pipelines[] = array(
@@ -220,10 +225,19 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$passthroughFields = array_merge($this->subsPassthroughFields, $this->passthroughFields);
 		
 		foreach ($passthroughFields as $subscriberField) {
-			$srcField = is_array($subscriberField) ? $subscriberField['value'] : $subscriberField;
+			if (!is_array($subscriberField) && strpos($subscriberField, ".") !== false) {
+				$project_val = '$' . $subscriberField;
+				foreach($reversed = array_reverse(explode(".", $subscriberField)) as $sub_key) {
+					$project_val = [$sub_key => $project_val];
+				}
+				$srcField = end($reversed);
+				$project = array_merge($project, $project_val);
+			} else {
+				$srcField = is_array($subscriberField) ? $subscriberField['value'] : $subscriberField;
+				$project[$srcField] ='$' . $srcField;
+			}
 			$sub_push[$srcField] =  '$' . $srcField;
 			$group2[$srcField] = array('$first' => '$sub_plans.' . $srcField);
-			$project[$srcField] ='$' . $srcField;
 		}
 		if (!$project) {
 			$project = 1;

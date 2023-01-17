@@ -5,7 +5,6 @@
  * @copyright       Copyright (C) 2012-2020 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-
 require_once APPLICATION_PATH . '/application/helpers/Portal/Actions.php';
 
 /**
@@ -25,64 +24,71 @@ class PortalController extends Yaf_Controller_Abstract {
 	 * @var Yaf_Request_Http
 	 */
 	protected $request;
-	
+
 	/**
 	 * holds request's raw body
 	 *
 	 * @var array
 	 */
 	protected $requestBody = [];
-	
+
 	/**
 	 * holds request's query
 	 *
 	 * @var array
 	 */
 	protected $query = [];
-	
+
 	/**
 	 * holds request's update
 	 *
 	 * @var array
 	 */
 	protected $update = [];
-		
+
 	/**
 	 * the response object
 	 *
 	 * @var Yaf_Response_Abstract
 	 */
 	protected $response;
-	
+
 	/**
 	 * Portal settings (plugin settings)
 	 *
 	 * @var mixed
 	 */
 	protected $settings;
-	
+
 	/**
 	 * action to run
 	 *
 	 * @var string
 	 */
 	protected $action;
-	
+
 	/**
 	 * OAuth2 token data
 	 *
 	 * @var array
 	 */
 	protected $tokenData = [];
-        
-         /**
+
+	/**
 	 * holds request's page - the index of the page use for pagination
 	 *
 	 * @var int
 	 */
 	protected $page;
-        
-        /**
+
+	/**
+	 * holds request's sort
+	 *
+	 * @var array
+	 */
+	protected $sort;
+
+	/**
 	 * holds request's size -the size of the page retrieved
 	 *
 	 * @var int
@@ -97,22 +103,23 @@ class PortalController extends Yaf_Controller_Abstract {
 
 		$this->request = $this->getRequest();
 		$this->requestBody = json_decode(file_get_contents('php://input'), JSON_OBJECT_AS_ARRAY) ?? [];
-		$this->update = $this->requestBody['update'] ?? [];
-		$this->query = json_decode($this->request->getRequest()['query'], JSON_OBJECT_AS_ARRAY) ?? [];
-                $this->page = $this->request->getRequest()['page'] ?? -1;
-                $this->size = $this->request->getRequest()['size'] ?? -1;
+		$this->update = $this->requestBody['update'] ?? json_decode($this->request->getRequest()['update'], JSON_OBJECT_AS_ARRAY);
+		$this->query = json_decode($this->request->get('query', '[]'), JSON_OBJECT_AS_ARRAY);
+		$this->page = $this->request->getRequest()['page'] ?? -1;
+		$this->size = $this->request->getRequest()['size'] ?? -1;
+		$this->sort = @json_decode($this->request->get('sort', '[]'), JSON_OBJECT_AS_ARRAY);
 		$this->response = $this->getResponse();
 		$requestParams = $this->request->getParams();
 		$this->action = !empty($requestParams) ? array_keys($requestParams)[0] :
-			($this->request->getMethod() === 'GET' ? 'get' : 'update');
-	
+				($this->request->getMethod() === 'GET' ? 'get' : 'update');
+
 		if (!$this->authenticate('selfcare')) {
 			return $this->forward('PortalError', 'unauthenticated');
 		}
-	
+
 		$this->setUser();
 	}
-	
+
 	/**
 	 * is the controller enabled
 	 *
@@ -141,7 +148,7 @@ class PortalController extends Yaf_Controller_Abstract {
 
 		$contentType = $params['content_type'] ?? self::RESPONSE_CONTENT_TYPE;
 		$this->response->setHeader('Content-Type', $contentType);
-		
+
 		$ret = [
 			'status' => $status,
 		];
@@ -149,17 +156,17 @@ class PortalController extends Yaf_Controller_Abstract {
 		if (!empty($params['code'])) {
 			$ret['code'] = $params['code'];
 		}
-		
+
 		if (!empty($params['details'])) {
 			$ret['details'] = $params['details'];
 		}
-                if (!empty($params['total_pages'])) {
+		if (!empty($params['total_pages'])) {
 			$ret['total_pages'] = $params['total_pages'];
 		}
-		
+
 		$this->response->setBody(json_encode($ret));
 	}
-	
+
 	/**
 	 * Account entry point
 	 *
@@ -168,14 +175,15 @@ class PortalController extends Yaf_Controller_Abstract {
 	public function accountAction() {
 		$params = array_merge($this->requestBody, [
 			'query' => $this->query,
-			'update' => $this->update
+			'update' => $this->update,
+			'sort' => $this->sort,
 		]);
-               
+
 		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'account']));
 		$res = $module->run($this->action, $params);
 		$this->setResponse($res);
 	}
-	
+
 	/**
 	 * Subscriber entry point
 	 *
@@ -185,8 +193,9 @@ class PortalController extends Yaf_Controller_Abstract {
 		$params = array_merge($this->requestBody, [
 			'query' => $this->query,
 			'update' => $this->update,
-                        'page' => $this ->page,
-                        'size' => $this ->size
+			'page' => $this->page,
+			'size' => $this->size,
+			'sort' => $this->sort, // TODO
 		]);
 
 		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'subscriber']));
@@ -205,16 +214,16 @@ class PortalController extends Yaf_Controller_Abstract {
 		$res = $module->run($this->action, $params);
 		$this->setResponse($res);
 	}
-        
-        /**
+
+	/**
 	 * Settings entry point
 	 *
 	 * @return void
 	 */
 	public function settingsAction() {
 		$params = array(
-                    'categories' => json_decode($this->request->getRequest()['categories'], false) ?? []
-                );
+			'categories' => json_decode($this->request->getRequest()['categories'], false) ?? []
+		);
 		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'settings']));
 		$res = $module->run($this->action, $params);
 		$this->setResponse($res);
@@ -226,8 +235,9 @@ class PortalController extends Yaf_Controller_Abstract {
 	 * @todo implement based on OAuth2 client_id (need to associate Oauth2 secret to a user)
 	 */
 	protected function setUser() {
+		
 	}
-	
+
 	/**
 	 * Authenticate the reqeust using OAuth2
 	 *
@@ -243,8 +253,7 @@ class PortalController extends Yaf_Controller_Abstract {
 				$verify = $oauth->verifyResourceRequest($oauthRequest, null, "{$scope} account");
 				break;
 			case 'subscriber':
-				$verify = $oauth->verifyResourceRequest($oauthRequest, null, "{$scope} account")
-					|| $oauth->verifyResourceRequest($oauthRequest, null, "{$scope} subscriber");
+				$verify = $oauth->verifyResourceRequest($oauthRequest, null, "{$scope} account") || $oauth->verifyResourceRequest($oauthRequest, null, "{$scope} subscriber");
 				break;
 			case 'registration':
 			case 'login':
@@ -263,19 +272,19 @@ class PortalController extends Yaf_Controller_Abstract {
 	protected function getDefaultParams() {
 		return array_merge(Billrun_Util::getIn($this->settings, 'configuration.values', []), ['token_data' => $this->tokenData]);
 	}
-    
-    /**
-     * get setting (from plugin settings) value
-     *
-     * @param  mixed $path - array or dot separated stirng
-     * @param  mixed $defaulValue
-     * @return mixed
-     */
-    protected function getSetting($path, $defaulValue = null) {
-        $pathArr = is_array($path) ? $path : explode('.', $path);
-        $settingPath = array_merge(['configuration', 'values'], $pathArr);
-        return Billrun_Util::getIn($this->settings, $settingPath, $defaulValue);
-    }
+
+	/**
+	 * get setting (from plugin settings) value
+	 *
+	 * @param  mixed $path - array or dot separated stirng
+	 * @param  mixed $defaulValue
+	 * @return mixed
+	 */
+	protected function getSetting($path, $defaulValue = null) {
+		$pathArr = is_array($path) ? $path : explode('.', $path);
+		$settingPath = array_merge(['configuration', 'values'], $pathArr);
+		return Billrun_Util::getIn($this->settings, $settingPath, $defaulValue);
+	}
 
 	protected function render($tpl, array $parameters = null) {
 		return $this->getView()->render('api/index.phtml', $parameters);

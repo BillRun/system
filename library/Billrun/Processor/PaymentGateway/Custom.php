@@ -22,6 +22,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $correlatedValue;
 	protected $linkToInvoice = true;
         protected $informationArray = [];
+	protected $ignoreDuplicates = false;
         
         
 	protected $billSavedFields = array();
@@ -63,6 +64,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
 			return false;
 		}
+		$this->ignoreDuplicates = isset($currentProcessor['ignore_duplicates']) ? $currentProcessor['ignore_duplicates'] : $this->ignoreDuplicates;
 		$this->linkToInvoice = $this->getLinkToInvoiceValue($currentProcessor['processor']);
 		$headerStructure = isset($currentProcessor['parser']['header_structure']) ? $currentProcessor['parser']['header_structure'] : array();
 		$dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
@@ -81,9 +83,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$parsedData = $parser->getDataRows();
 		$rowCount = 0;
 
-		foreach ($parsedData as $line) {
-                        $line = $this->formatLine($line,$dataStructure);
-			$row = $this->getBillRunLine($line);
+		foreach ($parsedData as $index => $line) {
+            $line = $this->formatLine($line,$dataStructure);
+			$row = $this->getBillRunLine($line, $index);
 			if (!$row){
 				return false;
 			}
@@ -116,7 +118,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 					$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
 				}
 			if (isset($paramObj['decimals'])) {
-				$value = intval($row[$paramObj['name']]);
+                    $value = intval($row[$paramObj['name']]);
 				$row[$paramObj['name']] = (float) ($value / pow(10, $paramObj['decimals']));
 			}
 			if (isset($paramObj['type']) && $paramObj['type'] == "date") {
@@ -135,13 +137,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 					throw new Exception($message);
 				}
 				$row[$paramObj['name']] = substr($row[$paramObj['name']], $paramObj['substring']['offset'], $paramObj['substring']['length']);
-			}
-		}
-		return $row;
-	}
-
-	protected function getBillRunLine($rawLine) {
-		$row = $rawLine;
+                }
+            }
+            return $row;
+        }
+        
+	protected function getBillRunLine($rawLine, $line_index) {
+		$row = $this->ignoreDuplicates ? $rawLine : array_merge($rawLine, ['parser_record_number' => $line_index]);
 		$row['stamp'] = md5(serialize($row));
 		return $row;
 	}
@@ -275,9 +277,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$logData = $fileLog->getRawData();
 		return $logData['stamp'];
 	}
-
+	
 	protected function updatePaymentsByRows($data, $currentProcessor) {
-		$no_txid_counter = 0;
+                $no_txid_counter = 0;
 		$billSavedFieldsNames = $this->getBillSavedFieldsNames($currentProcessor['parser']);
 		foreach ($data['data'] as $row) {
 			$txid_from_file = "";
@@ -285,10 +287,10 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				//TODO : support multiple header/footer lines
 				$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ? $this->{$this->tranIdentifierField['source'] . 'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
 				if (($txid_from_file === "") && (static::$type != 'payments')) {
-					$no_txid_counter++;
-					continue;
-				}
-			}
+                            $no_txid_counter++;
+                            continue;
+                        }
+                    }
 			$bill = (static::$type != 'payments') ? Billrun_Bill_Payment::getInstanceByid($txid_from_file) : null;
 			if (is_null($bill) && static::$type != 'payments') {
 				Billrun_Factory::log('Unknown transaction ' . $txid_from_file . ' in file ' . $this->filePath, Zend_Log::ALERT);
@@ -299,9 +301,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		}
 		if ($no_txid_counter > 0) {
 			Billrun_Factory::log()->log('In ' . $no_txid_counter . ' lines, ' . $txid_from_file . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
-		}
+                }
 	}
-
+	
 	protected function updateLogCollection($fileCorrelation) {
 		$source = isset($fileCorrelation['source']) ? $fileCorrelation['source'] : null;
 		$correlationField = isset($fileCorrelation['field']) ? $fileCorrelation['field'] : null;
@@ -371,12 +373,18 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return $savedFields;
 	}
 	
-	public function getCustomPaymentGatewayFields() {
-		return [
-			'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
-			'cpg_type' => [!empty($type = $this->getType()) ? $type : ""],
-			'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""]];
-	}
+	public function getCustomPaymentGatewayFields($row = null) {
+		$res = [
+				'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
+				'cpg_type' => [!empty($type = $this->getType()) ? $type : ""], 
+				'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""],
+				'file' => trim($this->filename, DIRECTORY_SEPARATOR)
+		 ];
+		if (!is_null($row) && isset($row['parser_record_number'])) {
+			$res['record_number'] = $row['parser_record_number'];
+		}
+		return $res;
+        }
 
 	public function getPaymentUrt($row) {
 		$date = in_array($this->dateField['source'], ['header', 'trailer']) ? $this->{$this->dateField['source'] . 'Rows'}[$this->dateField['field']] : $row[$this->dateField['field']];
@@ -395,5 +403,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$this->linkToInvoice = (($processor['identifier_field']['field'] === 'invoice_id') && (isset($processor['identifier_field']['link_to_invoice']))) ? $processor['identifier_field']['link_to_invoice'] : $this->linkToInvoice;
 		}
 	}
-
+	
+	public function handleLogMessages($message, $level, $type) {
+		Billrun_Factory::log($message, $level);
+		$this->informationArray[$type][] = $message;
+	}
 }
