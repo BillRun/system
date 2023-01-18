@@ -22,7 +22,13 @@ class tap3ToSmscPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 
 	public function afterCalculatorUpdateRow($row, $calculator) {
-		if ($calculator->getCalculatorQueueType() == 'pricing' && $row['type'] == 'tap3' && $row['usaget'] == 'sms') {
+		if ($calculator->getCalculatorQueueType() == 'pricing' && $row['type'] == 'tap3' &&
+			// ignore SMS from tap3
+			 ( $row['usaget'] == 'sms'
+				||
+			//ignore data usage  for  VoLTE calls
+				preg_match('/^ims$/i',$row['apn']) )
+		) {
 			$lineTime = $row['urt']->sec;
 			$transferDay = strtotime($this->transferDaySmsc);
 			if ($lineTime >= $transferDay) {
