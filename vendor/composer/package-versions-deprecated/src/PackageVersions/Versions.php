@@ -34,7 +34,10 @@ final class Versions
      */
     const VERSIONS          = array (
   'alcaeus/mongo-php-adapter' => '1.2.0@b828ebc06cd3c270997b13c97dadc94731b36354',
+  'alexandr-mironov/php-smpp' => '1.3.0.7@4899dcd5807973f3ab662bb269a981c8084c11a8',
   'bshaffer/oauth2-server-php' => 'v1.11.1@5a0c8000d4763b276919e2106f54eddda6bc50fa',
+  'chillerlan/php-qrcode' => '4.3.4@2ca4bf5ae048af1981d1023ee42a0a2a9d51e51d',
+  'chillerlan/php-settings-container' => '2.1.4@1beb7df3c14346d4344b0b2e12f6f9a74feabd4a',
   'clue/stream-filter' => 'v1.6.0@d6169430c7731d8509da7aecd0af756a5747b78e',
   'composer/package-versions-deprecated' => '1.11.99.5@b4f54f74ef3453349c24a845d22392cd31e65f1d',
   'guzzlehttp/guzzle' => '6.5.8@a52f0440530b54fa079ce76e8c5d196a42cad981',
@@ -42,7 +45,7 @@ final class Versions
   'guzzlehttp/psr7' => '1.9.0@e98e3e6d4f86621a9b75f623996e6bbdeb4b9318',
   'jean85/pretty-package-versions' => '1.6.0@1e0104b46f045868f11942aea058cd7186d6c303',
   'league/omnipay' => 'v3.0.2@9e10d91cbf84744207e13d4483e79de39b133368',
-  'maennchen/zipstream-php' => '2.1.0@c4c5803cc1f93df3d2448478ef79394a5981cc58',
+  'maennchen/zipstream-php' => '2.2.1@211e9ba1530ea5260b45d90c9ea252f56ec52729',
   'markbaker/complex' => '2.0.3@6f724d7e04606fd8adaa4e3bb381c3e9db09c946',
   'markbaker/matrix' => '2.1.3@174395a901b5ba0925f1d790fa91bab531074b61',
   'moneyphp/money' => 'v3.3.3@0dc40e3791c67e8793e3aa13fead8cf4661ec9cd',
@@ -71,7 +74,7 @@ final class Versions
   'symfony/polyfill-php72' => 'v1.27.0@869329b1e9894268a8a61dabb69153029b7a8c97',
   'symfony/polyfill-php80' => 'v1.27.0@7a6ff3f1959bb01aefccb463a0f2cd3d3d2fd936',
   'simpletest/simpletest' => 'v1.2.0@4fb6006517a1428785a0ea704fbedcc675421ec4',
-  '__root__' => 'dev-master@8c2db5fc36be06b414e0dbf431b63bcef8ec0c35',
+  '__root__' => '1.0.0+no-version-set@',
 );
 
     private function __construct()

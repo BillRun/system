@@ -6,6 +6,8 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/modules/Billapi/Models/Verification.php';
+
 /**
  * Billapi model for operations on BillRun entities
  *

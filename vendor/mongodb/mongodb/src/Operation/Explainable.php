@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2018 MongoDB, Inc.
+ * Copyright 2018-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,18 @@ namespace MongoDB\Operation;
 use MongoDB\Driver\Server;
 
 /**
- * Explainable interface for explainable operations (count, distinct, find,
- * findAndModify, delete, and update).
+ * Explainable interface for explainable operations (aggregate, count, distinct,
+ * find, findAndModify, delete, and update).
  *
  * @internal
  */
 interface Explainable extends Executable
 {
+    /**
+     * Returns the command document for this operation.
+     *
+     * @param Server $server
+     * @return array
+     */
     public function getCommandDocument(Server $server);
 }

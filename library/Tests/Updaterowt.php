@@ -585,6 +585,25 @@ class Tests_Updaterowt extends UnitTestCase {
 					'multiDayCycle' => true, 'runCycle' => ['stamp' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [8]],
 					'stamp' => 'z9', "aid" => 10021, 'sid' => 20021, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date('Y-m-d',strtotime('-1 day')), "foreign" => ["account" => ["invoicing_day" => date('d',strtotime('-1 day'))]],),
 				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0), 'billrun' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()))),
+			//brcd 3471 -  same service in same period , the usage group will duplicate 
+				array('row' => array('stamp' => 'z10', 'aid' => 3471, 'sid' => 34711, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 220,
+					'urt' => '2022-02-05', 'services_data' => [
+						[
+							"name" => "A",
+							"from" => "time*2020-02-23",
+							"to" => "time*2122-02-23",
+							"service_id" =>"1725648430542577",
+							"creation_time" => "time*2022-02-24"
+						],
+						[
+							"name" => "A",
+							"from" => "time*2020-02-23T22:00:00Z",
+							"to" => "time*2122-02-23T22:00:00Z",
+							"service_id" => "1725648430542649",
+							"creation_time" => "time*2022-02-24"
+						]
+					],),
+				'expected' => array('in_group' => 200, 'over_group' => 20, 'aprice' => 20, 'charge' => array('retail' => 23.4,))),
 		];
 	}
 

@@ -1339,8 +1339,8 @@ lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
         _obj = {
             "client_id": secret.name,
             "client_secret": secret.key,
-            "grant_types": null,
-            "scope": null,
+            "grant_types": 'client_credentials',
+            "scope": 'global',
             "user_id": null
         };
         db.oauth_clients.insert(_obj)
@@ -1358,6 +1358,20 @@ runOnce(lastConfig, 'BRCD-2772', function () {
     lastConfig['plugins'].push(_webhookPluginsSettings);
 });
 
+// BRCD-2936: add email authentication template
+if (typeof lastConfig['email_templates']['email_authentication'] === 'undefined') {
+	lastConfig['email_templates']['email_authentication'] = {
+		'subject': 'BillRun Customer Portal - Email Address Verification',
+		'content': '<pre>\nHello [[name]],\n\nPlease verify your E-mail address by clicking on the link below:\nhttp://billrun/callback?token=[[token]]\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n',
+		'html_translation': [
+			'name',
+			'token',
+			'verification_link',
+			'company_email',
+        	'company_name',
+		]
+	};
+}
 lastConfig = runOnce(lastConfig, 'BRCD-3527', function () {
     var inCollectionField = 
             {
@@ -1419,7 +1433,78 @@ runOnce(lastConfig, 'BRCD-3432', function () {
     };
     lastConfig['plugins'].push(mbPluginsSettings);
 });
+// BRCD-3325 : Add default condition - the "rejection_required" condition doesn't exist.
+runOnce(lastConfig, 'BRCD-3325', function () {
+    var rejection_required_cond = {
+        "field": "aid",
+				"op" : "exists",
+				"value" : false
+    };
+		lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
+});
 
+runOnce(lastConfig, 'BRCD-3413', function () {
+        if(lastConfig['email_templates']['invoice_ready']['placeholders'] === undefined){
+            lastConfig['email_templates']['invoice_ready']['placeholders'] = [];
+        }
+	lastConfig['email_templates']['invoice_ready']['placeholders'].push(
+            {
+                name: "start_date",
+                title: "Billing cycle start date",
+                path: "start_date",
+                type: "date",
+                system:true
+            }, 
+            {
+                name: "end_date",
+                title: "Billing cycle end date",
+                path: "end_date",
+                type: "date",
+                system:true
+            },
+            {
+                name: "invoice_current_balance",
+                title: "Invoice current balance",
+                path: "totals.current_balance.after_vat",
+                system:true
+            }, 
+            {
+                name: "invoice_due_date",
+                title: "Invoice due date",
+                path: "due_date",
+                type: "date",
+                system:true
+            }
+        );
+});
+
+//BRCD-3421: migrate webhooks from config to separate collection
+runOnce(lastConfig, 'BRCD-3421', function () {
+    // create webhooks collection
+    db.createCollection('webhooks');
+    db.webhooks.createIndex({'webhook_id': 1}, { unique: true , background: true});
+    db.webhooks.createIndex({'module' : 1, 'action' : 1 }, { unique: false , background: true});
+
+    if (!lastConfig.hasOwnProperty('plugins')) {
+        return;
+    }
+    
+    searchIndex = lastConfig.plugins.findIndex((plugin) => plugin.name == 'webhooksPlugin');
+    if (searchIndex === false || searchIndex === -1) {
+        return;
+    }
+    if (!lastConfig.plugins[searchIndex].hasOwnProperty('configuration') || 
+            !lastConfig.plugins[searchIndex].configuration.hasOwnProperty('values') ||
+            !lastConfig.plugins[searchIndex].configuration.values.hasOwnProperty('config')) {
+        return;
+    }
+    var _insertWebhooks = lastConfig.plugins[searchIndex].configuration.values.config;
+    if (!_insertWebhooks || !_insertWebhooks.length) {
+        return;
+    }
+    db.webhooks.insert(_insertWebhooks);
+});
+db.lines.createIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 //BRCD-2336: Can't "closeandnew" a prepaid bucket
 lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
 
@@ -1428,7 +1513,6 @@ lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
     db.prepaidincludes.createIndex({external_id : 1}, {unique: false});
     db.prepaidincludes.createIndex({name : 1}, {unique: false});
 });
-
 var invoice_lang_field = {
 	"select_list": true,
 	"display": true,

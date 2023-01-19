@@ -640,7 +640,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 						if (!isset($paymentParams['pays'])) {
 							$paymentParams['pays'] = [];
 						}
-						Billrun_Bill::addRelatedBill($paymentParams['pays'], $billDetails['type'], $billDetails['unique_id'], $paymentParams['amount']);
+						Billrun_Bill::addRelatedBill($paymentParams['pays'], $billDetails['type'], $billDetails['unique_id'], $paymentParams['amount'], $billDetails['invoices'][0]); //assume that could be only one invoice 
 					}
 					$paymentParams['dir'] = 'fc';
 				} else if (!empty($billDetails['left'])) {
@@ -650,7 +650,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 						if (!isset($paymentParams['paid_by'])) {
 							$paymentParams['paid_by'] = [];
 						}
-						Billrun_Bill::addRelatedBill($paymentParams['paid_by'], $billDetails['type'], $billDetails['unique_id'], $paymentParams['amount']);
+						Billrun_Bill::addRelatedBill($paymentParams['paid_by'], $billDetails['type'], $billDetails['unique_id'], $paymentParams['amount'], $billDetails['invoices'][0]);//assume that could be only one invoice 
 					}
 					$paymentParams['dir'] = 'tc';
 				}
@@ -665,7 +665,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 						if (!isset($paymentParams[$payDir])) {
 							$paymentParams[$payDir] = [];
 						}
-						Billrun_Bill::addRelatedBill($paymentParams[$payDir], $invoice['type'], $id, $amount);
+						Billrun_Bill::addRelatedBill($paymentParams[$payDir], $invoice['type'], $id, $amount, $invoice);
 					}
 				}
 				if (Billrun_Util::isEqual($paymentParams['amount'], 0, Billrun_Bill::precision)) {

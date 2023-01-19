@@ -1,9 +1,10 @@
 <?php
+// $Id$
 
-require_once __DIR__ . '/../../../autorun.php';
-require_once __DIR__ . '/../../dom_tester.php';
+require_once dirname(__FILE__) . '/../../../autorun.php';
+require_once dirname(__FILE__) . '/../../dom_tester.php';
 
-SimpleTest::prefer(new TextReporter());
+SimpleTest :: prefer(new TextReporter());
 
 class TestOfLiveCssSelectors extends DomTestCase
 {
@@ -11,7 +12,7 @@ class TestOfLiveCssSelectors extends DomTestCase
     {
         $this->addHeader('User-Agent: SimpleTest ' . SimpleTest::getVersion());
     }
-
+    
     public function testGet()
     {
         $url = 'http://simpletest.org/';

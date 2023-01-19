@@ -270,7 +270,7 @@ abstract class Billrun_Bill {
 			foreach ($overPayingBills as $key2 => $overPayingBill) {
 				$payingBillAmountLeft = $overPayingBill->getLeft();
 				if ($payingBillAmountLeft && (Billrun_Util::isEqual($unpaidBillLeft, $payingBillAmountLeft, static::precision))) {
-					$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $payingBillAmountLeft)->save();
+					$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $payingBillAmountLeft, $unpaidBill->getRawData())->save();
 					$unpaidBill->attachPayingBill($overPayingBill, $payingBillAmountLeft)->save();
 					unset($unpaidBills[$key1]);
 					unset($overPayingBills[$key2]);
@@ -285,7 +285,7 @@ abstract class Billrun_Bill {
 				$payingBillAmountLeft = $overPayingBill->getLeft();
 				if ($payingBillAmountLeft) {
 					$amountPaid = min(array($unpaidBillLeft, $payingBillAmountLeft));
-					$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $amountPaid)->save();
+					$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $amountPaid, $unpaidBill->getRawData())->save();
 					$unpaidBill->attachPayingBill($overPayingBill, $amountPaid)->save();
 					$unpaidBillLeft -= $amountPaid;
 				}
@@ -456,7 +456,7 @@ abstract class Billrun_Bill {
 			$paidBy = $this->getPaidByBills();
 			$relatedBillId = Billrun_Bill::findRelatedBill($paidBy, $billType, $billId);
 			if ($relatedBillId == -1) {
-				Billrun_Bill::addRelatedBill($paidBy, $billType, $billId, $amount);
+				Billrun_Bill::addRelatedBill($paidBy, $billType, $billId, $amount, $bill->getRawData());
 			} else {
 				$paidBy[$relatedBillId]['amount'] += floatval($amount);
 			}
@@ -515,14 +515,14 @@ abstract class Billrun_Bill {
 		}
 	}
 
-	public function attachPaidBill($billType, $billId, $amount) {
+	public function attachPaidBill($billType, $billId, $amount, $bill) {
 		$paymentRawData = $this->data->getRawData();
 		if(!isset($paymentRawData['pays'])){
 			$paymentRawData['pays'] = [];
 		}
 		$relatedBillId = Billrun_Bill::findRelatedBill($paymentRawData['pays'], $billType, $billId);
 		if ($relatedBillId == -1) {
-			Billrun_Bill::addRelatedBill($paymentRawData['pays'], $billType, $billId, $amount);
+			Billrun_Bill::addRelatedBill($paymentRawData['pays'], $billType, $billId, $amount, $bill);
 		} else {
 			$paymentRawData['pays'][$relatedBillId]['amount'] += floatval($amount);
 		}
@@ -829,7 +829,7 @@ abstract class Billrun_Bill {
 								if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
 									$payment->setPending(false);
 								}
-							$updateBills[$bill['type']][$bill['id']]->attachPaidBill($payment->getType(), $payment->getId(), $bill['amount'])->save();
+							$updateBills[$bill['type']][$bill['id']]->attachPaidBill($payment->getType(), $payment->getId(), $bill['amount'], $payment->getRawData())->save();
 						}
 					} else {
 						Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
@@ -1106,6 +1106,8 @@ abstract class Billrun_Bill {
 						'left_to_pay' => '$left_to_pay',
 						'txid' => '$txid',
 						'type' => '$type',
+                                                'invoice_date' => '$invoice_date',
+                                                'urt' => '$urt'
 					)
 				),
 			);	
@@ -1155,7 +1157,7 @@ abstract class Billrun_Bill {
 		}
 		return $this->method;
 	}
-
+	
 	/**
 	 * Function to get the debt or the credit balance, of all the accounts that are in collection, by aids (aids list or query).
 	 * @param array $aids - array of aids, or query array on "aid" field in bill
@@ -1306,8 +1308,8 @@ abstract class Billrun_Bill {
 				return $ele['aid'];
 			}, $results), $results);
 	}
-
-
+	
+	
 	protected function setChargeNotBefore($chargeNotBefore) {
 		$rawData = $this->getRawData();
 		$rawData['charge']['not_before'] = $chargeNotBefore;
@@ -1398,18 +1400,25 @@ abstract class Billrun_Bill {
 	 * @param array $relatedBills - the bills object to which we want to add a linked bill	
 	 * @param srting $type - related bill's type. one of: "rec"/"inv"
 	 * @param mixed $id - related bill's id
-	 * @param float $amount - related bill's amount
+	 * @param float $amount - related bill's amount (calculated by left / left_to_pay fields)
+         * @param array $relatedBill - the related bill
 	 */
-	public static function addRelatedBill(&$relatedBills, $type, $id, $amount) {
+	public static function addRelatedBill(&$relatedBills, $type, $id, $amount, $relatedBill = []) {
 		if (empty($relatedBills)) {
 			$relatedBills = [];
 		}
-
-		$relatedBills[] = [
+		$relatedBillDetails = [
 			'type' => $type,
 			'id' => $type === 'inv' ? intval($id) : $id,
-			'amount' => floatval($amount),
+			'amount' => floatval($amount)
 		];
+                if(isset($relatedBill['amount'])){
+                    $relatedBillDetails['total_amount'] = $relatedBill['amount'];
+                }
+                if(($type === 'inv' && isset($relatedBill['invoice_date'])) || isset($relatedBill['urt'])){
+                    $relatedBillDetails['date'] =  $type === 'inv' ?  $relatedBill['invoice_date'] : $relatedBill['urt'];
+                }             
+                $relatedBills[] = $relatedBillDetails;
 	}
 	
 	/**
@@ -1475,7 +1484,7 @@ abstract class Billrun_Bill {
 			
 			$newPaymentParam = [];
 			foreach ($paymentParams[$dir] as $billType => $bills) {
-				foreach ($bills as $billId => $amount) {
+				foreach ($bills as $billId => $amount) {                                       
 					Billrun_Bill::addRelatedBill($newPaymentParam, $billType, $billId, $amount);
 				}
 			}
@@ -1483,4 +1492,5 @@ abstract class Billrun_Bill {
 			$paymentParams[$dir] = $newPaymentParam;
 		}
 	}
+
 }

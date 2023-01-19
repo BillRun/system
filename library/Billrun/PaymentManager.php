@@ -190,7 +190,7 @@ class Billrun_PaymentManager {
 				$paymentDir = $dir == Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER ? Billrun_DataTypes_PrePayment::PAY_DIR_PAYS : Billrun_DataTypes_PrePayment::PAY_DIR_PAID_BY;
 				$billId = $bill->getId();
 				$relatedBills = $prePayment->getData($paymentDir, []);
-				Billrun_Bill::addRelatedBill($relatedBills, $billType, $billId, $amount);
+				Billrun_Bill::addRelatedBill($relatedBills, $billType, $billId, $amount, $bill->getRawData());
 				$prePayment->setData($paymentDir, $relatedBills);
 				$paymentData = $prePayment->getData();
 				$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
@@ -390,7 +390,7 @@ class Billrun_PaymentManager {
 						if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
 							$updatedBill->attachPayingBill($payment, $amountPaid, (!empty($pgResponse) && empty($pgResponse['stage']) || ($this->isFileBasedCharge($params) && $payment->isWaiting())) ? 'Pending' : @$pgResponse['stage'])->save();
 						} else {
-							$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
+							$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid, $payment->getRawData())->save();
 						}
 					}
 					break;

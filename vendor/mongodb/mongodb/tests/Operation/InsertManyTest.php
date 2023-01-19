@@ -7,14 +7,14 @@ use MongoDB\Operation\InsertMany;
 
 class InsertManyTest extends TestCase
 {
-    public function testConstructorDocumentsMustNotBeEmpty()
+    public function testConstructorDocumentsMustNotBeEmpty(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('$documents is empty');
         new InsertMany($this->getDatabaseName(), $this->getCollectionName(), []);
     }
 
-    public function testConstructorDocumentsMustBeAList()
+    public function testConstructorDocumentsMustBeAList(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('$documents is not a list (unexpected index: "1")');
@@ -24,17 +24,17 @@ class InsertManyTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testConstructorDocumentsArgumentElementTypeChecks($document)
+    public function testConstructorDocumentsArgumentElementTypeChecks($document): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$documents[0\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$documents[0\] to have type "array or object" but found "[\w ]+"/');
         new InsertMany($this->getDatabaseName(), $this->getCollectionName(), [$document]);
     }
 
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options)
+    public function testConstructorOptionTypeChecks(array $options): void
     {
         $this->expectException(InvalidArgumentException::class);
         new InsertMany($this->getDatabaseName(), $this->getCollectionName(), [['x' => 1]], $options);

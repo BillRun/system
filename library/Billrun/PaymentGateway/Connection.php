@@ -109,4 +109,8 @@ abstract class Billrun_PaymentGateway_Connection {
 
 	abstract public function export($fileName);
 	abstract public function receive();
+	
+	public function getWorkspace() {
+		return $this->workspace;
+	}
 }

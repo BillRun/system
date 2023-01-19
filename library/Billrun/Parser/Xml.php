@@ -132,7 +132,7 @@ class Billrun_Parser_Xml {
 			foreach ($this->input_array['data'] as $data) {
 				$data_from_relative_path = 1;
 				$SubPath = trim(str_replace($this->segment_info['data']['common_path'], "", $data['path']), $this->pathDelimiter);
-				if($this->segment_info['data']['common_path'] == $data['path']) {
+				if ($this->segment_info['data']['common_path'] == $data['path']) {
 					$SubPath = $this->segment_info['data']['common_path'];
 					$data_from_relative_path = 0;
 				}
@@ -142,9 +142,9 @@ class Billrun_Parser_Xml {
 					$SubPath = ($data_from_relative_path ? './/' : '//') . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
 				}
 				$ReturndValue = $childData->xpath($SubPath);
-				if(!$data_from_relative_path && count($ReturndValue) !== 1 && isset($ReturndValue[$i])) {
+				if (!$data_from_relative_path && count($ReturndValue) !== 1 && isset($ReturndValue[$i])) {
 					$ReturndValue = is_array($ReturndValue[$i]) ? $ReturndValue[$i] : [$ReturndValue[$i]];
-				}	
+				}
 				$value = $this->getValue($ReturndValue, $data);
 				$this->dataRows[$this->dataRowsNum - 1][$data['name']] = $value;
 			}
@@ -154,16 +154,18 @@ class Billrun_Parser_Xml {
 	}
 
 	public function addSingleFieldValues($index, $set_index) {
-		if(!empty($this->single_fields)) {
+		if (!empty($this->single_fields)) {
 			$this->dataRows[$index] = array_merge($this->dataRows[$index], $this->single_fields);
 		}
 		if(!empty($this->single_fields_by_data_set)) {
 			foreach($this->single_fields_by_data_set as $name => $data) {
 				$this->dataRows[$index][$name] = isset($data[$set_index]) ? strval($data[$set_index]) : "";
 			}
+			$this->addSingleFieldValues($this->dataRowsNum - 1, $set_index);
+			$i++;
 		}
 	}
-	
+
 	protected function parseHeaderOrTrailer($segment, $currentChild, $xml_data) {
         $this->{$segment.'RowsNum'}++;
 		foreach ($this->input_array[$segment] as $data) {
@@ -193,10 +195,10 @@ class Billrun_Parser_Xml {
 						$this->pathsBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
 					} else {
 						throw new Exception("No path for one of the " . $segment . "'s entity. No parse was made.");
+					}
 				}
 			}
 		}
-	}
         
 		$this->file_common_path = $this->getLongestCommonPath($this->paths);
         foreach ($this->pathsBySegment as $segment => $paths) {
@@ -273,9 +275,9 @@ class Billrun_Parser_Xml {
 					$this->single_fields_by_data_set[$data['name']] = !is_null($val) ? $val : [];
 					unset($this->input_array['data'][$index]);
 				} else {
-				$val = $xml->xpath('/' . str_replace($this->pathDelimiter, '/', $data['path']));
-				$this->single_fields[$data['name']] = !empty($val) ? strval(current($val)) : "";
-				unset($this->input_array['data'][$index]);
+					$val = $xml->xpath('/' . str_replace($this->pathDelimiter, '/', $data['path']));
+					$this->single_fields[$data['name']] = !empty($val) ? strval(current($val)) : "";
+					unset($this->input_array['data'][$index]);
 				}
 			}
 		}

@@ -372,7 +372,6 @@ abstract class Billrun_Account extends Billrun_Base {
 	public function getData() {
 		return $this->data;
 	}
-	
 	/**
 	 * Function that returns the relevant aids for collection.
 	 * @param array $aids
@@ -386,6 +385,6 @@ abstract class Billrun_Account extends Billrun_Base {
 			$rejection_query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];
 		}
 		$account_query = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
-		return array_merge($rejection_query, $account_query);
+		return array_merge_recursive($rejection_query, $account_query);
 	}
 }
