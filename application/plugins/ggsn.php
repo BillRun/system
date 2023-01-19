@@ -275,7 +275,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 
 			if($isVoLTE) {
 				Billrun_Factory::log('Skipping CDR  with  APN : '.$cdrLine['apnni'],Zend_Log::DEBUG );
-				return false;
+				//return false;  // reinstate if needed
 			}
 
 			//convert to unified time GMT  time.
