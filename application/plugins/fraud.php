@@ -508,174 +508,174 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Save lines to the fraud DB lines collection.
 	 * @param type $lines
 	 */
-	public function insertToFraudLines($lines) {
-		try {
-			Billrun_Factory::log()->log('Fraud plugin - Inserting ' . count($lines) . ' Lines to fraud lines collection', Zend_Log::INFO);
-			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->linesCollection();
-			foreach ($lines as $line) {
-
-				$line['unified_record_time'] = $line['urt'];
-				if (isset($line['aid'])) {
-					$line['account_id'] = $line['aid'];
-				}
-				if (isset($line['sid'])) {
-					$line['subscriber_id'] = $line['sid'];
-				}
-
-				$fraud_connection->insert(new Mongodloid_Entity($line), array('w' => 0));
-			}
-		} catch (Exception $e) {
-			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud lines collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
-		}
-	}
+// 	public function insertToFraudLines($lines) {
+// 		try {
+// 			Billrun_Factory::log()->log('Fraud plugin - Inserting ' . count($lines) . ' Lines to fraud lines collection', Zend_Log::INFO);
+// 			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->linesCollection();
+// 			foreach ($lines as $line) {
+//
+// 				$line['unified_record_time'] = $line['urt'];
+// 				if (isset($line['aid'])) {
+// 					$line['account_id'] = $line['aid'];
+// 				}
+// 				if (isset($line['sid'])) {
+// 					$line['subscriber_id'] = $line['sid'];
+// 				}
+//
+// 				$fraud_connection->insert(new Mongodloid_Entity($line), array('w' => 0));
+// 			}
+// 		} catch (Exception $e) {
+// 			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud lines collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+// 		}
+// 	}
 
 	/**
 	 * TODO document
 	 * detect roaming ggsn lines
 	 * @param type $lines
 	 */
-	protected function insertRoamingGgsn($lines) {
-		$roamingLines = array();
-		foreach ($lines as $line) {
-			if (!preg_match('/^(?=62\.90\.|37\.26\.)/', $line['sgsn_address'])) {
-				$roamingLines[] = $line;
-			}
-		}
-		if (!empty($roamingLines)) {
-			$this->insertToFraudLines($roamingLines);
-		}
-	}
+// 	protected function insertRoamingGgsn($lines) {
+// 		$roamingLines = array();
+// 		foreach ($lines as $line) {
+// 			if (!preg_match('/^(?=62\.90\.|37\.26\.)/', $line['sgsn_address'])) {
+// 				$roamingLines[] = $line;
+// 			}
+// 		}
+// 		if (!empty($roamingLines)) {
+// 			$this->insertToFraudLines($roamingLines);
+// 		}
+// 	}
 
-	protected function insertIntlNsn($lines) {
-		$roamingLines = array();
-		$circuit_groups = Billrun_Util::getIntlCircuitGroups();
-		$record_types = array('01', '11');
-		foreach ($lines as $line) {
-			if (isset($line['out_circuit_group']) && in_array($line['out_circuit_group'], $circuit_groups) && in_array($line['record_type'], $record_types)) {
-				$roamingLines[] = $line;
-			}
-		}
-		if (!empty($roamingLines)) {
-			$this->insertToFraudLines($roamingLines);
-		}
-	}
+// 	protected function insertIntlNsn($lines) {
+// 		$roamingLines = array();
+// 		$circuit_groups = Billrun_Util::getIntlCircuitGroups();
+// 		$record_types = array('01', '11');
+// 		foreach ($lines as $line) {
+// 			if (isset($line['out_circuit_group']) && in_array($line['out_circuit_group'], $circuit_groups) && in_array($line['record_type'], $record_types)) {
+// 				$roamingLines[] = $line;
+// 			}
+// 		}
+// 		if (!empty($roamingLines)) {
+// 			$this->insertToFraudLines($roamingLines);
+// 		}
+// 	}
 
 	/**
 	 * TODO
 	 * @param \Billrun_Processor $processor
 	 * @return type
 	 */
-	public function afterProcessorStore($processor) {
-		$type = $processor->getType();
-		if ($type != "ggsn" && $type != "nsn") {
-			return;
-		}
-		Billrun_Factory::log('Plugin fraud afterProcessorStore', Zend_Log::INFO);
-		$runAsync = Billrun_Factory::config()->getConfigValue('fraud.runAsync', 1);
-		if (function_exists("pcntl_fork") && $runAsync && -1 !== ($pid = pcntl_fork())) {
-			if ($pid == 0) {
-				Billrun_Util::resetForkProcess();
-				Billrun_Factory::log('Plugin fraud::afterProcessorStore run it in async mode', Zend_Log::INFO);
-				if ($type == "ggsn") {
-					$this->insertRoamingGgsn($processor->getData()['data']);
-				} else if ($type == "nsn") {
-					$this->insertIntlNsn($processor->getData()['data']);
-				}
-				Billrun_Factory::log('Plugin fraud::afterProcessorStore async mode done.', Zend_Log::INFO);
-				exit(); // exit from child process after finish
-			}
-		} else {
-			Billrun_Factory::log('Plugin fraud::afterProcessorStore runing in sync mode', Zend_Log::INFO);
-			if ($type == "ggsn") {
-				$this->insertRoamingGgsn($processor->getData()['data']);
-			} else if ($type == "nsn") {
-				$this->insertIntlNsn($processor->getData()['data']);
-			}
-		}
-		Billrun_Factory::log('Plugin fraud afterProcessorStore was ended', Zend_Log::INFO);
-	}
+// 	public function afterProcessorStore($processor) {
+// 		$type = $processor->getType();
+// 		if ($type != "ggsn" && $type != "nsn") {
+// 			return;
+// 		}
+// 		Billrun_Factory::log('Plugin fraud afterProcessorStore', Zend_Log::INFO);
+// 		$runAsync = Billrun_Factory::config()->getConfigValue('fraud.runAsync', 1);
+// 		if (function_exists("pcntl_fork") && $runAsync && -1 !== ($pid = pcntl_fork())) {
+// 			if ($pid == 0) {
+// 				Billrun_Util::resetForkProcess();
+// 				Billrun_Factory::log('Plugin fraud::afterProcessorStore run it in async mode', Zend_Log::INFO);
+// 				if ($type == "ggsn") {
+// 					$this->insertRoamingGgsn($processor->getData()['data']);
+// 				} else if ($type == "nsn") {
+// 					$this->insertIntlNsn($processor->getData()['data']);
+// 				}
+// 				Billrun_Factory::log('Plugin fraud::afterProcessorStore async mode done.', Zend_Log::INFO);
+// 				exit(); // exit from child process after finish
+// 			}
+// 		} else {
+// 			Billrun_Factory::log('Plugin fraud::afterProcessorStore runing in sync mode', Zend_Log::INFO);
+// 			if ($type == "ggsn") {
+// 				$this->insertRoamingGgsn($processor->getData()['data']);
+// 			} else if ($type == "nsn") {
+// 				$this->insertIntlNsn($processor->getData()['data']);
+// 			}
+// 		}
+// 		Billrun_Factory::log('Plugin fraud afterProcessorStore was ended', Zend_Log::INFO);
+// 	}
 
-	public function afterCalculatorUpdateRow(&$line, $calculator) {
-		if($line['type'] == "nrtrde" && isset($line['billrun'])) {
-			unset($line['billrun']);
-		}
-		if (!$this->isLineLegitimate($line, $calculator)) {
-			return true;
-		}
-
-		if (!$calculator->getCalculatorQueueType() == 'rate' || $line['type'] != 'nsn') {
-			return true;
-		}
-
-		if (isset($line['called_number'])) {
-			// fire  event to increased called_number usagev
-			$this->triggerCalledNumber($line);
-		}
-
-		if (isset($line['sid']) && isset($line['usaget']) && $line['usaget'] == 'incoming_call') {
-			$this->triggerCallingNumber($line);
-		}
-	}
-
-	protected function triggerCalledNumber($line) {
-		$called_number = Billrun_Util::msisdn($line['called_number']);
-		$query = array(
-			'called_number' => $called_number,
-			'out_circuit_group' => isset($line['out_circuit_group']) ? $line['out_circuit_group'] : '',
-			'date' => (int) date('Ymd', $line['urt']->sec),
-		);
-
-		$update = array(
-			'$inc' => array(
-				'usagev' => $line['usagev'],
-				'eventsCount' => 1
-			),
-		);
-
-		$options = array(
-			'upsert' => true,
-			'w' => 0,
-		);
-
-		try {
-			Billrun_Factory::log()->log("Fraud plugin - called " . $called_number . " with usagev of " . $line['usagev'] . " upserted to the fraud called collection", Zend_Log::DEBUG);
-			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud2.db'))->calledCollection();
-			$fraud_connection->update($query, $update, $options);
-		} catch (Exception $e) {
-			// @TODO: dump to file for durability
-			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $line['stamp'] . " to the fraud called, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
-		}
-	}
-
-	protected function triggerCallingNumber($line) {
-		$calling_number = Billrun_Util::msisdn($line['calling_number']);
-		$query = array(
-			'calling_number' => $calling_number,
-			'in_circuit_group' => isset($line['in_circuit_group']) ? $line['in_circuit_group'] : '',
-			'date' => (int) date('Ymd', $line['urt']->sec),
-		);
-
-		$update = array(
-			'$inc' => array(
-				'usagev' => $line['usagev'],
-				'eventsCount' => 1
-			),
-		);
-
-		$options = array(
-			'upsert' => true,
-			'w' => 0,
-		);
-
-		try {
-			Billrun_Factory::log()->log("Fraud plugin - calling " . $calling_number . " with usagev of " . $line['usagev'] . " upserted to the fraud calling collection", Zend_Log::DEBUG);
-			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud2.db'))->callingCollection();
-			$fraud_connection->update($query, $update, $options);
-		} catch (Exception $e) {
-			// @TODO: dump to file for durability
-			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $line['stamp'] . " to the fraud calling, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
-		}
-	}
+// 	public function afterCalculatorUpdateRow(&$line, $calculator) {
+// 		if($line['type'] == "nrtrde" && isset($line['billrun'])) {
+// 			unset($line['billrun']);
+// 		}
+// 		if (!$this->isLineLegitimate($line, $calculator)) {
+// 			return true;
+// 		}
+//
+// 		if (!$calculator->getCalculatorQueueType() == 'rate' || $line['type'] != 'nsn') {
+// 			return true;
+// 		}
+//
+// 		if (isset($line['called_number'])) {
+// 			// fire  event to increased called_number usagev
+// 			$this->triggerCalledNumber($line);
+// 		}
+//
+// 		if (isset($line['sid']) && isset($line['usaget']) && $line['usaget'] == 'incoming_call') {
+// 			$this->triggerCallingNumber($line);
+// 		}
+// 	}
+//
+// 	protected function triggerCalledNumber($line) {
+// 		$called_number = Billrun_Util::msisdn($line['called_number']);
+// 		$query = array(
+// 			'called_number' => $called_number,
+// 			'out_circuit_group' => isset($line['out_circuit_group']) ? $line['out_circuit_group'] : '',
+// 			'date' => (int) date('Ymd', $line['urt']->sec),
+// 		);
+//
+// 		$update = array(
+// 			'$inc' => array(
+// 				'usagev' => $line['usagev'],
+// 				'eventsCount' => 1
+// 			),
+// 		);
+//
+// 		$options = array(
+// 			'upsert' => true,
+// 			'w' => 0,
+// 		);
+//
+// 		try {
+// 			Billrun_Factory::log()->log("Fraud plugin - called " . $called_number . " with usagev of " . $line['usagev'] . " upserted to the fraud called collection", Zend_Log::DEBUG);
+// 			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud2.db'))->calledCollection();
+// 			$fraud_connection->update($query, $update, $options);
+// 		} catch (Exception $e) {
+// 			// @TODO: dump to file for durability
+// 			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $line['stamp'] . " to the fraud called, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+// 		}
+// 	}
+//
+// 	protected function triggerCallingNumber($line) {
+// 		$calling_number = Billrun_Util::msisdn($line['calling_number']);
+// 		$query = array(
+// 			'calling_number' => $calling_number,
+// 			'in_circuit_group' => isset($line['in_circuit_group']) ? $line['in_circuit_group'] : '',
+// 			'date' => (int) date('Ymd', $line['urt']->sec),
+// 		);
+//
+// 		$update = array(
+// 			'$inc' => array(
+// 				'usagev' => $line['usagev'],
+// 				'eventsCount' => 1
+// 			),
+// 		);
+//
+// 		$options = array(
+// 			'upsert' => true,
+// 			'w' => 0,
+// 		);
+//
+// 		try {
+// 			Billrun_Factory::log()->log("Fraud plugin - calling " . $calling_number . " with usagev of " . $line['usagev'] . " upserted to the fraud calling collection", Zend_Log::DEBUG);
+// 			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud2.db'))->callingCollection();
+// 			$fraud_connection->update($query, $update, $options);
+// 		} catch (Exception $e) {
+// 			// @TODO: dump to file for durability
+// 			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $line['stamp'] . " to the fraud calling, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+// 		}
+// 	}
 
 	protected function isLineLegitimate($row, $calculator) {
 		$queue_line = $calculator->getQueueLine($row['stamp']);
