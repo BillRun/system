@@ -212,7 +212,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		return $rates->query($query)->cursor()->current();
 	}
 	
-	protected function getLineAdditionalValues(){
+	protected function getLineAdditionalValues($row){
 		return array();
 	}
 	
