@@ -41,6 +41,7 @@ class OpenapiController extends RealtimeController {
 	protected $requestType;
 	protected $sessionId;
 	protected $initialRequest = null;
+	protected $missingData = [];
 
 	public function indexAction() {
 		$this->setHttpStatusCode(Billrun_Utils_HttpStatusCodes::HTTP_FORBIDDEN);
@@ -79,7 +80,7 @@ class OpenapiController extends RealtimeController {
 	 * see parent::getConfig
 	 */
 	protected function getConfig() {
-		return Billrun_Factory::config()->getFileTypeSettings('Realtime_RF', true);
+		return Billrun_Factory::config()->getFileTypeSettings('REALTIME_RF', true);
 	}
 	
 	/**
@@ -117,8 +118,7 @@ class OpenapiController extends RealtimeController {
 			$this->setHttpStatusCode(Billrun_Utils_HttpStatusCodes::HTTP_CREATED);
 			$this->requestType = 'initial';
 			$this->sessionId = uniqid();
-			$location = self::LOCATION . "/{$this->sessionId}";
-			$this->getResponse()->setHeader('Location', $location);
+			$this->setLocationHeader();
 		} else {
 			$this->sessionId = array_keys($params)[0];
 			$this->requestType = array_values($params)[0];
@@ -126,10 +126,18 @@ class OpenapiController extends RealtimeController {
 	}
 	
 	/**
+	 * method to set header location in case of success reservation
+	 */
+	protected function setLocationHeader() {
+		$location = self::LOCATION . "/{$this->sessionId}";
+		$this->getResponse()->setHeader('Location', $location);
+	}
+	
+	/**
 	 * see parent::process
 	 */
 	protected function process() {
-		$this->addMissingData();
+		$this->initMissingData();
 		$this->splitServiceRatings();
 		$lines = parent::process();
 		return $this->mergeServiceRatings($lines);
@@ -138,9 +146,12 @@ class OpenapiController extends RealtimeController {
 	/**
 	 * add missing data from initial request
 	 */
-	protected function addMissingData() {
+	protected function initMissingData() {
+		// todo: move to configuration
 		$fieldsToAdd = [
 			'uf.subscriptionId',
+			'uf.serviceRating.serviceInformation.sgsnMccMnc.mcc',
+			'uf.serviceRating.serviceInformation.sgsnMccMnc.mnc',
 		];
 		
 		if ($this->requestType === 'initial') {
@@ -154,10 +165,19 @@ class OpenapiController extends RealtimeController {
 			}
 
 			$initialRequest = $this->getInitialRequest();
-			$data = Billrun_Util::getIn($initialRequest, $fieldToAdd, '');
-			if (!empty($data)) {
-				Billrun_Util::setIn($this->event, $fieldToAdd, $data);
-			}
+			$missingData = Billrun_Util::getIn($initialRequest, $fieldToAdd, '');
+			$this->missingData[$fieldToAdd] = $missingData;
+		}
+	}
+	
+	/**
+	 * method to setup missing data for row
+	 * 
+	 * @param void
+	 */
+	protected function setMissingDataForRow(&$row) {
+		foreach ($this->missingData as $key => $val) {
+			Billrun_Util::setIn($row, $key, $val);
 		}
 	}
 	
@@ -176,13 +196,27 @@ class OpenapiController extends RealtimeController {
 				'record_type' => 'initial_request',
 				'type' => $this->event['type'],
 			);
-			$line = Billrun_Factory::db()->archiveCollection()->query($query)->cursor()
+			$line = $this->getBaseCollection()->query($query)->cursor()
 				->sort(array('urt' => -1))
 				->limit(1);
 			$this->initialRequest = $line->count() ? $line->current() : false;
 		}
 
 		return $this->initialRequest;
+	}
+	
+	/**
+	 * method to return the collection the initial line exists
+	 * in prepaid it would be archive collection, while postpaid it will be lines collection
+	 * 
+	 * @return Mongodloid_Collection
+	 */
+	protected function getBaseCollection() {
+		$config = $this->getConfig();
+		if ($config['realtime']['postpay_charge']) {
+			return Billrun_Factory::db()->linesCollection();
+		}
+		return Billrun_Factory::db()->archiveCollection();
 	}
 	
 	/**
@@ -205,9 +239,10 @@ class OpenapiController extends RealtimeController {
 			if (isset($row['uf']['serviceRating']['ratingGroup'])) {
 				$row['uf']['serviceRating']['ratingGroup'] = (string)$row['uf']['serviceRating']['ratingGroup']; //currently, custom fields are strings
 			}
-			$row['rebalance_required'] = in_array($requestSubType, [self::RATING_ACTION_DEBIT, self::RATING_ACTION_RELEASE]);
-			$row['reservation_required'] = in_array($requestSubType, [self::RATING_ACTION_RESERVE]);
+			$row['rebalance_required'] = !$this->config['realtime']['postpay_charge'] && in_array($requestSubType, [self::RATING_ACTION_DEBIT, self::RATING_ACTION_RELEASE]);
+			$row['reservation_required'] = $this->config['realtime']['postpay_charge'] || in_array($requestSubType, [self::RATING_ACTION_RESERVE]);
 			$row['request_id'] = $requestId;
+			$this->setMissingDataForRow($row);
 			$this->event[] = $row;
 		}
 
@@ -235,6 +270,7 @@ class OpenapiController extends RealtimeController {
 			$serviceRating['rebalance_required'] = $line['rebalance_required'];
 			$serviceRating['reservation_required'] = $line['reservation_required'];
 			$serviceRating['blocked_rate'] = $line['blocked_rate'] ?? false;
+			$serviceRating['arategroups'] = $line['arategroups'] ?? false;
 			$ret['service_rating'][] = $serviceRating;
 		}
 

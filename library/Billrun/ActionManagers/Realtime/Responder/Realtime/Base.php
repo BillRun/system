@@ -55,7 +55,7 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 			
 			if ($serviceRating['reservation_required'] ?? false) {
 				$serviceRatingRes['grantedUnit'] = [
-					$unitsField => $serviceRating['usagev'] ?? 0,
+					$unitsField => $this->getGrantedUnit($serviceRating),
 				];
 			}
 			
@@ -70,6 +70,26 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 
 		return $ret;
 	}
+	
+	protected function getGrantedUnit($serviceRating) {
+		if ($this->config['realtime']['postpay_charge'] && $this->config['realtime']['block_over_group']) {
+			return $this->getRateGroupLeft();
+		}
+		return $serviceRating['usagev'] ?? 0;
+	}
+	
+	/**
+	 * method to retrieve how much left on postpaid group balance
+	 * 
+	 * @return int the volume left
+	 */
+	protected function getRateGroupLeft() {
+		$arategroups = $this->row['arategroups'];
+		if ($arategroups[count($arategroups)-1]['left'] > 0) {
+			return $arategroups[count($arategroups)-1]['left'];
+		}
+		return 0;
+	}
 
 	/**
 	 * get result code used by OpenAPI
@@ -83,6 +103,11 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 		
 		$returnCode = $serviceRating['return_code'];
 		$returnCodes = Billrun_Factory::config()->getConfigValue('realtime.granted_code', []);
+
+		if ($returnCode == $returnCodes['ok'] && $this->config['realtime']['postpay_charge'] && $this->config['realtime']['block_over_group'] && $this->getRateGroupLeft() == 0) {
+			$returnCode = $returnCodes['no_available_balances'];
+		}
+		
 		switch ($returnCode) {
 			case $returnCodes['no_available_balances']:
 				return 'QUOTA_LIMIT_REACHED';

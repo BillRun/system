@@ -1637,7 +1637,7 @@ class ConfigModel {
 			throw new Exception('Response settings is not an array');
 		}
 		
-		if (!isset($responseSettings['encode']) || !in_array($responseSettings['encode'], array('json'))) {
+		if (!isset($responseSettings['encode']) || !in_array($responseSettings['encode'], array('json', 'array'))) {
 			throw new Exception('Invalid response encode type');
 		}
 
