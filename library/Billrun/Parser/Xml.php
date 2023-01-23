@@ -161,8 +161,6 @@ class Billrun_Parser_Xml {
 			foreach($this->single_fields_by_data_set as $name => $data) {
 				$this->dataRows[$index][$name] = isset($data[$set_index]) ? strval($data[$set_index]) : "";
 			}
-			$this->addSingleFieldValues($this->dataRowsNum - 1, $set_index);
-			$i++;
 		}
 	}
 
