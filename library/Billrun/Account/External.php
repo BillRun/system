@@ -144,8 +144,21 @@ class Billrun_Account_External extends Billrun_Account {
 	 * Method to Save as 'Close And New' item
 	 */
 	public function closeAndNew($set_values, $remove_values = array()) {
-		
+		return true;
 	}
+	
+	/**
+	 * method to make permanent change
+	 * on external subscribers mode no need to make updates to account as account is managed by 3rd party
+	 * @param type $query
+	 * @param type $update
+	 * @return true always
+	 */
+	public function permanentChange($query, $update) {
+		return true;
+	}
+
+
 
 	protected function buildParams(&$query) {
 
