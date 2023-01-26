@@ -104,6 +104,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 					$backedTo = $this->backup($fileData['path'], $file, $this->backupPaths);
 					$fileData['backed_to'] = $backedTo;
 				}
+				Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file, &$fileData));
 				// Log to DB
 				if ($this->logDB($fileData)) {
 					$ret[] = $fileData['path'];
@@ -121,7 +122,6 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 				if ($count >= $this->limit) {
 					break;
 				}
-				Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file));
 			}
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("SSH: Fail when downloading. with exception : " . $e, Zend_Log::DEBUG);
@@ -221,7 +221,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 
 		$addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => new MongoDate()
+			'received_time' => new Mongodloid_Date()
 		);
 
 		$update = array(

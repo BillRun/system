@@ -13,7 +13,7 @@
  * @subpackage      Auto-renew
  * @since           4.4
  */
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
 class Tests_Subscriber extends UnitTestCase {
 	
@@ -86,7 +86,7 @@ class Tests_Subscriber extends UnitTestCase {
 //			$start = $test['start'];
 //			$end = $test['end'];
 //			$expected = $test['expected'];
-//			$result = Billrun_Plan::getMonthsDiff($start, $end);
+//			$result = Billrun_Utils_Time::getMonthsDiff($start, $end);
 //			$roundedResult = round($result, 8, PHP_ROUND_HALF_UP);
 //			$roundedExpected = round($expected, 8, PHP_ROUND_HALF_UP);
 //			$this->assertEqual($roundedResult, $roundedExpected, $test['msg'] . " expected: " . print_r($expected,1) . " result: " . print_r($result,1));

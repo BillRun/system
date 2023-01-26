@@ -39,4 +39,35 @@ class Models_Rates extends Models_Entity {
 		$play = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
 		return Billrun_Utils_Plays::filterCustomFields($customFields, $play);
 	}
+	
+	/**
+	 * Returns true if current record does not overlap with existing records in the DB
+	 * @param array $data
+	 * @param array $ignoreIds
+	 * @return boolean
+	 */
+	protected function duplicateCheck($data, $ignoreIds = array()) {
+		// to allow create revisions - if OK can be moved to the parrent
+		if ($this->is_import) {
+			$duplicate_check_fields = Billrun_Util::getFieldVal($this->config['duplicate_check'], []);
+			$query = array();
+			foreach ($duplicate_check_fields as $fieldName) {
+				$query[$fieldName] = $data[$fieldName];
+			}
+			$query['from'] = [
+				'$lt' => $data['to']
+			];
+			$query['to'] = [
+				'$gt' => $data['from']
+			];
+			if ($ignoreIds) {
+				$query['_id'] = array(
+					'$nin' => $ignoreIds,
+				);
+			}
+			return $query ? !$this->collection->query($query)->count() : TRUE;
+		}
+		return parent::duplicateCheck($data, $ignoreIds);
+	}
+
 }

@@ -275,7 +275,11 @@ class Billrun_Utils_Time {
 	 * @param mixed $value
 	 */
 	public static function getTime($value) {
-		if ($value instanceof MongoDate) {
+		if ($value instanceof Mongodloid_Date) {
+			return $value->sec;
+		}
+		
+		if ($value instanceof Mongodloid_Date) {
 			return $value->sec;
 		}
 		
@@ -314,4 +318,81 @@ class Billrun_Utils_Time {
 		}
 	}
 
+	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0 by day amount
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getDaysSpanDiff($from, $to, $daySpan) {
+		$minDate = new DateTime($from);
+		$maxDate = new DateTime($to);
+
+		return (($minDate->diff($maxDate)->days+1) / $daySpan) * ($from > $to ? -1 : 1);
+	}
+
+	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0 by day amount with unix timestamps
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getDaysSpanDiffUnix($from, $to, $daySpan) {
+		$formatedFrom = date(Billrun_Base::base_dateformat,$from);
+		$formatedTo = date(Billrun_Base::base_dateformat,$to);
+
+		return static::getDaysSpanDiff($formatedFrom, $formatedTo, $daySpan);
+	}
+
+	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getDaysSpan($from, $to) {
+		$minDate = new DateTime($from);
+		$maxDate = new DateTime($to);
+
+		return $minDate->diff($maxDate)->days;
+	}
+
+
+		/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getMonthsDiff($from, $to) {
+		$minDate = new DateTime($from);
+		$maxDate = new DateTime($to);
+		if ($minDate->format('Y') == $maxDate->format('Y') && $minDate->format('m') == $maxDate->format('m')) {
+			return ($maxDate->format('d') - $minDate->format('d') + 1) / $minDate->format('t');
+		}
+		$yearDiff = $maxDate->format('Y') - $minDate->format('Y');
+		switch ($yearDiff) {
+			case 0:
+				$months = $maxDate->format('m') - $minDate->format('m') - 1;
+				break;
+			default :
+				$months = $maxDate->format('m') + 11 - $minDate->format('m') + ($yearDiff - 1) * 12;
+				break;
+		}
+		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + $maxDate->format('d') / $maxDate->format('t') + $months;
+	}
+
+
+	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getMonthsDiffUnix($from, $to) {
+		$formatedFrom = date(Billrun_Base::base_dateformat,$from);
+		$formatedTo = date(Billrun_Base::base_dateformat,$to);
+
+		return static::getMonthsDiff($formatedFrom,$formatedTo);
+	}
 }

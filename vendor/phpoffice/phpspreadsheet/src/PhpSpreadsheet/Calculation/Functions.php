@@ -3,6 +3,8 @@
 namespace PhpOffice\PhpSpreadsheet\Calculation;
 
 use PhpOffice\PhpSpreadsheet\Cell\Cell;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class Functions
 {
@@ -13,12 +15,13 @@ class Functions
      */
     const M_2DIVPI = 0.63661977236758134307553505349006;
 
-    /** constants */
     const COMPATIBILITY_EXCEL = 'Excel';
     const COMPATIBILITY_GNUMERIC = 'Gnumeric';
     const COMPATIBILITY_OPENOFFICE = 'OpenOfficeCalc';
 
+    /** Use of RETURNDATE_PHP_NUMERIC is discouraged - not 32-bit Y2038-safe, no timezone. */
     const RETURNDATE_PHP_NUMERIC = 'P';
+    /** Use of RETURNDATE_UNIX_TIMESTAMP is discouraged - not 32-bit Y2038-safe, no timezone. */
     const RETURNDATE_UNIX_TIMESTAMP = 'P';
     const RETURNDATE_PHP_OBJECT = 'O';
     const RETURNDATE_PHP_DATETIME_OBJECT = 'O';
@@ -57,8 +60,6 @@ class Functions
     /**
      * Set the Compatibility Mode.
      *
-     * @category Function Configuration
-     *
      * @param string $compatibilityMode Compatibility Mode
      *                                                Permitted values are:
      *                                                    Functions::COMPATIBILITY_EXCEL            'Excel'
@@ -69,7 +70,8 @@ class Functions
      */
     public static function setCompatibilityMode($compatibilityMode)
     {
-        if (($compatibilityMode == self::COMPATIBILITY_EXCEL) ||
+        if (
+            ($compatibilityMode == self::COMPATIBILITY_EXCEL) ||
             ($compatibilityMode == self::COMPATIBILITY_GNUMERIC) ||
             ($compatibilityMode == self::COMPATIBILITY_OPENOFFICE)
         ) {
@@ -83,8 +85,6 @@ class Functions
 
     /**
      * Return the current Compatibility Mode.
-     *
-     * @category Function Configuration
      *
      * @return string Compatibility Mode
      *                            Possible Return values are:
@@ -100,8 +100,6 @@ class Functions
     /**
      * Set the Return Date Format used by functions that return a date/time (Excel, PHP Serialized Numeric or PHP Object).
      *
-     * @category Function Configuration
-     *
      * @param string $returnDateType Return Date Format
      *                                                Permitted values are:
      *                                                    Functions::RETURNDATE_UNIX_TIMESTAMP        'P'
@@ -112,7 +110,8 @@ class Functions
      */
     public static function setReturnDateType($returnDateType)
     {
-        if (($returnDateType == self::RETURNDATE_UNIX_TIMESTAMP) ||
+        if (
+            ($returnDateType == self::RETURNDATE_UNIX_TIMESTAMP) ||
             ($returnDateType == self::RETURNDATE_PHP_DATETIME_OBJECT) ||
             ($returnDateType == self::RETURNDATE_EXCEL)
         ) {
@@ -126,8 +125,6 @@ class Functions
 
     /**
      * Return the current Return Date Format for functions that return a date/time (Excel, PHP Serialized Numeric or PHP Object).
-     *
-     * @category Function Configuration
      *
      * @return string Return Date Format
      *                            Possible Return values are:
@@ -143,8 +140,6 @@ class Functions
     /**
      * DUMMY.
      *
-     * @category Error Returns
-     *
      * @return string #Not Yet Implemented
      */
     public static function DUMMY()
@@ -154,8 +149,6 @@ class Functions
 
     /**
      * DIV0.
-     *
-     * @category Error Returns
      *
      * @return string #Not Yet Implemented
      */
@@ -173,8 +166,6 @@ class Functions
      * Returns the error value #N/A
      *        #N/A is the error value that means "no value is available."
      *
-     * @category Logical Functions
-     *
      * @return string #N/A!
      */
     public static function NA()
@@ -186,8 +177,6 @@ class Functions
      * NaN.
      *
      * Returns the error value #NUM!
-     *
-     * @category Error Returns
      *
      * @return string #NUM!
      */
@@ -201,8 +190,6 @@ class Functions
      *
      * Returns the error value #NAME?
      *
-     * @category Error Returns
-     *
      * @return string #NAME?
      */
     public static function NAME()
@@ -214,8 +201,6 @@ class Functions
      * REF.
      *
      * Returns the error value #REF!
-     *
-     * @category Error Returns
      *
      * @return string #REF!
      */
@@ -229,8 +214,6 @@ class Functions
      *
      * Returns the error value #NULL!
      *
-     * @category Error Returns
-     *
      * @return string #NULL!
      */
     public static function null()
@@ -242,8 +225,6 @@ class Functions
      * VALUE.
      *
      * Returns the error value #VALUE!
-     *
-     * @category Error Returns
      *
      * @return string #VALUE!
      */
@@ -272,11 +253,13 @@ class Functions
         $condition = self::flattenSingleValue($condition);
 
         if ($condition === '') {
-            $condition = '=""';
+            return '=""';
         }
-
         if (!is_string($condition) || !in_array($condition[0], ['>', '<', '='])) {
-            if (!is_numeric($condition)) {
+            $condition = self::operandSpecialHandling($condition);
+            if (is_bool($condition)) {
+                return '=' . ($condition ? 'TRUE' : 'FALSE');
+            } elseif (!is_numeric($condition)) {
                 $condition = Calculation::wrapResult(strtoupper($condition));
             }
 
@@ -285,9 +268,10 @@ class Functions
         preg_match('/(=|<[>=]?|>=?)(.*)/', $condition, $matches);
         [, $operator, $operand] = $matches;
 
+        $operand = self::operandSpecialHandling($operand);
         if (is_numeric(trim($operand, '"'))) {
             $operand = trim($operand, '"');
-        } elseif (!is_numeric($operand)) {
+        } elseif (!is_numeric($operand) && $operand !== 'FALSE' && $operand !== 'TRUE') {
             $operand = str_replace('"', '""', $operand);
             $operand = Calculation::wrapResult(strtoupper($operand));
         }
@@ -295,12 +279,33 @@ class Functions
         return str_replace('""""', '""', $operator . $operand);
     }
 
+    private static function operandSpecialHandling($operand)
+    {
+        if (is_numeric($operand) || is_bool($operand)) {
+            return $operand;
+        } elseif (strtoupper($operand) === Calculation::getTRUE() || strtoupper($operand) === Calculation::getFALSE()) {
+            return strtoupper($operand);
+        }
+
+        // Check for percentage
+        if (preg_match('/^\-?\d*\.?\d*\s?\%$/', $operand)) {
+            return ((float) rtrim($operand, '%')) / 100;
+        }
+
+        // Check for dates
+        if (($dateValueOperand = Date::stringToExcel($operand)) !== false) {
+            return $dateValueOperand;
+        }
+
+        return $operand;
+    }
+
     /**
      * ERROR_TYPE.
      *
      * @param mixed $value Value to check
      *
-     * @return bool
+     * @return int|string
      */
     public static function errorType($value = '')
     {
@@ -573,7 +578,7 @@ class Functions
     /**
      * Convert a multi-dimensional array to a simple 1-dimensional array.
      *
-     * @param array $array Array to be flattened
+     * @param array|mixed $array Array to be flattened
      *
      * @return array Flattened array
      */
@@ -606,7 +611,7 @@ class Functions
     /**
      * Convert a multi-dimensional array to a simple 1-dimensional array, but retain an element of indexing.
      *
-     * @param array $array Array to be flattened
+     * @param array|mixed $array Array to be flattened
      *
      * @return array Flattened array
      */
@@ -656,25 +661,51 @@ class Functions
      * ISFORMULA.
      *
      * @param mixed $cellReference The cell to check
-     * @param Cell $pCell The current cell (containing this formula)
+     * @param ?Cell $cell The current cell (containing this formula)
      *
      * @return bool|string
      */
-    public static function isFormula($cellReference = '', Cell $pCell = null)
+    public static function isFormula($cellReference = '', ?Cell $cell = null)
     {
-        if ($pCell === null) {
+        if ($cell === null) {
             return self::REF();
         }
+        $cellReference = self::expandDefinedName((string) $cellReference, $cell);
+        $cellReference = self::trimTrailingRange($cellReference);
 
         preg_match('/^' . Calculation::CALCULATION_REGEXP_CELLREF . '$/i', $cellReference, $matches);
 
         $cellReference = $matches[6] . $matches[7];
-        $worksheetName = trim($matches[3], "'");
+        $worksheetName = str_replace("''", "'", trim($matches[2], "'"));
 
         $worksheet = (!empty($worksheetName))
-            ? $pCell->getWorksheet()->getParent()->getSheetByName($worksheetName)
-            : $pCell->getWorksheet();
+            ? $cell->getWorksheet()->getParent()->getSheetByName($worksheetName)
+            : $cell->getWorksheet();
 
         return $worksheet->getCell($cellReference)->isFormula();
+    }
+
+    public static function expandDefinedName(string $coordinate, Cell $cell): string
+    {
+        $worksheet = $cell->getWorksheet();
+        $spreadsheet = $worksheet->getParent();
+        // Uppercase coordinate
+        $pCoordinatex = strtoupper($coordinate);
+        // Eliminate leading equal sign
+        $pCoordinatex = Worksheet::pregReplace('/^=/', '', $pCoordinatex);
+        $defined = $spreadsheet->getDefinedName($pCoordinatex, $worksheet);
+        if ($defined !== null) {
+            $worksheet2 = $defined->getWorkSheet();
+            if (!$defined->isFormula() && $worksheet2 !== null) {
+                $coordinate = "'" . $worksheet2->getTitle() . "'!" . Worksheet::pregReplace('/^=/', '', $defined->getValue());
+            }
+        }
+
+        return $coordinate;
+    }
+
+    public static function trimTrailingRange(string $coordinate): string
+    {
+        return Worksheet::pregReplace('/:[\\w\$]+$/', '', $coordinate);
     }
 }

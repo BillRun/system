@@ -93,7 +93,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
                 
         $addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => new MongoDate()
+			'received_time' => new Mongodloid_Date()
                     );
 		
 		if (!empty($fileData['source']) && in_array($fileData['source'], $file_types)) {

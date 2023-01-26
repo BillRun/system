@@ -147,7 +147,7 @@ class Matrix
      * @param int $i Row position
      * @param int $j Column position
      *
-     * @return mixed Element (int/float/double)
+     * @return float|int
      */
     public function get($i = null, $j = null)
     {
@@ -158,11 +158,6 @@ class Matrix
      * getMatrix.
      *
      *    Get a submatrix
-     *
-     * @param int $i0 Initial row index
-     * @param int $iF Final row index
-     * @param int $j0 Initial column index
-     * @param int $jF Final column index
      *
      * @return Matrix Submatrix
      */
@@ -328,11 +323,9 @@ class Matrix
      *
      * @param int $i Row position
      * @param int $j Column position
-     * @param mixed $c Int/float/double value
-     *
-     * @return mixed Element (int/float/double)
+     * @param float|int $c value
      */
-    public function set($i = null, $j = null, $c = null)
+    public function set($i = null, $j = null, $c = null): void
     {
         // Optimized set version just has this
         $this->A[$i][$j] = $c;
@@ -462,22 +455,9 @@ class Matrix
     }
 
     /**
-     * uminus.
-     *
-     *    Unary minus matrix -A
-     *
-     * @return Matrix Unary minus matrix
-     */
-    public function uminus()
-    {
-    }
-
-    /**
      * plus.
      *
      *    A + B
-     *
-     * @param mixed $B Matrix/Array
      *
      * @return Matrix Sum
      */
@@ -521,8 +501,6 @@ class Matrix
      * plusEquals.
      *
      *    A = A + B
-     *
-     * @param mixed $B Matrix/Array
      *
      * @return $this
      */
@@ -581,8 +559,6 @@ class Matrix
      *
      *    A - B
      *
-     * @param mixed $B Matrix/Array
-     *
      * @return Matrix Sum
      */
     public function minus(...$args)
@@ -625,8 +601,6 @@ class Matrix
      * minusEquals.
      *
      *    A = A - B
-     *
-     * @param mixed $B Matrix/Array
      *
      * @return $this
      */
@@ -686,8 +660,6 @@ class Matrix
      *    Element-by-element multiplication
      *    Cij = Aij * Bij
      *
-     * @param mixed $B Matrix/Array
-     *
      * @return Matrix Matrix Cij
      */
     public function arrayTimes(...$args)
@@ -731,8 +703,6 @@ class Matrix
      *
      *    Element-by-element multiplication
      *    Aij = Aij * Bij
-     *
-     * @param mixed $B Matrix/Array
      *
      * @return $this
      */
@@ -791,8 +761,6 @@ class Matrix
      *
      *    Element-by-element right division
      *    A / B
-     *
-     * @param Matrix $B Matrix B
      *
      * @return Matrix Division result
      */
@@ -857,8 +825,6 @@ class Matrix
      *    Element-by-element right division
      *    Aij = Aij / Bij
      *
-     * @param mixed $B Matrix/Array
-     *
      * @return Matrix Matrix Aij
      */
     public function arrayRightDivideEquals(...$args)
@@ -902,8 +868,6 @@ class Matrix
      *
      *    Element-by-element Left division
      *    A / B
-     *
-     * @param Matrix $B Matrix B
      *
      * @return Matrix Division result
      */
@@ -949,8 +913,6 @@ class Matrix
      *    Element-by-element Left division
      *    Aij = Aij / Bij
      *
-     * @param mixed $B Matrix/Array
-     *
      * @return Matrix Matrix Aij
      */
     public function arrayLeftDivideEquals(...$args)
@@ -993,8 +955,6 @@ class Matrix
      * times.
      *
      *    Matrix multiplication
-     *
-     * @param mixed $n Matrix/Array/Scalar
      *
      * @return Matrix Product
      */
@@ -1089,8 +1049,6 @@ class Matrix
      *
      *    A = A ^ B
      *
-     * @param mixed $B Matrix/Array
-     *
      * @return $this
      */
     public function power(...$args)
@@ -1130,7 +1088,7 @@ class Matrix
                         $validValues &= StringHelper::convertToNumberIfFraction($value);
                     }
                     if ($validValues) {
-                        $this->A[$i][$j] = pow($this->A[$i][$j], $value);
+                        $this->A[$i][$j] = $this->A[$i][$j] ** $value;
                     } else {
                         $this->A[$i][$j] = Functions::NAN();
                     }
@@ -1147,8 +1105,6 @@ class Matrix
      * concat.
      *
      *    A = A & B
-     *
-     * @param mixed $B Matrix/Array
      *
      * @return $this
      */
@@ -1195,7 +1151,7 @@ class Matrix
      *
      * @return Matrix ... Solution if A is square, least squares solution otherwise
      */
-    public function solve($B)
+    public function solve(self $B)
     {
         if ($this->m == $this->n) {
             $LU = new LUDecomposition($this);

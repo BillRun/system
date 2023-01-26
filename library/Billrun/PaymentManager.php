@@ -89,7 +89,7 @@ class Billrun_PaymentManager {
 			$paymentData['generated_pg_file_log'] = $params['generated_pg_file_log'];
 		}
 
-		$payment = Billrun_Bill_Payment::getInstance($method, $paymentData);
+		$payment = Billrun_Bill_Payment::getInstance($method, array_merge($paymentData, $params));
 		if (!$payment) {
 			return $this->handleError("Cannot get payment for {$method}. Payment data: " . print_R($paymentData, 1));
 		}
@@ -190,7 +190,7 @@ class Billrun_PaymentManager {
 				$paymentDir = $dir == Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER ? Billrun_DataTypes_PrePayment::PAY_DIR_PAYS : Billrun_DataTypes_PrePayment::PAY_DIR_PAID_BY;
 				$billId = $bill->getId();
 				$relatedBills = $prePayment->getData($paymentDir, []);
-				Billrun_Bill::addRelatedBill($relatedBills, $billType, $billId, $amount);
+				Billrun_Bill::addRelatedBill($relatedBills, $billType, $billId, $amount, $bill->getRawData());
 				$prePayment->setData($paymentDir, $relatedBills);
 				$paymentData = $prePayment->getData();
 				$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
@@ -276,7 +276,9 @@ class Billrun_PaymentManager {
 		$ret = [];
 		if (!$this->hasPaymentGateway($params)) { // no payment gateway - all payments are considered as successful
 			foreach ($prePayments as $prePayment) {
-				$ret[] = new Billrun_DataTypes_PostPayment($prePayment);
+				$postPayment = new Billrun_DataTypes_PostPayment($prePayment);
+				Billrun_Factory::dispatcher()->trigger('afterPaymentHandeled', array(&$postPayment));
+				$ret[] = $postPayment;
 			}
 			return $ret;
 		}
@@ -286,7 +288,8 @@ class Billrun_PaymentManager {
 			$payment = $prePayment->getPayment();
 			$gatewayDetails = $payment->getPaymentGatewayDetails();
 			$gatewayName = $gatewayDetails['name'];
-			$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+			$gatewayInstanceName = $gatewayDetails['instance_name'];
+			$gateway = Billrun_PaymentGateway::getInstance($gatewayInstanceName);
 
 			if (is_null($gateway)) {
 				Billrun_Factory::log("Illegal payment gateway object", Zend_Log::ALERT);
@@ -320,6 +323,7 @@ class Billrun_PaymentManager {
 			$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
 			$postPayment->setTransactionId($txId);
 			$postPayment->setPgResponse($responseFromGateway);
+			Billrun_Factory::dispatcher()->trigger('afterPaymentHandeled', array(&$postPayment, $gateway));
 			$ret[] = $postPayment;
 		}
 
@@ -386,7 +390,7 @@ class Billrun_PaymentManager {
 						if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
 							$updatedBill->attachPayingBill($payment, $amountPaid, (!empty($pgResponse) && empty($pgResponse['stage']) || ($this->isFileBasedCharge($params) && $payment->isWaiting())) ? 'Pending' : @$pgResponse['stage'])->save();
 						} else {
-							$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
+							$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid, $payment->getRawData())->save();
 						}
 					}
 					break;

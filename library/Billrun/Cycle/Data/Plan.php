@@ -13,7 +13,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	use Billrun_Traits_ForeignFields;
 	
-	protected  static $copyFromChargeData = ['prorated_start','prorated_end'];
+	protected static $copyFromChargeData = ['prorated_start', 'prorated_end', 'prorated_start_date', 'is_upfront'];
 	protected $plan = null;
 	protected $name = null;
 	protected $start = 0;
@@ -25,8 +25,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 	public function __construct(array $options) {
 		parent::__construct($options);
 		if (!$this->verifyConstrctionOptions($options)) {
-			Billrun_Factory::log("Invalid aggregate data for : ".get_class($this), Zend_Log::WARN);
-			return;
+			Billrun_Factory::log("Invalid aggregate data for : ".get_class($this), Zend_Log::ERR);
 		}
 		$this->name = $options['plan'];
 		$this->plan = $options['plan'];
@@ -43,7 +42,10 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	protected function getCharges($options) {
 		$charger = new Billrun_Plans_Charge();
-		return $charger->charge($options, $options['cycle']);
+		//Only charge  if the configuration suggest it should be in the cycle
+		return empty($options['cycle']) || Billrun_Utils_Cycle::shouldBeInCycle($options,$options['cycle'])  ?
+					$charger->charge($options, $options['cycle']) :
+					[];
 	}
 
 	protected function getLine($chargeingKey, $chargeData) {
@@ -56,20 +58,23 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		if (isset($chargeData['cycle'])) {
 			$entry['cycle'] = $chargeData['cycle'];
 		}
-		$entry['stamp'] = $this->generateLineStamp($entry);
-		foreach(self::$copyFromChargeData as $field) {
+		$chargeFieldsToCopy = array_merge(	Billrun_Factory::config()->getConfigValue('plans.plan_charge_fields_to_copy.fields',["start_date","end_date"]),
+											self::$copyFromChargeData );
+		foreach($chargeFieldsToCopy as $field) {
 			if( isset($chargeData[$field]) ) {
 				$entry[$field] = $chargeData[$field];
 			}
 		}
 		if (!empty($chargeData['start']) && $this->cycle->start() < $chargeData['start']) {
-			$entry['start'] = new MongoDate($chargeData['start']);
+			$entry['start'] = new Mongodloid_Date($chargeData['start']);
 		}
 		if (!empty($chargeData['end']) && $this->cycle->end() - 1 > $chargeData['end']) {
-			$entry['end'] = new MongoDate($chargeData['end']);
+			$entry['end'] = new Mongodloid_Date($chargeData['end']);
 		}
 
-		$entry = $this->addExternalFoerignFields($entry);
+		$entry['stamp'] = $this->generateLineStamp($entry);
+
+		$entry = $this->addExternalFoerignFields($entry,$chargeData);
 		$entry = $this->addTaxationToLine($entry);
 		unset($entry['tax']);
 		foreach ($this->subscriberFields as $fieldName => $value) {
@@ -89,7 +94,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		$flatEntry = array(
 			'plan' => $this->plan,
 			'name' => $this->name,
-			'process_time' => new MongoDate(),
+			'process_time' => new Mongodloid_Date(),
 			'usagev' => 1
 		);
 
@@ -101,12 +106,13 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		return array_merge($flatEntry, $this->stumpLine);
 	}
 	
-	protected function addExternalFoerignFields($entry) {
-		return array_merge($this->getForeignFields(array(), array_merge($this->foreignFields, $entry), true), $entry);
+	protected function addExternalFoerignFields($entry, $addedQueryData =[]) {
+		return array_merge($this->getForeignFields(array(), array_merge($this->foreignFields, $entry), true, $addedQueryData), $entry);
 	}
 
 	protected function generateLineStamp($line) {
-		return md5($line['charge_op'] . '_' . $line['aid'] . '_' . $line['sid'] . $this->plan . '_' . $this->cycle->start() . $this->cycle->key() . '_' . $line['aprice'].$this->start);
+		return md5(	$line['charge_op'] . '_' . $line['aid'] . '_' . $line['sid'] . $this->plan . '_' . $this->cycle->start() .
+					 $this->cycle->key() . '_' . $line['aprice'] . $this->start . @$line['prorated_start_date']);
 	}
 	
 	//TODO move this to the account/subscriber lines addition logic and work in batch mode.
@@ -116,7 +122,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			$taxCalc = Billrun_Calculator::getInstance(array('autoload' => false, 'type' => 'tax'));
 			$entryWithTax = $taxCalc->updateRow($entry);
 			if (!$entryWithTax) {
-				Billrun_Factory::log("Taxation of {$entry['name']} failed retring...", Zend_Log::WARN);
+				Billrun_Factory::log("Taxation of {$entry['name']} failed. Retrying...", Zend_Log::WARN);
 				sleep(1);
 			}
 		}

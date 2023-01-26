@@ -87,7 +87,7 @@ class ChargesAction extends ApiAction {
 		}
 		
 		$line['stamp'] = Billrun_Util::generateArrayStamp($line);
-		$line['urt'] = new MongoDate();
+		$line['urt'] = new Mongodloid_Date();
 		return $line;
 	}
 	

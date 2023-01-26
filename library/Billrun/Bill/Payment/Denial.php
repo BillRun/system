@@ -27,7 +27,8 @@ class Billrun_Bill_Payment_Denial extends Billrun_Bill_Payment {
 		$newOptions['due'] = abs($options['amount']) * $this->getPaymentAmountMultiplier($options['payment_amount']);
 		$newOptions['aid'] = $options['aid'];
 		$newOptions['denial'] = $options;
-                $newOptions['is_denial'] = true;
+        $newOptions['is_denial'] = true;
+		$newOptions['urt'] = !empty($options['urt']) ? $options['urt'] : date(Billrun_Base::base_datetimeformat, time());
 		return $newOptions;
 	}
 	

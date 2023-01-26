@@ -13,7 +13,7 @@
 trait Billrun_Traits_EntityGetter {
 	
 	protected static $entities = [];
-	protected static $entitiesData = [];
+	public static $entitiesData = [];
 	
 	/**
 	 * get filters for fetching the required entity/entities
@@ -100,7 +100,6 @@ trait Billrun_Traits_EntityGetter {
 
 		if (empty($entity)) {
 			Billrun_Factory::log('Entity not found for row ' . $row['stamp'], Billrun_Log::WARN);
-			Billrun_Factory::log('Params for not found entity, row ' . $row['stamp'] . ': ' . print_R($params, 1), Billrun_Log::DEBUG);
 			return $this->afterEntityNotFound($row, $params);
 		}
 
@@ -126,19 +125,19 @@ trait Billrun_Traits_EntityGetter {
 	protected function getEntityByFilters($row, $filters, $params = []) {
 		$category = Billrun_Util::getIn($params, 'category', '');
 		$matchedEntity = null;
-		foreach ($filters as $priority) {
+		foreach ($filters as $priorityIndex => $priority) {
 			$currentPriorityFilters = Billrun_Util::getIn($priority, 'filters', $priority);
 			$params['cache_db_queries'] = Billrun_Util::getIn($priority, 'cache_db_queries', false);
 			$query = $this->getEntityQuery($row, $currentPriorityFilters, $category, $params);
 			
 			if (!$query) {
-				Billrun_Factory::log('Cannot get query for row ' . $row['stamp'] . '. filters: ' . print_R($currentPriorityFilters, 1) . ', params: ' . print_R($params, 1), Billrun_Log::DEBUG);
+				Billrun_Factory::log('Cannot get query for row ' . $row['stamp'] . '. priority ' . $priorityIndex, Billrun_Log::DEBUG);
 				continue;
 			}
 			
 			Billrun_Factory::dispatcher()->trigger('extendEntityParamsQuery', [&$query, &$row, &$this, $params]);
-			
-			$matchedEntity = $this->getEntity($row, $query, $params);
+			$result = $this->getEntities($row, $query, $params);
+			$matchedEntity = is_array($result) ? current($result) : false;
 			if ($matchedEntity && !$matchedEntity->isEmpty()) {
 				break;
 			}
@@ -206,6 +205,9 @@ trait Billrun_Traits_EntityGetter {
 				unset($query[$i]);
 			}
 		}
+		if(!empty($params['multiple_entities'])) {
+			$query['multiple_entities'] = true;
+		}
 		return md5(serialize($query));
 	}
 	
@@ -227,44 +229,56 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $row
 	 * @param array $query
 	 * @param array $params
-	 * @return Mongodloid entity if found, false or empty Mongodloid otherwise
+	 * @return array with Mongodloid entity/entities ('multiple_entities')
 	 */
-	protected function getEntity($row, $query, $params = []) {
+	public function getEntities($row, $query, $params = []) {
 		$useCache = $this->shouldCacheEntity($params);
 		$cacheKey = $useCache ? $this->getEntityCacheKey($row, $query, $params) : '';
-		$entity = false;
+		$returned_entities = [];
 		
 		if ($useCache && !empty(self::$entities[$cacheKey])) {
 			$time = isset($row['urt']) ? $row['urt']->sec : time();
 			foreach (self::$entities[$cacheKey] as $cachedEntity) {
 				if ($cachedEntity['from'] <= $time && (!isset($cachedEntity['to']) || is_null($cachedEntity['to']) || $cachedEntity['to'] >= $time)) {
-					$entity = $cachedEntity['entity'];
+					$returned_entities[] = $cachedEntity['entity'];
+					if(!empty($params['multiple_entities'])) {
+						continue;
+					}
 					break;
 				}
 			}
 		}
 		
-		if (empty($entity)) {
+		if (empty($returned_entities)) {
 			$coll = $this->getCollection($params);
-			$entity = $coll->aggregate($query)->current();
-			if ($useCache && isset($entity['from']) && isset($entity['to'])) {
-				self::$entities[$cacheKey][] = [
-					'entity' => $entity,
-					'from' => $entity['from']->sec,
-					'to' => $entity['to']->sec,
-				];
+			if (empty($params['multiple_entities'])) {
+				$returned_entities[] = $coll->aggregate($query)->current();
+			} else {
+				$returned_entities = iterator_to_array($coll->aggregate($query));
+			}
+
+			if ($useCache) {
+				foreach ($returned_entities as $index => $entity) {
+					if (isset($entity['from']) && isset($entity['to'])) {
+						self::$entities[$cacheKey][] = [
+							'entity' => $entity,
+							'from' => $entity['from']->sec,
+							'to' => $entity['to']->sec,
+						];
+					}
+				}
 			}
 		}
-		
-		return $entity;
+
+		return $returned_entities;
 	}
-	
+
 	/**
 	 * Builds aggregate query from configuration
 	 * 
 	 * @return array Mongo query
 	 */
-	protected function getEntityQuery($row, $filters, $category = '', $params = []) {
+	public function getEntityQuery($row, $filters, $category = '', $params = []) {
 		$match = $this->getBasicMatchQuery($row, $category, $params);
 		$additional = [];
 		$group = $this->getBasicGroupQuery($row, $category, $params);
@@ -289,7 +303,7 @@ trait Billrun_Traits_EntityGetter {
 		$matchQuery = [['$match' => $match]];
 		$sortQuery = !empty($sort) ? [['$sort' => $sort]] : [];
 		$groupQuery = [['$group' => $group]];
-		$limitQuery = [['$limit' => 1]];
+		$limitQuery = !empty($params['multiple_entities']) ? [] : [['$limit' => 1]];
 		
 		return array_merge($matchQuery, $additional, $groupQuery, $additionalAfterGroup, $sortQuery, $limitQuery);
 	}
@@ -497,8 +511,8 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $rawEntity
 	 * @return array
 	 */
-	protected function getFullEntityDataQuery($rawEntity) {		
-		if (!isset($rawEntity['_id']['_id']) || !($rawEntity['_id']['_id'] instanceof MongoId)) {
+	public function getFullEntityDataQuery($rawEntity) {		
+		if (!isset($rawEntity['_id']['_id']) || !($rawEntity['_id']['_id'] instanceof Mongodloid_Id)) {
  			return false;	
  		}
 		

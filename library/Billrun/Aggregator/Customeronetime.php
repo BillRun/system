@@ -52,7 +52,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 	}
 	
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
-		Billrun_Factory::log("Doesn't  remove anything  in one time invoice");
+		Billrun_Factory::log("Doesn't remove anything in one time invoice");
 		return ;
 	}
 	
@@ -61,7 +61,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
 			$customCollName = Billrun_Util::getFieldVal($this->invoicingConfig[$this->subInvoiceType]['collection_name'], 'billrun');
 			if(!$this->isFakeCycle()) {
-				$aggregatedEntity->writeInvoice( $this->min_invoice_id, $aggregatedResults, FALSE, $customCollName );
+				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
 				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
 				//Save Account services / plans
 				$this->saveLines($aggregatedResults);
@@ -69,10 +69,12 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
 				//Save Customer user fields
 				$aggregatedEntity->setUserFields($this->customer_uf);
-				//Save the billrun document
+				//Close & Save the billrun document
+				$aggregatedEntity->closeInvoice($this->min_invoice_id, FALSE, $customCollName);
 				$aggregatedEntity->save();
 			} else {
-				$aggregatedEntity->writeInvoice( 0 , $aggregatedResults, $this->isFakeCycle() , $customCollName  );
+				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
+				$aggregatedEntity->closeInvoice($this->min_invoice_id , $this->isFakeCycle() , $customCollName );
 			}
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;

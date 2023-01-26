@@ -7,6 +7,25 @@
  */
 
 /**
+ * method to register namespace to path with backward compatibility to old yaf versions
+ * 
+ * @param string $namespace the namespace to register
+ * @param string $path path attached to the namespace
+ * 
+ * @since version 5.14
+ */
+function br_yaf_register_autoload($namespace, $path) {
+	if (version_compare(phpversion('yaf'), '3.2.0', '>=')) {
+		$mapping = array(
+			$namespace => $path . '/' . $namespace,
+		);
+		Yaf_Loader::getInstance()->registerNamespace($mapping);
+	} else {
+		Yaf_Loader::getInstance($path)->registerLocalNamespace($namespace);
+	}
+}
+
+/**
  * Billing bootstrap class
  *
  * @package  Bootstrap
@@ -14,6 +33,14 @@
  */
 class Bootstrap extends Yaf_Bootstrap_Abstract {
 
+    public function _initLoader(Yaf_Dispatcher $dispatcher) {
+		// set composer vendor autoload
+		Yaf_Loader::getInstance()->import(APPLICATION_PATH . '/vendor/autoload.php');
+		// set include paths of the system.
+		set_include_path(get_include_path() . PATH_SEPARATOR . Yaf_Loader::getInstance()->getLibraryPath()); // this is for Zend FW & Billrun objects
+		// make the base action auto load (required by controllers actions)
+		br_yaf_register_autoload('Action', APPLICATION_PATH . '/application/helpers');
+	}
 	public function _initEnvironment(Yaf_Dispatcher $dispatcher) {
 		if (!isset($_SERVER['HTTP_USER_AGENT'])) {
 			Yaf_Application::app()->getDispatcher()->setDefaultController('Cli');
@@ -22,6 +49,8 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 	
 	public function _initPlugin(Yaf_Dispatcher $dispatcher) {
 
+		// set composer vendor autoload
+		Yaf_Loader::getInstance()->import(APPLICATION_PATH . '/vendor/autoload.php');
 		// set include paths of the system.
 		set_include_path(get_include_path() . PATH_SEPARATOR . Yaf_Loader::getInstance()->getLibraryPath());
 
@@ -68,8 +97,6 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 			}
 		}
 
-		// make the base action auto load (required by controllers actions)
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Action');
 	}
 
 	public function _initLayout(Yaf_Dispatcher $dispatcher) {
