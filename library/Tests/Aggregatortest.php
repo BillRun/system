@@ -432,11 +432,16 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10000 => "1", 10027 => "28"]), 'postRun' => ''),
 			//allowPremature true invoicing day without  force accounts , only accounts with same day as the pass invoice day will run 
 			array('preRun' => ['allowPremature', 'removeBillruns'],
-				'test' => array('test_number' => 74, 'aid' => 1, 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'invoicing_days' => ["26", "27"])),
-				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10025 => "26", 10026 => "27"]), 'postRun' => ''),
-			//allowPremature false invoicing day  all the days 1-28 , + force accounts with account from all day only acccount with invoice day <= today will run 
-			array('preRun' => ['notallowPremature', 'removeBillruns'],
-				'test' => array('test_number' => 75, 'aid' => 'abcd', 'function' => array('testMultiDayNotallowPremature'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
+                        'test' => array('test_number' => 74, 'aid' => 'abcd', 'function' => array('testMultiDay'),
+                        'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 
+                        'invoicing_days' => ["26", "27"])),
+                       'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
+                        "accounts" => [10025=>"26", 10026=>"27"]),
+                         'postRun' => ''),
+                   //allowPremature true invoicing day  all the days 1-28 , + force accounts with account from all day each account will run in its day 
+                   array('preRun' => ['allowPremature', 'removeBillruns'],
+                       'test' => array('test_number' => 75, 'aid' => 'abcd', 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
+       
 						'invoicing_days' => ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28"],
 						'force_accounts' => [10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009, 10010, 10011, 10012, 10013, 10014, 10015, 10016, 10017, 10018, 10019, 10020, 10021, 10022, 10023, 10024, 10025, 10026, 10027]
 					)),
@@ -449,7 +454,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 				'line' => array('types' => array('flat', 'credit')),
 				'postRun'=>['multi_day_cycle_false']
 			),
-         //BRCD-3798 automatic test - Service cost is not being calculate correctly for service with no 'end date' in multi revisions in a cycle
+               //BRCD-3798 automatic test - Service cost is not being calculate correctly for service with no 'end date' in multi revisions in a cycle
          array('test' => array('test_number' => 3798, "aid" => 3798, 'sid' => 37981, 'function' => array( 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'),
          'options' => array("stamp" => "202208", "force_accounts" => array(3798))),
          'expected' => array('billrun' => array('invoice_id' => 109, 'billrun_key' => '202208', 'aid' => 3798, 'after_vat' => array("3798" => 117.936), 'total' => 117.936, 'vatable' => 100.8, 'vat' => 17),
@@ -516,6 +521,3141 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 			array('test' => array('test_number' => 185, "aid" => 890, 'sid' => 780, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(890))),
 				'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 890, 'after_vat' => array("780" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
 					'line' => array('types' => array('flat', 'service'))),),
+            /*
+            start -> https://billrun.atlassian.net/browse/BRCD-3526
+             sid 35268
+			 plan activation date 1'st of the month - invoice generated on next month (full arrears + upfront) */
+            array(
+                'test' => array('test_number' => '185-1', "aid" => 35267, 'sid' => 35268, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(35267))),
+                'expected' => array(
+                    'billrun' => array('billrun_key' => '202204', 'aid' => 35267, 'after_vat' => array("35268" => 234), 'total' => 234, 'vatable' => 200, 'vat' => 17),
+                    'line' => array('types' => array('flat')),
+                    'lines' => [
+                        ['query' => array('sid' => 35268,'billrun' => "202204", 'plan' => 'UPFRONT1'), 'aprice' => 100],
+                        ['query' => array('sid' => 35268,'billrun' => "202204", 'plan' => 'UPFRONT1'), 'aprice' => 100]
+                    ]
+                ),
+            ),
+            /* sid 352610
+			plan activation date in mid month - invoice generated on next month (partial arrears + full upfront) */
+            array(
+                'test' => array('test_number' => '185-2', "aid" => 35269, 'sid' => 352610, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(35269))),
+                'expected' => array(
+                    'billrun' => array('billrun_key' => '202204', 'aid' => 35269, 'after_vat' => array("352610" => 200.03225806451613), 'total' => 200.03225806451613, 'vatable' => 170.96774193548387, 'vat' => 17),
+                    'line' => array('types' => array('flat')),
+                    'lines' => [
+                        ['query' => array('sid' => 352610,'billrun' => "202204", 'plan' => 'UPFRONT1', 'aprice' => 100), 'aprice' => 100],
+                        ['query' => array('sid' => 352610,'billrun' => "202204", 'plan' => 'UPFRONT1', 'aprice' => 70.96774193548387), 'aprice' => 70.96774193548387]
+                    ]
+                ),
+            ),
+            /* sid 352612
+			 plan activation date last day of the month - invoice generated on next month (1 day arrears + full upfront) */
+            array(
+                'test' => array('test_number' => '185-3', "aid" => 352611, 'sid' => 352612, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352611))),
+                'expected' => array(
+                    'billrun' => array('billrun_key' => '202204', 'aid' => 352611, 'after_vat' => array("352612" => 120.77419354838709), 'total' => 120.77419354838709, 'vatable' => 103.225806451612903, 'vat' => 17),
+                    'line' => array('types' => array('flat')),
+                    'lines' => [
+                        ['query' => array('sid' => 352612,'billrun' => "202204", 'plan' => 'UPFRONT1', 'aprice' => 100), 'aprice' => 100],
+                        ['query' => array('sid' => 352612,'billrun' => "202204", 'plan' => 'UPFRONT1','aprice' => 3.225806451612903), 'aprice' => 3.225806451612903]
+                    ]
+                ),
+            ),
+            /* sid 352613
+			  plan activation date in the past few months - invoice generated on month (no arrears + full upfront)*/
+            array(
+                'test' => array('test_number' => '185-4', "aid" => 352613, 'sid' => 780, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352613))),
+                'expected' => array(
+                    'billrun' => array('billrun_key' => '202204', 'aid' => 352613, 'after_vat' => array("352614" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+                    'line' => array('types' => array('flat'))
+                ),
+            ),
+            /* sid 352616
+			 Plan change in 1'st day of the month - invoice generated on next month (refund old plan & charge new plan for arrears + new plan upfront) */
+            array(
+                'test' => array('test_number' => '185-5', "aid" => 352615, 'sid' => 352616, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'),
+                 'options' => array("stamp" => "202204", "force_accounts" => array(352615))),
+                'expected' => array(
+                    'billrun' => array('billrun_key' => '202204', 'aid' => 352615, 'after_vat' => array("352616" => 347.2258064516129), 'total' => 347.2258064516129, 'vatable' => 296.77419354838713, 'vat' => 17),
+                    'line' => array('types' => array('flat')),
+                    'lines' => [
+                        ['query' => array('sid' => 352616,'billrun' => '202204', 'plan' => 'UPFRONT1', 'aprice' => -96.7741935483870), 'aprice' => -96.77419354838709],
+                        ['query' => array('sid' => 352616,'billrun' => "202204", 'plan' => 'UPFRONT2','aprice' => 193.5483870967742), 'aprice' => 193.5483870967742],
+                        ['query' => array('sid' => 352616,'billrun' => "202204", 'plan' => 'UPFRONT2','aprice' => 200), 'aprice' => 200]
+                    ]
+                ),
+            ),
+            /* sid 352618
+			  Plan change in mid month - invoice generated on next month (refund old plan & charge new plan for arrears + new plan upfront)*/
+            array(
+                'test' => array('test_number' => '185-6', "aid" => 352617, 'sid' => 352618, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352617))),
+                'expected' => array(
+                    'billrun' => array('billrun_key' => '202204', 'aid' => 352617, 'after_vat' => array("352618" => 320.8064516129032326), 'total' => 320.8064516129032326, 'vatable' => 274.19354838709678, 'vat' => 17),
+                    'line' => array('types' => array('flat')),
+                    'lines' => [
+                        ['query' => array('sid' => 352618,'billrun' => '202204', 'plan' => 'UPFRONT1','aprice' => -67.74193548387098), 'aprice' => -67.74193548387098/*79.25806451612902*/],
+                        ['query' => array('sid' => 352618,'billrun' => "202204", 'plan' => 'UPFRONT2', 'aprice' => 141.93548387096774), 'aprice' => 141.93548387096774],
+                        ['query' => array('sid' => 352618,'billrun' => "202204", 'plan' => 'UPFRONT2', 'aprice' => 200), 'aprice' => 200]
+                    ]
+                ),
+            ),
+            /* sid 352620
+			  Plan change in the last day of the month - invoice generated on next month (refund old plan & charge new plan for arrears + new plan upfront) */
+            array(
+                'test' => array('test_number' => '185-7', "aid" => 352619, 'sid' => 352620, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(352619))),
+                'expected' => array(
+                    'billrun' => array('billrun_key' => '202204', 'aid' => 352619, 'after_vat' => array("352620" => 237.77419354838707), 'total' => 237.77419354838707, 'vatable' => 203.2258064516129, 'vat' => 17),
+                    'line' => array('types' => array('flat')), 
+                    'lines' => [
+                        ['query' => array('sid' => 352620,'billrun' => '202203', 'plan' => 'UPFRONT1'), 'aprice' => -3.225806451612903],
+                        ['query' => array('sid' => 352620,'billrun' => "202204", 'plan' => 'UPFRONT2'), 'aprice' => 200],
+                        ['query' => array('sid' => 352620,'billrun' => "202204", 'plan' => 'UPFRONT2'), 'aprice' => 6.4516129032258]
+                    ]
+                ),
+            ),
+            //end -> https://billrun.atlassian.net/browse/BRCD-3526
+            /*
+            duplicate tests for brcd 3439
+            */
+           
+              
+                [
+                    "test" => [
+                        "test_number" => 33439,
+                        "aid" => 33439,
+                        "function" => [
+                            "basicCompare",
+                            "lineExists",
+                            "duplicateAccounts",
+                            "passthrough"
+                        ],
+                        "options" => [
+                            "stamp" => "201805",
+                            "force_accounts" => [
+                                33439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 101,
+                            "billrun_key" => "201805",
+                            "aid" => 33439
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ],
+                            "final_charge" => -10
+                        ]
+                    ],
+                    "postRun" => [
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 43439,
+                        "aid" => 53439,
+                        "function" => [
+                            "basicCompare",
+                            "linesVSbillrun",
+                            "rounded",
+                            "passthrough"
+                        ],
+                        "options" => [
+                            "force_accounts" => [
+                                53439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 102,
+                            "billrun_key" => "201806",
+                            "aid" => 53439
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 53439,
+                        "aid" => 73439,
+                        "function" => [
+                            "basicCompare",
+                            "linesVSbillrun",
+                            "rounded",
+                            "passthrough"
+                        ],
+                        "options" => [
+                            "stamp" => "201805",
+                            "force_accounts" => [
+                                73439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 103,
+                            "billrun_key" => "201805",
+                            "aid" => 73439
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 63439,
+                        "aid" => 93439,
+                        "function" => [
+                            "basicCompare",
+                            "linesVSbillrun",
+                            "rounded",
+                            "passthrough"
+                        ],
+                        "options" => [
+                            "force_accounts" => [
+                                93439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 104,
+                            "billrun_key" => "201806",
+                            "aid" => 93439
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 73439,
+                        "aid" => 113439,
+                        "sid" => [
+                            12,
+                            14
+                        ],
+                        "function" => [
+                            "basicCompare",
+                            "sumSids",
+                            "subsPrice",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201805",
+                            "force_accounts" => [
+                                113439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 105,
+                            "billrun_key" => "201805",
+                            "aid" => 113439,
+                            "after_vat" => [
+                                "123439" => 105.3,
+                                "143439" => 117
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 83439,
+                        "aid" => 133439,
+                        "sid" => [
+                            15,
+                            16
+                        ],
+                        "function" => [
+                            "basicCompare",
+                            "sumSids",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201806",
+                            "force_accounts" => [
+                                133439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 106,
+                            "billrun_key" => "201806",
+                            "aid" => 133439,
+                            "after_vat" => [
+                                "153439" => 117,
+                                "163439" => 117
+                            ],
+                            "total" => 234,
+                            "vatable" => 200,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "postRun" => [
+                        "saveId"
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 93439,
+                        "aid" => 193439,
+                        "sid" => 203439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "force_accounts" => [
+                                193439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 107,
+                            "billrun_key" => "201806",
+                            "aid" => 193439,
+                            "after_vat" => [
+                                "203439" => 47.554838711
+                            ],
+                            "total" => 47.554838711,
+                            "vatable" => 40.64516129032258,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "postRun" => [
+                        "saveId"
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 103439,
+                        "aid" => 213439,
+                        "sid" => 203439,
+                        "function" => [
+                            "checkForeignFileds",
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "checkForeignFileds" => [
+                            "discount" => [
+                                "foreign.discount.description" => "ttt"
+                            ]
+                        ],
+                        "options" => [
+                            "stamp" => "201806",
+                            "force_accounts" => [
+                                213439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 108,
+                            "billrun_key" => "201806",
+                            "aid" => 213439,
+                            "after_vat" => [
+                                "213439" => 57.745161289
+                            ],
+                            "total" => 57.745161289,
+                            "vatable" => 49.354838709677416,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 113439,
+                        "aid" => 253439,
+                        "sid" => 263439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201806",
+                            "force_accounts" => [
+                                253439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 109,
+                            "billrun_key" => "201806",
+                            "aid" => 253439,
+                            "after_vat" => [
+                                "263439" => 52.83870967741935
+                            ],
+                            "total" => 52.83870967741935,
+                            "vatable" => 45.16129032258064,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 123439,
+                        "aid" => 273439,
+                        "sid" => [
+                            28,
+                            29
+                        ],
+                        "function" => [
+                            "basicCompare",
+                            "sumSids",
+                            "subsPrice",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201806",
+                            "force_accounts" => [
+                                273439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 110,
+                            "billrun_key" => "201806",
+                            "aid" => 273439,
+                            "after_vat" => [
+                                "283439" => 117,
+                                "293439" => 52.8387096774193
+                            ],
+                            "total" => 169.838709677,
+                            "vatable" => 145.1612903225806,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "postRun" => [
+                        "saveId"
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 133439,
+                        "aid" => 303439,
+                        "sid" => 313439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded",
+                            "passthrough"
+                        ],
+                        "options" => [
+                            "stamp" => "201806",
+                            "force_accounts" => [
+                                303439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 111,
+                            "billrun_key" => "201806",
+                            "aid" => 303439,
+                            "after_vat" => [
+                                "313439" => 234
+                            ],
+                            "total" => 234,
+                            "vatable" => 200,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "service"
+                            ]
+                        ]
+                    ],
+                    "postRun" => [
+                        "saveId"
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 143439,
+                        "aid" => 323439,
+                        "sid" => 333439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "force_accounts" => [
+                                323439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 112,
+                            "billrun_key" => "201806",
+                            "aid" => 323439,
+                            "after_vat" => [
+                                "333439" => 117
+                            ],
+                            "total" => 117,
+                            "vatable" => 100,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 153439,
+                        "aid" => 343439,
+                        "sid" => 333439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201806",
+                            "force_accounts" => [
+                                343439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 113,
+                            "billrun_key" => "201806",
+                            "aid" => 343439,
+                            "after_vat" => [
+                                "333439" => 117
+                            ],
+                            "total" => 117,
+                            "vatable" => 100,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "postRun" => [
+                        "saveId"
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 163439,
+                        "aid" => 353439,
+                        "sid" => [
+                            36,
+                            37,
+                            38,
+                            39
+                        ],
+                        "function" => [
+                            "basicCompare",
+                            "sumSids",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201806",
+                            "force_accounts" => [
+                                353439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 114,
+                            "billrun_key" => "201806",
+                            "aid" => 353439,
+                            "after_vat" => [
+                                "363439" => 128.7,
+                                "373439" => 234,
+                                "383439" => 128.7,
+                                "393439" => 128.7
+                            ],
+                            "total" => 620.1,
+                            "vatable" => 530,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "service"
+                            ]
+                        ]
+                    ],
+                    "postRun" => [
+                        "saveId"
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 173439,
+                        "aid" => 353439,
+                        "sid" => [
+                            36,
+                            37,
+                            38,
+                            39
+                        ],
+                        "function" => [
+                            "basicCompare",
+                            "sumSids",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201807",
+                            "force_accounts" => [
+                                353439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 115,
+                            "billrun_key" => "201807",
+                            "aid" => 353439,
+                            "after_vat" => [
+                                "363439" => 117,
+                                "373439" => 117,
+                                "383439" => 117,
+                                "393439" => 117
+                            ],
+                            "total" => 468,
+                            "vatable" => 400,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 183439,
+                        "aid" => 403439,
+                        "sid" => 413439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201806",
+                            "force_accounts" => [
+                                403439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 116,
+                            "billrun_key" => "201806",
+                            "aid" => 403439,
+                            "after_vat" => [
+                                "413439" => 351
+                            ],
+                            "total" => 351,
+                            "vatable" => 300,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "service"
+                            ]
+                        ]
+                    ],
+                    "postRun" => [
+                        "saveId"
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 193439,
+                        "aid" => 423439,
+                        "sid" => 433439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201806",
+                            "force_accounts" => [
+                                423439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 117,
+                            "billrun_key" => "201806",
+                            "aid" => 423439,
+                            "after_vat" => [
+                                "433439" => 234
+                            ],
+                            "total" => 234,
+                            "vatable" => 200,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "service"
+                            ]
+                        ]
+                    ],
+                    "postRun" => [
+                        "saveId"
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 283439,
+                        "aid" => 623439,
+                        "sid" => 633439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201807",
+                            "force_accounts" => [
+                                623439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 125,
+                            "billrun_key" => "201807",
+                            "aid" => 623439,
+                            "after_vat" => [
+                                "633439" => 2457
+                            ],
+                            "total" => 2457,
+                            "vatable" => 2100,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "service"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 293439,
+                        "aid" => 623439,
+                        "sid" => 633439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201808",
+                            "force_accounts" => [
+                                623439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 126,
+                            "billrun_key" => "201808",
+                            "aid" => 623439,
+                            "after_vat" => [
+                                "633439" => 117
+                            ],
+                            "total" => 117,
+                            "vatable" => 100,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 303439,
+                        "aid" => 643439,
+                        "sid" => 653439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201807",
+                            "force_accounts" => [
+                                643439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 127,
+                            "billrun_key" => "201807",
+                            "aid" => 643439,
+                            "after_vat" => [
+                                "653439" => 89.7
+                            ],
+                            "total" => 89.7,
+                            "vatable" => 76.666666667,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 323439,
+                        "aid" => 13439,
+                        "sid" => 23439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201807",
+                            "force_accounts" => [
+                                13439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 128,
+                            "billrun_key" => "201807",
+                            "aid" => 13439,
+                            "after_vat" => [
+                                "23439" => 307
+                            ],
+                            "total" => 307,
+                            "vatable" => 100,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "non",
+                                "credit",
+                                "service"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 333439,
+                        "aid" => 663439,
+                        "sid" => 673439,
+                        "function" => [
+                            "takeLastRevision"
+                        ],
+                        "options" => [
+                            "stamp" => "201810",
+                            "force_accounts" => [
+                                663439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "firstname" => "yossiB"
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 343439,
+                        "aid" => 703439,
+                        "sid" => 713439,
+                        "function" => [
+                            "totalsPrice"
+                        ],
+                        "options" => [
+                            "stamp" => "201901",
+                            "force_accounts" => [
+                                703439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "201901",
+                            "aid" => 703439,
+                            "after_vat" => [
+                                "713439" => 117
+                            ],
+                            "total" => 117,
+                            "vatable" => 100,
+                            "vat" => 17
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 353439,
+                        "aid" => 733439,
+                        "sid" => 743439,
+                        "function" => [
+                            "basicCompare",
+                            "subsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201901",
+                            "force_accounts" => [
+                                733439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 131,
+                            "billrun_key" => "201901",
+                            "aid" => 733439,
+                            "after_vat" => [
+                                "743439" => 117
+                            ]
+                        ]
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat"
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1725",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 363439,
+                        "aid" => 753439,
+                        "sid" => 763439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201807",
+                            "force_accounts" => [
+                                753439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 132,
+                            "billrun_key" => "201807",
+                            "aid" => 753439,
+                            "after_vat" => [
+                                "763439" => 234
+                            ],
+                            "total" => 234,
+                            "vatable" => 200,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "service"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1725",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 373439,
+                        "aid" => 753439,
+                        "sid" => 763439,
+                        "function" => [
+                            "planExist",
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201808",
+                            "force_accounts" => [
+                                753439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 133,
+                            "billrun_key" => "201808",
+                            "aid" => 753439,
+                            "after_vat" => [
+                                "763439" => 117
+                            ],
+                            "total" => 117,
+                            "vatable" => 100,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "postRun" => [
+                        "saveId"
+                    ],
+                    "jiraLink" => [
+                        "https://billrun.atlassian.net/browse/BRCD-1725",
+                        "https://billrun.atlassian.net/browse/BRCD-1730"
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 383439,
+                        "aid" => 793439,
+                        "sid" => 783439,
+                        "function" => [
+                            "basicCompare",
+                            "subsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201903",
+                            "force_accounts" => [
+                                793439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 134,
+                            "billrun_key" => "201903",
+                            "aid" => 793439,
+                            "after_vat" => [
+                                "783439" => 117
+                            ]
+                        ]
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "service"
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1758",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 393439,
+                        "aid" => 803439,
+                        "sid" => 813439,
+                        "function" => [
+                            "basicCompare",
+                            "subsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201904",
+                            "force_accounts" => [
+                                803439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 135,
+                            "billrun_key" => "201904",
+                            "aid" => 803439,
+                            "after_vat" => [
+                                "813439" => 101.903225
+                            ]
+                        ]
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "service"
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 403439,
+                        "aid" => 823439,
+                        "sid" => 833439,
+                        "function" => [
+                            "basicCompare",
+                            "subsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "201904",
+                            "force_accounts" => [
+                                823439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 136,
+                            "billrun_key" => "201904",
+                            "aid" => 823439,
+                            "after_vat" => [
+                                "833439" => 18.870967742
+                            ]
+                        ]
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "service"
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 413439,
+                        "aid" => 263439,
+                        "function" => [
+                            "basicCompare",
+                            "linesVSbillrun",
+                            "lineExists",
+                            "rounded",
+                            "passthrough",
+                            "totalsPrice"
+                        ],
+                        "options" => [
+                            "stamp" => "202003",
+                            "force_accounts" => [
+                                263439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "invoice_id" => 137,
+                            "billrun_key" => "202003",
+                            "aid" => 263439,
+                            "after_vat" => [
+                                "1003439" => 245.7
+                            ],
+                            "total" => 245.7,
+                            "vatable" => 210,
+                            "vat" => 17
+                        ]
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "service"
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1493",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 423439,
+                        "aid" => 12003439,
+                        "sid" => 2003439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                12003439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 12003439,
+                            "after_vat" => [
+                                "2003439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 433439,
+                        "aid" => 13003439,
+                        "sid" => 3003439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                13003439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 13003439,
+                            "after_vat" => [
+                                "3003439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 443439,
+                        "aid" => 14003439,
+                        "sid" => 4003439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                14003439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 14003439,
+                            "after_vat" => [
+                                "4003439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 453439,
+                        "aid" => 15003439,
+                        "sid" => 5003439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                15003439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 15003439,
+                            "after_vat" => [
+                                "5003439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 463439,
+                        "aid" => 16003439,
+                        "sid" => 6003439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                16003439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 16003439,
+                            "after_vat" => [
+                                "6003439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 473439,
+                        "aid" => 17003439,
+                        "sid" => 7003439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                17003439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 17003439,
+                            "after_vat" => [
+                                "7003439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 483439,
+                        "aid" => 12013439,
+                        "sid" => 2013439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                12013439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 12013439,
+                            "after_vat" => [
+                                "2013439" => 74.72903225805
+                            ],
+                            "total" => 74.72903225805,
+                            "vatable" => 63.8709677424,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 493439,
+                        "aid" => 13013439,
+                        "sid" => 3013439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                13013439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 13013439,
+                            "after_vat" => [
+                                "3013439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 503439,
+                        "aid" => 14013439,
+                        "sid" => 4013439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                14013439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 14013439,
+                            "after_vat" => [
+                                "4013439" => 74.72903225805
+                            ],
+                            "total" => 74.72903225805,
+                            "vatable" => 63.8709677424,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 513439,
+                        "aid" => 15013439,
+                        "sid" => 5013439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                15013439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 15013439,
+                            "after_vat" => [
+                                "5013439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 523439,
+                        "aid" => 16013439,
+                        "sid" => 6013439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                16013439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 16013439,
+                            "after_vat" => [
+                                "6013439" => 74.72903225805
+                            ],
+                            "total" => 74.72903225805,
+                            "vatable" => 63.8709677424,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 533439,
+                        "aid" => 17013439,
+                        "sid" => 7013439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                17013439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 17013439,
+                            "after_vat" => [
+                                "7013439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 543439,
+                        "aid" => 12023439,
+                        "sid" => 2023439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                12023439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 12023439,
+                            "after_vat" => [
+                                "2023439" => 74.729033
+                            ],
+                            "total" => 74.729033,
+                            "vatable" => 63.8709668,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 553439,
+                        "aid" => 13023439,
+                        "sid" => 3023439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                13023439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 13023439,
+                            "after_vat" => [
+                                "3023439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 563439,
+                        "aid" => 14023439,
+                        "sid" => 4023439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                14023439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 14023439,
+                            "after_vat" => [
+                                "4023439" => 75.106451612903
+                            ],
+                            "total" => 75.106451612903,
+                            "vatable" => 64.19354838709,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 573439,
+                        "aid" => 15023439,
+                        "sid" => 5023439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                15023439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 15023439,
+                            "after_vat" => [
+                                "5023439" => 98.50645
+                            ],
+                            "total" => 98.50645,
+                            "vatable" => 84.193548,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 583439,
+                        "aid" => 16023439,
+                        "sid" => 6023439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                16023439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 16023439,
+                            "after_vat" => [
+                                "6023439" => 37.36451703
+                            ],
+                            "total" => 37.36451703,
+                            "vatable" => 31.935483864,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 593439,
+                        "aid" => 17023439,
+                        "sid" => 7023439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                17023439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 17023439,
+                            "after_vat" => [
+                                "7023439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 603439,
+                        "aid" => 12033439,
+                        "sid" => 2033439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                12033439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 12033439,
+                            "after_vat" => [
+                                "2033439" => 40.76129119
+                            ],
+                            "total" => 40.76129119,
+                            "vatable" => 34.83870926,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 613439,
+                        "aid" => 13033439,
+                        "sid" => 3033439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                13033439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 13033439,
+                            "after_vat" => [
+                                "3033439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 623439,
+                        "aid" => 14033439,
+                        "sid" => 4033439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                14033439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 14033439,
+                            "after_vat" => [
+                                "4033439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 633439,
+                        "aid" => 15033439,
+                        "sid" => 5033439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                15033439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 15033439,
+                            "after_vat" => [
+                                "5033439" => 75.1064516
+                            ],
+                            "total" => 75.1064516,
+                            "vatable" => 64.1935483,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 643439,
+                        "aid" => 16033439,
+                        "sid" => 6033439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                16033439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 16033439,
+                            "after_vat" => [
+                                "6033439" => 40.76129119
+                            ],
+                            "total" => 40.76129119,
+                            "vatable" => 34.83870926,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 653439,
+                        "aid" => 17033439,
+                        "sid" => 7033439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202004",
+                            "force_accounts" => [
+                                17033439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202004",
+                            "aid" => 17033439,
+                            "after_vat" => [
+                                "7033439" => 105.3
+                            ],
+                            "total" => 105.3,
+                            "vatable" => 90,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-1913",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 663439,
+                        "aid" => 1875013439,
+                        "sid" => 1875003439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202008",
+                            "force_accounts" => [
+                                1875013439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202008",
+                            "aid" => 1875013439,
+                            "after_vat" => [
+                                "1875003439" => 113.22580645161288
+                            ],
+                            "total" => 113.22580645161288,
+                            "vatable" => 96.77419354838709,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-2742",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 683439,
+                        "aid" => 17703439,
+                        "sid" => 17713439,
+                        "function" => [
+                            "basicCompare",
+                            "subsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202005",
+                            "force_accounts" => [
+                                17703439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202005",
+                            "aid" => 17703439,
+                            "after_vat" => [
+                                "17713439" => 200
+                            ],
+                            "total" => 200,
+                            "vatable" => 200,
+                            "vat" => 0
+                        ]
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "service"
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-2492",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 693439,
+                        "aid" => 20000007843439,
+                        "sid" => 2903439,
+                        "function" => [
+                            "basicCompare",
+                            "subsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202101",
+                            "force_accounts" => [
+                                20000007843439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202101",
+                            "aid" => 20000007843439,
+                            "after_vat" => [
+                                "3439" => 1.9565442,
+                                "2903439" => 29.08097389230968
+                            ],
+                            "total" => 30.339039414890326,
+                            "vatable" => 25.93080291870968,
+                            "vat" => 0
+                        ]
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "service",
+                            "credit"
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-2993",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 703439,
+                        "aid" => 20000007853439,
+                        "sid" => 2913439,
+                        "function" => [
+                            "basicCompare",
+                            "subsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202101",
+                            "force_accounts" => [
+                                20000007853439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202101",
+                            "aid" => 20000007853439,
+                            "after_vat" => [
+                                "3439" => 1.9565442,
+                                "2913439" => 7.586449083870966
+                            ],
+                            "total" => 9.542993283870967,
+                            "vatable" => 7.5594141935483865,
+                            "vat" => 0
+                        ]
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "service",
+                            "credit"
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-2993",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 713439,
+                        "aid" => 179753439,
+                        "sid" => 179763439,
+                        "function" => [
+                            "basicCompare",
+                            "subsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202101",
+                            "force_accounts" => [
+                                179753439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202101",
+                            "aid" => 179753439,
+                            "after_vat" => [
+                                "179763439" => 160.0258064516129
+                            ],
+                            "total" => 160.0258064516129,
+                            "vatable" => 136.7741935483871,
+                            "vat" => 0
+                        ]
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "credit"
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-2988",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 723439,
+                        "aid" => 7253439,
+                        "sid" => 8253439,
+                        "function" => [
+                            "basicCompare",
+                            "subsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202102",
+                            "force_accounts" => [
+                                7253439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202102",
+                            "aid" => 7253439,
+                            "after_vat" => [
+                                "8253439" => 213.61935483870974
+                            ],
+                            "total" => 213.61935483870974,
+                            "vatable" => 182.5806451612904,
+                            "vat" => 0
+                        ]
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "credit"
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-2996",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "label" => "test the prorated discounts days is rounded down",
+                        "test_number" => 733439,
+                        "aid" => 2303439,
+                        "sid" => 800183439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202012",
+                            "force_accounts" => [
+                                2303439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202012",
+                            "aid" => 2303439,
+                            "after_vat" => [
+                                "800183439" => 35.778665181058486
+                            ],
+                            "total" => 35.778665181058486,
+                            "vatable" => 30.58005571030641,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-3014",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "label" => "test the service line created",
+                        "test_number" => 743439,
+                        "aid" => 3993439,
+                        "sid" => 4993439,
+                        "function" => [
+                            "basicCompare",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202103",
+                            "force_accounts" => [
+                                3993439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202103",
+                            "aid" => 3993439,
+                            "after_vat" => [
+                                "4993439" => 117
+                            ],
+                            "total" => 117,
+                            "vatable" => 100,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "jiraLink" => "https://billrun.atlassian.net/browse/BRCD-3013",
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "label" => "test the Conditional charge is applied only to one subscriber under the account instead of two",
+                        "test_number" => 753439,
+                        "aid" => 30823439,
+                        "sid" => [
+                            3083,
+                            3084
+                        ],
+                        "function" => [
+                            "basicCompare",
+                            "sumSids",
+                            "totalsPrice",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202106",
+                            "force_accounts" => [
+                                30823439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202106",
+                            "aid" => 30823439,
+                            "after_vat" => [
+                                "30833439" => 175.5,
+                                "30843439" => 175.5
+                            ],
+                            "total" => 351,
+                            "vatable" => 300,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "preRun" => [
+                        "allowPremature",
+                        "removeBillruns"
+                    ],
+                    "test" => [
+                        "test_number" => 733439,
+                        "aid" => 13439,
+                        "function" => [
+                            "testMultiDay"
+                        ],
+                        "options" => [
+                            "stamp" => "202205",
+                            "force_accounts" => [
+                                100003439,
+                                100273439,
+                                100263439,
+                                100253439
+                            ],
+                            "invoicing_days" => [
+                                "1",
+                                "28"
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun_key" => "202205",
+                        "accounts" => [
+                            "100003439" => "1",
+                            "100273439" => "28"
+                        ]
+                    ],
+                    "postRun" => "",
+                    "duplicate" => true
+                ],
+                [
+                    "preRun" => [
+                        "allowPremature",
+                        "removeBillruns"
+                    ],
+                    "test" => [
+                        "test_number" => 743439,
+                        "aid" => 13439,
+                        "function" => [
+                            "testMultiDay"
+                        ],
+                        "options" => [
+                            "stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
+                            "invoicing_days" => [
+                                "26",
+                                "27"
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun_key" => "202205",
+                        "accounts" => [
+                            "100253439" => "26",
+                            "100263439" => "27"
+                        ]
+                    ],
+                    "postRun" => "",
+                    "duplicate" => true
+                ],
+                [
+                    "preRun" => [
+                        "allowPremature",
+                        "removeBillruns"
+                    ],
+                    "test" => [
+                        "test_number" => 753439,
+                        "aid" => "NaN",
+                        "function" => [
+                            "testMultiDayNotallowPremature"
+                        ],
+                        "options" => [
+                            'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month'))),
+                            "invoicing_days" => [
+                                "1",
+                                "2",
+                                "3",
+                                "4",
+                                "5",
+                                "6",
+                                "7",
+                                "8",
+                                "9",
+                                "10",
+                                "11",
+                                "12",
+                                "13",
+                                "14",
+                                "15",
+                                "16",
+                                "17",
+                                "18",
+                                "19",
+                                "20",
+                                "21",
+                                "22",
+                                "23",
+                                "24",
+                                "25",
+                                "26",
+                                "27",
+                                "28"
+                            ],
+                            "force_accounts" => [
+                                100003439,
+                                100013439,
+                                100023439,
+                                100033439,
+                                100043439,
+                                100053439,
+                                100063439,
+                                100073439,
+                                100083439,
+                                100093439,
+                                100103439,
+                                100113439,
+                                100123439,
+                                100133439,
+                                100143439,
+                                100153439,
+                                100163439,
+                                100173439,
+                                100183439,
+                                100193439,
+                                100203439,
+                                100213439,
+                                100223439,
+                                100233439,
+                                100243439,
+                                100253439,
+                                100263439,
+                                100273439
+                        ]
+                    ]
+                ],
+                    "expected" => [
+                        "billrun_key" => "202207",
+                        "accounts" => [
+                            "100003439" => "1",
+                            "100013439" => "2",
+                            "100023439" => "3",
+                            "100033439" => "4",
+                            "100043439" => "5",
+                            "100053439" => "6",
+                            "100063439" => "7",
+                            "100073439" => "8",
+                            "100083439" => "9",
+                            "100093439" => "10",
+                            "100103439" => "11",
+                            "100113439" => "12",
+                            "100123439" => "13",
+                            "100133439" => "14",
+                            "100143439" => "15",
+                            "100153439" => "16",
+                            "100163439" => "17",
+                            "100173439" => "18",
+                            "100183439" => "19",
+                            "100193439" => "20",
+                            "100203439" => "21",
+                            "100213439" => "22",
+                            "100223439" => "23",
+                            "100233439" => "24",
+                            "100243439" => "25",
+                            "100253439" => "26",
+                            "100263439" => "27",
+                            "100273439" => "28"
+                        ]
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "credit"
+                        ]
+                    ],
+                    "postRun" => [
+                        "multi_day_cycle_false"
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 1763439,
+                        "aid" => 7703439,
+                        "sid" => 7713439,
+                        "function" => [
+                            "basicCompare",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202108",
+                            "force_accounts" => [
+                                7703439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202108",
+                            "aid" => 7703439,
+                            "after_vat" => [
+                                "7713439" => 58.5
+                            ],
+                            "total" => 58.5,
+                            "vatable" => 50,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 1773439,
+                        "aid" => 8823439,
+                        "sid" => 7723439,
+                        "function" => [
+                            "basicCompare",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202108",
+                            "force_accounts" => [
+                                8823439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202108",
+                            "aid" => 8823439,
+                            "after_vat" => [
+                                "7723439" => 58.5
+                            ],
+                            "total" => 58.5,
+                            "vatable" => 50,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 1783439,
+                        "aid" => 8833439,
+                        "sid" => 7733439,
+                        "function" => [
+                            "basicCompare",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202108",
+                            "force_accounts" => [
+                                8833439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202108",
+                            "aid" => 8833439,
+                            "after_vat" => [
+                                "7733439" => 117
+                            ],
+                            "total" => 117,
+                            "vatable" => 100,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 1793439,
+                        "aid" => 8843439,
+                        "sid" => 7743439,
+                        "function" => [
+                            "basicCompare",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202108",
+                            "force_accounts" => [
+                                8843439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202108",
+                            "aid" => 8843439,
+                            "after_vat" => [
+                                "7743439" => 60.387096774193544
+                            ],
+                            "total" => 60.387096774193544,
+                            "vatable" => 51.61290322580645,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 1803439,
+                        "aid" => 8853439,
+                        "sid" => 7753439,
+                        "function" => [
+                            "basicCompare",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202108",
+                            "force_accounts" => [
+                                8853439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202108",
+                            "aid" => 8853439,
+                            "after_vat" => [
+                                "7753439" => 0
+                            ],
+                            "total" => 0,
+                            "vatable" => 0,
+                            "vat" => 0
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 1813439,
+                        "aid" => 8863439,
+                        "sid" => 7763439,
+                        "function" => [
+                            "basicCompare",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202108",
+                            "force_accounts" => [
+                                8863439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202108",
+                            "aid" => 8863439,
+                            "after_vat" => [
+                                "7763439" => 0
+                            ],
+                            "total" => 0,
+                            "vatable" => 0,
+                            "vat" => 0
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "credit"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 1823439,
+                        "aid" => 8873439,
+                        "sid" => 7773439,
+                        "function" => [
+                            "basicCompare",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202108",
+                            "force_accounts" => [
+                                8873439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202108",
+                            "aid" => 8873439,
+                            "after_vat" => [
+                                "7773439" => 117
+                            ],
+                            "total" => 117,
+                            "vatable" => 100,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 1833439,
+                        "aid" => 8883439,
+                        "sid" => 7783439,
+                        "function" => [
+                            "basicCompare",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202108",
+                            "force_accounts" => [
+                                8883439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202108",
+                            "aid" => 8883439,
+                            "after_vat" => [
+                                "7783439" => 5.85
+                            ],
+                            "total" => 5.85,
+                            "vatable" => 5,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "service"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 1843439,
+                        "aid" => 8893439,
+                        "sid" => 7793439,
+                        "function" => [
+                            "basicCompare",
+                            "lineExists",
+                            "linesVSbillrun",
+                            "rounded"
+                        ],
+                        "options" => [
+                            "stamp" => "202108",
+                            "force_accounts" => [
+                                8893439
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [
+                            "billrun_key" => "202108",
+                            "aid" => 8893439,
+                            "after_vat" => [
+                                "7793439" => 5.85
+                            ],
+                            "total" => 5.85,
+                            "vatable" => 5,
+                            "vat" => 17
+                        ],
+                        "line" => [
+                            "types" => [
+                                "flat",
+                                "service"
+                            ]
+                        ]
+                    ],
+                    "duplicate" => true
+                ],
+                [
+                    "test" => [
+                        "test_number" => 13595,
+                        "aid" => 13595,
+                        "sid" => 63595,
+                        "function" => [
+                            "billrunNotCreated"
+                        ],
+                        "options" => [
+                            "stamp" => "202202",
+                            "force_accounts" => [
+                                13595
+                            ]
+                        ]
+                    ],
+                    "expected" => [
+                        "billrun" => [],
+                        "lines" => []   
+                    ],
+                    "duplicate" => false
+                ],
+            
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 67,),
@@ -539,9 +3679,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          $this->discountsCol = Billrun_Factory::db()->discountsCollection();
          $this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
          $this->balancesCol = Billrun_Factory::db()->discountsCollection();
-	 $this->billingCyclr = Billrun_Factory::db()->billing_cycleCollection();
+	     $this->billingCyclr = Billrun_Factory::db()->billing_cycleCollection();
          $this->billrunCol = Billrun_Factory::db()->billrunCollection();
-         $this->construct(basename(__FILE__, '.php'), ['bills','charges', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes']);
+         $this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle','charges', 'billrun', 'counters', 'discounts', 'taxes']);
          $this->setColletions();
          $this->loadDbConfig();
      }
@@ -578,6 +3718,19 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
      public function TestPerform() {
 
 		$this->tests = $this->test_cases();
+        // execute test cases pass by tests or all if it empty
+        $request = new Yaf_Request_Http;
+        $this->test_cases_to_run = $request->get('tests');
+        if ($this->test_cases_to_run) {
+            $this->test_cases_to_run = explode(',', $this->test_cases_to_run);
+            foreach ($this->tests as $case) {
+                if (in_array($case['test']['test_number'], $this->test_cases_to_run)){
+                    $this->cases[] = $case;
+                }
+             }
+             $this->tests =  $this->cases;
+            }
+       
          foreach ($this->tests as $key => $row) {
 
              $aid = $row['test']['aid'];
@@ -678,13 +3831,12 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
              $passed = false;
              $this->message .= 'aid :' . $retun_aid . $this->fail;
          }
-		return $passed;
-	}
-
-	public function checkInvoiceId($key, $returnBillrun, $row) {
-		$passed = TRUE;
-		$invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
-		$retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
+         return $passed;
+     }
+	 public function checkInvoiceId($key, $returnBillrun, $row) {
+		 $passed = TRUE;
+         $invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
+         $retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
          if (isset($invoice_id)) {
              
              if (!empty($retun_invoice_id) && $retun_invoice_id == $invoice_id) {
@@ -1333,13 +4485,16 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 		return $passed;
 	}
 
-	public function multi_day_cycle_false() {
+    public function multi_day_cycle_false()
+    {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/multi_day_cycle_false.ini');
 	}
- public function allowPremature($param) {
+    public function allowPremature($param)
+    {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/allow_premature_run.ini');
 }
-	public function notallowPremature($param) {
+    public function notallowPremature($param)
+    {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
 	}
 
@@ -1364,13 +4519,13 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 			$find = false;
 			foreach ($billruns_ as $bills) {
 				if ($bills['aid'] == $aid) {
-					$this->message .= "billrun crate for aid $aid  " . $this->pass;
+                    $this->message .= "billrun created for aid $aid  " . $this->pass;
 					$find = true;
 					continue 2;
 				}
 			}
 			if (!$find) {
-				$this->message .= "billrun not crate for aid $aid " . $this->fail;
+                $this->message .= "billrun not created for aid $aid " . $this->fail;
 				$this->assertTrue(0);
 			}
 		}
@@ -1383,7 +4538,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 			});
 
 			foreach ($wrongBillrun as $wrong => $bill) {
-				$this->message .= "billrun  crate for aid {$bill['aid']} and was not meant to be formed " . $this->fail;
+                $this->message .= "billrun  create for aid {$bill['aid']} and was not meant to be formed " . $this->fail;
 				$this->assertTrue(0);
 			}
 		}
@@ -1445,7 +4600,30 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 		Billrun_Aggregator_Customer::removeBeforeAggregate($stamp, $account);
 	}
 
+    public function checkPerLine($key, $returnBillrun, $row){
+        $this->message .="<b>checkPerLine</b></br>";
+        foreach ($row['expected']['lines'] as $line) {
+            $lines = [];
+            $cursor = Billrun_Factory::db()->linesCollection()->query($line['query'])->cursor()->limit(100000);
+            foreach ($cursor as $rowData) {
+                $lines[] = $rowData->getRawData();
+            }
 	
+            if (is_null($lines) || empty($lines)) {
+                $this->message .= "no create line for this query : " . json_encode($line['query']) . $this->fail;
+                $this->assertTrue(0);
+            }
+            if (!is_null($lines) && !empty($lines) && $lines[0]['aprice'] != $line['aprice']) {
+                $this->message .= "expected aprice is : " . $line['aprice'] . "actually aprice is: " . $lines[0]['aprice'] . $this->fail;
+                $this->assertTrue(0);
+            }
+            if (!is_null($lines) && !empty($lines) && $lines[0]['aprice'] == $line['aprice']) {
+                $this->message .= "expected aprice is : " . $line['aprice'] . $this->pass;
+                $this->assertTrue(1);
+            }
+        }
+    }
+}
 
  
- }
+ 
