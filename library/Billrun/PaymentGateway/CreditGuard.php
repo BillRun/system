@@ -122,6 +122,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$fourDigits = substr($cardNum, -4);
 			$retParams['four_digits'] = $this->saveDetails['four_digits'] = $fourDigits;
 			$retParams['expiration_date'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
+			$retParams['terminal_number'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->terminalNumber;
 			if ($retParams['action'] == 'SinglePayment' || $retParams['action'] == 'SinglePaymentToken') {
 				$this->transactionId = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->tranId;
 				$slaveNumber = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->slaveTerminalNumber;
@@ -766,6 +767,13 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	 * @throws Exception
 	 */
 	public function refundTransaction($transaction) {
+		$tranId = $transaction['payment_gateway']['transactionId'];
+		if (!isset($transaction['gateway_details']['terminal_number'])) {
+			$transactionCGDetails = $this->queryTransaction($tranId, $transaction);
+			$terminal = $transactionCGDetails['terminalNumber'];
+		} else {
+			$terminal = $transaction['gateway_details']['terminal_number'];
+		}
 		$xml = '<ashrait>
 			<request>
 				<command>refundDeal</command>
@@ -774,28 +782,30 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				<version>2000</version>
 				<language>HEB</language>
 				<refundDeal>
-					<terminalNumber>' . $transaction['gateway_details']['charging_terminal'] . '</terminalNumber>
+					<terminalNumber>' . $terminal . '</terminalNumber>
 					<tranId>' . $transaction['payment_gateway']['transactionId'] . '</tranId>
 					<cardNo>' . $transaction['gateway_details']['card_token'] . '</cardNo>
-					<total>' . $transaction['gateway_details']['transferred_amount'] . '</total>
+					<total>' . $this->convertAmountToSend($transaction['gateway_details']['transferred_amount']) . '</total>
 					<authNumber>' . $transaction['gateway_details']['auth_number'] . '</authNumber>
-					<firstPayment>' . ($transaction['installments']['first_payment'] ?? '') . '</firstPayment>
-					<periodicalPayment>' . ($transaction['installments']['periodical_payment'] ?? '') . '</periodicalPayment>
+					<firstPayment>' . ($transaction['installments']['first_payment'] ? $this->convertAmountToSend($transaction['installments']['first_payment']) : '') . '</firstPayment>
+					<periodicalPayment>' . ($transaction['installments']['periodical_payment'] ? $this->convertAmountToSend($transaction['installments']['periodical_payment']) : '') . '</periodicalPayment>
 					<numberOfPayments>' . ($transaction['installments']['number_of_payments'] ?? '') . '</numberOfPayments>
 					<shiftId1></shiftId1>
 					<shiftId2></shiftId2>
 					<shiftId3></shiftId3>
 					<shiftTxnDate></shiftTxnDate>
 				</refundDeal>
-			</request>transation
+			</request>
 		</ashrait>';
 		$params = $this->getGatewayCredentials();
 		$req = array(
 			'user' => $params['user'],
 			'password' => $params['password'],
-			'xml' => $xml
+			'int_in' => $xml
 		);
+		Billrun_Factory::log('CreditGuard send refund request: ' . print_R($req, 1));
 		$res = Billrun_Util::sendRequest($this->EndpointUrl, http_build_query($req), Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		Billrun_Factory::log('CreditGuard send refund response: ' . print_R($res, 1));
 		if (($params = $this->getResponseDetails($res)) === FALSE) {
 			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
 			throw new Exception('Operation Failed. Try Again...');
@@ -805,6 +815,29 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		return $params;
 	}
 	
+	protected function buildInquireTransactionQuery($params, $terminal = 'redirect_terminal') {
+		$credentials = $this->getGatewayCredentials();
+		$terminalNumber = $credentials[$terminal] ?? $params['redirect_terminal'];
+		$version = $params['version'] ?? '2000';
+		return array(
+			'user' => $credentials['user'],
+			'password' => $credentials['password'],
+			/* Build Ashrait XML to post */
+			'int_in' => '<ashrait>
+							<request>
+							 <language>HEB</language>
+							 <requestId>' . time() . '</requestId>
+							 <version>' . $version . '</version>
+							 <command>inquireTransactions</command>
+							 <inquireTransactions>
+							    <tranId>' . $params['txId'] . '</tranId>
+							 </inquireTransactions>
+							</request>
+					   </ashrait>'
+		);
+	}
+	
+
 	/**
 	 * method to query CG for transaction by transaction id
 	 * 
@@ -815,9 +848,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	 */
 	public function queryTransaction($txId, $params = []) {
 		if (!isset($params['terminal'])) {
-			$params['terminal'] = 'charging_terminal';
+			$params['terminal'] = 'redirect_terminal';
 		}
-		$postArray = $this->buildTransactionPost($txId, $params);
+		$params['txId'] = $txId;
+		$postArray = $this->buildInquireTransactionQuery($params, $params['terminal']);
 		if ($this->isNeedAdjustingRequest()){
 			$postString = http_build_query($postArray);
 		} else {
@@ -827,6 +861,17 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		if (empty($result)) {
 			return false;
 		}
-		return simplexml_load_string($result);
+
+		Billrun_Factory::log('CG query transaction found: ' . $result);
+		$xmlObj = simplexml_load_string($this->convertXml($result));
+		$retObj = json_decode(json_encode($xmlObj->response->inquireTransactions->transactions->transaction), TRUE);
+		return $retObj;
+	}
+	
+	protected function convertXml($xml) {
+		if (strpos(strtoupper($xml), 'HEB')) {
+			return iconv("utf-8", "iso-8859-8", $xml);
+		}
+		return $xml;
 	}
 }
