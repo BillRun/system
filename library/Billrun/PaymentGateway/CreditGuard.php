@@ -102,8 +102,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			}
 			$xmlObj = simplexml_load_string($result);
 			// Example to print out status text
-			if (!isset($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->result))
+			if (!isset($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->result) || 
+					(string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->result !== '000') {
 				return false;
+			}
 
 			$this->saveDetails['card_token'] = (string) $xmlObj->response->inquireTransactions->row->cardId;
 			$this->saveDetails['card_expiration'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
@@ -139,7 +141,15 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				}
 			}
 			if ($retParams['action'] == 'SinglePaymentToken') {
-				$this->sendRecurringMigrationRequest($this->saveDetails['aid'], $this->saveDetails);
+				$j5_response_xml = $this->sendJ5Request($this->saveDetails['aid'], $this->saveDetails, 'RecurringDebit');
+				$j5_response = simplexml_load_string($j5_response_xml);
+				if (!isset($j5_response->response->result) ||
+						(string) $j5_response->response->result !== '000') {
+					$retParams['action'] = 'SinglePayment'; // fallback to single payment so we will not save payment gateway into account
+				} else {
+					$this->saveDetails['auth_number_token'] = (string) $j5_response->response->doDeal->authNumber;
+				}
+
 			}
 
 			return $retParams;
@@ -158,7 +168,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'personal_id' => (string) $this->saveDetails['personal_id'],
 				'transaction_exhausted' => true,
 				'generate_token_time' => new MongoDate(time()),
-				'auth_number' => (string) $this->saveDetails['auth_number'],
+				'auth_number' => (string) ($this->saveDetails['auth_number_token'] ?? $this->saveDetails['auth_number']),
 				'four_digits' => (string) $this->saveDetails['four_digits'],
 			)
 		);
@@ -641,10 +651,27 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		return array('password');
 	}
 
+	/**
+	 * mirror function for sendJ5Request
+	 * @deprecated since version 5.16
+	 */
 	public function sendRecurringMigrationRequest($aid, $gatewayDetails){
+		return $this->sendJ5Request($aid, $gatewayDetails, 'RecurringMigration');
+	}
+
+	/**
+	 * method to send J5 request to CG gw
+	 * 
+	 * @param int $aid the account id
+	 * @param array $gatewayDetails the gateway details
+	 * @param string  $transactionType the transcation type RecurringDebit or RecurringMigration
+	 * 
+	 * @return the response from CG gw
+	 */
+	public function sendJ5Request($aid, $gatewayDetails, $transactionType = 'RecurringDebit'){
 		$credentials = $this->getGatewayCredentials();
 		$xmlParams['version'] = $credentials['version'] ?? '2000';
-		$postArray = $this->getRecurringMigrationXml($credentials, $xmlParams, $gatewayDetails);
+		$postArray = $this->getJ5Xml($credentials, $xmlParams, $gatewayDetails, $transactionType);
 		$postString = http_build_query($postArray);
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::INFO);
@@ -655,8 +682,12 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		return $response;
 	}
 
-
-	protected function getRecurringMigrationXml($credentials, $xmlParams, $gatewayDetails) {
+	protected function getJ5Xml($credentials, $xmlParams, $gatewayDetails, $transactionType) {
+		if ($transactionType == 'RecurringMigration') {
+			$auth_number = '<authNumber>' . $gatewayDetails['auth_number'] . '</authNumber>';
+		} else {
+			$auth_number = '';
+		}
 		return array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -675,14 +706,14 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <currency>ILS</currency>
 										  <creditType>RegularCredit</creditType>
 										  <transactionCode>Phone</transactionCode>
-										  <transactionType>RecurringMigration</transactionType>
+										  <transactionType>' . ($transactionType ?? 'RecurringDebit') . '</transactionType>
 										  <user></user>
 										  <externalId></externalId>
 										  <cardExpiration>' . $gatewayDetails['card_expiration'] . '</cardExpiration>
 										  <cardNo></cardNo>
 										  <cgUid></cgUid>
 										  <cardId>' . $gatewayDetails['card_token'] . '</cardId>
-										  <authNumber>' . $gatewayDetails['auth_number'] . '</authNumber>
+										  ' . $auth_number . '
 										  <ashraitEmvData>
 										 		 <recurringTotalNo>999</recurringTotalNo>
 										 		 <recurringTotalSum></recurringTotalSum>
@@ -714,7 +745,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	 * 
 	 * @return mixed the bill record if found, else false
 	 */
-	protected function fetchTransactionById($txId) {
+	public function fetchTransactionById($txId) {
 		$coll = Billrun_Factory::db()->billsCollection();
 		$query = array(
 			'payment_gateway.transactionId' => $txId, // required index
