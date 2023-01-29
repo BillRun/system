@@ -43,7 +43,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlParams['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount', 100);
 		$account = Billrun_Factory::account();
 		$account->loadAccountForQuery(array('aid' => (int)$aid));
-		$xmlParams['language'] = isset($account->pay_page_lang) ? $account->pay_page_lang : "ENG";
+		$xmlParams['language'] = isset($account->pay_page_lang) ? $account->pay_page_lang : "HEB";
 		$xmlParams['addFailPage'] = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
 
 		$customParams = $this->getGatewayCustomParams();
@@ -120,7 +120,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$fourDigits = substr($cardNum, -4);
 			$retParams['four_digits'] = $this->saveDetails['four_digits'] = $fourDigits;
 			$retParams['expiration_date'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
-			if ($retParams['action'] == 'SinglePayment') {
+			if ($retParams['action'] == 'SinglePayment' || $retParams['action'] == 'SinglePaymentToken') {
 				$this->transactionId = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->tranId;
 				$slaveNumber = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->slaveTerminalNumber;
 				$slaveSequence = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->slaveTerminalSequence;
@@ -138,13 +138,16 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 					$retParams['installments']['periodical_payment'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->periodicalPayment));
 				}
 			}
+			if ($retParams['action'] == 'SinglePaymentToken') {
+				$this->sendRecurringMigrationRequest($this->saveDetails['aid'], $this->saveDetails);
+			}
 
 			return $retParams;
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
 	}
-
+	
 	protected function buildSetQuery() {
 		return array(
 			'active' => array(
@@ -227,7 +230,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								<command>doDeal</command>
 								<requestId>23468</requestId>
 								<version>' . $version . '</version>
-								<language>Eng</language>
+								<language>Heb</language>
 								<mayBeDuplicate>0</mayBeDuplicate>
 									<doDeal>
 										<terminalNumber>' . $credentials['charging_terminal'] . '</terminalNumber>
@@ -260,7 +263,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function buildInquireQuery($params){
-                $version = $params['version'] ?? '2000';
+		$version = $params['version'] ?? '2000';
 		return array(
 			'user' => $params['user'],
 			'password' => $params['password'],
@@ -268,7 +271,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			'int_in' => '<ashrait>
 							<request>
 							 <language>HEB</language>
-                                                         <version>' . $version . '</version>
+							 <version>' . $version . '</version>
 							 <command>inquireTransactions</command>
 							 <inquireTransactions>
 							  <terminalNumber>' . $params['redirect_terminal'] . '</terminalNumber>
@@ -401,7 +404,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlParams['aid'] = $addonData['aid'] = $params['aid'];
 		$xmlParams['version'] = $credentials['version'] ?? '2000';
 		$xmlParams['mpiValidation'] = 'AutoComm';
-		$xmlParams['userData2'] = 'SinglePayment';
+		$xmlParams['userData2'] = $options['tokenize_on_single_payment'] ? 'SinglePaymentToken' : 'SinglePayment';
 		if (!empty($customParams['send_z_param'])) {
 			$aidStringVal = strval($addonData['aid']);
 			$addonData['aid'] = $this->addLeadingZero($aidStringVal);
@@ -417,7 +420,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlParams['amount'] = $this->convertAmountToSend($params['amount']);
 		$query = array('aid' => (int) $params['aid']);
 		$account = $this->account->loadAccountForQuery($query);
-		$xmlParams['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
+		$xmlParams['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "HEB";
 		$xmlParams['addFailPage'] = $params['fail_page'] ? '<errorUrl>' . $params['fail_page']  . '</errorUrl>' : '';
 		if (isset($options['installments'])) {
 			$installmentParams['amount'] = $this->convertAmountToSend($options['installments']['total_amount']);
