@@ -88,7 +88,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$params['txId'] = $txId;
 		$params['tid'] = $params['redirect_terminal'];
 
-		return $this->buildInquireQuery($params);
+		return $this->buildInquireQuery($params, $additionalParams['terminal'] ?? 'redirect_terminal');
 	}
 
 	public function getTransactionIdName() {
@@ -262,7 +262,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		return false;
 	}
 	
-	protected function buildInquireQuery($params){
+	protected function buildInquireQuery($params, $terminal = 'redirect_terminal') {
 		$version = $params['version'] ?? '2000';
 		return array(
 			'user' => $params['user'],
@@ -274,7 +274,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 							 <version>' . $version . '</version>
 							 <command>inquireTransactions</command>
 							 <inquireTransactions>
-							  <terminalNumber>' . $params['redirect_terminal'] . '</terminalNumber>
+							  <terminalNumber>' . ($params[$terminal] ?? $params['redirect_terminal']) . '</terminalNumber>
 							  <mainTerminalNumber/>
 							  <queryName>mpiTransaction</queryName>
 							  <mid>' . (int)$params['mid'] . '</mid>
@@ -693,5 +693,109 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 							</request>
 						 </ashrait>'
 		);
+	}
+	
+	/**
+	 * refund historic transaction by transaction id
+	 * 
+	 * @param string $txId the transaction id
+	 * 
+	 * @return mixed the refund transaction details on success, false on failure
+	 */
+	public function refundTransactionByTxId($txId) {
+		$transaction = $this->fetchTransactionById($txId);
+		return $transaction && $this->refundTransaction($transaction);
+	}
+	
+	/**
+	 * fetch transaction from bills by the CG transaction id
+	 * 
+	 * @param string $txId the transaction id
+	 * 
+	 * @return mixed the bill record if found, else false
+	 */
+	protected function fetchTransactionById($txId) {
+		$coll = Billrun_Factory::db()->billsCollection();
+		$query = array(
+			'payment_gateway.transactionId' => $txId, // required index
+		);
+		$transaction = $coll->query($query)->cursor()->current();
+		if (empty($transaction) || $transaction->isEmpty()) {
+			return false;
+		}
+		return $transaction;
+	}
+	
+	/**
+	 * refund historic transaction
+	 * 
+	 * @param array $transaction the transaction from bill collection
+	 * 
+	 * @return mixed the refund transaction details on success, false on failure
+	 * @throws Exception
+	 */
+	public function refundTransaction($transaction) {
+		$xml = '<ashrait>
+			<request>
+				<command>refundDeal</command>
+				<requesteId>' . time() . '</requesteId>
+				<dateTime>' . date('Y-m-d H:i:s') . '</dateTime>
+				<version>2000</version>
+				<language>HEB</language>
+				<refundDeal>
+					<terminalNumber>' . $transaction['gateway_details']['charging_terminal'] . '</terminalNumber>
+					<tranId>' . $transaction['payment_gateway']['transactionId'] . '</tranId>
+					<cardNo>' . $transaction['gateway_details']['card_token'] . '</cardNo>
+					<total>' . $transaction['gateway_details']['transferred_amount'] . '</total>
+					<authNumber>' . $transaction['gateway_details']['auth_number'] . '</authNumber>
+					<firstPayment>' . ($transaction['installments']['first_payment'] ?? '') . '</firstPayment>
+					<periodicalPayment>' . ($transaction['installments']['periodical_payment'] ?? '') . '</periodicalPayment>
+					<numberOfPayments>' . ($transaction['installments']['number_of_payments'] ?? '') . '</numberOfPayments>
+					<shiftId1></shiftId1>
+					<shiftId2></shiftId2>
+					<shiftId3></shiftId3>
+					<shiftTxnDate></shiftTxnDate>
+				</refundDeal>
+			</request>transation
+		</ashrait>';
+		$params = $this->getGatewayCredentials();
+		$req = array(
+			'user' => $params['user'],
+			'password' => $params['password'],
+			'xml' => $xml
+		);
+		$res = Billrun_Util::sendRequest($this->EndpointUrl, http_build_query($req), Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		if (($params = $this->getResponseDetails($res)) === FALSE) {
+			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
+			throw new Exception('Operation Failed. Try Again...');
+		}
+		// add refund to bills
+		$this->paySinglePayment($params);
+		return $params;
+	}
+	
+	/**
+	 * method to query CG for transaction by transaction id
+	 * 
+	 * @param string $txId transaction id 
+	 * @param array $params transaction parameters
+	 * 
+	 * @return boolean
+	 */
+	public function queryTransaction($txId, $params = []) {
+		if (!isset($params['terminal'])) {
+			$params['terminal'] = 'charging_terminal';
+		}
+		$postArray = $this->buildTransactionPost($txId, $params);
+		if ($this->isNeedAdjustingRequest()){
+			$postString = http_build_query($postArray);
+		} else {
+			$postString = $postArray;
+		}
+		$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		if (empty($result)) {
+			return false;
+		}
+		return simplexml_load_string($result);
 	}
 }
