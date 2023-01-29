@@ -904,5 +904,8 @@ abstract class Billrun_PaymentGateway {
 		return $account;
 	}
 	
+	public function queryTransaction($txId, $params) {
+		return true;
+	}
 
 }
