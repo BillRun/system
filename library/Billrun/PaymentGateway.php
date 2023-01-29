@@ -236,6 +236,9 @@ abstract class Billrun_PaymentGateway {
 		if (isset($data['installments'])) {
 			$options['installments'] = $data['installments'];
 		}
+		if ($data['tokenize_on_single_payment']) {
+			$options['tokenize_on_single_payment'] = $data['tokenize_on_single_payment'];
+		}
 		if ($this->needRequestForToken()){
 			$response = $this->getToken($aid, $tenantReturnUrl, $okPage, $failPage, $singlePaymentParams, $options);
 		} else {
@@ -508,6 +511,9 @@ abstract class Billrun_PaymentGateway {
 
 		if (isset($retParams['action']) && $retParams['action'] == 'SinglePayment') {
 			$this->paySinglePayment($retParams);
+		} else if (isset($retParams['action']) && $retParams['action'] == 'SinglePaymentToken') {
+			$this->paySinglePayment($retParams);
+			$this->savePaymentGateway();
 		} else {
 			$this->savePaymentGateway();
 		}
@@ -897,6 +903,6 @@ abstract class Billrun_PaymentGateway {
 		}
 		return $account;
 	}
-
+	
 
 }
