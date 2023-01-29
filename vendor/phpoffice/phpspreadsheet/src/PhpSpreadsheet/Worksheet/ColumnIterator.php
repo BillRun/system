@@ -66,7 +66,7 @@ class ColumnIterator implements \Iterator
      *
      * @throws Exception
      *
-     * @return $this
+     * @return ColumnIterator
      */
     public function resetStart($startColumn = 'A')
     {
@@ -89,7 +89,7 @@ class ColumnIterator implements \Iterator
      *
      * @param string $endColumn The column address at which to stop iterating
      *
-     * @return $this
+     * @return ColumnIterator
      */
     public function resetEnd($endColumn = null)
     {
@@ -106,7 +106,7 @@ class ColumnIterator implements \Iterator
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return ColumnIterator
      */
     public function seek($column = 'A')
     {

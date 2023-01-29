@@ -22,6 +22,9 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 	
 	public function _initPlugin(Yaf_Dispatcher $dispatcher) {
 
+		// set composer vendor autoload
+		Yaf_Loader::getInstance()->import(APPLICATION_PATH . '/vendor/autoload.php');
+
 		// set include paths of the system.
 		set_include_path(get_include_path() . PATH_SEPARATOR . Yaf_Loader::getInstance()->getLibraryPath());
 

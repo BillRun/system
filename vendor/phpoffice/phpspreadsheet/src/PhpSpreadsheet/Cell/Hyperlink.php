@@ -46,7 +46,7 @@ class Hyperlink
      *
      * @param string $value
      *
-     * @return $this
+     * @return Hyperlink
      */
     public function setUrl($value)
     {
@@ -70,7 +70,7 @@ class Hyperlink
      *
      * @param string $value
      *
-     * @return $this
+     * @return Hyperlink
      */
     public function setTooltip($value)
     {

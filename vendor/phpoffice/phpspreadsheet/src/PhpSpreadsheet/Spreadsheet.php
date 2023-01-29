@@ -721,7 +721,7 @@ class Spreadsheet
     {
         $worksheetCount = count($this->workSheetCollection);
         for ($i = 0; $i < $worksheetCount; ++$i) {
-            if ($this->workSheetCollection[$i]->getTitle() === trim($pName, "'")) {
+            if ($this->workSheetCollection[$i]->getTitle() === $pName) {
                 return $this->workSheetCollection[$i];
             }
         }
@@ -955,7 +955,7 @@ class Spreadsheet
      * @param string $namedRange
      * @param null|Worksheet $pSheet scope: use null for global scope
      *
-     * @return $this
+     * @return Spreadsheet
      */
     public function removeNamedRange($namedRange, Worksheet $pSheet = null)
     {

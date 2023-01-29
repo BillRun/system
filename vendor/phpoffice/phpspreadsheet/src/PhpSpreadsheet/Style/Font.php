@@ -161,7 +161,7 @@ class Font extends Supervisor
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Font
      */
     public function applyFromArray(array $pStyles)
     {
@@ -219,7 +219,7 @@ class Font extends Supervisor
      *
      * @param string $pValue
      *
-     * @return $this
+     * @return Font
      */
     public function setName($pValue)
     {
@@ -255,7 +255,7 @@ class Font extends Supervisor
      *
      * @param float $pValue
      *
-     * @return $this
+     * @return Font
      */
     public function setSize($pValue)
     {
@@ -291,7 +291,7 @@ class Font extends Supervisor
      *
      * @param bool $pValue
      *
-     * @return $this
+     * @return Font
      */
     public function setBold($pValue)
     {
@@ -327,7 +327,7 @@ class Font extends Supervisor
      *
      * @param bool $pValue
      *
-     * @return $this
+     * @return Font
      */
     public function setItalic($pValue)
     {
@@ -363,7 +363,7 @@ class Font extends Supervisor
      *
      * @param bool $pValue
      *
-     * @return $this
+     * @return Font
      */
     public function setSuperscript($pValue)
     {
@@ -400,7 +400,7 @@ class Font extends Supervisor
      *
      * @param bool $pValue
      *
-     * @return $this
+     * @return Font
      */
     public function setSubscript($pValue)
     {
@@ -439,7 +439,7 @@ class Font extends Supervisor
      *                                    If a boolean is passed, then TRUE equates to UNDERLINE_SINGLE,
      *                                        false equates to UNDERLINE_NONE
      *
-     * @return $this
+     * @return Font
      */
     public function setUnderline($pValue)
     {
@@ -477,7 +477,7 @@ class Font extends Supervisor
      *
      * @param bool $pValue
      *
-     * @return $this
+     * @return Font
      */
     public function setStrikethrough($pValue)
     {
@@ -512,7 +512,7 @@ class Font extends Supervisor
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Font
      */
     public function setColor(Color $pValue)
     {
