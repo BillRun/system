@@ -80,8 +80,12 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$icg = $row->get('in_circuit_group');
 		$line_time = $row->get('urt');
 		$matchedRate = false;
-                
-		if ($record_type == "01" || //MOC call
+
+
+		if($this->isCDRVoLTE($row)) {
+			$plmn = preg_match('/^incoming_/',$usage_type) ? $row['out_mgw_name'] : $row['in_mgw_name'] ;
+			$matchedRate = $this->getIntlRoamingRateByParams($called_number, $usage_type, $line_time, $plmn);
+		} else if ($record_type == "01" || //MOC call
 				(in_array($record_type, array("11","30")) && in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
 			$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
 		) {
@@ -133,9 +137,42 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		}
 		return $matchedRate;
 	}
+
+	/**
+	 * Get a matching rate by the supplied params
+	 * @param string $called_number the number called
+	 * @param string $usage_type the usage type (call / sms ...)
+	 * @param MongoDate $urt the time of the event
+	 * @param string $imgwn the PLMN code that  the CDR was generated under (for VoLTE calls only )
+	 * @return Mongodloid_Entity the matched rate or UNRATED rate if none found
+	 */
+	protected function getIntlRoamingRateByParams($called_number, $usage_type, $urt, $imgwn) {
+		$matchedRate = $this->rates['UNRATED'];
+		$called_number_prefixes = Billrun_Util::getPrefixes($called_number);
+		foreach ($called_number_prefixes as $prefix) {
+			if (isset($this->rates[$prefix])) {
+				foreach ($this->rates[$prefix] as $rate) {
+					if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
+						if ($rate['from'] <= $urt && $rate['to'] >= $urt) {
+							if (!empty($rate['params']['serving_networks']) && (
+								( is_array($rate['params']['serving_networks']) && in_array($imgwn, $rate['params']['serving_networks']))
+								 ||
+								( is_string($rate['params']['serving_networks']) && preg_match($rate['params']['serving_networks'],$imgwn))
+							)) {
+								$matchedRate = $rate;
+								break 2;
+							}
+						}
+					}
+				}
+			}
+		}
+		return $matchedRate;
+	}
 	//todo: move the regex and rate keys to config
 	protected function getLineAdditionalValues($row) {
 		$circuit_groups = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.whloesale_incoming_rate_key');
+		$retArr = [];
 		$rate_key = null;
 		if( in_array($row['record_type'],array('30','11')) &&  $this->valueWithinRanges($row['in_circuit_group'], $circuit_groups['icg']) ) {
 			if(preg_match('/^(997|972)?1800/',$row['called_number'])) {
@@ -150,9 +187,15 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		}
 		$additional_properties = $this->getAdditionalProperties();
 		if(isset($rate_key)){
-			return array($additional_properties['wholesale_rate_key'] => $rate_key);
+			$retArr = array($additional_properties['wholesale_rate_key'] => $rate_key);
 		}
-		return array();
+		if($this->isCDRVoLTE($row)) {
+			$retArr['sending_source'] = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.default_volte_sending_source','ISRCL');
+			$retArr['serving_network'] = preg_match('/^incoming_/',$this->getLineUsageType($row)) ? $row['out_mgw_name'] : $row['in_mgw_name'] ;
+			$retArr['roaming'] = 	!empty($retArr['serving_network']) &&
+									$retArr['serving_network'] !== Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.volte_local_plmn','ISRCL');
+		}
+		return $retArr;
 	}
 		
 	protected function getAdditionalProperties() {
@@ -174,6 +217,12 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 				}
 			}
 			return FALSE;
+	}
+
+	protected function isCDRVoLTE($cdr) {
+		return( in_array($cdr['record_type'],['01']) && ($cdr['in_circuit_group'] == '5000' && $cdr['in_circuit_group_name'] == 'VOLT' ))
+					||
+				(in_array($cdr['record_type'],['02']) && ($cdr['out_circuit_group'] == '5000' && $cdr['out_circuit_group_name'] == 'VOLT' ) );
 	}
 		
 }
