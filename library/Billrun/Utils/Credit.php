@@ -62,6 +62,7 @@ class Billrun_Utils_Credit {
 			'parser' => 'none',
 		];
 		$dummyProcessor = Billrun_Processor::getInstance($processorOptions);
+		$dummyProcessor->init();
 
 		foreach ($creditCdrs as $event) {
 			$dummyProcessor->addDataRow($event);
