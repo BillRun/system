@@ -559,7 +559,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return boolean true on success else false
 	 */
 	protected function applyQueueHash($query, $update, $queue) {
-		if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=')) {
+		/*if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=')) {
 			$session = Billrun_Factory::db()->startSession();
 			if ($session !== false) {
 				$session->startTransaction();
@@ -575,7 +575,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			Billrun_Factory::log("No support for transactions as you're running on mongodb standalone", Zend_Log::NOTICE);
 		} else {
 			Billrun_Factory::log("No support for transactions or \$isolated; Please upgrade MongoDB server or client", Zend_Log::WARN);
-		}
+		}*/
 		
 		$queue->update($query, $update, array('multiple' => true));
 		return true;
