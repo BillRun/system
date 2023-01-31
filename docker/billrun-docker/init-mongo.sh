@@ -10,6 +10,5 @@ FILE=/billrun/mongo/first_users.json
 if test -f "$FILE"; then
     mongoimport -d billing_container -c users $FILE
 fi 
-mongoimport -d billing_container -c taxes /billrun/mongo/base/taxes.export --batchSize 1
 
 mongo billing_container /billrun/mongo/migration/script.js
