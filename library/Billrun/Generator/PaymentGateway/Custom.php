@@ -73,7 +73,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$missing_fields = [];
 		if(isset($this->mandatory_fields_per_entity[$entity_type])) {
 			foreach($this->mandatory_fields_per_entity[$entity_type] as $field_name) {
-				if(isset($data[$field_name])) {
+				if(!is_null(Billrun_Util::getIn($data, $field_name))) {
 					continue;
 				} else {
 					$missing_fields[] = $field_name;
