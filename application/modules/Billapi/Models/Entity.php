@@ -374,6 +374,7 @@ class Models_Entity {
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
+			$this->after = $this->update;
 			$this->fixEntityFields($this->before);
 			$this->trackChanges($this->update['_id']);
 			return isset($status['ok']) && $status['ok'];
