@@ -128,12 +128,12 @@
             'dev_requirement' => false,
         ),
         'maennchen/zipstream-php' => array(
-            'pretty_version' => '2.2.1',
-            'version' => '2.2.1.0',
+            'pretty_version' => '2.2.6',
+            'version' => '2.2.6.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../maennchen/zipstream-php',
             'aliases' => array(),
-            'reference' => '211e9ba1530ea5260b45d90c9ea252f56ec52729',
+            'reference' => '30ad6f93cf3efe4192bc7a4c9cad11ff8f4f237f',
             'dev_requirement' => false,
         ),
         'markbaker/complex' => array(
@@ -146,12 +146,12 @@
             'dev_requirement' => false,
         ),
         'markbaker/matrix' => array(
-            'pretty_version' => '2.1.3',
-            'version' => '2.1.3.0',
+            'pretty_version' => '2.1.4',
+            'version' => '2.1.4.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../markbaker/matrix',
             'aliases' => array(),
-            'reference' => '174395a901b5ba0925f1d790fa91bab531074b61',
+            'reference' => '469e937dc91aa087e43b21a5266cb7567f482f3e',
             'dev_requirement' => false,
         ),
         'moneyphp/money' => array(
@@ -371,12 +371,12 @@
             'dev_requirement' => false,
         ),
         'symfony/http-foundation' => array(
-            'pretty_version' => 'v5.4.15',
-            'version' => '5.4.15.0',
+            'pretty_version' => 'v5.4.20',
+            'version' => '5.4.20.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/http-foundation',
             'aliases' => array(),
-            'reference' => '75bd663ff2db90141bfb733682459d5bbe9e29c3',
+            'reference' => 'd0435363362a47c14e9cf50663cb8ffbf491875a',
             'dev_requirement' => false,
         ),
         'symfony/polyfill-intl-idn' => array(
