@@ -788,12 +788,12 @@ db.taxes.createIndex({'key':1, 'from': 1, 'to': 1}, { unique: true, background: 
 db.taxes.createIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
 db.taxes.createIndex({'to': 1 }, { unique: false , sparse: true, background: true });
 
-lastConfig = runOnce(lastConfig, 'BRCD-3678', function () {
+lastConfig = runOnce(lastConfig, 'BRCD-3678-1', function () {
     //Suggestions Collection
     db.createCollection('suggestions');
     db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1_estimated_billrun_1");
     db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1");
-    db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: true , background: true});
+    db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
     db.suggestions.createIndex({'status': 1 }, { unique: false , background: true});
 });
 // BRCD-1936: Migrate old discount structure to new discount structure
@@ -1273,6 +1273,7 @@ db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEa
 		db.billrun.save(obj);
 	}
 )
+
 //BRCD-2452 reformat paid_by and pays objects to array format
 var bills = db.bills.find({
 	$or: [
@@ -1485,7 +1486,6 @@ lastConfig = runOnce(lastConfig, 'BRCD-3890', function () {
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'charges');
 });
 db.config.insert(lastConfig);
-
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.dropIndex("aid_1_urt_1");
 db.rebalance_queue.ensureIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});

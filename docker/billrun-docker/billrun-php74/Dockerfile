@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y \
         wkhtmltopdf libpng-dev zlib1g-dev libzip-dev \
     && pecl install yaf-3.1.4 \
     && pecl install mongodb-1.11.1 \
-    && pecl install xdebug \
+    && pecl install xdebug-3.1.6 \
     && docker-php-ext-enable yaf mongodb xdebug \
     && docker-php-ext-install pcntl bcmath gd zip
 
