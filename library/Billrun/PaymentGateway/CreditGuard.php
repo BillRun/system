@@ -141,6 +141,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 					$retParams['installments']['periodical_payment'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->periodicalPayment));
 				}
 			}
+
 			if ($retParams['action'] == 'SinglePaymentToken') {
 				$j5_response_xml = $this->sendJ5Request($this->saveDetails['aid'], $this->saveDetails, 'RecurringDebit');
 				$j5_response = simplexml_load_string($j5_response_xml);
@@ -150,7 +151,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				} else {
 					$this->saveDetails['auth_number_token'] = (string) $j5_response->response->doDeal->authNumber;
 				}
-
 			}
 
 			return $retParams;
@@ -434,10 +434,15 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlParams['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "HEB";
 		$xmlParams['addFailPage'] = $params['fail_page'] ? '<errorUrl>' . $params['fail_page']  . '</errorUrl>' : '';
 		if (isset($options['installments'])) {
-			$installmentParams['amount'] = $this->convertAmountToSend($options['installments']['total_amount']);
-			$installmentParams['number_of_payments'] = $options['installments']['number_of_payments'] - 1;
-			$installmentParams['periodical_payments'] = floor($installmentParams['amount'] / $options['installments']['number_of_payments']); 	
-			$installmentParams['first_payment'] = $installmentParams['amount'] - ($installmentParams['number_of_payments'] * $installmentParams['periodical_payments']);
+			if (!empty($options['installments']['total_amount'])) {
+				$installmentParams['amount'] = $this->convertAmountToSend($options['installments']['total_amount']);
+				$installmentParams['number_of_payments'] = $options['installments']['number_of_payments'] - 1;
+				$installmentParams['periodical_payments'] = floor($installmentParams['amount'] / $options['installments']['number_of_payments']);
+				$installmentParams['first_payment'] = $installmentParams['amount'] - ($installmentParams['number_of_payments'] * $installmentParams['periodical_payments']);
+			} else {
+				$installmentParams['amount'] = $xmlParams['amount'];
+				$installmentParams['number_of_payments'] = $options['installments']['number_of_payments'];
+			}
 			return $this->getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams, $addonData);
 		}
 
@@ -545,8 +550,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <transactionCode>Phone</transactionCode>
 										  <authNumber/>
 										  <numberOfPayments>' . $installmentParams['number_of_payments'] . '</numberOfPayments>
-										  <firstPayment>' . $installmentParams['first_payment'] . '</firstPayment>
-										  <periodicalPayment>' . $installmentParams['periodical_payments'] . '</periodicalPayment>
+										  <firstPayment>' . (!empty($installmentParams['first_payment']) ? $installmentParams['first_payment'] : ''). '</firstPayment>
+										  <periodicalPayment>' . (!empty($installmentParams['periodical_payments']) ? $installmentParams['periodical_payments'] : '') . '</periodicalPayment>
 										  <validation>TxnSetup</validation>
 										  <dealerNumber/>
 										  <mid>' . (int) $credentials['mid'] . '</mid>
@@ -665,14 +670,15 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	 * 
 	 * @param int $aid the account id
 	 * @param array $gatewayDetails the gateway details
-	 * @param string  $transactionType the transcation type RecurringDebit or RecurringMigration
+	 * @param string $transactionType the transcation type RecurringDebit or RecurringMigration
+	 * @param string $terminal the terminal to request from redirect_terminal or charging_terminal
 	 * 
 	 * @return the response from CG gw
 	 */
-	public function sendJ5Request($aid, $gatewayDetails, $transactionType = 'RecurringDebit'){
+	public function sendJ5Request($aid, $gatewayDetails, $transactionType = 'RecurringDebit', $terminal = 'redirect_terminal'){
 		$credentials = $this->getGatewayCredentials();
 		$xmlParams['version'] = $credentials['version'] ?? '2000';
-		$postArray = $this->getJ5Xml($credentials, $xmlParams, $gatewayDetails, $transactionType);
+		$postArray = $this->getJ5Xml($credentials, $xmlParams, $gatewayDetails, $transactionType, $terminal);
 		$postString = http_build_query($postArray);
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::INFO);
@@ -683,7 +689,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		return $response;
 	}
 
-	protected function getJ5Xml($credentials, $xmlParams, $gatewayDetails, $transactionType) {
+	protected function getJ5Xml($credentials, $xmlParams, $gatewayDetails, $transactionType, $terminal = 'redirect_terminal') {
 		if ($transactionType == 'RecurringMigration') {
 			$auth_number = '<authNumber>' . $gatewayDetails['auth_number'] . '</authNumber>';
 		} else {
@@ -700,7 +706,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								 <command>doDeal</command>
 								 <requestId></requestId>
 								 <doDeal>
-										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
+										  <terminalNumber>' . $credentials[$terminal] . '</terminalNumber>
 										  <validation>verify</validation>
 										  <total>100</total>
 										  <groupId></groupId>
