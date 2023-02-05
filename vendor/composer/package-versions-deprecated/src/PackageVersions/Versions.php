@@ -35,6 +35,8 @@ final class Versions
     const VERSIONS          = array (
   'alcaeus/mongo-php-adapter' => '1.2.0@b828ebc06cd3c270997b13c97dadc94731b36354',
   'bshaffer/oauth2-server-php' => 'v1.11.1@5a0c8000d4763b276919e2106f54eddda6bc50fa',
+  'chillerlan/php-qrcode' => '4.3.4@2ca4bf5ae048af1981d1023ee42a0a2a9d51e51d',
+  'chillerlan/php-settings-container' => '2.1.4@1beb7df3c14346d4344b0b2e12f6f9a74feabd4a',
   'clue/stream-filter' => 'v1.6.0@d6169430c7731d8509da7aecd0af756a5747b78e',
   'composer/package-versions-deprecated' => '1.11.99.5@b4f54f74ef3453349c24a845d22392cd31e65f1d',
   'guzzlehttp/guzzle' => '6.5.8@a52f0440530b54fa079ce76e8c5d196a42cad981',
@@ -42,9 +44,9 @@ final class Versions
   'guzzlehttp/psr7' => '1.9.0@e98e3e6d4f86621a9b75f623996e6bbdeb4b9318',
   'jean85/pretty-package-versions' => '1.6.0@1e0104b46f045868f11942aea058cd7186d6c303',
   'league/omnipay' => 'v3.0.2@9e10d91cbf84744207e13d4483e79de39b133368',
-  'maennchen/zipstream-php' => '2.1.0@c4c5803cc1f93df3d2448478ef79394a5981cc58',
+  'maennchen/zipstream-php' => '2.2.6@30ad6f93cf3efe4192bc7a4c9cad11ff8f4f237f',
   'markbaker/complex' => '2.0.3@6f724d7e04606fd8adaa4e3bb381c3e9db09c946',
-  'markbaker/matrix' => '2.1.3@174395a901b5ba0925f1d790fa91bab531074b61',
+  'markbaker/matrix' => '2.1.4@469e937dc91aa087e43b21a5266cb7567f482f3e',
   'moneyphp/money' => 'v3.3.3@0dc40e3791c67e8793e3aa13fead8cf4661ec9cd',
   'mongodb/mongodb' => '1.7.2@38b685191c047a57275d6ccd2ea5c50f23638485',
   'myclabs/php-enum' => '1.8.4@a867478eae49c9f59ece437ae7f9506bfaa27483',
@@ -64,14 +66,14 @@ final class Versions
   'psr/simple-cache' => '1.0.1@408d5eafb83c57f6365a3ca330ff23aa4a5fa39b',
   'ralouphie/getallheaders' => '3.0.3@120b605dfeb996808c31b6477290a714d356e822',
   'symfony/deprecation-contracts' => 'v2.5.2@e8b495ea28c1d97b5e0c121748d6f9b53d075c66',
-  'symfony/http-foundation' => 'v5.4.15@75bd663ff2db90141bfb733682459d5bbe9e29c3',
+  'symfony/http-foundation' => 'v5.4.20@d0435363362a47c14e9cf50663cb8ffbf491875a',
   'symfony/polyfill-intl-idn' => 'v1.27.0@639084e360537a19f9ee352433b84ce831f3d2da',
   'symfony/polyfill-intl-normalizer' => 'v1.27.0@19bd1e4fcd5b91116f14d8533c57831ed00571b6',
   'symfony/polyfill-mbstring' => 'v1.27.0@8ad114f6b39e2c98a8b0e3bd907732c207c2b534',
   'symfony/polyfill-php72' => 'v1.27.0@869329b1e9894268a8a61dabb69153029b7a8c97',
   'symfony/polyfill-php80' => 'v1.27.0@7a6ff3f1959bb01aefccb463a0f2cd3d3d2fd936',
   'simpletest/simpletest' => 'v1.2.0@4fb6006517a1428785a0ea704fbedcc675421ec4',
-  '__root__' => 'dev-master@8c2db5fc36be06b414e0dbf431b63bcef8ec0c35',
+  '__root__' => '1.0.0+no-version-set@',
 );
 
     private function __construct()
