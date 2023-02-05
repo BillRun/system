@@ -222,7 +222,7 @@ abstract class Billrun_PaymentGateway {
 			if (empty($data['amount'])) {
 				throw new Exception("Missing amount when making single payment");
 			}
-			if (isset($data['installments']) && ($data['amount'] != $data['installments']['total_amount'])) {
+			if (isset($data['installments']) && (isset($data['installments']['total_amount']) && $data['amount'] != $data['installments']['total_amount'])) {
 				throw new Exception("Single payment amount different from installments amount");
 			}
 			if (!$this->getActiveAccount($aid)) {
@@ -498,7 +498,10 @@ abstract class Billrun_PaymentGateway {
 		$tenantUrl = $this->getTenantReturnUrl($this->saveDetails['aid']);
 		$this->updateReturnUrlOnEror($tenantUrl);
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
+			Billrun_Factory::log("Requesting transaction details for txId " . $txId, Zend_Log::DEBUG);
+			Billrun_Factory::log("Payment gateway transaction details request: " . print_R($postString, 1), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Payment gateway transaction details response: " . print_R($result, 1), Zend_Log::DEBUG);
 			if (($retParams = $this->getResponseDetails($result)) === FALSE) {
 				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
 				throw new Exception('Operation Failed. Try Again...');
