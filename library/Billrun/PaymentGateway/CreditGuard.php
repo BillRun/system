@@ -112,6 +112,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['aid'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
 			$this->saveDetails['personal_id'] = (string) $xmlObj->response->inquireTransactions->row->personalId;
 			$this->saveDetails['auth_number'] = (string) $xmlObj->response->inquireTransactions->row->authNumber;
+			$this->saveDetails['card_type'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardType->attributes()->code;
+			$this->saveDetails['credit_company'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->creditCompany->attributes()->code;
+			$this->saveDetails['card_brand'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardBrand->attributes()->code;
+			$this->saveDetails['card_acquirer'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardAcquirer->attributes()->code;
 			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
 			$retParams['action'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
 			$retParams['transferred_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
@@ -119,6 +123,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$retParams['card_token'] = $this->saveDetails['card_token'];		
 			$retParams['personal_id'] = $this->saveDetails['personal_id'];
 			$retParams['auth_number'] = $this->saveDetails['auth_number'];
+			$retParams['card_type'] = $this->saveDetails['card_type'];
+			$retParams['credit_company'] = $this->saveDetails['credit_company'];
+			$retParams['card_brand'] = $this->saveDetails['card_brand'];
+			$retParams['card_acquirer'] = $this->saveDetails['card_acquirer'];
 			$fourDigits = substr($cardNum, -4);
 			$retParams['four_digits'] = $this->saveDetails['four_digits'] = $fourDigits;
 			$retParams['expiration_date'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
@@ -171,6 +179,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'generate_token_time' => new MongoDate(time()),
 				'auth_number' => (string) ($this->saveDetails['auth_number_token'] ?? $this->saveDetails['auth_number']),
 				'four_digits' => (string) $this->saveDetails['four_digits'],
+				'card_acquirer' => (string) $this->saveDetails['card_acquirer'],
+				'card_brand' => (string) $this->saveDetails['card_brand'],
+				'credit_company' => (string) $this->saveDetails['credit_company'],
+				'card_type' => (string) $this->saveDetails['card_type'],
 			)
 		);
 	}
@@ -373,6 +385,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$additionalParams['card_acquirer'] = $xmlObj->response->doDeal->cardAcquirer ? current($xmlObj->response->doDeal->cardAcquirer->attributes()->code) : '';
 			$additionalParams['card_brand'] = $xmlObj->response->doDeal->cardBrand ? current($xmlObj->response->doDeal->cardBrand->attributes()->code) : '';
 			$additionalParams['credit_company'] = $xmlObj->response->doDeal->creditCompany ? current($xmlObj->response->doDeal->creditCompany->attributes()->code) : '';
+			$additionalParams['card_type'] = $xmlObj->response->doDeal->cardType ? current($xmlObj->response->doDeal->cardType->attributes()->code) : '';
 		}	
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
