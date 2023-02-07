@@ -37,7 +37,7 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 		$data = $this->getRequestBody();
 		$method = $this->getMethod();
 		Billrun_Factory::log('HTTP request - sending request to prov '. '. Details: ' . print_r($data, 1), Zend_Log::DEBUG);
-		return Billrun_Util::sendRequest($requestUrl, $data, $method, params:$params);
+		return Billrun_Util::sendRequest($requestUrl, $data, $method, array('Accept-encoding' => 'deflate'), null, null, false, $params);
 	}
 
 	protected function getRequestUrl() {
@@ -46,7 +46,7 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 
 	protected function getRequestParams() {
 		return [
-			'authentication' => $this->remote_authentication,
+			'authentication' => $this->remote_authentication
 		];
 	}
 	
