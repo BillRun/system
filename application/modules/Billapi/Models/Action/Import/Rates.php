@@ -20,6 +20,8 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	 * @var array
 	 */
 	protected $rates_by_plan = array();
+	protected $rates_by_service = array();
+	
 	
 	protected $special_field = [
 		'__MULTI_FIELD_ACTION__',
@@ -54,7 +56,7 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	 */
 	protected function runManualMappingQuery($entities) {
 		$entities = $this->combineRateLines($entities);
-		$this->rates_by_plan = $this->getRatePlans($entities);
+		$this->setRatePlans($entities);
 		return parent::runManualMappingQuery($entities);
 	}
 
@@ -103,7 +105,7 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		];
 	}
 
-	protected function getRatePlans($entities) {
+	protected function setRatePlans($entities) {
 		$plan_rates = array();
 		$service_rates = array();
 		foreach ($entities as $rate) {
@@ -122,7 +124,8 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 				}
 			}
 		}
-		return $rates;
+		$this->rates_by_plan = $plan_rates;
+		$this->rates_by_service = $service_rates;
 	}
 
 	protected function combineRateLines($entities) {
@@ -253,7 +256,9 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		unset($combine_rate['tax__custom_logic']);
 		unset($combine_rate['tax__custom_tax']);
 		unset($combine_rate['tax__taxation']);
-		unset($combine_rate['rates.percentage']);
+		unset($combine_rate['rates.services.percentage']);
+		unset($combine_rate['rates.plans.percentage']);
+		unset($combine_rate['price_service']);
 		unset($combine_rate['price_plan']);
 		unset($combine_rate['price_from']);
 		unset($combine_rate['price_to']);
@@ -657,3 +662,4 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	}
 	
 }
+	
