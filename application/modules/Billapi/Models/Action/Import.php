@@ -382,7 +382,7 @@ class Models_Action_Import extends Models_Action {
 		foreach ($mapping as $fieldParams) {
 			$fieldName = $fieldParams['field_name'];
 			$value = $this->translateValue($row, $fieldParams);
-			if (!empty($value)) {
+			if (!empty($value) || $value === false) {
 				Billrun_Util::setIn($ret, $fieldName, $value);
 			}
 		}
