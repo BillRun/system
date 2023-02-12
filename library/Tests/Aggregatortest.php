@@ -534,6 +534,17 @@
 				'line' => array('types' => array('credit')))
 			
 		),
+        //BRCD-4042
+        array('test' => array('label' => 'change service quantity during the month', 'test_number' => 4042, "aid" => 80798,'sid' => array(80806),
+          'function' => array('basicCompare', 'sumSids', 'totalsPrice', 'linesVSbillrun', 'rounded'), 
+          'options' => array("stamp" => "202302", "force_accounts" => array(80798))),
+        'expected' => array('billrun' => array( 'billrun_key' => '202302', 
+        'aid' => 80798, 'after_vat' => array("80806" =>  1013.355198131),
+        'total' => 1013.355198131
+        , 'vatable' => 866.115553958 , 'vat' => 17),
+           )
+    ),
+
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 67,),
