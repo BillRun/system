@@ -643,13 +643,13 @@ class Mongodloid_Collection {
 		if ($ins instanceof Mongodloid_Entity) {
 			$a = $ins->getRawData();
 			$ret = $this->_collection->insertOne(Mongodloid_TypeConverter::fromMongodloid($a), $options);
-			$a['_id'] = new Mongodloid_Id($ret->getInsertedId());
+            $a['_id'] = new Mongodloid_Id($ret->getInsertedId());
 			$ins = new Mongodloid_Entity($a);
 		} else {
 			$a = $ins; // pass by reference - _id is not saved on by-ref var
 			$ret = $this->_collection->insertOne(Mongodloid_TypeConverter::fromMongodloid($a), $options);
 			$ins = $a;
-			$ins['_id'] = new Mongodloid_Id($ret->getInsertedId());
+            $ins['_id'] = new Mongodloid_Id($ret->getInsertedId());
 		}
 		return Mongodloid_Result::getResult($ret);
 	}
