@@ -478,6 +478,6 @@ class Models_Subscribers extends Models_Entity {
 	public function permanentChange() {
 		unset($this->update['plan_activation']);
 		unset($this->update['type']);
-		parent::permanentChange();
+		return parent::permanentChange();
 	}
 }
