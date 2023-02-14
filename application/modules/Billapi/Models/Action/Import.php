@@ -379,10 +379,11 @@ class Models_Action_Import extends Models_Action {
 	
 	protected function getPredefinedMappingEntityData($row, $mapping) {
 		$ret = [];
+		$goodEmptyValues = ['0', false, 0, 0.0];
 		foreach ($mapping as $fieldParams) {
 			$fieldName = $fieldParams['field_name'];
 			$value = $this->translateValue($row, $fieldParams);
-			if (!empty($value) || $value === false) {
+			if (!empty($value) || in_array($value, $goodEmptyValues, TRUE)) {
 				Billrun_Util::setIn($ret, $fieldName, $value);
 			}
 		}
