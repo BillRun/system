@@ -43,8 +43,50 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		'tax__custom_logic',
 		'tax__custom_tax'
 	];
-	
-	/**
+
+    /**
+     * @param $combine_rate
+     * @param  array  $rate_path
+     * @param $index
+     * @param $rate_line
+     * @return array|mixed
+     */
+    public function addRatesToRateLine(&$combine_rate, array $rate_path, $index, $rate_line)
+    {
+        $rates = Billrun_Util::getIn($combine_rate, $rate_path, []);
+        $last_rate = end($rates);
+        if ($index == 0 || $rate_line['price_from'] != $last_rate['from']) {
+            $price_from = Billrun_Util::getIn($rate_line, 'price_from', '') !== '' ? floatval(
+                Billrun_Util::getIn($rate_line, 'price_from', '')
+            ) : 0;
+            $price_to = Billrun_Util::getIn($rate_line, 'price_to', '') !== '' ? Billrun_Util::getIn(
+                $rate_line,
+                'price_to',
+                ''
+            ) : 'UNLIMITED';
+            $price_to = is_numeric($price_to) ? floatval($price_to) : $price_to;
+            $price_interval = Billrun_Util::getIn($rate_line, 'price_interval', '') !== '' ? floatval(
+                Billrun_Util::getIn($rate_line, 'price_interval', '')
+            ) : 0;
+            $price_value = Billrun_Util::getIn($rate_line, 'price_value', '') !== '' ? floatval(
+                Billrun_Util::getIn($rate_line, 'price_value', '')
+            ) : 0;
+            $rates[] = [
+                'from' => $price_from,
+                'to' => $price_to,
+                'interval' => $price_interval,
+                'price' => $price_value,
+                'uom_display' => [
+                    'range' => Billrun_Util::getIn($rate_line, 'usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+                    'interval' => Billrun_Util::getIn($rate_line, 'usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+                ],
+            ];
+        }
+        Billrun_Util::setIn($combine_rate, $rate_path, $rates);
+        return $rates;
+    }
+
+    /**
 	 * On Create action check for:
 	 * 1. Create Rate  - OK
 	 * 2. Not allow rate revision
@@ -160,7 +202,7 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		return $combined_entities;
 	}
 
-	protected function combineRate($combine_rate, $rate_line, $index, $operation, $multi_value_fields) {
+	protected function  combineRate($combine_rate, $rate_line, $index, $operation, $multi_value_fields) {
 		$is_percentage = Billrun_Util::getIn($rate_line, ['rates', 'percentage'], '') !== '';
 		$is_price = Billrun_Util::getIn($rate_line, 'price_value', '') !== '';
 		$is_base = Billrun_Util::getIn($rate_line, 'price_plan', 'BASE') === 'BASE';
@@ -185,29 +227,14 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 					)
 			) {
 				$usage_type = Billrun_Util::getIn($rate_line, 'usage_type_value', '_KEEP_SOURCE_USAGE_TYPE_');
-				$plan_name = Billrun_Util::getIn($rate_line, 'price_plan', 'BASE');
-				$rate_path = ['rates', $usage_type, $plan_name, 'rate'];
-				$rates = Billrun_Util::getIn($combine_rate, $rate_path, []);
-				$last_rate = end($rates);
-				if ($index == 0 || $rate_line['price_from'] != $last_rate['from']) {
-					$price_from = Billrun_Util::getIn($rate_line, 'price_from', '') !== '' ? floatval(Billrun_Util::getIn($rate_line, 'price_from', '')) : 0;
-					$price_to = Billrun_Util::getIn($rate_line, 'price_to', '') !== '' ? Billrun_Util::getIn($rate_line, 'price_to', '') : 'UNLIMITED';
-					$price_to = is_numeric($price_to) ? floatval($price_to) : $price_to;
-					$price_interval = Billrun_Util::getIn($rate_line, 'price_interval', '') !== '' ? floatval(Billrun_Util::getIn($rate_line, 'price_interval', '')) : 0;
-					$price_value = Billrun_Util::getIn($rate_line, 'price_value', '') !== '' ? floatval(Billrun_Util::getIn($rate_line, 'price_value', '')) : 0;
-					$rates[] = [
-						'from' => $price_from,
-						'to' => $price_to,
-						'interval' => $price_interval,
-						'price' => $price_value,
-						'uom_display' => [
-							'range' => Billrun_Util::getIn($rate_line, 'usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
-							'interval' => Billrun_Util::getIn($rate_line, 'usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
-						],
-					];
-					Billrun_Util::setIn($combine_rate, $rate_path, $rates);
-				}
-			} else {
+                // plans
+                $plan_name = Billrun_Util::getIn($rate_line, 'price_plan', 'BASE');
+                $this->addRatesToRateLine($combine_rate, ['rates', $usage_type, 'plans', $plan_name, 'rate'], $index, $rate_line);
+                
+                // services
+                $service_name = Billrun_Util::getIn($rate_line, 'price_service', 'BASE');
+                $this->addRatesToRateLine($combine_rate, ['rates', $usage_type, 'services', $service_name, 'rate'], $index, $rate_line);
+            } else {
 				$mandatory_price_fields = ['price_from', 'price_to', 'price_interval', 'price_value'];
 				if ($operation === 'create') {
 					$mandatory_price_fields[] = 'usage_type_value';
@@ -341,7 +368,8 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	protected function getItemConvertedRates($item) {
 		$rate_rates = Billrun_Util::getIn($item, 'rates', []);
 		foreach ($rate_rates as $usaget => $rates) {
-			foreach ($rates as $plan => $rate_steps) {
+            
+			foreach ($rates['plans'] as $plan => $rate_steps) {
 				$rate = Billrun_Util::getIn($rate_steps, 'rate', []);
 				foreach ($rate as $index => $rate_step) {
 					$range_unit = Billrun_Util::getIn($rate_step, ['uom_display', 'range'], 'counter');
@@ -357,7 +385,39 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 					$interval = Billrun_Util::getIn($rate_step, 'interval', '');
 					$converted_interval = $this->getValueByUnit($usaget, $interval_unit, $interval);
 					$new_interval = is_numeric($converted_interval) ? floatval($converted_interval) : $converted_interval;
-					$rate_path =  "{$usaget}.{$plan}.rate.{$index}";
+					$rate_path =  "{$usaget}.plans.{$plan}.rate.{$index}";
+					
+					Billrun_Util::setIn($rate_rates, $rate_path . '.from', $new_from);
+					Billrun_Util::setIn($rate_rates, $rate_path . '.to', $new_to);
+					Billrun_Util::setIn($rate_rates, $rate_path . '.price', $converted_price);
+					Billrun_Util::setIn($rate_rates, $rate_path . '.interval', $new_interval);
+				}
+		
+				$percentage = Billrun_Util::getIn($rate, ['percentage'], null);
+				if (!is_null($percentage)) {
+					$rate_path = "usaget.plan";
+					$converted_percentage = $percentage / 100;
+					Billrun_Util::setIn($rate_rates, $rate_path . '.percentage', $converted_percentage);
+				}
+			}
+            // services
+			foreach ($rates['services'] as $service => $rate_steps) {
+				$rate = Billrun_Util::getIn($rate_steps, 'rate', []);
+				foreach ($rate as $index => $rate_step) {
+					$range_unit = Billrun_Util::getIn($rate_step, ['uom_display', 'range'], 'counter');
+					$interval_unit = Billrun_Util::getIn($rate_step, ['uom_display', 'interval'], 'counter');
+					$from = Billrun_Util::getIn($rate_step, 'from', '');
+					$converted_from = $this->getValueByUnit($usaget, $range_unit, $from);
+					$new_from = is_numeric($converted_from) ? floatval($converted_from) : $converted_from;
+					$to = Billrun_Util::getIn($rate_step, 'to', '');
+					$converted_to = $this->getValueByUnit($usaget, $range_unit, $to);
+					$new_to = is_numeric($converted_to) ? floatval($converted_to) : $converted_to;
+					$price = Billrun_Util::getIn($rate_step, 'price', '');
+					$converted_price = is_numeric($price) ? floatval($price) : $price;
+					$interval = Billrun_Util::getIn($rate_step, 'interval', '');
+					$converted_interval = $this->getValueByUnit($usaget, $interval_unit, $interval);
+					$new_interval = is_numeric($converted_interval) ? floatval($converted_interval) : $converted_interval;
+					$rate_path =  "{$usaget}.services.{$service}.rate.{$index}";
 					
 					Billrun_Util::setIn($rate_rates, $rate_path . '.from', $new_from);
 					Billrun_Util::setIn($rate_rates, $rate_path . '.to', $new_to);
@@ -523,7 +583,7 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 				$plans = !empty($rates['plans']) ? array_keys($rates['plans']) : []; // to do add plans or services
 				$services = !empty($rates['services']) ? array_keys($rates['services']) : [];
 				$withBase = in_array('BASE', $plans) ||  in_array('BASE', $services);
-				if (count($plans) > 1 || count($services) > 1 || !$withBase) {
+				if (count($plans) >= 1 || count($services) >= 1 || !$withBase) {
 					$entities_to_update = [
 						'services' => $services,
 						'plans' => $plans,
@@ -551,6 +611,12 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 								} else if (!empty($rates[$collection][$entity_name]['percentage'])) {
 									$update['rates'][$rateKey][$usaget] = ['percentage' => (float)$rates[$collection][$entity_name]['percentage']];
 								}
+                                
+                                // add recurrence to update from existing entity
+                                if (!empty($existingEntity['recurrence'])) {
+                                    $update['recurrence'] = $existingEntity['recurrence'];
+                                }
+                                
 								$params = array(
 									'collection' => $collection,
 									'request' => array(
