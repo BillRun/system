@@ -45,7 +45,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 			$newData = $this->updateNonTaxableRowTaxInformation($current);
 		} else {
 			if( $problemField = $this->isLineDataComplete($current) ) {
-				Billrun_Factory::log("Line {$current['stamp']} is missing/has illigeal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
+				Billrun_Factory::log("Line {$current['stamp']} is missing/has illegal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
 				return FALSE;
 			}
 			$subscriberSearchData = ['sid'=>$current['sid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)];
@@ -232,18 +232,18 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 			'taxes' => [],
 		];
 	}
-	
+
 	protected function getRateForLine($line) {
 		$rate = FALSE;
 		if(!empty($line['arate'])) {
-			$rate = @Billrun_Rates_Util::getRateByRef($line['arate'])->getRawData();
+			$rate = Billrun_Rates_Util::getRateByRef($line['arate'], true)->getRawData();
 		} else {
 			$flatRate = $line['type'] == 'flat' ?
 				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
 				new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
 			$rate = $flatRate->getData();
 		}
-		return $rate;			
+		return $rate;
 	}
         
         protected function ifLineNeedFinalChargeRounding($line) {

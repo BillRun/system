@@ -24,7 +24,7 @@ class Column
      * @param Worksheet $parent
      * @param string $columnIndex
      */
-    public function __construct(Worksheet $parent = null, $columnIndex = 'A')
+    public function __construct(?Worksheet $parent = null, $columnIndex = 'A')
     {
         // Set parent and column index
         $this->parent = $parent;
@@ -36,11 +36,11 @@ class Column
      */
     public function __destruct()
     {
-        unset($this->parent);
+        $this->parent = null;
     }
 
     /**
-     * Get column index.
+     * Get column index as string eg: 'A'.
      *
      * @return string
      */

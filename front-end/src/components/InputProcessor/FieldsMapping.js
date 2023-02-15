@@ -1,11 +1,11 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import Immutable from 'immutable';
-import { Row, Col } from 'react-bootstrap';
+import { getConfig, getUnitLabel } from '@/common/Util';
 import Field from '@/components/Field';
+import Immutable from 'immutable';
+import PropTypes from 'prop-types';
+import React, { Component } from 'react';
+import { Col, Row } from 'react-bootstrap';
 import Help from '../Help';
 import UsageTypesSelector from '../UsageTypes/UsageTypesSelector';
-import { getUnitLabel } from '@/common/Util';
 
 export default class FieldsMapping extends Component {
 
@@ -14,6 +14,7 @@ export default class FieldsMapping extends Component {
     usageTypes: PropTypes.instanceOf(Immutable.List),
     usageTypesData: PropTypes.instanceOf(Immutable.List),
     propertyTypes: PropTypes.instanceOf(Immutable.List),
+    mongoOps: PropTypes.instanceOf(Immutable.List),
     onSetStaticUsaget: PropTypes.func,
     onSetFieldMapping: PropTypes.func,
   };
@@ -23,6 +24,7 @@ export default class FieldsMapping extends Component {
     usageTypes: Immutable.List(),
     usageTypesData: Immutable.List(),
     propertyTypes: Immutable.List(),
+    mongoOps: getConfig(['inputProcessor', 'dynamicFieldMapping', 'conditions'], Immutable.List()),
     onSetStaticUsaget: () => {},
     onSetFieldMapping: () => {},
   };
@@ -33,14 +35,9 @@ export default class FieldsMapping extends Component {
     this.onChangePattern = this.onChangePattern.bind(this);
     this.onChangeUsaget = this.onChangeUsaget.bind(this);
     this.addUsagetMapping = this.addUsagetMapping.bind(this);
-    this.onChangeUsaget = this.onChangeUsaget.bind(this);
     this.onSetType = this.onSetType.bind(this);
     this.onChangeStaticUsaget = this.onChangeStaticUsaget.bind(this);
     this.addFieldCondition = this.addFieldCondition.bind(this);
-    this.onChangeFieldName = this.onChangeFieldName.bind(this);
-    this.onRemoveCondition = this.onRemoveCondition.bind(this);
-    this.onChangeOperator = this.onChangeOperator.bind(this);
-    this.onChangeMultiValues = this.onChangeMultiValues.bind(this);
 
     this.state = {
       fieldName: '',
@@ -139,19 +136,10 @@ export default class FieldsMapping extends Component {
     this.setState({ fieldName: value, conditions });
   }
 
-  onChangeOperator = (index, operators, e) => {
+  onChangeOperator = (index, e) => {
     const { conditions } = this.state;
     const { value } = e.target;
-    let label;
-
-    operators.forEach((operator) => {
-      if (operator.value === value) {
-        label = operator.label;
-      }
-    });
-
     conditions[index].op = value;
-    conditions[index].op_label = label;
     this.setState({ op: value, conditions, pattern: '' });
   }
 
@@ -327,6 +315,7 @@ export default class FieldsMapping extends Component {
     } = this.state;
     const { settings,
             usageTypesData,
+            mongoOps,
             propertyTypes,
             onSetFieldMapping } = this.props;
 
@@ -341,17 +330,12 @@ export default class FieldsMapping extends Component {
     const defaultVolumeType = settings.get('usaget_type', '') !== 'static' ? '' : settings.getIn(['processor', 'default_volume_type'], 'field');
     const defaultVolumeSrc = settings.get('usaget_type', '') !== 'static' ? '' : settings.getIn(['processor', 'default_volume_src'], []);
     const volumeOptions = this.getVolumeOptions();
-    const mongoOps = [
-      { value: '$eq', label: 'Equals' },
-      { value: '$ne', label: 'Not Equals' },
-      { value: '$in', label: 'In' },
-      { value: '$nin', label: 'Not In' },
-      { value: '$regex', label: 'Regex' },
+    const mongoOperators = [
+      (<option disabled value="" key={-1}>Select Field...</option>),
+      ...mongoOps.map((operator, key) => (
+        <option value={operator.get('id', '')} key={key}>{operator.get('title', '')}</option>
+      ))
     ];
-    const mongoOperators = [(<option disabled value="" key={-1}>Select Field...</option>),
-                              ...mongoOps.map((operator, key) => (
-                                <option value={operator.value} key={key}>{operator.label}</option>
-                              ))];
 
     const dateFormat = settings.getIn(['processor', 'date_format']) || '';
 
@@ -614,7 +598,9 @@ export default class FieldsMapping extends Component {
                     { settings.getIn(['processor', 'usaget_mapping', key, 'conditions'], Immutable.List()).map((condition, value) => (
                       <div className="row-lg-12" key={`condition-${value}`}>
                         <div className="col-lg-4" style={{ marginLeft: -4 }}>{condition.get('src_field')}</div>
-                        <div className="col-lg-4" style={{ marginLeft: 18 }}>{condition.get('op_label')}</div>
+                        <div className="col-lg-4" style={{ marginLeft: 18 }}>
+                          {mongoOps.find((op) => op.get('id', '') === condition.get('op', ''), null, Immutable.Map()).get('title', '')}
+                        </div>
                         <div className="col-lg-4" style={{ marginLeft: -75 }}>{condition.get('pattern')}</div>
                       </div>
                     ))}
@@ -667,7 +653,7 @@ export default class FieldsMapping extends Component {
                         <select
                           id="op"
                           className="form-control"
-                          onChange={this.onChangeOperator.bind(this, key, mongoOps)}
+                          onChange={this.onChangeOperator.bind(this, key)}
                           value={condition.op === '' ? '' : condition.op}
                           disabled={settings.get('usaget_type', '') !== 'dynamic'}
                         >
@@ -719,7 +705,7 @@ export default class FieldsMapping extends Component {
                       showDisplayUnits={true}
                     />
                   </div>
-                  <div className="col-lg-2">
+                  <div className="col-lg-2 field-mapping-radio">
                     <Field
                       fieldType="radio"
                       name="dynamic-usaget-volume-type"

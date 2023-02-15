@@ -114,6 +114,24 @@
     "itemType": "usage",
     "itemsType": "usages"
   },
+  "rebalance_queue": {
+    "collection": "rebalance_queue",
+    "settingsKey": "rebalance_queue",
+    "uniqueField": "conditions_hash",
+    "itemName": "Rebalance Queue",
+    "itemsName": "Rebalances Queue",
+    "itemType": "rebalance_queue",
+    "itemsType": "rebalances_queue"
+  },
+  "usage_archive": {
+    "collection": "archive",
+    "settingsKey": "lines",
+    "uniqueField": "stamp",
+    "itemName": "usage (archive)",
+    "itemsName": "usages (archive)",
+    "itemType": "usage_archive",
+    "itemsType": "usages_archive"
+  },
   "queue": {
     "collection": "queue",
     "uniqueField": "stamp",
@@ -179,6 +197,13 @@
     "itemsName": "events",
     "itemType": "event",
     "itemsType": "events"
+  },
+  "suggestions": {
+    "collection": "suggestions",
+    "itemName": "suggestion",
+    "itemsName": "suggestions",
+    "itemType": "suggestion",
+    "itemsType": "suggestions"
   },
   "auto_renew": {
     "collection": "autorenew",

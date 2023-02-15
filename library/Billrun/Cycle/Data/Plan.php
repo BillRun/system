@@ -116,7 +116,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			$taxCalc = Billrun_Calculator::getInstance(array('autoload' => false, 'type' => 'tax'));
 			$entryWithTax = $taxCalc->updateRow($entry);
 			if (!$entryWithTax) {
-				Billrun_Factory::log("Taxation of {$entry['name']} failed retring...", Zend_Log::WARN);
+				Billrun_Factory::log("Taxation of {$entry['name']} failed. Retrying...", Zend_Log::WARN);
 				sleep(1);
 			}
 		}

@@ -162,6 +162,17 @@ export const getInputProcessorActionQuery = (fileType, action) => ({
   ],
 });
 
+export const getExportGeneratorActionQuery = (name, action) => ({
+  api: 'settings',
+  params: [
+    { category: 'export_generators' },
+    { action },
+    { data: JSON.stringify({ name }) },
+  ],
+});
+
+export const saveExportGeneratorQuery = generator => saveSettingsQuery(generator, 'export_generators');
+
 export const getCreditChargeQuery = params => ({
   api: 'credit',
   params,
@@ -255,6 +266,7 @@ export const disablePaymentGatewayQuery = name => ({
 export const apiEntityQuery = (collection, action, body) => ({
   entity: collection,
   action,
+  timeout: 3600000, // 60 minutes
   options: {
     method: 'POST',
     body,
@@ -310,10 +322,11 @@ export const getEntityByIdQuery = (collection, id) => ({
   ],
 });
 
-export const getEntitesQuery = (collection, project = {}, query = {}, sort = null, options = {}) => {
+export const getEntitesQuery = (collection, project = {}, query = {}, sort = null, options = {}, size = 9999) => {
   let action;
   switch (collection) {
     case 'users':
+    case 'suggestions':
       action = 'get';
       break;
     default:
@@ -325,7 +338,7 @@ export const getEntitesQuery = (collection, project = {}, query = {}, sort = nul
     entity: collection,
     params: [
       { page: 0 },
-      { size: 9999 },
+      { size },
       { query: JSON.stringify(query) },
       { project: JSON.stringify(project) },
       { sort: JSON.stringify(sortBy) },
@@ -357,9 +370,11 @@ export const getDeleteLineQuery = id => ({
 
 // List
 export const getAccountsQuery = (project = { aid: 1, firstname: 1, lastname: 1 }) =>
-  getEntitesQuery('subscribers', project, {type: 'account'});
+  getEntitesQuery('accounts', project, {type: 'account'});
 export const getSubscriptionsWithAidQuery = (project = { aid: 1, sid: 1, firstname: 1, lastname: 1 }) =>
   getEntitesQuery('subscribers', project, {type: 'subscriber'});
+export const getSubscribersByAidQuery = (aid) =>
+  getEntitesQuery('subscribers', { aid: 1, sid: 1, firstname: 1, lastname: 1 }, {type: 'subscriber', aid}, { sid: 1 });
 export const getPlansQuery = (project = { name: 1 }) => getEntitesQuery('plans', project);
 export const getServicesQuery = (project = { name: 1 }) => getEntitesQuery('services', project);
 export const getServicesKeysWithInfoQuery = () => getEntitesQuery('services', { name: 1, description: 1, play: 1, quantitative: 1, balance_period: 1 }, {}, { name: 1 	});
@@ -471,6 +486,29 @@ export const sendGenerateNewFileQuery = (paymentGateway, fileType, data) => {
   };
 }
 
+export const generateOneTimeInvoiceQuery = (aid, lines, sendMail) => {
+  const cdrs = lines.map(line => Immutable.Map({
+    aid: aid,
+    sid: line.get('sid', ''),
+    rate: line.get('rate', ''),
+    credit_time: line.get('date', ''),
+    usagev: line.get('volume', ''),
+    type: line.get('type', ''),
+    aprice: line.get('price', ''),
+  }));
+  const params = [
+    { cdrs: JSON.stringify(cdrs) },
+    { aid },
+    { send_email: sendMail ? 1 : 0 },
+    { step: 1 },
+    { allow_bill: 1 }
+  ];
+  return {
+    api: 'onetimeinvoice',
+    params,
+  };
+}
+
 export const auditTrailListQuery = (query, page, fields, sort, size) => ({
   action: 'get',
   entity: 'audit',
@@ -542,10 +580,17 @@ export const getEntityRevisionsQuery = (collection, revisionByFields, values, si
   });
 };
 
-export const getRebalanceAccountQuery = (aid, billrunKey = '') => {
+export const getRebalanceAccountQuery = (aid, billrunKey = '', rate = '') => {
   const params = [{ aid }];
   if (billrunKey !== '') {
     params.push({ billrun_key: billrunKey });
+  }
+  if (rate !== '') { //BRCD-1396
+    params.push({ query: JSON.stringify([[{
+      field_name : 'arate_key',
+      op : '$eq',
+      value : rate
+    }]]) });
   }
   return {
     api: 'resetlines',
@@ -745,11 +790,3 @@ export const getDashboardQuery = action => ({
   ],
 });
 // Dashboard reports queries - end
-
-export const getSubscribersQuery = aid => ({
-  action: 'get',
-  entity: 'subscribers',
-  params: [
-    { query: JSON.stringify({ aid, type: 'subscriber' }) },
-  ],
-});

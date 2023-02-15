@@ -17,6 +17,9 @@ import {
 const getTaxation = (state, props) => // eslint-disable-line no-unused-vars
   state.settings.getIn(['taxation']);
 
+const getExportGenerators = (state, props) => // eslint-disable-line no-unused-vars
+  state.settings.get('export_generators');
+
 const getPluginActions = (state, props) => // eslint-disable-line no-unused-vars
   state.settings.getIn(['plugin_actions']);
 
@@ -108,6 +111,12 @@ const getPaymentGateways = (state, props) => // eslint-disable-line no-unused-va
 const getInputProcessorFields = (state, props) => // eslint-disable-line no-unused-vars
   props.settings.get('fields', Immutable.List());
 
+const getInputProcessorCalculatedFields = (state, props) => {// eslint-disable-line no-unused-vars
+  return props.settings.getIn(['processor', 'calculated_fields'], Immutable.List())
+    .map(field => field.get('target_field', '')).map(field =>({ value: field, label: `${field} (Computed)` }))
+    .sortBy(field => field.value);
+}
+
 const selectFieldNames = (fields) => {
   if (fields) {
     return fields.map(field => field.get('field_name', ''));
@@ -173,6 +182,17 @@ const selectFielteredFields = (inputProssesors) => {
   return options.toList();
 };
 
+const selectCalculatedFields = (inputProssesors) => {
+  let options = Immutable.Set();
+  inputProssesors.forEach((inputProssesor) => {
+    const filteredFields = inputProssesor
+      .getIn(['processor', 'calculated_fields'], Immutable.List())
+      .map(field => field.get('target_field', ''));
+    options = options.concat(filteredFields);
+  });
+  return options.toList();
+};
+
 const selectRatingParams = (inputProssesors) => {
   let options = Immutable.Set();
   inputProssesors.forEach((inputProssesor) => {
@@ -209,7 +229,7 @@ const selectFileType = (fileTypes) => {
   if (!fileTypes) {
     return undefined;
   }
-  return fileTypes.map(fileType => fileType.get('file_type', ''));
+  return fileTypes.map(fileType => fileType.get('file_type', '')).toList();
 };
 
 export const inputProssesorCsiOptionsSelector = createSelector(
@@ -233,6 +253,11 @@ export const inputProssesorfilteredFieldsSelector = createSelector(
   selectFielteredFields,
 );
 
+export const inputProssesorCalculatedFieldsSelector = createSelector(
+  getInputProssesors,
+  selectCalculatedFields,
+);
+
 export const inputProssesorRatingParamsSelector = createSelector(
   getInputProssesors,
   selectRatingParams,
@@ -241,6 +266,11 @@ export const inputProssesorRatingParamsSelector = createSelector(
 export const taxMappingSelector = createSelector(
   getTaxation,
   (tax = Immutable.Map()) => tax.get('mapping'),
+);
+
+export const exportGeneratorsSelector = createSelector(
+  getExportGenerators,
+  (exportGenerators = Immutable.List()) => exportGenerators,
 );
 
 export const importersSelector = createSelector(
@@ -765,10 +795,13 @@ const getAdditionInputProcessorlineKeyOptions = () => {
 
 export const inputProcessorlineKeyOptionsSelector = createSelector(
   getInputProcessorFields,
+  getInputProcessorCalculatedFields,
   getAdditionInputProcessorlineKeyOptions,
-  (inputProcessorFields = Immutable.List(), additionlineKeyOptions = Immutable.List()) => inputProcessorFields
+  (inputProcessorFields = Immutable.List(), inputProcessorCalculatedFields = Immutable.List(),
+   additionlineKeyOptions = Immutable.List()) => inputProcessorFields
     .map(field => ({ value: field, label: field }))
     .sortBy(field => field.value)
+    .push(...inputProcessorCalculatedFields)
     .push(...additionlineKeyOptions)
     .map(({value, label}) => (Immutable.Map({ value, label })))
 );
@@ -801,15 +834,18 @@ export const inputProcessorComputedForeignFieldslineKeyOptionsSelector = createS
 
 export const inputProcessorComputedlineKeyOptionsSelector = createSelector(
   getInputProcessorFields,
+  getInputProcessorCalculatedFields,
   inputProcessorComputedForeignFieldslineKeyOptionsSelector,
   getAdditionInputProcessorComputedlineKeyOptions,
   (
     inputProcessorFields = Immutable.List(),
+    inputProcessorCalculatedFields = Immutable.List(),
     foreignFields = Immutable.List(),
     additionLineKeyOptions = Immutable.List(),
   ) => inputProcessorFields
     .map(field => ({ value: field, label: field }))
     .sortBy(field => field.value)
+    .push(...inputProcessorCalculatedFields)
     .push(...foreignFields)
     .push(...additionLineKeyOptions)
     .toArray()

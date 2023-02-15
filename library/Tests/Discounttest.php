@@ -13,7 +13,7 @@
  */
 require_once( APPLICATION_PATH . '/library/Tests/discounttestData/discountData.php');
 require_once(APPLICATION_PATH . '/library/Tests/discounttestData/discountTestCases.php');
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 define('UNIT_TESTING', 'true');
 
 class Tests_Discounttest extends UnitTestCase {
@@ -38,12 +38,12 @@ class Tests_Discounttest extends UnitTestCase {
 	}
 
 	public function TestPerform() {
-		
+
 		foreach ($this->Tests as $key => $row) {
 			$this->message .= "Test number : {$row['test_num']}<br>";
 			$aid = $row['test']['subsAccount'][0]['aid'];
 			$expectedEligibility = '<b>expected </b> </br>';
-			
+
 			foreach ($row['expected'] as $Dname => $dates) {
 				$expectedEligibility .= "<b>Eligibility for discount : <br>$Dname</b><br>";
 				foreach ($dates['eligibility'] as $date) {

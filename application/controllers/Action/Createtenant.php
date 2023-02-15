@@ -57,11 +57,20 @@ class CreatetenantAction extends ApiAction {
 		$this->response();
 	}
 
+	/**
+	 * method that check if the request source IP is allowed to call create tenant
+	 * 
+	 * @return boolean true if allowed else false
+	 */
 	protected function isWhiteListed() {
-		$ip = $_SERVER['REMOTE_ADDR'];
-		Billrun_Factory::log('Create Tenant - Got request from: ' . $ip, Zend_Log::INFO);
+		$ip_list = array($_SERVER['REMOTE_ADDR']);
+		if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+			$ip_list_forward = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
+			$ip_list = array_merge($ip_list, $ip_list_forward);
+		}
+		Billrun_Factory::log('Create Tenant - Got request from: ' . implode(', ', $ip_list), Zend_Log::INFO);
 		$whiteList = Billrun_Factory::config()->getConfigValue('create_tenant.remotes.white_list', array());
-		return in_array($ip, $whiteList);
+		return !empty(array_intersect($ip_list, $whiteList));
 	}
 
 	public function init() {
@@ -196,6 +205,12 @@ class CreatetenantAction extends ApiAction {
 		
 		if ($configPathKey == 'create_tenant.db_base_config') {
 			$this->addDbConfigData($dbConfig);
+		} else {
+			foreach ($dbConfig as $key => $val) {
+				if (isset($val['$date'])) {
+					$dbConfig[$key] = new MongoDate($val['$date']);
+				}
+			}
 		}
 		
 		if (!$collection->insert($dbConfig)) {

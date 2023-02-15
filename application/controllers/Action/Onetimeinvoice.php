@@ -54,7 +54,7 @@ class OnetimeinvoiceAction extends ApiAction {
             $affectedSids[] = $cdr['sid'] ?: 0;
             $cdr['billrun'] = $oneTimeStamp;
 			$cdr = $this->parseCDR($cdr);
-			$cdr['onettime_invoice'] = $oneTimeStamp;
+			$cdr['onetime_invoice'] = $oneTimeStamp;
 			if(!$this->processCDR($cdr) ) {
                 return FALSE;
 			}
