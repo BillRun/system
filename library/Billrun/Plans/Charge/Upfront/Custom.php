@@ -18,6 +18,11 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 
 	protected function getFractionOfMonth() {
 
+		//got a future subscriber for  some reason.
+		if( $this->activation >= $this->cycle->end()) {
+			return null;
+		}
+
 		if ((empty($this->deactivation) || $this->deactivation >= $this->cycle->end() ) && $this->activation < $this->cycle->start()  ) {
 			return 1;
 		}
@@ -67,7 +72,7 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 
 
 		$lastUpfrontCharge = $this->getPriceForCycle($this->cycle);
-		$endActivation  = strtotime('-1 second', $this->deactivation);
+		$endActivation  =  $this->deactivation;
 		$refundFraction = 1- Billrun_Utils_Time::getDaysSpanDiffUnix($this->cycle->start(), $endActivation, $cycleSpan);
 
 
@@ -105,6 +110,13 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 	protected function getUpfrontCycle($regularCycle) {
 		$nextCycleKey = Billrun_Billingcycle::getFollowingBillrunKey($regularCycle->key());
 		return  new Billrun_DataTypes_CustomCycleTime($nextCycleKey, $this->recurrenceConfig,$regularCycle->invoicingDay(),$this->activation);
+	}
+
+	protected function getPriceForCycle($cycle) {
+        $formatStart = date(Billrun_Base::base_dateformat,  $cycle->start());
+        $formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
+        $cycleCount = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart)/$this->recurrenceConfig['frequency'];
+        return $this->getPriceByOffset($cycleCount);
 	}
 
 }

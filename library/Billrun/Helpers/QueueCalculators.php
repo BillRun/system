@@ -50,6 +50,9 @@ class Billrun_Helpers_QueueCalculators {
             $calc_options = $this->getCalcOptions($calc_name);
             if ($this->isUnify($calc_name)) {
                 $this->unifyCalc($processor, $data);
+				foreach ($data['data'] as &$line) {
+					$processor->setFullCalculationTime($line);
+				}
                 continue;
             }
             $queue_data = $processor->getQueueData();
@@ -85,6 +88,7 @@ class Billrun_Helpers_QueueCalculators {
                 if ($calc->updateRow($entity) !== FALSE) {
                     if ($this->isLastCalc($calc_name, $last_calc)) {
                         $processor->unsetQueueRow($entity['stamp']);
+						$processor->setFullCalculationTime($entity);
                     } else {
                         $processor->setQueueRowStep($entity['stamp'], $calc_name);
                         $processor->addAdvancedPropertiesToQueueRow($line);
@@ -97,6 +101,7 @@ class Billrun_Helpers_QueueCalculators {
             } else {
                 if ($this->isLastCalc($calc_name, $last_calc)) {
                     $processor->unsetQueueRow($entity['stamp']);
+					$processor->setFullCalculationTime($entity);
                 } else {
                     $processor->setQueueRowStep($entity['stamp'], $calc_name);
                 }

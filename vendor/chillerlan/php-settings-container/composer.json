@@ -6,7 +6,7 @@
 	"type": "library",
 	"minimum-stability": "stable",
 	"keywords": [
-		"php7", "helper", "container", "settings"
+		"php7", "helper", "container", "settings", "configuration"
 	],
 	"authors": [
 		{
@@ -24,7 +24,7 @@
 		"ext-json": "*"
 	},
 	"require-dev": {
-		"phan/phan": "^4.0",
+		"phan/phan": "^5.3",
 		"phpunit/phpunit": "^9.5"
 	},
 	"autoload": {
@@ -37,5 +37,14 @@
 			"chillerlan\\SettingsTest\\": "tests/",
 			"chillerlan\\SettingsExamples\\": "examples/"
 		}
+	},
+	"scripts": {
+		"phpunit": "@php vendor/bin/phpunit",
+		"phan": "@php vendor/bin/phan"
+	},
+	"config": {
+		"lock": false,
+		"sort-packages": true,
+		"platform-check": true
 	}
 }

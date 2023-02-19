@@ -97,7 +97,7 @@ class Billrun_Account_External extends Billrun_Account {
 		];
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
-		$request->setParameterPost($requestData);
+		$request->setRawData(json_encode($requestData));
 		$res = $request->request(Billrun_Http_Request::POST)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
 		$res = json_decode($res);
@@ -137,7 +137,7 @@ class Billrun_Account_External extends Billrun_Account {
 		];
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
-		$request->setParameterPost($externalQuery);
+		$request->setRawData(json_encode($externalQuery));
 		$results = $request->request(Billrun_Http_Request::POST)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
 		$results = json_decode($results, true);
@@ -158,8 +158,21 @@ class Billrun_Account_External extends Billrun_Account {
 	 * Method to Save as 'Close And New' item
 	 */
 	public function closeAndNew($set_values, $remove_values = array()) {
-		
+		return true;
 	}
+	
+	/**
+	 * method to make permanent change
+	 * on external subscribers mode no need to make updates to account as account is managed by 3rd party
+	 * @param type $query
+	 * @param type $update
+	 * @return true always
+	 */
+	public function permanentChange($query, $update) {
+		return true;
+	}
+
+
 
 	protected function buildParams(&$query) {
 

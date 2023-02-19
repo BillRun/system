@@ -503,7 +503,7 @@ class Billrun_Cycle_Account_Invoice {
 	}
 		$invoicedLines =  $this->invoicedLines;
 		foreach($this->subscribers as $subscriber) {
-			$invoicedLines += $subscriber->getInvoicedLines(); //+ works as the array is  actually hashed by the line stamp
+			$invoicedLines += $subscriber->getInvoicedLines(); //+ *only* works as the array is  actually hashed by the line stamp
 		}
 		return $invoicedLines;
 	}
