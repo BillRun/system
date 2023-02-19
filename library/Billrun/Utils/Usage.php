@@ -83,8 +83,12 @@ class Billrun_Utils_Usage {
 				$entity = array();
 				$documents = $subscriber->loadSubscriberForQueries([$query]);
 				foreach ($documents as $subs) {
-					foreach ($subs as $sub) {
-						$entity[] = $sub;
+					if ($subs instanceof Mongodloid_Entity) {
+						$entity[] = $subs;
+					} else {
+						foreach ($subs as $sub) {
+							$entity[] = $sub;
+						}
 					}
 				}
 				return $entity;
