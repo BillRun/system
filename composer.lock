@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ff962f080529c03f44b90cba40a8d0b9",
+    "content-hash": "1c72e6143dd782e33937bbc223f62046",
     "packages": [
         {
             "name": "alcaeus/mongo-php-adapter",
@@ -2086,16 +2086,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v10.3.0",
+            "version": "v10.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "417d66a5b27a5ec53a706a346b05bfe170043d52"
+                "reference": "331415b232d60d7c0449de7bde4cb7d4fedf982e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/417d66a5b27a5ec53a706a346b05bfe170043d52",
-                "reference": "417d66a5b27a5ec53a706a346b05bfe170043d52",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/331415b232d60d7c0449de7bde4cb7d4fedf982e",
+                "reference": "331415b232d60d7c0449de7bde4cb7d4fedf982e",
                 "shasum": ""
             },
             "require": {
@@ -2141,9 +2141,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v10.3.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v10.5.0"
             },
-            "time": "2022-12-22T20:07:30+00:00"
+            "time": "2023-02-02T21:02:09+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
@@ -2790,5 +2790,5 @@
     "platform-overrides": {
         "ext-mongo": "1.6.16"
     },
-    "plugin-api-version": "2.1.0"
+    "plugin-api-version": "2.3.0"
 }

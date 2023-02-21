@@ -7,7 +7,7 @@
         "league/omnipay": "3.0.2",
         "payrexx/omnipay-payrexx": "1.1",
         "payrexx/payrexx": "1.7.6",
-        "stripe/stripe-php": "^10.3"
+        "stripe/stripe-php": "v10.5.0"
     },
     "require-dev": {
         "simpletest/simpletest": "^1.1"
