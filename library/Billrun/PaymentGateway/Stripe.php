@@ -6,7 +6,7 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
-require_once(APPLICATION_PATH . '/library/stripe-php/init.php');
+require_once(APPLICATION_PATH . '/vendor/stripe/stripe-php/init.php');
 
 /**
  * This class represents a payment gateway
