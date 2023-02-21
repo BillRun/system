@@ -16,7 +16,7 @@
         "payrexx/payrexx": "1.7.6",
         "alexandr-mironov/php-smpp": "1.3.0.7",
         "chillerlan/php-qrcode": "^4.3",
-        "stripe/stripe-php": "^10.3"
+        "stripe/stripe-php": "v10.5.0"
     },
     "require-dev": {
         "simpletest/simpletest": "^1.1"
