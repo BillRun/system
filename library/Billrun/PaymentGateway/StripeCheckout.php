@@ -307,7 +307,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
                 'payment_method_id' => $this->saveDetails['payment_method_id'],
                 'card_expiration' => (string)$this->saveDetails['card_expiration'],
                 'four_digits' => (string)$this->saveDetails['four_digits'],
-                'generate_token_time' => new Mongodloid_Date(time())
+                'generate_token_time' => new MongoDate(time()),
             )
         );
     }
