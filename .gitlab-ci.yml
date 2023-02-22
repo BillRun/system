@@ -9,15 +9,15 @@ stages:
   - test
 
 # # woraround for set pipeline status = skipped. Add lebel skip_ci to Merge Request
-# print-info:
-#  stage: build
-#  rules:
-#    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS == "skip_ci"
-#  when: manual
-#  script:
-#    - 'echo "Job start: $CI_JOB_STARTED_AT"'
-#    - 'echo "Branch: $CI_COMMIT_BRANCH"'
-#    - 'echo "Commit Author: $CI_COMMIT_AUTHOR"'
+print-info:
+ stage: build
+ rules:
+   - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS == "skip_ci"
+ when: manual
+ script:
+   - 'echo "Job start: $CI_JOB_STARTED_AT"'
+   - 'echo "Branch: $CI_COMMIT_BRANCH"'
+   - 'echo "Commit Author: $CI_COMMIT_AUTHOR"'
    
 integration_backend_tests:
   services:
