@@ -486,6 +486,21 @@ export const sendGenerateNewFileQuery = (paymentGateway, fileType, data) => {
   };
 }
 
+export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file) => {
+  const formData = new FormData();
+  formData.append('payment_gateway', paymentGateway);
+  formData.append('file_type', fileType);
+  formData.append('files', file);
+  return ({
+    api: 'custompaymentgateway',
+    action: 'uploadTransactionsRequestFile',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+}
+
 export const generateOneTimeInvoiceQuery = (aid, lines, sendMail) => {
   const cdrs = lines.map(line => Immutable.Map({
     aid: aid,

@@ -46,6 +46,7 @@ import AutoRenewSetup from '@/components/AutoRenew/AutoRenewSetup';
 import CustomFields from '@/components/CustomFields';
 import Events from '@/components/Events';
 import PaymentFiles from '@/components/PaymentFiles/PaymentFiles';
+import ReceivePaymentFiles from '@/components/ReceivePaymentFiles/ReceivePaymentFiles';
 import { ImporterSetup } from '../components/Importer';
 import { ExporterSetup } from '../components/Exporter';
 import { ImmediateInvoiceSetup } from '../components/ImmediateInvoice';
@@ -148,6 +149,7 @@ const routes = () => (
         <Route path="/queue" component={Authentication(QueueList)} title="Queue" />
         <Route path="/invoices" component={Authentication(InvoicesList)} title="Invoices" />
         <Route path="/custom-payment-files" component={Authentication(PaymentFiles)} title="Custom Transactions Request File" />
+        <Route path="/receive-custom-payment-files" component={Authentication(ReceivePaymentFiles)} title="Custom Transactions Receive File"/>
         <Route path="/settings" component={Authentication(Settings)} title="General Settings" />
         <Route path="/payment_gateways" component={Authentication(PaymentGateways)} title="Payment Gateways" />
         <Route path="/select_input_processor_template" component={Authentication(SelectTemplate)} title="Create New Input Processor" />

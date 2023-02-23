@@ -4,7 +4,11 @@ import { setFormModalError } from './guiStateActions/pageActions';
 import { getList, clearList } from '@/actions/listActions';
 import { clearItems, setListPage, clearNextPage } from '@/actions/entityListActions';
 import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '../common/Api';
-import { runningPaymentFilesListQuery, sendGenerateNewFileQuery } from '@/common/ApiQueries';
+import {
+  runningPaymentFilesListQuery,
+  sendGenerateNewFileQuery,
+  sendTransactionsReceiveFileQuery,
+} from '@/common/ApiQueries';
 
 export const actions = {
   SET_FILE_TYPE: 'SET_FILE_TYPE',
@@ -62,6 +66,17 @@ export const validateGeneratePaymentFile = (paymentFile) => (dispatch) => {
 export const sendGenerateNewFile = (paymentGateway, fileType, data) => (dispatch) => {
   const query = sendGenerateNewFileQuery(paymentGateway, fileType, data);
   const successMessage = 'File creation initiated';
+  return apiBillRun(query)
+    .then(success => dispatch(apiBillRunSuccessHandler(success, successMessage)))
+    .catch(error => {
+      dispatch(apiBillRunErrorHandler(error, 'Error'));
+      return Promise.reject();
+    });
+}
+
+export const sendTransactionsReceiveFile = (paymentGateway, fileType, file) => (dispatch) => {
+  const query = sendTransactionsReceiveFileQuery(paymentGateway, fileType, file);
+  const successMessage = 'Transaction receive file was successfully uploaded';
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success, successMessage)))
     .catch(error => {
