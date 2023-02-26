@@ -455,7 +455,7 @@ export const searchPlansByKeyQuery = (name, project = {}) => ({
   ],
 });
 
-export const runningPaymentFilesListQuery = (paymentGateway, fileType) => ({
+export const runningPaymentFilesListQuery = (paymentGateway, fileType, source) => ({
   action: 'get',
   entity: 'log',
   params: [
@@ -464,7 +464,7 @@ export const runningPaymentFilesListQuery = (paymentGateway, fileType) => ({
     { project: JSON.stringify({ stamp: 1}) },
     { sort: JSON.stringify({}) },
     { query: JSON.stringify({
-      source: "custom_payment_files",
+      source,
       cpg_name: paymentGateway,
       cpg_file_type: fileType,
       start_process_time:{ $exists: true },
@@ -490,10 +490,9 @@ export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file)
   const formData = new FormData();
   formData.append('payment_gateway', paymentGateway);
   formData.append('file_type', fileType);
-  formData.append('files', file);
+  formData.append('file', file);
   return ({
-    api: 'custompaymentgateway',
-    action: 'uploadTransactionsRequestFile',
+    api: 'uploadfile',
     options: {
       method: 'POST',
       body: formData,

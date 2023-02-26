@@ -172,9 +172,9 @@
     "parent": "account_receivables"
   },
   "receive-custom-payment-files": {
-    "title": "Transactions Receive File",
+    "title": "Transactions Response File",
     "icon": "",
-    "route": "receive-custom-payment-files",
+    "route": "response-custom-payment-files",
     "show": true,
     "roles": [],
     "order": 2,

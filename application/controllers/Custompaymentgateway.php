@@ -17,21 +17,6 @@ class CustompaymentgatewayController extends ApiController {
 
 	use Billrun_Traits_Api_UserPermissions;
 
-	public function uploadTransactionsRequestFileAction() {
-		error_log("POST: " . print_r($_POST, 1));
-		error_log("FILES: " . print_r($_FILES, 1));
-		$request = $this->getRequest();
-		$options['gateway_name'] = $request->get('payment_gateway');
-		$options['file_type'] = $request->get('file_type');
-		$options['cpg_type'] = "transactions_request";
-		$options['params'] = [];
-		$output = array(
-			'status' => "Done",
-			'details' => array(),
-		);
-		$this->setSuccess($output, $options);
-	}
-
 	public function generateTransactionsRequestFileAction() {
 		$this->allowed();
 		$request = $this->getRequest();

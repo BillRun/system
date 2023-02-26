@@ -48,6 +48,7 @@ abstract class Billrun_PaymentGateway_Connection {
 			$this->limit = $options['limit'];
 		}
 		$this->fileType = isset($options['file_type']) ? $options['file_type'] : null;
+		$this->cpgName = isset($options['cpg_name']) ? $options['cpg_name'] : null;
 	}
 
 	/**

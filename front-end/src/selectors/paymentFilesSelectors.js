@@ -9,9 +9,9 @@ import { paymentGatewaysSelector } from '@/selectors/settingsSelector'
 
 const getRunningPaymentFiles = state => state.list.get('payment_running_files_list');
 
-const getSelectedPaymentGateway = state => state.paymentsFiles.get('paymentGateway');
+const getSelectedPaymentGateway = (state, props, source) => state.paymentsFiles.getIn([source, 'paymentGateway']);
 
-const getSelectedFileType = state => state.paymentsFiles.get('fileType');
+const getSelectedFileType = (state, props, source) => state.paymentsFiles.getIn([source, 'fileType']);
 
 export const selectedPaymentGatewaySelector = createSelector(
   getSelectedPaymentGateway,

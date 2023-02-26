@@ -16,22 +16,24 @@ export const actions = {
   CLEAR: 'CLEAR',
 };
 
-export const setFileType = value => ({
+export const setFileType = (value, source) => ({
   type: actions.SET_FILE_TYPE,
   value,
+  source,
 });
 
-export const setPaymentGateway = value => ({
+export const setPaymentGateway = (value, source) => ({
   type: actions.SET_PAYMENT_GATEWAY,
   value,
+  source,
 });
 
 export const clear = () => ({
   type: actions.CLEAR,
 });
 
-export const getRunningPaymentFiles = (paymentGateway, fileType) => (dispatch) => 
-  dispatch(getList('payment_running_files_list', runningPaymentFilesListQuery(paymentGateway, fileType)));
+export const getRunningPaymentFiles = (paymentGateway, fileType, source) => (dispatch) => 
+  dispatch(getList('payment_running_files_list', runningPaymentFilesListQuery(paymentGateway, fileType, source)));
 
 export const cleanRunningPaymentFiles = () => (dispatch) => 
   dispatch(clearList('payment_running_files_list'));
