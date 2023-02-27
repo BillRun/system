@@ -27,7 +27,7 @@ class Billrun_Plans_Charge_Upfront_Notprorated_Custom extends Billrun_Plans_Char
 			return ($this->proratedStart ? 1 : 0 ) + 1;
 		}
 		// subscriber activates in the middle of the cycle and ends  before the  cyclle is done  should be charged for the current cycle month and no more
-		if ($this->activation >= $this->cycle->start() && $this->deactivation <= $this->cycle->end() && $this->proratedEnd) {
+		if ($this->activation >= $this->cycle->start() && $this->deactivation <= $this->cycle->end() ) {
 			return 1;
 		}
 		// nothing to charge as the values are out of this cycle. return null to indicate invalid charge  without affecting other charges.
