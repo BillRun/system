@@ -35,8 +35,6 @@ final class Versions
     const VERSIONS          = array (
   'alcaeus/mongo-php-adapter' => '1.2.0@b828ebc06cd3c270997b13c97dadc94731b36354',
   'bshaffer/oauth2-server-php' => 'v1.11.1@5a0c8000d4763b276919e2106f54eddda6bc50fa',
-  'chillerlan/php-qrcode' => '4.3.4@2ca4bf5ae048af1981d1023ee42a0a2a9d51e51d',
-  'chillerlan/php-settings-container' => '2.1.4@1beb7df3c14346d4344b0b2e12f6f9a74feabd4a',
   'clue/stream-filter' => 'v1.6.0@d6169430c7731d8509da7aecd0af756a5747b78e',
   'composer/package-versions-deprecated' => '1.11.99.5@b4f54f74ef3453349c24a845d22392cd31e65f1d',
   'guzzlehttp/guzzle' => '6.5.8@a52f0440530b54fa079ce76e8c5d196a42cad981',
@@ -53,7 +51,7 @@ final class Versions
   'omnipay/common' => 'v3.2.0@e278ff00676c05cd0f4aaaf6189a226f26ae056e',
   'payrexx/omnipay-payrexx' => 'v1.1@ce601e53e53ea78e8ac4630abf270598c94e6115',
   'payrexx/payrexx' => 'v1.7.6@e20791854ce344dbf20ab85d3668cfff7ebc9cca',
-  'php-http/discovery' => '1.14.3@31d8ee46d0215108df16a8527c7438e96a4d7735',
+  'php-http/discovery' => '1.15.2@5cc428320191ac1d0b6520034c2dc0698628ced5',
   'php-http/guzzle6-adapter' => 'v2.0.2@9d1a45eb1c59f12574552e81fb295e9e53430a56',
   'php-http/httplug' => '2.3.0@f640739f80dfa1152533976e3c112477f69274eb',
   'php-http/message' => '1.13.0@7886e647a30a966a1a8d1dad1845b71ca8678361',

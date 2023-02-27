@@ -13,8 +13,7 @@
         "bshaffer/oauth2-server-php": "1.11.1",
         "league/omnipay": "3.0.2",
         "payrexx/omnipay-payrexx": "1.1",
-        "payrexx/payrexx": "1.7.6",
-        "chillerlan/php-qrcode": "^4.3"
+        "payrexx/payrexx": "1.7.6"
     },
     "require-dev": {
         "simpletest/simpletest": "^1.1"

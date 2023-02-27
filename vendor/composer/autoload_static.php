@@ -82,11 +82,6 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
     );
 
     public static $prefixLengthsPsr4 = array (
-        'c' => 
-        array (
-            'chillerlan\\Settings\\' => 20,
-            'chillerlan\\QRCode\\' => 18,
-        ),
         'Z' => 
         array (
             'ZipStream\\' => 10,
@@ -128,7 +123,6 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         array (
             'Http\\Promise\\' => 13,
             'Http\\Message\\' => 13,
-            'Http\\Discovery\\' => 15,
             'Http\\Client\\' => 12,
             'Http\\Adapter\\Guzzle6\\' => 21,
         ),
@@ -150,14 +144,6 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
     );
 
     public static $prefixDirsPsr4 = array (
-        'chillerlan\\Settings\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/chillerlan/php-settings-container/src',
-        ),
-        'chillerlan\\QRCode\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/chillerlan/php-qrcode/src',
-        ),
         'ZipStream\\' => 
         array (
             0 => __DIR__ . '/..' . '/maennchen/zipstream-php/src',
@@ -243,10 +229,6 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         array (
             0 => __DIR__ . '/..' . '/php-http/message/src',
             1 => __DIR__ . '/..' . '/php-http/message-factory/src',
-        ),
-        'Http\\Discovery\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/php-http/discovery/src',
         ),
         'Http\\Client\\' => 
         array (
