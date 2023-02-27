@@ -50,7 +50,6 @@ integration_backend_tests:
     - source venv/bin/activate
     - pip3 install -e .
 
-
   # run tests with testrail's integration 
   script:
     - pytest -m smoke -s --junitxml=xml_report_backend.xml --testrail --tr-config=$CI_PROJECT_DIR/integration_tests/testrail.cfg --tr-email=$TESTRAIL_EMAIL --tr-password=$TESTRAIL_APIKEY --tr-testrun-description="Merge Request title = $CI_MERGE_REQUEST_TITLE, Commit SHA = $CI_COMMIT_SHORT_SHA"
