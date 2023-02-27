@@ -45,7 +45,7 @@ class UploadFileAction extends Action_Base {
 				}
 				$targetPath = $sharedDirectoryPath . DIRECTORY_SEPARATOR . $file['name'];
 				if (@move_uploaded_file($file['tmp_name'], $targetPath)) {
-					chmod($targetPath, 0440);
+					chmod($targetPath, 0660);
 					$pgOptions["file_name"] = $file['name']; 
 				}
 			}

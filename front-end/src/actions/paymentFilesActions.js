@@ -78,7 +78,7 @@ export const sendGenerateNewFile = (paymentGateway, fileType, data) => (dispatch
 
 export const sendTransactionsReceiveFile = (paymentGateway, fileType, file) => (dispatch) => {
   const query = sendTransactionsReceiveFileQuery(paymentGateway, fileType, file);
-  const successMessage = 'Transaction receive file was successfully uploaded';
+  const successMessage = 'Transaction response file was successfully uploaded';
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success, successMessage)))
     .catch(error => {

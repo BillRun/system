@@ -340,10 +340,10 @@ class ResponsePaymentFiles extends Component {
 
   onClickUploadTransactionsFile = () => {
     const config = {
-      title: "Upload Transactions File",
+      title: "Upload Transactions Response File",
       labelOk: "Upload",
       onOk: this.onUploadTransactionsFileClickOK,
-      skipConfirmOnClose: true,
+      skipConfirmOnClose: true, 
     };
 
     const item = Map({});
@@ -385,7 +385,7 @@ class ResponsePaymentFiles extends Component {
               onClick={this.onClickUploadTransactionsFile}
               buttonStyle={{}}
               action=''
-              label='Upload Transactions File'
+              label='Upload Transactions Response File'
               disabled={!showGeneratePaymentFile}
             />
           </WithTooltip>
