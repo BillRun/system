@@ -37,7 +37,7 @@ integration_backend_tests:
     - 'echo "Before Script Started!!"' 
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - pwd
-    - docker compose -f docker-compose-php74.yml up -d
+    - docker-compose -f docker-compose-php74.yml up -d
     - docker ps
 
     # create test virtual env
