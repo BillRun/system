@@ -101,12 +101,12 @@
             'dev_requirement' => false,
         ),
         'maennchen/zipstream-php' => array(
-            'pretty_version' => '2.2.6',
-            'version' => '2.2.6.0',
+            'pretty_version' => '2.1.0',
+            'version' => '2.1.0.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../maennchen/zipstream-php',
             'aliases' => array(),
-            'reference' => '30ad6f93cf3efe4192bc7a4c9cad11ff8f4f237f',
+            'reference' => 'c4c5803cc1f93df3d2448478ef79394a5981cc58',
             'dev_requirement' => false,
         ),
         'markbaker/complex' => array(
@@ -191,13 +191,24 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
             ),
         ),
         'php-http/client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
             ),
+        ),
+        'php-http/discovery' => array(
+            'pretty_version' => '1.15.2',
+            'version' => '1.15.2.0',
+            'type' => 'composer-plugin',
+            'install_path' => __DIR__ . '/../php-http/discovery',
+            'aliases' => array(),
+            'reference' => '5cc428320191ac1d0b6520034c2dc0698628ced5',
+            'dev_requirement' => false,
         ),
         'php-http/guzzle6-adapter' => array(
             'pretty_version' => 'v2.0.2',
@@ -272,6 +283,7 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/http-factory' => array(
@@ -282,6 +294,12 @@
             'aliases' => array(),
             'reference' => '12ac7fcd07e5b077433f5f2bee95b3a771bf61be',
             'dev_requirement' => false,
+        ),
+        'psr/http-factory-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '*',
+            ),
         ),
         'psr/http-message' => array(
             'pretty_version' => '1.0.1',
@@ -296,6 +314,7 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/simple-cache' => array(

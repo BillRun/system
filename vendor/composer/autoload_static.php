@@ -123,6 +123,7 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         array (
             'Http\\Promise\\' => 13,
             'Http\\Message\\' => 13,
+            'Http\\Discovery\\' => 15,
             'Http\\Client\\' => 12,
             'Http\\Adapter\\Guzzle6\\' => 21,
         ),
@@ -229,6 +230,10 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         array (
             0 => __DIR__ . '/..' . '/php-http/message/src',
             1 => __DIR__ . '/..' . '/php-http/message-factory/src',
+        ),
+        'Http\\Discovery\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/discovery/src',
         ),
         'Http\\Client\\' => 
         array (
