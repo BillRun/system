@@ -649,16 +649,6 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 			}
 		}
 
-		foreach ($entity['rates'] as $usaget => $rates) {
-			if (isset($entity['rates'][$usaget]['product'])) {
-				$entity['rates'][$usaget] = $entity['rates'][$usaget]['product'];
-			} else {
-				unset($entity['rates'][$usaget]);
-			}
-		}
-		if (empty($entity['rates'])) {
-			unset($entity['rates']);
-		}
 		return parent::importEntity($entity);
 	}
 
