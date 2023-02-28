@@ -1139,7 +1139,7 @@ class Billrun_DiscountManager {
 					'discount_to' => new Mongodloid_Date($to),
 				];
 				if(	$lineQuantity > 1 &&
-					($discount['preserve_usagev'] || Billrun_Factory::config()->getConfigValue('discounts.preserve_usagev',false) ) ) {
+					(!empty($discount['preserve_usagev']) || Billrun_Factory::config()->getConfigValue('discounts.preserve_usagev',false) ) ) {
 					$addToCdr['usagev'] = $lineQuantity;
 				}
 				$discountAmount = $eligibilityInterval['amount'];
