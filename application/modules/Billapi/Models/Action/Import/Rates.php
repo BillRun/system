@@ -648,6 +648,30 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 				}
 			}
 		}
+        
+        // Remove plans and services from rate entity if import operation is create
+        if ($this->getImportOperation() == 'create') {
+            $entityRates = $entity['rates'];
+            unset($entity['rates']);
+
+            $_rates = [];
+            foreach ($entityRates as $usaget => $entityRate) {
+                if (!isset($_rates[$usaget])) {
+                    $_rates[$usaget] = [];
+                }
+                foreach ($entityRate as $rate) {
+                    foreach ($rate as $rateName => $rateData) {
+                        if (!isset($_rates[$usaget][$rateName])) {
+                            $_rates[$usaget][$rateName] = $rateData;
+                        }
+                    }
+                }
+            }
+
+            if (!empty($_rates)) {
+                $entity['rates'] = $_rates;
+            }
+        }
 
 		return parent::importEntity($entity);
 	}
