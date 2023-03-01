@@ -224,7 +224,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * method to initialize the data and the file handler of the processor
 	 * useful when processing files in iterations one after another
 	 */
-	protected function init() {
+	public function init() {
 		$this->data = array('data' => array());
 		$this->queue_data = array();
 		if (is_resource($this->fileHandler)) {

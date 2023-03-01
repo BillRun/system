@@ -15,6 +15,14 @@
  */
 class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Notifiers_Abstract {
 	
+	protected $remote_authentication = [];
+
+	public function __construct($task)
+	{
+		parent::__construct($task);
+		$this->remote_authentication = Billrun_Factory::config()->getConfigValue('collection.settings.authentication', []);
+	}
+	
 	/**
 	 * sends an HTTP request
 	 * 
@@ -25,14 +33,21 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 		if (empty($requestUrl)) {
 			return false;
 		}
+		$params = $this->getRequestParams();
 		$data = $this->getRequestBody();
 		$method = $this->getMethod();
 		Billrun_Factory::log('HTTP request - sending request to prov '. '. Details: ' . print_r($data, 1), Zend_Log::DEBUG);
-		return Billrun_Util::sendRequest($requestUrl, $data, $method);
+		return Billrun_Util::sendRequest($requestUrl, $data, $method, array('Accept-encoding' => 'deflate'), null, null, false, $params);
 	}
 
 	protected function getRequestUrl() {
 		return $this->task['step_config']['url'];
+	}
+
+	protected function getRequestParams() {
+		return [
+			'authentication' => $this->remote_authentication
+		];
 	}
 	
 	/**

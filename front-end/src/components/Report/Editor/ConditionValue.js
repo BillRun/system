@@ -372,7 +372,7 @@ class ConditionValue extends Component {
     // String-select
     if ([config.get('type', 'string'), operator.get('type', '')].includes('string')
       && (config.getIn(['inputConfig', 'inputType']) === 'select' || operator.has('options'))
-      && ['eq', 'ne', 'nin', 'in'].includes(field.get('op', ''))
+      && (['eq', 'ne', 'nin', 'in'].includes(field.get('op', '')) || field.get('op', '').endsWith('_constant'))
     ) {
       return this.renderInputSelect();
     }
