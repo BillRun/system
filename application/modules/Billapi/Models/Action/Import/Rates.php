@@ -598,6 +598,12 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 								$existingEntity = Billrun_Factory::db()->{$collectionName}()->query($entityQuery)->cursor()->current();
 								$rateKey = $existingRate['key'];
 								$existingRateRates = isset($existingEntity['rates']) ? $existingEntity['rates'] : [];
+                                
+                                if ((is_null($existingRate) || is_null($rateKey))
+                                    && !empty($existingRateRates)) {
+                                    $rateKey = array_keys($existingRateRates)[0];
+                                }
+                                
 								$query = array(
 									'effective_date' => $from,
 									'name' => $entity_name
@@ -635,12 +641,6 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 									}
 								} catch (Exception $exc) {
 									return $exc->getMessage();
-								}
-								// Remove plan rates
-								unset($entity['rates'][$usaget]['services']);
-								unset($entity['rates'][$usaget]['plans']);
-								if (empty($entity['rates'][$usaget])) {
-									unset($entity['rates'][$usaget]);
 								}
 							}
 						}
