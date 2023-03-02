@@ -638,7 +638,7 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 								}
 								// Remove plan rates
 								unset($entity['rates'][$usaget]['services']);
-								unset($entity['rates'][$usaget]['plan']);
+								unset($entity['rates'][$usaget]['plans']);
 								if (empty($entity['rates'][$usaget])) {
 									unset($entity['rates'][$usaget]);
 								}
@@ -671,6 +671,18 @@ class Models_Action_Import_Rates extends Models_Action_Import {
             if (!empty($_rates)) {
                 $entity['rates'] = $_rates;
             }
+        }
+        
+        if (empty($entity['rates']['services'])) {
+            unset($entity['rates']['services']);
+        }
+        
+        if (empty($entity['rates']['plans'])) {
+            unset($entity['rates']['plans']);
+        }
+        
+        if (empty($entity['rates'])) {
+            unset($entity['rates']);
         }
 
 		return parent::importEntity($entity);
