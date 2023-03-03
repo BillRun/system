@@ -232,6 +232,11 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
         }
         
         $checkout_session = $stripeClient->checkout->sessions->create($params);
+        
+        if ($checkout_session->setup_intent) {
+            $setupIntent = $stripeClient->setupIntents->retrieve($checkout_session->setup_intent);
+            $checkout_session['setup_intent'] = $setupIntent->toArray();
+        }
 
         return $checkout_session;
     }
