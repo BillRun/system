@@ -16,14 +16,14 @@ import PaymentFileDetails from "@/components/PaymentFiles/PaymentFileDetails";
 import {
   paymentFilesSelector,
   paymentGatewayOptionsSelector,
-  fileTypeOptionsOptionsSelector,
+  responseFileTypeOptionsOptionsSelector,
   isRunningPaymentFilesSelector,
   selectedPaymentGatewaySelector,
   selectedFileTypeSelector,
 } from "@/selectors/paymentFilesSelectors";
 import { getSettings } from "@/actions/settingsActions";
 import { showFormModal } from "@/actions/guiStateActions/pageActions";
-import { getRunningPaymentFiles, cleanRunningPaymentFiles, sendTransactionsReceiveFile } from "@/actions/paymentFilesActions";
+import { getRunningResponsePaymentFiles, cleanRunningPaymentFiles, sendTransactionsReceiveFile } from "@/actions/paymentFilesActions";
 import {
   cleanPaymentFilesTable,
   setPaymentGateway,
@@ -142,7 +142,7 @@ class ResponsePaymentFiles extends Component {
   };
 
   fetchRunningPaymentFiles = (paymentGateway, fileType) => {
-    this.props.dispatch(getRunningPaymentFiles(paymentGateway, fileType, 'TransactionsResponse'));
+    this.props.dispatch(getRunningResponsePaymentFiles(paymentGateway, fileType, 'TransactionsResponse'));
   };
 
   onChangePaymentGatewayValue = (value) => {
@@ -454,7 +454,7 @@ class ResponsePaymentFiles extends Component {
 const mapStateToProps = (state, props) => ({
   paymentFiles: paymentFilesSelector(state, props) || undefined,
   paymentGatewayOptions: paymentGatewayOptionsSelector(state, props) || undefined,
-  fileTypeOptionsOptions: fileTypeOptionsOptionsSelector(state, props) || undefined,
+  fileTypeOptionsOptions: responseFileTypeOptionsOptionsSelector(state, props) || undefined,
   isRunningPaymentFiles: isRunningPaymentFilesSelector(state, props) || undefined,
   reportBillsFields: reportBillsFieldsSelector(state, props) || undefined,
   paymentGateway: selectedPaymentGatewaySelector(state, props, 'response'),

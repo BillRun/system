@@ -47,6 +47,21 @@ export const paymentGatewayOptionsSelector = createSelector(
   .toArray()
 );
 
+export const responseFileTypeOptionsOptionsSelector = createSelector(
+  paymentFilesSelector,
+  paymentFiles => paymentFiles.reduce((accPaymentFiles, paymentFile) => 
+    accPaymentFiles.set(paymentFile.get('name', ''), paymentFile
+      .get('transactions_response', List())
+      .filter(transactionRequest => transactionRequest.has('file_type'))
+      .map(transactionRequest => formatSelectOptions(Map({
+        value: transactionRequest.get('file_type', ''),
+        label: transactionRequest.get('title', sentenceCase(transactionRequest.get('file_type', '')))
+      })))
+      .toArray()
+    )
+  , Map())
+)
+
 export const fileTypeOptionsOptionsSelector = createSelector(
   paymentFilesSelector,
   paymentFiles => paymentFiles.reduce((accPaymentFiles, paymentFile) => 

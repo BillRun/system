@@ -6,6 +6,7 @@ import { clearItems, setListPage, clearNextPage } from '@/actions/entityListActi
 import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '../common/Api';
 import {
   runningPaymentFilesListQuery,
+  runningResponsePaymentFilesListQuery,
   sendGenerateNewFileQuery,
   sendTransactionsReceiveFileQuery,
 } from '@/common/ApiQueries';
@@ -34,6 +35,9 @@ export const clear = () => ({
 
 export const getRunningPaymentFiles = (paymentGateway, fileType, source) => (dispatch) => 
   dispatch(getList('payment_running_files_list', runningPaymentFilesListQuery(paymentGateway, fileType, source)));
+
+  export const getRunningResponsePaymentFiles = (paymentGateway, fileType, source) => (dispatch) => 
+  dispatch(getList('payment_running_files_list', runningResponsePaymentFilesListQuery(paymentGateway, fileType, source)));
 
 export const cleanRunningPaymentFiles = () => (dispatch) => 
   dispatch(clearList('payment_running_files_list'));
