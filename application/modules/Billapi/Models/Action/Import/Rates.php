@@ -29,6 +29,7 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		'__CSVROW__',
 		'__ERRORS__',
 		'price_plan',
+		'price_service',
 		'price_from',
 		'price_to',
 		'price_interval',
@@ -229,11 +230,27 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 				$usage_type = Billrun_Util::getIn($rate_line, 'usage_type_value', '_KEEP_SOURCE_USAGE_TYPE_');
                 // plans
                 $plan_name = Billrun_Util::getIn($rate_line, 'price_plan', 'BASE');
+                if (empty($plan_name)) {
+                    $plan_name = 'BASE';
+                }
                 $this->addRatesToRateLine($combine_rate, ['rates', $usage_type, 'plans', $plan_name, 'rate'], $index, $rate_line);
                 
                 // services
                 $service_name = Billrun_Util::getIn($rate_line, 'price_service', 'BASE');
+                if (empty($service_name)) {
+                    $service_name = 'BASE';
+                }
                 $this->addRatesToRateLine($combine_rate, ['rates', $usage_type, 'services', $service_name, 'rate'], $index, $rate_line);
+                
+                // check if it's needed to add rate information (to create or update)
+                // 2 cases:
+                // 1 - operation is create
+                $isCreate = $operation === 'create';
+                // 2 - operation is update and service and plan name is BASE
+                $isUpdate = $operation === 'permanentchange' && $service_name === 'BASE' && $plan_name === 'BASE';
+                if ($isCreate || $isUpdate) {
+                    $this->addRatesToRateLine($combine_rate, ['rates', $usage_type, 'BASE', 'rate'], $index, $rate_line);
+                }
             } else {
 				$mandatory_price_fields = ['price_from', 'price_to', 'price_interval', 'price_value'];
 				if ($operation === 'create') {
@@ -604,6 +621,10 @@ class Models_Action_Import_Rates extends Models_Action_Import {
                                     $rateKey = array_keys($existingRateRates)[0];
                                 }
                                 
+                                if ($this->operation == 'create') {
+                                    $rateKey = $keyField;
+                                }
+                                
 								$query = array(
 									'effective_date' => $from,
 									'name' => $entity_name
@@ -644,34 +665,16 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 								}
 							}
 						}
+                        // Remove plan rates
+                        unset($entity['rates'][$usaget]['services']);
+                        unset($entity['rates'][$usaget]['plans']);
+                        if (empty($entity['rates'][$usaget])) {
+                            unset($entity['rates'][$usaget]);
+                        }
 					}
 				}
 			}
 		}
-        
-        // Remove plans and services from rate entity if import operation is create
-        if ($this->getImportOperation() == 'create') {
-            $entityRates = $entity['rates'];
-            unset($entity['rates']);
-
-            $_rates = [];
-            foreach ($entityRates as $usaget => $entityRate) {
-                if (!isset($_rates[$usaget])) {
-                    $_rates[$usaget] = [];
-                }
-                foreach ($entityRate as $rate) {
-                    foreach ($rate as $rateName => $rateData) {
-                        if (!isset($_rates[$usaget][$rateName])) {
-                            $_rates[$usaget][$rateName] = $rateData;
-                        }
-                    }
-                }
-            }
-
-            if (!empty($_rates)) {
-                $entity['rates'] = $_rates;
-            }
-        }
         
         if (empty($entity['rates']['services'])) {
             unset($entity['rates']['services']);
