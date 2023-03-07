@@ -37,6 +37,15 @@ export const paymentFilesSelector = createSelector(
     )
 );
 
+export const paymentResponseFilesSelector = createSelector(
+  paymentGatewaysSelector,
+  paymentGateways => paymentGateways
+    .filter(paymentGateway => paymentGateway.has('transactions_response')
+      && !paymentGateway.get('transactions_response', List).isEmpty()
+      && paymentGateway.get('custom', false)
+    )
+);
+
 export const paymentGatewayOptionsSelector = createSelector(
   paymentFilesSelector,
   paymentFiles => paymentFiles.map(paymentFile => formatSelectOptions(Map({
@@ -48,7 +57,7 @@ export const paymentGatewayOptionsSelector = createSelector(
 );
 
 export const responseFileTypeOptionsOptionsSelector = createSelector(
-  paymentFilesSelector,
+  paymentResponseFilesSelector,
   paymentFiles => paymentFiles.reduce((accPaymentFiles, paymentFile) => 
     accPaymentFiles.set(paymentFile.get('name', ''), paymentFile
       .get('transactions_response', List())

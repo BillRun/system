@@ -24,8 +24,9 @@ class UploadFileAction extends Action_Base {
 		$this->allowed();
 		$status = false;
 		$request = $this->getRequest();
-		$options["payment_gateway"] = $request->get('payment_gateway');
-		$options["type"] = "transactions_response";
+		$payment_gateway = $request->get('payment_gateway');
+		$options["payment_gateway"] = $payment_gateway;
+		$options["type"] = str_replace("_", '', $payment_gateway) . "TransactionsResponse";
 		$options["file_type"] = $request->get('file_type');
 
 

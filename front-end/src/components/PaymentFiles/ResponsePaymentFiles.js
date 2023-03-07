@@ -6,7 +6,7 @@ import { List, Map, fromJS } from "immutable";
 import moment from "moment";
 import uuid from 'uuid';
 import pluralize from "pluralize";
-import { titleCase } from "change-case";
+import { titleCase, pascalCase } from "change-case";
 import { Form, FormGroup, ControlLabel, Col, Panel } from "react-bootstrap";
 import { WithTooltip, CreateButton } from "@/components/Elements";
 import EntityList from "@/components/EntityList";
@@ -23,9 +23,13 @@ import {
 } from "@/selectors/paymentFilesSelectors";
 import { getSettings } from "@/actions/settingsActions";
 import { showFormModal } from "@/actions/guiStateActions/pageActions";
-import { getRunningResponsePaymentFiles, cleanRunningPaymentFiles, sendTransactionsReceiveFile } from "@/actions/paymentFilesActions";
 import {
-  cleanPaymentFilesTable,
+  getRunningResponsePaymentFiles,
+  cleanRunningResponsePaymentFiles,
+  sendTransactionsReceiveFile,
+} from "@/actions/paymentFilesActions";
+import {
+  cleanResponsePaymentFilesTable,
   setPaymentGateway,
   setFileType,
 } from "@/actions/paymentFilesActions";
@@ -82,8 +86,8 @@ class ResponsePaymentFiles extends Component {
     const isRequiredChanged = `${paymentGateway}_${fileType}` !== `${prevProps.paymentGateway}_${prevProps.fileType}`;
     const isAutoReloadCountChanged = autoReloadCount !== prevProps.autoReloadCount;
     if (isRequiredChanged) {
-      this.props.dispatch(cleanRunningPaymentFiles());
-      this.props.dispatch(cleanPaymentFilesTable());
+      this.props.dispatch(cleanRunningResponsePaymentFiles());
+      this.props.dispatch(cleanResponsePaymentFilesTable());
     }
     // if Payment Gateway or File Type was changed, stop auto reload
     if (isRequiredChanged && this.reloadTableTimeout) {
@@ -114,7 +118,7 @@ class ResponsePaymentFiles extends Component {
   }
 
   componentWillUnmount() {
-    this.props.dispatch(cleanRunningPaymentFiles());
+    this.props.dispatch(cleanRunningResponsePaymentFiles());
     if (this.reloadTableTimeout) {
       clearTimeout(this.reloadTableTimeout);
     }
@@ -431,8 +435,7 @@ class ResponsePaymentFiles extends Component {
               api="get"
               showRevisionBy={false}
               baseFilter={{
-                source: 'transactions_response',
-                cpg_name: paymentGateway,
+                source: pascalCase(paymentGateway) + 'TransactionsResponse',
                 pg_file_type: fileType,
               }}
               // filterFields={this.getFilterFields()}

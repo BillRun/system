@@ -62,6 +62,7 @@ class Billrun_PaymentGateway_Connection_Relocate extends Billrun_PaymentGateway_
 			$moreFields = array();
 			if (!empty($this->fileType)) {
 				$moreFields['pg_file_type'] = $this->fileType;
+				$moreFields['cpg_file_type'] = $this->fileType;
 			}
 			if (!empty($this->cpgName)) {
 				$moreFields['cpg_name'] = $this->cpgName;
