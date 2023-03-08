@@ -35,7 +35,7 @@ import { setPageTitle } from '@/actions/guiStateActions/pageActions';
 import { getFieldName } from "@/common/Util";
 import { reportBillsFieldsSelector} from '@/selectors/reportSelectors';
 
-class PaymentFiles extends Component {
+class RequestPaymentFiles extends Component {
 
   static propTypes = {
     paymentFiles: PropTypes.instanceOf(List),
@@ -106,7 +106,7 @@ class PaymentFiles extends Component {
     // Auto Reload counter changed, set next auto rerun if not reseted and less then Max reloads
     if (isAutoReloadCountChanged) {
       clearTimeout(this.reloadTableTimeout);
-      const isAutoReloadCountLessThenMax = autoReloadCount < PaymentFiles.maxAutoReloadData;
+      const isAutoReloadCountLessThenMax = autoReloadCount < RequestPaymentFiles.maxAutoReloadData;
       if (isRequiredSelected && isAutoReloadCountLessThenMax && autoReloadCount > 0) {
         const delay = this.getAutoReloadNextDelay();
         this.reloadTableTimeout = setTimeout(this.autoReloadData, delay, autoReloadCount);
@@ -136,24 +136,24 @@ class PaymentFiles extends Component {
   getAutoReloadNextDelay = () => {
     const { autoReloadCount } = this.state;
     const index = autoReloadCount - 1;
-    const sec = index < PaymentFiles.secAutoReloadData.length
-      ? PaymentFiles.secAutoReloadData[index]
-      : PaymentFiles.secAutoReloadData[PaymentFiles.secAutoReloadData.length - 1];
+    const sec = index < RequestPaymentFiles.secAutoReloadData.length
+      ? RequestPaymentFiles.secAutoReloadData[index]
+      : RequestPaymentFiles.secAutoReloadData[RequestPaymentFiles.secAutoReloadData.length - 1];
     return sec * 1000;
   };
 
   fetchRunningPaymentFiles = (paymentGateway, fileType) => {
-    this.props.dispatch(getRunningPaymentFiles(paymentGateway, fileType));
+    this.props.dispatch(getRunningPaymentFiles(paymentGateway, fileType, 'custom_payment_files'));
   };
 
   onChangePaymentGatewayValue = (value) => {
     const paymentGateway = value && value.length ? value : "";
-    this.props.dispatch(setPaymentGateway(paymentGateway));
+    this.props.dispatch(setPaymentGateway(paymentGateway, 'request'));
   };
 
   onChangeFileTypeValue = (value) => {
     const fileType = value && value.length ? value : "";
-    this.props.dispatch(setFileType(fileType));
+    this.props.dispatch(setFileType(fileType, 'request'));
   };
 
   onShowDetails = (data) => {
@@ -378,7 +378,7 @@ class PaymentFiles extends Component {
   };
 
   afterSuccessGenerateNewFile = () => {
-    const reloadAfter = PaymentFiles.secReloadDelayAfterGenerateFile * 1000;
+    const reloadAfter = RequestPaymentFiles.secReloadDelayAfterGenerateFile * 1000;
     setTimeout(this.reloadData, reloadAfter);
     return Promise.resolve();
   };
@@ -471,8 +471,8 @@ const mapStateToProps = (state, props) => ({
   fileTypeOptionsOptions: fileTypeOptionsOptionsSelector(state, props) || undefined,
   isRunningPaymentFiles: isRunningPaymentFilesSelector(state, props) || undefined,
   reportBillsFields: reportBillsFieldsSelector(state, props) || undefined,
-  paymentGateway: selectedPaymentGatewaySelector(state, props),
-  fileType: selectedFileTypeSelector(state, props),
+  paymentGateway: selectedPaymentGatewaySelector(state, props, 'request'),
+  fileType: selectedFileTypeSelector(state, props, 'request'),
 });
 
-export default withRouter(connect(mapStateToProps)(PaymentFiles));
+export default withRouter(connect(mapStateToProps)(RequestPaymentFiles));
