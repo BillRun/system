@@ -83,9 +83,9 @@ class PaymentGatewaysController extends ApiController {
 			$requestData['fail_page'] = urlencode($requestData['fail_page']);
 		}
 		if (!Billrun_Utils_Security::validateData($requestData)) {
-            $ex = new Billrun_Exceptions_Api(999, array(), "Failed to authenticate");
-            $ex->logLevel = Zend_Log::DEBUG;
-            throw $ex;
+			$ex = new Billrun_Exceptions_Api(999, array(), "Failed to authenticate");
+			$ex->logLevel = Zend_Log::DEBUG;
+			throw $ex;
 		} else {
 			$data = $originalRequestData;
 			unset($data[Billrun_Utils_Security::SIGNATURE_FIELD]);
