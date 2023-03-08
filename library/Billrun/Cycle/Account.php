@@ -43,15 +43,19 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	
 	/**
 	 * Write the invoice to the Billrun collection
-	 * @param int $min_id minimum invoice id to start from
 	 */
-	public function writeInvoice($min_id, $flatLines,  $isFake = FALSE, $customCollName = FALSE) {
+	public function finalizeInvoice($flatLines) {
 		foreach ($this->records as $subscriber) {
 			$subInvoice = $subscriber->getInvoice();
 			$this->invoice->addSubscriber($subInvoice);
 		}
 		$this->invoice->updateTotals();
 		$this->applyDiscounts($flatLines);
+
+	}
+
+	public function closeInvoice($min_id, $isFake = FALSE, $customCollName = FALSE) {
+		$this->invoice->updateTotals();
 		$this->invoice->close($min_id, $isFake, $customCollName);
 	}
 	
@@ -65,6 +69,15 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 
 	public function getAppliedDiscounts() {
 		return $this->discounts;
+	}
+
+	public function &getSubscriber($sid) {
+		foreach ($this->records as &$subscriber) {
+			if($subscriber->getSid() == $sid) {
+				return $subscriber;
+			}
+		}
+		return null;
 	}
 
 	public function setUserFields(array $user_fields){

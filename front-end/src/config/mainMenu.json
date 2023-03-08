@@ -171,6 +171,15 @@
     "order": 1,
     "parent": "account_receivables"
   },
+  "receive-custom-payment-files": {
+    "title": "Transactions Response File",
+    "icon": "",
+    "route": "response-custom-payment-files",
+    "show": true,
+    "roles": [],
+    "order": 2,
+    "parent": "account_receivables"
+  },
   "tax": {
     "title": "Tax",
     "icon": "fa-percent",

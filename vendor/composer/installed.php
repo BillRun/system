@@ -1,22 +1,22 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => 'dev-master',
-        'version' => 'dev-master',
+        'pretty_version' => '1.0.0+no-version-set',
+        'version' => '1.0.0.0',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '8c2db5fc36be06b414e0dbf431b63bcef8ec0c35',
+        'reference' => NULL,
         'name' => '__root__',
         'dev' => true,
     ),
     'versions' => array(
         '__root__' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
+            'pretty_version' => '1.0.0+no-version-set',
+            'version' => '1.0.0.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '8c2db5fc36be06b414e0dbf431b63bcef8ec0c35',
+            'reference' => NULL,
             'dev_requirement' => false,
         ),
         'alcaeus/mongo-php-adapter' => array(
@@ -119,12 +119,12 @@
             'dev_requirement' => false,
         ),
         'markbaker/matrix' => array(
-            'pretty_version' => '2.1.3',
-            'version' => '2.1.3.0',
+            'pretty_version' => '2.1.4',
+            'version' => '2.1.4.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../markbaker/matrix',
             'aliases' => array(),
-            'reference' => '174395a901b5ba0925f1d790fa91bab531074b61',
+            'reference' => '469e937dc91aa087e43b21a5266cb7567f482f3e',
             'dev_requirement' => false,
         ),
         'moneyphp/money' => array(
@@ -191,21 +191,23 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
             ),
         ),
         'php-http/client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
             ),
         ),
         'php-http/discovery' => array(
-            'pretty_version' => '1.14.3',
-            'version' => '1.14.3.0',
-            'type' => 'library',
+            'pretty_version' => '1.15.2',
+            'version' => '1.15.2.0',
+            'type' => 'composer-plugin',
             'install_path' => __DIR__ . '/../php-http/discovery',
             'aliases' => array(),
-            'reference' => '31d8ee46d0215108df16a8527c7438e96a4d7735',
+            'reference' => '5cc428320191ac1d0b6520034c2dc0698628ced5',
             'dev_requirement' => false,
         ),
         'php-http/guzzle6-adapter' => array(
@@ -281,6 +283,7 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/http-factory' => array(
@@ -291,6 +294,12 @@
             'aliases' => array(),
             'reference' => '12ac7fcd07e5b077433f5f2bee95b3a771bf61be',
             'dev_requirement' => false,
+        ),
+        'psr/http-factory-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '*',
+            ),
         ),
         'psr/http-message' => array(
             'pretty_version' => '1.0.1',
@@ -305,6 +314,7 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/simple-cache' => array(
@@ -344,12 +354,12 @@
             'dev_requirement' => false,
         ),
         'symfony/http-foundation' => array(
-            'pretty_version' => 'v5.4.15',
-            'version' => '5.4.15.0',
+            'pretty_version' => 'v5.4.20',
+            'version' => '5.4.20.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/http-foundation',
             'aliases' => array(),
-            'reference' => '75bd663ff2db90141bfb733682459d5bbe9e29c3',
+            'reference' => 'd0435363362a47c14e9cf50663cb8ffbf491875a',
             'dev_requirement' => false,
         ),
         'symfony/polyfill-intl-idn' => array(

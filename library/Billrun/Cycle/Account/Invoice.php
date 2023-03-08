@@ -381,6 +381,7 @@ class Billrun_Cycle_Account_Invoice {
 		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), $past_balance_date);
 		if(!Billrun_Util::isEqual($pastBalance['total'], 0, Billrun_Billingcycle::PRECISION)) {
 			$newTotals['past_balance']['after_vat'] = $pastBalance['total'];
+			$newTotals['past_balance']['without_waiting']['after_vat'] = $pastBalance['without_waiting'];
 		}
 		$newTotals['current_balance']['after_vat'] = $newTotals['past_balance']['after_vat'] + $newTotals['after_vat_rounded'];
 		$rawData['totals'] = $newTotals;
@@ -503,7 +504,7 @@ class Billrun_Cycle_Account_Invoice {
 	}
 		$invoicedLines =  $this->invoicedLines;
 		foreach($this->subscribers as $subscriber) {
-			$invoicedLines += $subscriber->getInvoicedLines(); //+ works as the array is  actually hashed by the line stamp
+			$invoicedLines += $subscriber->getInvoicedLines(); //+ *only* works as the array is  actually hashed by the line stamp
 		}
 		return $invoicedLines;
 	}
