@@ -204,20 +204,28 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	}
 
 	protected function  combineRate($combine_rate, $rate_line, $index, $operation, $multi_value_fields) {
-		$is_percentage = Billrun_Util::getIn($rate_line, ['rates', 'percentage'], '') !== '';
 		$is_price = Billrun_Util::getIn($rate_line, 'price_value', '') !== '';
-		$is_base = Billrun_Util::getIn($rate_line, 'price_plan', 'BASE') === 'BASE';
+		$is_plan_percentage = Billrun_Util::getIn($rate_line, ['rates', 'plans', 'percentage'], '') !== '';
+		$is_service_percentage = Billrun_Util::getIn($rate_line, ['rates', 'services', 'percentage'], '') !== '';
+		$is_plan_base = Billrun_Util::getIn($rate_line, 'price_plan', 'BASE') === 'BASE';
+		$is_service_base = Billrun_Util::getIn($rate_line, 'price_service', 'BASE') === 'BASE';
 
 		$csv_row = Billrun_Util::getIn($rate_line, '__CSVROW__', 'unknown');
 		$error_path = ['__ERRORS__', $csv_row];
 		$errors = Billrun_Util::getIn($combine_rate, $error_path, []);
 
-		if ($is_percentage && !$is_base) {
+		if ($is_plan_percentage && !$is_plan_base) {
 			$usage_type = Billrun_Util::getIn($rate_line, 'usage_type_value', '_KEEP_SOURCE_USAGE_TYPE_');
 			$plan_name = Billrun_Util::getIn($rate_line, 'price_plan', 'BASE');
-			$rate_path = ['rates', $usage_type, $plan_name, 'percentage'];
-			$price_percentage = floatval(Billrun_Util::getIn($rate_line, ['rates', 'percentage'], 1));
-			Billrun_Util::setIn($combine_rate, ['rates', 'percentage'], $price_percentage);
+			$rate_path = ['rates', $usage_type, 'plans', $plan_name, 'percentage'];
+			$price_percentage = floatval(Billrun_Util::getIn($rate_line, ['rates', 'plans', 'percentage'], 1));
+			Billrun_Util::setIn($combine_rate, $rate_path, $price_percentage);
+		} else if ($is_service_percentage && !$is_service_base) {
+			$usage_type = Billrun_Util::getIn($rate_line, 'usage_type_value', '_KEEP_SOURCE_USAGE_TYPE_');
+			$price_service = Billrun_Util::getIn($rate_line, 'price_service', 'BASE');
+			$rate_path = ['rates', $usage_type, 'services', $price_service, 'percentage'];
+			$price_percentage = floatval(Billrun_Util::getIn($rate_line, ['rates', 'services', 'percentage'], 1));
+			Billrun_Util::setIn($combine_rate, $rate_path, $price_percentage);
 		} else if ($is_price) {
 			if (isset($rate_line['price_from'])
 				&& isset($rate_line['price_to'])
@@ -594,12 +602,11 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 			}
 		}
 		
-		$plan_updates = true;
 		foreach ($entity['rates'] as $usaget => $rates) {
 			if ($rates) {
 				$plans = !empty($rates['plans']) ? array_keys($rates['plans']) : []; // to do add plans or services
 				$services = !empty($rates['services']) ? array_keys($rates['services']) : [];
-				$withBase = in_array('BASE', $plans) ||  in_array('BASE', $services);
+				$withBase = in_array('BASE', $plans) || in_array('BASE', $services);
 				if (count($plans) >= 1 || count($services) >= 1 || !$withBase) {
 					$entities_to_update = [
 						'services' => $services,
@@ -675,20 +682,18 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 				}
 			}
 		}
-        
-        if (empty($entity['rates']['services'])) {
-            unset($entity['rates']['services']);
-        }
-        
-        if (empty($entity['rates']['plans'])) {
-            unset($entity['rates']['plans']);
-        }
-        
+        // remove all services price override
+				unset($entity['rates']['services']);
+				// remove all plans price override
+				unset($entity['rates']['plans']);
+				// if row include only plans OR services override remove it from product update
         if (empty($entity['rates'])) {
             unset($entity['rates']);
         }
-
-		return parent::importEntity($entity);
+				if (empty(array_diff(array_keys($entity), $this->special_field, ['key', 'effective_date']))) {
+					return true;
+				}
+				return parent::importEntity($entity);
 	}
 
 	/**
