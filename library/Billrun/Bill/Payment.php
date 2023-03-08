@@ -1207,4 +1207,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
                 }
             }
 	}
+
+	public static function getNotWaitingPaymentsQuery() {
+		return array(
+			'waiting_for_confirmation' => array(
+				'$ne' => TRUE,
+			),
+		);
+	}
+
 }

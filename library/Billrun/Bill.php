@@ -1339,6 +1339,7 @@ abstract class Billrun_Bill {
                               '$lte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
 		$query['method'] = array('$ne' => 'installment_agreement');
 		$query['type'] = 'rec';
+		$query = array_merge($query, Billrun_Bill::getNotRejectedOrCancelledQuery(), Billrun_Bill_Payment::getNotWaitingPaymentsQuery());
 		if (!empty($method)) {
 			$query['method']['$in'] = $method;
 		}
