@@ -23,9 +23,12 @@ class UploadFileAction extends Action_Base {
 	public function execute() {
 		$this->allowed();
 		$status = false;
-		$options["payment_gateway"] = ""; // "payment_gateway" name. E.g. Direct_Debit
-		$options["type"] = ""; // transactions_response etc.
-		$options["file_type"] = "";
+		$request = $this->getRequest();
+		$payment_gateway = $request->get('payment_gateway');
+		$options["payment_gateway"] = $payment_gateway;
+		$options["type"] = str_replace("_", '', $payment_gateway) . "TransactionsResponse";
+		$options["file_type"] = $request->get('file_type');
+
 
 		$pgOptions = $options;
 		//			$pgOptions['file_type'] = $options['type'];
@@ -33,7 +36,21 @@ class UploadFileAction extends Action_Base {
 			$options["payment_gateway"] .
 			"_" .
 			ucfirst($options["type"]);
-		$pgOptions["file_name"] = "abc.csv";
+		if (!empty($_FILES['file']['name'])) {
+			$file = $_FILES['file'];
+			if (is_uploaded_file($_FILES['file']['tmp_name'])) {
+				$directoryPath = $this->getFilesUploadPath();
+				$sharedDirectoryPath = Billrun_Util::getBillRunSharedFolderPath($directoryPath);
+				if (!file_exists($sharedDirectoryPath)) {
+					 mkdir($sharedDirectoryPath, 0777, true);
+				}
+				$targetPath = $sharedDirectoryPath . DIRECTORY_SEPARATOR . $file['name'];
+				if (@move_uploaded_file($file['tmp_name'], $targetPath)) {
+					chmod($targetPath, 0660);
+					$pgOptions["file_name"] = $file['name']; 
+				}
+			}
+		}
 		$receiver = $this->loadReceiver($pgOptions);
 		if ($receiver) {
 			$status = $receiver->receive();
@@ -50,11 +67,15 @@ class UploadFileAction extends Action_Base {
 		return true;
 	}
 
+	protected function getFilesUploadPath() {
+		return "uploaded_files" . DIRECTORY_SEPARATOR . date("Y") . DIRECTORY_SEPARATOR . date("m") . DIRECTORY_SEPARATOR . date("d");
+	}
+	
 	protected function loadReceiver($options) {
 		$connection = null;
 		$inputProcessor = false;
 		$connectionDetails["connection_type"] = "relocate";
-		$connectionDetails["path"] = "uploaded_files/" . date("Y") . "/" . date("m") . "/" . date("d");
+		$connectionDetails["path"] = $this->getFilesUploadPath();
 		$connectionDetails["delete_received"] = true;
 		$connectionDetails["filename_regex"] = "/^" . preg_quote($options["file_name"]) . '$/';
 		$a = mkdir(
@@ -63,10 +84,12 @@ class UploadFileAction extends Action_Base {
 			true
 		);
 		if (!$inputProcessor) {
-			$connectionDetails["type"] = str_replace("_", "", ucwords($options["payment_gateway"], "_")) .
-				str_replace("_", "", ucwords($options["type"], "_"));
+			// $connectionDetails["type"] = str_replace("_", "", ucwords($options["payment_gateway"], "_")) .
+				// str_replace("_", "", ucwords($options["type"], "_"));
+			$connectionDetails["type"] = $options["type"];
 			$connectionDetails["payments_file_type"] = $options["type"];
 			$connectionDetails["file_type"] = $options["file_type"];
+			$connectionDetails["cpg_name"] = $options["payment_gateway"];
 			$connection = Billrun_Factory::paymentGatewayConnection(
 					$connectionDetails
 			);
