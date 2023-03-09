@@ -1676,7 +1676,33 @@
 	],
 	"to" : "time*2170-01-11T16:55:17Z",
 	"creation_time" : "time*2020-11-30T22:00:00Z"
+},{
+	"from" : "time*2020-03-10T00:00:00Z",
+	"name" : "B",
+	"price" : [
+		{
+			"from" : 0,
+			"to" : "UNLIMITED",
+			"price" : 100
+		}
+	],
+	"description" : "b",
+	"prorated" : false,
+	"quantitative" : true,
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	],
+	"recurrence" : {
+		"frequency" : 1,
+		"start" : 1
+	},
+	"to" : "time*2172-03-09T14:37:38Z",
+	"creation_time" : "time*2020-03-10T00:00:00Z"
 }
+
 
 
 
