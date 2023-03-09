@@ -26,7 +26,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $template;
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
-        protected $invoice_extra_params = [];
+    protected $invoice_extra_params = [];
+	protected $header_path = "";
+	protected $footer_path = "";
+	protected $header_content = "";
+	protected $footer_content = "";
 	
 
 
@@ -88,8 +92,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->logo_path = $this->getLogoPath();
 		$this->billrun_footer_logo_path = APPLICATION_PATH . "/application/views/invoices/theme/logo.png";
 		$this->wkpdf_exec = Billrun_Util::getFieldVal($options['exec'], Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf'));
-		$view_type = empty($options['is_onetime']) ? 'view_path' : 'onetime_view_path';
-		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . Billrun_Factory::config()->getConfigValue(self::$type . '.'.$view_type, '/views/invoices/') ;
+		$this->view_path =  Billrun_Factory::config()->getConfigValue('application.directory') .
+								( empty($options['is_onetime']) ?
+									Billrun_Factory::config()->getConfigValue(self::$type . '.view_path', '/views/invoices/')  :
+									Billrun_Factory::config()->getConfigValue(self::$type . '.onetime_view_path', '/views/invoices/onetime/'));
+		 ;
 		$this->linesColl = Billrun_Factory::db()->linesCollection();
 		$this->plansColl = Billrun_Factory::db()->plansCollection();
 		$this->ratesColl = Billrun_Factory::db()->ratesCollection();
@@ -110,12 +117,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		);
 		$enableCustomHeader = Billrun_Factory::config()->getConfigValue(self::$type . '.status.header', false);
 		$enableCustomFooter = Billrun_Factory::config()->getConfigValue(self::$type . '.status.footer', false);
-		$this->header_path =  $this->view_path . Billrun_Util::getFieldVal($options['header_tpl'], ($enableCustomHeader ? '/header/header_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.header', '/header/header_tpl.html') ) );
-		$this->footer_path =  $this->view_path . Billrun_Util::getFieldVal($options['footer_tpl'], ($enableCustomFooter ? '/footer/footer_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '/footer/footer_tpl.html' ) ) );
-		$this->custom = array(
-			'header' => $enableCustomHeader === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.header', '') : false,
-			'footer' => $enableCustomFooter === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '') : false,
-		);
+		$this->setHeaderAndFooterPathAndContent($options);
 
 		//only generate bills that are 0.01 and above.
 		$this->invoice_threshold = Billrun_Util::getFieldVal($options['generator']['minimum_amount'], 0.005);
@@ -329,6 +331,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		if (!empty($this->accountsToInvoice)) {
 			$query['aid'] = array('$in' => $this->accountsToInvoice);
 		}
+		Billrun_Factory::dispatcher()->trigger("beforeLoadWkpdf", array(&$query, $this->accountsToInvoice));
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
 	}
 
@@ -482,7 +485,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 					<tbody>
 					<tr>
 						<td><img src='" . $this->logo_path . "' alt='' style='width:100px;object-fit:contain;'>&nbsp;&nbsp;" . $this->getCompanyName() . "</div></td>
-						<td><div class='paging'>page <span class='page'></span> of <span class='topage'></span></div></td>
+						<td><div class='paging'> ".Generator_Translations::stranslate('DEF_INV_PAGE'). " <span class='page'></span>  " . Generator_Translations::stranslate('DEF_INV_OF') . " <span class='topage'></span></div></td>
 					</tr>
 					</tbody>
 				</table>
@@ -507,7 +510,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 					  </ul>
 					</td>
 					<td>
-					  <p class='credentials'> <span class='text'>powered by</span> <img class='billrun-logo' src='" . $this->billrun_footer_logo_path . "' alt=''></p>
+					  <p class='credentials'> <span class='text'>".Generator_Translations::stranslate('DEF_INV_POWERED_BY')."</span> <img class='billrun-logo' src='" . $this->billrun_footer_logo_path . "' alt=''></p>
 					</td>
 				  </tr>
 				</tbody>
@@ -614,14 +617,48 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 
 	public function addExtraParamsToCurrentView($extraParams) {
-		if(!empty($extraParams)) {
-			foreach($extraParams as $paramKey => $paramVal) {
-				$this->view->assign('extra_'.$paramKey, $paramVal);
+		if (!empty($extraParams)) {
+			foreach ($extraParams as $paramKey => $paramVal) {
+				$this->view->assign('extra_' . $paramKey, $paramVal);
 			}
 		}
 	}
-        public function setBillrunExportPath($object, $paths) {
-            $object->set('export_path', $paths);
-        }
+
+	public function setBillrunExportPath($object, $paths) {
+		$object->set('export_path', $paths);
+	}
+
+	public function setHeaderAndFooterPathAndContent($options) {
+		foreach (['header', 'footer'] as $index => $segment) {
+			$path = $segment . "_path";
+			$content = $segment . "_content";
+			$tpl = $segment . "_tpl";
+			$this->custom[$segment] = false;			
+			$this->{$path} = $this->view_path . '/' . $segment . '/' . $tpl . '.html';
+			$enableCustomSegment = Billrun_Factory::config()->getConfigValue(self::$type . '.status.' . $segment, false);
+			if (isset($options[$path]) && isset($options[$content])) {
+				if($enableCustomSegment) {
+					$this->custom[$segment] = Billrun_Factory::config()->getConfigValue(self::$type . '.' . $content, '');
+					$this->{$path} = $this->view_path . Billrun_Util::getFieldVal($options[$tpl], '/' . $segment . '/' . $tpl . '.html');
+				} else {
+					$this->{$path} = !empty($options[$path]) ? $this->view_path . $options[$path] : $this->{$path};
+				}
+			} else {
+				Billrun_Factory::log($segment . "_path / " . $segment . "_content wasn't set in config, checking if '" . $segment . "' field is set..", Zend_Log::ERR);
+				if (isset($options[$segment])) {
+					if ($enableCustomSegment) {
+						$options[$segment] = str_replace('<p>', "", $options[$segment]);
+						$this->custom[$segment] = $options[$segment];
+					} elseif(preg_match('/^\/([A-z0-9-_+]+\/)*([A-z0-9]+\.((html)|(phtml)))$/', $options[$segment])) {
+						$this->{$path} = $this->view_path . $options[$segment];
+					} else {
+						Billrun_Factory::log($segment . " isn't custom, but it's path isn't valid. Default path was taken..", Zend_Log::ERR);
+					}
+				} else {
+					Billrun_Factory::log($segment . " field wasn't set in config, default path was taken..", Zend_Log::ERR);
+				}
+			}
+		}
+	}
 
 }
