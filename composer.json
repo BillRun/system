@@ -14,7 +14,8 @@
         "league/omnipay": "3.0.2",
         "payrexx/omnipay-payrexx": "1.1",
         "payrexx/payrexx": "1.7.6",
-        "maennchen/zipstream-php": "2.1.0"
+        "maennchen/zipstream-php": "2.1.0",
+        "stripe/stripe-php": "v10.5.0"
     },
     "require-dev": {
         "simpletest/simpletest": "^1.1"

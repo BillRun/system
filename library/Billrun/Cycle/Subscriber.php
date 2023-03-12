@@ -209,7 +209,6 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 
 	protected function constructRecords($data) {
-
 		Billrun_Factory::dispatcher()->trigger('beforeConstructSubscriberRecords',[&$data, $this]);
 		$this->mongoPlans = $this->cycleAggregator->getPlans(null,$data['subscriber_info']);
 		$constructedData = $this->constructSubscriberData($data['history'], $this->cycleAggregator->getCycle()->end());
@@ -441,6 +440,12 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			return $retVal;
 		};
 
+		// Function to Check for removed services in the current subscriber record use the $a compareFields to allow for custom compare fields.
+			$serviceCompare = function  ($a, $b) {
+				$aStamp = Billrun_Util::generateArrayStamp($a ,$b['compareFields']);
+				$bStamp = Billrun_Util::generateArrayStamp($b ,$b['compareFields']);
+				return strcmp($aStamp , $bStamp);
+			};
 		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
 			foreach($subscriber['services'] as  $tmpService) {
 				$currentMongoSrv = $mongoServices[$tmpService['name']];
@@ -460,17 +465,21 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 										'compareFields' => $srvStampFields)
 									  );
 
+					//Fix Quantitative  services which their quantity changed but not their from date
+					if(!empty($currentMongoSrv['quantitative']) && !empty($currentMongoSrv['prorated']) && !empty($previousServices) ) {
+						$testServiceData = $serviceData;
+						$testServiceData['compareFields'] = ['name','start','service_id'];//Compare without the quantity value
+						if(!empty($previousQuantService = array_uintersect($previousServices, [$testServiceData], $serviceCompare)) && reset($previousQuantService)['quantity'] !== $testServiceData['quantity']) {
+							//this  service  qunatity changed  but the  from was kept the same as the old service
+							// change the  from to much the current revision
+							$serviceData['start'] = @$subscriber['from']->sec + (@$subscriber['from']->usec/ 1000000) ?: $sfrom;
+						}
+					}
 				 if($serviceData['start'] !== $serviceData['end']) {
 					$stamp = Billrun_Util::generateArrayStamp($serviceData,$srvStampFields);
 					$currServices[$stamp] = $serviceData;
 				 }
 			}
-			// Function to Check for removed services in the current subscriber record.
-			$serviceCompare = function  ($a, $b) use($srvStampFields)  {
-				$aStamp = Billrun_Util::generateArrayStamp($a ,$a['compareFields']);
-				$bStamp = Billrun_Util::generateArrayStamp($b ,$b['compareFields']);
-				return strcmp($aStamp , $bStamp);
-			};
 
 			$removedServices  = array_udiff($previousServices, $currServices, $serviceCompare);
 			foreach($removedServices as $stamp => $removed) {
