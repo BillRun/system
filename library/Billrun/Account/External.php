@@ -27,7 +27,7 @@ class Billrun_Account_External extends Billrun_Account {
 		$this->setCachingTTL(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_ttl', 300));
 	}
 
-	public function getCachingEntityIdKey() {
+	public static function getCachingEntityIdKey() {
 		return 'aid';
 	}
 

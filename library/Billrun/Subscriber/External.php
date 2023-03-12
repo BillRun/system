@@ -77,7 +77,13 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	public function save() {
 		return true;
 	}
-	
+
+	//------------------------------- STATIC ------------------------------
+	public static function getCachingEntityIdKey() {
+		return 'sid';
+	}
+
+	//-------------------------------- PROTECTED --------------------------
 	protected function buildParams(&$query) {
 
 		if (isset($query['EXTRAS'])) {
