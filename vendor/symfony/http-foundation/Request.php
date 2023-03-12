@@ -191,7 +191,7 @@ class Request
     protected $session;
 
     /**
-     * @var string
+     * @var string|null
      */
     protected $locale;
 
@@ -439,12 +439,12 @@ class Request
     /**
      * Clones a request and overrides some of its parameters.
      *
-     * @param array $query      The GET parameters
-     * @param array $request    The POST parameters
-     * @param array $attributes The request attributes (parameters parsed from the PATH_INFO, ...)
-     * @param array $cookies    The COOKIE parameters
-     * @param array $files      The FILES parameters
-     * @param array $server     The SERVER parameters
+     * @param array|null $query      The GET parameters
+     * @param array|null $request    The POST parameters
+     * @param array|null $attributes The request attributes (parameters parsed from the PATH_INFO, ...)
+     * @param array|null $cookies    The COOKIE parameters
+     * @param array|null $files      The FILES parameters
+     * @param array|null $server     The SERVER parameters
      *
      * @return static
      */
@@ -1452,7 +1452,7 @@ class Request
      */
     public function getLocale()
     {
-        return null === $this->locale ? $this->defaultLocale : $this->locale;
+        return $this->locale ?? $this->defaultLocale;
     }
 
     /**
@@ -1573,9 +1573,9 @@ class Request
     /**
      * Gets the request body decoded as array, typically from a JSON payload.
      *
-     * @throws JsonException When the body cannot be decoded to an array
-     *
      * @return array
+     *
+     * @throws JsonException When the body cannot be decoded to an array
      */
     public function toArray()
     {

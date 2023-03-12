@@ -190,15 +190,15 @@
         'php-http/async-client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
-                1 => '*',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'php-http/client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
-                1 => '*',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'php-http/discovery' => array(
@@ -282,8 +282,8 @@
         'psr/http-client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
-                1 => '*',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'psr/http-factory' => array(
@@ -344,6 +344,15 @@
             'reference' => '4fb6006517a1428785a0ea704fbedcc675421ec4',
             'dev_requirement' => true,
         ),
+        'stripe/stripe-php' => array(
+            'pretty_version' => 'v10.5.0',
+            'version' => '10.5.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../stripe/stripe-php',
+            'aliases' => array(),
+            'reference' => '331415b232d60d7c0449de7bde4cb7d4fedf982e',
+            'dev_requirement' => false,
+        ),
         'symfony/deprecation-contracts' => array(
             'pretty_version' => 'v2.5.2',
             'version' => '2.5.2.0',
@@ -354,12 +363,12 @@
             'dev_requirement' => false,
         ),
         'symfony/http-foundation' => array(
-            'pretty_version' => 'v5.4.20',
-            'version' => '5.4.20.0',
+            'pretty_version' => 'v5.4.21',
+            'version' => '5.4.21.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/http-foundation',
             'aliases' => array(),
-            'reference' => 'd0435363362a47c14e9cf50663cb8ffbf491875a',
+            'reference' => '3bb6ee5582366c4176d5ce596b380117c8200bbf',
             'dev_requirement' => false,
         ),
         'symfony/polyfill-intl-idn' => array(
