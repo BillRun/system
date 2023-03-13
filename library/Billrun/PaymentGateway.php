@@ -222,12 +222,10 @@ abstract class Billrun_PaymentGateway {
 			if (empty($data['amount'])) {
 				throw new Exception("Missing amount when making single payment");
 			}
-			if (isset($data['installments']) && ($data['amount'] != $data['installments']['total_amount'])) {
+			if (isset($data['installments']) && (isset($data['installments']['total_amount']) && $data['amount'] != $data['installments']['total_amount'])) {
 				throw new Exception("Single payment amount different from installments amount");
 			}
-			$account = Billrun_Factory::account();
-			$query = array('aid' => intval($aid));
-			if (!$account->loadAccountForQuery($query)) {
+			if (!$this->getActiveAccount($aid)) {
 				throw new Exception("The account is not active");
 			}
 			$singlePaymentParams['amount'] = floatval($data['amount']);
@@ -237,6 +235,9 @@ abstract class Billrun_PaymentGateway {
 		}
 		if (isset($data['installments'])) {
 			$options['installments'] = $data['installments'];
+		}
+		if ($data['tokenize_on_single_payment']) {
+			$options['tokenize_on_single_payment'] = $data['tokenize_on_single_payment'];
 		}
 		if ($this->needRequestForToken()){
 			$response = $this->getToken($aid, $tenantReturnUrl, $okPage, $failPage, $singlePaymentParams, $options);
@@ -426,8 +427,8 @@ abstract class Billrun_PaymentGateway {
 	 * @return array - represents the request
 	 */
 	abstract protected function buildSinglePaymentArray($params, $options);
-
-		/**
+	
+	/**
 	 * Creates customer profile on the gateway for recurring billing charge
 	 * and save it for the account
 	 * 
@@ -497,7 +498,10 @@ abstract class Billrun_PaymentGateway {
 		$tenantUrl = $this->getTenantReturnUrl($this->saveDetails['aid']);
 		$this->updateReturnUrlOnEror($tenantUrl);
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
+			Billrun_Factory::log("Requesting transaction details for txId " . $txId, Zend_Log::DEBUG);
+			Billrun_Factory::log("Payment gateway transaction details request: " . print_R($postString, 1), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Payment gateway transaction details response: " . print_R($result, 1), Zend_Log::DEBUG);
 			if (($retParams = $this->getResponseDetails($result)) === FALSE) {
 				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
 				throw new Exception('Operation Failed. Try Again...');
@@ -510,6 +514,9 @@ abstract class Billrun_PaymentGateway {
 
 		if (isset($retParams['action']) && $retParams['action'] == 'SinglePayment') {
 			$this->paySinglePayment($retParams);
+		} else if (isset($retParams['action']) && $retParams['action'] == 'SinglePaymentToken') {
+			$this->paySinglePayment($retParams);
+			$this->savePaymentGateway();
 		} else {
 			$this->savePaymentGateway();
 		}
@@ -544,7 +551,7 @@ abstract class Billrun_PaymentGateway {
 		try {
 			$this->account->permanentChange($query, $update);
 		} catch (Exception $ex) {
-			Billrun_Factory::log("Updating payment gateway for account number " . $aid . " has failed", Zend_Log::ALERT);
+			Billrun_Factory::log("Updating payment gateway for account number " . $aid . " has failed. Exception: {$ex->getCode()}: {$ex->getMessage()}", Zend_Log::ALERT);
 			return false;
 		}	
 		Billrun_Factory::log($update['payment_gateway']['active']['name'] . " was defined successfully for " . $aid, Zend_Log::INFO);
@@ -836,15 +843,17 @@ abstract class Billrun_PaymentGateway {
 	}
 	
 	protected function paySinglePayment($retParams, $additionalParams = []) {
+		$accountId = $this->saveDetails['aid'];
+		$account = $this->getActiveAccount($accountId);
 		$options = array(
 			'collect' => true,
 			'payment_gateway' => true,
 			'single_payment_gateway' => true,
+			'account' => $account,
 			'additional_params' => $additionalParams
 		);
 		$gatewayDetails = $this->saveDetails;
 		$gatewayDetails['name'] = $this->billrunName;
-		$accountId = $this->saveDetails['aid'];
 		if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
 			Billrun_Factory::log("Non valid payment gateway for aid = " . $accountId, Zend_Log::NOTICE);
 		}
@@ -884,6 +893,22 @@ abstract class Billrun_PaymentGateway {
 		$customParams = !empty($gatewayDetails['custom_params']) ? $gatewayDetails['custom_params'] : array();
 		return $customParams;
 	}
+
+	/**
+	 * @param Int $aid
+	 * @return Billrun_Account|null
+	 */
+	private function getActiveAccount(int $aid) {
+		$account = Billrun_Factory::account();
+		$query = array('aid' => intval($aid));
+		if (!$account->loadAccountForQuery($query)) {
+			return null;
+		}
+		return $account;
+	}
 	
+	public function queryTransaction($txId, $params) {
+		return true;
+	}
 
 }

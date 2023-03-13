@@ -22,9 +22,13 @@ abstract class ClassDiscovery
      * @var array
      */
     private static $strategies = [
-        Strategy\PuliBetaStrategy::class,
         Strategy\CommonClassesStrategy::class,
         Strategy\CommonPsr17ClassesStrategy::class,
+        Strategy\PuliBetaStrategy::class,
+    ];
+
+    private static $deprecatedStrategies = [
+        Strategy\PuliBetaStrategy::class => true,
     ];
 
     /**
@@ -55,7 +59,9 @@ abstract class ClassDiscovery
             try {
                 $candidates = call_user_func($strategy.'::getCandidates', $type);
             } catch (StrategyUnavailableException $e) {
-                $exceptions[] = $e;
+                if (!isset(self::$deprecatedStrategies[$strategy])) {
+                    $exceptions[] = $e;
+                }
 
                 continue;
             }
@@ -125,6 +131,16 @@ abstract class ClassDiscovery
     }
 
     /**
+     * Returns the currently configured discovery strategies as fully qualified class names.
+     *
+     * @return string[]
+     */
+    public static function getStrategies(): iterable
+    {
+        return self::$strategies;
+    }
+
+    /**
      * Append a strategy at the end of the strategy queue.
      *
      * @param string $strategy Fully qualified class name to a DiscoveryStrategy
@@ -190,7 +206,7 @@ abstract class ClassDiscovery
     /**
      * Get an instance of the $class.
      *
-     * @param string|\Closure $class A FQCN of a class or a closure that instantiate the class.
+     * @param string|\Closure $class a FQCN of a class or a closure that instantiate the class
      *
      * @return object
      *
@@ -228,7 +244,7 @@ abstract class ClassDiscovery
     public static function safeClassExists($class)
     {
         try {
-            return class_exists($class);
+            return class_exists($class) || interface_exists($class);
         } catch (\Exception $e) {
             return false;
         }

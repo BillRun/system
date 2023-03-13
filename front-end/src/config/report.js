@@ -1,10 +1,12 @@
 export default {
   entities: [
     'usage',
+    'usage_archive',
     'subscription',
     'customer',
     'logFile',
     'queue',
+    'rebalance_queue',
     'event',
     'bills',
     'paymentsTransactionsRequest',
@@ -95,6 +97,9 @@ export default {
       { id: 'discount_from', type: 'datetime', title: 'Discount from' },
       { id: 'discount_to', type: 'datetime', title: 'Discount to' },
     ],
+    usage_archive: [
+      // use all usage fields
+    ],
     subscribers: [
       { id: 'aid', type: 'number' },
       { id: 'sid', type: 'number' },
@@ -183,6 +188,8 @@ export default {
       { id: 'parameters_string', title: 'Parameter String' },
       { id: 'correlation_value', title: 'Correlation Value' },
 
+      { id: 'cpg_name', title: 'Payment Gateway Name' },
+      { id: 'cpg_file_type', title: 'Payment Gateway File Type' },
     ],
     'paymentsTransactionsResponse': [
       { id: 'fetching_time', type: 'date' },
@@ -212,7 +219,9 @@ export default {
       { id: 'related_request_file', title: 'Related Request File' },
       { id: 'total_denied_amount', title: 'Total Denied Amount In The File' },
       { id: 'total_confirmed_amount', title: 'Total Confirmed Amount In The File' },
-      { id: 'total_rejected_amount', title: 'Total Rejected Amount In The File' }
+      { id: 'total_rejected_amount', title: 'Total Rejected Amount In The File' },
+      { id: 'cpg_name', title: 'Payment Gateway Name' },
+      { id: 'cpg_file_type', title: 'Payment Gateway File Type' },
     ],
     'paymentDenials': [
       { id: 'fetching_time', type: 'date' },
@@ -242,7 +251,9 @@ export default {
       { id: 'related_request_file', title: 'Related Request File' },
       { id: 'total_denied_amount', title: 'Total Denied Amount In The File' },
       { id: 'total_confirmed_amount', title: 'Total Confirmed Amount In The File' },
-      { id: 'total_rejected_amount', title: 'Total Rejected Amount In The File' }
+      { id: 'total_rejected_amount', title: 'Total Rejected Amount In The File' },
+      { id: 'cpg_name', title: 'Payment Gateway Name' },
+      { id: 'cpg_file_type', title: 'Payment Gateway File Type' },
     ],
     'paymentsFiles': [
       { id: 'fetching_time', type: 'date' },
@@ -272,7 +283,9 @@ export default {
       { id: 'related_request_file', title: 'Related Request File' },
       { id: 'total_denied_amount', title: 'Total Denied Amount In The File' },
       { id: 'total_confirmed_amount', title: 'Total Confirmed Amount In The File' },
-      { id: 'total_rejected_amount', title: 'Total Rejected Amount In The File' }
+      { id: 'total_rejected_amount', title: 'Total Rejected Amount In The File' },
+      { id: 'cpg_name', title: 'Payment Gateway Name' },
+      { id: 'cpg_file_type', title: 'Payment Gateway File Type' },
     ],
     queue: [
       // use all usage fields
@@ -284,6 +297,17 @@ export default {
         },
       },
       { id: 'in_queue_since', type: 'date' },
+      { id: 'calc_time', type: 'datetime' },
+      { id: 'reset_query_hash', title: 'Reset Query Hash' },
+    ],
+    rebalance_queue: [
+      { id: 'conditions_hash', title: 'Rebalance ID' },
+      { id: 'aid', type: 'number', title: 'Customer ID' },
+      { id: 'billrun_key', title: 'Billrun Key' },
+      { id: 'creation_date', type: 'datetime', title: 'Created' },
+      { id: 'conditions', type: 'json', title: 'Conditions' },
+			{ id: 'start_time', type: 'datetime', title: 'Reset Start Time' },
+			{ id: 'end_time', type: 'datetime', title: 'Reset End Time' }
     ],
     bills: [
       { id: 'billrun_key'},
@@ -392,9 +416,66 @@ export default {
     { id: 'in_range', title: 'Include‎', include: ['ranges', 'range', 'daterange'] },
     { id: 'nin_range', title: 'Does not include‎', include: ['ranges', 'range', 'daterange'] },
     { id: 'exists', title: 'Exists', type: 'boolean',
-      include: ['string', 'number', 'boolean', 'date', 'datetime', 'ranges', 'range', 'daterange'],
+      include: ['string', 'number', 'boolean', 'date', 'datetime', 'ranges', 'range', 'daterange', 'json'],
       exclude: [ 'fieldid:billrun_status', 'fieldid:logfile_status', 'fieldid:subscriber.play'],
       options: ['yes', 'no'],
+    },
+    { id: 'is_false', title: 'Is False', type: 'boolean', include: ['fieldid:calc_time'], options: ['yes', 'no'] },
+    { id: 'is_true', title: 'Is True', type: 'boolean', include: [], options: ['yes', 'no'] },
+    { id: 'eq_constant', title: 'Equals constant', include: ['date', 'datetime'], type: 'string',
+      options: [
+        { value: 'current_time', label: 'Current Time' },
+        { value: 'current_start', label: 'Current Billing Cycle Start' },
+        { value: 'current_end', label: 'Current Billing Cycle End' },
+        { value: 'first_unconfirmed_start', label: 'First Unconfirmed Billing Cycle Start' },
+        { value: 'first_unconfirmed_end', label: 'First Unconfirmed Billing Cycle End' },
+        { value: 'last_confirmed_start', label: 'Last Confirmed Billing Cycle Start' },
+        { value: 'last_confirmed_end', label: 'Last Confirmed Billing Cycle End' },
+      ],
+    },
+    { id: 'lt_constant', title: 'Less than constant', include: ['date', 'datetime'], type: 'string',
+      options: [
+        { value: 'current_time', label: 'Current Time' },
+        { value: 'current_start', label: 'Current Billing Cycle Start' },
+        { value: 'current_end', label: 'Current Billing Cycle End' },
+        { value: 'first_unconfirmed_start', label: 'First Unconfirmed Billing Cycle Start' },
+        { value: 'first_unconfirmed_end', label: 'First Unconfirmed Billing Cycle End' },
+        { value: 'last_confirmed_start', label: 'Last Confirmed Billing Cycle Start' },
+        { value: 'last_confirmed_end', label: 'Last Confirmed Billing Cycle End' },
+      ],
+    },
+    { id: 'lte_constant', title: 'Less than or equals constant', include: ['date', 'datetime'], type: 'string',
+      options: [
+        { value: 'current_time', label: 'Current Time' },
+        { value: 'current_start', label: 'Current Billing Cycle Start' },
+        { value: 'current_end', label: 'Current Billing Cycle End' },
+        { value: 'first_unconfirmed_start', label: 'First Unconfirmed Billing Cycle Start' },
+        { value: 'first_unconfirmed_end', label: 'First Unconfirmed Billing Cycle End' },
+        { value: 'last_confirmed_start', label: 'Last Confirmed Billing Cycle Start' },
+        { value: 'last_confirmed_end', label: 'Last Confirmed Billing Cycle End' },
+      ],
+    },
+    { id: 'gt_constant', title: 'Greater than constant', include: ['date', 'datetime'], type: 'string',
+      options: [
+        { value: 'current_time', label: 'Current Time' },
+        { value: 'current_start', label: 'Current Billing Cycle Start' },
+        { value: 'current_end', label: 'Current Billing Cycle End' },
+        { value: 'first_unconfirmed_start', label: 'First Unconfirmed Billing Cycle Start' },
+        { value: 'first_unconfirmed_end', label: 'First Unconfirmed Billing Cycle End' },
+        { value: 'last_confirmed_start', label: 'Last Confirmed Billing Cycle Start' },
+        { value: 'last_confirmed_end', label: 'Last Confirmed Billing Cycle End' },
+      ],
+    },
+    { id: 'gte_constant', title: 'Greater than or equals constant', include: ['date', 'datetime'], type: 'string',
+      options: [
+        { value: 'current_time', label: 'Current Time' },
+        { value: 'current_start', label: 'Current Billing Cycle Start' },
+        { value: 'current_end', label: 'Current Billing Cycle End' },
+        { value: 'first_unconfirmed_start', label: 'First Unconfirmed Billing Cycle Start' },
+        { value: 'first_unconfirmed_end', label: 'First Unconfirmed Billing Cycle End' },
+        { value: 'last_confirmed_start', label: 'Last Confirmed Billing Cycle Start' },
+        { value: 'last_confirmed_end', label: 'Last Confirmed Billing Cycle End' },
+      ],
     },
   ],
   aggregateOperators: [
@@ -439,12 +520,14 @@ export default {
       { value: 'h:i:s A', label: '10:05:59 PM' },
     ] },
     { id: 'multiplication', title: 'Multiply by a number' },
+    { id: 'rename_false', title: 'Label for FALSE Value' },
+    { id: 'rename_true', title: 'Label for TRUE Value' },
     { id: 'default_empty', title: 'Default Value', addOption: true, options: [
       { value: 'current_time', label: 'Current Time' },
       { value: 'current_start', label: 'Current Billing Cycle Start' },
       { value: 'current_end', label: 'Current Billing Cycle End' },
       { value: 'first_unconfirmed_start', label: 'First Unconfirmed Billing Cycle Start' },
-      { value: 'first_unconfirmed_end', label: 'First Unconfirmed Cycle End' },
+      { value: 'first_unconfirmed_end', label: 'First Unconfirmed Billing Cycle End' },
       { value: 'last_confirmed_start', label: 'Last Confirmed Billing Cycle Start' },
       { value: 'last_confirmed_end', label: 'Last Confirmed Billing Cycle End' },
     ] },
@@ -460,5 +543,6 @@ export default {
       { value: 'start', label: 'Start Date' },
       { value: 'end', label: 'End Date' },
     ] },
+    { id: 'json', title: 'JSON', fixedValue: true },
   ],
 };

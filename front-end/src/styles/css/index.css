@@ -41,6 +41,13 @@ fieldset[disabled] .btn {
 .input-min-line-height {
   line-height: 39px;
 }
+.input-checkbox-fix-height {
+  line-height: 20px;
+  margin-top: 9px
+}
+.action-fix-height {
+  min-height: 39px;;
+}
 
 /* Props */
 .clickable {
@@ -73,6 +80,9 @@ fieldset[disabled] .btn {
 .inline {
   display: inline-block;
 }
+.no-border{
+  border: none!important;
+}
 .withHover:hover {
   background-color: #e5e5e5;
 }
@@ -93,6 +103,9 @@ fieldset[disabled] .btn {
 
 .pt0{ padding-top: 0!important; }
 .pt5{ padding-top: 5px!important; }
+.pt10{ padding-top: 10px!important; }
+.pt20{ padding-top: 20px!important; }
+.pt50{ padding-top: 50px!important; }
 .pr0{ padding-right: 0!important; }
 .pr5{ padding-right: 5px!important; }
 .pr10{ padding-right: 10px!important; }
@@ -112,18 +125,22 @@ fieldset[disabled] .btn {
 .mt0{ margin-top: 0!important; }
 .mt5{ margin-top: 5px!important; }
 .mt10{ margin-top: 10px!important; }
+.mt15{ margin-top: 15px!important; }
 .mr0{ margin-right: 0!important; }
 .mr5{ margin-right: 5px!important; }
 .mr10{ margin-right: 10px!important; }
+.mr15{ margin-right: 15px!important; }
 .mr20{ margin-right: 20px!important; }
 .mr30{ margin-right: 30px!important; }
 .mr40{ margin-right: 40px!important; }
 .mb0{ margin-bottom: 0!important; }
 .mb5{ margin-bottom: 5px!important; }
 .mb10{ margin-bottom: 10px!important; }
+.mb15{ margin-bottom: 15px!important; }
 .ml0{ margin-left: 0!important; }
 .ml5{ margin-left: 5px!important; }
 .ml10{ margin-left: 10px!important; }
+.ml15{ margin-left: 15px!important; }
 .ml20{ margin-left: 20px!important; }
 
 .full-width{ width: 100%!important; }
@@ -176,6 +193,12 @@ fieldset[disabled] .btn {
 .form-group.has-error .dropdown.input-group-btn > button {
   border-color: red;
 }
+
+.dropdown-menu {
+  max-height: 200px;
+  overflow-y: scroll;
+}
+
 /* ~React-bootstrap */
 
 /* Custom field input */
@@ -485,4 +508,14 @@ ul.revision-history-list li.active .cycle {
 
 .CustomFieldsListRow {
   line-height: 40px;
+}
+
+.placeholder-block {
+  border-top: none;
+}
+.placeholder-block .panel-body {
+  padding: 0;
+}
+.form-actions-controllers {
+  min-height: 50px;
 }

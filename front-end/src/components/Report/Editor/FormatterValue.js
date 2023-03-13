@@ -33,6 +33,9 @@ class FormatterValue extends Component {
       const value = nextProps.config.get('options', Immutable.List()).map(formatSelectOptions).first().value || '';
       this.props.onChange(value);
     }
+    if (nextProps.config.has('fixedValue')) {
+      this.props.onChange(nextProps.config.get('fixedValue', ''));
+    }
   }
 
   shouldComponentUpdate(nextProps) {
@@ -59,7 +62,13 @@ class FormatterValue extends Component {
 
   render() {
     const { field, disabled, config } = this.props;
-    const disabledInput = disabled || config.isEmpty();
+    let disabledInput = disabled || config.isEmpty();
+    let value = field.get('value', '');
+    if (['json'].includes(config.get('id', ''))) {
+      disabledInput = true;
+      value = '';
+    }
+
     if (config.has('valueTypes')) {
       const selectedUnit = config
         .get('valueTypes', Immutable.List())
@@ -123,7 +132,7 @@ class FormatterValue extends Component {
     // String or Number or Default when Op not selected
     return (
       <Field
-        value={field.get('value', '')}
+        value={value}
         onChange={this.onChangeText}
         disabled={disabledInput}
       />

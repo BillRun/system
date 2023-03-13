@@ -26,6 +26,7 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 					$charges[] = array('value' => $price['price'] * $quantity, 'cycle' => $tariff['from'], 'full_price' => floatval($tariff['price']) ,'prorated_start' =>false,'prorated_end' =>false,"start"=>$this->cycle->start(),'end'=> $this->cycle->end(),
 					'deactivation_date'=>  $this->deactivation,
 					'activation_date'=>  $this->activation,
+'start_date'=> new MongoDate($this->cycle->start()), 'end_date' => new MongoDate($this->cycle->end())
 					);
 				}
 			}

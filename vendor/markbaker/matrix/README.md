@@ -5,7 +5,7 @@ PHPMatrix
 
 PHP Class for handling Matrices
 
-[![Build Status](https://travis-ci.org/MarkBaker/PHPMatrix.png?branch=1.2)](http://travis-ci.org/MarkBaker/PHPMatrix)
+[![Build Status](https://travis-ci.org/MarkBaker/PHPMatrix.png?branch=2.0)](http://travis-ci.org/MarkBaker/PHPMatrix)
 
 [![Matrix Transform](https://imgs.xkcd.com/comics/matrix_transform.png)](https://xkcd.com/184/)
 
@@ -15,33 +15,33 @@ Matrix Transform
 
 This library currently provides the following operations:
 
-- addition
-- direct sum
-- subtraction
-- multiplication
-- division (using [A].[B]<sup>-1</sup>)
-   - division by
-   - division into
+ - addition
+ - direct sum
+ - subtraction
+ - multiplication
+ - division (using [A].[B]<sup>-1</sup>)
+    - division by
+    - division into
 
-together with functions for
+together with functions for 
 
-- adjoint
-- antidiagonal
-- cofactors
-- determinant
-- diagonal
-- identity
-- inverse
-- minors
-- trace
-- transpose
-- solve
+ - adjoint
+ - antidiagonal
+ - cofactors
+ - determinant
+ - diagonal
+ - identity
+ - inverse
+ - minors
+ - trace
+ - transpose
+ - solve
 
-  Given Matrices A and B, calculate X for A.X = B
-
+   Given Matrices A and B, calculate X for A.X = B
+   
 and classes for
 
-- Decomposition
+ - Decomposition
    - LU Decomposition with partial row pivoting,
 
      such that [P].[A] = [L].[U] and [A] = [P]<sup>|</sup>.[L].[U]
@@ -51,12 +51,12 @@ and classes for
 
 ## TO DO
 
-- power() function
-- Decomposition
-    - Cholesky Decomposition
-    - EigenValue Decomposition
-        - EigenValues
-        - EigenVectors
+ - power() function
+ - Decomposition
+   - Cholesky Decomposition
+   - EigenValue Decomposition 
+     - EigenValues
+     - EigenVectors
 
 ---
 
@@ -139,7 +139,7 @@ $matrix = new Matrix\Matrix($grid);
 
 echo $matrix->trace();
 ```
-or you can call the function as you would in procedural code, passing the Matrix object as an argument
+or you can call the function as you would in procedural code, passing the Matrix object as an argument 
 ```php
 $grid = [
     [16,  3,  2, 13],

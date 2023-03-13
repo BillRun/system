@@ -43,6 +43,16 @@ class ReportModel {
 				'target_field' => 'aid',
 			),
 		),
+		'usage_archive' => array(
+			'subscription' => array(
+				'source_field' => 'sid',
+				'target_field' => 'sid',
+			),
+			'customer' => array(
+				'source_field' => 'aid',
+				'target_field' => 'aid',
+			),
+		),
 		'subscription' => array(
 			'usage' => array(
 				'source_field' => 'sid',
@@ -186,6 +196,8 @@ class ReportModel {
 			$aggregate[] = array('$limit' => $limit);
 		}
                 
+		// Uncommet to debuge report query
+		//error_log("Report aggregate query: " . print_r(json_encode($aggregate), 1));
 		$results = $collection->aggregateWithOptions($aggregate, $this->aggregateOptions);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
@@ -231,7 +243,10 @@ class ReportModel {
 		$output = array();
 		foreach ($row as $key => $value) {
 			$formats = $this->getRowsFormattersByKey($key, $formatters);
-			if(is_array($value)) {
+			$jsonFormatter = $this->isIncludeJsonFormatter($formats);
+			if ($jsonFormatter) {
+				$output[$key] = $this->formatOutputValue($value, $key, $formats);
+			} else if(is_array($value)) {
 				// array result like addToSet
 				if(count(array_filter(array_keys($value), 'is_string'))  === 0){
 					$formatedValues = array();
@@ -255,9 +270,10 @@ class ReportModel {
 	}
 	
 	protected function formatOutputValue($value, $key, $formats) {
-		if(!is_scalar($value) && (is_array($value) || get_class($value) !== 'MongoDate')){
+		$jsonFormatter = $this->isIncludeJsonFormatter($formats);
+		if (!$jsonFormatter && !is_scalar($value) && ((is_array($value) && !empty($value)) || get_class($value) !== 'MongoDate')){
 			// array result like addToSet
-			if(count(array_filter(array_keys($value), 'is_string')) === 0){
+			if(count(array_filter(array_keys($value), 'is_string')) === 0) {
 				$values = array();
 				foreach ($value as $val) {
 					$values[] = $this->formatOutputValue($val, $key, $formats);
@@ -277,6 +293,16 @@ class ReportModel {
 		return $value;
 	}
 	
+	protected function isIncludeJsonFormatter($formats) {
+		if (!empty($formats)) {
+			foreach ($formats as $format) {
+				if ($format['op'] == 'json') {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 	protected function pluckOutputValue($value, $key, $formats) {
 		$field_names = array_column($this->report['columns'], 'field_name', 'key');
 		//If value is object where value is at key 'NAME' -> pop the value
@@ -351,6 +377,26 @@ class ReportModel {
 			}
 			case 'multiplication':
 				return (is_numeric($value) && is_numeric($format['value'])) ? $value * $format['value'] : $value;
+			case 'json': {
+				$out = @json_encode($value);
+				return $out ? $out : $value;
+			}
+			case 'rename_false': {
+				if (in_array($value, [false, 'false', 'FALSE'], true)) {
+					$styledValue = $format['value'];
+					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
+					return $styledValue;
+				}
+				return $value;
+			}
+			case 'rename_true':  {
+				if (in_array($value, [true, 'true', 'TRUE'], true)) {
+					$styledValue = $format['value'];
+					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
+					return $styledValue;
+				}
+				return $value;
+			}
 			case 'default_empty': {
 				if ($value !== "" && !is_null($value)){
 					$styledValue = $value;
@@ -415,6 +461,12 @@ class ReportModel {
 			case 'last_days':
 				return 'between';
 		}
+		if ($op == 'is_false') {
+			return $value ? 'eq' : 'ne';
+		}
+		if ($op == 'is_true') {
+			return $value ? 'ne' : 'eq';
+		}
 		// search by field_name
 		if($field === 'billrun') {
 			switch ($value) {
@@ -467,6 +519,10 @@ class ReportModel {
 					'from' => date("c", strtotime("{$days} day midnight")),
 					'to' => date("c", strtotime("today") - 1)
 				);
+			case 'is_false':
+				return false;
+			case 'is_true':
+				return true;
 		}
 		// If subscriber.play doesn't exists in line we need to check for default play
 		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
@@ -532,6 +588,9 @@ class ReportModel {
 			}
 		}
 		if($field === 'calc_name' && $value === 'false') {
+			return false;
+		}
+		if($field === 'paid' && in_array($value, ['0', 0])) {
 			return false;
 		}
 		if($condition['field'] === 'logfile_status') {
@@ -675,6 +734,13 @@ class ReportModel {
 		return $this->getReportEntity();
 	}
 	
+	protected function getFieldType($condition) {
+		$op = $condition['op'];
+		if (in_array($op, ['is_false', 'is_true'])) {
+			return 'boolean';
+		}
+		return $condition['type'];
+	}
 	protected function getDefaultEntityMatch() {
 		$defaultEntityMatch = array();
 		switch ($this->getReportEntity()) {
@@ -738,6 +804,8 @@ class ReportModel {
 		switch ($entity) {
 			case 'usage':
 				return 'lines';
+			case 'usage_archive':
+				return 'archive';
 			case 'subscription':
 				return 'subscribers';
 			case 'customer':
@@ -754,6 +822,8 @@ class ReportModel {
 				return 'log';
 			case 'bills':
 				return 'bills';
+			case 'rebalance_queue':
+				return 'rebalance_queue';
 			default:
 				throw new Exception("Invalid entity type");
 		}
@@ -873,7 +943,7 @@ class ReportModel {
 	
 	protected function parseMatchCondition($condition) {
 		$condition_entity = $this->getFieldEntity($condition);
-		$type = $condition['type'];
+		$type = $this->getFieldType($condition);
 		$field = $this->formatInputMatchField($condition, $condition_entity);
 		$op = $this->formatInputMatchOp($condition, $field);
 		$value = $this->formatInputMatchValue($condition, $field, $type);
@@ -917,13 +987,26 @@ class ReportModel {
 			case 'in':
 			case 'nin':
 				//TODO: add support for dates
-				if ($type === 'number') {
-					$values = array_map('floatval', explode(',', $value));
-				} else {
+				if (is_bool($value)) {
+					$values = [$value];
+				} else if (is_string($value)) {
 					$values = explode(',', $value);
+				} else { //is_array($value)
+					$values = $value;
 				}
-				if ($field == 'paid' && in_array('0', $values)) {
-					$values[] = false;
+				if ($type === 'number') {
+					$values = array_map('floatval', $values);
+				} else {
+					// fix bool
+					$values = array_map(function($val) {
+						if (in_array($val, ['true', 'TRUE'])) {
+							return true;
+				}
+						if (in_array($val, ['false', 'FALSE'])) {
+							return false;
+						}
+						return $val;
+					}, $values);
 				}
 				$formatedExpression = array(
 					"\${$op}" => $values
@@ -982,6 +1065,41 @@ class ReportModel {
 						'$lte' => $value['to'],
 					);
 				}
+				break;
+			case 'lt_constant': 
+			case 'lte_constant': 
+			case 'gt_constant': 
+			case 'gte_constant': 
+			case 'eq_constant':
+				if ($value == "current_time") {
+					$expressionValue = time();
+				} else if ($value == "current_start") {
+					$expressionValue = Billrun_Billingcycle::getStartTime(Billrun_Billrun::getActiveBillrun());
+				} else if ($value == "current_end") {
+					$expressionValue = Billrun_Billingcycle::getEndTime(Billrun_Billrun::getActiveBillrun());
+				} else  if (in_array($value, ['first_unconfirmed_start', 'first_unconfirmed_end'])) {
+					$last = Billrun_Billingcycle::getLastConfirmedBillingCycle();
+					if ($last != Billrun_Billingcycle::getFirstTheoreticalBillingCycle()) {
+						$cycle = Billrun_Billingcycle::getFollowingBillrunKey($last);
+					} else {
+						$lastStarted = Billrun_Billingcycle::getFirstStartedBillingCycle();
+						$cycle = !is_null($lastStarted) ? $lastStarted : $last; 
+					}
+					if ($value == 'first_unconfirmed_start') {
+						$expressionValue = Billrun_Billingcycle::getStartTime($cycle);
+					} else {
+						$expressionValue = Billrun_Billingcycle::getEndTime($cycle);
+					}
+				} else if ($value == "last_confirmed_start") {
+					$expressionValue = Billrun_Billingcycle::getStartTime(Billrun_Billingcycle::getLastConfirmedBillingCycle());
+				} else if ($value == "last_confirmed_end") {
+					$expressionValue = Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getLastConfirmedBillingCycle());
+				}
+				$expressionOop = explode("_", $op);
+				$expressionOop = $expressionOop[0];
+				$formatedExpression = array(
+					"\${$expressionOop}" => new MongoDate($expressionValue),
+				);
 				break;
 			case 'lt':
 			case 'lte':

@@ -13,8 +13,9 @@
 							<tr>
 								<td><?php echo Generator_Translations::stranslate('DEF_INV_PERIOD');?></td>
 
-								<td><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format); ?></td>
+								<td><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format, !empty($data->get('invoicing_day')) ? $data->get('invoicing_day') : null); ?></td>
 							</tr>
+
 							<?php } ?>
 							<tr>
 								<td><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE_NO');?></td>

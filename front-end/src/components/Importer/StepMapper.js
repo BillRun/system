@@ -185,6 +185,7 @@ const StepMapper = (props) => {
               options={csvHeaders}
               value={item.getIn(['map', 'effective_date'], '')}
               placeholder="Select CSV field to update..."
+              allowCreate={true}
             />
           </Col>
         </FormGroup>

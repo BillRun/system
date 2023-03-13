@@ -75,14 +75,8 @@ class ConditionValue extends Component {
       customValueOptions: prevProps.customValueOptions
     }));
     const isSelectOptionsChanged = !oldOptions.isEmpty()
-      && !newOptions
-        .map(option => option.get('value'))
-        .sort()
-        .equals(
-          oldOptions
-          .map(option => option.get('value'))
-          .sort()
-        );
+      // options was removed 
+      && !oldOptions.every(element => newOptions.includes(element));
 
     const isTypeChanged = prevProps.config.get('type', '') !== ''
       && prevProps.config.get('type', '') !== config.get('type', '');

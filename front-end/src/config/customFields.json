@@ -45,7 +45,7 @@
       "title": "Boolean",
       "type": "boolean",
       "defaultValue": false,
-      "exclude": ["unique", "mandatory", "searchable", "multiple", "select_options", "select_list"]
+      "exclude": ["unique", "mandatory", "multiple", "select_options", "select_list"]
     }, {
       "id": "textarea",
       "type": "string",

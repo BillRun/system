@@ -91,7 +91,7 @@ class Models_Action_Get extends Models_Action {
 			$revision_info = true;
 			$project = array();
 		}
-
+		Billrun_Factory::log("Billapi get runs query: " .json_encode($this->query), Zend_Log::DEBUG);
 		$ret = $this->collectionHandler->find($this->query, $project);
 
 		if ($this->size != 0) {
@@ -107,6 +107,7 @@ class Models_Action_Get extends Models_Action {
 		}
 
 		$records = array_values(iterator_to_array($ret));
+		Billrun_Factory::log('Billapi get received ' . count($records) . " results", Zend_Log::DEBUG);
 		foreach($records as  &$record) {
 			if (isset($record['invoice_id'])) {
 				$record['invoice_id'] = (int)$record['invoice_id'];
@@ -152,7 +153,8 @@ class Models_Action_Get extends Models_Action {
 			if (Billrun_Util::getFieldVal($field['searchable'], false)) {
 				$ret [] = array(
 					'name' => $field['field_name'],
-					'type' => $this->getCustomFieldType($field),
+					//changed to array to allow search from UI by regex
+					'type' => 'array', //$this->getCustomFieldType($field),
 				);
 			}
 		}

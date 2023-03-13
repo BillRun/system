@@ -163,7 +163,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$linesCol = Billrun_Factory::db()->linesCollection();
 		$fields = array_merge($filter_fields, $requiredFields);
 		$limit = Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 100000);
-
+		Billrun_Factory::dispatcher()->trigger('beforeCycleLinesQuery',array(&$query,&$sort,&$fields));
+                
 		do {
 			$bufferCount += $addCount;
 			$cursor = $linesCol->query($query)->cursor()->fields($fields)
@@ -266,7 +267,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			// Service name
 			$index = $arrService['name'];
 			if(!isset($mongoServices[$index])) {
-				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService,1));
+				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService,1), Zend_Log::NOTICE);
 				continue;
 			}
 
@@ -424,33 +425,50 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			return $retVal;
 		};
 
-		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
-			foreach($subscriber['services'] as  $tmpService) {
-				$currentMongoSrv = $mongoServices[$tmpService['name']];
-				$srvStampFields = !empty($currentMongoSrv) &&  empty($currentMongoSrv['prorated']) && !empty($currentMongoSrv['quantitative']) ?
-											['name','service_id'] :
-											['name','start','quantity','service_id'];
-				 $serviceData = array(  'name' => $tmpService['name'],
-										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
-										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
-										'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
-										'start'=> max($tmpService['from']->sec + ($tmpService['from']->usec/ 1000000), $activationDate),
-										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000), $endTime , $deactivationDate) );
-				 if($serviceData['start'] !== $serviceData['end']) {
-					$stamp = Billrun_Util::generateArrayStamp($serviceData,$srvStampFields);
-					$currServices[$stamp] = $serviceData;
-				 }
-			}
-			// Function to Check for removed services in the current subscriber record.
-			$serviceCompare = function  ($a, $b) use($srvStampFields)  {
-				$aStamp = Billrun_Util::generateArrayStamp($a ,$srvStampFields);
-				$bStamp = Billrun_Util::generateArrayStamp($b ,$srvStampFields);
+		// Function to Check for removed services in the current subscriber record use the $a compareFields to allow for custom compare fields.
+			$serviceCompare = function  ($a, $b) {
+				$aStamp = Billrun_Util::generateArrayStamp($a ,$b['compareFields']);
+				$bStamp = Billrun_Util::generateArrayStamp($b ,$b['compareFields']);
 				return strcmp($aStamp , $bStamp);
 			};
 
+			if(isset($subscriber['services']) && is_array($subscriber['services'])) {
+				foreach($subscriber['services'] as  $tmpService) {
+					$currentMongoSrv = $mongoServices[$tmpService['name']];
+					$srvStampFields = !empty($currentMongoSrv) &&  empty($currentMongoSrv['prorated']) && !empty($currentMongoSrv['quantitative']) ?
+											['name','service_id'] : //Seperate services only on name and service_id for non prorated quantitative services
+											['name','start','quantity','service_id']; // Sepearate service by
+
+					$serviceData = array(  'name' => $tmpService['name'],
+											'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
+											'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
+											'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
+											'start'=> max($tmpService['from']->sec + ($tmpService['from']->usec/ 1000000), $activationDate),
+											'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000), $endTime , $deactivationDate),
+											'compareFields' => $srvStampFields
+					);
+
+					//Fix Quantitative  services which their quantity changed but not their from date
+					if(!empty($currentMongoSrv['quantitative']) && !empty($currentMongoSrv['prorated']) && !empty($previousServices) ) {
+						$testServiceData = $serviceData;
+						$testServiceData['compareFields'] = ['name','start','service_id'];//Compare without the quantity value
+						if(!empty($previousQuantService = array_uintersect($previousServices, [$testServiceData], $serviceCompare)) && reset($previousQuantService)['quantity'] !== $testServiceData['quantity']) {
+							//this  service  qunatity changed  but the  from was kept the same as the old service
+							// change the  from to much the current revision
+							$serviceData['start'] = @$subscriber['from']->sec + (@$subscriber['from']->usec/ 1000000) ?: $sfrom;
+						}
+					}
+
+					if($serviceData['start'] !== $serviceData['end']) {
+						$stamp = Billrun_Util::generateArrayStamp($serviceData,$srvStampFields);
+						$currServices[$stamp] = $serviceData;
+					}
+
+				}
+
 			$removedServices  = array_udiff($previousServices, $currServices, $serviceCompare);
 			foreach($removedServices as $stamp => $removed) {
-				if ( $sfrom <  $removed['end'] ) {
+				if ( $sfrom < $removed['end'] ) {
 					$retServices[$stamp]['end'] = $sfrom;
 				}
 			}

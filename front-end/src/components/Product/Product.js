@@ -23,7 +23,6 @@ import {
   usageTypesDataSelector,
   propertyTypeSelector,
 } from '@/selectors/settingsSelector';
-import { object } from 'bfj/src/events';
 
 
 class Product extends Component {

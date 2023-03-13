@@ -196,9 +196,17 @@ const mergeImportOptions = (item, configTypes, apiSettingsTypes, itemType = '') 
     configTypes
       .filter(entities => entities.includes(entity))
       .forEach((entities, type) => {
-        optionsWithMutations.push(type);
+        if (type === 'predefined_mapping') {
+          const exportVersion = getConfig(['env', 'exportVersion'], '');
+          optionsWithMutations.push(Immutable.Map({
+            value: type,
+            label: `${sentenceCase(getFieldName(type, 'import'))} (${exportVersion})`,
+          }));
+        } else {
+          optionsWithMutations.push(type);
+        }
       });
-    apiSettingsTypes
+      apiSettingsTypes
       .filter(entities => entities.includes(entity))
       .forEach((entities, type) => {
         optionsWithMutations.push(Immutable.Map({

@@ -26,16 +26,33 @@ class Billrun_Generator_PaymentGateway_Csv {
 
         public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
-                $this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
+		$this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
+		$this->forceHeader = $options['force_header']?? false;
+		$this->forceFooter = $options['force_footer']?? false;
 		if (isset($options['delimiter'])) {
 			$this->delimiter = $options['delimiter'];
 		} else if ($this->fixedWidth) {
 			$this->delimiter = '';
 		}
+		if (isset($options['local_dir'])) {
+			$this->local_dir = $options['local_dir'];
+		}
+		if (isset($options['file_path'])) {
+			$this->file_path = $options['file_path'];
+		}
+		if (isset($options['file_name'])) {
+			$this->file_name = $options['file_name'];
+		}
+		if (isset($options['headers'])) {
+			$this->headers = $options['headers'];
+		}
+		if (isset($options['data'])) {
+			$this->data = $options['data'];
+		}
+		if (isset($options['trailers'])) {
+			$this->trailers = $options['trailers'];
+		}
 		$this->validateOptions($options);
-                if (isset($options['local_dir'])) {
-                    $this->local_dir = $options['local_dir'];
-                }
 	}
         
 	/**
@@ -64,17 +81,31 @@ class Billrun_Generator_PaymentGateway_Csv {
 	}
 	
 	public function generate() {
-		if (count($this->data)) {
-			$this->writeHeaders();
-			$this->writeRows();
-			$this->writeTrailers();
+		if (count($this->data) || $this->forceHeader){
+			if (!$this->writeHeaders()) {
+				return false;
+			}
 		}
-		return;
+		if (count($this->data)) {
+			if (!$this->writeRows()) {
+				return false;
+			}
+		}
+		if (count($this->data)|| $this->forceFooter){
+			if (!$this->writeTrailers()) {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	protected function writeToFile($str) {
-                $str = iconv('utf-8', $this->encoding . '//TRANSLIT', $str);
+        $str = iconv('utf-8', $this->encoding . '//TRANSLIT', $str);
+		if (!file_exists($this->local_dir)) {
+			mkdir($this->local_dir, 0777, true);
+		}
 		return file_put_contents($this->file_path, $str, FILE_APPEND);
+		
 	}
 
 	protected function writeHeaders() {
@@ -88,12 +119,17 @@ class Billrun_Generator_PaymentGateway_Csv {
 			$fileContents .= $this->getRowContent($entity);
 			$fileContents .= PHP_EOL;
 			if ($counter == 50000) {
-				$this->writeToFile($fileContents);
+				if (!$this->writeToFile($fileContents)) {
+					return false;
+				}				
 				$fileContents = '';
 				$counter = 0;
 			}
 		}
-		$this->writeToFile($fileContents);
+		if (!$this->writeToFile($fileContents)) {
+			return false;
+		}
+		return true;
 	}
 	
 	protected function writeTrailers() {
@@ -107,15 +143,21 @@ class Billrun_Generator_PaymentGateway_Csv {
 			$fileContents .= $this->getRowContent($entity);
 			$fileContents .= PHP_EOL;
 			if ($counter == 50000) {
-				$this->writeToFile($fileContents);
+				if (!$this->writeToFile($fileContents)) {
+					return false;
+				}
 				$fileContents = '';
 				$counter = 0;
 			}
 		}
-		$this->writeToFile($fileContents);
+		if (!$this->writeToFile($fileContents)) {
+			return false;
+		}
+		return true;
 	}
 		
 	protected function writeRows() {
+		Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - start writing rows to file", Zend_Log::DEBUG);
 		$fileContents = '';
 		$counter = 0;
 		foreach ($this->data as $index => $entity) {
@@ -128,16 +170,23 @@ class Billrun_Generator_PaymentGateway_Csv {
 				$fileContents.= PHP_EOL;
 			}
 			if ($counter == 50000) {
-				$this->writeToFile($fileContents);
+				Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - writing bulk to file", Zend_Log::DEBUG);
+				if (!$this->writeToFile($fileContents)) {
+					return false;
+				}
 				$fileContents = '';
 				$counter = 0;
 			}
-                        $this->transactionsCounter++;
+            $this->transactionsCounter++;
 		}
 		if (!empty($this->trailers)) {
 			$fileContents.= PHP_EOL;
 		}
-		$this->writeToFile($fileContents);
+		if (!$this->writeToFile($fileContents)) {
+			return false;
+		}
+		Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - done writing rows to file", Zend_Log::DEBUG);
+		return true;
 	}
 	
 	protected function getRowContent($entity) {

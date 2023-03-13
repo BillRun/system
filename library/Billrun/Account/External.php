@@ -25,7 +25,7 @@ class Billrun_Account_External extends Billrun_Account {
 	}
 	
 
-	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = []) {
+	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = [], $invoicing_days = null) {
 			// Prepare request
 			$requestParams = [
 				'start_date' => date('Y-m-d',$cycle->start()->sec),
@@ -37,10 +37,14 @@ class Billrun_Account_External extends Billrun_Account {
 			if(!empty($aids)) {
 				$requestParams['aids'] = implode(',',$aids);
 			}
+			
+			if(!empty($invoicing_days)) {
+				$requestParams['invoicing_days'] = $invoicing_days;
+			}
 			Billrun_Factory::log('Sending request to ' . $this->remote_billable_url . ' with params : ' . json_encode($requestParams), Zend_Log::DEBUG);
 			//Actually  do the request
 			$results = Billrun_Util::sendRequest($this->remote_billable_url,$requestParams);
-			
+
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
 			
 			$results = json_decode($results, true);		
@@ -53,7 +57,7 @@ class Billrun_Account_External extends Billrun_Account {
 				Billrun_Factory::log("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams), Zend_Log::ALERT);
 				return [];
 			}
-			
+
 			// Preform translation if needed and return results
 			$fieldMapping = ['firstname' => 'first_name', 'lastname' => 'last_name'];
 			foreach($results['data'] as &$rev) {
@@ -87,13 +91,11 @@ class Billrun_Account_External extends Billrun_Account {
 													 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
 		$res = json_decode($res);
-		
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
-		
 		foreach ($res as $account) {
 			Billrun_Utils_Mongo::convertQueryMongoDates($account, static::API_DATETIME_REGEX);
 			$accounts[] = new Mongodloid_Entity($account);

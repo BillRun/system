@@ -108,7 +108,14 @@ const buildRequestData = (item, action) => {
     }
 
     case 'export': {
+      const exportVersion = getConfig(['env', 'exportVersion'], '');
       return item
+        .map((value, key) => { // add export version to filename
+          if (exportVersion !== '' && key === 'file_name') {
+            return `${value}_${exportVersion}`;
+          }
+          return value;
+        })
         .reduce((acc, data, key) => acc.push({[key]: JSON.stringify(data)}), Immutable.List())
         .toArray()
     }
@@ -262,8 +269,8 @@ export const validateMandatoryField = (value, fieldConfig) => {
   return true;
 }
 
-export const entitySearchByQuery = (collection, query, project, sort, options) => dispatch => {
-  const searchQuery = getEntitesQuery(collection, project, query, sort, options);
+export const entitySearchByQuery = (collection, query, project, sort, options, size) => dispatch => {
+  const searchQuery = getEntitesQuery(collection, project, query, sort, options, size);
   return apiBillRun(searchQuery, { timeOutMessage: apiTimeOutMessage })
     .then((success) => {
       if (success && success.data && success.data[0] && success.data[0].data && success.data[0].data.details) {
