@@ -54,7 +54,7 @@ final class Versions
   'omnipay/common' => 'v3.2.0@e278ff00676c05cd0f4aaaf6189a226f26ae056e',
   'payrexx/omnipay-payrexx' => 'v1.1@ce601e53e53ea78e8ac4630abf270598c94e6115',
   'payrexx/payrexx' => 'v1.7.6@e20791854ce344dbf20ab85d3668cfff7ebc9cca',
-  'php-http/discovery' => '1.14.3@31d8ee46d0215108df16a8527c7438e96a4d7735',
+  'php-http/discovery' => '1.15.2@5cc428320191ac1d0b6520034c2dc0698628ced5',
   'php-http/guzzle6-adapter' => 'v2.0.2@9d1a45eb1c59f12574552e81fb295e9e53430a56',
   'php-http/httplug' => '2.3.0@f640739f80dfa1152533976e3c112477f69274eb',
   'php-http/message' => '1.13.0@7886e647a30a966a1a8d1dad1845b71ca8678361',
