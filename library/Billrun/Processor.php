@@ -598,11 +598,35 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$this->data['stored_data'][] = $row;
 			} catch (Exception $e) {
 				Billrun_Factory::log("Processor store " . basename($this->filePath) . " failed on stamp : " . $row['stamp'] . " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::ALERT);
+                
+                if ($e->getCode() === 0 && strpos($e->getMessage(), 'Detected invalid UTF-8 for field path') === 0) {
+                    Billrun_Factory::log("Processor store " . basename($this->filePath) . 'Trying to fix encoding...', Zend_Log::DEBUG);
+                    $this->convertEncoding($entity);
+                    try {
+                        $collection->save($entity);
+                        $this->data['stored_data'][] = $row;
+                        Billrun_Factory::log("Processor store " . basename($this->filePath) . 'Encoding fix is done.', Zend_Log::DEBUG);
+                    } catch (Exception $e) {
+                        Billrun_Factory::log("Processor store " . basename($this->filePath) . " failed after encoding fix attempt on stamp : " . $row['stamp'] . " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::ALERT);
+                    }
+                }
+                
 				continue;
 			}
 		}
 	}
 
+    protected function convertEncoding(Mongodloid_Entity $entity) {
+        foreach ($entity['uf'] as $key => $value) {
+            if (is_string($value)) {
+                $newValue = mb_convert_encoding($value, "ASCII", "UTF-8");
+                if ($newValue !== $value && $newValue !== false) {
+                    $entity->set('uf.' . $key, $newValue);
+                }
+            }
+        }
+    }
+    
 	protected function addToQueue($queue_data) {
 		$queue = Billrun_Factory::db()->queueCollection();
 		foreach ($queue_data as $row) {
