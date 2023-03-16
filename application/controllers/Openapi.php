@@ -42,6 +42,7 @@ class OpenapiController extends RealtimeController {
 	protected $sessionId;
 	protected $initialRequest = null;
 	protected $missingData = [];
+	protected $config;
 
 	public function indexAction() {
 		$this->setHttpStatusCode(Billrun_Utils_HttpStatusCodes::HTTP_FORBIDDEN);
@@ -53,6 +54,7 @@ class OpenapiController extends RealtimeController {
 	 *
 	 */
 	public function ratingdataAction() {
+		$this->config = $this->getConfig();
 		if (!$this->authorize()) {
 			$this->setHttpStatusCode(Billrun_Utils_HttpStatusCodes::HTTP_UNAUTHORIZED);
 			return $this->respond(['status' => 0, 'cause' => 'Unauthorized']);
@@ -65,6 +67,9 @@ class OpenapiController extends RealtimeController {
 	 * validates OAuth2 authorization with dedicated scope
 	 */
 	protected function authorize() {
+		if ($this->config['realtime']['no_auth']) {
+			return true;
+		}
 		return Billrun_Utils_Security::validateOauth(false, 'openapi'); 
 	}
 	
@@ -212,8 +217,7 @@ class OpenapiController extends RealtimeController {
 	 * @return Mongodloid_Collection
 	 */
 	protected function getBaseCollection() {
-		$config = $this->getConfig();
-		if ($config['realtime']['postpay_charge']) {
+		if ($this->config['realtime']['postpay_charge']) {
 			return Billrun_Factory::db()->linesCollection();
 		}
 		return Billrun_Factory::db()->archiveCollection();
