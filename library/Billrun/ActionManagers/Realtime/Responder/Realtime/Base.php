@@ -26,5 +26,123 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 	public function getResponsApiName() {
 		return 'realtime';
 	}
+	
+	/**
+	 * get service rating array for OpenAPI response
+	 *
+	 * @return array
+	 */
+	protected function getServiceRating() {
+		$ret = [];
+		$unitsField = in_array($this->row['usaget'], ['call', 'incoming_call']) ? 'time' : 'totalVolume';
+
+		foreach ($this->row['service_rating'] ?? [] as $serviceRating) {
+			$serviceRatingRes = [
+				'resultCode' => $this->getResultCode($serviceRating),
+			];
+
+			if (isset($serviceRating['serviceContextId'])) {
+				$serviceRatingRes['serviceContextId'] =  $serviceRating['serviceContextId'];
+			}
+
+			if (isset($serviceRating['serviceId'])) {
+				$serviceRatingRes['serviceId'] =  $serviceRating['serviceId'];
+			}
+
+			if (isset($serviceRating['ratingGroup'])) {
+				$serviceRatingRes['ratingGroup'] =  intval($serviceRating['ratingGroup']);
+			}
+			
+			if ($serviceRating['reservation_required'] ?? false) {
+				$serviceRatingRes['grantedUnit'] = [
+					$unitsField => $this->getGrantedUnit($serviceRating),
+				];
+			}
+			
+			if ($serviceRating['rebalance_required'] ?? false) {
+				$serviceRatingRes['consumedUnit'] = [
+					$unitsField => $serviceRating['consumedUnit'][$unitsField] ?? 0,
+				];
+			}
+			
+			$ret[] = $serviceRatingRes;
+		}
+
+		return $ret;
+	}
+	
+	/**
+	 * method to get the granted unit
+	 * in postpaid this the leftover of the group
+	 * in prepaid is the predefined volume stored in usagev field
+	 * 
+	 * @param array $serviceRating service rating container
+	 * @return int the granted volume
+	 */
+	protected function getGrantedUnit($serviceRating) {
+		if ($this->requirePostpaidOverGroupBlock()) {
+			return $this->getRateGroupLeft();
+		}
+		return $serviceRating['usagev'] ?? 0;
+	}
+	
+	/**
+	 * method to check if we need postpaid block over group
+	 * 
+	 * @return boolean true if required to block over group on postpaid
+	 */
+	protected function requirePostpaidOverGroupBlock() {
+		return Billrun_Utils_Realtime::getRealtimeConfigValue($this->config, 'postpay_charge') && 
+				Billrun_Utils_Realtime::getRealtimeConfigValue($this->config, 'block_over_group');
+	}
+	
+	/**
+	 * method to retrieve how much left on postpaid group balance
+	 * 
+	 * @return int the volume left
+	 */
+	protected function getRateGroupLeft() {
+		$arategroups = $this->row['arategroups'];
+		if ($arategroups[count($arategroups)-1]['left'] > 0) {
+			return $arategroups[count($arategroups)-1]['left'];
+		}
+		return 0;
+	}
+
+	/**
+	 * get result code used by OpenAPI
+	 * 
+	 * @return string
+	 */
+	protected function getResultCode($serviceRating) {
+		if (empty($serviceRating['reservation_required'])) {
+			return 'SUCCESS';
+		}
+		
+		$returnCode = $serviceRating['return_code'];
+		$returnCodes = Billrun_Factory::config()->getConfigValue('realtime.granted_code', []);
+
+		if ($returnCode == $returnCodes['ok'] && $this->requirePostpaidOverGroupBlock() && $this->getRateGroupLeft() == 0) {
+			$returnCode = $returnCodes['no_available_balances'];
+		}
+		
+		switch ($returnCode) {
+			case $returnCodes['no_available_balances']:
+				return 'QUOTA_LIMIT_REACHED';
+			case $returnCodes['failed_calculator']['rate']:
+				if (!empty($serviceRating['blocked_rate'])) {
+					return 'END_USER_SERVICE_REJECTED';
+				}
+				return 'END_USER_SERVICE_DENIED';
+			case $returnCodes['failed_calculator']['customer']:
+				return 'USER_UNKNOWN';
+			case $returnCodes['failed_calculator']['pricing']:
+				return 'RATING_FAILED';
+			case $returnCodes['ok']:
+				return 'SUCCESS';
+			default:
+				return 'QUOTA_MANAGEMENT_NOT_APPLICABLE';
+		}
+	}
 
 }

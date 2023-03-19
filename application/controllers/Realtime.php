@@ -42,7 +42,7 @@ class RealtimeController extends ApiController {
 	 */
 	protected function setDataFromRequest() {
 		$request = $this->getRequest()->getRequest();
-		$this->config = Billrun_Factory::config()->getFileTypeSettings($request['file_type'], true);
+		$this->config = $this->getConfig();
 		if (!$this->config) {
 			Billrun_Factory::log('File type cannot be loaded', Zend_Log::ALERT);
 			throw new Billrun_Exceptions_Api(10000, 'Cannot load file type');
@@ -62,6 +62,16 @@ class RealtimeController extends ApiController {
 		}
 
 		$this->event['uf'] = $decoder->decode($requestBody);
+	}
+	
+	/**
+	 * get input processor configuration
+	 *
+	 * @return array
+	 */
+	protected function getConfig() {
+		$request = $this->getRequest()->getRequest();
+		return Billrun_Factory::config()->getFileTypeSettings($request['file_type'], true);
 	}
 
 	/**
@@ -110,11 +120,12 @@ class RealtimeController extends ApiController {
 	 * @return string request type
 	 */
 	protected function getRequestType() {
-		if (isset($this->config['realtime']['postpay_charge']) && $this->config['realtime']['postpay_charge']) {
+		if (Billrun_Utils_Realtime::getRealtimeConfigValue($this->config, 'postpay_charge', 'general', false)) {
 			$this->event['skip_calc'] = array('unify');
 			return Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST', "4");
 		}
-		$requestTypeField = $this->config['realtime']['request_type_field'];
+		
+		$requestTypeField = Billrun_Utils_Realtime::getRealtimeConfigValue($this->config, 'request_type_field');
 		if (!$requestTypeField) {
 			return (isset($this->event['uf']['request_type']) ? $this->event['uf']['request_type'] : null);
 		}
@@ -127,10 +138,11 @@ class RealtimeController extends ApiController {
 	 * @return string session id
 	 */
 	protected function getSessionId() {
-		if (!isset($this->config['realtime']['session_id_fields'])) {
+		$sessionIdFields = Billrun_Utils_Realtime::getRealtimeConfigValue($this->config, 'session_id_fields');
+		if (empty($sessionIdFields)) {
 			return (isset($this->event['uf']['session_id']) ? $this->event['uf']['session_id'] : Billrun_Util::generateRandomNum());
 		}
-		$sessionIdFields = $this->config['realtime']['session_id_fields'];
+
 		$sessionIdArr = array_intersect_key($this->event['uf'], array_flip($sessionIdFields));
 		return Billrun_Util::generateArrayStamp($sessionIdArr);
 	}
@@ -157,10 +169,15 @@ class RealtimeController extends ApiController {
 		$options['parser'] = 'none';
 		$processor = Billrun_Processor::getInstance($options);
 		if ($processor) {
-			$processor->addDataRow($this->event);
+			$multiLines = !Billrun_Util::isAssoc($this->event);
+			$rows = $multiLines ? $this->event : [$this->event];
+			foreach ($rows as $row) {
+				$processor->addDataRow($row);
+			}
 			$processor->process($this->config);
 			$data = $processor->getData()['data'];
-			return current($processor->getAllLines());
+			$allLines = $processor->getAllLines();
+			return $multiLines ? $allLines : current($allLines);
 		}
 	}
 
@@ -204,12 +221,21 @@ class RealtimeController extends ApiController {
 	 * @return boolean
 	 */
 	protected function isPretend($event) {
-		$pretendField = isset($this->config['realtime']['pretend_field']) ? $this->config['realtime']['pretend_field'] : 'pretend';
+		$pretendField = Billrun_Utils_Realtime::getRealtimeConfigValue($this->config, 'pretend_field', 'general', 'pretend');
 		return (isset($event['uf'][$pretendField]) && $event['uf'][$pretendField]);
 	}
 
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+	}
+	
+	/**
+	 * allows setting an HTTP status code for the response
+	 *
+	 * @param  int $httpStatusCode
+	 */
+	protected function setHttpStatusCode($httpStatusCode) {
+		$this->getResponse()->setHeader($this->getRequest()->getServer('SERVER_PROTOCOL'), $httpStatusCode);
 	}
 
 }
