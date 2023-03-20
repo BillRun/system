@@ -351,6 +351,9 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'transactions_amount') {
                 $line[$field['path']] = $this->transactionsTotalAmount;
             }
+            if (isset($field['predefined_values']) && $field['predefined_values'] == 'generatedLogFileStamp') {
+                $line[$field['path']] = $this->generatedLogFileStamp;
+            }
             if (isset($field['hard_coded_value'])) {
                 $line[$field['path']] = $field['hard_coded_value'];
             }
