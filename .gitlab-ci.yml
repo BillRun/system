@@ -7,8 +7,9 @@ image: serhii22ua/docker-compose-python10:latest-amd64
 stages:
   - build
   - test
+  - testing
 
-# # woraround for set pipeline status = skipped. Add lebel skip_ci to Merge Request
+# woraround for set pipeline status = skipped. Add lebel skip_ci to Merge Request
 print-info:
  stage: build
  rules:
@@ -34,15 +35,12 @@ integration_backend_tests:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS != "skip_ci"
   before_script:
     # build and run BillRun app in docker
-    - 'echo "Before Script Started!!"' 
     - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - pwd
-    - docker-compose -f docker-compose-php74.yml up -d
-    - docker ps
+    - docker compose -f docker-compose-php74.yml up -d
+    - pip3 install -r requirements.txt
 
     # create test virtual env
     - cd $CI_PROJECT_DIR/integration_tests/
-    - pwd
     - echo ENV = $TEST_ENV > .env
     - python3 --version  # for debugging
     - pip3 install virtualenv
@@ -50,17 +48,25 @@ integration_backend_tests:
     - source venv/bin/activate
     - pip3 install -e .
 
-  # run tests with testrail's integration 
+  # run tests with testrail's integration
   script:
     - pytest -m smoke -s --junitxml=xml_report_backend.xml --testrail --tr-config=$CI_PROJECT_DIR/integration_tests/testrail.cfg --tr-email=$TESTRAIL_EMAIL --tr-password=$TESTRAIL_APIKEY --tr-testrun-description="Merge Request title = $CI_MERGE_REQUEST_TITLE, Commit SHA = $CI_COMMIT_SHORT_SHA"
-    - docker ps -a
     
-
   artifacts:
     when: always
     paths:
-      - $CI_PROJECT_DIR/integration_tests/allure-results/*
+     # - $CI_PROJECT_DIR/integration_tests/allure-results/*
       - $CI_PROJECT_DIR/integration_tests/xml_report_backend.xml
     reports:
       junit: $CI_PROJECT_DIR/integration_tests/xml_report_backend.xml
     expire_in: 1 week
+
+php_testcases:
+  image: python:3.7.9-alpine
+  services:
+    - selenium/standalone-chrome
+  before_script:
+    - pip3 install -r requirements.txt
+  script:
+    - cd $CI_PROJECT_DIR/docker/billrun-docker
+    - pytest php_test.py
