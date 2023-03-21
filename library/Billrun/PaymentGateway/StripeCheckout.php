@@ -7,6 +7,7 @@
  */
 
 use Stripe\StripeClient;
+use Stripe\Customer;
 
 /**
  * This class represents a payment gateway
@@ -26,10 +27,24 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
     protected $billrunName = "StripeCheckout";
 
     protected $billrunToken;
+    
+    /**
+     * If value is true setup intent will be created and sent to the client on getRequest action
+     * later client should call okPage action on their side
+     * If value is false checkout session will be created and sent to the client on getRequest action
+     * @var bool
+     */
+    protected $custom_flow = false;
 
     public function updateSessionTransactionId($result)
     {
-        $this->saveDetails['ref'] = $result->id;
+        $this->saveDetails['custom_flow'] = $this->custom_flow;
+        
+        if (!$this->custom_flow) {
+            $this->saveDetails['ref'] = $result->id;
+        } else {
+            $this->saveDetails['ref'] = $result->setup_intent_id;
+        }
     }
 
     public function pay($gatewayDetails, $addonData)
@@ -142,7 +157,36 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
         $paymentRow = $paymentColl->query($query)->cursor()->current();
 
         $stripeClient = $this->setupStipe();
-        $checkoutSession = $stripeClient->checkout->sessions->retrieve($paymentRow['ref']);
+        
+        $customFlow = $paymentRow['custom_flow'];
+        
+        if ($customFlow) {
+            return $this->handleCustomFlow($stripeClient, $paymentRow['ref'], $aid);
+        }
+
+        return $this->handleCheckoutSession($stripeClient, $paymentRow['ref'], $aid);
+    }
+
+    public function createRecurringBillingProfile($aid, $gatewayDetails, $params = [])
+    {
+        return '';
+    }
+
+    public function getSecretFields()
+    {
+        return ['secret_key'];
+    }
+
+    /**
+     * @param  StripeClient  $stripeClient
+     * @param $ref
+     * @param  Int  $aid
+     * @return array
+     * @throws \Stripe\Exception\ApiErrorException
+     */
+    public function handleCheckoutSession(StripeClient $stripeClient, $ref, int $aid): array
+    {
+        $checkoutSession = $stripeClient->checkout->sessions->retrieve($ref);
 
         $setupIntent = $stripeClient->setupIntents->retrieve($checkoutSession->setup_intent);
 
@@ -158,7 +202,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
 
         $tenantUrl = $this->getTenantReturnUrl($aid);
         $this->updateReturnUrlOnEror($tenantUrl);
-        
+
         return [
             'tenantUrl' => $tenantUrl,
             'creditCard' => $paymentMethod->card->last4,
@@ -166,14 +210,61 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
         ];
     }
 
-    public function createRecurringBillingProfile($aid, $gatewayDetails, $params = [])
+    /**
+     * Gets the Stripe Checkout Session
+     * If custom_flow is false
+     */
+    public function getStripeCheckoutSession($failPage, $okPage, $stripeCustomer, StripeClient $stripeClient) 
     {
-        return '';
-    }
+        $failPage = $failPage ?? Billrun_Factory::config()->getConfigValue('payment.fail_page');
+        $okPage = $this->adjustRedirectUrl($okPage, $this->transactionId);
 
-    public function getSecretFields()
+        $params = [
+            'mode' => 'setup',
+            'success_url' => $okPage,
+            'customer' => $stripeCustomer->id,
+            'payment_method_types' => ['card'],
+        ];
+
+        if (!empty($failPage)) {
+            $params['cancel_url'] = $this->adjustRedirectUrl($failPage, $this->transactionId);
+        }
+
+        $checkout_session = $stripeClient->checkout->sessions->create($params);
+
+        if ($checkout_session->setup_intent) {
+            $setupIntent = $stripeClient->setupIntents->retrieve($checkout_session->setup_intent);
+            $checkout_session['setup_intent'] = $setupIntent->toArray();
+        }
+
+        return $checkout_session;
+    }
+    
+    public function getStripeSetupIntent($okPage, $stripeCustomer, StripeClient $stripeClient)
     {
-        return ['secret_key'];
+        $ephemeralKey = $stripeClient->ephemeralKeys->create([
+            'customer' => $stripeCustomer->id,
+        ], [
+            'stripe_version' => '2022-08-01',
+        ]);
+        
+        $setupIntent = $stripeClient->setupIntents->create([
+            'customer' => $stripeCustomer->id,
+            'payment_method_types' => ['card'],
+        ]);
+        
+        $okPage = $this->adjustRedirectUrl($okPage, $this->transactionId);
+        
+        $result = [
+            'setup_intent_client_secret' => $setupIntent->client_secret,
+            'setup_intent_id' => $setupIntent->id,
+            'ephemeral_key' => $ephemeralKey->secret,
+            'customer_id' => $stripeCustomer->id,
+            'txId' => $this->transactionId,
+            'okPage' => $okPage,
+        ];
+        
+        return (object)$result;
     }
 
     protected function buildPostArray($aid, $returnUrl, $okPage, $failPage)
@@ -183,6 +274,14 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
 
     protected function updateRedirectUrl($result)
     {
+        if ($this->custom_flow) {
+            $this->requestParams = (array) $result;
+            if (isset($this->requestParams['setup_intent_id'])) {
+                unset($this->requestParams['setup_intent_id']);
+            }
+            return;
+        }
+        
         $this->redirectUrl = $result->url;
         $this->requestParams = [
             'url' => $result->url,
@@ -217,28 +316,32 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
         $stripeCustomer = $this->getStripeCustomer($account);
         $this->saveDetails['customer_id'] = $stripeCustomer->id;
 
-        $failPage = $failPage ?? Billrun_Factory::config()->getConfigValue('payment.fail_page');
-        $okPage = $this->adjustRedirectUrl($okPage, $this->transactionId);
-        
-        $params = [
-            'mode' => 'setup',
-            'success_url' => $okPage,
-            'customer' => $stripeCustomer->id,
-            'payment_method_types' => ['card'],
-        ];
-        
-        if (!empty($failPage)) {
-            $params['cancel_url'] = $this->adjustRedirectUrl($failPage, $this->transactionId);
+        if ($this->custom_flow) {
+            return $this->getStripeSetupIntent( $okPage, $stripeCustomer, $stripeClient);
         }
         
-        $checkout_session = $stripeClient->checkout->sessions->create($params);
-        
-        if ($checkout_session->setup_intent) {
-            $setupIntent = $stripeClient->setupIntents->retrieve($checkout_session->setup_intent);
-            $checkout_session['setup_intent'] = $setupIntent->toArray();
-        }
+        return $this->getStripeCheckoutSession($failPage, $okPage, $stripeCustomer, $stripeClient);
+    }
 
-        return $checkout_session;
+    public function redirectToGateway($aid, $accountQuery, $timestamp, $request, $data)
+    {
+        $data = $request->get('data');
+        try {
+            $data = json_decode($data, true);
+            if (isset($data['custom_flow'])) {
+                $this->custom_flow = (bool)$data['custom_flow'];
+            }
+        } catch (Exception $e) {
+            $data = [];
+        }
+        
+        return parent::redirectToGateway(
+            $aid,
+            $accountQuery,
+            $timestamp,
+            $request,
+            $data
+        );
     }
 
     private function getStripeCustomer($account)
@@ -298,6 +401,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
 
         $paymentRow->set('ref', $this->saveDetails['ref']);
         $paymentRow->set('customer_id', $this->saveDetails['customer_id']);
+        $paymentRow->set('custom_flow', $this->saveDetails['custom_flow'] ?? false);
 
         $paymentColl->save($paymentRow);
     }
@@ -355,6 +459,30 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
     protected function buildSinglePaymentArray($params, $options)
     {
         throw new Exception("Single payment not supported in ".$this->billrunName);
+    }
+
+    private function handleCustomFlow(StripeClient $stripeClient, $ref, int $aid)
+    {
+        $setupIntent = $stripeClient->setupIntents->retrieve($ref);
+        
+        if ($setupIntent->status !== 'succeeded') {
+            throw new Exception('Setup intent not succeeded');
+        }
+        
+        $paymentMethod = $stripeClient->paymentMethods->retrieve($setupIntent->payment_method);
+
+        $this->saveDetails['customer_id'] = $setupIntent->customer;
+        $this->saveDetails['aid'] = $aid;
+        $this->saveDetails['payment_method_id'] = $paymentMethod->id;
+        $this->saveDetails['four_digits'] = $paymentMethod->card->last4;
+        $expDate = $paymentMethod->card->exp_month.$paymentMethod->card->exp_year;
+        $this->saveDetails['exp_date'] = $expDate;
+        $this->savePaymentGateway();
+
+        return [
+            'status' => 'success',
+            'message' => 'Payment method added successfully',
+        ];
     }
 
 }
