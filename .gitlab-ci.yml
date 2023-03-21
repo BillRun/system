@@ -54,7 +54,6 @@ integration_backend_tests:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing
     - docker build -t test .
     
-    
   artifacts:
     when: always
     paths:
