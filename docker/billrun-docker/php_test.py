@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-driver = webdriver.Chrome('$CI_PROJECT_DIR//docker//billrun-docker//chromedriver.exe')
+driver = webdriver.Chrome('sdoc//BillRun//billrun//docker//billrun-docker//chromedriver.exe')
 driver.get("http://localhost:8074/index.html#/")
 driver.implicitly_wait(100)
 username = driver.find_element(By.XPATH, "//input[@placeholder='Email address']")
