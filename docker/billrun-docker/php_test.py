@@ -3,8 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
 options = Options()
-options.headless = True
-
+options = webdriver.ChromeOptions()
 driver = webdriver.Chrome(options=options)
 driver.get("http://localhost:8074/index.html#/")
 driver.implicitly_wait(100)
