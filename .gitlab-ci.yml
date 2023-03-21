@@ -51,6 +51,8 @@ integration_backend_tests:
   # run tests with testrail's integration
   script:
     - pytest -m smoke -s --junitxml=xml_report_backend.xml --testrail --tr-config=$CI_PROJECT_DIR/integration_tests/testrail.cfg --tr-email=$TESTRAIL_EMAIL --tr-password=$TESTRAIL_APIKEY --tr-testrun-description="Merge Request title = $CI_MERGE_REQUEST_TITLE, Commit SHA = $CI_COMMIT_SHORT_SHA"
+    - cd $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing
+    - docker build -t test .
     
   artifacts:
     when: always
@@ -60,13 +62,3 @@ integration_backend_tests:
     reports:
       junit: $CI_PROJECT_DIR/integration_tests/xml_report_backend.xml
     expire_in: 1 week
-
-php_testcases:
-  image: python:3.7.9-alpine
-  services:
-    - selenium/standalone-chrome
-  before_script:
-    - pip3 install -r requirements.txt
-  script:
-    - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - pytest php_test.py
