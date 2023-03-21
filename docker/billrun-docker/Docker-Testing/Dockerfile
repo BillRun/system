@@ -18,4 +18,4 @@ RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.d
 
 RUN pip3 install selenium==4.8.2
 RUN ls
-CMD ['python3', 'abcd.py']
+CMD ['python3', 'test.py']
