@@ -1,4 +1,7 @@
 FROM ubuntu:latest
+FROM python:3.8-slim-buster
+
+WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
     python3 python3-pip \
@@ -17,5 +20,7 @@ RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.d
     dpkg -i google-chrome-stable_current_amd64.deb
 
 RUN pip3 install selenium==4.8.2
+
+COPY . .
 RUN ls
-CMD ['python3', 'test.py']
+RUN python3 test.py
