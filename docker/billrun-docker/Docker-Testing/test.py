@@ -10,14 +10,14 @@ driver = webdriver.Chrome(options=chrome_options)
 
 # driver.get("https://www.google.com/")
 # print(driver.title)
-driver.get("http://billrun/index.html#/")
+driver.get("http://46.101.14.10/index.html#/")
 driver.implicitly_wait(100)
 username = driver.find_element(By.XPATH, "//input[@placeholder='Email address']")
 username.send_keys("admin")
 password = driver.find_element(By.XPATH, "//input[@placeholder='Password']")
 password.send_keys("12345678")
 driver.find_element(By.XPATH, "//button[@type='submit']").click()
-driver.get("http://billrun/test/updaterowt?rebalance=1")
+driver.get("http://46.101.14.10/test/updaterowt?rebalance=1")
 logs = driver.find_element(By.XPATH, "/html/body").text
 print(logs)
 # file1 = open("Logs.txt", "w")  # write mode
