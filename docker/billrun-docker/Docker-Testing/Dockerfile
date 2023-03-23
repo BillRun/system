@@ -1,5 +1,4 @@
 FROM ubuntu:latest
-FROM python:3.8-slim-buster
 
 WORKDIR /app
 
@@ -23,4 +22,4 @@ RUN pip3 install selenium==4.8.2
 
 COPY . .
 RUN ls
-RUN python3 test.py
+CMD ["python3","abcd.py"]
