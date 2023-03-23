@@ -37,24 +37,6 @@
             'reference' => '5a0c8000d4763b276919e2106f54eddda6bc50fa',
             'dev_requirement' => false,
         ),
-        'chillerlan/php-qrcode' => array(
-            'pretty_version' => '4.3.4',
-            'version' => '4.3.4.0',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../chillerlan/php-qrcode',
-            'aliases' => array(),
-            'reference' => '2ca4bf5ae048af1981d1023ee42a0a2a9d51e51d',
-            'dev_requirement' => false,
-        ),
-        'chillerlan/php-settings-container' => array(
-            'pretty_version' => '2.1.4',
-            'version' => '2.1.4.0',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../chillerlan/php-settings-container',
-            'aliases' => array(),
-            'reference' => '1beb7df3c14346d4344b0b2e12f6f9a74feabd4a',
-            'dev_requirement' => false,
-        ),
         'clue/stream-filter' => array(
             'pretty_version' => 'v1.6.0',
             'version' => '1.6.0.0',
@@ -119,12 +101,12 @@
             'dev_requirement' => false,
         ),
         'maennchen/zipstream-php' => array(
-            'pretty_version' => '2.2.6',
-            'version' => '2.2.6.0',
+            'pretty_version' => '2.1.0',
+            'version' => '2.1.0.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../maennchen/zipstream-php',
             'aliases' => array(),
-            'reference' => '30ad6f93cf3efe4192bc7a4c9cad11ff8f4f237f',
+            'reference' => 'c4c5803cc1f93df3d2448478ef79394a5981cc58',
             'dev_requirement' => false,
         ),
         'markbaker/complex' => array(
@@ -208,22 +190,24 @@
         'php-http/async-client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'php-http/client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'php-http/discovery' => array(
-            'pretty_version' => '1.14.3',
-            'version' => '1.14.3.0',
-            'type' => 'library',
+            'pretty_version' => '1.15.2',
+            'version' => '1.15.2.0',
+            'type' => 'composer-plugin',
             'install_path' => __DIR__ . '/../php-http/discovery',
             'aliases' => array(),
-            'reference' => '31d8ee46d0215108df16a8527c7438e96a4d7735',
+            'reference' => '5cc428320191ac1d0b6520034c2dc0698628ced5',
             'dev_requirement' => false,
         ),
         'php-http/guzzle6-adapter' => array(
@@ -298,7 +282,8 @@
         'psr/http-client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'psr/http-factory' => array(
@@ -309,6 +294,12 @@
             'aliases' => array(),
             'reference' => '12ac7fcd07e5b077433f5f2bee95b3a771bf61be',
             'dev_requirement' => false,
+        ),
+        'psr/http-factory-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '*',
+            ),
         ),
         'psr/http-message' => array(
             'pretty_version' => '1.0.1',
@@ -323,6 +314,7 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/simple-cache' => array(
@@ -352,6 +344,15 @@
             'reference' => '4fb6006517a1428785a0ea704fbedcc675421ec4',
             'dev_requirement' => true,
         ),
+        'stripe/stripe-php' => array(
+            'pretty_version' => 'v10.5.0',
+            'version' => '10.5.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../stripe/stripe-php',
+            'aliases' => array(),
+            'reference' => '331415b232d60d7c0449de7bde4cb7d4fedf982e',
+            'dev_requirement' => false,
+        ),
         'symfony/deprecation-contracts' => array(
             'pretty_version' => 'v2.5.2',
             'version' => '2.5.2.0',
@@ -362,12 +363,12 @@
             'dev_requirement' => false,
         ),
         'symfony/http-foundation' => array(
-            'pretty_version' => 'v5.4.20',
-            'version' => '5.4.20.0',
+            'pretty_version' => 'v5.4.21',
+            'version' => '5.4.21.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/http-foundation',
             'aliases' => array(),
-            'reference' => 'd0435363362a47c14e9cf50663cb8ffbf491875a',
+            'reference' => '3bb6ee5582366c4176d5ce596b380117c8200bbf',
             'dev_requirement' => false,
         ),
         'symfony/polyfill-intl-idn' => array(

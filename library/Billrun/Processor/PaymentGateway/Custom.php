@@ -98,9 +98,29 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
         
 	protected function formatLine($row, $dataStructure) {
 		foreach ($dataStructure as $index => $paramObj) {
+		if (isset($paramObj['value_mult'])) {
+			$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
+		}
 			if (isset($paramObj['decimals'])) {
-				$value = intval($row[$paramObj['name']]);
-				$row[$paramObj['name']] = (float) ($value / pow(10, $paramObj['decimals']));
+	         	$value = floatval($row[$paramObj['name']]);
+			$row[$paramObj['name']] = number_format($value, $paramObj['decimals']);
+		}
+		if (isset($paramObj['type']) && $paramObj['type'] == "date") {
+			if (!isset($paramObj['format'])) {
+				$message = $paramObj['name'] . ' field was defined as date field, but without date format. Default BillRun format was taken';
+				Billrun_Factory::log($message, Zend_Log::WARN);
+				$this->informationArray['warnings'][] = $message;
+				$paramObj['format'] = Billrun_Base::base_datetimeformat;
+			}
+			$row[$paramObj['name']] = Billrun_Processor_Util::getRowDateTime($row, $paramObj['name'], $paramObj['format'])->format(Billrun_Base::base_datetimeformat);
+		}
+		if (isset($paramObj['substring'])) {
+			if (!isset($paramObj['substring']['offset']) || !isset($paramObj['substring']['length'])) {
+				$message = "Field name " . $paramObj['name'] . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
+				$this->logFile->updateLogFileField('errors', $message);
+				throw new Exception($message);
+			}
+			$row[$paramObj['name']] = substr($row[$paramObj['name']], $paramObj['substring']['offset'], $paramObj['substring']['length']);
 			}
 		}
 		return $row;
@@ -245,16 +265,31 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected function updatePaymentsByRows($data, $currentProcessor) {
 		$no_txid_counter = 0;
 		$billSavedFieldsNames = $this->getBillSavedFieldsNames($currentProcessor['parser']);
-		foreach ($data['data'] as $row) {
-			if (isset($this->tranIdentifierField)) {
+		foreach ($data['data'] as $index => $row) {
+			$bill = null;
+			if(!is_null($this->tranIdentifierField)){
                         if(($row[$this->tranIdentifierField] === "") && (static::$type != 'payments')){
 					$no_txid_counter++;
 					continue;
 				}
+				Billrun_Factory::log("Searching for bill with txid: " . $row[$this->tranIdentifierField] , Zend_Log::DEBUG);
+				$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
+			} else if (!is_null($this->tranIdentifierFields) && (static::$type != 'payments')) {
+				Billrun_Factory::log("Searching for bills using configured query, for line number " . $row['row_number'] , Zend_Log::DEBUG);
+				$query = $this->processIdentifierFields($row);
+				$bills = Billrun_Bill_Payment::queryPayments($query);
+				if (!empty($bills)) {
+					Billrun_Factory::log("Found " . count($bills) . " relevant bills" , Zend_Log::DEBUG);
+					if (count($bills) > 1) {
+						Billrun_Factory::log("Found more than one bill, taking 1 or none, according to the configuration" , Zend_Log::DEBUG);
+						$bill = $this->take_first ? Billrun_Bill_Payment::getInstanceByData(current(Billrun_Bill_Payment::queryPayments($query))) : null;
+					} else {
+						$bill = Billrun_Bill_Payment::getInstanceByData(current(Billrun_Bill_Payment::queryPayments($query)));
 			}
-			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
+				}
+			}
 			if (is_null($bill) && static::$type != 'payments') {
-				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
+				Billrun_Factory::log("No bill was found for line " . $index , Zend_Log::ALERT);
 				continue;
 			}
 			$this->billSavedFields = $this->getBillSavedFields($row, $billSavedFieldsNames);
@@ -263,6 +298,16 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if ($no_txid_counter > 0) {
                     Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
 		}
+	}
+
+	public function processIdentifierFields($row) {
+		$res = [];
+		foreach($this->tranIdentifierFields as $field_conf) {
+			$row_val = Billrun_Util::getIn($row, $field_conf['file_field'], "");
+			$res[$field_conf['field']] = [$field_conf['op'] => ($field_conf['type'] == 'int') ? intval($row_val) : (($field_conf['type'] == 'float') ? floatval($row_val) : $row_val)];
+		}
+		$res['generated_pg_file_log'] = ['$exists' => true];
+		return $res;
 	}
 
 	protected function updateLogCollection($fileCorrelation) {

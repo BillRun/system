@@ -298,7 +298,7 @@ abstract class Billrun_Account extends Billrun_Base {
 
 		if (!empty($updateCollectionStateChanged['in_collection'])) {
 			foreach ($updateCollectionStateChanged['in_collection'] as $aid => $item) {
-				$params = array('aid' => $aid, 'time' => date('c'));
+				$params = array('aid' => $aid, 'time' => date(Billrun_Base::base_datetimeformat));
 				if ($this->loadAccountForQuery($params)) {
 					$new_values = array('in_collection' => true, 'in_collection_from' => new Mongodloid_Date());
 					$collectionSteps->createCollectionSteps($aid);
@@ -313,7 +313,7 @@ abstract class Billrun_Account extends Billrun_Base {
 
 		if (!empty($updateCollectionStateChanged['out_of_collection'])) {
 			foreach ($updateCollectionStateChanged['out_of_collection'] as $aid => $item) {
-				$params = array('aid' => $aid, 'time' => date('c'));
+				$params = array('aid' => $aid, 'time' => date(Billrun_Base::base_datetimeformat));
 				if ($this->loadAccountForQuery($params)) {
 					$remove_values = array('in_collection', 'in_collection_from');
 					$collectionSteps->removeCollectionSteps($aid);

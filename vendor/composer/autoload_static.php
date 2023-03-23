@@ -82,11 +82,6 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
     );
 
     public static $prefixLengthsPsr4 = array (
-        'c' => 
-        array (
-            'chillerlan\\Settings\\' => 20,
-            'chillerlan\\QRCode\\' => 18,
-        ),
         'Z' => 
         array (
             'ZipStream\\' => 10,
@@ -99,6 +94,7 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
             'Symfony\\Polyfill\\Intl\\Normalizer\\' => 33,
             'Symfony\\Polyfill\\Intl\\Idn\\' => 26,
             'Symfony\\Component\\HttpFoundation\\' => 33,
+            'Stripe\\' => 7,
         ),
         'P' => 
         array (
@@ -150,14 +146,6 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
     );
 
     public static $prefixDirsPsr4 = array (
-        'chillerlan\\Settings\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/chillerlan/php-settings-container/src',
-        ),
-        'chillerlan\\QRCode\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/chillerlan/php-qrcode/src',
-        ),
         'ZipStream\\' => 
         array (
             0 => __DIR__ . '/..' . '/maennchen/zipstream-php/src',
@@ -185,6 +173,10 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         'Symfony\\Component\\HttpFoundation\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/http-foundation',
+        ),
+        'Stripe\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/stripe/stripe-php/lib',
         ),
         'Psr\\SimpleCache\\' => 
         array (

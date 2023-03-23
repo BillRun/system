@@ -455,7 +455,7 @@ export const searchPlansByKeyQuery = (name, project = {}) => ({
   ],
 });
 
-export const runningPaymentFilesListQuery = (paymentGateway, fileType) => ({
+export const runningPaymentFilesListQuery = (paymentGateway, fileType, source) => ({
   action: 'get',
   entity: 'log',
   params: [
@@ -464,9 +464,27 @@ export const runningPaymentFilesListQuery = (paymentGateway, fileType) => ({
     { project: JSON.stringify({ stamp: 1}) },
     { sort: JSON.stringify({}) },
     { query: JSON.stringify({
-      source: "custom_payment_files",
+      source,
       cpg_name: paymentGateway,
       cpg_file_type: fileType,
+      start_process_time:{ $exists: true },
+      process_time :{ $exists: false },
+    }) },
+  ],
+});
+
+export const runningResponsePaymentFilesListQuery = (paymentGateway, fileType, source) => ({
+  action: 'get',
+  entity: 'log',
+  params: [
+    { page: 0 },
+    { size: 9999 },
+    { project: JSON.stringify({ stamp: 1}) },
+    { sort: JSON.stringify({}) },
+    { query: JSON.stringify({
+      source,
+      cpg_name: paymentGateway,
+      pg_file_type: fileType,
       start_process_time:{ $exists: true },
       process_time :{ $exists: false },
     }) },
@@ -484,6 +502,20 @@ export const sendGenerateNewFileQuery = (paymentGateway, fileType, data) => {
     action: 'generateTransactionsRequestFile',
     params,
   };
+}
+
+export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file) => {
+  const formData = new FormData();
+  formData.append('payment_gateway', paymentGateway);
+  formData.append('file_type', fileType);
+  formData.append('file', file);
+  return ({
+    api: 'uploadfile',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
 }
 
 export const generateOneTimeInvoiceQuery = (aid, lines, sendMail) => {
