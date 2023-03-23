@@ -22,4 +22,4 @@ RUN pip3 install selenium==4.8.2
 
 COPY . .
 RUN ls
-CMD ["python3","abcd.py"]
+CMD ["python3","test.py"]
