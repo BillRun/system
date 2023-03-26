@@ -249,6 +249,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		unset($rawData['_id'], $rawData['generated_pg_file_log']);
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['cancel'] = $this->getId();
+		$rawData['urt'] = date('c');
 		return new $className($rawData);
 	}
 
