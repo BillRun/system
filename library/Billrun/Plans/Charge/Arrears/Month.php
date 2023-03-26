@@ -85,12 +85,12 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 	/**
 	 * Is the the subscriber hold  the plan  has terminated it subscription or is it just a plan change?
 	 */
-	protected function isTerminated() {
+	protected function isTerminated($cycle = false) {
 
 		$fakeSubDeactivation = (empty($this->subscriberDeactivation) ? PHP_INT_MAX : $this->subscriberDeactivation);
 	
 		return (	$fakeSubDeactivation <= $this->deactivation || empty($this->deactivation) &&
-					$fakeSubDeactivation < $this->cycle->end() 	);
+					$fakeSubDeactivation < ($cycle ? $cycle->end(): $this->cycle->end() )	);
 	}
 	
 }
