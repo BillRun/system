@@ -1485,6 +1485,33 @@ lastConfig = runOnce(lastConfig, 'BRCD-3890', function () {
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'discounts');
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'charges');
 });
+
+// BRCD-4102 Migrate all cancel bills to be 
+lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
+	var cancelBills = db.bills.find({cancel:{$exists:1}, urt:ISODate("1970-01-01T00:00:00.000Z")});
+	var bulkUpdate = [];
+	var maxWriteBatchSize =db.runCommand(
+		{
+		  hello: 1
+		}
+	 )['maxWriteBatchSize'];
+	print("Starts to update " + cancelBills.toArray().length + " bills")
+	for (var i=0; i<cancelBills.toArray().length; i++) {
+	    var update = { "updateOne" : {
+	        "filter" : {"_id" : cancelBills[i]['_id']},
+	        "update" :  {"$set" : {"urt" : cancelBills[i]['_id'].getTimestamp()}}
+	    }};
+	    bulkUpdate.push(update);
+		if (i!=0 && i%maxWriteBatchSize==0) {
+			db.bills.bulkWrite(bulkUpdate);
+			print("Updated " + maxWriteBatchSize + " cancellation bills, continue..")
+			bulkUpdate = []
+		}
+	}
+	db.bills.bulkWrite(bulkUpdate);
+	print("Updated total of " + i + " bills!")
+});
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.dropIndex("aid_1_urt_1");
