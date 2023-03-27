@@ -206,6 +206,7 @@ class RealtimeController extends ApiController {
 			return false;
 		}
 
+		Billrun_Factory::dispatcher()->trigger('realtimeBeforeGetResponse', array(&$data));
 		$response = $responder->getResponse();
 		Billrun_Factory::dispatcher()->trigger('realtimeAfterGetResponse', array($data, &$response));
 		$params = array('root' => 'response');
