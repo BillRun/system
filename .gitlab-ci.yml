@@ -46,7 +46,7 @@ integration_backend_tests:
     - python3 -m venv venv
     - source venv/bin/activate
     - pip3 install -e .
-
+    
   # run tests with testrail's integration
   script:
     - docker exec -i billrun-mongodb mongo billing_container --eval "db.config.count()"
