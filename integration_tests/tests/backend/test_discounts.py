@@ -73,7 +73,6 @@ def test_close_discount(to):
 @pytestrail.case('C2718')
 @allure.title('Close and new discount by API')
 @allure.description('DISCOUNT-API-4')
-@pytest.mark.smoke
 def test_close_and_new_discount():
     discount = Discounts()
     assertion_steps = DiscountAssertionSteps(discount)
