@@ -10,7 +10,7 @@ driver = webdriver.Chrome(options=chrome_options)
 
 # driver.get("http://www.google.com/")
 # print(driver.title)
-driver.get("http://localhost:8074/index.html#/")
+driver.get("http://46.101.14.10:8074/index.html#/")
 driver.implicitly_wait(100)
 username = driver.find_element(By.XPATH, "//input[@placeholder='Email address']")
 username.send_keys("admin")
@@ -24,7 +24,7 @@ try:
     print("Login using admin credential didn't work ERROR:- " + abc)
 except:
     print("Successfully Login using admin Credentials")
-    driver.get("http://localhost:8074/test/updaterowt?rebalance=1")
+    driver.get("http://46.101.14.10:8074/test/updaterowt?rebalance=1")
     result = driver.find_element(By.XPATH, "//div[contains(text(),'1')]").text
     print(result)
     logs = driver.find_element(By.XPATH, "/html/body").text
