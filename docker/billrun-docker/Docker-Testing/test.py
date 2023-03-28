@@ -20,6 +20,8 @@ print(driver.title)
 # password.send_keys("12345678")
 # print("password entered")
 # driver.find_element(By.XPATH, "//button[@type='submit']").click()
+# abc = driver.find_element(By.XPATH, "//div[@role='alert']").text #checking failure for login 
+# print(abc) # print the failure message after using admin credential
 # print("Successfully logged IN")
 # print(driver.title)
 # driver.get("http://46.101.14.10/test/updaterowt?rebalance=1")
