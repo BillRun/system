@@ -101,9 +101,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if (isset($paramObj['value_mult'])) {
 			$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
 		}
-			if (isset($paramObj['decimals'])) {
-	         	$value = floatval($row[$paramObj['name']]);
-			$row[$paramObj['name']] = number_format($value, $paramObj['decimals']);
+		if(isset($paramObj['decimals'])){
+			$value = intval($row[$paramObj['name']]);
+			$row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
 		}
 		if (isset($paramObj['type']) && $paramObj['type'] == "date") {
 			if (!isset($paramObj['format'])) {
