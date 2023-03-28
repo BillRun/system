@@ -8,27 +8,29 @@ chrome_options.add_argument("--headless")
 chrome_options.add_argument("--disable-gpu")
 driver = webdriver.Chrome(options=chrome_options)
 
-driver.get("https://www.google.com/")
-print(driver.title)
-# driver.get("http://46.101.14.10/index.html#/")
+# driver.get("http://www.google.com/")
 # print(driver.title)
-# driver.implicitly_wait(100)
-# username = driver.find_element(By.XPATH, "//input[@placeholder='Email address']")
-# username.send_keys("admin")
-# print("username entered")
-# password = driver.find_element(By.XPATH, "//input[@placeholder='Password']")
-# password.send_keys("12345678")
-# print("password entered")
-# driver.find_element(By.XPATH, "//button[@type='submit']").click()
-# abc = driver.find_element(By.XPATH, "//div[@role='alert']").text #checking failure for login 
-# print(abc) # print the failure message after using admin credential
-# print("Successfully logged IN")
-# print(driver.title)
-# driver.get("http://46.101.14.10/test/updaterowt?rebalance=1")
-# logs = driver.find_element(By.XPATH, "/html/body").text
-# print(logs)
+driver.get("http://localhost:8074/index.html#/")
+driver.implicitly_wait(100)
+username = driver.find_element(By.XPATH, "//input[@placeholder='Email address']")
+username.send_keys("admin")
+print("username entered")
+password = driver.find_element(By.XPATH, "//input[@placeholder='Password']")
+password.send_keys("12345678")
+print("password entered")
+driver.find_element(By.XPATH, "//button[@type='submit']").click()
+try:
+    abc = driver.find_element(By.XPATH, "//div[@role='alert']").text
+    print("Login using admin credential didn't work ERROR:- " + abc)
+except:
+    print("Successfully Login using admin Credentials")
+    driver.get("http://localhost:8074/test/updaterowt?rebalance=1")
+    result = driver.find_element(By.XPATH, "//div[contains(text(),'1')]").text
+    print(result)
+    logs = driver.find_element(By.XPATH, "/html/body").text
+    print(logs)
 # file1 = open("Logs.txt", "w")  # write mode
 # file1.write(logs)
 # print("Logs upload in file successfully")
 # file1.close()
-print("Code is successfully working")
+    print("Code is successfully working")
