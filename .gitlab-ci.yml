@@ -37,7 +37,7 @@ integration_backend_tests:
     # build and run BillRun app in docker
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker compose -f docker-compose-php74.yml up -d
-    # - sleep 600
+    - sleep 300
     # create test virtual env
     - cd $CI_PROJECT_DIR/integration_tests/
     - echo ENV = $TEST_ENV > .env
