@@ -108,7 +108,11 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 	 * @return int the volume left
 	 */
 	protected function getRateGroupLeft() {
-		$arategroups = $this->row['arategroups'];
+		$arategroups = $this->row['arategroups'] ?? 0;
+		
+		if (empty($arategroups)) {
+			return 0;
+		}
 		
 		$left = $arategroups[count($arategroups)-1]['left'] ?? 0;
 		// require to support minimum
