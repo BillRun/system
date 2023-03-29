@@ -119,6 +119,16 @@ abstract class Billrun_Account extends Billrun_Base {
 	protected abstract function getAccountDetails($queries, $globalLimit = FALSE, $globalDate = FALSE);
 	
 	/**
+	 * method to make permanent change to account
+	 * 
+	 * @param array $query query for update
+	 * @param array $update update array command
+	 * 
+	 * @return boolean true if permanent change succeed else false
+	 */
+	public abstract function permanentChange($query, $update);
+	
+	/**
 	 * get accounts revisions by params
 	 * @return array of mongodloid entities
 	 */

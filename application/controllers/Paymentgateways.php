@@ -41,7 +41,6 @@ class PaymentGatewaysController extends ApiController {
 				$settings[] = $setting;
 				continue;
 			}
-
 			$setting['title'] = $paymentGateway->getTitle();
 			$fields = $paymentGateway->getDefaultParameters();
 			$setting['params'] = $fields;
@@ -109,8 +108,10 @@ class PaymentGatewaysController extends ApiController {
 			return $this->setError("In single payment mode amount must be positive value", $request);
 		}
 		
-		if (isset($data['installments']) && (!is_array($data['installments']) || !isset($data['installments']['total_amount']) || 
-			$data['installments']['total_amount'] <= 0 || !isset($data['installments']['number_of_payments']) || $data['installments']['number_of_payments'] <= 1)) {
+		if (isset($data['installments']) && 
+				(!is_array($data['installments']) || 
+				!isset($data['installments']['number_of_payments']) || 
+				$data['installments']['number_of_payments'] < 1)) {
 			return $this->setError("Installment structure is invalid", $request);
 		}
 
