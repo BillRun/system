@@ -69,6 +69,9 @@ class OpenapiController extends RealtimeController {
 	protected function authorize() {
 		if ($this->config['realtime']['no_auth']) {
 			return true;
+		} else if ($this->config['realtime']['auth']) {
+			return $this->config['realtime']['auth']['user'] == $_SERVER['PHP_AUTH_USER'] &&
+					$this->config['realtime']['auth']['password'] == $_SERVER['PHP_AUTH_PW'];
 		}
 		return Billrun_Utils_Security::validateOauth(false, 'openapi'); 
 	}

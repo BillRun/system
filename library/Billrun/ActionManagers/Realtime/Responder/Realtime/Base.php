@@ -65,10 +65,16 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 				];
 			}
 			
+			$serviceRatingRes['expiryTime'] =  $this->getExpirationTime();
+			
 			$ret[] = $serviceRatingRes;
 		}
 
 		return $ret;
+	}
+	
+	protected function getExpirationTime() {
+		return $this->config['realtime'][$this->row['usaget']]['expiryTime'] ?? 3600;
 	}
 	
 	/**
@@ -102,11 +108,20 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 	 * @return int the volume left
 	 */
 	protected function getRateGroupLeft() {
-		$arategroups = $this->row['arategroups'];
-		if ($arategroups[count($arategroups)-1]['left'] > 0) {
-			return $arategroups[count($arategroups)-1]['left'];
+		$arategroups = $this->row['arategroups'] ?? 0;
+		
+		if (empty($arategroups)) {
+			return 0;
 		}
-		return 0;
+		
+		$left = $arategroups[count($arategroups)-1]['left'] ?? 0;
+		// require to support minimum
+		if ($left <= 0) {
+			return 0;
+		}
+		
+		$grantConfig = $this->config['realtime'][$this->row['usaget']]['default_values'] ?? 0;
+		return min($left, $grantConfig[$this->row['record_type']] ?? ($grantConfig[$this->row['default']]));
 	}
 
 	/**
