@@ -47,7 +47,7 @@ def test_update_discount():
 @pytestrail.case('C2715', 'C2716', 'C2717')
 @allure.title('Close discount by API')
 @allure.description('DISCOUNT-API-3')
-@pytest.mark.smoke
+#@pytest.mark.smoke
 @pytest.mark.parametrize('to', [
     True,  # 1, set random future date
     False,  # 2, w/o to param
