@@ -37,7 +37,7 @@ integration_backend_tests:
     # build and run BillRun app in docker
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker compose -f docker-compose-php74.yml up -d
-    - sleep 300
+    
     # create test virtual env
     - cd $CI_PROJECT_DIR/integration_tests/
     - echo ENV = $TEST_ENV > .env
@@ -47,20 +47,18 @@ integration_backend_tests:
     - source venv/bin/activate
     - pip3 install -e .
     
-    
   # run tests with testrail's integration
   script:
     - docker exec -i billrun-mongodb mongo billing_container --eval "db.config.count()"
+    - pytest -m smoke -s --junitxml=xml_report_backend.xml --testrail --tr-config=$CI_PROJECT_DIR/integration_tests/testrail.cfg --tr-email=$TESTRAIL_EMAIL --tr-password=$TESTRAIL_APIKEY --tr-testrun-description="Merge Request title = $CI_MERGE_REQUEST_TITLE, Commit SHA = $CI_COMMIT_SHORT_SHA"
+    - docker exec -i billrun-mongodb mongo billing_container --eval "db.config.count()"    
     - cd $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing
     - docker build -t test:v1 .
     - docker images
     - docker run --name testing test:v1
     - docker ps -a
-    - docker logs -f testing
+    - sleep 300
     - docker exec -i billrun-mongodb mongo billing_container --eval "db.config.count()"
-    - pytest -m smoke -s --junitxml=xml_report_backend.xml --testrail --tr-config=$CI_PROJECT_DIR/integration_tests/testrail.cfg --tr-email=$TESTRAIL_EMAIL --tr-password=$TESTRAIL_APIKEY --tr-testrun-description="Merge Request title = $CI_MERGE_REQUEST_TITLE, Commit SHA = $CI_COMMIT_SHORT_SHA"
-    - docker exec -i billrun-mongodb mongo billing_container --eval "db.config.count()"
-    
     
   artifacts:
     when: always
