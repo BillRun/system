@@ -4411,7 +4411,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
      }
 
      /**
-      * check if 'plan' filed under sub in billrun object exists
+      * check if 'plan' field under sub in billrun object exists
       * @param int $key number of the test case
       * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
       * @param array $row current test case
@@ -4419,16 +4419,16 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
       */
      public function planExist($key, $returnBillrun, $row) {
          $passed = true;
-         $this->message .= "<br><b> plan filed  :</b> <br>";
+         $this->message .= "<br><b> plan field  :</b> <br>";
          $sids = (array) $row['test']['sid'];
          foreach ($sids as $sid) {
              foreach ($returnBillrun['subs'] as $sub) {
                  if ($sid == $sub['sid']) {
                      if (!array_key_exists('plan', $sub)) {
-                         $this->message .= "plan filed does NOT exist in billrun object" . $this->fail;
+                         $this->message .= "plan field does NOT exist in billrun object" . $this->fail;
                          $passed = false;
                      } else {
-                         $this->message .= "plan filed exists in billrun object" . $this->pass;
+                         $this->message .= "plan field exists in billrun object" . $this->pass;
                      }
                  }
              }
