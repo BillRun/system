@@ -57,7 +57,7 @@ integration_backend_tests:
     - docker images
     - docker run --name testing test:v1
     - docker ps -a
-    - sleep 300
+    - sleep 1200
     - docker exec -i billrun-mongodb mongo billing_container --eval "db.config.count()"
     
   artifacts:
