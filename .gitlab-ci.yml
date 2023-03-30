@@ -60,6 +60,7 @@ integration_backend_tests:
     - sleep 1800
     - docker exec -i billrun-mongodb mongo billing_container --eval "db.config.count()"
     
+    
   artifacts:
     when: always
     paths:
