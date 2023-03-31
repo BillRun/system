@@ -65,7 +65,10 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 				];
 			}
 			
-			$serviceRatingRes['expiryTime'] =  $this->getExpirationTime();
+			$expirationTime = $this->getExpirationTime();
+			if ($expirationTime) {
+				$serviceRatingRes['expiryTime'] =  $this->getExpirationTime();
+			}
 			
 			$ret[] = $serviceRatingRes;
 		}

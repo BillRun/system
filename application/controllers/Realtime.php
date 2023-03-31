@@ -213,6 +213,8 @@ class RealtimeController extends ApiController {
 		$response = $encoder->encode($response, $params);
 		$this->setOutput(array($response, 1));
 
+		Billrun_Factory::log("Realtime req: " . print_R($this->event, 1), Billrun_Log::DEBUG);
+		Billrun_Factory::log("Realtime res: " . print_R($response, 1), Billrun_Log::DEBUG);
 		return $response;
 	}
 
