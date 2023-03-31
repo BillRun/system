@@ -112,7 +112,11 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 			return $requestedUsagev;
 		}
 
-		$defaultValue = Billrun_Utils_Realtime::getRealtimeConfigValue($config, ['default_values', $row['record_type']], $row['usaget']);
+		if (empty($config['realtime']['postpay_charge'])) {
+			$defaultValue = Billrun_Utils_Realtime::getRealtimeConfigValue($config, ['default_values', $row['record_type']], $row['usaget']);
+		} else {
+			$defaultValue = 0;
+		}
 		if (!is_null($defaultValue)) {
 			return floatval($defaultValue);
 		}
