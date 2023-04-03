@@ -25,6 +25,7 @@ trait Billrun_Subscriber_External_Cacheable {
 
 			$cache->remove($tagKey, static::getCacheTagPrefix());
 		}
+		return true;
 	}
 
 	/**
