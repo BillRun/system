@@ -35,8 +35,9 @@ integration_backend_tests:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS != "skip_ci"
   before_script:
     # build and run BillRun app in docker
+    - mkdir logs/ cache/
+    - chmod 777 logs/ cache/
     - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - bash run_docker.sh
     - docker compose -f docker-compose-php74.yml up -d
     
     # create test virtual env
