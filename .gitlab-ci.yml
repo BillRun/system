@@ -36,7 +36,7 @@ integration_backend_tests:
   before_script:
     # build and run BillRun app in docker
     - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - ./run_docker.sh
+    - bash run_docker.sh
     - docker compose -f docker-compose-php74.yml up -d
     
     # create test virtual env
