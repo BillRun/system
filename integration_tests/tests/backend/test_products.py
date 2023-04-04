@@ -47,7 +47,7 @@ def test_update_product():
 @pytestrail.case('C2686', 'C2709', 'C2710')
 @allure.title('Close product by API')
 @allure.description('PRODUCT-API-3')
-@pytest.mark.smoke
+#@pytest.mark.smoke
 @pytest.mark.parametrize('to', [
     True,  # 1, set random future date
     False,  # 2, w/o to param
