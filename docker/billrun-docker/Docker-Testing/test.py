@@ -29,8 +29,8 @@ except:
     print(result)
     logs = driver.find_element(By.XPATH, "/html/body").text
     print(logs)
-# file1 = open("Logs.txt", "w")  # write mode
-# file1.write(logs)
-# print("Logs upload in file successfully")
-# file1.close()
+    file1 = open("Logs.txt", "w")  # write mode
+    file1.write(logs)
+    print("Logs upload in file successfully")
+    file1.close()
     print("Code is successfully working")
