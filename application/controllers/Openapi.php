@@ -214,19 +214,6 @@ class OpenapiController extends RealtimeController {
 	}
 	
 	/**
-	 * method to return the collection the initial line exists
-	 * in prepaid it would be archive collection, while postpaid it will be lines collection
-	 * 
-	 * @return Mongodloid_Collection
-	 */
-	protected function getBaseCollection() {
-		if ($this->config['realtime']['postpay_charge']) {
-			return Billrun_Factory::db()->linesCollection();
-		}
-		return Billrun_Factory::db()->archiveCollection();
-	}
-	
-	/**
 	 * split service ratings to multiple lines (one for each service rating)
 	 */
 	protected function splitServiceRatings() {

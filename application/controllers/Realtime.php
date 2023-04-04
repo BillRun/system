@@ -215,7 +215,40 @@ class RealtimeController extends ApiController {
 
 		Billrun_Factory::log("Realtime req: " . print_R($this->event, 1), Billrun_Log::DEBUG);
 		Billrun_Factory::log("Realtime res: " . print_R($response, 1), Billrun_Log::DEBUG);
+		$this->updateLineResponse($data, $response);
 		return $response;
+	}
+	
+	/**
+	 * method to return the collection the initial line exists
+	 * in prepaid it would be archive collection, while postpaid it will be lines collection
+	 * 
+	 * @return Mongodloid_Collection
+	 */
+	protected function getBaseCollection() {
+		if ($this->config['realtime']['postpay_charge']) {
+			return Billrun_Factory::db()->linesCollection();
+		}
+		return Billrun_Factory::db()->archiveCollection();
+	}
+	
+	/**
+	 * method to store the api response
+	 * 
+	 * @param array $data the line data
+	 * @param array $response realtime api response
+	 */
+	protected function updateLineResponse($data, $response) {
+		$coll = $this->getBaseCollection();
+		$query = array(
+			'stamp' => $data['stamp'],
+		);
+		$update = array(
+			'$set' => array(
+				'response' => (array) $response,
+			)
+		);
+		$coll->update($query, $update);
 	}
 
 	/**
