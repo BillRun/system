@@ -55,6 +55,7 @@ integration_backend_tests:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing
     - docker build -t test:v1 .
     - docker run --name testing test:v1
+    - sleep 1200
 
   artifacts:
     when: always
