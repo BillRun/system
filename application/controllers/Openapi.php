@@ -233,8 +233,8 @@ class OpenapiController extends RealtimeController {
 			if (isset($row['uf']['serviceRating']['ratingGroup'])) {
 				$row['uf']['serviceRating']['ratingGroup'] = (string)$row['uf']['serviceRating']['ratingGroup']; //currently, custom fields are strings
 			}
-			$row['rebalance_required'] = !$this->config['realtime']['postpay_charge'] && in_array($requestSubType, [self::RATING_ACTION_DEBIT, self::RATING_ACTION_RELEASE]);
-			$row['reservation_required'] = $this->config['realtime']['postpay_charge'] || in_array($requestSubType, [self::RATING_ACTION_RESERVE]);
+			$row['rebalance_required'] = in_array($requestSubType, [self::RATING_ACTION_DEBIT, self::RATING_ACTION_RELEASE]);
+			$row['reservation_required'] = in_array($requestSubType, [self::RATING_ACTION_RESERVE]);
 			$row['request_id'] = $requestId;
 			$this->setMissingDataForRow($row);
 			$this->event[] = $row;
