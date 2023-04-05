@@ -54,12 +54,12 @@ integration_backend_tests:
     - pytest -m smoke -s --junitxml=xml_report_backend.xml --testrail --tr-config=$CI_PROJECT_DIR/integration_tests/testrail.cfg --tr-email=$TESTRAIL_EMAIL --tr-password=$TESTRAIL_APIKEY --tr-testrun-description="Merge Request title = $CI_MERGE_REQUEST_TITLE, Commit SHA = $CI_COMMIT_SHORT_SHA"   
     - cd $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing
     - docker build -t test:v1 .
-    - docker run --name testing test:v1 > dockerlogs.txt
+    - docker run --name testing test:v1 > Logs.txt
 
   artifacts:
     when: always
     paths:
-      - dockerlogs.txt
+      - $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing/Logs.txt
       - $CI_PROJECT_DIR/integration_tests/allure-results/*
       - $CI_PROJECT_DIR/integration_tests/xml_report_backend.xml
     reports:
