@@ -77,9 +77,13 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 			$responseField = $field['response_field_name'];
 			$rowField = $field['row_field_name'];
 			if (is_array($rowField)) {
-				$ret[$responseField] = (isset($rowField['classMethod']) ? $this->{$rowField['classMethod']}() : '');
+				$value = (isset($rowField['classMethod']) ? $this->{$rowField['classMethod']}() : '');
 			} else {
-				$ret[$responseField] = Billrun_Util::getIn($this->row, $rowField, '');
+				$value = Billrun_Util::getIn($this->row, $rowField, '');
+			}
+
+			if (!is_null($value)) {
+				Billrun_Util::setIn($ret, $responseField, $value);
 			}
 		}
 		return $ret;

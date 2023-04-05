@@ -125,8 +125,16 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"title" => "MB reports - export server's password",
 				"editable" => true,
 				"display" => true,
-				"nullable" => false,
-				"mandatory" => true
+				"nullable" => true,
+				"mandatory" => false
+			], [
+				"type" => "text",
+				"field_name" => "export.key_file_name",
+				"title" => "MB reports - export server's key file name",
+				"editable" => true,
+				"display" => true,
+				"nullable" => true,
+				"mandatory" => false
 			], [
 				"type" => "string",
 				"field_name" => "export.remote_directory",
@@ -288,9 +296,29 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function upload($report) {
 		$hostAndPort = $this->export_details['host'] . ':'. $this->port;
-		$auth = array(
-			'password' => $this->export_details['password'],
-		);
+		$fileName = $report->getFileName();
+		// Check if private key exist
+		if (isset($this->export_details['key_file_name'])) {		
+			Billrun_Factory::log("Found key file name configuration.." , Zend_Log::DEBUG);
+			$key_file_name = basename($this->export_details['key_file_name']);
+			Billrun_Factory::log("Validating key file name.." , Zend_Log::DEBUG);
+			if (!preg_match("/^([-\.\_\w]+)$/", $key_file_name)) {
+				throw new Exception("Key file name isn't valid : " . $key_file_name . ". Couldn't upload " . $fileName . " report' file");
+			}
+			Billrun_Factory::log("Key file name : " .  $key_file_name . " is valid. Checking if the key file exists" , Zend_Log::DEBUG);
+			$key_file_path = Billrun_Util::getBillRunPath('application/plugins/metabaseReports/keys/' . $key_file_name);
+			if (!file_exists($key_file_path) || !is_file($key_file_path)) {
+				throw new Exception("Couldn't find " . $key_file_name . " key file under: " . $key_file_path . ". Couldn't upload " . $fileName . " report' file");
+			}
+			Billrun_Factory::log("Found " . $key_file_name . " key file under : " . $key_file_path , Zend_Log::DEBUG);
+			$auth = array(
+				'key' => $key_file_path,
+			);
+		} else {
+			$auth = array(
+				'password' => $this->export_details['password'],
+			);
+		}
 		$connection = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
 		Billrun_Factory::log()->log("Connecting to SFTP server: " . $connection->getHost() , Zend_Log::INFO);
 		$connected = $connection->connect($this->export_details['user']);
@@ -299,7 +327,6 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			 return;
 		 }
 		Billrun_Factory::log()->log("Success: Connected to: " . $connection->getHost() , Zend_Log::INFO);
-        $fileName = $report->getFileName();
 		Billrun_Factory::log("Uploading " . $fileName . " to " . $this->export_details['remote_directory'], Zend_Log::INFO);
 		if (!empty($connection)){
 			try {
@@ -425,20 +452,54 @@ class Report {
 						$dateFormat = isset($param['format']) ? $param['format'] : 'Y-m-d';
 						if (isset($param['value']) && is_array($param['value'])) {
 							$date = Billrun_Util::calcRelativeTime($param['value'],time());
-							$params[$param['template_tag']]['value'] = date($dateFormat, $date);
+							$value = date($dateFormat, $date);
 						} else { throw new Exception("Invalid params for 'date' type, in parameter" . $param['template_tag']); }
 					break;
-					case "string" || "number" : 
-						$params[$param['template_tag']]['value'] = $param['value'];
+					case "string":
+					case "number":
+						$value = $param['value'];
+						if ($param['type'] == 'string' && $param['format'] == 'billrun_key') {
+							$billrun_key = Billrun_Util::isBillrunKey($param['value']) ? $param['value'] : $this->getRelevantBillrunKey($param['value']);
+							if ($billrun_key !== false) {
+									Billrun_Factory::log("Creating params query for billrun key: " . $billrun_key . ", for report: " . $this->name, Zend_Log::DEBUG);
+							} else {
+									throw new Exception("Unsupported billrun key input: " . $param['value'] . ", for report: " . $this->name);
+							}
+							$value = $billrun_key;
+						}
 					break;
 					default : 
-						throw new Exception("Invalid param type, in parameter" . $param['template_tag']);
+						throw new Exception("Invalid param type, in parameter " . $param['template_tag']);
 				endswitch;
-				$params[$param['template_tag']]['template-tag'] = $param['template_tag'];
-				$params[$param['template_tag']]['type'] = $param['type'];
+				$params[$param['template_tag']] = [
+					'value' => $value,
+					'template-tag' => $param['template_tag'],
+					'type' => $param['type']
+				];
 			}
 		}
 		return $params;
+	}
+
+	public function getRelevantBillrunKey($billrun_key) {
+		switch ($billrun_key) {
+			case 'current':
+				return Billrun_Billrun::getActiveBillrun();
+			case 'first_unconfirmed':
+				if (($last = Billrun_Billingcycle::getLastConfirmedBillingCycle()) != Billrun_Billingcycle::getFirstTheoreticalBillingCycle()) {
+						return Billrun_Billingcycle::getFollowingBillrunKey($last);
+				}
+				if (is_null($lastStarted = Billrun_Billingcycle::getFirstStartedBillingCycle())) {
+						return $last;
+				}
+				return $lastStarted;
+			case 'last_confirmed':
+				return Billrun_Billingcycle::getLastConfirmedBillingCycle();
+			case 'last_cycle':
+				return Billrun_Billingcycle::getPreviousBillrunKey(Billrun_Billingcycle::getBillrunKeyByTimestamp(time()));
+			default:
+				return false;
+		}
 	}
 	
 	public function getData() {

@@ -13,7 +13,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	use Billrun_Traits_ForeignFields;
 	
-	protected  static $copyFromChargeData = ['prorated_start','prorated_end'];
+	protected static $copyFromChargeData = ['prorated_start', 'prorated_end', 'prorated_start_date', 'is_upfront'];
 	protected $plan = null;
 	protected $name = null;
 	protected $start = 0;
@@ -74,7 +74,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 		$entry['stamp'] = $this->generateLineStamp($entry);
 
-		$entry = $this->addExternalFoerignFields($entry);
+		$entry = $this->addExternalFoerignFields($entry,$chargeData);
 		$entry = $this->addTaxationToLine($entry);
 		unset($entry['tax']);
 		foreach ($this->subscriberFields as $fieldName => $value) {
@@ -106,8 +106,8 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		return array_merge($flatEntry, $this->stumpLine);
 	}
 	
-	protected function addExternalFoerignFields($entry) {
-		return array_merge($this->getForeignFields(array(), array_merge($this->foreignFields, $entry), true), $entry);
+	protected function addExternalFoerignFields($entry, $addedQueryData =[]) {
+		return array_merge($this->getForeignFields(array(), array_merge($this->foreignFields, $entry), true, $addedQueryData), $entry);
 	}
 
 	protected function generateLineStamp($line) {

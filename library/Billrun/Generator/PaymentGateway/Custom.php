@@ -73,7 +73,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$missing_fields = [];
 		if(isset($this->mandatory_fields_per_entity[$entity_type])) {
 			foreach($this->mandatory_fields_per_entity[$entity_type] as $field_name) {
-				if(isset($data[$field_name])) {
+				if(!is_null(Billrun_Util::getIn($data, $field_name))) {
 					continue;
 				} else {
 					$missing_fields[] = $field_name;
@@ -136,7 +136,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             } catch(Exception $ex){
                 Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
                 continue;
-        }
+            }
+            Billrun_Factory::dispatcher()->trigger('afterPreparingCpfDataField', array(static::$type, $dataField, &$dataLine, &$attributes, $this));
         }
         if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
             ksort($dataLine);

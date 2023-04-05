@@ -35,7 +35,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * 
 	 * @param Billrun_Balance
 	 */
-	protected $balance;
+	public $balance;
 
 	/**
 	 * prepaid minimum balance volume
@@ -680,7 +680,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				}
 				$serviceMaximumQuantity = 1;
 				if($isGroupShared && !$service->isGroupAccountPool($serviceGroup) && $isGroupQuantityAffected) {
-					$serviceMaximumQuantity = $service->getServiceMaximumQuantityByAid($aid, $this->row['urt']->sec);
+					$rowServiceQuantity = $this->row['services_data'][$key]['quantity'] ?? 0;
+					$serviceMaximumQuantity = max($rowServiceQuantity, $service->getServiceMaximumQuantityByAid($aid, $this->row['urt']->sec));
 				}
 				
 				$groupVolume = $service->usageLeftInEntityGroup($balance, $rate, $usageType, $serviceGroup, $this->row['urt']->sec, $serviceQuantity, $serviceMaximumQuantity);
@@ -805,6 +806,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @return boolean
 	 */
 	protected function isRebalanceRequired() {
+		if (isset($this->row['rebalance_required']) && !$this->row['rebalance_required']) {
+			return false;
+		}
+
 		if ($this->isPostpayChargeRequest()) {
 			return false;
 		}
@@ -813,6 +818,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		} else {
 			$rebalanceTypes = array('final_request', 'update_request');
 		}
+
 		return ($this->row['realtime'] && in_array($this->row['record_type'], $rebalanceTypes));
 	}
 
@@ -823,7 +829,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected function isReblanceOnLastRequestOnly() {
 		$config = $this->getConfig($this->row);
-		return (isset($config['realtime']['rebalance_on_final']) && $config['realtime']['rebalance_on_final']);
+		return Billrun_Utils_Realtime::getRealtimeConfigValue($config, 'rebalance_on_final', $this->row['usaget'], false);
 	}
 
 	/**
@@ -864,7 +870,16 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$findQuery = array(
 			"sid" => $this->row['sid'],
 			"session_id" => $this->row['session_id'],
+			"usagev" => ['$gt' => 0],
 		);
+		
+		foreach(Billrun_Util::getCustomerAndRateUf($this->row['type']) ?? [] as $sessionField) {
+			$value = Billrun_Util::getIn($this->row['uf'], $sessionField);
+			if (!is_null($value)) {
+				$findQuery["uf.{$sessionField}"] = $value;
+			}
+		}
+		
 		$sort = array(
 			'sid' => 1,
 			'session_id' => 1,
@@ -882,7 +897,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function getRealUsagev($lineToRebalance) {
 		$config = $this->getConfig();
 		$usagev = 0;
-		$usedUsagevFields = is_array($config['realtime']['used_usagev_field']) ? $config['realtime']['used_usagev_field'] : array($config['realtime']['used_usagev_field']);
+		$usedUsagevFields = Billrun_Utils_Realtime::getRealtimeConfigValue($config, 'used_usagev_field', $this->row['usaget'], []);
+		if (!is_array($usedUsagevFields)) {
+			$usedUsagevFields = [$usedUsagevFields];
+		}
+
 		foreach ($usedUsagevFields as $usedUsagevField) {
 			$usedUsage = Billrun_util::getIn($this->row['uf'], $usedUsagevField);
 			$usagev += !is_null($usedUsage) ? $usedUsage : 0;
@@ -1055,6 +1074,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($this->row['type'], true)['pricing'];
 		$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
 		$aprice = Billrun_util::getIn($userFields, $apriceField);
+                		Billrun_Factory::dispatcher()->trigger('beforeGetLineAprice', array($this->row, &$aprice));
 		if (!is_null($aprice) && is_numeric($aprice)) {
 			$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
 			if (!is_null($apriceMult) && is_numeric($apriceMult)) {
