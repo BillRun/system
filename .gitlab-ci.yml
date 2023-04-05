@@ -59,7 +59,6 @@ integration_backend_tests:
   artifacts:
     when: always
     paths:
-      - $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing/Logs.txt
       - $CI_PROJECT_DIR/integration_tests/allure-results/*
       - $CI_PROJECT_DIR/integration_tests/xml_report_backend.xml
     reports:
