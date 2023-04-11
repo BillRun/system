@@ -103,7 +103,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 	}
 
 	protected function getLineVolume($row, $config) {
-		if (isset($row['reservation_required']) && !$row['reservation_required']) {
+		if (isset($row['reservation_required']) && !$row['reservation_required'] && !$config['realtime']['postpay_charge']) {
 			return 0;
 		}
 		

@@ -214,19 +214,6 @@ class OpenapiController extends RealtimeController {
 	}
 	
 	/**
-	 * method to return the collection the initial line exists
-	 * in prepaid it would be archive collection, while postpaid it will be lines collection
-	 * 
-	 * @return Mongodloid_Collection
-	 */
-	protected function getBaseCollection() {
-		if ($this->config['realtime']['postpay_charge']) {
-			return Billrun_Factory::db()->linesCollection();
-		}
-		return Billrun_Factory::db()->archiveCollection();
-	}
-	
-	/**
 	 * split service ratings to multiple lines (one for each service rating)
 	 */
 	protected function splitServiceRatings() {
@@ -246,8 +233,8 @@ class OpenapiController extends RealtimeController {
 			if (isset($row['uf']['serviceRating']['ratingGroup'])) {
 				$row['uf']['serviceRating']['ratingGroup'] = (string)$row['uf']['serviceRating']['ratingGroup']; //currently, custom fields are strings
 			}
-			$row['rebalance_required'] = !$this->config['realtime']['postpay_charge'] && in_array($requestSubType, [self::RATING_ACTION_DEBIT, self::RATING_ACTION_RELEASE]);
-			$row['reservation_required'] = $this->config['realtime']['postpay_charge'] || in_array($requestSubType, [self::RATING_ACTION_RESERVE]);
+			$row['rebalance_required'] = in_array($requestSubType, [self::RATING_ACTION_DEBIT, self::RATING_ACTION_RELEASE]);
+			$row['reservation_required'] = in_array($requestSubType, [self::RATING_ACTION_RESERVE]);
 			$row['request_id'] = $requestId;
 			$this->setMissingDataForRow($row);
 			$this->event[] = $row;
