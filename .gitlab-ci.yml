@@ -1,0 +1,38 @@
+image: docker:20.10.16
+stages:
+  - build
+  - push
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+services:
+  - docker:20.10.16-dind
+before_script:
+  - docker info
+build:
+  stage: build
+  script:
+    - echo "Building Docker image from Tag $CI_COMMIT_TAG"
+    # - docker build -t registry.gitlab.com/ .
+    # - docker images
+    # - docker save registry.gitlab.com/ > myimage.tar.gz
+    # - echo $CI_PROJECT_DIR
+    # - cd $CI_PROJECT_DIR 
+  artifacts:
+    paths:
+     - $CI_PROJECT_DIR
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^customer_portal-./'
+push:
+  stage: push
+  script:
+    - echo "Building Docker image from Tag $CI_COMMIT_TAG"
+    # - cd $CI_PROJECT_DIR
+    # - ls
+    # - pwd
+    # - docker login registry.gitlab.com -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    # - docker load -i myimage.tar.gz
+    # - docker push registry.gitlab.com/
+  when: manual
+  only:
+    - tags 
