@@ -246,10 +246,10 @@ class OpenapiController extends RealtimeController {
 		} else {
 			// we put first debit to charge first before reserve
 			usort($this->event, function($a, $b) {
-				if ($a['uf']['serviceRating']['requestSubType'] == 'DEBIT') {
+				if ($a['uf']['serviceRating']['requestSubType'] == self::RATING_ACTION_DEBIT) {
 					return -1;
 				}
-				return $b['uf']['serviceRating']['requestSubType'] == 'DEBIT' ? 1 : 0;
+				return $b['uf']['serviceRating']['requestSubType'] == self::RATING_ACTION_DEBIT ? 1 : 0;
 			});
 		}
 	}
