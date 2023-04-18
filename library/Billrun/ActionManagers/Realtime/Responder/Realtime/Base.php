@@ -61,7 +61,7 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 			
 			if ($serviceRating['rebalance_required'] ?? false) {
 				$serviceRatingRes['consumedUnit'] = [
-					$unitsField => $serviceRating['consumedUnit'][$unitsField] ?? 0,
+					$unitsField => $serviceRating['consumedUnit'][$unitsField] ?? $this->row['usagev'],
 				];
 			}
 			
@@ -133,7 +133,7 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 	 * @return string
 	 */
 	protected function getResultCode($serviceRating) {
-		if (empty($serviceRating['reservation_required'])) {
+		if (empty($serviceRating['reservation_required']) && !$this->requirePostpaidOverGroupBlock()) {
 			return 'SUCCESS';
 		}
 		
