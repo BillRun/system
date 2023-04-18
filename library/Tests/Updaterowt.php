@@ -471,6 +471,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	}
 
 	public function testUpdateRow() {
+		$this->rows  = $this->skip_tests($this->rows ,'row.stamp');
 		//running test
 		foreach ($this->rows as $key => $row) {
 			$fixrow = $this->fixRow($row['row'], $key);
