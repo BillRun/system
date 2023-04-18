@@ -220,6 +220,11 @@ class OpenapiController extends RealtimeController {
 		$requestId = uniqid();
 		$origRow = $this->event;
 		$this->event = [];
+		
+		// fix for sending object instead of array of objects
+		if (Billrun_Util::isAssoc($origRow['uf']['serviceRating'])) {
+			$origRow['uf']['serviceRating'] = array($origRow['uf']['serviceRating']);
+		}
 		$serviceRatings = $origRow['uf']['serviceRating'] ?? [];
 		$i = 1;
 		foreach ($serviceRatings as $serviceRating) {
