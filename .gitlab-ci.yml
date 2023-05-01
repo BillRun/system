@@ -81,7 +81,6 @@ php_testcases:
     - docker rm testing
     - docker image rm test:v1 nginx:latest mongo:3.6 billrun-php74
 
-
   artifacts:
     when: always
     paths:
