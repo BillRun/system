@@ -55,8 +55,7 @@ python_testcases:
     reports:
       junit: $CI_PROJECT_DIR/integration_tests/xml_report_backend.xml
     expire_in: 1 week
-
-    
+ 
 php_testcases:
   stage: test
   tags:
