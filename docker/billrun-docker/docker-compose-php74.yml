@@ -21,6 +21,7 @@ services:
             dockerfile: Dockerfile
         image: billrun-php74
         container_name: billrun-app
+        privileged: true
         restart: always
         environment:
         - "APPLICATION_ENV=container"
@@ -33,9 +34,21 @@ services:
         restart: always
         volumes:
             - ./../..:/billrun:ro
+            - ./../persist/data/db/mongo-3.6:/data/db
+            - ./../persist/backup:/backup
             - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
         ports:
             - 27017:27017
+
+    sftpgo:
+        image: "drakkan/sftpgo:latest"
+        restart: always
+        ports:
+          - "8080:8080"
+          - "443:443"
+          - "5007:5007"
+        volumes:
+          - ./sftp-go/:/etc/sftpgo
 
 networks:
   default:
