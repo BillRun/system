@@ -2,8 +2,7 @@ image: serhii22ua/docker-compose-python10:latest-amd64
 
 stages:
   - build
-  - test-1
-  - test-2
+  - test
 
 print-info:
  stage: build
@@ -25,7 +24,7 @@ python_testcases:
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: ""
 
-  stage: test-1
+  stage: test
   tags:
     - new_docker_runner
   rules:
@@ -59,7 +58,7 @@ python_testcases:
  
  
 php_testcases:
-  stage: test-2
+  stage: test
   tags:
     - CI_DEV
   rules:
@@ -70,13 +69,13 @@ php_testcases:
     - chmod 777 logs/ cache/
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74.yml up --build --detach
-    - sleep 20
 
   # Run php testcases
   script:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing
     - docker build -t test:v1 .
     - docker run -d --name testing test:v1
+    - docker logs testing
     - docker logs -f testing &> docker.log &
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74.yml down -v
