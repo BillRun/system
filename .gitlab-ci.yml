@@ -2,7 +2,8 @@ image: serhii22ua/docker-compose-python10:latest-amd64
 
 stages:
   - build
-  - test
+  - test-1
+  - test-2
 
 print-info:
  stage: build
@@ -24,7 +25,7 @@ python_testcases:
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: ""
 
-  stage: test
+  stage: test-1
   tags:
     - new_docker_runner
   rules:
@@ -58,7 +59,7 @@ python_testcases:
  
  
 php_testcases:
-  stage: test
+  stage: test-2
   tags:
     - CI_DEV
   rules:
@@ -81,7 +82,8 @@ php_testcases:
     - docker-compose -f docker-compose-php74.yml down -v
     - docker stop testing
     - docker rm testing
-    - docker image rm test:v1 nginx:latest mongo:3.6 billrun-php74
+    - docker image rm test:v1 nginx:latest mongo:3.6 billrun-php74 drakkan/sftpgo:latest
+
 
   artifacts:
     when: always
