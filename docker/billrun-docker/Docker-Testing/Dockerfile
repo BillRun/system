@@ -14,9 +14,9 @@ RUN wget https://chromedriver.storage.googleapis.com/111.0.5563.64/chromedriver_
     chmod +x /usr/bin/chromedriver && \
     rm chromedriver_linux64.zip
 
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+RUN wget https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_111.0.5563.64-1_amd64.deb && \
     apt-get install -y libgbm1 libu2f-udev libvulkan1 && \
-    dpkg -i google-chrome-stable_current_amd64.deb
+    dpkg -i google-chrome-stable_111.0.5563.64-1_amd64.deb
 
 RUN pip3 install selenium==4.8.2
 
