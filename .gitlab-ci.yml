@@ -65,7 +65,7 @@ php_testcases:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS != "skip_ci"
   before_script:
     # build and run BillRun app in docker
-    - mkdir logs/ cache/
+    - mkdir logs cache
     - chmod 777 logs/ cache/
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74.yml up --build --detach
@@ -78,6 +78,7 @@ php_testcases:
     - docker logs -f testing &> docker.log &
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74.yml down -v
+    - docker stop testing
     - docker rm testing
     - docker image rm test:v1 nginx:latest mongo:3.6 billrun-php74
 
