@@ -69,7 +69,7 @@ php_testcases:
     - chmod 777 logs/ cache/
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74.yml up --build --detach
-    - sleep 600
+    - sleep 20
 
   # Run php testcases
   script:
