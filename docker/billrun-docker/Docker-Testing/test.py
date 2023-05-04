@@ -10,6 +10,10 @@ chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--disable-dev-shm-usage")
 driver = webdriver.Chrome(options=chrome_options)
 
+driver.get("https://www.google.com/")
+a = driver.title
+print(a)
+
 driver.get("http://46.101.14.10:8074")
 driver.implicitly_wait(100)
 
