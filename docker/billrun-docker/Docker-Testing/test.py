@@ -9,7 +9,7 @@ chrome_options.add_argument("--headless")
 chrome_options.add_argument("--disable-gpu")
 driver = webdriver.Chrome(options=chrome_options)
 
-driver.get("http://46.101.14.10:8074/index.html#/")
+driver.get("46.101.14.10:8074")
 driver.implicitly_wait(100)
 
 # Encoded username and password
