@@ -223,6 +223,7 @@
     "status_running_files": "Running files"
   },
   "bills": {
+    "cpg_name": "Custom Payment Gateway Name",
     "billrun_key": "Billing cycle"
   },
   "immediate_invoice": {
