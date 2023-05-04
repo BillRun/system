@@ -74,7 +74,7 @@ php_testcases:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing
     - docker build -t test:v1 .
     - docker run -d --name testing test:v1
-    - docker logs testing > docker.log 2>&1
+    - docker logs --follow testing > docker.log
     #- docker logs testing
     #- docker logs -f testing &> docker.log &
     - cd $CI_PROJECT_DIR/docker/billrun-docker
@@ -82,6 +82,7 @@ php_testcases:
     - docker stop testing
     - docker rm testing
     - docker image rm test:v1 nginx:latest mongo:3.6 billrun-php74
+    - sleep 200
 
   artifacts:
     when: always
