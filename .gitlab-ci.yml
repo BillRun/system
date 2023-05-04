@@ -75,7 +75,7 @@ php_testcases:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing
     - docker build -t test:v1 .
     - docker run --name testing test:v1
-    - #docker logs testing
+    #- docker logs testing
     - docker logs -f testing &> docker.log &
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74.yml down -v
