@@ -7,9 +7,10 @@ chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--disable-dev-shm-usage")
 driver = webdriver.Chrome(options=chrome_options)
 
-driver.get("46.101.14.10:8074")
+driver.get("http://46.101.14.10:8074")
 driver.implicitly_wait(100)
 
 # Encoded username and password
