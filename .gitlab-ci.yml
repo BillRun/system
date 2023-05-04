@@ -81,7 +81,7 @@ php_testcases:
     - docker-compose -f docker-compose-php74.yml down -v
     - docker stop testing
     - docker rm testing
-    - docker image rm test:v1 nginx:latest mongo:3.6 billrun-php74 drakkan/sftpgo:latest
+    - docker image rm test:v1 nginx:latest mongo:3.6 billrun-php74
 
   artifacts:
     when: always
