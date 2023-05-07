@@ -1486,6 +1486,20 @@ lastConfig = runOnce(lastConfig, 'BRCD-3890', function () {
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'charges');
 });
 
+// BRCD-4010 : Set default value for missing instance_name
+lastConfig = runOnce(lastConfig, 'BRCD-4010', function () {
+	db.subscribers.find({
+		'payment_gateway.active': {$exists: 1},
+		'payment_gateway.active.instance_name': {$exists: 0},
+		type: 'account'
+	}).forEach(
+		function(account) {
+			account.payment_gateway.active.instance_name = account.payment_gateway.active.name;
+			db.subscribers.save(account);
+		}
+	);
+});
+
 // BRCD-4102 Migrate all cancel bills to be 
 lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
 	var cancelBills = db.bills.find({cancel:{$exists:1}, urt:ISODate("1970-01-01T00:00:00.000Z")});
