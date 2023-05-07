@@ -412,7 +412,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		$rawResults = $this->loadRawData($this->getCycle());
 		$data = $rawResults['data'];
-		Billrun_Factory::log('No data loaded by customer aggregator', Zend_Log::DEBUG);
+		if (empty($data)) {
+			Billrun_Factory::log('No data loaded by customer aggregator', Zend_Log::DEBUG);
+		}
 		$accounts = $this->parseToAccounts($data, $this);
 		
 		return $accounts;
