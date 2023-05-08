@@ -471,7 +471,82 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
         , 'vatable' => 866.115553958 , 'vat' => 17),
            )
                 ),
-        
+        //override plan and service price cases   https://billrun.atlassian.net/browse/BRCD-3183
+			/* /*sid 771
+			  override plan price for a subscriber for a whole month -
+			  Expected: the plan price will be the overridden price  -pass */
+			array('test' => array('test_number' => 176, "aid" => 770, 'sid' => 771, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(770))),
+				'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 770, 'after_vat' => array("771" => 58.5), 'total' => 58.5, 'vatable' => 50, 'vat' => 17),
+					'line' => array('types' => array('flat'))),),
+			/* sid 772
+			  override plan price for a subscriber, the last revision has the override  -
+			  Expected: the plan price will be overridden  for all the month-pass */
+			array('test' => array('test_number' => 177, "aid" => 882, 'sid' => 772, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(882))),
+				'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 882, 'after_vat' => array("772" => 58.5), 'total' => 58.5, 'vatable' => 50, 'vat' => 17),
+					'line' => array('types' => array('flat'))),),
+			/* sid 773
+			  override plan price for a subscriber, the override is not the last revision   -
+			  Expected: the plan price will not be overridden  -pass */
+			array('test' => array('test_number' => 178, "aid" => 883, 'sid' => 773, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(883))),
+				'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 883, 'after_vat' => array("773" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+					'line' => array('types' => array('flat'))),),
+			/* sid 774
+			  override plan price for a subscriber, the subscriber “from” is from mid-month  (prorated plan)  -
+			  Expected: the prorated plan price will be overridden  - pass */
+			array('test' => array('test_number' => 179, "aid" => 884, 'sid' => 774, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(884))),
+				'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 884, 'after_vat' => array("774" => 60.387096774193544), 'total' => 60.387096774193544, 'vatable' => 51.61290322580645, 'vat' => 17),
+					'line' => array('types' => array('flat'))),),
+			/* sid 775
+			  override plan price for a subscriber, the plan has a discount of about 100%
+			  Expected: the discount will be 100% of the plan price -pass */
+			array('test' => array('test_number' => 180, "aid" => 885, 'sid' => 775, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(885))),
+				'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 885, 'after_vat' => array("775" => 0), 'total' => 0, 'vatable' => 0, 'vat' => 0),
+					'line' => array('types' => array('flat', 'credit'))),),
+			/* sid 776
+			  override plan price for a subscriber, the plan has a monetary discount of about more than the plan price(after override )
+			  Expected: the discount will be 100% of the plan price and anyway will not be more the plan price-pass */
+			array('test' => array('test_number' => 181, "aid" => 886, 'sid' => 776, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(886))),
+				'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 886, 'after_vat' => array("776" => 0), 'total' => 0, 'vatable' => 0, 'vat' => 0),
+					'line' => array('types' => array('flat', 'credit'))),),
+			/* sid 777
+			  override another plan price for a subscriber
+			  Expected: the plan price will not be affected by the override - pass */
+			array('test' => array('test_number' => 182, "aid" => 887, 'sid' => 777, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(887))),
+				'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 887, 'after_vat' => array("777" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+					'line' => array('types' => array('flat'))),),
+			/* sid 778
+			  override service price,
+			  Expected: the service price will be the overridden price  - pass */
+			array('test' => array('test_number' => 183, "aid" => 888, 'sid' => 778, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(888))),
+				'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 888, 'after_vat' => array("778" => 5.85), 'total' => 5.85, 'vatable' => 5, 'vat' => 17),
+					'line' => array('types' => array('flat', 'service'))),),
+			/* sid 779
+			  override service price with a condition, the condition is met
+			  Expected: the service price will be the overridden price  - pass */
+			array('test' => array('test_number' => 184, "aid" => 889, 'sid' => 779, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(889))),
+				'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 889, 'after_vat' => array("779" => 5.85), 'total' => 5.85, 'vatable' => 5, 'vat' => 17),
+					'line' => array('types' => array('flat', 'service'))),),
+			/* sid 780
+			  override service price with a condition, the condition isn’t met
+			  Expected: the service price will not be overridden   - pass */
+			array('test' => array('test_number' => 185, "aid" => 890, 'sid' => 780, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202108", "force_accounts" => array(890))),
+				'expected' => array('billrun' => array('billrun_key' => '202108', 'aid' => 890, 'after_vat' => array("780" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+					'line' => array('types' => array('flat', 'service'))),),
+            /*
+            start -> https://billrun.atlassian.net/browse/BRCD-3526
+             sid 35268
+			 plan activation date 1'st of the month - invoice generated on next month (full arrears + upfront) */
+            array(
+                'test' => array('test_number' => '185-1', "aid" => 35267, 'sid' => 35268, 'function' => array('totalsPrice', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded','checkPerLine'), 'options' => array("stamp" => "202204", "force_accounts" => array(35267))),
+                'expected' => array(
+                    'billrun' => array('billrun_key' => '202204', 'aid' => 35267, 'after_vat' => array("35268" => 234), 'total' => 234, 'vatable' => 200, 'vat' => 17),
+                    'line' => array('types' => array('flat')),
+                    'lines' => [
+                        ['query' => array('sid' => 35268,'billrun' => "202204", 'plan' => 'UPFRONT1'), 'aprice' => 100],
+                        ['query' => array('sid' => 35268,'billrun' => "202204", 'plan' => 'UPFRONT1'), 'aprice' => 100]
+                    ]
+                ),
+            ),
             /* sid 352610
 			plan activation date in mid month - invoice generated on next month (partial arrears + full upfront) */
             array(
