@@ -40,6 +40,7 @@ class Tests_Discounttest extends UnitTestCase {
 	public function TestPerform() {
 		
 		$this->Tests = $this->skip_tests($this->Tests ,'test_num');
+		$this->Tests = $this->skip_tests($this->Tests ,'test_num');
 		foreach ($this->Tests as $key => $row) {
 			$this->message .= "Test number : {$row['test_num']}<br>";
 			$aid = $row['test']['subsAccount'][0]['aid'];
