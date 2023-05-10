@@ -38,13 +38,13 @@ class Tests_Discounttest extends UnitTestCase {
 	}
 
 	public function TestPerform() {
-		
+
 		$this->Tests = $this->skip_tests($this->Tests ,'test_num');
 		foreach ($this->Tests as $key => $row) {
 			$this->message .= "Test number : {$row['test_num']}<br>";
 			$aid = $row['test']['subsAccount'][0]['aid'];
 			$expectedEligibility = '<b>expected </b> </br>';
-			
+
 			foreach ($row['expected'] as $Dname => $dates) {
 				$expectedEligibility .= "<b>Eligibility for discount : <br>$Dname</b><br>";
 				foreach ($dates['eligibility'] as $date) {
