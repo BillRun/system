@@ -49,7 +49,7 @@ class Services(BaseAPI):
             'recurrence': {
                 "frequency": 1,
                 "start": 1
-            },
+            }
         }
 
         return self
