@@ -4,9 +4,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
 chrome_options = webdriver.ChromeOptions()
-# chrome_options.add_argument("--no-sandbox")
-# chrome_options.add_argument("--headless")
-# chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--disable-gpu")
 driver = webdriver.Chrome(options=chrome_options)
 
 driver.get("http://46.101.14.10:8074/index.html#/")
