@@ -245,7 +245,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 			return $row;
 		} catch (Exception $e) {
-			Billrun_Factory::log()->log($e->getMessage(), Zend_Log::ALERT);
+			Billrun_Factory::log()->log("Failed to update rate row with the following error:\n" . $e->getMessage(), Zend_Log::ALERT);
+			Billrun_Factory::log()->log($e->getTrace(), Zend_Log::DEBUG);
 			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.rate');
 			$row['usagev'] = 0;
 			return false;

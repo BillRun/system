@@ -132,7 +132,8 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 			return $row;
 		} catch (Exception $e) {
-			Billrun_Factory::log()->log($e->getMessage(), Zend_Log::ALERT);
+			Billrun_Factory::log()->log("Failed to update usage row with the following error:\n" . $e->getMessage(), Zend_Log::ALERT);
+			Billrun_Factory::log()->log($e->getTrace(), Zend_Log::DEBUG);
 			return false;
 		}
 	}
