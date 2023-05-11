@@ -150,8 +150,14 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 //-------------------------------------------------------------------
 // BRCD-1278 - backward support for new template
 if(lastConfig.invoice_export) {
-	lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
-	lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.header) &&
+		!lastConfig.invoice_export.header) {
+			lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
+	}
+	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.footer) &&
+		!lastConfig.invoice_export.footer) {
+			lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+	}
 }
 
 //BRCD-1229 - Input processor re-enabled when not requested
@@ -1181,10 +1187,10 @@ lastConfig = runOnce(lastConfig, 'BRCD-3227', function () {
     lastConfig['rates']['fields'] = fields;
 });
 // BRCD-2888 -adjusting config to the new invoice templates
-if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.header)) {
+if(lastConfig.invoice_export && /\/header\/header_tpl\.html$/.test(lastConfig.invoice_export.header)) {
 	lastConfig.invoice_export.header = "/header/header_tpl.phtml";
 }
-if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.footer)) {
+if(lastConfig.invoice_export && /\/footer\/footer_tpl\.html$/.test(lastConfig.invoice_export.footer)) {
 	lastConfig.invoice_export.footer = "/footer/footer_tpl.phtml";
 }
 // BRCD-2888 -adjusting config to the new invoice templates
@@ -1484,6 +1490,20 @@ lastConfig = runOnce(lastConfig, 'BRCD-3890', function () {
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'services');
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'discounts');
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'charges');
+});
+
+// BRCD-4010 : Set default value for missing instance_name
+lastConfig = runOnce(lastConfig, 'BRCD-4010', function () {
+	db.subscribers.find({
+		'payment_gateway.active': {$exists: 1},
+		'payment_gateway.active.instance_name': {$exists: 0},
+		type: 'account'
+	}).forEach(
+		function(account) {
+			account.payment_gateway.active.instance_name = account.payment_gateway.active.name;
+			db.subscribers.save(account);
+		}
+	);
 });
 
 // BRCD-4102 Migrate all cancel bills to be 
