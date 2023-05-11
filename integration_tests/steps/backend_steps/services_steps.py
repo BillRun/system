@@ -34,8 +34,6 @@ class Services(BaseAPI):
             prorated=None,
             quantitative=None,
             include=None,  # ?
-            recurrence_frequency=None,
-            recurrence_start=None,
     ):
         self.create_payload = {
             'description': description or get_random_str(),
@@ -46,10 +44,6 @@ class Services(BaseAPI):
             'to': to or get_random_past_or_future_date_str(past=False, start_range_from=5),
             'prorated': prorated or get_true_or_false(),
             'quantitative': quantitative or get_true_or_false(),
-            'recurrence': {
-                "frequency": 1,
-                "start": 1
-            }
         }
 
         return self
