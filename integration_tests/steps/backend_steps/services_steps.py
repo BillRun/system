@@ -61,6 +61,7 @@ class Services(BaseAPI):
             tax=None,
             prorated=None,
             quantitative=None,
+            billing_frequency_type=None,
     ):
         self.update_payload = {
             'description': description or get_random_str(),
@@ -68,6 +69,7 @@ class Services(BaseAPI):
             'tax': tax,
             'prorated': prorated or random.choice([False, True]),
             'quantitative': quantitative,
+            'billing_frequency_type': billing_frequency_type,
         }
         remove_keys_if_value_is_none(self.update_payload)
 
