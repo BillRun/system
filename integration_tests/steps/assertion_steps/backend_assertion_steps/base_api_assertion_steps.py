@@ -74,18 +74,11 @@ class APIAssertionSteps(ABC):
     def check_revision_has_new_to_date_after_close_and_new(self):
         assert_that(
             get_details(self.instance.get_by_id())[0].get('to'),
-            equal_to('2023-06-05T00:00:00+0000'),
+            equal_to(
+                convert_date_str_to_datetime_str(
+                    self.instance.close_and_new_payload.get('from'))),
             '"to" param is not changed to "from" param from new revision'
         )
-
-    # def check_revision_has_new_to_date_after_close_and_new(self):
-    #     assert_that(
-    #         get_details(self.instance.get_by_id())[0].get('to'),
-    #         equal_to(
-    #             convert_date_str_to_datetime_str(
-    #                 self.instance.close_and_new_payload.get('from'))),
-    #         '"to" param is not changed to "from" param from new revision'
-    #     )
 
     def check_object_revision_status(self, status=None):
         if not status:
