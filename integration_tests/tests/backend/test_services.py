@@ -32,7 +32,7 @@ def test_update_services():
     params_to_upd = {
         'description': get_random_str(),
         'prorated': get_true_or_false(),
-        'quantitative': get_true_or_false()
+        'quantitative': get_true_or_false(),
         'billing_frequency_type': 'monthly'
     }
     service.compose_create_payload().create()
