@@ -1,0 +1,42 @@
+version: '3.7'
+### Because MongoDB is not installed, please setup database configuration under <BILLRUN_ROOT>/conf/container.ini
+
+services:
+    web:
+        image: nginx:latest
+        container_name: billrun-nginx
+        ports:
+            - "8080:80"
+        restart: always
+        volumes:
+            - ./../..:/billrun:ro
+            - ./nginx.conf:/etc/nginx/nginx.conf
+        depends_on:
+            - "php"
+        environment:
+        - "APPLICATION_ENV=container"    
+    php:
+        build: 
+            context: ./billrun-php80
+            dockerfile: Dockerfile-light
+        image: billrun-php80
+        container_name: billrun-app
+        restart: always
+        environment:
+        - "APPLICATION_ENV=container"
+#        - "BR_MDB_HOST="
+#        - "BR_MDB_PORT="
+#        - "BR_MDB_USER="
+#        - "BR_MDB_PASS="
+#        - "BR_MDB_DBNAME="
+#        - "BR_MDB_AUTHDB="
+        volumes:
+            - ./../..:/billrun
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet:  10.103.0.1/16
