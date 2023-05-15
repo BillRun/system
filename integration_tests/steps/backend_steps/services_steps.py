@@ -62,6 +62,8 @@ class Services(BaseAPI):
             prorated=None,
             quantitative=None,
             Billing_Frequency=None,
+            recurrence_frequency=None,
+            recurrence_start=None,
     ):
         self.update_payload = {
             'description': description or get_random_str(),
@@ -70,6 +72,10 @@ class Services(BaseAPI):
             'prorated': prorated or random.choice([False, True]),
             'quantitative': quantitative,
             'Billing_Frequency': Billing_Frequency or random.choice(["Monthly", "Bimonthly", "Quartely" ,"Semiannual", "Annual"]),
+            'recurrence': {
+                "frequency": 1,
+                "start": 1
+            }
         }
         remove_keys_if_value_is_none(self.update_payload)
 
