@@ -2,7 +2,7 @@ FROM php:7.4-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
 RUN apt-get update && apt-get install -y \
-    wkhtmltopdf libpng-dev zlib1g-dev libzip-dev libcurl4-openssl-dev pkg-config libssl-dev \
+    wkhtmltopdf libpng-dev zlib1g-dev libzip-dev libcurl4-openssl-dev pkg-config libssl-dev wget \
     && pecl install yaf-3.1.4 \
     && pecl install mongodb-1.11.1 \
     && docker-php-ext-enable yaf mongodb \
