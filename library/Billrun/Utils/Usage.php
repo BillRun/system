@@ -80,14 +80,7 @@ class Billrun_Utils_Usage {
 				$subscriber = Billrun_Factory::subscriber();
 				$query = array('aid' => $row['aid'], 'sid' => array('$ne' => $row['sid']),
 					'from' => array('$lt' => new Mongodloid_Date()), 'to' => array('$gt' => new Mongodloid_Date()));
-				$entity = array();
-				$documents = $subscriber->loadSubscriberForQueries([$query]);
-				foreach ($documents as $subs) {
-					foreach ($subs as $sub) {
-						$entity[] = $sub;
-					}
-				}
-				return $entity;
+				return $subscriber->loadSubscriberForQueries([$query]);
 			default:
 				Billrun_Factory::log("Foreign entity type {$entityType} isn't supported.", Zend_Log::DEBUG);
 				return null;

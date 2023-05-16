@@ -17,7 +17,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	use Billrun_Traits_ForeignFields {
 		getForeignFieldsFromConfig as baseGetForeignFieldsFromConfig;
 	}
-
+	
 	/**
 	 * the type of the object
 	 *
@@ -178,21 +178,20 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	
         protected function calculateDataRow($line) {
             $lines_coll = Billrun_Factory::db()->linesCollection();
-            if ($line) {
-                Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
-                Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
-                $line->collection($lines_coll);
-                if ($this->isLineLegitimate($line)) {
-                        if ($this->updateRow($line) === FALSE) {
-                                unset($this->lines[$line['stamp']]);
+			if ($line) {
+				Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
+				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
+				$line->collection($lines_coll);
+				if ($this->isLineLegitimate($line)) {
+					if ($this->updateRow($line) === FALSE) {
+						unset($this->lines[$line['stamp']]);
                                 return;
-                        }
-                        $this->data[$line['stamp']] = $line;
-                }
-                Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
-            }
-        }
-
+					}
+					$this->data[$line['stamp']] = $line;
+				}
+				Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
+			}
+		}
         /**
          * Adding extra lines to calculated lines. 
          * @param Mongodloid_Entity $line- that we want to check if generate extra lines (inside the trigger)
@@ -357,7 +356,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$line->collection(Billrun_Factory::db()->linesCollection());
 		return $line;
 	}
-	
+
 	protected function pullQueueLineByStamp($stamp) {
 		$queue_line = Billrun_Factory::db()->queueCollection()->query('stamp', $stamp)
 				->cursor()->current();
@@ -367,8 +366,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$queue_line->collection(Billrun_Factory::db()->queueCollection());
 		return $queue_line;
 	}
-
-
 	/**
 	 * Mark the calculation as finished in the queue.
 	 * @param array $query additional query parameters to the queue
@@ -492,12 +489,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return array the queue lines
 	 */
 	protected function getQueuedLines($localquery) {
-		$queue = Billrun_Factory::db()->queueCollection();
+		$queue = Billrun_Factory::db()->queueCollection()->setReadPreference('RP_PRIMARY');
 		$querydata = $this->getBaseQuery();
 		$query = array_merge($querydata['query'], $localquery);
 		$update = $this->getBaseUpdate();
-//		$fields = array();
-//		$options = static::getBaseOptions();
 		$retLines = array();
 		$horizonlineCount = 0;
 		do {
@@ -530,13 +525,18 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			}
 
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
+			Billrun_Factory::log('Work hash: ' . $this->workHash, Zend_Log::DEBUG);
 			$update['$set']['hash'] = $this->workHash;
-
-			if ($this->applyQueueHash($query, $update, $queue) === FALSE) {
+if (($response = $this->applyQueueHash($query, $update, $queue)) === FALSE) {
 				continue;
 			}
+			Billrun_Factory::log('Queue records updated number: ' . $response['nModified'], Zend_Log::DEBUG);
 
 			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
+			if ($foundLines->count() != $response['nModified']) {
+				// TODO remove when https://billrun.atlassian.net/browse/BRCD-3852 is fixed
+				Billrun_Factory::log('Found wrong number of lines: ' . $foundLines->count(), Zend_Log::DEBUG);
+			}
 
 			if ($this->autosort) {
 				$foundLines->sort(array('urt' => 1));

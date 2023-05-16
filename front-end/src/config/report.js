@@ -311,6 +311,7 @@ export default {
     ],
     bills: [
       { id: 'billrun_key'},
+      { id: 'cpg_name'},
       { id: 'type',
         inputConfig: {
           inputType: 'select',

@@ -417,6 +417,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 			'expected' => array('billrun' => array('billrun_key' => '202103', 'aid' => 399, 'after_vat' => array("499" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
 				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3013",
 		),
+		 
 			array('test' => array('label' => 'test the Conditional charge is applied only to one subscriber under the account instead of two', 'test_number' => 75, "aid" => 3082, 'sid' => array(3083, 3084), 'function' => array('basicCompare', 'sumSids', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202106", "force_accounts" => array(3082))),
 				'expected' => array('billrun' => array('billrun_key' => '202106', 'aid' => 3082, 'after_vat' => array("3083" => 175.5, "3084" => 175.5), 'total' => 351, 'vatable' => 300, 'vat' => 17),
 				'line' => array('types' => array('credit')))
@@ -460,7 +461,17 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          'expected' => array('billrun' => array('invoice_id' => 109, 'billrun_key' => '202208', 'aid' => 3798, 'after_vat' => array("3798" => 117.936), 'total' => 117.936, 'vatable' => 100.8, 'vat' => 17),
          ),
         ),
-			//override plan and service price cases   https://billrun.atlassian.net/browse/BRCD-3183
+        //BRCD-4042
+        array('test' => array('label' => 'change service quantity during the month', 'test_number' => 4042, "aid" => 80798,'sid' => array(80806),
+          'function' => array('basicCompare', 'sumSids', 'totalsPrice', 'linesVSbillrun', 'rounded'), 
+          'options' => array("stamp" => "202302", "force_accounts" => array(80798))),
+        'expected' => array('billrun' => array( 'billrun_key' => '202302', 
+        'aid' => 80798, 'after_vat' => array("80806" =>  1013.355198131),
+        'total' => 1013.355198131
+        , 'vatable' => 866.115553958 , 'vat' => 17),
+           )
+                ),
+        //override plan and service price cases   https://billrun.atlassian.net/browse/BRCD-3183
 			/* /*sid 771
 			  override plan price for a subscriber for a whole month -
 			  Expected: the plan price will be the overridden price  -pass */
@@ -3778,6 +3789,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
                      $this->$pre($key, $row);
                  }
              }
+             if(empty($this->test_cases_to_run)){
+                $this->tests = $this->skip_tests($this->tests,'test.test_number');
+              }
              // run aggregator
              if (array_key_exists('aid', $row['test'])) {
                  $returnBillrun = $this->runT($row);
@@ -4411,7 +4425,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
      }
 
      /**
-      * check if 'plan' filed under sub in billrun object exists
+      * check if 'plan' field under sub in billrun object exists
       * @param int $key number of the test case
       * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
       * @param array $row current test case
@@ -4419,16 +4433,16 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
       */
      public function planExist($key, $returnBillrun, $row) {
          $passed = true;
-         $this->message .= "<br><b> plan filed  :</b> <br>";
+         $this->message .= "<br><b> plan field  :</b> <br>";
          $sids = (array) $row['test']['sid'];
          foreach ($sids as $sid) {
              foreach ($returnBillrun['subs'] as $sub) {
                  if ($sid == $sub['sid']) {
                      if (!array_key_exists('plan', $sub)) {
-                         $this->message .= "plan filed does NOT exist in billrun object" . $this->fail;
+                         $this->message .= "plan field does NOT exist in billrun object" . $this->fail;
                          $passed = false;
                      } else {
-                         $this->message .= "plan filed exists in billrun object" . $this->pass;
+                         $this->message .= "plan field exists in billrun object" . $this->pass;
                      }
                  }
              }
