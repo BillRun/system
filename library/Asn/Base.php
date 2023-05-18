@@ -71,7 +71,7 @@ class Asn_Base {
 	 * @param $rawData the raw byte data that we want to decode
 	 * @return Asn_Object an asn object holding the parsed ASN1 data.
 	 */
-	protected static function newClassFromData($rawData) {
+	protected static function newClassFromData(&$rawData, $depth=0) {
 		$tmpType = $offset = 0;
 		$flags = ord($rawData[$offset++]);
 		$type = $flags & Asn_Markers::ASN_EXTENSION_ID;
@@ -89,9 +89,32 @@ class Asn_Base {
 			return null;
 		}
 		
-		$ret =  new $cls($rawData, $type, $flags, $offset);
+		$tmpOffset = $offset;
+		$dataLength = static::parseObjectDataLength($rawData,$tmpOffset);
+		$ret =  new $cls( (empty($dataLength) ? $rawData : substr($rawData, 0, $tmpOffset+$dataLength) ), $type, $flags, $offset, $depth);
 		
 		return $ret;
+	}
+
+
+	/**
+	 * Get the Object actual data length.
+	 * @param $rawData 	(passed by ref) the raw byte data.
+	 * @param $offset  the offset that that the data header start at. (Note: this  varialbe will be alter by this function)
+	 * @return 		the length of the data also alter the $offset parameter by the length of the data header.
+	 */
+	protected static function parseObjectDataLength(&$rawData, &$offest = 0) {
+		$length = isset($rawData[$offest]) ? ord($rawData[$offest++]) : 0 ;
+		if (($length & Asn_Markers::ASN_LONG_LEN) == Asn_Markers::ASN_LONG_LEN) {
+			$tempLength = 0;
+			if($length == Asn_Markers::ASN_INDEFINITE_LEN ) {
+				return FALSE;
+			} else for ($x = ($length - Asn_Markers::ASN_LONG_LEN); $x > 0; $x--) {
+				$tempLength = ord($rawData[$offest++]) + ($tempLength << 8);
+			}
+			$length = $tempLength;
+		}
+		return $length;
 	}
 
 	/**
@@ -102,7 +125,7 @@ class Asn_Base {
 	 * @return 	the shifted data.
 	 * 	 	(Notice! will alter the provided $data)
 	 */
-	protected static function shift(&$data, $len = 1, $from = 0) {
+	protected static function &shift(&$data, $len = 1, $from = 0) {
 		$shifted = substr($data, $from, $len);
 		$data = substr($data, $len + $from);
 		return $shifted;

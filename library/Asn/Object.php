@@ -14,6 +14,12 @@
  */
 class Asn_Object extends Asn_Base {
 
+	const DEFAULT_MAX_OBJECT_DATA_SIZE = 1 << 24;
+	const DEFAULT_LVL_FOR_OBJECT_LIMIT = 5;
+
+	public static $MAX_DATA_SIZE_FOR_OBJECT = self::DEFAULT_MAX_OBJECT_DATA_SIZE;
+	public static $FIRST_LVL_FOR_OBJECT_SIZE_LIMIT = self::DEFAULT_LVL_FOR_OBJECT_LIMIT;
+
 	protected $parsedData = null;
 	protected $dataLength = false;
 	protected $rawDataLength = false;
@@ -22,23 +28,28 @@ class Asn_Object extends Asn_Base {
 	protected $flags = null;
 	protected $offset = 0;
 
-	function __construct($data = "", $type = false, $flags = false, $offset = 0) {	
-		$data = $this->getObjectData($data, $offset);		
-		
+	function __construct($data = "", $type = false, $flags = false, $offset = 0, $depth=0) {
+		$data = $this->getObjectData($data, $offset);
+
 		$this->typeId = $type;		
 		$this->flags = $flags;
-		
+		$datLen = strlen($data);
+		if(	$depth > static::$FIRST_LVL_FOR_OBJECT_SIZE_LIMIT
+			&& $datLen > Asn_Object::$MAX_DATA_SIZE_FOR_OBJECT){
+				$data = substr($data,0,Asn_Object::$MAX_DATA_SIZE_FOR_OBJECT);
+				Billrun_Factory::log($datLen);
+		}
 		if ($this->isConstructed()) {
 			//the object is constructed from smaller objects
 			$this->parsedData = array();
 			while (isset($data[0])) {
-				$ret = $this->newClassFromData($data);				
+				$ret = $this->newClassFromData($data, $depth+1);
 				$this->asnData .= static::shift($data,$ret->getRawDataLength());
 				if( $ret instanceof Asn_Type_Eoc || ( hexdec($ret->getType()) == 0 && $ret->getDataLength() == 0 )) {
-					$this->offset += $ret->getRawDataLength();					
+					$this->offset += $ret->getRawDataLength();
 					break;
 				}
-				$this->parsedData[] = $ret;				
+				$this->parsedData[] = $ret;
 			}			
 		} else {
 			//this object only conatins data so parse it.
@@ -77,7 +88,7 @@ class Asn_Object extends Asn_Base {
 	 * get the length of the  raw data this object was created from.
 	 * @return integer the length of the data that was used to create the object.
 	 */
-	public function getRawDataLength() {		
+	public function getRawDataLength() {
 		if(!$this->rawDataLength) {
 			$this->rawDataLength = $this->offset;
 			if(is_array($this->parsedData)) {
@@ -116,26 +127,6 @@ class Asn_Object extends Asn_Base {
 	 */
 	protected function parse($data) {
 		$this->parsedData = $data;
-	}
-	
-	/**
-	 * Get the Object actual data length.
-	 * @param $rawData 	(passed by ref) the raw byte data.
-	 * @param $offset  the offset that that the data header start at. (Note: this  varialbe will be alter by this function)
-	 * @return 		the length of the data also alter the $offset parameter by the length of the data header.
-	 */
-	protected function parseObjectDataLength($rawData, &$offest = 0) {
-		$length = isset($rawData[$offest]) ? ord($rawData[$offest++]) : 0 ;
-		if (($length & Asn_Markers::ASN_LONG_LEN) == Asn_Markers::ASN_LONG_LEN) {			
-			$tempLength = 0;
-			if($length == Asn_Markers::ASN_INDEFINITE_LEN ) {			
-				return FALSE;
-			} else for ($x = ($length - Asn_Markers::ASN_LONG_LEN); $x > 0; $x--) {
-				$tempLength = ord($rawData[$offest++]) + ($tempLength << 8);
-			}
-			$length = $tempLength;
-		}
-		return $length;
 	}
 	
 	/**
