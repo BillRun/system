@@ -370,12 +370,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return array the queue lines
 	 */
 	protected function getQueuedLines($localquery) {
-		$queue = Billrun_Factory::db()->queueCollection();
+		$queue = Billrun_Factory::db()->queueCollection()->setReadPreference('RP_PRIMARY');
 		$querydata = $this->getBaseQuery();
 		$query = array_merge($querydata['query'], $localquery);
 		$update = $this->getBaseUpdate();
-//		$fields = array();
-//		$options = static::getBaseOptions();
 		$retLines = array();
 		$horizonlineCount = 0;
 		do {
@@ -408,11 +406,18 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			}
 
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
+			Billrun_Factory::log('Work hash: ' . $this->workHash, Zend_Log::DEBUG);
 			$update['$set']['hash'] = $this->workHash;
-			//Billrun_Factory::log(print_r($query,1),Zend_Log::DEBUG);
-			$queue->update(array_merge($query, array('$isolated' => 1)), $update, array('multiple' => true));
+
+			$response = $queue->update($query, $update, array('multiple' => true, 'w' => 'majority'));
+			Billrun_Factory::log('Queue records updated number: ' . $response['nModified'], Zend_Log::DEBUG);
 
 			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
+
+			if ($foundLines->count() != $response['nModified']) {
+				// TODO remove when https://billrun.atlassian.net/browse/BRCD-3852 is fixed
+				Billrun_Factory::log('Found wrong number of lines: ' . $foundLines->count(), Zend_Log::DEBUG);
+			}
 
 			if ($this->autosort) {
 				$foundLines->sort(array('urt' => 1));
