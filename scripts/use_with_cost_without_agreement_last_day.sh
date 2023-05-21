@@ -15,7 +15,7 @@ OUTPUT=`mongo billing -ureading -p$PWD --quiet --eval 'db.getCollection("lines")
         $lt : ISODate("'$NOW'")    },    imsi : /^42508/,
     sdr : { $gt : 0 },
     sending_source : {
-        $nin : [ '$SENDING_SOURCE_LIST' ] }}).forEach(function(l){
+        $nin : [ '"$SENDING_SOURCE_LIST"' ] }}).forEach(function(l){
          print(l.urt+","+(l.sid ? l.sid : "" )+","+l.imsi+","+l.sending_source+","+l.sdr);
         })'`;
 
