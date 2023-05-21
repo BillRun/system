@@ -13,7 +13,7 @@ OUTPUT=`mongo billing -ureading -p$PWD --quiet --eval 'rs.slaveOk();db.getCollec
         $lt : ISODate("'$NOW'")    },
     imsi : /^42508/,
     sender : {
-        $nin : [ '$SENDING_SOURCE_LIST' ] }}).forEach(function(l){
+        $nin : [ '"$SENDING_SOURCE_LIST"' ] }}).forEach(function(l){
          print(l.urt+","+(l.sid ? l.sid : "" )+","+l.imsi+","+l.sender);
         })'`;
 
