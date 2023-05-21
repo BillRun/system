@@ -183,6 +183,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 			return isset($this->intlGgsnRates[strval($arate['$id'])]);
 		}
+		if($line['type'] == 'nsn' ) {
+			return !empty($line['roaming']);
+		}
 		return true;
 	}
 

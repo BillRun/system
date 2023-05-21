@@ -1,6 +1,8 @@
 #!/bin/bash
 
-PWD="";
+BASE_PATH=`dirname $0`;
+. $BASE_PATH/../conf/creds.sh
+
 LAST_DAY="`date -d '-2 days' +'%Y-%m-%dT%H:%M:%S%:z'`"
 NOW="`date +'%Y-%m-%dT%H:%M:%S%:z'`"
 

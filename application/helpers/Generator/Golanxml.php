@@ -1453,7 +1453,7 @@ class Generator_Golanxml extends Billrun_Generator {
 
 	protected function getCalledNo($line) {
 		$called_number = '';
-		if ($line['type'] == 'tap3' // on tap3
+		if ($line['type'] == 'tap3' || $line['roaming'] // on tap3 or marked as roaming
 			|| (isset($line['out_circuit_group']) && (in_array($line['out_circuit_group'], Billrun_Util::getIntlCircuitGroups())))) { // or call to abroad
 			if ($line['usaget'] == 'incoming_call') {
 				$called_number = $line['calling_number'];
@@ -1907,7 +1907,7 @@ EOI;
 			} else if ($credit_type == 'charge') {
 				$char = 'C';
 			}
-		} else if ($type == 'tap3') {
+		} else if ($type == 'tap3' || !empty($line['roaming'] )) {
 			if ($usaget == 'incoming_call') {
 				$char = 'I';
 			} else if ($usaget == 'data') {
