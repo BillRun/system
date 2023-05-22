@@ -398,6 +398,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 		chmod($pdf, $this->filePermissions);
 		$this->updateInvoicePropertyToBillrun($account, $pdf, $html);
+        
+		$this->signPdf($pdf);
+        
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorEntity',array($this, &$account,&$lines));
 	}
 
@@ -658,6 +661,32 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 					Billrun_Factory::log($segment . " field wasn't set in config, default path was taken..", Zend_Log::ERR);
 				}
 			}
+		}
+	}
+
+    public function signPdf(string $pdf) {
+		try {
+			$signerType = Billrun_Factory::config()->getConfigValue('signer.use', 'jsignpdf');
+
+			if (empty($signerType)) {
+				throw new Exception('Signer type not set');
+			}
+
+			if (empty($signerType) || $signerType === 'none') {
+				return;
+			}
+
+			$sigherClass = 'Billrun_Signer_' . ucfirst($signerType) . 'Signer';
+
+			if (!class_exists($sigherClass)) {
+				throw new Exception('Signer class not found');
+			}
+
+			/** @var Billrun_Signer_SignerAbstract $signer */
+			$signer = new $sigherClass($pdf);
+			$signer->sign();
+		} catch (Exception $e) {
+			Billrun_Factory::log("Failed to sign pdf: " . $e->getMessage(), Zend_Log::ERR);
 		}
 	}
 
