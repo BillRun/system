@@ -1027,49 +1027,52 @@ class Tests_Aggregator extends UnitTestCase
     }
     public function __construct($label = false)
     {
-        $this->arrays = $this->tests;
-        foreach ($this->arrays as $array) {
-            // Get the test number
-            $test_number = $array['test']['test_number'];
+        // $test_case = new Test_1();
+        $this->autoload_tests('aggregatorTestCases');
+    //    $this->tests =  $this->getTestCases();
+        // $this->arrays = $this->tests;
+        // foreach ($this->arrays as $array) {
+        // //     // Get the test number
+        //     $test_number = $array['test']['test_number'];
 
-            $path = "/home/yossi/Documents/seperat_test/";
-            $dirname = $path . "test_$test_number";
-            if (is_dir($dirname)) {
-                $dirname = $path . "duplicateID_test_$test_number";
-            }
-                $dirname = $path . "duplicateID_test_$test_number";
-            }
-            mkdir($dirname);
+        //     $path = "/home/yossi/projects/billrun/library/Tests/aggregatorTestCases";
+        //     // $dirname = $path . "test_$test_number";
+        //     // if (is_dir($dirname)) {
+        //     //     $dirname = $path . "duplicateID_test_$test_number";
+        //     // }
+        //     //     $dirname = $path . "duplicateID_test_$test_number";
+        //     // }
+        //     // mkdir($dirname);
 
-            $filename = "$dirname/test_$test_number.php";
-            if (file_exists($filename)) {
-                $filename = "$dirname/duplicateID_test_$test_number.php";
-            }
+        //     $filename = "$path/test_nuber_$test_number.php";
+        //     if (file_exists($filename)) {
+        //         $filename = "duplicateID_test_$test_number.php";
+        //     }
 
 
-            // Write the array to a new PHP class file in the test directory
-            $content = "<?php\n\n";
-            $content .= "class Test_$test_number {\n";
-            $content .= "    public function test_case() {\n";
-            $content .= "        return " . $this->custom_var_export($array) . ";\n";
-            $content .= "    }\n";
-            $content .= "}\n";
+        //     // Write the array to a new PHP class file in the test directory
+        //     $content = "<?php\n\n";
+        //     $content .= "class Test_Case_$test_number {\n";
+        //     $content .= "    public function test_case() {\n";
+        //     $content .= "        return " . $this->custom_var_export($array) . ";\n";
+        //     $content .= "    }\n";
+        //     $content .= "}\n";
 
-            file_put_contents($filename, $content);
-        }
-        die();
-        //  parent::__construct("test Aggregatore");
-        //  $this->ratesCol = Billrun_Factory::db()->ratesCollection();
-        //  $this->plansCol = Billrun_Factory::db()->plansCollection();
-        //  $this->linesCol = Billrun_Factory::db()->linesCollection();
-        //  $this->servicesCol = Billrun_Factory::db()->servicesCollection();
-        //  $this->discountsCol = Billrun_Factory::db()->discountsCollection();
-        //  $this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
-        //  $this->balancesCol = Billrun_Factory::db()->discountsCollection();
-        //  $this->billrunCol = Billrun_Factory::db()->billrunCollection();
-        //  $this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes','charges']);
-        //  $this->setColletions();
-        //  $this->loadDbConfig();
+        //     file_put_contents($filename, $content);
+        // }
+        // die();
+         parent::__construct("test Aggregatore");
+         $this->ratesCol = Billrun_Factory::db()->ratesCollection();
+         $this->plansCol = Billrun_Factory::db()->plansCollection();
+         $this->linesCol = Billrun_Factory::db()->linesCollection();
+         $this->servicesCol = Billrun_Factory::db()->servicesCollection();
+         $this->discountsCol = Billrun_Factory::db()->discountsCollection();
+         $this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
+         $this->balancesCol = Billrun_Factory::db()->discountsCollection();
+         $this->billrunCol = Billrun_Factory::db()->billrunCollection();
+         $this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes','charges']);
+         $this->setColletions();
+         $this->loadDbConfig();
     }
 
     public function loadDbConfig()
@@ -1106,7 +1109,7 @@ class Tests_Aggregator extends UnitTestCase
      */
     public function TestPerform()
     {
-
+        $this->tests =  $this->getTestCases();
         foreach ($this->tests as $key => $row) {
 
             $aid = $row['test']['aid'];
