@@ -123,7 +123,7 @@ class OpenapiController extends RealtimeController {
 	protected function prepareRequestData() {
 		$params = $this->getRequest()->getParams();
 		if (empty($params)) {
-			$this->setHttpStatusCode(Billrun_Utils_HttpStatusCodes::HTTP_CREATED);
+			$this->setHttpStatusCode(Billrun_Utils_HttpStatusCodes::getMessageForCode(Billrun_Utils_HttpStatusCodes::HTTP_CREATED));
 			$this->requestType = 'initial';
 			$this->sessionId = uniqid();
 			$this->setLocationHeader();
