@@ -29,7 +29,6 @@ OUTPUT=`mongo billing -ureading -p$PWD --quiet --eval 'rs.slaveOk();db.getCollec
          print(l.urt+","+(l.sid ? l.sid : "" )+","+l.imsi+","+l.sender);
         })'`;
 
-echo $OUTPUT;
 HEADER="urt,sid,imsi,sender"
 if [ -n "$OUTPUT" ]; then
     FILENAME="`date +%Y%m%d-%H%I`"_NRTRDE_last_hour.csv
