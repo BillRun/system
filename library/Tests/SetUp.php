@@ -119,7 +119,7 @@ trait Tests_SetUp
 
 	public function autoload_tests($dir)
 	{
-		$dir = new DirectoryIterator(__DIR__.'/'.$dir);
+		$dir = new DirectoryIterator(__DIR__ . '/' . $dir);
 		foreach ($dir as $fileinfo) {
 			if (!$fileinfo->isDot()) {
 				$filename = $fileinfo->getFilename();
@@ -131,19 +131,20 @@ trait Tests_SetUp
 		}
 	}
 
-	public function getTestCases(){
+	public function getTestCases($legacy_tests = [])
+	{
 		$all_test_cases = [];
 
 		// Get all declared classes
 		$classes = get_declared_classes();
-		
+
 		// Iterate over the classes
 		foreach ($classes as $class) {
 			// Check if the class name starts with 'Test_Case_'
 			if (strpos($class, 'Test_Case_') === 0) {
 				// Create an instance of the class
 				$instance = new $class();
-		
+
 				// Call the test_case method and store the result
 				if (method_exists($instance, 'test_case')) {
 					$test_case = $instance->test_case();
@@ -151,13 +152,43 @@ trait Tests_SetUp
 				}
 			}
 		}
-		  // Sort the test cases by test_number
-		  usort($all_test_cases, function($a, $b) {
+
+		// Sort the test cases by test_number
+		usort($legacy_tests, function ($a, $b) {
 			return $a['test']['test_number'] <=> $b['test']['test_number'];
 		});
-	
-		return $all_test_cases;
+		usort($all_test_cases, function ($a, $b) {
+			return $a['test']['test_number'] <=> $b['test']['test_number'];
+		});
+		//merge legacy test withe all the test cases 
+		return $this->mergeArraysByKey($all_test_cases,$legacy_tests, 'test.test_number');
+
 	}
+
+	function mergeArraysByKey($array1, $array2, $path)
+	{
+	//TODO: make it work
+		$mergedArray = array_filter([$array1,$array2], function (array $case1,$case2) use ($path) {
+				return  Billrun_Util::getIn($case1, $path) ==  Billrun_Util::getIn($case1, $path);
+		});
+
+		foreach ($array1 as $item1) {
+			$mergedItem = $item1;
+			$test_number1 = Billrun_Util::getIn($item1, $path);
+			foreach ($array2 as $item2) {
+				$test_number2 = Billrun_Util::getIn($item2, $path);
+				if ($test_number2 != $test_number1) {
+					$mergedItem = array_merge($item1, $item2);
+					break;
+				}
+			}
+
+			$mergedArray[] = $mergedItem;
+		}
+
+		return $mergedArray;
+	}
+
 
 	/**
 	 * tranform all fields starts with time* into MongoDate object

@@ -1109,7 +1109,7 @@ class Tests_Aggregator extends UnitTestCase
      */
     public function TestPerform()
     {
-        $this->tests =  $this->getTestCases();
+        $this->tests =  $this->getTestCases($this->tests);
         foreach ($this->tests as $key => $row) {
 
             $aid = $row['test']['aid'];
