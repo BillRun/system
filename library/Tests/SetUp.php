@@ -164,31 +164,35 @@ trait Tests_SetUp
 		return $this->mergeArraysByKey($all_test_cases,$legacy_tests, 'test.test_number');
 
 	}
-
-	function mergeArraysByKey($array1, $array2, $path)
-	{
-	//TODO: make it work
-		$mergedArray = array_filter([$array1,$array2], function (array $case1,$case2) use ($path) {
-				return  Billrun_Util::getIn($case1, $path) ==  Billrun_Util::getIn($case1, $path);
-		});
-
+	function mergeArraysByKey($array1, $array2, $path) {
+		$mergedArray = [];
+	
 		foreach ($array1 as $item1) {
 			$mergedItem = $item1;
 			$test_number1 = Billrun_Util::getIn($item1, $path);
-			foreach ($array2 as $item2) {
+	
+			foreach ($array2 as $key => $item2) {
 				$test_number2 = Billrun_Util::getIn($item2, $path);
-				if ($test_number2 != $test_number1) {
+	
+				if ($test_number1 == $test_number2) {
 					$mergedItem = array_merge($item1, $item2);
+					// Remove item from array2 so we don't process it again.
+					unset($array2[$key]);
 					break;
 				}
 			}
-
+	
 			$mergedArray[] = $mergedItem;
 		}
-
+	
+		// Add any remaining items from array2.
+		foreach ($array2 as $item2) {
+			$mergedArray[] = $item2;
+		}
+	
 		return $mergedArray;
 	}
-
+	
 
 	/**
 	 * tranform all fields starts with time* into MongoDate object
