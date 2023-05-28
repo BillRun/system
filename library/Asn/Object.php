@@ -37,7 +37,6 @@ class Asn_Object extends Asn_Base {
 		if(	$depth > static::$FIRST_LVL_FOR_OBJECT_SIZE_LIMIT
 			&& $datLen > Asn_Object::$MAX_DATA_SIZE_FOR_OBJECT){
 				$data = substr($data,0,Asn_Object::$MAX_DATA_SIZE_FOR_OBJECT);
-				Billrun_Factory::log($datLen);
 		}
 		if ($this->isConstructed()) {
 			//the object is constructed from smaller objects
