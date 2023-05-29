@@ -331,6 +331,8 @@ use Billrun_Traits_FileSequenceChecking;
 		do {
 			$bytes .= fread($fileHandle, self::FILE_READ_AHEAD_LENGTH);
 		} while (!feof($fileHandle));
+		Asn_Object::$MAX_DATA_SIZE_FOR_OBJECT = 4096;
+		Asn_Object::$FIRST_LVL_FOR_OBJECT_SIZE_LIMIT= 2;
 		$parsedData = Asn_Base::parseASNString($bytes);
 		$processorData['header'] = $processor->buildHeader($parsedData);
 		//$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
