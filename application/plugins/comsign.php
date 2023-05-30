@@ -28,8 +28,6 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$pdfPath = $invoiceData['invoice_file'];
 		$tmpPath = sys_get_temp_dir() . '/files/comsign/' . $invoiceData['billrun_key'] . '/' . implode('_', [$invoiceData['billrun_key'], $invoiceData['aid'], $invoiceData['invoice_id']]) . '.pdf';
         $signedPath = Billrun_Util::getBillRunSharedFolderPath('files/comsign/signed/' . $invoiceData['billrun_key'] . '/' . implode('_', [$invoiceData['billrun_key'], $invoiceData['aid'], $invoiceData['invoice_id']]) . '.pdf');
-        Billrun_Factory::log($signedPath, Zend_Log::DEBUG);
-        Billrun_Factory::log($tmpPath, Zend_Log::DEBUG);
 		$this->signPdf($signedPath, $pdfPath, $tmpPath);
 		$params['filename'] = $signedPath;
 	}
@@ -43,9 +41,9 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
 
         // Create request
         $payload = [];
-        if (isset($this->options['server']['host']) && isset($this->options['server']['port']) && isset($this->options['server']['pincode']) && isset($this->options['server']['certID'])) {
+        if (isset($this->options['server']['host']) && isset($this->options['server']['pincode']) && isset($this->options['server']['certID'])) {
             $server_address = $this->options['server']['host'];
-            $signUrl = $server_address . "/json/SignPDF_PIN";
+            $signUrl = $server_address . "/signature/signature.svc/json/SignPDF_PIN";
             $payload['CertID'] = $this->options['server']['certID'];
             $payload['Pincode'] = $this->options['server']['pincode'];
         } else {
@@ -93,14 +91,17 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
 
         // Exec API
         $curl = curl_init();
-        curl_setopt_array($curl, array(
+        $optArray = array(
             CURLOPT_URL => $signUrl,
             CURLOPT_POST => true,
-            CURLOPT_PORT => $this->options['server']['port'],
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_POSTFIELDS => json_encode($payload),
-        ));
+        );
+        if (isset($this->options['server']['port'])) {
+            $optArray[CURLOPT_PORT] = $this->options['server']['port'];
+        }
+        curl_setopt_array($curl, $optArray);
         $response = curl_exec($curl);
         $statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
@@ -181,10 +182,7 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
             "field_name" => "server.port",
             "title" => "Port",
             "editable" => true,
-            "display" => true,
-            "nullable" => false,
-            "mandatory" => true,
-            "default_value" => "443"
+            "display" => true
         ], [
             "type" => "number",
             "field_name" => "location.page",
