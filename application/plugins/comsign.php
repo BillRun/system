@@ -62,7 +62,7 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
         } else {
             throw new Exception("ComSign Plugin: Signature size data is missing.");
         }
-        if (isset($this->options['sign_image_name'])) {
+        if (isset($this->options['sign_image_name']) && $this->options['sign_image_name'] != "") {
             Billrun_Factory::log("ComSign Plugin: Loading signature image.", Zend_Log::DEBUG);
             $imagePath = APPLICATION_PATH . '/application/views/comsign/' . basename($this->options['sign_image_name']); 
             $imageData = base64_encode(file_get_contents($imagePath));
@@ -99,7 +99,11 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
             CURLOPT_POSTFIELDS => json_encode($payload),
         );
         if (isset($this->options['server']['port'])) {
-            $optArray[CURLOPT_PORT] = $this->options['server']['port'];
+            if (is_numeric($this->options['server']['port'])) {
+                $optArray[CURLOPT_PORT] = $this->options['server']['port'];
+            } else {
+                Billrun_Factory::log("ComSign Plugin: Server port provided is not numeric, continue without it.");
+            }
         }
         curl_setopt_array($curl, $optArray);
         $response = curl_exec($curl);
@@ -162,7 +166,7 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"nullable" => false,
 				"mandatory" => true
         ], [
-            "type" => "server.password",
+            "type" => "password",
             "field_name" => "server.pincode",
             "title" => "Pincode",
             "editable" => true,
@@ -170,7 +174,7 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
             "nullable" => false,
             "mandatory" => true
         ], [
-            "type" => "text",
+            "type" => "number",
             "field_name" => "server.host",
             "title" => "Host",
             "editable" => true,
