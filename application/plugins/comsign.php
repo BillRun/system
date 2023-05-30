@@ -174,7 +174,7 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
             "nullable" => false,
             "mandatory" => true
         ], [
-            "type" => "number",
+            "type" => "text",
             "field_name" => "server.host",
             "title" => "Host",
             "editable" => true,
@@ -182,7 +182,7 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
             "nullable" => false,
             "mandatory" => true
         ], [
-            "type" => "text",
+            "type" => "number",
             "field_name" => "server.port",
             "title" => "Port",
             "editable" => true,
