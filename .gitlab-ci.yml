@@ -87,4 +87,3 @@ php_testcases:
     when: always
     paths:
       - $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing/docker.log
-
