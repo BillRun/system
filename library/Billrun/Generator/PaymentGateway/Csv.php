@@ -128,14 +128,14 @@ class Billrun_Generator_PaymentGateway_Csv {
 				}
 			}
 			if ($counter == 50000) {
-				if (!$this->writeToFile($fileContents)) {
+				if ($this->writeToFile($fileContents) === false) {
 					return false;
 				}				
 				$fileContents = '';
 				$counter = 0;
 			}
 		}
-		if (!$this->writeToFile($fileContents)) {
+		if ($this->writeToFile($fileContents) === false) {
 			return false;
 		}
 		return true;
@@ -154,14 +154,14 @@ class Billrun_Generator_PaymentGateway_Csv {
 				$fileContents .= $this->row_separator;
 			}
 			if ($counter == 50000) {
-				if (!$this->writeToFile($fileContents)) {
+				if ($this->writeToFile($fileContents) === false) {
 					return false;
 				}
 				$fileContents = '';
 				$counter = 0;
 			}
 		}
-		if (!$this->writeToFile($fileContents)) {
+		if ($this->writeToFile($fileContents) === false) {
 			return false;
 		}
 		return true;
@@ -182,7 +182,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 			}
 			if ($counter == 50000) {
 				Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - writing bulk to file", Zend_Log::DEBUG);
-				if (!$this->writeToFile($fileContents)) {
+				if ($this->writeToFile($fileContents) === false) {
 					return false;
 				}
 				$fileContents = '';
@@ -193,7 +193,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if (!empty($this->trailers)) {
 			$fileContents.= $this->row_separator;
 		}
-		if (!$this->writeToFile($fileContents)) {
+		if ($this->writeToFile($fileContents) === false) {
 			return false;
 		}
 		Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - done writing rows to file", Zend_Log::DEBUG);

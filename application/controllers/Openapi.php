@@ -220,8 +220,13 @@ class OpenapiController extends RealtimeController {
 		$requestId = uniqid();
 		$origRow = $this->event;
 		$this->event = [];
+		
+		// fix for sending object instead of array of objects
+		if (Billrun_Util::isAssoc($origRow['uf']['serviceRating'])) {
+			$origRow['uf']['serviceRating'] = array($origRow['uf']['serviceRating']);
+		}
 		$serviceRatings = $origRow['uf']['serviceRating'] ?? [];
-
+		$i = 1;
 		foreach ($serviceRatings as $serviceRating) {
 			$requestSubType = $serviceRating['requestSubType'] ?? '';
 			if (!in_array($requestSubType, [self::RATING_ACTION_DEBIT, self::RATING_ACTION_RELEASE, self::RATING_ACTION_RESERVE])) {
@@ -236,12 +241,21 @@ class OpenapiController extends RealtimeController {
 			$row['rebalance_required'] = in_array($requestSubType, [self::RATING_ACTION_DEBIT, self::RATING_ACTION_RELEASE]);
 			$row['reservation_required'] = in_array($requestSubType, [self::RATING_ACTION_RESERVE]);
 			$row['request_id'] = $requestId;
+			$row['request_split_id'] = $i++;
 			$this->setMissingDataForRow($row);
 			$this->event[] = $row;
 		}
 
 		if (empty($this->event)) {
 			$this->event[] = $origRow;
+		} else {
+			// we put first debit to charge first before reserve
+			usort($this->event, function($a, $b) {
+				if ($a['uf']['serviceRating']['requestSubType'] == self::RATING_ACTION_DEBIT) {
+					return -1;
+				}
+				return $b['uf']['serviceRating']['requestSubType'] == self::RATING_ACTION_DEBIT ? 1 : 0;
+			});
 		}
 	}
 	
@@ -255,6 +269,11 @@ class OpenapiController extends RealtimeController {
 	protected function mergeServiceRatings($lines) {
 		$ret = current($lines);
 		$ret['service_rating'] = [];
+		
+		usort($lines, function($a, $b) {
+			return ($a['request_split_id'] < $b['request_split_id']) ? -1 : 1;
+		});
+
 		foreach ($lines as $line) {
 			if (empty($serviceRating = $line['uf']['serviceRating'])) {
 				continue;

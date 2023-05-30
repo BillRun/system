@@ -353,7 +353,7 @@ class Billrun_Service {
 				// on some cases we have limits to check through plugin
 				$limits = $this->data['include']['groups'][$staticGroup]['limits'];
 				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$staticGroup, $limits, $this, $usageType, $rate, $subscriberBalance));
-				if ($groupSelected === FALSE) {
+				if ($staticGroup === FALSE) {
 					return array('usagev' => 0);
 				}
 			}
@@ -433,7 +433,7 @@ class Billrun_Service {
 			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
 				// on some cases we have limits to check through plugin
 				$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$groupSelected, $limits, $this, $usageType, $rate));
+				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$groupSelected, $limits, $this, $usageType, $rate, false));
 				if ($groupSelected === FALSE) {
 					$this->unsetGroup($this->getEntityGroup());
 				}
