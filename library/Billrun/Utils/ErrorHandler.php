@@ -14,7 +14,7 @@ class Billrun_Utils_ErrorHandler {
 	 * you can also call to Yaf_Request_Abstract::getException to get the 
 	 * un-caught exception.
 	 */
-	public function errorAction(Exception $exception) {	
+	public function errorAction(Throwable $exception) {
 	   // Get exception output
 	   $output = $this->getExceptionOutput($exception);
 
