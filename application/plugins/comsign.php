@@ -62,7 +62,7 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
         } else {
             throw new Exception("ComSign Plugin: Signature size data is missing.");
         }
-        if (isset($this->options['sign_image_name']) && !empty($this->options['sign_image_name'])) {
+        if (!empty($this->options['sign_image_name'])) {
             Billrun_Factory::log("ComSign Plugin: Loading signature image.", Zend_Log::DEBUG);
             $imagePath = APPLICATION_PATH . '/application/views/comsign/' . basename($this->options['sign_image_name']); 
             $imageData = base64_encode(file_get_contents($imagePath));
