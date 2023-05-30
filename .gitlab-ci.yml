@@ -69,6 +69,7 @@ php_testcases:
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74.yml up --build --detach
 
+
   # Run php testcases
   script:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing
