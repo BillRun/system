@@ -69,7 +69,7 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
             if ($imageData !== false) {
                 $payload['Image'] = $imageData;
             } else {
-                Billrun_Factory::log("ComSign Plugin: Failed loading image $imagePath , using ComSign default.", Zend_Log::DEBUG);
+                Billrun_Factory::log("ComSign Plugin: Failed loading image $imagePath , using ComSign default.", Zend_Log::NOTICE);
             }
         } else {
             Billrun_Factory::log("ComSign Plugin: No image provided, using ComSign default.", Zend_Log::DEBUG);
@@ -102,7 +102,7 @@ class comsignPlugin extends Billrun_Plugin_BillrunPluginBase {
             if (is_numeric($this->options['server']['port'])) {
                 $optArray[CURLOPT_PORT] = $this->options['server']['port'];
             } else {
-                Billrun_Factory::log("ComSign Plugin: Server port provided is not numeric, continue without it.");
+                Billrun_Factory::log("ComSign Plugin: Server port provided is not numeric, continue without it.", Zend_Log::NOTICE);
             }
         }
         curl_setopt_array($curl, $optArray);
