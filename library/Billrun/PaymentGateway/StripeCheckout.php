@@ -49,7 +49,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
 
     public function pay($gatewayDetails, $addonData)
     {
-        $stripeClient = $this->setupStipe();
+        $stripeClient = $this->setupStripe();
         $gatewayDetails['amount'] = (int)$this->convertAmountToSend($gatewayDetails['amount']);
 
         $paymentIntent = $stripeClient->paymentIntents->create([
@@ -68,13 +68,44 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
             'additional_params' => [],
         ];
     }
+	
+	protected function credit($gatewayDetails, $addonData) {
+        $stripeClient = $this->setupStripe();
+
+		$query = array(
+			'aid' => $addonData['aid'],
+			'type' => 'rec',
+			'amount' => array('$gte' => 0),
+			'left' => 0,
+		);
+		
+		$sort = array('urt' => -1);
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		$billRecord = $billsColl->query($query)->cursor()->sort($sort)->limit(1)->current();
+
+		$requestedAmount = abs($gatewayDetails['amount']);
+        $gatewayDetails['amount'] = (int) $this->convertAmountToSend($requestedAmount < $billRecord['amount'] ? $requestedAmount : $billRecord['amount']);
+		
+		$refundData = array(
+            'amount' => $gatewayDetails['amount'],
+			'payment_intent' => $billRecord['payment_gateway']['transactionId'],
+        );
+        $paymentIntent = $stripeClient->refunds->create($refundData);
+
+        $this->transactionId = $paymentIntent->id;
+
+        return [
+            'status' => $paymentIntent->status,
+            'additional_params' => [],
+        ];
+	}
 
     /**
      * Sets the API key to be used for requests.
      * @param  string|null  $secretKey
      * @return StripeClient
      */
-    public function setupStipe(string $secretKey = null): StripeClient
+    public function setupStripe(string $secretKey = null)
     {
         if (!$secretKey) {
             $credentials = $this->getGatewayCredentials();
@@ -100,7 +131,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
 
     protected function validatingSecretKey($secretKey)
     {
-        $client = $this->setupStipe($secretKey);
+        $client = $this->setupStripe($secretKey);
         $balance = $client->balance->retrieve();
     }
 
@@ -156,7 +187,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
         ];
         $paymentRow = $paymentColl->query($query)->cursor()->current();
 
-        $stripeClient = $this->setupStipe();
+        $stripeClient = $this->setupStripe();
         
         $customFlow = $paymentRow['custom_flow'];
         
@@ -184,7 +215,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
      * @return array
      * @throws \Stripe\Exception\ApiErrorException
      */
-    public function handleCheckoutSession(StripeClient $stripeClient, $ref, int $aid): array
+    public function handleCheckoutSession(StripeClient $stripeClient, $ref, int $aid)
     {
         $checkoutSession = $stripeClient->checkout->sessions->retrieve($ref);
 
@@ -310,7 +341,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
         $this->transactionId = Billrun_Util::generateRandomNum();
 
         // setup stripe api key
-        $stripeClient = $this->setupStipe();
+        $stripeClient = $this->setupStripe();
 
         // get stripe account or create one
         $stripeCustomer = $this->getStripeCustomer($account);
@@ -350,7 +381,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
         $firstName = $account->firstname;
         $lastName = $account->lastname;
 
-        $client = $this->setupStipe();
+        $client = $this->setupStripe();
 
         $customers = $client->customers->all(['email' => $email]);
         if ($customers->count() > 0) {
@@ -363,7 +394,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway
         ]);
     }
 
-    protected function adjustRedirectUrl($url, $txId): string
+    protected function adjustRedirectUrl($url, $txId)
     {
         parse_str(parse_url($url, PHP_URL_QUERY) ?? '', $origParams);
         $origParams[$this->getTransactionIdName()] = $txId;
