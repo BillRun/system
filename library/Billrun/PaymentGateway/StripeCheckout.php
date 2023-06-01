@@ -9,7 +9,7 @@ use Stripe\StripeClient;
 use Stripe\Customer;
 
 /**
- * This class represents a payment gateway
+ * Stripe payment gateway
  *
  * @since    5.2
  */
