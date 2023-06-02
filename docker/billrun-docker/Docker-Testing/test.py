@@ -9,7 +9,9 @@ chrome_options.add_argument("--headless")
 chrome_options.add_argument("--disable-gpu")
 driver = webdriver.Chrome(options=chrome_options)
 
-driver.get("http://46.101.14.10:8074/index.html#/")
+root_url = "http://46.101.14.10:8074/"
+
+driver.get(f"{root_url}index.html#/")
 driver.maximize_window()
 driver.implicitly_wait(100)
 
@@ -36,55 +38,55 @@ try:
 except:
     print("Successfully Login using admin Credentials")
 
-    driver.get("http://46.101.14.10:8074/test/updaterowt?rebalance=1")
+    driver.get(f"{root_url}/test/updaterowt?rebalance=1")
     UpdateRowt_Rebalance_logs = driver.find_element(By.XPATH, "/html/body").text
     print(UpdateRowt_Rebalance_logs)
 
 print(
     "----------------------------------------------------------------------------------------UpdateRowt Rebalance--------------------------------------------------------------------------------")
 
-driver.get("http://46.101.14.10:8074/test/Aggregatortest?skip=1,2,40")
+driver.get(f"{root_url}test/Aggregatortest?skip=1,2,40")
 Aggregatortest_logs = driver.find_element(By.XPATH, "/html/body").text
 print(Aggregatortest_logs)
 
 print(
     "----------------------------------------------------------------------------------------Aggregatortest--------------------------------------------------------------------------------")
-driver.get("http://46.101.14.10:8074/test/updaterowt?skip=k12,d81")
+driver.get(f"{root_url}test/updaterowt?skip=k12,d81")
 updaterowt_logs = driver.find_element(By.XPATH, "/html/body").text
 print(updaterowt_logs)
 
 print(
     "----------------------------------------------------------------------------------------updaterowt--------------------------------------------------------------------------------")
 
-driver.get("http://46.101.14.10:8074/test/RateTest?skip=k12,d81")
+driver.get(f"{root_url}test/RateTest?skip=k12,d81")
 Rate_Test_logs = driver.find_element(By.XPATH, "/html/body").text
 print(Rate_Test_logs)
 
 print(
     "----------------------------------------------------------------------------------------Rate Test--------------------------------------------------------------------------------")
 
-driver.get("http://46.101.14.10:8074/test/monthsdifftest?skip1,4")
+driver.get(f"{root_url}test/monthsdifftest?skip1,4")
 month_diff_test_logs = driver.find_element(By.XPATH, "/html/body").text
 print(month_diff_test_logs)
 
 print(
     "----------------------------------------------------------------------------------------get month diff test --------------------------------------------------------------------------------")
 
-driver.get("http://46.101.14.10:8074/test/CustomerCalculatorTest?skip=k12,d81")
+driver.get(f"{root_url}test/CustomerCalculatorTest?skip=k12,d81")
 CustomerCalculatorTest_logs = driver.find_element(By.XPATH, "/html/body").text
 print(CustomerCalculatorTest_logs)
 
 print(
     "----------------------------------------------------------------------------------------CustomerCalculatorTest --------------------------------------------------------------------------------")
 
-driver.get("http://46.101.14.10:8074/test/Taxmappingtest?skip=1,2,40")
+driver.get(f"{root_url}test/Taxmappingtest?skip=1,2,40")
 Taxmappingtest_logs = driver.find_element(By.XPATH, "/html/body").text
 print(Taxmappingtest_logs)
 
 print(
     "----------------------------------------------------------------------------------------Taxmappingtest --------------------------------------------------------------------------------")
 
-driver.get("http://46.101.14.10:8074/test/discounttest?skip=1,2,40")
+driver.get(f"{root_url}test/discounttest?skip=1,2,40")
 discounttest_logs = driver.find_element(By.XPATH, "/html/body").text
 print(discounttest_logs)
 
