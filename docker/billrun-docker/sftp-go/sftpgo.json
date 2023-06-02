@@ -75,7 +75,7 @@
   "sftpd": {
     "bindings": [
       {
-        "port": 2022,
+        "port": 22,
         "address": "",
         "apply_proxy_config": true
       }
