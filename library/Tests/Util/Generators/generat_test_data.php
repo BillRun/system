@@ -15,7 +15,10 @@
 
 
 class generat_test_data{
- 
+  public  static $test_number;
+  public static function setTestNumber($test_number=null){
+     self::$test_number = $test_number;
+  }
   public static function bulidAPI($entity, $params){
     foreach ($params as $key => $val) {
       if (!is_array($val)) {
@@ -57,6 +60,9 @@ class generat_test_data{
         $count+=10;
       }
    };
+   if(!$response['status']=='1'|| !$response['status']==1){
+      throw new Exception ("test number: ".self::$test_number ." can't generate entity $entity with params: ".print_r($params)." response is: {$response['message']}");
+   }
     return $response;
   }
  

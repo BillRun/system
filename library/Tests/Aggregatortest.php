@@ -1110,8 +1110,14 @@ class Tests_Aggregator extends UnitTestCase
     public function TestPerform()
     {
         $this->tests =  $this->getTestCases($this->tests);
+        if (empty($this->test_cases_to_run)) {
+            $this->tests = $this->skip_tests($this->tests, 'test.test_number');
+        }
+       
         foreach ($this->tests as $key => $row) {
-
+            if($row['test']['test_number']==200)   {
+                   $a=1;
+            } 
             $aid = $row['test']['aid'];
             $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
             if (isset($row['test']['label'])) {
@@ -1127,9 +1133,7 @@ class Tests_Aggregator extends UnitTestCase
                     $this->$pre($key, $row);
                 }
             }
-            if (empty($this->test_cases_to_run)) {
-                $this->tests = $this->skip_tests($this->tests, 'test.test_number');
-            }
+            
             // run aggregator
             if (array_key_exists('aid', $row['test'])) {
                 $returnBillrun = $this->runT($row);
