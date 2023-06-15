@@ -1569,6 +1569,12 @@ lastConfig = runOnce(lastConfig, 'BRCD-3890', function () {
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'discounts');
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'charges');
 });
+
+lastConfig = runOnce(lastConfig, 'BRCD-4126', function () {
+	db.oauth_clients.updateMany({"grant_types" : null}, {$set:{"grant_types" : "client_credentials"}});
+	db.oauth_clients.updateMany({"scope" : null}, {$set:{"scope" : "global"}});
+});
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.dropIndex("aid_1_urt_1");
