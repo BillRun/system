@@ -1386,5 +1386,10 @@ lastConfig = runOnce(lastConfig, 'BRCD-3890', function () {
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'charges');
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-4172', function () {
+	db.bills.ensureIndex({'urt': 1 }, { unique: false, background: true});
+	db.bills.ensureIndex({'balance_effective_date': 1 }, { unique: false, background: true});
+});
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
