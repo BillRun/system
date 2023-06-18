@@ -33,6 +33,14 @@ class tap3ToSmscPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$transferDay = strtotime($this->transferDaySmsc);
 			if ($lineTime >= $transferDay) {
 				unset($row['billrun']);
+				if( preg_match('/^ims$/i',$row['apn']) ) {
+					if( !empty($row['vf_count_days']) ) {
+						unset($row['vf_count_days']);
+					}
+					if( !empty($row['vf_addon_days']) ) {
+						unset($row['vf_addon_days']);
+					}
+				}
 			}
 		}
 		
