@@ -666,7 +666,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
     public function signPdf(string $pdf) {
 		try {
-			$signerType = Billrun_Factory::config()->getConfigValue('signer.use', 'jsignpdf');
+			$signerType = Billrun_Factory::config()->getConfigValue('signer.use', 'none');
 
 			if (empty($signerType)) {
 				throw new Exception('Signer type not set');
