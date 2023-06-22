@@ -60,22 +60,22 @@ class Billrun_Signer_JsignpdfSigner extends Billrun_Signer_SignerAbstract
             '--disable-modify-content' => '',
             '--keystore-type' => 'PKCS12',
             '--certification-level' => 'CERTIFIED_NO_CHANGES_ALLOWED',
-            '--keystore-file' => $keystoreFile,
-            '--keystore-password' => $keystorePassword,
-            '--out-directory' => $outDir,
-            '--l2-text' => $this->config['l2_text'] ?? '""',
-            '--l4-text' => $this->config['l4_text'] ?? '""',
+            '--keystore-file' => escapeshellarg($keystoreFile),
+            '--keystore-password' => escapeshellarg($keystorePassword),
+            '--out-directory' => escapeshellarg($outDir),
+            '--l2-text' => escapeshellarg($this->config['l2_text']) ?? '""',
+            '--l4-text' => escapeshellarg($this->config['l4_text']) ?? '""',
         ];
         
         if (isset($this->config['image'])) {
-            $imageConfig = $this->config['image'];
+            $imageConfig = escapeshellarg($this->config['image']);
             $params['--visible-signature'] = '';
-            $params['--bg-scale'] = $imageConfig['bg_scale'];
-            $params['--bg-path'] = $imageConfig['bg_path'];
-            $params['-urx'] = $imageConfig['urx'];
-            $params['-ury'] = $imageConfig['ury'];
-            $params['-llx'] = $imageConfig['llx'];
-            $params['-lly'] = $imageConfig['lly'];
+            $params['--bg-scale'] = escapeshellarg($imageConfig['bg_scale']);
+            $params['--bg-path'] = escapeshellarg($imageConfig['bg_path']);
+            $params['-urx'] = escapeshellarg($imageConfig['urx']);
+            $params['-ury'] = escapeshellarg($imageConfig['ury']);
+            $params['-llx'] = escapeshellarg($imageConfig['llx']);
+            $params['-lly'] = escapeshellarg($imageConfig['lly']);
         }
         
         $paramsStr = join(' ', array_map(function ($key, $value) {
