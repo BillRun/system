@@ -991,10 +991,17 @@ abstract class Billrun_Bill {
 				'$match' => $filters
 			);
 		}
-		$match['$match']['$or'] = array(
+		if (!isset($match['$match']['$and'])) {
+			$match['$match']['$and'] = [];
+		}
+		$match['$match']['$and'][] = array('$or' => array(
 				array('charge.not_before' => array('$exists' => false)),
 				array('charge.not_before' => array('$lt' => new Mongodloid_Date())),
-		);
+		));
+		$match['$match']['$and'][] = array('$or' => array(
+				array('left_to_pay' => array('$gt' => 0)),
+				array('left' => array('$gt' => 0)),
+		));
 		$pipelines[] = $match;
 		$pipelines[] = array(
 			'$sort' => array(
