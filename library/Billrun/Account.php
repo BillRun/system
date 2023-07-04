@@ -386,7 +386,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	/**
 	 * Function that returns the relevant aids for collection.
 	 * @param array $aids
-	 * @param bollean $is_aids_query
+	 * @param boolean $is_aids_query
 	 * @param array $rejection_conditions
 	 * @return array of aids
 	 */
@@ -396,6 +396,9 @@ abstract class Billrun_Account extends Billrun_Base {
 			$rejection_query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];
 		}
 		$account_query = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
+		if ($rejection_query == ['aid' => ['$in' => [-1]]]) {
+			return $rejection_query; // clients hack in order to avoid wrong `aid` merge in the next line in case of an aid specific call. Actually a workaround for https://billrun.atlassian.net/browse/BRCD-4180
+		}
 		return array_merge($rejection_query, $account_query);
 	}
 }
