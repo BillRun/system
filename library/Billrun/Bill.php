@@ -991,9 +991,6 @@ abstract class Billrun_Bill {
 				'$match' => $filters
 			);
 		}
-		if (!isset($match['$match']['$and'])) {
-			$match['$match']['$and'] = [];
-		}
 		$match['$match']['$and'][] = array('$or' => array(
 				array('charge.not_before' => array('$exists' => false)),
 				array('charge.not_before' => array('$lt' => new Mongodloid_Date())),
