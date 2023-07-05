@@ -20,7 +20,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		parent::__construct($plan);
 		$this->seperatedCrossCycleCharges = Billrun_Util::getFieldVal(  $plan['separate_cross_cycle_charges'],
                                                                         Billrun_Factory::config()->getConfigValue('billrun.separate_cross_cycle_charges',
-                                                                                                                  $this->seperatedCrossCycleCharges) );
+																		$this->seperatedCrossCycleCharges) );
 	}
 
 	/**
@@ -28,31 +28,40 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 */
 	protected abstract function getFractionOfMonth();
 	
-	public abstract function getRefund(Billrun_DataTypes_CycleTime $cycle);
+	public abstract function getRefund(Billrun_DataTypes_CycleTime $cycle, $quantity=1);
 	
 	/**
 	 * Get the price of the current plan.
 	 * @return int, null if no charge
 	 */
 	public function getPrice($quantity = 1) {
+		//Is the  activation/deactivation outside the current cycle?
+		if( $this->activation > $this->cycle->end() || $this->deactivation < $this->cycle->start()) {
+			return null;
+		}
 
 		$fraction = $this->getFractionOfMonth();
 		if($fraction === null) {
 			return null;
 		}
 		$cycles = [['cycle'=> $this->cycle , 'fraction'=> $fraction]];
-		if($this->seperatedCrossCycleCharges && $this->activation < $this->cycle->end() && $this->activation >= $this->cycle->start() && $fraction > 1) {
-		$nextCycle = $this->getUpfrontCycle($this->cycle);
-		$cycles = [
-					['cycle'=> $this->cycle , 'fraction'=> $fraction  - 1],
-					['cycle'=> $nextCycle , 'fraction'=> 1 ],
-				];
+		if($this->seperatedCrossCycleCharges ) {
+			$nextCycle = $this->getUpfrontCycle($this->cycle);
+
+			if( $this->activation < $this->cycle->end() && $this->activation >= $this->cycle->start() && $fraction > 1) {
+				$cycles = [
+							['cycle'=> $this->cycle , 'fraction'=> $fraction  - 1],
+							['cycle'=> $nextCycle , 'fraction'=> 1 ],
+						];
+			} else if ($fraction == 1 && $this->activation <= $this->cycle->start() ) {
+				$cycles = [['cycle'=> $nextCycle , 'fraction'=> $fraction]];
+			}
 		}
 		$retCahrges = [];
 		foreach($cycles as $cycleData) {
 			$price = $this->getPriceForCycle($cycleData['cycle']);
 			$retCahrges[] = array_merge($this->getProrationData($this->price,$cycleData['cycle']),array(
-				'value'=> $price * $cycleData['fraction'],
+				'value'=> $price * $cycleData['fraction'] * $quantity,
 				'full_price' => floatval($price)
 				));
 		}
@@ -60,20 +69,20 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	}
 
 	protected function getPriceForCycle($cycle) {
-        $formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $cycle->end()));
+        $formatStart = date(Billrun_Base::base_dateformat,  $cycle->start());
         $formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
-        $startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
-        return $this->getPriceByOffset($startOffset);
+        $cycleCount = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
+        return $this->getPriceByOffset($cycleCount);
 	}
 	
 	/**
 	 * Get the price of the current plan
-	 * @param type $startOffset
+	 * @param type $cycleCount
 	 * @return price
 	 */
-	protected function getPriceByOffset($startOffset) {
+	protected function getPriceByOffset($cycleCount) {
 		foreach ($this->price as $tariff) {
-			if ($tariff['from'] <= $startOffset && (Billrun_Plan::isValueUnlimited($tariff['to']) ? PHP_INT_MAX : $tariff['to']) > $startOffset) {
+			if ($tariff['from'] <= ceil($cycleCount) && (Billrun_Plan::isValueUnlimited($tariff['to']) ? PHP_INT_MAX : $tariff['to']) > $cycleCount) {
 				return $tariff['price'];
 			}
 		}
@@ -82,15 +91,22 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	}
 
 	protected function getProrationData($price,$cycle = false) {
+			$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
 			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->end() )) );
 			$cycle = empty($cycle) ? $this->cycle : $cycle;
 			$nextCycle = $this->getUpfrontCycle($cycle);
+			$isUpfront =  $cycle->start() >= $this->cycle->end() || !$this->seperatedCrossCycleCharges && $this->deactivation >= $this->cycle->end() ;
+			//"this->deactivation < $this->cycle->end()" as the  deactivation date euqal the end of the current (and not next) cycle mean that the deactivation is in the future
 			return ['start' => $this->activation,
 					'prorated_start_date' => new Mongodloid_Date($this->activation > $cycle->start() ? $this->activation  : ($this->seperatedCrossCycleCharges ? $cycle->start() :$nextCycle->start())),
-					'end' =>  $this->deactivation < $cycle->end() ? $this->deactivation : $cycle->end(),
-					'prorated_end_date' => new Mongodloid_Date($this->deactivation && $this->deactivation < $cycle->end() ? $this->deactivation : (seperatedCrossCycleCharges ? $cycle->end() : $nextCycle->end()) ),
+					'end' =>  $this->deactivation < $this->cycle->end() ? $this->deactivation : $cycle->end(),
+					'prorated_end_date' => new Mongodloid_Date($this->deactivation && $this->deactivation < $this->cycle->end() ? $this->deactivation : ($this->seperatedCrossCycleCharges ? $cycle->end() : $nextCycle->end()) ),
 					'start_date' =>new Mongodloid_Date(Billrun_Plan::monthDiffToDate($startOffset,  $this->activation )),
-					'end_date' => new Mongodloid_Date($this->deactivation < $cycle->end() ? $this->deactivation : $cycle->end())];
+					'end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() ? $this->deactivation : $cycle->end()),
+					'is_upfront' =>  $isUpfront,
+					'prorated_start' =>  $this->proratedStart && !($isUpfront && $this->seperatedCrossCycleCharges),
+					'prorated_end' =>  $endProration && !$isUpfront
+   				];
 	}
 
 	protected function getUpfrontCycle($regularCycle) {

@@ -25,9 +25,11 @@ class PayAction extends ApiAction {
 		$action = !is_null($request->get('action')) ? $request->get('action') : '';
 		$txIdArray = json_decode($request->get('txid'), TRUE);
 		$deposits = array();
+		$paymentTxIds = array();
 		$jsonPayments = $request->get('payments');
 		$account = Billrun_Factory::account();
 		$uf = $request->get('uf');
+		$params = [];
 		if (!empty($uf)) {
 			$params['forced_uf'] = json_decode($uf, true);
 		}
@@ -64,7 +66,7 @@ class PayAction extends ApiAction {
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 				$this->processPaymentUf($inputPayment);
-				$deposit = new $className($inputPayment, $params);
+				$deposit = new $className(array_merge($inputPayment, $params));
 				$deposit->setUserFields($deposit->getRawData(), true);
 				$deposit->setDepositFreezeDate();
 				$deposit->setProcessTime();
@@ -76,12 +78,18 @@ class PayAction extends ApiAction {
 				$deposit->save();
 				unset($paymentsArr[$key]);
 			}
+			//getting txid for response
+			foreach ($deposits as $deposit){
+				$paymentTxIds[] = $deposit->getRawData()['txid'];
+			}
+
 			if (!empty($deposits) && empty($paymentsArr)) {
 				$this->getController()->setOutput(array(array(
 					'status' => 1,
 					'desc' => 'success',
 					'input' => $request->getPost(),
 					'details' => array(
+						'record_ids' => $paymentTxIds,
 						'deposits_saved' => count($deposits),
 					),
 				)));
@@ -124,11 +132,17 @@ class PayAction extends ApiAction {
 					}
 				}
 			}
+			//getting txid for response
+			foreach ($payments as $payment){
+				$paymentTxIds[] = $payment->getRawData()['txid'];
+			}
+
 			$this->getController()->setOutput(array(array(
 					'status' => 1,
 					'desc' => 'success',
 					'input' => $request->getPost(),
 					'details' => array(
+						'record_ids' => $paymentTxIds,
 						'payments_received' => count($paymentsArr),
 						'payments_saved' => count($payments),
 					),
@@ -274,9 +288,9 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 			$cancellationPayments = array();
 			foreach ($paymentsToCancel['payments'] as $payment) {
 				$id = $payment->getId();
-				$currentUf = isset($ufPerTxid[$id]) ? $ufPerTxid[$id] : array();
-				$payment->addUserFields($currentUf);
+				$cancellationUf = isset($ufPerTxid[$id]) ? $ufPerTxid[$id] : array();
 				$cancellationPayment = $payment->getCancellationPayment();
+				$cancellationPayment->addUserFields($cancellationUf);
 				$cancellationPayments[] = $cancellationPayment;
 			}
 			if ($cancellationPayments) {

@@ -59,7 +59,9 @@ class ExportAction extends Action_Base {
 			if ($exporter) {
 				$this->getController()->addOutput("Starting to export. This action can take a while...");
 				try {
-					$exporter->generate();
+					if ($exporter->generate() == false) {
+						return false;
+					}
 					if ($exporter->shouldFileBeMoved()) {
 						$this->getController()->addOutput("Exporting the file");
 						$exporter->move();

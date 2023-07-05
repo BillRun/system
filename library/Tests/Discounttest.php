@@ -185,6 +185,30 @@ class Tests_Discounttest extends UnitTestCase {
 				$pass = false;
 				$this->message .= "$discountName missing eligibility" . $this->fail;
 			}
+			if (isset($dates['subs'])) {
+				$subs = $eligibility[$discountName]['subs'];
+				$subsMissing = array_diff(array_keys($dates['subs']), array_keys($subs));
+				if (!empty($subsMissing)) {
+					$pass = false;
+					$this->message .= "the following eligible subscriber revision are missed: " . implode(', ', $subsMissing) . $this->fail . '<br/>';
+				}
+				$subsNotExpected = array_diff(array_keys($subs), array_keys($dates['subs']));
+				if (!empty($subsNotExpected)) {
+					$pass = false;
+					$this->message .= "the following eligible subscriber revision are not expected: " . implode(', ', $subsNotExpected) . $this->fail . '<br/>';
+				}
+				foreach ($dates['subs'] as $sid => $expectedSub) {
+					$from = $expectedSub[0]['from'];
+					$to = $expectedSub[0]['to'];
+					if (isset($subs[$sid]) && $subs[$sid][0]['from'] == $from->sec && $subs[$sid][0]['to'] == $to->sec) {
+						$this->message .= "$discountName subscriber revision <b>$sid</b> </br> '<b>from</b>' " . date("Y-m-d H:i:s", $from->sec)
+							. " '<b>to</b>' " . date("Y-m-d H:i:s", $to->sec) . $this->pass;
+					} else {
+						$this->message .= "$discountName subscriber revision <b>$sid</b> </br> '<b>from</b>' " . date("Y-m-d H:i:s", $from->sec)
+							. " '<b>to</b>' " . date("Y-m-d H:i:s", $to->sec) . $this->fail;
+					}
+				}
+			}
 		}
 		return $pass;
 	}

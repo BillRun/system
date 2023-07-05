@@ -59,4 +59,5 @@ class Generator_Translations {
 		$translation = $currentLangTranslation ?: $defaultLangTranslation ?: $slug;
 		return call_user_func_array('sprintf',array_merge([$translation], $args));
 	}
+
 }
