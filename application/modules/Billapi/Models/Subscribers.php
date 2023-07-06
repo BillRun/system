@@ -92,7 +92,8 @@ class Models_Subscribers extends Models_Entity {
 					$service['to'] = new MongoDate(strtotime($service['to']));
 				}
 				// handle custom period service or limited cycles service
-				$serviceRate = new Billrun_Service(array('name' => $service['name']));
+				$serviceTime = $service['to']->sec ?? time();
+				$serviceRate = new Billrun_Service(array('name' => $service['name'], 'time' => $serviceTime));
 				// if service not found, throw exception
 				if (empty($serviceRate) || empty($serviceRate->get('_id'))) {
 					throw new Billrun_Exceptions_Api(66601, array(), "Service was not found");
