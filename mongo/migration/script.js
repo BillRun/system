@@ -150,8 +150,14 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 //-------------------------------------------------------------------
 // BRCD-1278 - backward support for new template
 if(lastConfig.invoice_export) {
-	lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
-	lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.header) &&
+		!lastConfig.invoice_export.header) {
+			lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
+	}
+	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.footer) &&
+		!lastConfig.invoice_export.footer) {
+			lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+	}
 }
 
 //BRCD-1229 - Input processor re-enabled when not requested
@@ -1141,10 +1147,10 @@ lastConfig = runOnce(lastConfig, 'BRCD-3227', function () {
     lastConfig['rates']['fields'] = fields;
 });
 // BRCD-2888 -adjusting config to the new invoice templates
-if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.header)) {
+if(lastConfig.invoice_export && /\/header\/header_tpl\.html$/.test(lastConfig.invoice_export.header)) {
 	lastConfig.invoice_export.header = "/header/header_tpl.phtml";
 }
-if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.footer)) {
+if(lastConfig.invoice_export && /\/footer\/footer_tpl\.html$/.test(lastConfig.invoice_export.footer)) {
 	lastConfig.invoice_export.footer = "/footer/footer_tpl.phtml";
 }
 
@@ -1378,6 +1384,10 @@ lastConfig = runOnce(lastConfig, 'BRCD-3890', function () {
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'services');
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'discounts');
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'charges');
+});
+
+lastConfig = runOnce(lastConfig, 'BRCD-4172', function () {
+	db.bills.ensureIndex({'urt': 1 }, { unique: false, background: true});
 });
 
 db.config.insert(lastConfig);
