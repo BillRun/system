@@ -16,7 +16,7 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 
 	const DEF_CALC_DB_FIELD = 'aprice';
 
-	static protected $type = "ilds_external_pricing";
+	static protected $type = "ild_external_pricing";
 
 	const STATE_WAITING = 'waiting';
 	const STATE_PRICED = 'priced';
@@ -28,7 +28,7 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 
 	protected $pricingField = self::DEF_CALC_DB_FIELD;
 
-	protected $relevantRateKeys = [];
+	protected $relevantRateKeysRegex = [];
 
 	public function __construct(array $options = array()) {
 	    parent::__construct($options);
@@ -36,7 +36,7 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 		$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
 
-		$this->relevantRateKeys =  Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.relevant_rates',$this->relevantRateKeys);
+		$this->relevantRateKeysRegex =  Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.relevant_rates',$this->relevantRateKeysRegex);
 	}
 
 
@@ -53,12 +53,13 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 	 * write the calculation into DB
 	 */
 	public function updateRow($row) {
+		$rawRow = $row->getRawData();
 		// if line needs external pricing:
 		if($row['type'] == 'nsn') {
 			//		if the line has been priced
 			if ($row['external_pricing_state'] == static::STATE_PRICED) {
 				//Add the  current cycle stamp
-				$row['billrun']	 = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
+				$rawRow['billrun']	 = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
 				//	move it to the next stage of the queue
 				$associatedQueueLine = Billrun_Factory::db()->queueCollection()->findAndModify([type=>'nsn','stamp'=>$row['stamp']],['$set'=>['external_pricing_state'=>static::STATE_PRICED]]);
 			} else if($row['external_pricing_state'] == static::STATE_FAILED) {
@@ -66,14 +67,16 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 					return false;
 			} else {//	otherwise
 				if( empty($row['stamp']['external_pricing_state']) ) {
-					//unset from the  cycle  and mark the  line as waiting.
+					//unset from the cycle and mark the  line as waiting.
 					unset($this->lines[$row['stamp']]['billrun']);
-					$this->lines[$row['stamp']]['external_pricing_state'] =static::STATE_WAITING;
+					unset($rawRow['billrun']);
+					$rawRow['external_pricing_state']  = $this->lines[$row['stamp']]['external_pricing_state'] = static::STATE_WAITING;
 				}
-					//	force it to stay on the queue
-					return false;
+					//	line willbe forced to stay in the queue by the overriden setCalculatorTag function
+					// return the updated line to save it to the db (at the  end of the function)
 			}
-		} else { // if line is external pricing :
+			$row->setRawData($rawRow);
+		} else if($row['type'] == 'ild_external_pricing') { // if line is external pricing :
 			$updateValues = [];
 			//if the pricingwas succesful
 			if($row['status'] == static::RESULT_PRICED_OK) {
@@ -88,6 +91,9 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 			if (!($output['ok'] && isset($output['value']) && $output['value'])) {;
 				//	if update unseccesfful keep external pricing line in the queue.
 				return  false;
+			} else {
+				//if update sucessfull update the queue line o it  will be processed as soon as possible (don't updateit  if it in the middle of calculation)
+				Billrun_Factory::db()->queueCollection()->findAndModify([type=>'nsn','stamp'=>$row['source_stamp'],'calc_time'=>['$lt'=>strtotime('-2 minutes')]],['$set'=>['calc_time'=>false]]);
 			}
 
 		}
@@ -96,13 +102,70 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 
 	public function isLineLegitimate($line) {
 		//is the line need external pricing or is the line is external pricing and it has out/over plan usage
+
 		return $line['ild_external_pricing'] ||
-				$line['nsn'] && in_array($line['arate_key'], $this->relevantRateKeys)  ;//&& (!empty($line['over_plan']) ||!empty($line['out_plan']));
+				$line['type'] =='nsn' && !empty($line['arate_key']) && !empty(array_filter($this->relevantRateKeysRegex, function ($rte) use ($line) {
+					return preg_match('/^'.$rte.'$/',$line['arate_key']);}))   ;//TODO DEBUG && (!empty($line['over_plan']) ||!empty($line['out_plan']));
 	}
 
 	 public function getCalculatorQueueType() {
 		 return 'external_pricing';
-
 	 }
+
+	 	/**
+	 * Mark the calculation as finished in the queue.
+	 * @param array $query additional query parameters to the queue
+	 * @param array $update additional fields to update in the queue
+	 */
+	protected function setCalculatorTag($query = array(), $update = array()) {
+		$calculator_tag = $this->getCalculatorQueueType();
+		$stampsToAdvance  = array();
+		$stampsState = [
+			static::STATE_WAITING => [],
+			static::STATE_PRICED => [],
+			static::STATE_FAILED => [],
+		];
+		foreach ($this->lines as $item) {
+			if(	@$item['external_pricing_state'] !== static::STATE_WAITING
+				&&
+				@$item['external_pricing_state'] !== static::STATE_FAILED
+			) {
+				$stampsToAdvance [] = $item['stamp'];
+			}
+			foreach($stampsState as $state => &$currentStamps) {
+				if($state == @$item['external_pricing_state'] ) {
+					$currentStamps[] = $item['stamp'];
+				}
+			}
+		}
+		//update queue external pricing state
+		foreach($stampsState as $state => $currentStamps) {
+			if(!empty($currentStamps)) {
+				$query = array_merge($query, ['stamp' => ['$in' => $currentStamps ], 'hash' => $this->workHash, 'calc_time' => $this->signedMicrotime]);
+				$update = array_merge($update, ['$set' => ['external_pricing_state' => $state]]);
+				$this->queue_coll->update($query, $update, array('multiple' => true, 'w' => 1));
+			}
+		}
+		//Advance queue lines  to the  next calculator
+		$query = array_merge($query, array('stamp' => array('$in' => $stampsToAdvance ), 'hash' => $this->workHash, 'calc_time' => $this->signedMicrotime));
+		$update = array_merge($update, array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false)));
+		$this->queue_coll->update($query, $update, array('multiple' => true, 'w' => 1));
+
+
+	}
+
+
+	protected function getLineAdditionalValues($row){
+		$ret = [];
+		foreach($this->getAdditionalProperties() as $field) {
+			$ret[$field] = $row[$field];
+		}
+
+		return $ret;
+	}
+
+	protected function getAdditionalProperties() {
+		return array('external_pricing_state','generated');
+	}
 
 }
