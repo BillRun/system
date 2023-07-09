@@ -14,6 +14,7 @@ print-info:
    - 'echo "Branch: $CI_COMMIT_BRANCH"'
    - 'echo "Commit Author: $CI_COMMIT_AUTHOR"'
    
+   
 python_testcases:
   services:
    - name: docker:dind
