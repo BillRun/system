@@ -30,9 +30,9 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 	    parent::__construct($options);
 
 		// load file Structure
-		if( ($configFile = Billrun_Factory::config()->getConfigValue(static::type.'.generator.structure_config','')) &&
+		if( ($configFile = Billrun_Factory::config()->getConfigValue(static::$type.'.generator.structure_config','')) &&
 			file_exists($configFile)) {
-			$this->dataStructure = Yaf_Config_Ini();
+			$this->dataStructure = (new Yaf_Config_Ini($configFile))->toArray();
 		}
 	}
 
@@ -42,11 +42,11 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 	 */
 	public function load() {
 	    //query queue for CDRs  in external pricing stage  that  were  not  sent to pricing yet
-		$queueLines = Billrun_Factory::db()->queueCollection()->query(['external_pricing'=>'waiting','generated'=>['$exists'=>false,'$ne'=>true]])
+		$queueLines = Billrun_Factory::db()->queueCollection()->query(['external_pricing_state'=>'waiting','generated'=>['$exists'=>false,'$ne'=>true]])
 												->cursor()->sort(['urt'=>-1])->limit($this->limit ? $this->limit : 10000);
-		$this->stamps = array_map(function ($q){
+		$this->stamps = array_values(array_map(function ($q) {
 			return $q['stamp'];
-		},iterator_to_array($queueLines));
+		},iterator_to_array($queueLines)));
 		//load  the  relevant CDRs from lines
 		$this->data = Billrun_Factory::db()->linesCollection()->query(['stamp'=> ['$in'=>$this->stamps]]);
 	}
@@ -64,9 +64,9 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 			$generatedData[] = $this->getDataLine($row, $this->dataStructure['data']);
 		}
 
-		$generatedData[] =  $this->getFooter($this->dataStructure['footer']);
+		$generatedData[] =  $this->getFooter($this->dataStructure['trailer']);
 
-		if(!$this->write()) {
+		if(!$this->write($generatedData)) {
 			Billrun_Factory::log('Failed to write the external pricing file.', Zend_Log::ERR);
 			return false;
 		}
@@ -76,7 +76,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 				return false;
 		}
 
-		return true;
+ 		return true;
 	}
 
 
@@ -87,7 +87,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 	 * @return string The generated header line.
 	 */
 	protected function getHeader($headerStruct = []) {
-		return date('YmdHis');
+		return [ date('YmdHis') ];
 	}
     /**
      * Generates a data line for the CSV file based on a CDR row.
@@ -107,7 +107,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
      * @return string The generated footer line.
      */
 	protected function getFooter($footerStruct = []) {
-		return date('YmdHis');
+		return [ date('YmdHis') ];
 	}
 
     /**
@@ -144,13 +144,16 @@ class Generator_ExternalPricing  extends Billrun_Generator {
      */
 	protected function write($data) {
 		$fullPath =  $this->getFullFilePath();
-
+		$ret = true;
 		if(!( $fd =  fopen($fullPath,'w'))) {
 			Billrun_Factory::log("Failed to write to file : ${fullPath}", Zend_Log::ERR);
 			return false;
 		}
 
-		$ret =  fputcsv($fd, $data) !== false;
+		foreach($data as  $dLine) {
+			$ret &=  fputcsv($fd, $dLine) !== false;
+		}
+
 		fclose($fd);
 
 		return  $ret;
@@ -174,7 +177,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 
 
 	protected function getFullFilePath($fileData = false) {
-		return $this->export_directory . PHP_DIRECTORY_SEPERATOR . $this->getFilename($fileData);
+		return $this->export_directory . DIRECTORY_SEPARATOR . $this->getFilename($fileData);
 	}
 
 	protected function  getFilename($fileData = false) {
