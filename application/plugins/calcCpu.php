@@ -49,6 +49,12 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Factory::log('Plugin calc cpu rate', Zend_Log::INFO);
 		foreach ($data['data'] as &$line) {
 			$entity = new Mongodloid_Entity($line);
+
+			//Move external_pricing CDRs  tothe external pricing  stage  no need to run other  calcaltors on them.
+			if($line['type'] === 'ild_external_pricing') {
+				$processor->setQueueRowStep($entity['stamp'], 'pricing'); continue;
+			}
+
 			$rateCalc = Billrun_Calculator_Rate::getRateCalculator($entity, $options);
 			if ($rateCalc->isLineLegitimate($entity)) {
 				if ($rateCalc->updateRow($entity) !== FALSE) {
@@ -137,6 +143,35 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$line = $entity->getRawData();
 			}
 		}
+		// External Pricing calculator
+		if (in_array('external_pricing', $queue_calculators)) {
+			$queue_data = $processor->getQueueData();
+			$extPricingOptions = array(
+				'type' => 'ExternalPricing',
+				'calculator' => Billrun_Factory::config()->getConfigValue('ild_external_pricing.calculator', array()),
+			);
+			$extPricingCalc = Billrun_Calculator::getInstance(array_merge($options, $extPricingOptions));
+			Billrun_Factory::log('Plugin calc Cpu external pricing ' . count($queue_data) . ' lines', Zend_Log::INFO);
+			foreach ($data['data'] as $key => &$line) {
+				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'pricing') {
+					$entity = new Mongodloid_Entity($line);
+					if ($extPricingCalc->isLineLegitimate($entity)) {
+						if ( ($entity = $extPricingCalc->updateRow($entity)) !== FALSE ) {
+							if ( $entity['external_pricing_state'] !== Billrun_Calculator_ExternalPricing::STATE_WAITING ){
+								$extPricingCalc->setQueueRowStep($entity['stamp'], 'external_pricing');
+							}
+							$processor->addAdvancedPropertiesToQueueRow($entity);
+						}
+					} else {
+						$processor->setQueueRowStep($entity['stamp'], 'external_pricing');
+						$processor->addAdvancedPropertiesToQueueRow($entity);
+					}
+					if($entity) {
+						$line = $entity->getRawData();
+					}
+				}
+			}
+		}
 
 		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
 			$this->wholeSaleCalculators($data, $processor);
@@ -150,7 +185,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Factory::log('Plugin calc Cpu unifying ' . count($queue_data) . ' lines', Zend_Log::INFO);
 
 			foreach ($data['data'] as $key => &$line) {
-				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'pricing') {
+				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'external_pricing') {
 					$entity = new Mongodloid_Entity($line);
 					if ($this->unifyCalc->isLineLegitimate($entity)) {
 						if ($this->unifyCalc->updateRow($entity) !== FALSE) {

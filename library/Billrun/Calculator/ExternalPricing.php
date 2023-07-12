@@ -59,7 +59,7 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 			//		if the line has been priced
 			if ($row['external_pricing_state'] == static::STATE_PRICED) {
 				//Add the  current cycle stamp
-				$rawRow['billrun']	 = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
+				$rawRow['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
 				//	move it to the next stage of the queue
 				$associatedQueueLine = Billrun_Factory::db()->queueCollection()->findAndModify([type=>'nsn','stamp'=>$row['stamp']],['$set'=>['external_pricing_state'=>static::STATE_PRICED]]);
 			} else if($row['external_pricing_state'] == static::STATE_FAILED) {
@@ -82,14 +82,21 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 			if($row['status'] == static::RESULT_PRICED_OK) {
 				// update line  and  price it
 				$updateValues = ['external_pricing_state'=>static::STATE_PRICED,'aprice'=> $row['price']];
-			} else {
+			} else if($row['status'] == static::RESULT_PRICED_FAILED ) {
 				// otherwise mark the original line as failed
 				$updateValues = ['external_pricing_state'=>static::STATE_FAILED];
+			} else {
+				//keep the cdr in the queue
+				return false;
 			}
-			$output = Billrun_Factory::db()->linesCollection()->findAndModify([type=>'nsn','stamp'=>$row['source_stamp']],['$set'=>$updateVlues],['new'=>true]);
+			if(empty($row['source_stamp'])) {
+				Billrun_Factory::log('No source stamp provided  for external pricing ',Zend_log::ERR);
+				return false;
+			}
+			$output = Billrun_Factory::db()->linesCollection()->findAndModify(['type'=>'nsn','stamp'=>$row['source_stamp']],['$set'=>$updateValues],['new'=>true]);
 
 			if (!($output['ok'] && isset($output['value']) && $output['value'])) {;
-				//	if update unseccesfful keep external pricing line in the queue.
+				//	if update unsecussful keep external pricing line in the queue.
 				return  false;
 			} else {
 				//if update sucessfull update the queue line o it  will be processed as soon as possible (don't updateit  if it in the middle of calculation)
@@ -103,9 +110,9 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 	public function isLineLegitimate($line) {
 		//is the line need external pricing or is the line is external pricing and it has out/over plan usage
 
-		return $line['ild_external_pricing'] ||
+		return $line['type'] === 'ild_external_pricing' ||
 				$line['type'] =='nsn' && !empty($line['arate_key']) && !empty(array_filter($this->relevantRateKeysRegex, function ($rte) use ($line) {
-					return preg_match('/^'.$rte.'$/',$line['arate_key']);}))   ;//TODO DEBUG && (!empty($line['over_plan']) ||!empty($line['out_plan']));
+					return preg_match('/^'.$rte.'$/',$line['arate_key']);})) && (!empty($line['over_plan']) ||!empty($line['out_plan']));
 	}
 
 	 public function getCalculatorQueueType() {
