@@ -25,10 +25,12 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 	const RESULT_PRICED_OK = 'ok';
 	const RESULT_PRICED_FAILED = 'notok';
 
+	protected $FandMOpts = ['new'=>true,'w'=>1];
+
 
 	protected $pricingField = self::DEF_CALC_DB_FIELD;
-
 	protected $relevantRateKeysRegex = [];
+	protected $keepFailePricingCDRsInQueue =false;
 
 	public function __construct(array $options = array()) {
 	    parent::__construct($options);
@@ -36,7 +38,8 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 		$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
 
-		$this->relevantRateKeysRegex =  Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.relevant_rates',$this->relevantRateKeysRegex);
+		$this->relevantRateKeysRegex = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.relevant_rates',$this->relevantRateKeysRegex);
+		$this->keepFailePricingCDRsInQueue = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.keep_failed_pricing_cdrs_in_queue',$this->keepFailePricingCDRsInQueue);
 	}
 
 
@@ -61,12 +64,14 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 				//Add the  current cycle stamp
 				$rawRow['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
 				//	move it to the next stage of the queue
-				$associatedQueueLine = Billrun_Factory::db()->queueCollection()->findAndModify([type=>'nsn','stamp'=>$row['stamp']],['$set'=>['external_pricing_state'=>static::STATE_PRICED]]);
+				$associatedQueueLine = Billrun_Factory::db()->queueCollection()->findAndModify(['type'=>'nsn','stamp'=>$row['stamp']],['$set'=>['external_pricing_state'=>static::STATE_PRICED]],$this->FandMOpts);
+				 $this->lines[$row['stamp']]['external_pricing_state'] = static::STATE_PRICED;
 			} else if($row['external_pricing_state'] == static::STATE_FAILED) {
-					$associatedQueueLine = Billrun_Factory::db()->queueCollection()->findAndModify([type=>'nsn','stamp'=>$row['stamp']],['$set'=>['external_pricing_state'=>static::STATE_FAILED]]);
+					$associatedQueueLine = Billrun_Factory::db()->queueCollection()->findAndModify(['type'=>'nsn','stamp'=>$row['stamp']],['$set'=>['external_pricing_state'=>static::STATE_FAILED]],$this->FandMOpts);
+					$this->lines[$row['stamp']]['external_pricing_state'] = static::STATE_FAILED;
 					return false;
 			} else {//	otherwise
-				if( empty($row['stamp']['external_pricing_state']) ) {
+				if( empty($row['external_pricing_state']) ) {
 					//unset from the cycle and mark the  line as waiting.
 					unset($this->lines[$row['stamp']]['billrun']);
 					unset($rawRow['billrun']);
@@ -85,6 +90,9 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 			} else if($row['status'] == static::RESULT_PRICED_FAILED ) {
 				// otherwise mark the original line as failed
 				$updateValues = ['external_pricing_state'=>static::STATE_FAILED];
+				if($this->keepFailePricingCDRsInQueue) {
+					return false;
+				}
 			} else {
 				//keep the cdr in the queue
 				return false;
@@ -93,14 +101,14 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 				Billrun_Factory::log('No source stamp provided  for external pricing ',Zend_log::ERR);
 				return false;
 			}
-			$output = Billrun_Factory::db()->linesCollection()->findAndModify(['type'=>'nsn','stamp'=>$row['source_stamp']],['$set'=>$updateValues],['new'=>true]);
+			$output = Billrun_Factory::db()->linesCollection()->findAndModify(['type'=>'nsn','stamp'=>$row['source_stamp']],['$set'=>$updateValues],$this->FandMOpts);
 
-			if (!($output['ok'] && isset($output['value']) && $output['value'])) {;
+			if (!(isset($output['_id']) && !empty($output['_id']))) {;
 				//	if update unsecussful keep external pricing line in the queue.
 				return  false;
 			} else {
 				//if update sucessfull update the queue line o it  will be processed as soon as possible (don't updateit  if it in the middle of calculation)
-				Billrun_Factory::db()->queueCollection()->findAndModify([type=>'nsn','stamp'=>$row['source_stamp'],'calc_time'=>['$lt'=>strtotime('-2 minutes')]],['$set'=>['calc_time'=>false]]);
+				Billrun_Factory::db()->queueCollection()->findAndModify(['type'=>'nsn','stamp'=>$row['source_stamp'],'calc_time'=>['$lt'=>strtotime('-2 minutes')]],['$set'=>['calc_time'=>false]]);
 			}
 
 		}
@@ -139,10 +147,8 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 			) {
 				$stampsToAdvance [] = $item['stamp'];
 			}
-			foreach($stampsState as $state => &$currentStamps) {
-				if($state == @$item['external_pricing_state'] ) {
-					$currentStamps[] = $item['stamp'];
-				}
+			if(!empty($item['external_pricing_state']) && isset($stampsState[$item['external_pricing_state']]) ) {
+				$stampsState[$item['external_pricing_state']][] = $item['stamp'];
 			}
 		}
 		//update queue external pricing state
