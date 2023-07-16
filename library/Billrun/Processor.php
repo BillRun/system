@@ -581,10 +581,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * prepare the queue before insert
 	 */
 	protected function prepareQueue() {
+		$intialCalcName =	Billrun_Factory::config()->getConfigValue($this->getType().'.processor.initial_calc_stage','');
 		foreach ($this->data['data'] as $dataRow) {
 			$queueRow = $dataRow;
- 			$queueRow['calc_name'] = false;
+
+ 			$queueRow['calc_name'] = empty($intialCalcName) ? false : $intialCalcName;
  			$queueRow['calc_time'] = false;
+
 			$this->setQueueRow($queueRow);
 		}
 	}
