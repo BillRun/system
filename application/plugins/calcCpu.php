@@ -158,7 +158,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					if ($extPricingCalc->isLineLegitimate($entity)) {
 						if ( ($entity = $extPricingCalc->updateRow($entity)) !== FALSE ) {
 							if ( $entity['external_pricing_state'] !== Billrun_Calculator_ExternalPricing::STATE_WAITING ){
-								$extPricingCalc->setQueueRowStep($entity['stamp'], 'external_pricing');
+								$processor->setQueueRowStep($entity['stamp'], 'external_pricing');
 							}
 							$processor->addAdvancedPropertiesToQueueRow($entity);
 						}
