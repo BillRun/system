@@ -40,7 +40,7 @@ class Billrun_Processor_Csv extends Billrun_Processor_Base_SeparatorFieldLines {
 	 * @see Billrun_Processor_Base_FixedFieldsLines::isValidDataRecord($dataLine)
 	 */
 	protected function isValidDataRecord($dataLine) {
-		return true; //preg_match( $this->structConfig['config']['valid_data_line'], );
+		return count(array_intersect_key( array_keys($dataLine),  array_keys($this->data_structure) )) >= count($this->data_structure);
 	}
 
 	/**
