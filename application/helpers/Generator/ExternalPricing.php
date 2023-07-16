@@ -128,6 +128,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 			$mapping = @$generationMapping[$srcField];
 			if(empty($mapping)) {
 				Billrun_Factory::log("No  generation wasdefined to field ${srcField} ,skipping field.",Zend_Log::DEBUG);
+				continue;
 			}
 			if(is_array($mapping) && !empty($mapping['func']) ) {
 
