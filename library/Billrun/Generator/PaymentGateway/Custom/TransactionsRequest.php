@@ -215,12 +215,12 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				Billrun_Factory::log($message, Zend_Log::WARN);
 				$this->logFile->updateLogFileField('warnings', $message);
 			}
+			$line = $this->getDataLine($params);
+			$this->data[] = $line;
 			$extraFields = array_merge_recursive($this->getCustomPaymentGatewayFields(), ['pg_request' => $this->billSavedFields]);
 			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
 			Billrun_Factory::dispatcher()->trigger('beforeSavingRequestFilePayment', array(static::$type, &$currentPayment, &$params, $account, $this));
 			$currentPayment->save();
-			$line = $this->getDataLine($params);
-			$this->data[] = $line;
 		}
 		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;
