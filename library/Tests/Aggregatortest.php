@@ -3771,7 +3771,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
              }
              $this->tests =  $this->cases;
             }
-       
+         if(empty($this->test_cases_to_run)){
+                $this->tests = $this->skip_tests($this->tests,'test.test_number');
+          }
          foreach ($this->tests as $key => $row) {
 
              $aid = $row['test']['aid'];
@@ -3789,9 +3791,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
                      $this->$pre($key, $row);
                  }
              }
-             if(empty($this->test_cases_to_run)){
-                $this->tests = $this->skip_tests($this->tests,'test.test_number');
-              }
+            
              // run aggregator
              if (array_key_exists('aid', $row['test'])) {
                  $returnBillrun = $this->runT($row);

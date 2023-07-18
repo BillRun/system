@@ -8622,9 +8622,7 @@
 				"creation_time" : "time*2019-06-02T00:00:00Z",
 				"activation_date" : "time*2019-06-02T00:00:00Z",
 				"plan_deactivation" : "time*2170-06-02T15:55:59Z"
-				},{
-
-			,
+				},
 			{
 				"OBJID" : "626e528ba9c5aae8bec57f47",
 				"from" : "time*2019-06-02T00:00:00Z",
