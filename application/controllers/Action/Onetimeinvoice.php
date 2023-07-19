@@ -176,7 +176,7 @@ class OnetimeinvoiceAction extends ApiAction {
 			$expectedTotals = $fakeInvoice->getInvoice()->getRawData()['totals'];
 		}
 
-		//Charge the account on the resulting fake in voice totals
+		//Charge the account on the resulting fake in voice totals (TODO REPLACE WITH ACTUAL CHARGING LOGIC)
 		$current_account = Billrun_Factory::account(['aid' => $this->aid]);
 		$inputPayment = [
 			'amount' => $expectedTotals['after_vat_rounded'],
@@ -204,11 +204,7 @@ class OnetimeinvoiceAction extends ApiAction {
 			}
 
 
-		// if(false === ($processsedCDrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'])) ) {
-		// 	//Error message will be provided  for the  spesific CDR for within processCDRs  function
-		// 	return false;
-		// }
-		//Actually save the onetime  CDRs to the DB. (By pulling the  CDR processors and saving theprcessed CDRs to DB)
+		//Actually save the onetime  CDRs to the DB. (By pulling the CDR processors and saving theprcessed CDRs to DB)
 		foreach($processsedCDrs as $cdr) {
 			$processor = $this->getProcessorForCDR($cdr, true);
 			$processor->storeWhenInMemory();
@@ -226,7 +222,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'] , 'autoload'=>true]);
 		$actualInvoiceData = $this->invoice->getRawData();
 
-		//Create bill for the invioce and attach the payment to it.
+		//Create bill for the invioce and attach the payment to it. (TODO ACTUALLY LIMIT THE INVOICE/PAYMENT ASSOCIATION)
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
 		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill',
 														'stamp' => $chargingOptions['oneTimeStamp'],
