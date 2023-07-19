@@ -79,6 +79,17 @@ class Billrun_Processor_Credit extends Billrun_Processor {
 		}	
 	}
 
+	public function storeWhenInMemory() {
+		if(!$this->inMemoryProcessing) {
+			Billrun_Factory::log("Billrun_Processor_Credit: Not in Memory mode will not store to DB", Zend_Log::ERR);
+			return FALSE;
+		}
+		if ( $this->inMemoryProcessing && $this->store() === FALSE) {
+			Billrun_Factory::log("Billrun_Processor_Credit: cannot store the parser lines " . $this->filePath, Zend_Log::ERR);
+			return FALSE;
+		}
+	}
+
 	protected function processLines() {
 	}
 	
