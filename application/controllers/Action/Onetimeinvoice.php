@@ -22,7 +22,6 @@ class OnetimeinvoiceAction extends ApiAction {
 	const STEP_PDF_ONLY = 0;
 	const STEP_PDF_AND_BILL = 1;
 	const STEP_FULL = 2;
-	const STEP_REVERSE_FULL = 3;
 
 	protected $aid;
 	
@@ -139,7 +138,7 @@ class OnetimeinvoiceAction extends ApiAction {
 					$this->aid => $chargingOptions['paymentData'],
 				],
 			];
-            Billrun_Bill_Payment::makePayment($chargeOptions);
+            $paymentRespone =  Billrun_Bill_Payment::makePayment($chargeOptions);
 			if (!$this->release()) {
 				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
 				return [];
@@ -152,12 +151,13 @@ class OnetimeinvoiceAction extends ApiAction {
 
 	protected function chargeBeforeInvoiceFlow($chargingOptions) {
 
+		//Process and price onetime  CDRs  in memory
 		if(false === ($processsedCDrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true)) ) {
 			//Error message will be provided  for the  spesific CDR for within processCDRs  function
 			return false;
 		}
 
-        // run aggregate on cdrs generate invoice
+        // run aggregate on cdrs and fake invoice generate invoice
         $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',
 														'stamp' => $chargingOptions['oneTimeStamp'] ,
 														'force_accounts' => [$this->aid],
@@ -166,14 +166,17 @@ class OnetimeinvoiceAction extends ApiAction {
 														'affected_sids' => $chargingOptions['affectedSids'],
 														'generate_pdf'=> false,
 														'uf' => $chargingOptions['uf']]);
+
         $aggregator->setExternalChargesForAid($this->aid,$processsedCDrs);
 		$aggregator->aggregate();
 
+		//Get The fake invoice totals
 		$fakeInvoice = $aggregator->getLastBillrunObj();
 		if($fakeInvoice) {
 			$expectedTotals = $fakeInvoice->getInvoice()->getRawData()['totals'];
 		}
 
+		//Charge the account on the resulting fake in voice totals
 		$current_account = Billrun_Factory::account(['aid' => $this->aid]);
 		$inputPayment = [
 			'amount' => $expectedTotals['after_vat_rounded'],
@@ -201,12 +204,17 @@ class OnetimeinvoiceAction extends ApiAction {
 			}
 
 
-		if(false === ($processsedCDrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'])) ) {
-			//Error message will be provided  for the  spesific CDR for within processCDRs  function
-			return false;
+		// if(false === ($processsedCDrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'])) ) {
+		// 	//Error message will be provided  for the  spesific CDR for within processCDRs  function
+		// 	return false;
+		// }
+		//Actually save the onetime  CDRs to the DB. (By pulling the  CDR processors and saving theprcessed CDRs to DB)
+		foreach($processsedCDrs as $cdr) {
+			$processor = $this->getProcessorForCDR($cdr, true);
+			$processor->storeWhenInMemory();
 		}
 
-
+		//Actually generte te invoice
         $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',
 														'stamp' => $chargingOptions['oneTimeStamp'] ,
 														'force_accounts' => [$this->aid],
@@ -218,9 +226,13 @@ class OnetimeinvoiceAction extends ApiAction {
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'] , 'autoload'=>true]);
 		$actualInvoiceData = $this->invoice->getRawData();
 
-		//Attach
+		//Create bill for the invioce and attach the payment to it.
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
-		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill','stamp' => $chargingOptions['oneTimeStamp'],'invoices'=> [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail']]);
+		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill',
+														'stamp' => $chargingOptions['oneTimeStamp'],
+														'invoices'=> [$this->invoice->getInvoiceID()],
+														'send_email' => $chargingOptions['sendEmail'],
+														'force_payment_to_invoice' => [ $this->invoice->getInvoiceID() => $deposit->getId() ]]);
 
 		$billrunToBill->load();
 		$result = $billrunToBill->generate();
@@ -373,7 +385,7 @@ class OnetimeinvoiceAction extends ApiAction {
 			'rand' => $cdr['rand'],
 			'in_memory' =>  $inMemory,
 		);
-		$processor = Billrun_Processor::getInstance($options);
+		$processor = $this->getProcessorForCDR($cdr, $inMemory);
 		$processor->addDataRow($cdr);
 		if ($processor->process() === false) {
 			$this->setError('Processing Error for CDR'.json_encode($cdr));
@@ -381,6 +393,16 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 		Billrun_Factory::log("Process of credit ended", Zend_Log::INFO);
 		return current($processor->getAllLines());
+	}
+
+	protected function getProcessorForCDR($cdr, $inMemoryProcessing = false) {
+		$options = [
+			'type' => 'Credit',
+			'parser' => 'none',
+			'rand' => $cdr['rand'],
+			'in_memory' =>  $inMemoryProcessing,
+		];
+		return  Billrun_Processor::getInstance($options);
 	}
 	
 	protected function getSkipCalcs($row) {
