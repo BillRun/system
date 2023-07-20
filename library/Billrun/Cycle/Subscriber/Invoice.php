@@ -324,7 +324,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			}
 			return $newPrice;
 		} else if( empty($taxData) ) {
-			Billrun_Factory::log('addLineVatableData failed: Tax data missing. account: ' . $this->data['aid'] . ', billrun: ' . $this->data['key'], Zend_Log::CRIT);
+			Billrun_Factory::log('addLineVatableData failed: Tax data missing. account: ' . $this->data['aid'] . ', subscriber: ' . $this->data['sid'] . ', billrun: ' . $this->data['key'] . ', breakdown key: ' . $breakdownKey, Zend_Log::CRIT);
 		}
 		//else 
 		return $pricingData['aprice'];
