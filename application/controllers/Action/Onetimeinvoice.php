@@ -138,7 +138,7 @@ class OnetimeinvoiceAction extends ApiAction {
 					$this->aid => $chargingOptions['paymentData'],
 				],
 			];
-            $paymentRespone =  Billrun_Bill_Payment::makePayment($chargeOptions);
+            $paymentResponse =  Billrun_Bill_Payment::makePayment($chargeOptions); // todo: handle payment response
 			if (!$this->release()) {
 				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
 				return [];
@@ -174,34 +174,35 @@ class OnetimeinvoiceAction extends ApiAction {
 		$fakeInvoice = $aggregator->getLastBillrunObj();
 		if($fakeInvoice) {
 			$expectedTotals = $fakeInvoice->getInvoice()->getRawData()['totals'];
+		} else {
+			throw new Exception("Invoice cannot be pretend before charge");
 		}
-
+		
 		//Charge the account on the resulting fake in voice totals (TODO REPLACE WITH ACTUAL CHARGING LOGIC)
-		$current_account = Billrun_Factory::account(['aid' => $this->aid]);
-		$inputPayment = [
-			'amount' => $expectedTotals['after_vat_rounded'],
-			'dir'=> 'fc',
-			'payer_name' => $current_account->__get('full_name'),
-			'aid'=> $this->aid
-		];
+		$current_account = Billrun_Factory::account()->loadAccountForQuery(['aid' => (int) $this->aid]);
+		
 		try {
-			$method = 'credit';
-			$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
-			$deposit = new $className($inputPayment);
-			$deposit->setUserFields($deposit->getRawData(), true);
-			$deposit->setDepositFreezeDate();
-			$deposit->setProcessTime();
-			$foreignData = $this->getForeignFields(array('account' => $current_account));
-			if (!is_null($current_account)) {
-				$deposit->setForeignFields($foreignData);
-			}
-			$deposits[] = $deposit;
-			$deposit->save();
-			} catch(\Exception $ex) {
-				$this->setError("Failed  when  trying to preform payment  for AID: ${inputPayment['aid']} for an amount of ${inputPayment['amount']}");
-				Billrun_Factory::log()->logCrash($ex,Zend_Log::ERR);
-				return false;
-			}
+			$paymentParams = [
+				'gateway_details' => $current_account['payment_gateway']['active'],
+				'dir' => 'fc',
+				'payer_name' => $current_account['first_name']  . ' ' . $current_account['last_name'],
+				'aid' => $current_account['aid'],
+				
+			];
+			$paymentParams['gateway_details']['amount'] = $paymentParams['amount'] = $expectedTotals['after_vat_rounded'];
+			$paymentParams['gateway_details']['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');
+			
+			$paymentOptions = [
+				'payment_gateway' => true,
+				'collect' => true,
+				'account' => $current_account,
+			];
+			Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $paymentOptions);
+		} catch (\Exception $ex) {
+			$this->setError("Failed  when  trying to preform payment  for AID: ${inputPayment['aid']} for an amount of ${inputPayment['amount']}");
+			Billrun_Factory::log()->logCrash($ex, Zend_Log::ERR);
+			return false;
+		}
 
 
 		//Actually save the onetime  CDRs to the DB. (By pulling the CDR processors and saving theprcessed CDRs to DB)
@@ -220,20 +221,28 @@ class OnetimeinvoiceAction extends ApiAction {
         $aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'] , 'autoload'=>true]);
-		$actualInvoiceData = $this->invoice->getRawData();
 
 		//Create bill for the invioce and attach the payment to it. (TODO ACTUALLY LIMIT THE INVOICE/PAYMENT ASSOCIATION)
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
-		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill',
-														'stamp' => $chargingOptions['oneTimeStamp'],
-														'invoices'=> [$this->invoice->getInvoiceID()],
-														'send_email' => $chargingOptions['sendEmail'],
-														'force_payment_to_invoice' => [ $this->invoice->getInvoiceID() => $deposit->getId() ]]);
+		$billrunToBillParams = [
+			'type' => 'BillrunToBill',
+			'stamp' => $chargingOptions['oneTimeStamp'],
+			'invoices' => [$this->invoice->getInvoiceID()],
+			'send_email' => $chargingOptions['sendEmail'],
+			/* 'force_payment_to_invoice' => [ $this->invoice->getInvoiceID() => $deposit->getId() ] */
+		];
+		$billrunToBill = Billrun_Generator::getInstance($billrunToBillParams);
 
 		$billrunToBill->load();
 		$result = $billrunToBill->generate();
 		$this->isValidGenerateResult($result, $billrunToBill);
-
+		
+		$results = [
+			'pdfPath' => $this->invoice->getInvoicePath(),
+			'invoiceData' => $this->invoice->getRawData(),
+		];
+		
+		return $results;
 	}
 
 	protected function processCDRs($inputCdrs, $oneTimeStamp, $inMemory = false) {
