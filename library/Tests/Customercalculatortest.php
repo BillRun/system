@@ -117,6 +117,7 @@
      }
 
      public function TestPerform() {
+        $this->rows  = $this->skip_tests($this->rows ,'row.stamp');
          foreach ($this->rows as $key => $row) {
              $this->message .= 'test stamp : ' . $row['row']['stamp'];
              $fixrow = $this->fixRow($row['row'], $key);

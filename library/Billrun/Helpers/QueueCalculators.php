@@ -73,6 +73,7 @@ class Billrun_Helpers_QueueCalculators {
 								$processor->addAdvancedPropertiesToQueueRow($line);
 							}
 						} else {
+							Billrun_Factory::log('Line ' . $line['stamp'] . ' should go to the queue', Zend_Log::DEBUG);
 							$this->stuckInQueue[$line['stamp']] = true;
 						}
 						$this->calcPricingCase($entity, $calc_name);
@@ -85,6 +86,7 @@ class Billrun_Helpers_QueueCalculators {
 					}
 					$line = $entity->getRawData();
 				} else {
+					Billrun_Factory::log('Line ' . $line['stamp'] . ' should go to the queue', Zend_Log::DEBUG);
 					$this->stuckInQueue[$line['stamp']] = true;
 				}
 
