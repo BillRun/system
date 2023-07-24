@@ -976,7 +976,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 	
 	public static function payAndUpdateStatus($paymentMethod, $paymentParams, $options = array()) {
-		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($paymentMethod, array($paymentParams), $options);
+		$paymentManager = Billrun_PaymentManager::getInstance();
+		$paymentResponse = $paymentManager->pay($paymentMethod, array($paymentParams), $options);
 		$gatewayName = $paymentParams['gateway_details']['name'];
 		$gatewayInstanceName = $paymentParams['gateway_details']['instance_name'];
 		$gateway = Billrun_PaymentGateway::getInstance($gatewayInstanceName);
@@ -988,6 +989,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			self::updateAccordingToStatus($paymentResponse['response'][$transactionId], $payment, $gatewayName);
 		}
+		return $paymentResponse;
 	}
 	
 	protected static function getPaginationQuery($filtersQuery, $page, $size) {
