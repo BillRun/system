@@ -107,7 +107,6 @@ class ReportSetup extends Component {
       'bills.fields',
       'rates.fields',
       'payment_gateways',
-      'payments',
     ]));
   }
 
