@@ -139,6 +139,10 @@ class Billrun_Exporter extends Billrun_Generator_File {
         return new Billrun_Exporter($params);
     }
 
+    public function getGeneratedFiles() {
+		return [$this->getExportFilePath()];
+	}
+
     protected function getLinkedEntityData($entity, $params, $field) {
         switch ($entity) {
             case 'line':
