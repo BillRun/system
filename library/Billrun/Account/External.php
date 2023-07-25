@@ -31,10 +31,11 @@ class Billrun_Account_External extends Billrun_Account {
 	
 
 	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = [], $invoicing_days = null) {
+			$dateFormat = (abs($cycle->end()->sec - $cycle->start()->sec) <= 86400 ? 'Y-m-d H:i:s' : 'Y-m-d');
 			// Prepare request
 			$requestParams = [
-				'start_date' => date('Y-m-d',$cycle->start()->sec),
-				'end_date' => date('Y-m-d',$cycle->end()->sec),
+				'start_date' => date($dateFormat,$cycle->start()->sec),
+				'end_date' => date($dateFormat ,$cycle->end()->sec),
 				'page' => $page,
 				'size' => $size
 			];
