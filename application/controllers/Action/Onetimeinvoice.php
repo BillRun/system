@@ -61,6 +61,10 @@ class OnetimeinvoiceAction extends ApiAction {
 		];
 
         if($chargeFlow === 'charge_before_invoice') {
+			if ($step != 2) {
+				$this->setError('charge_before_invoice must to be with step 2');
+				return false;
+			}
 			$results = $this->chargeBeforeInvoiceFlow( $chargingOptions );
 		} else  {
 			$results = $this->invoiceChargeFlow( $chargingOptions );
