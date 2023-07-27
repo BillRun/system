@@ -303,7 +303,7 @@ class Billrun_PaymentManager {
 					$payment->setPending(true);
 					$addonData = array('aid' => $payment->getAid(), 'txid' => $payment->getId());
 					$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails, $addonData);
-                                        $responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
+					$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
 				} catch (Exception $e) {
 					$payment->setGatewayChargeFailure($e->getMessage());
 					$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
@@ -317,7 +317,7 @@ class Billrun_PaymentManager {
 				if (empty($paymentStatus['status'])) {
 					return $this->handleError("Missing status from gateway for single payment");
 				}
-                                $responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
+				$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
 			}
 			$txId = $gateway->getTransactionId();
 			$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
