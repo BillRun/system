@@ -71,7 +71,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 
 		if($results === false) {
-			return false;
+			return;
 		}
 		
 		if(empty($request['send_back_invoices'])) {
@@ -210,7 +210,12 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 
 		if (empty($paymentStatus['payment'][0]) || $paymentStatus['payment'][0]->isRejected() || $paymentStatus['payment'][0]->isRejection()) {
-			throw new Exception("Charge failed before invoicing");
+			$error = array(
+				'status' => 0,
+				'desc' => 'Charge failed before invoicing',
+			);
+			$this->getController()->setOutput(array($error));
+			return false;
 		}
 		//Actually save the onetime  CDRs to the DB. (By pulling the CDR processors and saving theprcessed CDRs to DB)
 		foreach($processsedCDrs as $cdr) {

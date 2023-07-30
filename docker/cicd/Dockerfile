@@ -2,12 +2,12 @@ FROM php:7.4-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
 RUN apt-get update && apt-get install -y \
-    wkhtmltopdf libpng-dev zlib1g-dev libzip-dev libcurl4-openssl-dev pkg-config libssl-dev wget \
+    wkhtmltopdf libpng-dev zlib1g-dev libzip-dev libgmp-dev libcurl4-openssl-dev pkg-config libssl-dev wget \
         unzip openjdk-11-jre-headless \
     && pecl install yaf-3.1.4 \
     && pecl install mongodb-1.11.1 \
     && docker-php-ext-enable yaf mongodb \
-    && docker-php-ext-install pcntl bcmath gd zip sockets \    
+    && docker-php-ext-install pcntl bcmath gd zip sockets gmp \    
     && apt-get clean
 
 RUN  wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb' \
