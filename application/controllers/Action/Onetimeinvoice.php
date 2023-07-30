@@ -185,13 +185,21 @@ class OnetimeinvoiceAction extends ApiAction {
 		//Charge the account on the resulting fake in voice totals (TODO REPLACE WITH ACTUAL CHARGING LOGIC)
 		$current_account = Billrun_Factory::account()->loadAccountForQuery(['aid' => (int) $this->aid]);
 		
+		if (empty($current_account['payment_gateway']['active'])) {
+			$error = array(
+				'status' => 0,
+				'desc' => 'No payment method for account',
+			);
+			$this->getController()->setOutput(array($error));
+			return false;
+		}
+		
 		try {
 			$paymentParams = [
 				'gateway_details' => $current_account['payment_gateway']['active'],
 				'dir' => $expectedTotals['after_vat_rounded'] > 0 ? 'fc' : 'tc',
 				'payer_name' => $current_account['first_name']  . ' ' . $current_account['last_name'],
 				'aid' => $current_account['aid'],
-				
 			];
 			$paymentParams['amount'] = abs($expectedTotals['after_vat_rounded']);
 			$paymentParams['gateway_details']['amount'] = $expectedTotals['after_vat_rounded'];
