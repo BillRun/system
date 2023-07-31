@@ -296,7 +296,7 @@ abstract class Billrun_Bill {
 		}
 	}
 
-	public static function getUnpaidBills($query = array(), $sort = array('urt'=>1)) {
+	public static function getUnpaidBills($query = array(), $sort = array()) {
 		$mandatoryQuery = static::getUnpaidQuery();
 		$query = array_merge($query, $mandatoryQuery);
 		return static::getBills($query, $sort);
@@ -729,7 +729,10 @@ abstract class Billrun_Bill {
 						}
 					} else if ($rawPayment['dir'] == 'fc') {
 						$leftToSpare = floatval($rawPayment['amount']);
-						$unpaidBills = Billrun_Bill::getUnpaidBills(array('aid' => $aid));
+						$sort = array(
+							'urt' => 1,
+						);
+						$unpaidBills = Billrun_Bill::getUnpaidBills(array('aid' => $aid), $sort);
 						foreach ($unpaidBills as $rawUnpaidBill) {
 							$unpaidBill = Billrun_Bill::getInstanceByData($rawUnpaidBill);
 							$invoiceAmountToPay = min($unpaidBill->getLeftToPay(), $leftToSpare);
@@ -742,7 +745,10 @@ abstract class Billrun_Bill {
 						}
 					} else if ($rawPayment['dir'] == 'tc') {
 						$leftToSpare = floatval($rawPayment['amount']);
-						$overPayingBills = Billrun_Bill::getOverPayingBills(array('aid' => $aid));
+						$sort = array(
+							'urt' => 1,
+						);
+						$overPayingBills = Billrun_Bill::getOverPayingBills(array('aid' => $aid), $sort);
 						foreach ($overPayingBills as $overPayingBill) {
 							$credit = min($overPayingBill->getLeft(), $leftToSpare);
 							if ($credit) {
