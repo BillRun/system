@@ -296,7 +296,7 @@ abstract class Billrun_Bill {
 		}
 	}
 
-	public static function getUnpaidBills($query = array(), $sort = array()) {
+	public static function getUnpaidBills($query = array(), $sort = array('urt'=>1)) {
 		$mandatoryQuery = static::getUnpaidQuery();
 		$query = array_merge($query, $mandatoryQuery);
 		return static::getBills($query, $sort);
