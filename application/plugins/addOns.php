@@ -104,7 +104,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
-		if ($row['type'] == 'ggsn') {
+		if ($row['type'] == 'ggsn' || $row['type'] == 'nsn' ) {
 			if (isset($row['urt'])) {
 				$this->lineTime = $row['urt']->sec;
 				$this->lineType = $row['type'];
@@ -133,7 +133,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator){
 		$this->updateBasePlanUsage($row, $update);
-		if (!is_null($this->package) && ($row['type'] == 'ggsn')) {
+		if (!is_null($this->package) && ($row['type'] == 'ggsn' || $row['type'] == 'nsn')) {
 			Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['addon_service'] = $this->package;
 			$balancesIncludeRow = array();
@@ -158,7 +158,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'billrun_month' => $this->balanceToUpdate['billrun_month'],
 					'added_usage' => floor($this->extraUsage / $this->coefficient),
 					'usage_before' => array(
-						'data' => $this->balanceToUpdate['balance']['totals']['data']['usagev']
+						$row['usaget'] => $this->balanceToUpdate['balance']['totals'][$row['usaget']]['usagev']
 					)
 				);
 			}
@@ -174,7 +174,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 						'billrun_month' => $exhaustedBalance['billrun_month'], 
 						'added_usage' => $usageLeft,
 						'usage_before' => array(
-							'data' => $exhaustedBalance['balance']['totals']['data']['usagev']
+							$row['usaget'] => $exhaustedBalance['balance']['totals'][$row['usaget']]['usagev']
 						)
 					);
 					$exhaustedUpdate['$inc']['balance.totals.' . $row['usaget'] . '.usagev'] = $usageLeft;
@@ -202,7 +202,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
-		if (!is_null($this->package) && ($row['type'] == 'ggsn')) {	
+		if (!is_null($this->package) && ($row['type'] == 'ggsn' || $row['type'] == 'nsn')) {
 			$this->removeRoamingBalanceTx($row);
 		}
 	}
