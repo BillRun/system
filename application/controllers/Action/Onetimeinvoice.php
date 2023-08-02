@@ -194,36 +194,38 @@ class OnetimeinvoiceAction extends ApiAction {
 			return false;
 		}
 		
-		try {
-			$paymentParams = [
-				'gateway_details' => $current_account['payment_gateway']['active'],
-				'dir' => $expectedTotals['after_vat_rounded'] > 0 ? 'fc' : 'tc',
-				'payer_name' => $current_account['first_name']  . ' ' . $current_account['last_name'],
-				'aid' => $current_account['aid'],
-			];
-			$paymentParams['amount'] = abs($expectedTotals['after_vat_rounded']);
-			$paymentParams['gateway_details']['amount'] = $expectedTotals['after_vat_rounded'];
-			$paymentParams['gateway_details']['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');
-			
-			$paymentOptions = [
-				'payment_gateway' => true,
-				'collect' => true,
-				'account' => $current_account,
-			];
-			$paymentStatus = Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $paymentOptions);
-		} catch (\Exception $ex) {
-			$this->setError("Failed  when  trying to preform payment  for AID: ${inputPayment['aid']} for an amount of ${inputPayment['amount']}");
-			Billrun_Factory::log()->logCrash($ex, Zend_Log::ERR);
-			return false;
-		}
+		if (!Billrun_Util::isEqual($expectedTotals['after_vat_rounded'], 0, Billrun_Bill::precision)) {
+			try {
+				$paymentParams = [
+					'gateway_details' => $current_account['payment_gateway']['active'],
+					'dir' => $expectedTotals['after_vat_rounded'] > 0 ? 'fc' : 'tc',
+					'payer_name' => $current_account['first_name']  . ' ' . $current_account['last_name'],
+					'aid' => $current_account['aid'],
+				];
+				$paymentParams['amount'] = abs($expectedTotals['after_vat_rounded']);
+				$paymentParams['gateway_details']['amount'] = $expectedTotals['after_vat_rounded'];
+				$paymentParams['gateway_details']['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');
 
-		if (empty($paymentStatus['payment'][0]) || $paymentStatus['payment'][0]->isRejected() || $paymentStatus['payment'][0]->isRejection()) {
-			$error = array(
-				'status' => 0,
-				'desc' => 'Charge failed before invoicing',
-			);
-			$this->getController()->setOutput(array($error));
-			return false;
+				$paymentOptions = [
+					'payment_gateway' => true,
+					'collect' => true,
+					'account' => $current_account,
+				];
+				$paymentStatus = Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $paymentOptions);
+			} catch (\Exception $ex) {
+				$this->setError("Failed  when  trying to preform payment  for AID: ${inputPayment['aid']} for an amount of ${inputPayment['amount']}");
+				Billrun_Factory::log()->logCrash($ex, Zend_Log::ERR);
+				return false;
+			}
+
+			if (empty($paymentStatus['payment'][0]) || $paymentStatus['payment'][0]->isRejected() || $paymentStatus['payment'][0]->isRejection()) {
+				$error = array(
+					'status' => 0,
+					'desc' => 'Charge failed before invoicing',
+				);
+				$this->getController()->setOutput(array($error));
+				return false;
+			}
 		}
 		//Actually save the onetime  CDRs to the DB. (By pulling the CDR processors and saving theprcessed CDRs to DB)
 		foreach($processsedCDrs as $cdr) {
