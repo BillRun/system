@@ -71,6 +71,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 			'type' => 'rec',
 			'amount' => array('$gte' => 0),
 			'left' => 0,
+			'gateway_details.name' => $this->billrunName,
 		);
 
 		$sort = array('urt' => -1);
@@ -78,7 +79,15 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 		$billRecord = $billsColl->query($query)->cursor()->sort($sort)->limit(1)->current();
 
 		$requestedAmount = abs($gatewayDetails['amount']);
-		$gatewayDetails['amount'] = (int) $this->convertAmountToSend($requestedAmount < $billRecord['amount'] ? $requestedAmount : $billRecord['amount']);
+		
+		if ($requestedAmount > $billRecord['amount']) {
+			return [
+				'status' => false,
+				'additional_params' => ['desc' => 'requested amount is bigger than last transaction amount'],
+			];
+		}
+		
+		$gatewayDetails['amount'] = (int) $this->convertAmountToSend($requestedAmount);
 
 		$refundData = array(
 			'amount' => $gatewayDetails['amount'],

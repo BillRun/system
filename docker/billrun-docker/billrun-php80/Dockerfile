@@ -3,12 +3,12 @@ from php:8.0-fpm
 
 RUN apt-get update && apt-get install -y \
         wkhtmltopdf wget  \
-		libpng-dev zlib1g-dev libzip-dev \
+		libpng-dev zlib1g-dev libzip-dev libgmp-dev \
     && pecl install yaf \
     && pecl install mongodb \
     && pecl install xdebug \
     && docker-php-ext-enable yaf mongodb xdebug \
-    && docker-php-ext-install pcntl bcmath gd zip sockets
+    && docker-php-ext-install pcntl bcmath gd zip sockets gmp
 
 
 RUN  wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb' \
