@@ -36,7 +36,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (isset($row['roaming']) && preg_match('/sms/',$row['usaget'])) {
 					$this->roamingSms = true;
 				}
-				$this->roamingLine = !empty($row['roaming']) && $row['serving_network'] !== Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.volte_local_plmn','ISRCL');
+				$this->roamingLine = !empty($row['roaming']) && !empty($row['serving_network']) && $row['serving_network'] !== Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.volte_local_plmn','ISRCL');
 			} else {
 				Billrun_Factory::log()->log('urt wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
