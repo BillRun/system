@@ -493,7 +493,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::ALERT);
 
-			if ($e->getCode() == "11000") {
+			if ($e->getCode() == "11000" ||
+				 (	$e instanceof MongoCursorException &&
+					$e->getCode() == "911" &&
+					method_exists($e,'getDocument') && ($expDoc = $e->getDocument() ) && is_array($expDoc['writeErrors']) &&
+					count(array_filter(function($werr) {
+					 return $werr['code'] != '11000';
+				},$expDoc['writeErrors'])) == 0) ) {
 				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::ALERT);
 				return $this->addToCollection($collection);
 			}
@@ -539,7 +545,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::ALERT);
 
-			if ($e->getCode() == "11000") {
+			if ($e->getCode() == "11000" ||
+				 (	$e instanceof MongoCursorException &&
+					$e->getCode() == "911" &&
+					method_exists($e,'getDocument') && ($expDoc = $e->getDocument() ) && is_array($expDoc['writeErrors']) &&
+					count(array_filter(function($werr) {
+					 return $werr['code'] != '11000';
+				},$expDoc['writeErrors'])) == 0)) {
 				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::ALERT);
 				return $this->addToQueue($queue_data);
 			}
@@ -562,6 +574,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				continue;
 			}
 		}
+		return true;
 	}
 
 	protected function addToQueue($queue_data) {
@@ -575,6 +588,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				continue;
 			}
 		}
+		return true;
 	}
 
 	/**
