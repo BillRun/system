@@ -582,7 +582,7 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('DATA_ABOVEFREEUSAGE', $subscriber_group_usage_DATA_ABOVEFREEUSAGE);
 							$this->writer->writeElement('DATA_CAPACITY', (($group_name == 'VF') || isset($group['limits']['vf'],$group['limits']['days'])) ?
 																				($group['data'] == 'UNLIMITED' ? 6291456  : $this->bytesToKB($group['data'])):
-																				$group['data']); // Hard coded 6GB for vf data abroad
+																				($group['data'] == 'UNLIMITED' ? $group['data'] : $this->bytesToKB($group['data'])) ); // Hard coded 6GB for vf data abroad
 							if(isset($group['limits']['vf'],$group['limits']['days'])) {
 								$this->writer->writeElement('VF_DAYS_USAGE', isset($subscriber_group_usage_VF_DAYS) ? $subscriber_group_usage_VF_DAYS : 0 );
 								$this->writer->writeElement('VF_DAYS_CAPACITY', $group['limits']['days']);
