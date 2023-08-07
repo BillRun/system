@@ -1174,7 +1174,7 @@ abstract class Billrun_Bill {
 		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
 		$rejection_required_aids = array_column(array_map(function($account) {
 				return $account->getRawData();
-			}, $currentAccounts), 'aid');
+			}, $currentAccounts), 'aid') ?? [];
 
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$match = array(
