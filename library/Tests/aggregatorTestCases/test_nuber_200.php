@@ -36,6 +36,7 @@ class Test_Case_200
 
         return [
             'test' => [
+                'label'=>"DEMO NEW TEST",
                 'test_number' => 200,
                 'aid' => $account['aid'],
                 'function' => [

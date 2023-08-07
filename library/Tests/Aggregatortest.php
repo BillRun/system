@@ -575,10 +575,10 @@
     //      }
     //      return $export;
     //  }
-     public function __construct($label = false)
-     {
-         // $test_case = new Test_1();
-         $this->autoload_tests('aggregatorTestCases');
+    //  public function __construct($label = false)
+    //  {
+    //      // $test_case = new Test_1();
+    //      $this->autoload_tests('aggregatorTestCases');
      //    $this->tests =  $this->getTestCases();
          // $this->arrays = $this->tests;
          // foreach ($this->arrays as $array) {
@@ -611,22 +611,23 @@
          //     file_put_contents($filename, $content);
          // }
          // die();
-          parent::__construct("test Aggregatore");
-          $this->ratesCol = Billrun_Factory::db()->ratesCollection();
-          $this->plansCol = Billrun_Factory::db()->plansCollection();
-          $this->linesCol = Billrun_Factory::db()->linesCollection();
-          $this->servicesCol = Billrun_Factory::db()->servicesCollection();
-          $this->discountsCol = Billrun_Factory::db()->discountsCollection();
-          $this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
-          $this->balancesCol = Billrun_Factory::db()->discountsCollection();
-          $this->billrunCol = Billrun_Factory::db()->billrunCollection();
-          $this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes','charges']);
-          $this->setColletions();
-          $this->loadDbConfig();
-      }
+    //       parent::__construct("test Aggregatore");
+    //       $this->ratesCol = Billrun_Factory::db()->ratesCollection();
+    //       $this->plansCol = Billrun_Factory::db()->plansCollection();
+    //       $this->linesCol = Billrun_Factory::db()->linesCollection();
+    //       $this->servicesCol = Billrun_Factory::db()->servicesCollection();
+    //       $this->discountsCol = Billrun_Factory::db()->discountsCollection();
+    //       $this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
+    //       $this->balancesCol = Billrun_Factory::db()->discountsCollection();
+    //       $this->billrunCol = Billrun_Factory::db()->billrunCollection();
+    //       $this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes','charges']);
+    //       $this->setColletions();
+    //       $this->loadDbConfig();
+    //   }
  
      public function __construct($label = false) {
          parent::__construct("test Aggregatore");
+         $this->autoload_tests('aggregatorTestCases');
          $this->ratesCol = Billrun_Factory::db()->ratesCollection();
          $this->plansCol = Billrun_Factory::db()->plansCollection();
          $this->linesCol = Billrun_Factory::db()->linesCollection();
