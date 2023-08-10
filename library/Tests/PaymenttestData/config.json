@@ -877,12 +877,16 @@
 						{
 							"name": "CreditGuard",
 							"params": {
-								"user": "SDOC",
-								"password": "sD#4R!3r",
-								"mid": "10912",
-								"endpoint_url": "https://kupot1t.creditguard.co.il/xpo/Relay",
-								"redirect_terminal": "0962832",
-								"charging_terminal": "0962832"
+								"custom_style" : "  ",
+								"endpoint_url" : "https://cguat2.creditguard.co.il/xpo/Relay",
+								"mid" : "13607",
+								"charging_terminal" : "0883111010",
+								"user" : "wemobile",
+								"ancestor_urls" : "  ",
+								"version" : "2000",
+								"custom_text" : " ",
+								"password" : "Z5xz2@WO",
+								"redirect_terminal" : "0883110015"
 							}
 						}
 					],
