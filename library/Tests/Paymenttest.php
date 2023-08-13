@@ -54,6 +54,7 @@ class Tests_paymenttest extends UnitTestCase {
 		$this->billsCol = Billrun_Factory::db()->billsCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
+		$this->operationsCol = Billrun_Factory::db()->operationsCollection();
 
 
 		$this->construct(basename(__FILE__, '.php'), ['bills', 'taxes']);
@@ -847,6 +848,7 @@ class Tests_paymenttest extends UnitTestCase {
 			$this->billsCol->remove($this->buildQuery($params));
 			$this->billsCol->remove($this->buildQuery($params));
 			$this->billrunCol->remove($this->buildQuery($params));
+			$this->operationsCol->remove(['filtration'=>$params['aid']]);
 		}
 	}
 
