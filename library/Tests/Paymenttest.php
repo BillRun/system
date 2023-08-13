@@ -52,6 +52,10 @@ class Tests_paymenttest extends UnitTestCase {
 		$this->user = $request->get('user');
 		$this->password = $request->get('password');
 		$this->billsCol = Billrun_Factory::db()->billsCollection();
+		$this->linesCol = Billrun_Factory::db()->linesCollection();
+		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
+
+
 		$this->construct(basename(__FILE__, '.php'), ['bills', 'taxes']);
 		$this->setColletions();
 		$this->loadDbConfig();
@@ -365,6 +369,9 @@ class Tests_paymenttest extends UnitTestCase {
 					continue;
 				}
 				$DataField = $nested ? $DataField : $bill[$k];
+                //  if(is_null($DataField))
+				//     $DataField = Billrun_Util::getIn($bill, $k);
+
 
 				if (is_array($v)) {
 					// check dates 
@@ -744,7 +751,7 @@ class Tests_paymenttest extends UnitTestCase {
 		Billrun_Factory::log("send api API to $url with params l" . print_r($request, 1), Zend_Log::INFO);
 		$api = explode('/', $url);
 		if (in_array('onetimeinvoice', $api))
-	     	sleep(3);
+	     	sleep(2);
 		$respons = json_decode(Billrun_Util::sendRequest($url, $request), true);
 		Billrun_Factory::log("response is :" . print_r($respons, 1), Zend_Log::INFO);
 		echo '<pre>';
@@ -838,6 +845,8 @@ class Tests_paymenttest extends UnitTestCase {
 			}
 			Billrun_Factory::log("remove from bills collection by this query  : $paramToprint", Zend_Log::INFO);
 			$this->billsCol->remove($this->buildQuery($params));
+			$this->billsCol->remove($this->buildQuery($params));
+			$this->billrunCol->remove($this->buildQuery($params));
 		}
 	}
 

@@ -19,7 +19,7 @@
 					],
 					"payments": {
 						"offline": {
-							"uf": ["credit_type", "payer_address"]
+							"uf": ["credit_type", "payer_address","reason_code","payer_name"]
 						}
 					},
 					"usage_types": [

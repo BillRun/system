@@ -3990,8 +3990,6 @@
 				"amount": 15,
 				"due": -15,
 				"left": 0,
-				"uf.payer_name": "Yossi",
-				"uf.reason_code": "4",
 				"cancelled": true,
 				"pending": false,
 				"waiting_for_confirmation": false
@@ -4009,6 +4007,8 @@
 				"total_paid": 0,
 				"paid": false
 			}
+		
+			
 		],
 		"testRailId": 567
 	}
@@ -4261,8 +4261,6 @@
 				"amount": 15,
 				"due": -15,
 				"left": 0,
-				"uf.payer_name": "Yossi",
-				"uf.reason_code": "4",
 				"cancelled": true,
 				"pending": false,
 				"waiting_for_confirmation": false
@@ -4519,8 +4517,6 @@
 				"amount": 15,
 				"due": -15,
 				"left": 0,
-				"uf.payer_name": "Yossi",
-				"uf.reason_code": "4",
 				"cancelled": true,
 				"pending": false,
 				"waiting_for_confirmation": false
@@ -7250,7 +7246,7 @@
 		"testRailId": 566
 	},
 	{
-		"description": "onetime invoice with charge_flow:charge_before_invoice",
+		"description": "charge onetime invoice with charge_flow:charge_before_invoice",
 		"test_id": 78,
 		"api": "onetimeinvoice",
 		"params": {
@@ -7321,8 +7317,625 @@
 			]
 		,
 		"testRailId": 566
-	}
+		},
+		{
+			"description": "charge onetime invoice without charge_flow:charge_before_invoice",
+			"test_id": 79,
+			"api": "onetimeinvoice",
+			"params": {
+				"api": "onetimeinvoice",
+				"aid": "78",
+				"step": "2",
+				"invoice_unixtime": "past",
+				"cdrs": [
+					{
+						"aid": "78",
+						"sid": "0",
+						"rate": "CALL",
+						"credit_time": "2021-03-18T17:18:56.385Z",
+						"usagev": 1,
+						"type": "credit",
+						"aprice": "10.00"
+					}
+				]
+			},
+			"source": "api",
+			"request_method": "GET",
+			"preTest": [],
+			"testFunctions": [
+			
+				{
+					"FieldComparison": {
+						"aid":{"$in":[78]}	
+					}
+				}
+				
+			],
+			"postTest": [
+				{
+					"cleanDB": {
+						"aid": 78
+					}
+				}
+			],
+			"expected": [
+				{
+					"aid": 78,
+					"type": "rec",
+					"amount": 11.7,
+					"due": -11.7,
+					"pending" : false,
+					"method": "automatic",
+					"vendor_response.name" : "CreditGuard",
+					"vendor_response.status" : "000"
+				  
+				},
+				{
+					"aid": 78,
+					"type": "inv",
+					"amount": 11.7,
+					"due": 11.7,
+					"due_before_vat": 10,
+					"invoice_type": "immediate",
+					"lastname": "yoss",
+					"method": "automatic",
+					"paid": "1",
+					"payer_name": "yoss yossi",
+					"total_paid": 11.7,
+					"left_to_pay": 0	,
+					"pending_covering_amount":0
+				}
+					
+				]
+			,
+			"testRailId": 566
+		},
+		{
+			"description": "refund onetime invoice without charge_flow:charge_before_invoice",
+			"test_id": 80,
+			"api": "onetimeinvoice",
+			"params": {
+				"api": "onetimeinvoice",
+				"aid": "78",
+				"step": "2",
+				"invoice_unixtime": "past",
+				"cdrs": [
+					{
+						"aid": "78",
+						"sid": "0",
+						"rate": "CALL",
+						"credit_time": "2021-03-18T17:18:56.385Z",
+						"usagev": 1,
+						"type": "credit",
+						"aprice": "-10.00"
+					}
+				]
+			},
+			"source": "api",
+			"request_method": "GET",
+			"preTest": [],
+			"testFunctions": [
+			
+				{
+					"FieldComparison": {
+						"aid":{"$in":[78]}	
+					}
+				}
+				
+			],
+			"postTest": [
+				{
+					"cleanDB": {
+						"aid": 78
+					}
+				}
+			],
+			"expected": [
+				{
+					"aid": 78,
+					"type": "rec",
+					"amount": 11.7,
+					"due": 11.7,
+					"pending" : false,
+					"paid" : true,
+					"total_paid": 11.7,
+					"method": "automatic",
+					"left_to_pay": 0	,
+					"vendor_response.name" : "CreditGuard",
+					"vendor_response.status" : "000"
+				  
+				},
+				{
+					"aid": 78,
+					"type": "inv",
+					"amount": 11.7,
+					"due": -11.7,
+					"due_before_vat": -10,
+					"invoice_type": "immediate",
+					"lastname": "yoss",
+					"method": "automatic",
+					"payer_name": "yoss yossi",
+					"pending_covering_amount":0
+				}
+					
+				]
+			,
+			"testRailId": 566
+		},
+		{
+			"description": "refund onetime invoice with charge_flow:charge_before_invoice",
+			"test_id": 81,
+			"api": "onetimeinvoice",
+			"params": {
+				"api": "onetimeinvoice",
+				"aid": "78",
+				"step": "2",
+				"invoice_unixtime": "past",
+				"charge_flow":"charge_before_invoice",
+				"cdrs": [
+					{
+						"aid": "78",
+						"sid": "0",
+						"rate": "CALL",
+						"credit_time": "2021-03-18T17:18:56.385Z",
+						"usagev": 1,
+						"type": "credit",
+						"aprice": "-10.00"
+					}
+				]
+			},
+			"source": "api",
+			"request_method": "GET",
+			"preTest": [],
+			"testFunctions": [
+			
+				{
+					"FieldComparison": {
+						"aid":{"$in":[78]}	
+					}
+				}
+				
+			],
+			"postTest": [
+				{
+					"cleanDB": {
+						"aid": 78
+					}
+				}
+			],
+			"expected": [
+				{
+					"aid": 78,
+					"type": "rec",
+					"amount": 11.7,
+					"due": 11.7,
+					"pending" : false,
+					"paid" : true,
+					"total_paid": 11.7,
+					"method": "automatic",
+					"left_to_pay": 0	,
+					"vendor_response.name" : "CreditGuard",
+					"vendor_response.status" : "000"
+				  
+				},
+				{
+					"aid": 78,
+					"type": "inv",
+					"amount": 11.7,
+					"due": -11.7,
+					"due_before_vat": -10,
+					"invoice_type": "immediate",
+					"lastname": "yoss",
+					"method": "automatic",
+					"payer_name": "yoss yossi",
+					"pending_covering_amount":0
+				}
+					
+				]
+			,
+			"testRailId": 566
+			},
+			{
+				"description": "rejection - charge onetime with charge_flow=charge_before_invoice",
+				"test_id": 82,
+				"api": "onetimeinvoice",
+				"params": {
+					"api": "onetimeinvoice",
+					"aid": "82",
+					"step": "2",
+					"invoice_unixtime": "past",
+					"charge_flow":"charge_before_invoice",
+					"cdrs": [
+						{
+							"aid": "82",
+							"sid": "0",
+							"rate": "CALL",
+							"credit_time": "2021-03-18T17:18:56.385Z",
+							"usagev": 1,
+							"type": "credit",
+							"aprice": "20.00"
+						}
+					]
+				},
+				"source": "api",
+				"request_method": "GET",
+				"preTest": [],
+				"testFunctions": [
+				
+					{
+						"FieldComparison": {
+							"aid":{"$in":[82]}	
+						}
+					}
+					
+				],
+				"postTest": [
+					{
+						"cleanDB": {
+							"aid": 82
+						}
+					}
+				],
+				"expected": [
+					{
 
-
+						"aid" :82,
+						"type" : "inv",
+						"amount" : 23.4,
+						"due" : 23.4,
+						"due_before_vat" : 20,
+						"left_to_pay" : 23.4,
+						"method" : "automatic",
+						"paid" : false,
+						"total_paid" : 0,
+						"vatable_left_to_pay" : 23.4,
+						"pending_covering_amount" : 0
+					},
+					{
+						"dir" : "fc",
+						"aid" :82,
+						"method" : "automatic",
+						"type" : "rec",
+						"amount" : 23.4,
+						"due" : -23.4,
+						"pending_covering_amount" : 0,
+						"waiting_for_confirmation" : false,
+						"pending" : false,
+						"rejected" : true
+					},
+					{
+						"dir" : "fc",
+						"method" : "automatic",
+						"aid" :82,
+						"type" : "rec",
+						"amount" : 23.4,
+						"due" : 23.4,
+						"rejection" : true,
+						"rejection_code" : "342",
+						"left_to_pay" : 23.4,
+						"total_paid" : 0,
+						"paid" : false,
+						"pending_covering_amount" : 0,
+						"waiting_for_confirmation" : false
+						
+					}
+					
+						
+					]
+				,
+				"testRailId": 566
+				},
+				{
+					"description": "rejection - refund onetime with charge_flow=charge_before_invoice",
+					"test_id": 83,
+					"api": "onetimeinvoice",
+					"params": {
+						"api": "onetimeinvoice",
+						"aid": "82",
+						"step": "2",
+						"invoice_unixtime": "past",
+						"charge_flow":"charge_before_invoice",
+						"cdrs": [
+							{
+								"aid": "82",
+								"sid": "0",
+								"rate": "CALL",
+								"credit_time": "2021-03-18T17:18:56.385Z",
+								"usagev": 1,
+								"type": "credit",
+								"aprice": "20.00"
+							}
+						]
+					},
+					"source": "api",
+					"request_method": "GET",
+					"preTest": [],
+					"testFunctions": [
+					
+						{
+							"FieldComparison": {
+								"aid":{"$in":[82]}	
+							}
+						}
+						
+					],
+					"postTest": [
+						{
+							"cleanDB": {
+								"aid": 82
+							}
+						}
+					],
+					"expected": [
+						{
+							"aid": 82,
+							"amount" : 23.4,
+							"type":"inv",
+							"due" : -23.4,
+							"due_before_vat" : -20,
+							"left" : 23.4,
+							"pending_covering_amount" : 0
+						},
+						{
+							"aid": 82,
+							"type" : "rec",
+							"amount" : 23.4,
+							"due" : 23.4,
+							"total_paid" : 23.4,
+							"vatable_left_to_pay" : 0,
+							"paid" : true,
+							"pending" : false,
+							"rejected" : true
+						},
+						{
+							"aid": 82,
+							"amount" : 23.4,
+							"due" : -23.4,
+							"type":"rec",
+							"rejection" : true,
+							"left" : 23.4,
+							"pending_covering_amount" : 0,
+							"waiting_for_confirmation" : false
+						}
+						
+						
+							
+						]
+					,
+					"testRailId": 566
+					},
+					
+					{
+						"description": "account with  debt - charge onetime with charge_flow=charge_before_invoice ",
+						"test_id": 85,
+						"api": "bill",
+						"params": {
+							"aid" :72
+						},
+						"source": "api",
+						"request_method": "GET",
+						"preTest": [
+							{
+								"bulidAPI": {
+									"api": "onetimeinvoice",
+									"aid": "72",
+									"step": "1",
+									"invoice_unixtime": "past",
+									"cdrs": [
+										{
+											"aid": "72",
+											"sid": "0",
+											"rate": "CALL",
+											"credit_time": "2021-03-18T17:18:56.385Z",
+											"usagev": 1,
+											"type": "credit",
+											"aprice": "20.00"
+										}
+									]
+								}
+							}
+							,{
+								"bulidAPI":{
+									"api": "onetimeinvoice",
+									"aid": "72",
+									"step": "2",
+									"invoice_unixtime": "past",
+									"charge_flow":"charge_before_invoice",
+									"cdrs": [
+										{
+											"aid": "72",
+											"sid": "0",
+											"rate": "CALL",
+											"credit_time": "2021-03-18T17:18:56.385Z",
+											"usagev": 1,
+											"type": "credit",
+											"aprice": "30.00"
+										}
+									]
+								}	
+							}
+						],
+						"testFunctions": [
+						
+							{
+								"FieldComparison": {
+									"aid":{"$in":[72]}
+								
+									
+								}
+								
+							},{
+							"checkApiRespons": {
+								"details.balance.total":"23.4",
+								"details.balance.without_waiting":"23.4"							}
+						}
+						],
+						"postTest": [
+							{
+								"cleanDB": {
+									"aid": 72
+								}
+							}
+							
+						],
+						"expected": [
+							{
+								"aid": 72,
+								"type": "inv",
+								"amount": 23.4,
+								"due": 23.4,
+								"due_before_vat": 20,
+								"invoice_type": "immediate",
+								"lastname": "yoss",
+								"method": "automatic",
+								"paid": false,
+								"payer_name": "yoss yossi",
+								"total_paid": 0,
+								"left_to_pay": 23.4			
+							},
+							{
+									"aid": 72,
+									"type": "rec",
+									"amount": 35.1,
+									"due": -35.1,
+									"pending" : false,
+									"method": "automatic",
+									"vendor_response.name" : "CreditGuard",
+									"vendor_response.status" : "000"
+								},
+								{
+									"aid": 72,
+									"type": "inv",
+									"amount": 35.1,
+									"due": 35.1,
+									"due_before_vat": 30,
+									"invoice_type": "immediate",
+									"lastname": "yoss",
+									"method": "automatic",
+									"paid": true,
+									"payer_name": "yoss yossi",
+									"total_paid": 35.1,
+									"left_to_pay": 0
+								}
+							]
+						,
+						"testRailId": 566
+					}
+					,
+					{
+						"description": "account with overpaid  - charge onetime with charge_flow=charge_before_invoice  ",
+						"test_id": 86,
+						"api": "bill",
+						"params": {
+							"aid" :72
+						},
+						"source": "api",
+						"request_method": "GET",
+						"preTest": [
+							{
+								"bulidAPI": {
+									"api": "onetimeinvoice",
+									"aid": "72",
+									"step": "1",
+									"invoice_unixtime": "past",
+									"cdrs": [
+										{
+											"aid": "72",
+											"sid": "0",
+											"rate": "CALL",
+											"credit_time": "2021-03-18T17:18:56.385Z",
+											"usagev": 1,
+											"type": "credit",
+											"aprice": "-20.00"
+										}
+									]
+								}
+							}
+							,{
+								"bulidAPI":{
+									"api": "onetimeinvoice",
+									"aid": "72",
+									"step": "2",
+									"invoice_unixtime": "past",
+									"charge_flow":"charge_before_invoice",
+									"cdrs": [
+										{
+											"aid": "72",
+											"sid": "0",
+											"rate": "CALL",
+											"credit_time": "2021-03-18T17:18:56.385Z",
+											"usagev": 1,
+											"type": "credit",
+											"aprice": "30.00"
+										}
+									]
+								}	
+							}
+						],
+						"testFunctions": [
+						
+							{
+								"FieldComparison": {
+									"aid":{"$in":[72]}
+								
+									
+								}
+								
+							},{
+							"checkApiRespons": {
+								"details.balance.total":"-23.4",
+								"details.balance.without_waiting":"-23.4"		
+												}
+						}
+						],
+						"postTest": [
+							{
+								"cleanDB": {
+									"aid": 72
+								}
+							}
+							
+						],
+						"expected": [
+							{
+								"aid": 72,
+								"type": "inv",
+								"amount": 23.4,
+								"due": -23.4,
+								"due_before_vat": -20,
+								"invoice_type": "immediate",
+								"lastname": "yoss",
+								"method": "automatic",
+								"payer_name": "yoss yossi",
+								"left": 23.4			
+							},
+							{
+									"aid": 72,
+									"type": "rec",
+									"amount": 35.1,
+									"due": -35.1,
+									"pending" : false,
+									"method": "automatic",
+									"vendor_response.name" : "CreditGuard",
+									"vendor_response.status" : "000"
+								},
+								{
+									"aid": 72,
+									"type": "inv",
+									"amount": 35.1,
+									"due": 35.1,
+									"due_before_vat": 30,
+									"invoice_type": "immediate",
+									"lastname": "yoss",
+									"method": "automatic",
+									"paid": true,
+									"payer_name": "yoss yossi",
+									"total_paid": 35.1,
+									"left_to_pay": 0
+								}
+							]
+						,
+						"testRailId": 566
+					}
 ]
 
