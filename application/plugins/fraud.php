@@ -165,7 +165,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$before = $callUsageBefore + $smsUsageBefore * 60; // convert sms units to seconds
 			$currentUsage = ($usaget == 'sms') ? $row['usagev'] * 60 : $row['usagev'];
 			$after = $before + $currentUsage;
-		} else if(is_array($rule['usaget']) && in_array($usaget, $rule['usaget'])) {
+		} else if(!empty($rule['usaget']) && is_array($rule['usaget']) && in_array($usaget, $rule['usaget'])) {
 			$before = 0;
 			foreach($rule['usaget'] as $ruleUsageType) {
 				$before += !empty($balance['usage_before'][$ruleUsageType]) ? $balance['usage_before'][$ruleUsageType] : 0;
