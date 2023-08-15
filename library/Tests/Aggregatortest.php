@@ -603,7 +603,9 @@
       * and restore the original data 
       */
      public function TestPerform() {
-
+        if(empty($this->test_cases_to_run)){
+            $this->tests = $this->skip_tests($this->tests,'test.test_number');
+          }
          foreach ($this->tests as $key => $row) {
 
              $aid = $row['test']['aid'];
@@ -621,9 +623,6 @@
                      $this->$pre($key, $row);
                  }
              }
-             if(empty($this->test_cases_to_run)){
-                $this->tests = $this->skip_tests($this->tests,'test.test_number');
-              }
              // run aggregator
              if (array_key_exists('aid', $row['test'])) {
                  $returnBillrun = $this->runT($row);
