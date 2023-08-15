@@ -289,7 +289,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 		$addonBalances = $this->balances->query($addonQuery)->cursor();
 		if ($addonBalances->current()->isEmpty()) {
-			Billrun_Factory::log()->log("Didn't found roaming balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::NOTICE);
+			Billrun_Factory::log()->log("Didn't found addon balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::NOTICE);
 		}
 		$addonBalancesByOrder = array();
 		foreach ($addonBalances as $balance) {
@@ -407,7 +407,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	/**
-	 * method to update roaming balances once the regular balance was removed.
+	 * method to update addon balances once the regular balance was removed.
 	 * 
 	 */
 	public function afterResetBalances($rebalanceSids, $rebalanceStamps, $billrunKey) {
@@ -441,7 +441,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	/**
-	 * method to calculate the usage need to be subtracted from the roaming balance.
+	 * method to calculate the usage need to be subtracted from the addon balance.
 	 * 
 	 * @param type $line
 	 * 
