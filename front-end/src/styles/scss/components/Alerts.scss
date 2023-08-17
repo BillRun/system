@@ -1,0 +1,28 @@
+/* System Alerts */
+.alert-notifier-container{
+  width: 50%;
+  position: fixed;
+  z-index: 99999;
+  top: 0;
+  right: 0;
+  padding: 5;
+  .alert {
+    margin-bottom: 10px;
+  }
+}
+
+.alerts-enter {
+  opacity: 0;
+}
+.alerts-enter-active {
+  opacity: 1;
+  transition: opacity 500ms ease-in;
+}
+.alerts-exit {
+  opacity: 1;
+}
+.alerts-exit-active {
+  opacity: 0;
+  transition: opacity 300ms ease-in;
+}
+/* ~ System Alerts */

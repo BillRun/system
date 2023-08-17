@@ -94,13 +94,14 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 	 * get the main  aggreation and paging logic query that is to be sent to the DB
 	 */
 	protected function getCycleAggregationPipeline($addedPassthroughFields, $page, $size) {
+		$customIDFields = $this->getCustomIDFieldsGrouping();
 		$pipelines[] = array(
 			'$group' => array_merge($addedPassthroughFields['group'],array(
 				'_id' => array(
 					'aid' => '$aid',
 				),
 				'sub_plans' => array(
-					'$push' => array_merge($addedPassthroughFields['sub_push'],array(
+					'$push' => array_merge($customIDFields['sub_push'],$addedPassthroughFields['sub_push'],array(
 						'type' => '$type',
 						'sid' => '$sid',
 						'plan' => '$plan',
@@ -144,9 +145,10 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 				'sub_plans.from' => -1,
 			)
 		);
+
 		$pipelines[] = array(
 			'$group' => array_merge($addedPassthroughFields['second_group'], array(
-				'_id' => array(
+				'_id' => array_merge($customIDFields['second_group'],array(
 					'aid' => '$_id.aid',
 					'sid' => '$sub_plans.sid',
 					'plan' => '$sub_plans.plan',
@@ -158,15 +160,15 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 					'address' => '$sub_plans.address',
 					'services' => '$sub_plans.services',
 					'activation_date' => '$sub_plans.activation_date'
-				),
+				)),
 				'plan_dates' => array(
-					'$push' => array(
+					'$push' => array_merge($customIDFields['second_group'],array(
 						'plan' => '$sub_plans.plan',
 						'from' => '$sub_plans.from',
 						'to' => '$sub_plans.to',
 						'plan_activation' => '$sub_plans.plan_activation',
 						'plan_deactivation' => '$sub_plans.plan_deactivation',
-					),
+					)),
 				),
 				'card_token' => array(
 					'$first' => '$card_token'
@@ -198,15 +200,36 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$passthroughFields = array_merge($this->subsPassthroughFields, $this->passthroughFields);
 		
 		foreach ($passthroughFields as $subscriberField) {
-			$srcField = is_array($subscriberField) ? $subscriberField['value'] : $subscriberField;
+			if (!is_array($subscriberField) && strpos($subscriberField, ".") !== false) {
+				$project_val = '$' . $subscriberField;
+				foreach($reversed = array_reverse(explode(".", $subscriberField)) as $sub_key) {
+					$project_val = [$sub_key => $project_val];
+				}
+				$srcField = end($reversed);
+				$project = array_merge($project, $project_val);
+			} else {
+				$srcField = is_array($subscriberField) ? $subscriberField['value'] : $subscriberField;
+				$project[$srcField] ='$' . $srcField;
+			}
 			$sub_push[$srcField] =  '$' . $srcField;
 			$group2[$srcField] = array('$first' => '$sub_plans.' . $srcField);
-			$project[$srcField] ='$' . $srcField;
 		}
 		if (!$project) {
 			$project = 1;
 		}
 		return array('group' => $group, 'project' => $project, 'second_group' => $group2,'sub_push' => $sub_push );
+	}
+
+	protected function getCustomIDFieldsGrouping() {
+		$customIDFields = Billrun_Factory::config()->getConfigValue('customer.aggregator.revision_identification_fields',[]);
+		$retGroupingFields = ['sub_push'=> [], 'second_group'=>[]];
+		if(!empty($customIDFields)) {
+			foreach($customIDFields as $CIDF) {
+				$retGroupingFields['sub_push'][$CIDF] = '$'.$CIDF;
+				$retGroupingFields['second_group'][$CIDF] = '$sub_plans.'.$CIDF;
+			}
+		}
+		return $retGroupingFields;
 	}
 	
 }

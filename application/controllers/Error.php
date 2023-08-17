@@ -12,14 +12,18 @@ class ErrorController extends Yaf_Controller_Abstract {
 	 * you can also call to Yaf_Request_Abstract::getException to get the 
 	 * un-caught exception.
 	 */
-	public function errorAction(Exception $exception) {	
+	public function errorAction(Throwable $exception) {	
 	   // Get exception output
 	   $output = $this->getExceptionOutput($exception);
 
 	   // TODO: THIS IS DEBUG CODE!!!!!!!!!!!!!!!!!!
 	   if(php_sapi_name() != "cli") {
 		   print_r($output);
-		   Billrun_Factory::log(print_r($output,1), Zend_Log::ERR);
+		   $logLevel = Zend_Log::ERR;
+		   if(isset($exception->logLevel)) {
+			   $logLevel = $exception->logLevel;
+		   }
+		   Billrun_Factory::log(print_r($output,1), $logLevel);
 	   } else {
 		   echo "Exception: " . $output;
 	   }
@@ -37,7 +41,7 @@ class ErrorController extends Yaf_Controller_Abstract {
 	 * @param Exception $exception
 	 * @return json enecoded array
 	 */
-	protected function getExceptionOutput(Exception $exception) {
+	protected function getExceptionOutput(Throwable $exception) {
 	   // Get exception output
 	   if($exception instanceof Billrun_Exceptions_Base) {
 		   return $this->billrunExceptionOutput($exception);
@@ -60,7 +64,7 @@ class ErrorController extends Yaf_Controller_Abstract {
 	 * @param type $exception
 	 * @return string
 	 */
-	protected function generalExceptionOutput(Exception $exception) {
+	protected function generalExceptionOutput(Throwable $exception) {
 	   $output = array();
 	   $output['status'] = 0;
 	   $output['code'] = 500;

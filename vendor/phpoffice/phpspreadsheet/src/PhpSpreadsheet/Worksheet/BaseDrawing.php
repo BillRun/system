@@ -154,7 +154,7 @@ class BaseDrawing implements IComparable
      *
      * @param string $pValue
      *
-     * @return $this
+     * @return BaseDrawing
      */
     public function setName($pValue)
     {
@@ -178,7 +178,7 @@ class BaseDrawing implements IComparable
      *
      * @param string $description
      *
-     * @return $this
+     * @return BaseDrawing
      */
     public function setDescription($description)
     {
@@ -205,7 +205,7 @@ class BaseDrawing implements IComparable
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return BaseDrawing
      */
     public function setWorksheet(Worksheet $pValue = null, $pOverrideOld = false)
     {
@@ -253,7 +253,7 @@ class BaseDrawing implements IComparable
      *
      * @param string $pValue eg: 'A1'
      *
-     * @return $this
+     * @return BaseDrawing
      */
     public function setCoordinates($pValue)
     {
@@ -277,7 +277,7 @@ class BaseDrawing implements IComparable
      *
      * @param int $pValue
      *
-     * @return $this
+     * @return BaseDrawing
      */
     public function setOffsetX($pValue)
     {
@@ -301,7 +301,7 @@ class BaseDrawing implements IComparable
      *
      * @param int $pValue
      *
-     * @return $this
+     * @return BaseDrawing
      */
     public function setOffsetY($pValue)
     {
@@ -325,7 +325,7 @@ class BaseDrawing implements IComparable
      *
      * @param int $pValue
      *
-     * @return $this
+     * @return BaseDrawing
      */
     public function setWidth($pValue)
     {
@@ -356,7 +356,7 @@ class BaseDrawing implements IComparable
      *
      * @param int $pValue
      *
-     * @return $this
+     * @return BaseDrawing
      */
     public function setHeight($pValue)
     {
@@ -386,7 +386,7 @@ class BaseDrawing implements IComparable
      * @param int $width
      * @param int $height
      *
-     * @return $this
+     * @return BaseDrawing
      */
     public function setWidthAndHeight($width, $height)
     {
@@ -423,7 +423,7 @@ class BaseDrawing implements IComparable
      *
      * @param bool $pValue
      *
-     * @return $this
+     * @return BaseDrawing
      */
     public function setResizeProportional($pValue)
     {
@@ -447,7 +447,7 @@ class BaseDrawing implements IComparable
      *
      * @param int $pValue
      *
-     * @return $this
+     * @return BaseDrawing
      */
     public function setRotation($pValue)
     {
@@ -471,7 +471,7 @@ class BaseDrawing implements IComparable
      *
      * @param Drawing\Shadow $pValue
      *
-     * @return $this
+     * @return BaseDrawing
      */
     public function setShadow(Drawing\Shadow $pValue = null)
     {

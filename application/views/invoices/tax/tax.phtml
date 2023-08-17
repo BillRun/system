@@ -1,6 +1,6 @@
 <?php $colspan = empty($col_count) ? 1 : $col_count-1; ?>
 <tr class="total">
-	<td colspan='<?php echo $colspan; ?>'>TAXES</td>
+	<td colspan='<?php echo $colspan; ?>'><?php echo Generator_Translations::stranslate('DEF_INV_TAXES');?></td>
 	<td><?php echo $this->currencySymbol() . number_format( $data['after_vat']  - $data['before_vat'], 2); ?></td>
 </tr>
 <?php if(!empty($data['taxes'])) {	

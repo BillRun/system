@@ -127,7 +127,7 @@ class Border extends Supervisor
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Border
      */
     public function applyFromArray(array $pStyles)
     {
@@ -166,7 +166,7 @@ class Border extends Supervisor
      *                            When passing a boolean, FALSE equates Border::BORDER_NONE
      *                                and TRUE to Border::BORDER_MEDIUM
      *
-     * @return $this
+     * @return Border
      */
     public function setBorderStyle($pValue)
     {
@@ -202,7 +202,7 @@ class Border extends Supervisor
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Border
      */
     public function setColor(Color $pValue)
     {

@@ -42,7 +42,7 @@ class ColumnDimension extends Dimension
     }
 
     /**
-     * Get column index as string eg: 'A'.
+     * Get ColumnIndex.
      *
      * @return string
      */
@@ -52,11 +52,11 @@ class ColumnDimension extends Dimension
     }
 
     /**
-     * Set column index as string eg: 'A'.
+     * Set ColumnIndex.
      *
      * @param string $pValue
      *
-     * @return $this
+     * @return ColumnDimension
      */
     public function setColumnIndex($pValue)
     {
@@ -80,7 +80,7 @@ class ColumnDimension extends Dimension
      *
      * @param float $pValue
      *
-     * @return $this
+     * @return ColumnDimension
      */
     public function setWidth($pValue)
     {
@@ -104,7 +104,7 @@ class ColumnDimension extends Dimension
      *
      * @param bool $pValue
      *
-     * @return $this
+     * @return ColumnDimension
      */
     public function setAutoSize($pValue)
     {

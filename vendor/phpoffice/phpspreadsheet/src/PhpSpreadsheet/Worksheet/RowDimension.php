@@ -56,7 +56,7 @@ class RowDimension extends Dimension
      *
      * @param int $pValue
      *
-     * @return $this
+     * @return RowDimension
      */
     public function setRowIndex($pValue)
     {
@@ -80,7 +80,7 @@ class RowDimension extends Dimension
      *
      * @param float $pValue
      *
-     * @return $this
+     * @return RowDimension
      */
     public function setRowHeight($pValue)
     {
@@ -104,7 +104,7 @@ class RowDimension extends Dimension
      *
      * @param bool $pValue
      *
-     * @return $this
+     * @return RowDimension
      */
     public function setZeroHeight($pValue)
     {

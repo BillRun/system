@@ -38,6 +38,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$step = isset($request['step']) ? intval($request['step']) : self::STEP_FULL;
 		$sendEmail = isset($request['send_email']) ? intval($request['send_email']) : true;
 		$allowBill = isset($request['allow_bill']) ? intval($request['allow_bill']) : 1;
+		$uf = isset($request['uf']) ? json_decode($request['uf'],JSON_OBJECT_AS_ARRAY) : [];
         $cdrs = [];
         $this->aid = intval($request['aid']);
 		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''),JSON_OBJECT_AS_ARRAY);
@@ -60,7 +61,12 @@ class OnetimeinvoiceAction extends ApiAction {
         }
 
         // run aggregate on cdrs generate invoice
-        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  'stamp' => $oneTimeStamp , 'force_accounts' => [$this->aid], 'invoice_subtype' => Billrun_Util::getFieldVal($request['type'], 'regular'),'affected_sids' => $affectedSids ]);
+        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  
+														'stamp' => $oneTimeStamp , 
+														'force_accounts' => [$this->aid], 
+														'invoice_subtype' => Billrun_Util::getFieldVal($request['type'], 'regular'),
+														'affected_sids' => $affectedSids,
+														'uf' => $uf]);
         $aggregator->aggregate();
 
 
@@ -106,7 +112,7 @@ class OnetimeinvoiceAction extends ApiAction {
 			$this->getController()->setOutput(array(array(
 					'status' => 1,
 					'desc' => 'success',
-					'details' => [ 'invoice_path' => $pdfPath ],
+					'details' => [ 'invoice_path' => $pdfPath , 'invoice_id' => $this->invoice->getInvoiceID()],
 					'input' => $request
 			)));
 			return TRUE;
@@ -153,6 +159,16 @@ class OnetimeinvoiceAction extends ApiAction {
             if(empty($request[$key]) /*|| !Billrun_Util::verify_array($request[$key], $type)*/ ) {
                 $msg  .= "Required input '{$key}' is missing or of incorrect type.\n";
             }
+        }
+          //Validate the uf data
+        if(!empty($request['uf'])) {
+			$uf = json_decode($request['uf'],JSON_OBJECT_AS_ARRAY);
+			$uf_config = Billrun_Factory::config()->getConfigValue('billrun.immediate_invoice.uf', array());
+			foreach($uf as $uf_key => $uf_val) {
+					if (!in_array($uf_key, $uf_config)){
+							$msg .= "Field '{$uf_key}' is not configured as a valid user field\n";
+					}
+			}
         }
         if(!empty($msg)) {
             $this->setError($msg,$request);
