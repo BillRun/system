@@ -268,7 +268,8 @@ class ConfigModel {
 			foreach ($data['params'] as $key => $value) {
 				if (!in_array($key, $neededParameters)){
 					unset($data['params'][$key]);
-				} elseif (in_array($key, $secretFields) && $value === $fakePassword && isset ($rawPgSettings['params'][$key])){
+				}
+				if (in_array($key, $secretFields) && $value === $fakePassword && isset($rawPgSettings['params'][$key])) {
 					$data['params'][$key] = $rawPgSettings['params'][$key];
 				}
 			}
