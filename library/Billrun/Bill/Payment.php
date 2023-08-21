@@ -271,6 +271,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['rejection'] = TRUE;
 		$rawData['rejection_code'] = $response['status'];
+		$rawData['urt'] = date('c');
 		if (isset($response['additional_params'])) {
 			$rawData['vendor_response'] = $response['additional_params'];
 		}
