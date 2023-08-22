@@ -526,7 +526,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
       * and restore the original data 
       */
      public function TestPerform() {
-
+        if(empty($this->test_cases_to_run)){
+            $this->tests = $this->skip_tests($this->tests,'test.test_number');
+          }
 		$this->tests = $this->test_cases();
          foreach ($this->tests as $key => $row) {
 
@@ -544,9 +546,6 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
                  foreach ($preRun as $pre) {
                      $this->$pre($key, $row);
                  }
-             }
-             if(empty($this->test_cases_to_run)){
-                $this->tests = $this->skip_tests($this->tests,'test.test_number');
               }
              // run aggregator
              if (array_key_exists('aid', $row['test'])) {

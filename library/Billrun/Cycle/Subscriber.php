@@ -450,7 +450,10 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 					if(!empty($currentMongoSrv['quantitative']) && !empty($currentMongoSrv['prorated']) && !empty($previousServices) ) {
 						$testServiceData = $serviceData;
 						$testServiceData['compare_fields'] = ['name','start','service_id'];//Compare without the quantity value
-						if(!empty($previousQuantService = array_uintersect($previousServices, [$testServiceData], $serviceCompare)) && reset($previousQuantService)['quantity'] !== $testServiceData['quantity']) {
+						$tempPreviousServices =array_map(function($r){
+								$r['compare_fields'] = ['name','start','service_id']; return $r;
+							},$previousServices);
+						if(!empty($previousQuantService = array_uintersect($tempPreviousServices, [$testServiceData], $serviceCompare)) && reset($previousQuantService)['quantity'] !== $testServiceData['quantity']) {
 							//this  service  qunatity changed  but the  from was kept the same as the old service
 							// change the  from to much the current revision
 							$serviceData['start'] = @$subscriber['from']->sec + (@$subscriber['from']->usec/ 1000000) ?: $sfrom;
