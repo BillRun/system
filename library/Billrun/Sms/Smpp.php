@@ -128,6 +128,10 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 			$this->transportSocket->setSendTimeout($this->socketTimeout);
 			$this->smppClient = new smpp\Client($this->transportSocket);
 
+			// Open the connection
+			$this->transportSocket->open();
+			$this->smppClient->bindTransmitter($this->user, $this->token);
+
 			// Optional connection specific overrides
 			if (!empty($this->clientOptions['smsNullTerminateOctetstrings'])) {
 				smpp\Client::$smsNullTerminateOctetstrings = $this->getClassConstant('smpp\Client', $this->clientOptions['smsNullTerminateOctetstrings']);
@@ -184,6 +188,22 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 	}
 
 	/**
+	 * on class destruction close smpp connection
+	 */
+	public function __destruct() {
+		if ($this->smppClient) {
+			try {
+				// Close connection
+				$this->smppClient->close();
+			} catch (Throwable $th) {
+				Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
+			} catch (Exception $ex) {
+				Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $ex->getCode() . ', message: ' . $ex->getMessage(), Zend_Log::WARN);
+			}
+		}
+	}
+
+	/**
 	 * see parent::send
 	 * 
 	 * @return mixed msg id if success, false on failure
@@ -206,10 +226,6 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 				return false;
 			}
 
-			// Open the connection
-			$this->transportSocket->open();
-			$this->smppClient->bindTransmitter($this->user, $this->token);
-
 			if ($this->clientOptions['utf8togsm']) {
 				$encodedMsg = smpp\helpers\GsmEncoderHelper::utf8_to_gsm0338($this->body);
 			} else if ($this->clientOptions['pack7bit']) {
@@ -222,11 +238,6 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 			$toSmpp = new smpp\Address($this->to, $this->clientOptions['addressTON'], $this->clientOptions['addressNPI']);
 			$output = $this->smppClient->sendSMS($from, $toSmpp, $encodedMsg, null, $this->clientOptions['messageEncoding']);
 
-			// Close connection
-			$this->smppClient->close();
-			
-			// reset to to avoid double sending on the upper layer so we are resetting the to field
-			$this->to = '';
 		} catch (Throwable $th) {
 			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
 			$output = false;
@@ -234,6 +245,9 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $ex->getCode() . ', message: ' . $ex->getMessage(), Zend_Log::WARN);
 			$output = false;
 		}
+		
+		// reset to to avoid double sending on the upper layer so we are resetting the to field
+		$this->to = '';
 		
 		return $output;
 	}
