@@ -181,7 +181,7 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 			$this->smppClient->debug = $this->debug;
 			$this->transportSocket->debug = $this->debug;
 		} catch (Throwable $th) {
-			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
+			Billrun_Factory::log('Send SMPP SMS: got throwable. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $ex->getCode() . ', message: ' . $ex->getMessage(), Zend_Log::WARN);
 		}
@@ -196,7 +196,7 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 				// Close connection
 				$this->smppClient->close();
 			} catch (Throwable $th) {
-				Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
+				Billrun_Factory::log('Send SMPP SMS: got throwable. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
 			} catch (Exception $ex) {
 				Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $ex->getCode() . ', message: ' . $ex->getMessage(), Zend_Log::WARN);
 			}
@@ -239,7 +239,7 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 			$output = $this->smppClient->sendSMS($from, $toSmpp, $encodedMsg, null, $this->clientOptions['messageEncoding']);
 
 		} catch (Throwable $th) {
-			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
+			Billrun_Factory::log('Send SMPP SMS: got throwable. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
 			$output = false;
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $ex->getCode() . ', message: ' . $ex->getMessage(), Zend_Log::WARN);
