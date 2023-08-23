@@ -164,6 +164,8 @@ class ConfigModel {
 				}
 			}
 			return $plugins;
+		} elseif ($category === "taxation") {
+			return $this->getSecureTaxation($this->_getFromConfig($currentConfig, $category, $data));
 		}
 		
 		return $this->_getFromConfig($currentConfig, $category, $data);
@@ -266,7 +268,8 @@ class ConfigModel {
 			foreach ($data['params'] as $key => $value) {
 				if (!in_array($key, $neededParameters)){
 					unset($data['params'][$key]);
-				} elseif (in_array($key, $secretFields) && $value === $fakePassword && isset ($rawPgSettings['params'][$key])){
+				}
+				if (in_array($key, $secretFields) && $value === $fakePassword && isset($rawPgSettings['params'][$key])) {
 					$data['params'][$key] = $rawPgSettings['params'][$key];
 				}
 			}
@@ -726,7 +729,7 @@ class ConfigModel {
 	protected function _updateConfig(&$currentConfig, $category, $data) {
 		
 		if ($category === 'taxation') {
-			$this->updateTaxationSettings($currentConfig, $data);
+			$data = $this->updateTaxationSettings($currentConfig, $data);
 		}
 		
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
@@ -1689,6 +1692,7 @@ class ConfigModel {
 			   $this->setModelField($config, $model, $field, $fieldData['title'], $mandatory && $fieldData['mandatory'], $mandatory );
 		   }
 		}
+		return $this->setSecureTaxation($config, $data);
 	}
 	
 	protected function setModelField(&$config, $model, $fieldName, $title, $mandatory = true, $display = true) {
@@ -1781,6 +1785,25 @@ class ConfigModel {
 		return Billrun_Factory::config()->getConfigValue('unify', []);
 	}
 	
+	protected function setSecureTaxation($conf, $taxationSetting) {
+		if (isset($taxationSetting['CSI']['auth_code'])) {
+			$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
+			if ($taxationSetting['CSI']['auth_code'] === $fakePassword) {
+				$rawTaxationSettings = $conf['taxation'];
+				$taxationSetting['CSI']['auth_code'] = $rawTaxationSettings['CSI']['auth_code'];
+			}
+		}
+		return $taxationSetting;
+	}
+	
+	protected function getSecureTaxation($taxationSetting) {
+		if (isset($taxationSetting['CSI']['auth_code'])) {
+			$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
+			$taxationSetting['CSI']['auth_code'] = $fakePassword;
+		}
+		return $taxationSetting;
+	}
+
 	protected function getSecurePaymentGateway($paymentGatewaySetting){
 		$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
 		$securePaymentGateway = $paymentGatewaySetting; 
