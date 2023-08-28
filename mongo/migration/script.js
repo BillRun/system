@@ -1535,7 +1535,6 @@ lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
 	db.bills.bulkWrite(bulkUpdate);
 	print("Updated total of " + i + " bills!")
 });
-
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.dropIndex("aid_1_urt_1");
