@@ -128,10 +128,6 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 			$this->transportSocket->setSendTimeout($this->socketTimeout);
 			$this->smppClient = new smpp\Client($this->transportSocket);
 
-			// Open the connection
-			$this->transportSocket->open();
-			$this->smppClient->bindTransmitter($this->user, $this->token);
-
 			// Optional connection specific overrides
 			if (!empty($this->clientOptions['smsNullTerminateOctetstrings'])) {
 				smpp\Client::$smsNullTerminateOctetstrings = $this->getClassConstant('smpp\Client', $this->clientOptions['smsNullTerminateOctetstrings']);
@@ -225,6 +221,10 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 				Billrun_Factory::log('SMS: need to set sms destination (to)', Zend_Log::NOTICE);
 				return false;
 			}
+			
+			// Open the connection
+			$this->transportSocket->open();
+			$this->smppClient->bindTransmitter($this->user, $this->token);
 
 			if ($this->clientOptions['utf8togsm']) {
 				$encodedMsg = smpp\helpers\GsmEncoderHelper::utf8_to_gsm0338($this->body);
