@@ -246,9 +246,6 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 			$output = false;
 		}
 		
-		// reset to to avoid double sending on the upper layer so we are resetting the to field
-		$this->to = '';
-		
 		return $output;
 	}
 
