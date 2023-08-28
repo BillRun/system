@@ -108,8 +108,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             if (isset($dataField['linked_entity'])) {
                 $dataLine[$dataField['path']] = $this->getLinkedEntityData($dataField['linked_entity']['entity'], $params, $dataField['linked_entity']['field_name']);
             }
-            if (isset($dataField['parameter_name‎']) && in_array($dataField['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$dataField['parameter_name‎']])) {
-                $dataLine[$dataField['path']] = $this->options[$dataField['parameter_name‎']];
+            if (isset($dataField['parameter_name']) && in_array($dataField['parameter_name'], $this->extraParamsNames) && isset($this->options[$dataField['parameter_name']])) {
+                $dataLine[$dataField['path']] = $this->options[$dataField['parameter_name']];
             }
             if ((isset($dataField['type']) && $dataField['type'] == 'autoinc')) {
                     $dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpf_generator_' . $this->getFilename());
@@ -330,11 +330,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'transactions_amount') {
                 $line[$field['path']] = $this->transactionsTotalAmount;
             }
+            if (isset($field['predefined_values']) && $field['predefined_values'] == 'log_stamp') {
+                $line[$field['path']] = $this->generatedLogFileStamp;
+            }
             if (isset($field['hard_coded_value'])) {
                 $line[$field['path']] = $field['hard_coded_value'];
             }
-            if (isset($field['parameter_name‎']) && in_array($field['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$field['parameter_name‎']])) {
-                $line[$field['path']] = $this->options[$field['parameter_name‎']];
+            if (isset($field['parameter_name']) && in_array($field['parameter_name'], $this->extraParamsNames) && isset($this->options[$field['parameter_name']])) {
+                $line[$field['path']] = $this->options[$field['parameter_name']];
             }
             $warningMessages = [];
             $line[$field['path']] = Billrun_Util::formattingValue($field, $line[$field['path']], $warningMessages);

@@ -210,11 +210,12 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				Billrun_Factory::log($message, Zend_Log::WARN);
 				$this->logFile->updateLogFileField('warnings', $message);
 			}
-			$extraFields = array_merge_recursive($this->getCustomPaymentGatewayFields(), ['pg_request' => $this->billSavedFields]);
-			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
-			Billrun_Factory::dispatcher()->trigger('beforeSavingRequestFilePayment', array(static::$type, &$currentPayment, &$params, $account, $this));
-			$currentPayment->save();
+			$extraFields = $this->getCustomPaymentGatewayFields();
+			$mergeToExistingArrayFields = ['cpg_name', 'cpg_type', 'cpg_file_type'];
+			Billrun_Factory::dispatcher()->trigger('beforeGettingRequestFilePaymentDataLine', array(static::$type, $currentPayment, &$params, &$extraFields, &$mergeToExistingArrayFields, $account, $this));
 			$line = $this->getDataLine($params);
+			$currentPayment->setExtraFields(array_merge_recursive($extraFields, ['pg_request' => $this->billSavedFields]), $mergeToExistingArrayFields);
+			$currentPayment->save();
 			if (!empty($line)) {
 			$this->data[] = $line;
 		}
@@ -392,5 +393,5 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}
 		
 		return $res_params;
-	}
+        }
 }
