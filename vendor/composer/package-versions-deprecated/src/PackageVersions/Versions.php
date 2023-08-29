@@ -42,7 +42,7 @@ final class Versions
   'guzzlehttp/psr7' => '1.9.1@e4490cabc77465aaee90b20cfc9a770f8c04be6b',
   'jean85/pretty-package-versions' => '1.6.0@1e0104b46f045868f11942aea058cd7186d6c303',
   'league/omnipay' => 'v3.0.2@9e10d91cbf84744207e13d4483e79de39b133368',
-  'maennchen/zipstream-php' => '2.2.6@30ad6f93cf3efe4192bc7a4c9cad11ff8f4f237f',
+  'maennchen/zipstream-php' => '2.1.0@c4c5803cc1f93df3d2448478ef79394a5981cc58',
   'markbaker/complex' => '2.0.3@6f724d7e04606fd8adaa4e3bb381c3e9db09c946',
   'markbaker/matrix' => '2.1.4@469e937dc91aa087e43b21a5266cb7567f482f3e',
   'moneyphp/money' => 'v3.3.3@0dc40e3791c67e8793e3aa13fead8cf4661ec9cd',
