@@ -26,10 +26,14 @@ class Asn1_Utils {
 		return $parsedObject ? $parsedObject->getBinary() : '';
 	}
 	
-	public static function parseData($data, $config) {
+	public static function parseData($data, $config,$parentType = null) {
 		$ret = array();
 
-		uksort($data,function($ka,$kb) use ($config){ return  $config['application_id'][$ka] - $config['application_id'][$kb]; });
+		uksort($data,function($ka,$kb) use ( $config, $parentType ){
+			return  (isset($config['field_order'][$parentType][$ka]) ? intval($config['field_order'][$parentType][$ka]) : 100 )
+						-
+					(isset($config['field_order'][$parentType][$kb]) ? intval($config['field_order'][$parentType][$kb]) : 100 );
+		});
 
 		foreach ($data as $asnType => $value) {
 			$type = self::getType($asnType, $config);
@@ -51,11 +55,11 @@ class Asn1_Utils {
 			switch ($type) {
 				case 'choice':
 				case 'sequence':
-					$sons = self::parseData($value, $config);
+					$sons = self::parseData($value, $config, $asnType);
 					break;
 				case 'sequence_of':
 					foreach ($value as $son) {
-						$sons = array_merge($sons, self::parseData($son, $config));
+						$sons = array_merge($sons, self::parseData($son, $config, $asnType));
 					}
 					break;
 				default:
