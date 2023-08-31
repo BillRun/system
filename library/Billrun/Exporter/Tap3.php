@@ -134,10 +134,11 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 		$ret = array();
 		$this->loadTadigs();
 
-		foreach ($this->rowsToExport as $row) {
+		foreach ($this->rowsToExport as $key => $row) {
 			$tadig = $this->getTadig($row);
 			if ($tadig === false) {
 				Billrun_Log::getInstance()->log('Tadigs ' . $this->exporterType . ' exporter: Cannot get TADIG for row. stamp: ' . $row['stamp'], Zend_log::WARN);
+				unset($this->rowsToExport[$key]);
 				continue;
 			}
 			if (!isset($ret[$tadig])) {
