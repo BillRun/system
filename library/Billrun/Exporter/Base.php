@@ -36,6 +36,9 @@ abstract class Billrun_Exporter_Base extends Billrun_Base {
 	
 	protected $logCollection = null;
 
+
+	protected $whitelistFunctions = ['hexdec'];
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->options = $options;
@@ -152,13 +155,25 @@ abstract class Billrun_Exporter_Base extends Billrun_Base {
             if (isset($field['hard_coded_value'])) {
                 Billrun_Util::setIn($line,$field['path'], $field['hard_coded_value'] );
             }
-			if (isset($field['linked_entity'])) {
+            if (isset($field['config'])) {
+                Billrun_Util::setIn($line,$field['path'], $this->getConfig($field['config'],'') );
+            }
+			if (isset($field['linked_entity']) && Billrun_Util::isSetIn($row, $field['linked_entity']['field_name']) ) {
 				Billrun_Util::setIn($line,$field['path'], Billrun_Util::getIn($row, $field['linked_entity']['field_name']) );
 			}
 
             if (isset($field['number_format'])) {
                 Billrun_Util::setIn($line,$field['path'], Billrun_Utils_Units::formatNumber($field, $line) );
             }
+
+			if(!empty($field['alterations'])) {
+				foreach($field['alterations'] as $alterFunc) {
+					if(in_array($alterFunc,$this->whitelistFunctions)) {
+						 Billrun_Util::setIn($line,$field['path'],
+											 call_user_func($alterFunc, Billrun_Util::getIn($line, $field['path'],'')) );
+					}
+				}
+			}
         }
 
 

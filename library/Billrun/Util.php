@@ -1786,7 +1786,28 @@ class Billrun_Util {
 		
 		return $ret;
 	}
-	
+
+	public static function  isSetIn($arr, $keys ) {
+		if (!$arr) {
+			return false;
+		}
+
+		if (!is_array($keys)) {
+			if (isset($arr[$keys])) {
+				return true;
+			}
+			$keys = explode('.', $keys);
+		}
+
+		foreach ($keys as $key) {
+			if (!isset($arr[$key])) {
+				return false;
+			}
+			$arr = $arr[$key];
+		}
+
+		return true;
+	}
 	/**
 	 * Increase the value in an array.
 	 * Also supports deep fetch (for nested arrays)

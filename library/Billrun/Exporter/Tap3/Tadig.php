@@ -347,12 +347,6 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				$ret[] = array(
 					'RecEntityInformation' => $recEntityInfo,
 				);
-				
-				if ($this->getLineType($row) == self::$LINE_TYPE_DATA) {
-					$ret[] = array(
-						'RecEntityInformation' => $this->getSgsnRecEntityInformation($row),
-					);
-				}
 			}
 		}
 		return $ret;
@@ -362,10 +356,15 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$recIdField=  Billrun_Util::getIn($this->config,
 										  'helper_field_mappings.'.$this->getCallEventDetail($row).'.RecEntityId',
 										  Billrun_Util::getIn($this->config,'helper_field_mappings.common.RecEntityId'));
+
+		$typeMappingPath = implode('.',array_map(function($key) use($row){
+				return Billrun_Util::getIn($row,$key,'_KEY_'.$key.'_DONT_EXISTS');
+			}	,$this->getConfig('record_entity.type.fields',[])));
+
 		switch ($this->getLineType($row)) {
 			case self::$LINE_TYPE_DATA:	
-				$recEntityType = $this->getConfig('rec_entity_type.GGSN');
 
+				$recEntityType = $this->getConfig('record_entity.type.mapping.'.$typeMappingPath,0);
 				$recEntityId = Billrun_Util::getIn($row, $recIdField, '');
 				$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
 				break;
@@ -374,7 +373,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			case self::$LINE_TYPE_INCOMING_CALL:
 			case self::$LINE_TYPE_SMS:
 			case self::$LINE_TYPE_INCOMING_SMS:
-				$recEntityType = $this->getConfig('rec_entity_type.MSC');
+				$recEntityType = $this->getConfig('record_entity.type.mapping.'.$typeMappingPath,0);
 
 				$recEntityId = Billrun_Util::getIn($row, $recIdField, '');
 				$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
@@ -391,19 +390,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			'RecEntityId' => $recEntityId,
 		);
 	}
-	
-	protected function getSgsnRecEntityInformation($row) {
-		$recEntityType = $this->getConfig('rec_entity_type.SGSN');
-		$recEntityId = Billrun_Util::getIn($row, 'sgsn_address', '');
-		$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
 
-		return array(
-			'RecEntityCode' => intval($recEntityCode),
-			'RecEntityType' => intval($recEntityType),
-			'RecEntityId' => $recEntityId,
-		);
-	}
-	
 	protected function getRecEntityCodeByRecEntityId($recEntityId) {
 		if (!isset($this->recEntities[$recEntityId])) {
 			$this->recEntities[$recEntityId] = count($this->recEntities);
@@ -444,9 +431,6 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			array(
 				'RecEntityCode' => $this->getRecEntityCode($row),
 			),
-			// array(
-			// 	'RecEntityCode' => $this->getSgsnRecEntityInformation($row),
-			// ),
 		);
 	}
 	
@@ -460,7 +444,8 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$interval = @$rate['rates'][$row['usaget']]['BASE']['rate'][0]['interval'] ?? 1;
 		switch ($this->getLineType($row)) {
 			case self::$LINE_TYPE_DATA:
-				$callTypeLevel1 = $this->getConfig('call_type_level_1.GGSN');
+				$callTypeLevel1 = $this->getConfig('call_type_level_1.HGGSN');
+				$callTypeLevel2 = $this->getConfig('call_type_level_2.narrowband');
 				$chargedItem = $this->getConfig('charged_item.volume_total_based_charge');
 				$chargedUnits = ceil($chargeableUnits / $interval) * $interval; // TODO: currentlty, no "rounded" volume field
 				break;
