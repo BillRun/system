@@ -51,6 +51,8 @@ class Billrun_Account_External extends Billrun_Account {
 			//Actually  do the request
 			$request = new Billrun_Http_Request($this->remote_billable_url, ['authentication' => $this->remote_billable_authentication]);
 			$request->setParameterPost($requestParams);
+			$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.billable.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
+			$request->setConfig(array('timeout' => $requestTimeout));
 			$results = $request->request(Billrun_Http_Request::POST)->getBody();
 
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
@@ -99,6 +101,8 @@ class Billrun_Account_External extends Billrun_Account {
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
 		$request->setRawData(json_encode($requestData));
+		$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.account.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
+		$request->setConfig(array('timeout' => $requestTimeout));
 		$res = $request->request(Billrun_Http_Request::POST)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
 		$res = json_decode($res);
