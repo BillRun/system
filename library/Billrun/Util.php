@@ -2110,6 +2110,26 @@ class Billrun_Util {
             return $value;
         }
 
+   /**
+	* Merges two arrays based on a set of predefined rules.
+	*
+	* @param array $mainArr The primary array that will be modified and returned.
+	* @param array $secArr The secondary array which provides values to be merged into the primary array.
+	* @param array $rules An associative array of rules that determine how merging should be done.
+	*     Rule keys can include:
+	*     - '$push': Appends values from the secondary array into the main array.
+	*     - '$addToSet': Appends unique values from the secondary array into the main array.
+	*     - '$mergeArrayByRules': Recursively applies the mergeArrayByRules function to nested arrays.
+	*     - '$mergeMultiArraysByRules': Merges multiple nested arrays from both main and secondary arrays into one, based on specified rules.
+	*     - Other valid PHP functions: Applies native PHP functions to merge array values.
+	*       Supported functions are listed in the config under 'billrun.runnble_functions'
+	* 		default  valid functions  are  ('min','max','array_merge','array_diff')
+	*
+	* The function also uses internal `static::getIn` and `static::setIn` methods
+	* for retrieving and updating nested array values respectively.
+	*
+	* @return array The merged array.
+	*/
 	public static function mergeArrayByRules($mainArr, $secArr, $rules) {
 
 		foreach($rules as $srcFieldKey => $fieldRules) {

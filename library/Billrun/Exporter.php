@@ -121,7 +121,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
     public function __construct($options = array()) {
         parent::__construct($options);
         if(!empty($options['base_query'])) {
-            $this->baseQuery =  json_decode($options['base_query'], JSON_OBJECT_AS_ARRAY);
+            $this->baseQuery =  json_decode($options['base_query'], JSON_OBJECT_AS_ARRAY) ?? [];
         }
         $this->exportTime = time();
         $this->exportStamp = $this->getExportStamp();

@@ -168,8 +168,14 @@ abstract class Billrun_Exporter_Base extends Billrun_Base {
 
 			if(!empty($field['alterations'])) {
 				foreach($field['alterations'] as $alterFunc) {
-					if(in_array($alterFunc,$this->whitelistFunctions)) {
+					if(is_string($alterFunc) && in_array($alterFunc,$this->whitelistFunctions)) {
 						 Billrun_Util::setIn($line,$field['path'],
+											 call_user_func($alterFunc, Billrun_Util::getIn($line, $field['path'],'')) );
+					} else if (isset($alterFunc['func']) && in_array($alterFunc['func'],$this->whitelistFunctions)) {
+						$args = array_map(function($arg) use ($field, $line) {
+							return $arg === null ? Billrun_Util::getIn($line, $field['path'],'') : $arg;
+						});
+						Billrun_Util::setIn($line,$field['path'],
 											 call_user_func($alterFunc, Billrun_Util::getIn($line, $field['path'],'')) );
 					}
 				}
