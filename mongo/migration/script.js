@@ -1534,13 +1534,10 @@ lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
 
 // BRCD-4217 Migrate all rejection bills urt
 lastConfig = runOnce(lastConfig, 'BRCD-4217', function () {
+	print("BRCD-4217 - Migrating rejection bills urt..")
 	var rejectionBills = db.bills.find({rejection:true, urt:ISODate("1970-01-01T00:00:00.000Z")});
 	var bulkUpdate = [];
-	var maxWriteBatchSize =db.runCommand(
-		{
-		  hello: 1
-		}
-	 )['maxWriteBatchSize'];
+	var maxWriteBatchSize = 1000;
 	print("Starts to update " + rejectionBills.toArray().length + " bills")
 	for (var i=0; i<rejectionBills.toArray().length; i++) {
 	    var update = { "updateOne" : {
