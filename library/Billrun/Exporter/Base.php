@@ -37,7 +37,7 @@ abstract class Billrun_Exporter_Base extends Billrun_Base {
 	protected $logCollection = null;
 
 
-	protected $whitelistFunctions = ['hexdec'];
+	protected $whitelistFunctions = ['hexdec','intval','preg_replace'];
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -174,9 +174,9 @@ abstract class Billrun_Exporter_Base extends Billrun_Base {
 					} else if (isset($alterFunc['func']) && in_array($alterFunc['func'],$this->whitelistFunctions)) {
 						$args = array_map(function($arg) use ($field, $line) {
 							return $arg === null ? Billrun_Util::getIn($line, $field['path'],'') : $arg;
-						});
+						},$alterFunc['args']);
 						Billrun_Util::setIn($line,$field['path'],
-											 call_user_func($alterFunc, Billrun_Util::getIn($line, $field['path'],'')) );
+											 call_user_func_array($alterFunc['func'], $args ) );
 					}
 				}
 			}
