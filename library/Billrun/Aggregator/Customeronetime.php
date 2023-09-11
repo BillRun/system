@@ -78,11 +78,15 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 				$aggregatedEntity->setUserFields($this->customer_uf);
 				//Close & Save the billrun document
 				$aggregatedEntity->closeInvoice($this->min_invoice_id, FALSE, $customCollName);
+				//Save configurable/aggretaion data
+				$aggregatedEntity->addConfigurableData();
 				$aggregatedEntity->save();
 			} else {
 				$this->addExternalCharges($aggregatedEntity);
 				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
 				$aggregatedEntity->closeInvoice($this->min_invoice_id , $this->isFakeCycle() , $customCollName );
+				//Save configurable/aggretaion data
+				$aggregatedEntity->addConfigurableData();
 			}
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;

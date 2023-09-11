@@ -395,6 +395,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$from = max($subPlan['plan_activation']->sec, $subPlan['from']->sec);
 			$to = $subPlan['to']->sec;
 			$addedData = $subPlan;
+			$lastStamp = $currentStamp;
 		}
 		// Add the last value.
 		$toAdd = array("plan" => $name,'name'=>$name, "start" => $from, "end" => $to);
