@@ -58,7 +58,14 @@ stages:
   #   expire_in: 1 week
 
 php_testcases:
+  services:
+   - name: docker:dind
+     alias: dockerhost
+
   variables:
+    DOCKER_HOST: tcp://dockerhost:2375/
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
     CI_DEBUG_TRACE: "true"
   stage: test
   tags:
