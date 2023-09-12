@@ -62,7 +62,7 @@ php_testcases:
     CI_DEBUG_TRACE: "true"
   stage: test
   tags:
-    - CI_DEV
+    - new_docker_runner
   rules:
     - when: manual
   #   - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS != "skip_ci"
