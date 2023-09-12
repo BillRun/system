@@ -72,6 +72,12 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 			'amount' => array('$gte' => 0),
 			'left' => 0,
 			'gateway_details.name' => $this->billrunName,
+			'$or' => array(
+				array(
+					'refunded' => array ('$exists' => 0),
+					'refunded' => false,
+				),
+			),
 		);
 
 		$sort = array('urt' => -1);
@@ -96,6 +102,12 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 		$paymentIntent = $stripeClient->refunds->create($refundData);
 
 		$this->transactionId = $paymentIntent->id;
+		
+		if ($this->isCompleted($paymentIntent->status)) {
+			$billRecord['refunded'] = true;
+			$billRecord['refunded_amount'] = $gatewayDetails['amount'] + ($billRecord['refunded_amount'] ?? 0);
+			$billRecord->save();
+		}
 
 		return [
 			'status' => $paymentIntent->status,
