@@ -196,11 +196,15 @@ class OnetimeinvoiceAction extends ApiAction {
 
 		if (!Billrun_Util::isEqual($expectedTotals['after_vat_rounded'], 0, Billrun_Bill::precision)) {
 			try {
+				if (!$this->lock()) {
+					Billrun_Factory::log("makePayment is already running", Zend_Log::NOTICE);
+					return [];
+				}
+
 				$paymentOptions = [
 					'bills' => array(
 						array(
 							'aid' => $current_account['aid'],
-							'left_to_pay' => abs($expectedTotals['after_vat_rounded']),
 							'gateway_details' => $current_account['payment_gateway']['active'],
 							'payer_name' => $current_account['first_name'] . ' ' . $current_account['last_name'],
 							'payment_method' => 'automatic',
@@ -208,13 +212,25 @@ class OnetimeinvoiceAction extends ApiAction {
 					),
 					'aids' => array($current_account['aid']),
 				];
+				
+				if ($expectedTotals['after_vat_rounded'] > 0) {
+					$paymentOptions['bills'][0]['left_to_pay'] = $expectedTotals['after_vat_rounded'];
+				} else {
+					$paymentOptions['bills'][0]['left'] = (-1) * $expectedTotals['after_vat_rounded'];
+				}
 				$paymentStatus = Billrun_Bill_Payment::makePayment($paymentOptions);
+
+				if (!$this->release()) {
+					Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
+					return [];
+				}
+
 			} catch (\Exception $ex) {
 				$this->setError("Failed  when  trying to preform payment  for AID: ${inputPayment['aid']} for an amount of ${inputPayment['amount']}");
 				Billrun_Factory::log()->logCrash($ex, Zend_Log::ERR);
 				return false;
 			}
-
+			
 			if (empty($paymentStatus['completed'])) {
 				$error = array(
 					'status' => 0,

@@ -69,20 +69,47 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 		$query = array(
 			'aid' => $addonData['aid'],
 			'type' => 'rec',
-			'amount' => array('$gte' => 0),
+			'amount' => array('$gt' => 0),
 			'left' => 0,
 			'gateway_details.name' => $this->billrunName,
-			'$or' => array(
+			'$and' => array(
 				array(
-					'refunded' => array ('$exists' => 0),
-					'refunded' => false,
+					'$or' => array(
+						array('refunded' => array ('$exists' => 0)),
+						array('refunded' => false),
+					),
+				),
+				array(
+					'$or' => array(
+						array('rejected' => array ('$exists' => 0)),
+						array('rejected' => false),
+					),
+				),
+				array(
+					'$or' => array(
+						array('rejection' => array ('$exists' => 0)),
+						array('rejection' => false),
+					),
+				),
+				array(
+					'$or' => array(
+						array('pending' => array ('$exists' => 0)),
+						array('pending' => false),
+					),
 				),
 			),
 		);
 
-		$sort = array('urt' => -1);
+		$sort = array('due_date' => -1);
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$billRecord = $billsColl->query($query)->cursor()->sort($sort)->limit(1)->current();
+		
+		if (empty($billRecord) || $billRecord->isEmpty()) {
+			return [
+				'status' => false,
+				'additional_params' => ['desc' => 'cannot find transaction to refund'],
+			];
+		}
 
 		$requestedAmount = abs($gatewayDetails['amount']);
 		
@@ -93,10 +120,10 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 			];
 		}
 		
-		$gatewayDetails['amount'] = (int) $this->convertAmountToSend($requestedAmount);
+		$convertedAmount = (int) $this->convertAmountToSend($requestedAmount);
 
 		$refundData = array(
-			'amount' => $gatewayDetails['amount'],
+			'amount' => $convertedAmount,
 			'payment_intent' => $billRecord['payment_gateway']['transactionId'],
 		);
 		$paymentIntent = $stripeClient->refunds->create($refundData);
@@ -105,8 +132,8 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 		
 		if ($this->isCompleted($paymentIntent->status)) {
 			$billRecord['refunded'] = true;
-			$billRecord['refunded_amount'] = $gatewayDetails['amount'] + ($billRecord['refunded_amount'] ?? 0);
-			$billRecord->save();
+			$billRecord['refunded_amount'] = $requestedAmount + ($billRecord['refunded_amount'] ?? 0);
+			$billsColl->save($billRecord);
 		}
 
 		return [
