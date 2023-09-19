@@ -1506,6 +1506,10 @@ lastConfig = runOnce(lastConfig, 'BRCD-4010', function () {
 	);
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-4172', function () {
+	db.bills.ensureIndex({'urt': 1 }, { unique: false, background: true});
+})
+
 // BRCD-4102 Migrate all cancel bills to be 
 lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
 	var cancelBills = db.bills.find({cancel:{$exists:1}, urt:ISODate("1970-01-01T00:00:00.000Z")});
@@ -1531,7 +1535,6 @@ lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
 	db.bills.bulkWrite(bulkUpdate);
 	print("Updated total of " + i + " bills!")
 });
-
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.dropIndex("aid_1_urt_1");
