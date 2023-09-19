@@ -106,7 +106,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 		
 		if (empty($billRecord) || $billRecord->isEmpty()) {
 			return [
-				'status' => false,
+				'status' => 'failed',
 				'additional_params' => ['desc' => 'cannot find transaction to refund'],
 			];
 		}
@@ -115,7 +115,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 		
 		if ($requestedAmount > $billRecord['amount']) {
 			return [
-				'status' => false,
+				'status' => 'failed',
 				'additional_params' => ['desc' => 'requested amount is bigger than last transaction amount'],
 			];
 		}
@@ -132,6 +132,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 		
 		if ($this->isCompleted($paymentIntent->status)) {
 			$billRecord['refunded'] = true;
+			$billRecord['refunded_txid'] = $addonData['txid'];
 			$billRecord['refunded_amount'] = $requestedAmount + ($billRecord['refunded_amount'] ?? 0);
 			$billsColl->save($billRecord);
 		}
