@@ -76,7 +76,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$paymentParams[$payDir][$billData['type']][$id] = $amount;
 		}
 		try {
-			$accountQuery = ["aid" => $paymentParams['aid']];
+			$accountQuery = ["aid" => intval($paymentParams['aid'])];
 			if (isset($paymentParams['urt'])) {
 				$accountQuery['urt'] = $paymentParams['urt'];
 			}
