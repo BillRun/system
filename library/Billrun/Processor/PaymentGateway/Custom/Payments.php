@@ -75,10 +75,13 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
 			$paymentParams[$payDir][$billData['type']][$id] = $amount;
 		}
+		if (!is_null($this->dateField)) {
+			$paymentParams['urt'] = $this->getPaymentUrt($row);
+		}
 		try {
 			$accountQuery = ["aid" => intval($paymentParams['aid'])];
 			if (isset($paymentParams['urt'])) {
-				$accountQuery['urt'] = $paymentParams['urt'];
+				$accountQuery['time'] = $paymentParams['urt'];
 			}
 			$accountData = Billrun_Factory::account()->loadAccountForQuery($accountQuery)->getRawData();
 			$paymentExtraParams["account"] = $accountData;
