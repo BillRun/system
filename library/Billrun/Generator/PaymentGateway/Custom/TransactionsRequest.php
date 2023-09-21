@@ -188,12 +188,11 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if (!$this->isPaymentUpholdPlaceholders($paymentParams, $placeHoldersConditions)) {
 				continue;
 			}
-			$params = $this->handlePayment($account, $paymentParams, $customer, $options);
+			$currentPayment = $this->handlePayment($account, $paymentParams, $customer, $options);
 			
-			if ($params == FALSE) {
+			if ($currentPayment == FALSE) {
 				continue;
 			}
-			$currentPayment = $payment[0];
 			//If payment is pre-approved don't wait for confirmation and lfag it as such
 			if ($this->isAssumeApproved()) {
 				$currentPayment->setExtraFields([static::ASSUME_APPROVED_FILE_STATE => true]);
@@ -392,6 +391,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$currentPayment->save();
 		}
 		
-		return $res_params;
+		return $currentPayment;
         }
 }
