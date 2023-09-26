@@ -172,6 +172,7 @@ class ResetLinesModel {
         } else {
             $query = $basicQuery;
         }
+        Billrun_Factory::dispatcher()->trigger('beforeResetLinesGetAllLinesStamps', array(&$query, $update_aids, $advancedProperties, $this));        
         $stamps = $this->getAllLinesStamps($lines_coll, $query);
         $linesSizeToHandle = Billrun_Config::getInstance()->getConfigValue('resetlines.lines.size', 100000);
         $iteration = 1;
