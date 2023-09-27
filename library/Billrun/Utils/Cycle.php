@@ -20,14 +20,14 @@ class Billrun_Utils_Cycle {
 									strtotime(date("Y-{$entryConfig['recurrence']['start']}-01 00:00:00", $activationDate));
 		$startDateStr = date(Billrun_Base::base_dateformat,($startDate < $cycle->end() ? $startDate : $cycle->end()));
 		$endDateStr = date(Billrun_Base::base_dateformat,($startDate < $cycle->end() ? $cycle->end() : $startDate));
-
+				// does entry is a regular cycle entry and  falls   within the current  cycle?
 		return  ( empty($entryConfig['recurrence']['frequency']) &&	( empty($entryConfig['end']) || $entryConfig['end'] >= $cycle->start() ) &&
 																	( empty($entryConfig['start']) || $entryConfig['start'] < $cycle->end() ) )
-				||
-				(Billrun_Utils_Time::getMonthsDiff($startDateStr, $endDateStr) % $entryConfig['recurrence']['frequency']) == 0
-				||
+				|| //  is the  entry a  custom cycle and is aligned  with  current  cycle
+				(!empty($entryConfig['recurrence']['frequency']) && Billrun_Utils_Time::getMonthsDiff($startDateStr, $endDateStr) % $entryConfig['recurrence']['frequency']) == 0
+				|| // is the entry a custom cycle entry and the  subscriber  deactevidted  during the current  cycle?
 				(!empty($entryConfig['deactivation_date']) && $entryConfig['deactivation_date']->sec <= $cycle->end() &&  $entryConfig['deactivation_date']->sec >= $cycle->start() )
-				||
+				||// is the entry a custom cycle entry and the plan was deactevidted  during the current  cycle?
 				(!empty($entryConfig['end']) && $entryConfig['end'] < $cycle->end() &&  $entryConfig['end'] > $cycle->start() );
 
 	}
