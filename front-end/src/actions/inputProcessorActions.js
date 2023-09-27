@@ -133,6 +133,14 @@ const convert = (settings) => {
     filters
   };
 
+  if (parser.hasOwnProperty('encoding_source')) {
+    ret.encoding_source = parser.encoding_source;
+  }
+  
+  if (parser.hasOwnProperty('encoding_target')) {
+    ret.encoding_target = parser.encoding_target;
+  }
+  
   ret.fields = Immutable.List(ret.unfiltered_fields.filter(field => field.get('checked') === true).map(field => field.get('name')));
 
   if (settings.type !== 'realtime') {
@@ -580,6 +588,14 @@ export function saveInputProcessorSettings(state, parts = []) {
       }, Immutable.List()),
     },
   };
+  
+  if (state.get('encoding_source')) {
+    settings.parser.encoding_source = state.get('encoding_source');
+  }
+  
+  if (state.get('encoding_target')) {
+    settings.parser.encoding_target = state.get('encoding_target');
+  }
 
   if (state.get('delimiter') !== 'json') {
     settings.parser.csv_has_header = state.get('csv_has_header', false);

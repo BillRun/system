@@ -1506,6 +1506,10 @@ lastConfig = runOnce(lastConfig, 'BRCD-4010', function () {
 	);
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-4172', function () {
+	db.bills.ensureIndex({'urt': 1 }, { unique: false, background: true});
+})
+
 // BRCD-4102 Migrate all cancel bills to be 
 lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
 	var cancelBills = db.bills.find({cancel:{$exists:1}, urt:ISODate("1970-01-01T00:00:00.000Z")});
@@ -1525,6 +1529,29 @@ lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
 		if (i!=0 && i%maxWriteBatchSize==0) {
 			db.bills.bulkWrite(bulkUpdate);
 			print("Updated " + maxWriteBatchSize + " cancellation bills, continue..")
+			bulkUpdate = []
+		}
+	}
+	db.bills.bulkWrite(bulkUpdate);
+	print("Updated total of " + i + " bills!")
+});
+
+// BRCD-4217 Migrate all rejection bills urt
+lastConfig = runOnce(lastConfig, 'BRCD-4217', function () {
+	print("BRCD-4217 - Migrating rejection bills urt..")
+	var rejectionBills = db.bills.find({rejection:true, urt:ISODate("1970-01-01T00:00:00.000Z")});
+	var bulkUpdate = [];
+	var maxWriteBatchSize = 1000;
+	print("Starts to update " + rejectionBills.toArray().length + " bills")
+	for (var i=0; i<rejectionBills.toArray().length; i++) {
+	    var update = { "updateOne" : {
+	        "filter" : {"_id" : rejectionBills[i]['_id']},
+	        "update" :  {"$set" : {"urt" : rejectionBills[i]['_id'].getTimestamp()}}
+	    }};
+	    bulkUpdate.push(update);
+		if (i!=0 && i%maxWriteBatchSize==0) {
+			db.bills.bulkWrite(bulkUpdate);
+			print("Updated " + maxWriteBatchSize + " rejection bills, continue..")
 			bulkUpdate = []
 		}
 	}
