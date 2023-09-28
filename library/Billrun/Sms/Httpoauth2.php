@@ -237,8 +237,10 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 			
 			if ($this->destinationFieldFormat == 'array' && !is_array($this->to)) {
 				$destination = array($this->to);
-			} else if ($this->destinationFieldFormat == 'string' && !is_string($this->to)) {
+			} else if ($this->destinationFieldFormat == 'string' && is_array($this->to)) {
 				$destination = implode(',', $this->to);
+			} else if ($this->destinationFieldFormat == 'string') {
+				$destination = (string) $this->to;
 			} else {
 				$destination = $this->to;
 			}
