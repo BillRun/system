@@ -33,6 +33,7 @@ class Billrun_Cycle_Subscriber_Invoice {
         
         protected $groupingExtraFields = array();
         protected $groupingEnabled = true;
+		protected $groupingSumExtraFields = array();
 
         /**
 	 * 
@@ -49,6 +50,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		}
                 $this->groupingExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', array()); 
                 $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
+				$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array()); 
 	}
 
 	/**
@@ -570,6 +572,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->data['totals']['grouping'][$index]['before_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['before_taxes'], 0) + Billrun_Util::getIn($row, 'aprice', 0);
 		$this->data['totals']['grouping'][$index]['taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['taxes'], 0) + Billrun_Util::getIn($row, 'tax_data.total_amount', 0);
 		$this->data['totals']['grouping'][$index]['after_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['after_taxes'], 0) + Billrun_Util::getIn($row, 'final_charge', 0);
+		// Sum extra grouping fields
+		foreach ($this->groupingSumExtraFields as $field) {
+			Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field, Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index][$field], 0) + Billrun_Util::getIn($row, $field, 0));
+		}		
 	}
 
 	protected function addGroupToTotalGrouping($row) {
