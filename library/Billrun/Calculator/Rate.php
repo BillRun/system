@@ -393,8 +393,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		// check row destination ranges
 		if (method_exists($this, 'get_called_number')) {
 			$destination = $this->get_called_number($row);
+		} elseif (!empty($row['called_number'])) {
+			$destination = $row['called_number'];
 		} else {
-			$destination = $row['called_number'] ?? $row['dialed_digits'];
+			$destination = $row['dialed_digits'];
 		}
 		
 		$kosher_vpn_range = Billrun_Factory::config()->getConfigValue('prepaid.kosher_vpn_range', array());
