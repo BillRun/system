@@ -61,10 +61,10 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 	protected $user;
 
 	/**
-	 * authentication token or password
+	 * authentication password
 	 * @var string
 	 */
-	protected $token;
+	protected $password;
 
 	/**
 	 * authentication bearer
@@ -111,7 +111,7 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 	 * 
 	 * @var string
 	 */
-	protected $tokenField = 'token';
+	protected $bearerField = 'token';
 
 	/**
 	 * destination field format; array or string; string default
@@ -142,12 +142,26 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 	protected $messageField = 'message';
 
 	/**
+	 * user field name; login default
+	 * 
+	 * @var string
+	 */
+	protected $userField = 'login';
+
+	/**
+	 * user field name; password default
+	 * 
+	 * @var string
+	 */
+	protected $passwordField = 'password';
+
+	/**
 	 * the field to that defined the return sms ack in the http response
 	 * 
 	 * @var string
 	 */
 	protected $returnResultCodeField = 'returnCode';
-	
+
 	/**
 	 * the token bearer expiration duration
 	 * 
@@ -160,7 +174,7 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 	 * 
 	 * @var int
 	 */
-	protected $httpTimeout = 3;
+	protected $httpTimeout = 10;
 
 	public function getFrom() {
 		return $this->from;
@@ -213,15 +227,15 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 		}
 
 		$data = array(
-			'login' => $this->user,
-			'password' => $this->token,
+			$this->userField => $this->user,
+			$this->passwordField => $this->password,
 		);
 
 		$output = billrun_util::sendRequest($this->url . $this->loginPath, $this->parseData($data), $this->httpRequestMethod, $this->httpHeaders, $this->httpTimeout);
 		Billrun_Factory::log("Send Http OAuth2 SMS login http response: " . $output, Zend_Log::DEBUG);
 		$ret = json_decode($output, true);
 
-		$this->bearer = Billrun_Util::getIn($ret, $this->tokenField) ?? false;
+		$this->bearer = Billrun_Util::getIn($ret, $this->bearerField) ?? false;
 
 		$this->bearerExpiration = time() + $this->bearerExpirationDuration;
 
