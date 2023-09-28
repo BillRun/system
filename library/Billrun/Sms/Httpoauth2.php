@@ -147,6 +147,13 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 	 * @var string
 	 */
 	protected $returnResultCodeField = 'returnCode';
+	
+	/**
+	 * the token bearer expiration duration
+	 * 
+	 * @var int
+	 */
+	protected $bearerExpirationDuration = 3540; // 1 hour minus buffer
 
 	/**
 	 * socket time out in milliseconds
@@ -216,7 +223,7 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 
 		$this->bearer = Billrun_Util::getIn($ret, $this->tokenField) ?? false;
 
-		$this->bearerExpiration = time() + 3500; // 1 hour minus minor buffer
+		$this->bearerExpiration = time() + $this->bearerExpirationDuration;
 
 		return $this->bearer;
 	}
