@@ -79,12 +79,6 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 	protected $bearerExpiration;
 
 	/**
-	 * account login details
-	 * @var mixed array or object
-	 */
-	protected $account = array();
-
-	/**
 	 * array of client options
 	 * 
 	 * @var array
@@ -118,14 +112,14 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 	 * @var string
 	 */
 	protected $tokenField = 'token';
-	
+
 	/**
 	 * destination field format; array or string; string default
 	 * 
 	 * @var string
 	 */
 	protected $destinationFieldFormat = 'string';
-	
+
 	/**
 	 * destination field name; to default
 	 * 
@@ -139,7 +133,7 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 	 * @var string
 	 */
 	protected $fromField = 'from';
-	
+
 	/**
 	 * from field name; message default
 	 * 
@@ -178,15 +172,27 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 	 * on class destruction close logout
 	 */
 	public function __destruct() {
-		if ($this->bearer && $this->account['mogoAccountId']) {
-			try {
-				$output = Billrun_Util::sendRequest($this->url . self::LOGOUT_PATH, array(), $this->httpRequestMethod, $this->httpHeaders, $this->httpTimeout, null, false, array('httpversion' => '2.0'));
-				Billrun_Factory::log("Send Http OAuth2 SMS logout http response: " . $output, Zend_Log::DEBUG);
-			} catch (Throwable $th) {
-				Billrun_Factory::log('Send Http OAuth2 SMS logout: got throwable. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
-			} catch (Exception $ex) {
-				Billrun_Factory::log('Send Http OAuth2 SMS logout: got exception. code: ' . $ex->getCode() . ', message: ' . $ex->getMessage(), Zend_Log::WARN);
-			}
+		if ($this->bearer && !empty($this->logoutPath)) {
+			$this->logout();
+		}
+	}
+
+	protected function getHeadersWithAuthorization() {
+		$authHeader = array(
+			'Authorization' => 'bearer ' . $this->bearer,
+		);
+		return array_merge($authHeader, $this->httpHeaders);
+	}
+
+	public function logout() {
+		try {
+			$output = Billrun_Util::sendRequest($this->url . $this->logoutPath, array(), $this->httpRequestMethod, $this->httpHeaders, $this->httpTimeout);
+			$this->bearer = null;
+			Billrun_Factory::log("Send Http OAuth2 SMS logout http response: " . $output, Zend_Log::DEBUG);
+		} catch (Throwable $th) {
+			Billrun_Factory::log('Send Http OAuth2 SMS logout: got throwable. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
+		} catch (Exception $ex) {
+			Billrun_Factory::log('Send Http OAuth2 SMS logout: got exception. code: ' . $ex->getCode() . ', message: ' . $ex->getMessage(), Zend_Log::WARN);
 		}
 	}
 
@@ -194,7 +200,7 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 		return json_encode($data);
 	}
 
-	protected function login() {
+	public function login() {
 		if (!empty($this->bearer) && $this->bearerExpiration > time()) {
 			return $this->bearer;
 		}
@@ -208,7 +214,6 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 		Billrun_Factory::log("Send Http OAuth2 SMS login http response: " . $output, Zend_Log::DEBUG);
 		$ret = json_decode($output, true);
 
-		$this->account = $ret['account'] ?? array();
 		$this->bearer = Billrun_Util::getIn($ret, $this->tokenField) ?? false;
 
 		$this->bearerExpiration = time() + 3500; // 1 hour minus minor buffer
@@ -234,7 +239,7 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 				Billrun_Factory::log('SMS Http OAuth2: need to set sms destination (to)', Zend_Log::NOTICE);
 				return false;
 			}
-			
+
 			if ($this->destinationFieldFormat == 'array' && !is_array($this->to)) {
 				$destination = array($this->to);
 			} else if ($this->destinationFieldFormat == 'string' && is_array($this->to)) {
@@ -251,23 +256,17 @@ class Billrun_Sms_Httpoauth2 extends Billrun_Sms_Abstract {
 
 			$data = array(
 				$this->fromField => $this->from,
-				$this->destinationField=> $destination,
+				$this->destinationField => $destination,
 				$this->messageField => $this->body,
 			);
 
 			$unifiedData = array_merge($data, $this->sendSmsOptions);
 
-			$headers = array(
-				'Authorization' => 'bearer ' . $this->bearer,
-			);
-			
-			$requestHeaders = array_merge($headers, $this->httpHeaders);
+			$output = billrun_util::sendRequest($this->url . $this->sendSmsPath, $this->parseData($unifiedData), $this->httpRequestMethod, $this->getHeadersWithAuthorization(), $this->httpTimeout);
 
-			$output = billrun_util::sendRequest($this->url . $this->sendSmsPath, $this->parseData($unifiedData), $this->httpRequestMethod, $requestHeaders, $this->httpTimeout, null, false, array('httpversion' => '2.0'));
-			
 			Billrun_Factory::log("Send Http OAuth2 SMS send http response: " . $output, Zend_Log::DEBUG);
 			$retArray = json_decode($output, true);
-			
+
 			$ret = Billrun_Util::getIn($retArray, $this->returnResultCodeField);
 		} catch (Throwable $th) {
 			Billrun_Factory::log('Send Http OAuth2 SMS send: got throwable. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
