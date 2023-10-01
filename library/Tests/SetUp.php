@@ -96,6 +96,23 @@ trait Tests_SetUp {
 		$this->restoreCollection();
 	}
 
+	public function skip_tests($tests,$path)
+	{
+		$request = new Yaf_Request_Http;
+		$this->test_cases_to_skip = $request->get('skip');
+		
+		if ($this->test_cases_to_skip !== null && !empty($this->test_cases_to_skip)) {
+			$this->test_cases_to_skip = explode(',', $this->test_cases_to_skip);
+			foreach ($tests as $case) {
+				$test_number =Billrun_Util::getIn($case, $path);
+				if ( !in_array($test_number, $this->test_cases_to_skip)) {
+					$cases[] = $case;
+				}
+			}
+		}
+       return !empty($cases) ? $cases : $tests;
+	}
+
 	/**
 	 * tranform all fields starts with time* into Mongodloid_Date object
 	 * @param array $jsonAr 

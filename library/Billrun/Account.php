@@ -308,7 +308,7 @@ abstract class Billrun_Account extends Billrun_Base {
 
 		if (!empty($updateCollectionStateChanged['in_collection'])) {
 			foreach ($updateCollectionStateChanged['in_collection'] as $aid => $item) {
-				$params = array('aid' => $aid, 'time' => date('c'));
+				$params = array('aid' => $aid, 'time' => date(Billrun_Base::base_datetimeformat));
 				if ($this->loadAccountForQuery($params)) {
 					$new_values = array('in_collection' => true, 'in_collection_from' => new Mongodloid_Date());
 					$collectionSteps->createCollectionSteps($aid);
@@ -323,7 +323,7 @@ abstract class Billrun_Account extends Billrun_Base {
 
 		if (!empty($updateCollectionStateChanged['out_of_collection'])) {
 			foreach ($updateCollectionStateChanged['out_of_collection'] as $aid => $item) {
-				$params = array('aid' => $aid, 'time' => date('c'));
+				$params = array('aid' => $aid, 'time' => date(Billrun_Base::base_datetimeformat));
 				if ($this->loadAccountForQuery($params)) {
 					$remove_values = array('in_collection', 'in_collection_from');
 					$collectionSteps->removeCollectionSteps($aid);
@@ -385,7 +385,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	/**
 	 * Function that returns the relevant aids for collection.
 	 * @param array $aids
-	 * @param bollean $is_aids_query
+	 * @param boolean $is_aids_query
 	 * @param array $rejection_conditions
 	 * @return array of aids
 	 */
@@ -395,6 +395,9 @@ abstract class Billrun_Account extends Billrun_Base {
 			$rejection_query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];
 		}
 		$account_query = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
+		if ($rejection_query == ['aid' => ['$in' => [-1]]]) {
+			return $rejection_query; // clients hack in order to avoid wrong `aid` merge in the next line in case of an aid specific call. Actually a workaround for https://billrun.atlassian.net/browse/BRCD-4180
+		}
 		return array_merge_recursive($rejection_query, $account_query);
 	}
 }

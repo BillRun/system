@@ -188,12 +188,11 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if (!$this->isPaymentUpholdPlaceholders($paymentParams, $placeHoldersConditions)) {
 				continue;
 			}
-			$params = $this->handlePayment($account, $paymentParams, $customer, $options);
+			$currentPayment = $this->handlePayment($account, $paymentParams, $customer, $options);
 			
-			if ($params == FALSE) {
+			if ($currentPayment == FALSE) {
 				continue;
 			}
-			$currentPayment = $payment[0];
 			//If payment is pre-approved don't wait for confirmation and lfag it as such
 			if ($this->isAssumeApproved()) {
 				$currentPayment->setExtraFields([static::ASSUME_APPROVED_FILE_STATE => true]);
@@ -210,11 +209,12 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				Billrun_Factory::log($message, Zend_Log::WARN);
 				$this->logFile->updateLogFileField('warnings', $message);
 			}
-			$extraFields = array_merge_recursive($this->getCustomPaymentGatewayFields(), ['pg_request' => $this->billSavedFields]);
-			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
-			Billrun_Factory::dispatcher()->trigger('beforeSavingRequestFilePayment', array(static::$type, &$currentPayment, &$params, $account, $this));
-			$currentPayment->save();
+			$extraFields = $this->getCustomPaymentGatewayFields();
+			$mergeToExistingArrayFields = ['cpg_name', 'cpg_type', 'cpg_file_type'];
+			Billrun_Factory::dispatcher()->trigger('beforeGettingRequestFilePaymentDataLine', array(static::$type, $currentPayment, &$params, &$extraFields, &$mergeToExistingArrayFields, $account, $this));
 			$line = $this->getDataLine($params);
+			$currentPayment->setExtraFields(array_merge_recursive($extraFields, ['pg_request' => $this->billSavedFields]), $mergeToExistingArrayFields);
+			$currentPayment->save();
 			if (!empty($line)) {
 			$this->data[] = $line;
 		}
@@ -387,10 +387,10 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			$extraFields = array_merge_recursive($this->getCustomPaymentGatewayFields(), ['pg_request' => $this->billSavedFields]);
 			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
-			Billrun_Factory::dispatcher()->trigger('beforeSavingRequestFilePayment', array(static::$type, &$currentPayment, &$res_params, $this));
+			Billrun_Factory::dispatcher()->trigger('beforeSavingRequestFilePayment', array(static::$type, &$currentPayment, &$res_params, $account, $this));
 			$currentPayment->save();
 		}
 		
-		return $res_params;
-	}
+		return $currentPayment;
+        }
 }

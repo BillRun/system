@@ -166,12 +166,15 @@ class Billrun_DataTypes_PrePayment {
 				}
 			default:
 				$customerDir = $this->getCustomerDirection();
+				$sort = array(
+					'urt' => 1,
+				);
 				if ($customerDir == self::DIR_FROM_CUSTOMER) {
-					return Billrun_Bill::getUnpaidBills($query);
+					return Billrun_Bill::getUnpaidBills($query, $sort);
 				}
 
 				if ($customerDir == self::DIR_TO_CUSTOMER) {
-					return Billrun_Bill::getOverPayingBills($query);
+					return Billrun_Bill::getOverPayingBills($query, $sort);
 				}
 		}
 

@@ -121,6 +121,7 @@
     "description": "Title",
     "name": "Key",
     "period_type": "Eligibility Period",
+    "price_service": "Service Price Override",
     "custom_period_type": "Custom"
   },
   "plan": {
@@ -149,6 +150,8 @@
     "manual_mapping": "Map Manually CSV columns to entity fields",
     "predefined_mapping": "Use file with predefined structure",
     "permanentchange": "Update",
+    "price_entity_target": "Price target Entity",
+    "rates.service.percentage": "Service Price Override by Percentage",
     "rates.percentage": "Plan Price Override by Percentage"
   },
   "foreign": {
@@ -220,6 +223,7 @@
     "status_running_files": "Running files"
   },
   "bills": {
+    "cpg_name": "Custom Payment Gateway Name",
     "billrun_key": "Billing cycle"
   },
   "immediate_invoice": {
