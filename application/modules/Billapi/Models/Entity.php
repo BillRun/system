@@ -247,6 +247,7 @@ class Models_Entity {
 		$uniqueFields = array();
 		$defaultFieldsValues = array();
 		$fieldTypes = array();
+		$multipleFields = array();
 		//all the options that value can be, so if selected will not throw an api exception.
 		$selectOptionsFields = array();
 
@@ -257,6 +258,7 @@ class Models_Entity {
 			$defaultFieldsValues[$fieldName] = Billrun_Util::getFieldVal($customField['default_value'], null);
 			$fieldTypes[$fieldName] = Billrun_Util::getFieldVal($customField['type'], 'string');
 			$selectOptionsFields[$fieldName] = Billrun_Util::getFieldVal($customField['select_options'], null);
+			$multipleFields[$fieldName] = Billrun_Util::getFieldVal($customField['multiple'], false);
 		}
 
 		if (!isset($this->config[$this->action]['update_parameters'])) {
@@ -280,7 +282,8 @@ class Models_Entity {
 			}
 			if (!is_null($selectOptionsFields[$field])) {
 				$selectOptions = is_string($selectOptionsFields[$field]) ? explode(",", $selectOptionsFields[$field]) : $selectOptionsFields[$field];
-				if (!in_array($val, $selectOptions)) {
+				$isMultiple = $multipleFields[$field];
+				if ((!$isMultiple && !in_array($val, $selectOptions)) || ($isMultiple && array_diff($val, $selectOptions))) {
 					if(!$mandatoryFields[$field] && empty($val)){
 						$val = null;
 					}else{
@@ -375,6 +378,7 @@ class Models_Entity {
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
+            $this->after = $this->update;
 			$this->fixEntityFields($this->before);
 			$this->trackChanges($this->update['_id'] ?? null);
 			return isset($status['ok']) && $status['ok'];
@@ -419,7 +423,7 @@ class Models_Entity {
 				return false;
 			}
 			if($this->before === null){
-				throw new Exception('No entity before the change was found. stack:' . print_r(debug_backtrace(), 1));
+				throw new Exception('No entity before the change was found. Query: ' . json_encode($this->query));
 			}
                         $newRevision = $this->before->getRawData();
                         $newRevision['to'] = $this->update['from'];
@@ -441,10 +445,10 @@ class Models_Entity {
 			
 			$key = $oldRevision[$field];
 			if($oldRevision === null){
-				throw new Exception('No old Revision was found. stack:' . print_r(debug_backtrace(), 1));
+				throw new Exception('No old Revision was found. Query: ' . json_encode($permanentQuery));
 			}
 			if ($newRevision === null){
-				throw new Exception('No new Revision was found. stack:' . print_r(debug_backtrace(), 1));
+				throw new Exception('No new Revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate));
 			}
 			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
 		}

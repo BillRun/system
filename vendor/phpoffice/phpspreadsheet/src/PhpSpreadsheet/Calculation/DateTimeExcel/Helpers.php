@@ -5,6 +5,7 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel;
 use DateTime;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
+use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 use PhpOffice\PhpSpreadsheet\Shared\Date as SharedDateHelper;
 
 class Helpers
@@ -33,7 +34,7 @@ class Helpers
         if (is_object($dateValue)) {
             $retval = SharedDateHelper::PHPToExcel($dateValue);
             if (is_bool($retval)) {
-                throw new Exception(Functions::VALUE());
+                throw new Exception(ExcelError::VALUE());
             }
 
             return $retval;
@@ -46,11 +47,11 @@ class Helpers
             $dateValue = DateValue::fromString($dateValue);
             Functions::setReturnDateType($saveReturnDateType);
             if (!is_numeric($dateValue)) {
-                throw new Exception(Functions::VALUE());
+                throw new Exception(ExcelError::VALUE());
             }
         }
         if ($dateValue < 0 && Functions::getCompatibilityMode() !== Functions::COMPATIBILITY_OPENOFFICE) {
-            throw new Exception(Functions::NAN());
+            throw new Exception(ExcelError::NAN());
         }
 
         return (float) $dateValue;
@@ -253,7 +254,7 @@ class Helpers
             return (float) $number;
         }
 
-        throw new Exception(Functions::VALUE());
+        throw new Exception(ExcelError::VALUE());
     }
 
     /**
@@ -266,13 +267,13 @@ class Helpers
     public static function validateNotNegative($number)
     {
         if (!is_numeric($number)) {
-            throw new Exception(Functions::VALUE());
+            throw new Exception(ExcelError::VALUE());
         }
         if ($number >= 0) {
             return (float) $number;
         }
 
-        throw new Exception(Functions::NAN());
+        throw new Exception(ExcelError::NAN());
     }
 
     public static function silly1900(DateTime $PHPDateObject, string $mod = '-1 day'): void
@@ -281,5 +282,26 @@ class Helpers
         if ($isoDate < '1900-03-01') {
             $PHPDateObject->modify($mod);
         }
+    }
+
+    public static function dateParse(string $string): array
+    {
+        return self::forceArray(date_parse($string));
+    }
+
+    public static function dateParseSucceeded(array $dateArray): bool
+    {
+        return $dateArray['error_count'] === 0;
+    }
+
+    /**
+     * Despite documentation, date_parse probably never returns false.
+     * Just in case, this routine helps guarantee it.
+     *
+     * @param array|false $dateArray
+     */
+    private static function forceArray($dateArray): array
+    {
+        return is_array($dateArray) ? $dateArray : ['error_count' => 1];
     }
 }

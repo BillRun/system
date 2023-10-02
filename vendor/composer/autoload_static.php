@@ -4,13 +4,24 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit6419453ab9298f84126343878359903e
+class ComposerStaticInit29566db855439114bef9bd21a07efecb
 {
     public static $files = array (
+        '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
+        'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
+        '9c67151ae59aff4788964ce8eb2a0f43' => __DIR__ . '/..' . '/clue/stream-filter/src/functions_include.php',
+        '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
+        'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
-        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
+        '25072dd6e2470089de65ae7bf11d3109' => __DIR__ . '/..' . '/symfony/polyfill-php72/bootstrap.php',
+        'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
+        'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
+        '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
+        '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
         '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
+        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
+        '06dd8487319ccd8403765f5b8c9f2d61' => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Mongo/functions.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
     );
 
@@ -35,7 +46,12 @@ class ComposerStaticInit6419453ab9298f84126343878359903e
         'S' => 
         array (
             'Symfony\\Polyfill\\Php80\\' => 23,
+            'Symfony\\Polyfill\\Php72\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
+            'Symfony\\Polyfill\\Intl\\Normalizer\\' => 33,
+            'Symfony\\Polyfill\\Intl\\Idn\\' => 26,
+            'Symfony\\Component\\HttpFoundation\\' => 33,
+            'Stripe\\' => 7,
         ),
         'P' => 
         array (
@@ -45,19 +61,44 @@ class ComposerStaticInit6419453ab9298f84126343878359903e
             'PhpOffice\\PhpSpreadsheet\\' => 25,
             'ParagonIE\\ConstantTime\\' => 23,
         ),
+        'O' => 
+        array (
+            'Omnipay\\Payrexx\\' => 16,
+            'Omnipay\\Common\\' => 15,
+        ),
         'M' => 
         array (
             'MyCLabs\\Enum\\' => 13,
             'MongoDB\\' => 8,
+            'Money\\' => 6,
             'Matrix\\' => 7,
         ),
         'J' => 
         array (
             'Jean85\\' => 7,
         ),
+        'H' => 
+        array (
+            'Http\\Promise\\' => 13,
+            'Http\\Message\\' => 13,
+            'Http\\Discovery\\' => 15,
+            'Http\\Client\\' => 12,
+            'Http\\Adapter\\Guzzle6\\' => 21,
+        ),
+        'G' => 
+        array (
+            'GuzzleHttp\\Psr7\\' => 16,
+            'GuzzleHttp\\Promise\\' => 19,
+            'GuzzleHttp\\' => 11,
+        ),
         'C' => 
         array (
             'Complex\\' => 8,
+            'Clue\\StreamFilter\\' => 18,
+        ),
+        'A' => 
+        array (
+            'Alcaeus\\MongoDbAdapter\\' => 23,
         ),
     );
 
@@ -86,9 +127,29 @@ class ComposerStaticInit6419453ab9298f84126343878359903e
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
         ),
+        'Symfony\\Polyfill\\Php72\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php72',
+        ),
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
+        ),
+        'Symfony\\Polyfill\\Intl\\Normalizer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer',
+        ),
+        'Symfony\\Polyfill\\Intl\\Idn\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-intl-idn',
+        ),
+        'Symfony\\Component\\HttpFoundation\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/http-foundation',
+        ),
+        'Stripe\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/stripe/stripe-php/lib',
         ),
         'Psr\\SimpleCache\\' => 
         array (
@@ -111,6 +172,14 @@ class ComposerStaticInit6419453ab9298f84126343878359903e
         array (
             0 => __DIR__ . '/..' . '/paragonie/constant_time_encoding/src',
         ),
+        'Omnipay\\Payrexx\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/payrexx/omnipay-payrexx/src',
+        ),
+        'Omnipay\\Common\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/omnipay/common/src/Common',
+        ),
         'MyCLabs\\Enum\\' => 
         array (
             0 => __DIR__ . '/..' . '/myclabs/php-enum/src',
@@ -118,6 +187,10 @@ class ComposerStaticInit6419453ab9298f84126343878359903e
         'MongoDB\\' => 
         array (
             0 => __DIR__ . '/..' . '/mongodb/mongodb/src',
+        ),
+        'Money\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/moneyphp/money/src',
         ),
         'Matrix\\' => 
         array (
@@ -127,18 +200,73 @@ class ComposerStaticInit6419453ab9298f84126343878359903e
         array (
             0 => __DIR__ . '/..' . '/jean85/pretty-package-versions/src',
         ),
+        'Http\\Promise\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/promise/src',
+        ),
+        'Http\\Message\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/message/src',
+            1 => __DIR__ . '/..' . '/php-http/message-factory/src',
+        ),
+        'Http\\Discovery\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/discovery/src',
+        ),
+        'Http\\Client\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/httplug/src',
+        ),
+        'Http\\Adapter\\Guzzle6\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/guzzle6-adapter/src',
+        ),
+        'GuzzleHttp\\Psr7\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/psr7/src',
+        ),
+        'GuzzleHttp\\Promise\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/promises/src',
+        ),
+        'GuzzleHttp\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
+        ),
         'Complex\\' => 
         array (
             0 => __DIR__ . '/..' . '/markbaker/complex/classes/src',
         ),
+        'Clue\\StreamFilter\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/clue/stream-filter/src',
+        ),
+        'Alcaeus\\MongoDbAdapter\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Alcaeus/MongoDbAdapter',
+        ),
     );
 
     public static $prefixesPsr0 = array (
+        'P' => 
+        array (
+            'Payrexx' => 
+            array (
+                0 => __DIR__ . '/..' . '/payrexx/payrexx/lib',
+            ),
+        ),
         'O' => 
         array (
             'OAuth2' => 
             array (
                 0 => __DIR__ . '/..' . '/bshaffer/oauth2-server-php/src',
+            ),
+        ),
+        'M' => 
+        array (
+            'Mongo' => 
+            array (
+                0 => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Mongo',
             ),
         ),
         'H' => 
@@ -251,9 +379,11 @@ class ComposerStaticInit6419453ab9298f84126343878359903e
         'NoPatternExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'NoSkipsReporter' => __DIR__ . '/..' . '/simpletest/simpletest/reporter.php',
         'NoTextExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/web_tester.php',
+        'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
         'NotAExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'NotEqualExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'NotIdenticalExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
+        'Omnipay\\Omnipay' => __DIR__ . '/..' . '/omnipay/common/src/Omnipay.php',
         'OpaqueContainer' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
         'OtherTestException' => __DIR__ . '/..' . '/simpletest/simpletest/test/exceptions_test.php',
         'OutsideMarginExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
@@ -267,6 +397,7 @@ class ComposerStaticInit6419453ab9298f84126343878359903e
         'PassingUnitTestCaseOutput' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual_test.php',
         'PathEqualExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/test/collector_test.php',
         'PatternExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
+        'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
         'Recorder' => __DIR__ . '/..' . '/simpletest/simpletest/recorder.php',
         'RecursiveNasty' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
         'ReferenceExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
@@ -390,7 +521,7 @@ class ComposerStaticInit6419453ab9298f84126343878359903e
         'SimpleUrl' => __DIR__ . '/..' . '/simpletest/simpletest/url.php',
         'SimpleUserAgent' => __DIR__ . '/..' . '/simpletest/simpletest/user_agent.php',
         'SimpleWidget' => __DIR__ . '/..' . '/simpletest/simpletest/tag.php',
-        'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
+        'Stringable' => __DIR__ . '/..' . '/myclabs/php-enum/stubs/Stringable.php',
         'TestCaseWithParseError' => __DIR__ . '/..' . '/simpletest/simpletest/test/test_with_parse_error.php',
         'TestDisplayClass' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual_test.php',
         'TestDoxReporter' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/testdox.php',
@@ -588,10 +719,10 @@ class ComposerStaticInit6419453ab9298f84126343878359903e
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit6419453ab9298f84126343878359903e::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit6419453ab9298f84126343878359903e::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit6419453ab9298f84126343878359903e::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit6419453ab9298f84126343878359903e::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit29566db855439114bef9bd21a07efecb::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit29566db855439114bef9bd21a07efecb::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit29566db855439114bef9bd21a07efecb::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit29566db855439114bef9bd21a07efecb::$classMap;
 
         }, null, ClassLoader::class);
     }

@@ -51,15 +51,19 @@ class ExportAction extends Action_Base {
 				Billrun_Factory::log("Can't get configurarion: " . print_R($export_generator_options, 1), Zend_Log::EMERG);
 				return false;
 			}
-			$params = array_merge($exportGeneratorSettings, $export_generator_options);
-			$exporter = new Billrun_Exporter($params);
+
+			$extraParams = $this->getController()->getParameters();
+			$params = array_merge($extraParams,$exportGeneratorSettings, $export_generator_options);
+			$exporter =  Billrun_Exporter::getInstance($params);
 			$exporter_name = $exporter->getType();
 			$this->getController()->addOutput("Exporter {$exporter_name} loaded");
 
 			if ($exporter) {
 				$this->getController()->addOutput("Starting to export. This action can take a while...");
 				try {
-					$exporter->generate();
+					if ($exporter->generate() == false) {
+						return false;
+					}
 					if ($exporter->shouldFileBeMoved()) {
 						$this->getController()->addOutput("Exporting the file");
 						$exporter->move();

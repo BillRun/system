@@ -2,12 +2,16 @@
 
 namespace PhpOffice\PhpSpreadsheet\Calculation\MathTrig;
 
+use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
+use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 use PhpOffice\PhpSpreadsheet\Calculation\Statistical;
 
 class Factorial
 {
+    use ArrayEnabled;
+
     /**
      * FACT.
      *
@@ -17,12 +21,18 @@ class Factorial
      * Excel Function:
      *        FACT(factVal)
      *
-     * @param float $factVal Factorial Value
+     * @param array|float $factVal Factorial Value, or can be an array of numbers
      *
-     * @return float|int|string Factorial, or a string containing an error
+     * @return array|float|int|string Factorial, or a string containing an error
+     *         If an array of numbers is passed as the argument, then the returned result will also be an array
+     *            with the same dimensions
      */
     public static function fact($factVal)
     {
+        if (is_array($factVal)) {
+            return self::evaluateSingleArgumentArray([self::class, __FUNCTION__], $factVal);
+        }
+
         try {
             $factVal = Helpers::validateNumericNullBool($factVal);
             Helpers::validateNotNegative($factVal);
@@ -53,12 +63,18 @@ class Factorial
      * Excel Function:
      *        FACTDOUBLE(factVal)
      *
-     * @param float $factVal Factorial Value
+     * @param array|float $factVal Factorial Value, or can be an array of numbers
      *
-     * @return float|int|string Double Factorial, or a string containing an error
+     * @return array|float|int|string Double Factorial, or a string containing an error
+     *         If an array of numbers is passed as the argument, then the returned result will also be an array
+     *            with the same dimensions
      */
     public static function factDouble($factVal)
     {
+        if (is_array($factVal)) {
+            return self::evaluateSingleArgumentArray([self::class, __FUNCTION__], $factVal);
+        }
+
         try {
             $factVal = Helpers::validateNumericNullSubstitution($factVal, 0);
             Helpers::validateNotNegative($factVal);
@@ -105,6 +121,6 @@ class Factorial
 
         $summer = self::fact($summer);
 
-        return $summer / $divisor;
+        return is_numeric($summer) ? ($summer / $divisor) : ExcelError::VALUE();
     }
 }

@@ -117,9 +117,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				if (isset($paramObj['value_mult'])) {
 					$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
 				}
-			if (isset($paramObj['decimals'])) {
+		if(isset($paramObj['decimals'])){
 				$value = intval($row[$paramObj['name']]);
-				$row[$paramObj['name']] = (float) ($value / pow(10, $paramObj['decimals']));
+			$row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
 			}
 			if (isset($paramObj['type']) && $paramObj['type'] == "date") {
 				if (!isset($paramObj['format'])) {
@@ -137,7 +137,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 					throw new Exception($message);
 				}
 				$row[$paramObj['name']] = substr($row[$paramObj['name']], $paramObj['substring']['offset'], $paramObj['substring']['length']);
-			}
+                }
 		}
 		return $row;
 	}
@@ -281,7 +281,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected function updatePaymentsByRows($data, $currentProcessor) {
 		$no_txid_counter = 0;
 		$billSavedFieldsNames = $this->getBillSavedFieldsNames($currentProcessor['parser']);
-		foreach ($data['data'] as $row) {
+		foreach ($data['data'] as $index => $row) {
 			$txid_from_file = "";
 			if (isset($this->tranIdentifierField)) {
 				//TODO : support multiple header/footer lines
@@ -290,8 +290,22 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 					$no_txid_counter++;
 					continue;
 				}
+				Billrun_Factory::log("Searching for bill with txid: " . $row[$this->tranIdentifierField] , Zend_Log::DEBUG);
+				$bill = (static::$type != 'payments') ? Billrun_Bill_Payment::getInstanceByid($txid_from_file) : null;
+			} else if (!is_null($this->tranIdentifierFields) && (static::$type != 'payments')) {
+				Billrun_Factory::log("Searching for bills using configured query, for line number " . $row['row_number'] , Zend_Log::DEBUG);
+				$query = $this->processIdentifierFields($row);
+				$bills = Billrun_Bill_Payment::queryPayments($query);
+				if (!empty($bills)) {
+					Billrun_Factory::log("Found " . count($bills) . " relevant bills" , Zend_Log::DEBUG);
+					if (count($bills) > 1) {
+						Billrun_Factory::log("Found more than one bill, taking 1 or none, according to the configuration" , Zend_Log::DEBUG);
+						$bill = $this->take_first ? Billrun_Bill_Payment::getInstanceByData(current(Billrun_Bill_Payment::queryPayments($query))) : null;
+					} else {
+						$bill = Billrun_Bill_Payment::getInstanceByData(current(Billrun_Bill_Payment::queryPayments($query)));
+					}
+				}
 			}
-			$bill = (static::$type != 'payments') ? Billrun_Bill_Payment::getInstanceByid($txid_from_file) : null;
 			if (is_null($bill) && static::$type != 'payments') {
 				Billrun_Factory::log('Unknown transaction ' . $txid_from_file . ' in file ' . $this->filePath, Zend_Log::ALERT);
 				continue;
@@ -302,6 +316,16 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if ($no_txid_counter > 0) {
 			Billrun_Factory::log()->log('In ' . $no_txid_counter . ' lines, ' . $txid_from_file . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
 		}
+	}
+
+	public function processIdentifierFields($row) {
+		$res = [];
+		foreach($this->tranIdentifierFields as $field_conf) {
+			$row_val = Billrun_Util::getIn($row, $field_conf['file_field'], "");
+			$res[$field_conf['field']] = [$field_conf['op'] => ($field_conf['type'] == 'int') ? intval($row_val) : (($field_conf['type'] == 'float') ? floatval($row_val) : $row_val)];
+		}
+		$res['generated_pg_file_log'] = ['$exists' => true];
+		return $res;
 	}
 
 	protected function updateLogCollection($fileCorrelation) {
@@ -377,8 +401,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$res = [
 			'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
 			'cpg_type' => [!empty($type = $this->getType()) ? $type : ""],
-			'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""],
-			'file' => trim($this->filename, DIRECTORY_SEPARATOR)
+				'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""],
+				'file' => trim($this->filename, DIRECTORY_SEPARATOR)
 		];
 		if (!is_null($row) && isset($row['parser_record_number'])) {
 			$res['record_number'] = $row['parser_record_number'];
@@ -408,5 +432,4 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		Billrun_Factory::log($message, $level);
 		$this->informationArray[$type][] = $message;
 	}
-
 }

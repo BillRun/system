@@ -632,6 +632,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	}
 
 	public function testUpdateRow() {
+		$this->rows  = $this->skip_tests($this->rows ,'row.stamp');
 		//running test
 		$this->rows = $this->tests();
 		foreach ($this->rows as $key => $row) {
@@ -697,7 +698,8 @@ class Tests_Updaterowt extends UnitTestCase {
 		$aids = [$row['aid']];
 		$billrun_key = $row['billrun'];
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/process_time_offset.ini');
-		$rebalance = new ResetLinesModel($aids, $billrun_key, $conditions);
+		$stamp[$row['stamp']] = $row['stamp'];
+		$rebalance = new ResetLinesModel($aids, $billrun_key, $conditions,$stamp);
 		$rebalance->reset();
 		$this->balances = $this->getBalance($row);
 		if (isset($this->row['conditions'])) {

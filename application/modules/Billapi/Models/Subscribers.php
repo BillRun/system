@@ -50,7 +50,9 @@ class Models_Subscribers extends Models_Entity {
 	protected function getCustomFields($update = array()) {
 		$customFields = parent::getCustomFields();
 		$subscriberFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
-		$subscriberPlay = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
+		$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+		$defaultPlayName = isset($defaultPlay['name'])? $defaultPlay['name'] : '';
+		$subscriberPlay = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', $defaultPlayName));
 		$subscriberFields = Billrun_Utils_Plays::filterCustomFields($subscriberFields, $subscriberPlay);
 		return array_merge($subscriberFields, $customFields);
 	}
@@ -90,7 +92,8 @@ class Models_Subscribers extends Models_Entity {
 					$service['to'] = new Mongodloid_Date(strtotime($service['to']));
 				}
 				// handle custom period service or limited cycles service
-				$serviceRate = new Billrun_Service(array('name' => $service['name']));
+				$serviceTime = $service['to']->sec ?? time();
+				$serviceRate = new Billrun_Service(array('name' => $service['name'], 'time' => $serviceTime));
 				// if service not found, throw exception
 				if (empty($serviceRate) || empty($serviceRate->get('_id'))) {
 					throw new Billrun_Exceptions_Api(66601, array(), "Service was not found");
@@ -481,6 +484,6 @@ class Models_Subscribers extends Models_Entity {
 	public function permanentChange() {
 		unset($this->update['plan_activation']);
 		unset($this->update['type']);
-		parent::permanentChange();
+		return parent::permanentChange();
 	}
 }

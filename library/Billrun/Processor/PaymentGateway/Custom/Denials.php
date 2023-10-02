@@ -15,6 +15,8 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 
 	protected static $type = 'denials';
 	protected $tranIdentifierField;
+	protected $tranIdentifierFields = null;
+	protected $take_first = true;
 	protected $amountField;
 	protected $dateField;
 
@@ -23,13 +25,29 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 	}
 	
 	protected function mapProcessorFields($processorDefinition) {
-		if (empty($processorDefinition['processor']['transaction_identifier_field']) || empty($processorDefinition['processor']['amount_field'])) {
+		if (empty($processorDefinition['processor']['amount_field']) ||
+			(!isset($processorDefinition['processor']['transaction_identifier_field']) && 
+			!isset($processorDefinition['processor']['transaction_identifier_fields']))) {
                         $message = "Missing definitions for file type " . $processorDefinition['file_type'];
 			Billrun_Factory::log($message, Zend_Log::DEBUG);
 			$this->informationArray['errors'][] = $message;
                         return false;
 		}
-		parent::initProcessorFields(['tran_identifier_field' => 'transaction_identifier_field' , 'amount_field' => 'amount_field', 'date_field' => 'date_field'], $processorDefinition);
+			
+		if (isset($processorDefinition['processor']['transaction_identifier_field'])){
+			$this->tranIdentifierField = $processorDefinition['processor']['transaction_identifier_field'];
+		} else if (isset($processorDefinition['processor']['transaction_identifier_fields'])) {
+			$this->tranIdentifierFields = $processorDefinition['processor']['transaction_identifier_fields']['conditions'];
+			$this->take_first = $processorDefinition['processor']['transaction_identifier_fields']['take_first'];
+		}
+
+		if (empty($this->tranIdentifierField) && empty($this->tranIdentifierFields)) {
+			$message = "No transaction identifier configuration was found for file type " . $processorDefinition['file_type'];
+			Billrun_Factory::log($message, Zend_Log::DEBUG);
+            $this->informationArray['errors'][] = $message;
+			return false;
+		}
+		parent::initProcessorFields(['amount_field' => 'amount_field', 'date_field' => 'date_field'], $processorDefinition);
 		return true;
 	}
 	
@@ -110,3 +128,5 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 	}
 
 }
+
+

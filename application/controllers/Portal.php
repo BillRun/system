@@ -103,7 +103,7 @@ class PortalController extends Yaf_Controller_Abstract {
 
 		$this->request = $this->getRequest();
 		$this->requestBody = json_decode(file_get_contents('php://input'), JSON_OBJECT_AS_ARRAY) ?? [];
-		$this->update = $this->requestBody['update'] ?? json_decode($this->request->get('update', '[]'), JSON_OBJECT_AS_ARRAY);
+		$this->update = $this->requestBody['update'] ?? json_decode($this->request->getRequest()['update'], JSON_OBJECT_AS_ARRAY);
 		$this->query = json_decode($this->request->get('query', '[]'), JSON_OBJECT_AS_ARRAY);
 		$this->page = $this->request->getRequest()['page'] ?? -1;
 		$this->size = $this->request->getRequest()['size'] ?? -1;
