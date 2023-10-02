@@ -224,7 +224,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * method to initialize the data and the file handler of the processor
 	 * useful when processing files in iterations one after another
 	 */
-	protected function init() {
+	public function init() {
 		$this->data = array('data' => array());
 		$this->queue_data = array();
 		if (is_resource($this->fileHandler)) {
@@ -245,7 +245,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 
 			if ($this->processLines() === FALSE) {
-				Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
+				Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ALERT);
 				return FALSE;
 			}
 			
@@ -836,5 +836,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	protected function setPgFileType($fileType) {
 		return;
+	}
+
+	public function setFullCalculationTime(&$entity) {
+		if (in_array('full_calculation', Billrun_Factory::config()->getConfigValue('lines.reference_fields', []))) {
+			$entity['full_calculation'] = new MongoDate();
+		}
 	}
 }

@@ -7,8 +7,9 @@ use DateTimeZone;
 use PhpOffice\PhpSpreadsheet\Calculation\Calculation;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 use PhpOffice\PhpSpreadsheet\Calculation\Internal\WildcardMatch;
+use PhpOffice\PhpSpreadsheet\Cell\AddressRange;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
-use PhpOffice\PhpSpreadsheet\Exception as PhpSpreadsheetException;
+use PhpOffice\PhpSpreadsheet\Exception;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use PhpOffice\PhpSpreadsheet\Worksheet\AutoFilter\Column\Rule;
 
@@ -35,13 +36,33 @@ class AutoFilter
      */
     private $columns = [];
 
+    /** @var bool */
+    private $evaluated = false;
+
+    public function getEvaluated(): bool
+    {
+        return $this->evaluated;
+    }
+
+    public function setEvaluated(bool $value): void
+    {
+        $this->evaluated = $value;
+    }
+
     /**
      * Create a new AutoFilter.
      *
-     * @param string $range Cell range (i.e. A1:E10)
+     * @param AddressRange|array<int>|string $range
+     *            A simple string containing a Cell range like 'A1:E10' is permitted
+     *              or passing in an array of [$fromColumnIndex, $fromRow, $toColumnIndex, $toRow] (e.g. [3, 5, 6, 8]),
+     *              or an AddressRange object.
      */
     public function __construct($range = '', ?Worksheet $worksheet = null)
     {
+        if ($range !== '') {
+            [, $range] = Worksheet::extractSheetTitle(Validations::validateCellRange($range), true);
+        }
+
         $this->range = $range;
         $this->workSheet = $worksheet;
     }
@@ -63,6 +84,7 @@ class AutoFilter
      */
     public function setParent(?Worksheet $worksheet = null)
     {
+        $this->evaluated = false;
         $this->workSheet = $worksheet;
 
         return $this;
@@ -79,16 +101,21 @@ class AutoFilter
     }
 
     /**
-     * Set AutoFilter Range.
+     * Set AutoFilter Cell Range.
      *
-     * @param string $range Cell range (i.e. A1:E10)
-     *
-     * @return $this
+     * @param AddressRange|array<int>|string $range
+     *            A simple string containing a Cell range like 'A1:E10' or a Cell address like 'A1' is permitted
+     *              or passing in an array of [$fromColumnIndex, $fromRow, $toColumnIndex, $toRow] (e.g. [3, 5, 6, 8]),
+     *              or an AddressRange object.
      */
-    public function setRange($range)
+    public function setRange($range = ''): self
     {
+        $this->evaluated = false;
         // extract coordinate
-        [$worksheet, $range] = Worksheet::extractSheetTitle($range, true);
+        if ($range !== '') {
+            [, $range] = Worksheet::extractSheetTitle(Validations::validateCellRange($range), true);
+        }
+
         if (empty($range)) {
             //    Discard all column rules
             $this->columns = [];
@@ -97,8 +124,8 @@ class AutoFilter
             return $this;
         }
 
-        if (strpos($range, ':') === false) {
-            throw new PhpSpreadsheetException('Autofilter must be set on a range of cells.');
+        if (ctype_digit($range) || ctype_alpha($range)) {
+            throw new Exception("{$range} is an invalid range for AutoFilter");
         }
 
         $this->range = $range;
@@ -108,6 +135,20 @@ class AutoFilter
             $colIndex = Coordinate::columnIndexFromString($key);
             if (($rangeStart[0] > $colIndex) || ($rangeEnd[0] < $colIndex)) {
                 unset($this->columns[$key]);
+            }
+        }
+
+        return $this;
+    }
+
+    public function setRangeToMaxRow(): self
+    {
+        $this->evaluated = false;
+        if ($this->workSheet !== null) {
+            $thisrange = $this->range;
+            $range = (string) preg_replace('/\\d+$/', (string) $this->workSheet->getHighestRow(), $thisrange);
+            if ($range !== $thisrange) {
+                $this->setRange($range);
             }
         }
 
@@ -134,13 +175,13 @@ class AutoFilter
     public function testColumnInRange($column)
     {
         if (empty($this->range)) {
-            throw new PhpSpreadsheetException('No autofilter range is defined.');
+            throw new Exception('No autofilter range is defined.');
         }
 
         $columnIndex = Coordinate::columnIndexFromString($column);
         [$rangeStart, $rangeEnd] = Coordinate::rangeBoundaries($this->range);
         if (($rangeStart[0] > $columnIndex) || ($rangeEnd[0] < $columnIndex)) {
-            throw new PhpSpreadsheetException('Column is outside of current autofilter range.');
+            throw new Exception('Column is outside of current autofilter range.');
         }
 
         return $columnIndex - $rangeStart[0];
@@ -201,12 +242,13 @@ class AutoFilter
      */
     public function setColumn($columnObjectOrString)
     {
+        $this->evaluated = false;
         if ((is_string($columnObjectOrString)) && (!empty($columnObjectOrString))) {
             $column = $columnObjectOrString;
         } elseif (is_object($columnObjectOrString) && ($columnObjectOrString instanceof AutoFilter\Column)) {
             $column = $columnObjectOrString->getColumnIndex();
         } else {
-            throw new PhpSpreadsheetException('Column is not within the autofilter range.');
+            throw new Exception('Column is not within the autofilter range.');
         }
         $this->testColumnInRange($column);
 
@@ -230,6 +272,7 @@ class AutoFilter
      */
     public function clearColumn($column)
     {
+        $this->evaluated = false;
         $this->testColumnInRange($column);
 
         if (isset($this->columns[$column])) {
@@ -253,6 +296,7 @@ class AutoFilter
      */
     public function shiftColumn($fromColumn, $toColumn)
     {
+        $this->evaluated = false;
         $fromColumn = strtoupper($fromColumn);
         $toColumn = strtoupper($toColumn);
 
@@ -277,7 +321,7 @@ class AutoFilter
      *
      * @return bool
      */
-    private static function filterTestInSimpleDataSet($cellValue, $dataSet)
+    protected static function filterTestInSimpleDataSet($cellValue, $dataSet)
     {
         $dataSetValues = $dataSet['filterValues'];
         $blanks = $dataSet['blanks'];
@@ -296,7 +340,7 @@ class AutoFilter
      *
      * @return bool
      */
-    private static function filterTestInDateGroupSet($cellValue, $dataSet)
+    protected static function filterTestInDateGroupSet($cellValue, $dataSet)
     {
         $dateSet = $dataSet['filterValues'];
         $blanks = $dataSet['blanks'];
@@ -340,7 +384,7 @@ class AutoFilter
      *
      * @return bool
      */
-    private static function filterTestInCustomDataSet($cellValue, $ruleSet)
+    protected static function filterTestInCustomDataSet($cellValue, $ruleSet)
     {
         /** @var array[] */
         $dataSet = $ruleSet['filterRules'];
@@ -360,7 +404,7 @@ class AutoFilter
             /** @var string */
             $ruleOperator = $rule['operator'];
             /** @var string */
-            $cellValueString = $cellValue;
+            $cellValueString = $cellValue ?? '';
             $retVal = false;
 
             if (is_numeric($ruleValue)) {
@@ -465,7 +509,7 @@ class AutoFilter
      *
      * @return bool
      */
-    private static function filterTestInPeriodDateSet($cellValue, $monthSet)
+    protected static function filterTestInPeriodDateSet($cellValue, $monthSet)
     {
         //    Blank cells are always ignored, so return a FALSE
         if (($cellValue == '') || ($cellValue === null)) {
@@ -905,6 +949,9 @@ class AutoFilter
                             $averageFormula = '=AVERAGE(' . $columnID . ($rangeStart[1] + 1) . ':' . $columnID . $rangeEnd[1] . ')';
                             $spreadsheet = ($this->workSheet === null) ? null : $this->workSheet->getParent();
                             $average = Calculation::getInstance($spreadsheet)->calculateFormula($averageFormula, null, $this->workSheet->getCell('A1'));
+                            while (is_array($average)) {
+                                $average = array_pop($average);
+                            }
                             //    Set above/below rule based on greaterThan or LessTan
                             $operator = ($dynamicRuleType === Rule::AUTOFILTER_RULETYPE_DYNAMIC_ABOVEAVERAGE)
                                 ? Rule::AUTOFILTER_COLUMN_RULE_GREATERTHAN
@@ -985,6 +1032,8 @@ class AutoFilter
             }
         }
 
+        $rangeEnd[1] = $this->autoExtendRange($rangeStart[1], $rangeEnd[1]);
+
         //    Execute the column tests for each row in the autoFilter range to determine show/hide,
         for ($row = $rangeStart[1] + 1; $row <= $rangeEnd[1]; ++$row) {
             $result = true;
@@ -1002,8 +1051,32 @@ class AutoFilter
             //    Set show/hide for the row based on the result of the autoFilter result
             $this->workSheet->getRowDimension((int) $row)->setVisible($result);
         }
+        $this->evaluated = true;
 
         return $this;
+    }
+
+    /**
+     * Magic Range Auto-sizing.
+     * For a single row rangeSet, we follow MS Excel rules, and search for the first empty row to determine our range.
+     */
+    public function autoExtendRange(int $startRow, int $endRow): int
+    {
+        if ($startRow === $endRow && $this->workSheet !== null) {
+            try {
+                $rowIterator = $this->workSheet->getRowIterator($startRow + 1);
+            } catch (Exception $e) {
+                // If there are no rows below $startRow
+                return $startRow;
+            }
+            foreach ($rowIterator as $row) {
+                if ($row->isEmpty(CellIterator::TREAT_NULL_VALUE_AS_EMPTY_CELL | CellIterator::TREAT_EMPTY_STRING_AS_EMPTY_CELL) === true) {
+                    return $row->getRowIndex() - 1;
+                }
+            }
+        }
+
+        return $endRow;
     }
 
     /**

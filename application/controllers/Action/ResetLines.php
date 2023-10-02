@@ -55,22 +55,7 @@ class ResetLinesAction extends ApiAction {
 		}
 
 		try {
-			$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
-			foreach ($aids as $aid) {
-				$rebalanceLine = array(
-					'aid' => $aid,
-					'billrun_key' => $billrun_key,
-					'conditions' => !empty($conditions) ? $conditions : array(),
-					'conditions_hash' => md5(serialize($conditions)),
-					'creation_date' => new Mongodloid_Date()
-				);
-				$query = array(
-					'aid' => $aid,
-					'billrun_key' => $billrun_key,
-				);
-				$options = array('upsert' => true);
-				$rebalance_queue->update($query, array('$set' => $rebalanceLine), $options);
-			}
+			static::insertToRebalanceQueue($aids, $billrun_key, $conditions);
 		} catch (Exception $exc) {
 			Billrun_Util::logFailedResetLines($aids, $billrun_key, $invoicing_day);
 			return FALSE;
@@ -84,6 +69,40 @@ class ResetLinesAction extends ApiAction {
 		return TRUE;
 	}
 	
+	/**
+	 * Insert to rebalnce queue according to the params.
+	 * 
+	 * @param array $aids
+	 * @param string $billrun_key
+	 * @param array $conditions
+	 * 
+	 */
+	public static function insertToRebalanceQueue($aids, $billrun_key, $conditions = array()) {
+		$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
+		foreach ($aids as $aid) {
+			$query = [
+				'aid' => $aid,
+				'billrun_key' => $billrun_key,
+				'$or' => array(
+					array('start_time' => array('$exists' => true), 'end_time' => array('$exists' => false)),
+					array('start_time' => array('$exists' => false), 'end_time' => array('$exists' => false)),
+				)
+			];
+			$exist_rebalance_object = $rebalance_queue->query($query)->count();
+			if(empty($exist_rebalance_object)) {
+			$rebalanceLine = array(
+				'aid' => $aid,
+				'billrun_key' => $billrun_key,
+				'conditions' => !empty($conditions) ? $conditions : array(),
+				'conditions_hash' => md5(serialize($conditions)),
+				'creation_date' => new Mongodloid_Date()
+			);
+                            $rebalanceLine['stamp'] =  md5(serialize($rebalanceLine));
+				$rebalance_queue->insert($rebalanceLine);
+			}
+		}
+	}
+
 	/**
 	 * Gets aids from the request.
 	 * If aid (list or string) received - returns it as array of integers.

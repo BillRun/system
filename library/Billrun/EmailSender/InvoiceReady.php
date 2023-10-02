@@ -104,7 +104,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	 */
 	public function validateData($data) {
 		if (empty($data['invoice_file']) || empty($data['attributes']['email'])) {
-			Billrun_Factory::log('sendInvoiceReadyMail - missing invoice file or email. Invoice data: ' . print_R($data, 1), Billrun_Log::NOTICE);
+			Billrun_Factory::log('sendInvoiceReadyMail - missing invoice file or email. Invoice ID: ' . $data['invoice_id'], Billrun_Log::NOTICE);
 			return false;
 		}
 		if (!$this->isShippingMethodMatch($data)) {

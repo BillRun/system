@@ -19,7 +19,9 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 		parent::__construct($plan);;
 		$this->recurrenceConfig = $plan['recurrence'];
 		$this->updateCycleByConfig($plan);
-		$this->setSpanCover();
+		if($this->recurrenceConfig['frequency'] !== 1) {
+			$this->setSpanCover();
+		}
 	}
 
 	/**
@@ -40,18 +42,17 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 
 		$formatCycleStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
 		$formatCycleEnd = date(Billrun_Base::base_dateformat,  $this->cycle->end()-1);
-		$fakeSubDeactivation = (empty($this->subscriberDeactivation) ? PHP_INT_MAX : $this->subscriberDeactivation);
-		$this->isTerminated =  ($fakeSubDeactivation <= $this->deactivation || empty($this->deactivation) && $fakeSubDeactivation < $this->cycle->end());
-		$adjustedDeactivation = (empty($this->deactivation) || (!$this->proratedEnd && !$this->isTerminated || !$this->proratedTermination && $this->isTerminated ) ? $this->cycle->end() : $this->deactivation - 1);
+
+		$adjustedDeactivation = (empty($this->deactivation) || (!$this->proratedEnd && !$this->isTerminated() || !$this->proratedTermination && $this->isTerminated() ) ? $this->cycle->end() : $this->deactivation - 1);
 		$formatEnd = date(Billrun_Base::base_dateformat, min( $adjustedDeactivation, $this->cycle->end() - 1) );
 
 		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatCycleStart,$formatCycleEnd);
-		$this->startOffset = Billrun_Utils_Time::getDaysSpanDiff($formatActivation, $formatCycleStart,$cycleSpan);
-		$this->endOffset = Billrun_Utils_Time::getDaysSpanDiff($formatActivation, $formatEnd,$cycleSpan);
+		$this->startOffset = Billrun_Utils_Time::getDaysSpanDiff($formatActivation, $formatCycleStart, $cycleSpan);
+		$this->endOffset = Billrun_Utils_Time::getDaysSpanDiff($formatActivation, $formatEnd, $cycleSpan);
 	}
 
 	protected function getProrationData($price, $cycle = false) {
-		$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
+		$endProration =  $this->proratedEnd && !$this->isTerminated($cycle) || ($this->proratedTermination && $this->isTerminated($cycle));
 		$proratedActivation =  $this->proratedStart  || $this->startOffset ?  $this->activation :  $this->cycle->start();
 		$proratedEnding =  $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE  ;
 		$frequency = $this->recurrenceConfig['frequency'];
@@ -65,5 +66,7 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 					'prorated_end' =>  $endProration
 				];
 	}
+
+	abstract protected function isTerminated($cycle=false);
 
 }

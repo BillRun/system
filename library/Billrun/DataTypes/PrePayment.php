@@ -64,13 +64,12 @@ class Billrun_DataTypes_PrePayment {
 	 * @var int
 	 */
 	private $aid = null;
-	
+
 	/**
 	 * payment method
 	 * @var string
 	 */
 	private $method = null;
-
 
 	public function __construct($paymentData, $method) {
 		$this->data = $paymentData;
@@ -161,21 +160,24 @@ class Billrun_DataTypes_PrePayment {
 						return Billrun_Bill_Invoice::getInvoices($query);
 					case self::BILL_TYPE_RECEIPT:
 						$query['txid'] = [
-							'$in' => array_map('strval',array_column($updatedBills, id)),
+							'$in' => array_map('strval', array_column($updatedBills, id)),
 						];
 						return Billrun_Bill_Payment::queryPayments($query);
 				}
 			default:
 				$customerDir = $this->getCustomerDirection();
+				$sort = array(
+					'urt' => 1,
+				);
 				if ($customerDir == self::DIR_FROM_CUSTOMER) {
-					return Billrun_Bill::getUnpaidBills($query);
+					return Billrun_Bill::getUnpaidBills($query, $sort);
 				}
 
 				if ($customerDir == self::DIR_TO_CUSTOMER) {
-					return Billrun_Bill::getOverPayingBills($query);
+					return Billrun_Bill::getOverPayingBills($query, $sort);
 				}
 		}
-		
+
 		return null;
 	}
 
@@ -334,9 +336,9 @@ class Billrun_DataTypes_PrePayment {
 		}
 		return floatval($amount);
 	}
-	
+
 	public function getMethod() {
 		return $this->method;
 	}
-	
+
 }

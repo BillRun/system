@@ -210,7 +210,7 @@ class Models_Action_Export extends Models_Action {
 		if (empty($value)) {
 			return 'no';
 		}
-		return in_array($value, ['false', 'FALSE', '0', 'null', 'NULL']) ? 'no' : 'yes';
+		return in_array($value, ['false', 'FALSE', '0', 'null', 'NULL']) && $value !== true ? 'no' : 'yes';
 	}
 
 	function formatPercentage($value) {

@@ -19,7 +19,11 @@ class ErrorController extends Yaf_Controller_Abstract {
 	   // TODO: THIS IS DEBUG CODE!!!!!!!!!!!!!!!!!!
 	   if(php_sapi_name() != "cli") {
 		   print_r($output);
-		   Billrun_Factory::log(print_r($output,1), Zend_Log::ERR);
+		   $logLevel = Zend_Log::ERR;
+		   if(isset($exception->logLevel)) {
+			   $logLevel = $exception->logLevel;
+		   }
+		   Billrun_Factory::log(print_r($output,1), $logLevel);
 	   } else {
 		   echo "Exception: " . $output;
 	   }
@@ -81,7 +85,7 @@ class ErrorController extends Yaf_Controller_Abstract {
 			   $output['data']['message'] = $exception->getMessage() . "\n";
 			   break;
 	   }
-
+		 $output['data']['message'] = htmlspecialchars($output['data']['message']);
 	   return json_encode($output);
 	}
 }

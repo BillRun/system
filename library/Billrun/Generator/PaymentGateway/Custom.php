@@ -73,7 +73,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$missing_fields = [];
 		if(isset($this->mandatory_fields_per_entity[$entity_type])) {
 			foreach($this->mandatory_fields_per_entity[$entity_type] as $field_name) {
-				if(isset($data[$field_name])) {
+				if(!is_null(Billrun_Util::getIn($data, $field_name))) {
 					continue;
 				} else {
 					$missing_fields[] = $field_name;
@@ -108,8 +108,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             if (isset($dataField['linked_entity'])) {
                 $dataLine[$dataField['path']] = $this->getLinkedEntityData($dataField['linked_entity']['entity'], $params, $dataField['linked_entity']['field_name']);
             }
-            if (isset($dataField['parameter_name‎']) && in_array($dataField['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$dataField['parameter_name‎']])) {
-                $dataLine[$dataField['path']] = $this->options[$dataField['parameter_name‎']];
+            if (isset($dataField['parameter_name']) && in_array($dataField['parameter_name'], $this->extraParamsNames) && isset($this->options[$dataField['parameter_name']])) {
+                $dataLine[$dataField['path']] = $this->options[$dataField['parameter_name']];
             }
             if ((isset($dataField['type']) && $dataField['type'] == 'autoinc')) {
                     $dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpf_generator_' . $this->getFilename());
@@ -136,7 +136,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             } catch(Exception $ex){
                 Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
                 continue;
-        }
+            }
+            Billrun_Factory::dispatcher()->trigger('afterPreparingCpfDataField', array(static::$type, $dataField, &$dataLine, &$attributes, $this));
         }
         if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
             ksort($dataLine);
@@ -329,11 +330,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'transactions_amount') {
                 $line[$field['path']] = $this->transactionsTotalAmount;
             }
+            if (isset($field['predefined_values']) && $field['predefined_values'] == 'log_stamp') {
+                $line[$field['path']] = $this->generatedLogFileStamp;
+            }
             if (isset($field['hard_coded_value'])) {
                 $line[$field['path']] = $field['hard_coded_value'];
             }
-            if (isset($field['parameter_name‎']) && in_array($field['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$field['parameter_name‎']])) {
-                $line[$field['path']] = $this->options[$field['parameter_name‎']];
+            if (isset($field['parameter_name']) && in_array($field['parameter_name'], $this->extraParamsNames) && isset($this->options[$field['parameter_name']])) {
+                $line[$field['path']] = $this->options[$field['parameter_name']];
             }
             $warningMessages = [];
             $line[$field['path']] = Billrun_Util::formattingValue($field, $line[$field['path']], $warningMessages);

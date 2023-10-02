@@ -1,0 +1,336 @@
+{
+  "products": {
+    "title": "Products",
+    "icon": "fa-book",
+    "route": "products",
+    "show": true,
+    "roles": [],
+    "order":1,
+    "parent": "root"
+  },
+  "prepaid": {
+    "title": "Prepaid",
+    "icon": "fa-cubes",
+    "route": "",
+    "show": true,
+    "roles": [],
+    "order":2,
+    "parent": "root"
+  },
+  "prepaid_plans": {
+    "title": "Plans",
+    "icon": "",
+    "route": "prepaid_plans",
+    "show": true,
+    "roles": [],
+    "order":0,
+    "parent":"prepaid"
+  },
+  "prepaid_includes": {
+    "title": "Buckets",
+    "icon": "",
+    "route": "prepaid_includes",
+    "show": true,
+    "roles": [],
+    "order": 1,
+    "parent":"prepaid"
+  },
+  "charging": {
+    "title": "Buckets Groups",
+    "icon": "",
+    "route": "charging_plans",
+    "show": true,
+    "roles": [],
+    "order": 2,
+    "parent":"prepaid"
+  },
+  "recurring": {
+    "title": "Recurring Charges",
+    "icon": "",
+    "route": "auto_renews",
+    "show": true,
+    "roles": [],
+    "order": 3,
+    "parent":"prepaid"
+  },
+  "postpaid": {
+    "title": "Postpaid",
+    "icon": "fa-puzzle-piece",
+    "route": "",
+    "show": true,
+    "roles": [],
+    "order": 3,
+    "parent": "root"
+  },
+  "postpaid_plans": {
+    "id": "postpaid",
+    "title": "Plans",
+    "icon": "",
+    "route": "plans",
+    "show": true,
+    "roles": [],
+    "order": 0,
+    "parent": "postpaid"
+  },
+  "services": {
+    "title": "Services",
+    "icon": "",
+    "route": "services",
+    "show": true,
+    "roles": [],
+    "order": 1,
+    "parent": "postpaid"
+  },
+  "discounts": {
+    "title": "Discounts",
+    "icon": "",
+    "route": "discounts",
+    "show": true,
+    "roles": [],
+    "order": 2,
+    "parent": "postpaid"
+  },
+  "charges": {
+    "title": "Conditional Charges",
+    "icon": "",
+    "route": "charges",
+    "show": true,
+    "roles": [],
+    "order": 2,
+    "parent": "postpaid"
+  },
+  "customers": {
+    "title": "Customers",
+    "icon": "fa-users",
+    "route": "customers",
+    "show": true,
+    "roles": [],
+    "order": 4,
+    "parent": "root"
+  },
+  "usage": {
+    "title": "Usage",
+    "icon": "fa-list",
+    "route": "usage",
+    "show": true,
+    "roles": [],
+    "order": 5,
+    "parent": "root"
+  },
+  "cycle": {
+    "title": "Maintenance",
+    "icon": "fa-clock-o",
+    "route": "",
+    "show": true,
+    "roles": [],
+    "order":6,
+    "parent": "root"
+  },
+  "run_cycle": {
+    "title": "Run a Billing Cycle",
+    "icon": "",
+    "route": "run_cycle",
+    "show": true,
+    "roles": [],
+    "order":0,
+    "parent":"cycle"
+  },
+  "suggestions": {
+    "title": "Repricing Suggestions",
+    "icon": "",
+    "route": "suggestions",
+    "show": true,
+    "roles": [],
+    "order":0,
+    "parent":"cycle"
+  },
+  "account_receivables": {
+    "title": "Account Receivables",
+    "icon": "fa-file-text-o",
+    "route": "",
+    "show": true,
+    "roles": [],
+    "order": 7,
+    "parent": "root"
+  },
+  "invoices": {
+    "title": "Invoices",
+    "icon": "",
+    "route": "invoices",
+    "show": true,
+    "roles": [],
+    "order": 0,
+    "parent": "account_receivables"
+  },
+  "custom-payment-files": {
+    "title": "Transactions Request File",
+    "icon": "",
+    "route": "custom-payment-files",
+    "show": true,
+    "roles": [],
+    "order": 1,
+    "parent": "account_receivables"
+  },
+  "receive-custom-payment-files": {
+    "title": "Transactions Response File",
+    "icon": "",
+    "route": "response-custom-payment-files",
+    "show": true,
+    "roles": [],
+    "order": 2,
+    "parent": "account_receivables"
+  },
+  "tax": {
+    "title": "Tax",
+    "icon": "fa-percent",
+    "route": "",
+    "show": true,
+    "roles": [],
+    "order": 7.1,
+    "parent": "root"
+  },
+  "taxes": {
+    "title": "Rates",
+    "icon": "",
+    "route": "taxes",
+    "show": true,
+    "roles": [],
+    "order": 0,
+    "parent": "tax"
+  },
+  "tax_mapping": {
+    "title": "Mapping Rules",
+    "icon": "",
+    "route": "taxes/mapping-rules",
+    "show": true,
+    "roles": [],
+    "order": 1,
+    "parent": "tax"
+  },
+  "templates": {
+    "title": "Templates",
+    "icon": "fa-newspaper-o",
+    "route": "",
+    "show": true,
+    "roles": [],
+    "order":7.3,
+    "parent": "root"
+  },
+  "invoice_template": {
+    "title": "Invoice Template",
+    "icon": "",
+    "route": "invoice-template",
+    "show": true,
+    "roles": ["admin"],
+    "order":0,
+    "parent":"templates"
+  },
+  "email_templates": {
+    "title": "Email Templates",
+    "icon": "",
+    "route": "email_templates",
+    "show": true,
+    "roles": ["admin"],
+    "order":1,
+    "parent":"templates"
+  },
+  "reports": {
+    "title": "Reports",
+    "icon": "fa-list-alt",
+    "route": "reports",
+    "show": true,
+    "roles": [],
+    "order": 7.5,
+    "parent": "root"
+  },
+  "users": {
+    "title": "User Management",
+    "icon": "fa-user",
+    "route": "users",
+    "show": true,
+    "roles": [],
+    "order": 8,
+    "parent": "root"
+  },
+  "audit_trail": {
+    "title": "Audit Trail",
+    "icon": "fa-history",
+    "route": "audit-trail",
+    "show": true,
+    "roles": [],
+    "order": 9,
+    "parent": "root"
+  },
+  "settings": {
+    "title": "Settings",
+    "icon": "fa-cog",
+    "route": "",
+    "show": true,
+    "roles": ["admin"],
+    "order": 10,
+    "parent": "root"
+  },
+  "settings_general": {
+    "title": "General Settings",
+    "icon": "",
+    "route": "settings",
+    "show": true,
+    "roles": ["admin"],
+    "order": 0,
+    "parent": "settings"
+  },
+  "input_processors": {
+    "title": "Input Processors",
+    "icon": "",
+    "route": "input_processors",
+    "show": true,
+    "roles": ["admin"],
+    "order": 1,
+    "parent": "settings"
+  },
+  "export_generators": {
+    "title": "Export Generators",
+    "icon": "",
+    "route": "export_generators",
+    "show": true,
+    "roles": ["admin"],
+    "order": 2,
+    "parent": "settings"
+  },
+  "payment_gateways": {
+    "title": "Payment Gateways",
+    "icon": "",
+    "route": "payment_gateways",
+    "show": true,
+    "roles": ["admin"],
+    "order": 3,
+    "parent": "settings"
+  },
+  "collections": {
+    "title": "Collection",
+    "icon": "",
+    "route": "collections",
+    "show": true,
+    "roles": ["admin"],
+    "order": 4,
+    "parent": "settings"
+  },
+  "custom_fields": {
+    "title": "Custom Fields",
+    "icon": "",
+    "route": "custom_fields",
+    "show": true,
+    "roles": ["admin"],
+    "order": 6,
+    "parent": "settings"
+  },
+  "events": {
+    "title": "Events",
+    "icon": "",
+    "route": "events",
+    "show": true,
+    "roles": ["admin"],
+    "order": 7,
+    "parent": "settings"
+  }
+}
