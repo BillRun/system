@@ -265,7 +265,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	protected function getLineRate($row, $usaget, $type, $tariffCategory, $filters) {
 		if ($this->overrideRate || !isset($row[$this->getRatingField()])) {
 			$this->setRowDataForQuery($row);
-			$rate = $this->getRateByParams($row);
+			$rate = $this->getRateByParams($row, $usaget, $type, $tariffCategory, $filters);
 		} else {
 			$rate = Billrun_Factory::db()->ratesCollection()->getRef($row[$this->getRatingField()]);
 		}
