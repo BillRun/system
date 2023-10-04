@@ -1620,7 +1620,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
 	print("Updated total of " + i + " bills!")
 });
 lastConfig = runOnce(lastConfig, 'BRCD-4126', function () {
-	db.oauth_clients.updateMany({"grant_types" : null}, {$set:{"grant_types" : "client_credentials"}});
+	db.oauth_clients.updateMany({"grant_types" : null, "scope" : {"$ne":"selfcare account"}}, {$set:{"grant_types" : "client_credentials"}});
 	db.oauth_clients.updateMany({"scope" : null}, {$set:{"scope" : "global"}});
 });
 db.config.insert(lastConfig);
