@@ -496,12 +496,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 			if ($e->getCode() == "11000" ||
 				 (	$e instanceof MongoCursorException &&
 					$e->getCode() == "911" &&
-					method_exists($e,'getDocument') && ($expDoc = $e->getDocument() ) && is_array($expDoc['writeErrors']) &&
-					count(array_filter(function($werr) {
+					( method_exists($e,'getDocument') && ($expDoc = $e->getDocument())  && is_array($expDoc) && is_array($expDoc['writeErrors'])  &&
+					count(array_filter($expDoc['writeErrors'],function($werr) {
 					 return $werr['code'] != '11000';
-				},$expDoc['writeErrors'])) == 0) ) {
-				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::ALERT);
-				return $this->addToCollection($collection);
+				})) == 0 )) ) {
+					Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::ALERT);
+					return $this->addToCollection($collection);
 			}
 			return false;
 		}
@@ -548,10 +548,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 			if ($e->getCode() == "11000" ||
 				 (	$e instanceof MongoCursorException &&
 					$e->getCode() == "911" &&
-					method_exists($e,'getDocument') && ($expDoc = $e->getDocument() ) && is_array($expDoc['writeErrors']) &&
-					count(array_filter(function($werr) {
+					(method_exists($e,'getDocument') && ($expDoc = $e->getDocument())  && is_array($expDoc) && is_array($expDoc['writeErrors']) &&
+					count(array_filter($expDoc['writeErrors'],function($werr) {
 					 return $werr['code'] != '11000';
-				},$expDoc['writeErrors'])) == 0)) {
+				})) == 0 )) ) {
 				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::ALERT);
 				return $this->addToQueue($queue_data);
 			}
