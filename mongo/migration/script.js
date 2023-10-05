@@ -52,10 +52,21 @@ function runOnce(lastConfig, taskCode, callback) {
     }
     return lastConfig;
 }
+
+function _collectionSave(coll, record) {
+    if (!Object.hasOwn(record, '_id')) {
+        coll.insertOne(record);
+    } else {
+        coll.replaceOne({"_id":record._id}, record, {"upsert":true}); // upsert in case of someone save in parallel
+    }
+}
 // =============================================================================
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig	['_id'];
 // =============================================================================
+
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty().next();
+delete lastConfig['_id'];
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
 var fields = lastConfig['rates']['fields'];
@@ -160,12 +171,12 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 if(lastConfig.invoice_export) {
 	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.header) &&
 		!lastConfig.invoice_export.header) {
-			lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
+	lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
 	}
 	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.footer) &&
 		!lastConfig.invoice_export.footer) {
-			lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
-	}
+	lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+}
 }
 
 //BRCD-1229 - Input processor re-enabled when not requested
@@ -241,7 +252,7 @@ db.subscribers.find({activation_date:{$exists:0}, type:'subscriber'}).forEach(
 					activationDate = obj2.from;
 				}
 				obj2.activation_date = activationDate;
-				db.subscribers.save(obj2);
+				_collectionSave(db.subscribers, obj2);
 			}
 		);
 	}
@@ -390,7 +401,7 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 			}
 		}
 		
-		db.subscribers.save(obj);
+		_collectionSave(db.subscribers, obj);
 	}
 );
 // BRCD-1552 collection
@@ -510,7 +521,7 @@ subscribers.forEach(function (sub) {
 	services.forEach(function (service) {
 		if (service.quantity) {
 			service.quantity = Number(service.quantity);
-			db.subscribers.save(sub);
+			_collectionSave(db.subscribers, sub);
 		}
 	});
 });
@@ -602,7 +613,7 @@ if (lastConfig['taxation']['tax_type'] == 'vat') {
 		params: {}
 	};
 	
-	db.taxes.insert(vat);
+	db.taxes.insertOne(vat);
 }
 
 //BRCD-1834 : Add tax field
@@ -785,8 +796,8 @@ db.subscribers.getIndexes().forEach(function(index){
 // Migrate audit records in log collection into separated audit collection
 db.log.find({"source":"audit"}).forEach(
 	function(obj) {
-		db.audit.save(obj);
-		db.log.remove(obj._id);
+		db.audit.insertOne(obj);
+		db.log.deleteOne({_id:obj._id});
 	}
 );
 
@@ -899,7 +910,7 @@ db.discounts.find({"discount_subject":{$exists: true}}).forEach(
 		delete obj.discount_type;
 		delete obj.discount_subject;
 		delete obj.prorated;
-		db.discounts.save(obj);
+		_collectionSave(db.discounts, obj);
 	}
 )
 
@@ -909,7 +920,7 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	plan.prorated_end = plan.prorated;
 	plan.prorated_termination = plan.prorated;
 	delete plan.prorated;
-	db.plans.save(plan);
+	_collectionSave(db.plans, plan);
 });
 // BRCD-1241: convert events to new structure
 if (typeof lastConfig.events !== 'undefined') {
@@ -1060,7 +1071,7 @@ services.forEach(function (service) {
 				delete balance['balance']['groups'];
 			}
 			balance['updated_by_script'] = ISODate();
-			db.balances.save(balance);
+			_collectionSave(db.balances, balance);
 		});
 	});
 });
@@ -1148,7 +1159,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-2791', function () {
 			if (typeof line['calc_time'] === "number") {
 				line['calc_time'] = new Date(line['calc_time'] * 1000);
 			}
-			db.queue.save(line);
+			_collectionSave(db.queue, line);
 		});
 });
 
@@ -1260,7 +1271,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
 				}
 			}
 			//                printjson(obj); // debug log
-			db.subscribers.save(obj);
+			_collectionSave(db.subscribers, obj);
 		}
 	);
 });
@@ -1275,7 +1286,7 @@ db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach
 			obj['charge'] = {};
 		}
 		obj['charge']['not_before'] = obj['due_date'];
-		db.bills.save(obj);
+		_collectionSave(db.bills, obj);
 	}
 )
 db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
@@ -1284,7 +1295,7 @@ db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEa
 			obj['charge'] = {};
 		}
 		obj['charge']['not_before'] = obj['due_date'];
-		db.billrun.save(obj);
+		_collectionSave(db.billrun, obj);
 	}
 )
 
@@ -1319,7 +1330,7 @@ bills.forEach(function (bill) {
 		}
 
 		bill[currentBillsKey] = relatedBills;
-		db.bills.save(bill);
+		_collectionSave(db.bills, bill);
 	}
 });
 
@@ -1338,12 +1349,12 @@ lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
     db.createCollection("oauth_jwt");
 
     // create indexes
-    db.oauth_clients.ensureIndex({'client_id': 1 });
-    db.oauth_access_tokens.ensureIndex({'access_token': 1 });
-    db.oauth_authorization_codes.ensureIndex({'authorization_code': 1 });
-    db.oauth_refresh_tokens.ensureIndex({'refresh_token': 1 });
-    db.oauth_users.ensureIndex({'username': 1 });
-    db.oauth_scopes.ensureIndex({'oauth_scopes': 1 });
+    db.oauth_clients.createIndex({'client_id': 1 });
+    db.oauth_access_tokens.createIndex({'access_token': 1 });
+    db.oauth_authorization_codes.createIndex({'authorization_code': 1 });
+    db.oauth_refresh_tokens.createIndex({'refresh_token': 1 });
+    db.oauth_users.createIndex({'username': 1 });
+    db.oauth_scopes.createIndex({'oauth_scopes': 1 });
     
     var _obj;
     for (var secretKey in lastConfig.shared_secret) {
@@ -1358,7 +1369,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
             "scope": 'global',
             "user_id": null
         };
-        db.oauth_clients.insert(_obj)
+        db.oauth_clients.insertOne(_obj)
     }
 
 })
@@ -1414,7 +1425,7 @@ runOnce(lastConfig, 'BRCD-3307', function () {
 			function (obj) {
 				obj['urt'] = obj['balance_effective_date'];
 				delete obj['balance_effective_date'];
-				db.bills.save(obj);
+				_collectionSave(db.bills, obj);
 			}
 	)
 });
@@ -1422,7 +1433,7 @@ runOnce(lastConfig, 'BRCD-3307', function () {
 lastConfig = runOnce(lastConfig, 'BRCD-3806', function () {
     //Suggestions Collection
     db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculation_type_1_estimated_billrun_1");
-	db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
+	db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
 });
 
 // BRCD-3618 configure full_calculation date field
@@ -1517,7 +1528,7 @@ runOnce(lastConfig, 'BRCD-3421', function () {
     if (!_insertWebhooks || !_insertWebhooks.length) {
         return;
     }
-    db.webhooks.insert(_insertWebhooks);
+    db.webhooks.insertMany(_insertWebhooks);
 });
 db.lines.createIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 //BRCD-2336: Can't "closeandnew" a prepaid bucket
@@ -1593,13 +1604,13 @@ lastConfig = runOnce(lastConfig, 'BRCD-4010', function () {
 	}).forEach(
 		function(account) {
 			account.payment_gateway.active.instance_name = account.payment_gateway.active.name;
-			db.subscribers.save(account);
+			_collectionSave(db.subscribers, account);
 		}
 	);
 });
 
 lastConfig = runOnce(lastConfig, 'BRCD-4172', function () {
-	db.bills.ensureIndex({'urt': 1 }, { unique: false, background: true});
+	db.bills.createIndex({'urt': 1 }, { unique: false, background: true});
 })
 
 // BRCD-4102 Migrate all cancel bills to be 
@@ -1752,9 +1763,9 @@ lastConfig = runOnce(lastConfig, 'BRCD-4266', function () {
 	print("DONE\tBRCD-4266");
 });
 
-db.config.insert(lastConfig);
-db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
+db.config.insertOne(lastConfig);
+db.lines.createIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.dropIndex("aid_1_urt_1");
-db.rebalance_queue.ensureIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});
+db.rebalance_queue.createIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});
 db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
-db.rebalance_queue.ensureIndex({"aid": 1, "billrun_key": 1}, {unique: false, "background": true});
+db.rebalance_queue.createIndex({"aid": 1, "billrun_key": 1}, {unique: false, "background": true});
