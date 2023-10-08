@@ -7,9 +7,7 @@
  */
 
 /**
- * Billapi unique get operation
- * Retrieve list of entities while the key or name field is unique
- * This is accounts unique get
+ * Billapi get operation for Balances
  *
  * @package  Billapi
  * @since    5.3
