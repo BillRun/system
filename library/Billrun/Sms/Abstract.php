@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing sending Sms alerts
+ * Billing sending SMS Abstract
  *
  * @package  Sms
  * @since    5.13

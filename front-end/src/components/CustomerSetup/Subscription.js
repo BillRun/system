@@ -73,7 +73,7 @@ class Subscription extends Component {
     const { subscription } = this.state;
     const type = this.getServiceType(serviceName);
     const from = getItemDateValue(subscription, 'from').format('YYYY-MM-DD');
-    const to = getItemDateValue(subscription, 'to', moment().add(100, 'years')).toISOString();
+    const to = getItemDateValue(subscription, 'to').format('YYYY-MM-DD');
     const newService = Immutable.Map({ name: serviceName, from, to });
     const originServices = originSubscription.get('services', Immutable.List()) || Immutable.List();
     const existingService = originServices.find(originService => originService.get('name', '') === serviceName);
@@ -86,7 +86,7 @@ class Subscription extends Component {
         return newService.setIn(['ui_flags', 'balance_period'], true);
       }
       default: {
-        return existingService || newService;
+        return newService;
       }
     }
   }
@@ -98,7 +98,7 @@ class Subscription extends Component {
     const subscriptionToSave = compose(
       this.removeServiceUiFlags,
       // Now update services dates runs of sub. From field change,
-      // can be uncommet to be shure that servises date are correct if bugs will be found
+      // can be uncomment to be sure that services date are correct if bugs will be found
       // this.updateServicesDates,
     )(subscription);
 
@@ -149,7 +149,7 @@ class Subscription extends Component {
     }
     const servicesNames = Immutable.Set(services.split(','));
     const originServices = subscription.get('services', Immutable.List()) || Immutable.List();
-    const originServicesNames = Immutable.Set(originServices.map(originServic => originServic.get('name', '')));
+    const originServicesNames = Immutable.Set(originServices.map(originService => originService.get('name', '')));
 
     const addedServices = servicesNames.filter(item => !originServicesNames.has(item));
     const removedServices = originServicesNames.filter(item => !servicesNames.has(item));
@@ -313,27 +313,34 @@ class Subscription extends Component {
         const newService = service.getIn(['ui_flags', 'serviceId'], '') === '';
 
         switch (serviceType) {
-          case 'normal': // New -> update to SUB from.
-          return (newService) ? service.set('from', from) : service;
+          case 'normal': { // New -> update to SUB from if its less.
+            if (newService) {
+              const serviceFrom = service.get('from', from);
+              if (moment(serviceFrom).isBefore(from, 'days')) {
+                return service.set('from', from);
+              }
+            }
+            return service;
+          }
 
           case 'quantitative': { // New or Existing with change -> update to SUB from.
-          const existingServiceWithChange = existingService && existingService.get('quantity', '') !== service.get('quantity', '');
-          return (newService || existingServiceWithChange) ? service.set('from', from) : service;
-        }
+            const existingServiceWithChange = existingService && existingService.get('quantity', '') !== service.get('quantity', '');
+            return (newService || existingServiceWithChange) ? service.set('from', from) : service;
+          }
 
-        case 'balance_period': {
-          const existingServiceWithChange = existingService && !moment(existingService.get('from', '')).isSame(moment(service.get('from', '')), 'days');
-          const incorrectForm = moment(service.get('from', '')).isBefore(from, 'days');
-          // New or Existing with change and incorrect FROM -> Update from to SUB from
-          return ((newService || existingServiceWithChange) && incorrectForm) ? service.set('from', from) : service;
-        }
+          case 'balance_period': {
+            const existingServiceWithChange = existingService && !moment(existingService.get('from', '')).isSame(moment(service.get('from', '')), 'days');
+            const incorrectForm = moment(service.get('from', '')).isBefore(from, 'days');
+            // New or Existing with change and incorrect FROM -> Update from to SUB from
+            return ((newService || existingServiceWithChange) && incorrectForm) ? service.set('from', from) : service;
+          }
 
-        default:
-        return service;
-      }
+          default:
+            return service;
+        }
+      });
     });
-  });
-}
+  }
 
   removeSubscriptionField = (path, value) => {
     this.setState(prevState => ({ subscription: prevState.subscription.deleteIn(path, value) }));
@@ -504,12 +511,19 @@ class Subscription extends Component {
     );
   }
 
+  getServiceStartMinDate = () => {
+    const { subscription } = this.state;
+    const subscriptionFrom = getItemDateValue(subscription, 'from');
+    const subscriptionActivation = getItemDateValue(subscription, 'activation_date', subscriptionFrom);
+    return moment.max(subscriptionFrom, subscriptionActivation);
+  }
+
   render() {
     const { progress, subscription } = this.state;
     const { revisions, mode, allServices, subscription: originSubscription } = this.props;
     const allowEdit = ['update', 'clone', 'closeandnew', 'create'].includes(mode);
     const services = subscription.get('services', Immutable.List()) || Immutable.List();
-    const subscriptionFrom = getItemDateValue(subscription, 'from');
+    const minStartDate = this.getServiceStartMinDate();
     const originServices = originSubscription.get('services', Immutable.List()) || Immutable.List();
 
     return (
@@ -538,7 +552,7 @@ class Subscription extends Component {
               originSubscriptionServices={originServices}
               servicesOptions={allServices}
               editable={allowEdit}
-              subscriptionFrom={subscriptionFrom}
+              minStartDate={minStartDate}
               onChangeService={this.onChangeServiceDetails}
               onRemoveService={this.onRemoveService}
               onAddService={this.onAddService}

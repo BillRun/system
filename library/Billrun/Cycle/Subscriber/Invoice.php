@@ -574,7 +574,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->data['totals']['grouping'][$index]['after_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['after_taxes'], 0) + Billrun_Util::getIn($row, 'final_charge', 0);
 		// Sum extra grouping fields
 		foreach ($this->groupingSumExtraFields as $field) {
-			Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field, Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index][$field], 0) + Billrun_Util::getIn($row, $field, 0));
+			Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field, Billrun_Util::getIn($this->data['totals']['grouping'][$index], $field, 0) + Billrun_Util::getIn($row, $field, 0));
 		}		
 	}
 
