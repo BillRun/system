@@ -41,6 +41,12 @@ export default class SubscriptionServicesDetails extends Component {
     }
   }
 
+  onChangePeriodEndDate = (index, newDate) => {
+    if (newDate) {
+      this.props.onChangeService(index, 'to', newDate.format('YYYY-MM-DD'));
+    }
+  }
+
   onClickRemoveCloneService = (index) => {
     if (index !== -1) {
       this.props.onRemoveService(index);
