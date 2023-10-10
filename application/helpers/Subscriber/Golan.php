@@ -788,7 +788,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		else {
 			$plan = $this->getPlan();
 		}
-
+		$offerId = empty($offer['id']) ? $this->offer_id : $offer['id'];
 		$flat_entry = array(
 			'aid' => $this->aid,
 			'sid' => $this->sid,
@@ -805,7 +805,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'plan' => $plan->getName(),
 			'plan_ref' => $plan->createRef(),
 			'process_time' => date(Billrun_Base::base_dateformat),
-			'offer_id' => $this->offer_id,
+			'offer_id' => $offerId,
 		);
 		if (!empty($offer) && isset($offer['start_date']) && isset($offer['end_date'])) {
 			$flat_entry['start_date'] = $offer['start_date'];
@@ -815,7 +815,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$flat_entry['unique_plan_id'] = self::generatePlanUniqueId($offer['id'], $offer['start_date']);
 		}
 		$flat_entry['total_aprice'] = $flat_entry['aprice_no_vat'] + $flat_entry['aprice'];
-		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $flat_entry['type'] . $billrun_end_time . $flat_entry['plan'] . $flat_entry['fraction']);
+		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $flat_entry['type'] . $billrun_end_time . $flat_entry['plan'] . $flat_entry['fraction'] . $offerId);
 		$flat_entry['stamp'] = $stamp;
 		if ($retEntity) {
 			return new Mongodloid_Entity($flat_entry);
