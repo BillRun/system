@@ -576,8 +576,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			
 			$servicePeriod = $serviceObject->get("balance_period");
-			if ($servicePeriod && $servicePeriod !== "default" && isset($service['to']->sec)) {
-				$sortKey = (int) $service['to']->sec;
+			
+			$sortField = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.serviceFetchSortField', 'to');
+			if ($servicePeriod && $servicePeriod !== "default" && isset($service[$sortField]->sec)) {
+				$sortKey = (int) $service[$sortField]->sec;
 			} else {
 				$sortKey = (int) Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getBillrunKeyByTimestamp($time)); // end of cycle
 			}
