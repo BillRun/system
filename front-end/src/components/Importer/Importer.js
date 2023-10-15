@@ -279,6 +279,7 @@ class Importer extends Component {
       '__UPDATER__',
       '__CSVROW__',
       '__ERRORS__',
+      'price_service',
       'price_plan',
       'price_from',
       'price_to',
@@ -287,17 +288,25 @@ class Importer extends Component {
       'usage_type_value',
       'usage_type_unit',
     ];
-    const taxFields = ['tax__type', 'tax__taxation','tax__custom_logic','tax__custom_tax'];
+    const taxFields = ['tax__type', 'tax__taxation', 'tax__custom_logic', 'tax__custom_tax'];
     const roundingRulesFields = ['rounding_type', 'rounding_decimals'];
     return combinedRate.withMutations((combinedRateWithMutations) => {
       // Check price field, if we have pricing or percentage in import but missing pricing data -> return error
-      if (rateLine.get('rates.percentage', '') !== '' && rateLine.get('price_plan', 'BASE') !== 'BASE') {
+      const planName = rateLine.get('price_plan', 'BASE');
+      if (rateLine.get('rates.plans.percentage', '') !== '' && !['BASE', '', null].includes(planName)) {
         const usageType = rateLine.get('usage_type_value', '_KEEP_SOURCE_USAGE_TYPE_');
-        const planName = rateLine.get('price_plan', 'BASE');
-        const ratePath = ['rates', usageType, planName, 'percentage'];
-        const pricePercentage = parseFloat(rateLine.get('rates.percentage', 1));
+        const ratePath = ['rates', usageType, 'plans', planName, 'percentage'];
+        const pricePercentage = parseFloat(rateLine.get('rates.plans.percentage', 1));
         combinedRateWithMutations.setIn(ratePath, pricePercentage);
-      } else if (rateLine.get('price_value', '') !== '') {
+      }
+      const serviceName = rateLine.get('price_service', 'BASE');
+      if (rateLine.get('rates.services.percentage', '') !== '' && !['BASE', '', null].includes(serviceName)) {
+        const usageType = rateLine.get('usage_type_value', '_KEEP_SOURCE_USAGE_TYPE_');
+        const ratePath = ['rates', usageType, 'services', serviceName, 'percentage'];
+        const pricePercentage = parseFloat(rateLine.get('rates.services.percentage', 1));
+        combinedRateWithMutations.setIn(ratePath, pricePercentage);
+      }
+      if (rateLine.get('price_value', '') !== '') {
         if (rateLine.has('price_from')
           && rateLine.has('price_to')
           && rateLine.has('price_interval')
@@ -307,7 +316,48 @@ class Importer extends Component {
           )
         ) {
           const usageType = rateLine.get('usage_type_value', '_KEEP_SOURCE_USAGE_TYPE_');
-          const planName = rateLine.get('price_plan', 'BASE');
+          if (['BASE', '', null].includes(planName) && ['BASE', '', null].includes(serviceName)) {
+            const ratePath = ['rates', usageType, 'product', 'BASE', 'rate'];
+            const priceRate = Immutable.Map({
+              from: rateLine.get('price_from', 0),
+              to: rateLine.get('price_to', 'UNLIMITED'),
+              interval: rateLine.get('price_interval', 0),
+              price: rateLine.get('price_value', 0),
+              uom_display: Immutable.Map({
+                range: rateLine.get('usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+                interval: rateLine.get('usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+              }),
+            });
+            combinedRateWithMutations.updateIn(ratePath, Immutable.List(), rates => rates.push(priceRate));
+          }
+          if (!['BASE', '', null].includes(planName)) {
+            const ratePath = ['rates', usageType, 'plans', planName, 'rate'];
+            const priceRate = Immutable.Map({
+              from: rateLine.get('price_from', 0),
+              to: rateLine.get('price_to', 'UNLIMITED'),
+              interval: rateLine.get('price_interval', 0),
+              price: rateLine.get('price_value', 0),
+              uom_display: Immutable.Map({
+                range: rateLine.get('usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+                interval: rateLine.get('usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+              }),
+            });
+            combinedRateWithMutations.updateIn(ratePath, Immutable.List(), rates => rates.push(priceRate));
+          }
+          if (!['BASE', '', null].includes(serviceName)) {
+            const ratePath = ['rates', usageType, 'services', serviceName, 'rate'];
+            const priceRate = Immutable.Map({
+              from: rateLine.get('price_from', 0),
+              to: rateLine.get('price_to', 'UNLIMITED'),
+              interval: rateLine.get('price_interval', 0),
+              price: rateLine.get('price_value', 0),
+              uom_display: Immutable.Map({
+                range: rateLine.get('usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+                interval: rateLine.get('usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+              }),
+            });
+            combinedRateWithMutations.updateIn(ratePath, Immutable.List(), rates => rates.push(priceRate));
+          }
           const ratePath = ['rates', usageType, planName, 'rate'];
           const priceRate = Immutable.Map({
             from: rateLine.get('price_from', 0),
@@ -407,6 +457,9 @@ class Importer extends Component {
         .delete('tax__custom_tax')
         .delete('tax__taxation')
         .delete('rates.percentage')
+        .delete('rates.services.percentage')
+        .delete('rates.plans.percentage')
+        .delete('price_service')
         .delete('price_plan')
         .delete('price_from')
         .delete('price_to')

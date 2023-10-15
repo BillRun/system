@@ -113,6 +113,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 * make the calculation
 	 */
 	public function updateRow($row) {
+		try {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$usaget = $row['usaget'];
 		$type = $row['type'];
@@ -135,9 +136,14 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 				}
 			}
 		}
-		
+
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log("Failed to update usage row with the following error: " . $e->getMessage(), Zend_Log::ALERT);
+			Billrun_Factory::log()->log($e->getTrace(), Zend_Log::DEBUG);
+			return false;
+		}
 	}
 	
 	/**

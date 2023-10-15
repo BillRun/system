@@ -245,7 +245,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 
 			if ($this->processLines() === FALSE) {
-				Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
+				Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ALERT);
 				return FALSE;
 			}
 			

@@ -84,7 +84,7 @@ class Customer extends Component {
 
   renderPaymentGatewayLabel = () => {
     const { customer, supportedGateways } = this.props;
-    const customerPgName = customer.getIn(['payment_gateway', 'active', 'instance_name'], '');
+    let customerPgName = customer.getIn(['payment_gateway', 'active', 'instance_name'], '');
     if (!customerPgName) {
       customerPgName = customer.getIn(['payment_gateway', 'active', 'name'], '');
     }

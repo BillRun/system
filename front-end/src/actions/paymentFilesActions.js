@@ -4,7 +4,12 @@ import { setFormModalError } from './guiStateActions/pageActions';
 import { getList, clearList } from '@/actions/listActions';
 import { clearItems, setListPage, clearNextPage } from '@/actions/entityListActions';
 import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '../common/Api';
-import { runningPaymentFilesListQuery, sendGenerateNewFileQuery } from '@/common/ApiQueries';
+import {
+  runningPaymentFilesListQuery,
+  runningResponsePaymentFilesListQuery,
+  sendGenerateNewFileQuery,
+  sendTransactionsReceiveFileQuery,
+} from '@/common/ApiQueries';
 
 export const actions = {
   SET_FILE_TYPE: 'SET_FILE_TYPE',
@@ -12,30 +17,44 @@ export const actions = {
   CLEAR: 'CLEAR',
 };
 
-export const setFileType = value => ({
+export const setFileType = (value, source) => ({
   type: actions.SET_FILE_TYPE,
   value,
+  source,
 });
 
-export const setPaymentGateway = value => ({
+export const setPaymentGateway = (value, source) => ({
   type: actions.SET_PAYMENT_GATEWAY,
   value,
+  source,
 });
 
 export const clear = () => ({
   type: actions.CLEAR,
 });
 
-export const getRunningPaymentFiles = (paymentGateway, fileType) => (dispatch) => 
-  dispatch(getList('payment_running_files_list', runningPaymentFilesListQuery(paymentGateway, fileType)));
+export const getRunningPaymentFiles = (paymentGateway, fileType, source) => (dispatch) => 
+  dispatch(getList('payment_running_files_list', runningPaymentFilesListQuery(paymentGateway, fileType, source)));
 
 export const cleanRunningPaymentFiles = () => (dispatch) => 
   dispatch(clearList('payment_running_files_list'));
+
+export const getRunningResponsePaymentFiles = (paymentGateway, fileType, source) => (dispatch) => 
+    dispatch(getList('response_payment_running_files_list', runningResponsePaymentFilesListQuery(paymentGateway, fileType, source)));
+
+export const cleanRunningResponsePaymentFiles = () => (dispatch) => 
+  dispatch(clearList('response_payment_running_files_list'));
 
 export const cleanPaymentFilesTable = () => (dispatch) => {
   dispatch(clearItems('payments_files'));
   dispatch(setListPage('payments_files', 0));
   dispatch(clearNextPage('payments_files'));
+}
+
+export const cleanResponsePaymentFilesTable = () => (dispatch) => {
+  dispatch(clearItems('payments_transactions_response_files'));
+  dispatch(setListPage('payments_transactions_response_files', 0));
+  dispatch(clearNextPage('payments_transactions_response_files'));
 }
 
 export const validateGeneratePaymentFile = (paymentFile) => (dispatch) => {
@@ -62,6 +81,17 @@ export const validateGeneratePaymentFile = (paymentFile) => (dispatch) => {
 export const sendGenerateNewFile = (paymentGateway, fileType, data) => (dispatch) => {
   const query = sendGenerateNewFileQuery(paymentGateway, fileType, data);
   const successMessage = 'File creation initiated';
+  return apiBillRun(query)
+    .then(success => dispatch(apiBillRunSuccessHandler(success, successMessage)))
+    .catch(error => {
+      dispatch(apiBillRunErrorHandler(error, 'Error'));
+      return Promise.reject();
+    });
+}
+
+export const sendTransactionsReceiveFile = (paymentGateway, fileType, file) => (dispatch) => {
+  const query = sendTransactionsReceiveFileQuery(paymentGateway, fileType, file);
+  const successMessage = 'Transaction response file was successfully uploaded';
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success, successMessage)))
     .catch(error => {

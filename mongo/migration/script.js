@@ -150,8 +150,14 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 //-------------------------------------------------------------------
 // BRCD-1278 - backward support for new template
 if(lastConfig.invoice_export) {
+	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.header) &&
+		!lastConfig.invoice_export.header) {
 	lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
+	}
+	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.footer) &&
+		!lastConfig.invoice_export.footer) {
 	lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+}
 }
 
 //BRCD-1229 - Input processor re-enabled when not requested
@@ -1181,10 +1187,10 @@ lastConfig = runOnce(lastConfig, 'BRCD-3227', function () {
     lastConfig['rates']['fields'] = fields;
 });
 // BRCD-2888 -adjusting config to the new invoice templates
-if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.header)) {
+if(lastConfig.invoice_export && /\/header\/header_tpl\.html$/.test(lastConfig.invoice_export.header)) {
 	lastConfig.invoice_export.header = "/header/header_tpl.phtml";
 }
-if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.footer)) {
+if(lastConfig.invoice_export && /\/footer\/footer_tpl\.html$/.test(lastConfig.invoice_export.footer)) {
 	lastConfig.invoice_export.footer = "/footer/footer_tpl.phtml";
 }
 // BRCD-2888 -adjusting config to the new invoice templates
@@ -1570,11 +1576,53 @@ lastConfig = runOnce(lastConfig, 'BRCD-3890', function () {
 	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'charges');
 });
 
-lastConfig = runOnce(lastConfig, 'BRCD-4126', function () {
-	db.oauth_clients.updateMany({"grant_types" : null}, {$set:{"grant_types" : "client_credentials"}});
-	db.oauth_clients.updateMany({"scope" : null}, {$set:{"scope" : "global"}});
+// BRCD-4010 : Set default value for missing instance_name
+lastConfig = runOnce(lastConfig, 'BRCD-4010', function () {
+	db.subscribers.find({
+		'payment_gateway.active': {$exists: 1},
+		'payment_gateway.active.instance_name': {$exists: 0},
+		type: 'account'
+	}).forEach(
+		function(account) {
+			account.payment_gateway.active.instance_name = account.payment_gateway.active.name;
+			db.subscribers.save(account);
+		}
+	);
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-4172', function () {
+	db.bills.ensureIndex({'urt': 1 }, { unique: false, background: true});
+})
+
+// BRCD-4102 Migrate all cancel bills to be 
+lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
+	var cancelBills = db.bills.find({cancel:{$exists:1}, urt:ISODate("1970-01-01T00:00:00.000Z")});
+	var bulkUpdate = [];
+	var maxWriteBatchSize =db.runCommand(
+		{
+		  hello: 1
+		}
+	 )['maxWriteBatchSize'];
+	print("Starts to update " + cancelBills.toArray().length + " bills")
+	for (var i=0; i<cancelBills.toArray().length; i++) {
+	    var update = { "updateOne" : {
+	        "filter" : {"_id" : cancelBills[i]['_id']},
+	        "update" :  {"$set" : {"urt" : cancelBills[i]['_id'].getTimestamp()}}
+	    }};
+	    bulkUpdate.push(update);
+		if (i!=0 && i%maxWriteBatchSize==0) {
+			db.bills.bulkWrite(bulkUpdate);
+			print("Updated " + maxWriteBatchSize + " cancellation bills, continue..")
+			bulkUpdate = []
+		}
+	}
+	db.bills.bulkWrite(bulkUpdate);
+	print("Updated total of " + i + " bills!")
+});
+lastConfig = runOnce(lastConfig, 'BRCD-4126', function () {
+	db.oauth_clients.updateMany({"grant_types" : null, "scope" : {"$ne":"selfcare account"}}, {$set:{"grant_types" : "client_credentials"}});
+	db.oauth_clients.updateMany({"scope" : null}, {$set:{"scope" : "global"}});
+});
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.dropIndex("aid_1_urt_1");

@@ -51,7 +51,7 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 		if (empty($this->deactivation)  ) {
 			return null;
 		}
-		$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
+		$endProration =  $this->proratedEnd && !$this->isTerminated($cycle) || ($this->proratedTermination && $this->isTerminated($cycle));
 		// get a refund for a cancelled plan paid upfront
 		if ($this->activation >= $cycle->start() //No refund need as it  started  in the current cycle
 			 || 
