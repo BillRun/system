@@ -152,12 +152,12 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 if(lastConfig.invoice_export) {
 	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.header) &&
 		!lastConfig.invoice_export.header) {
-	lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
+			lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
 	}
 	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.footer) &&
 		!lastConfig.invoice_export.footer) {
-	lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
-}
+			lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+	}
 }
 
 //BRCD-1229 - Input processor re-enabled when not requested
@@ -1623,6 +1623,30 @@ lastConfig = runOnce(lastConfig, 'BRCD-4126', function () {
 	db.oauth_clients.updateMany({"grant_types" : null, "scope" : {"$ne":"selfcare account"}}, {$set:{"grant_types" : "client_credentials"}});
 	db.oauth_clients.updateMany({"scope" : null}, {$set:{"scope" : "global"}});
 });
+
+// BRCD-4217 Migrate all rejection bills urt
+lastConfig = runOnce(lastConfig, 'BRCD-4217', function () {
+	print("BRCD-4217 - Migrating rejection bills urt..")
+	var rejectionBills = db.bills.find({rejection:true, urt:ISODate("1970-01-01T00:00:00.000Z")});
+	var bulkUpdate = [];
+	var maxWriteBatchSize = 1000;
+	print("Starts to update " + rejectionBills.toArray().length + " bills")
+	for (var i=0; i<rejectionBills.toArray().length; i++) {
+	    var update = { "updateOne" : {
+	        "filter" : {"_id" : rejectionBills[i]['_id']},
+	        "update" :  {"$set" : {"urt" : rejectionBills[i]['_id'].getTimestamp()}}
+	    }};
+	    bulkUpdate.push(update);
+		if (i!=0 && i%maxWriteBatchSize==0) {
+			db.bills.bulkWrite(bulkUpdate);
+			print("Updated " + maxWriteBatchSize + " rejection bills, continue..")
+			bulkUpdate = []
+		}
+	}
+	db.bills.bulkWrite(bulkUpdate);
+	print("Updated total of " + i + " bills!")
+});
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.dropIndex("aid_1_urt_1");

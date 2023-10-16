@@ -1701,7 +1701,34 @@
 	},
 	"to" : "time*2172-03-09T14:37:38Z",
 	"creation_time" : "time*2020-03-10T00:00:00Z"
+},
+{
+
+	"from" : "time*2020-09-27T21:00:00Z",
+	"name" : "CUSTOM_CYCL_NEW_STRUCT",
+	"price" : [
+		{
+			"from" : 0,
+			"to" : "UNLIMITED",
+			"price" : 10
+		}
+	],
+	"description" : "CUSTOM_CYCL_NEW_STRUCT",
+	"prorated" : false,
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	],
+	"recurrence" : {
+		"frequency" : 1,
+		"start" : 1
+	},
+	"to" : "time*2172-09-27T20:02:39Z",
+	"creation_time" : "time*2020-09-27T21:00:00Z"
 }
+
 
 
 

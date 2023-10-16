@@ -11310,10 +11310,64 @@
 				"creation_time" : "time*2023-03-09T00:00:00Z",
 				"activation_date" : "time*2023-03-09T00:00:00Z",
 				"plan_deactivation" : "time*2172-03-09T15:25:13Z"
+				},
+ 
+
+		{
+			
+			"from" : "time*2020-09-26T21:00:00Z",
+			"aid" : 4237,
+			"invoice_language" : "gr_CY",
+			"firstname" : "yossi",
+			"lastname" : "test",
+			"email" : "test@gmail.com",
+			"country" : "Israel",
+			"address" : "hshalom 7",
+			"zip_code" : "123ab",
+			"payment_gateway" : "",
+			"salutation" : "",
+			"invoice_shipping_method" : "email",
+			"invoice_detailed" : false,
+			"invoice_message" : "",
+			"building_name" : "",
+			"province" : "",
+			"street" : "",
+			"house_number" : "",
+			"apartment" : "",
+			"city" : "",
+			"type" : "account",
+			"to" : "time*2172-09-27T20:03:20Z",
+			"creation_time" : "time*2023-09-26T21:00:00Z"
+		},
+		{
+
+			"from" : "time*2020-09-26T21:00:00Z",
+			"aid" : 4237,
+			"sid" : 42371,
+			"plan" : "AOK",
+			"services" : [
+				{
+					"name" : "CUSTOM_CYCL_NEW_STRUCT",
+					"from" : "time*2020-09-26T21:00:00Z",
+					"to" : "time*2023-09-27T19:03:37Z",
+					"service_id" : "1778218629084055",
+					"creation_time" : "time*2023-09-27T19:03:55.537Z"
 				}
-
-
-
+			],
+			"play" : "Default",
+			"firstname" : "yossi",
+			"lastname" : "test",
+			"address" : "hshalom 7",
+			"country" : "Israel",
+			"contract_dates" : [ ],
+			"type" : "subscriber",
+			"plan_activation" : "time*2020-09-26T21:00:00Z",
+			"to" : "time*2172-09-27T20:03:55Z",
+			"deactivation_date" : "time*2172-09-27T20:03:55Z",
+			"activation_date" : "time*2020-09-26T21:00:00Z",
+			"creation_time" : "time*2020-09-26T21:00:00Z",
+				"plan_deactivation" : "time*2172-09-27T20:03:55Z"
+			}
 
 
 			]
