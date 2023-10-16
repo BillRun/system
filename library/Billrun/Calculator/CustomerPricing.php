@@ -336,7 +336,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array_merge(parent::getPossiblyUpdatedFields(), array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroups', 'over_arate', 'over_group', 'in_group', 'in_arate', 'rates', 'out_group'));
+		return array_merge(parent::getPossiblyUpdatedFields(), array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroups', 'over_arate', 'over_group', 'in_group', 'in_arate', 'rates', 'out_group', 'cf'));
 	}
 
 	public function getPricingField() {
