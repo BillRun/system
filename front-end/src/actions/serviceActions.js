@@ -9,6 +9,8 @@ import {
   convertServiceBalancePeriodToObject,
   convertServiceBalancePeriodToString,
   getConfig,
+  convertToOldRecurrence,
+  convertToNewRecurrence,
 } from '@/common/Util';
 import {
   usageTypesDataSelector,
@@ -78,7 +80,8 @@ const convertService = (getState, service, convertToBaseUnit, toSend) => {
   const usageTypesData = usageTypesDataSelector(state);
   const propertyTypes = propertyTypeSelector(state);
   const serviceIncludes = getPlanConvertedIncludes(propertyTypes, usageTypesData, service, convertToBaseUnit); // eslint-disable-line max-len
-  return service.withMutations((itemWithMutations) => {
+  const serviceWithNewRecurrence = convertToNewRecurrence(service);
+  return serviceWithNewRecurrence.withMutations((itemWithMutations) => {
     if (!serviceIncludes.isEmpty()) {
       itemWithMutations.set('include', serviceIncludes);
     }
@@ -103,11 +106,12 @@ const convertService = (getState, service, convertToBaseUnit, toSend) => {
     if (!rates.isEmpty()) {
       itemWithMutations.set('rates', rates);
     }
+    // itemWithMutations = convertToNewRecurrence(itemWithMutations);
   });
 };
 
 export const saveService = (service, action) => (dispatch, getState) => {
-  const convertedService = convertService(getState, service, true, true);
+  const convertedService = convertToOldRecurrence(convertService(getState, service, true, true));
   return dispatch(saveEntity('services', convertedService, action));
 };
 

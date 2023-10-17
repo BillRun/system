@@ -9,6 +9,8 @@ import {
   getPlanConvertedPpThresholds,
   getPlanConvertedNotificationThresholds,
   getPlanConvertedIncludes,
+  convertToOldRecurrence,
+  convertToNewRecurrence,
 } from '@/common/Util';
 import {
   usageTypesDataSelector,
@@ -117,7 +119,8 @@ const convertPlan = (getState, plan, convertToBaseUnit) => {
   const planIncludes = !isPrepaidPlan
     ? getPlanConvertedIncludes(propertyTypes, usageTypesData, plan, convertToBaseUnit)
     : null;
-  return plan.withMutations((itemWithMutations) => {
+  const planWithNewRecurrence = convertToNewRecurrence(plan);
+  return planWithNewRecurrence.withMutations((itemWithMutations) => {
     itemWithMutations.set('rates', rates);
     if (isPrepaidPlan) {
       if (!ppThresholds.isEmpty()) {
@@ -129,18 +132,19 @@ const convertPlan = (getState, plan, convertToBaseUnit) => {
     } else if (!planIncludes.isEmpty()) {
       itemWithMutations.set('include', planIncludes);
     }
-    if (!itemWithMutations.hasIn(['recurrence', 'frequency'])) {
-      let frequency = '';
-      const periodicity = itemWithMutations.getIn(['recurrence', 'periodicity'], '');
-      if (periodicity === 'month') {
-        frequency = 1;
-      } else if (periodicity === 'year') {
-        frequency = 12;
-      }
-      itemWithMutations.setIn(['recurrence', 'start'], 1);
-      itemWithMutations.setIn(['recurrence', 'frequency'], frequency);
-      itemWithMutations.deleteIn(['recurrence', 'periodicity']);
-    }
+    // itemWithMutations = convertToNewRecurrence(itemWithMutations);
+    // if (!itemWithMutations.hasIn(['recurrence', 'frequency'])) {
+    //   let frequency = '';
+    //   const periodicity = itemWithMutations.getIn(['recurrence', 'periodicity'], '');
+    //   if (periodicity === 'month') {
+    //     frequency = 1;
+    //   } else if (periodicity === 'year') {
+    //     frequency = 12;
+    //   }
+    //   itemWithMutations.setIn(['recurrence', 'start'], 1);
+    //   itemWithMutations.setIn(['recurrence', 'frequency'], frequency);
+    //   itemWithMutations.deleteIn(['recurrence', 'periodicity']);
+    // }
   });
 };
 
@@ -158,7 +162,7 @@ const convertPrepaidGroup = (getState, prepaidGroup, convertToBaseUnit) => {
 };
 
 export const savePlan = (plan, action) => (dispatch, getState) => {
-  const convertedPlan = convertPlan(getState, plan, true);
+  const convertedPlan = convertToOldRecurrence(convertPlan(getState, plan, true));
   return dispatch(saveEntity('plans', convertedPlan, action));
 };
 

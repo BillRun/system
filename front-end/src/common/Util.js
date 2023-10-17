@@ -19,6 +19,7 @@ import inputProcessorConfig from '../config/InputProcessor.json';
 import discountConfig from '../config/discount.json';
 import conditionsConfig from '../config/conditions.json';
 import exportGeneratorConfig from '../config/exportGenerator.json';
+import { itemsSelector } from '@/selectors/entityListSelectors';
 
 
 /**
@@ -784,5 +785,37 @@ export const getConditions = (enabledOperators = Immutable.List()) => {
         opsWithMutations.push(opConfig.merge(enabledOperator));
       }
     });
+  });
+}
+
+export const convertToOldRecurrence = (item) => {
+  return item.withMutations((itemWithMutations) => {
+    const frequency = item.getIn(['recurrence', 'frequency'], '');
+    if (itemWithMutations.hasIn(['recurrence', 'frequency']) && [1, 12].includes(frequency)) {
+      if (frequency === 12) {
+        itemWithMutations.setIn(['recurrence', 'periodicity'], 'year');
+      } else {
+        itemWithMutations.setIn(['recurrence', 'periodicity'], 'month');
+      }
+      itemWithMutations.deleteIn(['recurrence', 'frequency']);
+      itemWithMutations.deleteIn(['recurrence', 'start']);
+    }
+  });
+}
+
+export const convertToNewRecurrence = (item) => {
+  return item.withMutations((itemWithMutations) => {
+    if (!itemWithMutations.hasIn(['recurrence', 'frequency'])) {
+      let frequency = '';
+      const periodicity = itemWithMutations.getIn(['recurrence', 'periodicity'], '');
+      if (periodicity === 'month') {
+        frequency = 1;
+      } else if (periodicity === 'year') {
+        frequency = 12;
+      }
+      itemWithMutations.setIn(['recurrence', 'start'], 1);
+      itemWithMutations.setIn(['recurrence', 'frequency'], frequency);
+      itemWithMutations.deleteIn(['recurrence', 'periodicity']);
+    }
   });
 }
