@@ -19,7 +19,6 @@ import inputProcessorConfig from '../config/InputProcessor.json';
 import discountConfig from '../config/discount.json';
 import conditionsConfig from '../config/conditions.json';
 import exportGeneratorConfig from '../config/exportGenerator.json';
-import { itemsSelector } from '@/selectors/entityListSelectors';
 
 
 /**

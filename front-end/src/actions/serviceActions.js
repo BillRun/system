@@ -106,7 +106,6 @@ const convertService = (getState, service, convertToBaseUnit, toSend) => {
     if (!rates.isEmpty()) {
       itemWithMutations.set('rates', rates);
     }
-    // itemWithMutations = convertToNewRecurrence(itemWithMutations);
   });
 };
 
