@@ -18,7 +18,7 @@ trait Billrun_Traits_Api_OperationsLock {
 	 * Returns the data of the operation that request to lock it.
 	 *
 	 */
-	protected abstract static function getInsertData();
+	protected abstract function getInsertData();
 	
 	/**
 	 * Returns the conflicting conditions of the selected operation.

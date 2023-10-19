@@ -142,6 +142,19 @@ abstract class Zend_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
                      '_readOnly');
     }
 
+    public function __serialize(): array
+    {
+	    return [
+		    "_data" => $this->_data,
+		    "_tableClass" => $this->_tableClass,
+		    "_rowClass" => $this->_rowClass,
+		    "_pointer" => $this->_pointer,
+		    "_count" => $this->_count,
+		    "_rows" => $this->_rows,
+		    "_stored" => $this->_stored,
+		    "_readOnly" => $this->_readOnly,
+	    ];
+    }
     /**
      * Setup to do on wakeup.
      * A de-serialized Rowset should not be assumed to have access to a live

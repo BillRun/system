@@ -183,7 +183,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		return $customer;
 	}
 
-	public function addAdditionalParameters($request) {
+	public function addAdditionalParameters() {
 		$token = $request->get('stripeToken');
 		$email = $request->get('stripeEmail');
 

@@ -14,9 +14,14 @@ class Billrun_Utils_ErrorHandler {
 	 * you can also call to Yaf_Request_Abstract::getException to get the 
 	 * un-caught exception.
 	 */
-	public function errorAction(Exception $exception) {	
+	public function errorAction(Throwable $exception) {	
 	   // Get exception output
-	   $output = $this->getExceptionOutput($exception);
+	   if($exception instanceof Throwable) {
+	   	$output = $this->generalThrowableOutput($exception);
+	   }
+	   else {
+	   	$output = $this->getExceptionOutput($exception);
+	   }
 
 	   // TODO: THIS IS DEBUG CODE!!!!!!!!!!!!!!!!!!
 	   if(php_sapi_name() != "cli") {
@@ -28,11 +33,44 @@ class Billrun_Utils_ErrorHandler {
 	   // TODO: THIS IS DEBUG CODE!!!!!!!!!!!!!!!!!!
 
 	   $logLevel = Zend_Log::CRIT;
-	   if(isset($exception->logLevel)) {
-		   $logLevel = $exception->logLevel;
+	  if($exception instanceof Throwable) {
+	   	//Billrun_Factory::log()->logCrash(new Exception($exception->getMessage(), 999999), $logLevel);
 	   }
-	   Billrun_Factory::log()->logCrash($exception, $logLevel);
+	   else {
+	      //if(isset($exception->logLevel)) {
+	//	   $logLevel = $exception->logLevel;
+	   //	}
+	   	Billrun_Factory::log()->logCrash($exception, $logLevel);
+	   }
+
+	   
+	   
 	} 
+
+	protected function generalThrowableOutput(Throwable $th) {
+	   $output = array();
+	   $output['status'] = 0;
+	   $output['code'] = 500;
+	   $output['data']['message'] = $output['data']['message'] = "MESSAGE: " . $th->getMessage() . " ----- STACKTRACE: " . $th->getTraceAsString() . "\n";
+	   /* error occurs 
+	   switch ($exception->getCode()) {
+		   case 999999:
+			   $output['data']['message'] = $th->getTraceAsString() . "\n";
+			   break;
+		   case YAF_ERR_NOTFOUND_MODULE:
+		   case YAF_ERR_NOTFOUND_CONTROLLER:
+		   case YAF_ERR_NOTFOUND_ACTION:
+		   case YAF_ERR_NOTFOUND_VIEW:
+			   $output['data']['message'] = $th->getTraceAsString() . "\n";
+			   $output['code'] = 404;
+			   break;
+		   default :
+			   $output['data']['message'] = $th->getTraceAsString() . "\n";
+			   break;
+	   }
+*/
+	   return json_encode($output);
+	}
 
 	/**
 	 * Get the output from the exception to be displayed to the user
@@ -87,3 +125,4 @@ class Billrun_Utils_ErrorHandler {
 	   return json_encode($output);
 	}
 }
+

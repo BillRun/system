@@ -3,7 +3,7 @@ from php:8.0-fpm
 
 RUN apt-get update && apt-get install -y \
         wkhtmltopdf \
-    && pecl install yaf \
+    && pecl install yaf-3-3-0 \
     && pecl install mongodb \
     && pecl install xdebug \
     && docker-php-ext-enable yaf mongodb xdebug \

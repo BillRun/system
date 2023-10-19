@@ -101,7 +101,9 @@ class Billrun_Util {
 	 * @return string the array stamp
 	 */
 	public static function generateArrayStamp($ar, $filter = array()) {
-		
+		if($ar instanceof Yaf_Config_Ini){	
+			$ar = $ar->toArray();
+		}
 		return md5(serialize(empty($filter) ? $ar : array_intersect_key($ar, array_flip($filter))));
 	}
         
@@ -602,6 +604,7 @@ class Billrun_Util {
 		$descriptorspec = array(
 			2 => STDERR,
 		);
+		Billrun_Factory::log("About to run CLI command: " . $syscmd,Zend_Log::DEBUG);
 		$process = proc_open($syscmd, $descriptorspec, $pipes);
 		if ($process === FALSE) {
 			Billrun_Factory::log('Can\'t execute CLI command',Zend_Log::ERR);
@@ -1576,21 +1579,30 @@ class Billrun_Util {
 		return is_numeric($value) && $value > strtotime('-30 years') &&  $value < strtotime('+30 years');
 	}
 	
-	
-	public static function setHttpSessionTimeout($timeout = null) {
+	/**
+	 * 
+	 * @param int $timeout duration in second session ttl 
+	 * @param string $samesite same cookie
+	 */
+	public static function setHttpSessionTimeout($timeout = null, $samesite = 'Strict') {
 		if (!is_null($timeout)) {
 			$sessionTimeout = $timeout;
 		} else {
 			$sessionTimeout = Billrun_Factory::config()->getConfigValue('session.timeout', 3600);
 		}
 		
-		ini_set('session.gc_maxlifetime', $sessionTimeout);
-		ini_set("session.cookie_lifetime", $sessionTimeout);
-        
 		$cookieParams = session_get_cookie_params();
-		session_set_cookie_params(
-			(int) $sessionTimeout, $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure']
-		);
+		
+		if (version_compare(PHP_VERSION, '7.3.0') >= 0) {
+			$cookieParams['lifetime'] = $sessionTimeout;
+			$cookieParams['samesite'] = $samesite;
+			session_set_cookie_params($cookieParams);
+		} else {
+			session_set_cookie_params(
+				(int) $sessionTimeout, $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure']
+			);
+			ini_set('session.cookie_samesite', $samesite);
+		}
 	}
 	
 	public static function isValidIP($subject) {
@@ -2014,6 +2026,128 @@ class Billrun_Util {
 		$url = htmlspecialchars($url);
 		return $url;
 	}
+        
+        public static function formattingValue($formatObj, $value, &$warningMessages = [], $defaultDateFormat = Billrun_Base::base_datetimeformat){
+            $valueType = $formatObj['type'] ?? 'string';
+            switch ($valueType){
+                case 'string'://todo:: allow only 'number' type to to use number format. 
+                case 'number':
+                    if(isset($formatObj['number_format']) && isset($formatObj['number_format']['decimals'])){
+                        if (!isset($formatObj['number_format']['dec_point']) && isset($formatObj['number_format']['thousands_sep'])) {
+                            $message = "'dec_point' is missing: " . print_r($formatObj['number_format'], 1) . ", so only 'decimals' was used to format value: " . $value;
+                            $warningMessages[] = $message;
+                            Billrun_Factory::log($message, Zend_Log::WARN);
+                        } elseif ((isset($formatObj['number_format']['dec_point']) && (!isset($formatObj['number_format']['thousands_sep'])))) {
+                            $message = "'thousands_sep' is missing: " . print_r($formatObj['number_format'], 1) . ", so only 'decimals' was used to format value: " . $value;
+                            $warningMessages[] = $message;
+                            Billrun_Factory::log($message, Zend_Log::WARN);
+                        } 
+                        if (isset($formatObj['number_format']['dec_point']) && isset($formatObj['number_format']['thousands_sep'])){
+                            $value = number_format((float)$value, $formatObj['number_format']['decimals'], $formatObj['number_format']['dec_point'], $formatObj['number_format']['thousands_sep']);
+                        } else {
+                            $value = number_format((float)$value, $formatObj['number_format']['decimals']); 
+                        } 
+                    }
+                    break;
+                case 'date':                   
+                    $dateFormat = isset($formatObj['format']) ? $formatObj['format'] : $defaultDateFormat;
+                    if ($value instanceof Mongodloid_Date) {
+                        $dateValue = $value->sec;
+                    } elseif (intval($value)) {
+                        $dateValue = $value;
+                    } else if (strtotime($value)) {
+                       $dateValue = strtotime($value); 
+                    } else {
+                        $message = "Couldn't convert date string " . $value;
+                        $warningMessages[] = $message;
+                        Billrun_Factory::log($message, Zend_Log::WARN);
+                        break;
+                    }
+                    if (isset($formatObj['relative_time'])) {
+                       $dateValue = strtotime($formatObj['relative_time'], $dateValue);
+                    }
+                    $value = date($dateFormat, $dateValue);
+                    break;
+            }
+            if (isset($formatObj['value_mult'])) {
+                $value = floatval($formatObj['value_mult']) * floatval($value);
+            }
+            $padding = $formatObj['padding'] ?? [];
+            if (!empty($padding)){
+                $padDir = isset($padding['direction']) ? ($padding['direction']==='right' ? STR_PAD_RIGHT :  STR_PAD_LEFT) : STR_PAD_LEFT;
+                $padChar = isset($padding['character']) ? $padding['character'] : '';
+                $length = isset($padding['length']) ? $padding['length'] : strlen($value);
+                $valueToPed = substr($value, 0, $length) ?? '';
+                $value = str_pad($valueToPed, $length, $padChar, $padDir) ?? '';
+            }
+            if (isset($formatObj['substring'])) {
+                if (!isset($formatObj['substring']['offset']) || !isset($formatObj['substring']['length'])) {
+			$message = "substring: " . print_r($formatObj['substring'], 1) . " was defined incorrectly";
+                        $warningMessages[] = $message;
+                        Billrun_Factory::log($message, Zend_Log::WARN);
+		}
+		$value = substr($value, $formatObj['substring']['offset'], $formatObj['substring']['length']);
+            }
+            return $value;
+        }
 
+	public static function mergeArrayByRules($mainArr, $secArr, $rules) {
+
+		foreach($rules as $srcFieldKey => $fieldRules) {
+			foreach($fieldRules as $ruleKey => $ruleVal) {
+				if(null === static::getIn($secArr, $srcFieldKey, null) && null === static::getIn($mainArr,$srcFieldKey, null)) {
+					continue;
+				}
+				switch($ruleKey) {
+					case '$push' :
+								static::setIn( $mainArr, $srcFieldKey, array_merge(static::getIn($secArr, $srcFieldKey, null),
+																					static::getIn($mainArr,$srcFieldKey, null))
+											);
+						break;
+					case '$addToSet' :
+						static::setIn( $mainArr, $srcFieldKey, array_merge(@array_udiff(	static::getIn($secArr, $srcFieldKey, null),
+																						static::getIn($mainArr,$srcFieldKey, null),function($a,$b) {return strcmp(md5(json_encode($a)),md5(json_encode($b)));}),
+																		static::getIn($mainArr,$srcFieldKey, null))
+									);
+						break;
+					case '$mergeArrayByRules' :
+						//recursivly call current function  to  dive into  nested structure
+						static::setIn( $mainArr, $srcFieldKey, static::mergeArrayByRules(
+																						static::getIn($mainArr, $srcFieldKey, []),
+																						static::getIn($secArr,$srcFieldKey, []),
+																						$ruleVal) );
+						break;
+
+					case '$mergeMultiArraysByRules' :
+						//Merge multiple arrays  enteries to a single one based on  specific rules
+
+						foreach(array_merge(static::getIn($mainArr, $srcFieldKey, []),static::getIn($secArr,$srcFieldKey, [])) as $subSecArr)  {
+							static::setIn( $mainArr, $srcFieldKey, [static::mergeArrayByRules(
+																						@reset(static::getIn($mainArr, $srcFieldKey, [])),
+																						$subSecArr,
+																						$ruleVal)] );
+						}
+
+						break;
+					default :
+						//use native functions to run operations
+						$cleanRule = str_replace('$','',$ruleKey);
+						if(function_exists($cleanRule) && in_array($cleanRule,Billrun_Factory::config()->getConfigValue('billrun.runnble_functions',['min','max','array_merge','array_diff']))) {
+							static::setIn( $mainArr, $srcFieldKey, call_user_func_array($cleanRule,[
+																						static::getIn($mainArr, $srcFieldKey, null),
+																						static::getIn($secArr,$srcFieldKey, null)])
+										);
+						} else {
+							//  just  copy the  secondary array value if it exists
+							static::setIn( $mainArr, $srcFieldKey,
+								static::getIn($mainArr, $srcFieldKey,
+										static::getIn($secArr,$srcFieldKey,null)));
+						}
+				}
+			}
+		}
+		return $mainArr;
+
+	}
 
 }

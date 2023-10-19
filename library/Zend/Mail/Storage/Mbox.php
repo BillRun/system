@@ -402,6 +402,14 @@ class Zend_Mail_Storage_Mbox extends Zend_Mail_Storage_Abstract
         return array('_filename', '_positions', '_filemtime');
     }
 
+    public function __serialize(): array
+    {
+	    return [
+		    "_filename" => $this->_filename,
+		    "_positions" => $this->_positions,
+		    "_filemtime" => $this->_filemtime,
+	    ];
+    }
     /**
      * magic method for unserialize()
      *
