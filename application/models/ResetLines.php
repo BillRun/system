@@ -52,6 +52,7 @@ class ResetLinesModel {
 	protected $alreadyUpdated = [];
 	
 	protected $balances;
+	protected $isSidLevel;
 	
 	/**
 	 * Conditions to add to the query when rebalancing.
@@ -60,6 +61,8 @@ class ResetLinesModel {
 	protected $conditions;
 
 	public function __construct($aids, $billrun_key, $conditions) {
+		$config = Billrun_Factory::config();
+		$this->isSidLevel = $config->getConfigValue("balances.sid_level", false);
 		$this->initBalances($aids, $billrun_key);
 		$this->aids = $aids;
 		$this->billrun_key = strval($billrun_key);
@@ -405,6 +408,11 @@ class ResetLinesModel {
 	protected function getRelevantBalances($balances, $balanceId, $params = array()) {
 		$this->alreadyUpdated = [];
 		$ret = [];
+		if ($this->isSidLevel) {
+			if (isset($params['aid']) && isset($params['sid']) && $params['sid'] != 0) {
+				$params['aid'] = 0;
+			}
+		}
 		foreach ($balances as $balance) {
 			$rawData = $balance->getRawData();
 			if (isset($rawData['_id']) && !empty($balanceId) && $rawData['_id']->{'$id'} == $balanceId) {
@@ -508,10 +516,8 @@ class ResetLinesModel {
 		if (empty($this->balanceSubstract)) {
 			return;
 		}
-		$queryBalances = array(
-			'aid' => array('$in' => $aids),
-			'period' => 'default'
-		);
+		$queryBalances = $this->getQueryBalances($aids, $this->billrun_key);
+		$queryBalances['period'] = 'default';
 
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($this->balanceSubstract as $aid => $usageBySid) {
@@ -543,16 +549,41 @@ class ResetLinesModel {
 		return $ret;
 	}
 
-	protected function initBalances($aids) {
-		$queryBalances = array(
-			'aid' => array('$in' => $aids),
-		);
+	protected function initBalances($aids, $billrun_key) {
+		$queryBalances = $this->getQueryBalances($aids, $billrun_key);
 
 		$balances = Billrun_Factory::db()->balancesCollection()->query($queryBalances)->cursor();
 		foreach ($balances as $balance) {
 			$balanceId = $balance->getRawData()['_id']->{'$id'};
 			$this->balances[$balanceId] = $balance;
 		}
+	}
+
+	protected function getQueryBalances($aids, $billrun_key) {
+		$query = [];
+		
+		if ($this->isSidLevel) {
+			$subsQuery = ['aid'=>['$in'=>$aids]];
+			$from = new MongoDate(Billrun_Billingcycle::getStartTime($billrun_key));
+			$to = new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key));
+			$subsQuery['$or'] = array(
+				array('from' => ['$lte'=>$from], 'to' => ['$gt'=>$from]),
+				array('from' => ['$lte'=>$to], 'to' => ['$gt'=>$to])
+			);
+			$sids = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $subsQuery);
+			$query['$or'] = array(
+				array(
+					'aid' => ['$in'=>$aids],
+					'sid' => 0
+				),
+				array(
+					'sid' => array('$in' => $sids)
+				)
+			);
+		} else {
+			$query['aid'] = array('$in' => $aids);
+		}
+		return $query;
 	}
 
 	protected function isInExtendedBalance($arategroups) {
