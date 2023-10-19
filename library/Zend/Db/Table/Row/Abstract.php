@@ -244,6 +244,17 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
         return array('_tableClass', '_primary', '_data', '_cleanData', '_readOnly' ,'_modifiedFields');
     }
 
+    public function __serialize(): array
+    {
+            return [
+		    "_tableClass" => $this->_tableClass,
+		    "_primary" => $this->_primary,
+		    "_data" => $this->_data,
+                    "_cleanData" => $this->_cleanData,
+		    "_readOnly" => $this->_readOnly,
+		    "_modifiedFields" => $this->_modifiedFields,
+            ];
+    }
     /**
      * Setup to do on wakeup.
      * A de-serialized Row should not be assumed to have access to a live

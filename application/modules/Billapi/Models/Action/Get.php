@@ -91,10 +91,12 @@ class Models_Action_Get extends Models_Action {
 			$revision_info = true;
 			$project = array();
 		}
+		Billrun_Factory::log("Billapi get runs query: " .json_encode($this->query), Zend_Log::DEBUG);
+		if (!empty($this->collectionHandler)) {
+		    $ret = $this->collectionHandler->find($this->query, $project);
+		}
 
-		$ret = $this->collectionHandler->find($this->query, $project);
-
-		if ($this->size != 0) {
+		if ($this->size != 0 && !empty($ret)) {
 			$ret->limit($this->size + 1); // the +1 is to indicate if there is next page
 		}
 
@@ -107,6 +109,7 @@ class Models_Action_Get extends Models_Action {
 		}
 
 		$records = array_values(iterator_to_array($ret));
+		Billrun_Factory::log('Billapi get received ' . count($records) . " results", Zend_Log::DEBUG);
 		foreach($records as  &$record) {
 			if (isset($record['invoice_id'])) {
 				$record['invoice_id'] = (int)$record['invoice_id'];

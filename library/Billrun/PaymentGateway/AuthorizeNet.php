@@ -738,7 +738,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		return array('customer_profile_id' => $account['customer_profile_id'], 'payment_id' => isset($account['payment_profile_id']) ? $account['payment_profile_id'] : '');
 	}
 	
-	protected function checkIfCustomerExists ($aid) {
+	protected function checkIfCustomerExists () {
 		$customerProfileId = '';
 		$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$accountQuery['type'] = 'account';

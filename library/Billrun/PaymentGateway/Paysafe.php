@@ -247,7 +247,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		return $customerId;
 	}
 
-	public function addAdditionalParameters($request) {
+	public function addAdditionalParameters() {
 		return array('profile_paymentToken' => $request->get('profile_paymentToken'));
 	}
 
