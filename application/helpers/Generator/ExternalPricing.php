@@ -24,6 +24,12 @@ class Generator_ExternalPricing  extends Billrun_Generator {
      * @var array
      */
 	protected $dataStructure = [];
+	/**
+	* This variable stores the generation time for the generator class.
+	*
+	* @var int $generationTime The generation time in seconds since  epoch.
+	*/
+	protected $generationTime = 0;
 
 	public function __construct(array $options) {
 	    parent::__construct($options);
@@ -33,6 +39,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 			file_exists($configFile)) {
 			$this->dataStructure = (new Yaf_Config_Ini($configFile))->toArray();
 		}
+		$this->generationTime = time();
 	}
 
 
@@ -57,6 +64,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 	 */
 	public function generate() {
 		$generatedData = [];
+		$this->generationTime = time();
 
 		$generatedData[] = $this->getHeader($this->dataStructure['header']);
 
@@ -92,7 +100,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 	 * @return string The generated header line.
 	 */
 	protected function getHeader($headerStruct = []) {
-		return [ 'H01', date('YmdHis') ];
+		return [ 'H01', date('YmdHis',$this->generationTime) ];
 	}
     /**
      * Generates a data line for the CSV file based on a CDR row.
@@ -102,7 +110,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
      * @return string The generated data line.
      */
 	protected function getDataLine($row , $dataStruct = [], $generationMapping = []) {
-		return array_merge(['D01'], $this->exractFields($row, $dataStruct, $generationMapping));
+		return array_merge([], $this->extractFields($row, $dataStruct, $generationMapping));
 	}
 
     /**
@@ -122,12 +130,12 @@ class Generator_ExternalPricing  extends Billrun_Generator {
      * @param array $dataStruct Structure configuration for the data line.
      * @return array The extracted fields.
      */
-	protected function exractFields($row, $dataStruct = [], $generationMapping = []) {
+	protected function extractFields($row, $dataStruct = [], $generationMapping = []) {
 		$retRow = [];
 		foreach($dataStruct as $srcField => $dstField) {
 			$mapping = @$generationMapping[$srcField];
 			if(empty($mapping)) {
-				Billrun_Factory::log("No  generation wasdefined to field ${srcField} ,skipping field.",Zend_Log::DEBUG);
+				Billrun_Factory::log("No  generation was defined to field :${srcField} ,skipping field.",Zend_Log::DEBUG);
 				continue;
 			}
 			if(is_array($mapping) && !empty($mapping['func']) ) {
@@ -147,6 +155,8 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 					Billrun_Factory::log("Function ${mapping['func']} is not valid for csv generation",Zend_Log::WARN);
 				}
 
+			} else if(is_array($mapping) && !empty($mapping['value']) ) {
+				$retRow[$dstField] = $mapping['value'];
 			} else {
 				$retRow[$dstField] = $row[$mapping];
 			}
@@ -188,7 +198,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 		// Update the queue collection to mark the queue lines as generated
 		$result = Billrun_Factory::db()->queueCollection()->update(
 			['stamp' => ['$in' => $stamps]],
-			['$set' => ['generated' => true]]
+			['$set' => ['generated' => true,'generated_file' => $this->getFilename()]]
 		,['multiple'=>1]);
 
 		return  $result['ok'] == 1 && ($result['n'] === count($stamps)) ;
@@ -200,7 +210,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 	}
 
 	protected function  getFilename($fileData = false) {
-		return date('YmdHis').'_ISRGT_external_pricing.csv';
+		return date('YmdHis',$this->generationTime).'_ISRGT_external_pricing.csv';
 	}
 
 	protected function sumArguments() {
