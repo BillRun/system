@@ -484,10 +484,8 @@ class ResetLinesModel {
 		$verifiedArray = Billrun_Util::verify_array($aids, 'int');
 		$aidsAsKeys = array_flip($verifiedArray);
 		$balancesToUpdate = array_intersect_key($this->extendedBalanceUsageSubtract, $aidsAsKeys);
-		$queryBalances = array(
-			'aid' => array('$in' => $aids),
-			'period' => array('$ne' => 'default')
-		);
+		$queryBalances = $this->getQueryBalances($aids, $this->billrun_key);
+		$queryBalances['period'] = array('$ne' => 'default');
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($balancesToUpdate as $aid => $packageUsage) {
 			foreach ($packageUsage as $balanceId => $usageByUsaget) {
@@ -523,7 +521,7 @@ class ResetLinesModel {
 		foreach ($this->balanceSubstract as $aid => $usageBySid) {
 			foreach ($usageBySid as $sid => $usageByMonth) {
 				foreach ($usageByMonth as $billrunKey => $usage) {
-					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey));
+					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $this->isSidLevel ? 0 : $aid, 'sid' => $sid, 'billrun_key' => $billrunKey));
 					foreach ($relevantBalances as $balanceToUpdate) {
 						if (empty($balanceToUpdate)) {
 							continue;
