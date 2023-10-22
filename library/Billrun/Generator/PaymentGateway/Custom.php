@@ -69,7 +69,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	}
 	
 	protected function validateMandatoryFieldsExistence($entity, $entity_type = 'account') {
-		$data = $entity->getRawData();
+		$data = is_array($entity)? $entity : $entity->getRawData();
 		$missing_fields = [];
 		if(isset($this->mandatory_fields_per_entity[$entity_type])) {
 			foreach($this->mandatory_fields_per_entity[$entity_type] as $field_name) {
