@@ -179,10 +179,12 @@ class ResponsePaymentFiles extends Component {
 
   getListActions = () => [{ type: "refresh" }];
 
-  getRowActions = () => [
-    { type: "view", onClick: this.onShowDetails, helpText: "Details", onClickColumn: "stamp" },
-    { type: "report", onClick: this.goToReport, helpText: "Report", show: this.isFinished },
-  ];
+  getRowActions = () => {
+    return [
+      { type: "view", onClick: this.onShowDetails, helpText: "Details", onClickColumn: "stamp" },
+      { type: "report", onClick: this.goToReport, helpText: this.getHelpTextForReport, show: this.isFinished, enable: this.getAffectsBills},
+    ];
+  }
 
   getFilterFields = () => [{ id: "creation_time", placeholder: this.getLabel("creation_time") }];
 
@@ -276,6 +278,7 @@ class ResponsePaymentFiles extends Component {
     { field_name: 'errors', multiple: true },
     { field_name: 'warnings', multiple: true },
     { field_name: 'info', multiple: true },
+    { field_name: 'affects_bills' },
   ];
 
   getTableFields = () => [
@@ -303,6 +306,7 @@ class ResponsePaymentFiles extends Component {
     errors: 1,
     warnings: 1,
     info: 1,
+    affects_bills:1
   });
 
   getDefaultSort = () => Map({ creation_time: -1 });
