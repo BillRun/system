@@ -120,7 +120,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers));
 		Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::INFO);
 		$this->setFileMandatoryFields();
-		$this->headers = !empty($header = $this->getHeaderLine()) ? [$header] : [];
 		foreach ($this->customers as $customer) {
 			if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
 				break;
@@ -226,6 +225,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->file_transactions_counter = $numberOfRecordsToTreat;
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
 		$this->logFile->updateLogFileField('info', $message);
+		$this->headers = !empty($header = $this->getHeaderLine()) ? [$header] : [];
 		$this->trailers = !empty($trailer = $this->getTrailerLine()) ? [$trailer] : [];
 	}
 
