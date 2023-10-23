@@ -12,7 +12,7 @@ import {
   getSettings,
 } from '@/actions/settingsActions';
 import { isPlaysEnabledSelector } from '@/selectors/settingsSelector';
-import { getConfig } from '@/common/Util';
+import { getConfig, getFieldName } from '@/common/Util';
 
 
 class ProductsList extends Component {
@@ -90,15 +90,16 @@ class ProductsList extends Component {
       .filter(field => (field.get('show_in_list', false) || ProductsList.defaultListFields.includes(field.get('field_name', ''))))
       .map((field) => {
         const fieldname = field.get('field_name');
+        const fieldTitle = field.get('title', getFieldName(fieldname, 'subscription', changeCase.sentenceCase(fieldname)));
         switch (fieldname) {
           case 'rates':
-            return { id: 'unit_type', parser: this.parserUsegt };
+            return { id: 'unit_type', title: fieldTitle, parser: this.parserUsegt };
           case 'description':
-            return { id: fieldname, sort: true };
+            return { id: fieldname, title: fieldTitle, sort: true };
           case 'key':
-            return { id: fieldname, sort: true };
+            return { id: fieldname, title: fieldTitle, sort: true };
           default: 
-            return { id: fieldname };
+            return { id: fieldname, title: fieldTitle };
         }
       })
       .toArray();

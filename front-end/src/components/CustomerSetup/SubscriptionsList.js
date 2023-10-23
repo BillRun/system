@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import Immutable from 'immutable';
 import changeCase from 'change-case';
 import EntityList from '../EntityList';
-import { getItemDateValue, getConfig } from '@/common/Util';
+import { getItemDateValue, getConfig, getFieldName } from '@/common/Util';
 import { isPlaysEnabledSelector } from '@/selectors/settingsSelector';
 
 
@@ -73,19 +73,20 @@ class SubscriptionsList extends Component {
       .filter(field => (field.get('show_in_list', false) || SubscriptionsList.defaultListFields.includes(field.get('field_name', ''))))
       .map((field) => {
         const fieldname = field.get('field_name');
+        const fieldTitle = field.get('title', getFieldName(fieldname, 'subscription', changeCase.sentenceCase(fieldname)));
         switch (fieldname) {
           case 'plan_activation':
-            return { id: fieldname, parser: this.planActivationParser, cssClass: 'long-date text-center' };
+            return { id: fieldname, title: fieldTitle, parser: this.planActivationParser, cssClass: 'long-date text-center' };
           case 'services':
-            return { id: fieldname, parser: this.servicesParser };
+            return { id: fieldname, title: fieldTitle, parser: this.servicesParser };
           case 'address':
-            return { id: fieldname, parser: this.addressParser };
+            return { id: fieldname, title: fieldTitle, parser: this.addressParser };
           case 'sid':
-            return { id: fieldname, type: 'number', sort: true };
+            return { id: fieldname, title: fieldTitle, type: 'number', sort: true };
           case 'play':
-            return { id: fieldname, sort: true };
+            return { id: fieldname, title: fieldTitle, sort: true };
           default: {
-            return { id: fieldname };
+            return { id: fieldname, title: fieldTitle };
           }
         }
       })

@@ -38,8 +38,8 @@ const PlansList = (props) => {
   const displayPlay = () => props.isPlaysEnabled;
 
   const tableFields = [
-    { id: 'description', title: 'Title', sort: true },
-    { id: 'name', title: 'Key', sort: true },
+    { id: 'description', sort: true },
+    { id: 'name', sort: true },
     { title: 'Trial', parser: parserTrial },
     { id: 'recurrence_charges', title: 'Recurring Charges', parser: parserRecuringCharges },
     { id: 'recurrence_frequency', title: 'Billing Frequency', parser: parserBillingFrequency },
