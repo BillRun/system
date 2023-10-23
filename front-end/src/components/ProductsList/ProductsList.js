@@ -12,13 +12,13 @@ import {
   getSettings,
 } from '@/actions/settingsActions';
 import { isPlaysEnabledSelector } from '@/selectors/settingsSelector';
+import { getConfig } from '@/common/Util';
 
 
 class ProductsList extends Component {
 
   static propTypes = {
     fields: PropTypes.instanceOf(Immutable.List),
-    defaultListFields: PropTypes.arrayOf(PropTypes.string),
     isPlaysEnabled: PropTypes.bool,
     usageTypesOptions: PropTypes.array,
     router: PropTypes.shape({
@@ -31,17 +31,13 @@ class ProductsList extends Component {
     fields: null,
     isPlaysEnabled: false,
     usageTypesOptions: [],
-    defaultListFields: ['description', 'key', 'rates'],
   }
+
+  static defaultListFields = getConfig(['systemItems', 'product', 'defaultListFields'], Immutable.List());
 
   static rowActions = [
     { type: 'edit' },
     { type: 'view' },
-  ]
-
-  static filterFields = [
-    { id: 'key', placeholder: 'Key' },
-    { id: 'description', placeholder: 'Title' },
   ]
 
   state = {
@@ -75,9 +71,9 @@ class ProductsList extends Component {
   }
 
   getProjectFields = () => {
-    const { fields, defaultListFields } = this.props;
+    const { fields } = this.props;
     return fields
-      .filter(field => (field.get('show_in_list', false) || defaultListFields.includes(field.get('field_name', ''))))
+      .filter(field => (field.get('show_in_list', false) || ProductsList.defaultListFields.includes(field.get('field_name', ''))))
       .reduce((acc, field) => acc.set(field.get('field_name'), 1), Immutable.Map({}))
       .toJS();
   };
@@ -88,23 +84,21 @@ class ProductsList extends Component {
   }];
 
   getFields = () => {
-    const { fields, defaultListFields } = this.props;
+    const { fields } = this.props;
     return fields
       .filter(this.filterPlayField)
-      .filter(field => (field.get('show_in_list', false) || defaultListFields.includes(field.get('field_name', ''))))
+      .filter(field => (field.get('show_in_list', false) || ProductsList.defaultListFields.includes(field.get('field_name', ''))))
       .map((field) => {
         const fieldname = field.get('field_name');
         switch (fieldname) {
           case 'rates':
             return { id: 'unit_type', parser: this.parserUsegt };
           case 'description':
-            return { id: fieldname, title: 'Title', sort: true };
+            return { id: fieldname, sort: true };
           case 'key':
-            return { id: fieldname, title: 'Key', sort: true };
-          default: {
-            const title = field.get('title', field.get('field_name', ''));
-            return { id: fieldname, title: changeCase.sentenceCase(title) };
-          }
+            return { id: fieldname, sort: true };
+          default: 
+            return { id: fieldname };
         }
       })
       .toArray();
@@ -142,7 +136,6 @@ class ProductsList extends Component {
         collection="rates"
         itemType="product"
         itemsType="products"
-        filterFields={ProductsList.filterFields}
         tableFields={this.getFields()}
         projectFields={this.getProjectFields()}
         showRevisionBy="key"

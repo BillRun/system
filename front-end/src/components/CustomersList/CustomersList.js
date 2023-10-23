@@ -18,7 +18,6 @@ class CustomersList extends Component {
 
   static propTypes = {
     accountFields: PropTypes.instanceOf(Immutable.List),
-    accountAllwaysShownFields: PropTypes.instanceOf(Immutable.List),
     importItem: PropTypes.instanceOf(Immutable.Map),
     router: PropTypes.shape({
       push: PropTypes.func.isRequired,
@@ -28,9 +27,10 @@ class CustomersList extends Component {
 
   static defaultProps = {
     accountFields: null,
-    accountAllwaysShownFields: Immutable.List(['aid', 'firstname', 'lastname']),
     importItem: Immutable.Map(),
   };
+
+  static defaultListFields = getConfig(['systemItems', 'customer', 'defaultListFields'], Immutable.List());
 
   state = {
     showImport: false,
@@ -46,9 +46,9 @@ class CustomersList extends Component {
   }
 
   getListFields = () => {
-    const { accountFields, accountAllwaysShownFields } = this.props;
+    const { accountFields } = this.props;
     return accountFields
-      .filter(field => field.get('show_in_list', false) || accountAllwaysShownFields.includes(field.get('field_name', '')))
+      .filter(field => field.get('show_in_list', false) || CustomersList.defaultListFields.includes(field.get('field_name', '')))
       .map(field => ({
         id: field.get('field_name'),
         placeholder: field.get('title', getFieldName(field.get('field_name', ''), 'account')),
@@ -138,7 +138,6 @@ class CustomersList extends Component {
           itemsType="customers"
           itemType="customer"
           tableFields={fields}
-          filterFields={fields}
           actions={actions}
           listActions={listActions}
           refreshString={refreshString}

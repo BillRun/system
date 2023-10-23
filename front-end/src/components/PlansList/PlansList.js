@@ -48,11 +48,6 @@ const PlansList = (props) => {
     { id: 'play', title: 'Play', display: displayPlay(), parser: parsePlay },
   ];
 
-  const filterFields = [
-    { id: 'name', placeholder: 'Key' },
-    { id: 'description', placeholder: 'Title' },
-  ];
-
   const projectFields = {
     recurrence_frequency: 1,
     recurrence_charges: 1,
@@ -78,7 +73,6 @@ const PlansList = (props) => {
     <EntityList
       itemType="plan"
       itemsType="plans"
-      filterFields={filterFields}
       baseFilter={baseFilter}
       tableFields={tableFields}
       projectFields={projectFields}

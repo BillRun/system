@@ -259,6 +259,7 @@
   "amount": "Amount",
   "type": "Type",
   "key": "Key",
+  "description": "Title",
   "billrun_key": "Cycle",
   "usagev": "Activity volume",
   "urt": "Record time",

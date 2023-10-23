@@ -64,7 +64,6 @@ class CustomerSetup extends Component {
     services: PropTypes.instanceOf(Immutable.List),
     currency: PropTypes.string,
     gateways: PropTypes.instanceOf(Immutable.List),
-    defaultSubsctiptionListFields: PropTypes.array,
     allowancesEnabled: PropTypes.bool,
     activeTab: PropTypes.oneOfType([
       PropTypes.string,
@@ -90,7 +89,6 @@ class CustomerSetup extends Component {
     plans: Immutable.List(),
     services: Immutable.List(),
     currency: '',
-    defaultSubsctiptionListFields: ['sid', 'firstname', 'lastname', 'plan', 'plan_activation', 'services', 'address'],
     allowancesEnabled: false,
   };
 
@@ -258,7 +256,6 @@ class CustomerSetup extends Component {
   render() {
     const {
       customer,
-      defaultSubsctiptionListFields,
       settings,
       plans,
       services,
@@ -307,7 +304,6 @@ class CustomerSetup extends Component {
                       allPlans={plans}
                       allServices={services}
                       onSaveSubscription={this.onSaveSubscription}
-                      defaultListFields={defaultSubsctiptionListFields}
                       getSubscription={this.getSubscription}
                       clearRevisions={this.clearSubscriptionRevisions}
                       clearList={this.clearSubscriptions}

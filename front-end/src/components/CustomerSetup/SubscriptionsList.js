@@ -17,17 +17,17 @@ class SubscriptionsList extends Component {
       PropTypes.string,
       PropTypes.number,
     ]),
-    defaultListFields: PropTypes.arrayOf(PropTypes.string),
     onNew: PropTypes.func.isRequired,
     onClickEdit: PropTypes.func.isRequired,
   };
 
   static defaultProps = {
     settings: Immutable.List(),
-    defaultListFields: [],
     isPlaysEnabled: false,
     aid: '',
   };
+
+  static defaultListFields = getConfig(['systemItems', 'subscription', 'defaultListFields'], Immutable.List());
 
   planActivationParser = (subscription) => {
     const date = getItemDateValue(subscription, 'plan_activation', false);
@@ -67,10 +67,10 @@ class SubscriptionsList extends Component {
   }
 
   getFields = () => {
-    const { settings, defaultListFields } = this.props;
+    const { settings } = this.props;
     return settings
       .filter(this.filterPlayField)
-      .filter(field => (field.get('show_in_list', false) || defaultListFields.includes(field.get('field_name', ''))))
+      .filter(field => (field.get('show_in_list', false) || SubscriptionsList.defaultListFields.includes(field.get('field_name', ''))))
       .map((field) => {
         const fieldname = field.get('field_name');
         switch (fieldname) {
@@ -81,17 +81,11 @@ class SubscriptionsList extends Component {
           case 'address':
             return { id: fieldname, parser: this.addressParser };
           case 'sid':
-            return { id: fieldname, title: 'ID', type: 'number', sort: true };
+            return { id: fieldname, type: 'number', sort: true };
           case 'play':
             return { id: fieldname, sort: true };
           default: {
-            let title = fieldname;
-            if (fieldname === 'firstname') {
-              title = 'first name';
-            } else if (fieldname === 'lastname') {
-              title = 'last name';
-            }
-            return { id: fieldname, title: changeCase.sentenceCase(title) };
+            return { id: fieldname };
           }
         }
       })
@@ -117,20 +111,14 @@ class SubscriptionsList extends Component {
     this.props.onClickEdit(item, 'subscription', 'clone');
   }
 
-  filterFields = () => [
-    { id: 'sid', placeholder: 'ID', type: 'number' },
-    { id: 'firstname', placeholder: 'First Name' },
-    { id: 'lastname', placeholder: 'Last Name' },
-  ];
-
   getSubsctiptionListProject = () => {
-    const { settings, defaultListFields } = this.props;
+    const { settings } = this.props;
     return Immutable.Map().withMutations((fieldsWithMutations) => {
       fieldsWithMutations.set('from', 1);
       fieldsWithMutations.set('to', 1);
       fieldsWithMutations.set('revision_info', 1);
       fieldsWithMutations.set('aid', 1);
-      defaultListFields.forEach((defaultSubsctiptionListField) => {
+      SubscriptionsList.defaultListFields.forEach((defaultSubsctiptionListField) => {
         fieldsWithMutations.set(defaultSubsctiptionListField, 1);
       });
       settings
@@ -154,7 +142,6 @@ class SubscriptionsList extends Component {
           <EntityList
             itemsType="subscribers"
             itemType="subscription"
-            filterFields={this.filterFields()}
             tableFields={fields}
             projectFields={projectFields}
             showRevisionBy={true}

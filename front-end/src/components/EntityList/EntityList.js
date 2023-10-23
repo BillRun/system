@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { noCase, upperCaseFirst } from 'change-case';
+import { noCase, upperCaseFirst, sentenceCase } from 'change-case';
 import { Col, Row, Panel } from 'react-bootstrap';
 import { LoadingItemPlaceholder, Actions } from '@/components/Elements';
 import List from '../List';
@@ -35,7 +35,7 @@ import {
 import {
   getSettings,
 } from '@/actions/settingsActions';
-import { getConfig } from '@/common/Util';
+import { getFieldName, getConfig } from '@/common/Util';
 
 
 class EntityList extends Component {
@@ -391,12 +391,12 @@ class EntityList extends Component {
   }
 
   renderFilter = () => {
-    const { filter, filterFields, entityFields, customFilters } = this.props;
+    const { filter, filterFields, entityFields, customFilters, itemType } = this.props;
     const allFilterFields = entityFields
       .filter(field => field.get('searchable', false))
       .map(field => Immutable.Map({
         id: field.get('field_name', ''),
-        placeholder: field.get('title', field.get('field_name', '')),
+        placeholder: field.get('title', getFieldName(field.get('field_name', ''), itemType)),
       }))
       .withMutations((accWithMutations) => {
         Immutable.fromJS(filterFields).forEach((field) => {
@@ -405,7 +405,6 @@ class EntityList extends Component {
           }
         });
       })
-      .reverse()
       .toJS();
 
     if (allFilterFields.length === 0) {
@@ -466,9 +465,15 @@ class EntityList extends Component {
   }
 
   renderList = () => {
-    const { items, sort, tableFields, showRevisionBy } = this.props;
+    const { items, sort, tableFields, showRevisionBy, itemType } = this.props;
     const actions = this.getActions();
     const fields = (!showRevisionBy) ? tableFields : this.addStateColumn(tableFields);
+    fields.map(field => {
+      if (!field.hasOwnProperty('title') && field.hasOwnProperty('id')) {
+        field.title = getFieldName(field.id, itemType, sentenceCase(field.id) )
+      }
+      return field;
+    });
     return (
       <List
         sort={sort}

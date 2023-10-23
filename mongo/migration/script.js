@@ -1647,6 +1647,74 @@ lastConfig = runOnce(lastConfig, 'BRCD-4217', function () {
 	print("Updated total of " + i + " bills!")
 });
 
+
+// BRCD-4266 - Set default searchable fields for dynamic entity lists (customers)
+lastConfig = runOnce(lastConfig, 'BRCD-4266', function () {
+	print("BRCD-4266 - Set default searchable fields for dynamic entity lists (customers)..");
+	// Account
+	var defaultAccountSearchableFields = ['aid', 'firstname', 'lastname', 'first_name', 'last_name'];
+	var accountFields = lastConfig['subscribers']['account']['fields'];
+	for (var field_key in accountFields) {
+		if (defaultAccountSearchableFields.includes(accountFields[field_key].field_name)) {
+			accountFields[field_key].searchable = true;
+		}
+	}
+	// Subscriber
+	var defaultSubscriberSearchableFields = ['sid', 'firstname', 'lastname', 'first_name', 'last_name'];
+	var subscriberFields = lastConfig['subscribers']['subscriber']['fields'];
+	for (var field_key in subscriberFields) {
+		if (defaultSubscriberSearchableFields.includes(subscriberFields[field_key].field_name)) {
+			subscriberFields[field_key].searchable = true;
+		}
+	}
+	lastConfig['subscribers']['subscriber']['fields'] = subscriberFields;
+	// Tax
+	var defaultTaxesSearchableFields = ['description', 'key'];
+	var taxesFields = lastConfig['taxes']['fields'];
+	for (var field_key in taxesFields) {
+		if (defaultTaxesSearchableFields.includes(taxesFields[field_key].field_name)) {
+			taxesFields[field_key].searchable = true;
+		}
+	}
+	lastConfig['taxes']['fields'] = taxesFields;
+	// discounts
+	var defaultDiscountsSearchableFields = ['description', 'key'];
+	var discountsFields = lastConfig['discounts']['fields'];
+	for (var field_key in discountsFields) {
+		if (defaultDiscountsSearchableFields.includes(discountsFields[field_key].field_name)) {
+			discountsFields[field_key].searchable = true;
+		}
+	}
+	lastConfig['discounts']['fields'] = discountsFields;
+	// Plans
+	var defaultPlansSearchableFields = ['name', 'description'];
+	var plansFields = lastConfig['plans']['fields'];
+	for (var field_key in plansFields) {
+		if (defaultPlansSearchableFields.includes(plansFields[field_key].field_name)) {
+			plansFields[field_key].searchable = true;
+		}
+	}
+	lastConfig['plans']['fields'] = plansFields;
+	// Services
+	var defaultServicesSearchableFields = ['description', 'name'];
+	var servicesFields = lastConfig['services']['fields'];
+	for (var field_key in servicesFields) {
+		if (defaultServicesSearchableFields.includes(servicesFields[field_key].field_name)) {
+			servicesFields[field_key].searchable = true;
+		}
+	}
+	lastConfig['services']['fields'] = servicesFields;
+	// Rates
+	var defaultRatesSearchableFields = ['key', 'description'];
+	var ratesFields = lastConfig['rates']['fields'];
+	for (var field_key in ratesFields) {
+		if (defaultRatesSearchableFields.includes(ratesFields[field_key].field_name)) {
+			ratesFields[field_key].searchable = true;
+		}
+	}
+	lastConfig['rates']['fields'] = ratesFields;
+});
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.dropIndex("aid_1_urt_1");

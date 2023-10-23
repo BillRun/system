@@ -54,7 +54,8 @@
     "itemsName": "products",
     "itemType": "product",
     "itemsType": "products",
-    "settingsKey": "rates"
+    "settingsKey": "rates",
+    "defaultListFields": ["description", "key", "rates"]
   },
   "discount": {
     "collection": "discounts",
@@ -84,7 +85,8 @@
     "itemsName": "subscribers",
     "itemType": "subscription",
     "itemsType": "subscriptions",
-    "settingsKey": "subscribers.subscriber"
+    "settingsKey": "subscribers.subscriber",
+    "defaultListFields": ["sid", "firstname", "lastname", "plan", "plan_activation", "services"]
   },
   "customer": {
     "collection": "accounts",
@@ -94,7 +96,8 @@
     "itemsName": "customers",
     "itemType": "customer",
     "itemsType": "customers",
-    "settingsKey": "subscribers.account"
+    "settingsKey": "subscribers.account",
+    "defaultListFields": ["aid", "firstname", "lastname"]
   },
   "report": {
     "collection": "reports",
@@ -148,7 +151,8 @@
     "itemsName": "tax rates",
     "itemType": "tax",
     "itemsType": "taxes",
-    "settingsKey": "taxes"
+    "settingsKey": "taxes",
+    "defaultListFields": ["key", "description", "rate"]
   },
   "logFile": {
     "collection": "log",
