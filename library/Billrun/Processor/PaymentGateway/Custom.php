@@ -51,7 +51,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	 * @see Billrun_Plugin_Interface_IProcessor::processData
 	 */
 	protected function processLines() {
-		Billrun_Factory::log("Processing custom payments file' lines..", Zend_Log::DEBUG);
+		Billrun_Factory::log("Processing custom payments file' lines", Zend_Log::DEBUG);
 		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
 			return $settingsByType['file_type'] === $this->fileType;
 		}));
@@ -65,12 +65,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
 			return false;
 		}
-		Billrun_Factory::log("Checking 'ignore duplicates' and 'link to invoice' configuration	" . $this->ignoreDuplicates, Zend_Log::DEBUG);
+		Billrun_Factory::log("Checking 'ignore duplicates' and 'link to invoice' configuration" . $this->ignoreDuplicates, Zend_Log::DEBUG);
 		$this->ignoreDuplicates = isset($currentProcessor['ignore_duplicates']) ? $currentProcessor['ignore_duplicates'] : $this->ignoreDuplicates;
 		$this->linkToInvoice = $this->getLinkToInvoiceValue($currentProcessor['processor']);
+		Billrun_Factory::log("Pulling header & data structure", Zend_Log::DEBUG);
 		$headerStructure = isset($currentProcessor['parser']['header_structure']) ? $currentProcessor['parser']['header_structure'] : array();
 		$dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
-		Billrun_Factory::log("Pulled header & data structure, parsing data..", Zend_Log::DEBUG);
+		Billrun_Factory::log("Parsing data...", Zend_Log::DEBUG);
 		$parser = $this->getParser();
 		$parser->setHeaderStructure($headerStructure);
 		$parser->setDataStructure($dataStructure);
@@ -78,15 +79,15 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$parser->parse($this->fileHandler);
 		} catch(Exception $ex) {
 			Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
-			Billrun_Factory::log()->log('Something went wrong while processing the file.', Zend_Log::ALERT);
+			Billrun_Factory::log()->log('Something went wrong while processing the file', Zend_Log::ALERT);
 			return false;
 		}
-		Billrun_Factory::log("Finished parsing..", Zend_Log::DEBUG);
+		Billrun_Factory::log("Finished parsing", Zend_Log::DEBUG);
 		$this->headerRows = $parser->getHeaderRows();
 		$this->trailerRows = $parser->getTrailerRows();
 		$parsedData = $parser->getDataRows();
 		$rowCount = 0;
-		Billrun_Factory::log("Formating parsed data, and adding stamp field..", Zend_Log::DEBUG);
+		Billrun_Factory::log("Formating parsed data, and adding stamp field", Zend_Log::DEBUG);
 		foreach ($parsedData as $index => $line) {
             $line = $this->formatLine($line,$dataStructure);
 			$row = $this->getBillRunLine($line, $index);
@@ -153,7 +154,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 
 	protected function updateData() {
-		Billrun_Factory::log("Updating file' data..", Zend_Log::DEBUG);
+		Billrun_Factory::log("Updating file' data...", Zend_Log::DEBUG);
 		$data = $this->getData();
 		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
 			return $settingsByType['file_type'] === $this->fileType;
@@ -164,7 +165,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$fileCorrelationObj = isset($currentProcessor['correlation']) ? $currentProcessor['correlation'] : null;
 		if (!empty($fileStatus) && in_array($fileStatus, array('only_rejections', 'only_acceptance'))) {
 			if (empty($fileConfCount) || empty($fileCorrelationObj)) {
-				throw new Exception("Couldn't find file's correlation value, or number of expected response files.");
+				throw new Exception("Couldn't find file's correlation value, or number of expected response files");
 			}
 			$this->updateLogCollection($fileCorrelationObj);
 		}
@@ -175,7 +176,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				Billrun_Factory::log("Current file count is " . $currentFileCount . ", out of " . $fileConfCount, Zend_Log::DEBUG);
 				$this->informationArray['file_count'] = $currentFileCount;
 				if (($currentFileCount) > $fileConfCount) {
-					$message = 'Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.';
+					$message = 'Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base';
 					Billrun_Factory::log($message , Zend_Log::ALERT);
 					$this->informationArray['errors'] = $message;
 					return False;
@@ -187,7 +188,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			}
 		}
 		$this->informationArray = array_merge($this->informationArray, $this->getCustomPaymentGatewayFields());
-		Billrun_Factory::log("Updating records by rows..", Zend_Log::DEBUG);
+		Billrun_Factory::log("Updating records by rows...", Zend_Log::DEBUG);
 		$this->updatePaymentsByRows($data, $currentProcessor);
 		$this->informationArray['process_time'] = new Mongodloid_Date($this->now);
         $this->updateLogFile();
@@ -220,7 +221,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 	
 	protected function updateLeftPaymentsByFileStatus() {
-		Billrun_Factory::log("Updating lef payments by file status..", Zend_Log::DEBUG);
+		Billrun_Factory::log("Updating lef payments by file status", Zend_Log::DEBUG);
 		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
 			return $settingsByType['file_type'] === $this->fileType;
 		}));
@@ -235,15 +236,15 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			}
 		}
 		$correlatedField =  $fileCorrelationObj['file_field'];
-		Billrun_Factory::log("Using " . $correlatedField . " as correlated field..", Zend_Log::DEBUG);
+		Billrun_Factory::log("Using " . $correlatedField . " as correlated field", Zend_Log::DEBUG);
 		if (!empty($fileConfCount) && !empty($currentFileCount) && $currentFileCount != $fileConfCount) {
-			Billrun_Factory::log("Processed file is not the last one, continue..", Zend_Log::DEBUG);
+			Billrun_Factory::log("Processed file is not the last one, continue", Zend_Log::DEBUG);
 			return;
 		}
 		$origFileStamp = $this->getOriginalFileStamp($correlatedField);
-		Billrun_Factory::log("Found original file' stamp : " . $origFileStamp . ". Pulling relevant bills..", Zend_Log::DEBUG);
+		Billrun_Factory::log("Found original file' stamp : " . $origFileStamp . ". Pulling relevant bills...", Zend_Log::DEBUG);
 		$relevantBills = $this->getOrigFileBills($origFileStamp);
-		Billrun_Factory::log("Updating " . count($relevantBills) . " relevantt bills..", Zend_Log::DEBUG);
+		Billrun_Factory::log("Updating " . count($relevantBills) . " relevant bills", Zend_Log::DEBUG);
 		foreach ($relevantBills as $bill) {
 			if (!($bill instanceof Billrun_Bill)) {
 				$bill = Billrun_Bill::getInstanceByData($bill);
@@ -327,7 +328,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$this->updatePayments($row, $bill, $currentProcessor);
 		}
 		if ($no_txid_counter > 0) {
-			Billrun_Factory::log()->log('In ' . $no_txid_counter . ' lines, ' . $txid_from_file . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
+			Billrun_Factory::log()->log('In ' . $no_txid_counter . ' lines, ' . $txid_from_file . ' field is empty. No update was made for these lines', Zend_Log::ALERT);
 		}
 	}
 
@@ -342,7 +343,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 
 	protected function updateLogCollection($fileCorrelation) {
-		Billrun_Factory::log("Updating log collection in 'updateLogCollection' function..", Zend_Log::DEBUG);
+		Billrun_Factory::log("Updating log collection in 'updateLogCollection' function", Zend_Log::DEBUG);
 		$source = isset($fileCorrelation['source']) ? $fileCorrelation['source'] : null;
 		$correlationField = isset($fileCorrelation['field']) ? $fileCorrelation['field'] : null;
 		$logField = isset($fileCorrelation['file_field']) ? $fileCorrelation['file_field'] : null;
@@ -375,20 +376,20 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 
 	protected function updateLogFile() {
-		Billrun_Factory::log("Updating log collection in 'updateLogFile' function..", Zend_Log::DEBUG);
+		Billrun_Factory::log("Updating log collection in 'updateLogFile' function", Zend_Log::DEBUG);
 		$current_stamp = $this->getStamp();
 		$log = Billrun_Factory::db()->logCollection()->setReadPreference('RP_PRIMARY');
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
 			Billrun_Factory::log("Updating log - id : " . $current_stamp, Zend_Log::DEBUG);
 			$resource = $log->findOne($current_stamp);
 			if (!empty($resource)) {
-				Billrun_Factory::log("Found relevant log object, pulling log' data..", Zend_Log::DEBUG);
+				Billrun_Factory::log("Found relevant log object, pulling log' data", Zend_Log::DEBUG);
 			}
 			$entityData = $resource->getRawData();
 			$data = array_merge($entityData, $this->informationArray);
-			Billrun_Factory::log("Setting new information..", Zend_Log::DEBUG);
+			Billrun_Factory::log("Setting new information", Zend_Log::DEBUG);
 			$resource->setRawData($data);
-			Billrun_Factory::log("Saving updated log object..", Zend_Log::DEBUG);
+			Billrun_Factory::log("Saving updated log object", Zend_Log::DEBUG);
 			$log->save($resource);
 		}
 	}
@@ -436,7 +437,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if (!empty($date)) {
 			return $date;
 		} else {
-			$message = "Couldn't find date field: " . $this->dateField['field'] . " in the relevant " . $this->dateField['source'] . " row. Current time was taken..";
+			$message = "Couldn't find date field: " . $this->dateField['field'] . " in the relevant " . $this->dateField['source'] . " row, Current time was taken";
 			$this->informationArray['warnings'][] = $message;
 			Billrun_Factory::log()->log($message, Zend_Log::WARN);
 			return date(Billrun_Base::base_datetimeformat, time());
