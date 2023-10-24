@@ -69,6 +69,10 @@ class OnetimeinvoiceAction extends ApiAction {
 		];
 
 		if ($expected) {
+			if ($step != self::STEP_PDF_ONLY) {
+				$this->setError('Expected must to be with step 0 only');
+				return false;
+			}
 			$expectedInvoice = $this->expectedInvoice($chargingOptions, $expected ? true : false);
 			$expectedInvoiceData = $expectedInvoice->getInvoice()->getRawData();
 			$results = [
@@ -76,8 +80,8 @@ class OnetimeinvoiceAction extends ApiAction {
 				'invoiceData' => $expectedInvoiceData,
 			];
 		} else if ($chargeFlow === 'charge_before_invoice') {
-			if ($step != 2) {
-				$this->setError('charge_before_invoice must to be with step 2');
+			if ($step != self::STEP_FULL) {
+				$this->setError('charge_before_invoice must to be with step 2 only');
 				return false;
 			}
 			$results = $this->chargeBeforeInvoiceFlow($chargingOptions);
