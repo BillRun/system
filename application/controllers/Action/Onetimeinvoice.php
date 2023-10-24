@@ -25,6 +25,12 @@ class OnetimeinvoiceAction extends ApiAction {
 	const STEP_FULL = 2;
 
 	protected $aid;
+	
+	/**
+	 * container for processed cdrs
+	 * @var array
+	 */
+	protected $processsedCdrs = array();
 
 	public function execute($arg = null) {
 		$this->allowed();
@@ -91,9 +97,11 @@ class OnetimeinvoiceAction extends ApiAction {
 					'input' => $request
 			);
 			if ($expected) {
-				$ret['billrun'] = $results['invoiceData'] ?? false;
+				$ret['invoiceData'] = $results['invoiceData'] ?? false;
+			} else {
+				$ret['paymentData'] = $results['paymentData'] ?? false;
 			}
-			unset($ret['billrun']['pdfPath']);
+			unset($ret['invoiceData']['pdfPath']);
 			$this->getController()->setOutput(array($ret));
 			return TRUE;
 		} // else 
@@ -110,7 +118,8 @@ class OnetimeinvoiceAction extends ApiAction {
 
 	protected function invoiceChargeFlow($chargingOptions) {
 
-		if (false === $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'])) {
+		$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp']);
+		if ($this->processsedCdrs === false) {
 			//Error message will be provided  for the  spesific CDR for within processCDRs  function
 			return false;
 		}
@@ -162,13 +171,17 @@ class OnetimeinvoiceAction extends ApiAction {
 			}
 		}
 		$results['invoiceData'] = $this->invoice->getRawData();
+		$results['paymentData'] = $paymentResponse;
 
 		return $results;
 	}
 	
 	protected function expectedInvoice($chargingOptions, $expected = false) {
-		//Process and price onetime  CDRs  in memory
-		if (false === ($processsedCDrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true))) {
+		//Process and price onetime  CDRs in memory
+		if (empty($this->processsedCdrs)) {
+			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
+		}
+		if ($this->processsedCdrs === false) {
 			//Error message will be provided  for the  spesific CDR for within processCDRs  function
 			return false;
 		}
@@ -183,7 +196,7 @@ class OnetimeinvoiceAction extends ApiAction {
 					'generate_pdf' => $expected,
 					'uf' => $chargingOptions['uf']]);
 
-		$aggregator->setExternalChargesForAid($this->aid, $processsedCDrs);
+		$aggregator->setExternalChargesForAid($this->aid, $this->processsedCdrs);
 		$aggregator->aggregate();
 
 		//Get The fake invoice totals
@@ -194,7 +207,9 @@ class OnetimeinvoiceAction extends ApiAction {
 
 	protected function chargeBeforeInvoiceFlow($chargingOptions) {
 
-		//Process and price onetime  CDRs  in memory
+		if (empty($this->processsedCdrs)) {
+			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
+		}
 		$fakeInvoice = $this->expectedInvoice($chargingOptions);
 		if ($fakeInvoice) {
 			$expectedTotals = $fakeInvoice->getInvoice()->getRawData()['totals'];
@@ -261,7 +276,7 @@ class OnetimeinvoiceAction extends ApiAction {
 			}
 		}
 		//Actually save the onetime  CDRs to the DB. (By pulling the CDR processors and saving theprcessed CDRs to DB)
-		foreach ($processsedCDrs as $cdr) {
+		foreach ($this->processsedCdrs as $cdr) {
 			$processor = $this->getProcessorForCDR($cdr, true);
 			$processor->storeWhenInMemory();
 		}
@@ -295,6 +310,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$results = [
 			'pdfPath' => $this->invoice->getInvoicePath(),
 			'invoiceData' => $this->invoice->getRawData(),
+			'paymentData' => $paymentStatus,
 		];
 
 		return $results;
