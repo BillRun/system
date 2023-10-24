@@ -77,7 +77,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 			return true;
 		}
 
-		$generatedData[] =  $this->getFooter($this->dataStructure['trailer']);
+		$generatedData[] =  $this->getFooter($this->dataStructure['trailer'], $generatedData);
 
 		if(!$this->write($generatedData)) {
 			Billrun_Factory::log('Failed to write the external pricing file.', Zend_Log::ERR);
@@ -119,8 +119,8 @@ class Generator_ExternalPricing  extends Billrun_Generator {
      * @param array $footerStruct Structure configuration for the footer line.
      * @return string The generated footer line.
      */
-	protected function getFooter($footerStruct = []) {
-		return [ 'F01', date('YmdHis') ];
+	protected function getFooter($footerStruct = [], $generatedData = []) {
+		return [ 'F01', date('YmdHis'), count($generatedData)-1 ];
 	}
 
     /**
