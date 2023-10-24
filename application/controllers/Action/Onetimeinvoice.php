@@ -87,12 +87,13 @@ class OnetimeinvoiceAction extends ApiAction {
 			$ret = array(
 					'status' => 1,
 					'desc' => 'success',
-					'details' => ['invoice_path' => $results['pdfPath'], 'invoice_id' => !$expected ? $this->invoice->getInvoiceID() : '000000000000'],
+					'details' => ['invoice_path' => basename($results['pdfPath']), 'invoice_id' => !$expected ? $this->invoice->getInvoiceID() : '000000000000'],
 					'input' => $request
 			);
 			if ($expected) {
-				$ret['totals'] = $results['totals'] ?? false;
+				$ret['billrun'] = $results ?? false;
 			}
+			unset($ret['billrun']['pdfPath']);
 			$this->getController()->setOutput(array($ret));
 			return TRUE;
 		} // else 
