@@ -278,7 +278,7 @@ class Billrun_Cycle_Account_Invoice {
 		if (!$isFake ) {
 			$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId, $customCollName);
 		} else {
-			$rawDataWithSubs['invoice_id'] = $invoiceId;
+			$rawDataWithSubs['invoice_id'] = str_pad('0', strlen($invoiceId), '0');
 			$newRawData = $rawDataWithSubs;
 		}
 		$this->data->setRawData($newRawData);		
