@@ -64,7 +64,11 @@ class OnetimeinvoiceAction extends ApiAction {
 
 		if ($expected) {
 			$expectedInvoice = $this->expectedInvoice($chargingOptions, $expected ? true : false);
-			$results = $expectedInvoice->getInvoice()->getRawData();
+			$expectedInvoiceData = $expectedInvoice->getInvoice()->getRawData();
+			$results = [
+				'pdfPath' => Generator_WkPdf::getTempDir($chargingOptions['oneTimeStamp']) . "/pdf/{$chargingOptions['oneTimeStamp']}_{$this->aid}_{$expectedInvoiceData['invoice_id']}.pdf",
+				'invoiceData' => $expectedInvoiceData,
+			];
 		} else if ($chargeFlow === 'charge_before_invoice') {
 			if ($step != 2) {
 				$this->setError('charge_before_invoice must to be with step 2');
