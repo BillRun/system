@@ -84,7 +84,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 			} else {
 				$this->addExternalCharges($aggregatedEntity);
 				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
-				$aggregatedEntity->closeInvoice($this->min_invoice_id , $this->isFakeCycle() , $customCollName );
+				$aggregatedEntity->closeInvoice(str_pad('0', strlen($this->min_invoice_id), '0') , $this->isFakeCycle() , $customCollName );
 				//Save configurable/aggretaion data
 				$aggregatedEntity->addConfigurableData();
 			}
