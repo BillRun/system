@@ -400,8 +400,11 @@ class EntityList extends Component {
       }))
       .withMutations((accWithMutations) => {
         Immutable.fromJS(filterFields).forEach((field) => {
-          if (accWithMutations.findIndex(acc => acc.get('id', '') === field.get('id', '')) < 0) {
+          let filterIndex = accWithMutations.findIndex(acc => acc.get('id', '') === field.get('id', ''));
+          if (filterIndex < 0) {
             accWithMutations.push(field);
+          } else {
+            accWithMutations.set(filterIndex, accWithMutations.get(filterIndex).merge(field));
           }
         });
       })

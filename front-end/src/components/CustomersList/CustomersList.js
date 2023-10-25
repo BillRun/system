@@ -58,6 +58,10 @@ class CustomersList extends Component {
       .toJS();
   }
 
+  getFilterOverrides = () => [{
+    id: 'aid', type: 'number'
+  }];
+
   getListActions = () => [{
     type: 'add',
   }, {
@@ -112,6 +116,7 @@ class CustomersList extends Component {
     }
 
     const fields = this.getListFields();
+    const filterOverrides = this.getFilterOverrides();
     const listActions = this.getListActions();
     const actions = this.getActions();
     const apiDateFormat = getConfig('apiDateFormat', 'YYYY-MM-DD');
@@ -138,6 +143,7 @@ class CustomersList extends Component {
           itemsType="customers"
           itemType="customer"
           tableFields={fields}
+          filterFields={filterOverrides}
           actions={actions}
           listActions={listActions}
           refreshString={refreshString}

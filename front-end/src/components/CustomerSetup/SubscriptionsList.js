@@ -93,6 +93,11 @@ class SubscriptionsList extends Component {
       .toArray();
   }
 
+
+  getFilterOverrides = () => [{
+    id: 'sid', type: 'number'
+  }];
+
   getActions = () => [
     { type: 'edit', helpText: 'Edit', onClick: this.props.onClickEdit, onClickColumn: 'sid' },
   ]
@@ -133,6 +138,7 @@ class SubscriptionsList extends Component {
   render() {
     const { aid } = this.props;
     const fields = this.getFields();
+    const filterOverrides = this.getFilterOverrides();
     const actions = this.getActions();
     const listActions = this.getListActions();
     const projectFields = this.getSubsctiptionListProject();
@@ -144,6 +150,7 @@ class SubscriptionsList extends Component {
             itemsType="subscribers"
             itemType="subscription"
             tableFields={fields}
+            filterFields={filterOverrides}
             projectFields={projectFields}
             showRevisionBy={true}
             actions={actions}
