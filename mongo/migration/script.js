@@ -224,20 +224,22 @@ for (var paymentGateway in paymentGateways) {
 }
 
 // BRCD-1390 - Add activation_date field to subscriber
-db.subscribers.find({activation_date:{$exists:0}, type:'subscriber'}).forEach(
-	function(obj) {
-		var activationDate = -1;
-		db.subscribers.find({sid:obj.sid, aid:obj.aid, activation_date:{$exists:0}}).sort({'from': 1}).forEach(
-			function(obj2) {
-				if (activationDate == -1) {
-					activationDate = obj2.from;
+lastConfig = runOnce(lastConfig, 'BRCD-1390', function(){
+	db.subscribers.find({activation_date:{$exists:0}, type:'subscriber'}).forEach(
+		function(obj) {
+			var activationDate = -1;
+			db.subscribers.find({sid:obj.sid, aid:obj.aid, activation_date:{$exists:0}}).sort({'from': 1}).forEach(
+				function(obj2) {
+					if (activationDate == -1) {
+						activationDate = obj2.from;
+					}
+					obj2.activation_date = activationDate;
+					db.subscribers.save(obj2);
 				}
-				obj2.activation_date = activationDate;
-				db.subscribers.save(obj2);
-			}
-		);
-	}
-);
+			);
+		}
+	)
+});
 
 // BRCD-1402 - Add activation_date field to subscriber
 if(lastConfig.invoice_export) {
@@ -366,25 +368,30 @@ for (var i in propertyTypes) {
 db.rebalance_queue.createIndex({"creation_date": 1}, {unique: false, "background": true})
 
 // BRCD-1443 - Wrong billrun field after a rebalance
-db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
+lastConfig = runOnce(lastConfig, 'BRCD-1443', function(){
+	db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
+});
+
 // BRCD-1457 - Fix creation_time field in subscriber services
-db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
-	function(obj) {
-		var services = obj.services;
-		for (var service in services) {
-			if (obj['services'][service]['creation_time'] === undefined) {
-				obj['services'][service]['creation_time'] = obj['services'][service]['from'];
-			} else if (obj['services'][service]['creation_time']['sec'] !== undefined) {
-				var sec = obj['services'][service]['creation_time']['sec'];
-				var usec = obj['services'][service]['creation_time']['usec'];
-				var milliseconds = sec * 1000 + usec;
-				obj['services'][service]['creation_time'] = new Date(milliseconds);
+lastConfig = runOnce(lastConfig, 'BRCD-1457', function(){
+	db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
+		function(obj) {
+			var services = obj.services;
+			for (var service in services) {
+				if (obj['services'][service]['creation_time'] === undefined) {
+					obj['services'][service]['creation_time'] = obj['services'][service]['from'];
+				} else if (obj['services'][service]['creation_time']['sec'] !== undefined) {
+					var sec = obj['services'][service]['creation_time']['sec'];
+					var usec = obj['services'][service]['creation_time']['usec'];
+					var milliseconds = sec * 1000 + usec;
+					obj['services'][service]['creation_time'] = new Date(milliseconds);
+				}
 			}
+			
+			db.subscribers.save(obj);
 		}
-		
-		db.subscribers.save(obj);
-	}
-);
+	)
+});
 // BRCD-1552 collection
 if (typeof lastConfig['collection'] === 'undefined') {
 	lastConfig['collection'] = {'settings': {}};
@@ -484,27 +491,31 @@ db.collection_steps.createIndex({'trigger_date': 1}, { unique: false , sparse: t
 db.collection_steps.createIndex({'extra_params.aid':1 }, { unique: false , sparse: true, background: true });
 
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
-db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});
+lastConfig = runOnce(lastConfig, 'BRCD-1541', function(){
+	db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});
+});
 
 //BRCD-1621 - Service quantity based quota
-var subscribers = db.subscribers.find({type:'subscriber', "services":{$type:4, $ne:[]}, $where: function() {
-	var services = this.services; 
-		var hasStringQuantity = false; 
+lastConfig = runOnce(lastConfig, 'BRCD-1621', function(){
+	var subscribers = db.subscribers.find({type:'subscriber', "services":{$type:4, $ne:[]}, $where: function() {
+		var services = this.services; 
+			var hasStringQuantity = false; 
+			services.forEach(function (service) {
+				if (typeof service.quantity === "string") {
+					hasStringQuantity = true;
+				}
+			});
+			return hasStringQuantity;
+	}});
+	subscribers.forEach(function (sub) {
+		var services = sub.services;
 		services.forEach(function (service) {
-			if (typeof service.quantity === "string") {
-				hasStringQuantity = true;
+			if (service.quantity) {
+				service.quantity = Number(service.quantity);
+				db.subscribers.save(sub);
 			}
 		});
-		return hasStringQuantity;
-}});
-subscribers.forEach(function (sub) {
-	var services = sub.services;
-	services.forEach(function (service) {
-		if (service.quantity) {
-			service.quantity = Number(service.quantity);
-			db.subscribers.save(sub);
-		}
-	});
+	})
 });
 
 //// BRCD-1624: add default Plays to config
@@ -571,31 +582,38 @@ if (typeof lastConfig['taxation']['default']['key'] === 'undefined') {
 }
 
 // BRCD-1837: convert legacy VAT taxation to default taxation rate
-if (lastConfig['taxation']['tax_type'] == 'vat') {
-	var vatRate = lastConfig['taxation']['vat']['v'];
-	var vatLabel = typeof lastConfig['taxation']['vat_label'] !== 'undefined' ? lastConfig['taxation']['vat_label'] : "Vat";
-	
-	lastConfig.taxation = {
-		"tax_type": "usage",
-		"default": {
-			"key": "DEFAULT_VAT"
-		}
+lastConfig = runOnce(lastConfig, 'BRCD-1837', function(){
+	if (lastConfig['taxation']['tax_type'] == 'vat') {
+		var vatRate = lastConfig['taxation']['vat']['v'];
+		var vatLabel = typeof lastConfig['taxation']['vat_label'] !== 'undefined' ? lastConfig['taxation']['vat_label'] : "Vat";
+		
+		lastConfig.taxation = {
+			"tax_type": "usage",
+			"default": {
+				"key": "DEFAULT_VAT"
+			}
+		};
+		
+		var vatFrom = new Date('2019-01-01');
+		var vatTo = new Date('2119-01-01');
+		var vat = {
+			key: "DEFAULT_VAT",
+			from: vatFrom,
+			creation_time: vatFrom,
+			to: vatTo,
+			description: vatLabel,
+			rate: vatRate,
+			params: {}
+		};
+		
+		db.taxes.insert(vat);
 	};
-	
-	var vatFrom = new Date('2019-01-01');
-	var vatTo = new Date('2119-01-01');
-	var vat = {
-		key: "DEFAULT_VAT",
-		from: vatFrom,
-		creation_time: vatFrom,
-		to: vatTo,
-		description: vatLabel,
-		rate: vatRate,
-		params: {}
-	};
-	
-	db.taxes.insert(vat);
-}
+	// BRCD-1837: convert rates' "vatable" field to new tax mapping
+	db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
+	db.rates.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
+	db.services.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
+	db.services.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
+});
 
 //BRCD-1834 : Add tax field
 var taxField ={
@@ -782,12 +800,6 @@ db.log.find({"source":"audit"}).forEach(
 	}
 );
 
-// BRCD-1837: convert rates' "vatable" field to new tax mapping
-db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
-db.rates.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
-db.services.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
-db.services.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
-
 // taxes collection indexes
 db.createCollection('taxes');
 db.taxes.createIndex({'key':1, 'from': 1, 'to': 1}, { unique: true, background: true });
@@ -803,105 +815,109 @@ lastConfig = runOnce(lastConfig, 'BRCD-3678-1', function () {
     db.suggestions.createIndex({'status': 1 }, { unique: false , background: true});
 });
 // BRCD-1936: Migrate old discount structure to new discount structure
-function isEmpty(obj) {
-    for(var key in obj) {
-        if(obj.hasOwnProperty(key))
-            return false;
-    }
-    return true;
-}
-
-db.discounts.find({"discount_subject":{$exists: true}}).forEach(
-	function(obj) {
-		var subjectService;
-		if (obj.discount_subject.service !== undefined) {
-			subjectService = obj.discount_subject.service;
-		} else {
-			subjectService = {};
+lastConfig = runOnce(lastConfig, 'BRCD-1936', function(){
+	function isEmpty(obj) {
+		for(var key in obj) {
+			if(obj.hasOwnProperty(key))
+				return false;
 		}
-		var subjectPlan;
-		if (obj.discount_subject.plan !== undefined) {
-			subjectPlan = obj.discount_subject.plan;
-		} else {
-			subjectPlan = {};
-		}
-		var oldParams = obj.params;
-		obj.type = obj.discount_type;
-		if (obj.prorated == false) {
-			obj.proration = "no";
-		} else {
-			obj.proration = "inherited";
-		}
-		var plansInSubject = {};
-		for (var planName in subjectPlan) {
-			if (subjectPlan[planName].value !== undefined) {
-				plansInSubject[planName] = subjectPlan[planName];
-			} else {
-				var plan = {};
-				plan[planName] = {"value": subjectPlan[planName]};
-				plansInSubject[planName] = {"value": subjectPlan[planName]};
-			}
-		}
-		var servicesInSubject = {};
-		for (var serviceName in subjectService) {
-			if (subjectService[serviceName].value !== undefined) {
-				servicesInSubject[serviceName] = subjectService[serviceName];
-			} else {
-				var service = {};
-				service[serviceName] = {"value": subjectService[serviceName]};
-				servicesInSubject[serviceName] = {"value": subjectService[serviceName]};
-			}
-		}
-		obj.subject = {};
-		if (isEmpty(plansInSubject) === false) {
-			obj.subject.plan = plansInSubject;
-		}
-		if (isEmpty(servicesInSubject) === false) {
-			obj.subject.service = servicesInSubject;
-		}
-		if (isEmpty(obj.subject)) {
-			delete obj.subject;
-		}
-		var conditionObject = {};
-		obj.params = {};
-		var fieldsObject = {};
-		var servicesValues = {};
-		conditionObject["subscriber"] = {};
-		if (oldParams.plan !== undefined) {
-			fieldsObject = [{"field": "plan", "op": "eq", "value": oldParams.plan}];
-			conditionObject["subscriber"]["fields"] = fieldsObject;
-		}
-		var serviceObject = {};
-		var serviceValue = [];
-		var servicesArray = [];
-		if (oldParams.service !== undefined) {
-			var serviceCondAmount = oldParams.service.length;
-			for (var i = 0; i < serviceCondAmount; i++) {
-				servicesArray.push(oldParams.service[i]);
-			}
-			serviceValue.push({"field": "name", "op": "in", "value":servicesArray})
-			servicesValues = {"fields": serviceValue};
-			serviceObject['any'] = [servicesValues];
-			conditionObject["subscriber"]["service"] = serviceObject;
-		}
-		if (isEmpty(fieldsObject) === false || isEmpty(serviceObject) === false) {
-			conditionObject["subscriber"] = [conditionObject["subscriber"]];
-			obj.params.conditions = [conditionObject];
-		}
-		delete obj.discount_type;
-		delete obj.discount_subject;
-		delete obj.prorated;
-		db.discounts.save(obj);
+		return true;
 	}
-)
+
+	db.discounts.find({"discount_subject":{$exists: true}}).forEach(
+		function(obj) {
+			var subjectService;
+			if (obj.discount_subject.service !== undefined) {
+				subjectService = obj.discount_subject.service;
+			} else {
+				subjectService = {};
+			}
+			var subjectPlan;
+			if (obj.discount_subject.plan !== undefined) {
+				subjectPlan = obj.discount_subject.plan;
+			} else {
+				subjectPlan = {};
+			}
+			var oldParams = obj.params;
+			obj.type = obj.discount_type;
+			if (obj.prorated == false) {
+				obj.proration = "no";
+			} else {
+				obj.proration = "inherited";
+			}
+			var plansInSubject = {};
+			for (var planName in subjectPlan) {
+				if (subjectPlan[planName].value !== undefined) {
+					plansInSubject[planName] = subjectPlan[planName];
+				} else {
+					var plan = {};
+					plan[planName] = {"value": subjectPlan[planName]};
+					plansInSubject[planName] = {"value": subjectPlan[planName]};
+				}
+			}
+			var servicesInSubject = {};
+			for (var serviceName in subjectService) {
+				if (subjectService[serviceName].value !== undefined) {
+					servicesInSubject[serviceName] = subjectService[serviceName];
+				} else {
+					var service = {};
+					service[serviceName] = {"value": subjectService[serviceName]};
+					servicesInSubject[serviceName] = {"value": subjectService[serviceName]};
+				}
+			}
+			obj.subject = {};
+			if (isEmpty(plansInSubject) === false) {
+				obj.subject.plan = plansInSubject;
+			}
+			if (isEmpty(servicesInSubject) === false) {
+				obj.subject.service = servicesInSubject;
+			}
+			if (isEmpty(obj.subject)) {
+				delete obj.subject;
+			}
+			var conditionObject = {};
+			obj.params = {};
+			var fieldsObject = {};
+			var servicesValues = {};
+			conditionObject["subscriber"] = {};
+			if (oldParams.plan !== undefined) {
+				fieldsObject = [{"field": "plan", "op": "eq", "value": oldParams.plan}];
+				conditionObject["subscriber"]["fields"] = fieldsObject;
+			}
+			var serviceObject = {};
+			var serviceValue = [];
+			var servicesArray = [];
+			if (oldParams.service !== undefined) {
+				var serviceCondAmount = oldParams.service.length;
+				for (var i = 0; i < serviceCondAmount; i++) {
+					servicesArray.push(oldParams.service[i]);
+				}
+				serviceValue.push({"field": "name", "op": "in", "value":servicesArray})
+				servicesValues = {"fields": serviceValue};
+				serviceObject['any'] = [servicesValues];
+				conditionObject["subscriber"]["service"] = serviceObject;
+			}
+			if (isEmpty(fieldsObject) === false || isEmpty(serviceObject) === false) {
+				conditionObject["subscriber"] = [conditionObject["subscriber"]];
+				obj.params.conditions = [conditionObject];
+			}
+			delete obj.discount_type;
+			delete obj.discount_subject;
+			delete obj.prorated;
+			db.discounts.save(obj);
+		}
+	)
+});
 
 // BRCD-1971 - update prorated field
-db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
-	plan.prorated_start = plan.prorated;
-	plan.prorated_end = plan.prorated;
-	plan.prorated_termination = plan.prorated;
-	delete plan.prorated;
-	db.plans.save(plan);
+lastConfig = runOnce(lastConfig, 'BRCD-1971', function(){
+	db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
+		plan.prorated_start = plan.prorated;
+		plan.prorated_end = plan.prorated;
+		plan.prorated_termination = plan.prorated;
+		delete plan.prorated;
+		db.plans.save(plan);
+	})
 });
 // BRCD-1241: convert events to new structure
 if (typeof lastConfig.events !== 'undefined') {
@@ -1260,63 +1276,66 @@ lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
 db.subscribers.createIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
 db.billrun.createIndex( { 'billrun_key': -1, 'attributes.invoicing_day': -1 },{unique: false, background: true });
 db.billrun.dropIndex('billrun_key_-1');
+
 //BRCD-2042 - charge.not_before migration script
-db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
-	function(obj) {
-		if (typeof obj['charge'] === 'undefined') {
-			obj['charge'] = {};
+lastConfig = runOnce(lastConfig, 'BRCD-2042', function(){
+	db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
+		function(obj) {
+			if (typeof obj['charge'] === 'undefined') {
+				obj['charge'] = {};
+			}
+			obj['charge']['not_before'] = obj['due_date'];
+			db.bills.save(obj);
 		}
-		obj['charge']['not_before'] = obj['due_date'];
-		db.bills.save(obj);
-	}
-)
-db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
-	function(obj) {
-		if (typeof obj['charge'] === 'undefined') {
-			obj['charge'] = {};
+	)
+	db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
+		function(obj) {
+			if (typeof obj['charge'] === 'undefined') {
+				obj['charge'] = {};
+			}
+			obj['charge']['not_before'] = obj['due_date'];
+			db.billrun.save(obj);
 		}
-		obj['charge']['not_before'] = obj['due_date'];
-		db.billrun.save(obj);
-	}
-)
+	)
+})
 
 //BRCD-2452 reformat paid_by and pays objects to array format
-var bills = db.bills.find({
-	$or: [
-		{"pays.inv": {$exists: 1}},
-		{"pays.rec": {$exists: 1}},
-		{"paid_by.inv": {$exists: 1}},
-		{"paid_by.rec": {$exists: 1}}
-	]
-});
-bills.forEach(function (bill) {
-	var relatedBills = [];
-	var currentBillsKey;
+lastConfig = runOnce(lastConfig, 'BRCD-2452', function(){
+	var bills = db.bills.find({
+		$or: [
+			{"pays.inv": {$exists: 1}},
+			{"pays.rec": {$exists: 1}},
+			{"paid_by.inv": {$exists: 1}},
+			{"paid_by.rec": {$exists: 1}}
+		]
+	});
+	bills.forEach(function (bill) {
+		var relatedBills = [];
+		var currentBillsKey;
 
-	if (typeof bill['pays'] !== 'undefined') {
-		currentBillsKey = 'pays';
-	} else if (typeof bill['paid_by'] !== 'undefined') {
-		currentBillsKey = 'paid_by';
-	}
-
-	if (typeof bill[currentBillsKey] != 'undefined') {
-		for (type in bill[currentBillsKey]) {
-			for (id in bill[currentBillsKey][type]) {
-				relatedBills.push({
-					"type": type,
-					"id": type === 'inv' ? parseInt(id) : id,
-					"amount": parseFloat(bill[currentBillsKey][type][id])
-				});
-			}
+		if (typeof bill['pays'] !== 'undefined') {
+			currentBillsKey = 'pays';
+		} else if (typeof bill['paid_by'] !== 'undefined') {
+			currentBillsKey = 'paid_by';
 		}
 
-		bill[currentBillsKey] = relatedBills;
-		db.bills.save(bill);
-	}
+		if (typeof bill[currentBillsKey] != 'undefined') {
+			for (type in bill[currentBillsKey]) {
+				for (id in bill[currentBillsKey][type]) {
+					relatedBills.push({
+						"type": type,
+						"id": type === 'inv' ? parseInt(id) : id,
+						"amount": parseFloat(bill[currentBillsKey][type][id])
+					});
+				}
+			}
+
+			bill[currentBillsKey] = relatedBills;
+			db.bills.save(bill);
+		}
+	})
 });
 
-// BRCD-2772 - add webhooks supports all audit collection field should be lowercase
-db.audit.update({"collection" : "Login"}, {$set:{"collection":"login"}}, {"multi":1});
 
 //BRCD-2855 Oauth support
 lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
@@ -1363,6 +1382,9 @@ runOnce(lastConfig, 'BRCD-2772', function () {
         "hide_from_ui": false
     };
     lastConfig['plugins'].push(_webhookPluginsSettings);
+
+	// BRCD-2772 - add webhooks supports all audit collection field should be lowercase
+	db.audit.update({"collection" : "Login"}, {$set:{"collection":"login"}}, {"multi":1});
 });
 
 // BRCD-2936: add email authentication template
