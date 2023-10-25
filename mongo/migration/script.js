@@ -53,10 +53,11 @@ function runOnce(lastConfig, taskCode, callback) {
     return lastConfig;
 }
 // =============================================================================
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig	['_id'];
+// =============================================================================
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
-delete lastConfig['_id'];
 var fields = lastConfig['rates']['fields'];
 var found = false;
 for (var field_key in fields) {
@@ -1648,71 +1649,100 @@ lastConfig = runOnce(lastConfig, 'BRCD-4217', function () {
 });
 
 
-// BRCD-4266 - Set default searchable fields for dynamic entity lists (customers)
+// BRCD-4266 - Set default searchable fields for dynamic entity lists
 lastConfig = runOnce(lastConfig, 'BRCD-4266', function () {
-	print("BRCD-4266 - Set default searchable fields for dynamic entity lists (customers)..");
+	print("START\tBRCD-4266 - Set default searchable fields for dynamic entity lists..");
 	// Account
-	var defaultAccountSearchableFields = ['aid', 'firstname', 'lastname', 'first_name', 'last_name'];
-	var accountFields = lastConfig['subscribers']['account']['fields'];
-	for (var field_key in accountFields) {
-		if (defaultAccountSearchableFields.includes(accountFields[field_key].field_name)) {
-			accountFields[field_key].searchable = true;
+	if (typeof lastConfig['subscribers'] !== 'undefined' && typeof lastConfig['subscribers']['account'] !== 'undefined' && typeof lastConfig['subscribers']['account']['fields'] !== 'undefined') {
+		var accountFields = lastConfig['subscribers']['account']['fields'];
+		var defaultAccountSearchableFields = ['aid', 'firstname', 'lastname', 'first_name', 'last_name'];
+		for (var field_key in accountFields) {
+			if (defaultAccountSearchableFields.includes(accountFields[field_key].field_name)) {
+				accountFields[field_key].searchable = true;
+			}
 		}
+		lastConfig['subscribers']['account']['fields'] = accountFields;
+		print("\t* update account fields");
 	}
+
 	// Subscriber
-	var defaultSubscriberSearchableFields = ['sid', 'firstname', 'lastname', 'first_name', 'last_name'];
-	var subscriberFields = lastConfig['subscribers']['subscriber']['fields'];
-	for (var field_key in subscriberFields) {
-		if (defaultSubscriberSearchableFields.includes(subscriberFields[field_key].field_name)) {
-			subscriberFields[field_key].searchable = true;
+	if (typeof lastConfig['subscribers'] !== 'undefined' && typeof lastConfig['subscribers']['subscriber'] !== 'undefined' && typeof lastConfig['subscribers']['subscriber']['fields'] !== 'undefined') {
+		var subscriberFields = lastConfig['subscribers']['subscriber']['fields'];
+		var defaultSubscriberSearchableFields = ['sid', 'firstname', 'lastname', 'first_name', 'last_name'];
+		for (var field_key in subscriberFields) {
+			if (defaultSubscriberSearchableFields.includes(subscriberFields[field_key].field_name)) {
+				subscriberFields[field_key].searchable = true;
+			}
 		}
+		lastConfig['subscribers']['subscriber']['fields'] = subscriberFields;
+		print("\t* update subscriber fields");
 	}
-	lastConfig['subscribers']['subscriber']['fields'] = subscriberFields;
+
 	// Tax
-	var defaultTaxesSearchableFields = ['description', 'key'];
-	var taxesFields = lastConfig['taxes']['fields'];
-	for (var field_key in taxesFields) {
-		if (defaultTaxesSearchableFields.includes(taxesFields[field_key].field_name)) {
-			taxesFields[field_key].searchable = true;
+	if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fields'] !== 'undefined') {
+		var taxesFields = lastConfig['taxes']['fields'];
+		var defaultTaxesSearchableFields = ['description', 'key'];
+		for (var field_key in taxesFields) {
+			if (defaultTaxesSearchableFields.includes(taxesFields[field_key].field_name)) {
+				taxesFields[field_key].searchable = true;
+			}
 		}
+		lastConfig['taxes']['fields'] = taxesFields;
+		print("\t* update taxes fields");
 	}
-	lastConfig['taxes']['fields'] = taxesFields;
+
 	// discounts
-	var defaultDiscountsSearchableFields = ['description', 'key'];
-	var discountsFields = lastConfig['discounts']['fields'];
-	for (var field_key in discountsFields) {
-		if (defaultDiscountsSearchableFields.includes(discountsFields[field_key].field_name)) {
-			discountsFields[field_key].searchable = true;
+	if (typeof lastConfig['discounts'] !== 'undefined' && typeof lastConfig['discounts']['fields'] !== 'undefined') {
+		var discountsFields = lastConfig['discounts']['fields'];
+		var defaultDiscountsSearchableFields = ['description', 'key'];
+		for (var field_key in discountsFields) {
+			if (defaultDiscountsSearchableFields.includes(discountsFields[field_key].field_name)) {
+				discountsFields[field_key].searchable = true;
+			}
 		}
+		lastConfig['discounts']['fields'] = discountsFields;
+		print("\t* update discounts fields");
 	}
-	lastConfig['discounts']['fields'] = discountsFields;
+
 	// Plans
-	var defaultPlansSearchableFields = ['name', 'description'];
-	var plansFields = lastConfig['plans']['fields'];
-	for (var field_key in plansFields) {
-		if (defaultPlansSearchableFields.includes(plansFields[field_key].field_name)) {
-			plansFields[field_key].searchable = true;
+	if (typeof lastConfig['plans'] !== 'undefined' && typeof lastConfig['plans']['fields'] !== 'undefined') {
+		var plansFields = lastConfig['plans']['fields'];
+		var defaultPlansSearchableFields = ['name', 'description'];
+		for (var field_key in plansFields) {
+			if (defaultPlansSearchableFields.includes(plansFields[field_key].field_name)) {
+				plansFields[field_key].searchable = true;
+			}
 		}
+		lastConfig['plans']['fields'] = plansFields;
+		print("\t* update plans fields");
 	}
-	lastConfig['plans']['fields'] = plansFields;
+
 	// Services
-	var defaultServicesSearchableFields = ['description', 'name'];
-	var servicesFields = lastConfig['services']['fields'];
-	for (var field_key in servicesFields) {
-		if (defaultServicesSearchableFields.includes(servicesFields[field_key].field_name)) {
-			servicesFields[field_key].searchable = true;
+	if (typeof lastConfig['services'] !== 'undefined' && typeof lastConfig['services']['fields'] !== 'undefined' ) {
+		var servicesFields = lastConfig['services']['fields'];
+		var defaultServicesSearchableFields = ['description', 'name'];
+		for (var field_key in servicesFields) {
+			if (defaultServicesSearchableFields.includes(servicesFields[field_key].field_name)) {
+				servicesFields[field_key].searchable = true;
+			}
 		}
+		lastConfig['services']['fields'] = servicesFields;
+		print("\t* update services fields");
 	}
-	lastConfig['services']['fields'] = servicesFields;
+
 	// Rates
-	var defaultRatesSearchableFields = ['key', 'description'];
-	var ratesFields = lastConfig['rates']['fields'];
-	for (var field_key in ratesFields) {
-		if (defaultRatesSearchableFields.includes(ratesFields[field_key].field_name)) {
-			ratesFields[field_key].searchable = true;
+	if (typeof lastConfig['rates'] !== 'undefined' && typeof lastConfig['rates']['fields'] !== 'undefined' ) {
+		var ratesFields = lastConfig['rates']['fields'];
+		var defaultRatesSearchableFields = ['key', 'description'];
+		for (var field_key in ratesFields) {
+			if (defaultRatesSearchableFields.includes(ratesFields[field_key].field_name)) {
+				ratesFields[field_key].searchable = true;
+			}
 		}
+		lastConfig['rates']['fields'] = ratesFields;
+		print("\t* update rates fields");
 	}
-	lastConfig['rates']['fields'] = ratesFields;
+	print("DONE\tBRCD-4266");
 });
 
 db.config.insert(lastConfig);
