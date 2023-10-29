@@ -308,7 +308,7 @@ class Billrun_Utils_Time {
         $diff = static::isClockChangeBetweenDates($date1, $date2);
 
         //We need to sub diff between dates from total days
-		if ( $diff ) {
+        if ( $diff ) {
             $days -= $diff;
         }
 
@@ -331,13 +331,13 @@ class Billrun_Utils_Time {
      */
     public static function isClockChangeBetweenDates($date1, $date2)
     {
-		$timezone =new DateTimeZone(date_default_timezone_get());
+        $timezone =new DateTimeZone(date_default_timezone_get());
         if ($date1 > $date2) {
             $datediff = strtotime(date("Y-m-d", $date1)) - strtotime(date("Y-m-d", $date2));
-			$dateTrans= $timezone->getTransitions( $date2, $date1);
+            $dateTrans= $timezone->getTransitions( $date2, $date1);
         } else {
             $datediff = strtotime(date("Y-m-d", $date2)) - strtotime(date("Y-m-d", $date1));
-			$dateTrans= $timezone->getTransitions( $date1, $date2);
+            $dateTrans= $timezone->getTransitions( $date1, $date2);
         }
         $days = ($datediff) / (60 * 60 * 24);
         $diff = $days - floor($days);
