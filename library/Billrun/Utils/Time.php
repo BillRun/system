@@ -344,6 +344,6 @@ class Billrun_Utils_Time {
         if ($diff == 0 ||  count($dateTrans) < 2) {
             return false;
         }
-        return $diff;
+        return $diff > 0.5 ? -1+$diff : $diff;
     }
 }
