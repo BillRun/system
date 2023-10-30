@@ -20,6 +20,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $cached_results = array();
 	protected $count_days;
 	protected $roamingSms = false;
+	protected $roamingLine = false;
 	protected $premium_ir_not_included = null;
 	protected $limit_count = [] ;
 	protected $usage_count = [] ;
@@ -35,6 +36,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (isset($row['roaming']) && preg_match('/sms/',$row['usaget'])) {
 					$this->roamingSms = true;
 				}
+				$this->roamingLine = !empty($row['roaming']) && !empty($row['serving_network']) && $row['serving_network'] !== Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.volte_local_plmn','ISRCL');
 			} else {
 				Billrun_Factory::log()->log('urt wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
@@ -44,6 +46,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else {
 			$this->premium_ir_not_included = null;
 		}
+
 		$this->limit_count = [];
 		$this->usage_count = [];
 	}
@@ -117,7 +120,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$line_month = substr($this->line_time, 4, 2);
 		$line_day = substr($this->line_time, 6, 2);
 		$dayKey = $line_year . $line_month . $line_day;
-		if($this->line_type == 'tap3' || $this->roamingSms) {
+		if($this->line_type == 'tap3' || $this->roamingSms || $this->roamingLine ) {
 			$results = $this->loadSidLines($sid, $limits, $plan, $groupSelected);
 		} else if ($this->line_type == 'nrtrde' || $this->line_type == 'ggsn') {
 			$results = $this->loadSidNrtrdeLines($sid, $limits, $plan, $groupSelected);
