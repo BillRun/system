@@ -518,28 +518,55 @@ export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file)
   });
 }
 
-export const generateOneTimeInvoiceQuery = (aid, lines, sendMail) => {
-  const cdrs = lines.map(line => Immutable.Map({
-    aid: aid,
-    sid: line.get('sid', ''),
-    rate: line.get('rate', ''),
-    credit_time: line.get('date', ''),
-    usagev: line.get('volume', ''),
-    type: line.get('type', ''),
-    aprice: line.get('price', ''),
-  }));
+export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_charge', sendMail = false) => {
+  const cdrs = lines
+    .map(line => Immutable.Map({
+      aid: aid,
+      sid: line.get('sid', ''),
+      rate: line.get('rate', ''),
+      credit_time: line.get('date', ''),
+      usagev: line.get('volume', ''),
+      type: line.get('type', ''),
+      aprice: line.get('price', ''),
+    }).filter(val => val !== ''));
   const params = [
     { cdrs: JSON.stringify(cdrs) },
     { aid },
     { send_email: sendMail ? 1 : 0 },
-    { step: 1 },
-    { allow_bill: 1 }
   ];
+  if (invoiceType === 'without_charge') {
+    params.push({ step: 1 });
+    params.push({ allow_bill: 1 });
+  } else if (invoiceType === 'charge') {
+    params.push({ step: 2 });
+    params.push({ allow_bill: 1 });
+  } else if (invoiceType === 'successful_charge') {
+    params.push({ step: 2 });
+    params.push({ allow_bill: 1 });
+    params.push({ charge_flow: 'charge_before_invoice' });
+  } else if (invoiceType === 'expected') {
+    params.push({ step: 0 });
+    params.push({ allow_bill: 1 });
+    params.push({ charge_flow: 'charge_before_invoice' });
+    params.push({ expected: 1 });
+  } else if (invoiceType === 'download_expected') {
+    params.push({ step: 0 });
+    params.push({ allow_bill: 1 });
+    params.push({ charge_flow: 'charge_before_invoice' });
+    params.push({ expected: 1 });
+    params.push({ send_back_invoices: 1 });
+  }
   return {
     api: 'onetimeinvoice',
     params,
   };
 }
+
+export const generateOneTimeInvoiceDownloadExpectedQuery = (aid, lines, invoiceType) =>
+  generateOneTimeInvoiceQuery(aid, lines, 'download_expected', false);
+
+export const generateOneTimeInvoiceExpectedQuery = (aid, lines) =>
+  generateOneTimeInvoiceQuery(aid, lines, 'expected');
 
 export const auditTrailListQuery = (query, page, fields, sort, size) => ({
   action: 'get',

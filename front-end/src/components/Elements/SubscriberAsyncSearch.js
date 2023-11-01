@@ -12,7 +12,10 @@ import {
 import { entitySearchByQuery } from '@/actions/entityActions';
 
 
-const SubscriberAsyncSearch = ({ sid, aid, editable, onChange, searchPlaceholder, noResultsPlaceholder, dispatch }) => {
+const SubscriberAsyncSearch = ({
+   sid, aid, label, editable, searchPlaceholder, noResultsPlaceholder,
+   onChange, dispatch
+}) => {
 
   const defaultOptions = {
     value: 0,
@@ -67,17 +70,21 @@ const SubscriberAsyncSearch = ({ sid, aid, editable, onChange, searchPlaceholder
   });
 
   const onChangeSubscriber = (sid, { option }) => {
-    onChange(sid);
+    onChange(sid, option);
+  }
+  let defaultInputValue = undefined;
+  if (isNumber(sid)) {
+    defaultInputValue = {value: parseFloat(sid), label};
   }
 
   return (
     <Field
       fieldType="select"
-      value={`${sid}`}
+      value={defaultInputValue}
       onChange={onChangeSubscriber}
       clearable={false}
       isAsync={true}
-      isControlled={false}
+      isControlled={true}
       cacheOptions={true}
       defaultOptions={true}
       placeholder={searchPlaceholder}
@@ -89,13 +96,14 @@ const SubscriberAsyncSearch = ({ sid, aid, editable, onChange, searchPlaceholder
 }
 
 SubscriberAsyncSearch.defaultProps = {
-  sid: 0,
-  aid: 0,
+  sid: '',
+  aid: '',
+  label: '',
   currency: '',
   editable: true,
   accountsOptions: [],
-  searchPlaceholder: "Enter subscriber id, customer id, first name or last name",
-  noResultsPlaceholder: "No subscriber found",
+  searchPlaceholder: "Type your subscriber ID, first, or last name for search.",
+  noResultsPlaceholder: "No subscriber were found. Try searching by another ID or name.",
 };
 
 SubscriberAsyncSearch.propTypes = {
@@ -107,6 +115,7 @@ SubscriberAsyncSearch.propTypes = {
     PropTypes.string,
     PropTypes.number,
   ]).isRequired,
+  label: PropTypes.string,
   currency: PropTypes.string,
   editable: PropTypes.bool,
   searchPlaceholder: PropTypes.string,
