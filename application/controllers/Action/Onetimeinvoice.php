@@ -101,11 +101,11 @@ class OnetimeinvoiceAction extends ApiAction {
 					'input' => $request
 			);
 			if ($expected) {
-				$ret['invoiceData'] = $results['invoiceData'] ?? false;
+				$ret['details']['invoiceData'] = $results['invoiceData'] ?? false;
 			} else {
-				$ret['paymentData'] = $results['paymentData'] ?? false;
+				$ret['details']['paymentData'] = $results['paymentData'] ?? false;
 			}
-			unset($ret['invoiceData']['pdfPath']);
+			unset($ret['details']['invoiceData']['pdfPath']);
 			$this->getController()->setOutput(array($ret));
 			return TRUE;
 		} // else 
