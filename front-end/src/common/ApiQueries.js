@@ -751,22 +751,34 @@ export const getCollectionDebtQuery = aid => ({
   ],
 });
 
-export const getOfflinePaymentQuery = (method, aid, amount, payerName, chequeNo) => ({
-  api: 'pay',
-  params: [
-    { method },
-    { payments: JSON.stringify([{
-      amount,
-      aid,
-      payer_name: payerName,
-      dir: 'fc',
-      deposit_slip: '',
-      deposit_slip_bank: '',
-      cheque_no: chequeNo,
-      source: 'web',
-    }]) },
-  ],
-});
+export const getOfflinePaymentQuery = (method, aid, amount, payerName, chequeNo, dir, uf, note, urt) => {
+  const payment = {
+    amount,
+    aid,
+    payer_name: payerName,
+    dir,
+    deposit_slip: '',
+    deposit_slip_bank: '',
+    cheque_no: chequeNo,
+    source: 'web',
+  };
+  if (urt !== '') {
+    payment['urt'] = urt;
+  }
+  if ( note !== '') {
+    payment['note'] = note;
+  }
+  if (uf !== undefined && uf.size !== 0) {
+    payment['uf'] = uf;
+  }
+  return {
+    api: 'pay',
+    params: [
+      { method },
+      { payments:  JSON.stringify([payment])},
+    ]
+  }
+};
 
 export const getConfirmationOperationAllQuery = () => ({
   api: 'operations',
