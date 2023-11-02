@@ -24,6 +24,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected $encoding = 'utf-8';
 	protected $transactionsCounter = 0;
 	protected $row_separator = "line_break";
+	protected $row_separator_after_last_line = false;
 
 	public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
@@ -55,6 +56,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		}
 		$row_separator = Billrun_Util::getIn($options, 'row_separator', 'line_break');
 		$this->row_separator = $row_separator == 'line_break' ? PHP_EOL : $row_separator;
+		$this->row_separator_after_last_line = Billrun_Util::getIn($options, 'row_separator_after_last_line', $this->row_separator_after_last_line);
 		$this->validateOptions($options);
 	}
         
@@ -96,6 +98,11 @@ class Billrun_Generator_PaymentGateway_Csv {
 		}
 		if (count($this->data)|| $this->forceFooter){
 			if (!$this->writeTrailers()) {
+				return false;
+			}
+		}
+		if ($this->row_separator_after_last_line) {
+			if ($this->writeToFile($this->row_separator) === false) {
 				return false;
 			}
 		}

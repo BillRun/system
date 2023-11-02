@@ -120,7 +120,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers));
 		Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::INFO);
 		$this->setFileMandatoryFields();
-		$this->headers = !empty($header = $this->getHeaderLine()) ? [$header] : [];
 		foreach ($this->customers as $customer) {
 			if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
 				break;
@@ -197,15 +196,15 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if ($this->isAssumeApproved()) {
 				$currentPayment->setExtraFields([static::ASSUME_APPROVED_FILE_STATE => true]);
 			}
-			$params = $currentPayment->getRawData();
+			$params = is_array($currentPayment)? $currentPayment : $currentPayment->getRawData();
 			if (isset($account['payment_gateway']['active']['card_token'])) {
 				$params['card_token'] = $account['payment_gateway']['active']['card_token'];
 			}
 			if (isset($account['payment_gateway']['active']['card_expiration'])) {
 				$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
 			}
-			if (!$this->validateMandatoryFieldsExistence($currentPayment, 'payment_request')) {
-				$message = "One or more of the file's mandatory fields is missing for the payment request that was created for aid: " . $customer['aid'] . ". The payment was creadted anyway..";
+			if (!empty($this->validateMandatoryFieldsExistence($params, 'payment_request'))) {
+				$message = "One or more of the file's mandatory fields is missing for the payment request that was created for aid: " . $customer['aid'] . ". The payment was created anyway.";
 				Billrun_Factory::log($message, Zend_Log::WARN);
 				$this->logFile->updateLogFileField('warnings', $message);
 			}
@@ -213,17 +212,20 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$mergeToExistingArrayFields = ['cpg_name', 'cpg_type', 'cpg_file_type'];
 			Billrun_Factory::dispatcher()->trigger('beforeGettingRequestFilePaymentDataLine', array(static::$type, $currentPayment, &$params, &$extraFields, &$mergeToExistingArrayFields, $account, $this));
 			$line = $this->getDataLine($params);
-			$currentPayment->setExtraFields(array_merge_recursive($extraFields, ['pg_request' => $this->billSavedFields]), $mergeToExistingArrayFields);
-			$currentPayment->save();
+			if ($this->affects_bills) {
+				$currentPayment->setExtraFields(array_merge_recursive($extraFields, ['pg_request' => $this->billSavedFields]), $mergeToExistingArrayFields);
+				$currentPayment->save();
+			}
 			if (!empty($line)) {
-			$this->data[] = $line;
-		}
+				$this->data[] = $line;
+			}
 		}
 		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;
 		$this->file_transactions_counter = $numberOfRecordsToTreat;
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
 		$this->logFile->updateLogFileField('info', $message);
+		$this->headers = !empty($header = $this->getHeaderLine()) ? [$header] : [];
 		$this->trailers = !empty($trailer = $this->getTrailerLine()) ? [$trailer] : [];
 	}
 
@@ -389,8 +391,10 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
 			Billrun_Factory::dispatcher()->trigger('beforeSavingRequestFilePayment', array(static::$type, &$currentPayment, &$res_params, $account, $this));
 			$currentPayment->save();
+			return $currentPayment;
 		}
-		
-		return $currentPayment;
-        }
+		else {
+			return $res_params;
+		}
+    }
 }

@@ -19,7 +19,7 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 	 */
 	public function getPrice($quantity = 1) {
 		$charges = array();
-		if ($this->endOffset > 0 ) {
+		if ($this->endOffset > 0 && ($this->deactivation >= $this->cycle->start() || empty($this->deactivation ))) {
 			foreach ($this->price as $tariff) {
 				$price = $this->getTariffForMonthCover($tariff, $this->startOffset, $this->endOffset );
 				if (!empty($price)) {
@@ -30,6 +30,8 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 					);
 				}
 			}
+		} else if ($this->deactivation < $this->cycle->start() && empty($this->deactivation )) {
+			Billrun_Factory::log(Billrun_Utils_Dev::colorText("Got none prorated plan/service ended before the  cycle start","Yellow"),Zend_Log::INFO);
 		}
 
 		return $charges;
