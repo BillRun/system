@@ -55,6 +55,7 @@ class ResetLinesModel {
      */
     protected $alreadyUpdated = [];
     protected $balances;
+	protected $isSidLevel;
 
     /**
      * Conditions to add to the query when rebalancing.
@@ -64,6 +65,8 @@ class ResetLinesModel {
     protected $linesStampsByRebalanceStamp = [];
 
 	public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps, $stampsToRecoverByAidAndSid = array()) {
+		$config = Billrun_Factory::config();
+		$this->isSidLevel = $config->getConfigValue("balances.sid_level", false);
         $this->initBalances($aids, $billrun_key);
         $this->aids = $aids;
         $this->billrun_key = strval($billrun_key);
@@ -702,9 +705,9 @@ class ResetLinesModel {
                 if ($this->checkIfStampsCanStoreInDB($stamps)) {
                     try {
                         $updateData = array('$set' => array('stamps_by_sid' => $stampsBySid));
-                    Billrun_Factory::log("before update rebalance queue recover stamps", Zend_Log::DEBUG);
+                        Billrun_Factory::log("before update rebalance queue recover stamps", Zend_Log::DEBUG);
                         Billrun_Factory::db()->rebalance_queueCollection()->update($query, $updateData);
-                    Billrun_Factory::log("after update rebalance queue recover stamps", Zend_Log::DEBUG);
+                        Billrun_Factory::log("after update rebalance queue recover stamps", Zend_Log::DEBUG);
                     } catch (Exception $ex) {
                         Billrun_Factory::log("Rebalance: failed to add stamps to rebalance queue, Error: " . $ex->getMessage(), Zend_Log::ERR);
                         $this->addStampsToRebalnceQueueFile($aid, $this->rebalnceQueueRecoverStampsPath, $stampsBySid, $query);          
@@ -887,6 +890,11 @@ class ResetLinesModel {
     protected function getRelevantBalances($balances, $balanceId, $params = array(), $invoicing_day = null) {
         $this->alreadyUpdated = [];
         $ret = [];
+		if ($this->isSidLevel) {
+			if (isset($params['aid']) && isset($params['sid']) && $params['sid'] != 0) {
+				$params['aid'] = 0;
+			}
+		}
         foreach ($balances as $balance) {
             $rawData = $balance->getRawData();
             if (isset($rawData['_id']) && !empty($balanceId) && $rawData['_id']->{'$id'} == $balanceId) {
@@ -957,10 +965,8 @@ class ResetLinesModel {
         $verifiedArray = Billrun_Util::verify_array($aids, 'int');
         $aidsAsKeys = array_flip($verifiedArray);
         $balancesToUpdate = array_intersect_key($this->extendedBalanceUsageSubtract, $aidsAsKeys);
-        $queryBalances = array(
-            'aid' => array('$in' => $aids),
-            'period' => array('$ne' => 'default'),
-        );
+		$queryBalances = $this->getQueryBalances($aids, $this->billrun_key);
+		$queryBalances['period'] = array('$ne' => 'default');
         $balances = $balancesColl->query($queryBalances)->cursor();
         foreach ($balancesToUpdate as $aid => $packageUsage) {
             $account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
@@ -998,10 +1004,9 @@ class ResetLinesModel {
         if (empty($this->balanceSubstract)) {
             return;
         }
-        $queryBalances = array(
-            'aid' => array('$in' => $aids),
-            'period' => 'default',
-        );
+		$queryBalances = $this->getQueryBalances($aids, $this->billrun_key);
+		$queryBalances['period'] = 'default';
+
         $balances = $balancesColl->query($queryBalances)->cursor();
         $accounts = Billrun_Factory::account()->loadAccountsForQuery(['aid' => array('$in' => array_keys($this->balanceSubstract))]);
         foreach ($this->balanceSubstract as $aid => $usageBySid) {
@@ -1011,7 +1016,7 @@ class ResetLinesModel {
             $invoicing_day = isset($current_account['invoicing_day']) ? $current_account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
             foreach ($usageBySid as $sid => $usageByMonth) {
                 foreach ($usageByMonth as $billrunKey => $usage) {
-                    $relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
+					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $this->isSidLevel ? 0 : $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
                     if (empty($relevantBalances)) {
                         continue;
                     }
@@ -1047,16 +1052,41 @@ class ResetLinesModel {
         return $ret;
     }
 
-    protected function initBalances($aids) {
-        $queryBalances = array(
-            'aid' => array('$in' => $aids),
-        );
+	protected function initBalances($aids, $billrun_key) {
+		$queryBalances = $this->getQueryBalances($aids, $billrun_key);
 
         $balances = Billrun_Factory::db()->balancesCollection()->query($queryBalances)->cursor();
         foreach ($balances as $balance) {
             $balanceId = $balance->getRawData()['_id']->{'$id'};
             $this->balances[$balanceId] = $balance;
         }
+	}
+
+	protected function getQueryBalances($aids, $billrun_key) {
+		$query = [];
+		
+		if ($this->isSidLevel) {
+			$subsQuery = ['aid'=>['$in'=>$aids]];
+			$from = new MongoDate(Billrun_Billingcycle::getStartTime($billrun_key));
+			$to = new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key));
+			$subsQuery['$or'] = array(
+				array('from' => ['$lte'=>$from], 'to' => ['$gt'=>$from]),
+				array('from' => ['$lte'=>$to], 'to' => ['$gt'=>$to])
+			);
+			$sids = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $subsQuery);
+			$query['$or'] = array(
+				array(
+					'aid' => ['$in'=>$aids],
+					'sid' => 0
+				),
+				array(
+					'sid' => array('$in' => $sids)
+				)
+			);
+		} else {
+			$query['aid'] = array('$in' => $aids);
+		}
+		return $query;
     }
 
     protected function isInExtendedBalance($arategroups) {
