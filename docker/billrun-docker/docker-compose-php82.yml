@@ -33,7 +33,7 @@ services:
         restart: always
         volumes:
             - ./../..:/billrun:ro
-            - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ./init-mongosh.sh:/docker-entrypoint-initdb.d/init-mongosh.sh
         ports:
             - 27017:27017
 
