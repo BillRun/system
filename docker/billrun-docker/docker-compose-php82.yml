@@ -28,7 +28,7 @@ services:
         volumes:
             - ./../..:/billrun
     mongodb:
-        image: mongo:4.4
+        image: mongo:6.0
         container_name: billrun-mongodb
         restart: always
         volumes:
