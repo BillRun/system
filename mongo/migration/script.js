@@ -118,7 +118,7 @@ if (typeof lastConfig['billrun']['generate_pdf']  === 'undefined') {
 
 // BRCD-441 -Add plugin support
 if (!lastConfig['plugins']) {
-	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"];
+	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin", "notificationsPlugin"];
 }
 
 for (var i = 0; i < lastConfig['plugins'].length; i++) {
@@ -134,6 +134,13 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 			lastConfig['plugins'][i] = {
 				"name": lastConfig['plugins'][i],
 				"enabled": true,
+				"system": true,
+				"hide_from_ui": false
+			};
+		} else if (lastConfig['plugins'][i] === "notificationsPlugin") {
+			lastConfig['plugins'][i] = {
+				"name": lastConfig['plugins'][i],
+				"enabled": false,
 				"system": true,
 				"hide_from_ui": false
 			};
