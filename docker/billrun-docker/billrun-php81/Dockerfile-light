@@ -2,11 +2,14 @@ from php:8.1-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
 RUN apt-get update && apt-get install -y \
-        wkhtmltopdf \
+        wkhtmltopdf wget  \
+		libpng-dev zlib1g-dev libzip-dev libgmp-dev \
+                unzip openjdk-11-jre-headless \
     && pecl install yaf \
     && pecl install mongodb \
-    && docker-php-ext-enable yaf mongodb \
-    && docker-php-ext-install pcntl bcmath
+    && pecl install xdebug \
+    && docker-php-ext-enable yaf mongodb xdebug \
+    && docker-php-ext-install pcntl bcmath gd zip sockets gmp
 
 COPY php-fpm.conf /usr/local/etc/
 COPY php.ini /usr/local/etc/php/
