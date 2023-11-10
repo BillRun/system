@@ -88,7 +88,7 @@ class CustompaymentgatewayController extends ApiController {
 		return true;
 	}
 
-	protected function render($tpl, array $parameters = null) {
+	protected function render(string $tpl, array $parameters = null): string {
 		return parent::render('index', $parameters);
 	}
 

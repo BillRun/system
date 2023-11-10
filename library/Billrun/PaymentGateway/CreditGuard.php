@@ -18,10 +18,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $pendingCodes = "/$^/";
 	protected $completionCodes = "/^000$/";
 	protected $account;
-        
+
 	protected function __construct($instanceName =  null) {
 		parent::__construct($instanceName);
-		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
+		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'] ?? null;
 	}
 
 	public function updateSessionTransactionId($result) {
@@ -475,7 +475,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 						<recurringTotalSum></recurringTotalSum>
 						<recurringFrequency>04</recurringFrequency>
 					</ashraitEmvData>';
-
+	
 		return array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -628,7 +628,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 		return true;
 	}
-
+	
 	protected function getPPSConfigJSON() {
 		$customParams = $this->getGatewayCustomParams();
 		$basicParams = $this->getGatewayCredentials();

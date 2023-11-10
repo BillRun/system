@@ -54,6 +54,7 @@ class AccruedInterest
         $basis = FinancialConstants::BASIS_DAYS_PER_YEAR_NASD,
         $calcMethod = self::ACCRINT_CALCMODE_ISSUE_TO_SETTLEMENT
     ) {
+        self::doNothing($calcMethod);
         $issue = Functions::flattenSingleValue($issue);
         $firstInterest = Functions::flattenSingleValue($firstInterest);
         $settlement = Functions::flattenSingleValue($settlement);
@@ -73,17 +74,18 @@ class AccruedInterest
             $rate = SecurityValidations::validateRate($rate);
             $parValue = SecurityValidations::validateParValue($parValue);
             $frequency = SecurityValidations::validateFrequency($frequency);
+            self::doNothing($frequency);
             $basis = SecurityValidations::validateBasis($basis);
         } catch (Exception $e) {
             return $e->getMessage();
         }
 
-        $daysBetweenIssueAndSettlement = YearFrac::fraction($issue, $settlement, $basis);
+        $daysBetweenIssueAndSettlement = Functions::scalar(YearFrac::fraction($issue, $settlement, $basis));
         if (!is_numeric($daysBetweenIssueAndSettlement)) {
             //    return date error
             return $daysBetweenIssueAndSettlement;
         }
-        $daysBetweenFirstInterestAndSettlement = YearFrac::fraction($firstInterest, $settlement, $basis);
+        $daysBetweenFirstInterestAndSettlement = Functions::scalar(YearFrac::fraction($firstInterest, $settlement, $basis));
         if (!is_numeric($daysBetweenFirstInterestAndSettlement)) {
             //    return date error
             return $daysBetweenFirstInterestAndSettlement;
@@ -140,12 +142,18 @@ class AccruedInterest
             return $e->getMessage();
         }
 
-        $daysBetweenIssueAndSettlement = YearFrac::fraction($issue, $settlement, $basis);
+        $daysBetweenIssueAndSettlement = Functions::scalar(YearFrac::fraction($issue, $settlement, $basis));
         if (!is_numeric($daysBetweenIssueAndSettlement)) {
             //    return date error
             return $daysBetweenIssueAndSettlement;
         }
 
         return $parValue * $rate * $daysBetweenIssueAndSettlement;
+    }
+
+    /** @param mixed $arg */
+    private static function doNothing($arg): bool
+    {
+        return (bool) $arg;
     }
 }

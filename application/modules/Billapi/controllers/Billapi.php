@@ -223,7 +223,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 *
 	 * @return string the render layout including the page (component)
 	 */
-	protected function render($tpl, array $parameters = null) {
+	protected function render(string $tpl, array $parameters = null): string {
 		return $this->getView()->render('index.phtml', $parameters);
 	}
 

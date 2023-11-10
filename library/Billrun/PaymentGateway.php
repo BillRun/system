@@ -58,8 +58,8 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $billrunName;
-        
-        /**
+	
+	/**
 	 * Instance name for the payment gateway.
 	 * @var string
 	 */
@@ -109,7 +109,7 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $htmlForm;
-	
+
 	protected function __construct($instanceName =  null) {
 
 		if ($this->supportsOmnipay()) {
@@ -287,7 +287,7 @@ abstract class Billrun_PaymentGateway {
 
 	/**
 	 * Updates the current transactionId.
-	 *
+	 * 
 	 * @param $result - response to request to get billing agreement from the payment gateway.
 	 */
 	abstract function updateSessionTransactionId($result);
@@ -664,8 +664,8 @@ abstract class Billrun_PaymentGateway {
 	 * @return Array - the status and stage of the payment.
 	 */
 	public function getGatewayCredentials() {
-		$gatewayDetails = $this->getGateway();
-		return $gatewayDetails['params'];
+		$gatewayDetails = current($gateway);
+		return $gatewayDetails['params'] ?? false;
 	}
 	
 	protected function getGateway(){
@@ -684,7 +684,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	public function getGatewayExport() {
 		$gatewayDetails = $this->getGateway();
-		return $gatewayDetails['export'];
+		return $gatewayDetails['export'] ?? false;
 	}
 	
 		/**
@@ -743,7 +743,7 @@ abstract class Billrun_PaymentGateway {
 	 * adding params that the payment gateway needs for further integraion.
 	 * 
 	 */
-	public function addAdditionalParameters() {
+	public function addAdditionalParameters($request) {
 		return array();
 	}
 	
@@ -755,7 +755,7 @@ abstract class Billrun_PaymentGateway {
 		return false;
 	}
 	
-	protected function checkIfCustomerExists () {
+	protected function checkIfCustomerExists ($aid) {
 		return false;
 	}
 	
@@ -893,7 +893,7 @@ abstract class Billrun_PaymentGateway {
 		$customParams = !empty($gatewayDetails['custom_params']) ? $gatewayDetails['custom_params'] : array();
 		return $customParams;
 	}
-
+	
 	/**
 	 * @param Int $aid
 	 * @return Billrun_Account|null

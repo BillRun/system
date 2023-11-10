@@ -1770,6 +1770,9 @@ class Billrun_Util {
 		}
 		
 		if (!is_array($keys)) {
+			if (!is_string($keys)) {
+				return '';
+			}
 			if (isset($arr[$keys])) {
 				return $arr[$keys];
 			}

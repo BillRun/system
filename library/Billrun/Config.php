@@ -159,7 +159,11 @@ class Billrun_Config {
 	 * @return Billrun_Config
 	 */
 	static public function getInstance($config = null) {
-		$stamp = Billrun_Util::generateArrayStamp($config);
+		if ($config instanceof Yaf_Config_Abstract) {
+			$stamp = Billrun_Util::generateArrayStamp($config->toArray());
+		} else {
+			$stamp = Billrun_Util::generateArrayStamp($config);
+		}
 		if (empty(self::$instance[$stamp])) {
 			if (empty($config)) {
 				$config = new Yaf_Config_Simple(Yaf_Application::app()->getConfig()->toArray());

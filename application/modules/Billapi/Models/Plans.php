@@ -16,7 +16,7 @@ class Models_Plans extends Models_Entity {
 	
 	protected function init($params) {
 		parent::init($params);
-		if ($this->update['connection_type'] == "postpaid") {
+		if (isset($this->update['connection_type']) && $this->update['connection_type'] == "postpaid") {
 			$this->validateRecurrence();
 		}
 	}

@@ -63,7 +63,7 @@ class RealtimeController extends ApiController {
 
 		$this->event['uf'] = $decoder->decode($requestBody);
 	}
-	
+
 	/**
 	 * get input processor configuration
 	 *
@@ -174,7 +174,8 @@ class RealtimeController extends ApiController {
 			foreach ($rows as $row) {
 				$processor->addDataRow($row);
 			}
-			$processor->process($this->config);
+			$processor->setRealtimeConfig($this->config);
+			$processor->process();
 			$data = $processor->getData()['data'];
 			$allLines = $processor->getAllLines();
 			return $multiLines ? $allLines : current($allLines);
@@ -218,7 +219,7 @@ class RealtimeController extends ApiController {
 		$this->updateLineResponse($data, $response);
 		return $response;
 	}
-	
+
 	/**
 	 * method to return the collection the initial line exists
 	 * in prepaid it would be archive collection, while postpaid it will be lines collection

@@ -22,7 +22,7 @@ abstract class Action_Base extends Yaf_Action_Abstract {
 	 * 
 	 * @return string the output of the api
 	 */
-	protected function render($tpl, array $parameters = null) {
+	protected function render(string $tpl, array $parameters = null): string {
 		return parent::render('index', $parameters);
 	}
 

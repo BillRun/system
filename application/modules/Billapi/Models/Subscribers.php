@@ -383,8 +383,13 @@ class Models_Subscribers extends Models_Entity {
 		$previousPlan = '';
 		$revisionsFrom = $this->collection->query($revisionsQuery)->cursor()->sort(array('from' => 1));
 		$subscriberDeactivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('to' => -1))->current()['to'];
-		$subscriberActivation = $revisionsFrom->current()['from'];
+//		$subscriberActivation = $revisionsFrom->current()['from']; // MongoDB cursor should avoid double fetching on the same cursor; the next foreach cause reset the cursor
+		$first = true;
 		foreach ($revisionsFrom as $revision) {
+			if ($first) {
+				$first = false;
+				$subscriberActivation = $revision['from'];
+			}
 			$revisionsArray[] = $revision->getRawData();
 		}
 		foreach ($revisionsArray as &$revision) {
