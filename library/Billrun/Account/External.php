@@ -31,7 +31,12 @@ class Billrun_Account_External extends Billrun_Account {
 	
 
 	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = [], $invoicing_days = null) {
-			$dateFormat = (abs($cycle->end()->sec - $cycle->start()->sec) <= 86400 ? 'Y-m-d H:i:s' : 'Y-m-d'); // help some CRMs understand if this is an immediate invoice call
+			$dateFormat = ( (abs($cycle->end()->sec - $cycle->start()->sec) <= 86400 &&
+							Billrun_Factory::config()->getConfigValue('subscribers.billable.compatiblity.use_datetime_for_same_day_cycle',true))
+								?  // help some CRMs understand if this is an immediate invoice call
+								Billrun_Factory::config()->getConfigValue('subscribers.billable.single_day_cycle_format','Y-m-d H:i:s')
+								: //  regualr  +1 months  cycle time  format for  start/end fields
+								Billrun_Factory::config()->getConfigValue('subscribers.billable.single_day_cycle_format','Y-m-d'));
 			// Prepare request
 			$requestParams = [
 				'start_date' => date($dateFormat,$cycle->start()->sec),
@@ -51,6 +56,8 @@ class Billrun_Account_External extends Billrun_Account {
 			//Actually  do the request
 			$request = new Billrun_Http_Request($this->remote_billable_url, ['authentication' => $this->remote_billable_authentication]);
 			$request->setParameterPost($requestParams);
+			$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.billable.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
+			$request->setConfig(array('timeout' => $requestTimeout));
 			$results = $request->request(Billrun_Http_Request::POST)->getBody();
 
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
@@ -99,6 +106,8 @@ class Billrun_Account_External extends Billrun_Account {
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
 		$request->setRawData(json_encode($requestData));
+		$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.account.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
+		$request->setConfig(array('timeout' => $requestTimeout));
 		$res = $request->request(Billrun_Http_Request::POST)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
 		$res = json_decode($res);

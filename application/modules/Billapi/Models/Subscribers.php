@@ -92,7 +92,7 @@ class Models_Subscribers extends Models_Entity {
 					$service['to'] = new Mongodloid_Date(strtotime($service['to']));
 				}
 				// handle custom period service or limited cycles service
-				$serviceTime = $service['to']->sec ?? time();
+				$serviceTime = $service['from']->sec ?? time();
 				$serviceRate = new Billrun_Service(array('name' => $service['name'], 'time' => $serviceTime));
 				// if service not found, throw exception
 				if (empty($serviceRate) || empty($serviceRate->get('_id'))) {

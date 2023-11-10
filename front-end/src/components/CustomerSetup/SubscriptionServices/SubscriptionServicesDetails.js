@@ -5,6 +5,7 @@ import moment from 'moment';
 import { Panel, InputGroup, Badge } from 'react-bootstrap';
 import Field from '@/components/Field';
 import { CreateButton } from '@/components/Elements';
+import SubscriptionServicesPeriod from './SubscriptionServicesPeriod';
 
 
 export default class SubscriptionServicesDetails extends Component {
@@ -13,7 +14,7 @@ export default class SubscriptionServicesDetails extends Component {
     editable: PropTypes.bool,
     originSubscriptionServices: PropTypes.instanceOf(Immutable.List),
     subscriptionServices: PropTypes.instanceOf(Immutable.List),
-    subscriptionFrom: PropTypes.object,
+    minStartDate: PropTypes.object,
     servicesOptions: PropTypes.instanceOf(Immutable.List),
     onChangeService: PropTypes.func.isRequired,
     onRemoveService: PropTypes.func.isRequired,
@@ -24,13 +25,25 @@ export default class SubscriptionServicesDetails extends Component {
     editable: true,
     originSubscriptionServices: Immutable.List(),
     subscriptionServices: Immutable.List(),
-    subscriptionFrom: null,
+    minStartDate: null,
     servicesOptions: Immutable.List(),
   }
 
   onChangePeriodStartDate = (index, newDate) => {
     if (newDate) {
       this.props.onChangeService(index, 'from', newDate.format('YYYY-MM-DD'));
+    }
+  }
+
+  onChangePeriodEndDate = (index, newDate) => {
+    if (newDate) {
+      this.props.onChangeService(index, 'to', newDate.format('YYYY-MM-DD'));
+    }
+  }
+
+  onChangePeriodEndDate = (index, newDate) => {
+    if (newDate) {
+      this.props.onChangeService(index, 'to', newDate.format('YYYY-MM-DD'));
     }
   }
 
@@ -44,8 +57,12 @@ export default class SubscriptionServicesDetails extends Component {
     this.props.onAddService(serviceName);
   }
 
+  onClickAddNormalService = (serviceName) => {
+    this.props.onAddService(serviceName);
+  }
+
   onChangeServiceQuantity = (index, e) => {
-    const { subscriptionFrom, originSubscriptionServices, subscriptionServices } = this.props;
+    const { minStartDate, originSubscriptionServices, subscriptionServices } = this.props;
     const { value } = e.target;
     const fixedValue = value > 1 ? Number(value) : 1; // not possible to add 0 for quantity service
     const service = subscriptionServices.get(index, null);
@@ -53,18 +70,18 @@ export default class SubscriptionServicesDetails extends Component {
       const existingService = originSubscriptionServices.find(originService => originService.get('name', '') === service.get('name', ''));
       const newFrom = (existingService && existingService.get('quantity', '') === fixedValue)
         ? existingService.get('from', '')
-        : subscriptionFrom.format('YYYY-MM-DD');
+        : minStartDate.format('YYYY-MM-DD');
       this.props.onChangeService(index, 'quantity', fixedValue);
       this.props.onChangeService(index, 'from', newFrom);
     }
   }
 
   filterServiceStartDate = (serviceDate, date) => {
-    const { subscriptionFrom } = this.props;
+    const { minStartDate } = this.props;
     if (serviceDate) {
-      return date.isSame(moment(serviceDate), 'days') || date.isSameOrAfter(subscriptionFrom);
+      return date.isSame(moment(serviceDate), 'days') || date.isSameOrAfter(minStartDate);
     }
-    return date.isSameOrAfter(subscriptionFrom);
+    return date.isSameOrAfter(minStartDate);
   }
 
   renderServiceBadge = (service, type) => {
@@ -84,7 +101,61 @@ export default class SubscriptionServicesDetails extends Component {
     return '';
   }
 
-  renderServicesQuentity = (editable) => {
+  renderServicesNormal = (editable) => {
+    const { servicesOptions, subscriptionServices, minStartDate, originSubscriptionServices } = this.props;
+    return subscriptionServices
+      .map((service, index) => service.set('index', index))
+      .filter(service => service.get('quantity', null) == null)
+      .filter(service => !service.getIn(['ui_flags', 'balance_period'], false))
+      .map((service) => {
+        const serviceTitle = servicesOptions.find(
+          allService => allService.get('name', '') === service.get('name', ''),
+          null,
+          Immutable.Map(),
+        ).get('description', service.get('name', ''));
+        return service.set('title', serviceTitle);
+      })
+      .reduce((acc, service) => {
+        const serviceName = service.get('name', '');
+        return acc.update(serviceName, Immutable.List(), list => list.push(service));
+      }, Immutable.Map())
+      .map((services, key) => {
+        const service = services.first();
+        const onClickAddCloneService = (e) => {
+          this.onClickAddNormalService(service.get('name', ''), e);
+        };
+        const style = editable ? { verticalAlign: 'middle', paddingBottom: 47, width: '30%', textAlign: 'right', paddingRight: 20 } : { verticalAlign: 'middle', textAlign: 'right', paddingRight: 20 };
+        return (
+          <tr key={`normal_${key}`}>
+            <td style={style}>
+              {service.get('title', '')}
+            </td>
+            <td style={{ width: '70%' }}>
+              { services.map((servicePeriod, i) => (
+                <SubscriptionServicesPeriod
+                  key={`normal_${i}_${service.get('name', 'no-name')}`} 
+                  service={servicePeriod}
+                  idx={i}
+                  editable={editable}
+                  minStartDate={minStartDate}
+                  originSubscriptionServices={originSubscriptionServices}
+                  renderServiceBadge={this.renderServiceBadge}
+                  onChangePeriodStartDate={this.onChangePeriodStartDate}
+                  onChangePeriodEndDate={this.onChangePeriodEndDate}
+                  onClickRemoveCloneService={this.onClickRemoveCloneService}
+                  filterServiceStartDate={this.filterServiceStartDate}
+                />
+              ))}
+              { editable && <CreateButton buttonStyle={{ marginTop: 5, marginBottom: 10 }} onClick={onClickAddCloneService} label="Add period" />}
+            </td>
+          </tr>
+        );
+      })
+      .toList()
+      .toArray();
+  }
+
+  renderServicesQuantity = (editable) => {
     const { servicesOptions, subscriptionServices } = this.props;
     return subscriptionServices
       .map((service, index) => service.set('index', index))
@@ -157,7 +228,7 @@ export default class SubscriptionServicesDetails extends Component {
   }
 
   renderPeriods = (service, key, editable) => {
-    const { subscriptionFrom, originSubscriptionServices } = this.props;
+    const { minStartDate, originSubscriptionServices } = this.props;
     if (!editable) {
       return (
         <div key={`byPeriod_${key}_${service.get('name', 'no-name')}`} >{key + 1}. Start Date:&nbsp;
@@ -175,7 +246,7 @@ export default class SubscriptionServicesDetails extends Component {
     const onRemoveBind = (e) => { this.onClickRemoveCloneService(serviceKey, e); };
     const existingService = originSubscriptionServices.find(originService => originService.get('name', '') === service.get('name', ''));
     const originFrom = (service.hasIn(['ui_flags', 'serviceId']) && existingService) ? existingService.get('from', null) : null;
-    const filterServiseDate = e => this.filterServiceStartDate(originFrom, e);
+    const filterServiceDate = e => this.filterServiceStartDate(originFrom, e);
     const badge = this.renderServiceBadge(service, 'byPeriod');
     return (
       <InputGroup key={`byPeriod_${key}_${service.get('name', 'no-name')}`} style={{ width: '100%', marginTop: 5 }} >
@@ -183,11 +254,11 @@ export default class SubscriptionServicesDetails extends Component {
         <Field
           style={{ width: '100%' }}
           fieldType="date"
-          filterDate={filterServiseDate}
+          filterDate={filterServiceDate}
           value={moment(service.get('from', ''))}
           onChange={onChangeBind}
           editable={editable}
-          highlightDates={[subscriptionFrom]}
+          highlightDates={[minStartDate]}
         />
         <InputGroup.Addon onClick={onRemoveBind}>
           <i className="fa fa-trash-o text-danger" />
@@ -198,13 +269,16 @@ export default class SubscriptionServicesDetails extends Component {
 
   render() {
     const { editable } = this.props;
-    const servicesQuentity = this.renderServicesQuentity(editable);
+    const servicesNormal = this.renderServicesNormal(editable);
+    const servicesQuantity = this.renderServicesQuantity(editable);
     const servicesByPeriod = this.renderServicesByPeriod(editable);
-    if (servicesQuentity.length + servicesByPeriod.length > 0) {
+    if (servicesQuantity.length + servicesByPeriod.length + servicesNormal.length > 0) {
       return (
-        <Panel header="Services Details">
-          <table style={{ width: '100%' }}><tbody>{servicesQuentity}</tbody></table>
-          {servicesQuentity.length > 0 && servicesByPeriod.length > 0 && <hr />}
+        <Panel header="Services Details" className="subscription-services-details">
+          <table style={{ width: '100%' }}><tbody>{servicesNormal}</tbody></table>
+          {servicesNormal.length > 0 && servicesQuantity.length > 0 && <hr />}
+          <table style={{ width: '100%' }}><tbody>{servicesQuantity}</tbody></table>
+          {servicesQuantity.length > 0 && servicesByPeriod.length > 0 && <hr />}
           <table style={{ width: '100%' }}><tbody>{servicesByPeriod}</tbody></table>
         </Panel>
       );

@@ -784,7 +784,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				'$regex' => new Mongodloid_Regex('/^\d{6}$/i'), // 6 digits length billrun keys only
 			],
 			'urt' => [
-				'$gt' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrun_key)),
+				'$gte' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrun_key)),
 			],
 			'installments' => [
 				'$exists' => true,

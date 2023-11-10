@@ -622,6 +622,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				'to' => $subscriberData['plan_deactivation'],
 				'service_id' => 0, // assumption: there is no *custom period* service includes
 				'plan_included' => true,
+				'creation_time' => $subscriberData['plan_activation'],
 			);
 		}
 		return $retServices;
@@ -659,6 +660,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					'service_id' => isset($service['service_id']) ? $service['service_id'] : 0,
 					'quantity' => isset($service['quantity']) ? $service['quantity'] : 1,
 					'plan_included' => false,
+					'creation_time' => isset($service['creation_time']) ? $service['creation_time'] : new Mongodloid_Date(),
 				);
 			}
 		}

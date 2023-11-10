@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing sending Sms alerts
+ * Billing sending SMS through SMPP
  *
  * @package  Sms
  * @since    5.13
