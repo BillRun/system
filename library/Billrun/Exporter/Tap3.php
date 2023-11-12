@@ -121,8 +121,9 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	protected function buildTap3Options($currentGenOptions) {
 		$this->getFileName();
 		$currentGenOptions['parent_exporter'] = $this;
-		return $currentGenOptions;
+		$currentGenOptions['filename_params'] = $this->params;
 
+		return $currentGenOptions;
 	}
 
 	/**

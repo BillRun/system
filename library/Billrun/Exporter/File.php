@@ -124,9 +124,13 @@ abstract class Billrun_Exporter_File extends Billrun_Exporter_Bulk {
 	 */
 	protected function getSequenceNumber() {
 		if (is_null($this->sequenceNum)) {
-			$seqNumLength = $this->getConfig('sequence_num_length', 5);
-			$nextSequenceNum = $this->getNextLogSequenceNumber();
-			$this->sequenceNum = sprintf('%0' . $seqNumLength . 'd', $nextSequenceNum % pow(10, $seqNumLength));
+			if(!empty($this->options['filename_params']['param1'])) {
+				$this->sequenceNum = $this->options['filename_params']['param1'];
+			} else {
+				$seqNumLength = $this->getConfig('sequence_num_length', 5);
+				$nextSequenceNum = $this->getNextLogSequenceNumber();
+				$this->sequenceNum = sprintf('%0' . $seqNumLength . 'd', $nextSequenceNum % pow(10, $seqNumLength));
+			}
 		}
 		return $this->sequenceNum;
 	}

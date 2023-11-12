@@ -444,7 +444,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$interval = @$rate['rates'][$row['usaget']]['BASE']['rate'][0]['interval'] ?? 1;
 		switch ($this->getLineType($row)) {
 			case self::$LINE_TYPE_DATA:
-				$callTypeLevel1 = $this->getConfig('call_type_level_1.HGGSN');
+				$callTypeLevel1 = $this->getConfig('call_type_level_1.PGW');
 				$callTypeLevel2 = $this->getConfig('call_type_level_2.narrowband');
 				$chargedItem = $this->getConfig('charged_item.volume_total_based_charge');
 				$chargedUnits = ceil($chargeableUnits / $interval) * $interval; // TODO: currentlty, no "rounded" volume field
