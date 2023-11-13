@@ -156,7 +156,7 @@ class BillAction extends ApiAction {
 			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
 		}
-		$contractors= Billrun_Bill::getBalanceByAids($aids, false, $only_debt);
+		$contractors= Billrun_Bill::getBalanceByAids($aids, false, $only_debt, true);
 		$result = array();
 		foreach ($contractors as $contractor) {
 			$result[$contractor['aid']] = current($contractor);
