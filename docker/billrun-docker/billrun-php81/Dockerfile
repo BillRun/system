@@ -3,8 +3,9 @@ from php:8.1-fpm
 
 RUN apt-get update && apt-get install -y \
         wkhtmltopdf wget  \
-		libpng-dev zlib1g-dev libzip-dev libgmp-dev unzip \
-#                unzip openjdk-11-jre-headless \
+		libpng-dev zlib1g-dev libzip-dev libgmp-dev  \
+                libssl-dev unzip \ 
+                openjdk-17-jre-headless \
     && pecl install yaf \
     && pecl install mongodb \
     && pecl install xdebug \

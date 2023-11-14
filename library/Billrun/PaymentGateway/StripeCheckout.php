@@ -66,19 +66,22 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 	protected function credit($gatewayDetails, $addonData) {
 		$stripeClient = $this->setupStripe();
 
+		$requestedAmount = abs($gatewayDetails['amount']);
+		
 		$query = array(
 			'aid' => $addonData['aid'],
 			'type' => 'rec',
 			'amount' => array('$gt' => 0),
 			'left' => 0,
 			'gateway_details.name' => $this->billrunName,
+			'$expr' => array(
+				'$lte' => array(
+					array('$add' => array('$refunded_amount', $requestedAmount)),
+					'$amount'
+				)
+			),
+			'cancel' => array ('$exists' => 0),
 			'$and' => array(
-				array(
-					'$or' => array(
-						array('refunded' => array ('$exists' => 0)),
-						array('refunded' => false),
-					),
-				),
 				array(
 					'$or' => array(
 						array('rejected' => array ('$exists' => 0)),
@@ -97,6 +100,12 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 						array('pending' => false),
 					),
 				),
+				array(
+					'$or' => array(
+						array('cancelled' => array ('$exists' => 0)),
+						array('cancelled' => false),
+					),
+				),
 			),
 		);
 
@@ -111,8 +120,6 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 			];
 		}
 
-		$requestedAmount = abs($gatewayDetails['amount']);
-		
 		if ($requestedAmount > $billRecord['amount']) {
 			return [
 				'status' => 'failed',
@@ -132,7 +139,7 @@ class Billrun_PaymentGateway_StripeCheckout extends Billrun_PaymentGateway {
 		
 		if ($this->isCompleted($paymentIntent->status)) {
 			$billRecord['refunded'] = true;
-			$billRecord['refunded_txid'] = $addonData['txid'];
+			$billRecord['refunded_txid'] = array_merge($billRecord['refunded_txid'] ?? array(), array($addonData['txid']));
 			$billRecord['refunded_amount'] = $requestedAmount + ($billRecord['refunded_amount'] ?? 0);
 			$billsColl->save($billRecord);
 		}
