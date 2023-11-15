@@ -40,6 +40,9 @@ class BillAction extends ApiAction {
 				case 'get_balance' :
 					$response = $this->getCollectionDebt($request, false); //aids json array
 					break;
+				case 'get_conditionless_debt' :
+					$response = $this->getAccountConditionlessDebt($request); //aids json array & date field
+					break;
 				case 'search_invoice' :
 				default :
 					$response = $this->getBalanceFor($request); // aid or invoice id
@@ -198,4 +201,27 @@ class BillAction extends ApiAction {
 		return false;
 	}
 
+	/**
+	 * @param Yaf_Request_Abstract $request
+	 *  
+	 * 
+	 */
+	protected function getAccountConditionlessDebt($request) {
+		$aids = explode(',', $request->get('aids'));
+		$date = $request->get('relative_date');
+		if (empty($aids)) {
+			$this->setError('Must supply at least one aid', $request->getPost());
+			return FALSE;
+		}
+		if (!$this->isLegalAccountIds($aids)) {
+			$this->setError('Illegal account ids', $request->getPost());
+			return FALSE;
+		}
+		$balances = array();
+		foreach ($aids as $aid) {
+			$balances[$aid] = Billrun_Bill::getTotalDueForAccount(intval($aid), $date, false, true);
+		}
+
+		return $balances;	
+	}
 }
