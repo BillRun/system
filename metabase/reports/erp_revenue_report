@@ -51,7 +51,6 @@
  },
 
 {$group:{_id:{
-res:"$res",
 invoice_date:"$invoice_date",
 start_date:"$start_date",
 end_date:"$end_date",
