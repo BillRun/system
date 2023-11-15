@@ -17,7 +17,7 @@
         AID:"$aid",
         rate_price:"$cf.rate_price",
         prod: "$cf.product",
-        tier:"$cf.tier",
+        tier:"$foreign.rate.description",
         }, 
         tier_title: {$first: "$foreign.rate.description"},
         taxes:{$sum:"$tax_data.total_amount"},
