@@ -33,6 +33,11 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	protected $plan;
 
 	/**
+	 * @var mixed $parentAccount The parent account associated with the subscriber.
+	 *      This variable stores information about the subscriber's parent account.
+	 **/
+	protected $parentAccount = [];
+	/**
 	 * Validate the input
 	 * @param array $input
 	 * @return true if valid
@@ -210,7 +215,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 	protected function constructRecords($data) {
 		Billrun_Factory::dispatcher()->trigger('beforeConstructSubscriberRecords',[&$data, $this]);
-		$this->mongoPlans = $this->cycleAggregator->getPlans(null,$data['subscriber_info']);
+		$this->parentAccount = $data['account_info'];
+		$this->mongoPlans = $this->cycleAggregator->getPlans($data['account_info'],$data['subscriber_info']);
 		$constructedData = $this->constructSubscriberData($data['history'], $this->cycleAggregator->getCycle()->end());
 		$dataForAggration = $data['subscriber_info'];
 		$dataForAggration['plans'] = $constructedData['plans'];
@@ -268,7 +274,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$overrideData['overrides'] = array_filter($data['overrides'], function($override) use ($arrService) {
 				return $override['type'] != 'service' || empty($override['id']) || $arrService['service_id'] == $override['id'];
 			});
-			$localMongoServices = $this->cycleAggregator->getServices(null,$overrideData);
+			$localMongoServices = $this->cycleAggregator->getServices($this->parentAccount,$overrideData);
 			// Service name
 			$name = $arrService['name'];
 			if(!isset($localMongoServices[$name])) {
@@ -309,7 +315,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$stumpLine = $data['line_stump'];
 
 		foreach ($plans as &$value) {
-			$mongoPlans = $this->cycleAggregator->getPlans(null,$value);
+			$mongoPlans = $this->cycleAggregator->getPlans($this->parentAccount,$value);
 			// Plan name
 			$index = $value['plan'];
 			if(!isset($mongoPlans[$index])) {
@@ -425,7 +431,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$activationDate = @$subscriber['activation_date']->sec + (@$subscriber['activation_date']->usec/ 1000000) ?: 0;
 		$deactivationDate = @$subscriber['deactivation_date']->sec + (@$subscriber['deactivation_date']->usec/ 1000000) ?: PHP_INT_MAX;
 
-		$mongoServices = $this->cycleAggregator->getServices();
+		$mongoServices = $this->cycleAggregator->getServices($this->parentAccount,$subscriber);
 
 		$customSrvStampFields = Billrun_Factory::config()->getConfigValue('customer.aggregator.service_identification_fields',[]);
 		//function to merge  previous and  current services

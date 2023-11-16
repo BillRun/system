@@ -332,10 +332,12 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$invoiceData['key'] = $cycle->key();
 
 		$aggregatableRecords = array();
+		$accountRevisions = $subscribers[0] ?? [];
+		usort($accountRevisions,function($a,$b){ return  $b['from'] - $a['from'];});
 		foreach ($subscribers as $sid => $subscriberList) {
 			usort($subscriberList,function($a,$b){ return  $a['from'] - $b['from'];});
 			Billrun_Factory::log("Constructing records for sid " . $sid);
-			$aggregatableRecords[] = $this->constructSubscriber($subscriberList, $invoiceData, $subsCount);
+			$aggregatableRecords[] = $this->constructSubscriber($subscriberList, $invoiceData, $subsCount, reset($accountRevisions));
 		}
 		Billrun_Factory::log("Constructed: " . count($aggregatableRecords));
 		$this->records = $aggregatableRecords;
@@ -351,17 +353,18 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @param array $invoiceData Invoice
 	 * @return Billrun_Cycle_Subscriber Aggregateable subscriber
 	 */
-	protected function constructSubscriber($sorted, $invoiceData, $subsCount = 0 ) {
+	protected function constructSubscriber($sorted, $invoiceData, $subsCount = 0, $accountLastRevision = null ) {
 
 		$data = [
-			'rates' => $this->cycleAggregator->getRates(null,end($sorted)),
-			'discounts' => $this->cycleAggregator->getDiscounts(null,end($sorted)),
-                        'charges' => $this->cycleAggregator->getCharges(),
+			'rates' => $this->cycleAggregator->getRates($accountLastRevision, end($sorted)),
+			'discounts' => $this->cycleAggregator->getDiscounts($accountLastRevision, end($sorted)),
+			'charges' => $this->cycleAggregator->getCharges(),
 		];
 		$invoice = new Billrun_Cycle_Subscriber_Invoice($data, $invoiceData);
 
 		$invoice->setShouldKeepLinesinMemory($this->invoice->shouldKeepLinesinMemory($subsCount));
 		$invoice->setShouldAggregateUsage( $subsCount < Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_to_aggregate',500) );
+		$subConstratorData['account_info'] = $accountLastRevision;
 		$subConstratorData['history'] = $sorted;
 		$subConstratorData['subscriber_info'] = end($sorted);
 		$subConstratorData['subscriber_info']['invoice'] = &$invoice;
