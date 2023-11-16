@@ -236,8 +236,11 @@ abstract class Billrun_PaymentGateway {
 		if (isset($data['installments'])) {
 			$options['installments'] = $data['installments'];
 		}
-		if ($data['tokenize_on_single_payment']) {
+		if (isset($data['tokenize_on_single_payment'])) {
 			$options['tokenize_on_single_payment'] = $data['tokenize_on_single_payment'];
+		}
+		if (isset($data['tokenize_option']) && empty($data['tokenize_on_single_payment'])) { // tokenize_option is conflict with tokenize_on_single_payment
+			$options['tokenize_option'] = $data['tokenize_option'];
 		}
 		if ($this->needRequestForToken()){
 			$response = $this->getToken($aid, $tenantReturnUrl, $okPage, $failPage, $singlePaymentParams, $options);
@@ -743,7 +746,7 @@ abstract class Billrun_PaymentGateway {
 	 * adding params that the payment gateway needs for further integraion.
 	 * 
 	 */
-	public function addAdditionalParameters() {
+	public function addAdditionalParameters($request) {
 		return array();
 	}
 	

@@ -16,7 +16,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class BillAction extends ApiAction {
 
 	use Billrun_Traits_Api_UserPermissions;
-
+	
 	public function execute() {
 		$this->allowed();
 		$request = $this->getRequest();
@@ -133,8 +133,8 @@ class BillAction extends ApiAction {
 
 		Billrun_Factory::log('queryBillsInvoices query  : ' . print_r($query, 1));
 		if (is_array($queryAsArray = json_decode($query, JSON_OBJECT_AS_ARRAY))) {
-			Billrun_Utils_Mongo::convertQueryMongodloidDates($queryAsArray);
-		}
+                    Billrun_Utils_Mongo::convertQueryMongodloidDates($queryAsArray);               
+                }
 		return Billrun_Bill_Invoice::getInvoices($queryAsArray);
 	}
 
@@ -147,7 +147,7 @@ class BillAction extends ApiAction {
 	 */
 	public function getCollectionDebt($request, $only_debt = true) {
 		if ($request instanceof Yaf_Request_Abstract) {
-			$jsonAids = $request->get('aids', '[]');
+		$jsonAids = $request->get('aids', '[]');
 			$requestBody = $request->getPost();
 		} else {
 			$jsonAids = $request['aids'] ?? [];
@@ -162,11 +162,11 @@ class BillAction extends ApiAction {
 			$this->setError('Must supply at least one aid', $requestBody);
 			return FALSE;
 		}
-		$contractors = Billrun_Bill::getBalanceByAids($aids, false, $only_debt);
+		$contractors = Billrun_Bill::getBalanceByAids($aids, false, $only_debt, true);
 		$result = array();
 		foreach ($contractors as $contractor) {
 			$result[$contractor['aid']] = current($contractor);
-		}
+		}	
 		return $result;
 	}
 
@@ -182,7 +182,7 @@ class BillAction extends ApiAction {
 		}
 		return $result;
 	}
-
+	
 	/**
 	 * Validate that aids are valid aids (numric type)
 	 * @param type $aids

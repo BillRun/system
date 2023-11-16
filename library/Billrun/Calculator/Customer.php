@@ -393,7 +393,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if ($this->isLineLegitimate($row)) {
 				$line_params = $this->getIdentityParams($row);
 				if (count($line_params) == 0) {
-					Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
+					Billrun_Factory::log('Couldn\'t identify caller for ' . $row['type'] . ' line of stamp ' . $row['stamp'], Zend_Log::ALERT);
 				} else {
 					foreach ($line_params as $key => $currParams) {
 						$currParams['time'] = date(Billrun_Base::base_datetimeformat, $row['urt']->sec);

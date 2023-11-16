@@ -3760,6 +3760,90 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
                     ],
                     "duplicate" => false
                 ],
+                 // DST - discount end and subscriber terminat after DST
+            [
+                "test" => [
+                    "label"=>"DST",
+                    "test_number" => 42734,
+                    "aid" => 42734,
+                    "sid" => 42735,
+                    "function" => [
+                        "basicCompare",
+                        "sumSids",
+                        "totalsPrice",
+                        "lineExists",
+                        "linesVSbillrun",
+                        "rounded"
+                    ],
+                    "options" => [
+                        "stamp" => "202311",
+                        "force_accounts" => [
+                            42734
+                        ]
+                    ]
+                ],
+                "expected" => [
+                    "billrun" => [
+                        "billrun_key" => "202311",
+                        "aid" => 42734,
+                        "after_vat" => [
+                            "42735" =>
+                            0
+                        ],
+                        "total" => 0,
+                        "vatable" => 0,
+                        "vat" => 17
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "service"
+                        ]
+                    ]
+                ]
+            ],  
+                       // DST - discount end  after DST
+             [
+                "test" => [
+                    "label"=>"DST",
+                    "test_number" => 42736,
+                    "aid" => 42736,
+                    "sid" => 42737,
+                    "function" => [
+                        "basicCompare",
+                        "sumSids",
+                        "totalsPrice",
+                        "lineExists",
+                        "linesVSbillrun",
+                        "rounded"
+                    ],
+                    "options" => [
+                        "stamp" => "202311",
+                        "force_accounts" => [
+                            42736
+                        ]
+                    ]
+                ],
+                "expected" => [
+                    "billrun" => [
+                        "billrun_key" => "202311",
+                        "aid" => 42736,
+                        "after_vat" => [
+                            "42737" =>
+                            0.9645161290339358
+                        ],
+                        "total" => 0.9645161290339358,
+                        "vatable" => 0.8243727598580648,
+                        "vat" => 17
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "service"
+                        ]
+                    ]
+                ]
+            ],
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 67,),
