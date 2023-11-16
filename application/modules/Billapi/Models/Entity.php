@@ -431,10 +431,12 @@ class Models_Entity {
 			$this->insert($prevEntity);
 		}
 		$beforeChangeRevisions = $this->collection->query($permanentQuery)->cursor();
-		$oldRevisions = iterator_to_array($beforeChangeRevisions);
+		$oldRevisions = array_map(function ($e) {return $e->getRawData();}, iterator_to_array($beforeChangeRevisions));
 		$this->collection->update($permanentQuery, $permanentUpdate, array('multiple' => true));
 		$afterChangeRevisions = $this->collection->query($permanentQuery)->cursor();
 		$this->fixEntityFields($this->before);
+		$newRevisions = [];
+		// Map and validate new revisions
 		foreach ($afterChangeRevisions as $newRevision) {
 			$currentId = $newRevision['_id']->getMongoId()->{'$id'};
 			$oldRevision = $oldRevisions[$currentId];
@@ -446,8 +448,9 @@ class Models_Entity {
 			if ($newRevision === null){
 				throw new Exception('No new Revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate));
 			}
-			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
+			$newRevisions[$currentId] = $newRevision->getRawData();
 		}
+		Billrun_AuditTrail_Util::trackMultipleChanges($this->action, $field, $this->entityName, $oldRevisions, $newRevisions);
 		return true;
 	}
 
