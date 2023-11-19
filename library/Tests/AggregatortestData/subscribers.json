@@ -2626,32 +2626,7 @@
 					"to": "time*2167-06-28T10:16:31Z",
 					"creation_time": "time*2018-06-27T21:00:00Z"
 				},
-				{
-					"from": "time*2020-03-25T20:00:00Z",
-					"aid": 1770,
-					"sid": 1771,
-					"plan": "NOT_TAXABLE_PLAN",
-					"services": [
-						{
-							"name": "NOT_TAXABLE_SERVICE",
-							"from": "time*2019-03-30T21:00:00Z",
-							"to": "time*2118-03-10T14:24:43Z",
-							"service_id": "1600087131219770",
-							"creation_time": "time*2018-03-10T14:24:47.165Z"
-						}
-					],
-					"firstname": "d",
-					"lastname": "d",
-					"address": "d",
-					"country": "d",
-					"type": "subscriber",
-					"plan_activation": "time*2020-03-25T20:00:00Z",
-					"to": "time*2119-03-05T22:00:00Z",
-					"deactivation_date": "time*2119-03-05T22:00:00Z",
-					"creation_time": "time*2019-03-04T22:00:00Z",
-					"activation_date": "time*2020-03-25T20:00:00Z",
-					"plan_deactivation": "time*2119-03-05T22:00:00Z"
-				}, {
+			 {
 
 					"aid": 187501,
 					"firstname": "יוסיggj",
@@ -2743,61 +2718,7 @@
 						}
 					]
 				},
-				{
-
-					"sid": 290,
-					"aid": 2000000784,
-					"type": "subscriber",
-					"from": "time*2020-12-24T14:57:49Z",
-					"to": "time*2120-12-24T14:57:49Z",
-					"plan": "BOX_1",
-					"services": [
-						{
-							"name": "LEGACY_CUSTOMER",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2200-12-24T14:57:49Z",
-							"service_id": 2044,
-							"creation_time": "time*2020-12-24T14:57:49Z"
-						},
-						{
-							"name": "TOP_UP_1",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2120-12-24T14:57:49Z",
-							"service_id": 2051,
-							"creation_time": "time*2020-12-24T14:57:49Z"
-						},
-						{
-							"name": "TOP_UP_1",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2021-12-24T14:57:49Z",
-							"service_id": 2052,
-							"creation_time": "time*2020-12-24T14:57:49Z"
-						},
-						{
-							"name": "TOP_UP_1",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2120-12-24T14:57:49Z",
-							"service_id": 2053,
-							"creation_time": "time*2020-12-24T14:57:49Z"
-						}
-					],
-					"play": "mobile",
-					"firstname": "Legacy",
-					"lastname": "First",
-					"address": null,
-					"activation_date": "time*2020-12-24T14:57:49Z",
-					"deactivation_date": null,
-					"plan_activation": "time*2020-12-24T14:57:49Z",
-					"plan_deactivation": null,
-					"creation_time": "time*2020-12-24T14:57:49Z",
-					"former_plan": null,
-					"imsi": [
-						"236"
-					],
-					"sub_number": "35790000495",
-					"portability_code": "P7RZI5DZ",
-					"discounts": null
-				},
+				
 				{
 					"aid": 230,
 					"sid": 80018,
@@ -3983,21 +3904,7 @@
 						}
 					]
 				},
-					{
-
-					"from": "time*2018-01-27T22:00:00Z",
-					"aid": 1770,
-					"firstname": "a",
-					"lastname": "s",
-					"email": "s",
-					"country": "s",
-					"address": "s",
-					"zip_code": "s",
-					"salutation": "s",
-					"type": "account",
-					"to": "time*2167-06-28T10:16:31Z",
-					"creation_time": "time*2018-06-27T21:00:00Z"
-				},
+					
 				{
 					"from": "time*2020-03-25T20:00:00Z",
 					"aid": 1770,
