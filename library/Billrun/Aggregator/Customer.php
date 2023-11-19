@@ -329,7 +329,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $this->chargesCache;
 	}
 
-	public static function removeBeforeAggregate($billrunKey, $aids = array(),$override = true) {
+	public static function removeBeforeAggregate($billrunKey, $aids = array(), $override = true) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$billrunQuery = array('billrun_key' => $billrunKey, 'aid' => ['$in' => $aids]);

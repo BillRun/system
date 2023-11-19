@@ -51,7 +51,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		$this->affectedSids = Billrun_Util::getFieldVal($options['affected_sids'],[]);
 	}
 	
-	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
+	public static function removeBeforeAggregate($billrunKey, $aids = array(), $override = true) {
 		Billrun_Factory::log("Doesn't remove anything in one time invoice");
 		return ;
 	}
@@ -146,7 +146,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 				foreach($this->getAggregatorConfig('subscriber.passthrough_data', array()) as $dstField => $srcField) {
 					if(is_array($srcField) && method_exists($this, $srcField['func']) && !in_array($srcField['func'],$invalidAccountFunctions)) {
 						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
-					} else if(!empty($subscriberPlan['passthrough'][$srcField]) && !in_array($srcField, $invalidFields)) {
+					} else if(!is_array($srcField) && !empty($subscriberPlan['passthrough'][$srcField]) && !in_array($srcField, $invalidFields)) {
 						$raw[$srcField] = $subscriberPlan['passthrough'][$srcField];
 					}
 				}

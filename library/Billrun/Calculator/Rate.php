@@ -298,7 +298,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
 	protected function getRateByParams($row, $usaget, $type, $tariffCategory, $filters) {
-		$query = $this->getRateQuery($row);
+		$query = $this->getRateQuery($row, $usaget, $type, $tariffCategory, $filters);
 		Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		$matchedRate = $rates_coll->aggregate($query)->current();
@@ -324,7 +324,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * 
 	 * @return string mongo query
 	 */
-	protected function getRateQuery($row) {
+	protected function getRateQuery($row, $usaget, $type, $tariffCategory, $filters) {
 		$pipelines = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . self::$type, array()) +
 			Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
 		$query = array();
