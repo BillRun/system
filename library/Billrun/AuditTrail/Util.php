@@ -53,14 +53,14 @@ class Billrun_AuditTrail_Util {
 	public static function trackMultipleChanges($type = '', $keyField = '', $collection = '', $oldRevisions = [], $newRevisions, array $additionalParams = array()) {
 		Billrun_Factory::log("Track changes in audit trail", Zend_Log::DEBUG);
 		$logEntrys = [];
-		$user = static::getUser();
+		$trackUser = static::getUser();
 		foreach ($newRevisions as $_id => $newRevision) {
 			$oldRevision = $oldRevisions[$_id];
 			$key = $oldRevision[$keyField];
 			if($oldRevision === null){
 				throw new Exception("No old Revision was found by _id: $_id.");
 			}
-			$logEntrys[] = static::createLogEntry($user, $type, $key, $collection, $oldRevision, $newRevision, $additionalParams);
+			$logEntrys[] = static::createLogEntry($trackUser, $type, $key, $collection, $oldRevision, $newRevision, $additionalParams);
 		}
 		try {
 			$res = Billrun_Factory::db()->auditCollection()->batchInsert($logEntrys);
