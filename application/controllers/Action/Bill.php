@@ -203,8 +203,8 @@ class BillAction extends ApiAction {
 
 	/**
 	 * @param Yaf_Request_Abstract $request
-	 *  
-	 * 
+	 * @return array - return aid => total debt array, regardless cnb field, until given relative date (or current date - 
+	 * if no date was supplied).
 	 */
 	protected function getAccountConditionlessDebt($request) {
 		$aids = explode(',', $request->get('aids'));
