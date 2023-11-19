@@ -79,16 +79,20 @@ class Billrun_AuditTrail_Util {
 	}
 
 	protected static function getUser() {
-		$user = Billrun_Factory::user();
 		if ($user) {
 			$trackUser = array(
 				'_id' => $user->getMongoId()->getMongoID(),
 				'name' => $user->getUsername(),
+				'api' => false,
 			);
-		} else { // in case 3rd party API update with token => there is no user
+		} else { // in case 3rd party API update with token
+			$oauth2 = Billrun_Factory::oauth2();
+			$access_token = $oauth2->getAccessTokenData(OAuth2\Request::createFromGlobals());
+			
 			$trackUser = array(
-				'_id' => null,
-				'name' => '_3RD_PARTY_TOKEN_',
+				'_id' => $access_token['_id'] ?? null,
+				'name' => $access_token['client_id'] ?? '_3RD_PARTY_TOKEN_',
+				'api' => true
 			);
 		}
 		return $trackUser;
