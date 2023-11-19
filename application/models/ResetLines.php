@@ -67,6 +67,8 @@ class ResetLinesModel {
 	public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps, $stampsToRecoverByAidAndSid = array()) {
 		$config = Billrun_Factory::config();
 		$this->isSidLevel = $config->getConfigValue("balances.sid_level", false);
+		$config = Billrun_Factory::config();
+		$this->isSidLevel = $config->getConfigValue("balances.sid_level", false);
 		$this->initBalances($aids, $billrun_key);
 		$this->aids = $aids;
 		$this->billrun_key = strval($billrun_key);
@@ -1060,6 +1062,33 @@ class ResetLinesModel {
 			$balanceId = $balance->getRawData()['_id']->{'$id'};
 			$this->balances[$balanceId] = $balance;
 		}
+	}
+
+	protected function getQueryBalances($aids, $billrun_key) {
+		$query = [];
+		
+		if ($this->isSidLevel) {
+			$subsQuery = ['aid'=>['$in'=>$aids]];
+			$from = new MongoDate(Billrun_Billingcycle::getStartTime($billrun_key));
+			$to = new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key));
+			$subsQuery['$or'] = array(
+				array('from' => ['$lte'=>$from], 'to' => ['$gt'=>$from]),
+				array('from' => ['$lte'=>$to], 'to' => ['$gt'=>$to])
+			);
+			$sids = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $subsQuery);
+			$query['$or'] = array(
+				array(
+					'aid' => ['$in'=>$aids],
+					'sid' => 0
+				),
+				array(
+					'sid' => array('$in' => $sids)
+				)
+			);
+		} else {
+			$query['aid'] = array('$in' => $aids);
+		}
+		return $query;
 	}
 
 	protected function getQueryBalances($aids, $billrun_key) {

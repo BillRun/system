@@ -8,7 +8,14 @@
 					"unit_test_config": true,
 					"shared_folder": "shared",
 					"cg_return_url": "",
-					"shared_secret": [],
+					"shared_secret": [{
+						"name" : "yossi",
+						"from" : "time*2023-04-30T00:00:00Z",
+						"to" : "time*2223-05-02T00:00:00Z",
+						"key" : "fb174e264ed76541747d6d420769ff02",
+						"crc" : "03307237"
+					}
+			],
 					"usage_types": [
 						{
 							"usage_type": "roming_data",
