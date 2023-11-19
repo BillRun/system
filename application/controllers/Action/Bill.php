@@ -208,7 +208,7 @@ class BillAction extends ApiAction {
 	 */
 	protected function getAccountConditionlessDebt($request) {
 		$aids = explode(',', $request->get('aids'));
-		$date = $request->get('relative_date');
+		$date = !empty($request->get('relative_date')) ? $request->get('relative_date') : null;
 		if (empty($aids)) {
 			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
@@ -222,6 +222,6 @@ class BillAction extends ApiAction {
 			$balances[$aid] = Billrun_Bill::getTotalDueForAccount(intval($aid), $date, false, true);
 		}
 
-		return $balances;	
+		return array_map(function($balance) { return $balance['total']; }, $balances);
 	}
 }

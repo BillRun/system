@@ -237,12 +237,14 @@ abstract class Billrun_Bill {
 		$query['aid'] = $aid;
 		if (!empty($date)) {
 			$relative_date = new Mongodloid_Date(strtotime($date));
-			$query['$or'] = array(
-				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
-				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => false))
-			);
 			if (!$ignore_cnb) {
-				$query['$or'][] = array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date));
+				$query['$or'] = array(
+					array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date)),
+					array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
+					array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => false))
+				);
+			} else {
+				$query['urt'] = array('$lte' => $relative_date);
 			}
 		}
 		$results = static::getTotalDue($query, $notFormatted);
