@@ -3776,6 +3776,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
      public function __construct($label = false) {
          parent::__construct("test Aggregatore");
+         $this->autoload_tests('aggregatorTestCases');
          $this->ratesCol = Billrun_Factory::db()->ratesCollection();
          $this->plansCol = Billrun_Factory::db()->plansCollection();
          $this->linesCol = Billrun_Factory::db()->linesCollection();
@@ -3819,11 +3820,12 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
       * print the test result
       * and restore the original data 
       */
-     public function TestPerform() {
-        if(empty($this->test_cases_to_run)){
-            $this->tests = $this->skip_tests($this->tests,'test.test_number');
+    public function TestPerform()
+    {
+        $this->tests =  $this->getTestCases($this->tests);
+        if (empty($this->test_cases_to_run)) {
+            $this->tests = $this->skip_tests($this->tests, 'test.test_number');
           }
-		$this->tests = $this->test_cases();
         // execute test cases pass by tests or all if it empty
         $request = new Yaf_Request_Http;
         $this->test_cases_to_run = $request->get('tests');
@@ -3855,7 +3857,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
                  foreach ($preRun as $pre) {
                      $this->$pre($key, $row);
                  }
-             }
+              }
              // run aggregator
              if (array_key_exists('aid', $row['test'])) {
                  $returnBillrun = $this->runT($row);
