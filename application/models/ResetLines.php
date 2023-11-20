@@ -1091,33 +1091,6 @@ class ResetLinesModel {
 		return $query;
 	}
 
-	protected function getQueryBalances($aids, $billrun_key) {
-		$query = [];
-		
-		if ($this->isSidLevel) {
-			$subsQuery = ['aid'=>['$in'=>$aids]];
-			$from = new MongoDate(Billrun_Billingcycle::getStartTime($billrun_key));
-			$to = new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key));
-			$subsQuery['$or'] = array(
-				array('from' => ['$lte'=>$from], 'to' => ['$gt'=>$from]),
-				array('from' => ['$lte'=>$to], 'to' => ['$gt'=>$to])
-			);
-			$sids = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $subsQuery);
-			$query['$or'] = array(
-				array(
-					'aid' => ['$in'=>$aids],
-					'sid' => 0
-				),
-				array(
-					'sid' => array('$in' => $sids)
-				)
-			);
-		} else {
-			$query['aid'] = array('$in' => $aids);
-		}
-		return $query;
-	}
-
 	protected function isInExtendedBalance($arategroups) {
 		$arategroupBalances = array_column($arategroups, 'balance_ref');
 		foreach ($arategroupBalances as $balanceRef) {
