@@ -1727,8 +1727,31 @@
 	},
 	"to" : "time*2172-09-27T20:02:39Z",
 	"creation_time" : "time*2020-09-27T21:00:00Z"
-}
+},
+{
 
+	"from" : "time*2019-03-31T22:00:00Z",
+	"name" : "CENTREX",
+	"price" : [
+		{
+			"to" : "UNLIMITED",
+			"price" : 8.356545961002785,
+			"from" : 0
+		}
+	],
+	"description" : "centrex",
+	"prorated" : true,
+	"quantitative" : true,
+	"reference_code" : "CENTREX",
+	"to" : "time*2168-05-27T16:12:00Z",
+	"creation_time" : "time*2019-03-31T22:00:00Z",
+	"category" : "CENTREX",
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	]}
 
 
 
