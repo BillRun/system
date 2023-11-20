@@ -664,6 +664,11 @@ abstract class Billrun_PaymentGateway {
 	 * @return Array - the status and stage of the payment.
 	 */
 	public function getGatewayCredentials() {
+		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
+		$gatewayName = $this->billrunName;
+		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
+			return $paymentGateway['name'] == $gatewayName;
+		});
 		$gatewayDetails = current($gateway);
 		return $gatewayDetails['params'] ?? false;
 	}
