@@ -16,6 +16,7 @@ class Billrun_PaymentGateway_Connection_Relocate extends Billrun_PaymentGateway_
 	protected static $type = 'relocate';
 	protected $checkReceivedSize = true;
 	protected $source;
+	protected $payments_file_type;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -40,6 +41,7 @@ class Billrun_PaymentGateway_Connection_Relocate extends Billrun_PaymentGateway_
 
 
 		$this->source = isset($options['type']) ? $options['type'] : self::$type;
+		$this->payments_file_type = isset($options['payments_file_type']) ? $options['payments_file_type'] : "";
 	}
 
 	public function receive() {
@@ -183,7 +185,9 @@ class Billrun_PaymentGateway_Connection_Relocate extends Billrun_PaymentGateway_
 
 		$addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => new Mongodloid_Date()
+			'received_time' => new Mongodloid_Date(),
+			'payments_file_type' => $this->payments_file_type,
+			'type' => 'custom_payment_gateway'
 		);
 
 		$update = array(
