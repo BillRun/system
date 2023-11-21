@@ -29,7 +29,6 @@ class BillAction extends ApiAction {
 					$response = $this->getOverDueBalances($request); // not defined yet
 					break;
 				case 'get_balances' :
-				case 'get_conditionless_debt' :
 					$response = $this->getBalances($request); // aids list
 					break;
 				case 'collection_debt' :
@@ -106,11 +105,8 @@ class BillAction extends ApiAction {
 	 */
 	protected function getBalances($request) {
 		$aids = explode(',', $request->get('aids'));
-		$date = !empty($request->get('relative_date')) ? $request->get('relative_date') : null;
-		$ignore_cnb = false;
-		if (!empty($request->get('ignore_cnb'))) {
-			$ignore_cnb = $request->get('ignore_cnb') === "false" ? false : true;
-		}
+		$date = !empty($request->get('date')) ? $request->get('date') : null;
+		$include_future_chargeable = filter_var($request->get('include_future_chargeable', FALSE), FILTER_VALIDATE_BOOLEAN);
 
 		if (empty($aids)) {
 			$this->setError('Must supply at least one aid', $request->getPost());
@@ -122,7 +118,7 @@ class BillAction extends ApiAction {
 		}
 		$balances = array();
 		foreach ($aids as $aid) {
-			$balances[$aid] = Billrun_Bill::getTotalDueForAccount(intval($aid), $date, false, $ignore_cnb);
+			$balances[$aid] = Billrun_Bill::getTotalDueForAccount(intval($aid), $date, false, $include_future_chargeable);
 		}
 
 		return empty($date) ? $balances : array_map(function($balance) { return $balance['total']; }, $balances);

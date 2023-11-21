@@ -232,12 +232,12 @@ abstract class Billrun_Bill {
 	 * @param boolean $notFormatted
 	 * @return array
 	 */
-	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false, $ignore_cnb = false) {
+	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false, $include_future_chargeable = false) {
 		$query = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$query['aid'] = $aid;
 		if (!empty($date)) {
 			$relative_date = new Mongodloid_Date(strtotime($date));
-			if (!$ignore_cnb) {
+			if (!$include_future_chargeable) {
 				$query['$or'] = array(
 					array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date)),
 					array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
