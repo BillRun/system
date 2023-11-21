@@ -26,7 +26,7 @@ class UploadFileAction extends Action_Base {
 		$request = $this->getRequest();
 		$payment_gateway = $request->get('payment_gateway');
 		$options["payment_gateway"] = $payment_gateway;
-		$options["payments_file_type"] = 'transactions_response'/*$request->get('payments_file_type')*/;
+		$options["payments_file_type"] = $request->get('payments_file_type');
 		$options["type"] = str_replace("_", '', $payment_gateway . ucwords($options['payments_file_type'], '_'));
 		$options["file_type"] = $request->get('file_type');
 
