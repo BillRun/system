@@ -29,6 +29,7 @@ class BillAction extends ApiAction {
 					$response = $this->getOverDueBalances($request); // not defined yet
 					break;
 				case 'get_balances' :
+				case 'get_conditionless_debt' :
 					$response = $this->getBalances($request); // aids list
 					break;
 				case 'collection_debt' :
@@ -39,9 +40,6 @@ class BillAction extends ApiAction {
 					break;
 				case 'get_balance' :
 					$response = $this->getCollectionDebt($request, false); //aids json array
-					break;
-				case 'get_conditionless_debt' :
-					$response = $this->getAccountConditionlessDebt($request); //aids json array & date field
 					break;
 				case 'search_invoice' :
 				default :
@@ -108,6 +106,12 @@ class BillAction extends ApiAction {
 	 */
 	protected function getBalances($request) {
 		$aids = explode(',', $request->get('aids'));
+		$date = !empty($request->get('relative_date')) ? $request->get('relative_date') : null;
+		$ignore_cnb = false;
+		if (!empty($request->get('ignore_cnb'))) {
+			$ignore_cnb = $request->get('ignore_cnb') === "false" ? false : true;
+		}
+
 		if (empty($aids)) {
 			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
@@ -118,10 +122,10 @@ class BillAction extends ApiAction {
 		}
 		$balances = array();
 		foreach ($aids as $aid) {
-			$balances[$aid] = Billrun_Bill::getTotalDueForAccount(intval($aid));
+			$balances[$aid] = Billrun_Bill::getTotalDueForAccount(intval($aid), $date, false, $ignore_cnb);
 		}
 
-		return $balances;
+		return empty($date) ? $balances : array_map(function($balance) { return $balance['total']; }, $balances);
 	}
 
 	protected function getOverDueBalances($request) {
@@ -201,27 +205,4 @@ class BillAction extends ApiAction {
 		return false;
 	}
 
-	/**
-	 * @param Yaf_Request_Abstract $request
-	 * @return array - return aid => total debt array, regardless cnb field, until given relative date (or current date - 
-	 * if no date was supplied).
-	 */
-	protected function getAccountConditionlessDebt($request) {
-		$aids = explode(',', $request->get('aids'));
-		$date = !empty($request->get('relative_date')) ? $request->get('relative_date') : null;
-		if (empty($aids)) {
-			$this->setError('Must supply at least one aid', $request->getPost());
-			return FALSE;
-		}
-		if (!$this->isLegalAccountIds($aids)) {
-			$this->setError('Illegal account ids', $request->getPost());
-			return FALSE;
-		}
-		$balances = array();
-		foreach ($aids as $aid) {
-			$balances[$aid] = Billrun_Bill::getTotalDueForAccount(intval($aid), $date, false, true);
-		}
-
-		return array_map(function($balance) { return $balance['total']; }, $balances);
-	}
 }
