@@ -244,7 +244,10 @@ abstract class Billrun_Bill {
 					array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => false))
 				);
 			} else {
-				$query['urt'] = array('$lte' => $relative_date);
+				$query['$or'] = array(
+					array('urt' => array('$lte' => $relative_date)),
+					array('urt' => array('$exists' => false)),
+				);
 			}
 		}
 		$results = static::getTotalDue($query, $notFormatted);
