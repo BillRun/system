@@ -3760,6 +3760,90 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
                     ],
                     "duplicate" => false
                 ],
+                 // DST - discount end and subscriber terminat after DST
+            [
+                "test" => [
+                    "label"=>"DST",
+                    "test_number" => 42734,
+                    "aid" => 42734,
+                    "sid" => 42735,
+                    "function" => [
+                        "basicCompare",
+                        "sumSids",
+                        "totalsPrice",
+                        "lineExists",
+                        "linesVSbillrun",
+                        "rounded"
+                    ],
+                    "options" => [
+                        "stamp" => "202311",
+                        "force_accounts" => [
+                            42734
+                        ]
+                    ]
+                ],
+                "expected" => [
+                    "billrun" => [
+                        "billrun_key" => "202311",
+                        "aid" => 42734,
+                        "after_vat" => [
+                            "42735" =>
+                            0
+                        ],
+                        "total" => 0,
+                        "vatable" => 0,
+                        "vat" => 17
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "service"
+                        ]
+                    ]
+                ]
+            ],  
+                       // DST - discount end  after DST
+             [
+                "test" => [
+                    "label"=>"DST",
+                    "test_number" => 42736,
+                    "aid" => 42736,
+                    "sid" => 42737,
+                    "function" => [
+                        "basicCompare",
+                        "sumSids",
+                        "totalsPrice",
+                        "lineExists",
+                        "linesVSbillrun",
+                        "rounded"
+                    ],
+                    "options" => [
+                        "stamp" => "202311",
+                        "force_accounts" => [
+                            42736
+                        ]
+                    ]
+                ],
+                "expected" => [
+                    "billrun" => [
+                        "billrun_key" => "202311",
+                        "aid" => 42736,
+                        "after_vat" => [
+                            "42737" =>
+                            0.9645161290339358
+                        ],
+                        "total" => 0.9645161290339358,
+                        "vatable" => 0.8243727598580648,
+                        "vat" => 17
+                    ],
+                    "line" => [
+                        "types" => [
+                            "flat",
+                            "service"
+                        ]
+                    ]
+                ]
+            ],
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 67,),
@@ -3776,6 +3860,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
      public function __construct($label = false) {
          parent::__construct("test Aggregatore");
+         $this->autoload_tests('aggregatorTestCases');
          $this->ratesCol = Billrun_Factory::db()->ratesCollection();
          $this->plansCol = Billrun_Factory::db()->plansCollection();
          $this->linesCol = Billrun_Factory::db()->linesCollection();
@@ -3819,11 +3904,12 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
       * print the test result
       * and restore the original data 
       */
-     public function TestPerform() {
-        if(empty($this->test_cases_to_run)){
-            $this->tests = $this->skip_tests($this->tests,'test.test_number');
+    public function TestPerform()
+    {
+        $this->tests =  $this->getTestCases($this->tests);
+        if (empty($this->test_cases_to_run)) {
+            $this->tests = $this->skip_tests($this->tests, 'test.test_number');
           }
-		$this->tests = $this->test_cases();
         // execute test cases pass by tests or all if it empty
         $request = new Yaf_Request_Http;
         $this->test_cases_to_run = $request->get('tests');
@@ -3855,7 +3941,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
                  foreach ($preRun as $pre) {
                      $this->$pre($key, $row);
                  }
-             }
+              }
              // run aggregator
              if (array_key_exists('aid', $row['test'])) {
                  $returnBillrun = $this->runT($row);
