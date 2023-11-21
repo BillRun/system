@@ -1225,7 +1225,49 @@
 			"proration" : "inherited",
 			"to" : "time*2172-03-09T14:38:26Z",
 			"creation_time" : "time*2015-03-10T00:00:00Z"
-		}
+		},
+		{
+            "from": "time*2023-01-01T02:00:00Z",
+            "key": "LEGACY_TRIAL_DISCOUNT",
+            "description": "Trial Discount",
+            "params": {
+                "min_subscribers": "",
+                "max_subscribers": "",
+                "conditions": [
+                    {
+                        "subscriber": [
+                            {
+                                "service": {
+                                    "any": [
+                                        {
+                                            "fields": [
+                                                {
+                                                    "field": "name",
+                                                    "op": "in",
+                                                    "value": [
+                                                        "LEGACY_ONE_MONTH_TRIAL"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "type": "percentage",
+            "subject": {
+                "monthly_fees": {
+                    "value": 1
+                }
+            },
+            "proration": "inherited",
+            "priority": "1",
+            "to": "time*2172-03-09T11:21:21Z",
+            "creation_time": "time*2023-01-01T02:00:00Z"
+        }
 
 
 	]

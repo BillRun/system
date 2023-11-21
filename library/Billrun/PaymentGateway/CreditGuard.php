@@ -18,7 +18,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $pendingCodes = "/$^/";
 	protected $completionCodes = "/^000$/";
 	protected $account;
-
+        
 	protected function __construct($instanceName =  null) {
 		parent::__construct($instanceName);
 		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'] ?? null;
@@ -87,6 +87,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$params = $this->getGatewayCredentials();
 		$params['txId'] = $txId;
 		$params['tid'] = $params['redirect_terminal'];
+		if ($additionalParams['keepCCDetails']) {
+			$this->saveDetails['keepCCDetails'] = $additionalParams['keepCCDetails'];
+		}
 
 		return $this->buildInquireQuery($params, $additionalParams['terminal'] ?? 'redirect_terminal');
 	}
@@ -151,6 +154,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				}
 			}
 
+			if ($this->saveDetails['keepCCDetails']) {
+				$retParams['action'] = 'SinglePaymentToken';
+			}
+			
 			if ($retParams['action'] == 'SinglePaymentToken') {
 				$j5_response_xml = $this->sendJ5Request($this->saveDetails['aid'], $this->saveDetails, 'RecurringDebit');
 				$j5_response = simplexml_load_string($j5_response_xml);
@@ -183,6 +190,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'card_brand' => (string) $this->saveDetails['card_brand'],
 				'credit_company' => (string) $this->saveDetails['credit_company'],
 				'card_type' => (string) $this->saveDetails['card_type'],
+				'keepCCDetails' => $this->saveDetails['keepCCDetails'],
 			)
 		);
 	}
@@ -430,6 +438,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlParams['version'] = $credentials['version'] ?? '2000';
 		$xmlParams['mpiValidation'] = 'AutoComm';
 		$xmlParams['userData2'] = $options['tokenize_on_single_payment'] ? 'SinglePaymentToken' : 'SinglePayment';
+		$xmlParams['tokenize_option'] = $options['tokenize_option'] ?? false;
 		if (!empty($customParams['send_z_param'])) {
 			$aidStringVal = strval($addonData['aid']);
 			$addonData['aid'] = $this->addLeadingZero($aidStringVal);
@@ -469,7 +478,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function getXmlStructureByParams($credentials, $xmlParams, $addonData = array()) {
-		$ppsConfig  = $this->getPPSConfigJSON();
+		$ppsConfig  = $this->getPPSConfigJSON($xmlParams);
 		$XParameter = !empty($addonData['txid']) ? '<user>' . $addonData['txid']  . '</user>' : '';
 		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
 		$ashraitEmvData = '<ashraitEmvData>
@@ -477,7 +486,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 						<recurringTotalSum></recurringTotalSum>
 						<recurringFrequency>04</recurringFrequency>
 					</ashraitEmvData>';
-	
+
 		return array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -539,6 +548,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	protected function getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams, $addonData) {
 		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
+		$ppsConfig  = $this->getPPSConfigJSON($xmlParams);
 		return array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -583,6 +593,14 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										   <userData9/>
 										   <userData10/>
 										  </customerData>
+										  '. (!empty($ppsConfig) ?
+										  '<paymentPageData>
+											<ppsJSONConfig>
+												'.$ppsConfig.'
+											</ppsJSONConfig>
+										  </paymentPageData>
+										  ' : '')
+										  .'
 								 </doDeal>
 							</request>
 						   </ashrait>'
@@ -630,13 +648,29 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 		return true;
 	}
-	
-	protected function getPPSConfigJSON() {
+
+	public function addAdditionalParameters($request) {
+		$keepCCDetails = $request->get('keepCCDetails');
+		if ($keepCCDetails == 'true') {
+			return array('keepCCDetails' => true);
+		}
+		return array();
+	}
+
+	protected function getPPSConfigJSON($params = array()) {
 		$customParams = $this->getGatewayCustomParams();
 		$basicParams = $this->getGatewayCredentials();
 		if(empty($customParams['paymentPageData']['ppsJSONConfig'])) {
+			if (isset($params['tokenize_option'])) {
+				$ppsConfig = array(
+					'uiCustomData' => array(
+						'keepCCDetails' => !empty($params['tokenize_option']),
+					),
+				);
+			} else {
 			return null;
 		}
+		} else {
 		$ppsConfig = $customParams['paymentPageData']['ppsJSONConfig'];
 
 		if(!empty($basicParams['ancestor_urls']) && trim($basicParams['ancestor_urls'])) {
@@ -651,6 +685,11 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				$ppsConfig['uiCustomData']['customText'] = json_decode($basicParams['custom_text']);
 			} else {
 				Billrun_Factory::log('Billrun_PaymentGateway_CreditGuard::getPPSConfigJSON -  customText json cannot  be parsed  correctly',Zend_Log::WARN);
+				}
+			}
+
+			if ($params['tokenize_option']) {
+				$ppsConfig['uiCustomData']['keepCCDetails'] = !empty($params['tokenize_option']);
 			}
 		}
 
