@@ -79,6 +79,7 @@ class Billrun_AuditTrail_Util {
 	}
 
 	protected static function getUser() {
+		$user = Billrun_Factory::user();
 		if ($user) {
 			$trackUser = array(
 				'_id' => $user->getMongoId()->getMongoID(),
