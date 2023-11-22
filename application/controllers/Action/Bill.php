@@ -121,7 +121,7 @@ class BillAction extends ApiAction {
 			$balances[$aid] = Billrun_Bill::getTotalDueForAccount(intval($aid), $date, false, $include_future_chargeable);
 		}
 
-		return empty($date) ? $balances : array_map(function($balance) { return $balance['total']; }, $balances);
+		return $balances;
 	}
 
 	protected function getOverDueBalances($request) {
