@@ -31,18 +31,13 @@ const ServicesList = (props) => {
 
   const displayPlay = () => props.isPlaysEnabled;
 
-  const filterFields = [
-    { id: 'description', placeholder: 'Title' },
-    { id: 'name', placeholder: 'Key' },
-  ];
-
   const tableFields = [
-    { id: 'description', title: 'Title', sort: true },
-    { id: 'name', title: 'Key', sort: true },
+    { id: 'description', sort: true },
+    { id: 'name', sort: true },
     { title: 'Price', parser: parserPrice, sort: true },
     { title: 'Quantitative', parser: parserQuantitative, sort: true },
     { title: 'Period', parser: parserPeriod, sort: true },
-    { id: 'play', title: 'Play', display: displayPlay(), parser: parsePlay },
+    { id: 'play', display: displayPlay(), parser: parsePlay },
   ];
 
   const projectFields = {
@@ -62,7 +57,6 @@ const ServicesList = (props) => {
     <EntityList
       itemsType="services"
       itemType="service"
-      filterFields={filterFields}
       tableFields={tableFields}
       projectFields={projectFields}
       showRevisionBy="name"
