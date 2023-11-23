@@ -61,9 +61,9 @@ function _collectionSave(coll, record) {
     }
 }
 // =============================================================================
-
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty().next();
 delete lastConfig['_id'];
+// =============================================================================
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
 var fields = lastConfig['rates']['fields'];
@@ -118,7 +118,7 @@ for (var i in lastConfig['file_types']) {
 }
 
 // BRCD-1077 update all products(Rates) tariff_category field.
-db.rates.update({'tariff_category': {$exists: false}},{$set:{'tariff_category':'retail'}},{multi:1});
+db.rates.updateMany({'tariff_category': {$exists: false}},{$set:{'tariff_category':'retail'}});
 
 // BRCD-938: Option to not generate pdfs for the cycle
 if (typeof lastConfig['billrun']['generate_pdf']  === 'undefined') {
@@ -168,12 +168,12 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 if(lastConfig.invoice_export) {
 	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.header) &&
 		!lastConfig.invoice_export.header) {
-	lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
+			lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
 	}
 	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.footer) &&
 		!lastConfig.invoice_export.footer) {
-	lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
-}
+			lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+	}
 }
 
 //BRCD-1229 - Input processor re-enabled when not requested
@@ -382,7 +382,7 @@ for (var i in propertyTypes) {
 db.rebalance_queue.createIndex({"creation_date": 1}, {unique: false, "background": true})
 
 // BRCD-1443 - Wrong billrun field after a rebalance
-db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
+db.billrun.updateMany({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}});
 // BRCD-1457 - Fix creation_time field in subscriber services
 db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
 	function(obj) {
@@ -500,7 +500,7 @@ db.collection_steps.createIndex({'trigger_date': 1}, { unique: false , sparse: t
 db.collection_steps.createIndex({'extra_params.aid':1 }, { unique: false , sparse: true, background: true });
 
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
-db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});
+db.bills.updateMany({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}});
 
 //BRCD-1621 - Service quantity based quota
 var subscribers = db.subscribers.find({type:'subscriber', "services":{$type:4, $ne:[]}, $where: function() {
@@ -799,10 +799,10 @@ db.log.find({"source":"audit"}).forEach(
 );
 
 // BRCD-1837: convert rates' "vatable" field to new tax mapping
-db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
-db.rates.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
-db.services.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
-db.services.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
+db.rates.updateMany({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}});
+db.rates.updateMany({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}});
+db.services.updateMany({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}});
+db.services.updateMany({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}});
 
 // taxes collection indexes
 db.createCollection('taxes');
@@ -980,7 +980,7 @@ for (var i in lastConfig['usage_types']) {
             _update_query[_unset_entry_key] = {};
             _update_query[_unset_entry_key][_balance_unset_key] = 1;
 //            printjson(_update_query);
-            db.balances.update({_id:obj._id}, _update_query);
+            db.balances.updateOne({_id:obj._id}, _update_query);
         }
     );
 }
@@ -1053,14 +1053,14 @@ services.forEach(function (service) {
 			const update = {
 				$setOnInsert: setOnInsert,
 				$inc: inc,
-				$set: set,
+				$set: set
 			};
 			
 			const options = {
 				upsert: true
 			};
 
-			db.balances.update(query, update, options);
+			db.balances.updateOne(query, update, options);
 
 			// remove group from monthly balance
 			delete balance['balance']['groups'][group['name']];
@@ -1332,7 +1332,7 @@ bills.forEach(function (bill) {
 });
 
 // BRCD-2772 - add webhooks supports all audit collection field should be lowercase
-db.audit.update({"collection" : "Login"}, {$set:{"collection":"login"}}, {"multi":1});
+db.audit.updateMany({"collection" : "Login"}, {$set:{"collection":"login"}});
 
 //BRCD-2855 Oauth support
 lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
@@ -1661,6 +1661,103 @@ lastConfig = runOnce(lastConfig, 'BRCD-4217', function () {
 	}
 	db.bills.bulkWrite(bulkUpdate);
 	print("Updated total of " + i + " bills!")
+});
+
+
+// BRCD-4266 - Set default searchable fields for dynamic entity lists
+lastConfig = runOnce(lastConfig, 'BRCD-4266', function () {
+	print("START\tBRCD-4266 - Set default searchable fields for dynamic entity lists..");
+	// Account
+	if (typeof lastConfig['subscribers'] !== 'undefined' && typeof lastConfig['subscribers']['account'] !== 'undefined' && typeof lastConfig['subscribers']['account']['fields'] !== 'undefined') {
+		var accountFields = lastConfig['subscribers']['account']['fields'];
+		var defaultAccountSearchableFields = ['aid', 'firstname', 'lastname', 'first_name', 'last_name'];
+		for (var field_key in accountFields) {
+			if (defaultAccountSearchableFields.includes(accountFields[field_key].field_name)) {
+				accountFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['subscribers']['account']['fields'] = accountFields;
+		print("\t* update account fields");
+	}
+
+	// Subscriber
+	if (typeof lastConfig['subscribers'] !== 'undefined' && typeof lastConfig['subscribers']['subscriber'] !== 'undefined' && typeof lastConfig['subscribers']['subscriber']['fields'] !== 'undefined') {
+		var subscriberFields = lastConfig['subscribers']['subscriber']['fields'];
+		var defaultSubscriberSearchableFields = ['sid', 'firstname', 'lastname', 'first_name', 'last_name'];
+		for (var field_key in subscriberFields) {
+			if (defaultSubscriberSearchableFields.includes(subscriberFields[field_key].field_name)) {
+				subscriberFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['subscribers']['subscriber']['fields'] = subscriberFields;
+		print("\t* update subscriber fields");
+	}
+
+	// Tax
+	if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fields'] !== 'undefined') {
+		var taxesFields = lastConfig['taxes']['fields'];
+		var defaultTaxesSearchableFields = ['description', 'key'];
+		for (var field_key in taxesFields) {
+			if (defaultTaxesSearchableFields.includes(taxesFields[field_key].field_name)) {
+				taxesFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['taxes']['fields'] = taxesFields;
+		print("\t* update taxes fields");
+	}
+
+	// discounts
+	if (typeof lastConfig['discounts'] !== 'undefined' && typeof lastConfig['discounts']['fields'] !== 'undefined') {
+		var discountsFields = lastConfig['discounts']['fields'];
+		var defaultDiscountsSearchableFields = ['description', 'key'];
+		for (var field_key in discountsFields) {
+			if (defaultDiscountsSearchableFields.includes(discountsFields[field_key].field_name)) {
+				discountsFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['discounts']['fields'] = discountsFields;
+		print("\t* update discounts fields");
+	}
+
+	// Plans
+	if (typeof lastConfig['plans'] !== 'undefined' && typeof lastConfig['plans']['fields'] !== 'undefined') {
+		var plansFields = lastConfig['plans']['fields'];
+		var defaultPlansSearchableFields = ['name', 'description'];
+		for (var field_key in plansFields) {
+			if (defaultPlansSearchableFields.includes(plansFields[field_key].field_name)) {
+				plansFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['plans']['fields'] = plansFields;
+		print("\t* update plans fields");
+	}
+
+	// Services
+	if (typeof lastConfig['services'] !== 'undefined' && typeof lastConfig['services']['fields'] !== 'undefined' ) {
+		var servicesFields = lastConfig['services']['fields'];
+		var defaultServicesSearchableFields = ['description', 'name'];
+		for (var field_key in servicesFields) {
+			if (defaultServicesSearchableFields.includes(servicesFields[field_key].field_name)) {
+				servicesFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['services']['fields'] = servicesFields;
+		print("\t* update services fields");
+	}
+
+	// Rates
+	if (typeof lastConfig['rates'] !== 'undefined' && typeof lastConfig['rates']['fields'] !== 'undefined' ) {
+		var ratesFields = lastConfig['rates']['fields'];
+		var defaultRatesSearchableFields = ['key', 'description'];
+		for (var field_key in ratesFields) {
+			if (defaultRatesSearchableFields.includes(ratesFields[field_key].field_name)) {
+				ratesFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['rates']['fields'] = ratesFields;
+		print("\t* update rates fields");
+	}
+	print("DONE\tBRCD-4266");
 });
 
 db.config.insertOne(lastConfig);
