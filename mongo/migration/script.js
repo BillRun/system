@@ -121,7 +121,7 @@ for (var i in lastConfig['file_types']) {
 }
 
 // BRCD-1077 update all products(Rates) tariff_category field.
-db.rates.update({'tariff_category': {$exists: false}},{$set:{'tariff_category':'retail'}},{multi:1});
+db.rates.updateMany({'tariff_category': {$exists: false}},{$set:{'tariff_category':'retail'}});
 
 // BRCD-938: Option to not generate pdfs for the cycle
 if (typeof lastConfig['billrun']['generate_pdf']  === 'undefined') {
@@ -385,7 +385,7 @@ for (var i in propertyTypes) {
 db.rebalance_queue.createIndex({"creation_date": 1}, {unique: false, "background": true})
 
 // BRCD-1443 - Wrong billrun field after a rebalance
-db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
+db.billrun.updateMulti({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}});
 // BRCD-1457 - Fix creation_time field in subscriber services
 db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
 	function(obj) {
@@ -503,7 +503,7 @@ db.collection_steps.createIndex({'trigger_date': 1}, { unique: false , sparse: t
 db.collection_steps.createIndex({'extra_params.aid':1 }, { unique: false , sparse: true, background: true });
 
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
-db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});
+db.bills.updateMany({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}});
 
 //BRCD-1621 - Service quantity based quota
 var subscribers = db.subscribers.find({type:'subscriber', "services":{$type:4, $ne:[]}, $where: function() {
@@ -802,10 +802,10 @@ db.log.find({"source":"audit"}).forEach(
 );
 
 // BRCD-1837: convert rates' "vatable" field to new tax mapping
-db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
-db.rates.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
-db.services.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
-db.services.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
+db.rates.updateMany({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}});
+db.rates.updateMany({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}});
+db.services.updateMany({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}});
+db.services.updateMany({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}});
 
 // taxes collection indexes
 db.createCollection('taxes');
@@ -983,7 +983,7 @@ for (var i in lastConfig['usage_types']) {
             _update_query[_unset_entry_key] = {};
             _update_query[_unset_entry_key][_balance_unset_key] = 1;
 //            printjson(_update_query);
-            db.balances.update({_id:obj._id}, _update_query);
+            db.balances.updateOne({_id:obj._id}, _update_query);
         }
     );
 }
@@ -1056,14 +1056,14 @@ services.forEach(function (service) {
 			const update = {
 				$setOnInsert: setOnInsert,
 				$inc: inc,
-				$set: set,
+				$set: set
 			};
 			
 			const options = {
 				upsert: true
 			};
 
-			db.balances.update(query, update, options);
+			db.balances.updateOne(query, update, options);
 
 			// remove group from monthly balance
 			delete balance['balance']['groups'][group['name']];
@@ -1335,7 +1335,7 @@ bills.forEach(function (bill) {
 });
 
 // BRCD-2772 - add webhooks supports all audit collection field should be lowercase
-db.audit.update({"collection" : "Login"}, {$set:{"collection":"login"}}, {"multi":1});
+db.audit.updateMany({"collection" : "Login"}, {$set:{"collection":"login"}});
 
 //BRCD-2855 Oauth support
 lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
