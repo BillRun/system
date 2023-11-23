@@ -792,13 +792,15 @@ db.subscribers.getIndexes().forEach(function(index){
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
 
-// Migrate audit records in log collection into separated audit collection
-db.log.find({"source":"audit"}).forEach(
-	function(obj) {
-		db.audit.save(obj);
-		db.log.remove(obj._id);
-	}
-);
+//BRCD-2244 - Migrate audit records in log collection into separated audit collection
+lastConfig = runOnce(lastConfig, 'BRCD-2244', function() {
+    db.log.find({ "source": "audit" }).forEach(
+        function(obj) {
+            db.audit.save(obj);
+            db.log.remove(obj._id);
+        }
+    );
+})
 
 // taxes collection indexes
 db.createCollection('taxes');
