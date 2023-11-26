@@ -37,6 +37,7 @@ function removeFieldFromConfig(lastConf, field_names, entityName) {
 // Perform specific migrations only once
 // Important note: runOnce is guaranteed to run some migration code once per task code only if the whole migration script completes without errors.
 function runOnce(lastConfig, taskCode, callback) {
+    print("running task " + taskCode);
     if (typeof lastConfig.past_migration_tasks === 'undefined') {
         lastConfig['past_migration_tasks'] = [];
     }
@@ -1637,7 +1638,11 @@ lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
 		  hello: 1
 		}
 	 )['maxWriteBatchSize'];
-	print("Starts to update " + cancelBills.toArray().length + " bills")
+	var _cancelBillsCount = cancelBills.toArray().length;
+	print("Starts to update " + _cancelBillsCount + " bills");
+	if (_cancelBillsCount === 0) {
+		return;
+	}
 	for (var i=0; i<cancelBills.toArray().length; i++) {
 	    var update = { "updateOne" : {
 	        "filter" : {"_id" : cancelBills[i]['_id']},
@@ -1664,7 +1669,11 @@ lastConfig = runOnce(lastConfig, 'BRCD-4217', function () {
 	var rejectionBills = db.bills.find({rejection:true, urt:ISODate("1970-01-01T00:00:00.000Z")});
 	var bulkUpdate = [];
 	var maxWriteBatchSize = 1000;
-	print("Starts to update " + rejectionBills.toArray().length + " bills")
+	var _rejectionBillsCount = rejectionBills.toArray().length;
+	print("Starts to update " + _rejectionBillsCount + " bills");
+	if (_rejectionBillsCount === 0) {
+		return;
+	}
 	for (var i=0; i<rejectionBills.toArray().length; i++) {
 	    var update = { "updateOne" : {
 	        "filter" : {"_id" : rejectionBills[i]['_id']},
