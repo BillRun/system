@@ -64,7 +64,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	public function getInvoiceGrouping() {
 		$fields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', []);
 		if (!empty($fields)) {
-			return array(['conditions' => [], 'name' => 'default_grouping', 'fields' => array_map(function ($field) {
+			return array(['conditions' => [], 'name' => 'default', 'fields' => array_map(function ($field) {
                     return ['field_name' => $field, 'op' => 'group'];
                 }, $fields)]);
 		} else {
@@ -617,7 +617,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			$this->data['totals']['grouping'][$index][$field] = $value;
 		}
 		if(isset($row_grouping_options['name'])) {
-			$this->data['totals']['grouping'][$index]['group_name'] = $row_grouping_options['name'];
+			$this->data['totals']['grouping'][$index]['grouping'] = $row_grouping_options['name'];
 		}
 		$this->updateTotalsGrouping($row, $index, $row_grouping_options['fields']);
 	}
