@@ -53,6 +53,14 @@ function runOnce(lastConfig, taskCode, callback) {
     return lastConfig;
 }
 
+function _createCollection(newcoll) {
+    var _existsingColls = db.getCollectionNames();
+    if (_existsingColls.indexOf(newcoll) >= 0) { // collection already exists
+        return false;
+    }
+    return db.createCollection(newColl);
+}
+
 function _collectionSave(coll, record) {
     if (!Object.hasOwn(record, '_id')) {
         coll.insertOne(record);
@@ -805,14 +813,14 @@ db.services.updateMany({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}
 db.services.updateMany({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}});
 
 // taxes collection indexes
-db.createCollection('taxes');
+_createCollection('taxes');
 db.taxes.createIndex({'key':1, 'from': 1, 'to': 1}, { unique: true, background: true });
 db.taxes.createIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
 db.taxes.createIndex({'to': 1 }, { unique: false , sparse: true, background: true });
 
 lastConfig = runOnce(lastConfig, 'BRCD-3678-1', function () {
     //Suggestions Collection
-    db.createCollection('suggestions');
+    _createCollection('suggestions');
     db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1_estimated_billrun_1");
     db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1");
     db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
@@ -1337,13 +1345,13 @@ db.audit.updateMany({"collection" : "Login"}, {$set:{"collection":"login"}});
 //BRCD-2855 Oauth support
 lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
     // create collections
-    db.createCollection("oauth_clients");
-    db.createCollection("oauth_access_tokens");
-    db.createCollection("oauth_authorization_codes");
-    db.createCollection("oauth_refresh_tokens");
-    db.createCollection("oauth_users");
-    db.createCollection("oauth_scopes");
-    db.createCollection("oauth_jwt");
+    _createCollection("oauth_clients");
+    _createCollection("oauth_access_tokens");
+    _createCollection("oauth_authorization_codes");
+    _createCollection("oauth_refresh_tokens");
+    _createCollection("oauth_users");
+    _createCollection("oauth_scopes");
+    _createCollection("oauth_jwt");
 
     // create indexes
     db.oauth_clients.createIndex({'client_id': 1 });
@@ -1504,7 +1512,7 @@ runOnce(lastConfig, 'BRCD-3413', function () {
 //BRCD-3421: migrate webhooks from config to separate collection
 runOnce(lastConfig, 'BRCD-3421', function () {
     // create webhooks collection
-    db.createCollection('webhooks');
+    _createCollection('webhooks');
     db.webhooks.createIndex({'webhook_id': 1}, { unique: true , background: true});
     db.webhooks.createIndex({'module' : 1, 'action' : 1 }, { unique: false , background: true});
 
