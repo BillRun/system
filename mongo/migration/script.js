@@ -37,6 +37,7 @@ function removeFieldFromConfig(lastConf, field_names, entityName) {
 // Perform specific migrations only once
 // Important note: runOnce is guaranteed to run some migration code once per task code only if the whole migration script completes without errors.
 function runOnce(lastConfig, taskCode, callback) {
+    print("running task " + taskCode);
     if (typeof lastConfig.past_migration_tasks === 'undefined') {
         lastConfig['past_migration_tasks'] = [];
     }
@@ -68,6 +69,16 @@ function _collectionSave(coll, record) {
         coll.replaceOne({"_id":record._id}, record, {"upsert":true}); // upsert in case of someone save in parallel
     }
 }
+
+function _dropIndex(collname, indexname) {
+    indexes = db.getCollection(collname).getIndexes();
+    let i = indexes.find(obj => obj.name === indexname);
+    if (i === undefined) {
+        return false;
+    }
+    return db.getCollection(collname).dropIndex(indexname);
+}
+
 // =============================================================================
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty().next();
 delete lastConfig['_id'];
@@ -430,7 +441,7 @@ if (typeof lastConfig['collection']['settings']['run_on_days'] === 'undefined') 
 if (typeof lastConfig['collection']['settings']['run_on_hours'] === 'undefined') {
     lastConfig['collection']['settings']['run_on_hours'] = [];
 }
-db.counters.dropIndex("coll_1_oid_1");
+_dropIndex("counters", "coll_1_oid_1")
 db.counters.createIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
 // BRCD-1475 - Choose CDR fields that will be saved under 'uf'
@@ -502,8 +513,8 @@ db.bills.createIndex({'billrun_key': 1 }, { unique: false, background: true});
 db.bills.createIndex({'invoice_date': 1 }, { unique: false, background: true});
 
 // BRCD-1552 collection
-db.collection_steps.dropIndex("aid_1");
-db.collection_steps.dropIndex("trigger_date_1_done_1");
+_dropIndex("collection_steps", "aid_1");
+_dropIndex("collection_steps", "trigger_date_1_done_1");
 db.collection_steps.createIndex({'trigger_date': 1}, { unique: false , sparse: true, background: true });
 db.collection_steps.createIndex({'extra_params.aid':1 }, { unique: false , sparse: true, background: true });
 
@@ -784,11 +795,11 @@ if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fi
 db.subscribers.getIndexes().forEach(function(index){
 	var indexFields = Object.keys(index.key);
 	if (index.unique && indexFields.length == 3 && indexFields[0] == 'sid' && indexFields[1] == 'from' && indexFields[2] == 'aid') {
-		db.subscribers.dropIndex(index.name);
+                _dropIndex("subscribers", index.name)
 		db.subscribers.createIndex({'sid': 1}, { unique: false, sparse: true, background: true });
 	}
 	else if ((indexFields.length == 1) && index.key.aid && index.sparse) {
-		db.subscribers.dropIndex(index.name);
+                _dropIndex("subscribers", index.name)
 		db.subscribers.createIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
 	}
 })
@@ -821,8 +832,8 @@ db.taxes.createIndex({'to': 1 }, { unique: false , sparse: true, background: tru
 lastConfig = runOnce(lastConfig, 'BRCD-3678-1', function () {
     //Suggestions Collection
     _createCollection('suggestions');
-    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1_estimated_billrun_1");
-    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1");
+    _dropIndex("suggestions", "aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1_estimated_billrun_1")
+    _dropIndex("suggestions", "aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1")
     db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
     db.suggestions.createIndex({'status': 1 }, { unique: false , background: true});
 });
@@ -1225,10 +1236,10 @@ if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.footer)
 	lastConfig.invoice_export.footer = "/footer/footer_tpl.phtml";
 }
 
-db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
-db.archive.dropIndex('session_id_1_request_num_-1')
-db.archive.dropIndex('sid_1_call_reference_1')
-db.archive.dropIndex('call_reference_1')
+_dropIndex("archive", "sid_1_session_id_1_request_num_");
+_dropIndex("archive", "session_id_1_request_num_");
+_dropIndex("archive", "sid_1_call_reference_1");
+_dropIndex("archive", "call_reference_1");
 if (db.serverStatus().ok == 0) {
 	print('Cannot shard archive collection - no permission')
 } else if (db.serverStatus().process == 'mongos') {
@@ -1283,7 +1294,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
 
 db.subscribers.createIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
 db.billrun.createIndex( { 'billrun_key': -1, 'attributes.invoicing_day': -1 },{unique: false, background: true });
-db.billrun.dropIndex('billrun_key_-1');
+_dropIndex("billrun", "billrun_key_-1");
 //BRCD-2042 - charge.not_before migration script
 db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
 	function(obj) {
@@ -1437,8 +1448,8 @@ runOnce(lastConfig, 'BRCD-3307', function () {
 
 lastConfig = runOnce(lastConfig, 'BRCD-3806', function () {
     //Suggestions Collection
-    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculation_type_1_estimated_billrun_1");
-	db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
+    _dropIndex("suggestions", "aid_1_sid_1_billrun_key_1_status_1_key_1_recalculation_type_1_estimated_billrun_1")
+    db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
 });
 
 // BRCD-3618 configure full_calculation date field
@@ -1627,7 +1638,11 @@ lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
 		  hello: 1
 		}
 	 )['maxWriteBatchSize'];
-	print("Starts to update " + cancelBills.toArray().length + " bills")
+	var _cancelBillsCount = cancelBills.toArray().length;
+	print("Starts to update " + _cancelBillsCount + " bills");
+	if (_cancelBillsCount === 0) {
+		return;
+	}
 	for (var i=0; i<cancelBills.toArray().length; i++) {
 	    var update = { "updateOne" : {
 	        "filter" : {"_id" : cancelBills[i]['_id']},
@@ -1654,7 +1669,11 @@ lastConfig = runOnce(lastConfig, 'BRCD-4217', function () {
 	var rejectionBills = db.bills.find({rejection:true, urt:ISODate("1970-01-01T00:00:00.000Z")});
 	var bulkUpdate = [];
 	var maxWriteBatchSize = 1000;
-	print("Starts to update " + rejectionBills.toArray().length + " bills")
+	var _rejectionBillsCount = rejectionBills.toArray().length;
+	print("Starts to update " + _rejectionBillsCount + " bills");
+	if (_rejectionBillsCount === 0) {
+		return;
+	}
 	for (var i=0; i<rejectionBills.toArray().length; i++) {
 	    var update = { "updateOne" : {
 	        "filter" : {"_id" : rejectionBills[i]['_id']},
@@ -1770,7 +1789,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-4266', function () {
 
 db.config.insertOne(lastConfig);
 db.lines.createIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
-db.lines.dropIndex("aid_1_urt_1");
+_dropIndex("lines", "aid_1_urt_1");
 db.rebalance_queue.createIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});
-db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
+_dropIndex("rebalance_queue", "aid_1_billrun_key_1");
 db.rebalance_queue.createIndex({"aid": 1, "billrun_key": 1}, {unique: false, "background": true});
