@@ -69,12 +69,9 @@ function _collectionSave(coll, record) {
     }
 }
 // =============================================================================
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
-delete lastConfig	['_id'];
-// =============================================================================
-
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty().next();
 delete lastConfig['_id'];
+// =============================================================================
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
 var fields = lastConfig['rates']['fields'];
