@@ -59,7 +59,7 @@ function _createCollection(newcoll) {
     if (_existsingColls.indexOf(newcoll) >= 0) { // collection already exists
         return false;
     }
-    return db.createCollection(newColl);
+    return db.createCollection(newcoll);
 }
 
 function _collectionSave(coll, record) {
