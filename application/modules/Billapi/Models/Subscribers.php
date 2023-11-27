@@ -105,7 +105,7 @@ class Models_Subscribers extends Models_Entity {
 					$serviceAvailableCycles = $serviceRate->getServiceCyclesCount();
 					if ($serviceAvailableCycles !== Billrun_Service::UNLIMITED_VALUE) {
 						$vDate = date(Billrun_Base::base_datetimeformat, $service['from']->sec);
-						$to = strtotime('+' . $serviceAvailableCycles . ' months', Billrun_Billingcycle::getBillrunStartTimeByDate($vDate));
+						$to = strtotime('+' . $serviceAvailableCycles . ' months', Billrun_Billingcycle::getBillrunEndTimeByDate($vDate));
 						$service['to'] = new MongoDate($to);
 					}
 				}
