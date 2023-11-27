@@ -81,6 +81,32 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         return true;
 	}
 
+	protected function buildGeneratorOptions() {
+        $this->fileNameParams = isset($this->config['filename_params']) ? $this->config['filename_params'] : self::DEFAULT_FILENAME_PARMS;
+        $this->fileNameStructure = isset($this->config['filename']) ? $this->config['filename'] : self::DEFAULT_FILENAME;
+        //$this->fileName = $this->getFilename();
+        //$options['file_name'] = $this->fileName;
+        $options['file_type'] = $this->getType();
+        $this->localDir = $this->getFilePath();
+        $options['local_dir'] = $this->localDir;
+        //$options['file_path'] = $this->localDir . DIRECTORY_SEPARATOR . $this->fileName;
+        $this->rowsToExport = $this->loadRows();
+        $options['data'] = $this->rowsToExport;
+        $this->headerToExport[0] = $this->getHeaderLine();
+        $options['headers'] = $this->headerToExport;
+        $this->footerToExport[0] = $this->getTrailerLine();
+        $options['trailers'] = $this->footerToExport;
+        $options['type'] = $this->config['generator']['type'];
+        $options['force_header'] = $this->config['generator']['force_header'] ?? false;
+        $options['force_footer'] = $this->config['generator']['force_footer'] ?? false;
+        $options['configByType'] = $this->config;
+        if ($options['type'] == 'separator') {
+            $options['delimiter'] = $this->config['generator']['separator'] ?? ",";
+        }
+        return $options;
+    }
+
+
 	public function getGeneratedFiles() {
 		return $this->filesExported;
 	}
@@ -97,10 +123,15 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         return  $this->getFileName();
 	}
 
+	public function getSequenceNumber() {
+		 return $this->params['param1'];
+	}
+
 
     protected function getExportFilePath() {
 		return  $this->getFilePathForTadig('EMPTY');
     }
+
 
 
 	protected function setTap3FileNameSttructure($tadig) {

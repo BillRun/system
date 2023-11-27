@@ -622,4 +622,22 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	// 	return $this->mapFields($fieldsMapping, $row);
 	// }
 
+	/**
+	 * gets current sequence number for the file
+	 *
+	 * @return string - number in the range of 00001-99999
+	 */
+	protected function getSequenceNumber() {
+		if (is_null($this->sequenceNum)) {
+			if(!empty($this->options['parent_exporter'])) {
+				$this->sequenceNum = $this->options['parent_exporter']->getSequenceNumber();
+			} else {
+				$seqNumLength = $this->getConfig('sequence_num_length', 5);
+				$nextSequenceNum = $this->getNextLogSequenceNumber();
+				$this->sequenceNum = sprintf('%0' . $seqNumLength . 'd', $nextSequenceNum % pow(10, $seqNumLength));
+			}
+		}
+		return $this->sequenceNum;
+	}
+
 }
