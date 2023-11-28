@@ -47,25 +47,25 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span><br>';
 	public function test_cases() {
 
-	}
-
-
-    public function __construct($label = false) {
-        parent::__construct("test Aggregatore");
-        $this->autoload_tests('aggregatorTestCases');
-        $this->ratesCol = Billrun_Factory::db()->ratesCollection();
-        $this->plansCol = Billrun_Factory::db()->plansCollection();
-        $this->linesCol = Billrun_Factory::db()->linesCollection();
-        $this->servicesCol = Billrun_Factory::db()->servicesCollection();
-        $this->discountsCol = Billrun_Factory::db()->discountsCollection();
-        $this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
-        $this->balancesCol = Billrun_Factory::db()->discountsCollection();
-        $this->billingCyclr = Billrun_Factory::db()->billing_cycleCollection();
-        $this->billrunCol = Billrun_Factory::db()->billrunCollection();
-        $this->construct(basename(__FILE__, '.php'), ['bills','charges', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes']);
-        $this->setColletions();
-        $this->loadDbConfig();
     }
+
+     public function __construct($label = false) {
+         parent::__construct("test Aggregatore");
+         $this->autoload_tests('aggregatorTestCases');
+         $this->ratesCol = Billrun_Factory::db()->ratesCollection();
+         $this->plansCol = Billrun_Factory::db()->plansCollection();
+         $this->linesCol = Billrun_Factory::db()->linesCollection();
+         $this->servicesCol = Billrun_Factory::db()->servicesCollection();
+         $this->discountsCol = Billrun_Factory::db()->discountsCollection();
+         $this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
+         $this->balancesCol = Billrun_Factory::db()->discountsCollection();
+	 $this->billingCyclr = Billrun_Factory::db()->billing_cycleCollection();
+         $this->billrunCol = Billrun_Factory::db()->billrunCollection();
+        $this->construct(basename(__FILE__, '.php'), ['bills','charges', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes']);
+         $this->setColletions();
+         $this->loadDbConfig();
+     }
+
      public function loadDbConfig() {
          Billrun_Config::getInstance()->loadDbConfig();
      }
@@ -113,12 +113,10 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
              }
              $this->tests =  $this->cases;
             }
-         if(empty($this->test_cases_to_run)){
-                $this->tests = $this->skip_tests($this->tests,'test.test_number');
-          }
+      
          foreach ($this->tests as $key => $row) {
-        
-         $aid = $row['test']['aid'];
+
+             $aid = $row['test']['aid'];
 	     $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
 	    if (isset($row['test']['label'])) {
 	         $this->message .= '<br>test label :  ' . $row['test']['label'];
@@ -167,9 +165,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 		if ($this->fails) {
 			$this->message .= $this->fails;
          }
-      
          print_r($this->message);
-
         $this->restoreColletions();
      }
 
@@ -577,7 +573,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          $stamp = $row['test']['options']['stamp'];
          $query = array('aid' => $aid, "billrun_key" => $stamp);
          $billrun = $this->getBillruns($query)->count();
-         if (count($billrun) > 0) {
+         if (count((array)$billrun) > 0) {
              $this->message .= '<b>aggregate run full cycle</b>' . $this->pass;
          } else {
              $passed = false;
@@ -885,7 +881,7 @@ public function passthrough($key, $returnBillrun, $row) {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
 	}
 
-	public function testMultiDay($key, $returnBillrun, $row) {
+	public function testMultiDay($row) {
 		$passed = true;
 		
 		$aids = [];
@@ -951,7 +947,7 @@ public function passthrough($key, $returnBillrun, $row) {
 		$this->billrunCol->remove(['billrun_key' => ['$ne' => 'abc']]);
 	}
 
-	public function testMultiDayNotallowPremature($key, $returnBillrun, $row) {
+	public function testMultiDayNotallowPremature( $row) {
 		$now = date('d');
 		$billruns = $this->getBillruns();
 		$billruns_ = [];

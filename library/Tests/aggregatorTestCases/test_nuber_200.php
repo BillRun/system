@@ -26,7 +26,7 @@ class Test_Case_200
                 'services' => [
                     [
                         "name" => $service['name'],
-                        "from" =>  $now->format('Y-m-d'),
+                        "from" => $now->format('Y-m-d'),
                         "to" => "2118-05-06T11:06:07Z"
                     ]
                 ]
