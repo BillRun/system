@@ -1,3 +1,7 @@
+include:
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
+
+
 image: serhii22ua/docker-compose-python10:latest-amd64
 
 stages:
