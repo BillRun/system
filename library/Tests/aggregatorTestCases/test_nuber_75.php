@@ -3,122 +3,90 @@
 class Test_Case_75 {
     public function test_case() {
         return [
-    'preRun' => [
-        'allowPremature',
-        'removeBillruns',
-    ],
     'test' => [
+        'label' => 'test  subscriber with discount about 3 month , from 03/12 to 02/03 , test thet the discount is created for 3 days in 03 ',
         'test_number' => 75,
-        'aid' => 'abcd',
+        'aid' => 13263,
+        'sid' => 82331,
         'function' => [
-            'testMultiDay',
+            'basicCompare',
+            'totalsPrice',
+            'lineExists',
+            'linesVSbillrun',
+            'rounded',
         ],
         'options' => [
-            'stamp' => '202311',
-            'invoicing_days' => [
-                '1',
-                '2',
-                '3',
-                '4',
-                '5',
-                '6',
-                '7',
-                '8',
-                '9',
-                '10',
-                '11',
-                '12',
-                '13',
-                '14',
-                '15',
-                '16',
-                '17',
-                '18',
-                '19',
-                '20',
-                '21',
-                '22',
-                '23',
-                '24',
-                '25',
-                '26',
-                '27',
-                '28',
-            ],
+            'stamp' => '202104',
             'force_accounts' => [
-                10000,
-                10001,
-                10002,
-                10003,
-                10004,
-                10005,
-                10006,
-                10007,
-                10008,
-                10009,
-                10010,
-                10011,
-                10012,
-                10013,
-                10014,
-                10015,
-                10016,
-                10017,
-                10018,
-                10019,
-                10020,
-                10021,
-                10022,
-                10023,
-                10024,
-                10025,
-                10026,
-                10027,
+                13263,
             ],
         ],
     ],
     'expected' => [
-        'billrun_key' => '202401',
-        'accounts' => [
-            10000 => '1',
-            10001 => '2',
-            10002 => '3',
-            10003 => '4',
-            10004 => '5',
-            10005 => '6',
-            10006 => '7',
-            10007 => '8',
-            10008 => '9',
-            10009 => '10',
-            10010 => '11',
-            10011 => '12',
-            10012 => '13',
-            10013 => '14',
-            10014 => '15',
-            10015 => '16',
-            10016 => '17',
-            10017 => '18',
-            10018 => '19',
-            10019 => '20',
-            10020 => '21',
-            10021 => '22',
-            10022 => '23',
-            10023 => '24',
-            10024 => '25',
-            10025 => '26',
-            10026 => '27',
-            10027 => '28',
+        'billrun' => [
+            'billrun_key' => '202104',
+            'aid' => 13263,
+            'after_vat' => [<?php
+
+class Test_Case_75 {
+    public function test_case() {
+        return [
+    'test' => [
+        'label' => 'test the Conditional charge is applied only to one subscriber under the account instead of two',
+        'test_number' => 75,
+        'aid' => 3082,
+        'sid' => [
+            3083,
+            3084,
+        ],
+        'function' => [
+            'basicCompare',
+            'sumSids',
+            'totalsPrice',
+            'lineExists',
+            'linesVSbillrun',
+            'rounded',
+        ],
+        'options' => [
+            'stamp' => '202106',
+            'force_accounts' => [
+                3082,
+            ],
         ],
     ],
-    'line' => [
-        'types' => [
-            'flat',
-            'credit',
+    'expected' => [
+        'billrun' => [
+            'billrun_key' => '202106',
+            'aid' => 3082,
+            'after_vat' => [
+                3083 => 175.5,
+                3084 => 175.5,
+            ],
+            'total' => 351,
+            'vatable' => 300,
+            'vat' => 17,
+        ],
+        'line' => [
+            'types' => [
+                'credit',
+            ],
         ],
     ],
-    'postRun' => [
-        'multi_day_cycle_false',
+];
+    }
+}
+            ],
+            'total' => 69.10593943749474,
+            'vatable' => 59.064905502132255,
+            'vat' => 17,
+        ],
+        'line' => [
+            'types' => [
+                'flat',
+            ],
+        ],
     ],
+    'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-3133',
 ];
     }
 }
