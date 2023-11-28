@@ -185,8 +185,8 @@
   "paymentsFiles" : {
     "collection": "log",
     "uniqueField": "stamp",
-    "itemName": "transactions request file",
-    "itemsName": "transactions request file",
+    "itemName": "payment file",
+    "itemsName": "payments files",
     "itemType": "payment_files",
     "itemsType": "payments_files"
   },

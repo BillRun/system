@@ -1,3 +1,4 @@
+
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
@@ -11,36 +12,33 @@ import { Form, FormGroup, ControlLabel, Col, Panel } from "react-bootstrap";
 import { WithTooltip, CreateButton } from "@/components/Elements";
 import EntityList from "@/components/EntityList";
 import Field from "@/components/Field";
-import GeneratePaymentFileForm from "./GeneratePaymentFileForm";
-import PaymentFileDetails from "./PaymentFileDetails";
+import UploadTransactionsFile from "./UploadPaymentFileForm";
+import PaymentFileDetails from "@/components/PaymentFiles/PaymentFileDetails";
 import {
-  paymentRequestFilesSelector,
-  paymentRequestGatewayOptionsSelector,
-  paymentRequestFileTypeOptionsOptionsSelector,
-  isRunningRequestPaymentFilesSelector,
+  paymentGatewayOptionsSelector,
+  paymentFileTypeOptionsOptionsSelector,
+  isRunningPaymentFilesSelector,
   selectedPaymentGatewaySelector,
   selectedFileTypeSelector,
 } from "@/selectors/paymentFilesSelectors";
 import { getSettings } from "@/actions/settingsActions";
 import { showFormModal } from "@/actions/guiStateActions/pageActions";
 import {
-  getRunningRequestPaymentFiles,
-  cleanRunningRequestPaymentFiles,
-  cleanRequestPaymentFilesTable,
-  sendGenerateNewFile,
-  validateGeneratePaymentFile,
-  setPaymentGateway,
   setFileType,
+  setPaymentGateway,
+  getRunningPaymentFiles,
+  cleanRunningPaymentFiles,
+  cleanPaymentFilesTable,
+  sendTransactionsReceiveFile,
 } from "@/actions/paymentFilesActions";
 import { gotEntity } from '@/actions/entityActions';
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
-import { getFieldName } from "@/common/Util";
 import { reportBillsFieldsSelector} from '@/selectors/reportSelectors';
+import { getFieldName } from "@/common/Util";
 
-class RequestPaymentFiles extends Component {
+class PaymentsFiles extends Component {
 
   static propTypes = {
-    paymentFiles: PropTypes.instanceOf(List),
     reportBillsFields: PropTypes.instanceOf(List),
     paymentGateway: PropTypes.string,
     fileType: PropTypes.string,
@@ -56,7 +54,6 @@ class RequestPaymentFiles extends Component {
   static defaultProps = {
     paymentGateway: '',
     fileType: '',
-    paymentFiles: List(),
     reportBillsFields: List(),
     paymentGatewayOptions: [],
     fileTypeOptionsOptions: Map(),
@@ -76,7 +73,7 @@ class RequestPaymentFiles extends Component {
     const { paymentGateway, fileType } = this.props;
     this.props.dispatch(getSettings("payment_gateways"));
     if (paymentGateway !== '' && fileType !== '') {
-      this.props.dispatch(getRunningRequestPaymentFiles(paymentGateway, fileType));
+      this.props.dispatch(getRunningPaymentFiles(paymentGateway, fileType));
     }
   }
 
@@ -89,8 +86,8 @@ class RequestPaymentFiles extends Component {
     const isRequiredChanged = `${paymentGateway}_${fileType}` !== `${prevProps.paymentGateway}_${prevProps.fileType}`;
     const isAutoReloadCountChanged = autoReloadCount !== prevProps.autoReloadCount;
     if (isRequiredChanged) {
-      this.props.dispatch(cleanRunningRequestPaymentFiles());
-      this.props.dispatch(cleanRequestPaymentFilesTable());
+      this.props.dispatch(cleanRunningPaymentFiles());
+      this.props.dispatch(cleanPaymentFilesTable());
     }
     // if Payment Gateway or File Type was changed, stop auto reload
     if (isRequiredChanged && this.reloadTableTimeout) {
@@ -112,7 +109,7 @@ class RequestPaymentFiles extends Component {
     // Auto Reload counter changed, set next auto rerun if not reseted and less then Max reloads
     if (isAutoReloadCountChanged) {
       clearTimeout(this.reloadTableTimeout);
-      const isAutoReloadCountLessThenMax = autoReloadCount < RequestPaymentFiles.maxAutoReloadData;
+      const isAutoReloadCountLessThenMax = autoReloadCount < PaymentsFiles.maxAutoReloadData;
       if (isRequiredSelected && isAutoReloadCountLessThenMax && autoReloadCount > 0) {
         const delay = this.getAutoReloadNextDelay();
         this.reloadTableTimeout = setTimeout(this.autoReloadData, delay, autoReloadCount);
@@ -121,7 +118,7 @@ class RequestPaymentFiles extends Component {
   }
 
   componentWillUnmount() {
-    this.props.dispatch(cleanRunningRequestPaymentFiles());
+    this.props.dispatch(cleanRunningPaymentFiles());
     if (this.reloadTableTimeout) {
       clearTimeout(this.reloadTableTimeout);
     }
@@ -142,24 +139,24 @@ class RequestPaymentFiles extends Component {
   getAutoReloadNextDelay = () => {
     const { autoReloadCount } = this.state;
     const index = autoReloadCount - 1;
-    const sec = index < RequestPaymentFiles.secAutoReloadData.length
-      ? RequestPaymentFiles.secAutoReloadData[index]
-      : RequestPaymentFiles.secAutoReloadData[RequestPaymentFiles.secAutoReloadData.length - 1];
+    const sec = index < PaymentsFiles.secAutoReloadData.length
+      ? PaymentsFiles.secAutoReloadData[index]
+      : PaymentsFiles.secAutoReloadData[PaymentsFiles.secAutoReloadData.length - 1];
     return sec * 1000;
   };
 
   fetchRunningPaymentFiles = (paymentGateway, fileType) => {
-    this.props.dispatch(getRunningRequestPaymentFiles(paymentGateway, fileType));
+    this.props.dispatch(getRunningPaymentFiles(paymentGateway, fileType));
   };
 
   onChangePaymentGatewayValue = (value) => {
     const paymentGateway = value && value.length ? value : "";
-    this.props.dispatch(setPaymentGateway(paymentGateway, 'request'));
+    this.props.dispatch(setPaymentGateway(paymentGateway, 'paymentsFiles'));
   };
 
   onChangeFileTypeValue = (value) => {
     const fileType = value && value.length ? value : "";
-    this.props.dispatch(setFileType(fileType, 'request'));
+    this.props.dispatch(setFileType(fileType, 'paymentsFiles'));
   };
 
   onShowDetails = (data) => {
@@ -191,7 +188,7 @@ class RequestPaymentFiles extends Component {
 
   getFilterFields = () => [{ id: "creation_time", placeholder: this.getLabel("creation_time") }];
 
-  getLabel = (key) => getFieldName(key, "payment_files", titleCase(key));
+  getLabel = (key) => getFieldName(key, "paymentsFiles", titleCase(key));
 
   getPredefinedReportConfiguration = (line) => {
     const { reportBillsFields, paymentGateway } = this.props;
@@ -241,7 +238,7 @@ class RequestPaymentFiles extends Component {
 
   goToReport = (data) => {
     this.props.dispatch(gotEntity('reports', this.getPredefinedReportConfiguration(data)));
-    this.props.dispatch(setPageTitle('Transactions Request File Report'));
+    this.props.dispatch(setPageTitle('Payments Files Report'));
     this.props.router.push({
       pathname: 'reports/report',
       query: {
@@ -325,7 +322,7 @@ class RequestPaymentFiles extends Component {
     if (isRunningPaymentFiles > 0) {
       return `${isRunningPaymentFiles} files is running...`;
     }
-    return "Generate Transactions Request File";
+    return "Upload Payment File";
   };
 
   fixDetailsFields = (field) => this.fixGeneratePaymentFileFields(field);
@@ -349,54 +346,29 @@ class RequestPaymentFiles extends Component {
       }
     });
 
-  onClickGenerateNewFile = () => {
-    const fields = this.getGenerateNewFileFields();
+  onClickUploadTransactionsFile = () => {
     const config = {
-      title: "Generate Transactions Request File",
-      labelOk: "Generate",
-      onOk: this.onGenerateNewFileClickOK,
+      title: "Upload Payments File",
+      labelOk: "Upload",
+      onOk: this.onUploadTransactionsFileClickOK,
+      skipConfirmOnClose: true, 
     };
-    const item = Map({ fields, values: Map() });
-    return this.props.dispatch(showFormModal(item, GeneratePaymentFileForm, config));
+
+    const item = Map({});
+    return this.props.dispatch(showFormModal(item, UploadTransactionsFile, config));
   };
 
-  getGenerateNewFileFields = () => {
-    const { paymentFiles, isRunningPaymentFiles, paymentGateway, fileType } = this.props;
-    const isRequiredFieldsSelected = paymentGateway !== "" && fileType !== "";
-    const showGeneratePaymentFile = isRunningPaymentFiles === 0 && isRequiredFieldsSelected;
-    if (!showGeneratePaymentFile) {
-      return List();
-    }
-    return paymentFiles
-      .find((paymentFile) => paymentFile.get("name", "") === paymentGateway, null, Map())
-      .get("transactions_request", List())
-      .find((transactionsRequest) => transactionsRequest.get("file_type", "") === fileType, null, Map())
-      .get("parameters", List())
-      .map(this.fixGeneratePaymentFileFields);
-  };
-
-  getAffectsBills = (data) => {
-    return data.get("affects_bills", true);
-  }
-
-  getHelpTextForReport = (data) => {
-    return data.get("affects_bills", true) ? "Report" : "This file does not generate any reportable bills entities. Please refer to the generated file for details.";
-  }
-
-  onGenerateNewFileClickOK = (paymentFile) => {
+  onUploadTransactionsFileClickOK = (paymentFile) => {
     const { paymentGateway, fileType } = this.props;
-    if (!this.props.dispatch(validateGeneratePaymentFile(paymentFile))) {
-      return false;
-    }
-    const data = paymentFile.get("values", Map());
+    const file = paymentFile.get("file", null);
     return this.props
-      .dispatch(sendGenerateNewFile(paymentGateway, fileType, data))
-      .then(this.afterSuccessGenerateNewFile)
+      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'payments'))
+      .then(this.afterSuccessUploadTransactionsFile)
       .catch((error) => Promise.reject());
   };
 
-  afterSuccessGenerateNewFile = () => {
-    const reloadAfter = RequestPaymentFiles.secReloadDelayAfterGenerateFile * 1000;
+  afterSuccessUploadTransactionsFile = () => {
+    const reloadAfter = PaymentsFiles.secReloadDelayAfterGenerateFile * 1000;
     setTimeout(this.reloadData, reloadAfter);
     return Promise.resolve();
   };
@@ -416,11 +388,15 @@ class RequestPaymentFiles extends Component {
       <div>
         {label}
         <div className='pull-right'>
-          {
-            <WithTooltip helpText={this.getGeneratePaymentFileTooltipText()}>
-              <CreateButton onClick={this.onClickGenerateNewFile} buttonStyle={{}} action='' label='Generate Transactions Request File' disabled={!showGeneratePaymentFile} />
-            </WithTooltip>
-          }
+          <WithTooltip helpText={this.getGeneratePaymentFileTooltipText()}>
+            <CreateButton
+              onClick={this.onClickUploadTransactionsFile}
+              buttonStyle={{}}
+              action=''
+              label='Upload Payments File'
+              disabled={!showGeneratePaymentFile}
+            />
+          </WithTooltip>
         </div>
       </div>
     );
@@ -459,13 +435,12 @@ class RequestPaymentFiles extends Component {
           <Col lg={12}>
             <EntityList
               fetchOnMount={false}
-              entityKey="paymentsTransactionsRequest"
+              entityKey="paymentsFiles"
               api="get"
               showRevisionBy={false}
               baseFilter={{
-                source: 'custom_payment_files',
-                cpg_name: paymentGateway,
-                cpg_file_type: fileType,
+                source: paymentGateway + 'Payments',
+                cpg_file_type: {"$in" : [fileType]},
               }}
               // filterFields={this.getFilterFields()}
               tableFields={this.getTableFields()}
@@ -484,13 +459,12 @@ class RequestPaymentFiles extends Component {
 }
 
 const mapStateToProps = (state, props) => ({
-  paymentFiles: paymentRequestFilesSelector(state, props) || undefined,
-  paymentGatewayOptions: paymentRequestGatewayOptionsSelector(state, props) || undefined,
-  fileTypeOptionsOptions: paymentRequestFileTypeOptionsOptionsSelector(state, props) || undefined,
-  isRunningPaymentFiles: isRunningRequestPaymentFilesSelector(state, props) || undefined,
+  paymentGatewayOptions: paymentGatewayOptionsSelector(state, props) || undefined,
+  fileTypeOptionsOptions: paymentFileTypeOptionsOptionsSelector(state, props) || undefined,
+  isRunningPaymentFiles: isRunningPaymentFilesSelector(state, props) || undefined,
   reportBillsFields: reportBillsFieldsSelector(state, props) || undefined,
-  paymentGateway: selectedPaymentGatewaySelector(state, props, 'request'),
-  fileType: selectedFileTypeSelector(state, props, 'request'),
+  paymentGateway: selectedPaymentGatewaySelector(state, props, 'paymentsFiles'),
+  fileType: selectedFileTypeSelector(state, props, 'paymentsFiles'),
 });
 
-export default withRouter(connect(mapStateToProps)(RequestPaymentFiles));
+export default withRouter(connect(mapStateToProps)(PaymentsFiles));
