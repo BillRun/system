@@ -203,7 +203,7 @@ class VfdaysAction extends Action_Base {
 					'plan' => 1,
 					'arategroup' => 1,
 					'billrun' => 1,
-					'isr_time' => array(
+					'urt' => array(
 						'$cond' => array(
 							'if' => array(
 								'$and' => array(
@@ -234,12 +234,7 @@ class VfdaysAction extends Action_Base {
 				'$group' => array(
 					'_id' => array(
 						'plan'=> '$plan',
-						'day_key' => array(
-							'$dayOfMonth' => array('$isr_time'),
-						),
-						'month_key' => array(
-							'$month' => array('$isr_time'),
-						),
+						'date' =>['$dateToString'=>['format' => '%Y-%j','date'=>'$urt']],
 						'arategroup' => '$arategroup'
 					),
 				),
@@ -250,7 +245,7 @@ class VfdaysAction extends Action_Base {
 						'arategroup' =>'$_id.arategroup',
 						'plan'=>'$_id.plan'
 					],
-					'max_date' => ['$max'=>['$add'=>[['$multiply'=>['$_id.month_key',100]],'$_id.day_key']] ],
+					'max_date' => ['$max'=>'_id.$date' ],
 					'day_sum' => array(
 						'$sum' => 1,
 					),
