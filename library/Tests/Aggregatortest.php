@@ -47,7 +47,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span><br>';
 	public function test_cases() {
 
-
+    }
 
      public function __construct($label = false) {
          parent::__construct("test Aggregatore");
@@ -881,101 +881,101 @@ public function passthrough($key, $returnBillrun, $row) {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
 	}
 
-	// public function testMultiDay($key, $returnBillrun, $row) {
-	// 	$passed = true;
+	public function testMultiDay($row) {
+		$passed = true;
 		
-	// 	$aids = [];
-	// 	foreach ($row['expected']['accounts'] as $aid => $day) {
-	// 		$aids[] = $aid;
-	// 		$aid_and_days[$aid] = $day;
-	// 	}
+		$aids = [];
+		foreach ($row['expected']['accounts'] as $aid => $day) {
+			$aids[] = $aid;
+			$aid_and_days[$aid] = $day;
+		}
 
-	// 	$billruns = $this->getBillruns();
-	// 	$billruns_ = [];
-	// 	foreach ($billruns as $bill) {
-	// 		$billruns_[] = $bill->getRawData();
-	// 	}
+		$billruns = $this->getBillruns();
+		$billruns_ = [];
+		foreach ($billruns as $bill) {
+			$billruns_[] = $bill->getRawData();
+		}
 
-	// 	//Checks that all the  billruns  that should have been created were created
-	// 	$find = false;
-	// 	foreach ($aids as $aid) {
-	// 		$find = false;
-	// 		foreach ($billruns_ as $bills) {
-	// 			if ($bills['aid'] == $aid) {
-    //                 $this->message .= "billrun created for aid $aid  " . $this->pass;
-	// 				$find = true;
-	// 				continue 2;
-	// 			}
-	// 		}
-	// 		if (!$find) {
-    //             $this->message .= "billrun not created for aid $aid " . $this->fail;
-	// 			$this->assertTrue(0);
-	// 		}
-	// 	}
+		//Checks that all the  billruns  that should have been created were created
+		$find = false;
+		foreach ($aids as $aid) {
+			$find = false;
+			foreach ($billruns_ as $bills) {
+				if ($bills['aid'] == $aid) {
+                    $this->message .= "billrun created for aid $aid  " . $this->pass;
+					$find = true;
+					continue 2;
+				}
+			}
+			if (!$find) {
+                $this->message .= "billrun not created for aid $aid " . $this->fail;
+				$this->assertTrue(0);
+			}
+		}
 
-	// 	//Checks that no  billruns have been created that should not be created
-	// 	if (count($billruns_) > count($aids)) {
+		//Checks that no  billruns have been created that should not be created
+		if (count($billruns_) > count($aids)) {
 
-	// 		$wrongBillrun = array_filter($billruns_, function (array $bill) use ($aids) {
-	// 			return !in_array($bill['aid'], $aids);
-	// 		});
+			$wrongBillrun = array_filter($billruns_, function (array $bill) use ($aids) {
+				return !in_array($bill['aid'], $aids);
+			});
 
-	// 		foreach ($wrongBillrun as $wrong => $bill) {
-    //             $this->message .= "billrun  create for aid {$bill['aid']} and was not meant to be formed " . $this->fail;
-	// 			$this->assertTrue(0);
-	// 		}
-	// 	}
+			foreach ($wrongBillrun as $wrong => $bill) {
+                $this->message .= "billrun  create for aid {$bill['aid']} and was not meant to be formed " . $this->fail;
+				$this->assertTrue(0);
+			}
+		}
 
-	// 	//Checking that invoicing day is correct
-	// 	foreach ($billruns_ as $bill) {
-	// 		foreach ($aid_and_days as $aid => $day) {
-	// 			if ($bill['aid'] == $aid) {
-	// 				if ($bill['invoicing_day'] == $day) {
-	// 					$this->message .= "billrun  invoicing_day for aid $aid is correct ,day : $day" . $this->pass;
-	// 					continue 2;
-	// 				} else {
-	// 					$this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  : $day , actual result is{$bill['invoicing_day'] } " . $this->fail;
-	// 					$this->assertTrue(0);
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
+		//Checking that invoicing day is correct
+		foreach ($billruns_ as $bill) {
+			foreach ($aid_and_days as $aid => $day) {
+				if ($bill['aid'] == $aid) {
+					if ($bill['invoicing_day'] == $day) {
+						$this->message .= "billrun  invoicing_day for aid $aid is correct ,day : $day" . $this->pass;
+						continue 2;
+					} else {
+						$this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  : $day , actual result is{$bill['invoicing_day'] } " . $this->fail;
+						$this->assertTrue(0);
+					}
+				}
+			}
+		}
+	}
 
 	public function removeBillruns() {
 		$this->billingCyclr->remove(['billrun_key' => ['$ne' => 'abc']]);
 		$this->billrunCol->remove(['billrun_key' => ['$ne' => 'abc']]);
 	}
 
-	// public function testMultiDayNotallowPremature($key, $returnBillrun, $row) {
-	// 	$now = date('d');
-	// 	$billruns = $this->getBillruns();
-	// 	$billruns_ = [];
-	// 	$aid_and_days = $row['expected']['accounts'];
-	// 	foreach ($billruns as $bill) {
-	// 		$billruns_[] = $bill->getRawData();
-	// 	}
+	public function testMultiDayNotallowPremature( $row) {
+		$now = date('d');
+		$billruns = $this->getBillruns();
+		$billruns_ = [];
+		$aid_and_days = $row['expected']['accounts'];
+		foreach ($billruns as $bill) {
+			$billruns_[] = $bill->getRawData();
+		}
 
-	// 	foreach ($billruns_ as $bill) {
+		foreach ($billruns_ as $bill) {
 			
-	// 				if ($bill['invoicing_day'] == $aid_and_days[$bill['aid']]) {
-	// 					$this->message .= "billrun  invoicing_day for aid $aid is correct ,day : {$aid_and_days[$bill['aid']]}" . $this->pass;
-	// 				} else {
-	// 					$this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  :  {$aid_and_days[$bill['aid']]} , actual result is{$bill['invoicing_day'] } " . $this->fail;
-	// 					 $this->assertTrue(0);
-	// 				}
-	// 				if ($bill['invoicing_day'] <= $now) {
-	// 					$this->message .= "notallowPrematurun  is corrcet now its  $now  and  invoicing day  is{$aid_and_days[$bill['aid']]} aid $aid " . $this->pass;
-	// 				} else {
-	// 					$this->message .= "notallowPrematurun  is not  corrcet now its  $now  and  invoicing day  is {$aid_and_days[$bill['aid']]}  aid $aid " . $this->fail;
-	// 					$this->assertTrue(0);
-	// 				}
-	// 				$this->message .= '<br>****************************************************************<br>';
+					if ($bill['invoicing_day'] == $aid_and_days[$bill['aid']]) {
+						$this->message .= "billrun  invoicing_day for aid $aid is correct ,day : {$aid_and_days[$bill['aid']]}" . $this->pass;
+					} else {
+						$this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  :  {$aid_and_days[$bill['aid']]} , actual result is{$bill['invoicing_day'] } " . $this->fail;
+						 $this->assertTrue(0);
+					}
+					if ($bill['invoicing_day'] <= $now) {
+						$this->message .= "notallowPrematurun  is corrcet now its  $now  and  invoicing day  is{$aid_and_days[$bill['aid']]} aid $aid " . $this->pass;
+					} else {
+						$this->message .= "notallowPrematurun  is not  corrcet now its  $now  and  invoicing day  is {$aid_and_days[$bill['aid']]}  aid $aid " . $this->fail;
+						$this->assertTrue(0);
+					}
+					$this->message .= '<br>****************************************************************<br>';
 
 			
 			
-	// 	}
-	// }
+		}
+	}
 
 	public function cleanAfterAggregate($key, $row) {
 		$stamp = $row['test']['options']['stamp'];
