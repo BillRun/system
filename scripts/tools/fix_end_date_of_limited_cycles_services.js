@@ -8,15 +8,18 @@ function addMonthsToDate(fromDate, monthsToAdd) {
   }
 
 var limited_cycle_services = db.services.aggregate([{$match: {balance_period: {$exists: false}, price: {$elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {month_limit: {$size: 1}}}, {$unwind: "$month_limit"},{$unwind: "$month_limit"}])
+let today = new Date();
+let lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+let lastYearISO = lastYear.toISOString();
 
 limited_cycle_services.forEach(service => {
-    printjson("Updating subscriber with the following serivece: " + service._id);
-    db.subscriber.updateMany({'services.name': service._id, to: {$gt: ISODate("2022-11-01T00:00:00Z")}}, {})
-    var subscribers = db.subscribers.find({'services.name': service._id, to: {$gt: ISODate("2022-11-01T00:00:00Z")}});
+    printjson("Updating subscribers with the following service: " + service._id);
+    var subscribers = db.subscribers.find({'services.name': service._id, to: {$gt: ISODate(lastYearISO)}});
     subscribers.forEach(subscriber => {
-        for (let i = 0; i < subscriber.services.length; index++) {
+        for (let i = 0; i < subscriber.services.length; i++) {
             if(subscriber.services[i].name == service._id) {
-                subscriber.services[i].to = addMonthsToDate(subscriber.services[i].from, service.month_limit);
+                printjson("Updating subscriber " + subscriber.sid + " with a new end date of the service to be " + service.month_limit + " after " + subscriber.services[i].from);
+                subscriber.services[i].to = ISODate(addMonthsToDate(subscriber.services[i].from, service.month_limit));
             }
         }
         db.subscribers.save(subscriber);
@@ -26,5 +29,5 @@ limited_cycle_services.forEach(service => {
 
 var services_with_revisions_with_differernt_cycles = db.services.aggregate([{$match: {balance_period: {$exists: false}, price: {$elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {$expr: {$gt: [{$size: "$month_limit"}, 1]}}}])
 services_with_revisions_with_differernt_cycles.forEach(service => {
-    printjson("Service with that the month limit has been changed: " + service.name);
+    printjson("Service with that the month limit has been changed and will require a more complex fix: " + service._id);
 });
