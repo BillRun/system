@@ -61,14 +61,7 @@ class Billrun_PaymentGateway_Connection_Relocate extends Billrun_PaymentGateway_
 				Billrun_Factory::log('File ' . $file . ' is not valid', Zend_Log::INFO);
 				continue;
 			}
-			$moreFields = array();
-			if (!empty($this->fileType)) {
-				$moreFields['pg_file_type'] = $this->fileType;
-				$moreFields['cpg_file_type'] = $this->fileType;
-			}
-			if (!empty($this->cpgName)) {
-				$moreFields['cpg_name'] = $this->cpgName;
-			}
+			$moreFields = $this->getCustomPaymentGatewayFields();
 			if (!$this->lockFileForReceive($file, $type, $moreFields)) {
 				Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
 				continue;
@@ -211,6 +204,14 @@ class Billrun_PaymentGateway_Connection_Relocate extends Billrun_PaymentGateway_
 
 	public function export($fileName) {
 		
+	}
+
+	public function getCustomPaymentGatewayFields() {
+		return [
+			'cpg_name' => [!empty($this->cpgName) ? $this->cpgName : ""],
+			'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""],
+			'pg_file_type' => $this->fileType
+		];
 	}
 
 }
