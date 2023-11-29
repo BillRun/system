@@ -232,16 +232,23 @@ abstract class Billrun_Bill {
 	 * @param boolean $notFormatted
 	 * @return array
 	 */
-	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false) {
+	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false, $include_future_chargeable = false) {
 		$query = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$query['aid'] = $aid;
 		if (!empty($date)) {
 			$relative_date = new Mongodloid_Date(strtotime($date));
-			$query['$or'] = array(
-				array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date)),
-				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
-				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => false))
-			);
+			if (!$include_future_chargeable) {
+				$query['$or'] = array(
+					array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date)),
+					array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
+					array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => false))
+				);
+			} else {
+				$query['$or'] = array(
+					array('urt' => array('$lte' => $relative_date)),
+					array('urt' => array('$exists' => false)),
+				);
+			}
 		}
 		$results = static::getTotalDue($query, $notFormatted);
 		if (count($results)) {
