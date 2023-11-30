@@ -1421,11 +1421,12 @@ lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
 		service_and_cycle_limit[service._id] = service.month_limit;
 	});
 	
+	print("Subscriber ID, Service Key, Original End Date, Corrected End Date")
 	var subscribers = db.subscribers.find({'services.name': {$in: all_service_keys}, to: {$gt: ISODate(lastYearISO)}});
 	subscribers.forEach(subscriber => {
 		for (var i = 0; i < subscriber.services.length; i++) {
 			if(all_service_keys.includes(subscriber.services[i].name)) {
-				printjson("Updating subscriber " + subscriber.sid + " with a new end date of the service " + subscriber.services[i].name + " to be " + service_and_cycle_limit[subscriber.services[i].name] + " months after " + subscriber.services[i].from);
+				printjson(subscriber.sid + "," + subscriber.services[i].name + "," + subscriber.services[i].to.toISOString() + "," + addMonthsToDate(subscriber.services[i].from, service_and_cycle_limit[subscriber.services[i].name]));
 				subscriber.services[i].to = ISODate(addMonthsToDate(subscriber.services[i].from, service_and_cycle_limit[subscriber.services[i].name]));
 			}
 		}
