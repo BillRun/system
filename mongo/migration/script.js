@@ -1421,13 +1421,16 @@ lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
 		service_and_cycle_limit[service._id] = service.month_limit;
 	});
 	
-	print("Subscriber ID, Service Key, Original End Date, Corrected End Date")
+	print("Subscriber ID, Service Key, Start Date, Original End Date, Corrected End Date")
 	var subscribers = db.subscribers.find({'services.name': {$in: all_service_keys}, to: {$gt: ISODate(lastYearISO)}});
 	subscribers.forEach(subscriber => {
 		for (var i = 0; i < subscriber.services.length; i++) {
 			if(all_service_keys.includes(subscriber.services[i].name)) {
-				printjson(subscriber.sid + "," + subscriber.services[i].name + "," + subscriber.services[i].to.toISOString() + "," + addMonthsToDate(subscriber.services[i].from, service_and_cycle_limit[subscriber.services[i].name]));
-				subscriber.services[i].to = ISODate(addMonthsToDate(subscriber.services[i].from, service_and_cycle_limit[subscriber.services[i].name]));
+				var corrected_end_date = addMonthsToDate(subscriber.services[i].from, service_and_cycle_limit[subscriber.services[i].name]);
+				if (subscriber.services[i].to.toISOString() != corrected_end_date) {
+					print(subscriber.sid + "," + subscriber.services[i].name + "," + subscriber.services[i].from.toISOString() + "," + service_and_cycle_limit[subscriber.services[i].name] + "," + subscriber.services[i].to.toISOString() + "," + corrected_end_date);
+					subscriber.services[i].to = ISODate(corrected_end_date);
+				}
 			}
 		}
 		db.subscribers.save(subscriber);
