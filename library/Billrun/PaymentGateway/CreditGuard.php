@@ -196,7 +196,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	public function getDefaultParameters() {
-		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url", "version",'custom_style','custom_text','ancestor_urls');
+		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url", "version", "custom_style", "custom_text", "custom_style_singlepayment", "custom_text_singlepayment", "ancestor_urls");
 		return $this->rearrangeParametres($params);
 	}
 	
@@ -677,17 +677,27 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				$ppsConfig['frameAncestorURLs'] = $basicParams['ancestor_urls'];
 			}
 
-			if(!empty($basicParams['custom_style']) && trim($basicParams['custom_style'])) {
-				$ppsConfig['uiCustomData']['customStyle'] = $basicParams['custom_style'];
+			if ($params['transactionType'] == 'RecurringDebit') {
+				$customStyleParamName = 'custom_style';
+				$customTextParamName = 'custom_text';
+			} else {
+				$customStyleParamName = 'custom_style_singlepayment';
+				$customTextParamName = 'custom_text_singlepayment';
 			}
-			if(!empty($basicParams['custom_text'])) {
-				if(json_decode($basicParams['custom_text'])) {
-					$ppsConfig['uiCustomData']['customText'] = json_decode($basicParams['custom_text']);
-				} else {
-					Billrun_Factory::log('Billrun_PaymentGateway_CreditGuard::getPPSConfigJSON -  customText json cannot  be parsed  correctly',Zend_Log::WARN);
-				}
+			
+			if (!empty($basicParams[$customStyleParamName]) && trim($basicParams[$customStyleParamName])) {
+				$ppsConfig['uiCustomData']['customStyle'] = $basicParams[$customStyleParamName];
 			}
 
+			if (!empty($basicParams[$customTextParamName])) {
+				$custom_text_parsed = json_decode($basicParams[$customTextParamName]);
+				if ($custom_text_parsed) {
+					$ppsConfig['uiCustomData']['customText'] = $custom_text_parsed;
+				} else {
+					Billrun_Factory::log('Billrun_PaymentGateway_CreditGuard::getPPSConfigJSON - customText json cannot  be parsed  correctly',Zend_Log::WARN);
+				}
+			}
+			
 			if ($params['tokenize_option']) {
 				$ppsConfig['uiCustomData']['keepCCDetails'] = !empty($params['tokenize_option']);
 			}

@@ -105,6 +105,9 @@ class BillAction extends ApiAction {
 	 */
 	protected function getBalances($request) {
 		$aids = explode(',', $request->get('aids'));
+		$date = !empty($request->get('date')) ? $request->get('date') : null;
+		$include_future_chargeable = filter_var($request->get('include_future_chargeable', FALSE), FILTER_VALIDATE_BOOLEAN);
+
 		if (empty($aids)) {
 			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
@@ -115,7 +118,7 @@ class BillAction extends ApiAction {
 		}
 		$balances = array();
 		foreach ($aids as $aid) {
-			$balances[$aid] = Billrun_Bill::getTotalDueForAccount(intval($aid));
+			$balances[$aid] = Billrun_Bill::getTotalDueForAccount(intval($aid), $date, false, $include_future_chargeable);
 		}
 
 		return $balances;
