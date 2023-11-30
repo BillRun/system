@@ -1408,25 +1408,29 @@ lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
 		return newDate.toISOString(); // Return the new date as an ISO string
 	  }
 	
-	var limited_cycle_services = db.services.aggregate([{$match: {balance_period: {$exists: false}, price: {$elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {month_limit: {$size: 1}}}, {$unwind: "$month_limit"},{$unwind: "$month_limit"}])
-	let today = new Date();
-	let lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
-	let lastYearISO = lastYear.toISOString();
+	var limited_cycle_services = db.services.aggregate([{$match: {balance_period: {$exists: false}, price: {$size: 1, $elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {month_limit: {$size: 1}}}, {$unwind: "$month_limit"},{$unwind: "$month_limit"}])
+	var today = new Date();
+	var lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+	var lastYearISO = lastYear.toISOString();
+	
+	var all_service_keys = [];
+	var service_and_cycle_limit = [];
 	
 	limited_cycle_services.forEach(service => {
-		printjson("Updating subscribers with the following service: " + service._id);
-		var subscribers = db.subscribers.find({'services.name': service._id, to: {$gt: ISODate(lastYearISO)}});
-		subscribers.forEach(subscriber => {
-			for (let i = 0; i < subscriber.services.length; i++) {
-				if(subscriber.services[i].name == service._id) {
-					printjson("Updating subscriber " + subscriber.sid + " with a new end date of the service to be " + service.month_limit + " after " + subscriber.services[i].from);
-					subscriber.services[i].to = ISODate(addMonthsToDate(subscriber.services[i].from, service.month_limit));
-				}
-			}
-			db.subscribers.save(subscriber);
-		})
+		all_service_keys.push(service._id);
+		service_and_cycle_limit[service._id] = service.month_limit;
 	});
 	
+	var subscribers = db.subscribers.find({'services.name': {$in: all_service_keys}, to: {$gt: ISODate(lastYearISO)}});
+	subscribers.forEach(subscriber => {
+		for (var i = 0; i < subscriber.services.length; i++) {
+			if(all_service_keys.includes(subscriber.services[i].name)) {
+				printjson("Updating subscriber " + subscriber.sid + " with a new end date of the service " + subscriber.services[i].name + " to be " + service_and_cycle_limit[subscriber.services[i].name] + " months after " + subscriber.services[i].from);
+				subscriber.services[i].to = ISODate(addMonthsToDate(subscriber.services[i].from, service_and_cycle_limit[subscriber.services[i].name]));
+			}
+		}
+		db.subscribers.save(subscriber);
+	})
 	
 	var services_with_revisions_with_differernt_cycles = db.services.aggregate([{$match: {balance_period: {$exists: false}, price: {$elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {$expr: {$gt: [{$size: "$month_limit"}, 1]}}}])
 	services_with_revisions_with_differernt_cycles.forEach(service => {
