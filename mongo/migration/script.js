@@ -1421,7 +1421,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
 		service_and_cycle_limit[service._id] = service.month_limit;
 	});
 	
-	print("Subscriber ID, Service Key, Start Date, Original End Date, Corrected End Date")
+	print("Subscriber ID, Service Key, Start Date, cycles, Original End Date, Corrected End Date")
 	var subscribers = db.subscribers.find({'services.name': {$in: all_service_keys}, to: {$gt: ISODate(lastYearISO)}});
 	subscribers.forEach(subscriber => {
 		for (var i = 0; i < subscriber.services.length; i++) {
@@ -1438,7 +1438,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
 	
 	var services_with_revisions_with_differernt_cycles = db.services.aggregate([{$match: {balance_period: {$exists: false}, price: {$elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {$expr: {$gt: [{$size: "$month_limit"}, 1]}}}])
 	services_with_revisions_with_differernt_cycles.forEach(service => {
-		printjson("Service with that the month limit has been changed and will require a more complex fix: " + service._id);
+		printjson("BRCD-4297: Service with that the month limit has been changed and will require a more complex fix: " + service._id);
 	});
 });
 
