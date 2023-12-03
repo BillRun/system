@@ -22,15 +22,15 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 	const STATE_PRICED = 'priced';
 	const STATE_FAILED = 'failed';
 
-	const RESULT_PRICED_OK = 'ok';
-	const RESULT_PRICED_FAILED = 'notok';
+	const RESULT_PRICED_OK = '0';
+	const RESULT_PRICED_FAILED = [ '1','2','3','4','5' ];
 
 	protected $FandMOpts = ['new'=>true,'w'=>1];
 
 
 	protected $pricingField = self::DEF_CALC_DB_FIELD;
 	protected $relevantRateKeysRegex = [];
-	protected $keepFailePricingCDRsInQueue =false;
+	protected $keepFailedPricingCDRsInQueue =false;
 
 	public function __construct(array $options = array()) {
 	    parent::__construct($options);
@@ -39,7 +39,7 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
 
 		$this->relevantRateKeysRegex = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.relevant_rates',$this->relevantRateKeysRegex);
-		$this->keepFailePricingCDRsInQueue = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.keep_failed_pricing_cdrs_in_queue',$this->keepFailePricingCDRsInQueue);
+		$this->keepFailedPricingCDRsInQueue = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.keep_failed_pricing_cdrs_in_queue',$this->keepFailedPricingCDRsInQueue);
 	}
 
 
@@ -87,14 +87,15 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 			if($row['status'] == static::RESULT_PRICED_OK) {
 				// update line  and  price it
 				$updateValues = ['external_pricing_state'=>static::STATE_PRICED,'aprice'=> $row['price']];
-			} else if($row['status'] == static::RESULT_PRICED_FAILED ) {
+			} else if( in_array($row['status'], static::RESULT_PRICED_FAILED) ) {
 				// otherwise mark the original line as failed
 				$updateValues = ['external_pricing_state'=>static::STATE_FAILED];
-				if($this->keepFailePricingCDRsInQueue) {
+				if($this->keepFailedPricingCDRsInQueue) {
 					return false;
 				}
 			} else {
 				//keep the cdr in the queue
+				Billrun_Factory::log("External pricing CDR with stamp {$row['stamp']} returned  with invalid  state : {$row['status']}.",Zend_Log:WRAN);
 				return false;
 			}
 			if(empty($row['source_stamp'])) {
