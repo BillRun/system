@@ -13,8 +13,9 @@
 							<tr>
 								<td><?php echo Generator_Translations::stranslate('DEF_INV_PERIOD');?></td>
 
-								<td><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format); ?></td>
+								<td><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format, !empty($data->get('invoicing_day')) ? $data->get('invoicing_day') : null); ?></td>
 							</tr>
+
 							<?php } ?>
 							<tr>
 								<td><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE_NO');?></td>
@@ -25,7 +26,19 @@
 							<tr>
 								<td><?php echo Generator_Translations::stranslate('DEF_INV_PRINT_DATE');?></td>
 
-								<td><?php echo date($date_format); ?></td>
+								<td><?php
+									 $invoicing_time = time();
+									 if( !empty($invoice_display_options['print_date_field']) ) {
+										 $invoicing_time = $data->get($invoice_display_options['print_date_field']);
+										 if($invoicing_time instanceOf MongoDate ) {
+											 $invoicing_time = $invoicing_time->sec;
+										 }
+									 }
+									  if( !empty($invoice_display_options['print_date_relative_arg']) ) {
+										 $invoicing_time = strtotime( $data->get($invoice_display_options['print_date_relative_arg']), $invoicing_time );
+									 }
+									echo date( $date_format, $invoicing_time );
+								?></td>
 							</tr>
 							<?php if ((!array_key_exists('due_date', $invoice_display_options) || !empty($invoice_display_options['due_date'])) && $data->get('due_date') ) { ?>
 								<tr>

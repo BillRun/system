@@ -29,7 +29,7 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 	public function execute() {
 		$details = array();
 		try {
-			$this->time = new MongoDate();
+			$this->time = new Mongodloid_Date();
 			$oldEntity = $this->getOldEntity();
 			if (!$oldEntity) {
 				$this->reportError(42, Zend_Log::NOTICE);
@@ -140,7 +140,7 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 		}
 		
 		try {
-			$this->query['_id'] = new MongoId($queryData['_id']);
+			$this->query['_id'] = new Mongodloid_Id($queryData['_id']);
 		} catch (MongoException $ex) {
 			$invalidField = new Billrun_DataTypes_InvalidField('_id',2);
 			throw new Billrun_Exceptions_InvalidFields(array($invalidField));

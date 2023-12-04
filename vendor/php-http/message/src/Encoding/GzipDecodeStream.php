@@ -13,8 +13,7 @@ use Psr\Http\Message\StreamInterface;
 class GzipDecodeStream extends FilteredStream
 {
     /**
-     * @param StreamInterface $stream
-     * @param int             $level
+     * @param int $level
      */
     public function __construct(StreamInterface $stream, $level = -1)
     {
@@ -31,7 +30,7 @@ class GzipDecodeStream extends FilteredStream
     /**
      * {@inheritdoc}
      */
-    protected function readFilter()
+    protected function readFilter(): string
     {
         return 'zlib.inflate';
     }
@@ -39,7 +38,7 @@ class GzipDecodeStream extends FilteredStream
     /**
      * {@inheritdoc}
      */
-    protected function writeFilter()
+    protected function writeFilter(): string
     {
         return 'zlib.deflate';
     }

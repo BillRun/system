@@ -6,6 +6,8 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/modules/Billapi/Models/Verification.php';
+
 /**
  * Billapi model for operations on BillRun entities
  *
@@ -58,7 +60,7 @@ class Models_Entity {
 	 * @var array
 	 */
 	protected $update = array();
-	
+
 	/**
 	 * The update data from request without changes
 	 * @var array
@@ -133,9 +135,9 @@ class Models_Entity {
 	/**
 	 * Gets the minimum date for moving entities in time (unix timestamp)
 	 * 
-	 * @var int
+	 * @var array (for multi day cycle mode - save minimum date to each invoicing day)
 	 */
-	protected static $minUpdateDatetime = null;
+	protected static $minUpdateDatetime = [];
 
 	/**
 	 * the change action applied on the entity
@@ -144,6 +146,11 @@ class Models_Entity {
 	 */
 	protected $availableOperations = array('query', 'update', 'sort');
 
+	/**
+	 * Flag to indicate that action triggered by import
+	 * @var Boolean
+	 */
+	protected $is_import = false;
 	public static function getInstance($params) {
 		$modelPrefix = 'Models_';
 		$className = $modelPrefix . ucfirst($params['collection']);
@@ -203,12 +210,13 @@ class Models_Entity {
 		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
 			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
 		}
+		$this->is_import = isset($params['request']['is_import']) ? boolval($params['request']['is_import']) : false;
 
 		//transalte all date fields
-		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
+		Billrun_Utils_Mongo::convertQueryMongodloidDates($this->update);
 	}
 
-	/** 
+	/**
 	 * method to retrieve entity name that we are running on
 	 * 
 	 * @return string
@@ -239,6 +247,9 @@ class Models_Entity {
 		$uniqueFields = array();
 		$defaultFieldsValues = array();
 		$fieldTypes = array();
+		$multipleFields = array();
+		//all the options that value can be, so if selected will not throw an api exception.
+		$selectOptionsFields = array();
 
 		foreach ($customFields as $customField) {
 			$fieldName = $customField['field_name'];
@@ -246,6 +257,8 @@ class Models_Entity {
 			$uniqueFields[$fieldName] = Billrun_Util::getFieldVal($customField['unique'], false);
 			$defaultFieldsValues[$fieldName] = Billrun_Util::getFieldVal($customField['default_value'], null);
 			$fieldTypes[$fieldName] = Billrun_Util::getFieldVal($customField['type'], 'string');
+			$selectOptionsFields[$fieldName] = Billrun_Util::getFieldVal($customField['select_options'], null);
+			$multipleFields[$fieldName] = Billrun_Util::getFieldVal($customField['multiple'], false);
 		}
 
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
@@ -262,6 +275,17 @@ class Models_Entity {
 			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
 			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal, $fieldTypes[$field])) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value $uniqueVal");
+			}
+			if (!is_null($selectOptionsFields[$field])) {
+				$selectOptions = is_string($selectOptionsFields[$field]) ? explode(",", $selectOptionsFields[$field]) : $selectOptionsFields[$field];
+				$isMultiple = $multipleFields[$field];
+				if ((!$isMultiple && !in_array($val, $selectOptions)) || ($isMultiple && array_diff($val, $selectOptions))) {
+					if(!$mandatoryFields[$field] && empty($val)){
+						$val = null;
+					}else{
+						throw new Billrun_Exceptions_Api(0, array(), "Invalid field: $field, with value: $val");
+					}
+				}
 			}
 			if (!is_null($val)) {
 				Billrun_Util::setIn($this->update, $field, $val);
@@ -340,16 +364,17 @@ class Models_Entity {
 		$this->action = 'create';
 		unset($this->update['_id']);
 		if (empty($this->update['from'])) {
-			$this->update['from'] = new MongoDate();
+			$this->update['from'] = new Mongodloid_Date();
 		}
 		if (empty($this->update['to'])) {
-			$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
+			$this->update['to'] = new Mongodloid_Date(strtotime(self::UNLIMITED_DATE));
 		}
 		if (empty($this->update['creation_time'])) {
 			$this->update['creation_time'] = $this->update['from'];
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
+            $this->after = $this->update;
 			$this->fixEntityFields($this->before);
 			$this->trackChanges($this->update['_id']);
 			return isset($status['ok']) && $status['ok'];
@@ -387,14 +412,19 @@ class Models_Entity {
 		$permanentQuery = $this->getPermanentChangeQuery();
 		$permanentUpdate = $this->getPermanentChangeUpdate();
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
+		$field = $this->getKeyField();
 		if ($this->update['from']->sec != $this->before['from']->sec && $this->update['from']->sec != $this->before['to']->sec) {
 			$res = $this->collection->update($this->query, array('$set' => array('to' => $this->update['from'])));
 			if (!isset($res['nModified']) || !$res['nModified']) {
 				return false;
 			}
 			if($this->before === null){
-				throw new Exception('No entity before the change was found. stack:' . print_r(debug_backtrace(), 1));
+				throw new Exception('No entity before the change was found. Query: ' . json_encode($this->query));
 			}
+                        $newRevision = $this->before->getRawData();
+                        $newRevision['to'] = $this->update['from'];
+                        $key = $this->before[$field];
+                        Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $this->before->getRawData(), $newRevision);
 			$prevEntity = $this->before->getRawData();
 			unset($prevEntity['_id']);
 			$prevEntity['from'] = $this->update['from'];
@@ -405,17 +435,16 @@ class Models_Entity {
 		$this->collection->update($permanentQuery, $permanentUpdate, array('multiple' => true));
 		$afterChangeRevisions = $this->collection->query($permanentQuery)->cursor();
 		$this->fixEntityFields($this->before);
-		$field = $this->getKeyField();
 		foreach ($afterChangeRevisions as $newRevision) {
 			$currentId = $newRevision['_id']->getMongoId()->{'$id'};
 			$oldRevision = $oldRevisions[$currentId];
 			
 			$key = $oldRevision[$field];
 			if($oldRevision === null){
-				throw new Exception('No old Revision was found. stack:' . print_r(debug_backtrace(), 1));
+				throw new Exception('No old Revision was found. Query: ' . json_encode($permanentQuery));
 			}
 			if ($newRevision === null){
-				throw new Exception('No new Revision was found. stack:' . print_r(debug_backtrace(), 1));
+				throw new Exception('No new Revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate));
 			}
 			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
 		}
@@ -454,6 +483,9 @@ class Models_Entity {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
 		}
+                if (!$this->update || empty($this->update)) {
+			return;
+		}
 
 		$this->protectKeyField();
 
@@ -487,10 +519,14 @@ class Models_Entity {
 	 * @return true if check success else false
 	 */
 	protected function checkDateRangeFields($time = null) {
+		if (static::isAllowedChangeDuringClosedCycle()) {
+			return true;
+		}
 		if (is_null($time)) {
 			$time = time();
 		}
-		if (isset($this->before['to']->sec) && $this->before['to']->sec < self::getMinimumUpdateDate()) {
+		$invoicing_day = ($this instanceof Models_Accounts) ? $this->invoicing_day : null;
+		if (isset($this->before['to']->sec) && $this->before['to']->sec < self::getMinimumUpdateDate($invoicing_day)) {
 			return false;
 		}
 		return true;
@@ -506,7 +542,7 @@ class Models_Entity {
 	public function closeandnew() {
 		$this->action = 'closeandnew';
 		if (!isset($this->update['from'])) {
-			$this->update['from'] = new MongoDate();
+			$this->update['from'] = new Mongodloid_Date();
 		}
 		if (!is_null($this->before)) {
 			$prevEntity = $this->before->getRawData();
@@ -550,7 +586,7 @@ class Models_Entity {
 	protected function getCloseAndNewPreUpdateCommand() {
 		return array(
 			'$set' => array(
-				'to' => new MongoDate($this->update['from']->sec)
+				'to' => new Mongodloid_Date($this->update['from']->sec)
 			)
 		);
 	}
@@ -568,16 +604,21 @@ class Models_Entity {
 
 	/**
 	 * method get the minimum time to update
-	 * 
+	 * @param string $invoicing_day - in multi day cycle system mode - need to send account's invoicing day
 	 * @return unix timestamp
 	 */
-	public static function getMinimumUpdateDate() {
-		if (is_null(self::$minUpdateDatetime)) {
-			self::$minUpdateDatetime = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle()) ? Billrun_Billingcycle::getEndTime($billrunKey) : 0;
+	public static function getMinimumUpdateDate($invoicing_day = null) {	
+		if (empty(self::$minUpdateDatetime)) {
+			if (!Billrun_Factory::config()->isMultiDayCycle() && is_null($invoicing_day)) {
+				self::$minUpdateDatetime[0] = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle()) ? Billrun_Billingcycle::getEndTime($billrunKey) : 0;
+			} else {
+				$invoicing_day = !is_null($invoicing_day) ? $invoicing_day : Billrun_Factory::config()->getConfigChargingDay();
+				self::$minUpdateDatetime[$invoicing_day] = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle($invoicing_day)) ? Billrun_Billingcycle::getEndTime($billrunKey, $invoicing_day) : 0;
 		}
-		return self::$minUpdateDatetime;
+		}
+		return is_null($invoicing_day) ? self::$minUpdateDatetime[0] : self::$minUpdateDatetime[$invoicing_day];
 	}
-	
+
 	public static function isAllowedChangeDuringClosedCycle() {
 		return Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false);
 	}
@@ -643,8 +684,8 @@ class Models_Entity {
 		if (is_null($action)) {
 			$action = $this->action;
 		}
-
-		$fromMinTime = self::getMinimumUpdateDate();
+		$invoicing_day = ($this instanceof Models_Accounts) ? $this->invoicing_day : null;
+		$fromMinTime = self::getMinimumUpdateDate($invoicing_day);
 		if (isset($params[$field]->sec) && $params[$field]->sec < $fromMinTime) {
 			throw new Billrun_Exceptions_Api(1, array(), ucfirst($action) . ' minimum date is ' . date('Y-m-d', $fromMinTime));
 			return false;
@@ -714,7 +755,7 @@ class Models_Entity {
 
 		if (!isset($this->update['to'])) {
 			$this->update = array(
-				'to' => new MongoDate()
+				'to' => new Mongodloid_Date()
 			);
 		}
 
@@ -748,7 +789,7 @@ class Models_Entity {
 		$this->fixEntityFields($this->before);
 		return $ret;
 	}
-	
+
 	public function reopen() {
 		$this->action = 'reopen';
 
@@ -766,14 +807,15 @@ class Models_Entity {
 		}
 		
 		$changeDuringClosedCycle = static::isAllowedChangeDuringClosedCycle();
-		if (!$changeDuringClosedCycle && $this->update['from']->sec < self::getMinimumUpdateDate()) {
+		$invoicing_day = ($this instanceof Models_Accounts) ? $this->invoicing_day : null;
+		if (!$changeDuringClosedCycle && $this->update['from']->sec < self::getMinimumUpdateDate($invoicing_day)) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity in a closed cycle');
 		}
 
 		$prevEntity = $this->before->getRawData();
 		$this->update = array_merge($prevEntity, $this->update);
 		unset($this->update['_id']);
-		$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
+		$this->update['to'] = new Mongodloid_Date(strtotime(self::UNLIMITED_DATE));
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
 		$this->fixEntityFields($this->before);
@@ -794,7 +836,7 @@ class Models_Entity {
 		}
 		if (!isset($this->update[$edge])) {
 			$this->update = array(
-				$edge => new MongoDate()
+				$edge => new Mongodloid_Date()
 			);
 		}
 
@@ -851,21 +893,21 @@ class Models_Entity {
 
 		if (!empty($followingEntry) && !$followingEntry->isEmpty() && ($this->before[$edge]->sec === $followingEntry[$otherEdge]->sec)) {
 			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
-			$this->setUpdate(array($otherEdge => new MongoDate($this->update[$edge]->sec)));
+			$this->setUpdate(array($otherEdge => new Mongodloid_Date($this->update[$edge]->sec)));
 			$this->setBefore($followingEntry);
 			return $this->update();
 		}
 		return true;
 	}
-
+	
 	/**
 	 * Convert keys that was received as dot annotation back to dot annotation
 	 */	
-	protected function dataToDbUpdateFormat(&$data, $originalUpdate) {
+	protected function dataToDbUpdateFormat(&$data) {
 		foreach ($this->originalUpdate as $update_key => $value) {
 			$keys = explode('.', $update_key);
 			if (count($keys) > 1) {
-				$val = Billrun_Util::getIn($originalUpdate, $update_key);
+				$val = Billrun_Util::getIn($data, $update_key);
 				$data[$update_key] = $val;
 				Billrun_Util::unsetInPath($data, $keys, true);
 			}
@@ -876,7 +918,7 @@ class Models_Entity {
 		$update = array();
 		unset($data['_id']);
 		if(!empty($data)) {
-			$this->dataToDbUpdateFormat($data, $this->originalUpdate);
+			$this->dataToDbUpdateFormat($data);
 			$update = array(
 				'$set' => $data,
 			);
@@ -919,7 +961,7 @@ class Models_Entity {
 
 		$records = array_values(iterator_to_array($res));
 		foreach ($records as &$record) {
-			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongodloidDatetimeFields($record);
 		}
 		return $records;
 	}
@@ -955,7 +997,8 @@ class Models_Entity {
 	 * @return boolean - is reopen required
 	 */
 	protected function shouldReopenPreviousEntry() {
-		if (!(isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate())) {
+		$invoicing_day = ($this instanceof Models_Accounts) ? $this->invoicing_day : null;
+		if (!(isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate($invoicing_day))) {
 			return false;
 		}
 		$this->previousEntry = $this->getPreviousEntity();
@@ -985,6 +1028,14 @@ class Models_Entity {
 	}
 	
 	/**
+	 * method to get the update instruct
+	 * @param array mongo update instruct
+	 */
+	public function getUpdate() {
+		return $this->update;
+	}
+	
+	/**
 	 * method to update the update options instruct
 	 * @param array $o mongo update options instruct
 	 */
@@ -996,7 +1047,6 @@ class Models_Entity {
 					'$each' => $push_field['field_values']
 				);
 			}
-			
 		}
 		if (isset($o['pull_fields'])) {
 			foreach ($o['pull_fields'] as $pull_field) {
@@ -1006,7 +1056,6 @@ class Models_Entity {
 					$queryOptions['$pull'][$pull_field['field_name']]['$in'] = $pull_field['field_values'];
 				}
 			}
-			
 		}
 		$this->queryOptions = $queryOptions;
 	}
@@ -1087,7 +1136,7 @@ class Models_Entity {
 	 * @return array the entity loaded
 	 */
 	protected function loadById($id, $readPrimary = false) {
-		$fetchQuery = array('_id' => ($id instanceof MongoId) ? $id : new MongoId($id));
+		$fetchQuery = array('_id' => ($id instanceof Mongodloid_Id) ? $id : new Mongodloid_Id($id));
 		$cursor = $this->collection->query($fetchQuery)->cursor();
 		if ($readPrimary) {
 			$cursor->setReadPreference('RP_PRIMARY');
@@ -1154,7 +1203,8 @@ class Models_Entity {
 		$status = self::getStatus($record, $collection);
 		$isLast = self::getIsLast($record, $collection, $entityName);
 		$earlyExpiration = self::isEarlyExpiration($record, $status, $isLast);
-		$isCurrentCycle = $record['from']->sec >= self::getMinimumUpdateDate();
+		$invoicing_day = in_array('invoicing_day', array_keys($record)) ? (!is_null($record['invoicing_day']) ? $record['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay()) : null;
+		$isCurrentCycle = $record['from']->sec >= self::getMinimumUpdateDate($invoicing_day);
 		$record['revision_info'] = array(
 			"status" => $status,
 			"is_last" => $isLast,
@@ -1163,17 +1213,18 @@ class Models_Entity {
 			"closeandnewable" => $isCurrentCycle,
 			"movable" => $isCurrentCycle,
 			"removable" => $isCurrentCycle,
-			"movable_from" => self::isDateMovable($record['from']->sec),
-			"movable_to" => self::isDateMovable($record['to']->sec)
+			"movable_from" => self::isDateMovable($record['from']->sec, $invoicing_day),
+			"movable_to" => self::isDateMovable($record['to']->sec, $invoicing_day)
 		);
 		return $record;
 	}
 
-	protected static function isDateMovable($timestamp) {
+	protected static function isDateMovable($timestamp, $invoicing_day = null) {
 		if (static::isAllowedChangeDuringClosedCycle()) {
 			return true;
 		}
-		return self::getMinimumUpdateDate() <= $timestamp;
+		$chosen_invoicing_day = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		return self::getMinimumUpdateDate($chosen_invoicing_day) <= $timestamp;
 	}
 
 	/**
@@ -1317,4 +1368,5 @@ class Models_Entity {
 		}
 		return $additional;
 	}
+
 }

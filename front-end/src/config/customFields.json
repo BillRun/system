@@ -45,12 +45,17 @@
       "title": "Boolean",
       "type": "boolean",
       "defaultValue": false,
-      "exclude": ["unique", "mandatory", "searchable", "multiple", "select_options", "select_list"]
+      "exclude": ["unique", "mandatory", "multiple", "select_options", "select_list"]
     }, {
       "id": "textarea",
       "type": "string",
       "title": "Text Area",
       "exclude": ["multiple", "select_options", "select_list"]
+    }, {
+      "id": "json",
+      "type": "json",
+      "title": "JSON",
+      "exclude": ["unique", "multiple", "select_options", "select_list", "searchable"]
     }, {
       "id": "percentage",
       "type": "number",

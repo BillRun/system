@@ -68,12 +68,40 @@ class CreditAction extends ApiAction {
 	}
 	
 	protected function setEventsData() {
-		$basicEvent = $this->setEventData();
-		$this->events[] = $basicEvent;
-		
-		if ($this->hasInstallments()) {
-			$this->setInstallmentsData();
-		}
+		$requests = [];
+                $reportResult = [];
+                $this->originRequest = $this->request;
+                if(isset($this->request['suggestion_stamp'])){
+                    $requests = Billrun_Compute_Suggestions::getCreditRequests($this->request['suggestion_stamp']);          
+                }
+                if(empty($requests)){
+                    $requests[] = $this->request;
+                    $singleEvent = true; 
+                }
+                foreach ($requests as $request){
+                    try {
+                        $this->request = $request;
+                        $basicEvent = $this->setEventData();
+                        $this->events[] = $basicEvent;
+
+                        if ($this->hasInstallments()) {
+                                $this->setInstallmentsData();
+                        }
+                        $reportResult[] = "Succeeded credit request : " .  json_encode($this->request);
+                    } catch (Exception $ex) {
+                        if($singleEvent){// single event
+                            throw $ex;
+                        }else{// multiple events
+                            $this->status = 2;
+                            $message = "Failed credit request: " . json_encode($this->request) .", " . $ex->getMessage();
+                            $reportResult[] = $message;
+                            Billrun_Factory::log($message . ", origin request: " . json_encode($this->originRequest), Zend_Log::NOTICE);
+                        }
+                    }                   
+                }
+                if(!$singleEvent){
+                    $this->desc = $reportResult;
+                }
 	}
 	
 	protected function setEventData() {
@@ -167,7 +195,7 @@ class CreditAction extends ApiAction {
 	protected function parse($credit_row) {
 		$ret = $this->validateFields($credit_row);
 		$ret['skip_calc'] = $this->getSkipCalcs($ret);
-		$ret['process_time'] = new MongoDate();
+		$ret['process_time'] = new Mongodloid_Date();
 		$ret['usaget'] = $this->getCreditUsaget($ret);
 		$rate = Billrun_Rates_Util::getRateByName($credit_row['rate']);
 		if ($rate->isEmpty()) {
@@ -184,12 +212,24 @@ class CreditAction extends ApiAction {
 		} else {
 			$this->parseCreditByUsagev($ret);
 		}
+                if(isset($credit_row['recalculation_type'])){
+                    $grouping_keys = Billrun_Compute_Suggestions::getGroupingFieldsByRecalculationType($credit_row['recalculation_type']);
+                    foreach ($grouping_keys as $grouping_key){
+                        $value = Billrun_util::getIn($credit_row, $grouping_key);
+                        if(isset($value)){
+                            Billrun_Util::setIn($ret, $grouping_key, $value);
+                        }
+                    }                   
+                }
+                
 		return $ret;
 	}
 	
 	protected function parseCreditByPrice(&$row) {
 		$row['credit']['aprice'] = $row['aprice'];
-		$row['aprice'] = $row['aprice'] * $row['usagev'];
+		if (!isset($row['multiply_charge_by_volume']) || boolval($row['multiply_charge_by_volume'])) {
+			$row['aprice'] = $row['aprice'] * $row['usagev'];
+		}
 		$row['prepriced'] = true;
 	}
 	
@@ -261,6 +301,23 @@ class CreditAction extends ApiAction {
 			}
 		}
 		
+		// credit custom fields
+		if (isset($credit_row['uf'])) {
+			if (!isset($ret['uf'])) {
+				$ret['uf'] = array();
+			}
+			$entry = json_decode($credit_row['uf'], JSON_OBJECT_AS_ARRAY);
+			$ufFields = Billrun_Factory::config()->getConfigValue('lines.credit.fields', array());
+			foreach ($ufFields as $field) {
+				$key = $field['field_name'];
+				if (!empty($field['mandatory']) && !isset($entry[$key])) {
+					$this->setError('Following field is missing: uf.' . $key);
+				} else if (isset($entry[$key])) {
+					$ret['uf'][$key] = $entry[$key];
+				}
+			}
+		}
+
 		return $ret;
 	}
 	
@@ -286,7 +343,7 @@ class CreditAction extends ApiAction {
 		$ret = [
 			'status' => $this->status,
 			'desc' => $this->desc,
-			'input' => $this->request,
+			'input' => $this->originRequest,
 		];
 		
 		$stamps = array_column($this->events, 'stamp');

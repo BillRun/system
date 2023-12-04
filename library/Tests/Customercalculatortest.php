@@ -11,7 +11,7 @@
   *
   * @author yossi
   */
- require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
  define('UNIT_TESTING', 'true');
 
@@ -242,9 +242,9 @@
      protected function fixRow($row, $key) {
 
          if (!array_key_exists('urt', $row)) {
-             $row['urt'] = new MongoDate(time() + $key);
+             $row['urt'] = new Mongodloid_Date(time() + $key);
          } else {
-             $row['urt'] = new MongoDate(strtotime($row['urt']));
+             $row['urt'] = new Mongodloid_Date(strtotime($row['urt']));
          }
          if (!isset($row['type'])) {
              $row['type'] = 'mytype';
@@ -255,10 +255,10 @@
          if (isset($row['expected']['services_data'])) {
              foreach ($row['expected']['services_data'] as $service) {
                  if (isset($row['expected']['services_data']['to'])) {
-                     $row['expected']['services_data']['to'] = new MongoDate(strtotime($row['expected']['services_data']['to']));
+                     $row['expected']['services_data']['to'] = new Mongodloid_Date(strtotime($row['expected']['services_data']['to']));
                  }
                  if (isset($row['expected']['services_data']['from'])) {
-                     $row['expected']['services_data']['from'] = new MongoDate(strtotime($row['expected']['services_data']['from']));
+                     $row['expected']['services_data']['from'] = new Mongodloid_Date(strtotime($row['expected']['services_data']['from']));
                  }
              }
          }

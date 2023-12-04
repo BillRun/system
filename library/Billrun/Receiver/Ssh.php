@@ -134,7 +134,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 
 					// Checks that file received correctly
 					if (!$this->isFileReceivedCorrectly($sourceFile, $fileData['path'])) {
-						Billrun_Factory::log()->log("SSH: file was not saved correctly " . $file, Zend_Log::ALERT);
+						Billrun_Factory::log()->log("SSH: file was not saved correctly " . $file, Zend_Log::WARN);
 						continue;
 					}
 
@@ -172,7 +172,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						break;
 					}
 
-					Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file));
+					Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file, &$fileData));
 				}
 			} catch (Exception $e) {
 				Billrun_Factory::log()->log("SSH: Fail when downloading. with exception : " . $e, Zend_Log::DEBUG);

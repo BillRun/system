@@ -174,34 +174,49 @@ const convert = (settings) => {
       usaget_mapping,
       src_field: usaget_type === "dynamic" ? processor.usaget_mapping[0].src_field : ""
     });
+    // Convert old structure rate_calculators to new
+    const rateCategory = Object.keys(rate_calculators)[0]
+    const usaget = Object.keys(rate_calculators[rateCategory])[0]
+    if (Array.isArray(rate_calculators[rateCategory][usaget])) {
+      const rateCalculatorsImmutable = Immutable.fromJS(rate_calculators);
+      ret.rate_calculators = Immutable.Map().withMutations((calcWithMutations) => {
+        rateCalculatorsImmutable.forEach((rateCategories, rateCategoryName) => {
+          rateCategories.forEach((usageTypes, usageTypeName) => {
+            usageTypes.forEach((priorities, priorityIdx) => {
+              calcWithMutations.updateIn([rateCategoryName, usageTypeName, 'priorities'], Immutable.List() , prioritiesList => prioritiesList.push(Immutable.Map({filters: priorities})));
+            })
+          })
+        })
+      }).toJS();
+    }
     if (!rate_calculators) {
       if (usaget_type === 'dynamic') {
         ret.rate_calculators = processor.usaget_mapping.reduce((acc, mapping) => {
-	  acc['retail'][mapping.usaget] = [];
+	        acc['retail'][mapping.usaget]['priorities'] = [];
           return acc;
         }, {});
       } else {
-	ret.rate_calculators = { retail: { [processor.default_usaget]: [] } };
+	      ret.rate_calculators = { retail: { [processor.default_usaget]: {'priorities': []} } };
       }
     }
     if (!customer_identification_fields) {
       if (usaget_type === 'dynamic') {
         ret.customer_identification_fields = processor.usaget_mapping.reduce((acc, mapping) => {
-          acc[mapping.usaget] = [];
+          acc[mapping.usaget]['priorities'] = [];
           return acc;
         }, {});
       } else {
-        ret.customer_identification_fields = { [processor.default_usaget]: [] };
+        ret.customer_identification_fields = { [processor.default_usaget]: {'priorities': []} };
       }
     }
     if (!pricing) {
       if (usaget_type === 'dynamic') {
         ret.pricing = processor.usaget_mapping.reduce((acc, mapping) => {
-          acc[mapping.usaget] = {};
+          acc[mapping.usaget]['priorities'] = {};
           return acc;
         }, {});
       } else {
-        ret.pricing = { [processor.default_usaget]: {} };
+        ret.pricing = { [processor.default_usaget]: {'priorities': {}} };
       }
     }
 
@@ -505,9 +520,13 @@ export function setLineKey(rateCategory, usaget, priority, index, value) {
   };
 }
 
-export function setComputedLineKey(paths, values) {
+export function setComputedLineKey(rateCategory, usaget, priority, index, paths, values) {
   return {
     type: SET_COMPUTED_LINE_KEY,
+    rateCategory,
+    usaget,
+    priority,
+    index,
     paths,
     values,
   };
@@ -620,6 +639,9 @@ export function saveInputProcessorSettings(state, parts = []) {
     if (processor.get('timezone_field', false)) {
       settings.processor['timezone_field'] = processor.get('timezone_field');
     }
+    if (processor.get('calculated_fields', false)) {
+      settings.processor['calculated_fields'] = processor.get('calculated_fields');
+    }
   }
   if (customer_identification_fields) {
     settings.customer_identification_fields = customer_identification_fields.toJS();
@@ -699,7 +721,7 @@ export const deleteInputProcessor = fileType => (dispatch) => {
   dispatch(startProgressIndicator());
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success)))
-    .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error occured while trying to delete input processor')));
+    .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error occurred while trying to delete input processor')));
 };
 
 export const updateInputProcessorEnabled = (fileType, enabled) => (dispatch) => {
@@ -708,7 +730,7 @@ export const updateInputProcessorEnabled = (fileType, enabled) => (dispatch) => 
   dispatch(startProgressIndicator());
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success)))
-    .catch(error => dispatch(apiBillRunErrorHandler(error, `Error occured while trying to ${action} input processor`)));
+    .catch(error => dispatch(apiBillRunErrorHandler(error, `Error occurred while trying to ${action} input processor`)));
 };
 
 export function setUsagetType(usaget_type) {

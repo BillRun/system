@@ -38,7 +38,7 @@ class Conditions extends Component {
     onChangeField: () => {},
     onChangeOperator: () => {},
     onChangeValue: () => {},
-    onAdd: () => {},
+    onAdd: null,
     onRemove: () => {},
   }
 
@@ -111,13 +111,17 @@ class Conditions extends Component {
             </FormGroup>
           </Col>
         )}
-        <Col sm={12}>
-          {conditionsRows.isEmpty() && (
+        { conditionsRows.isEmpty() && noConditionsLabel.length > 0 && (
+          <Col sm={12}>
             <small>{noConditionsLabel}</small>
-          )}
-          { conditionsRows }
-        </Col>
-        { editable && (
+          </Col>
+        )}
+        { !conditionsRows.isEmpty() && (
+          <Col sm={12}>
+            { conditionsRows }
+          </Col>
+        )}
+        { editable && this.props.onAdd && (
           <Col sm={12} className="pl0 pr0">
             <CreateButton
               onClick={this.onAddCondition}

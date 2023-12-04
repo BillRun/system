@@ -19,10 +19,11 @@ class Models_Services extends Models_Entity {
 	protected function init($params) {
 		parent::init($params);
 		$this->validatePrice();
+		$this->validateRecurrence();
 	}
 	
 	/**
-	 * Verfiy services has all price parameters required.
+	 * Verify services has all price parameters required.
 	 */
 	protected function validatePrice() {
 		$priceIntervals = Billrun_Util::getIn($this->update, 'price', []);
@@ -37,6 +38,27 @@ class Models_Services extends Models_Entity {
 		}
 		
 		return true;
+	}
+	
+	/**
+	 * Verify services has all price parameters required.
+	 */
+	protected function validateRecurrence() {
+            $update_parameters = Billrun_Util::getIn($this->config, [$this->action, 'update_parameters'], []);
+            $recurrence_field = array_reduce($update_parameters, function ($acc, $field) {
+                return $field['name'] == 'recurrence' ? $field : $acc;
+            }, null);
+            if (!is_null($recurrence_field)) {
+                    $frequency = Billrun_Util::getIn($this->update, 'recurrence.frequency', []);
+                    if (empty($frequency)) {
+                            throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Missing Billing Frequency - Type parameter');
+                    }
+                    $start = Billrun_Util::getIn($this->update, 'recurrence.start', []);
+                    if (empty($start)) {
+                            throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Missing Billing Frequency - Start parameter');
+                    }
+            }
+            return true;
 	}
 	
 	/**

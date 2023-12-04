@@ -59,7 +59,7 @@ class ConfigModel {
 		$this->collection = Billrun_Factory::db()->configCollection();
 		$this->options = array('receive', 'process', 'calculate', 'export');
 		$this->loadConfig();
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+		br_yaf_register_autoload('Models', APPLICATION_PATH . '/application/modules/Billapi');
 	}
 
 	public function getOptions() {
@@ -291,12 +291,12 @@ class ConfigModel {
 			if (empty($data['name'])) {
 				throw new Exception('Couldn\'t find export generator name');
 			}
-			if (empty($data['file_type'])) {
-				throw new Exception('Export generator must be associated to input processor');
-			}
-			if (empty($data['segments']) || !is_array($data['segments'])){
-				throw new Exception('Segments must be an array and contain at least one value');
-			}
+//			if (empty($data['file_type'])) {
+//				throw new Exception('Export generator must be associated to input processor');
+//			}
+//			if (empty($data['segments']) || !is_array($data['segments'])){
+//				throw new Exception('Segments must be an array and contain at least one value');
+//			}
 			
 			$rawExportGenSettings = $this->getExportGeneratorSettings($updatedData, $data['name']);
 			if ($rawExportGenSettings) {
@@ -324,8 +324,8 @@ class ConfigModel {
 				$secret = Billrun_Utils_Security::generateSecretKey();
 				$data = array_merge($data, $secret);
 			}
-			$data['from'] = new MongoDate(strtotime($data['from']));
-			$data['to'] = new MongoDate(strtotime($data['to']));
+			$data['from'] = new Mongodloid_Date(strtotime($data['from']));
+			$data['to'] = new Mongodloid_Date(strtotime($data['to']));
 			$this->setSharedSecretSettings($updatedData, $data);
 			$sharedSettings = $this->validateSharedSecretSettings($updatedData, $data);
 			if (!$sharedSettings) {
@@ -388,7 +388,7 @@ class ConfigModel {
 				// remove previous defined clientof the same secret (in case of multiple saves or name change)
 				Billrun_Factory::oauth2()->getStorage('access_token')->unsetClientDetails(null, $data['key']);
 				// save into oauth_clients
-				Billrun_Factory::oauth2()->getStorage('access_token')->setClientDetails($data['name'], $data['key'], Billrun_Util::getForkUrl());
+				Billrun_Factory::oauth2()->getStorage('access_token')->setClientDetails($data['name'], $data['key'], Billrun_Util::getForkUrl(), 'client_credentials', 'global');
 			}
 		}
 
@@ -965,6 +965,13 @@ class ConfigModel {
 					break;
 				}
 			}
+		} else if ($category === 'export_generators') {
+			foreach ($updatedData['export_generators'] as &$someFtSettings) {
+				if ($someFtSettings['name'] == $data['name']) {
+					$someFtSettings['enabled'] = $enabled;
+					break;
+				}
+			}
 		}
  
 		$ret = $this->collection->insert($updatedData);
@@ -1114,12 +1121,9 @@ class ConfigModel {
  	}
 	
 	protected function unsetExportGeneratorSettings(&$config, $name) {
-		$config['export_generators'] = array_map(function($ele) use($name){
-			if ($ele['name'] == $name){
-				$ele['enabled'] = false;
-			}
-			return $ele;
-		}, $config['export_generators']);	
+		$config['export_generators'] = array_values(array_filter($config['export_generators'], function($egSettings) use ($name) {
+ 			return $egSettings['name'] !== $name;
+ 		}));	
 	}
 	
 	protected function unsetSharedSecretSettings(&$config, $secret) {
@@ -1273,19 +1277,19 @@ class ConfigModel {
  	}
  
 	protected function validateExportGeneratorSettings(&$config, $eg) {
-		$fileTypeSettings = $this->getFileTypeSettings($config, $eg['file_type']);
-		if (empty($fileTypeSettings)){
-			Billrun_Factory::log("There's no matching file type "  . $eg['file_type']);
-			return false;
-		}
-		$parserSettings = $fileTypeSettings['parser'];
-		$inputProcessorFields = $parserSettings['structure'];
-		foreach ($eg['segments'] as $segment){
-			if (!in_array($segment['field'], $inputProcessorFields)){
-				Billrun_Factory::log("There's no matching field in the name of "  . $segment['field'] . "in input processor: ", $eg['file_type']);
-				return false;
-			}
-		}
+//		$fileTypeSettings = $this->getFileTypeSettings($config, $eg['file_type']);
+//		if (empty($fileTypeSettings)){
+//			Billrun_Factory::log("There's no matching file type "  . $eg['file_type']);
+//			return false;
+//		}
+//		$parserSettings = $fileTypeSettings['parser'];
+//		$inputProcessorFields = $parserSettings['structure'];
+//		foreach ($eg['segments'] as $segment){
+//			if (!in_array($segment['field'], $inputProcessorFields)){
+//				Billrun_Factory::log("There's no matching field in the name of "  . $segment['field'] . "in input processor: ", $eg['file_type']);
+//				return false;
+//			}
+//		}
 		
 		return true;
  	}
@@ -1319,6 +1323,9 @@ class ConfigModel {
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
 		if (isset($fileSettings['processor'])) {
 			$customFields = $fileSettings['parser']['custom_keys'];
+			$calculatedFields = array_map(function($mapping) {
+				return $mapping['target_field'];
+			}, $fileSettings['processor']['calculated_fields'] ?? []);
 			$uniqueFields[] = $dateField = $fileSettings['processor']['date_field'];
 			$volumeFields = $this->getVolumeFields($fileSettings);
 			$uniqueFields = array_merge($uniqueFields,  $volumeFields);
@@ -1373,8 +1380,8 @@ class ConfigModel {
 					$ratingLineKeys = array();
 					foreach ($fileSettings['rate_calculators'] as $category => $rates) {
 						foreach ($rates as $rules) {
-							foreach ($rules as $usageRules) {
-								foreach ($usageRules as $rule) {
+							foreach ($rules['priorities'] as $usageRules) {
+								foreach ($usageRules['filters'] as $rule) {
 									$ratingLineKeys[] = $rule['line_key'];
 								}
 							}
@@ -1396,8 +1403,11 @@ class ConfigModel {
 			$customFields = array_merge($customFields, array_map(function($field) {
 				return 'uf.' . $field;
 			}, $customFields));
+			$calculatedFields = array_merge($calculatedFields, array_map(function($field) {
+				return 'cf.' . $field;
+			}, $calculatedFields));
 			$additionalFields = array('computed');
-			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields))) {
+			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields, $calculatedFields))) {
 				throw new Exception('Unknown source field(s) ' . implode(',', array_unique($diff)));
 		}
 		}
@@ -1527,8 +1537,8 @@ class ConfigModel {
 		$longestPrefixParams = array();
 		foreach ($rateCalculatorsSettings as $category => $usagetRates) {
 			foreach ($usagetRates as $usaget => $rates) {
-				foreach ($rates as $rateRules) {
-					foreach ($rateRules as $rule) {
+				foreach ($rates['priorities'] as $rateRules) {
+					foreach ($rateRules['filters'] as $rule) {
 						if (!isset($rule['type'], $rule['rate_key'], $rule['line_key'])) {
 							throw new Exception('Illegal rating rules for usaget ' . $usaget);
 						}
@@ -1630,7 +1640,7 @@ class ConfigModel {
 			throw new Exception('Response settings is not an array');
 		}
 		
-		if (!isset($responseSettings['encode']) || !in_array($responseSettings['encode'], array('json'))) {
+		if (!isset($responseSettings['encode']) || !in_array($responseSettings['encode'], array('json', 'array'))) {
 			throw new Exception('Invalid response encode type');
 		}
 
@@ -1769,7 +1779,7 @@ class ConfigModel {
 	 * @return array
 	 */
 	protected function getUnifyConfig($config, $unifyConfig) {
-		if (empty($unifyConfig) && !empty($config['realtime']) && empty($config['realtime']['postpay_charge'])) { // prepaid request
+		if (empty($unifyConfig) && !empty($config['realtime']) && empty(Billrun_Utils_Realtime::getRealtimeConfigValue($config, 'postpay_charge'))) { // prepaid request
 			$unifyConfig = $this->getPrepaidUnifyConfig();
 		}
 		
@@ -1784,7 +1794,15 @@ class ConfigModel {
 	protected function getPrepaidUnifyConfig() {
 		return Billrun_Factory::config()->getConfigValue('unify', []);
 	}
-	
+
+	/**
+	 * Function to check if the system in multi day cycle mode
+	 * @return default invoicing day, if multi day cycle mode, else returns false
+	 */
+	public function isMultiDayCycleMode() {
+		return Billrun_Factory::config()->isMultiDayCycle();
+}
+
 	protected function setSecureTaxation($conf, $taxationSetting) {
 		if (isset($taxationSetting['CSI']['auth_code'])) {
 			$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
@@ -1803,7 +1821,7 @@ class ConfigModel {
 		}
 		return $taxationSetting;
 	}
-
+	
 	protected function getSecurePaymentGateway($paymentGatewaySetting){
 		$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
 		$securePaymentGateway = $paymentGatewaySetting; 

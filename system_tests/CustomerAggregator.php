@@ -228,7 +228,7 @@ function translateDates($data, $dates) {
 function translateRecordDates($record, $dates) {
 	foreach ($record as $key => &$value) {
 		if(in_array($key, $dates)) {
-			$value = new MongoDate($value);
+			$value = new Mongodloid_Date($value);
 		}
 	}
 	return $record;

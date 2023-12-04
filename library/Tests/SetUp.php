@@ -195,7 +195,7 @@ trait Tests_SetUp
 	
 
 	/**
-	 * tranform all fields starts with time* into MongoDate object
+	 * tranform all fields starts with time* into Mongodloid_Date object
 	 * @param array $jsonAr 
 	 */
 	protected function fixDates($jsonAr)
@@ -207,7 +207,7 @@ trait Tests_SetUp
 	}
 
 	/**
-	 * tranform all fields starts with time* into MongoDate object
+	 * tranform all fields starts with time* into Mongodloid_Date object
 	 * @param array $jsonAr 
 	 */
 	protected function fixArrayDates($arr)
@@ -219,7 +219,7 @@ trait Tests_SetUp
 			if (is_string($value)) {
 				$value = explode("*", $value);
 				if ((count($value) == 2) && ($value[0] == 'time')) {
-					$value = new MongoDate(strtotime($value[1]));
+					$value = new Mongodloid_Date(strtotime($value[1]));
 					$arr[$jsonField] = $value;
 				}
 			} else if (is_array($arr)) {
@@ -269,7 +269,7 @@ trait Tests_SetUp
 	{
 		if (isset($data['OBJID'])) {
 			$data['_id'] = $data['OBJID'];
-			$data['_id'] = new MongoID($data['OBJID']);
+			$data['_id'] = new Mongodloid_Id($data['OBJID']);
 			unset($data['OBJID']);
 		}
 		return $data;

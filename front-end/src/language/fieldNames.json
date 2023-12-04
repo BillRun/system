@@ -121,11 +121,16 @@
     "description": "Title",
     "name": "Key",
     "period_type": "Eligibility Period",
+    "price_service": "Service Price Override",
     "custom_period_type": "Custom"
   },
   "plan": {
     "description": "Title",
     "name": "Key",
+    "proration": "Proration",
+    "prorated_start": "Prorated start",
+    "prorated_end": "Prorate old plan charge on plan change",
+    "prorated_termination": "Prorate charge on termination",
     "upfront": "Charging Mode"
   },
   "product": {
@@ -142,9 +147,11 @@
     "price_plan": "Plan Price Override"
   },
   "import": {
-    "manual_mapping": "Map Manually CSV colums to entity field",
+    "manual_mapping": "Map Manually CSV columns to entity fields",
     "predefined_mapping": "Use file with predefined structure",
     "permanentchange": "Update",
+    "price_entity_target": "Price target Entity",
+    "rates.service.percentage": "Service Price Override by Percentage",
     "rates.percentage": "Plan Price Override by Percentage"
   },
   "foreign": {
@@ -216,11 +223,55 @@
     "status_running_files": "Running files"
   },
   "bills": {
+    "cpg_name": "Custom Payment Gateway Name",
     "billrun_key": "Billing cycle"
   },
+  "immediate_invoice": {
+    "volume": "Volume",
+    "date": "Date",
+    "price": "Charge",
+    "product": "Product",
+    "subscriber": "Subscriber",
+    "select_rate_help": "Select Product",
+    "select_subscriber_help": "Select Subscriber",
+    "select_customer": "Select Customer",
+    "select_customer_help": "Type customer name or ID..."
+  },
+  "export_generator": {
+    "name": "Name",
+    "status": "Status",
+    "status_active": "Active",
+    "status_disabled": "Not Active",
+    "query": "Query",
+    "file_name": "File Name",
+    "sequence_number_placeholder_description": "Sequence number",
+    "date_YYYYMMDDHHMMSS_placeholder_description": "Date in format 20201231235959",
+    "date": "Date",
+    "export_file_type": "Export File Type",
+    "time_range": "Time Range",
+    "record_type": "Record Type"
+  },
+  "suggestions": {
+    "key": "Product",
+    "amount": "Correction Amount"
+  },
+  "status": "Status",
+  "amount": "Amount",
+  "type": "Type",
+  "key": "Key",
+  "billrun_key": "Cycle",
+  "usagev": "Activity volume",
+  "urt": "Record time",
   "aid": "Customer ID",
   "sid": "Subscriber ID",
   "from": "From",
   "to": "To",
+  "billing_frequency": "Billing Frequency",
+  "fixed_cycle_months": "Fixed cycle months",
+  "recurrence.periodicity.1": "Monthly",
+  "recurrence.periodicity.2": "Bimonthly",
+  "recurrence.periodicity.3": "Quarterly",
+  "recurrence.periodicity.6": "Semiannual",
+  "recurrence.periodicity.12": "Annual",
   "effective_date": "Effective Date"
 }

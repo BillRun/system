@@ -22,11 +22,11 @@ class Api_Translator_DatetimeModel extends Api_Translator_TypeModel {
 	public function internalTranslateField($data) {
 		try {
 			if (isset($data['sec'])) {
-				return new MongoDate($data['sec']);
+				return new Mongodloid_Date($data['sec']);
 			}
 			$time = strtotime($data);
 			if ($time > 0) {
-				return new MongoDate($time);
+				return new Mongodloid_Date($time);
 			} else {
 				return false;
 			}
