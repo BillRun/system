@@ -80,6 +80,17 @@ const defaultCustomerIdentification = Immutable.fromJS({
   clear_regex: '//',
 });
 
+const defaultRatingMapping = Immutable.Map({
+  type: '',
+  rate_key: '',
+  line_key: '',
+});
+
+const defaultRatingMappingProperty = Immutable.Map({
+  filters: Immutable.List([defaultRatingMapping])
+  // cache_db_queries: true,
+});
+
 export default function (state = defaultState, action) {
   const { field, mapping, width, index, priority } = action;
   let field_to_move, fieldWidthToMove;
@@ -154,7 +165,7 @@ export default function (state = defaultState, action) {
         .setIn(['rate_calculators'], Immutable.Map({ retail: Immutable.Map() }));
 
     case SET_STATIC_USAGET: {
-      const rateCalculators = state.get('rate_calculators', Immutable.Map()).map(() => Immutable.Map({ [action.usaget]: Immutable.List() }));
+      const rateCalculators = state.get('rate_calculators', Immutable.Map()).map(() => Immutable.Map({ [action.usaget]: Immutable.Map({priorities: Immutable.List()}) }));
       return state
         .setIn(['processor', 'default_usaget'], action.usaget)
         .set('rate_calculators', rateCalculators)
@@ -173,7 +184,7 @@ export default function (state = defaultState, action) {
         src_field: fieldName,
         conditions,
       });
-      const rateCalculators = state.get('rate_calculators', Immutable.Map()).map(calc => ((!calc.has(usaget)) ? calc.set(usaget, Immutable.List()) : calc));
+      const rateCalculators = state.get('rate_calculators', Immutable.Map()).map(calc => ((!calc.has(usaget)) ? calc.set(usaget, Immutable.Map({priorities: Immutable.List()})) : calc));
       return state
         .updateIn(['processor', 'usaget_mapping'], list => list.push(newMap))
         .set('rate_calculators', rateCalculators)
@@ -207,7 +218,7 @@ export default function (state = defaultState, action) {
           }
           return priceCalc;
         })
-        .set('rate_calculators', rateCalculators);;
+        .set('rate_calculators', rateCalculators);
     }
 
     case SET_CUSETOMER_MAPPING:
@@ -236,40 +247,30 @@ export default function (state = defaultState, action) {
     case SET_RATING_FIELD: {
       const { rate_key, value, rateCategory, usaget } = action;
       const new_priority = state
-        .getIn(['rate_calculators', rateCategory, usaget, priority, index])
+        .getIn(['rate_calculators', rateCategory, usaget, 'priorities', priority, 'filters', index])
         .set('type', value)
         .set('rate_key', rate_key);
-      return state.setIn(['rate_calculators', rateCategory, usaget, priority, index], new_priority);
+      return state.setIn(['rate_calculators', rateCategory, usaget, 'priorities', priority, 'filters', index], new_priority);
     }
 
     case ADD_RATING_FIELD: {
       const { rateCategory, usaget } = action;
-      const newRating = Immutable.fromJS({
-        type: '',
-        rate_key: '',
-        line_key: '',
-      });
-      return state.updateIn(['rate_calculators', rateCategory, usaget, priority], list => (list ? list.push(newRating) : Immutable.List([newRating])));
+      return state.updateIn(['rate_calculators', rateCategory, usaget, 'priorities', priority, 'filters'], Immutable.List(), list => list.push(defaultRatingMapping));
     }
 
     case ADD_RATING_PRIORITY: {
       const { rateCategory, usaget } = action;
-      const newRating = Immutable.fromJS({
-        type: '',
-        rate_key: '',
-        line_key: '',
-      });
-      return state.updateIn(['rate_calculators', rateCategory, usaget], list => list.push(Immutable.List([newRating])));
+      return state.updateIn(['rate_calculators', rateCategory, usaget, 'priorities'], Immutable.List(), priorities => priorities.push(defaultRatingMappingProperty));
     }
 
     case REMOVE_RATING_PRIORITY: {
       const { rateCategory, usaget } = action;
-      return state.updateIn(['rate_calculators', rateCategory, usaget], list => list.remove(priority));
+      return state.updateIn(['rate_calculators', rateCategory, usaget, 'priorities'], Immutable.List(), list => list.remove(priority));
     }
 
     case REMOVE_RATING_FIELD: {
       const { rateCategory, usaget } = action;
-      return state.updateIn(['rate_calculators', rateCategory, usaget, priority], list => list.remove(index));
+      return state.updateIn(['rate_calculators', rateCategory, usaget, 'priorities', priority, 'filters'], Immutable.List(), list => list.remove(index));
     }
 
     case REMOVE_RECEIVER: {
@@ -288,23 +289,27 @@ export default function (state = defaultState, action) {
         const lineKey = preFunctionFields.get('preFunctionValue', '');
         const preFunction = preFunctionFields.get('preFunction', '');
         return state
-          .setIn(['rate_calculators', rateCategory, usaget, priority, index, 'line_key'], lineKey)
-          .setIn(['rate_calculators', rateCategory, usaget, priority, index, 'preFunction'], preFunction);
+          .setIn(['rate_calculators', rateCategory, usaget, 'priorities', priority, 'filters', index, 'line_key'], lineKey)
+          .setIn(['rate_calculators', rateCategory, usaget, 'priorities', priority, 'filters', index, 'preFunction'], preFunction);
       }
       return state
-        .setIn(['rate_calculators', rateCategory, usaget, priority, index, 'line_key'], value)
-        .deleteIn(['rate_calculators', rateCategory, usaget, priority, index, 'preFunction']);
+        .setIn(['rate_calculators', rateCategory, usaget, 'priorities', priority, 'filters', index, 'line_key'], value)
+        .deleteIn(['rate_calculators', rateCategory, usaget, 'priorities', priority, 'filters', index, 'preFunction']);
     }
 
-    case SET_COMPUTED_LINE_KEY:
+    case SET_COMPUTED_LINE_KEY: {
+      const { rateCategory, usaget, paths, values } = action;
       return state.withMutations((stateWithMutations) => {
-        action.paths.forEach((path, i) => {
-          stateWithMutations.setIn(['rate_calculators', ...path], action.values[i]);
+        paths.forEach((path, i) => {
+          stateWithMutations.setIn(['rate_calculators', rateCategory, usaget, 'priorities', priority, 'filters', index, ...path], values[i]);
         });
       });
+    }
 
-    case UNSET_COMPUTED_LINE_KEY:
-      return state.deleteIn(['rate_calculators', action.rateCategory, action.usaget, action.priority, action.index, 'computed']);
+    case UNSET_COMPUTED_LINE_KEY: {
+      const { rateCategory, usaget } = action;
+      return state.deleteIn(['rate_calculators', rateCategory, usaget,'priorities', priority, 'filters', index, 'computed']);
+    }
 
     case SET_RECEIVER_FIELD:
       return state.setIn(['receiver', index, field], mapping);

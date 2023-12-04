@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { ControlLabel, FormGroup, Col } from 'react-bootstrap';
-import { titleCase } from 'change-case';
+import { upperCaseFirst } from 'change-case';
 import { ReportDescription } from '../../../language/FieldDescriptions';
 import Help from '../../Help';
 import Field from '@/components/Field';
@@ -60,7 +60,7 @@ class Details extends Component {
     const { entities } = this.props;
     return entities.map(option => Immutable.Map({
       value: option,
-      label: titleCase(getConfig(['systemItems', option, 'itemName'], option)),
+      label: upperCaseFirst(getConfig(['systemItems', option, 'itemName'], option)),
     }))
     .map(formatSelectOptions)
     .toArray();

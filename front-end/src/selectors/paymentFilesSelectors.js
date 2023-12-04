@@ -9,9 +9,9 @@ import { paymentGatewaysSelector } from '@/selectors/settingsSelector'
 
 const getRunningPaymentFiles = state => state.list.get('payment_running_files_list');
 
-const getSelectedPaymentGateway = state => state.paymentsFiles.get('paymentGateway');
+const getSelectedPaymentGateway = (state, props, source) => state.paymentsFiles.getIn([source, 'paymentGateway']);
 
-const getSelectedFileType = state => state.paymentsFiles.get('fileType');
+const getSelectedFileType = (state, props, source) => state.paymentsFiles.getIn([source, 'fileType']);
 
 export const selectedPaymentGatewaySelector = createSelector(
   getSelectedPaymentGateway,
@@ -37,6 +37,15 @@ export const paymentFilesSelector = createSelector(
     )
 );
 
+export const paymentResponseFilesSelector = createSelector(
+  paymentGatewaysSelector,
+  paymentGateways => paymentGateways
+    .filter(paymentGateway => paymentGateway.has('transactions_response')
+      && !paymentGateway.get('transactions_response', List).isEmpty()
+      && paymentGateway.get('custom', false)
+    )
+);
+
 export const paymentGatewayOptionsSelector = createSelector(
   paymentFilesSelector,
   paymentFiles => paymentFiles.map(paymentFile => formatSelectOptions(Map({
@@ -46,6 +55,21 @@ export const paymentGatewayOptionsSelector = createSelector(
   .toList()
   .toArray()
 );
+
+export const responseFileTypeOptionsOptionsSelector = createSelector(
+  paymentResponseFilesSelector,
+  paymentFiles => paymentFiles.reduce((accPaymentFiles, paymentFile) => 
+    accPaymentFiles.set(paymentFile.get('name', ''), paymentFile
+      .get('transactions_response', List())
+      .filter(transactionRequest => transactionRequest.has('file_type'))
+      .map(transactionRequest => formatSelectOptions(Map({
+        value: transactionRequest.get('file_type', ''),
+        label: transactionRequest.get('title', sentenceCase(transactionRequest.get('file_type', '')))
+      })))
+      .toArray()
+    )
+  , Map())
+)
 
 export const fileTypeOptionsOptionsSelector = createSelector(
   paymentFilesSelector,

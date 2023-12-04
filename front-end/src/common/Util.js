@@ -1,6 +1,8 @@
 import Immutable from 'immutable';
 import moment from 'moment';
 import isNumber from 'is-number';
+import removePrefix from 'remove-prefix';
+import removeSuffix from 'remove-suffix';
 import { titleCase, sentenceCase } from 'change-case';
 import systemConfig from '../config/system';
 import fieldNamesConfig from '../language/fieldNames.json';
@@ -13,7 +15,11 @@ import importConfig from '../config/import.json';
 import exportConfig from '../config/export.json';
 import collectionsConfig from '../config/collections.json';
 import customFieldsConfig from '../config/customFields.json';
+import inputProcessorConfig from '../config/InputProcessor.json';
 import discountConfig from '../config/discount.json';
+import conditionsConfig from '../config/conditions.json';
+import exportGeneratorConfig from '../config/exportGenerator.json';
+
 
 /**
  * Get data from config files
@@ -72,7 +78,13 @@ export const getConfig = (key, defaultValue = null) => {
         break;
       case 'customFields': configCache = configCache.set('customFields', Immutable.fromJS(customFieldsConfig));
         break;
+      case 'inputProcessor': configCache = configCache.set('inputProcessor', Immutable.fromJS(inputProcessorConfig));
+        break;
       case 'discount': configCache = configCache.set('discount', Immutable.fromJS(discountConfig));
+        break;
+      case 'exportGenerator': configCache = configCache.set('exportGenerator', Immutable.fromJS(exportGeneratorConfig));
+        break;
+      case 'conditions': configCache = configCache.set('conditions', Immutable.fromJS(conditionsConfig));
         break;
       default: console.log(`Config category not exists ${path}`);
     }
@@ -95,7 +107,7 @@ export const getFieldName = (field, category, defaultValue = null) => {
   return field;
 };
 
-/*  Map entity different names to fieldNames.json names */
+
 export const getFieldNameType = (type) => {
   switch (type.toLocaleLowerCase()) {
     case 'account':
@@ -580,7 +592,12 @@ export const getAvailableFields = (settings, additionalFields = []) => {
     .get('fields', Immutable.List())
     .map(field => (Immutable.Map({ value: field, label: field })))
     .sortBy(field => field.get('value', ''));
-  return fields.concat(Immutable.fromJS(additionalFields));
+  const computedFields = settings
+    .getIn(['processor', 'calculated_fields'], Immutable.List())
+    .map(field => field.get('target_field', ''))
+    .map(field => (Immutable.Map({ value: field, label: `${field} (Computed)`})))
+    .sortBy(field => field.get('value', ''));
+  return Immutable.List([...fields, ...computedFields, ...Immutable.fromJS(additionalFields)])
 };
 
 export const escapeRegExp = text =>
@@ -719,4 +736,53 @@ export const formatPluginLabel = (plugin) => {
     return plugin_key;
   }
   return titleCase(name.substring(0, name.lastIndexOf(plugin_key)));
+}
+
+export const parsePeriodPhpFormat = (value) => {
+  if (typeof value !== 'string' || value === '') {
+    return { suffix: '', prefix: '', number: '' };
+  }
+  const suffixes = {
+    minutes: 'minutes',
+    minute: 'minutes',
+    hours: 'hours',
+    hour: 'hours',
+    days: 'days',
+    day: 'days',
+    weeks: 'weeks',
+    week: 'weeks',
+    months: 'months',
+    month: 'months',
+    years: 'years',
+    year: 'years',
+  };
+  const [valueWithoutPrefix, prefix] = removePrefix(value.toLocaleLowerCase(), ['+', '-', ' ']);
+  const [valueWithoutPrefixAndSuffix, suffix] = removeSuffix(valueWithoutPrefix, Object.keys(suffixes));
+  const number = isNumber(valueWithoutPrefixAndSuffix) ? Math.abs(parseFloat(valueWithoutPrefixAndSuffix)) : '';
+  return { prefix, number, suffix: suffixes[suffix] || '' };
+}
+
+export const getSelectOptionsFromConfig = (configPath) => {
+  return getConfig(configPath, Immutable.List())
+    .map(parseConfigSelectOptions)
+    .toArray();
+}
+
+export const getConditionFromConfig = (configPath) => {
+  const enabledOperators = getConfig(configPath, Immutable.List());
+  return getConditions(enabledOperators);
+}
+
+export const getConditions = (enabledOperators = Immutable.List()) => {
+  const availableOperators = getConfig(['conditions', 'operators'], Immutable.List());
+  return Immutable.List().withMutations((opsWithMutations) => {
+    enabledOperators.forEach((enabledOperator) => {
+      const opConfig = availableOperators.find(op => op.get('id', '') === enabledOperator.get('id', ''), null, null);
+      if (opConfig === null) {
+        opsWithMutations.push(enabledOperator);
+      } else {
+        opsWithMutations.push(opConfig.merge(enabledOperator));
+      }
+    });
+  });
 }

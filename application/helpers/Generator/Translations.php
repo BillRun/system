@@ -47,21 +47,15 @@ class Generator_Translations {
 	}
 	
 	public static function translate($slug, $args = []) {
-		if (!is_array($args)) {
-			$args = [$args];
-		}
-		$currentLangTranslation = static::$translations[static::$currentLang][$slug];
-		$defaultLangTranslation = static::$translations[static::getDefaultLanguage()][$slug];
-		$translation = $currentLangTranslation ?: $defaultLangTranslation ?: $slug;
-		call_user_func_array('printf',array_merge([$translation], $args));
+		echo( static::stranslate($slug, $args) );
 	}
 
 	public static function stranslate($slug, $args = []) {
 		if (!is_array($args)) {
 			$args = [$args];
 		}
-		$currentLangTranslation = static::$translations[static::$currentLang][$slug];
-		$defaultLangTranslation = static::$translations[static::getDefaultLanguage()][$slug];
+		$currentLangTranslation = @static::$translations[static::$currentLang][$slug];
+		$defaultLangTranslation = @static::$translations[static::getDefaultLanguage()][$slug];
 		$translation = $currentLangTranslation ?: $defaultLangTranslation ?: $slug;
 		return call_user_func_array('sprintf',array_merge([$translation], $args));
 	}

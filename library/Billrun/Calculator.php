@@ -14,7 +14,9 @@
  */
 abstract class Billrun_Calculator extends Billrun_Base {
 
-	use Billrun_Traits_ForeignFields;
+	use Billrun_Traits_ForeignFields {
+		getForeignFieldsFromConfig as baseGetForeignFieldsFromConfig;
+	}
 	
 	/**
 	 * the type of the object
@@ -161,10 +163,21 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	public function calc() {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data));
-		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$lines = $this->pullLines($this->lines);
 		$this->prepareData($lines);
 		foreach ($lines as $line) {
+                    $extraLines = $this->addExtraLines($line);
+                    $this->calculateDataRow($line);
+                    foreach ($extraLines as $extraLine){
+                        $extraLine = ($extraLine instanceof Mongodloid_Entity) ? $extraLine : new Mongodloid_Entity($extraLine);
+                        $this->calculateDataRow($extraLine);
+                    }
+		}
+		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
+	}
+	
+        protected function calculateDataRow($line) {
+            $lines_coll = Billrun_Factory::db()->linesCollection();
 			if ($line) {
 				Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
 				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
@@ -172,14 +185,111 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				if ($this->isLineLegitimate($line)) {
 					if ($this->updateRow($line) === FALSE) {
 						unset($this->lines[$line['stamp']]);
-						continue;
+                                return;
 					}
 					$this->data[$line['stamp']] = $line;
 				}
 				Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
 			}
 		}
-		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
+        /**
+         * Adding extra lines to calculated lines. 
+         * @param Mongodloid_Entity $line- that we want to check if generate extra lines (inside the trigger)
+         * @param array $extraData - the extra lines we need to add to the calculator data. 
+         * @return array $extraData - the extra lines we need to add to the calculator data. 
+         */
+	protected function addExtraLines($line, $extraData = []){
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $this));
+		if(!empty($extraData)){
+			$queueLinesToInsert = [];
+			$linesToInsert = [];
+			foreach ($extraData as $originalStamp => $extraDataByStamp){
+				foreach ($extraDataByStamp as $newStamp => $extraRow){
+					$newQueueLine = $this->pullQueueLineByStamp($originalStamp);
+					$saveProperties = $this->getPossiblyUpdatedFields();
+					foreach ($saveProperties as $p) {
+						if (!is_null($val = Billrun_Util::getIn($extraRow, $p, null))) {
+							$newQueueLine[$p] = $val;
+						}
+					}
+					unset($newQueueLine['_id']);
+					$newQueueLine['stamp'] = $newStamp;
+					$queueLinesToInsert[$newStamp] = $newQueueLine;
+					$linesToInsert[$newStamp] = $extraRow;
+					$this->lines[$newStamp] = $newQueueLine;
+				}
+			}
+			Billrun_Factory::log("Calculator " . $this->getType() . ": before lines batch insert to lines collection", Zend_Log::DEBUG);
+			$this->batchInsertLines($linesToInsert, Billrun_Factory::db()->linesCollection());
+			Billrun_Factory::log("Calculator " . $this->getType() . ": before lines batch insert to queue collection", Zend_Log::DEBUG);
+			$this->batchInsertLines($queueLinesToInsert, Billrun_Factory::db()->queueCollection());
+		}
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $this));
+		return $extraData[$line['stamp']] ?? [];
+	}
+
+	/**
+	 * Batch inserting lines to collection
+	 * @param array $linesToInsert
+	 * @param type $collection 
+	 */
+	protected function batchInsertLines($linesToInsert, $collection) {
+		try {
+			$ret = $collection->batchInsert($linesToInsert);
+			Billrun_Factory::log("Calculator " . $this->getType() . ": after lines batch insert", Zend_Log::DEBUG);
+			if (isset($ret['err']) && !is_null($ret['err'])) {
+				Billrun_Factory::log("Calculator " . $this->getType() . ": batch insertion of adding extra lines to lines failed, Insert Error: " . $ret['err'], Zend_Log::ALERT);
+				throw new Exception();
+			}
+		} catch (Exception $e) {
+			try {
+				Billrun_Factory::log("Calculator " . $this->getType() . ": Batch insert failed during of adding extra lines to lines, removing duplicate lines and retry the bulkInsert, Error: " . $e->getMessage(), Zend_Log::ERR);
+				$linesWithoutDuplicates = $this->removeDuplicateLines($linesToInsert, $collection);
+				$ret = $collection->batchInsert($linesWithoutDuplicates);
+				if (isset($ret['err']) && !is_null($ret['err'])) {
+					Billrun_Factory::log("Calculator " . $this->getType() . ": batch insertion of adding extra lines to lines failed, Insert Error: " . $ret['err'], Zend_Log::ALERT);
+					throw new Exception();
+				}
+			} catch (Exception $ex) {
+				Billrun_Factory::log("Calculator " . $this->getType() . ": Batch insert failed during of adding extra lines to lines, inserting line by line, Error: " . $ex->getMessage(), Zend_Log::ERR);
+				$this->restoringLinesLineByLine($linesToInsert, $collection);
+			}
+		}
+	}
+	
+	/**
+	 * Remove all the lines that are in $archivedLinesToInsert and also already in lines collection
+	 * @param array $archivedLinesToInsert
+	 * @param array $archivedLinesStamps
+	 */
+	protected function removeDuplicateLines($linesToInsert, $collection) {
+		$query = array('stamp' => array('$in' => array_keys($linesToInsert)));
+		$duplicateLines = $collection->query($query)->cursor()->fields(array('stamp' => 1))->setRawReturn(true);
+		$duplicateLinesStamps = array_column(iterator_to_array($duplicateLines), 'stamp');
+		foreach ($duplicateLinesStamps as $duplicateLineStamp) {
+			unset($linesToInsert[$duplicateLineStamp]);
+		}
+		return array_values($linesToInsert);
+	}
+	
+	protected function restoringLinesLineByLine($linesToInsert, $collection) {
+		foreach ($linesToInsert as $stamp => $line) {
+			try {
+				$ret = $collection->insert($line); // ok==1, err null
+				if (isset($ret['err']) && !is_null($ret['err'])) {
+					Billrun_Factory::log("Calculator " . $this->getType() . ": line insertion of adding extra line to lines failed, Insert Error: " . $ret['err'] . ", failed_line " . $stamp, Zend_Log::ALERT);
+					throw new Exception($ret['err']);
+				}
+			} catch (Exception $e) {
+				if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+					Billrun_Factory::log("Calculator " . $this->getType() . ": line insertion of adding extra line to lines failed, Insert Error: " . $e->getMessage() . ", failed_line " . $stamp, Zend_Log::NOTICE);
+					continue;
+				} else {
+					Billrun_Factory::log("Calculator " . $this->getType() . ": line insertion of adding extra line to lines failed, Insert Error: " . $e->getMessage() . ", failed_line " . $stamp, Zend_Log::ALERT);
+					throw $e;
+				}
+			}
+		}
 	}
 
 	/**
@@ -247,6 +357,15 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		return $line;
 	}
 
+	protected function pullQueueLineByStamp($stamp) {
+		$queue_line = Billrun_Factory::db()->queueCollection()->query('stamp', $stamp)
+				->cursor()->current();
+		if ($queue_line->isEmpty()) {
+			return false;
+		}
+		$queue_line->collection(Billrun_Factory::db()->queueCollection());
+		return $queue_line;
+	}
 	/**
 	 * Mark the calculation as finished in the queue.
 	 * @param array $query additional query parameters to the queue
@@ -291,7 +410,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$query['$and'][0]['$or'] = array(
 			array('calc_time' => false),
 			array('calc_time' => array(
-					'$ne' => true, '$lt' => $orphand_time
+					'$ne' => true, '$lt' => new Mongodloid_Date($orphand_time)
 				)),
 		);
 //		$queryData['hint'] = $current_calculator_queue_tag;
@@ -304,7 +423,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return array
 	 */
 	protected function getBaseUpdate() {
-		$this->signedMicrotime = microtime(true);
+		$this->signedMicrotime = new Mongodloid_Date();
 		$update = array(
 			'$set' => array(
 				'calc_time' => $this->signedMicrotime,
@@ -408,12 +527,12 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			Billrun_Factory::log('Work hash: ' . $this->workHash, Zend_Log::DEBUG);
 			$update['$set']['hash'] = $this->workHash;
-
-			$response = $queue->update($query, $update, array('multiple' => true, 'w' => 'majority'));
+if (($response = $this->applyQueueHash($query, $update, $queue)) === FALSE) {
+				continue;
+			}
 			Billrun_Factory::log('Queue records updated number: ' . $response['nModified'], Zend_Log::DEBUG);
 
 			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
-
 			if ($foundLines->count() != $response['nModified']) {
 				// TODO remove when https://billrun.atlassian.net/browse/BRCD-3852 is fixed
 				Billrun_Factory::log('Found wrong number of lines: ' . $foundLines->count(), Zend_Log::DEBUG);
@@ -428,6 +547,38 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$retLines[$line['stamp']] = $line;
 		}
 		return $retLines;
+	}
+
+	/**
+	 * method to apply query update hash
+	 * 
+	 * @param array $query the query to filter
+	 * @param array $update the update to be applied
+	 * @param Collection $queue the mongodb collection
+	 * 
+	 * @return boolean true on success else false
+	 */
+	protected function applyQueueHash($query, $update, $queue) {
+		/*if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=')) {
+			$session = Billrun_Factory::db()->startSession();
+			if ($session !== false) {
+				$session->startTransaction();
+				try {
+					$queue->update($query, $update, array('multiple' => true, 'session' => $session));
+					$session->commitTransaction();
+					return true;
+				} catch (Exception $ex) {
+					$session->abortTransaction();
+					return false;
+				}
+			}
+			Billrun_Factory::log("No support for transactions as you're running on mongodb standalone", Zend_Log::NOTICE);
+		} else {
+			Billrun_Factory::log("No support for transactions or \$isolated; Please upgrade MongoDB server or client", Zend_Log::WARN);
+		}*/
+		
+		$queue->update($query, $update, array('multiple' => true));
+		return true;
 	}
 
 	/**

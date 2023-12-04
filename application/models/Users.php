@@ -26,14 +26,14 @@ class UsersModel extends TableModel {
 	}
 	
 	public function getUserById($userId){
-		$mongoId = new MongoId($userId);
+		$mongoId = new Mongodloid_Id($userId);
 		Billrun_Factory::log("Finish get user by id", Zend_Log::INFO);
 		return current(iterator_to_array($this->collection->query(['_id' => $mongoId])->cursor()))->getRawData();
 	}
 	
 	public function deleteUserById($userId){
 		try{
-			$mongoId = new MongoId($userId);
+			$mongoId = new Mongodloid_Id($userId);
 			$deleteQuery = $this->collection->remove(['_id' => $mongoId]);
 			Billrun_Factory::log("Finish remove user", Zend_Log::INFO);
 		}catch(\MongoException $e){
@@ -61,7 +61,7 @@ class UsersModel extends TableModel {
 	}
 	
 	public function updateUser($userId, $username, $roles, $password){
-		$mongoId = new MongoId($userId);
+		$mongoId = new Mongodloid_Id($userId);
 		$setArray = array('username' => (string) $username,'roles' => $roles );
 		
 		foreach($roles as $role){
@@ -86,8 +86,8 @@ class UsersModel extends TableModel {
 	}
 	
 	public function updateUserLastLogin($userId){
-		$mongoId =  new MongoId($userId);
-		$setArray = array('last_login' => new MongoDate());
+		$mongoId =  new Mongodloid_Id($userId);
+		$setArray = array('last_login' => new Mongodloid_Date());
 		
 		try{
 			Billrun_Factory::log("Start Update user last login : " . print_r($setArray, 1), Zend_Log::INFO);

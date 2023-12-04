@@ -75,8 +75,8 @@ class Models_Action_Export extends Models_Action {
 		$fields = $this->getFieldsConfig();
 		$config = $this->getMapperConfig();
 		$exportable_fields = array_replace_recursive(
-			array_column($fields, null, 'field_name'),
-			array_column($config, null, 'field_name')
+			array_column($config, null, 'field_name'),
+			array_column($fields, null, 'field_name')
 		);
 		$exportable_fields = array_filter($exportable_fields, function($field) {
 			return Billrun_Util::getIn($field, 'exportable', true);
@@ -88,11 +88,16 @@ class Models_Action_Export extends Models_Action {
 		$mapper = $this->setCsvOrder($mapper);
 		return $mapper;
 	}
-
+	
 	protected function getRowValue($data, $path, $params) {
 		$defaultValue = Billrun_Util::getIn($params, 'default_value', null);
-		$value = Billrun_Util::getIn($data, explode('.', $path), $defaultValue);
 		$type = Billrun_Util::getIn($params, 'type', 'string');
+		$callback = Billrun_Util::getIn($params, 'callback', false);
+		if (!empty($callback) && method_exists($this, $callback)) {
+			$value = $this->{$callback}($data, $path, $params);
+		} else {
+			$value = Billrun_Util::getIn($data, explode('.', $path), $defaultValue);
+		}
 		if (empty($value) && $type !== 'boolean' && !in_array($value, [0, '0']) ) {
 			return '';
 		}
@@ -112,7 +117,7 @@ class Models_Action_Export extends Models_Action {
 			case 'boolean':
 				return $this->formatBoolean($value);
 			default:
-				if ($value instanceof MongoDate) {
+				if ($value instanceof Mongodloid_Date) {
 					return $this->formatDate($value);
 				}
 				if (is_array($value) /*&& Billrun_Util::getIn($params, 'multiple', false)*/) {
@@ -142,7 +147,13 @@ class Models_Action_Export extends Models_Action {
 		$query = [];
 		foreach ($this->query as $key => $value) {
 			if ($key === 'from') {
-				$query['to'] = ['$gte' => $value];
+				if (!empty($value)) {
+					$query['to'] = ['$gte' => $value];
+				}
+			} else if ($key === 'to') {
+				if (!empty($value)) {
+					$query['from'] = ['$lte' => $value];
+				}
 			} else {
 				$query[$key] = $value;
 			}
@@ -151,12 +162,23 @@ class Models_Action_Export extends Models_Action {
 	}
 
 	protected function getDataToExport($query) {
-		$records = [];
-		$results = $this->collectionHandler->query($query)->cursor();
-		foreach ($results as $result) {
-			$records[] = $result->getRawData();
-		}
-		return $records;
+		$collection = $this->getCollectionName();
+		$action = 'uniqueget';
+		$params = [
+			'request' => [
+				'collection' => $collection,
+				'action' => $action,
+				'query' => json_decode($this->request['query']),
+				'sort' => json_decode($this->request['sort']),
+				'options' => json_decode($this->request['options']),
+				'states' => json_decode($this->request['states']),
+			],
+			'settings' => Billrun_Factory::config()->getConfigValue("billapi.{$collection}.{$action}", []),
+		];
+
+		$action = new Models_Action_Uniqueget($params);
+		$res = $action->execute();
+		return $res;
 	}
 
 	protected function formatJson($data) {
@@ -181,14 +203,14 @@ class Models_Action_Export extends Models_Action {
 	}
 
 	protected function formatDate($value) {
-		return Billrun_Utils_Mongo::convertMongoDatesToReadable($value);
+		return Billrun_Utils_Mongo::convertMongodloidDatesToReadable($value);
 	}
 
 	protected function formatBoolean($value) {
 		if (empty($value)) {
 			return 'no';
 		}
-		return in_array($value, ['false', 'FALSE', '0', 'null', 'NULL']) ? 'no' : 'yes';
+		return in_array($value, ['false', 'FALSE', '0', 'null', 'NULL']) && $value !== true ? 'no' : 'yes';
 	}
 
 	function formatPercentage($value) {

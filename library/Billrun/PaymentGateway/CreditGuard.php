@@ -168,13 +168,12 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 					$this->saveDetails['auth_number_token'] = (string) $j5_response->response->doDeal->authNumber;
 				}
 			}
-
 			return $retParams;
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
 	}
-	
+
 	protected function buildSetQuery() {
 		return array(
 			'active' => array(
@@ -184,7 +183,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'card_expiration' => (string) $this->saveDetails['card_expiration'],
 				'personal_id' => (string) $this->saveDetails['personal_id'],
 				'transaction_exhausted' => true,
-				'generate_token_time' => new MongoDate(time()),
+				'generate_token_time' => new Mongodloid_Date(time()),
 				'auth_number' => (string) ($this->saveDetails['auth_number_token'] ?? $this->saveDetails['auth_number']),
 				'four_digits' => (string) $this->saveDetails['four_digits'],
 				'card_acquirer' => (string) $this->saveDetails['card_acquirer'],
@@ -295,7 +294,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function buildInquireQuery($params, $terminal = 'redirect_terminal') {
-		$version = $params['version'] ?? '2000';
+                $version = $params['version'] ?? '2000';
 		return array(
 			'user' => $params['user'],
 			'password' => $params['password'],
@@ -303,7 +302,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			'int_in' => '<ashrait>
 							<request>
 							 <language>HEB</language>
-							 <version>' . $version . '</version>
+                                                         <version>' . $version . '</version>
 							 <command>inquireTransactions</command>
 							 <inquireTransactions>
 							  <terminalNumber>' . ($params[$terminal] ?? $params['redirect_terminal']) . '</terminalNumber>
@@ -459,10 +458,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlParams['addFailPage'] = $params['fail_page'] ? '<errorUrl>' . $params['fail_page']  . '</errorUrl>' : '';
 		if (isset($options['installments'])) {
 			if (!empty($options['installments']['total_amount'])) {
-				$installmentParams['amount'] = $this->convertAmountToSend($options['installments']['total_amount']);
-				$installmentParams['number_of_payments'] = $options['installments']['number_of_payments'] - 1;
-				$installmentParams['periodical_payments'] = floor($installmentParams['amount'] / $options['installments']['number_of_payments']);
-				$installmentParams['first_payment'] = $installmentParams['amount'] - ($installmentParams['number_of_payments'] * $installmentParams['periodical_payments']);
+			$installmentParams['amount'] = $this->convertAmountToSend($options['installments']['total_amount']);
+			$installmentParams['number_of_payments'] = $options['installments']['number_of_payments'] - 1;
+			$installmentParams['periodical_payments'] = floor($installmentParams['amount'] / $options['installments']['number_of_payments']); 	
+			$installmentParams['first_payment'] = $installmentParams['amount'] - ($installmentParams['number_of_payments'] * $installmentParams['periodical_payments']);
 			} else {
 				$installmentParams['amount'] = $xmlParams['amount'];
 				$installmentParams['number_of_payments'] = $options['installments']['number_of_payments'];
@@ -742,6 +741,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 		return $response;
 	}
+
 
 	protected function getJ5Xml($credentials, $xmlParams, $gatewayDetails, $transactionType, $terminal = 'redirect_terminal') {
 		if ($transactionType == 'RecurringMigration') {

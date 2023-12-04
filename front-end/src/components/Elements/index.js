@@ -20,6 +20,9 @@ import TabsWrapper from './TabsWrapper';
 import Stepper from './Stepper';
 import PriorityMapping from './PriorityMapping';
 import Conditions from './Conditions';
+import SubscriberAsyncSearch from './SubscriberAsyncSearch';
+import RateAsyncSearch from './RateAsyncSearch';
+import RecurrenceFrequency from './RecurrenceFrequency';
 
 export {
   WithEntityLink,
@@ -45,4 +48,7 @@ export {
   Stepper,
   PriorityMapping,
   Conditions,
+  SubscriberAsyncSearch,
+  RateAsyncSearch,
+  RecurrenceFrequency,
 };

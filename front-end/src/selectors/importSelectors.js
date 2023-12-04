@@ -108,8 +108,15 @@ const selectProductImportFields = (fields) => {
         fieldsWithMutations.push(setFieldTitle(fieldPricePlan, 'product'));
 
         const helpPercentage = 'Field will effect only if \'Plan Price Override\' value is different from BASE';
-        const fieldPricePercentage = Immutable.Map({ field_name: 'rates.percentage', help: helpPercentage });
+        const fieldPricePercentage = Immutable.Map({ field_name: 'rates.plans.percentage', help: helpPercentage });
         fieldsWithMutations.push(setFieldTitle(fieldPricePercentage, 'import'));
+
+        const fieldPriceService = Immutable.Map({ field_name: 'price_service' });
+        fieldsWithMutations.push(setFieldTitle(fieldPriceService, 'service'));
+
+        const helpServicePercentage = 'Field will effect only if \'Service Price Override\' value is different from BASE';
+        const fieldServicePricePercentage = Immutable.Map({ field_name: 'rates.services.percentage', help: helpServicePercentage });
+        fieldsWithMutations.push(setFieldTitle(fieldServicePricePercentage, 'import'));
       }
       if (productField.get('field_name', '') === 'rounding_rules') {
         const fieldRoundingType = Immutable.Map({ field_name: 'rounding_type', title: 'Final charge rounding type' });
@@ -196,9 +203,17 @@ const mergeImportOptions = (item, configTypes, apiSettingsTypes, itemType = '') 
     configTypes
       .filter(entities => entities.includes(entity))
       .forEach((entities, type) => {
-        optionsWithMutations.push(type);
+        if (type === 'predefined_mapping') {
+          const exportVersion = getConfig(['env', 'exportVersion'], '');
+          optionsWithMutations.push(Immutable.Map({
+            value: type,
+            label: `${sentenceCase(getFieldName(type, 'import'))} (${exportVersion})`,
+          }));
+        } else {
+          optionsWithMutations.push(type);
+        }
       });
-    apiSettingsTypes
+      apiSettingsTypes
       .filter(entities => entities.includes(entity))
       .forEach((entities, type) => {
         optionsWithMutations.push(Immutable.Map({

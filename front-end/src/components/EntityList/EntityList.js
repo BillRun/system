@@ -3,10 +3,10 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import Immutable from 'immutable';
+import moment from 'moment';
 import { noCase, upperCaseFirst } from 'change-case';
 import { Col, Row, Panel } from 'react-bootstrap';
 import { LoadingItemPlaceholder, Actions } from '@/components/Elements';
-import { ExporterPopup } from '@/components/Exporter';
 import List from '../List';
 import Pager from './Pager';
 import State from './State';
@@ -24,8 +24,14 @@ import {
   // clearItem,
 } from '@/actions/entityListActions';
 import {
+  exportEntities,
+} from '@/actions/entityActions';
+import {
   importTypesOptionsSelector,
 } from '@/selectors/importSelectors';
+import {
+  entityFieldSelector,
+} from '@/selectors/settingsSelector';
 import {
   getSettings,
 } from '@/actions/settingsActions';
@@ -41,10 +47,12 @@ class EntityList extends Component {
     entityKey: PropTypes.string,
     api: PropTypes.string,
     items: PropTypes.instanceOf(Immutable.List),
+    entityFields: PropTypes.instanceOf(Immutable.List),
     tableFields: PropTypes.array,
     filterFields: PropTypes.array,
     typeSelectOptions: PropTypes.array,
     baseFilter: PropTypes.object,
+    baseOrFilter: PropTypes.array,
     projectFields: PropTypes.object,
     page: PropTypes.number,
     nextPage: PropTypes.bool,
@@ -69,6 +77,7 @@ class EntityList extends Component {
       push: PropTypes.func.isRequired,
     }).isRequired,
     onListRefresh: PropTypes.func,
+    onClearFilters: PropTypes.func,
     dispatch: PropTypes.func.isRequired,
     listActions: PropTypes.arrayOf(PropTypes.object),
     refreshString: PropTypes.string,
@@ -89,9 +98,11 @@ class EntityList extends Component {
     forceRefetchItems: false,
     fetchOnMount: true,
     baseFilter: {},
+    baseOrFilter: [],
     tableFields: [],
     filterFields: [],
     typeSelectOptions: [],
+    entityFields: Immutable.List(),
     projectFields: {},
     sort: Immutable.Map(),
     defaultSort: Immutable.Map(),
@@ -101,13 +112,13 @@ class EntityList extends Component {
     actions: [],
     listActions: null,
     onListRefresh: null,
-  }
-
-  state = {
-    showExport: false,
+    onClearFilters: null,
   }
 
   componentWillMount() {
+    const { entityKey } = this.props;
+    const settingsKey = getConfig(['systemItems', entityKey, 'settingsKey'], entityKey);
+    this.props.dispatch(getSettings(`${settingsKey}.fields`));
     const { forceRefetchItems, items, sort, defaultSort, itemsType, fetchOnMount } = this.props;
     if ((forceRefetchItems || items == null || items.isEmpty()) && fetchOnMount) {
       this.fetchItems(this.props);
@@ -181,11 +192,13 @@ class EntityList extends Component {
   }
 
   onClickExport = () => {
-    this.setState(() => ({ showExport: true }));
-  }
-
-  onExportFinish = () => {
-    this.setState(() => ({ showExport: false }));
+    const { itemType } = this.props;
+    const now = moment().format('YYYYMMDD');
+    const options = Immutable.Map({
+      file_name: `export_${itemType}_${now}`,
+    });
+    const data = Immutable.fromJS(this.getExportQuery(this.props)).merge(options);
+    this.props.dispatch(exportEntities(itemType, data));
   }
 
   onSort = (sort) => {
@@ -198,6 +211,13 @@ class EntityList extends Component {
     const { itemsType } = this.props;
     this.props.dispatch(setListPage(itemsType, 0));
     this.props.dispatch(setListFilter(itemsType, filter));
+  }
+
+  onClearFilters = (filter) => {
+    const { onClearFilters } = this.props;
+    if (onClearFilters) {
+      onClearFilters();
+    }
   }
 
   onPageChange = (page) => {
@@ -238,13 +258,14 @@ class EntityList extends Component {
       filter,
       state,
       baseFilter,
+      baseOrFilter,
       projectFields,
       api,
       showRevisionBy,
     } = props;
     const project = showRevisionBy ? { ...projectFields, ...{ to: 1, from: 1, revision_info: 1 } } : projectFields;
     const query = { ...filter.toObject(), ...baseFilter };
-    const options = { or_fields: Object.keys(filter.toObject()) };
+    const options = { or_fields: [...Object.keys(filter.toObject()), ...baseOrFilter] };
     const request = {
       action: api,
       entity: collection,
@@ -346,19 +367,14 @@ class EntityList extends Component {
     }).reverse();
   }
 
-  renderExporter = () => {
-    const { showExport } = this.state;
-    const { itemType } = this.props;
-    if (this.isExportEnabled()) {
-      return (
-        <ExporterPopup
-          entityKey={itemType}
-          show={showExport}
-          onClose={this.onExportFinish}
-        />
-      )
-    }
-    return null;
+  getExportQuery = (props) => {
+    const requestData = this.buildQuery(props);
+    return requestData.params.reduce((acc, val, key) => {
+      if (!['page', 'size'].includes(key)) {
+        Object.assign(acc, val);
+      }
+      return acc;
+    }, {});
   }
 
   renderPanelHeader = () => {
@@ -375,12 +391,34 @@ class EntityList extends Component {
   }
 
   renderFilter = () => {
-    const { filter, filterFields } = this.props;
-    if (filterFields.length === 0) {
+    const { filter, filterFields, entityFields, customFilters } = this.props;
+    const allFilterFields = entityFields
+      .filter(field => field.get('searchable', false))
+      .map(field => Immutable.Map({
+        id: field.get('field_name', ''),
+        placeholder: field.get('title', field.get('field_name', '')),
+      }))
+      .withMutations((accWithMutations) => {
+        Immutable.fromJS(filterFields).forEach((field) => {
+          if (accWithMutations.findIndex(acc => acc.get('id', '') === field.get('id', '')) < 0) {
+            accWithMutations.push(field);
+          }
+        });
+      })
+      .reverse()
+      .toJS();
+
+    if (allFilterFields.length === 0) {
       return null;
     }
     return (
-      <Filter filter={filter} fields={filterFields} onFilter={this.onFilter}>
+      <Filter
+        filter={filter}
+        fields={allFilterFields}
+        onFilter={this.onFilter}
+        onClear={this.onClearFilters}
+        customFilters={customFilters}
+      >
         { this.renderStateFilter() }
       </Filter>
     );
@@ -456,7 +494,6 @@ class EntityList extends Component {
           </Panel>
           { this.renderPager() }
         </Col>
-        { this.renderExporter() }
       </Row>
     );
   }
@@ -493,6 +530,7 @@ const mapStateToProps = (state, props) => {
     filter: state.entityList.filter.get(itemsType),
     size: state.entityList.size.get(itemsType),
     inProgress: state.progressIndicator > 0,
+    entityFields: entityFieldSelector(state, {entityName: getConfig(['systemItems', entityKey, 'settingsKey'], entityKey).split('.')}),
     typeSelectOptions: importTypesOptionsSelector(state, props, 'importer', itemType),
   })
 }

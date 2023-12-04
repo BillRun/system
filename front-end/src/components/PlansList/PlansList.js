@@ -5,6 +5,7 @@ import Immutable from 'immutable';
 import changeCase from 'change-case';
 import EntityList from '../EntityList';
 import { isPlaysEnabledSelector } from '@/selectors/settingsSelector';
+import { getFieldName } from '@/common/Util';
 
 
 const PlansList = (props) => {
@@ -22,8 +23,12 @@ const PlansList = (props) => {
   };
 
   const parserBillingFrequency = (item) => {
-    const periodicity = item.getIn(['recurrence', 'periodicity'], '');
-    return (!periodicity) ? '' : `${changeCase.upperCaseFirst(periodicity)}ly`;
+    if (item.hasIn(['recurrence', 'periodicity'])) {
+      const periodicity = item.getIn(['recurrence', 'periodicity'], '');
+      return (!periodicity) ? '' : `${changeCase.upperCaseFirst(periodicity)}ly`;
+    }
+    const frequency = item.getIn(['recurrence', 'frequency'], '')
+    return getFieldName('recurrence.periodicity.1', '', frequency);
   };
 
   const parserChargingMode = item => (item.get('upfront') ? 'Upfront' : 'Arrears');

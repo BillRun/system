@@ -27,13 +27,9 @@ class Billrun_Helpers_QueueCalculators {
 	 * @var Billrun_Calculator_Unify
 	 */
 	protected $unifyCalc;
-	
 	protected $options = array();
-	
 	protected $realtime = false;
-	
-	protected $calculatorFailed = false;
-	
+	protected $calculatorFailed = [];
 	protected $stuckInQueue = array();
 
 	public function __construct($options) {
@@ -42,72 +38,96 @@ class Billrun_Helpers_QueueCalculators {
 	}
 
 	public function run(Billrun_Processor $processor, &$data) {
-		$this->unifyCalc = null;
-		$this->queue_calculators = $this->getQueueCalculators();
-		$calc_name_in_queue = array_merge(array(false), $this->queue_calculators);
-		$last_calc = array_pop($calc_name_in_queue);
-		$index = 0;
-		foreach ($this->queue_calculators as $calc_name) {
-			Billrun_Factory::log('Plugin calc cpu ' . $calc_name, Zend_Log::INFO);
-			$calc_options = $this->getCalcOptions($calc_name);
-			if ($this->isUnify($calc_name)) {
-				$this->unifyCalc($processor, $data);
-				continue;
-			}
-			$queue_data = $processor->getQueueData();
-			$calc = Billrun_Calculator::getInstance(array_merge($this->options, $calc_options));
-			$calc->prepareData(array_diff_key($data['data'], $this->stuckInQueue));
-			foreach ($data['data'] as $key => &$line) {
-				if ($index == 0 && $this->realtime) {
-					$line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok', 1);
+		$success = true;
+        $this->unifyCalc = null;
+        $this->queue_calculators = $this->getQueueCalculators();
+        $index = 0;
+        foreach ($this->queue_calculators as $calc_name) {
+            Billrun_Factory::log('Plugin calc cpu ' . $calc_name, Zend_Log::INFO);
+            $calc_options = $this->getCalcOptions($calc_name);
+            if ($this->isUnify($calc_name)) {
+                $this->unifyCalc($processor, $data);
+				foreach ($data['data'] as &$line) {
+					$processor->setFullCalculationTime($line);
 				}
-				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $calc_name_in_queue[$index]) {
-					$line['realtime'] = $this->realtime;
-					$entity = new Mongodloid_Entity($line);
-					if (!$this->shouldSkipCalc($line, $calc_name) && $calc->isLineLegitimate($entity)) {
-						if ($calc->updateRow($entity) !== FALSE) {
-							if ($this->isLastCalc($calc_name, $last_calc)) {
-								$processor->unsetQueueRow($entity['stamp']);
-							} else {
-								$processor->setQueueRowStep($entity['stamp'], $calc_name);
-								$processor->addAdvancedPropertiesToQueueRow($line);
-							}
-						} else {
-							Billrun_Factory::log('Line ' . $line['stamp'] . ' should go to the queue', Zend_Log::DEBUG);
-							$this->stuckInQueue[$line['stamp']] = true;
-						}
-						$this->calcPricingCase($entity, $calc_name);
-					} else {
-						if ($this->isLastCalc($calc_name, $last_calc)) {
-							$processor->unsetQueueRow($entity['stamp']);
-						} else {
-							$processor->setQueueRowStep($entity['stamp'], $calc_name);
-						}
-					}
-					$line = $entity->getRawData();
-				} else {
-					Billrun_Factory::log('Line ' . $line['stamp'] . ' should go to the queue', Zend_Log::DEBUG);
-					$this->stuckInQueue[$line['stamp']] = true;
-				}
+                continue;
+            }
+            $queue_data = $processor->getQueueData();
+            $calc = Billrun_Calculator::getInstance(array_merge($this->options, $calc_options));
+            $calc->prepareData(array_diff_key($data['data'], $this->stuckInQueue));
+            $allExtraLines = [];
+            foreach ($data['data'] as $key => &$line) {
+                $extraLines = $this->addExtraLines($line, $queue_data, $calc, $processor);
+                $this->calculateDataRow($data, $index, $line, $calc_name, $queue_data, $calc, $processor);
+                foreach ($extraLines as $stamp => &$extraLine) {
+                    $this->calculateDataRow($data, $index, $extraLine, $calc_name, $queue_data, $calc, $processor);
+                }
 
-				if ($this->realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name) {
-					if ($line['request_type'] != Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST')) {
-						$line['usagev'] = 0;
-						$line['apr'] = 0;
-					}
-					$line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.' . $calc_name, -999);
-					$this->calculatorFailed = true;
-					$this->unifyCalc($processor, $data);
-					return false;
-				}
-			}
-			$index++;
+				$allExtraLines = array_merge($allExtraLines, $extraLines);
+            }
+			$data['data'] = array_merge($data['data'], $allExtraLines);
+            $index++;
+        }
+        Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
+        return true;
+    }
+
+    protected function calculateDataRow(&$data, $index, &$line, $calc_name, $queue_data, $calc, $processor) {
+        $calc_name_in_queue = array_merge(array(false), $this->queue_calculators);
+        $last_calc = array_pop($calc_name_in_queue);
+        if ($index == 0 && $this->realtime) {
+            $line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok', 1);
+        }
+
+		if (!isset($this->calculatorFailed[$line['stamp']])) {
+			$this->calculatorFailed[$line['stamp']] = false;
 		}
-		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
-		return true;
-	}
-	
-	protected function getQueueCalculators() {
+
+        if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $calc_name_in_queue[$index]) {
+            $line['realtime'] = $this->realtime;
+            $entity = new Mongodloid_Entity($line);
+            if (!$this->shouldSkipCalc($line, $calc_name) && $calc->isLineLegitimate($entity)) {
+                if ($calc->updateRow($entity) !== FALSE) {
+                    if ($this->isLastCalc($calc_name, $last_calc)) {
+                        $processor->unsetQueueRow($entity['stamp']);
+						$processor->setFullCalculationTime($entity);
+                    } else {
+                        $processor->setQueueRowStep($entity['stamp'], $calc_name);
+                        $processor->addAdvancedPropertiesToQueueRow($line);
+                    }
+                } else {
+                    $processor->addAdvancedPropertiesToQueueRow($line);
+							Billrun_Factory::log('Line ' . $line['stamp'] . ' should go to the queue', Zend_Log::DEBUG);
+                    $this->stuckInQueue[$line['stamp']] = true;
+                }
+                $this->calcPricingCase($entity, $calc_name);
+            } else {
+                if ($this->isLastCalc($calc_name, $last_calc)) {
+                    $processor->unsetQueueRow($entity['stamp']);
+					$processor->setFullCalculationTime($entity);
+                } else {
+                    $processor->setQueueRowStep($entity['stamp'], $calc_name);
+                }
+            }
+            $line = $entity->getRawData();
+        } else {
+					Billrun_Factory::log('Line ' . $line['stamp'] . ' should go to the queue', Zend_Log::DEBUG);
+            $this->stuckInQueue[$line['stamp']] = true;
+        }
+
+		if ($this->realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name && !$this->calculatorFailed[$line['stamp']]) {
+            if ($line['request_type'] != Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST')) {
+                $line['usagev'] = 0;
+                $line['apr'] = 0;
+            }
+            $line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.' . $calc_name, -999);
+			$this->calculatorFailed[$line['stamp']] = true;
+            $this->unifyCalc($processor, $data);
+			$success = false;
+        }
+    }
+
+    protected function getQueueCalculators() {
 		$queue_calcs = Billrun_Factory::config()->getConfigValue("queue.calculators", array());
 		if ($this->realtime && !array_search('unify', $queue_calcs)) { // realtime must run a unify calculator
 			$queue_calcs[] = 'unify';
@@ -178,7 +198,7 @@ class Billrun_Helpers_QueueCalculators {
 				}
 				continue;
 			}
-			if (isset($queue_data[$line['stamp']]) && in_array($queue_data[$line['stamp']]['calc_name'] , array('pricing', 'tax'))) {
+			if (isset($queue_data[$line['stamp']]) && in_array($queue_data[$line['stamp']]['calc_name'], array('pricing', 'tax'))) {
 				$entity = new Mongodloid_Entity($line);
 				if ($this->unifyCalc->isLineLegitimate($entity)) {
 					$this->unifyCalc->updateRow($entity);
@@ -235,9 +255,35 @@ class Billrun_Helpers_QueueCalculators {
 	 * @return bool
 	 */
 	protected function shouldRemoveFromQueue($line) {
-		return !$this->calculatorFailed ||
+		return !$this->calculatorFailed[$line['stamp']] ||
 			($this->realtime && $line['request_type'] != Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST'));
-			
 	}
+	
+	/**
+	 * Adding extra lines to the calculated lines
+	 * @param array $line - that we want to check if generate extra lines (inside the trigger)
+	 * @param array $queue_data
+	 * @param Billrun_Calculator $calculator
+	 * @param Billrun_Processor $processor 
+	 * @param array $extraData - the extra lines we need to add to the calculator data. 
+         * @return array $extraData - the extra lines we need to add to the calculator data. 
+	 */
+	protected function addExtraLines(&$line, &$queue_data, $calculator, $processor, $extraData = []) {
+            Billrun_Factory::dispatcher()->trigger('beforeCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $calculator));
+            if (!empty($extraData)) {
+                foreach ($extraData as $originalStamp => $extraDataByStamp) {
+                    foreach ($extraDataByStamp as $newStamp => $extraRow) {
+                        $queueLine = $queue_data[$originalStamp];
+                        unset($queueLine['_id']);
+                        $queueLine['stamp'] = $newStamp;
+                        $queue_data[$newStamp] = $queueLine;
+                        $processor->setQueueRow($queueLine);
+                    }
+                }
+            }
+            Billrun_Factory::dispatcher()->trigger('afterCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $calculator));
+            return $extraData[$line['stamp']] ?? [];
+        }
 
 }
+

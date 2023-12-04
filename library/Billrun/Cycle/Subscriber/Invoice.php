@@ -33,6 +33,7 @@ class Billrun_Cycle_Subscriber_Invoice {
         
         protected $groupingExtraFields = array();
         protected $groupingEnabled = true;
+		protected $groupingSumExtraFields = array();
 
         /**
 	 * 
@@ -49,6 +50,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		}
                 $this->groupingExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', array()); 
                 $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
+				$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array()); 
 	}
 
 	/**
@@ -151,7 +153,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 				$breakdowns['count'] += 1;
 				foreach($taxData as $tax ) {
 					if(empty($tax['description'])) {
-						Billrun_Factory::log('Received Tax  with empty  decription Skiping...',Zend_log::DEBUG);
+                                                Billrun_Factory::log('Received tax with an empty description. Skipping...',Zend_log::DEBUG);
 						continue;
 					}
 					@$breakdowns['taxes'][$tax['description']] = $overridePreviouslyAggregatedResults ? @$breakdowns['taxes'][$tax['description']] + $tax['amount'] : $tax['amount'];
@@ -343,7 +345,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			}
 			return $newPrice;
 		} else if( empty($taxData) ) {
-			Billrun_Factory::log('addLineVatableData failed: Tax data missing. data: ' . print_R($this->data, 1), Zend_Log::CRIT);
+			Billrun_Factory::log('addLineVatableData failed: Tax data missing. account: ' . $this->data['aid'] . ', subscriber: ' . $this->data['sid'] . ', billrun: ' . $this->data['key'] . ', breakdown key: ' . $breakdownKey, Zend_Log::CRIT);
 		}
 		//else 
 		return $pricingData['aprice'];
@@ -589,6 +591,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->data['totals']['grouping'][$index]['before_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['before_taxes'], 0) + Billrun_Util::getIn($row, 'aprice', 0);
 		$this->data['totals']['grouping'][$index]['taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['taxes'], 0) + Billrun_Util::getIn($row, 'tax_data.total_amount', 0);
 		$this->data['totals']['grouping'][$index]['after_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['after_taxes'], 0) + Billrun_Util::getIn($row, 'final_charge', 0);
+		// Sum extra grouping fields
+		foreach ($this->groupingSumExtraFields as $field) {
+			Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field, Billrun_Util::getIn($this->data['totals']['grouping'][$index], $field, 0) + Billrun_Util::getIn($row, $field, 0));
+		}		
 	}
 
 	protected function addGroupToTotalGrouping($row) {

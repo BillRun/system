@@ -20,8 +20,7 @@ import Charge from '@/components/Charge';
 import ServicesList from '@/components/ServicesList';
 import Service from '@/components/Service';
 import InputProcessorsList from '@/components/InputProcessorsList';
-import ExportGenerator from '@/components/ExportGenerator';
-import ExportGeneratorsList from '@/components/ExportGeneratorsList';
+import { ExportGenerator, ExportGeneratorsList } from '@/components/ExportGenerator';
 import InputProcessor from '@/components/InputProcessor';
 import UsageList from '@/components/UsageList';
 import RunCycle from '@/components/Cycle';
@@ -46,9 +45,12 @@ import AutoRenewsList from '@/components/AutoRenew/AutoRenewsList';
 import AutoRenewSetup from '@/components/AutoRenew/AutoRenewSetup';
 import CustomFields from '@/components/CustomFields';
 import Events from '@/components/Events';
-import PaymentFiles from '@/components/PaymentFiles/PaymentFiles';
+import RequestPaymentFiles from '@/components/PaymentFiles/RequestPaymentFiles';
+import ResponsePaymentFiles from '@/components/PaymentFiles/ResponsePaymentFiles';
 import { ImporterSetup } from '../components/Importer';
 import { ExporterSetup } from '../components/Exporter';
+import { ImmediateInvoiceSetup } from '../components/ImmediateInvoice';
+import SuggestionsSetup, { SuggestionsList } from '../components/Suggestions';
 import { TaxList, TaxSetup, TaxMapping } from '@/components/Tax';
 
 
@@ -140,13 +142,14 @@ const routes = () => (
 
         <Route path="/input_processor" component={Authentication(InputProcessor)} />
         <Route path="/input_processors" component={Authentication(InputProcessorsList)} title="Input Processors" />
-        <Route path="/export_generator" component={Authentication(ExportGenerator)} title="Export Generator" />
+        <Route path="/export_generator(/:name)" component={Authentication(ExportGenerator)} title="Export Generator" />
         <Route path="/export_generators" component={Authentication(ExportGeneratorsList)} title="Export Generators" />
         <Route path="/usage" component={Authentication(UsageList)} title="Usage" />
         <Route path="/run_cycle" component={Authentication(RunCycle)} title="Billing Cycle" />
         <Route path="/queue" component={Authentication(QueueList)} title="Queue" />
         <Route path="/invoices" component={Authentication(InvoicesList)} title="Invoices" />
-        <Route path="/custom-payment-files" component={Authentication(PaymentFiles)} title="Custom Transactions Request File" />
+        <Route path="/custom-payment-files" component={Authentication(RequestPaymentFiles)} title="Custom Transactions Request File" />
+        <Route path="/response-custom-payment-files" component={Authentication(ResponsePaymentFiles)} title="Custom Transactions Response File"/>
         <Route path="/settings" component={Authentication(Settings)} title="General Settings" />
         <Route path="/payment_gateways" component={Authentication(PaymentGateways)} title="Payment Gateways" />
         <Route path="/select_input_processor_template" component={Authentication(SelectTemplate)} title="Create New Input Processor" />
@@ -162,6 +165,11 @@ const routes = () => (
         <Route path="/changepassword(/:itemId)" component={ChangePassword} title="Change Password" />
         <Route path="/import(/:itemType)" component={Authentication(ImporterSetup)} />
         <Route path="/export(/:itemType)" component={Authentication(ExporterSetup)} />
+        <Route path="/immediate-invoice" component={Authentication(ImmediateInvoiceSetup)} title="Immediate Invoice" />
+        <Route path="suggestions" >
+          <IndexRoute component={Authentication(SuggestionsSetup)} title="Repricing Suggestions" />
+          <Route path=":itemId" component={Authentication(SuggestionsList)} title="Customer Repricing Suggestions" />
+        </Route>
         <Route path="*" component={PageNotFound404} title=" " />
       </Route>
     </Router>

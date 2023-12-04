@@ -27,13 +27,14 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$this->constructOptions($options);
 		$this->foreignFields = $this->getForeignFields(array('service' => $options), $this->stumpLine);
 	}
-
+	
 	protected  function verifyConstrctionOptions($options) {
 	 return !(!isset($options['name'], $options['cycle']));
 	}
-
 	protected function getCharges($options) {
-		if( $this->planIncluded && !Billrun_Factory::config()->getConfigValue('customer.aggregator.charge_included_service',TRUE)) {
+		if( $this->planIncluded &&
+			!Billrun_Factory::config()->getConfigValue('customer.aggregator.charge_included_service',TRUE) &&
+			Billrun_Utils_Cycle::shouldBeInCycle($options, $options['cycle']) ) {
 			return [ 'charge' => 0 ];
 		}
 			
@@ -60,7 +61,8 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 	}
 	
 	protected function generateLineStamp($line) {
-		return md5($line['usagev'].$line['charge_op']. $line['aid'] . $line['sid'] . $this->name . $this->cycle->start() . $this->cycle->key() . $this->serviceID . $this->start.$this->quantity);
+		return md5(	$line['usagev'].$line['charge_op']. $line['aid'] . $line['sid'] . $this->name . $this->cycle->start() . 
+					$this->cycle->key().$this->serviceID . @$line['prorated_start_date'] . $this->start.$this->quantity);
 	}
 
 }

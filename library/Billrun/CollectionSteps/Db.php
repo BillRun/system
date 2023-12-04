@@ -86,12 +86,12 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$triggerDate = strtotime($do_after_days);
 		$triggerDate = $this->getClosestValidTime($triggerDate, $on_hours);
 		$triggerDate = $this->getClosestValidDate($triggerDate, $on_holidays, $on_days);
-		return new MongoDate($triggerDate);
+		return new Mongodloid_Date($triggerDate);
 	}
 
 	public function createCollectionSteps($aid) {
 		$steps = Billrun_Factory::config()->getConfigValue('collection.steps', Array());
-		$create_date = new MongoDate();
+		$create_date = new Mongodloid_Date();
 		$newSteps = array();
 		foreach ($steps as $step) {
 			if ($step['active']) {
@@ -155,8 +155,8 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$step_ttl = "-{$ttl_value} {$ttl_type}";
 		$query = array(
 			'trigger_date' => array(
-				'$lte' => new MongoDate(),
-				'$gte' => new MongoDate(strtotime($step_ttl)),
+				'$lte' => new Mongodloid_Date(),
+				'$gte' => new Mongodloid_Date(strtotime($step_ttl)),
 			),
 			'notify_time' => array('$exists' => false),
 		);
@@ -188,7 +188,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		);
 		$update = array(
 			'$set' => array(
-				'notify_time' => new MongoDate(),
+				'notify_time' => new Mongodloid_Date(),
 				'returned_value' => $response,
 			),
 		);

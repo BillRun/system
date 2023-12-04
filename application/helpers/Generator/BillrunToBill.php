@@ -24,7 +24,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $logo = null;
 	protected $confirmDate;
 	protected $sendEmail = true;
+	protected $sendToRremoteServer = false;
 	protected $filtration = null;
+	protected $invoicing_days = [];
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -33,6 +35,12 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		if (isset($options['send_email'])) {
 			$this->sendEmail = $options['send_email'];
+		}
+		if (isset($options['send_to_remote_server'])) {
+			$this->sendToRremoteServer = $options['send_to_remote_server'];
+		}
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$this->invoicing_days = !empty($options['invoicing_days']) ? [$options['invoicing_days']] : null;
 		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
@@ -48,6 +56,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			'invoice_id' => $invoiceQuery,
 			'allow_bill' => ['$ne' => 0],
 		);
+		if (!empty($this->invoicing_days)) {
+			$query['invoicing_day'] = array('$in' => $this->invoicing_days);
+		}
 		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 
 		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
@@ -79,8 +90,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::dispatcher()->trigger('afterInvoicesConfirmation', array($invoices, (string) $this->stamp));
 		if (count($invoicesIds) > 0) {
 			$this->handleSendInvoicesByMail($invoicesIds);
+			$this->handleSendInvoicesRemoteServer($invoices);
 		} else {
-			Billrun_Factory::log()->log('There are no invoices to send by email. No mail was sent.', Zend_Log::INFO);
+			Billrun_Factory::log()->log('There are no invoices to send by email \ move to remote server. No mail was sent \ moved.', Zend_Log::INFO);
 		}
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
@@ -114,11 +126,17 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'BIC' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bic'],null),
 				'IBAN' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['iban'],null),
 				'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'],null),
-				'urt' => new MongoDate(),
+				'urt' => new Mongodloid_Date(),
 				'invoice_date' => $invoice['invoice_date'],
 				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
                                 'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
 			);
+		if (!empty($invoice['invoicing_day'])) {
+			$bill['invoicing_day'] = $invoice['invoicing_day'];
+		}
+		if (!empty($invoice['uf'])) {
+			$bill['uf'] = $invoice['uf'];
+		}
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];
 		}
@@ -135,7 +153,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$account = Billrun_Factory::account();
 		$foreignData = $this->getForeignFields(array('account' => $account->loadAccountForQuery(['aid' => $invoice['aid']])));
 		$bill = array_merge_recursive($bill, $foreignData);
-		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
+		Billrun_Factory::log('Creating bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice));
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
@@ -147,7 +165,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $data
 	 */
 	protected function updateBillrunONBilled($data) {
-		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1)));
+		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1, 'confirmation_time' => new Mongodloid_Date())));
 	}
 	
 	/**
@@ -235,7 +253,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		);
 	}
 	
-	
+
 	public function handleSendInvoicesByMail($invoices) {
 		if (!$this->sendEmail) {
 			return;
@@ -249,11 +267,65 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::emailSenderManager($options)->notify();
 	}
 	
+	public function handleSendInvoicesRemoteServer($invoices) {
+		if (!$this->sendToRremoteServer) {
+			return;
+		}
+		$connections = $this->getActiveInvoicesRemoteServerSenders($invoices);
+		foreach ($connections as $connection) {
+			$sender = $connection['sender'];
+			if ($sender) {
+				$files = $connection['files'];
+				if (!$sender->send($files)) {
+					Billrun_Factory::log()->log("Move to sender {$connection['name']} - failed!", Zend_Log::NOTICE);
+				} else {
+					Billrun_Factory::log()->log("Move to sender {$connection['name']} - done", Zend_Log::INFO);
+				}
+			} else {
+					Billrun_Factory::log()->log("Cannot get sender {$connection['name']}, files will not be moved.", Zend_Log::ERR);
+			}
+		}
+		Billrun_Factory::log()->log("Billrun_Exporter::move - done", Zend_Log::INFO);
+	}
+	
+	protected function getActiveInvoicesRemoteServerSenders($invoices) {
+		$output = [];
+		$invoices_senders = Billrun_Factory::config()->getConfigValue('invoice_export.senders', []);
+		foreach ($invoices_senders as $invoices_sender) {
+			$is_active = Billrun_Util::getIn($invoices_sender, 'active', false);
+			if (!$is_active) {
+				continue;
+			}
+			$conditions = Billrun_Util::getIn($invoices_sender, 'conditions', []);
+			foreach ($invoices as $invoice) {
+				if ($this->isConditionsMeet($invoice, $conditions)) {
+					$connections = Billrun_Util::getIn($invoices_sender, 'connections', []);
+					foreach ($connections as $connection) {
+						$sender_hash = md5($connection['host'].$connection['user'].$connection['password'].$connection['remote_directory']);
+						if (!array_key_exists($sender_hash, $output)) {
+							$sender = Billrun_Sender::getInstance($connection);
+							$output[$sender_hash]['name'] = $connection['name'];
+							if ($sender) {
+								$output[$sender_hash]['sender'] = $sender;
+							} else {
+								$output[$sender_hash]['sender'] = null;
+							}
+						} else if (is_null($output[$sender_hash])) {
+							continue;
+						}
+						$output[$sender_hash]['files'][] = $invoice['invoice_file'];
+					}
+				}
+			}
+		}
+		return $output;
+	}
+	
 	protected function updateDueDate($invoice) {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'confirm_date' && $this->isConditionsMeet($invoice, $option['conditions'])) {
-				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
+				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
 			}
 		}
 		return $invoice['due_date'];
@@ -266,10 +338,10 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		// go through all config options and try to match the relevant
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'confirm_date' && in_array($invoiceType, $option['invoice_type'])) {				
-				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
+				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
 			}
 			if (in_array($invoiceType, $option['invoice_type']) && !empty($invoice[$option['anchor_field']])) {	
-				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $invoice[$option['anchor_field']]->sec));
+				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $invoice[$option['anchor_field']]->sec));
 			}
 		}
 		
@@ -280,10 +352,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		
 		// else - get config default value or temporerily use 'invoice_date' with offset
 		Billrun_Factory::log()->log('Failed to match charge date for invoice:' . $invoice['invoice_id'] . ', using default configuration', Zend_Log::NOTICE);
-		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.charge_not_before', '+0 seconds'), $this->confirmDate));
+		return new Mongodloid_Date(strtotime(Billrun_Factory::config()->getConfigValue('billrun.charge_not_before', '+0 seconds'), $this->confirmDate));
 	}
 	
 	protected function getForeignFieldsEntity () {
 		return 'bills';
 	}
+	
 }

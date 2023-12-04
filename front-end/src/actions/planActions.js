@@ -129,6 +129,18 @@ const convertPlan = (getState, plan, convertToBaseUnit) => {
     } else if (!planIncludes.isEmpty()) {
       itemWithMutations.set('include', planIncludes);
     }
+    if (!itemWithMutations.hasIn(['recurrence', 'frequency'])) {
+      let frequency = '';
+      const periodicity = itemWithMutations.getIn(['recurrence', 'periodicity'], '');
+      if (periodicity === 'month') {
+        frequency = 1;
+      } else if (periodicity === 'year') {
+        frequency = 12;
+      }
+      itemWithMutations.setIn(['recurrence', 'start'], 1);
+      itemWithMutations.setIn(['recurrence', 'frequency'], frequency);
+      itemWithMutations.deleteIn(['recurrence', 'periodicity']);
+    }
   });
 };
 

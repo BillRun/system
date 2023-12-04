@@ -12,42 +12,43 @@
 namespace Symfony\Component\HttpFoundation\Session\Storage\Handler;
 
 /**
- * NullSessionHandler.
- *
  * Can be used in unit testing or in a situations where persisted sessions are not desired.
  *
  * @author Drak <drak@zikula.org>
  */
-class NullSessionHandler implements \SessionHandlerInterface
+class NullSessionHandler extends AbstractSessionHandler
 {
     /**
-     * {@inheritdoc}
+     * @return bool
      */
-    public function open($savePath, $sessionName)
-    {
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
+    #[\ReturnTypeWillChange]
     public function close()
     {
         return true;
     }
 
     /**
+     * @return bool
+     */
+    #[\ReturnTypeWillChange]
+    public function validateId($sessionId)
+    {
+        return true;
+    }
+
+    /**
      * {@inheritdoc}
      */
-    public function read($sessionId)
+    protected function doRead(string $sessionId)
     {
         return '';
     }
 
     /**
-     * {@inheritdoc}
+     * @return bool
      */
-    public function write($sessionId, $data)
+    #[\ReturnTypeWillChange]
+    public function updateTimestamp($sessionId, $data)
     {
         return true;
     }
@@ -55,7 +56,7 @@ class NullSessionHandler implements \SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function destroy($sessionId)
+    protected function doWrite(string $sessionId, string $data)
     {
         return true;
     }
@@ -63,8 +64,17 @@ class NullSessionHandler implements \SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
+    protected function doDestroy(string $sessionId)
+    {
+        return true;
+    }
+
+    /**
+     * @return int|false
+     */
+    #[\ReturnTypeWillChange]
     public function gc($maxlifetime)
     {
-        return true;
+        return 0;
     }
 }

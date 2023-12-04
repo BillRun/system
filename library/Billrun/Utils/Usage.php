@@ -79,7 +79,7 @@ class Billrun_Utils_Usage {
 			case 'account_subscribers':
 				$subscriber = Billrun_Factory::subscriber();
 				$query = array('aid' => $row['aid'], 'sid' => array('$ne' => $row['sid']),
-					'from' => array('$lt' => new MongoDate()), 'to' => array('$gt' => new MongoDate()));
+					'from' => array('$lt' => new Mongodloid_Date()), 'to' => array('$gt' => new Mongodloid_Date()));
 				return $subscriber->loadSubscriberForQueries([$query]);
 			default:
 				Billrun_Factory::log("Foreign entity type {$entityType} isn't supported.", Zend_Log::DEBUG);
@@ -145,7 +145,7 @@ class Billrun_Utils_Usage {
 
 			foreach ($possibleTimeFields as  $timeField =>  $offset) {
 				if(empty($row[$timeField])) {continue;}
-				$timeValue = $row[$timeField] instanceof MongoDate ?
+				$timeValue = $row[$timeField] instanceof Mongodloid_Date ?
 								$row[$timeField]->sec :
 								@Billrun_Util::getFieldVal($row[$timeField],$defaultTime);
 				$retQueries[] =array_merge( $baseQuery , ['time'=> date(Billrun_Base::base_datetimeformat,$timeValue + $offset) ]);

@@ -24,6 +24,12 @@ services:
         restart: always
         environment:
         - "APPLICATION_ENV=container"
+#        - "BR_MDB_HOST="
+#        - "BR_MDB_PORT="
+#        - "BR_MDB_USER="
+#        - "BR_MDB_PASS="
+#        - "BR_MDB_DBNAME="
+#        - "BR_MDB_AUTHDB="
         volumes:
             - ./../..:/billrun
 

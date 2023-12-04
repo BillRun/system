@@ -7,7 +7,7 @@ defined('APPLICATION_PATH') || define('APPLICATION_PATH', $dir);
 require_once(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARATOR . 'config.php');
 $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
 $app->bootstrap();
-Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+br_yaf_register_autoload('Models', APPLICATION_PATH . '/application/modules/Billapi');
 
 /**
  * Reset and update linking fields between bills (invoices, payments)
@@ -99,8 +99,8 @@ function rebuildRejectionsAndCancelledLinks($aid) {
 					}
 				}
 				$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
-				$origPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedPayment[$complementaryPaymentField]['due'])->save();
-				$complPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedPayment[$complementaryPaymentField]['due'])->save();
+				$origPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedPayment[$complementaryPaymentField]['due'], $unpaidBill->getRawData())->save();
+				$complPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedPayment[$complementaryPaymentField]['due'], $unpaidBill->getRawData())->save();
 			} else {
 				$overPayingBill = current(Billrun_Bill::getOverPayingBills(array('aid' => $aid, 'due' => $matchedPayment[$complementaryPaymentField]['due'])));
 				if ($overPayingBill == false) {

@@ -6,6 +6,7 @@ use Http\Discovery\Exception\ClassInstantiationFailedException;
 use Http\Discovery\Exception\DiscoveryFailedException;
 use Http\Discovery\Exception\NoCandidateFoundException;
 use Http\Discovery\Exception\StrategyUnavailableException;
+use Http\Discovery\Strategy\DiscoveryStrategy;
 
 /**
  * Registry that based find results on class existence.
@@ -19,12 +20,17 @@ abstract class ClassDiscovery
     /**
      * A list of strategies to find classes.
      *
-     * @var array
+     * @var DiscoveryStrategy[]
      */
     private static $strategies = [
-        Strategy\PuliBetaStrategy::class,
+        Strategy\GeneratedDiscoveryStrategy::class,
         Strategy\CommonClassesStrategy::class,
         Strategy\CommonPsr17ClassesStrategy::class,
+        Strategy\PuliBetaStrategy::class,
+    ];
+
+    private static $deprecatedStrategies = [
+        Strategy\PuliBetaStrategy::class => true,
     ];
 
     /**
@@ -50,12 +56,21 @@ abstract class ClassDiscovery
             return $class;
         }
 
+        static $skipStrategy;
+        $skipStrategy ?? $skipStrategy = self::safeClassExists(Strategy\GeneratedDiscoveryStrategy::class) ? false : Strategy\GeneratedDiscoveryStrategy::class;
+
         $exceptions = [];
         foreach (self::$strategies as $strategy) {
+            if ($skipStrategy === $strategy) {
+                continue;
+            }
+
             try {
-                $candidates = call_user_func($strategy.'::getCandidates', $type);
+                $candidates = $strategy::getCandidates($type);
             } catch (StrategyUnavailableException $e) {
-                $exceptions[] = $e;
+                if (!isset(self::$deprecatedStrategies[$strategy])) {
+                    $exceptions[] = $e;
+                }
 
                 continue;
             }
@@ -116,7 +131,7 @@ abstract class ClassDiscovery
     /**
      * Set new strategies and clear the cache.
      *
-     * @param array $strategies string array of fully qualified class name to a DiscoveryStrategy
+     * @param string[] $strategies list of fully qualified class names that implement DiscoveryStrategy
      */
     public static function setStrategies(array $strategies)
     {
@@ -125,9 +140,19 @@ abstract class ClassDiscovery
     }
 
     /**
+     * Returns the currently configured discovery strategies as fully qualified class names.
+     *
+     * @return string[]
+     */
+    public static function getStrategies(): iterable
+    {
+        return self::$strategies;
+    }
+
+    /**
      * Append a strategy at the end of the strategy queue.
      *
-     * @param string $strategy Fully qualified class name to a DiscoveryStrategy
+     * @param string $strategy Fully qualified class name of a DiscoveryStrategy
      */
     public static function appendStrategy($strategy)
     {
@@ -146,9 +171,6 @@ abstract class ClassDiscovery
         self::clearCache();
     }
 
-    /**
-     * Clear the cache.
-     */
     public static function clearCache()
     {
         self::$cache = [];
@@ -156,8 +178,6 @@ abstract class ClassDiscovery
 
     /**
      * Evaluates conditions to boolean.
-     *
-     * @param mixed $condition
      *
      * @return bool
      */
@@ -190,7 +210,7 @@ abstract class ClassDiscovery
     /**
      * Get an instance of the $class.
      *
-     * @param string|\Closure $class A FQCN of a class or a closure that instantiate the class.
+     * @param string|\Closure $class a FQCN of a class or a closure that instantiate the class
      *
      * @return object
      *
@@ -214,21 +234,20 @@ abstract class ClassDiscovery
     }
 
     /**
-     * We want to do a "safe" version of PHP's "class_exists" because Magento has a bug
+     * We need a "safe" version of PHP's "class_exists" because Magento has a bug
      * (or they call it a "feature"). Magento is throwing an exception if you do class_exists()
      * on a class that ends with "Factory" and if that file does not exits.
      *
-     * This function will catch all potential exceptions and make sure it returns a boolean.
+     * This function catches all potential exceptions and makes sure to always return a boolean.
      *
      * @param string $class
-     * @param bool   $autoload
      *
      * @return bool
      */
     public static function safeClassExists($class)
     {
         try {
-            return class_exists($class);
+            return class_exists($class) || interface_exists($class);
         } catch (\Exception $e) {
             return false;
         }

@@ -2,7 +2,9 @@
 
 namespace PhpOffice\PhpSpreadsheet;
 
+use PhpOffice\PhpSpreadsheet\Reader\IReader;
 use PhpOffice\PhpSpreadsheet\Shared\File;
+use PhpOffice\PhpSpreadsheet\Writer\IWriter;
 
 /**
  * Factory to create readers and writers easily.
@@ -36,15 +38,8 @@ abstract class IOFactory
 
     /**
      * Create Writer\IWriter.
-     *
-     * @param Spreadsheet $spreadsheet
-     * @param string $writerType Example: Xlsx
-     *
-     * @throws Writer\Exception
-     *
-     * @return Writer\IWriter
      */
-    public static function createWriter(Spreadsheet $spreadsheet, $writerType)
+    public static function createWriter(Spreadsheet $spreadsheet, string $writerType): IWriter
     {
         if (!isset(self::$writers[$writerType])) {
             throw new Writer\Exception("No writer found for type $writerType");
@@ -52,21 +47,14 @@ abstract class IOFactory
 
         // Instantiate writer
         $className = self::$writers[$writerType];
-        $writer = new $className($spreadsheet);
 
-        return $writer;
+        return new $className($spreadsheet);
     }
 
     /**
-     * Create Reader\IReader.
-     *
-     * @param string $readerType Example: Xlsx
-     *
-     * @throws Reader\Exception
-     *
-     * @return Reader\IReader
+     * Create IReader.
      */
-    public static function createReader($readerType)
+    public static function createReader(string $readerType): IReader
     {
         if (!isset(self::$readers[$readerType])) {
             throw new Reader\Exception("No reader found for type $readerType");
@@ -74,39 +62,28 @@ abstract class IOFactory
 
         // Instantiate reader
         $className = self::$readers[$readerType];
-        $reader = new $className();
 
-        return $reader;
+        return new $className();
     }
 
     /**
      * Loads Spreadsheet from file using automatic Reader\IReader resolution.
      *
-     * @param string $pFilename The name of the spreadsheet file
-     *
-     * @throws Reader\Exception
-     *
-     * @return Spreadsheet
+     * @param string $filename The name of the spreadsheet file
      */
-    public static function load($pFilename)
+    public static function load(string $filename, int $flags = 0): Spreadsheet
     {
-        $reader = self::createReaderForFile($pFilename);
+        $reader = self::createReaderForFile($filename);
 
-        return $reader->load($pFilename);
+        return $reader->load($filename, $flags);
     }
 
     /**
-     * Identify file type using automatic Reader\IReader resolution.
-     *
-     * @param string $pFilename The name of the spreadsheet file to identify
-     *
-     * @throws Reader\Exception
-     *
-     * @return string
+     * Identify file type using automatic IReader resolution.
      */
-    public static function identify($pFilename)
+    public static function identify(string $filename): string
     {
-        $reader = self::createReaderForFile($pFilename);
+        $reader = self::createReaderForFile($filename);
         $className = get_class($reader);
         $classType = explode('\\', $className);
         unset($reader);
@@ -115,15 +92,9 @@ abstract class IOFactory
     }
 
     /**
-     * Create Reader\IReader for file using automatic Reader\IReader resolution.
-     *
-     * @param string $filename The name of the spreadsheet file
-     *
-     * @throws Reader\Exception
-     *
-     * @return Reader\IReader
+     * Create Reader\IReader for file using automatic IReader resolution.
      */
-    public static function createReaderForFile($filename)
+    public static function createReaderForFile(string $filename): IReader
     {
         File::assertFile($filename);
 
@@ -133,7 +104,7 @@ abstract class IOFactory
             $reader = self::createReader($guessedReader);
 
             // Let's see if we are lucky
-            if (isset($reader) && $reader->canRead($filename)) {
+            if ($reader->canRead($filename)) {
                 return $reader;
             }
         }
@@ -155,12 +126,8 @@ abstract class IOFactory
 
     /**
      * Guess a reader type from the file extension, if any.
-     *
-     * @param string $filename
-     *
-     * @return null|string
      */
-    private static function getReaderTypeFromExtension($filename)
+    private static function getReaderTypeFromExtension(string $filename): ?string
     {
         $pathinfo = pathinfo($filename);
         if (!isset($pathinfo['extension'])) {
@@ -200,14 +167,11 @@ abstract class IOFactory
 
     /**
      * Register a writer with its type and class name.
-     *
-     * @param string $writerType
-     * @param string $writerClass
      */
-    public static function registerWriter($writerType, $writerClass)
+    public static function registerWriter(string $writerType, string $writerClass): void
     {
-        if (!is_a($writerClass, Writer\IWriter::class, true)) {
-            throw new Writer\Exception('Registered writers must implement ' . Writer\IWriter::class);
+        if (!is_a($writerClass, IWriter::class, true)) {
+            throw new Writer\Exception('Registered writers must implement ' . IWriter::class);
         }
 
         self::$writers[$writerType] = $writerClass;
@@ -215,14 +179,11 @@ abstract class IOFactory
 
     /**
      * Register a reader with its type and class name.
-     *
-     * @param string $readerType
-     * @param string $readerClass
      */
-    public static function registerReader($readerType, $readerClass)
+    public static function registerReader(string $readerType, string $readerClass): void
     {
-        if (!is_a($readerClass, Reader\IReader::class, true)) {
-            throw new Reader\Exception('Registered readers must implement ' . Reader\IReader::class);
+        if (!is_a($readerClass, IReader::class, true)) {
+            throw new Reader\Exception('Registered readers must implement ' . IReader::class);
         }
 
         self::$readers[$readerType] = $readerClass;

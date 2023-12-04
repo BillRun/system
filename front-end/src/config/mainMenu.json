@@ -118,7 +118,7 @@
     "parent": "root"
   },
   "cycle": {
-    "title": "Billing Cycle",
+    "title": "Maintenance",
     "icon": "fa-clock-o",
     "route": "",
     "show": true,
@@ -127,9 +127,18 @@
     "parent": "root"
   },
   "run_cycle": {
-    "title": "Run",
+    "title": "Run a Billing Cycle",
     "icon": "",
     "route": "run_cycle",
+    "show": true,
+    "roles": [],
+    "order":0,
+    "parent":"cycle"
+  },
+  "suggestions": {
+    "title": "Repricing Suggestions",
+    "icon": "",
+    "route": "suggestions",
     "show": true,
     "roles": [],
     "order":0,
@@ -160,6 +169,15 @@
     "show": true,
     "roles": [],
     "order": 1,
+    "parent": "account_receivables"
+  },
+  "receive-custom-payment-files": {
+    "title": "Transactions Response File",
+    "icon": "",
+    "route": "response-custom-payment-files",
+    "show": true,
+    "roles": [],
+    "order": 2,
     "parent": "account_receivables"
   },
   "tax": {
