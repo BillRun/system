@@ -133,3 +133,6 @@ push:
  when: manual
  only:
    - tags
+
+include:
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
