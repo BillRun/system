@@ -223,21 +223,15 @@ class Billrun_Cycle_Subscriber_Invoice {
 				Billrun_Factory::log("Found rate " . $id_str . " in cycle rates cache" ,Zend_Log::DEBUG);
 				return $this->rates[$id_str];
 			} else {
-				Billrun_Factory::log("Didn't find rate in cycle rates cache. Searching in db using arate_key and line urt" ,Zend_Log::DEBUG);
-				$query = array(
-						'key' => $row['arate_key'],
-						'from' => array('$lte' => new Mongodloid_Date($row['urt']->sec)),
-						'to' => array('$gt' => new Mongodloid_Date($row['urt']->sec))
-				);
-				$res = Billrun_Factory::db()->ratesCollection()->find($query)->sort(array('from' => -1));
-				if (count($res) > 1) {
-						Billrun_Factory::log("Found more than 1 rate. Taking the latest" ,Zend_Log::NOTICE);
+				Billrun_Factory::log("Didn't find rate " . $id_str . " in rates cache. Searching relevant rate by Db ref" ,Zend_Log::DEBUG);
+				$rate = Billrun_Rates_Util::getRateByRef($raw_rate, true)->getRawData();
+				if (empty($rate)) {
+					Billrun_Factory::log("Didn't find rate " . $id_str . " using db ref. Searching relevant rate by time" ,Zend_Log::DEBUG);
+					$rate = Billrun_Rates_Util::getRateByName($row['arate_key'], $row['urt']->sec);
 				} else {
-						if (count($res) == 0) {
-								Billrun_Factory::log("Didn't find matching rate for row " . $row['stamp'] ,Zend_Log::ERR);
-						}
+					Billrun_Factory::log("Found rate " . $id_str . " using ref" ,Zend_Log::DEBUG);
 				}
-				$res = $res->current();
+				$res = $rate;
 			}
 		} else {
 			$res = $this->rates[$col_str][$id_str];
