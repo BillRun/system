@@ -220,16 +220,16 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$col_str = strval($raw_rate['$ref']);
 		if(!isset($this->rates[$col_str][$id_str])) {
 			if (isset($this->rates[$id_str])) {
-				Billrun_Factory::log("Found rate " . $id_str . " in cycle rates cache" ,Zend_Log::DEBUG);
+				Billrun_Factory::log("Found rate " . $row['arate_key'] . " in cycle rates cache, using ref " . $id_str ,Zend_Log::DEBUG);
 				return $this->rates[$id_str];
 			} else {
-				Billrun_Factory::log("Didn't find rate " . $id_str . " in rates cache. Searching relevant rate by Db ref" ,Zend_Log::DEBUG);
+				Billrun_Factory::log("Didn't find rate " . $row['arate_key'] . " in rates cache. Searching relevant rate by Db ref " . $id_str ,Zend_Log::DEBUG);
 				$rate = Billrun_Rates_Util::getRateByRef($raw_rate, true)->getRawData();
 				if (empty($rate)) {
-					Billrun_Factory::log("Didn't find rate " . $id_str . " using db ref. Searching relevant rate by time" ,Zend_Log::DEBUG);
+					Billrun_Factory::log("Didn't find rate " . $row['arate_key'] . " using db ref " . $id_str . ". Searching relevant rate by time" ,Zend_Log::DEBUG);
 					$rate = Billrun_Rates_Util::getRateByName($row['arate_key'], $row['urt']->sec);
 				} else {
-					Billrun_Factory::log("Found rate " . $id_str . " using ref" ,Zend_Log::DEBUG);
+					Billrun_Factory::log("Found rate " . $row['arate_key'] . " using ref " . $id_str ,Zend_Log::DEBUG);
 				}
 				$res = $rate;
 			}
@@ -254,7 +254,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		if (!$breakdownKey = $this->getBreakdownKey($row)) {
 			return;
 		}
-		Billrun_Factory::log("Searching for row's rate" ,Zend_Log::DEBUG);
+		Billrun_Factory::log("Searching rate for row " . $row['stamp'] ,Zend_Log::DEBUG);
 		$rate = $this->getRowRate($row);
                 if($this->groupingEnabled){
                         $this->addGroupToTotalGrouping($row);
