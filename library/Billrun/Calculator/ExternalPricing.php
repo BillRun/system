@@ -95,7 +95,7 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 				}
 			} else {
 				//keep the cdr in the queue
-				Billrun_Factory::log("External pricing CDR with stamp {$row['stamp']} returned  with invalid  state : {$row['status']}.",Zend_Log:WRAN);
+				Billrun_Factory::log("External pricing CDR with stamp {$row['stamp']} returned  with invalid  state : {$row['status']}.",Zend_Log::WRAN);
 				return false;
 			}
 			if(empty($row['source_stamp'])) {
