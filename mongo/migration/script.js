@@ -37,19 +37,21 @@ function removeFieldFromConfig(lastConf, field_names, entityName) {
 // Perform specific migrations only once
 // Important note: runOnce is guaranteed to run some migration code once per task code only if the whole migration script completes without errors.
 function runOnce(lastConfig, taskCode, callback) {
-    print("running task " + taskCode);
     if (typeof lastConfig.past_migration_tasks === 'undefined') {
         lastConfig['past_migration_tasks'] = [];
     }
     taskCode = taskCode.toUpperCase();
     if (!lastConfig.past_migration_tasks.includes(taskCode)) {
         if (new RegExp(/.*-\d+$/).test(taskCode)) {
+            print("running task " + taskCode);
             callback();
             lastConfig.past_migration_tasks.push(taskCode);
         }
         else {
             print('Illegal task code ' + taskCode);
         }
+    } else {
+        print('task ' + taskCode + ' already applied in this environment');
     }
     return lastConfig;
 }
