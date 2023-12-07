@@ -89,10 +89,11 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 				$updateValues = ['external_pricing_state'=>static::STATE_PRICED,'aprice'=> $row['price']];
 			} else if( in_array($row['status'], static::RESULT_PRICED_FAILED) ) {
 				// otherwise mark the original line as failed
-				$updateValues = ['external_pricing_state'=>static::STATE_FAILED];
+				$updateValues = ['external_pricing_state'=>static::STATE_FAILED, 'external_pricing_status_code' => $row['status'] ];
 				if($this->keepFailedPricingCDRsInQueue) {
 					return false;
 				}
+				Billrun_Factory::db()->queueCollection()->findAndModify(['type'=>'nsn','stamp'=>$row['source_stamp']],['$set'=>$updateValues],$this->FandMOpts);
 			} else {
 				//keep the cdr in the queue
 				Billrun_Factory::log("External pricing CDR with stamp {$row['stamp']} returned  with invalid  state : {$row['status']}.",Zend_Log::WRAN);
@@ -108,7 +109,7 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 				//	if update unsecussful keep external pricing line in the queue.
 				return  false;
 			} else {
-				//if update sucessfull update the queue line o it  will be processed as soon as possible (don't updateit  if it in the middle of calculation)
+				//if update sucessfull update the queue line so it  will be processed as soon as possible (don't updateit  if it in the middle of calculation)
 				Billrun_Factory::db()->queueCollection()->findAndModify(['type'=>'nsn','stamp'=>$row['source_stamp'],'calc_time'=>['$lt'=>strtotime('-2 minutes')]],['$set'=>['calc_time'=>false]]);
 			}
 
