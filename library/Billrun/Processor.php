@@ -448,6 +448,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function getFileForProcessing() {
 		$log = Billrun_Factory::db()->logCollection();
+		list($query, $update, $options) = $this->getLogFileQuery();
+		$file = $log->findAndModify($query, $update, array(), $options);
+		$file->collection($log);
+		return $file;
+	}
+
+	protected function getLogFileQuery(){
 		$adoptThreshold = strtotime('-' . $this->orphandFilesAdoptionTime);
 
 		// verify minimum orphan time to avoid parallel processing
@@ -480,9 +487,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			),
 			'new' => true,
 		);
-		$file = $log->findAndModify($query, $update, array(), $options);
-		$file->collection($log);
-		return $file;
+		return [$query, $update, $options];
 	}
 
 	public function fgetsIncrementLine($file_handler) {

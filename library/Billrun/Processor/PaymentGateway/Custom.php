@@ -454,4 +454,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		Billrun_Factory::log($message, $level);
 		$this->informationArray[$type][] = $message;
 	}
+
+	protected function getFileForProcessing() {
+		$log = Billrun_Factory::db()->logCollection();
+		list($query, $update, $options) = $this->getLogFileQuery();
+		$query['file_type'] = $this->fileType;
+		$file = $log->findAndModify($query, $update, array(), $options);
+		$file->collection($log);
+		return $file;
+	}
 }
