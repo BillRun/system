@@ -124,6 +124,40 @@ trait Billrun_Traits_FileActions {
 	}
 
 	/**
+	 * Method to check if the file is allready being received
+	 * @return bollean true  if the file wasn't receive and can be fetched to the workspace or false if another process allready received the file.
+	 */
+	protected function lockFileForGeneration($filename, $type, $more_fields = array(), $orphan_window = false) {
+		$log = Billrun_Factory::db()->logCollection();
+		$orphan_window = $orphan_window ? $orphan_window : $this->file_fetch_orphan_time;
+		$logData = $this->getFileLogData($filename, $type, $more_fields);
+		$query = array(
+			'stamp' => $logData['stamp'],
+			'file_name' => $filename,
+			'generation_time' => array('$lt' => new MongoDate(time() - $orphan_window))
+		);
+
+		$update = array(
+			'$set' => array(
+				'generation_time' => new MongoDate(time()),
+				'generator_host' => Billrun_Util::getHostName(),
+			),
+			'$setOnInsert' => $logData
+		);
+		try {
+			$result = $log->update($query, $update, array('upsert' => 1, 'w' => 1));
+		} catch (Exception $e) {
+			if ($e->getCode() == 11000) {
+				Billrun_Factory::log()->log("Billrun_Traits_FileActions::lockFileForGeneration - Trying to relock  a file the was already beeen locked : " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::DEBUG);
+			} else {
+				throw $e;
+			}
+			return FALSE;
+		}
+		return $result['n'] == 1 && $result['ok'] == 1;
+	}
+
+	/**
 	 * build the structure that will be used as a base to log the file in the DB, and generate the file uniqe stamp.
 	 * @param type $filename
 	 * @param type $type

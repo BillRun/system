@@ -16,6 +16,9 @@
  */
 class Generator_ExternalPricing  extends Billrun_Generator {
 
+	use Billrun_Traits_FileActions;
+
+	static protected $type = 'external_pricing';
 
 	protected $validFuncs = ['intval','floatval','date','sprintf','sumArguments'];
 	 /**
@@ -30,6 +33,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 	* @var int $generationTime The generation time in seconds since  epoch.
 	*/
 	protected $generationTime = 0;
+
 
 	public function __construct(array $options) {
 	    parent::__construct($options);
@@ -66,10 +70,10 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 		$generatedData = [];
 		$this->generationTime = time();
 
-		$generatedData[] = $this->getHeader($this->dataStructure['header']);
+		$generatedData[] = $this->getHeader(@$this->dataStructure['header']);
 
 		foreach($this->data as $row) {
-			$generatedData[] = $this->getDataLine($row, $this->dataStructure['data'], $this->dataStructure['field_generation']);
+			$generatedData[] = $this->getDataLine($row, @$this->dataStructure['data'], $this->dataStructure['field_generation']);
 		}
 
 		if( count($generatedData) == 1 ) {
@@ -77,7 +81,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 			return true;
 		}
 
-		$generatedData[] =  $this->getFooter($this->dataStructure['trailer'], $generatedData);
+		$generatedData[] =  $this->getFooter(@$this->dataStructure['trailer'], $generatedData);
 
 		if(!$this->write($generatedData)) {
 			Billrun_Factory::log('Failed to write the external pricing file.', Zend_Log::ERR);
@@ -88,6 +92,12 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 				Billrun_Factory::log('Failed to mark all queue lines as generated', Zend_Log::ERR);
 				return false;
 		}
+
+		if( !$this->logFileGeneration() ) {
+			Billrun_Factory::log('Failed to log the  generated file lines as generated', Zend_Log::ERR);
+			return false;
+		}
+
 		Billrun_Factory::log('generated '.count($generatedData).' lines to '.$this->getFullFilePath(),Zend_Log::INFO);
  		return true;
 	}
@@ -216,6 +226,26 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 	protected function sumArguments() {
 		$args = func_get_args();
 		return array_sum($args);
+	}
+
+	/**
+	* Logs the generation of a file and locks it for further processing.
+	*
+	* This method records the details of a generated log file, including the file name,
+	* export path, and the count of stamps (lines) to be logged. It then locks the file
+	* for generation using the `lockFileForGeneration` method, indicating that a file
+	* has been successfully generated.
+	*
+	* @return bool
+	*   Returns a boolean indicating the success of locking the file for generation.
+	*/
+	protected function logFileGeneration() {
+		$fileData = [
+			'file_name' => $this->getFilename(),
+			'export_path' => $this->getFullFilePath(),
+			'line_count' => count($this->stamps)
+		];
+		return $this->lockFileForGeneration($fileData['file_name'], static::$type.'_export', $fileData);
 	}
 }
 
