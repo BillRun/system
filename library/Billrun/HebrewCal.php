@@ -183,11 +183,11 @@ class Billrun_HebrewCal {
 		$holidays = $holidays ? $holidays : self::getHolidaysForYear($unixtime);
 		$jewishDate = preg_replace("/\/\d+$/", "", preg_replace("/(?=\b)([1-9])(?=\b)/", "0$1", self::getHebrewDate($unixtime)));
 
-		if (isset($holidays[$jewishDate])) {
-			return $holidays[$jewishDate];
-		}
 		if (isset($weekends[date('w', $unixtime)])) {
 			return $weekends[date('w', $unixtime)];
+		}
+		if (isset($holidays[$jewishDate])) {
+			return $holidays[$jewishDate];
 		}
 
 		return HEBCAL_WEEKDAY;
