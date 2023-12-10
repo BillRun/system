@@ -132,6 +132,9 @@
 	"paymentsTransactionsResponse":{
 		"fields": []
 	},
+	"paymentsTransactionsRequest":{
+		"fields": []
+	},
 	"taxes": {
 		"fields": [
 			{
