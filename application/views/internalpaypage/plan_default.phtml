@@ -8,10 +8,10 @@
 											<i class="material-icons">keyboard_arrow_down</i>
 										</a>
 
-										<h5 class="plan-title"><?php echo htmlspecialchars($plans[0]['name']);?></h5><!-- /.plan-title -->
+										<h5 class="plan-title"><?php echo htmlspecialchars(is_string($plans[0]['name']) ? $plans[0]['name'] : '');?></h5><!-- /.plan-title -->
 
-										<p><?php echo htmlspecialchars($plans[0]['description']);?></p>
-										<input type="hidden" name="plan" id="plan" class="form-control" value="<?php echo htmlspecialchars($plans[0]['name']); ?>"/>
+										<p><?php echo htmlspecialchars(is_string($plans[0]['description']) ? $plans[0]['description'] : '');?></p>
+										<input type="hidden" name="plan" id="plan" class="form-control" value="<?php echo htmlspecialchars(is_string($plans[0]['name']) ? $plans[0]['name'] : '');?>"/>
 										<div class="plan-body">
 											<div class="plan-aside">
 												Monthly charging

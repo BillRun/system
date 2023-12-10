@@ -85,7 +85,7 @@ class ErrorController extends Yaf_Controller_Abstract {
 			   $output['data']['message'] = $exception->getMessage() . "\n";
 			   break;
 	   }
-		 $output['data']['message'] = htmlspecialchars($output['data']['message']);
+		 $output['data']['message'] = htmlspecialchars(is_string($output['data']['message']) ? $output['data']['message'] : '');
 	   return json_encode($output);
 	}
 }

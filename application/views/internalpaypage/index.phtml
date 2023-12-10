@@ -9,10 +9,10 @@
 		<div class="shell">
 			<a href="#" class="logo">
 				<span class="logo-icon">
-					<img src="<?php echo $company_image; ?>" alt="<?php echo htmlspecialchars($tenant['name']); ?>" />
+					<img src="<?php echo $company_image; ?>" alt="<?php echo htmlspecialchars(is_string($tenant['name']) ? $tenant['name'] : ''); ?>" />
 				</span>
 
-				<span class="text"><?php echo htmlspecialchars($tenant['name']);?></span>
+				<span class="text"><?php echo htmlspecialchars(is_string($tenant['name']) ? $tenant['name'] : '');?></span>
 			</a>
 
 			<div class="header-aside">
