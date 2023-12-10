@@ -333,6 +333,11 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @return integer Price after vat.
 	 */
 	protected function addLineVatableData($pricingData, $breakdownKey,$taxData = array()) {
+		Billrun_Factory::dispatcher()->trigger('beforeAddLineVatableData', array($this, $pricingData, $breakdownKey,&$taxData));
+		if (isset($taxData['add_to_breakdown']) && !$taxData['add_to_breakdown']) {
+			Billrun_Factory::log('Tax data should not be added to billrun ' . $breakdownKey . ' breakdown', Zend_Log::DEBUG);
+			return $pricingData['aprice'];
+		}
 		if(!empty($taxData['total_amount']) ) {
 			$this->data['totals']['vatable'] = Billrun_Util::getFieldVal($this->data['totals']['vatable'], 0) + $pricingData['aprice'];
 			$this->data['totals'][$breakdownKey]['vatable'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['vatable'], 0) + $pricingData['aprice'];
