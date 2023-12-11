@@ -181,15 +181,30 @@ class Billrun_HebrewCal {
 	public static function getDayType($unixtime, $weekends = false, $holidays = false) {
 		$weekends = $weekends ? $weekends : array('6' => HEBCAL_WEEKEND);
 		$holidays = $holidays ? $holidays : self::getHolidaysForYear($unixtime);
+		$types = [];
+		
 		$jewishDate = preg_replace("/\/\d+$/", "", preg_replace("/(?=\b)([1-9])(?=\b)/", "0$1", self::getHebrewDate($unixtime)));
-
-		if (isset($weekends[date('w', $unixtime)])) {
-			return $weekends[date('w', $unixtime)];
-		}
-		if (isset($holidays[$jewishDate])) {
-			return $holidays[$jewishDate];
+		if (isset($holidays[$jewishDate]) ) {
+			$types[] = $holidays[$jewishDate];
 		}
 
+		$day_num = date('w', $unixtime);
+		if (isset($weekends[$day_num])) {
+			$types[] = $weekends[$day_num];
+		}
+
+		if (in_array(HEBCAL_HOLIDAY, $types)) {
+			return HEBCAL_HOLIDAY;
+		}
+		if (in_array(HEBCAL_WEEKEND, $types)) {
+			return HEBCAL_WEEKEND;
+		}
+		if (in_array(HEBCAL_SHORTDAY, $types)) {
+			return HEBCAL_SHORTDAY;
+		}
+		if (in_array(HEBCAL_WORKDAY, $types)) {
+			return HEBCAL_WORKDAY;
+		}
 		return HEBCAL_WEEKDAY;
 	}
 
