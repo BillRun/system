@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y \
 RUN  wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb' \
 	&& apt install -y ./wkhtmltox_0.12.5-1.buster_amd64.deb
 
+RUN docker-php-ext-configure calendar && docker-php-ext-install calendar
+
 # install jsignpdf
 RUN wget -O /tmp/jsignpdf.zip https://github.com/JSignPdf/JSignPdfBin/archive/refs/tags/1.0.1.zip
 RUN unzip /tmp/jsignpdf.zip -d /tmp
