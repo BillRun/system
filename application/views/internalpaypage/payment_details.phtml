@@ -6,8 +6,8 @@
 						<ul class="list-radios">
 						<?php 
 						foreach ($payment_gateways as $pg) : 
-							$gpName = htmlspecialchars($pg['name']);
-							$gpTitle = htmlspecialchars($pg['title']);
+							$gpName = htmlspecialchars(is_string($pg['name']) ? $pg['name'] : '');
+							$gpTitle = htmlspecialchars(is_string($pg['title']) ? $pg['title'] : '');
 						?>
 							<li>
 								<div class="radio radio-cards">
