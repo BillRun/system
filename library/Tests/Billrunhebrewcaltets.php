@@ -6,7 +6,7 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 /**
- * Billing Billrun_HebrewCal for Hebrew calendar
+ *  unit test for Billrun_HebrewCal for Hebrew calendar
  *
  * @package  Billrun_HebrewCal
  * @since    0.5
