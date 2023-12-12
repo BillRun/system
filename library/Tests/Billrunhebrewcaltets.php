@@ -6,9 +6,9 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 /**
- * Billing calculator for finding rates  of lines
+ * Billing Billrun_HebrewCal for Hebrew calendar
  *
- * @package  calculator
+ * @package  Billrun_HebrewCal
  * @since    0.5
  */
 
