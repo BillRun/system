@@ -70,7 +70,7 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 					$associatedQueueLine = Billrun_Factory::db()->queueCollection()->findAndModify(['type'=>'nsn','stamp'=>$row['stamp']],['$set'=>['external_pricing_state'=>static::STATE_FAILED]],$this->FandMOpts);
 					$this->lines[$row['stamp']]['external_pricing_state'] = static::STATE_FAILED;
 					return false;
-			} else {//	otherwise
+			} else {//	otherwise (Thats  probably  the first time we see the line)
 				if( empty($row['external_pricing_state']) ) {
 					//unset from the cycle and mark the  line as waiting.
 					unset($this->lines[$row['stamp']]['billrun']);
