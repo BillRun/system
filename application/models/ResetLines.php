@@ -357,7 +357,7 @@ class ResetLinesModel {
                                 'calc_name' => false,
                                 'calc_time' => false,
                                 'skip_fraud' => true,
-            'reset_query_hash' => key($this->conditions[$line['aid']])
+            'reset_query_hash' => key($this->conditions[$line['aid']] ?? [])
                         );
 			$this->aggregateLineUsage($line);
         Billrun_Factory::log("after aggregateLineUsage", Zend_Log::DEBUG);
