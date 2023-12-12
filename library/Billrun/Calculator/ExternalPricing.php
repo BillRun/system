@@ -31,6 +31,7 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 	protected $pricingField = self::DEF_CALC_DB_FIELD;
 	protected $relevantRateKeysRegex = [];
 	protected $keepFailedPricingCDRsInQueue =false;
+	protected $extPricingActivationDate=false;
 
 	public function __construct(array $options = array()) {
 	    parent::__construct($options);
@@ -40,6 +41,8 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 
 		$this->relevantRateKeysRegex = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.relevant_rates',$this->relevantRateKeysRegex);
 		$this->keepFailedPricingCDRsInQueue = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.keep_failed_pricing_cdrs_in_queue',$this->keepFailedPricingCDRsInQueue);
+
+		$this->extPricingActivationDate = new MongoDate( strtotime(Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.external_pricing_activation_date','2023-12-24')));
 	}
 
 
@@ -120,9 +123,10 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 	public function isLineLegitimate($line) {
 		//is the line need external pricing or is the line is external pricing and it has out/over plan usage
 
-		return $line['type'] === 'ild_external_pricing' ||
+		return $line['urt'] > $this->extPricingActivationDate  && (
+				$line['type'] === 'ild_external_pricing' ||
 				$line['type'] =='nsn' && !empty($line['arate_key']) && !empty(array_filter($this->relevantRateKeysRegex, function ($rte) use ($line) {
-					return preg_match('/^'.$rte.'$/',$line['arate_key']);})) && (!empty($line['over_plan']) ||!empty($line['out_plan']));
+					return preg_match('/^'.$rte.'$/',$line['arate_key']);})) && (!empty($line['over_plan']) ||!empty($line['out_plan'])));
 	}
 
 	 public function getCalculatorQueueType() {
