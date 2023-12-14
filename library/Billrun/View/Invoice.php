@@ -289,18 +289,21 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function createSubscriberInvoiceTables($lines, $flatTypes = [], $usageTypes = [], $details_keys = []) {
 		$config = Billrun_Factory::config();
 		$invoice_display = $config->getInvoiceDisplayConfig();
-		$lines = array_filter($lines, function($line) {
+		if (is_a($lines, 'Traversable')) {
+			$lines = iterator_to_array($lines);
+		}
+		$lines_filtered = array_filter($lines, function($line) {
 			return $line['sid'] != 0;
 		});
-		$this->buildNotCustomTabels($lines, $flatTypes, false, $details_keys);
+		$this->buildNotCustomTabels($lines_filtered, $flatTypes, false, $details_keys);
 		if (!empty($tabels_config = $invoice_display['usage_details']['tables'])) {
-			foreach ($lines as $index => $line) {
+			foreach ($lines_filtered as $index => $line) {
 				if (in_array($line['type'], $usageTypes)) {
 					$this->associateLineToTable($line, $tabels_config, $details_keys);
 				}
 			}
 		} else {
-			$this->buildNotCustomTabels($lines, $usageTypes, true, $details_keys);
+			$this->buildNotCustomTabels($lines_filtered, $usageTypes, true, $details_keys);
 		}
 	}
 
