@@ -36,14 +36,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
 		$this->informationArray['type'] = 'custom_payment_gateway';
 		$this->informationArray['creation_type'] = new Mongodloid_Date();
-		$this->informationArray['fileType'] = 'received';
-		$this->informationArray['total_denied_amount'] = 0;
-		$this->informationArray['total_confirmed_amount'] = 0;
-		$this->informationArray['total_rejected_amount'] = 0;
-		$this->informationArray['transactions']['confirmed'] = 0;
-		$this->informationArray['transactions']['rejected'] = 0;
-		$this->informationArray['transactions']['denied'] = 0;
-		$this->informationArray['last_file'] = false;
+		$this->resetInformationArray();
 		$this->now = time();
 	}
 
@@ -99,7 +92,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		}
 		$this->data['header'] = array('header' => TRUE); //TODO
         $this->data['trailer'] = array('trailer' => TRUE); //TODO
-
+		$this->resetInformationArray();
 		return true;
 	}
         
@@ -453,5 +446,19 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	public function handleLogMessages($message, $level, $type) {
 		Billrun_Factory::log($message, $level);
 		$this->informationArray[$type][] = $message;
+	}
+
+	protected function resetInformationArray() {
+		$this->informationArray['fileType'] = 'received';
+		$this->informationArray['total_denied_amount'] = 0;
+		$this->informationArray['total_confirmed_amount'] = 0;
+		$this->informationArray['total_rejected_amount'] = 0;
+		$this->informationArray['transactions']['confirmed'] = 0;
+		$this->informationArray['transactions']['rejected'] = 0;
+		$this->informationArray['transactions']['denied'] = 0;
+		$this->informationArray['last_file'] = false;
+		$this->informationArray['errors'] = [];
+		$this->informationArray['warnings'] = [];
+		$this->informationArray['info'] = [];
 	}
 }
