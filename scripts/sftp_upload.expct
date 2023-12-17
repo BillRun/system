@@ -1,0 +1,16 @@
+#!/usr/bin/expect
+
+spawn sftp billrun@172.29.20.30
+expect "password:"
+send "b1llr@n\n"
+expect "sftp>"
+set argv1 [lindex $argv 0]
+set argv2 [lindex $argv 1]
+send "ls $argv1 /data/tmp/International_calls/from_golan\n"
+expect "sftp>"
+send "put $argv1 /data/tmp/International_calls/from_golan/\n"
+expect "sftp>"
+send "chgrp 1001 /data/tmp/International_calls/from_golan/$argv2\n"
+expect "sftp>"
+send "chmod 664 /data/tmp/International_calls/from_golan/$argv2\n"
+expect "sftp>
