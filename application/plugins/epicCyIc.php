@@ -9,17 +9,20 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->ict_configuration = !empty($options['ict']) ? $options['ict'] : [];
 	}
 
-/*
-	EPICIC-56: Invoice only customers that are flagged as "active" ones
-*/
-	public function afterAggregatorLoadData($arr, &$data){ 
-		for ($i = 0; $i < sizeof($data); $i++) {
-      $rawData_bill = $data[$i]->getInvoice()->getRawData()['attributes']['billable'];	
-      if (isset($rawData_bill) && !$rawData_bill) {
-				unset($data[$i]);	
-			}
-		}
-	}	
+    /*
+            EPICIC-56: Invoice only customers that are flagged as "active" ones
+    */
+    public function afterAggregatorLoadData($arr, &$data) {
+        if (Billrun_Util::getIn($this->ict_configuration, "billable_flagged.enable", true)) {
+            $dataSize = sizeof($data);
+            for ($i = 0; $i < $dataSize; $i++) {
+                $rawData_bill = $data[$i]->getInvoice()->getRawData()['attributes']['billable'];
+                if (isset($rawData_bill) && !$rawData_bill) {
+                    unset($data[$i]);
+                }
+            }
+        }
+    }
 
 	public function beforeImportRowFormat(&$row, $operation, $requestCollection, $update) {
 		if ($operation == "permanentchange") {
