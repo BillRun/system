@@ -6036,7 +6036,7 @@ lastConfig["export_generators"][0] =
 var conf = {
     //EPICIC-52
     'billrun.compute.suggestions.rate_recalculations.enabled': 1,
-	'log.debug.filterParams.priority.v': 5
+	'log.debug.filterParams.priority.v': 7
 
 };
 lastConfig = addToConfig(conf, lastConfig);
@@ -10403,8 +10403,32 @@ lastConfig = runOnce(lastConfig, 'EPICIC-175', function () {
 
 lastConfig = runOnce(lastConfig, 'EPICIC-179', function () {
 	lastConfig.log.debug.filterParams.priority.v = 7;
-});	
+});
 
+lastConfig = runOnce(lastConfig, 'EPICIC-162', function () {
+	lastConfig['notifications_settings']=
+	 [
+        {
+            "file_type" : "ICT",
+            "monitoring" : {
+                "enabled" : true,
+                "receive_alert_after" : 100000,
+                "recurrence" : {
+                    "type" : "minutely",
+                    "value" : 30
+                },
+                "files_num" : 1,
+                "process_alert_after" : 1,
+                "notify_by_email" : {
+                    "use_global_addresses" : true,
+                    "additional_addresses" : [
+                        "TD-BILIN@epic.com.cy",
+                    ]
+                },
+            }
+        }
+    ]
+});
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
