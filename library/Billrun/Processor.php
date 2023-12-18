@@ -448,13 +448,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function getFileForProcessing() {
 		$log = Billrun_Factory::db()->logCollection();
-		list($query, $update, $options) = $this->getLogFileQuery();
-		$file = $log->findAndModify($query, $update, array(), $options);
-		$file->collection($log);
-		return $file;
-	}
-
-	protected function getLogFileQuery(){
 		$adoptThreshold = strtotime('-' . $this->orphandFilesAdoptionTime);
 
 		// verify minimum orphan time to avoid parallel processing
@@ -462,19 +455,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log("Processor orphan time less than one hour: " . $this->orphandFilesAdoptionTime . ". Please set value greater than or equal to one hour. We will take one hour for now", Zend_Log::NOTICE);
 			$adoptThreshold = time() - 3600;
 		}
-		$query = array(
-			'source' => !empty($this->receiverSource) ? $this->receiverSource :static::$type,
-			'process_time' => array(
-				'$exists' => false,
-			),
-			'$or' => array(
-				array('start_process_time' => array('$exists' => false)),
-				array('start_process_time' => array('$lt' => new Mongodloid_Date($adoptThreshold))),
-			),
-			'received_time' => array(
-				'$exists' => true,
-			),
-		);
+		$query = $this->getLogFileQuery($adoptThreshold);
 		$update = array(
 			'$set' => array(
 				'start_process_time' => new Mongodloid_Date(time()),
@@ -487,7 +468,25 @@ abstract class Billrun_Processor extends Billrun_Base {
 			),
 			'new' => true,
 		);
-		return [$query, $update, $options];
+		$file = $log->findAndModify($query, $update, array(), $options);
+		$file->collection($log);
+		return $file;
+	}
+
+	protected function getLogFileQuery($adoptThreshold) {
+		return array(
+			'source' => !empty($this->receiverSource) ? $this->receiverSource :static::$type,
+			'process_time' => array(
+				'$exists' => false,
+			),
+			'$or' => array(
+				array('start_process_time' => array('$exists' => false)),
+				array('start_process_time' => array('$lt' => new Mongodloid_Date($adoptThreshold))),
+			),
+			'received_time' => array(
+				'$exists' => true,
+			),
+		);
 	}
 
 	public function fgetsIncrementLine($file_handler) {
