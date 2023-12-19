@@ -14,17 +14,20 @@
  */
 class Billrun_View_Invoice extends Yaf_View_Simple {
 	
-	public $lines = array();
-	protected $subServices = [];
-	protected $tariffMultiplier = array(
-		'call' => 60,
-		'incoming_call' => 60,
-		'data' => 1024*1024
-	);
-	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^972/'=>'0');
-	public $invoice_flat_tabels = [];
-	public $invoice_usage_tabels = [];
-	public $details_keys = [];
+	// !!! do not define class properties !!!
+	// the next class properties removed due to yaf failure, php segfault
+//	public $lines = array();
+//	protected $subServices = [];
+//	protected $tariffMultiplier = array(
+//		'call' => 60,
+//		'incoming_call' => 60,
+//		'data' => 1024*1024
+//	);
+//	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^972/'=>'0');
+//	public $invoice_flat_tabels = [];
+//	public $invoice_usage_tabels = [];
+//	public $details_keys = [];
+	// !!! do not define class properties !!!
 	
 	/*
 	 * get and set lines of the account
@@ -197,7 +200,12 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			
 			}
 		}
-		$retTariff = (empty($tariff) ? 0 : Billrun_Tariff_Util::getTariffForVolume($tariff, 0))  * Billrun_Util::getFieldVal($this->tariffMultiplier[$usaget], 1);
+		$tariffMultiplier = array(
+			'call' => 60,
+			'incoming_call' => 60,
+			'data' => 1024 * 1024
+		);
+		$retTariff = (empty($tariff) ? 0 : Billrun_Tariff_Util::getTariffForVolume($tariff, 0))  * Billrun_Util::getFieldVal($tariffMultiplier[$usaget], 1);
 		if($addTax) {
 			$taxCalc = Billrun_Calculator::getInstance(['type'=>'tax']);
 			$retTariff = $taxCalc->addTax($retTariff);
@@ -223,8 +231,8 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	
 	public function getInvoicePhonenumber($rawNumber) {
 		$retNumber = $rawNumber;
-		
-		foreach($this->destinationsNumberTransforms as $regex => $transform) {
+		$destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^972/'=>'0');
+		foreach($destinationsNumberTransforms as $regex => $transform) {
 			$retNumber = preg_replace($regex,$transform,$retNumber);
 		}
 		
@@ -281,18 +289,21 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function createSubscriberInvoiceTables($lines, $flatTypes = [], $usageTypes = [], $details_keys = []) {
 		$config = Billrun_Factory::config();
 		$invoice_display = $config->getInvoiceDisplayConfig();
-		$lines = array_filter($lines, function($line) {
+		if (is_a($lines, 'Traversable')) {
+			$lines = iterator_to_array($lines);
+		}
+		$lines_filtered = array_filter($lines, function($line) {
 			return $line['sid'] != 0;
 		});
-		$this->buildNotCustomTabels($lines, $flatTypes, false, $details_keys);
+		$this->buildNotCustomTabels($lines_filtered, $flatTypes, false, $details_keys);
 		if (!empty($tabels_config = $invoice_display['usage_details']['tables'])) {
-			foreach ($lines as $index => $line) {
+			foreach ($lines_filtered as $index => $line) {
 				if (in_array($line['type'], $usageTypes)) {
 					$this->associateLineToTable($line, $tabels_config, $details_keys);
 				}
 			}
 		} else {
-			$this->buildNotCustomTabels($lines, $usageTypes, true, $details_keys);
+			$this->buildNotCustomTabels($lines_filtered, $usageTypes, true, $details_keys);
 		}
 	}
 

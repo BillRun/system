@@ -386,7 +386,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		Billrun_Factory::dispatcher()->trigger('afterInvoiceHTMLCommit',array(&$invoice_html,$this,$account));
 
 		$this->updateHtmlDynamicData($account);
-		$ExporterFlagsString = Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type');
+		$ExporterFlagsString = Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type --enable-local-file-access');
 		Billrun_Factory::log('Generating invoice ' . $pdf_name . " to : $pdf", Zend_Log::INFO);
 		exec($this->wkpdf_exec . " {$ExporterFlagsString} --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 
