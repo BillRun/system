@@ -32,12 +32,12 @@ class VfdaysAction extends Action_Base {
 		$max_datetime = $request->get("max_datetime");
 		$this->plans = Billrun_Factory::config()->getConfigValue('vfdays.target_plans');
 		Billrun_Factory::log()->log("{$sid} - Quering : ".time(), Zend_Log::INFO);
-		$results = $this->count_days($sid, $year, $max_datetime);
+		$results = Utils_VF::countDaysFraud(Billrun_Factory::db()->linesCollection(), $sid, $year, $max_datetime);
 		Billrun_Factory::log()->log("{$sid} -  Quering Locally done : ".time(), Zend_Log::INFO);
 		$tap3_results = $this->count_days_tap3($sid, $year, $max_datetime);
 		Billrun_Factory::log()->log(" {$sid} - Quering remote done : ".time(), Zend_Log::INFO);
 
-		$days = empty($results['VF']["count"]) ? 0 :$results['VF']["count"];
+		$days = empty($results['VF']["day_sum"]) ? 0 :$results['VF']["day_sum"];
 		$tap3_vf_count = empty($tap3_results['VF']["day_sum"]) ? 0 :$tap3_results['VF']["day_sum"];
 		$addon_max_days = max(0,@$tap3_results['IRP_VF_10_DAYS']["day_sum"],@$results['IRP_VF_10_DAYS']["count"]);
 
@@ -63,92 +63,110 @@ class VfdaysAction extends Action_Base {
 
 //		$ggsn_fields = Billrun_Factory::config()->getConfigValue('ggsn.fraud.groups.vodafone15');
 //		$sender = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.groups.vodafone15');
-		$vfrateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
+		try {
+			$vfRateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
+			$from = strtotime($year . '-01-01' . ' 00:00:00');
+			if (is_null($max_datetime)) {
+				$to = strtotime($year . '-12-31' . ' 23:59:59');
+			} else {
+				$to = !is_numeric($max_datetime) ? strtotime($max_datetime) : $max_datetime;
+			}
 
-		$match1 = array(
-			'$match' => array(
-				'$or' => array(
-					array('subscriber_id' => $sid),
-					array('sid' => $sid),
-				)
-			),
-		);
-		$match2 = array(
-			'$match' => array(
-				'$or' => array(
-					array('arategroup' => [ '$in' => $vfrateGroups] )
+			$start_of_year = new MongoDate($from);
+			$end_date = new MongoDate($to);
+			$isr_transitions = Billrun_Util::getIsraelTransitions();
+			if (Billrun_Util::isWrongIsrTransitions($isr_transitions)) {
+				Billrun_Log::getInstance()->log("The number of transitions returned is unexpected", Zend_Log::ALERT);
+			}
+			$transition_dates = Billrun_Util::buildTransitionsDates($isr_transitions);
+			$transition_date_summer = new MongoDate($transition_dates['summer']->getTimestamp());
+			$transition_date_winter = new MongoDate($transition_dates['winter']->getTimestamp());
+			$summer_offset = Billrun_Util::getTransitionOffset($isr_transitions, 1);
+			$winter_offset = Billrun_Util::getTransitionOffset($isr_transitions, 2);
+
+
+			$match = array(
+				'$match' => array(
+					'sid' => $sid,
+					'arategroup' => ['$in'=> $vfRateGroups ],
 				),
-				'record_opening_time' => new MongoRegex("/^$year/")
-//				'$or' => array(
-//					array_merge(
-//						array(
-//						'type' => "ggsn",
-//						'record_opening_time' => new MongoRegex("/^$year/"),
-//						), $ggsn_fields
-//					),
-//					array(
-//						'type' => "nrtrde",
-//						'callEventStartTimeStamp' => new MongoRegex("/^$year/"),
-//						'sender' => array('$in' => $sender),
-//						'$or' => array(
-//							array(
-//								'record_type' => "MTC",
-//								'callEventDurationRound' => array('$gt' => 0), // duration greater then 0 => call and not sms
-//							),
-//							array(
-//								'record_type' => "MOC",
-//								'connectedNumber' => new MongoRegex('/^972/')
-//							),
-//						),
-//					),
-//				),
-			),
-		);
-
-		if (!empty($max_datetime)) {
-			$match2['$match']['record_opening_time'] = array(
-				'$lte' => date('YmdHis', strtotime($max_datetime)),
-				'$gte' => $year,
 			);
-		}
 
-		$group = array(
-			'$group' => array(
-				'_id' => [
-							'plan'=> '$plan',
-							'date' =>['$substr' => [
-								'$record_opening_time',
-								4,
-								4
-							]],
-							'arategroup' => '$arategroup'
-				],
-				'count' => array('$sum' => 1),
-			),
-		);
+			$project = array(
+				'$project' => array(
+					'sid' => 1,
+					'urt' => 1,
+					'type' => 1,
+					'plan' => 1,
+					'arategroup' => 1,
+					'billrun' => 1,
+					'urt' => array(
+						'$cond' => array(
+							'if' => array(
+								'$and' => array(
+									array('$gte' => array('$urt', $transition_date_summer)),
+									array('$lt' => array('$urt', $transition_date_winter)),
+								),
+							),
+							'then' => array(
+								'$add' => array('$urt', $summer_offset * 1000)
+							),
+							'else' => array(
+								'$add' => array('$urt', $winter_offset * 1000)
+							),
+						),
+					),
+				),
+			);
 
-		$group2 = array(
-			'$group' => array(
-				'_id' => [
+			$match2 = array(
+				'$match' => array(
+					'urt' => array(
+						'$gte' => $start_of_year,
+						'$lte' => $end_date,
+					),
+				),
+			);
+			$group = array(
+				'$group' => array(
+					'_id' => array(
+						'plan'=> '$plan',
+						'date' =>['$dateToString'=>['format' => '%Y-%j','date'=>'$urt']],
+						'arategroup' => '$arategroup'
+					),
+				),
+			);
+			$group2 = array(
+				'$group' => array(
+					'_id' => [
 						'arategroup' =>'$_id.arategroup',
 						'plan'=>'$_id.plan'
 					],
-				'max_date' => ['$max'=>'$_id.date' ],
-				'count' => array('$sum' => 1),
-			),
-		);
-		$sortPlans = [
+					'max_date' => ['$max'=>'_id.$date' ],
+					'day_sum' => array(
+						'$sum' => 1,
+					),
+				),
+			);
+			$sortPlans = [
 				'$sort' => ['max_date'=> -1]
 			];
-		//$limitRes = ['$limit'=> 1];
-		$group3 = array(
-			'$group' => array(
-				'_id' => '$_id.arategroup',
-				'count' => array('$max' => '$count'),
-			),
-		);
-		Billrun_Factory::log("vfdays nrtrde aggregate query : ".json_encode([$match1, $match2, $group, $group2,$sortPlans,$group3]));
-		$results = Billrun_Factory::db()->linesCollection()->aggregate($match1, $match2, $group, $group2,$sortPlans,$group3);
+
+			$group3 = array(
+				'$group' => array(
+					'_id' => '$_id.arategroup',
+					'day_sum' => array(
+						'$max' => '$day_sum',
+					),
+				),
+			);
+			$billing_connection = Billrun_Factory::db()->linesCollection();
+			Billrun_Factory::log("vfdays tap3 aggregate query : ".json_encode([$match, $project, $match2, $group, $group2,$sortPlans,$group3]));
+			$results = $billing_connection->aggregate($match, $project, $match2, $group, $group2,$sortPlans,$group3);
+		} catch (Exception $ex) {
+			Billrun_Factory::log('Error to fetch to billing from fraud system. ' . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
+			Billrun_Factory::log('We will skip the billing fetch for this call.', Zend_Log::WARN);
+		}
 		$associatedResults = [];
 		foreach($results as $res) {
 			$associatedResults[$res['_id']] = $res;
