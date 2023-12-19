@@ -23,25 +23,34 @@ class Generator_Translations {
 	}
 
     public static function setLanguage($lang = null) {
-        if (is_null($lang)) {
-            static::setLanguage(static::getDefaultLanguage());
-        } else {
-            if (!static::$languages[$lang]++) {
-                static::setTranslation($lang, ['/conf/translations/' . $lang . '.ini', '/conf/translations/overrides/' . $lang . '.ini']);
-            }
-            static::$currentLang = $lang;
-        }
-    }
+		if (is_null($lang)) {
+			$lang = static::getDefaultLanguage();
+		}
+		
+		$translationsLocations = array(
+			'/conf/translations/' . $lang . '.ini',
+			'/conf/translations/overrides/' . $lang . '.ini',
+			'/conf/translations/tenants/' . Billrun_Factory::config()->getTenant() . '/' . $lang . '.ini',
+		);
+		
+		if (!static::$languages[$lang]++) {
+			static::setTranslation($lang, $translationsLocations);
+		}
+		static::$currentLang = $lang;
+	}
 
     protected static function setTranslation($lang, $paths) {
 		$tr = [];
 		foreach ($paths as $path) {
+			if (!file_exists($path)) {
+				continue;
+			}
 			$slugs = parse_ini_file(APPLICATION_PATH . $path);
 			$tr = array_merge($tr, $slugs ?: []);
 		}
 		static::$translations[$lang] = $tr;
 	}
-	
+
 	public static function getDefaultLanguage() {
 		return Billrun_Factory::config()->getConfigValue(static::$defaultLangPath, 'en_GB');
 	}
