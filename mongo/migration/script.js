@@ -1397,5 +1397,50 @@ lastConfig = runOnce(lastConfig, 'BRCD-4172', function () {
 	db.bills.ensureIndex({'urt': 1 }, { unique: false, background: true});
 });
 
+// BRCD-4297 Correct end date of services with limited cycles
+lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
+	function addMonthsToDate(fromDate, monthsToAdd) {
+		const newDate = new Date(fromDate); // Create a new Date object from the provided fromDate
+	  
+		// Add the specified number of months to the newDate
+		newDate.setMonth(newDate.getMonth() + parseInt(monthsToAdd));
+	  
+		return newDate.toISOString(); // Return the new date as an ISO string
+	  }
+	
+	var limited_cycle_services = db.services.aggregate([{$match: {balance_period: {$exists: false}, prorated: true, price: {$size: 1, $elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {month_limit: {$size: 1}}}, {$unwind: "$month_limit"},{$unwind: "$month_limit"}])
+	var today = new Date();
+	var lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+	var lastYearISO = lastYear.toISOString();
+	
+	var all_service_keys = [];
+	var service_and_cycle_limit = [];
+	
+	limited_cycle_services.forEach(service => {
+		all_service_keys.push(service._id);
+		service_and_cycle_limit[service._id] = service.month_limit;
+	});
+	
+	print("Subscriber ID, Service Key, Start Date, cycles, Original End Date, Corrected End Date")
+	var subscribers = db.subscribers.find({'services.name': {$in: all_service_keys}, to: {$gt: ISODate(lastYearISO)}});
+	subscribers.forEach(subscriber => {
+		for (var i = 0; i < subscriber.services.length; i++) {
+			if(all_service_keys.includes(subscriber.services[i].name)) {
+				var corrected_end_date = addMonthsToDate(subscriber.services[i].from, service_and_cycle_limit[subscriber.services[i].name]);
+				if (subscriber.services[i].to.toISOString() != corrected_end_date) {
+					print(subscriber.sid + "," + subscriber.services[i].name + "," + subscriber.services[i].from.toISOString() + "," + service_and_cycle_limit[subscriber.services[i].name] + "," + subscriber.services[i].to.toISOString() + "," + corrected_end_date);
+					subscriber.services[i].to = ISODate(corrected_end_date);
+				}
+			}
+		}
+		db.subscribers.save(subscriber);
+	})
+	
+	var services_with_revisions_with_differernt_cycles = db.services.aggregate([{$match: {balance_period: {$exists: false}, prorated: true, price: {$elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {$expr: {$gt: [{$size: "$month_limit"}, 1]}}}])
+	services_with_revisions_with_differernt_cycles.forEach(service => {
+		printjson("BRCD-4297: Service with that the month limit has been changed and will require a more complex fix: " + service._id);
+	});
+});
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
