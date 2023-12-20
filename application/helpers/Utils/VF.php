@@ -14,7 +14,7 @@
  * @todo refactoring to general subscriber http class
  */
 class Utils_VF  {
-	public static function countDaysFraud($coll, $sid, $year = null, $max_datetime = null) {
+	public static function countVFDays($coll, $sid, $year = null, $max_datetime = null,$filter = []) {
 		try {
 			$vfRateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
 			$from = strtotime($year . '-01-01' . ' 00:00:00');
@@ -37,81 +37,85 @@ class Utils_VF  {
 			$winter_offset = Billrun_Util::getTransitionOffset($isr_transitions, 2);
 
 
-			$match = array(
-				'$match' => array(
+			$match = [
+				'$match' => [
 					'sid' => $sid,
 					'arategroup' => ['$in'=> $vfRateGroups ],
-				),
-			);
+				],
+			];
 
-			$project = array(
-				'$project' => array(
+			if(!empty($filter) &&  is_array($filter)) {
+				$match['$match'] = array_merge($filter,$match['$match']);
+			}
+
+			$project = [
+				'$project' => [
 					'sid' => 1,
 					'urt' => 1,
 					'type' => 1,
 					'plan' => 1,
 					'arategroup' => 1,
 					'billrun' => 1,
-					'urt' => array(
-						'$cond' => array(
-							'if' => array(
-								'$and' => array(
-									array('$gte' => array('$urt', $transition_date_summer)),
-									array('$lt' => array('$urt', $transition_date_winter)),
-								),
-							),
-							'then' => array(
-								'$add' => array('$urt', $summer_offset * 1000)
-							),
-							'else' => array(
-								'$add' => array('$urt', $winter_offset * 1000)
-							),
-						),
-					),
-				),
-			);
+					'urt' => [
+						'$cond' => [
+							'if' => [
+								'$and' => [
+									['$gte' => ['$urt', $transition_date_summer] ],
+									['$lt' => ['$urt', $transition_date_winter] ],
+								],
+							],
+							'then' => [
+								'$add' => ['$urt', $summer_offset * 1000 ]
+							],
+							'else' => [
+								'$add' => ['$urt', $winter_offset * 1000 ]
+							],
+						],
+					],
+				],
+			];
 
-			$match2 = array(
-				'$match' => array(
-					'urt' => array(
+			$match2 = [
+				'$match' => [
+					'urt' => [
 						'$gte' => $start_of_year,
 						'$lte' => $end_date,
-					),
-				),
-			);
-			$group = array(
-				'$group' => array(
-					'_id' => array(
+					],
+				],
+			];
+			$group = [
+				'$group' => [
+					'_id' => [
 						'plan'=> '$plan',
-						'date' =>['$dateToString'=>['format' => '%Y-%j','date'=>'$urt']],
+						'date' =>[ '$dateToString' => ['format' => '%Y-%j','date'=>'$urt'] ],
 						'arategroup' => '$arategroup'
-					),
-				),
-			);
-			$group2 = array(
-				'$group' => array(
+					],
+				],
+			];
+			$group2 = [
+				'$group' => [
 					'_id' => [
 						'arategroup' =>'$_id.arategroup',
 						'plan'=>'$_id.plan'
 					],
 					'max_date' => ['$max'=>'_id.$date' ],
-					'day_sum' => array(
+					'day_sum' => [
 						'$sum' => 1,
-					),
-				),
-			);
+					],
+				],
+			];
 			$sortPlans = [
 				'$sort' => ['max_date'=> -1]
 			];
 
-			$group3 = array(
-				'$group' => array(
+			$group3 = [
+				'$group' => [
 					'_id' => '$_id.arategroup',
-					'day_sum' => array(
+					'day_sum' => [
 						'$max' => '$day_sum',
-					),
-				),
-			);
+					],
+				],
+			];
 
 			Billrun_Factory::log("vfdays aggregate query : ".json_encode([$match, $project, $match2, $group, $group2,$sortPlans,$group3]));
 			$results = $coll->aggregate($match, $project, $match2, $group, $group2,$sortPlans,$group3);

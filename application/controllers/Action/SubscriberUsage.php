@@ -35,7 +35,7 @@ class Subscriber_UsageAction extends ApiAction {
 		if(!Billrun_util::isBillrunKey($billrunKey)){
 			return $this->setError("billrun is not a valid billrun key", $body);
 		}
-		$offers = json_decode($body["offers"],JSON_OBJECT_AS_ARRAY);
+		$offers = $body["offers"];
 		if (!is_array($offers)) {
 			return $this->setError('Illegal offers format', $body);
 		}
@@ -300,9 +300,15 @@ class Subscriber_UsageAction extends ApiAction {
 
 	public function countDays($sid, $year = null, $plans = []) {
 		//$fraudResult = $this->countDaysFraud($sid, $year);
-		$fraudResult = Utils_VF::countDaysFraud(Billrun_Factory::db()->linesCollection(), $sid, $year, $max_datetime);
+		$fraudResult = Utils_VF::countVFDays(Billrun_Factory::db()->linesCollection(), $sid, $year, $max_datetime);
 		$fraudCount = 0 + @$fraudResult['VF']['day_sum'] + @$fraudResult['IRP_VF_10_DAYS']['day_sum'];
-		$billingResult = $this->countDaysBilling($sid, $year, $plans);
+		// $billingResult = $this->countDaysBilling($sid, $year, $plans);
+		$billingLinesColl = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
+		$billingResult =  Utils_VF::countVFDays($billingLinesColl, $sid, $year, null, [	'$or' => [
+																									['type' => 'tap3'],
+																									['type' => 'smsc'],
+																								],
+																							'plan' => ['$in' => $plans]]);
 		$billingCount = 0 + ( empty($billingResult['VF']["day_sum"]) ? 0 : $billingResult['VF']["day_sum"] ) +  max(0,@$billingResult['IRP_VF_10_DAYS']["day_sum"]);
 		return max($billingCount,$fraudCount);
 	}
