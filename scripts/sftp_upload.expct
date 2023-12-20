@@ -2,7 +2,7 @@
 
 spawn sftp billrun@172.29.20.30
 expect "password:"
-send "b1llr@n\n"
+send "\n"
 expect "sftp>"
 set argv1 [lindex $argv 0]
 set argv2 [lindex $argv 1]
