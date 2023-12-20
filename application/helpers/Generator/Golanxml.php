@@ -105,6 +105,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->buffer = $options['buffer'];
 		}
 
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Utils");
+
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
 		$this->loadRates();
@@ -250,7 +252,16 @@ class Generator_Golanxml extends Billrun_Generator {
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			$plans = isset($subscriber['plans']) ? $subscriber['plans'] : array();
 			if ($this->hasVFPlanInCycle($plans)) {
-				$vfCountDays = $this->queryVFDaysApi($sid, date('Y'), date(Billrun_Base::base_dateformat, time()));
+				$vfDaysData = Utils_VF::countVFDays(Billrun_Factory::db()->linesCollection(),
+													 $sid, date('Y'), date(Billrun_Base::base_dateformat, time()),[	'$or' => [
+																									['type' => 'tap3'],
+																									['type' => 'smsc'],
+																									['type' => "nsn","roaming"=>true],
+																								],
+																							]);
+				if(!empty($vfDaysData['VF'])) {
+					$vfCountDays = $vfDaysData['VF']['day_sum'];
+				}
 			}
 			$this->plansToCharge = !empty($plans) ? $this->getPlanNames($plans): array();
 			if (empty($plans) && !isset($subscriber['breakdown'])) {
