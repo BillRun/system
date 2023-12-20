@@ -773,6 +773,21 @@ export const getConditionFromConfig = (configPath) => {
   return getConditions(enabledOperators);
 }
 
+export const createReportSaveToBillsField = (field, prefix = '') => {
+  let title = field.get('payment_gateway');
+  title += `: ${getFieldName(field.get('field_name', ''), 'bills')}`;
+  if (field.get('is_multi', false)) {
+    title += ` (${field.getIn(['file_type'], '')})`;
+  }
+  title = title.trim();
+  return Immutable.Map({
+    field_name: `${prefix}.${field.get('field_name', '')}`,
+    title,
+    type: field.getIn(['type'], 'text'),
+    payment_gateway: field.get('payment_gateway')
+  });
+}
+
 export const getConditions = (enabledOperators = Immutable.List()) => {
   const availableOperators = getConfig(['conditions', 'operators'], Immutable.List());
   return Immutable.List().withMutations((opsWithMutations) => {
