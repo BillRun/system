@@ -79,9 +79,13 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 					unset($this->lines[$row['stamp']]['billrun']);
 					unset($rawRow['billrun']);
 					$rawRow['external_pricing_state']  = $this->lines[$row['stamp']]['external_pricing_state'] = static::STATE_WAITING;
-				}
 					//	line willbe forced to stay in the queue by the overriden setCalculatorTag function
 					// return the updated line to save it to the db (at the  end of the function)
+
+				} else {
+					//  Line  was allready forced to stay in the  queue and no update needed as it still waiting for pricing.
+					return false;
+				}
 			}
 			$row->setRawData($rawRow);
 		} else if($row['type'] == 'ild_external_pricing') { // if line is external pricing :

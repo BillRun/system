@@ -34,6 +34,7 @@ class Billrun_Processor_Csv extends Billrun_Processor_Base_SeparatorFieldLines {
 
 
 		return parent::parse();
+
 	}
 
 	/**
@@ -73,9 +74,14 @@ class Billrun_Processor_Csv extends Billrun_Processor_Base_SeparatorFieldLines {
 
 	protected function buildData($line, $line_number = null) {
 		$row = parent::buildData($line, $line_number);
+		if( !empty($this->structConfig['config']['date_format']) && !empty($this->structConfig['config']['date_field'])
+			&& !empty($row[$this->structConfig['config']['date_field']]) &&empty($row['urt']) ) {
+			    $datetime = DateTime::createFromFormat($this->structConfig['config']['date_format'], $row[ $this->structConfig['config']['date_field']]);
+				$row['urt'] =  new MongoDate( $datetime ?  $datetime->format('U') : strtotime( $row[ $this->structConfig['config']['date_field']] ));
+		}
+
 		return $row;
 	}
-
 }
 
 ?>
