@@ -93,7 +93,7 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 			//if the pricingwas succesful
 			if($row['status'] == static::RESULT_PRICED_OK) {
 				// update line  and  price it
-				$updateValues = ['external_pricing_state'=>static::STATE_PRICED,'aprice'=> $row['price']];
+				$updateValues = ['external_pricing_state'=>static::STATE_PRICED,'aprice'=> floatval($row['price'])];
 			} else if( in_array($row['status'], static::RESULT_PRICED_FAILED) ) {
 				// otherwise mark the original line as failed
 				$updateValues = ['external_pricing_state'=>static::STATE_FAILED, 'external_pricing_status_code' => $row['status'] ];
