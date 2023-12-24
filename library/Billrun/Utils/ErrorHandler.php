@@ -39,7 +39,7 @@ class Billrun_Utils_ErrorHandler {
 	 * @param Exception $exception
 	 * @return json encoded array
 	 */
-	protected function getExceptionOutput(Exception $exception) {
+	protected function getExceptionOutput(Throwable $exception) {
 	   // Get exception output
 	   if($exception instanceof Billrun_Exceptions_Base) {
 		   return $this->billrunExceptionOutput($exception);
@@ -62,7 +62,7 @@ class Billrun_Utils_ErrorHandler {
 	 * @param type $exception
 	 * @return string
 	 */
-	protected function generalExceptionOutput(Exception $exception) {
+	protected function generalExceptionOutput(Throwable $exception) {
 	   $output = array();
 	   $output['status'] = 0;
 	   $output['code'] = 500;
