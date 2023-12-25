@@ -1009,7 +1009,7 @@ class Billrun_Billrun {
 			$active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($last['billrun_key'],$planConfig);
 			$billrun_start_time = !is_null($invoicing_day) ? Billrun_Billingcycle::getStartTime($active_billrun, $invoicing_day) : Billrun_Billingcycle::getStartTime($active_billrun);
 			// TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
-			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
+			if ($now - $billrun_start_time > (2592000 * Billrun_Factory::config()->getConfigValue('pricing.max_delta_months', 2))) { // more than X months diff (60*60*24*30*X)
 				$active_billrun = $runtime_billrun_key;
 			}
 		}

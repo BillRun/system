@@ -147,6 +147,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$rate_key = $rate['key'];
 		foreach ($this->data['breakdown'][$breakdownKey] as &$breakdowns) {
 			if ($breakdowns['name'] === $rate_key) {
+				Billrun_Factory::log("Found relevant billrun breakdown for rate " . $rate_key,Zend_Log::DEBUG);
 				$breakdowns['cost'] = !$overridePreviouslyAggregatedResults ? $breakdowns['cost'] + $cost : $cost;
 				$breakdowns['usagev'] = !$overridePreviouslyAggregatedResults ? $breakdowns['usagev'] + $usagev : $usagev;
 				$breakdowns['count'] += 1;
@@ -165,9 +166,11 @@ class Billrun_Cycle_Subscriber_Invoice {
 		}
 		
 		if(!$rate_key) {
+			Billrun_Factory::log("Didn't find rate data to update. Updating " . $row['stamp'] . " data under 'Plans and Services' breakdown",Zend_Log::DEBUG);
 			$rate_key = "Plans and Services";
 		}
 		
+		Billrun_Factory::log("Creating new breakdown object for " . $rate_key,Zend_Log::DEBUG);
 		$newBrkDown =  array('name' => $rate_key, 'count' => 1 , 'usagev' => $usagev, 'cost' => $cost);
 		if(!empty($addedData)) {
 			$newBrkDown = array_merge( $newBrkDown, $addedData);
@@ -219,11 +222,24 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$col_str = strval($raw_rate['$ref']);
 		if(!isset($this->rates[$col_str][$id_str])) {
 			if (isset($this->rates[$id_str])) {
+				Billrun_Factory::log("Found rate " . $row['arate_key'] . " in cycle rates cache, using ref " . $id_str ,Zend_Log::DEBUG);
 				return $this->rates[$id_str];
+			} else {
+				Billrun_Factory::log("Didn't find rate " . $row['arate_key'] . " in rates cache. Searching relevant rate by Db ref " . $id_str ,Zend_Log::DEBUG);
+				$rate = Billrun_Rates_Util::getRateByRef($raw_rate, true)->getRawData();
+				if (empty($rate)) {
+					Billrun_Factory::log("Didn't find rate " . $row['arate_key'] . " using db ref " . $id_str . ". Searching relevant rate by time" ,Zend_Log::DEBUG);
+					$rate = Billrun_Rates_Util::getRateByName($row['arate_key'], $row['urt']->sec);
+				} else {
+					Billrun_Factory::log("Found rate " . $row['arate_key'] . " using ref " . $id_str ,Zend_Log::DEBUG);
+				}
+				$res = $rate;
 			}
-			return null;
+		} else {
+			$res = $this->rates[$col_str][$id_str];
 		}
-		return $this->rates[$col_str][$id_str];
+			
+		return $res;
 	}
 	
 	/**
@@ -236,9 +252,11 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @todo remove billrun_key parameter
 	 */
 	public function addLine($counters, $row, $pricingData, $vatable) {
+		Billrun_Factory::log("Adding line " . $row['stamp'] . " to billrun breakdown" ,Zend_Log::DEBUG);
 		if (!$breakdownKey = $this->getBreakdownKey($row)) {
 			return;
 		}
+		Billrun_Factory::log("Searching rate for row " . $row['stamp'] ,Zend_Log::DEBUG);
 		$rate = $this->getRowRate($row);
                 if($this->groupingEnabled){
                         $this->addGroupToTotalGrouping($row);
@@ -250,6 +268,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		if(!empty($row['end'])) {
 			$addedData['end'] = $row['end'];
 		}
+		Billrun_Factory::log("Updating billrun breakdown with row " . $row['stamp'] . " data",Zend_Log::DEBUG);
 		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes'], $addedData);
 		// TODO: apply arategroup to new billrun object
 		if (isset($row['arategroup'])) {

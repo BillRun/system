@@ -32,7 +32,7 @@ class BillAction extends ApiAction {
 					$response = $this->getBalances($request); // aids list
 					break;
 				case 'collection_debt' :
-					$response = $this->getCollectionDebt($request); //aids json array
+					$response = $this->getCollectionDebt($request); //aids json array & threshold (optional)
 					break;
 				case 'all_collection_debts' :
 					$response = $this->getAllCollectionDebts($request);
@@ -157,6 +157,7 @@ class BillAction extends ApiAction {
 			$requestBody = $request;
 		}
 		$aids = json_decode($jsonAids, TRUE);
+		$min_debt = $request->get('threshold', null);
 		if (!is_array($aids) || json_last_error()) {
 			$this->setError('Illegal account ids', $requestBody);
 			return FALSE;
@@ -165,7 +166,7 @@ class BillAction extends ApiAction {
 			$this->setError('Must supply at least one aid', $requestBody);
 			return FALSE;
 		}
-		$contractors = Billrun_Bill::getBalanceByAids($aids, false, $only_debt, true);
+		$contractors = Billrun_Bill::getBalanceByAids($aids, false, $only_debt, true, $min_debt);
 		$result = array();
 		foreach ($contractors as $contractor) {
 			$result[$contractor['aid']] = current($contractor);
