@@ -31,6 +31,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->configByType = !empty($options[$options['type']]) ? $options[$options['type']] : array();
 		$this->gatewayName = $options['name']; 
 		$this->receiverSource = str_replace('_', '', ucwords($options['name'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
+		$this->setPgFileType($options['file_type']);
 		$this->bills = Billrun_Factory::db()->billsCollection();
 		$this->log = Billrun_Factory::db()->logCollection();
 		$this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
@@ -460,5 +461,11 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->informationArray['errors'] = [];
 		$this->informationArray['warnings'] = [];
 		$this->informationArray['info'] = [];
+	}
+
+	protected function getLogFileQuery($adoptThreshold) {
+		$query = parent::getLogFileQuery($adoptThreshold);
+		$query['pg_file_type'] = $this->fileType;
+		return $query;
 	}
 }
