@@ -54,6 +54,7 @@ class Generator_Translations {
 			if (!file_exists($path)) {
 				continue;
 			}
+			Billrun_Factory::log("Loading translation file " . $path . " of lang " . $lang);
 			$slugs = parse_ini_file(APPLICATION_PATH . $path);
 			$tr = array_merge($tr, $slugs ?: []);
 		}
