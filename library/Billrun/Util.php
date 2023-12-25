@@ -1016,5 +1016,27 @@ class Billrun_Util {
 		}
 		return $str;
 	}
+	/**
+	* Translates specified fields in the given data array using the provided translations.
+	*
+	* @param array       $data         The data array to be translated.
+	* @param array       $translations An associative array where keys represent the fields to translate,
+	* @param object|null $self         An optional object instance used for calling class methods during translation.
+	*
+	* @return array The translated data array.
+	*/
+	public static function translateFieldValue($data, $translations, $self = NULL) {
+		foreach ($translations as $key => $translation) {
+			if(is_string($translation) || is_numeric($translation)) {
+				$replace = is_integer($translation) ? '"[['.$key.']]"' : '[['.$key.']]';
+				$data[$key] = $translation;
+			} elseif ($self !== NULL && method_exists($self, $translation["class_method"])) {
+				$data[$key]= call_user_func( array($self, $translation["class_method"]) , $data, $translation['arguments']);
+			} else {
+				Billrun_Factory::log("Couldn't translate {$key} to ".print_r($translation,1),Zend_log::WARN);
+			}
+		}
+		return $data;
+	}
 }
 
