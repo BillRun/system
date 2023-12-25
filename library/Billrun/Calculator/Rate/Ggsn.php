@@ -73,12 +73,13 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	protected function getLineRate($row, $usage_type) {
 		$line_time = $row['urt'];
 		foreach ($this->rates as $rate) {
-			if (preg_match($rate['params']['sgsn_addresses'], $row['sgsn_address']) && $rate['from'] <= $line_time && $line_time <= $rate['to']) {
+			$regex = isset($rate['params']['sgsn_addresses']['$regex']) ? $rate['params']['sgsn_addresses']['$regex'] : $rate['params']['sgsn_addresses'];
+			if (preg_match($regex, $row['sgsn_address']) && $rate['from'] <= $line_time && $line_time <= $rate['to']) {
 				return $rate;
 			}
 		}
 		Billrun_Factory::log()->log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
-		return FALSE;
+		return $this->rates['UNRATED'];
 	}
 
 }
