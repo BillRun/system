@@ -163,6 +163,7 @@ $(function () {
 		if (isAPIAvailable()) {
 			var remove_non_existing_usage_types = $("#remove_non_existing_usage_types").is(':checked') ? 1 : 0;
 			var remove_non_existing_prefix = $("#remove_non_existing_prefix").is(':checked') ? 1 : 0;
+			var allow_past_rates = $("#allow_past_rates").is(':checked') ? 1 : 0;
 			var files = $("#importPricesModal #file-upload2").get(0).files; // FileList object
 			if (files.length) {
 				$(this).attr('disabled', 'disabled');
@@ -194,7 +195,11 @@ $(function () {
 					$.ajax({
 						url: '/api/importpriceslist',
 						type: "POST",
-						data: {prices: _prices, remove_non_existing_usage_types: remove_non_existing_usage_types, remove_non_existing_prefix: remove_non_existing_prefix}
+						data: {
+							prices: _prices,
+							remove_non_existing_usage_types: remove_non_existing_usage_types, remove_non_existing_prefix: remove_non_existing_prefix,
+							allow_past_rates: allow_past_rates
+						}
 					}).done(function (msg) {
 						obj = JSON.parse(msg);
 						var output;
