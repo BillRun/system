@@ -7,7 +7,7 @@ CURRENT_UPLOAD_FILE=/var/www/billrun/workspace/ftp_upload_time_file
 
 DEST_DIRECTORY="/data/tmp/International_calls/from_golan"
 
-if[ -n $2 ]; then
+if [ -n $2 ]; then
 	DEST_DIRECTORY=$2;
 fi
 
