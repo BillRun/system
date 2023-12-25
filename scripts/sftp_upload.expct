@@ -1,17 +1,18 @@
 #!/usr/bin/expect
 
-set argv1 [lindex $argv 0]
-set argv2 [lindex $argv 1]
-set argv3 [lindex $argv 2]
+set local_path [lindex $argv 0]
+set filename [lindex $argv 1]
+set pwd [lindex $argv 2]
+set base_dir [lindex $argv 3]
 spawn sftp billrun@172.29.20.30
 expect "password:"
-send "$argv3\n"
+send "$pwd\n"
 expect "sftp>"
-send "ls $argv1 /data/tmp/International_calls/from_golan\n"
+send "ls $local_path $base_dir\n"
 expect "sftp>"
-send "put $argv1 /data/tmp/International_calls/from_golan/\n"
+send "put $local_path $base_dir/\n"
 expect "sftp>"
-send "chgrp 1001 /data/tmp/International_calls/from_golan/$argv2\n"
+send "chgrp 1001 $base_dir/$filename\n"
 expect "sftp>"
-send "chmod 664 /data/tmp/International_calls/from_golan/$argv2\n"
+send "chmod 664 $base_dir/$filename\n"
 expect "sftp>"
