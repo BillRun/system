@@ -1,13 +1,4 @@
 {
-  "immediate-invoice": {
-    "title": "Immediate Invoice",
-    "icon": "fa-book",
-    "route": "immediate-invoice",
-    "show": true,
-    "roles": [],
-    "order":0,
-    "parent": "root"
-  },
   "products": {
     "title": "Products",
     "icon": "fa-book",
