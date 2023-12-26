@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /*
  * This file is part of PHPUnit.
  *
@@ -10,67 +10,57 @@
 namespace PHPUnit\Framework;
 
 /**
- * A warning.
+ * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
-class WarningTestCase extends TestCase
+final class WarningTestCase extends TestCase
 {
     /**
-     * @var string
-     */
-    protected $message = '';
-
-    /**
-     * @var bool
+     * @var ?bool
      */
     protected $backupGlobals = false;
 
     /**
-     * @var bool
+     * @var ?bool
      */
     protected $backupStaticAttributes = false;
 
     /**
-     * @var bool
+     * @var ?bool
      */
     protected $runTestInSeparateProcess = false;
 
     /**
-     * @var bool
+     * @var string
      */
-    protected $useErrorHandler = false;
+    private $message;
 
-    /**
-     * @param string $message
-     */
-    public function __construct($message = '')
+    public function __construct(string $message = '')
     {
         $this->message = $message;
+
         parent::__construct('Warning');
     }
 
-    /**
-     * @throws Exception
-     */
-    protected function runTest()
-    {
-        throw new Warning($this->message);
-    }
-
-    /**
-     * @return string
-     */
-    public function getMessage()
+    public function getMessage(): string
     {
         return $this->message;
     }
 
     /**
      * Returns a string representation of the test case.
-     *
-     * @return string
      */
-    public function toString()
+    public function toString(): string
     {
         return 'Warning';
+    }
+
+    /**
+     * @throws Exception
+     *
+     * @psalm-return never-return
+     */
+    protected function runTest(): void
+    {
+        throw new Warning($this->message);
     }
 }
