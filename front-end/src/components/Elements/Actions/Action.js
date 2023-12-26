@@ -64,6 +64,7 @@ const Action = (props) => {
     'fa-minus': type === 'collapse',
     'fa-cog': type === 'settings',
     'fa-th-list': type === 'list',
+    'fa-exclamation': type === 'tooltip',
   }), [type]);
 
   if (!showAction) {

@@ -168,12 +168,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		
 		// this is for balances sharding, although this is _id query
 		if (!isset($query['sid'])) {
-			$query['sid'] = [
-				'$in' => [
-					0,
-					$this->row['sid'],
-				],
-			];
+			$query['sid'] = $this->row['sid'];
 		}
 		if (!isset($query['aid'])) {
 			$query['aid'] = $this->row['aid'];
