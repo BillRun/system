@@ -16,5 +16,11 @@
         "platform": {
             "ext-mongo": "1.6.16"
         }
+    },
+    "require-dev": {
+        "codeception/codeception": "^4.2",
+        "codeception/module-webdriver": "^1.4",
+        "codeception/module-asserts": "^1.3",
+        "codeception/module-cli": "^1.1"
     }
 }
