@@ -6,16 +6,20 @@ namespace Http\Promise;
  * A promise already fulfilled.
  *
  * @author Joel Wurtz <joel.wurtz@gmail.com>
+ *
+ * @template-covariant T
+ *
+ * @implements Promise<T>
  */
 final class FulfilledPromise implements Promise
 {
     /**
-     * @var mixed
+     * @var T
      */
     private $result;
 
     /**
-     * @param $result
+     * @param T $result
      */
     public function __construct($result)
     {
@@ -54,5 +58,7 @@ final class FulfilledPromise implements Promise
         if ($unwrap) {
             return $this->result;
         }
+
+        return;
     }
 }
