@@ -12,8 +12,8 @@
 
 namespace chillerlan\QRCodeTest\Output;
 
-use chillerlan\QRCodeExamples\MyCustomOutput;
 use chillerlan\QRCode\{QRCode, QROptions};
+use chillerlan\QRCode\Data\QRMatrix;
 use chillerlan\QRCode\Output\{QROutputInterface, QRString};
 
 /**
@@ -47,8 +47,8 @@ class QRStringTest extends QROutputTestAbstract{
 
 		$this->options->moduleValues = [
 			// data
-			1024 => 'A',
-			4    => 'B',
+			QRMatrix::M_DATA_DARK => 'A',
+			QRMatrix::M_DATA      => 'B',
 		];
 
 		$this->outputInterface = $this->getOutputInterface($this->options);
@@ -56,21 +56,6 @@ class QRStringTest extends QROutputTestAbstract{
 
 		$this::assertStringContainsString('A', $data);
 		$this::assertStringContainsString('B', $data);
-	}
-
-	/**
-	 * covers the custom output functionality via an example
-	 */
-	public function testCustomOutput():void{
-		$this->options->version         = 5;
-		$this->options->eccLevel        = QRCode::ECC_L;
-		$this->options->outputType      = QRCode::OUTPUT_CUSTOM;
-		$this->options->outputInterface = MyCustomOutput::class;
-
-		$this::assertSame(
-			file_get_contents(__DIR__.'/samples/custom'),
-			(new QRCode($this->options))->render('test')
-		);
 	}
 
 }

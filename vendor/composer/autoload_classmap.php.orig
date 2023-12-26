@@ -124,6 +124,11 @@ return array(
     'OpaqueContainer' => $vendorDir . '/simpletest/simpletest/test/expectation_test.php',
     'OtherTestException' => $vendorDir . '/simpletest/simpletest/test/exceptions_test.php',
     'OutsideMarginExpectation' => $vendorDir . '/simpletest/simpletest/expectation.php',
+<<<<<<< HEAD
+    'PHPUnit_TestCase' => $vendorDir . '/simpletest/simpletest/extensions/pear_test_case.php',
+    'PackagingSynchronisation' => $vendorDir . '/simpletest/simpletest/packages/simpletest.org/package.php',
+=======
+    'PHPUnitTestCase' => $vendorDir . '/simpletest/simpletest/extensions/phpunit/PHPUnitTestCase.php',
     'PHPUnit\\Exception' => $vendorDir . '/phpunit/phpunit/src/Exception.php',
     'PHPUnit\\Framework\\ActualValueIsNotAnObjectException' => $vendorDir . '/phpunit/phpunit/src/Framework/Exception/ActualValueIsNotAnObjectException.php',
     'PHPUnit\\Framework\\Assert' => $vendorDir . '/phpunit/phpunit/src/Framework/Assert.php',
@@ -473,8 +478,7 @@ return array(
     'PHPUnit\\Util\\Xml\\SuccessfulSchemaDetectionResult' => $vendorDir . '/phpunit/phpunit/src/Util/Xml/SuccessfulSchemaDetectionResult.php',
     'PHPUnit\\Util\\Xml\\ValidationResult' => $vendorDir . '/phpunit/phpunit/src/Util/Xml/ValidationResult.php',
     'PHPUnit\\Util\\Xml\\Validator' => $vendorDir . '/phpunit/phpunit/src/Util/Xml/Validator.php',
-    'PHPUnit_TestCase' => $vendorDir . '/simpletest/simpletest/extensions/pear_test_case.php',
-    'PackagingSynchronisation' => $vendorDir . '/simpletest/simpletest/packages/simpletest.org/package.php',
+>>>>>>> new_features_mdb4
     'PageRequest' => $vendorDir . '/simpletest/simpletest/test/site/page_request.php',
     'ParallelRegex' => $vendorDir . '/simpletest/simpletest/php_parser.php',
     'ParametersExpectation' => $vendorDir . '/simpletest/simpletest/mock_objects.php',
@@ -564,6 +568,8 @@ return array(
     'SampleInterfaceWithClone' => $vendorDir . '/simpletest/simpletest/test/interfaces_test.php',
     'SampleInterfaceWithHintInSignature' => $vendorDir . '/simpletest/simpletest/test/interfaces_test_php5_1.php',
     'SampleTestForRecorder' => $vendorDir . '/simpletest/simpletest/test/support/recorder_sample.php',
+<<<<<<< HEAD
+=======
     'SebastianBergmann\\CliParser\\AmbiguousOptionException' => $vendorDir . '/sebastian/cli-parser/src/exceptions/AmbiguousOptionException.php',
     'SebastianBergmann\\CliParser\\Exception' => $vendorDir . '/sebastian/cli-parser/src/exceptions/Exception.php',
     'SebastianBergmann\\CliParser\\OptionDoesNotAllowArgumentException' => $vendorDir . '/sebastian/cli-parser/src/exceptions/OptionDoesNotAllowArgumentException.php',
@@ -764,6 +770,11 @@ return array(
     'SebastianBergmann\\Type\\UnknownType' => $vendorDir . '/sebastian/type/src/type/UnknownType.php',
     'SebastianBergmann\\Type\\VoidType' => $vendorDir . '/sebastian/type/src/type/VoidType.php',
     'SebastianBergmann\\Version' => $vendorDir . '/sebastian/version/src/Version.php',
+    'SelectById' => $vendorDir . '/simpletest/simpletest/selector.php',
+    'SelectByLabel' => $vendorDir . '/simpletest/simpletest/selector.php',
+    'SelectByLabelOrName' => $vendorDir . '/simpletest/simpletest/selector.php',
+    'SelectByName' => $vendorDir . '/simpletest/simpletest/selector.php',
+>>>>>>> new_features_mdb4
     'SelectiveReporter' => $vendorDir . '/simpletest/simpletest/reporter.php',
     'SeleneseTestCase' => $vendorDir . '/simpletest/simpletest/extensions/selenese_tester.php',
     'SeleniumTestCase' => $vendorDir . '/simpletest/simpletest/extensions/selenium.php',
