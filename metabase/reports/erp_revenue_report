@@ -25,6 +25,7 @@
                         }
                     }
                 ]}}]}]}},
+{ $match: { 'attributes.billable':{ $eq: true} } },
 { $unwind : "$totals.grouping" },
 { $match : { "totals.grouping.source": { $ne: "plan" } }},
 {$addFields: { 
@@ -56,7 +57,7 @@ invoice_date:"$invoice_date",
 start_date:"$start_date",
 end_date:"$end_date",
 INVOICE_NUMBER:"$invoice_id",
-IFS_CUST_CODE:"$totals.grouping.foreign.account.ifs_operator_id",
+IFS_CUST_CODE:"$attributes.ifs_operator_id",
 OBJECT_ID:"$res.object_id",
 MTN_IND:"$res.mtn_ind",
 PROD_SERV:"$res.prod_serv",
