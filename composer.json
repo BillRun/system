@@ -10,5 +10,10 @@
         "platform": {
             "php": "7.0"
         }
+    },
+    "require-dev": {
+        "codeception/codeception": "^4.2",
+        "codeception/module-webdriver": "^1.4",
+        "codeception/module-asserts": "^1.3"
     }
 }
