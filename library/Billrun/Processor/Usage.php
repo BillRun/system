@@ -360,4 +360,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return !empty($this->prepricedMapping[$usaget]);
 	}
 	
+	public function getTimeZone() {
+		return $this->timeZone;
+	}
+
 }
