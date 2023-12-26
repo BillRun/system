@@ -64,6 +64,15 @@
             'reference' => '59374f2fef0cabb9e8ddb53277e85cdca74328de',
             'dev_requirement' => true,
         ),
+        'codeception/module-cli' => array(
+            'pretty_version' => '1.1.1',
+            'version' => '1.1.1.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../codeception/module-cli',
+            'aliases' => array(),
+            'reference' => '1f841ad4a1d43e5d9e60a43c4cc9e5af8008024f',
+            'dev_requirement' => true,
+        ),
         'codeception/module-webdriver' => array(
             'pretty_version' => '1.4.1',
             'version' => '1.4.1.0',

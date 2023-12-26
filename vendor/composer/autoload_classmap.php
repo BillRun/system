@@ -13,6 +13,7 @@ return array(
     'Codeception\\Lib\\Interfaces\\SessionSnapshot' => $vendorDir . '/codeception/module-webdriver/src/Codeception/Lib/Interfaces/SessionSnapshot.php',
     'Codeception\\Module\\AbstractAsserts' => $vendorDir . '/codeception/module-asserts/src/Codeception/Module/AbstractAsserts.php',
     'Codeception\\Module\\Asserts' => $vendorDir . '/codeception/module-asserts/src/Codeception/Module/Asserts.php',
+    'Codeception\\Module\\Cli' => $vendorDir . '/codeception/module-cli/src/Codeception/Module/Cli.php',
     'Codeception\\Module\\WebDriver' => $vendorDir . '/codeception/module-webdriver/src/Codeception/Module/WebDriver.php',
     'Codeception\\Util\\Shared\\Asserts' => $vendorDir . '/codeception/lib-asserts/src/Codeception/Util/Shared/Asserts.php',
     'Codeception\\Util\\Shared\\InheritedAsserts' => $vendorDir . '/codeception/lib-asserts/src/Codeception/Util/Shared/InheritedAsserts.php',
