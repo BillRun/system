@@ -110,7 +110,10 @@ const convertService = (getState, service, convertToBaseUnit, toSend) => {
 };
 
 export const saveService = (service, action) => (dispatch, getState) => {
-  const convertedService = convertToOldRecurrence(convertService(getState, service, true, true));
+  let convertedService = convertService(getState, service, true);
+  if (action === 'create' || (action === 'update' && convertedService.getIn(['recurrence', 'converted'], false))) {
+    convertedService = convertToOldRecurrence(convertedService);
+  } 
   return dispatch(saveEntity('services', convertedService, action));
 };
 

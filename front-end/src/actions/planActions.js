@@ -149,7 +149,10 @@ const convertPrepaidGroup = (getState, prepaidGroup, convertToBaseUnit) => {
 };
 
 export const savePlan = (plan, action) => (dispatch, getState) => {
-  const convertedPlan = convertToOldRecurrence(convertPlan(getState, plan, true));
+  let convertedPlan = convertPlan(getState, plan, true);
+  if (action === 'create' || (action === 'update' && convertedPlan.getIn(['recurrence', 'converted'], false))) {
+    convertedPlan = convertToOldRecurrence(convertedPlan);
+  } 
   return dispatch(saveEntity('plans', convertedPlan, action));
 };
 

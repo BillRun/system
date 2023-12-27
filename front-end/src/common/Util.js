@@ -813,6 +813,7 @@ export const convertToOldRecurrence = (item) => {
       }
       itemWithMutations.deleteIn(['recurrence', 'frequency']);
       itemWithMutations.deleteIn(['recurrence', 'start']);
+      itemWithMutations.deleteIn(['recurrence', 'converted']);
     }
   });
 }
@@ -829,6 +830,7 @@ export const convertToNewRecurrence = (item) => {
       }
       itemWithMutations.setIn(['recurrence', 'start'], 1);
       itemWithMutations.setIn(['recurrence', 'frequency'], frequency);
+      itemWithMutations.setIn(['recurrence', 'converted'], true);
       itemWithMutations.deleteIn(['recurrence', 'periodicity']);
     }
   });
