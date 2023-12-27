@@ -1,68 +1,63 @@
 <?php
 /**
- *
- * @filesource   text.php
  * @created      21.12.2017
  * @author       Smiley <smiley@chillerlan.net>
  * @copyright    2017 Smiley
  * @license      MIT
  */
 
-namespace chillerlan\QRCodeExamples;
-
 use chillerlan\QRCode\{QRCode, QROptions};
+use chillerlan\QRCode\Data\QRMatrix;
 
 require_once __DIR__.'/../vendor/autoload.php';
 
-$data = 'https://www.youtube.com/watch?v=DLzxrzFCyOs&t=43s';
+/**
+ * a little helper to create a proper ANSI 8-bit color escape sequence
+ *
+ * @see https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
+ * @see https://en.wikipedia.org/wiki/Block_Elements
+ *
+ * @codeCoverageIgnore
+ */
+function ansi8(string $str, int $color, bool $background = null):string{
+	$color      = max(0, min($color, 255));
+	$background = ($background === true) ? 48 : 38;
 
-$options = new QROptions([
-	'version'      => 5,
-	'outputType'   => QRCode::OUTPUT_STRING_TEXT,
-	'eccLevel'     => QRCode::ECC_L,
-]);
-
-// <pre> to view it in a browser
-echo '<pre style="font-size: 75%; line-height: 1;">'.(new QRCode($options))->render($data).'</pre>';
+	return sprintf("\x1b[%s;5;%sm%s\x1b[0m", $background, $color, $str);
+}
 
 
-// custom values
 $options = new QROptions([
 	'version'      => 5,
 	'outputType'   => QRCode::OUTPUT_STRING_TEXT,
 	'eccLevel'     => QRCode::ECC_L,
 	'moduleValues' => [
 		// finder
-		1536 => 'A', // dark (true)
-		6    => 'a', // light (false)
+		QRMatrix::M_FINDER_DARK    => ansi8('██', 124), // dark (true)
+		QRMatrix::M_FINDER_DOT     => ansi8('██', 124), // dark (true)
+		QRMatrix::M_FINDER         => ansi8('░░', 124), // light (false)
 		// alignment
-		2560 => 'B',
-		10   => 'b',
+		QRMatrix::M_ALIGNMENT_DARK => ansi8('██', 2),
+		QRMatrix::M_ALIGNMENT      => ansi8('░░', 2),
 		// timing
-		3072 => 'C',
-		12   => 'c',
+		QRMatrix::M_TIMING_DARK    => ansi8('██', 184),
+		QRMatrix::M_TIMING         => ansi8('░░', 184),
 		// format
-		3584 => 'D',
-		14   => 'd',
+		QRMatrix::M_FORMAT_DARK    => ansi8('██', 200),
+		QRMatrix::M_FORMAT         => ansi8('░░', 200),
 		// version
-		4096 => 'E',
-		16   => 'e',
+		QRMatrix::M_VERSION_DARK   => ansi8('██', 21),
+		QRMatrix::M_VERSION        => ansi8('░░', 21),
 		// data
-		1024 => 'F',
-		4    => 'f',
+		QRMatrix::M_DATA_DARK      => ansi8('██', 166),
+		QRMatrix::M_DATA           => ansi8('░░', 166),
 		// darkmodule
-		512  => 'G',
+		QRMatrix::M_DARKMODULE     => ansi8('██', 53),
 		// separator
-		8    => 'h',
+		QRMatrix::M_SEPARATOR      => ansi8('░░', 253),
 		// quietzone
-		18   => 'i',
+		QRMatrix::M_QUIETZONE      => ansi8('░░', 253),
 	],
 ]);
 
-// <pre> to view it in a browser
-echo '<pre style="font-size: 75%; line-height: 1;">'.(new QRCode($options))->render($data).'</pre>';
-
-
-
-
-
+echo (new QRCode($options))->render('https://www.youtube.com/watch?v=dQw4w9WgXcQ');

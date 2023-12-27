@@ -53,10 +53,11 @@ function runOnce(lastConfig, taskCode, callback) {
     return lastConfig;
 }
 // =============================================================================
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig	['_id'];
+// =============================================================================
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
-delete lastConfig['_id'];
 var fields = lastConfig['rates']['fields'];
 var found = false;
 for (var field_key in fields) {
@@ -1631,6 +1632,51 @@ lastConfig = runOnce(lastConfig, 'BRCD-4126', function () {
 	db.oauth_clients.updateMany({"scope" : null}, {$set:{"scope" : "global"}});
 });
 
+// BRCD-4297 Correct end date of services with limited cycles
+lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
+	function addMonthsToDate(fromDate, monthsToAdd) {
+		const newDate = new Date(fromDate); // Create a new Date object from the provided fromDate
+	  
+		// Add the specified number of months to the newDate
+		newDate.setMonth(newDate.getMonth() + parseInt(monthsToAdd));
+	  
+		return newDate.toISOString(); // Return the new date as an ISO string
+	  }
+	
+	var limited_cycle_services = db.services.aggregate([{$match: {balance_period: {$exists: false}, prorated: true, price: {$size: 1, $elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {month_limit: {$size: 1}}}, {$unwind: "$month_limit"},{$unwind: "$month_limit"}])
+	var today = new Date();
+	var lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+	var lastYearISO = lastYear.toISOString();
+	
+	var all_service_keys = [];
+	var service_and_cycle_limit = [];
+	
+	limited_cycle_services.forEach(service => {
+		all_service_keys.push(service._id);
+		service_and_cycle_limit[service._id] = service.month_limit;
+	});
+	
+	print("Subscriber ID, Service Key, Start Date, cycles, Original End Date, Corrected End Date")
+	var subscribers = db.subscribers.find({'services.name': {$in: all_service_keys}, to: {$gt: ISODate(lastYearISO)}});
+	subscribers.forEach(subscriber => {
+		for (var i = 0; i < subscriber.services.length; i++) {
+			if(all_service_keys.includes(subscriber.services[i].name)) {
+				var corrected_end_date = addMonthsToDate(subscriber.services[i].from, service_and_cycle_limit[subscriber.services[i].name]);
+				if (subscriber.services[i].to.toISOString() != corrected_end_date) {
+					print(subscriber.sid + "," + subscriber.services[i].name + "," + subscriber.services[i].from.toISOString() + "," + service_and_cycle_limit[subscriber.services[i].name] + "," + subscriber.services[i].to.toISOString() + "," + corrected_end_date);
+					subscriber.services[i].to = ISODate(corrected_end_date);
+				}
+			}
+		}
+		db.subscribers.save(subscriber);
+	})
+	
+	var services_with_revisions_with_differernt_cycles = db.services.aggregate([{$match: {balance_period: {$exists: false}, prorated: true, price: {$elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {$expr: {$gt: [{$size: "$month_limit"}, 1]}}}])
+	services_with_revisions_with_differernt_cycles.forEach(service => {
+		printjson("BRCD-4297: Service with that the month limit has been changed and will require a more complex fix: " + service._id);
+	});
+});
+
 // BRCD-4217 Migrate all rejection bills urt
 lastConfig = runOnce(lastConfig, 'BRCD-4217', function () {
 	print("BRCD-4217 - Migrating rejection bills urt..")
@@ -1652,6 +1698,103 @@ lastConfig = runOnce(lastConfig, 'BRCD-4217', function () {
 	}
 	db.bills.bulkWrite(bulkUpdate);
 	print("Updated total of " + i + " bills!")
+});
+
+
+// BRCD-4266 - Set default searchable fields for dynamic entity lists
+lastConfig = runOnce(lastConfig, 'BRCD-4266', function () {
+	print("START\tBRCD-4266 - Set default searchable fields for dynamic entity lists..");
+	// Account
+	if (typeof lastConfig['subscribers'] !== 'undefined' && typeof lastConfig['subscribers']['account'] !== 'undefined' && typeof lastConfig['subscribers']['account']['fields'] !== 'undefined') {
+		var accountFields = lastConfig['subscribers']['account']['fields'];
+		var defaultAccountSearchableFields = ['aid', 'firstname', 'lastname', 'first_name', 'last_name'];
+		for (var field_key in accountFields) {
+			if (defaultAccountSearchableFields.includes(accountFields[field_key].field_name)) {
+				accountFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['subscribers']['account']['fields'] = accountFields;
+		print("\t* update account fields");
+	}
+
+	// Subscriber
+	if (typeof lastConfig['subscribers'] !== 'undefined' && typeof lastConfig['subscribers']['subscriber'] !== 'undefined' && typeof lastConfig['subscribers']['subscriber']['fields'] !== 'undefined') {
+		var subscriberFields = lastConfig['subscribers']['subscriber']['fields'];
+		var defaultSubscriberSearchableFields = ['sid', 'firstname', 'lastname', 'first_name', 'last_name'];
+		for (var field_key in subscriberFields) {
+			if (defaultSubscriberSearchableFields.includes(subscriberFields[field_key].field_name)) {
+				subscriberFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['subscribers']['subscriber']['fields'] = subscriberFields;
+		print("\t* update subscriber fields");
+	}
+
+	// Tax
+	if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fields'] !== 'undefined') {
+		var taxesFields = lastConfig['taxes']['fields'];
+		var defaultTaxesSearchableFields = ['description', 'key'];
+		for (var field_key in taxesFields) {
+			if (defaultTaxesSearchableFields.includes(taxesFields[field_key].field_name)) {
+				taxesFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['taxes']['fields'] = taxesFields;
+		print("\t* update taxes fields");
+	}
+
+	// discounts
+	if (typeof lastConfig['discounts'] !== 'undefined' && typeof lastConfig['discounts']['fields'] !== 'undefined') {
+		var discountsFields = lastConfig['discounts']['fields'];
+		var defaultDiscountsSearchableFields = ['description', 'key'];
+		for (var field_key in discountsFields) {
+			if (defaultDiscountsSearchableFields.includes(discountsFields[field_key].field_name)) {
+				discountsFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['discounts']['fields'] = discountsFields;
+		print("\t* update discounts fields");
+	}
+
+	// Plans
+	if (typeof lastConfig['plans'] !== 'undefined' && typeof lastConfig['plans']['fields'] !== 'undefined') {
+		var plansFields = lastConfig['plans']['fields'];
+		var defaultPlansSearchableFields = ['name', 'description'];
+		for (var field_key in plansFields) {
+			if (defaultPlansSearchableFields.includes(plansFields[field_key].field_name)) {
+				plansFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['plans']['fields'] = plansFields;
+		print("\t* update plans fields");
+	}
+
+	// Services
+	if (typeof lastConfig['services'] !== 'undefined' && typeof lastConfig['services']['fields'] !== 'undefined' ) {
+		var servicesFields = lastConfig['services']['fields'];
+		var defaultServicesSearchableFields = ['description', 'name'];
+		for (var field_key in servicesFields) {
+			if (defaultServicesSearchableFields.includes(servicesFields[field_key].field_name)) {
+				servicesFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['services']['fields'] = servicesFields;
+		print("\t* update services fields");
+	}
+
+	// Rates
+	if (typeof lastConfig['rates'] !== 'undefined' && typeof lastConfig['rates']['fields'] !== 'undefined' ) {
+		var ratesFields = lastConfig['rates']['fields'];
+		var defaultRatesSearchableFields = ['key', 'description'];
+		for (var field_key in ratesFields) {
+			if (defaultRatesSearchableFields.includes(ratesFields[field_key].field_name)) {
+				ratesFields[field_key].searchable = true;
+			}
+		}
+		lastConfig['rates']['fields'] = ratesFields;
+		print("\t* update rates fields");
+	}
+	print("DONE\tBRCD-4266");
 });
 
 db.config.insert(lastConfig);

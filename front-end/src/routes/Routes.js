@@ -47,6 +47,7 @@ import CustomFields from '@/components/CustomFields';
 import Events from '@/components/Events';
 import RequestPaymentFiles from '@/components/PaymentFiles/RequestPaymentFiles';
 import ResponsePaymentFiles from '@/components/PaymentFiles/ResponsePaymentFiles';
+import PaymentsFiles from '@/components/PaymentFiles/PaymentsFiles';
 import { ImporterSetup } from '../components/Importer';
 import { ExporterSetup } from '../components/Exporter';
 import { ImmediateInvoiceSetup } from '../components/ImmediateInvoice';
@@ -148,6 +149,7 @@ const routes = () => (
         <Route path="/run_cycle" component={Authentication(RunCycle)} title="Billing Cycle" />
         <Route path="/queue" component={Authentication(QueueList)} title="Queue" />
         <Route path="/invoices" component={Authentication(InvoicesList)} title="Invoices" />
+        <Route path="/payments" component={Authentication(PaymentsFiles)} title="Payments" />
         <Route path="/custom-payment-files" component={Authentication(RequestPaymentFiles)} title="Custom Transactions Request File" />
         <Route path="/response-custom-payment-files" component={Authentication(ResponsePaymentFiles)} title="Custom Transactions Response File"/>
         <Route path="/settings" component={Authentication(Settings)} title="General Settings" />
