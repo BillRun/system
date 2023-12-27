@@ -15,8 +15,17 @@ jobs:
 
   static-code-analysis:
     name: "Static Code Analysis"
-
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+      matrix:
+        php-version:
+          - "7.4"
+          - "8.0"
+          - "8.1"
+          - "8.2"
+          - "8.3"
 
     env:
       PHAN_ALLOW_XDEBUG: 0
@@ -29,20 +38,21 @@ jobs:
       - name: "Install PHP"
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "7.4"
+          php-version: ${{ matrix.php-version }}
           coverage: none
           tools: pecl
           extensions: ast, gd, imagick, json, mbstring
 
       - name: "Update dependencies with composer"
-        run: composer update --no-interaction --no-ansi --no-progress --no-suggest
+        uses: ramsey/composer-install@v2
 
       - name: "Run phan"
-        run: php vendor/bin/phan
+        run: php vendor/bin/phan --target-php-version=${{ matrix.php-version }}
+
 
   tests:
     name: "Unit Tests"
-
+    needs: static-code-analysis
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -55,12 +65,10 @@ jobs:
           - "7.4"
           - "8.0"
           - "8.1"
+          - "8.2"
+          - "8.3"
 
     steps:
-#      - name: "Configure git to avoid issues with line endings"
-#        if: matrix.os == 'windows-latest'
-#        run: git config --global core.autocrlf false
-
       - name: "Checkout"
         uses: actions/checkout@v3
 
@@ -73,10 +81,18 @@ jobs:
           extensions: gd, imagick, json, mbstring
 
       - name: "Install dependencies with composer"
-        run: composer update --no-ansi --no-interaction --no-progress --no-suggest
+        uses: ramsey/composer-install@v2
 
       - name: "Run tests with phpunit"
-        run: php vendor/bin/phpunit --configuration=phpunit.xml
+        run: php vendor/bin/phpunit --colors=always --configuration=phpunit.xml.dist
 
       - name: "Send code coverage report to Codecov.io"
         uses: codecov/codecov-action@v3
+        with:
+         files: .build/coverage/clover.xml
+
+      - name: "Send code coverage report to Codacy"
+        uses: codacy/codacy-coverage-reporter-action@v1
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          coverage-reports: .build/coverage/clover.xml

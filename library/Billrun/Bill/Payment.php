@@ -679,6 +679,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$gatewayInstanceName = $gatewayDetails['instance_name'];
 				$paymentParams['gateway_details'] = $gatewayDetails;
 				if ((self::isChargeMode($chargeOptions) && $gatewayDetails['amount'] < 0) || (self::isRefundMode($chargeOptions) && $gatewayDetails['amount'] > 0)) {
+					Billrun_Factory::log('Skipping account ' . $paymentParams['aid'] . ' with amount ' . $gatewayDetails['amount'] . ' due to requested charge mode', Zend_Log::DEBUG);
 					continue;
 				}
 				if ($gatewayDetails['amount'] > 0) {
@@ -1022,7 +1023,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$pipelines[] = array(
 			'$limit' => intval($size),
 		);
-		
+		Billrun_Factory::log('Paginated debts query: ' . json_encode($pipelines), Zend_Log::DEBUG);
 		return $pipelines;
 	}
 	

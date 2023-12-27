@@ -6,6 +6,7 @@ import {
   getFieldNameType,
   getConfig,
   sortFieldOption,
+  createReportSaveToBillsField
 } from '@/common/Util';
 import {
   subscriberFieldsWithPlaySelector,
@@ -15,7 +16,10 @@ import {
   linesFieldsSelector,
   billsFieldsSelector,
   billsUserFieldsSelector,
-  saveToBillPaymentGatewaySelector,
+  saveToBillPaymentsPaymentGatewaySelector,
+  saveToBillDenialsPaymentGatewaySelector,
+  saveToBillTransactionsResponsePaymentGatewaySelector,
+  saveToBillTransactionsRequestPaymentGatewaySelector,
   rateCategoriesSelector,
   isPlaysEnabledSelector,
 } from './settingsSelector';
@@ -89,17 +93,32 @@ const selectReportLinesFields = (
   const selectReportBillsFields = (
     userFields = Immutable.List(),
     billrunFields = Immutable.List(),
-    saveToBillsFields = Immutable.List(),
+    saveToBillPaymentsFields = Immutable.List(),
+    saveToBillDenialsFields = Immutable.List(),
+    saveToBillTransactionsResponseFields = Immutable.List(),
+    saveToBillTransactionsRequestFields = Immutable.List(),
   ) =>
     Immutable.List().withMutations((optionsWithMutations) => {
       // set fields from IP
-      saveToBillsFields.forEach((saveToBillsField) => {
-        optionsWithMutations.push(Immutable.Map({
-          field_name: `pg_request.${saveToBillsField.get('field_name', '')}`,
-          title: `${saveToBillsField.get('payment_gateway')}: ${getFieldName(saveToBillsField.get('field_name', ''), 'bills')}`,
-          type: saveToBillsField.getIn(['type'], 'text'),
-          payment_gateway: saveToBillsField.get('payment_gateway')
-        }));
+      saveToBillTransactionsRequestFields.forEach((saveToBillsField) => {
+        optionsWithMutations.push(
+          createReportSaveToBillsField(saveToBillsField, 'pg_request')
+        );
+      });
+      saveToBillTransactionsResponseFields.forEach((saveToBillsField) => {
+        optionsWithMutations.push(
+          createReportSaveToBillsField(saveToBillsField, 'pg_response')
+        );
+      });
+      saveToBillDenialsFields.forEach((saveToBillsField) => {
+        optionsWithMutations.push(
+          createReportSaveToBillsField(saveToBillsField, 'pg_denials')
+        );
+      });
+      saveToBillPaymentsFields.forEach((saveToBillsField) => {
+        optionsWithMutations.push(
+          createReportSaveToBillsField(saveToBillsField, 'pg_payments')
+        );
       });
       // Set fields from billrun settings
       billrunFields.forEach((billrunField) => {
@@ -334,7 +353,10 @@ const reportQueueFieldsSelector = createSelector(
 export const reportBillsFieldsSelector = createSelector(
   billsUserFieldsSelector,
   billsFieldsSelector,
-  saveToBillPaymentGatewaySelector,
+  saveToBillPaymentsPaymentGatewaySelector,
+  saveToBillDenialsPaymentGatewaySelector,
+  saveToBillTransactionsResponsePaymentGatewaySelector,
+  saveToBillTransactionsRequestPaymentGatewaySelector,
   selectReportBillsFields,
 );
 

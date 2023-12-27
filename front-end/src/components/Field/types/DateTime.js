@@ -27,12 +27,17 @@ const DateTime = (props) => {
       <div className="non-editable-field">{ displayValue }</div>
     );
   }
+  const onDateTimeChangeRaw = (newDate) => {
+    const date = moment( (newDate).target.value, dateTimeFormat );
+    onDateTimeChange( date );
+
+  }
   const onDateTimeChange = (newDate) => {
     const utcDate = moment.isMoment(newDate) && newDate.isValid() ? newDate.utc() : '';
     onChange(utcDate);
   }
   const placeholderText = (disabled && !value) ? '' : placeholder;
-  const selected = (moment.isMoment(value) && value.isValid()) ? value : null;
+  const selected = (moment.isMoment(value) && value.isValid()) ? value.local() : null;
   const minDateValue = moment.isMoment(minDate) ? minDate : undefined;
   return (
     <DatePicker
@@ -46,6 +51,7 @@ const DateTime = (props) => {
       timeFormat={timeFormat}
       selected={selected}
       onChange={onDateTimeChange}
+      onChangeRaw={onDateTimeChangeRaw}
       disabled={disabled}
       placeholderText={placeholderText}
     >
