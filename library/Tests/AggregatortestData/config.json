@@ -330,6 +330,11 @@
 									"editable": true,
 									"display": true,
 									"title": "Salutation"
+								},{
+									"field_name" : "services",
+									"system" : true,
+									"mandatory" : false,
+									"multiple" : true
 								}
 							]
 						}
