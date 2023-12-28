@@ -235,6 +235,11 @@
 									"field_name": "services",
 									"system": true,
 									"mandatory": false
+								},
+								{
+									"field_name": "overrides",
+									"system": true,
+									"mandatory": false
 								}
 							]
 						},
@@ -330,11 +335,6 @@
 									"editable": true,
 									"display": true,
 									"title": "Salutation"
-								},{
-									"field_name" : "services",
-									"system" : true,
-									"mandatory" : false,
-									"multiple" : true
 								}
 							]
 						}

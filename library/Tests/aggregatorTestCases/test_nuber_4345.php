@@ -17,6 +17,12 @@ class Test_Case_4345
             "price" => [["price" => 10, "from" => 0, "to" => "UNLIMITED"]]]);
         $account = generat_subscribers::generateAccount([
             "from" => '2023-07-01',
+            "to" => "2118-05-06T11:06:07Z"
+        ]);
+        $subscriber = generat_subscribers::generateSubscriber([
+            'aid' => $account['aid'],
+            'plan' => $plan['name'],
+            "from" => '2023-07-01',
             "to" => "2118-05-06T11:06:07Z",
             'services' => [
                 [
@@ -44,18 +50,10 @@ class Test_Case_4345
                         ]
                     ]
                 ]
-            ],
-
-        ]);
-        $subscriber = generat_subscribers::generateSubscriber([
-            'aid' => $account['aid'],
-            'plan' => $plan['name'],
-            "from" => '2023-07-01',
-            "to" => "2118-05-06T11:06:07Z"
+            ]
 
         ]);
         $stamp = '202310';
-
 
         return [
             'test' => [
