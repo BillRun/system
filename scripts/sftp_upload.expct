@@ -8,8 +8,6 @@ spawn sftp billrun@172.29.20.30
 expect "password:"
 send "$pwd\n"
 expect "sftp>"
-send "ls $local_path $base_dir\n"
-expect "sftp>"
 send "put $local_path $base_dir/\n"
 expect "sftp>"
 send "chgrp 1001 $base_dir/$filename\n"
