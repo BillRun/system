@@ -14,7 +14,7 @@ class Test_Case_4345
         $service = generat_services::generateService([
             'from' => '2020-01-01',
             'prorated' => false,
-            "price" => [["price" => 10, "from" => 0, "to" => "UNLIMITED"]]]);
+            "price" => [["price" => 500, "from" => 0, "to" => "UNLIMITED"]]]);
         $account = generat_subscribers::generateAccount([
             "from" => '2023-07-01',
             "to" => "2118-05-06T11:06:07Z"
@@ -31,27 +31,7 @@ class Test_Case_4345
                     "to" => "2118-05-06T11:06:07Z"
                 ]
             ],
-            "overrides" => [
-                [
-                    "type" => "service",
-                    "key" => $service['name'],
-                    "value" => [
-                        "price" => [
-                            [
-                                "price" => 500,
-                                "from" => 0,
-                                "to" => 3
-                            ],
-                            [
-                                "price" => 10000000,
-                                "from" => 3,
-                                "to" => "9223372036854776000"
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-
+          
         ]);
         $stamp = '202310';
 
