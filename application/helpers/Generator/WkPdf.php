@@ -22,6 +22,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $render_subscription_details = TRUE;
 	protected $linesColl;
 	protected $plansColl;
+	protected $ratesColl;
 	protected $servicesColl;
 	protected $template;
 	protected $is_fake_generation = FALSE;
@@ -31,7 +32,14 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $footer_path = "";
 	protected $header_content = "";
 	protected $footer_content = "";
-	
+	protected $font_awesome_css_path;
+	protected $css_path;
+	protected $logo_path;
+	protected $view_path;
+	protected $billrun_footer_logo_path;
+	protected $tanent_css;
+	protected $paths;
+	protected $wkpdf_exec;	
 
 
 	/**
@@ -584,7 +592,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			$update['invoice_html'] = $htmlPath;
 		}
 		if(!$this->is_fake_generation) {
-			$this->billrunColl->update(["_id"=>$account['_id']->getMongoID(),"invoice_id"=>$account['invoice_id'], "aid"=>$account['aid'], 'billrun_key' => $account['billrun_key']], ['$set' => $update ]);
+			$query = [
+				"_id" => $account['_id']->getMongoID(), 
+				"invoice_id" => $account['invoice_id'], 
+				"aid" => $account['aid'], 
+				"billrun_key" => $account['billrun_key']
+			];
+			$update = [
+				'$set' => $update
+			];
+			$this->billrunColl->update($query, $update);
 		}
 	}
 
