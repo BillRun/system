@@ -28,7 +28,7 @@ const PlansList = (props) => {
       return (!periodicity) ? '' : `${changeCase.upperCaseFirst(periodicity)}ly`;
     }
     const frequency = item.getIn(['recurrence', 'frequency'], '')
-    return getFieldName('recurrence.periodicity.1', '', frequency);
+    return getFieldName(`recurrence.periodicity.${frequency}`, '', '');
   };
 
   const parserChargingMode = item => (item.get('upfront') ? 'Upfront' : 'Arrears');

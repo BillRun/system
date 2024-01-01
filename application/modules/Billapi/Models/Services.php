@@ -49,14 +49,17 @@ class Models_Services extends Models_Entity {
                 return $field['name'] == 'recurrence' ? $field : $acc;
             }, null);
             if (!is_null($recurrence_field)) {
-                    $frequency = Billrun_Util::getIn($this->update, 'recurrence.frequency', []);
-                    if (empty($frequency)) {
-                            throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Missing Billing Frequency - Type parameter');
-                    }
-                    $start = Billrun_Util::getIn($this->update, 'recurrence.start', []);
-                    if (empty($start)) {
-                            throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Missing Billing Frequency - Start parameter');
-                    }
+							$periodicity = Billrun_Util::getIn($this->update, 'recurrence.periodicity', null);
+							if (empty($periodicity)) {
+								$frequency = Billrun_Util::getIn($this->update, 'recurrence.frequency', null);
+								if (empty($frequency) ) {
+									throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Missing Billing Frequency - Type parameter');
+								}
+								$start = Billrun_Util::getIn($this->update, 'recurrence.start', null);
+								if (empty($start)) {
+									throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Missing Billing Frequency - Start parameter');
+								}
+							}
             }
             return true;
 	}
