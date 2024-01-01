@@ -22,19 +22,14 @@ class generat_test_data
   }
 
   
-  public static function generateRandomString($length = 15)
-  {
-    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $charactersLength = strlen($characters);
-    $randomString = '';
+  
+  public static function getCurrentDateTimeWithMilliseconds() {
+    $now = new DateTime();
+    $milliseconds = round(microtime(true) * 1000) % 1000; // Get current milliseconds
 
-    for ($i = 0; $i < $length; $i++) {
-      $randomString .= $characters[rand(0, $charactersLength - 1)];
-    }
-
-    return $randomString;
-  }
-
+    // Format the date and time, and append milliseconds
+    return $now->format('YmdHis') . sprintf('%03d', $milliseconds);
+}
 
   public static function bulidAPI($entity, $params)
 {

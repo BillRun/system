@@ -21,7 +21,7 @@ class generat_services extends generat_test_data
     $service = array_merge(
       [
         "description" => "aaa",
-        "name" => generat_test_data::generateRandomString(),
+        "name" => generat_test_data::getCurrentDateTimeWithMilliseconds(),
         "price" => [
           [
             "from" => 0,
