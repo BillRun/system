@@ -6,6 +6,10 @@ namespace Http\Promise;
  * A rejected promise.
  *
  * @author Joel Wurtz <joel.wurtz@gmail.com>
+ *
+ * @template-covariant T
+ *
+ * @implements Promise<T>
  */
 final class RejectedPromise implements Promise
 {
@@ -14,9 +18,6 @@ final class RejectedPromise implements Promise
      */
     private $exception;
 
-    /**
-     * @param \Exception $exception
-     */
     public function __construct(\Exception $exception)
     {
         $this->exception = $exception;
@@ -54,5 +55,7 @@ final class RejectedPromise implements Promise
         if ($unwrap) {
             throw $this->exception;
         }
+
+        return;
     }
 }

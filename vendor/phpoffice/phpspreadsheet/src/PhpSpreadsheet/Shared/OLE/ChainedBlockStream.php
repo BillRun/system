@@ -6,10 +6,13 @@ use PhpOffice\PhpSpreadsheet\Shared\OLE;
 
 class ChainedBlockStream
 {
+    /** @var mixed */
+    public $context;
+
     /**
      * The OLE container of the file that is being read.
      *
-     * @var OLE
+     * @var null|OLE
      */
     public $ole;
 
@@ -42,13 +45,13 @@ class ChainedBlockStream
      *                                    ole-chainedblockstream://oleInstanceId=1
      * @param string $mode only "r" is supported
      * @param int $options mask of STREAM_REPORT_ERRORS and STREAM_USE_PATH
-     * @param string &$openedPath absolute path of the opened stream (out parameter)
+     * @param string $openedPath absolute path of the opened stream (out parameter)
      *
      * @return bool true on success
      */
     public function stream_open($path, $mode, $options, &$openedPath) // @codingStandardsIgnoreLine
     {
-        if ($mode != 'r') {
+        if ($mode[0] !== 'r') {
             if ($options & STREAM_REPORT_ERRORS) {
                 trigger_error('Only reading is supported', E_USER_WARNING);
             }
@@ -71,7 +74,7 @@ class ChainedBlockStream
         $this->data = '';
         if (isset($this->params['size']) && $this->params['size'] < $this->ole->bigBlockThreshold && $blockId != $this->ole->root->startBlock) {
             // Block id refers to small blocks
-            $rootPos = $this->ole->_getBlockOffset($this->ole->root->startBlock);
+            $rootPos = $this->ole->getBlockOffset($this->ole->root->startBlock);
             while ($blockId != -2) {
                 $pos = $rootPos + $blockId * $this->ole->bigBlockSize;
                 $blockId = $this->ole->sbat[$blockId];
@@ -81,7 +84,7 @@ class ChainedBlockStream
         } else {
             // Block id refers to big blocks
             while ($blockId != -2) {
-                $pos = $this->ole->_getBlockOffset($blockId);
+                $pos = $this->ole->getBlockOffset($blockId);
                 fseek($this->ole->_file_handle, $pos);
                 $this->data .= fread($this->ole->_file_handle, $this->ole->bigBlockSize);
                 $blockId = $this->ole->bbat[$blockId];
@@ -101,7 +104,7 @@ class ChainedBlockStream
     /**
      * Implements support for fclose().
      */
-    public function stream_close() // @codingStandardsIgnoreLine
+    public function stream_close(): void // @codingStandardsIgnoreLine
     {
         $this->ole = null;
         unset($GLOBALS['_OLE_INSTANCES']);
@@ -112,14 +115,14 @@ class ChainedBlockStream
      *
      * @param int $count maximum number of bytes to read
      *
-     * @return string
+     * @return false|string
      */
     public function stream_read($count) // @codingStandardsIgnoreLine
     {
         if ($this->stream_eof()) {
             return false;
         }
-        $s = substr($this->data, $this->pos, $count);
+        $s = substr($this->data, (int) $this->pos, $count);
         $this->pos += $count;
 
         return $s;
@@ -160,7 +163,8 @@ class ChainedBlockStream
             $this->pos = $offset;
         } elseif ($whence == SEEK_CUR && -$offset <= $this->pos) {
             $this->pos += $offset;
-        } elseif ($whence == SEEK_END && -$offset <= count($this->data)) {
+            // @phpstan-ignore-next-line
+        } elseif ($whence == SEEK_END && -$offset <= count(/** @scrutinizer ignore-type */ $this->data)) {
             $this->pos = strlen($this->data) + $offset;
         } else {
             return false;
@@ -179,7 +183,7 @@ class ChainedBlockStream
     {
         return [
             'size' => strlen($this->data),
-            ];
+        ];
     }
 
     // Methods used by stream_wrapper_register() that are not implemented:

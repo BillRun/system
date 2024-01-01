@@ -2,7 +2,7 @@
 
 namespace PhpOffice\PhpSpreadsheet\Shared\Trend;
 
-class BestFit
+abstract class BestFit
 {
     /**
      * Indicator flag for a calculation error.
@@ -53,39 +53,55 @@ class BestFit
      */
     protected $yBestFitValues = [];
 
+    /** @var float */
     protected $goodnessOfFit = 1;
 
+    /** @var float */
     protected $stdevOfResiduals = 0;
 
+    /** @var float */
     protected $covariance = 0;
 
+    /** @var float */
     protected $correlation = 0;
 
+    /** @var float */
     protected $SSRegression = 0;
 
+    /** @var float */
     protected $SSResiduals = 0;
 
+    /** @var float */
     protected $DFResiduals = 0;
 
+    /** @var float */
     protected $f = 0;
 
+    /** @var float */
     protected $slope = 0;
 
+    /** @var float */
     protected $slopeSE = 0;
 
+    /** @var float */
     protected $intersect = 0;
 
+    /** @var float */
     protected $intersectSE = 0;
 
+    /** @var float */
     protected $xOffset = 0;
 
+    /** @var float */
     protected $yOffset = 0;
 
+    /** @return bool */
     public function getError()
     {
         return $this->error;
     }
 
+    /** @return string */
     public function getBestFitType()
     {
         return $this->bestFitType;
@@ -96,24 +112,18 @@ class BestFit
      *
      * @param float $xValue X-Value
      *
-     * @return bool Y-Value
+     * @return float Y-Value
      */
-    public function getValueOfYForX($xValue)
-    {
-        return false;
-    }
+    abstract public function getValueOfYForX($xValue);
 
     /**
      * Return the X-Value for a specified value of Y.
      *
      * @param float $yValue Y-Value
      *
-     * @return bool X-Value
+     * @return float X-Value
      */
-    public function getValueOfXForY($yValue)
-    {
-        return false;
-    }
+    abstract public function getValueOfXForY($yValue);
 
     /**
      * Return the original set of X-Values.
@@ -130,12 +140,9 @@ class BestFit
      *
      * @param int $dp Number of places of decimal precision to display
      *
-     * @return bool
+     * @return string
      */
-    public function getEquation($dp = 0)
-    {
-        return false;
-    }
+    abstract public function getEquation($dp = 0);
 
     /**
      * Return the Slope of the line.
@@ -341,20 +348,42 @@ class BestFit
         return $this->yBestFitValues;
     }
 
-    protected function calculateGoodnessOfFit($sumX, $sumY, $sumX2, $sumY2, $sumXY, $meanX, $meanY, $const)
+    /** @var mixed */
+    private static $scrutinizerZeroPointZero = 0.0;
+
+    /**
+     * @param mixed $x
+     * @param mixed $y
+     */
+    private static function scrutinizerLooseCompare($x, $y): bool
     {
-        $SSres = $SScov = $SScor = $SStot = $SSsex = 0.0;
+        return $x == $y;
+    }
+
+    /**
+     * @param float $sumX
+     * @param float $sumY
+     * @param float $sumX2
+     * @param float $sumY2
+     * @param float $sumXY
+     * @param float $meanX
+     * @param float $meanY
+     * @param bool|int $const
+     */
+    protected function calculateGoodnessOfFit($sumX, $sumY, $sumX2, $sumY2, $sumXY, $meanX, $meanY, $const): void
+    {
+        $SSres = $SScov = $SStot = $SSsex = 0.0;
         foreach ($this->xValues as $xKey => $xValue) {
             $bestFitY = $this->yBestFitValues[$xKey] = $this->getValueOfYForX($xValue);
 
             $SSres += ($this->yValues[$xKey] - $bestFitY) * ($this->yValues[$xKey] - $bestFitY);
-            if ($const) {
+            if ($const === true) {
                 $SStot += ($this->yValues[$xKey] - $meanY) * ($this->yValues[$xKey] - $meanY);
             } else {
                 $SStot += $this->yValues[$xKey] * $this->yValues[$xKey];
             }
             $SScov += ($this->xValues[$xKey] - $meanX) * ($this->yValues[$xKey] - $meanY);
-            if ($const) {
+            if ($const === true) {
                 $SSsex += ($this->xValues[$xKey] - $meanX) * ($this->xValues[$xKey] - $meanX);
             } else {
                 $SSsex += $this->xValues[$xKey] * $this->xValues[$xKey];
@@ -362,14 +391,15 @@ class BestFit
         }
 
         $this->SSResiduals = $SSres;
-        $this->DFResiduals = $this->valueCount - 1 - $const;
+        $this->DFResiduals = $this->valueCount - 1 - ($const === true ? 1 : 0);
 
         if ($this->DFResiduals == 0.0) {
             $this->stdevOfResiduals = 0.0;
         } else {
             $this->stdevOfResiduals = sqrt($SSres / $this->DFResiduals);
         }
-        if (($SStot == 0.0) || ($SSres == $SStot)) {
+        // Scrutinizer thinks $SSres == $SStot is always true. It is wrong.
+        if ($SStot == self::$scrutinizerZeroPointZero || self::scrutinizerLooseCompare($SSres, $SStot)) {
             $this->goodnessOfFit = 1;
         } else {
             $this->goodnessOfFit = 1 - ($SSres / $SStot);
@@ -377,7 +407,7 @@ class BestFit
 
         $this->SSRegression = $this->goodnessOfFit * $SStot;
         $this->covariance = $SScov / $this->valueCount;
-        $this->correlation = ($this->valueCount * $sumXY - $sumX * $sumY) / sqrt(($this->valueCount * $sumX2 - pow($sumX, 2)) * ($this->valueCount * $sumY2 - pow($sumY, 2)));
+        $this->correlation = ($this->valueCount * $sumXY - $sumX * $sumY) / sqrt(($this->valueCount * $sumX2 - $sumX ** 2) * ($this->valueCount * $sumY2 - $sumY ** 2));
         $this->slopeSE = $this->stdevOfResiduals / sqrt($SSsex);
         $this->intersectSE = $this->stdevOfResiduals * sqrt(1 / ($this->valueCount - ($sumX * $sumX) / $sumX2));
         if ($this->SSResiduals != 0.0) {
@@ -395,27 +425,40 @@ class BestFit
         }
     }
 
+    /** @return float|int */
+    private function sumSquares(array $values)
+    {
+        return array_sum(
+            array_map(
+                function ($value) {
+                    return $value ** 2;
+                },
+                $values
+            )
+        );
+    }
+
     /**
      * @param float[] $yValues
      * @param float[] $xValues
-     * @param bool $const
      */
-    protected function leastSquareFit(array $yValues, array $xValues, $const)
+    protected function leastSquareFit(array $yValues, array $xValues, bool $const): void
     {
         // calculate sums
-        $x_sum = array_sum($xValues);
-        $y_sum = array_sum($yValues);
-        $meanX = $x_sum / $this->valueCount;
-        $meanY = $y_sum / $this->valueCount;
-        $mBase = $mDivisor = $xx_sum = $xy_sum = $yy_sum = 0.0;
+        $sumValuesX = array_sum($xValues);
+        $sumValuesY = array_sum($yValues);
+        $meanValueX = $sumValuesX / $this->valueCount;
+        $meanValueY = $sumValuesY / $this->valueCount;
+        $sumSquaresX = $this->sumSquares($xValues);
+        $sumSquaresY = $this->sumSquares($yValues);
+        $mBase = $mDivisor = 0.0;
+        $xy_sum = 0.0;
         for ($i = 0; $i < $this->valueCount; ++$i) {
             $xy_sum += $xValues[$i] * $yValues[$i];
-            $xx_sum += $xValues[$i] * $xValues[$i];
-            $yy_sum += $yValues[$i] * $yValues[$i];
 
-            if ($const) {
-                $mBase += ($xValues[$i] - $meanX) * ($yValues[$i] - $meanY);
-                $mDivisor += ($xValues[$i] - $meanX) * ($xValues[$i] - $meanX);
+            if ($const === true) {
+                $mBase += ($xValues[$i] - $meanValueX) * ($yValues[$i] - $meanValueY);
+                $mDivisor += ($xValues[$i] - $meanValueX) * ($xValues[$i] - $meanValueX);
             } else {
                 $mBase += $xValues[$i] * $yValues[$i];
                 $mDivisor += $xValues[$i] * $xValues[$i];
@@ -426,13 +469,9 @@ class BestFit
         $this->slope = $mBase / $mDivisor;
 
         // calculate intersect
-        if ($const) {
-            $this->intersect = $meanY - ($this->slope * $meanX);
-        } else {
-            $this->intersect = 0;
-        }
+        $this->intersect = ($const === true) ? $meanValueY - ($this->slope * $meanValueX) : 0.0;
 
-        $this->calculateGoodnessOfFit($x_sum, $y_sum, $xx_sum, $yy_sum, $xy_sum, $meanX, $meanY, $const);
+        $this->calculateGoodnessOfFit($sumValuesX, $sumValuesY, $sumSquaresX, $sumSquaresY, $xy_sum, $meanValueX, $meanValueY, $const);
     }
 
     /**
@@ -440,23 +479,22 @@ class BestFit
      *
      * @param float[] $yValues The set of Y-values for this regression
      * @param float[] $xValues The set of X-values for this regression
-     * @param bool $const
      */
-    public function __construct($yValues, $xValues = [], $const = true)
+    public function __construct($yValues, $xValues = [])
     {
         //    Calculate number of points
-        $nY = count($yValues);
-        $nX = count($xValues);
+        $yValueCount = count($yValues);
+        $xValueCount = count($xValues);
 
         //    Define X Values if necessary
-        if ($nX == 0) {
-            $xValues = range(1, $nY);
-        } elseif ($nY != $nX) {
+        if ($xValueCount === 0) {
+            $xValues = range(1, $yValueCount);
+        } elseif ($yValueCount !== $xValueCount) {
             //    Ensure both arrays of points are the same size
             $this->error = true;
         }
 
-        $this->valueCount = $nY;
+        $this->valueCount = $yValueCount;
         $this->xValues = $xValues;
         $this->yValues = $yValues;
     }

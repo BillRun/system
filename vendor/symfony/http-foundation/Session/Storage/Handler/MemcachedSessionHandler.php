@@ -12,20 +12,15 @@
 namespace Symfony\Component\HttpFoundation\Session\Storage\Handler;
 
 /**
- * MemcachedSessionHandler.
- *
  * Memcached based session storage handler based on the Memcached class
  * provided by the PHP memcached extension.
  *
- * @see http://php.net/memcached
+ * @see https://php.net/memcached
  *
  * @author Drak <drak@zikula.org>
  */
-class MemcachedSessionHandler implements \SessionHandlerInterface
+class MemcachedSessionHandler extends AbstractSessionHandler
 {
-    /**
-     * @var \Memcached Memcached driver
-     */
     private $memcached;
 
     /**
@@ -43,74 +38,89 @@ class MemcachedSessionHandler implements \SessionHandlerInterface
      *
      * List of available options:
      *  * prefix: The prefix to use for the memcached keys in order to avoid collision
-     *  * expiretime: The time to live in seconds
-     *
-     * @param \Memcached $memcached A \Memcached instance
-     * @param array      $options   An associative array of Memcached options
+     *  * ttl: The time to live in seconds.
      *
      * @throws \InvalidArgumentException When unsupported options are passed
      */
-    public function __construct(\Memcached $memcached, array $options = array())
+    public function __construct(\Memcached $memcached, array $options = [])
     {
         $this->memcached = $memcached;
 
-        if ($diff = array_diff(array_keys($options), array('prefix', 'expiretime'))) {
-            throw new \InvalidArgumentException(sprintf(
-                'The following options are not supported "%s"', implode(', ', $diff)
-            ));
+        if ($diff = array_diff(array_keys($options), ['prefix', 'expiretime', 'ttl'])) {
+            throw new \InvalidArgumentException(sprintf('The following options are not supported "%s".', implode(', ', $diff)));
         }
 
-        $this->ttl = isset($options['expiretime']) ? (int) $options['expiretime'] : 86400;
-        $this->prefix = isset($options['prefix']) ? $options['prefix'] : 'sf2s';
+        $this->ttl = $options['expiretime'] ?? $options['ttl'] ?? null;
+        $this->prefix = $options['prefix'] ?? 'sf2s';
     }
 
     /**
-     * {@inheritdoc}
+     * @return bool
      */
-    public function open($savePath, $sessionName)
-    {
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
+    #[\ReturnTypeWillChange]
     public function close()
     {
-        return true;
+        return $this->memcached->quit();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function read($sessionId)
+    protected function doRead(string $sessionId)
     {
         return $this->memcached->get($this->prefix.$sessionId) ?: '';
     }
 
     /**
-     * {@inheritdoc}
+     * @return bool
      */
-    public function write($sessionId, $data)
+    #[\ReturnTypeWillChange]
+    public function updateTimestamp($sessionId, $data)
     {
-        return $this->memcached->set($this->prefix.$sessionId, $data, time() + $this->ttl);
+        $this->memcached->touch($this->prefix.$sessionId, $this->getCompatibleTtl());
+
+        return true;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function destroy($sessionId)
+    protected function doWrite(string $sessionId, string $data)
     {
-        return $this->memcached->delete($this->prefix.$sessionId);
+        return $this->memcached->set($this->prefix.$sessionId, $data, $this->getCompatibleTtl());
+    }
+
+    private function getCompatibleTtl(): int
+    {
+        $ttl = (int) ($this->ttl ?? \ini_get('session.gc_maxlifetime'));
+
+        // If the relative TTL that is used exceeds 30 days, memcached will treat the value as Unix time.
+        // We have to convert it to an absolute Unix time at this point, to make sure the TTL is correct.
+        if ($ttl > 60 * 60 * 24 * 30) {
+            $ttl += time();
+        }
+
+        return $ttl;
     }
 
     /**
      * {@inheritdoc}
      */
+    protected function doDestroy(string $sessionId)
+    {
+        $result = $this->memcached->delete($this->prefix.$sessionId);
+
+        return $result || \Memcached::RES_NOTFOUND == $this->memcached->getResultCode();
+    }
+
+    /**
+     * @return int|false
+     */
+    #[\ReturnTypeWillChange]
     public function gc($maxlifetime)
     {
         // not required here because memcached will auto expire the records anyhow.
-        return true;
+        return 0;
     }
 
     /**

@@ -13,8 +13,7 @@ use Psr\Http\Message\StreamInterface;
 class DecompressStream extends FilteredStream
 {
     /**
-     * @param StreamInterface $stream
-     * @param int             $level
+     * @param int $level
      */
     public function __construct(StreamInterface $stream, $level = -1)
     {
@@ -28,18 +27,12 @@ class DecompressStream extends FilteredStream
         $this->writeFilterCallback = Filter\fun($this->writeFilter(), ['window' => 15, 'level' => $level]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function readFilter()
+    protected function readFilter(): string
     {
         return 'zlib.inflate';
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function writeFilter()
+    protected function writeFilter(): string
     {
         return 'zlib.deflate';
     }

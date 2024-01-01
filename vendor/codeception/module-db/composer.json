@@ -1,0 +1,29 @@
+{
+    "name":"codeception/module-db",
+    "description":"DB module for Codeception",
+    "keywords":["codeception", "db-testing", "database-testing"],
+    "homepage":"https://codeception.com/",
+    "type":"library",
+    "license":"MIT",
+    "authors":[
+        {
+            "name": "Michael Bodnarchuk"
+        },
+        {
+            "name": "Gintautas Miselis"
+        }
+    ],
+    "minimum-stability": "RC",
+    "require": {
+        "php": "^7.4 | ^8.0",
+        "ext-json": "*",
+        "ext-pdo": "*",
+        "codeception/codeception": "^4.1"
+    },
+    "autoload":{
+        "classmap": ["src/"]
+    },
+    "config": {
+        "classmap-authoritative": true
+    }
+}

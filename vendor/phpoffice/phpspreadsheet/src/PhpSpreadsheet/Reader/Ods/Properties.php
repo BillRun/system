@@ -4,9 +4,11 @@ namespace PhpOffice\PhpSpreadsheet\Reader\Ods;
 
 use PhpOffice\PhpSpreadsheet\Document\Properties as DocumentProperties;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use SimpleXMLElement;
 
 class Properties
 {
+    /** @var Spreadsheet */
     private $spreadsheet;
 
     public function __construct(Spreadsheet $spreadsheet)
@@ -14,29 +16,30 @@ class Properties
         $this->spreadsheet = $spreadsheet;
     }
 
-    public function load(\SimpleXMLElement $xml, $namespacesMeta)
+    public function load(SimpleXMLElement $xml, array $namespacesMeta): void
     {
         $docProps = $this->spreadsheet->getProperties();
         $officeProperty = $xml->children($namespacesMeta['office']);
         foreach ($officeProperty as $officePropertyData) {
-            /** @var \SimpleXMLElement $officePropertyData */
-            $officePropertiesDC = (object) [];
             if (isset($namespacesMeta['dc'])) {
+                /** @scrutinizer ignore-call */
                 $officePropertiesDC = $officePropertyData->children($namespacesMeta['dc']);
+                $this->setCoreProperties($docProps, $officePropertiesDC);
             }
-            $this->setCoreProperties($docProps, $officePropertiesDC);
 
-            $officePropertyMeta = (object) [];
+            $officePropertyMeta = null;
             if (isset($namespacesMeta['dc'])) {
+                /** @scrutinizer ignore-call */
                 $officePropertyMeta = $officePropertyData->children($namespacesMeta['meta']);
             }
+            $officePropertyMeta = $officePropertyMeta ?? [];
             foreach ($officePropertyMeta as $propertyName => $propertyValue) {
                 $this->setMetaProperties($namespacesMeta, $propertyValue, $propertyName, $docProps);
             }
         }
     }
 
-    private function setCoreProperties(DocumentProperties $docProps, \SimpleXMLElement $officePropertyDC)
+    private function setCoreProperties(DocumentProperties $docProps, SimpleXMLElement $officePropertyDC): void
     {
         foreach ($officePropertyDC as $propertyName => $propertyValue) {
             $propertyValue = (string) $propertyValue;
@@ -54,14 +57,8 @@ class Properties
                     $docProps->setLastModifiedBy($propertyValue);
 
                     break;
-                case 'creation-date':
-                    $creationDate = strtotime($propertyValue);
-                    $docProps->setCreated($creationDate);
-                    $docProps->setModified($creationDate);
-
-                    break;
-                case 'keyword':
-                    $docProps->setKeywords($propertyValue);
+                case 'date':
+                    $docProps->setModified($propertyValue);
 
                     break;
                 case 'description':
@@ -73,11 +70,11 @@ class Properties
     }
 
     private function setMetaProperties(
-        $namespacesMeta,
-        \SimpleXMLElement $propertyValue,
-        $propertyName,
+        array $namespacesMeta,
+        SimpleXMLElement $propertyValue,
+        string $propertyName,
         DocumentProperties $docProps
-    ) {
+    ): void {
         $propertyValueAttributes = $propertyValue->attributes($namespacesMeta['meta']);
         $propertyValue = (string) $propertyValue;
         switch ($propertyName) {
@@ -90,8 +87,7 @@ class Properties
 
                 break;
             case 'creation-date':
-                $creationDate = strtotime($propertyValue);
-                $docProps->setCreated($creationDate);
+                $docProps->setCreated($propertyValue);
 
                 break;
             case 'user-defined':
@@ -101,7 +97,11 @@ class Properties
         }
     }
 
-    private function setUserDefinedProperty($propertyValueAttributes, $propertyValue, DocumentProperties $docProps)
+    /**
+     * @param mixed $propertyValueAttributes
+     * @param mixed $propertyValue
+     */
+    private function setUserDefinedProperty($propertyValueAttributes, $propertyValue, DocumentProperties $docProps): void
     {
         $propertyValueName = '';
         $propertyValueType = DocumentProperties::PROPERTY_TYPE_STRING;
