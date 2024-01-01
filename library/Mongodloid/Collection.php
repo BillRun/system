@@ -816,7 +816,7 @@ class Mongodloid_Collection {
 			$collectionWriteConcern = $this->getWriteConcern();
 
 			$wstring = $options['w'] ?? $collectionWriteConcern['w'];
-			$wtimeout = $options['wTimeoutMS'] ?? $collectionWriteConcern['wtimeout'];
+			$wtimeout = isset($options['wTimeoutMS']) ? $options['wTimeoutMS'] : $collectionWriteConcern['wtimeout'];
 			$writeConcern = new \MongoDB\Driver\WriteConcern($wstring, max($wtimeout, 0));
 			$options['writeConcern'] = $writeConcern;
 		}
