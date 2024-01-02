@@ -45,7 +45,7 @@ class ImportPricesListAction extends ApiAction {
 		if (isset($request['remove_non_existing_prefix'])) {
 			$this->remove_non_existing_prefix = (boolean) $request['remove_non_existing_prefix'];
 		}
-		if (!($ret = $this->validateList($list))) {
+		if (!($ret = $this->validateList($list, $request))) {
 			return $ret;
 		}
 		$ret = $this->importRates();
@@ -121,7 +121,7 @@ class ImportPricesListAction extends ApiAction {
 		return array('updated' => $updated_keys, 'future' => $future_keys, 'missing_category' => $missing_categories, 'old' => $old_or_not_exist);
 	}
 
-	protected function validateList($list) {
+	protected function validateList($list, $params = []) {
 		// exactly one infinite "times" for each rule
 		// continuous rule numbers starting from 1
 		if (!$list) {
@@ -145,7 +145,7 @@ class ImportPricesListAction extends ApiAction {
 				return $this->setError('Illegal price', $item);
 			} else if (!Zend_Date::isDate($item['from_date'], 'yyyy-MM-dd HH:mm:ss')) {
 				return $this->setError('Illegal from date', $item);
-			} else if ((new Zend_Date($item['from_date'], 'yyyy-MM-dd HH:mm:ss')) <= $now) {
+			} else if (empty($params['allow_past_rates']) && (new Zend_Date($item['from_date'], 'yyyy-MM-dd HH:mm:ss')) <= $now) {
 				return $this->setError('from date must be in the future', $item);
 			} else if (!$item['key']) {
 				return $this->setError('Illegal key', $item);
