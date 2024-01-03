@@ -86,7 +86,7 @@ class Protection extends Supervisor
      *
      * @throws PhpSpreadsheetException
      *
-     * @return $this
+     * @return Protection
      */
     public function applyFromArray(array $pStyles)
     {
@@ -123,7 +123,7 @@ class Protection extends Supervisor
      *
      * @param string $pValue see self::PROTECTION_*
      *
-     * @return $this
+     * @return Protection
      */
     public function setLocked($pValue)
     {
@@ -156,7 +156,7 @@ class Protection extends Supervisor
      *
      * @param string $pValue see self::PROTECTION_*
      *
-     * @return $this
+     * @return Protection
      */
     public function setHidden($pValue)
     {

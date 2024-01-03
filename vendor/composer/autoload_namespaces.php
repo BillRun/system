@@ -6,4 +6,6 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Payrexx' => array($vendorDir . '/payrexx/payrexx/lib'),
+    'Behat\\Gherkin' => array($vendorDir . '/behat/gherkin/src'),
 );

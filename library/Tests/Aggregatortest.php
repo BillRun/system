@@ -534,6 +534,17 @@
 				'line' => array('types' => array('credit')))
 			
 		),
+        //BRCD-4042
+        array('test' => array('label' => 'change service quantity during the month', 'test_number' => 4042, "aid" => 80798,'sid' => array(80806),
+          'function' => array('basicCompare', 'sumSids', 'totalsPrice', 'linesVSbillrun', 'rounded'), 
+          'options' => array("stamp" => "202302", "force_accounts" => array(80798))),
+        'expected' => array('billrun' => array( 'billrun_key' => '202302', 
+        'aid' => 80798, 'after_vat' => array("80806" =>  1013.355198131),
+        'total' => 1013.355198131
+        , 'vatable' => 866.115553958 , 'vat' => 17),
+           )
+    ),
+
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 67,),
@@ -546,9 +557,77 @@
 			'expected' => array(),
 		)
      );
-
+    //  function custom_var_export($expression, $indent = '')
+    //  {
+    //      $export = '';
+    //      if (is_array($expression)) {
+    //          $indexed = array_values($expression) === $expression;
+    //          $export .= "[\n";
+    //          foreach ($expression as $key => $value) {
+    //              $export .= $indent . '    ';
+    //              $export .= (!$indexed ? var_export($key, true) . ' => ' : '');
+    //              $export .= (is_array($value) ? $this->custom_var_export($value, $indent . '    ') : var_export($value, true));
+    //              $export .= ",\n";
+    //          }
+    //          $export .= $indent . "]";
+    //      } else {
+    //          $export = var_export($expression, true);
+    //      }
+    //      return $export;
+    //  }
+    //  public function __construct($label = false)
+    //  {
+    //      // $test_case = new Test_1();
+    //      $this->autoload_tests('aggregatorTestCases');
+     //    $this->tests =  $this->getTestCases();
+         // $this->arrays = $this->tests;
+         // foreach ($this->arrays as $array) {
+         // //     // Get the test number
+         //     $test_number = $array['test']['test_number'];
+ 
+         //     $path = "/home/yossi/projects/billrun/library/Tests/aggregatorTestCases";
+         //     // $dirname = $path . "test_$test_number";
+         //     // if (is_dir($dirname)) {
+         //     //     $dirname = $path . "duplicateID_test_$test_number";
+         //     // }
+         //     //     $dirname = $path . "duplicateID_test_$test_number";
+         //     // }
+         //     // mkdir($dirname);
+ 
+         //     $filename = "$path/test_nuber_$test_number.php";
+         //     if (file_exists($filename)) {
+         //         $filename = "duplicateID_test_$test_number.php";
+         //     }
+ 
+ 
+         //     // Write the array to a new PHP class file in the test directory
+         //     $content = "<?php\n\n";
+         //     $content .= "class Test_Case_$test_number {\n";
+         //     $content .= "    public function test_case() {\n";
+         //     $content .= "        return " . $this->custom_var_export($array) . ";\n";
+         //     $content .= "    }\n";
+         //     $content .= "}\n";
+ 
+         //     file_put_contents($filename, $content);
+         // }
+         // die();
+    //       parent::__construct("test Aggregatore");
+    //       $this->ratesCol = Billrun_Factory::db()->ratesCollection();
+    //       $this->plansCol = Billrun_Factory::db()->plansCollection();
+    //       $this->linesCol = Billrun_Factory::db()->linesCollection();
+    //       $this->servicesCol = Billrun_Factory::db()->servicesCollection();
+    //       $this->discountsCol = Billrun_Factory::db()->discountsCollection();
+    //       $this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
+    //       $this->balancesCol = Billrun_Factory::db()->discountsCollection();
+    //       $this->billrunCol = Billrun_Factory::db()->billrunCollection();
+    //       $this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes','charges']);
+    //       $this->setColletions();
+    //       $this->loadDbConfig();
+    //   }
+ 
      public function __construct($label = false) {
          parent::__construct("test Aggregatore");
+         $this->autoload_tests('aggregatorTestCases');
          $this->ratesCol = Billrun_Factory::db()->ratesCollection();
          $this->plansCol = Billrun_Factory::db()->plansCollection();
          $this->linesCol = Billrun_Factory::db()->linesCollection();
@@ -591,7 +670,12 @@
       * print the test result
       * and restore the original data 
       */
-     public function TestPerform() {
+    public function TestPerform()
+    {
+        $this->tests =  $this->getTestCases($this->tests);
+        if (empty($this->test_cases_to_run)) {
+            $this->tests = $this->skip_tests($this->tests, 'test.test_number');
+        }
 
          foreach ($this->tests as $key => $row) {
 

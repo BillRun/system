@@ -147,7 +147,7 @@ class Csv extends BaseWriter
      *
      * @param string $pValue Delimiter, defaults to ','
      *
-     * @return $this
+     * @return CSV
      */
     public function setDelimiter($pValue)
     {
@@ -171,7 +171,7 @@ class Csv extends BaseWriter
      *
      * @param string $pValue Enclosure, defaults to "
      *
-     * @return $this
+     * @return CSV
      */
     public function setEnclosure($pValue)
     {
@@ -198,7 +198,7 @@ class Csv extends BaseWriter
      *
      * @param string $pValue Line ending, defaults to OS line ending (PHP_EOL)
      *
-     * @return $this
+     * @return CSV
      */
     public function setLineEnding($pValue)
     {
@@ -222,7 +222,7 @@ class Csv extends BaseWriter
      *
      * @param bool $pValue Use UTF-8 byte-order mark? Defaults to false
      *
-     * @return $this
+     * @return CSV
      */
     public function setUseBOM($pValue)
     {
@@ -246,7 +246,7 @@ class Csv extends BaseWriter
      *
      * @param bool $pValue Use separator line? Defaults to false
      *
-     * @return $this
+     * @return CSV
      */
     public function setIncludeSeparatorLine($pValue)
     {
@@ -271,7 +271,7 @@ class Csv extends BaseWriter
      * @param bool $pValue Set the file to be written as a fully Excel compatible csv file
      *                                Note that this overrides other settings such as useBOM, enclosure and delimiter
      *
-     * @return $this
+     * @return CSV
      */
     public function setExcelCompatibility($pValue)
     {
@@ -295,7 +295,7 @@ class Csv extends BaseWriter
      *
      * @param int $pValue Sheet index
      *
-     * @return $this
+     * @return CSV
      */
     public function setSheetIndex($pValue)
     {

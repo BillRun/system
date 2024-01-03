@@ -167,7 +167,7 @@ class Ods extends BaseWriter
      *
      * @param Spreadsheet $spreadsheet PhpSpreadsheet object
      *
-     * @return $this
+     * @return self
      */
     public function setSpreadsheet(Spreadsheet $spreadsheet)
     {

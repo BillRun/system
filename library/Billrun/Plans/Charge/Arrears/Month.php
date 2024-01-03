@@ -37,7 +37,8 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 					'prorated_start' =>  $this->proratedStart ,
 					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE, $this->deactivation && $this->cycle->end() > $this->deactivation ) : $this->cycle->end(),
 					'prorated_end' =>  $endProration,
-
+					'deactivation_date'=>  $this->deactivation,
+					'activation_date'=>  $this->activation,
 					'cycle' => $tariff['from'],
 					'full_price' => floatval($tariff['price']) );
 					
