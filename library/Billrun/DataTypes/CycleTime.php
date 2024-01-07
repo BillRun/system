@@ -96,4 +96,11 @@ class Billrun_DataTypes_CycleTime {
 		}
 		return $this->days;
 	}
+	/**
+	 * returm the time  flats (plans/services/discounts/etc..) should be at for this  cycle.$GLOBALS
+	 */
+	public function getFlatsTime() {
+		// return 1 milliseconds  before the  end of the cycle
+		return $this->end() - 0.001;
+	}
 }

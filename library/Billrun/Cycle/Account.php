@@ -379,7 +379,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			'billrun' => $cycle->key(),
 			'type' => 'flat',
 			'usaget' => 'flat',
-			'urt' => new Mongodloid_Date($cycle->end() - 0.001),
+			'urt' => new Mongodloid_Date($cycle->getFlatsTime()),
 		);
 		
 		return $flatEntry;
