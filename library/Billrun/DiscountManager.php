@@ -1476,7 +1476,7 @@ class Billrun_DiscountManager {
 			'description' => $discount['description'],
 			'usaget' =>  $isChargeLine ? 'conditional_charge' : 'discount',
 			'discount_type' => isset($discount['type']) ? $discount['type'] : 'percentage',
-			'urt' => new Mongodloid_Date($this->cycle->end()),
+			'urt' => new Mongodloid_Date($this->cycle->end() - 0.001),
 			'arate' => $discount->createRef($collection),
 			'arate_key' => $discount['key'],
 			'aid' => $eligibleLine['aid'],
