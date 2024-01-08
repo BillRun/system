@@ -1510,14 +1510,6 @@ lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
 	});
 });
 
-db.config.insert(lastConfig);
-db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
-db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
-db.lines.dropIndex("aid_1_urt_1");
-db.rebalance_queue.ensureIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});
-db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
-db.rebalance_queue.ensureIndex({"aid": 1, "billrun_key": 1}, {unique: false, "background": true});
-
 runOnce(lastConfig, 'BRCD-4306', function () {
     var mbPluginsSettings = {
         "name": "metabaseReportsPlugin",
@@ -1535,4 +1527,12 @@ runOnce(lastConfig, 'BRCD-4306', function () {
     };
     lastConfig['plugins'].push(mbPluginsSettings);
 });
+
+db.config.insert(lastConfig);
+db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
+db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
+db.lines.dropIndex("aid_1_urt_1");
+db.rebalance_queue.ensureIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});
+db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
+db.rebalance_queue.ensureIndex({"aid": 1, "billrun_key": 1}, {unique: false, "background": true});
 
