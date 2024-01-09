@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,14 +30,12 @@ use function array_column;
 /**
  * Operation for the ListDatabases command, returning only database names.
  *
- * @api
  * @see \MongoDB\Client::listDatabaseNames()
- * @see http://docs.mongodb.org/manual/reference/command/ListDatabases/
+ * @see https://mongodb.com/docs/manual/reference/command/listDatabases/#mongodb-dbcommand-dbcmd.listDatabases
  */
 class ListDatabaseNames implements Executable
 {
-    /** @var ListDatabasesCommand */
-    private $listDatabases;
+    private ListDatabasesCommand $listDatabases;
 
     /**
      * Constructs a listDatabases command.
@@ -49,16 +47,16 @@ class ListDatabaseNames implements Executable
      *
      *    For servers < 4.0.5, this option is ignored.
      *
-     *  * filter (document): Query by which to filter databases.
+     *  * comment (mixed): BSON value to attach as a comment to this command.
      *
-     *    For servers < 3.6, this option is ignored.
+     *    This is not supported for servers versions < 4.4.
+     *
+     *  * filter (document): Query by which to filter databases.
      *
      *  * maxTimeMS (integer): The maximum amount of time to allow the query to
      *    run.
      *
      *  * session (MongoDB\Driver\Session): Client session.
-     *
-     *    Sessions are not supported for server versions < 3.6.
      *
      * @param array $options Command options
      * @throws InvalidArgumentException for parameter/option parsing errors
@@ -72,8 +70,6 @@ class ListDatabaseNames implements Executable
      * Execute the operation.
      *
      * @see Executable::execute()
-     * @param Server $server
-     * @return Iterator
      * @throws UnexpectedValueException if the command response was malformed
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */

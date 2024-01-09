@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,11 @@
 
 namespace MongoDB;
 
+use Countable;
+use Iterator;
 use MongoDB\BSON\JavascriptInterface;
-use MongoDB\Driver\Cursor;
+use MongoDB\Codec\DocumentCodec;
+use MongoDB\Driver\CursorInterface;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\Manager;
 use MongoDB\Driver\ReadConcern;
@@ -36,11 +39,14 @@ use MongoDB\Operation\BulkWrite;
 use MongoDB\Operation\Count;
 use MongoDB\Operation\CountDocuments;
 use MongoDB\Operation\CreateIndexes;
+use MongoDB\Operation\CreateSearchIndexes;
 use MongoDB\Operation\DeleteMany;
 use MongoDB\Operation\DeleteOne;
 use MongoDB\Operation\Distinct;
 use MongoDB\Operation\DropCollection;
+use MongoDB\Operation\DropEncryptedCollection;
 use MongoDB\Operation\DropIndexes;
+use MongoDB\Operation\DropSearchIndex;
 use MongoDB\Operation\EstimatedDocumentCount;
 use MongoDB\Operation\Explain;
 use MongoDB\Operation\Explainable;
@@ -52,61 +58,47 @@ use MongoDB\Operation\FindOneAndUpdate;
 use MongoDB\Operation\InsertMany;
 use MongoDB\Operation\InsertOne;
 use MongoDB\Operation\ListIndexes;
+use MongoDB\Operation\ListSearchIndexes;
 use MongoDB\Operation\MapReduce;
 use MongoDB\Operation\RenameCollection;
 use MongoDB\Operation\ReplaceOne;
 use MongoDB\Operation\UpdateMany;
 use MongoDB\Operation\UpdateOne;
+use MongoDB\Operation\UpdateSearchIndex;
 use MongoDB\Operation\Watch;
-use Traversable;
 
 use function array_diff_key;
 use function array_intersect_key;
+use function array_key_exists;
 use function current;
 use function is_array;
 use function strlen;
 
 class Collection
 {
-    /** @var array */
-    private static $defaultTypeMap = [
+    private const DEFAULT_TYPE_MAP = [
         'array' => BSONArray::class,
         'document' => BSONDocument::class,
         'root' => BSONDocument::class,
     ];
 
-    /** @var integer */
-    private static $wireVersionForFindAndModifyWriteConcern = 4;
+    private const WIRE_VERSION_FOR_READ_CONCERN_WITH_WRITE_STAGE = 8;
 
-    /** @var integer */
-    private static $wireVersionForReadConcern = 4;
+    private ?DocumentCodec $codec = null;
 
-    /** @var integer */
-    private static $wireVersionForWritableCommandWriteConcern = 5;
+    private string $collectionName;
 
-    /** @var integer */
-    private static $wireVersionForReadConcernWithWriteStage = 8;
+    private string $databaseName;
 
-    /** @var string */
-    private $collectionName;
+    private Manager $manager;
 
-    /** @var string */
-    private $databaseName;
+    private ReadConcern $readConcern;
 
-    /** @var Manager */
-    private $manager;
+    private ReadPreference $readPreference;
 
-    /** @var ReadConcern */
-    private $readConcern;
+    private array $typeMap;
 
-    /** @var ReadPreference */
-    private $readPreference;
-
-    /** @var array */
-    private $typeMap;
-
-    /** @var WriteConcern */
-    private $writeConcern;
+    private WriteConcern $writeConcern;
 
     /**
      * Constructs new Collection instance.
@@ -115,6 +107,9 @@ class Collection
      * CRUD (i.e. create, read, update, and delete) and index management.
      *
      * Supported options:
+     *
+     *  * codec (MongoDB\Codec\DocumentCodec): Codec used to decode documents
+     *    from BSON to PHP objects.
      *
      *  * readConcern (MongoDB\Driver\ReadConcern): The default read concern to
      *    use for collection operations. Defaults to the Manager's read concern.
@@ -135,7 +130,7 @@ class Collection
      * @param array   $options        Collection options
      * @throws InvalidArgumentException for parameter/option parsing errors
      */
-    public function __construct(Manager $manager, $databaseName, $collectionName, array $options = [])
+    public function __construct(Manager $manager, string $databaseName, string $collectionName, array $options = [])
     {
         if (strlen($databaseName) < 1) {
             throw new InvalidArgumentException('$databaseName is invalid: ' . $databaseName);
@@ -143,6 +138,10 @@ class Collection
 
         if (strlen($collectionName) < 1) {
             throw new InvalidArgumentException('$collectionName is invalid: ' . $collectionName);
+        }
+
+        if (isset($options['codec']) && ! $options['codec'] instanceof DocumentCodec) {
+            throw InvalidArgumentException::invalidType('"codec" option', $options['codec'], DocumentCodec::class);
         }
 
         if (isset($options['readConcern']) && ! $options['readConcern'] instanceof ReadConcern) {
@@ -162,23 +161,26 @@ class Collection
         }
 
         $this->manager = $manager;
-        $this->databaseName = (string) $databaseName;
-        $this->collectionName = (string) $collectionName;
+        $this->databaseName = $databaseName;
+        $this->collectionName = $collectionName;
+
+        $this->codec = $options['codec'] ?? null;
         $this->readConcern = $options['readConcern'] ?? $this->manager->getReadConcern();
         $this->readPreference = $options['readPreference'] ?? $this->manager->getReadPreference();
-        $this->typeMap = $options['typeMap'] ?? self::$defaultTypeMap;
+        $this->typeMap = $options['typeMap'] ?? self::DEFAULT_TYPE_MAP;
         $this->writeConcern = $options['writeConcern'] ?? $this->manager->getWriteConcern();
     }
 
     /**
      * Return internal properties for debugging purposes.
      *
-     * @see http://php.net/manual/en/language.oop5.magic.php#language.oop5.magic.debuginfo
+     * @see https://php.net/manual/en/language.oop5.magic.php#language.oop5.magic.debuginfo
      * @return array
      */
     public function __debugInfo()
     {
         return [
+            'codec' => $this->codec,
             'collectionName' => $this->collectionName,
             'databaseName' => $this->databaseName,
             'manager' => $this->manager,
@@ -192,7 +194,7 @@ class Collection
     /**
      * Return the collection namespace (e.g. "db.collection").
      *
-     * @see https://docs.mongodb.org/manual/faq/developers/#faq-dev-namespace
+     * @see https://mongodb.com/docs/manual/core/databases-and-collections/
      * @return string
      */
     public function __toString()
@@ -203,15 +205,10 @@ class Collection
     /**
      * Executes an aggregation framework pipeline on the collection.
      *
-     * Note: this method's return value depends on the MongoDB server version
-     * and the "useCursor" option. If "useCursor" is true, a Cursor will be
-     * returned; otherwise, an ArrayIterator is returned, which wraps the
-     * "result" array from the command response document.
-     *
      * @see Aggregate::__construct() for supported options
-     * @param array $pipeline List of pipeline operations
+     * @param array $pipeline Aggregation pipeline
      * @param array $options  Command options
-     * @return Traversable
+     * @return CursorInterface&Iterator
      * @throws UnexpectedValueException if the command response was malformed
      * @throws UnsupportedException if options are not supported by the selected server
      * @throws InvalidArgumentException for parameter/option parsing errors
@@ -221,9 +218,7 @@ class Collection
     {
         $hasWriteStage = is_last_pipeline_operator_write($pipeline);
 
-        if (! isset($options['readPreference']) && ! is_in_transaction($options)) {
-            $options['readPreference'] = $this->readPreference;
-        }
+        $options = $this->inheritReadPreference($options);
 
         $server = $hasWriteStage
             ? select_server_for_aggregate_write_stage($this->manager, $options)
@@ -231,29 +226,15 @@ class Collection
 
         /* MongoDB 4.2 and later supports a read concern when an $out stage is
          * being used, but earlier versions do not.
-         *
-         * A read concern is also not compatible with transactions.
          */
-        if (
-            ! isset($options['readConcern']) &&
-            server_supports_feature($server, self::$wireVersionForReadConcern) &&
-            ! is_in_transaction($options) &&
-            ( ! $hasWriteStage || server_supports_feature($server, self::$wireVersionForReadConcernWithWriteStage))
-        ) {
-            $options['readConcern'] = $this->readConcern;
+        if (! $hasWriteStage || server_supports_feature($server, self::WIRE_VERSION_FOR_READ_CONCERN_WITH_WRITE_STAGE)) {
+            $options = $this->inheritReadConcern($options);
         }
 
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
+        $options = $this->inheritCodecOrTypeMap($options);
 
-        if (
-            $hasWriteStage &&
-            ! isset($options['writeConcern']) &&
-            server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) &&
-            ! is_in_transaction($options)
-        ) {
-            $options['writeConcern'] = $this->writeConcern;
+        if ($hasWriteStage) {
+            $options = $this->inheritWriteOptions($options);
         }
 
         $operation = new Aggregate($this->databaseName, $this->collectionName, $pipeline, $options);
@@ -274,14 +255,12 @@ class Collection
      */
     public function bulkWrite(array $operations, array $options = [])
     {
-        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
+        $options = $this->inheritCodec($options);
 
         $operation = new BulkWrite($this->databaseName, $this->collectionName, $operations, $options);
-        $server = select_server($this->manager, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
@@ -300,19 +279,11 @@ class Collection
      */
     public function count($filter = [], array $options = [])
     {
-        if (! isset($options['readPreference']) && ! is_in_transaction($options)) {
-            $options['readPreference'] = $this->readPreference;
-        }
-
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['readConcern']) && server_supports_feature($server, self::$wireVersionForReadConcern) && ! is_in_transaction($options)) {
-            $options['readConcern'] = $this->readConcern;
-        }
+        $options = $this->inheritReadOptions($options);
 
         $operation = new Count($this->databaseName, $this->collectionName, $filter, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server($this->manager, $options));
     }
 
     /**
@@ -329,19 +300,11 @@ class Collection
      */
     public function countDocuments($filter = [], array $options = [])
     {
-        if (! isset($options['readPreference']) && ! is_in_transaction($options)) {
-            $options['readPreference'] = $this->readPreference;
-        }
-
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['readConcern']) && server_supports_feature($server, self::$wireVersionForReadConcern) && ! is_in_transaction($options)) {
-            $options['readConcern'] = $this->readConcern;
-        }
+        $options = $this->inheritReadOptions($options);
 
         $operation = new CountDocuments($this->databaseName, $this->collectionName, $filter, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server($this->manager, $options));
     }
 
     /**
@@ -383,8 +346,8 @@ class Collection
      * If the "name" option is unspecified, a name will be generated from the
      * "key" document.
      *
-     * @see http://docs.mongodb.org/manual/reference/command/createIndexes/
-     * @see http://docs.mongodb.org/manual/reference/method/db.collection.createIndex/
+     * @see https://mongodb.com/docs/manual/reference/command/createIndexes/
+     * @see https://mongodb.com/docs/manual/reference/method/db.collection.createIndex/
      * @see CreateIndexes::__construct() for supported command options
      * @param array[] $indexes List of index specifications
      * @param array   $options Command options
@@ -395,13 +358,67 @@ class Collection
      */
     public function createIndexes(array $indexes, array $options = [])
     {
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
 
         $operation = new CreateIndexes($this->databaseName, $this->collectionName, $indexes, $options);
+
+        return $operation->execute(select_server_for_write($this->manager, $options));
+    }
+
+    /**
+     * Create an Atlas Search index for the collection.
+     * Only available when used against a 7.0+ Atlas cluster.
+     *
+     * @see https://www.mongodb.com/docs/manual/reference/command/createSearchIndexes/
+     * @see https://mongodb.com/docs/manual/reference/method/db.collection.createSearchIndex/
+     * @param array|object                          $definition Atlas Search index mapping definition
+     * @param array{name?: string, comment?: mixed} $options    Command options
+     * @return string The name of the created search index
+     * @throws UnsupportedException if options are not supported by the selected server
+     * @throws InvalidArgumentException for parameter/option parsing errors
+     * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
+     */
+    public function createSearchIndex($definition, array $options = []): string
+    {
+        $index = ['definition' => $definition];
+        if (isset($options['name'])) {
+            $index['name'] = $options['name'];
+            unset($options['name']);
+        }
+
+        $names = $this->createSearchIndexes([$index], $options);
+
+        return current($names);
+    }
+
+    /**
+     * Create one or more Atlas Search indexes for the collection.
+     * Only available when used against a 7.0+ Atlas cluster.
+     *
+     * Each element in the $indexes array must have "definition" document and they may have a "name" string.
+     * The name can be omitted for a single index, in which case a name will be the default.
+     * For example:
+     *
+     *     $indexes = [
+     *         // Create a search index with the default name, on
+     *         ['definition' => ['mappings' => ['dynamic' => false, 'fields' => ['title' => ['type' => 'string']]]]],
+     *         // Create a named search index on all fields
+     *         ['name' => 'search_all', 'definition' => ['mappings' => ['dynamic' => true]]],
+     *     ];
+     *
+     * @see https://www.mongodb.com/docs/manual/reference/command/createSearchIndexes/
+     * @see https://mongodb.com/docs/manual/reference/method/db.collection.createSearchIndex/
+     * @param list<array{name?: string, definition: array|object}> $indexes List of search index specifications
+     * @param array{comment?: string}                              $options Command options
+     * @return string[] The names of the created search indexes
+     * @throws UnsupportedException if options are not supported by the selected server
+     * @throws InvalidArgumentException for parameter/option parsing errors
+     * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
+     */
+    public function createSearchIndexes(array $indexes, array $options = []): array
+    {
+        $operation = new CreateSearchIndexes($this->databaseName, $this->collectionName, $indexes, $options);
+        $server = select_server_for_write($this->manager, $options);
 
         return $operation->execute($server);
     }
@@ -410,7 +427,7 @@ class Collection
      * Deletes all documents matching the filter.
      *
      * @see DeleteMany::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/reference/command/delete/
+     * @see https://mongodb.com/docs/manual/reference/command/delete/
      * @param array|object $filter  Query by which to delete documents
      * @param array        $options Command options
      * @return DeleteResult
@@ -420,21 +437,18 @@ class Collection
      */
     public function deleteMany($filter, array $options = [])
     {
-        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
 
         $operation = new DeleteMany($this->databaseName, $this->collectionName, $filter, $options);
-        $server = select_server($this->manager, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
      * Deletes at most one document matching the filter.
      *
      * @see DeleteOne::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/reference/command/delete/
+     * @see https://mongodb.com/docs/manual/reference/command/delete/
      * @param array|object $filter  Query by which to delete documents
      * @param array        $options Command options
      * @return DeleteResult
@@ -444,14 +458,11 @@ class Collection
      */
     public function deleteOne($filter, array $options = [])
     {
-        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
 
         $operation = new DeleteOne($this->databaseName, $this->collectionName, $filter, $options);
-        $server = select_server($this->manager, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
@@ -461,31 +472,20 @@ class Collection
      * @param string       $fieldName Field for which to return distinct values
      * @param array|object $filter    Query by which to filter documents
      * @param array        $options   Command options
-     * @return mixed[]
+     * @return array
      * @throws UnexpectedValueException if the command response was malformed
      * @throws UnsupportedException if options are not supported by the selected server
      * @throws InvalidArgumentException for parameter/option parsing errors
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
-    public function distinct($fieldName, $filter = [], array $options = [])
+    public function distinct(string $fieldName, $filter = [], array $options = [])
     {
-        if (! isset($options['readPreference']) && ! is_in_transaction($options)) {
-            $options['readPreference'] = $this->readPreference;
-        }
-
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
-
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['readConcern']) && server_supports_feature($server, self::$wireVersionForReadConcern) && ! is_in_transaction($options)) {
-            $options['readConcern'] = $this->readConcern;
-        }
+        $options = $this->inheritReadOptions($options);
+        $options = $this->inheritTypeMap($options);
 
         $operation = new Distinct($this->databaseName, $this->collectionName, $fieldName, $filter, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server($this->manager, $options));
     }
 
     /**
@@ -500,17 +500,19 @@ class Collection
      */
     public function drop(array $options = [])
     {
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
+        $options = $this->inheritWriteOptions($options);
+        $options = $this->inheritTypeMap($options);
+
+        $server = select_server_for_write($this->manager, $options);
+
+        if (! isset($options['encryptedFields'])) {
+            $options['encryptedFields'] = get_encrypted_fields_from_driver($this->databaseName, $this->collectionName, $this->manager)
+                ?? get_encrypted_fields_from_server($this->databaseName, $this->collectionName, $this->manager, $server);
         }
 
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
-
-        $operation = new DropCollection($this->databaseName, $this->collectionName, $options);
+        $operation = isset($options['encryptedFields'])
+            ? new DropEncryptedCollection($this->databaseName, $this->collectionName, $options)
+            : new DropCollection($this->databaseName, $this->collectionName, $options);
 
         return $operation->execute($server);
     }
@@ -534,19 +536,12 @@ class Collection
             throw new InvalidArgumentException('dropIndexes() must be used to drop multiple indexes');
         }
 
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
-
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
+        $options = $this->inheritTypeMap($options);
 
         $operation = new DropIndexes($this->databaseName, $this->collectionName, $indexName, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
@@ -561,19 +556,30 @@ class Collection
      */
     public function dropIndexes(array $options = [])
     {
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
-
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
+        $options = $this->inheritTypeMap($options);
 
         $operation = new DropIndexes($this->databaseName, $this->collectionName, '*', $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
+    }
+
+    /**
+     * Drop a single Atlas Search index in the collection.
+     * Only available when used against a 7.0+ Atlas cluster.
+     *
+     * @param string                 $name    Search index name
+     * @param array{comment?: mixed} $options Additional options
+     * @throws UnsupportedException if options are not supported by the selected server
+     * @throws InvalidArgumentException for parameter/option parsing errors
+     * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
+     */
+    public function dropSearchIndex(string $name, array $options = []): void
+    {
+        $operation = new DropSearchIndex($this->databaseName, $this->collectionName, $name);
+        $server = select_server_for_write($this->manager, $options);
+
+        $operation->execute($server);
     }
 
     /**
@@ -589,26 +595,18 @@ class Collection
      */
     public function estimatedDocumentCount(array $options = [])
     {
-        if (! isset($options['readPreference']) && ! is_in_transaction($options)) {
-            $options['readPreference'] = $this->readPreference;
-        }
-
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['readConcern']) && server_supports_feature($server, self::$wireVersionForReadConcern) && ! is_in_transaction($options)) {
-            $options['readConcern'] = $this->readConcern;
-        }
+        $options = $this->inheritReadOptions($options);
 
         $operation = new EstimatedDocumentCount($this->databaseName, $this->collectionName, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server($this->manager, $options));
     }
 
     /**
      * Explains explainable commands.
      *
      * @see Explain::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/reference/command/explain/
+     * @see https://mongodb.com/docs/manual/reference/command/explain/
      * @param Explainable $explainable Command on which to run explain
      * @param array       $options     Additional options
      * @return array|object
@@ -618,59 +616,41 @@ class Collection
      */
     public function explain(Explainable $explainable, array $options = [])
     {
-        if (! isset($options['readPreference']) && ! is_in_transaction($options)) {
-            $options['readPreference'] = $this->readPreference;
-        }
-
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
-
-        $server = select_server($this->manager, $options);
+        $options = $this->inheritReadPreference($options);
+        $options = $this->inheritTypeMap($options);
 
         $operation = new Explain($this->databaseName, $explainable, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server($this->manager, $options));
     }
 
     /**
      * Finds documents matching the query.
      *
      * @see Find::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/core/read-operations-introduction/
+     * @see https://mongodb.com/docs/manual/crud/#read-operations
      * @param array|object $filter  Query by which to filter documents
      * @param array        $options Additional options
-     * @return Cursor
+     * @return CursorInterface&Iterator
      * @throws UnsupportedException if options are not supported by the selected server
      * @throws InvalidArgumentException for parameter/option parsing errors
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
     public function find($filter = [], array $options = [])
     {
-        if (! isset($options['readPreference']) && ! is_in_transaction($options)) {
-            $options['readPreference'] = $this->readPreference;
-        }
-
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['readConcern']) && server_supports_feature($server, self::$wireVersionForReadConcern) && ! is_in_transaction($options)) {
-            $options['readConcern'] = $this->readConcern;
-        }
-
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
+        $options = $this->inheritReadOptions($options);
+        $options = $this->inheritCodecOrTypeMap($options);
 
         $operation = new Find($this->databaseName, $this->collectionName, $filter, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server($this->manager, $options));
     }
 
     /**
      * Finds a single document matching the query.
      *
      * @see FindOne::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/core/read-operations-introduction/
+     * @see https://mongodb.com/docs/manual/crud/#read-operations
      * @param array|object $filter  Query by which to filter documents
      * @param array        $options Additional options
      * @return array|object|null
@@ -680,23 +660,12 @@ class Collection
      */
     public function findOne($filter = [], array $options = [])
     {
-        if (! isset($options['readPreference']) && ! is_in_transaction($options)) {
-            $options['readPreference'] = $this->readPreference;
-        }
-
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['readConcern']) && server_supports_feature($server, self::$wireVersionForReadConcern) && ! is_in_transaction($options)) {
-            $options['readConcern'] = $this->readConcern;
-        }
-
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
+        $options = $this->inheritReadOptions($options);
+        $options = $this->inheritCodecOrTypeMap($options);
 
         $operation = new FindOne($this->databaseName, $this->collectionName, $filter, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server($this->manager, $options));
     }
 
     /**
@@ -705,7 +674,7 @@ class Collection
      * The document to return may be null if no document matched the filter.
      *
      * @see FindOneAndDelete::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/reference/command/findAndModify/
+     * @see https://mongodb.com/docs/manual/reference/command/findAndModify/
      * @param array|object $filter  Query by which to filter documents
      * @param array        $options Command options
      * @return array|object|null
@@ -716,19 +685,12 @@ class Collection
      */
     public function findOneAndDelete($filter, array $options = [])
     {
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForFindAndModifyWriteConcern) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
-
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
+        $options = $this->inheritWriteOptions($options);
+        $options = $this->inheritCodecOrTypeMap($options);
 
         $operation = new FindOneAndDelete($this->databaseName, $this->collectionName, $filter, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
@@ -741,7 +703,7 @@ class Collection
      * to return the updated document.
      *
      * @see FindOneAndReplace::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/reference/command/findAndModify/
+     * @see https://mongodb.com/docs/manual/reference/command/findAndModify/
      * @param array|object $filter      Query by which to filter documents
      * @param array|object $replacement Replacement document
      * @param array        $options     Command options
@@ -753,19 +715,12 @@ class Collection
      */
     public function findOneAndReplace($filter, $replacement, array $options = [])
     {
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForFindAndModifyWriteConcern) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
-
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
+        $options = $this->inheritWriteOptions($options);
+        $options = $this->inheritCodecOrTypeMap($options);
 
         $operation = new FindOneAndReplace($this->databaseName, $this->collectionName, $filter, $replacement, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
@@ -778,7 +733,7 @@ class Collection
      * to return the updated document.
      *
      * @see FindOneAndReplace::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/reference/command/findAndModify/
+     * @see https://mongodb.com/docs/manual/reference/command/findAndModify/
      * @param array|object $filter  Query by which to filter documents
      * @param array|object $update  Update to apply to the matched document
      * @param array        $options Command options
@@ -790,19 +745,12 @@ class Collection
      */
     public function findOneAndUpdate($filter, $update, array $options = [])
     {
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForFindAndModifyWriteConcern) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
-
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
+        $options = $this->inheritWriteOptions($options);
+        $options = $this->inheritCodecOrTypeMap($options);
 
         $operation = new FindOneAndUpdate($this->databaseName, $this->collectionName, $filter, $update, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
@@ -838,7 +786,7 @@ class Collection
     /**
      * Return the collection namespace.
      *
-     * @see https://docs.mongodb.org/manual/reference/glossary/#term-namespace
+     * @see https://mongodb.com/docs/manual/reference/glossary/#term-namespace
      * @return string
      */
     public function getNamespace()
@@ -849,7 +797,7 @@ class Collection
     /**
      * Return the read concern for this collection.
      *
-     * @see http://php.net/manual/en/mongodb-driver-readconcern.isdefault.php
+     * @see https://php.net/manual/en/mongodb-driver-readconcern.isdefault.php
      * @return ReadConcern
      */
     public function getReadConcern()
@@ -880,7 +828,7 @@ class Collection
     /**
      * Return the write concern for this collection.
      *
-     * @see http://php.net/manual/en/mongodb-driver-writeconcern.isdefault.php
+     * @see https://php.net/manual/en/mongodb-driver-writeconcern.isdefault.php
      * @return WriteConcern
      */
     public function getWriteConcern()
@@ -892,30 +840,28 @@ class Collection
      * Inserts multiple documents.
      *
      * @see InsertMany::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/reference/command/insert/
-     * @param array[]|object[] $documents The documents to insert
-     * @param array            $options   Command options
+     * @see https://mongodb.com/docs/manual/reference/command/insert/
+     * @param list<object|array> $documents The documents to insert
+     * @param array              $options   Command options
      * @return InsertManyResult
      * @throws InvalidArgumentException for parameter/option parsing errors
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
     public function insertMany(array $documents, array $options = [])
     {
-        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
+        $options = $this->inheritCodec($options);
 
         $operation = new InsertMany($this->databaseName, $this->collectionName, $documents, $options);
-        $server = select_server($this->manager, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
      * Inserts one document.
      *
      * @see InsertOne::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/reference/command/insert/
+     * @see https://mongodb.com/docs/manual/reference/command/insert/
      * @param array|object $document The document to insert
      * @param array        $options  Command options
      * @return InsertOneResult
@@ -924,21 +870,18 @@ class Collection
      */
     public function insertOne($document, array $options = [])
     {
-        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
+        $options = $this->inheritCodec($options);
 
         $operation = new InsertOne($this->databaseName, $this->collectionName, $document, $options);
-        $server = select_server($this->manager, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
      * Returns information for all indexes for the collection.
      *
      * @see ListIndexes::__construct() for supported options
-     * @param array $options
      * @return IndexInfoIterator
      * @throws InvalidArgumentException for parameter/option parsing errors
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
@@ -946,6 +889,23 @@ class Collection
     public function listIndexes(array $options = [])
     {
         $operation = new ListIndexes($this->databaseName, $this->collectionName, $options);
+
+        return $operation->execute(select_server($this->manager, $options));
+    }
+
+    /**
+     * Returns information for all Atlas Search indexes for the collection.
+     * Only available when used against a 7.0+ Atlas cluster.
+     *
+     * @param array{name?: string} $options Command options
+     * @return Countable&Iterator
+     * @throws InvalidArgumentException for parameter/option parsing errors
+     * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
+     * @see ListSearchIndexes::__construct() for supported options
+     */
+    public function listSearchIndexes(array $options = []): Iterator
+    {
+        $operation = new ListSearchIndexes($this->databaseName, $this->collectionName, $options);
         $server = select_server($this->manager, $options);
 
         return $operation->execute($server);
@@ -955,7 +915,7 @@ class Collection
      * Executes a map-reduce aggregation on the collection.
      *
      * @see MapReduce::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/reference/command/mapReduce/
+     * @see https://mongodb.com/docs/manual/reference/command/mapReduce/
      * @param JavascriptInterface $map     Map function
      * @param JavascriptInterface $reduce  Reduce function
      * @param string|array|object $out     Output specification
@@ -970,46 +930,35 @@ class Collection
     {
         $hasOutputCollection = ! is_mapreduce_output_inline($out);
 
-        if (! isset($options['readPreference']) && ! is_in_transaction($options)) {
-            $options['readPreference'] = $this->readPreference;
-        }
-
         // Check if the out option is inline because we will want to coerce a primary read preference if not
         if ($hasOutputCollection) {
-            $options['readPreference'] = new ReadPreference(ReadPreference::RP_PRIMARY);
+            $options['readPreference'] = new ReadPreference(ReadPreference::PRIMARY);
+        } else {
+            $options = $this->inheritReadPreference($options);
         }
-
-        $server = select_server($this->manager, $options);
 
         /* A "majority" read concern is not compatible with inline output, so
          * avoid providing the Collection's read concern if it would conflict.
-         *
-         * A read concern is also not compatible with transactions.
          */
-        if (! isset($options['readConcern']) && ! ($hasOutputCollection && $this->readConcern->getLevel() === ReadConcern::MAJORITY) && server_supports_feature($server, self::$wireVersionForReadConcern) && ! is_in_transaction($options)) {
-            $options['readConcern'] = $this->readConcern;
+        if (! $hasOutputCollection || $this->readConcern->getLevel() !== ReadConcern::MAJORITY) {
+            $options = $this->inheritReadConcern($options);
         }
 
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
-
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
+        $options = $this->inheritTypeMap($options);
 
         $operation = new MapReduce($this->databaseName, $this->collectionName, $map, $reduce, $out, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
      * Renames the collection.
      *
      * @see RenameCollection::__construct() for supported options
-     * @param string  $toCollectionName New name of the collection
-     * @param ?string $toDatabaseName   New database name of the collection. Defaults to the original database.
-     * @param array   $options          Additional options
+     * @param string      $toCollectionName New name of the collection
+     * @param string|null $toDatabaseName   New database name of the collection. Defaults to the original database.
+     * @param array       $options          Additional options
      * @return array|object Command result document
      * @throws UnsupportedException if options are not supported by the selected server
      * @throws InvalidArgumentException for parameter/option parsing errors
@@ -1021,26 +970,19 @@ class Collection
             $toDatabaseName = $this->databaseName;
         }
 
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
-
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
+        $options = $this->inheritTypeMap($options);
 
         $operation = new RenameCollection($this->databaseName, $this->collectionName, $toDatabaseName, $toCollectionName, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
      * Replaces at most one document matching the filter.
      *
      * @see ReplaceOne::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/reference/command/update/
+     * @see https://mongodb.com/docs/manual/reference/command/update/
      * @param array|object $filter      Query by which to filter documents
      * @param array|object $replacement Replacement document
      * @param array        $options     Command options
@@ -1051,21 +993,19 @@ class Collection
      */
     public function replaceOne($filter, $replacement, array $options = [])
     {
-        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
+        $options = $this->inheritCodec($options);
 
         $operation = new ReplaceOne($this->databaseName, $this->collectionName, $filter, $replacement, $options);
-        $server = select_server($this->manager, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
      * Updates all documents matching the filter.
      *
      * @see UpdateMany::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/reference/command/update/
+     * @see https://mongodb.com/docs/manual/reference/command/update/
      * @param array|object $filter  Query by which to filter documents
      * @param array|object $update  Update to apply to the matched documents
      * @param array        $options Command options
@@ -1076,21 +1016,18 @@ class Collection
      */
     public function updateMany($filter, $update, array $options = [])
     {
-        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
 
         $operation = new UpdateMany($this->databaseName, $this->collectionName, $filter, $update, $options);
-        $server = select_server($this->manager, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
     }
 
     /**
      * Updates at most one document matching the filter.
      *
      * @see UpdateOne::__construct() for supported options
-     * @see http://docs.mongodb.org/manual/reference/command/update/
+     * @see https://mongodb.com/docs/manual/reference/command/update/
      * @param array|object $filter  Query by which to filter documents
      * @param array|object $update  Update to apply to the matched document
      * @param array        $options Command options
@@ -1101,51 +1038,49 @@ class Collection
      */
     public function updateOne($filter, $update, array $options = [])
     {
-        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
-            $options['writeConcern'] = $this->writeConcern;
-        }
+        $options = $this->inheritWriteOptions($options);
 
         $operation = new UpdateOne($this->databaseName, $this->collectionName, $filter, $update, $options);
-        $server = select_server($this->manager, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server_for_write($this->manager, $options));
+    }
+
+    /**
+     * Update a single Atlas Search index in the collection.
+     * Only available when used against a 7.0+ Atlas cluster.
+     *
+     * @param string                 $name       Search index name
+     * @param array|object           $definition Atlas Search index definition
+     * @param array{comment?: mixed} $options    Command options
+     * @throws UnsupportedException if options are not supported by the selected server
+     * @throws InvalidArgumentException for parameter parsing errors
+     * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
+     */
+    public function updateSearchIndex(string $name, $definition, array $options = []): void
+    {
+        $operation = new UpdateSearchIndex($this->databaseName, $this->collectionName, $name, $definition, $options);
+        $server = select_server_for_write($this->manager, $options);
+
+        $operation->execute($server);
     }
 
     /**
      * Create a change stream for watching changes to the collection.
      *
      * @see Watch::__construct() for supported options
-     * @param array $pipeline List of pipeline operations
+     * @param array $pipeline Aggregation pipeline
      * @param array $options  Command options
      * @return ChangeStream
      * @throws InvalidArgumentException for parameter/option parsing errors
      */
     public function watch(array $pipeline = [], array $options = [])
     {
-        if (! isset($options['readPreference']) && ! is_in_transaction($options)) {
-            $options['readPreference'] = $this->readPreference;
-        }
-
-        $server = select_server($this->manager, $options);
-
-        /* Although change streams require a newer version of the server than
-         * read concerns, perform the usual wire version check before inheriting
-         * the collection's read concern. In the event that the server is too
-         * old, this makes it more likely that users will encounter an error
-         * related to change streams being unsupported instead of an
-         * UnsupportedException regarding use of the "readConcern" option from
-         * the Aggregate operation class. */
-        if (! isset($options['readConcern']) && server_supports_feature($server, self::$wireVersionForReadConcern) && ! is_in_transaction($options)) {
-            $options['readConcern'] = $this->readConcern;
-        }
-
-        if (! isset($options['typeMap'])) {
-            $options['typeMap'] = $this->typeMap;
-        }
+        $options = $this->inheritReadOptions($options);
+        $options = $this->inheritCodecOrTypeMap($options);
 
         $operation = new Watch($this->manager, $this->databaseName, $this->collectionName, $pipeline, $options);
 
-        return $operation->execute($server);
+        return $operation->execute(select_server($this->manager, $options));
     }
 
     /**
@@ -1159,6 +1094,7 @@ class Collection
     public function withOptions(array $options = [])
     {
         $options += [
+            'codec' => $this->codec,
             'readConcern' => $this->readConcern,
             'readPreference' => $this->readPreference,
             'typeMap' => $this->typeMap,
@@ -1166,5 +1102,88 @@ class Collection
         ];
 
         return new Collection($this->manager, $this->databaseName, $this->collectionName, $options);
+    }
+
+    private function inheritCodec(array $options): array
+    {
+        // If the options contain a type map, don't inherit anything
+        if (isset($options['typeMap'])) {
+            return $options;
+        }
+
+        if (! array_key_exists('codec', $options)) {
+            $options['codec'] = $this->codec;
+        }
+
+        return $options;
+    }
+
+    private function inheritCodecOrTypeMap(array $options): array
+    {
+        // If the options contain a type map, don't inherit anything
+        if (isset($options['typeMap'])) {
+            return $options;
+        }
+
+        // If this collection does not use a codec, or if a codec was explicitly
+        // defined in the options, only inherit the type map (if possible)
+        if (! $this->codec || array_key_exists('codec', $options)) {
+            return $this->inheritTypeMap($options);
+        }
+
+        // At this point, we know that we use a codec and the options array did
+        // not explicitly contain a codec, so we can inherit ours
+        $options['codec'] = $this->codec;
+
+        return $options;
+    }
+
+    private function inheritReadConcern(array $options): array
+    {
+        // ReadConcern and ReadPreference may not change within a transaction
+        if (! isset($options['readConcern']) && ! is_in_transaction($options)) {
+            $options['readConcern'] = $this->readConcern;
+        }
+
+        return $options;
+    }
+
+    private function inheritReadOptions(array $options): array
+    {
+        $options = $this->inheritReadConcern($options);
+
+        return $this->inheritReadPreference($options);
+    }
+
+    private function inheritReadPreference(array $options): array
+    {
+        // ReadConcern and ReadPreference may not change within a transaction
+        if (! isset($options['readPreference']) && ! is_in_transaction($options)) {
+            $options['readPreference'] = $this->readPreference;
+        }
+
+        return $options;
+    }
+
+    private function inheritTypeMap(array $options): array
+    {
+        // Only inherit the type map if no codec is used
+        if (! isset($options['typeMap']) && ! isset($options['codec'])) {
+            $options['typeMap'] = $this->typeMap;
+        }
+
+        return $options;
+    }
+
+    private function inheritWriteOptions(array $options): array
+    {
+        // WriteConcern may not change within a transaction
+        if (! is_in_transaction($options)) {
+            if (! isset($options['writeConcern'])) {
+                $options['writeConcern'] = $this->writeConcern;
+            }
+        }
+
+        return $options;
     }
 }

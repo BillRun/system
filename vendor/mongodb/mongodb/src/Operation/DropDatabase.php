@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,53 +23,44 @@ use MongoDB\Driver\Server;
 use MongoDB\Driver\Session;
 use MongoDB\Driver\WriteConcern;
 use MongoDB\Exception\InvalidArgumentException;
-use MongoDB\Exception\UnsupportedException;
 
 use function current;
 use function is_array;
-use function MongoDB\server_supports_feature;
 
 /**
  * Operation for the dropDatabase command.
  *
- * @api
  * @see \MongoDB\Client::dropDatabase()
  * @see \MongoDB\Database::drop()
- * @see http://docs.mongodb.org/manual/reference/command/dropDatabase/
+ * @see https://mongodb.com/docs/manual/reference/command/dropDatabase/
  */
 class DropDatabase implements Executable
 {
-    /** @var integer */
-    private static $wireVersionForWriteConcern = 5;
+    private string $databaseName;
 
-    /** @var string */
-    private $databaseName;
-
-    /** @var array */
-    private $options;
+    private array $options;
 
     /**
      * Constructs a dropDatabase command.
      *
      * Supported options:
      *
-     *  * session (MongoDB\Driver\Session): Client session.
+     *  * comment (mixed): BSON value to attach as a comment to this command.
      *
-     *    Sessions are not supported for server versions < 3.6.
+     *    This is not supported for servers versions < 4.4.
+     *
+     *  * session (MongoDB\Driver\Session): Client session.
      *
      *  * typeMap (array): Type map for BSON deserialization. This will be used
      *    for the returned command result document.
      *
      *  * writeConcern (MongoDB\Driver\WriteConcern): Write concern.
      *
-     *    This is not supported for server versions < 3.4 and will result in an
-     *    exception at execution time if used.
-     *
      * @param string $databaseName Database name
      * @param array  $options      Command options
      * @throws InvalidArgumentException for parameter/option parsing errors
      */
-    public function __construct($databaseName, array $options = [])
+    public function __construct(string $databaseName, array $options = [])
     {
         if (isset($options['session']) && ! $options['session'] instanceof Session) {
             throw InvalidArgumentException::invalidType('"session" option', $options['session'], Session::class);
@@ -87,7 +78,7 @@ class DropDatabase implements Executable
             unset($options['writeConcern']);
         }
 
-        $this->databaseName = (string) $databaseName;
+        $this->databaseName = $databaseName;
         $this->options = $options;
     }
 
@@ -95,19 +86,12 @@ class DropDatabase implements Executable
      * Execute the operation.
      *
      * @see Executable::execute()
-     * @param Server $server
      * @return array|object Command result document
-     * @throws UnsupportedException if writeConcern is used and unsupported
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
     public function execute(Server $server)
     {
-        if (isset($this->options['writeConcern']) && ! server_supports_feature($server, self::$wireVersionForWriteConcern)) {
-            throw UnsupportedException::writeConcernNotSupported();
-        }
-
-        $command = new Command(['dropDatabase' => 1]);
-        $cursor = $server->executeWriteCommand($this->databaseName, $command, $this->createOptions());
+        $cursor = $server->executeWriteCommand($this->databaseName, $this->createCommand(), $this->createOptions());
 
         if (isset($this->options['typeMap'])) {
             $cursor->setTypeMap($this->options['typeMap']);
@@ -117,12 +101,25 @@ class DropDatabase implements Executable
     }
 
     /**
+     * Create the dropDatabase command.
+     */
+    private function createCommand(): Command
+    {
+        $cmd = ['dropDatabase' => 1];
+
+        if (isset($this->options['comment'])) {
+            $cmd['comment'] = $this->options['comment'];
+        }
+
+        return new Command($cmd);
+    }
+
+    /**
      * Create options for executing the command.
      *
-     * @see http://php.net/manual/en/mongodb-driver-server.executewritecommand.php
-     * @return array
+     * @see https://php.net/manual/en/mongodb-driver-server.executewritecommand.php
      */
-    private function createOptions()
+    private function createOptions(): array
     {
         $options = [];
 

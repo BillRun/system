@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +30,7 @@ class ResumeTokenException extends RuntimeException
      */
     public static function invalidType($value)
     {
-        return new static(sprintf('Expected resume token to have type "array or object" but found "%s"', get_debug_type($value)));
+        return new self(sprintf('Expected resume token to have type "array or object" but found "%s"', get_debug_type($value)));
     }
 
     /**
@@ -40,6 +40,6 @@ class ResumeTokenException extends RuntimeException
      */
     public static function notFound()
     {
-        return new static('Resume token not found in change document');
+        return new self('Resume token not found in change document');
     }
 }

@@ -1,7 +1,7 @@
 # Money
 
 [![Latest Version](https://img.shields.io/github/release/moneyphp/money.svg?style=flat-square)](https://github.com/moneyphp/money/releases)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/php-http/message/CI?style=flat-square)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/moneyphp/money/ci.yml?branch=master&style=flat-square)
 [![Total Downloads](https://img.shields.io/packagist/dt/moneyphp/money.svg?style=flat-square)](https://packagist.org/packages/moneyphp/money)
 
 [![Email](https://img.shields.io/badge/email-team@moneyphp.org-blue.svg?style=flat-square)](mailto:team@moneyphp.org)
@@ -36,9 +36,10 @@ The documentation is available at http://moneyphp.org
 
 ## Requirements
 
-PHP 5.6+. Other than that, this library has no external requirements. MoneyPHP will not provide any support to
-PHP versions that are [not supported by the language itself](http://php.net/supported-versions.php). There might be
-additional dependencies for specific feature, e.g. the Swap exchange implementation, check the documentation for more information.
+This library requires the [BCMath PHP extension](https://www.php.net/manual/en/book.bc.php). There might be additional dependencies for specific feature, e.g. the
+Swap exchange implementation, check the documentation for more information.
+
+Version 4 requires PHP 8.0. For older version of PHP, use version 3 of this library.
 
 
 ## Install
@@ -66,7 +67,7 @@ Please see the [official documentation](http://moneyphp.org).
 
 ## Testing
 
-We try to follow BDD and TDD, as such we use both [phpspec](http://www.phpspec.net) and [phpunit](https://phpunit.de) to test this library.
+We try to follow TDD by using [phpunit](https://phpunit.de) to test this library.
 
 ```bash
 $ composer test

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,9 @@ use ReturnTypeWillChange;
 
 use function array_key_exists;
 use function array_search;
+use function trigger_error;
+
+use const E_USER_DEPRECATED;
 
 /**
  * Index information model class.
@@ -34,19 +37,16 @@ use function array_search;
  * For information on keys and index options, see the referenced
  * db.collection.createIndex() documentation.
  *
- * @api
  * @see \MongoDB\Collection::listIndexes()
  * @see https://github.com/mongodb/specifications/blob/master/source/enumerate-indexes.rst
- * @see http://docs.mongodb.org/manual/reference/method/db.collection.createIndex/
+ * @see https://mongodb.com/docs/manual/reference/method/db.collection.createIndex/
+ * @template-implements ArrayAccess<string, mixed>
  */
 class IndexInfo implements ArrayAccess
 {
-    /** @var array */
-    private $info;
+    private array $info;
 
-    /**
-     * @param array $info Index info
-     */
+    /** @param array $info Index info */
     public function __construct(array $info)
     {
         $this->info = $info;
@@ -55,7 +55,7 @@ class IndexInfo implements ArrayAccess
     /**
      * Return the collection info as an array.
      *
-     * @see http://php.net/oop5.magic#language.oop5.magic.debuginfo
+     * @see https://php.net/oop5.magic#language.oop5.magic.debuginfo
      * @return array
      */
     public function __debugInfo()
@@ -127,16 +127,19 @@ class IndexInfo implements ArrayAccess
      * Return whether or not this index is of type geoHaystack.
      *
      * @return boolean
+     * @deprecated Since 1.16: MongoDB 5.0 removes support for geoHaystack indexes.
      */
     public function isGeoHaystack()
     {
+        trigger_error('MongoDB 5.0 removes support for "geoHaystack" indexes, the method "IndexInfo::isGeoHaystack()" will be removed in a future release', E_USER_DEPRECATED);
+
         return array_search('geoHaystack', $this->getKey(), true) !== false;
     }
 
     /**
      * Return whether this is a sparse index.
      *
-     * @see http://docs.mongodb.org/manual/core/index-sparse/
+     * @see https://mongodb.com/docs/manual/core/index-sparse/
      * @return boolean
      */
     public function isSparse()
@@ -157,7 +160,7 @@ class IndexInfo implements ArrayAccess
     /**
      * Return whether this is a TTL index.
      *
-     * @see http://docs.mongodb.org/manual/core/index-ttl/
+     * @see https://mongodb.com/docs/manual/core/index-ttl/
      * @return boolean
      */
     public function isTtl()
@@ -168,7 +171,7 @@ class IndexInfo implements ArrayAccess
     /**
      * Return whether this is a unique index.
      *
-     * @see http://docs.mongodb.org/manual/core/index-unique/
+     * @see https://mongodb.com/docs/manual/core/index-unique/
      * @return boolean
      */
     public function isUnique()
@@ -179,7 +182,7 @@ class IndexInfo implements ArrayAccess
     /**
      * Check whether a field exists in the index information.
      *
-     * @see http://php.net/arrayaccess.offsetexists
+     * @see https://php.net/arrayaccess.offsetexists
      * @param mixed $key
      * @return boolean
      */
@@ -196,7 +199,7 @@ class IndexInfo implements ArrayAccess
      * that index fields be made accessible under their original names. It may
      * also be used to access fields that do not have a helper method.
      *
-     * @see http://php.net/arrayaccess.offsetget
+     * @see https://php.net/arrayaccess.offsetget
      * @see https://github.com/mongodb/specifications/blob/master/source/enumerate-indexes.rst#getting-full-index-information
      * @param mixed $key
      * @return mixed
@@ -210,7 +213,7 @@ class IndexInfo implements ArrayAccess
     /**
      * Not supported.
      *
-     * @see http://php.net/arrayaccess.offsetset
+     * @see https://php.net/arrayaccess.offsetset
      * @param mixed $key
      * @param mixed $value
      * @throws BadMethodCallException
@@ -225,7 +228,7 @@ class IndexInfo implements ArrayAccess
     /**
      * Not supported.
      *
-     * @see http://php.net/arrayaccess.offsetunset
+     * @see https://php.net/arrayaccess.offsetunset
      * @param mixed $key
      * @throws BadMethodCallException
      * @return void

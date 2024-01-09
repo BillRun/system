@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,7 +32,7 @@ use function MongoDB\recursive_copy;
  * The internal data will be filtered through array_values() during BSON
  * serialization to ensure that it becomes a BSON array.
  *
- * @api
+ * @template-extends ArrayObject<int, mixed>
  */
 class BSONArray extends ArrayObject implements JsonSerializable, Serializable, Unserializable
 {
@@ -49,14 +49,13 @@ class BSONArray extends ArrayObject implements JsonSerializable, Serializable, U
     /**
      * Factory method for var_export().
      *
-     * @see http://php.net/oop5.magic#object.set-state
-     * @see http://php.net/var-export
-     * @param array $properties
+     * @see https://php.net/oop5.magic#object.set-state
+     * @see https://php.net/var-export
      * @return self
      */
     public static function __set_state(array $properties)
     {
-        $array = new static();
+        $array = new self();
         $array->exchangeArray($properties);
 
         return $array;
@@ -68,9 +67,10 @@ class BSONArray extends ArrayObject implements JsonSerializable, Serializable, U
      * The array data will be numerically reindexed to ensure that it is stored
      * as a BSON array.
      *
-     * @see http://php.net/mongodb-bson-serializable.bsonserialize
+     * @see https://php.net/mongodb-bson-serializable.bsonserialize
      * @return array
      */
+    #[ReturnTypeWillChange]
     public function bsonSerialize()
     {
         return array_values($this->getArrayCopy());
@@ -79,12 +79,13 @@ class BSONArray extends ArrayObject implements JsonSerializable, Serializable, U
     /**
      * Unserialize the document to BSON.
      *
-     * @see http://php.net/mongodb-bson-unserializable.bsonunserialize
-     * @param array $data Array data
+     * @see https://php.net/mongodb-bson-unserializable.bsonunserialize
+     * @param array<int, mixed> $data Array data
      */
+    #[ReturnTypeWillChange]
     public function bsonUnserialize(array $data)
     {
-        self::__construct($data);
+        parent::__construct($data);
     }
 
     /**
@@ -93,7 +94,7 @@ class BSONArray extends ArrayObject implements JsonSerializable, Serializable, U
      * The array data will be numerically reindexed to ensure that it is stored
      * as a JSON array.
      *
-     * @see http://php.net/jsonserializable.jsonserialize
+     * @see https://php.net/jsonserializable.jsonserialize
      * @return array
      */
     #[ReturnTypeWillChange]

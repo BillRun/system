@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,44 +17,54 @@
 
 namespace MongoDB\Model;
 
-use Closure;
 use Iterator;
 use IteratorIterator;
 use ReturnTypeWillChange;
 use Traversable;
 
+use function call_user_func;
+
 /**
  * Iterator to apply a callback before returning an element
  *
  * @internal
+ *
+ * @template TKey
+ * @template TValue
+ * @template TCallbackValue
+ * @template-implements Iterator<TKey, TCallbackValue>
  */
 class CallbackIterator implements Iterator
 {
-    /** @var Closure */
+    /** @var callable(TValue, TKey): TCallbackValue */
     private $callback;
 
-    /** @var Iterator */
-    private $iterator;
+    /** @var Iterator<TKey, TValue> */
+    private Iterator $iterator;
 
-    public function __construct(Traversable $traversable, Closure $callback)
+    /**
+     * @param Traversable<TKey, TValue>              $traversable
+     * @param callable(TValue, TKey): TCallbackValue $callback
+     */
+    public function __construct(Traversable $traversable, callable $callback)
     {
         $this->iterator = $traversable instanceof Iterator ? $traversable : new IteratorIterator($traversable);
         $this->callback = $callback;
     }
 
     /**
-     * @see http://php.net/iterator.current
-     * @return mixed
+     * @see https://php.net/iterator.current
+     * @return TCallbackValue
      */
     #[ReturnTypeWillChange]
     public function current()
     {
-        return ($this->callback)($this->iterator->current());
+        return call_user_func($this->callback, $this->iterator->current(), $this->iterator->key());
     }
 
     /**
-     * @see http://php.net/iterator.key
-     * @return mixed
+     * @see https://php.net/iterator.key
+     * @return TKey
      */
     #[ReturnTypeWillChange]
     public function key()
@@ -62,32 +72,20 @@ class CallbackIterator implements Iterator
         return $this->iterator->key();
     }
 
-    /**
-     * @see http://php.net/iterator.next
-     * @return void
-     */
-    #[ReturnTypeWillChange]
-    public function next()
+    /** @see https://php.net/iterator.next */
+    public function next(): void
     {
         $this->iterator->next();
     }
 
-    /**
-     * @see http://php.net/iterator.rewind
-     * @return void
-     */
-    #[ReturnTypeWillChange]
-    public function rewind()
+    /** @see https://php.net/iterator.rewind */
+    public function rewind(): void
     {
         $this->iterator->rewind();
     }
 
-    /**
-     * @see http://php.net/iterator.valid
-     * @return boolean
-     */
-    #[ReturnTypeWillChange]
-    public function valid()
+    /** @see https://php.net/iterator.valid */
+    public function valid(): bool
     {
         return $this->iterator->valid();
     }
