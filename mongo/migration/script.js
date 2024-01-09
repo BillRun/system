@@ -51,11 +51,12 @@ function runOnce(lastConfig, taskCode, callback) {
             print('Illegal task code ' + taskCode);
         }
     } else {
-        print('task ' + taskCode + ' already applied in this environment');
+//        print('task ' + taskCode + ' already applied in this environment');
     }
     return lastConfig;
 }
 
+// add createCollection wrapper function as mongosh throw exception on create existing collection
 function _createCollection(newcoll) {
     var _existsingColls = db.getCollectionNames();
     if (_existsingColls.indexOf(newcoll) >= 0) { // collection already exists
@@ -64,6 +65,7 @@ function _createCollection(newcoll) {
     return db.createCollection(newcoll);
 }
 
+// backward compatability for save function (required to start using insertOne or replaceOne instead)
 function _collectionSave(coll, record) {
     if (!Object.hasOwn(record, '_id')) {
         coll.insertOne(record);
@@ -72,6 +74,7 @@ function _collectionSave(coll, record) {
     }
 }
 
+// add dropIndex wrapper function as mongosh throw exception on drop non-existing collection
 function _dropIndex(collname, indexname) {
     indexes = db.getCollection(collname).getIndexes();
     let i = indexes.find(obj => obj.name === indexname);
