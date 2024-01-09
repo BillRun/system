@@ -20,6 +20,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		$this->activeBillrunEndTime = $this->calculator->getActiveBillrunEndTime(); // todo remove this coupling
 		$this->activeBillrun = $this->calculator->getActiveBillrun(); // todo remove this coupling
 		$this->nextActiveBillrun = $this->calculator->getNextActiveBillrun(); // todo remove this coupling
+		$this->nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($this->nextActiveBillrun);
 	}
 
 	protected function validate() {
