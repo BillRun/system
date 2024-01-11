@@ -69,6 +69,7 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 				$retResults[$revStamp]['id'] = array_filter($revision, function ($key) use ($idFields) { return in_array($key, $idFields); }, ARRAY_FILTER_USE_KEY);
 				$passthroughFields = ($revision['type'] == 'account') ? $this->passthroughFields : $this->subsPassthroughFields;
 				foreach ($passthroughFields as $passthroughField) {
+					$passthroughField = is_array($passthroughField) ? $passthroughField['value'] : $passthroughField;
 					if(isset($revision[$passthroughField])) {
 						$retResults[$revStamp]['passthrough'][$passthroughField] = $revision[$passthroughField];
 					}
@@ -76,8 +77,15 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 			}
 		}
 
-		usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
-		//usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
+		usort($retResults, function($a, $b){
+			return ($a['from']  && $b['from'] ?
+						($a['from']->sec - $b['from']->sec) :
+						($a['from'] < $b['from'] ?
+							-1 :
+							($a['from'] > $b['from'] ?
+								1 : 0
+							)
+						) ); });
 		return ["data" => array_map(function($item){ return new Mongodloid_Entity($item);}, array_values($retResults)), "options" => $result['options']];
 
 	}

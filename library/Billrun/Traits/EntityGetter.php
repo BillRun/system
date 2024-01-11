@@ -135,7 +135,7 @@ trait Billrun_Traits_EntityGetter {
 				continue;
 			}
 			
-			Billrun_Factory::dispatcher()->trigger('extendEntityParamsQuery', [&$query, &$row, &$this, $params]);
+			Billrun_Factory::dispatcher()->trigger('extendEntityParamsQuery', [&$query, &$row, &$this, &$params]);
 			$result = $this->getEntities($row, $query, $params);
 			$matchedEntity = is_array($result) ? current($result) : false;
 			if ($matchedEntity && !$matchedEntity->isEmpty()) {

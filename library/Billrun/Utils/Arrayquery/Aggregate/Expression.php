@@ -57,7 +57,7 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 				if(isset($this->mapping[$key]) && method_exists($this, $this->mapping[$key])) {
 					$ret = $this->{$this->mapping[$key]}($data, $value,	$pastValue);
 				} else {
-					$ret[$key] = $this->evaluate($data, $value, $pastValue[$key]);
+					$ret[$key] = $this->evaluate($data, $value, @$pastValue[$key]);
 				}
 			}
 		} else {

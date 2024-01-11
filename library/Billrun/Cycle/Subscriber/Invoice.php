@@ -248,7 +248,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		if(!empty($row['end'])) {
 			$addedData['end'] = $row['end'];
 		}
-		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes'], $addedData);
+		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],isset($row['tax_data']) ? $row['tax_data']['taxes'] : [], $addedData);
 		// TODO: apply arategroup to new billrun object
 		if (isset($row['arategroup'])) {
 			$this->addLineGroupData($counters, $row);
@@ -324,7 +324,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			}
 			return $newPrice;
 		} else if( empty($taxData) ) {
-			Billrun_Factory::log('addLineVatableData failed: Tax data missing. data: ' . print_R($this->data, 1), Zend_Log::CRIT);
+			Billrun_Factory::log('addLineVatableData failed: Tax data missing. aid: ' . $this->data['aid'] . ", sid: " . $this->data['sid'] . ", billrun: " . $this->data['key'], Zend_Log::CRIT);
 		}
 		//else 
 		return $pricingData['aprice'];
@@ -447,13 +447,13 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected function processLine($line) {
 		$pricingData = $this->getPricingData($line);
 
-		if ($line['type'] == 'flat') {
+		if ($line['type'] == 'flat' || $line['usaget'] == 'flat') {
 			if(!$this->processFlatLine($line)) {
 				return false;
 			}
 		} else {
 			$rate = $this->getRowRate($line);
-			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable)) || isset($line['tax_data']);
+			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable)) || !empty($line['tax_data']['total_tax']);
 			$this->updateInvoice(array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable);
 		} 
 		
