@@ -627,20 +627,22 @@ class Report {
 
 	public function getPlaceHolderValue($param, $manager_params) {
 		$place_holder_key = str_replace(["[[", "]]"], "", $param['value']);
-		if (isset($manager_params['invoices'])) {
+		$invoice = null;
+		if (!empty($manager_params['invoices'])) {
 			$invoice = current($manager_params['invoices']);
-		} else {
-			throw new Exception("Didn't find an invoice to get customer_id, in parameter " . $param['template_tag']);
 		}
 		switch ($place_holder_key) : 
 			case 'customer_id' :
+				if (is_null($invoice)) {
+					throw new Exception("customer_id placeholder isn't avilable in " . $manager_params['event'] . " timing");
+				}
 				return $invoice['aid'];
 			break;
 			case 'cycle_start_time':
-				return $invoice['start_date']->sec;
+				return is_null($invoice) ? Billrun_Billingcycle::getStartTime($manager_params['billrun_key']) : $invoice['start_date']->sec;
 			break;
 			case 'cycle_end_time':
-				return $invoice['end_date']->sec;
+				return is_null($invoice) ? Billrun_Billingcycle::getEndTime($manager_params['billrun_key']) :  $invoice['end_date']->sec;
 			break;
 			default : 
 				throw new Exception("Unsupported placeholder " . $place_holder_key . ", in parameter " . isset($param['template_tag'])) ? $param['template_tag'] : $param['param'];
