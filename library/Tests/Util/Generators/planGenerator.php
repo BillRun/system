@@ -23,7 +23,7 @@ class generat_plans extends generat_test_data
       [
         "price" => [ ["price" => 1, "from" => 0, "to" => "UNLIMITED"]],
         "from" => "2023-05-12",
-        "name" => generat_test_data::getCurrentDateTimeWithMilliseconds(),
+        "name" => '20240111134913717',
         "tax" => [["type" => "vat", "taxation" => "global"]],
         "upfront" => true,
         "recurrence" => ["frequency" => 1, "start" => 1],

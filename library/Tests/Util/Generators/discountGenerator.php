@@ -22,7 +22,7 @@ class generat_discounts extends generat_test_data
     $discount = array_merge([
       
         "description" => "nn",
-        "key" => generat_test_data::getCurrentDateTimeWithMilliseconds(),
+        "key" => '20240111134913715',
         "proration" => "inherited",
         "priority" => "",
         "params" => [

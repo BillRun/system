@@ -10,10 +10,11 @@ class Test_Case_4345
     {
 
         generat_test_data::setTestNumber(4345);
-        $plan = generat_plans::generatePlan(['from' => '2020-01-01']);
+        $plan = generat_plans::generatePlan(['name' =>'20240111134913711','from' => '2020-01-01']);
         $service = generat_services::generateService([
             'from' => '2020-01-01',
             'prorated' => false,
+            'name' =>'20240111134913712',
             "price" => [["price" => 500, "from" => 0, "to" => "UNLIMITED"]]]);
         $account = generat_subscribers::generateAccount([
             "from" => '2023-07-01',
