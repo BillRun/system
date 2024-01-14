@@ -69,7 +69,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->run_after_invoice_confirmed = Billrun_Util::getIn($options, "run_after_invoice_confirmed", false);
 		$this->run_after_cycle_finished = Billrun_Util::getIn($options, "run_after_cycle_finished", false);
 		$this->run_after_cycle_confirmed = Billrun_Util::getIn($options, "run_after_cycle_confirmed", false);
-		$this->default_remote_directory = Billrun_Util::getIn($options, "default_remote_directory", "/metabase_reoprts_dir");
+		$this->default_remote_directory = Billrun_Util::getIn($options, "default_remote_directory", "/metabase_reports_dir");
 	}
 	
 	/**
