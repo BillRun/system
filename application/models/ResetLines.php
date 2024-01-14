@@ -143,6 +143,7 @@ class ResetLinesModel {
 						'over_plan' => 1,
 						'plan' => 1,
 						'usagesb' => 1,
+					   'external_pricing_state' => 1,
 //						'usagev' => 1,
 					),
 					'$set' => array(

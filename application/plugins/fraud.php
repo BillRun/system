@@ -125,6 +125,49 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return true;
 	}
 
+public function afterPricingDoneWithBalance($row, $balance, $pricingData, $calculator) {
+		if (method_exists($calculator, 'getPricingField') && ($pricingField = $calculator->getPricingField())) {
+			$rowPrice = isset($pricingData[$pricingField]) ? $pricingData[$pricingField] : 0;
+		} else {
+			return true;
+		}
+
+		if ((!$this->isLineLegitimate($row, $calculator)) ||
+			($row['type'] == 'tap3') || // first check we are not on tap3, because we prevent intl roaming fraud on nrtrde
+			// Check if row is too "old" to be considered as a fraud. Currently done by decrease X hours (default: 1.5 hours) from min_time variable
+		     ($row['urt']->sec <= $this->min_time) ) {
+			return true;
+		}
+
+		if (empty($balance)) {
+			Billrun_Factory::log("Fraud plugin - balance is empty or not transfer to the plugin" . $row['stamp'] . ' | calculator ' . $calculator->getType(), Zend_Log::WARN);
+			return true;
+		}
+		// if not plan to row - cannot do anything
+		if (!isset($row['plan'])) {
+			Billrun_Factory::log("Fraud plugin - plan not exists for line " . $row['stamp'], Zend_Log::ERR);
+			return true;
+		}
+
+		$thresholds = Billrun_Factory::config()->getConfigValue('fraud.final_pricing.thresholds', array());
+
+		foreach ($thresholds as $type => $limits) {
+			switch ($type) {
+				case 'cost':
+					$this->costCheck($limits, $row, $balance, $rowPrice);
+					break;
+
+				default:
+					Billrun_Factory::log("Fraud plugin - method doesn't exists for final pricing" . $type, Zend_Log::WARN);
+					break;
+			}
+		}
+
+		return true;
+	}
+
+
+
 	protected function addonUsageCheck($limits, $row, $balance) {
 		$ret = array();
 		if ($row['usagev'] === 0) {
@@ -399,6 +442,16 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (isset($rule['ignoreSubscribers']) &&
 			(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
 			return false;
+		}
+
+		if (!empty($rule['conditions'])
+			&& !$this->checkCondOnRow( $rule['conditions'], $row ) ) {
+				return false;
+		}
+
+		if (!empty($rule['ignoreConditions'])
+			&& $this->checkCondOnRow($rule['ignoreConditions'], $row) 	) {
+				return false;
 		}
 
 		$threshold = $rule['threshold'];
@@ -826,6 +879,43 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$this->checkConditionRule($rule, $row, $balance->balance);
 			}
 		}
+	}
+
+	protected function checkCondOnRow($conds,$row) {
+		$res =  true;
+		foreach($conds as $cond) {
+			switch($cond['op']) {
+				case 'or' :
+						$res |= $this->checkCondOnRow($cond['conditions'],$row);
+					break;
+
+				case 'regex' :
+						$res &= @preg_match($cond['regex'],$row[$cond['field']]);
+					break;
+
+				case 'eq':
+				case 'ne':
+				case 'gt':
+				case 'lt':
+					$righVal = empty($cond['value']) ?  $row[$cond['right_field']] : $cond['value'];
+					$cmp = is_numeric($row[cond['field']]) &&  is_numeric($rightVal)
+									? $row[cond['field']]  - $rightVal
+									: strcmp($row[cond['field']],$rightVal);
+					$res &= $cond['op']==='ne' && $cmp !== 0 ||
+							$cond['op']==='eq' && $cmp == 0 ||
+							$cond['op']==='lt' && $cmp < 0 ||
+							$cond['op']==='gt' && $cmp > 0;
+					break;
+
+				case 'isset':
+				case 'exists':
+					$res &= isset($row[$cond['field']]);
+					break;
+				default:
+					Billrun_Factory::log("What condition {$cond['op']} even  means...",Zend_Log::WARN);
+			}
+		}
+		return  $res;
 	}
 
 	protected function checkConditionRule($rule, $row, $balance) {
