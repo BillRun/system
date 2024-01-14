@@ -58,6 +58,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $run_after_invoice_confirmed;
 	protected $run_after_cycle_finished;
 	protected $run_after_cycle_confirmed;
+	public $account_default_remote_directory;
 	
 	public function __construct($options = array()) {		
 		$this->reports_details = isset($options['reports']) ? $options['reports'] : [];
@@ -68,6 +69,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->run_after_invoice_confirmed = Billrun_Util::getIn($options, "run_after_invoice_confirmed", false);
 		$this->run_after_cycle_finished = Billrun_Util::getIn($options, "run_after_cycle_finished", false);
 		$this->run_after_cycle_confirmed = Billrun_Util::getIn($options, "run_after_cycle_confirmed", false);
+		$this->account_default_remote_directory = Billrun_Util::getIn($options, "account_default_remote_directory", "/metabase_reoprts_dir");
 	}
 	
 	/**
@@ -229,6 +231,14 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"display" => true,
 				"nullable" => false,
 				"mandatory" => true
+			], [
+				"type" => "string",
+				"field_name" => "export.account_default_remote_directory",
+				"title" => "MB reports - report files' default account remote directory",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => false
 			], [
 				"type" => "string",
 				"field_name" => "export.export_directory",
@@ -462,6 +472,15 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			try {
 				$local = $this->export_details['export_directory'] . '/' . $fileName;
 				$remote = $export_conf['remote_directory'] . '/' . $fileName;
+				Billrun_Factory::log()->log("Checking if " . $export_conf['remote_directory'] . " directory exists before uploading", Zend_Log::DEBUG);
+				if (!$connection->getConnection()->file_exists($export_conf['remote_directory'])) {
+					Billrun_Factory::log()->log($export_conf['remote_directory'] . " directory wasn't fount on host " . $export_conf['host'] . ". Creating directory.", Zend_Log::DEBUG);
+					$mkdir_res = $connection->getConnection()->mkdir($export_conf['remote_directory']);
+					if (!$mkdir_res) {
+						throw new Exception("Couldn't create " . $export_conf['remote_directory'] . " directory");
+					}
+				}
+				Billrun_Factory::log()->log($export_conf['remote_directory'] . " directory was found/created successfully. Uploading file", Zend_Log::DEBUG);
 				$response = $connection->put($local, $remote);
 			} catch (Exception $e) {
 				Billrun_Factory::log("Report file: " . $fileName . " uploading ERR: " . $e->getMessage(), Zend_Log::ALERT);
@@ -474,6 +493,10 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 	}
+
+	public function getExportDetails() {
+		return $this->export_details;
+    }
 }
 
 class Report {
