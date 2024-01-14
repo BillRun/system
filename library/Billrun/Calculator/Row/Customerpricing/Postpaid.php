@@ -35,9 +35,9 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		$pricingData = parent::update($pricingOnly);
 		if ($pricingData && (!isset($this->row['retail_rate']) || $this->row['retail_rate'])) {
 			$urt = $this->row['urt']->sec;
-			if ($urt <= $this->activeBillrunEndTime) { // lines in current billing cycle
+			if ($urt < $this->activeBillrunEndTime) { // lines in current billing cycle
 				$billrunKey = $this->activeBillrun;
-			} else if ($urt <= $this->nextActiveBillrunEndTime) { // late lines
+			} else if ($urt < $this->nextActiveBillrunEndTime) { // late lines
 				$billrunKey = $this->nextActiveBillrun;
 			} else { // future lines
 				$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($urt);
