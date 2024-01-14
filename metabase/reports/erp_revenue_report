@@ -67,6 +67,7 @@ GROSS_AMOUNT:{$sum:"$totals.grouping.after_taxes"},
 NET_AMOUNT:{$sum:"$totals.grouping.before_taxes"},
 TAX_AMOUNT:{$sum:"$totals.grouping.taxes"} }},
 
+{$match:{$or :[{NET_AMOUNT:{$ne:0}}, {TAX_AMOUNT:{$ne:0}},{GROSS_AMOUNT:{$ne:0}} ]}},
 {$project:{_id : 0,
 INVOICE_NUMBER: {'$ifNull':["$_id.INVOICE_NUMBER", ""]},
 IFS_CUST_CODE:{'$ifNull':["$_id.IFS_CUST_CODE", ""]},
