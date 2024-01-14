@@ -31,6 +31,13 @@ class TagFilter extends ComplexFilter
     public function __construct($filterString)
     {
         $this->filterString = trim($filterString);
+
+       if(preg_match('/\s/u', $this->filterString)) {
+            trigger_error(
+                "Tags with whitespace are deprecated and may be removed in a future version",
+                E_USER_DEPRECATED
+            );
+       }
     }
 
     /**
@@ -89,7 +96,7 @@ class TagFilter extends ComplexFilter
      *
      * @param FeatureNode $feature Feature instance
      *
-     * @return Boolean
+     * @return bool
      */
     public function isFeatureMatch(FeatureNode $feature)
     {
@@ -102,7 +109,7 @@ class TagFilter extends ComplexFilter
      * @param FeatureNode $feature Feature node instance
      * @param ScenarioInterface $scenario Scenario or Outline node instance
      *
-     * @return Boolean
+     * @return bool
      */
     public function isScenarioMatch(FeatureNode $feature, ScenarioInterface $scenario)
     {
@@ -124,7 +131,7 @@ class TagFilter extends ComplexFilter
      *
      * @param string[] $tags
      *
-     * @return Boolean
+     * @return bool
      */
     protected function isTagsMatchCondition($tags)
     {
@@ -144,7 +151,7 @@ class TagFilter extends ComplexFilter
                 }
             }
 
-            $satisfies = (false !== $satisfiesComma && $satisfies && $satisfiesComma) || false;
+            $satisfies = $satisfiesComma && $satisfies;
         }
 
         return $satisfies;

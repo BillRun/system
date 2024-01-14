@@ -28,7 +28,7 @@ class DggContainer
     /**
      * BLIP Store Container.
      *
-     * @var DggContainer\BstoreContainer
+     * @var ?DggContainer\BstoreContainer
      */
     private $bstoreContainer;
 
@@ -61,7 +61,7 @@ class DggContainer
      *
      * @param int $value
      */
-    public function setSpIdMax($value)
+    public function setSpIdMax($value): void
     {
         $this->spIdMax = $value;
     }
@@ -81,7 +81,7 @@ class DggContainer
      *
      * @param int $value
      */
-    public function setCDgSaved($value)
+    public function setCDgSaved($value): void
     {
         $this->cDgSaved = $value;
     }
@@ -101,7 +101,7 @@ class DggContainer
      *
      * @param int $value
      */
-    public function setCSpSaved($value)
+    public function setCSpSaved($value): void
     {
         $this->cSpSaved = $value;
     }
@@ -109,7 +109,7 @@ class DggContainer
     /**
      * Get BLIP Store Container.
      *
-     * @return DggContainer\BstoreContainer
+     * @return ?DggContainer\BstoreContainer
      */
     public function getBstoreContainer()
     {
@@ -121,7 +121,7 @@ class DggContainer
      *
      * @param DggContainer\BstoreContainer $bstoreContainer
      */
-    public function setBstoreContainer($bstoreContainer)
+    public function setBstoreContainer($bstoreContainer): void
     {
         $this->bstoreContainer = $bstoreContainer;
     }
@@ -132,7 +132,7 @@ class DggContainer
      * @param int $property The number specifies the option
      * @param mixed $value
      */
-    public function setOPT($property, $value)
+    public function setOPT($property, $value): void
     {
         $this->OPT[$property] = $value;
     }
@@ -166,10 +166,10 @@ class DggContainer
     /**
      * Set identifier clusters. [<drawingId> => <max shape id>, ...].
      *
-     * @param array $pValue
+     * @param array $IDCLs
      */
-    public function setIDCLs($pValue)
+    public function setIDCLs($IDCLs): void
     {
-        $this->IDCLs = $pValue;
+        $this->IDCLs = $IDCLs;
     }
 }

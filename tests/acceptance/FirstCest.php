@@ -5,7 +5,7 @@ class FirstCest
     public function frontpageWorks(AcceptanceTester $I)
     {
         $I->amOnPage('/');
-        $I->see('Please Sign in');
+        $I->waitForText('Please Sign In', 1);
     }
 
 

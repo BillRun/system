@@ -7,5 +7,6 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Payrexx' => array($vendorDir . '/payrexx/payrexx/lib'),
+    'HTMLPurifier' => array($vendorDir . '/ezyang/htmlpurifier/library'),
     'Behat\\Gherkin' => array($vendorDir . '/behat/gherkin/src'),
 );
