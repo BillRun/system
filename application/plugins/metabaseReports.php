@@ -58,7 +58,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $run_after_invoice_confirmed;
 	protected $run_after_cycle_finished;
 	protected $run_after_cycle_confirmed;
-	public $account_default_remote_directory;
+	public $default_remote_directory;
 	
 	public function __construct($options = array()) {		
 		$this->reports_details = isset($options['reports']) ? $options['reports'] : [];
@@ -69,7 +69,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->run_after_invoice_confirmed = Billrun_Util::getIn($options, "run_after_invoice_confirmed", false);
 		$this->run_after_cycle_finished = Billrun_Util::getIn($options, "run_after_cycle_finished", false);
 		$this->run_after_cycle_confirmed = Billrun_Util::getIn($options, "run_after_cycle_confirmed", false);
-		$this->account_default_remote_directory = Billrun_Util::getIn($options, "account_default_remote_directory", "/metabase_reoprts_dir");
+		$this->default_remote_directory = Billrun_Util::getIn($options, "default_remote_directory", "/metabase_reoprts_dir");
 	}
 	
 	/**
@@ -233,8 +233,8 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"mandatory" => true
 			], [
 				"type" => "string",
-				"field_name" => "export.account_default_remote_directory",
-				"title" => "MB reports - report files' default account remote directory",
+				"field_name" => "export.default_remote_directory",
+				"title" => "MB reports - report files' default remote directory",
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
