@@ -35,7 +35,7 @@ class Generator_Translations {
 		if (is_null($lang)) {
 			$lang = static::getDefaultLanguage();
 		}
-
+		static::$currentLang = $lang;
 		$translationsLocations = array(
 			'/conf/translations/' . $lang . '.ini',
 			'/conf/translations/overrides/' . $lang . '.ini',
@@ -45,13 +45,12 @@ class Generator_Translations {
 		if (!static::$languages[$lang]++) {
 			static::setTranslation($lang, $translationsLocations);
 		}
-		static::$currentLang = $lang;
 	}
 
 	protected static function setTranslation($lang, $paths) {
 		$tr = [];
 		foreach ($paths as $path) {
-			if (!file_exists($path)) {
+			if (!file_exists(APPLICATION_PATH . $path)) {
 				continue;
 			}
 			Billrun_Factory::log("Loading translation file " . $path . " of lang " . $lang);
