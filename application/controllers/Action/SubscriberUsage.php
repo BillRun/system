@@ -307,6 +307,7 @@ class Subscriber_UsageAction extends ApiAction {
 		$billingResult =  Utils_VF::countVFDays($billingLinesColl, $sid, $year, null, [	'$or' => [
 																									['type' => 'tap3'],
 																									['type' => 'smsc'],
+																									['type' => "nsn","roaming"=>true],
 																								],
 																							'plan' => ['$in' => $plans]]);
 		$billingCount = 0 + ( empty($billingResult['VF']["day_sum"]) ? 0 : $billingResult['VF']["day_sum"] ) +  max(0,@$billingResult['IRP_VF_10_DAYS']["day_sum"]);
