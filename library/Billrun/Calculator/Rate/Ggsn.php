@@ -86,7 +86,10 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 			if ($rate['key'] === 'UNRATED') {
 				continue;
 			}
-			$regex = (get_class($rate['params']['sgsn_addresses']) == 'MongoRegex') ? '/' . $rate['params']['sgsn_addresses']->regex . '/' : $rate['params']['sgsn_addresses'];
+			$regex = (is_array($rate['params']['sgsn_addresses']) && !empty($rate['params']['sgsn_addresses']['regex']) )
+							? '/' . $rate['params']['sgsn_addresses']['$regex'] . '/'
+							: $rate['params']['sgsn_addresses'];
+			
 			if (preg_match($regex, $row['sgsn_address']) && $rate['from'] <= $line_time && $line_time <= $rate['to']) {
 				return $rate;
 			}
