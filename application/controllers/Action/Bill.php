@@ -157,7 +157,7 @@ class BillAction extends ApiAction {
 			$requestBody = $request;
 		}
 		$aids = json_decode($jsonAids, TRUE);
-		$min_debt = $request->get('threshold', null);
+		$min_debt = Billrun_Factory::config()->getConfigValue('api.bill.collection_debt.threshold', null);
 		if (!is_array($aids) || json_last_error()) {
 			$this->setError('Illegal account ids', $requestBody);
 			return FALSE;
