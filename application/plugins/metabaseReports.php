@@ -463,10 +463,11 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$local = $this->export_details['export_directory'] . '/' . $fileName;
 				Billrun_Factory::log()->log("Checking if a remote directory was configured for report " . $report->name . " before uploading", Zend_Log::DEBUG);
 				if (empty($export_conf['remote_directory'])) {
-					Billrun_Factory::log()->log("Didn't find remote directory configuration. Uploading " . $fileName . " report file to /" . $fileName, Zend_Log::WARN);
-					$remote = DIRECTORY_SEPARATOR . $fileName;
+					$current_dir = $connection->getConnection()->pwd();
+					Billrun_Factory::log()->log("Didn't find remote directory configuration. Uploading " . $fileName . " report file to current directory " . $current_dir, Zend_Log::WARN);
+					$remote = $current_dir . DIRECTORY_SEPARATOR . $fileName;
 				} else {
-					Billrun_Factory::log()->log("Found remote directory configuration. Uploading " . $fileName . " report file to " . $export_conf['remote_directory'], Zend_Log::WARN);
+					Billrun_Factory::log()->log("Found remote directory configuration. Uploading " . $fileName . " report file to " . $export_conf['remote_directory'], Zend_Log::DEBUG);
 					$remote = $export_conf['remote_directory'] . DIRECTORY_SEPARATOR . $fileName;
 				}
 				Billrun_Factory::log()->log("Trying to upload file to " . $remote, Zend_Log::DEBUG);
