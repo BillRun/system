@@ -79,6 +79,9 @@ class Billrun_Processor_Csv extends Billrun_Processor_Base_SeparatorFieldLines {
 			    $datetime = DateTime::createFromFormat($this->structConfig['config']['date_format'], $row[ $this->structConfig['config']['date_field']]);
 				$row['urt'] =  new MongoDate( $datetime ?  $datetime->format('U') : strtotime( $row[ $this->structConfig['config']['date_field']] ));
 		}
+		if ( !empty($this->structConfig['config']['add_filename_to_row_stamp']) ) {
+			$row['stamp'] = md5($row['stamp'].basename($this->filePath));
+		}
 
 		return $row;
 	}
