@@ -84,7 +84,7 @@ class Conditions extends Component {
         index={index}
         fields={fields}
         operators={operators}
-        conditions={conditions}
+        conditionsSize={conditions.size}
         customValueOptions={customValueOptions}
         disabled={disabled}
         editable={editable}

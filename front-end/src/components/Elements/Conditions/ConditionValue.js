@@ -24,9 +24,9 @@ class ConditionValue extends Component {
     field: PropTypes.instanceOf(Immutable.Map),
     config: PropTypes.instanceOf(Immutable.Map),
     operator: PropTypes.instanceOf(Immutable.Map),
-    conditions: PropTypes.instanceOf(Immutable.List),
     dynamicSelectOptions: PropTypes.instanceOf(Immutable.List),
     customValueOptions: PropTypes.instanceOf(Immutable.List),
+    conditionsSize:  PropTypes.number,
     disabled: PropTypes.bool,
     editable: PropTypes.bool,
     onChange: PropTypes.func,
@@ -37,9 +37,9 @@ class ConditionValue extends Component {
     field: Immutable.Map(),
     config: Immutable.Map(),
     operator: Immutable.Map(),
-    conditions: Immutable.List(),
     dynamicSelectOptions: Immutable.List(),
     customValueOptions: Immutable.List(),
+    conditionsSize: 0,
     disabled: false,
     editable: true,
     onChange: () => {},
@@ -51,20 +51,20 @@ class ConditionValue extends Component {
   }
 
   shouldComponentUpdate(nextProps) {
-    const { field, config, conditions, operator, dynamicSelectOptions, disabled, editable } = this.props;
+    const { field, config, conditionsSize, operator, dynamicSelectOptions, disabled, editable } = this.props;
     return (
       !Immutable.is(field, nextProps.field)
       || !Immutable.is(config, nextProps.config)
       || !Immutable.is(dynamicSelectOptions, nextProps.dynamicSelectOptions)
       || !Immutable.is(operator, nextProps.operator)
-      || !Immutable.is(conditions, nextProps.conditions)
+      || conditionsSize !== nextProps.conditionsSize
       || disabled !== nextProps.disabled
       || editable !== nextProps.editable
     );
   }
 
   componentDidUpdate(prevProps) {
-    const { config, conditions, dynamicSelectOptions, operator, customValueOptions } = this.props;
+    const { config, conditionsSize, dynamicSelectOptions, operator, customValueOptions } = this.props;
     if (!Immutable.is(prevProps.config, config)) {
       this.initFieldOptions(config, dynamicSelectOptions);
     }
@@ -78,11 +78,11 @@ class ConditionValue extends Component {
       customValueOptions: prevProps.customValueOptions
     }));
     const isSelectOptionsChanged = !oldOptions.isEmpty()
-      && conditions.size >= prevProps.conditions.size
+      && conditionsSize >= prevProps.conditionsSize
       // options was removed 
       && !oldOptions.every(element => newOptions.includes(element));
 
-    const isTypeChanged = conditions.size >= prevProps.conditions.size 
+    const isTypeChanged = conditionsSize >= prevProps.conditionsSize
       && prevProps.config.get('type', '') !== ''
       && prevProps.config.get('type', '') !== config.get('type', '');
 
