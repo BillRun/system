@@ -157,7 +157,17 @@ class BillAction extends ApiAction {
 			$requestBody = $request;
 		}
 		$aids = json_decode($jsonAids, TRUE);
-		$min_debt = Billrun_Factory::config()->getConfigValue('api.bill.collection_debt.threshold', null);
+		if (!is_null($request->get('threshold', null))) {
+			$min_debt = $request->get('threshold', null);
+			Billrun_Factory::log("Using api threshold parameter value " . $min_debt, Zend_Log::DEBUG);
+		} else {
+			$min_debt = Billrun_Factory::config()->getConfigValue('api.bill.collection_debt.threshold', null);
+			if (!is_null($min_debt)) {
+				Billrun_Factory::log("Using configured threshold value " . $min_debt, Zend_Log::DEBUG);
+			} else {
+				Billrun_Factory::log("No threshold value was found", Zend_Log::DEBUG);
+			}
+		}
 		if (!is_array($aids) || json_last_error()) {
 			$this->setError('Illegal account ids', $requestBody);
 			return FALSE;
