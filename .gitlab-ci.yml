@@ -36,7 +36,7 @@ python_testcases:
     - docker compose -f docker-compose-php74.yml up -d
 
     # create test virtual env
-    - cd $CI_PROJECT_DIR/integration_tests/
+    - cd $CI_PROJECT_DIR/tests/legacy/integration_tests/
     - echo ENV = $TEST_ENV > .env
     - python3 --version  # for debugging
     - pip3 install virtualenv
@@ -46,15 +46,15 @@ python_testcases:
 
   # run python testcases
   script:
-    - pytest -m smoke -s --junitxml=xml_report_backend.xml --testrail --tr-config=$CI_PROJECT_DIR/integration_tests/testrail.cfg --tr-email=$TESTRAIL_EMAIL --tr-password=$TESTRAIL_APIKEY --tr-testrun-description="Merge Request title = $CI_MERGE_REQUEST_TITLE, Commit SHA = $CI_COMMIT_SHORT_SHA"
+    - pytest -m smoke -s --junitxml=xml_report_backend.xml --testrail --tr-config=$CI_PROJECT_DIR/tests/legacy/integration_tests/testrail.cfg --tr-email=$TESTRAIL_EMAIL --tr-password=$TESTRAIL_APIKEY --tr-testrun-description="Merge Request title = $CI_MERGE_REQUEST_TITLE, Commit SHA = $CI_COMMIT_SHORT_SHA"
 
   artifacts:
     when: always
     paths:
-      - $CI_PROJECT_DIR/integration_tests/allure-results/*
-      - $CI_PROJECT_DIR/integration_tests/xml_report_backend.xml
+      - $CI_PROJECT_DIR/tests/legacy/integration_tests/allure-results/*
+      - $CI_PROJECT_DIR/tests/legacy/integration_tests/xml_report_backend.xml
     reports:
-      junit: $CI_PROJECT_DIR/integration_tests/xml_report_backend.xml
+      junit: $CI_PROJECT_DIR/tests/legacy/integration_tests/xml_report_backend.xml
     expire_in: 1 week
 
 php_testcases:
