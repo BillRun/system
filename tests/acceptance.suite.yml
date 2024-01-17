@@ -8,7 +8,7 @@ actor: AcceptanceTester
 modules:
     enabled:
         - WebDriver:
-            url: http://10.103.0.1:8074
+            url: http://web
             host: chrome
             port: 4444
             browser: chrome

@@ -1,11 +1,20 @@
 <?php
 
-/* 
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @category   Application
+ * @package    Helpers
+ * @subpackage Generator
+ * @copyright  Copyright (C) 2023 BillRun Technologies LTD. All rights reserved.
+ * @license    GNU General Public License version 2 or later
  */
 
+/**
+ * Translations generator
+ *
+ * @package    Generator
+ * @subpackage Translations
+ * @since      5.0
+ */
 class Generator_Translations {
 	
 	protected static $defaultLangPath = 'billrun.invoices.language.default';
@@ -16,7 +25,7 @@ class Generator_Translations {
 	
 	public static function load() {
 		if (!static::$defaultLang) {
-			$defaultLang = Billrun_Factory::config()->getConfigValue(static::$defaultLangPath, 'en_GB' );
+			$defaultLang = Billrun_Factory::config()->getConfigValue(static::$defaultLangPath, 'en_GB');
 				static::$defaultLang = $defaultLang;
 				static::setLanguage($defaultLang);
 		}
@@ -24,18 +33,27 @@ class Generator_Translations {
 
     public static function setLanguage($lang = null) {
         if (is_null($lang)) {
-            static::setLanguage(static::getDefaultLanguage());
-        } else {
-            if (!static::$languages[$lang]++) {
-                static::setTranslation($lang, ['/conf/translations/' . $lang . '.ini', '/conf/translations/overrides/' . $lang . '.ini']);
+			$lang = static::getDefaultLanguage();
             }
             static::$currentLang = $lang;
+		$translationsLocations = array(
+			'/conf/translations/' . $lang . '.ini',
+			'/conf/translations/overrides/' . $lang . '.ini',
+			'/conf/translations/tenants/' . Billrun_Factory::config()->getTenant() . '/' . $lang . '.ini',
+		);
+
+		if (!static::$languages[$lang]++) {
+			static::setTranslation($lang, $translationsLocations);
         }
     }
 
     protected static function setTranslation($lang, $paths) {
 		$tr = [];
 		foreach ($paths as $path) {
+			if (!file_exists(APPLICATION_PATH . $path)) {
+				continue;
+			}
+			Billrun_Factory::log("Loading translation file " . $path . " of lang " . $lang);
 			$slugs = parse_ini_file(APPLICATION_PATH . $path);
 			$tr = array_merge($tr, $slugs ?: []);
 		}
