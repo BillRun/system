@@ -801,3 +801,37 @@ export const getConditions = (enabledOperators = Immutable.List()) => {
     });
   });
 }
+
+export const convertToOldRecurrence = (item) => {
+  return item.withMutations((itemWithMutations) => {
+    const frequency = item.getIn(['recurrence', 'frequency'], '');
+    if (itemWithMutations.hasIn(['recurrence', 'frequency']) && [1, 12].includes(frequency)) {
+      if (frequency === 12) {
+        itemWithMutations.setIn(['recurrence', 'periodicity'], 'year');
+      } else {
+        itemWithMutations.setIn(['recurrence', 'periodicity'], 'month');
+      }
+      itemWithMutations.deleteIn(['recurrence', 'frequency']);
+      itemWithMutations.deleteIn(['recurrence', 'start']);
+      itemWithMutations.deleteIn(['recurrence', 'converted']);
+    }
+  });
+}
+
+export const convertToNewRecurrence = (item) => {
+  return item.withMutations((itemWithMutations) => {
+    if (!itemWithMutations.hasIn(['recurrence', 'frequency'])) {
+      let frequency = '';
+      const periodicity = itemWithMutations.getIn(['recurrence', 'periodicity'], '');
+      if (periodicity === 'month') {
+        frequency = 1;
+      } else if (periodicity === 'year') {
+        frequency = 12;
+      }
+      itemWithMutations.setIn(['recurrence', 'start'], 1);
+      itemWithMutations.setIn(['recurrence', 'frequency'], frequency);
+      itemWithMutations.setIn(['recurrence', 'converted'], true);
+      itemWithMutations.deleteIn(['recurrence', 'periodicity']);
+    }
+  });
+}

@@ -146,7 +146,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		}
 		$rate_key = $rate['key'];
 		foreach ($this->data['breakdown'][$breakdownKey] as &$breakdowns) {
-			if ($breakdowns['name'] === $rate_key) {
+			if (($breakdowns['name'] === $rate_key) || (!$rate_key && ($breakdowns['name'] == 'Plans and Services'))) {
 				Billrun_Factory::log("Found relevant billrun breakdown for rate " . $rate_key,Zend_Log::DEBUG);
 				$breakdowns['cost'] = !$overridePreviouslyAggregatedResults ? $breakdowns['cost'] + $cost : $cost;
 				$breakdowns['usagev'] = !$overridePreviouslyAggregatedResults ? $breakdowns['usagev'] + $usagev : $usagev;
