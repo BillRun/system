@@ -286,7 +286,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @param array $row
 	 */
 	public function getRowRate($row) {
-		return Billrun_Rates_Util::getRateByRef($row->get('arate', true));
+		return Billrun_Rates_Util::getRateByRef($row->get('arate', true),true);
 	}
 
 	/**

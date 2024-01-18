@@ -290,18 +290,19 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if (isset($this->unifiedLines[$updatedRowStamp])) {
 			$existingRow = $this->unifiedLines[$updatedRowStamp];
 			$this->setMinUrt($newRow, $existingRow);
-			foreach ($typeFields['$inc'] as $field) {
-				$newVal = Billrun_Util::getIn($newRow, $field, null);
-				$exisingVal = Billrun_Util::getIn($existingRow, $field, null);
-				if (!is_null($newVal) && is_null($exisingVal)) {
-					Billrun_Util::setIn($existingRow, $field, 0);
+			if (isset($typeFields['$inc'])) {
+				foreach ($typeFields['$inc'] as &$field) {
+					$newVal = Billrun_Util::getIn($newRow, $field, null);
+					$exisingVal = Billrun_Util::getIn($existingRow, $field, null);
+					if (!is_null($newVal) && is_null($exisingVal)) {
+						Billrun_Util::setIn($existingRow, $field, 0);
+					}
 				}
 			}
 		} else {
-			//Billrun_Factory::log(print_r($newRow,1),Zend_Log::ERR);
 			$existingRow = array('lcount' => 0, 'type' => $type);
-			foreach ($typeFields as $key => $fields) {
-				foreach ($fields as $field) {
+			foreach ($typeFields as $key => &$fields) {
+				foreach ($fields as &$field) {
 					$newVal = Billrun_Util::getIn($newRow, $field, null);
 					if ($key == '$inc' && !is_null($newVal)) {
 						Billrun_Util::setIn($existingRow, $field, 0);
@@ -328,6 +329,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$serialize_array = array();
 		$arategroupsCount = isset($newRow['arategroups']) ? count($newRow['arategroups']) : 0;
 		foreach ($typeData['stamp']['value'] as $type => $field) {
+			//TODO  why  is this  needed  it`s just  the  same logic  in this for loop  as the other 2?
 			if($type === 'custom_value'  || $type === 'calculated_fields' ){
 				continue;
 			}
@@ -336,17 +338,20 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				Billrun_Util::setIn($serialize_array, $field, $newVal);
 			}
 		}
-
-		foreach ($typeData['stamp']['value']['custom_value'][$usaget] as $field) {
-			$newVal = Billrun_Util::getIn($newRow, $field, null);
-			if (!is_null($newVal)) {
-				Billrun_Util::setIn($serialize_array, $field, $newVal);
+		if (isset($typeData['stamp']['value']['custom_value'][$usaget])) {
+			foreach ($typeData['stamp']['value']['custom_value'][$usaget] as $field) {
+				$newVal = Billrun_Util::getIn($newRow, $field, null);
+				if (!is_null($newVal)) {
+					Billrun_Util::setIn($serialize_array, $field, $newVal);
+				}
 			}
 		}
-		foreach ($typeData['stamp']['value']['calculated_fields'][$usaget] as $field) {
-			$newVal = Billrun_Util::getIn($newRow, $field, null);
-			if (!is_null($newVal)) {
-				Billrun_Util::setIn($serialize_array, $field, $newVal);
+		if (isset($typeData['stamp']['value']['calculated_fields'][$usaget])) {
+			foreach ($typeData['stamp']['value']['calculated_fields'][$usaget] as $field) {
+				$newVal = Billrun_Util::getIn($newRow, $field, null);
+				if (!is_null($newVal)) {
+					Billrun_Util::setIn($serialize_array, $field, $newVal);
+				}
 			}
 		}
 
@@ -559,22 +564,24 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				unset($update[$action]);
 			}
 		}
-		$ret = $this->linesCollection->update($query, $update);
-		return (!$ret || !$ret['ok'] || $ret['nModified'] == 0) ? false : true;
+		$ret = $this->linesCollection->update($query, $update, [ 'w' => $this->writeConcern] );
+		return (!$ret || !$ret['ok'] || $ret['nModified'] == 0) && (!$ret || $this->writeConcern != 0 ) ? false : true;
 	}
 	
 	protected function handleUpdatingFailure($query, $update, $key, $row) {
 		$updateFailedLines = array();
 		$incUpdate = $update;
 		unset($update['$inc']);
-		foreach ($update['$set'] as $field => $value) {
-			if ($field != 'process_time') {
-				unset($update['$set'][$field]);
+		if (isset($update['$set'])) {
+			foreach ($update['$set'] as $field => $value) {
+				if ($field != 'process_time') {
+					unset($update['$set'][$field]);
+				}
 			}
 		}
 		$update['$set']['lcount'] = $row['lcount'];
-		$ret = $this->linesCollection->update($query, $update, array('upsert' => true, 'w' => $this->writeConcern));
-		$success = !empty($ret['ok']) && empty($ret['updatedExisting']);
+		$ret = $this->linesCollection->update($query, $update, array('upsert' => true, 'w' => $this->writeConcern) );
+		$success = !empty($ret['ok']) && empty($ret['updatedExisting']) || ($ret || $this->writeConcern == 0 ) ;
 		if (!$success) {
 			if (!$this->tryUpdatingExistingRecord($query, $incUpdate)) {
 				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);

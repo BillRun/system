@@ -1261,7 +1261,7 @@ class Models_Entity {
 			$query[$fieldName] = $record[$fieldName];
 		}
 		$recordCollection = Billrun_Factory::db()->{$collection . 'Collection'}();
-		return $recordCollection->query($query)->count() === 0;
+		return $recordCollection->query($query)->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**

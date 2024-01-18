@@ -46,8 +46,8 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 						$row = $this->parseData('tap3', $data);
 						if ($row) {
 							$row['file_rec_num'] = $key + 1;
-							if(!empty($this->headerRows[0]['header']['sending_source'])) {
-								$row['header_sending_source'] = $this->headerRows[0]['header']['sending_source'];
+							if(!empty($this->currentFileHeader['header']['sending_source'])) {
+								$row['header_sending_source'] = $this->currentFileHeader['header']['sending_source'];
 							}
 							$this->dataRows[] = $row;
 						}
@@ -152,14 +152,15 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 			}
 		}
 
-//		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']) !== null) {
-//			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][Billrun_Util::getNestedArrayVal($cdrLine, $mapping['TimeOffsetCode'])];
-//			if (empty($offset)) {
-//				$offset = '+00:00';
-//			}
-//			$cdrLine['urt'] = new Mongodloid_Date(Billrun_Util::dateTimeConvertShortToIso(Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']), $offset));
-//			$cdrLine['tzoffset'] = $offset;
-//		}
+		if (	Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']) !== null
+				&& !empty( $timeCodeList = Billrun_Util::getin($this->currentFileHeader,'networkInfo.UtcTimeOffsetInfoList'))
+				&& !is_null( $timeCode = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['TimeOffsetCode']) )
+			) {
+			$offset = $timeCodeList[$timeCode];
+			if (!empty($offset)) {
+				$cdrLine['tzoffset'] = $offset;
+			}
+		}
 	}
 	
 	/**

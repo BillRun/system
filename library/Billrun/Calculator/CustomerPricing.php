@@ -371,7 +371,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return false;
 		}
 		foreach ($line['rates'] as $rate) {
-			$arate = Billrun_Rates_Util::getRateByRef($rate['rate']);
+			$arate = Billrun_Rates_Util::getRateByRef($rate['rate'],true);
 			if (is_null($arate) || (!empty($arate['skip_calc']) && in_array(self::$type, $arate['skip_calc']))) {
 				return false;
 			}

@@ -142,7 +142,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	public function prepareData($lines) {
-		if ($this->isBulk() && empty($this->subscribers)) {
+		if ($this->isBulk() ) {
 			$this->subscribers = $this->loadSubscribers($lines);
 		}
 		if ($this->bulkAccounts) {
@@ -308,8 +308,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$this->subscribers_by_stamp = false;
 		$subscriber_extra_data = array_keys($this->subscriber->getCustomerExtraData());
 
+		$splitRows =  is_array($rows) && Billrun_Factory::config()->getConfigValue('customer.calculator.limit_in_memory_queries',false) ? array_chunk( $rows ,$this->limit) : [$rows];
+		$results = [];
+		foreach($splitRows as $rowBatch) {
+			if(empty($rowBatch)) { continue; }
 		// build customer mapping priorities
-		$priorities = $this->buildPriorities($rows, $subscriber_extra_data);
+			$priorities = $this->buildPriorities($rowBatch, $subscriber_extra_data);
 		$queriesToMatchSubs = [];
 		foreach ($priorities as $priorityQueries) {
 			if (empty($priorityQueries)) {
@@ -318,19 +322,21 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$queriesToMatchSubs[] = $priorityQueries;
 		}
 		// load one subscriber for each query
-		$results = $this->subscriber->loadSubscriberForQueries($queriesToMatchSubs, $this->subscriber->getAvailableFields());
-		if (!$results) {
+				$tmpResults = $this->subscriber->loadSubscriberForQueries($queriesToMatchSubs, $this->subscriber->getAvailableFields());
+				if (!$tmpResults) {
 			Billrun_Factory::log('Failed to load subscribers data for params: ' . print_r($priorityQueries, 1), Zend_Log::NOTICE);
-			return false;
+					continue;
 		}
 
 
-		return array_map(function($data) {
+			$results = array_merge(array_map(function($data) {
 			$type = array('type' => Billrun_Factory::config()->getConfigValue('subscribers.subscriber.type', 'db'));
 			$options = array('data' => $data->getRawData());
 			$subscriber = Billrun_Subscriber::getInstance(array_merge($data->getRawData(), $options, $type));
 			return $subscriber;
-		}, $results);
+			}, $tmpResults),$results);
+		}
+		return $results;
 	}
 
 	public function loadAccounts($rows) {
@@ -377,6 +383,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function loadSubscriberForLine($row) {
 		$priorities = $this->buildPriorities([$row]);
 		foreach ($priorities as $priority) {
+			if(empty($priority)) { continue; }
 			if ( $subData = $this->subscriber->loadSubscriberForQuery($priority) ) {
 				$type = array('type' => Billrun_Factory::config()->getConfigValue('subscribers.subscriber.type', 'db'));
 				$options = array('data' => $subData->getRawData());
@@ -395,7 +402,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$line_params = $this->getIdentityParams($row);
 				if (count($line_params) == 0) {
 					Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
-					return;
+					continue;
 				} else {
 					foreach ($line_params as $key => $currParams) {
 						$currParams['time'] = date(Billrun_Base::base_datetimeformat, $row['urt']->sec);
