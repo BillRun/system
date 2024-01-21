@@ -118,7 +118,7 @@ if (typeof lastConfig['billrun']['generate_pdf']  === 'undefined') {
 
 // BRCD-441 -Add plugin support
 if (!lastConfig['plugins']) {
-	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"];
+	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin", "notificationsPlugin"];
 }
 
 for (var i = 0; i < lastConfig['plugins'].length; i++) {
@@ -137,6 +137,13 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 				"system": true,
 				"hide_from_ui": false
 			};
+		} else if (lastConfig['plugins'][i] === "notificationsPlugin") {
+			lastConfig['plugins'][i] = {
+				"name": lastConfig['plugins'][i],
+				"enabled": false,
+				"system": true,
+				"hide_from_ui": false
+			};
 		} else {
 				lastConfig['plugins'][i] = {
 				"name": lastConfig['plugins'][i],
@@ -150,8 +157,14 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 //-------------------------------------------------------------------
 // BRCD-1278 - backward support for new template
 if(lastConfig.invoice_export) {
-	lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
-	lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.header) &&
+		!lastConfig.invoice_export.header) {
+			lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
+	}
+	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.footer) &&
+		!lastConfig.invoice_export.footer) {
+			lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+	}
 }
 
 //BRCD-1229 - Input processor re-enabled when not requested
@@ -1181,10 +1194,10 @@ lastConfig = runOnce(lastConfig, 'BRCD-3227', function () {
     lastConfig['rates']['fields'] = fields;
 });
 // BRCD-2888 -adjusting config to the new invoice templates
-if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.header)) {
+if(lastConfig.invoice_export && /\/header\/header_tpl\.html$/.test(lastConfig.invoice_export.header)) {
 	lastConfig.invoice_export.header = "/header/header_tpl.phtml";
 }
-if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.footer)) {
+if(lastConfig.invoice_export && /\/footer\/footer_tpl\.html$/.test(lastConfig.invoice_export.footer)) {
 	lastConfig.invoice_export.footer = "/footer/footer_tpl.phtml";
 }
 // BRCD-2888 -adjusting config to the new invoice templates
@@ -1449,6 +1462,73 @@ lastConfig = runOnce(lastConfig, 'BRCD-4010', function () {
 	);
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-4172', function () {
+	db.bills.ensureIndex({'urt': 1 }, { unique: false, background: true});
+});
+// BRCD-4297 Correct end date of services with limited cycles
+lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
+	function addMonthsToDate(fromDate, monthsToAdd) {
+		const newDate = new Date(fromDate); // Create a new Date object from the provided fromDate
+	  
+		// Add the specified number of months to the newDate
+		newDate.setMonth(newDate.getMonth() + parseInt(monthsToAdd));
+	  
+		return newDate.toISOString(); // Return the new date as an ISO string
+	  }
+	
+	var limited_cycle_services = db.services.aggregate([{$match: {balance_period: {$exists: false}, prorated: true, price: {$size: 1, $elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {month_limit: {$size: 1}}}, {$unwind: "$month_limit"},{$unwind: "$month_limit"}])
+	var today = new Date();
+	var lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+	var lastYearISO = lastYear.toISOString();
+	
+	var all_service_keys = [];
+	var service_and_cycle_limit = [];
+	
+	limited_cycle_services.forEach(service => {
+		all_service_keys.push(service._id);
+		service_and_cycle_limit[service._id] = service.month_limit;
+	});
+	
+	print("Subscriber ID, Service Key, Start Date, cycles, Original End Date, Corrected End Date")
+	var subscribers = db.subscribers.find({'services.name': {$in: all_service_keys}, to: {$gt: ISODate(lastYearISO)}});
+	subscribers.forEach(subscriber => {
+		for (var i = 0; i < subscriber.services.length; i++) {
+			if(all_service_keys.includes(subscriber.services[i].name)) {
+				var corrected_end_date = addMonthsToDate(subscriber.services[i].from, service_and_cycle_limit[subscriber.services[i].name]);
+				if (subscriber.services[i].to.toISOString() != corrected_end_date) {
+					print(subscriber.sid + "," + subscriber.services[i].name + "," + subscriber.services[i].from.toISOString() + "," + service_and_cycle_limit[subscriber.services[i].name] + "," + subscriber.services[i].to.toISOString() + "," + corrected_end_date);
+					subscriber.services[i].to = ISODate(corrected_end_date);
+				}
+			}
+		}
+		db.subscribers.save(subscriber);
+	})
+	
+	var services_with_revisions_with_differernt_cycles = db.services.aggregate([{$match: {balance_period: {$exists: false}, prorated: true, price: {$elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {$expr: {$gt: [{$size: "$month_limit"}, 1]}}}])
+	services_with_revisions_with_differernt_cycles.forEach(service => {
+		printjson("BRCD-4297: Service with that the month limit has been changed and will require a more complex fix: " + service._id);
+	});
+});
+
+// BRCD-3432 add BillRun' metabase plugin
+runOnce(lastConfig, 'BRCD-3432', function () {
+    var mbPluginsSettings = {
+        "name": "metabaseReportsPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": true,
+				"configuration" : {
+					"values" : {
+						"metabase_details" : {},
+						"export" : {},
+						"added_data" : {},
+						"reports" : []
+					}
+				}
+    };
+    lastConfig['plugins'].push(mbPluginsSettings);
+});
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
@@ -1456,3 +1536,4 @@ db.lines.dropIndex("aid_1_urt_1");
 db.rebalance_queue.ensureIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});
 db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
 db.rebalance_queue.ensureIndex({"aid": 1, "billrun_key": 1}, {unique: false, "background": true});
+

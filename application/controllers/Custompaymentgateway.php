@@ -80,8 +80,14 @@ class CustompaymentgatewayController extends ApiController {
 			}
 		}
 		if (!empty($options['params'])) {
-			if (!preg_match( '/^[\w\d_-]+$/', implode("", $options['params']))) {
-				return false;
+			$email_reg = "/^([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@([a-z0-9\-]+\.)+[a-z]{2,6}$/ix";
+			$general_reg = "/^[\w\d_-]+$/";
+			foreach ($options['params'] as $name => $value) {
+				if (preg_match($email_reg, $value)) {
+					continue;
+				} elseif (!preg_match($general_reg, $value)) {
+					return false;
+				}
 			}
 		}
 

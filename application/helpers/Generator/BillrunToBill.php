@@ -129,6 +129,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		if (!empty($invoice['invoicing_day'])) {
 			$bill['invoicing_day'] = $invoice['invoicing_day'];
 		}
+		if (!empty($invoice['uf'])) {
+			$bill['uf'] = $invoice['uf'];
+		}
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];
 		}
@@ -149,7 +152,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice));
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
-		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill));
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill, $invoice));
  	}
 	
 	/**
