@@ -451,6 +451,7 @@ public function afterPricingDoneWithBalance($row, $balance, $pricingData, $calcu
 
 		if (!empty($rule['ignoreConditions'])
 			&& $this->checkCondOnRow($rule['ignoreConditions'], $row) 	) {
+				Billrun_Factory::log("Event {$rule['name']} is ignored as row matched ignoreConditions stamp : {$row['stamp']}",Zend_Log::DEBUG);
 				return false;
 		}
 
@@ -897,10 +898,10 @@ public function afterPricingDoneWithBalance($row, $balance, $pricingData, $calcu
 				case 'ne':
 				case 'gt':
 				case 'lt':
-					$righVal = empty($cond['value']) ?  $row[$cond['right_field']] : $cond['value'];
-					$cmp = is_numeric($row[cond['field']]) &&  is_numeric($rightVal)
-									? $row[cond['field']]  - $rightVal
-									: strcmp($row[cond['field']],$rightVal);
+					$rightVal = empty($cond['value']) ?  $row[$cond['right_field']] : $cond['value'];
+					$cmp = is_numeric($row[$cond['field']]) &&  is_numeric($rightVal)
+									? $row[$cond['field']]  - $rightVal
+									: strcmp($row[$cond['field']],$rightVal);
 					$res &= $cond['op']==='ne' && $cmp !== 0 ||
 							$cond['op']==='eq' && $cmp == 0 ||
 							$cond['op']==='lt' && $cmp < 0 ||

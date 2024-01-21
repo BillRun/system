@@ -206,10 +206,10 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 			if(!empty($row['arategroup'])) {
 				$adjutmentsUpdate['balance.groups.'.$row['arategroup'].'.'.$row['usaget'].'.cost'] = $adjutmemtAmount;
 			}
-
+			$billrunKey = Billrun_Util::getBillrunKey($row->get('urt')->sec);
 			$updateQuery = [
 				'sid' => $row['sid'],
-				'billrun_month'=> Billrun_Util::getBillrunKey($row->get('urt')->sec),
+				'billrun_month'=> $billrunKey,
 				"tx.{$row['stamp']}_external_pricing" => ['$exists'=> 0 ]
 			];
 			$options = array(
@@ -217,7 +217,8 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 				'new' => false,
 				'w' => 1,
 			);
-			$balance = Billrun_Balance::getCollection()->findAndModify($updateQuery, ['$inc'=> $adjutmentsUpdate, '$set' => ["tx.{$row['stamp']}_external_pricing" => 1]],[],$options);
+			$mongoBalance = Billrun_Balance::getCollection()->findAndModify($updateQuery, ['$inc'=> $adjutmentsUpdate, '$set' => ["tx.{$row['stamp']}_external_pricing" => 1]],[],$options);
+			$balance =  Billrun_Factory::balance(['sid' => $row['sid'], 'billrun_key' => $billrunKey, 'unique_plan_id' => $row['unique_plan_id'] ]);
 			Billrun_Factory::dispatcher()->trigger('afterPricingDoneWithBalance',[$row, $balance, ['aprice'=> $adjutmemtAmount], $this]);
 		}
 	}
