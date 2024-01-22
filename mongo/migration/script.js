@@ -1516,7 +1516,7 @@ runOnce(lastConfig, 'BRCD-3432', function () {
         "name": "metabaseReportsPlugin",
         "enabled": false,
         "system": true,
-        "hide_from_ui": true,
+        "hide_from_ui": false,
 				"configuration" : {
 					"values" : {
 						"metabase_details" : {},
