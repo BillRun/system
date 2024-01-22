@@ -1611,6 +1611,15 @@ lastConfig = runOnce(lastConfig, 'BRCD-4217', function () {
 	print("Updated total of " + i + " bills!")
 });
 
+//BRCD-4306 MB plugin shouldn't be hide from UI
+runOnce(lastConfig, 'BRCD-4306', function () {
+	for (var i = 0; i < lastConfig['plugins'].length; i++) {
+		if (lastConfig['plugins'][i]['name'] == "metabaseReportsPlugin") {
+			lastConfig['plugins'][i]['hide_from_ui'] = false;
+		}
+	}
+});
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 db.lines.dropIndex("aid_1_urt_1");
