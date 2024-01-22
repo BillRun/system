@@ -1510,8 +1510,8 @@ lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
 	});
 });
 
-// BRCD-3432 add BillRun' metabase plugin
-runOnce(lastConfig, 'BRCD-3432', function () {
+// BRCD-4306 add BillRun' metabase plugin
+runOnce(lastConfig, 'BRCD-4306', function () {
     var mbPluginsSettings = {
         "name": "metabaseReportsPlugin",
         "enabled": false,
