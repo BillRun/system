@@ -57,13 +57,13 @@ class SidUsageVolumeAction extends Action_Base {
 	}
 
     public function getSidUsageVolume($sid, $from, $to) {
-        $collection = $linesCollection = Billrun_Factory::db()->linesCollection();
+        $linesCollection = Billrun_Factory::db()->linesCollection();
         $match = array(
 			'$match' => array(
 				'sid' => $sid,
 				'urt' => array(
-                    '$gte' => new MongoDate($from),
-                    '$lte' => new MongoDate($to),
+                    '$gte' => new MongoDate(strtotime($from)),
+                    '$lte' => new MongoDate(strtotime($to)),
                 ),
                 'billrun' => array('$exists' => true)
 			)
@@ -82,25 +82,28 @@ class SidUsageVolumeAction extends Action_Base {
 				'sms_roaming' => $this->getSmsRoamingQuery()
 			)
 		);
-		Billrun_Factory::log("Query: " . json_encode($match));
-		Billrun_Factory::log("Query: " . json_encode($group));
-        $collection->aggregateWithOptions([$match, $project, $addFields, $group, $project3, $match2], ['allowDiskUse' => true]);
+		Billrun_Factory::log(json_encode($group));
+		$ret = $linesCollection->aggregate([$match, $group], ["allowDiskUse" => true]);
+		echo "";
     }
 
 	protected function getSumQuery($cond, $divide, $cond_second_param = null ,$use_divide = true) {
-		return ['sum' => [
-				array ('cond' => $cond),
-				$use_divide ? array ('divide' => $divide) : $cond_second_param,
-				0
-			  ]];
+		$res = array('$sum' => ['$cond' => [$cond]]);
+		if ($use_divide) {
+			$res['$sum']['$cond'][] = ['$divide' => $divide];
+		} else {
+			$res['$sum']['$cond'][] = $cond_second_param;
+		}
+		$res['$sum']['$cond'][] = 0;
+		return $res;
 	}
 
 	protected function getCallsInMinutesQuery() {
-		$cond = ['and' => array(
-			['eq' => ['type', 'nsn']],
-			['eq' => ['usaget', 'call']],
-			['ne' => ['in_circuit_group_name', 'VOLT']],
-			['ne' => ['out_circuit_group', '2120']]
+		$cond = ['$and' => array(
+			['$eq' => ['$type', 'nsn']],
+			['$eq' => ['$usaget', 'call']],
+			['$ne' => ['$in_circuit_group_name', 'VOLT']],
+			['$ne' => ['$out_circuit_group', '2120']]
 		)];
 		$divide = ['$usagev', 60];
 		return $this->getSumQuery($cond, $divide);
