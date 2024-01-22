@@ -1510,13 +1510,13 @@ lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
 	});
 });
 
-// BRCD-4306 add BillRun' metabase plugin
-runOnce(lastConfig, 'BRCD-4306', function () {
+// BRCD-3432 add BillRun' metabase plugin
+runOnce(lastConfig, 'BRCD-3432', function () {
     var mbPluginsSettings = {
         "name": "metabaseReportsPlugin",
         "enabled": false,
         "system": true,
-        "hide_from_ui": false,
+        "hide_from_ui": true,
 				"configuration" : {
 					"values" : {
 						"metabase_details" : {},
@@ -1529,8 +1529,8 @@ runOnce(lastConfig, 'BRCD-4306', function () {
     lastConfig['plugins'].push(mbPluginsSettings);
 });
 
-// BRCD-4306-1 MB plugin shouldn't be hide from UI
-runOnce(lastConfig, 'BRCD-4306-1', function () {
+//BRCD-4306 MB plugin shouldn't be hide from UI
+runOnce(lastConfig, 'BRCD-4306', function () {
 	for (var i = 0; i < lastConfig['plugins'].length; i++) {
 		if (lastConfig['plugins'][i]['name'] == "metabaseReportsPlugin") {
 			lastConfig['plugins'][i]['hide_from_ui'] = false;
