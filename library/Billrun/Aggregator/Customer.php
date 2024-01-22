@@ -138,7 +138,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @var boolean
 	 */
 	protected $generatePdf = true;
-	
+
 	/**
 	 * If true don't aggregate usage lines. 
 	 * @var boolean
@@ -190,7 +190,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->forceAccountIds =(array) Billrun_Util::getFieldVal($options['aggregator']['force_accounts'],  Billrun_Util::getFieldVal($options['force_accounts'],$this->forceAccountIds));
 		$this->fakeCycle = Billrun_Util::getFieldVal($options['aggregator']['fake_cycle'], Billrun_Util::getFieldVal($options['fake_cycle'], $this->fakeCycle));
 		$this->ignoreCdrs = Billrun_Util::getFieldVal($options['aggregator']['ignore_cdrs'], Billrun_Util::getFieldVal($options['ignore_cdrs'], $this->ignoreCdrs));
-		
+
 		if (isset($options['action']) && $options['action'] == 'cycle') {
 			$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
 			$this->isCycle = true;
@@ -978,7 +978,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected function enrichConfig($var,$ret) {
 		if(!is_array($ret)) {
-			return $ret;
+		return $ret;
 		}
 		$enrichmentMapping = Billrun_Factory::config()->getConfigValue('customer.aggregator.config_enrichment', [
 			'passthrough_data' => [
@@ -1004,7 +1004,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		return array_merge($enrichment,$ret);
 	}
-
+	
 	public function getData() {
 		return $this->data;
 	}
