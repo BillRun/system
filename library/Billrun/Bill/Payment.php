@@ -1023,7 +1023,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$pipelines[] = array(
 			'$limit' => intval($size),
 		);
-		
+		Billrun_Factory::log('Paginated debts query: ' . json_encode($pipelines), Zend_Log::DEBUG);
 		return $pipelines;
 	}
 	

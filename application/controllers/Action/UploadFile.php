@@ -26,7 +26,8 @@ class UploadFileAction extends Action_Base {
 		$request = $this->getRequest();
 		$payment_gateway = $request->get('payment_gateway');
 		$options["payment_gateway"] = $payment_gateway;
-		$options["type"] = str_replace("_", '', $payment_gateway) . "TransactionsResponse";
+		$options["payments_file_type"] = $request->get('payments_file_type');
+		$options["type"] = str_replace("_", '', $payment_gateway . ucwords($options['payments_file_type'], '_'));
 		$options["file_type"] = $request->get('file_type');
 
 
@@ -87,7 +88,7 @@ class UploadFileAction extends Action_Base {
 			// $connectionDetails["type"] = str_replace("_", "", ucwords($options["payment_gateway"], "_")) .
 				// str_replace("_", "", ucwords($options["type"], "_"));
 			$connectionDetails["type"] = $options["type"];
-			$connectionDetails["payments_file_type"] = $options["type"];
+			$connectionDetails["payments_file_type"] = $options["payments_file_type"];
 			$connectionDetails["file_type"] = $options["file_type"];
 			$connectionDetails["cpg_name"] = $options["payment_gateway"];
 			$connection = Billrun_Factory::paymentGatewayConnection(

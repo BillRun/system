@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
         wkhtmltopdf wget  \
 		libpng-dev zlib1g-dev libzip-dev libgmp-dev \
                 unzip openjdk-11-jre-headless \
+                unzip openjdk-11-jre-headless \
     && pecl install yaf-3.1.4 \
     && pecl install mongodb-1.11.1 \
     && pecl install xdebug-3.1.6 \

@@ -162,6 +162,15 @@
     "order": 0,
     "parent": "account_receivables"
   },
+  "payments": {
+    "title": "Payments",
+    "icon": "",
+    "route": "payments",
+    "show": true,
+    "roles": [],
+    "order": 0,
+    "parent": "account_receivables"
+  },
   "custom-payment-files": {
     "title": "Transactions Request File",
     "icon": "",

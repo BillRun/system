@@ -139,7 +139,7 @@ abstract class SettingsContainerAbstract implements SettingsContainerInterface{
 	 * @inheritdoc
 	 */
 	public function toJSON(int $jsonOptions = null):string{
-		return json_encode($this, $jsonOptions ?? 0);
+		return json_encode($this, ($jsonOptions ?? 0));
 	}
 
 	/**
@@ -153,6 +153,7 @@ abstract class SettingsContainerAbstract implements SettingsContainerInterface{
 
 	/**
 	 * @inheritdoc
+	 * @phan-suppress PhanUndeclaredClassAttribute
 	 */
 	#[\ReturnTypeWillChange]
 	public function jsonSerialize():array{

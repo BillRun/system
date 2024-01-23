@@ -65,6 +65,13 @@ class Design extends Base
     /** @var string $headerImageShape */
     protected $headerImageShape;
 
+    /**
+     * optional
+     *
+     * @var array $headerImageCustomLink
+     */
+    protected $headerImageCustomLink;
+
     /** @var int $useIndividualEmailLogo */
     protected $useIndividualEmailLogo = 0;
 
@@ -114,7 +121,7 @@ class Design extends Base
     /**
      * @param string $uuid
      */
-    public function setUuid(string $uuid): void
+    public function setUuid($uuid): void
     {
         $this->uuid = $uuid;
     }
@@ -381,6 +388,29 @@ class Design extends Base
     public function setHeaderImageShape(string $headerImageShape): void
     {
         $this->headerImageShape = $headerImageShape;
+    }
+
+    /**
+     * @return array
+     */
+    public function getHeaderImageCustomLink(): array
+    {
+        return $this->headerImageCustomLink;
+    }
+
+    /**
+     * Use language ID as array key. Array key 0 or datatype 'string' will be handled as the default value (Will be used
+     * for each activated frontend language).
+     *
+     * @param string|array $headerImageCustomLink
+     */
+    public function setHeaderImageCustomLink($headerImageCustomLink): void
+    {
+        if (is_string($headerImageCustomLink)) {
+            $this->headerImageCustomLink = [$headerImageCustomLink];
+        } elseif(is_array($headerImageCustomLink)) {
+            $this->headerImageCustomLink = $headerImageCustomLink;
+        }
     }
 
     /**

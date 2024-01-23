@@ -63,7 +63,7 @@ class SessionHandlerFactory
             case str_starts_with($connection, 'rediss:'):
             case str_starts_with($connection, 'memcached:'):
                 if (!class_exists(AbstractAdapter::class)) {
-                    throw new \InvalidArgumentException(sprintf('Unsupported DSN "%s". Try running "composer require symfony/cache".', $connection));
+                    throw new \InvalidArgumentException('Unsupported Redis or Memcached DSN. Try running "composer require symfony/cache".');
                 }
                 $handlerClass = str_starts_with($connection, 'memcached:') ? MemcachedSessionHandler::class : RedisSessionHandler::class;
                 $connection = AbstractAdapter::createConnection($connection, ['lazy' => true]);
@@ -72,7 +72,7 @@ class SessionHandlerFactory
 
             case str_starts_with($connection, 'pdo_oci://'):
                 if (!class_exists(DriverManager::class)) {
-                    throw new \InvalidArgumentException(sprintf('Unsupported DSN "%s". Try running "composer require doctrine/dbal".', $connection));
+                    throw new \InvalidArgumentException('Unsupported PDO OCI DSN. Try running "composer require doctrine/dbal".');
                 }
                 $connection[3] = '-';
                 $params = class_exists(DsnParser::class) ? (new DsnParser())->parse($connection) : ['url' => $connection];
@@ -82,6 +82,7 @@ class SessionHandlerFactory
                 }
 
                 $connection = DriverManager::getConnection($params, $config);
+                // The condition should be removed once support for DBAL <3.3 is dropped
                 $connection = method_exists($connection, 'getNativeConnection') ? $connection->getNativeConnection() : $connection->getWrappedConnection();
                 // no break;
 

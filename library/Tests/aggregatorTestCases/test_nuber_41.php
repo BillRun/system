@@ -23,6 +23,7 @@ class Test_Case_41 {
     ],
     'expected' => [
         'billrun' => [
+            'invoice_id' => 137,
             'billrun_key' => '202003',
             'aid' => 26,
             'after_vat' => [

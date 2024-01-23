@@ -16,6 +16,7 @@ class Billrun_PaymentGateway_Connection_Relocate extends Billrun_PaymentGateway_
 	protected static $type = 'relocate';
 	protected $checkReceivedSize = true;
 	protected $source;
+	protected $payments_file_type;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -40,6 +41,7 @@ class Billrun_PaymentGateway_Connection_Relocate extends Billrun_PaymentGateway_
 
 
 		$this->source = isset($options['type']) ? $options['type'] : self::$type;
+		$this->payments_file_type = isset($options['payments_file_type']) ? $options['payments_file_type'] : "";
 	}
 
 	public function receive() {
@@ -59,14 +61,7 @@ class Billrun_PaymentGateway_Connection_Relocate extends Billrun_PaymentGateway_
 				Billrun_Factory::log('File ' . $file . ' is not valid', Zend_Log::INFO);
 				continue;
 			}
-			$moreFields = array();
-			if (!empty($this->fileType)) {
-				$moreFields['pg_file_type'] = $this->fileType;
-				$moreFields['cpg_file_type'] = $this->fileType;
-			}
-			if (!empty($this->cpgName)) {
-				$moreFields['cpg_name'] = $this->cpgName;
-			}
+			$moreFields = $this->getCustomPaymentGatewayFields();
 			if (!$this->lockFileForReceive($file, $type, $moreFields)) {
 				Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
 				continue;
@@ -183,7 +178,9 @@ class Billrun_PaymentGateway_Connection_Relocate extends Billrun_PaymentGateway_
 
 		$addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => new Mongodloid_Date()
+			'received_time' => new Mongodloid_Date(),
+			'payments_file_type' => $this->payments_file_type,
+			'type' => 'custom_payment_gateway'
 		);
 
 		$update = array(
@@ -207,6 +204,14 @@ class Billrun_PaymentGateway_Connection_Relocate extends Billrun_PaymentGateway_
 
 	public function export($fileName) {
 		
+	}
+
+	public function getCustomPaymentGatewayFields() {
+		return [
+			'cpg_name' => [!empty($this->cpgName) ? $this->cpgName : ""],
+			'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""],
+			'pg_file_type' => $this->fileType
+		];
 	}
 
 }

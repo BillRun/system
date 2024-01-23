@@ -332,7 +332,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	public static function removeBeforeAggregate($billrunKey, $aids = array(),$override = true) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		$billrunQuery = array('billrun_key' => $billrunKey, 'aid' => ['$in' => $aids]);
+		$billrunQuery = array('billrun_key' => $billrunKey);
+		if ($aids) {
+			$billrunQuery['aid']['$in'] = $aids;
+		}
 		//if in overirde mode only protect billed account if not then protect any invoiced account
 		if($override) {
 			$billrunQuery['billed'] = array('$eq' => 1) ;

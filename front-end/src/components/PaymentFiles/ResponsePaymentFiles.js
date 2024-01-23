@@ -14,10 +14,9 @@ import Field from "@/components/Field";
 import UploadTransactionsFile from "./UploadPaymentFileForm";
 import PaymentFileDetails from "@/components/PaymentFiles/PaymentFileDetails";
 import {
-  paymentFilesSelector,
-  paymentGatewayOptionsSelector,
+  paymentResponseGatewayOptionsSelector,
   responseFileTypeOptionsOptionsSelector,
-  isRunningPaymentFilesSelector,
+  isRunningResponsePaymentFilesSelector,
   selectedPaymentGatewaySelector,
   selectedFileTypeSelector,
 } from "@/selectors/paymentFilesSelectors";
@@ -25,13 +24,11 @@ import { getSettings } from "@/actions/settingsActions";
 import { showFormModal } from "@/actions/guiStateActions/pageActions";
 import {
   getRunningResponsePaymentFiles,
-  cleanRunningResponsePaymentFiles,
-  sendTransactionsReceiveFile,
-} from "@/actions/paymentFilesActions";
-import {
   cleanResponsePaymentFilesTable,
+  cleanRunningResponsePaymentFiles,
   setPaymentGateway,
   setFileType,
+  sendTransactionsReceiveFile,
 } from "@/actions/paymentFilesActions";
 import { gotEntity } from '@/actions/entityActions';
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
@@ -41,7 +38,6 @@ import { reportBillsFieldsSelector} from '@/selectors/reportSelectors';
 class ResponsePaymentFiles extends Component {
 
   static propTypes = {
-    paymentFiles: PropTypes.instanceOf(List),
     reportBillsFields: PropTypes.instanceOf(List),
     paymentGateway: PropTypes.string,
     fileType: PropTypes.string,
@@ -57,7 +53,6 @@ class ResponsePaymentFiles extends Component {
   static defaultProps = {
     paymentGateway: '',
     fileType: '',
-    paymentFiles: List(),
     reportBillsFields: List(),
     paymentGatewayOptions: [],
     fileTypeOptionsOptions: Map(),
@@ -74,6 +69,10 @@ class ResponsePaymentFiles extends Component {
   };
 
   componentDidMount() {
+    const { paymentGateway, fileType } = this.props;
+    if (paymentGateway !== '' && fileType !== '') {
+      this.props.dispatch(getRunningResponsePaymentFiles(paymentGateway, fileType));
+    }
     this.props.dispatch(getSettings("payment_gateways"));
   }
 
@@ -146,7 +145,7 @@ class ResponsePaymentFiles extends Component {
   };
 
   fetchRunningPaymentFiles = (paymentGateway, fileType) => {
-    this.props.dispatch(getRunningResponsePaymentFiles(paymentGateway, fileType, 'TransactionsResponse'));
+    this.props.dispatch(getRunningResponsePaymentFiles(paymentGateway, fileType));
   };
 
   onChangePaymentGatewayValue = (value) => {
@@ -362,7 +361,7 @@ class ResponsePaymentFiles extends Component {
     const { paymentGateway, fileType } = this.props;
     const file = paymentFile.get("file", null);
     return this.props
-      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file))
+      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'transactions_response'))
       .then(this.afterSuccessUploadTransactionsFile)
       .catch((error) => Promise.reject());
   };
@@ -459,10 +458,9 @@ class ResponsePaymentFiles extends Component {
 }
 
 const mapStateToProps = (state, props) => ({
-  paymentFiles: paymentFilesSelector(state, props) || undefined,
-  paymentGatewayOptions: paymentGatewayOptionsSelector(state, props) || undefined,
+  paymentGatewayOptions: paymentResponseGatewayOptionsSelector(state, props) || undefined,
   fileTypeOptionsOptions: responseFileTypeOptionsOptionsSelector(state, props) || undefined,
-  isRunningPaymentFiles: isRunningPaymentFilesSelector(state, props) || undefined,
+  isRunningPaymentFiles: isRunningResponsePaymentFilesSelector(state, props) || undefined,
   reportBillsFields: reportBillsFieldsSelector(state, props) || undefined,
   paymentGateway: selectedPaymentGatewaySelector(state, props, 'response'),
   fileType: selectedFileTypeSelector(state, props, 'response'),

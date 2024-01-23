@@ -1,0 +1,36 @@
+{
+    "name":"codeception/module-rest",
+    "description":"REST module for Codeception",
+    "keywords":["codeception", "rest"],
+    "homepage":"https://codeception.com/",
+    "type":"library",
+    "license":"MIT",
+    "authors":[
+        {
+            "name":"Gintautas Miselis"
+        }
+    ],
+    "minimum-stability": "RC",
+    "require": {
+        "php": "^7.4 | ^8.0",
+        "ext-dom": "*",
+        "ext-json": "*",
+        "codeception/codeception": "^4.1",
+        "justinrainbow/json-schema": "~5.2.9",
+        "softcreatr/jsonpath": "^0.5 | ^0.7 | ^0.8"
+    },
+    "require-dev": {
+        "codeception/stub": "^4.0",
+        "codeception/util-universalframework": "^1.0",
+        "codeception/lib-innerbrowser": "^2.0"
+    },
+    "suggest": {
+        "aws/aws-sdk-php": "For using AWS Auth"
+    },
+    "autoload":{
+        "classmap": ["src/"]
+    },
+    "config": {
+        "classmap-authoritative": true
+    }
+}

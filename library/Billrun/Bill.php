@@ -232,16 +232,23 @@ abstract class Billrun_Bill {
 	 * @param boolean $notFormatted
 	 * @return array
 	 */
-	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false) {
+	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false, $include_future_chargeable = false) {
 		$query = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$query['aid'] = $aid;
 		if (!empty($date)) {
 			$relative_date = new Mongodloid_Date(strtotime($date));
-			$query['$or'] = array(
-				array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date)),
-				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
-				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => false))
-			);
+			if (!$include_future_chargeable) {
+				$query['$or'] = array(
+					array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date)),
+					array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
+					array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => false))
+				);
+			} else {
+				$query['$or'] = array(
+					array('urt' => array('$lte' => $relative_date)),
+					array('urt' => array('$exists' => false)),
+				);
+			}
 		}
 		$results = static::getTotalDue($query, $notFormatted);
 		if (count($results)) {
@@ -1176,9 +1183,10 @@ abstract class Billrun_Bill {
 	 * @param boolean $only_debts - true if we want to get all the accounts that are in collection, with their debts
 	 * (if they have credit balance they will not show) otherwise show also get all the accounts that are in collection that they have credit/debt
 	 * @param boolean $include_pending - true if we want to get all the accounts that are in collection include debts that are in pending. false by default to not include pending debts. 
+	 * @param $min_debt - minimum debt amount can be sent - and it will override the collection configured minimum debt
          * @return 
 	 */
-	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false, $include_pending = false) {
+	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false, $include_pending = false, $min_debt = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
 		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
@@ -1292,7 +1300,7 @@ abstract class Billrun_Bill {
                         } else {
                             $project3['$project']['total'] =  array('$add' => array('$total_debt_valid', '$total_debt_invalid'));
                         }
-			$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
+			$minBalance = is_null($min_debt) ? floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10')) : floatval($min_debt);
 			$match2 = array(
 				'$match' => array(
 					'total' => array(
@@ -1314,7 +1322,7 @@ abstract class Billrun_Bill {
 				)
 			);
 		}
-		$results = iterator_to_array($billsColl->aggregate($match, $project, $addFields, $group, $project3, $match2));
+		$results = iterator_to_array($billsColl->aggregateWithOptions([$match, $project, $addFields, $group, $project3, $match2], ['allowDiskUse' => true]));
 		return array_combine(array_map(function($ele) {
 				return $ele['aid'];
 			}, $results), $results);

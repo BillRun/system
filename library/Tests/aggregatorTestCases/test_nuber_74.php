@@ -3,43 +3,32 @@
 class Test_Case_74 {
     public function test_case() {
         return [
+    'preRun' => [
+        'allowPremature',
+        'removeBillruns',
+    ],
     'test' => [
-        'label' => 'test  subscriber with 2 discounts 1st about 3 month , from 02/12 to 02/03 2nd is about 26.32% forever , test thet the discount is created for 2 days in 03 ',
         'test_number' => 74,
-        'aid' => 13262,
-        'sid' => 82330,
+        'aid' => 'abcd',
         'function' => [
-            'basicCompare',
-            'totalsPrice',
-            'lineExists',
-            'linesVSbillrun',
-            'rounded',
+            'testMultiDay',
         ],
         'options' => [
-            'stamp' => '202104',
-            'force_accounts' => [
-                13262,
+            'stamp' => '202311',
+            'invoicing_days' => [
+                '26',
+                '27',
             ],
         ],
     ],
     'expected' => [
-        'billrun' => [
-            'billrun_key' => '202104',
-            'aid' => 13262,
-            'after_vat' => [
-                82330 => 52.045827657463285,
-            ],
-            'total' => 52.045827657463285,
-            'vatable' => 44.48361338244725,
-            'vat' => 17,
-        ],
-        'line' => [
-            'types' => [
-                'flat',
-            ],
+        'billrun_key' => '202311',
+        'accounts' => [
+            10025 => '26',
+            10026 => '27',
         ],
     ],
-    'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-3133',
+    'postRun' => '',
 ];
     }
 }
