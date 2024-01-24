@@ -1,4 +1,7 @@
-
+// External variables :
+//		trgtColl : the collection to remove data from
+//		daysToRmove : how much days to remove   before the script ends.
+//		monthsToKeep : The minimum amount of data  to keep in the DB in months
 if (trgtColl && daysToRmove && monthsToKeep) {
     var firstLine =  db.getCollection(trgtColl).find({creation_time:{$exists:1}}).sort({creation_time:1}).limit(1).next();
     if(!firstLine) {
@@ -24,15 +27,20 @@ if (trgtColl && daysToRmove && monthsToKeep) {
         }
         var sectionEnd = sectionEndCursor.next();
         var cursor = db.getCollection(trgtColl).find({creation_time:{$lt:new Date(horizon),$lte:sectionEnd.creation_time}}).sort({creation_time:1}).limit(1);
+		//Remove documents in chunks of size chunkSize
         while(cursor.hasNext()) {
             var end = cursor.next();
             var linesCount = db.getCollection(trgtColl).count({creation_time:{$lt:new Date(horizon)},_id:{$lte:end._id}});
             print("Removing :" + linesCount + " lines before the date of : " +  new Date(horizon)+ " with id smaller then :" + end._id);
             var removedResults = db.getCollection(trgtColl).remove({creation_time:{$lt:new Date(horizon)},_id:{$lte:end._id}});
+			//acummulate removal count
             if(removedResults.nRemoved) {
                 totalRemoved += removedResults.nRemoved;
-            }
-            printjson(totalRemoved);
+            } else if(removedResults.deletedCount) {
+				totalRemoved += removedResults.deletedCount;
+			}
+
+			//wait and advance..
             sleep(interval);
             cursor = db.getCollection(trgtColl).find({creation_time:{$lt:new Date(horizon)},_id:{$lte:sectionEnd._id}}).sort({_id:1}).skip(chunkSize).limit(1);
         }
