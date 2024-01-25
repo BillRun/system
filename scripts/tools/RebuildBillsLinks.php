@@ -63,6 +63,7 @@ function rebuildRejectionsAndCancelledLinks($aid) {
 	$originalPayments = array();
 	
 	foreach (array('rej' => $rejections, 'can' => $cancellations) as $key => $payments) {
+		$matchedPayments = [];
 		foreach ($payments as $payment) {
 			$linkField = ($key == 'rej') ?  'original_txid' : 'cancel';
 			$originalPaymentField = ($key == 'rej') ?  'rejected' : 'cancelled';
