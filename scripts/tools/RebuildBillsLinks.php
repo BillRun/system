@@ -58,7 +58,6 @@ function rebuildBillsLinks($accounts) {
 function rebuildRejectionsAndCancelledLinks($aid) {
 	$rejections = Billrun_Bill_Payment::getRejectionPayments($aid);
 	$cancellations = Billrun_Bill_Payment::getCancellationPayments($aid);
-	$matchedPayments = array();
 	$complementaryPayments = array();
 	$originalPayments = array();
 	
