@@ -82,21 +82,7 @@ class SidUsageVolumeAction extends Action_Base {
 				'sms_roaming' => $this->getSmsRoamingQuery()
 			)
 		);
-		$project = array(
-			'$project' => array(
-				'_id' => 0, 
-				'Data (MB)' => '$data_in_mb', 
-				'Calls (minutes)' => '$calls_in_minutes',
-				'International calls (minutes)' => '$international_calls_in_minutes',
-				'Sms' => '$sms',
-				'Mms' => '$mms',
-				'Roaming data (MB)' => '$data_roaming',
-				'Roaming calls (minutes)' => '$calls_roaming',
-				'Roaming incoming calls (minutes)' => '$incoming_calls_roaming',
-				'Roaming sms' => '$sms_roaming'
-			)
-		);
-		$ret = $linesCollection->aggregate([$match, $group, $project], ["allowDiskUse" => true]);
+		$ret = $linesCollection->aggregate([$match, $group], ["allowDiskUse" => true]);
 		return current($ret);
     }
 
