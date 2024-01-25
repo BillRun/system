@@ -38,7 +38,7 @@ class SidUsageVolumeAction extends Action_Base {
 		Billrun_Factory::log()->log("Request params Received: sids-" . $request['sids'] . ", from_date-" . $request['from_date'] . ", to_date-" . $request['to_date'], Zend_Log::INFO);
         $from = $request['from_date'];
         $to = $request['to_date'];
-		$sids = array_unique(Billrun_Util::verify_array(explode(',', $request['sids']), 'int'));
+		$sids = array_unique(json_decode($request['sids'], TRUE));
         foreach ($sids as $sid) {
             $results[$sid] = $this->getSidUsageVolume($sid, $from, $to);
         }
@@ -82,9 +82,22 @@ class SidUsageVolumeAction extends Action_Base {
 				'sms_roaming' => $this->getSmsRoamingQuery()
 			)
 		);
-		Billrun_Factory::log(json_encode($group));
-		$ret = $linesCollection->aggregate([$match, $group], ["allowDiskUse" => true]);
-		echo "";
+		$project = array(
+			'$project' => array(
+				'_id' => 0, 
+				'Data (MB)' => '$data_in_mb', 
+				'Calls (minutes)' => '$calls_in_minutes',
+				'International calls (minutes)' => '$international_calls_in_minutes',
+				'Sms' => '$sms',
+				'Mms' => '$mms',
+				'Roaming data (MB)' => '$data_roaming',
+				'Roaming calls (minutes)' => '$calls_roaming',
+				'Roaming incoming calls (minutes)' => '$incoming_calls_roaming',
+				'Roaming sms' => '$sms_roaming'
+			)
+		);
+		$ret = $linesCollection->aggregate([$match, $group, $project], ["allowDiskUse" => true]);
+		return current($ret);
     }
 
 	protected function getSumQuery($cond, $divide, $cond_second_param = null ,$use_divide = true) {
@@ -111,8 +124,8 @@ class SidUsageVolumeAction extends Action_Base {
 
 	protected function getDataInMbQuery() {
 		$cond = ['$and' => array(
-			['$type' => 'ggsn'],
-			['$usaget' => 'call']
+			['$eq' => ['$type', 'ggsn']],
+			['$eq' => ['$usaget', 'call']]
 		)];
 		$divide = ['$usagev', 1048576];
 		return $this->getSumQuery($cond, $divide);
@@ -120,9 +133,9 @@ class SidUsageVolumeAction extends Action_Base {
 
 	protected function getInterCallsInMinutesQuery() {
 		$cond = ['$and' => array(
-			['$type' => 'nsn'],
-			['$usaget' => 'call'],
-			['$ne' => ['$out_circuit_group','2120']]
+			['$eq' => ['$type', 'nsn']],
+			['$eq' => ['$usaget', 'call']],
+			['$eq' => ['$out_circuit_group','2120']]
 		)];
 		$divide = ['$usagev', 60];
 		return $this->getSumQuery($cond, $divide);
@@ -130,8 +143,8 @@ class SidUsageVolumeAction extends Action_Base {
 
 	protected function getSmsQuery() {
 		$cond = ['$and' => array(
-			['$type' => 'smsc'],
-			['$usaget' => 'sms'],
+			['$eq' => ['$type', 'smsc']],
+			['$eq' => ['$usaget', 'sms']],
 			['$ne' => ['$roaming',true]]
 		)];
 		return $this->getSumQuery($cond, null, 1, false);
@@ -139,8 +152,8 @@ class SidUsageVolumeAction extends Action_Base {
 
 	protected function getMmsQuery() {
 		$cond = ['$and' => array(
-			['$type' => 'mmsc'],
-			['$usaget' => 'mms'],
+			['$eq' => ['$type', 'mmsc']],
+			['$eq' => ['$usaget', 'mms']],
 			['$ne' => ['$out_circuit_group','2120']]
 		)];
 		$divide = ['$usagev', 60];
@@ -149,8 +162,8 @@ class SidUsageVolumeAction extends Action_Base {
 
 	protected function getDataRoamingQuery() {
 		$cond = ['$and' => array(
-			['$type' => 'tap3'],
-			['$usaget' => 'data']
+			['$eq' => ['$type', 'tap3']],
+			['$eq' => ['$usaget', 'data']]
 		)];
 		$divide = ['$usagev', 1048576];
 		return $this->getSumQuery($cond, $divide);
@@ -158,10 +171,10 @@ class SidUsageVolumeAction extends Action_Base {
 
 	protected function getCallsRoamingQuery() {
 		$cond = ['$and' => array(
-			['$usaget' => 'call'],
+			['$eq' => ['$usaget', 'call']],
 			['$or' => array(
-				array('$type' => 'tap3'),
-				array('$roaming' => true)
+				['$eq' => ['$type', 'tap3']],
+				['$eq' => ['$roaming', true]]
 			)]
 		)];
 		$divide = ['$usagev', 60];
@@ -170,10 +183,10 @@ class SidUsageVolumeAction extends Action_Base {
 
 	protected function getIncomingCallsRoamingQuery() {
 		$cond = ['$and' => array(
-			['$usaget' => 'incoming_call'],
+			['$eq' => ['$usaget', 'incoming_call']],
 			['$or' => array(
-				array('$type' => 'tap3'),
-				array('$roaming' => true)
+				['$eq' => ['$type', 'tap3']],
+				['$eq' => ['$roaming', true]]
 			)]
 		)];
 		$divide = ['$usagev', 60];
@@ -182,8 +195,8 @@ class SidUsageVolumeAction extends Action_Base {
 
 	protected function getSmsRoamingQuery() {
 		$cond = ['$and' => array(
-			['$type' => 'smsc'],
-			['$roaming' => true]
+			['$eq' => ['$type', 'smsc']],
+			['$eq' => ['$roaming', true]]
 		)];
 		return $this->getSumQuery($cond, null, 1, false);
 	}
