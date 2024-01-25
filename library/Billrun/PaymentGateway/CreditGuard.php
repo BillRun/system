@@ -242,6 +242,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$customParams = $this->getGatewayCustomParams();
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
 		$terminal_type = isset($addonData['terminal_type']) ? $addonData['terminal_type'] : 'charging_terminal';
+		$terminalNumber = $credentials[$terminal_type] ?? $credentials['charging_terminal'];
 		$ZParameter = '';
 		if (!empty($customParams['send_z_param'])) {
 			$aidStringVal = strval($addonData['aid']);
@@ -265,7 +266,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								<language>Heb</language>
 								<mayBeDuplicate>0</mayBeDuplicate>
 									<doDeal>
-										<terminalNumber>' . $credentials[$terminal_type] . '</terminalNumber>
+										<terminalNumber>' . $terminalNumber . '</terminalNumber>
 										<cardId>' . $gatewayDetails['card_token'] . '</cardId>
 										<cardExpiration>' . $gatewayDetails['card_expiration'] . '</cardExpiration>
 										<creditType>RegularCredit</creditType>
@@ -549,6 +550,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	protected function getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams, $addonData) {
 		$terminal_type = isset($xmlParams['terminal_type']) ? $xmlParams['terminal_type'] : 'redirect_terminal';
+		$terminalNumber = $credentials[$terminal_type] ?? $credentials['redirect_terminal'];
 		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
 		return array(
 			'user' => $credentials['user'],
@@ -563,7 +565,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								 <doDeal>
 										  <successUrl>' . $xmlParams['ok_page'] . '</successUrl>
 										  ' . $xmlParams['addFailPage'] . '
-										  <terminalNumber>' . $credentials[$terminal_type] . '</terminalNumber>
+										  <terminalNumber>' . $terminalNumber . '</terminalNumber>
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
 										  <total>' . $installmentParams['amount'] . '</total>
