@@ -58,9 +58,17 @@ python_testcases:
     expire_in: 1 week
 
 php_testcases:
+  services:
+   - name: docker:dind
+     alias: dockerhost
+
+  variables:
+    DOCKER_HOST: tcp://dockerhost:2375/
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
   stage: test
   tags:
-    - CI_DEV
+    - new_docker_runner
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS != "skip_ci"
   before_script:
@@ -89,3 +97,7 @@ php_testcases:
     when: always
     paths:
       - $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing/docker.log
+
+include:
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
+

@@ -233,7 +233,8 @@ abstract class Billrun_Bill {
 	 * @return array
 	 */
 	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false) {
-		$query = array('aid' => $aid);
+		$query = Billrun_Bill::getNotRejectedOrCancelledQuery();
+		$query['aid'] = $aid;
 		if (!empty($date)) {
 			$relative_date = new MongoDate(strtotime($date));
 			$query['$or'] = array(
@@ -1302,7 +1303,7 @@ abstract class Billrun_Bill {
 				)
 			);
 		}
-		$results = iterator_to_array($billsColl->aggregate($match, $project, $addFields, $group, $project3, $match2));
+		$results = iterator_to_array($billsColl->aggregateWithOptions([$match, $project, $addFields, $group, $project3, $match2], ['allowDiskUse' => true]));
 		return array_combine(array_map(function($ele) {
 				return $ele['aid'];
 			}, $results), $results);
