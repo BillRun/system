@@ -24,8 +24,10 @@
 		"ext-json": "*"
 	},
 	"require-dev": {
-		"phan/phan": "^5.3",
-		"phpunit/phpunit": "^9.5"
+		"phan/phan": "^5.4",
+		"phpmd/phpmd": "^2.13",
+		"phpunit/phpunit": "^9.6",
+		"phpcsstandards/php_codesniffer": "^3.8"
 	},
 	"autoload": {
 		"psr-4": {
@@ -34,8 +36,7 @@
 	},
 	"autoload-dev": {
 		"psr-4": {
-			"chillerlan\\SettingsTest\\": "tests/",
-			"chillerlan\\SettingsExamples\\": "examples/"
+			"chillerlan\\SettingsTest\\": "tests/"
 		}
 	},
 	"scripts": {
