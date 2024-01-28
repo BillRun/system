@@ -471,7 +471,7 @@ abstract class Billrun_PaymentGateway {
 			$postString = $postArray;
 		}
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::INFO);
+			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			Billrun_Factory::log("Payment gateway token request: " . print_R($postArray, 1), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			Billrun_Factory::log("Payment gateway token response: " . print_R($result, 1), Zend_Log::DEBUG);
