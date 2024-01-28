@@ -111,7 +111,7 @@ class SidUsageVolumeAction extends Action_Base {
 	protected function getDataInMbQuery() {
 		$cond = ['$and' => array(
 			['$eq' => ['$type', 'ggsn']],
-			['$eq' => ['$usaget', 'call']]
+			['$eq' => ['$usaget', 'data']]
 		)];
 		$divide = ['$usagev', 1048576];
 		return $this->getSumQuery($cond, $divide);
@@ -142,8 +142,7 @@ class SidUsageVolumeAction extends Action_Base {
 			['$eq' => ['$usaget', 'mms']],
 			['$ne' => ['$out_circuit_group','2120']]
 		)];
-		$divide = ['$usagev', 60];
-		return $this->getSumQuery($cond, $divide);
+		return $this->getSumQuery($cond, null, 1, false);
 	}
 
 	protected function getDataRoamingQuery() {
