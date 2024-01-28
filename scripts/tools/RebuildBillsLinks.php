@@ -2,8 +2,9 @@
 
 // Example: php scripts/tools/RebuildBillsLinks.php --accounts=123 --env <env> --tenant <tenant>
 
-$dir = '/var/www/billrun/';
-defined('APPLICATION_PATH') || define('APPLICATION_PATH', $dir);
+chdir(dirname(dirname(__DIR__)));
+
+defined('APPLICATION_PATH') || define('APPLICATION_PATH', getcwd());
 require_once(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARATOR . 'config.php');
 $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
 $app->bootstrap();
