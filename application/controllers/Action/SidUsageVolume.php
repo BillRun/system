@@ -19,8 +19,10 @@ class SidUsageVolumeAction extends Action_Base {
 	 */
 	public function execute() {
 		Billrun_Factory::log()->log("Execute sid usage volume api", Zend_Log::INFO);
-		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-
+		$request = $this->getRequest()->getRequest();
+		if (!isset($request['sids'])) {
+			$request = json_decode(file_get_contents('php://input'),true);
+		}
 		$params = array('sids', 'from_date', 'to_date');
 		foreach ($params as $param) {
 			if (!isset($request[$param])) {
@@ -35,10 +37,10 @@ class SidUsageVolumeAction extends Action_Base {
 			}
 		}
 
-		Billrun_Factory::log()->log("Request params Received: sids-" . $request['sids'] . ", from_date-" . $request['from_date'] . ", to_date-" . $request['to_date'], Zend_Log::INFO);
+		Billrun_Factory::log()->log("Request params Received: sids-" . is_array($request['sids']) ? print_r($request['sids'], 1) : $request['sids'] . ", from_date-" . $request['from_date'] . ", to_date-" . $request['to_date'], Zend_Log::INFO);
         $from = $request['from_date'];
         $to = $request['to_date'];
-		$sids = array_unique(json_decode($request['sids'], TRUE));
+		$sids = is_array($request['sids']) ? $request['sids'] : array_unique(json_decode($request['sids'], TRUE));
         foreach ($sids as $sid) {
             $results[$sid] = $this->getSidUsageVolume($sid, $from, $to);
         }
