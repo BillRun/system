@@ -41,6 +41,15 @@ class Payrexx
     }
 
     /**
+     * This method passes header to the request.
+     * The format of the elements needs to be like this: 'Content-type: multipart/form-data'
+     */
+    public function setHttpHeaders(array $header): void
+    {
+        $this->communicator->httpHeaders = $header;
+    }
+
+    /**
      * This method returns the version of the API communicator which is the API version used for this
      * application.
      *

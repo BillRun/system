@@ -488,11 +488,12 @@ export const billsUserFieldsSelector = createSelector(
   }
 );
 
-export const saveToBillPaymentGatewaySelector = createSelector(
+export const saveToBillTransactionsRequestPaymentGatewaySelector = createSelector(
   getPaymentGateways,
   (paymentGateways = Immutable.List()) => {
     return Immutable.List().withMutations((fieldsWithMutations) => {
       paymentGateways.forEach((paymentGateway) => {
+        const isMulti = paymentGateway.getIn(['transactions_request'], Immutable.List()).size > 1;
         paymentGateway.getIn(['transactions_request'], Immutable.List()).forEach((transactionRequest) => {
           transactionRequest.getIn(['generator', 'data_structure'], Immutable.List()).forEach((field) => {
             if(field.getIn(['save_to_bill'], false) === true){
@@ -501,7 +502,87 @@ export const saveToBillPaymentGatewaySelector = createSelector(
               } else {
                 fieldsWithMutations.push(field
                   .set('field_name', getFieldName(field.get('name', ''), 'bills'))
-                  .set('payment_gateway', paymentGateway.get('name', '')));
+                  .set('payment_gateway', paymentGateway.get('name', ''))
+                  .set('file_type', transactionRequest.get('file_type', ''))
+                  .set('is_multi', isMulti));
+              }
+            }
+          });
+        });
+      });
+    })
+  },
+);
+
+export const saveToBillTransactionsResponsePaymentGatewaySelector = createSelector(
+  getPaymentGateways,
+  (paymentGateways = Immutable.List()) => {
+    return Immutable.List().withMutations((fieldsWithMutations) => {
+      paymentGateways.forEach((paymentGateway) => {
+        const isMulti = paymentGateway.getIn(['transactions_response'], Immutable.List()).size > 1;
+        paymentGateway.getIn(['transactions_response'], Immutable.List()).forEach((transactionRequest) => {
+          transactionRequest.getIn(['parser', 'data_structure'], Immutable.List()).forEach((field) => {
+            if(field.getIn(['save_to_bill'], false) === true){
+              if (field.get('title', '') !== '') {
+                fieldsWithMutations.push(field.set('payment_gateway', paymentGateway.get('name', '')));
+              } else {
+                fieldsWithMutations.push(field
+                  .set('field_name', getFieldName(field.get('name', ''), 'bills'))
+                  .set('payment_gateway', paymentGateway.get('name', ''))
+                  .set('file_type', transactionRequest.get('file_type', ''))
+                  .set('is_multi', isMulti));
+              }
+            }
+          });
+        });
+      });
+    })
+  },
+);
+
+export const saveToBillDenialsPaymentGatewaySelector = createSelector(
+  getPaymentGateways,
+  (paymentGateways = Immutable.List()) => {
+    return Immutable.List().withMutations((fieldsWithMutations) => {
+      paymentGateways.forEach((paymentGateway) => {
+        const isMulti = paymentGateway.getIn(['denials'], Immutable.List()).size > 1;
+        paymentGateway.getIn(['denials'], Immutable.List()).forEach((transactionRequest) => {
+          transactionRequest.getIn(['parser', 'data_structure'], Immutable.List()).forEach((field) => {
+            if(field.getIn(['save_to_bill'], false) === true){
+              if (field.get('title', '') !== '') {
+                fieldsWithMutations.push(field.set('payment_gateway', paymentGateway.get('name', '')));
+              } else {
+                fieldsWithMutations.push(field
+                  .set('field_name', getFieldName(field.get('name', ''), 'bills'))
+                  .set('payment_gateway', paymentGateway.get('name', ''))
+                  .set('file_type', transactionRequest.get('file_type', ''))
+                  .set('is_multi', isMulti));
+              }
+            }
+          });
+        });
+      });
+    })
+  },
+);
+
+export const saveToBillPaymentsPaymentGatewaySelector = createSelector(
+  getPaymentGateways,
+  (paymentGateways = Immutable.List()) => {
+    return Immutable.List().withMutations((fieldsWithMutations) => {
+      paymentGateways.forEach((paymentGateway) => {
+        const isMulti = paymentGateway.getIn(['payments'], Immutable.List()).size > 1;
+        paymentGateway.getIn(['payments'], Immutable.List()).forEach((transactionRequest) => {
+          transactionRequest.getIn(['parser', 'data_structure'], Immutable.List()).forEach((field) => {
+            if(field.getIn(['save_to_bill'], false) === true){
+              if (field.get('title', '') !== '') {
+                fieldsWithMutations.push(field.set('payment_gateway', paymentGateway.get('name', '')));
+              } else {
+                fieldsWithMutations.push(field
+                  .set('field_name', getFieldName(field.get('name', ''), 'bills'))
+                  .set('payment_gateway', paymentGateway.get('name', ''))
+                  .set('file_type', transactionRequest.get('file_type', ''))
+                  .set('is_multi', isMulti));
               }
             }
           });
