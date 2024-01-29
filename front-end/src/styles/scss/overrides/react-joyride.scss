@@ -1,0 +1,21 @@
+$joyride-color: #008cba;
+$joyride-tooltip-border-radius: 0;
+$joyride-button-border-radius: 0;
+@import '~react-joyride/lib/react-joyride';
+
+.joyride-tooltip__button {
+  min-width: 90px;
+  font-size: 12px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  &.joyride-tooltip__button--primary{
+    color: #ffffff;
+    background-color: #008cba;
+    border-color: #0079a1;
+  }
+  &.joyride-tooltip__button--secondary {
+    color: #333333;
+    background-color: #ffffff;
+    border-color: #cccccc;
+  }
+}

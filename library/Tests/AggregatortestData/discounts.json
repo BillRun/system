@@ -2,7 +2,6 @@
 	"collection": "discountsCollection",
 	"data": [
 		{
-
 			"from": "time*2018-03-31T21:00:00Z",
 			"key": "TT",
 			"description": "ttt",
@@ -14,8 +13,11 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "PLAN_A"
+										"op": "in",
+										"value": [
+											"PLAN_A_NEW_RECURRENCE_STRACUT",
+											"PLAN_A"
+										]
 									}
 								]
 							}
@@ -31,12 +33,14 @@
 				"plan": {
 					"PLAN_A": {
 						"value": 0.1
+					},
+					"PLAN_A_NEW_RECURRENCE_STRACUT": {
+						"value": 0.1
 					}
 				}
 			}
 		},
 		{
-
 			"from": "time*2017-12-31T22:00:00Z",
 			"key": "SER",
 			"description": "ser",
@@ -53,7 +57,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_SERVICE"
+														"DISCOUNT_SERVICE",
+														"DISCOUNT_SERVICE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -73,12 +78,14 @@
 				"service": {
 					"DISCOUNT_SERVICE": {
 						"value": "50"
+					},
+					"DISCOUNT_SERVICE_NEW_RECURRENCE_STRACUT": {
+						"value": "50"
 					}
 				}
 			}
 		},
 		{
-
 			"from": "time*2018-01-28T22:00:00Z",
 			"key": "D",
 			"description": "d",
@@ -95,7 +102,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"NOT_TAXABLE"
+														"NOT_TAXABLE",
+														"NOT_TAXABLE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -115,12 +123,14 @@
 				"service": {
 					"NOT_TAXABLE": {
 						"value": "10"
+					},
+					"NOT_TAXABLE_NEW_RECURRENCE_STRACUT": {
+						"value": "10"
 					}
 				}
 			}
 		},
 		{
-
 			"from": "time*2018-12-31T22:00:00Z",
 			"key": "TTF",
 			"description": "TTF",
@@ -132,8 +142,11 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "TTF"
+										"op": "in",
+										"value": [
+											"TTF",
+											"TTF_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								]
 							}
@@ -151,13 +164,14 @@
 				"plan": {
 					"TTF": {
 						"value": 10
+					},
+					"TTF_NEW_RECURRENCE_STRACUT": {
+						"value": 10
 					}
 				}
 			}
-		}
-		,
+		},
 		{
-
 			"from": "time*2018-12-31T22:00:00Z",
 			"key": "FFF",
 			"description": "FFF",
@@ -169,8 +183,11 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "FFF"
+										"op": "in",
+										"value": [
+											"FFF",
+											"FFF_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								]
 							}
@@ -188,13 +205,14 @@
 				"plan": {
 					"FFF": {
 						"value": 10
+					},
+					"FFF_NEW_RECURRENCE_STRACUT": {
+						"value": 10
 					}
 				}
 			}
-		}
-		,
+		},
 		{
-
 			"from": "time*2018-12-31T22:00:00Z",
 			"key": "TFF",
 			"description": "TFF",
@@ -206,8 +224,11 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "TFF"
+										"op": "in",
+										"value": [
+											"TFF",
+											"TFF_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								]
 							}
@@ -225,13 +246,14 @@
 				"plan": {
 					"TFF": {
 						"value": 10
+					},
+					"TFF_NEW_RECURRENCE_STRACUT": {
+						"value": 10
 					}
 				}
 			}
-		}
-		,
+		},
 		{
-
 			"from": "time*2018-12-31T22:00:00Z",
 			"key": "FTT",
 			"description": "FTT",
@@ -243,8 +265,11 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "FTT"
+										"op": "in",
+										"value": [
+											"FTT",
+											"FTT_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								]
 							}
@@ -262,13 +287,14 @@
 				"plan": {
 					"FTT": {
 						"value": 10
+					},
+					"FTT_NEW_RECURRENCE_STRACUT": {
+						"value": 10
 					}
 				}
 			}
-		}
-		,
+		},
 		{
-
 			"from": "time*2018-12-31T22:00:00Z",
 			"key": "TTT",
 			"description": "TTT",
@@ -280,8 +306,11 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "TTT"
+										"op": "in",
+										"value": [
+											"TTT",
+											"TTT_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								]
 							}
@@ -299,12 +328,14 @@
 				"plan": {
 					"TTT": {
 						"value": 10
+					},
+					"TTT_NEW_RECURRENCE_STRACUT": {
+						"value": 10
 					}
 				}
 			}
 		},
 		{
-
 			"from": "time*2018-12-31T22:00:00Z",
 			"key": "FFT",
 			"description": "FFT",
@@ -316,8 +347,11 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "FFT"
+										"op": "in",
+										"value": [
+											"FFT",
+											"FFT_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								]
 							}
@@ -335,12 +369,14 @@
 				"plan": {
 					"FFT": {
 						"value": 10
+					},
+					"FFT_NEW_RECURRENCE_STRACUT": {
+						"value": 10
 					}
 				}
 			}
-		}
-		, {
-
+		},
+		{
 			"from": "time*2020-04-30T22:00:00Z",
 			"key": "BOX1",
 			"description": "Box",
@@ -361,13 +397,14 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"LEGACY_CUSTOMER"
+														"LEGACY_CUSTOMER",
+														"LEGACY_CUSTOMER_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
 										}
 									]
-		},
+								},
 								"fields": [
 									{
 										"field": "plan",
@@ -388,7 +425,8 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BOX_1"
+											"BOX_1",
+											"BOX_1_NEW_RECURRENCE_STRACUT"
 										]
 									}
 								],
@@ -400,7 +438,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"LEGACY_CUSTOMER"
+														"LEGACY_CUSTOMER",
+														"LEGACY_CUSTOMER_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -475,8 +514,10 @@
 			"type": "monetary",
 			"subject": {
 				"plan": {
-
 					"BOX_1": {
+						"value": 16.73109244
+					},
+					"BOX_1_NEW_RECURRENCE_STRACUT": {
 						"value": 16.73109244
 					}
 				}
@@ -486,7 +527,6 @@
 			"creation_time": "time*2020-04-30T22:00:00Z"
 		},
 		{
-
 			"from": "time*2020-11-23T22:00:00Z",
 			"key": "BOX_2",
 			"description": "Box",
@@ -496,7 +536,6 @@
 				"publication_end_date": "time*2038-06-01T00:00:00Z",
 				"publication_start_date": "time*2020-05-01T00:00:00Z",
 				"conditions": [
-
 					{
 						"subscriber": [
 							{
@@ -505,7 +544,8 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BOX_1"
+											"BOX_1",
+											"BOX_1_NEW_RECURRENCE_STRACUT"
 										]
 									}
 								],
@@ -517,7 +557,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"LEGACY_CUSTOMER"
+														"LEGACY_CUSTOMER",
+														"LEGACY_CUSTOMER_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -532,17 +573,19 @@
 			"type": "monetary",
 			"subject": {
 				"plan": {
-
 					"BOX_1": {
+						"value": 8.394957983
+					},
+					"BOX_1_NEW_RECURRENCE_STRACUT": {
 						"value": 8.394957983
 					}
 				}
 			},
-			"proration": "inherited",			
+			"proration": "inherited",
 			"to": "time*2020-12-01T22:00:00Z",
 			"creation_time": "time*2020-11-23T22:00:00Z"
-		}, {
-
+		},
+		{
 			"from": "time*2018-01-13T00:00:00Z",
 			"key": "AAAABBB",
 			"description": "aa",
@@ -558,7 +601,8 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"PRICELEVELS"
+											"PRICELEVELS",
+											"PRICELEVELS__NEW_RECURRENCE_STRACUT"
 										]
 									}
 								]
@@ -572,6 +616,9 @@
 				"plan": {
 					"PRICELEVELS": {
 						"value": 0.2
+					},
+					"PRICELEVELS__NEW_RECURRENCE_STRACUT": {
+						"value": 0.2
 					}
 				}
 			},
@@ -580,7 +627,6 @@
 			"creation_time": "time*2018-01-13T00:00:00Z"
 		},
 		{
-
 			"from": "time*2020-01-13T00:00:00Z",
 			"key": "ABCDEFG",
 			"description": "abcdefg",
@@ -599,7 +645,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"ABCD"
+														"ABCD",
+														"ABCD_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -616,6 +663,9 @@
 				"plan": {
 					"AZ": {
 						"value": 0.2
+					},
+					"AZ_NEW_RECURRENCE_STRACUT": {
+						"value": 0.2
 					}
 				}
 			},
@@ -624,7 +674,6 @@
 			"creation_time": "time*2018-01-13T00:00:00Z"
 		},
 		{
-
 			"from": "time*2018-01-13T00:00:00Z",
 			"key": "EFG",
 			"description": "efg",
@@ -643,7 +692,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"EFG"
+														"EFG",
+														"EFG_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -659,6 +709,9 @@
 			"subject": {
 				"plan": {
 					"AZ": {
+						"value": 0.2
+					},
+					"AZ_NEW_RECURRENCE_STRACUT": {
 						"value": 0.2
 					}
 				}
@@ -714,10 +767,8 @@
 					}
 				}
 			}
-		}
-		,
+		},
 		{
-
 			"from": "time*2020-04-30T22:00:00Z",
 			"key": "DISCOUNT_FD",
 			"description": "Discount FD",
@@ -729,8 +780,11 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "PLAN_FD"
+										"op": "in",
+										"value": [
+											"PLAN_FD",
+											"PLAN_FD_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								],
 								"service": {
@@ -741,7 +795,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_A_SERVICE"
+														"DISCOUNT_A_SERVICE",
+														"DISCOUNT_A_SERVICE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -761,13 +816,14 @@
 				"plan": {
 					"PLAN_FD": {
 						"value": 0.20829999999999999
+					},
+					"PLAN_FD_NEW_RECURRENCE_STRACUT": {
+						"value": 0.20829999999999999
 					}
 				}
 			}
-		}
-		,
+		},
 		{
-
 			"from": "time*2020-04-30T22:00:00Z",
 			"key": "DISCOUNT_MU",
 			"description": "Discount MU",
@@ -779,8 +835,11 @@
 								"fields": [
 									{
 										"field": "plan",
-										"op": "eq",
-										"value": "PLAN_MU"
+										"op": "in",
+										"value": [
+											"PLAN_MU",
+											"PLAN_MU_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								],
 								"service": {
@@ -791,7 +850,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_A_SERVICE"
+														"DISCOUNT_A_SERVICE",
+														"DISCOUNT_A_SERVICE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -810,6 +870,9 @@
 			"subject": {
 				"plan": {
 					"PLAN_MU": {
+						"value": 0.20829999999999999
+					},
+					"PLAN_MU_NEW_RECURRENCE_STRACUT": {
 						"value": 0.20829999999999999
 					}
 				}
@@ -831,7 +894,8 @@
 										"field": "sid",
 										"op": "in",
 										"value": [
-											775
+											775,
+											7753439
 										]
 									}
 								]
@@ -844,6 +908,9 @@
 			"subject": {
 				"plan": {
 					"PLAN_C": {
+						"value": 1
+					},
+					"PLAN_C_NEW_RECURRENCE_STRACUT": {
 						"value": 1
 					}
 				}
@@ -868,7 +935,8 @@
 										"field": "sid",
 										"op": "in",
 										"value": [
-											776
+											776,
+											7763439
 										]
 									}
 								]
@@ -882,15 +950,17 @@
 				"plan": {
 					"PLAN_C": {
 						"value": 100
+					},
+					"PLAN_C_NEW_RECURRENCE_STRACUT": {
+						"value": 100
 					}
 				}
 			},
 			"proration": "inherited",
 			"to": "time*2170-07-28T07:08:33Z",
 			"creation_time": "time*2018-07-29T00:00:00Z"
-		}
-
-		, {
+		},
+		{
 			"from": "time*2020-03-11T23:00:00Z",
 			"key": "3_month_free",
 			"description": "3_month_free",
@@ -903,7 +973,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": "8GB"
+										"value": [
+											"8GB",
+											"8GB_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								],
 								"service": {
@@ -914,7 +987,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"3_MONTHS_FREE_SERVICE"
+														"3_MONTHS_FREE_SERVICE",
+														"3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -936,11 +1010,15 @@
 				"plan": {
 					"8GB": {
 						"value": 1
+					},
+					"8GB_NEW_RECURRENCE_STRACUT": {
+						"value": 1
 					}
 				}
 			},
 			"excludes": [
-				"14P"
+				"14P",
+				"14PS_NEW_RECURRENCE_STRACUT"
 			]
 		},
 		{
@@ -956,7 +1034,10 @@
 									{
 										"field": "plan",
 										"op": "in",
-										"value": "1GB"
+										"value": [
+											"1GB",
+											"1GB_NEW_RECURRENCE_STRACUT"
+										]
 									}
 								],
 								"service": {
@@ -967,7 +1048,8 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_A_SERVICE_2"
+														"DISCOUNT_A_SERVICE_2",
+														"DISCOUNT_A_SERVICE_2_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -987,6 +1069,9 @@
 				"plan": {
 					"1GB": {
 						"value": 0.2632
+					},
+					"1GB_NEW_RECURRENCE_STRACUT": {
+						"value": 0.2632
 					}
 				}
 			}
@@ -995,53 +1080,6 @@
 			"from": "time*2019-05-31T22:00:00Z",
 			"key": "SOFT3",
 			"description": "SOFT3",
-			"params": {
-				"conditions": [
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "in",
-										"value": "8GB"
-		}
-								],
-								"service": {
-									"any": [
-										{
-											"fields": [
-												{
-													"field": "name",
-													"op": "in",
-													"value": [
-														"DISCOUNT_A_SERVICE_3"
-													]
-												}
-											]
-										}
-									]
-								}
-							}
-						]
-					}
-				]
-			},
-			"to": "time*2168-05-16T14:05:30Z",
-			"creation_time": "time*2019-05-31T22:00:00Z",
-			"type": "percentage",
-			"proration": "inherited",
-			"subject": {
-				"plan": {
-					"8GB": {
-						"value": 0.2632
-					}
-				}
-			}
-		}, {
-			"from": "time*2019-05-31T22:00:00Z",
-			"key": "14P",
-			"description": "14P",
 			"params": {
 				"conditions": [
 					{
@@ -1062,7 +1100,63 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"14PS"
+														"DISCOUNT_A_SERVICE_3",
+														"DISCOUNT_A_SERVICE_3_NEW_RECURRENCE_STRACUT"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"8GB": {
+						"value": 0.2632
+					},
+					"8GB_NEW_RECURRENCE_STRACUT": {
+						"value": 0.2632
+					}
+				}
+			}
+		},
+		{
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "14P",
+			"description": "14P",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"8GB",
+											"8GB_NEW_RECURRENCE_STRACUT"
+										]
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"14PS",
+														"14PS_NEW_RECURRENCE_STRACUT"
 													]
 												}
 											]
@@ -1082,12 +1176,56 @@
 				"plan": {
 					"8GB": {
 						"value": 0.14
+					},
+					"8GB_NEW_RECURRENCE_STRACUT": {
+						"value": 0.14
 					}
 				}
 			}
+		},
+		{
+			"from" : "time*2015-03-10T00:00:00Z",
+			"key" : "BBB",
+			"description" : "bbb",
+			"params" : {
+				"min_subscribers" : "",
+				"max_subscribers" : "",
+				"conditions" : [
+					{
+						"subscriber" : [
+							{
+								"service" : {
+									"any" : [
+										{
+											"fields" : [
+												{
+													"field" : "name",
+													"op" : "in",
+													"value" : [
+														"B"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"type" : "percentage",
+			"subject" : {
+				"service" : {
+					"B" : {
+						"value" : 1
+					}
+				}
+			},
+			"proration" : "inherited",
+			"to" : "time*2172-03-09T14:38:26Z",
+			"creation_time" : "time*2015-03-10T00:00:00Z"
 		}
-
-
 
 
 	]

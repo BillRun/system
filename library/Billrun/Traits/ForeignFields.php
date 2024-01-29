@@ -31,8 +31,8 @@ trait Billrun_Traits_ForeignFields  {
 		$this->addedForeignFields = array();
 	}
 	
-	protected function getForeignFieldsFromConfig() {
-		return array_filter(Billrun_Factory::config()->getConfigValue('lines.fields', array()), function($value) {
+	protected function getForeignFieldsFromConfig($entity = 'lines') {
+		return array_filter(Billrun_Factory::config()->getConfigValue($entity.'.fields', array()), function($value) {
 			return isset($value['foreign']);
 		});
 	}
@@ -40,7 +40,7 @@ trait Billrun_Traits_ForeignFields  {
 	protected function getForeignFields($foreignEntities, $existsingFields = array(), $autoLoadEntities = FALSE, $fullData = array()) {
 		$entity = $this->getForeignFieldsEntity();
 		$foreignFieldsData = !empty($existsingFields) ? $existsingFields : array();
-		$foreignFieldsConf = $this->getForeignFieldsFromConfig();
+		$foreignFieldsConf = $this->getForeignFieldsFromConfig($entity);
 		
 		foreach ($foreignFieldsConf as $fieldConf) {
 			if(!preg_match('/^'.$this->foreginFieldPrefix.'\./',$fieldConf['field_name'])) {

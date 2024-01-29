@@ -139,7 +139,58 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	}
 
 	public function getLine($fp) {
-		return fgets($fp);
+        $line = fgets($fp);
+        
+        if (isset($this->encodingSource)) {
+            $encodingTarget = $this->encodingTarget ?? self::DEFAULT_TARGET_ENCODING;
+            
+            $supportedEncodings = mb_list_encodings();
+            $targetEncodingSupported = in_array($encodingTarget, $supportedEncodings);
+            $sourceEncodingSupported = in_array($this->encodingSource, $supportedEncodings);
+
+            if (!$targetEncodingSupported) {
+                Billrun_Factory::log(
+                    sprintf(
+                        "Parser %s encoding convert cancelled. Unsupported target encoding: %s",
+                        __CLASS__,
+                        $encodingTarget
+                    ),
+                    Zend_Log::ALERT
+                );
+                return $line;
+            }
+            
+            if (!$sourceEncodingSupported) {
+                Billrun_Factory::log(
+                    sprintf(
+                        "Parser %s encoding convert cancelled. Unsupported source encoding: %s",
+                        __CLASS__,
+                        $this->encodingSource
+                    ),
+                    Zend_Log::ALERT
+                );
+                return $line;
+            }
+            
+            $lineConverted = mb_convert_encoding($line, $this->encodingTarget, $this->encodingSource);
+            
+            if ($lineConverted === false) {
+                Billrun_Factory::log(
+                    sprintf(
+                        "Parser %s encoding convert failed. Source encoding: %s, Target encoding: %s, Line: %s",
+                        __CLASS__,
+                        $this->encodingSource,
+                        $this->encodingTarget,
+                        $line
+                    ),
+                    Zend_Log::ALERT
+                );
+            }
+            
+            $line = $lineConverted;
+        }
+
+        return $line;
 	}
 	
 	public function removeLastLine($record_type) {

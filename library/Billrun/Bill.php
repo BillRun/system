@@ -233,7 +233,8 @@ abstract class Billrun_Bill {
 	 * @return array
 	 */
 	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false) {
-		$query = array('aid' => $aid);
+		$query = Billrun_Bill::getNotRejectedOrCancelledQuery();
+		$query['aid'] = $aid;
 		if (!empty($date)) {
 			$relative_date = new Mongodloid_Date(strtotime($date));
 			$query['$or'] = array(
@@ -729,7 +730,10 @@ abstract class Billrun_Bill {
 						}
 					} else if ($rawPayment['dir'] == 'fc') {
 						$leftToSpare = floatval($rawPayment['amount']);
-						$unpaidBills = Billrun_Bill::getUnpaidBills(array('aid' => $aid));
+						$sort = array(
+							'urt' => 1,
+						);
+						$unpaidBills = Billrun_Bill::getUnpaidBills(array('aid' => $aid), $sort);
 						foreach ($unpaidBills as $rawUnpaidBill) {
 							$unpaidBill = Billrun_Bill::getInstanceByData($rawUnpaidBill);
 							$invoiceAmountToPay = min($unpaidBill->getLeftToPay(), $leftToSpare);
@@ -742,7 +746,10 @@ abstract class Billrun_Bill {
 						}
 					} else if ($rawPayment['dir'] == 'tc') {
 						$leftToSpare = floatval($rawPayment['amount']);
-						$overPayingBills = Billrun_Bill::getOverPayingBills(array('aid' => $aid));
+						$sort = array(
+							'urt' => 1,
+						);
+						$overPayingBills = Billrun_Bill::getOverPayingBills(array('aid' => $aid), $sort);
 						foreach ($overPayingBills as $overPayingBill) {
 							$credit = min($overPayingBill->getLeft(), $leftToSpare);
 							if ($credit) {
@@ -768,7 +775,8 @@ abstract class Billrun_Bill {
 					foreach ($payments as $payment) {
 						$gatewayDetails = $payment->getPaymentGatewayDetails();
 						$gatewayName = $gatewayDetails['name'];
-						$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+						$gatewayInstanceName = $gatewayDetails['instance_name'];
+						$gateway = Billrun_PaymentGateway::getInstance($gatewayInstanceName);
 						if (is_null($gateway)) {
 							Billrun_Factory::log("Illegal payment gateway object", Zend_Log::ALERT);
 						} else {
@@ -873,7 +881,7 @@ abstract class Billrun_Bill {
 
 			case 'Completed':
 				$pending = $this->data['waiting_payments'];
-				if (count($pending)) {
+				if (!empty($pending)) {
 					$this->removeFromWaitingPayments($billId, $billType);
 					$result = count($this->data['waiting_payments']) ? '2' : ($this->isPaid() ? '1' : '0');
 				}
@@ -990,10 +998,14 @@ abstract class Billrun_Bill {
 				'$match' => $filters
 			);
 		}
-		$match['$match']['$or'] = array(
+		$match['$match']['$and'][] = array('$or' => array(
 				array('charge.not_before' => array('$exists' => false)),
 				array('charge.not_before' => array('$lt' => new Mongodloid_Date())),
-		);
+		));
+		$match['$match']['$and'][] = array('$or' => array(
+				array('left_to_pay' => array('$gt' => 0)),
+				array('left' => array('$gt' => 0)),
+		));
 		$pipelines[] = $match;
 		$pipelines[] = array(
 			'$sort' => array(
@@ -1172,7 +1184,7 @@ abstract class Billrun_Bill {
 		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
 		$rejection_required_aids = array_column(array_map(function($account) {
 				return $account->getRawData();
-			}, $currentAccounts), 'aid');
+			}, $currentAccounts), 'aid') ?? [];
 
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$match = array(
@@ -1300,7 +1312,7 @@ abstract class Billrun_Bill {
 				)
 			);
 		}
-		$results = iterator_to_array($billsColl->aggregate($match, $project, $addFields, $group, $project3, $match2));
+		$results = iterator_to_array($billsColl->aggregateWithOptions([$match, $project, $addFields, $group, $project3, $match2], ['allowDiskUse' => true]));
 		return array_combine(array_map(function($ele) {
 				return $ele['aid'];
 			}, $results), $results);
@@ -1338,6 +1350,7 @@ abstract class Billrun_Bill {
                               '$lte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
 		$query['method'] = array('$ne' => 'installment_agreement');
 		$query['type'] = 'rec';
+		$query = array_merge($query, Billrun_Bill::getNotRejectedOrCancelledQuery(), Billrun_Bill_Payment::getNotWaitingPaymentsQuery());
 		if (!empty($method)) {
 			$query['method']['$in'] = $method;
 		}

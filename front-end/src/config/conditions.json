@@ -1,0 +1,34 @@
+{
+  "operators": [
+    { "id": "last_days", "title": "Last (days)", "type": "number", "include": [], "suffix": "Days" },
+    { "id": "last_days_include_today", "title": "Last (days including today)", "type": "number", "include": [], "suffix": "Days" },
+    { "id": "last_hours", "title": "Last (hours)", "type": "number", "include": [], "suffix": "Hours" },
+    { "id": "eq", "title": "Equals", "include": ["date", "datetime", "boolean"] },
+    { "id": "in", "title": "Equals", "type": "array", "include": ["string", "number"], "exclude": [] },
+    { "id": "ne", "title": "Does not equal", "include": ["boolean"], "exclude": [] },
+    { "id": "nin", "title": "Does not equal", "type": "array", "include": ["string", "number"], "exclude": [] },
+    { "id": "lt", "title": "<", "include": ["number", "date", "datetime"], "exclude": [] },
+    { "id": "lte", "title": "<=", "include": ["number", "date", "datetime"], "exclude": [] },
+    { "id": "gt", "title": ">", "include": ["number", "date", "datetime"], "exclude": [] },
+    { "id": "gte", "title": ">=", "include": ["number", "date", "datetime"], "exclude": [] },
+    { "id": "like", "title": "Contains", "include": ["string", "number"], "exclude": [] },
+    { "id": "regex", "title": "Matches regular expression", "include": ["string", "textarea"], "exclude": [] },
+    { "id": "starts_with", "title": "Starts with", "include": ["string"], "exclude": [] },
+    { "id": "ends_with", "title": "Ends with", "include": ["string"], "exclude": [] },
+    { "id": "in_range", "title": "Include‎", "include": ["ranges", "range", "daterange"] },
+    { "id": "nin_range", "title": "Does not include‎", "include": ["ranges", "range", "daterange"] },
+    { "id": "exists", "title": "Exists", "type": "boolean", "options": ["yes", "no"] }
+  ],
+  "aggregate": [
+    { "id": "group", "title": "Group", "include": ["string", "number", "boolean", "date"], "exclude": [] },
+    { "id": "sum", "title": "Sum", "include": ["number"], "exclude": [] },
+    { "id": "avg", "title": "Average", "include": ["number"], "exclude": [] },
+    { "id": "first", "title": "First", "include": ["string", "number", "boolean", "date", "ranges", "range"], "exclude": [] },
+    { "id": "last", "title": "Last", "include": ["string", "number", "boolean", "date", "ranges", "range"], "exclude": [] },
+    { "id": "max", "title": "Max", "include": ["number", "date"], "exclude": [] },
+    { "id": "min", "title": "Min", "include": ["number", "date"], "exclude": [] },
+    { "id": "push", "title": "List", "include": ["string", "number", "boolean", "date"], "exclude": [] },
+    { "id": "addToSet", "title": "Unique List", "include": ["string", "number", "boolean", "date", "ranges", "range"], "exclude": [] },
+    { "id": "count", "title": "Count", "include": [] }
+  ]
+}

@@ -394,7 +394,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$line_params = $this->getIdentityParams($row);
 				if (count($line_params) == 0) {
 					Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
-					return;
 				} else {
 					foreach ($line_params as $key => $currParams) {
 						$currParams['time'] = date(Billrun_Base::base_datetimeformat, $row['urt']->sec);
@@ -687,8 +686,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * method to get update the lines's foreign fields, according to the system mode (multi day cycle or not)
 	 * @return the updated foreign fields array. 
 	 */
-	protected function getForeignFieldsFromConfig() {
-		$foreignFields = $this->baseGetForeignFieldsFromConfig();
+	protected function getForeignFieldsFromConfig($entity = 'lines') {
+		$foreignFields = $this->baseGetForeignFieldsFromConfig($entity);
 		$config = Billrun_Factory::config();
 		$runningTimeForeign = [];
 		if($config->isMultiDayCycle()) {

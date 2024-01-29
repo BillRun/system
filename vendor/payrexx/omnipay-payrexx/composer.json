@@ -1,0 +1,45 @@
+{
+    "name": "payrexx/omnipay-payrexx",
+    "type": "library",
+    "description": "Payrexx driver for the Omnipay payment processing library",
+    "keywords": [
+        "gateway",
+        "merchant",
+        "payrexx",
+        "omnipay",
+        "pay",
+        "payment"
+    ],
+    "homepage": "https://developers.payrexx.com/",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Payrexx AG",
+            "email": "dev@payrexx.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": { "Omnipay\\Payrexx\\" : "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "Omnipay\\Payrexx\\Test\\": "tests/" }
+    },
+    "require": {
+        "omnipay/common": "^3.0.1",
+        "payrexx/payrexx": "^1.6"
+    },
+    "require-dev": {
+        "omnipay/tests": "^3.1",
+        "squizlabs/php_codesniffer": "^3",
+        "phpro/grumphp": "^0.14",
+        "phpmd/phpmd": "^2",
+        "overtrue/phplint": "^1",
+        "jakub-onderka/php-parallel-lint": "^1"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "check-style": "phpcs -p --standard=PSR2 src/",
+        "fix-style": "phpcbf -p --standard=PSR2 src/"
+    },
+    "prefer-stable": true
+}

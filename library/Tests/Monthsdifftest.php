@@ -63,6 +63,7 @@ class Tests_Monthsdifftest extends UnitTestCase {
 	 */
 	public function TestPerform() {
 		$nbsp='&nbsp &nbsp &nbsp ';
+		$this->tests = $this->skip_tests($this->tests ,'test number');
 		foreach ($this->tests as $row) {
 			$returnval = $this->compare($row);
 			$this->assertTrue($returnval[0]);

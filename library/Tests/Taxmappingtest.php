@@ -183,6 +183,7 @@ class Tests_TaxMappingTest extends UnitTestCase {
 	}
    
 	public function TestPerform() {
+		$this->tests = $this->skip_tests($this->tests ,'test_number');
 		foreach ($this->tests as $key => $row) {
 			if (!isset($row['expected']['lines'])) {
 				$this->message .= '<span style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . ' </br><b> Expected: </b> ';

@@ -279,7 +279,7 @@ class BillrunController extends ApiController {
 	 */
 	protected function canSyncCharge($request) {
 		$aids = Billrun_Util::verify_array($request->get('aids', []), 'int');
-		return (count($aids) == 1 && $request->get('pay_mode', '') == 'one_payment');
+		return count($aids) == 1;
 	}
 
 	/**

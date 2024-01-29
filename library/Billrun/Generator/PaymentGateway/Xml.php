@@ -271,7 +271,7 @@ class Billrun_Generator_PaymentGateway_Xml {
 
         foreach ($arr as $element => $value) {
             $element = is_numeric($element) ? "node" : $element;
-            $newElement = $doc->createElement($this->name_space . ':' . $element, (is_array($value) ? null : $value));
+            $newElement = $doc->createElement($this->name_space . ':' . $element, (is_array($value) ? null : htmlspecialchars($value, ENT_XML1)));
             $node->appendChild($newElement);
 
             if (is_array($value)) {

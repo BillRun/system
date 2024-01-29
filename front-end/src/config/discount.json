@@ -1,0 +1,63 @@
+{
+  "conditions": {
+    "fields": {
+      "subscriber": [
+        { "id": "aid", "type": "number" },
+        { "id": "sid", "type": "number" },
+        { "id": "plan", "inputConfig": { "inputType": "select", "callback": "getPlansOptions" } },
+        { "id": "services", "show": false },
+        { "id": "plan_activation", "type": "date" },
+        { "id": "plan_deactivation", "type": "date" },
+        { "id": "activation_date", "type": "date" },
+        { "id": "deactivation_date", "type": "date" },
+        { "id": "play", "inputConfig": {
+          "inputType": "select",
+          "callback": "getPlayTypeOptions"
+        } }
+      ],
+      "account": [
+        { "id": "aid", "type": "number" }
+      ],
+      "subscriber_services": [
+        { "id": "name", "title": "Name", "type": "string", "inputConfig": { "inputType": "select", "callback": "getServicesOptions" } },
+        { "id": "from", "title": "From", "type": "date" },
+        { "id": "to", "title": "To", "type": "date" },
+        { "id": "quantity", "title": "Quantity", "type": "number" }
+      ]
+    },
+    "valueOptions": [
+      { "id": "@cycle_start_date@", "title": "Billing Cycle Start Date", "include": ["date"], "exclude": [] },
+      { "id": "@cycle_end_date@", "title": "Billing Cycle End Date", "include": ["date"], "exclude": [] },
+      { "id": "@plan_activation@", "title": "Plan Activation Date", "include": ["date"], "exclude": ["fieldid:plan_activation"] },
+      { "id": "@plan_deactivation@", "title": "Plan Deactivation Date", "include": ["date"], "exclude": ["fieldid:plan_deactivation"] },
+      { "id": "@activation_date@", "title": "Activation Date", "include": ["date"], "exclude": ["fieldid:activation_date"] },
+      { "id": "@deactivation_date@", "title": "Deactivation Date", "include": ["date"], "exclude": ["fieldid:deactivation_date"] }
+    ],
+    "operators" : [
+      { "id": "eq", "title": "Equals", "include": ["date", "datetime"] },
+      { "id": "ne", "title": "Does not equal", "include": [], "exclude": [] },
+      { "id": "in", "title": "Equals", "include": ["string", "textarea", "number", "percentage"], "exclude": []  },
+      { "id": "nin", "title": "Does not equal", "include": ["string", "textarea", "number", "percentage"], "exclude": []  },
+      { "id": "lt", "title": "Is Less Than", "include": ["number", "percentage", "date", "datetime"], "exclude": [] },
+      { "id": "lte", "title": "Is Less Than Or Equal", "include": ["number", "percentage", "date", "datetime"], "exclude": [] },
+      { "id": "gt", "title": "Is Greater Than", "include": ["number", "percentage", "date", "datetime"], "exclude": [] },
+      { "id": "gte", "title": "Is Greater Than Or Equal", "include": ["number", "percentage", "date", "datetime"], "exclude": [] },
+      { "id": "regex", "title": "Contains", "include": ["string", "textarea"], "exclude": [] },
+      { "id": "is", "title": "Equals", "type": "boolean",
+        "include": ["boolean"],
+        "exclude": [],
+        "trueLabel": "True",
+        "falseLabel": "False"
+      },
+      { "id": "is", "title": "Is", "type": "string",
+        "include": ["daterange"],
+        "exclude": [],
+        "options": [{"value": "active", "label": "Active"}, {"value": "notActive", "label": "Inactive"}]
+      },
+      { "id": "exists", "title": "Exists", "type": "boolean",
+        "include": ["string", "textarea", "number", "percentage", "boolean", "date", "datetime", "ranges", "range"],
+        "exclude": []
+      }
+    ]
+  }
+}

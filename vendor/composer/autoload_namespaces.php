@@ -6,6 +6,8 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Payrexx' => array($vendorDir . '/payrexx/payrexx/lib'),
     'OAuth2' => array($vendorDir . '/bshaffer/oauth2-server-php/src'),
-    'HTMLPurifier' => array($vendorDir . '/ezyang/htmlpurifier/library'),
+    'Mongo' => array($vendorDir . '/alcaeus/mongo-php-adapter/lib/Mongo'),
+    'Behat\\Gherkin' => array($vendorDir . '/behat/gherkin/src'),
 );

@@ -10,10 +10,10 @@ exports
 logs
 cache
 crontab
-conf/dori.ini
 /nbproject/
 /conf/tenants/*
 /scripts/locks/*
 shared
 docker/persist
 .vscode/
+node_modules

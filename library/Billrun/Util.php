@@ -1167,7 +1167,7 @@ class Billrun_Util {
 	 * @param returnResponse - true - function returns the whole response, false - returns only body.
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null, $returnResponse  = false) {
+	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null, $returnResponse  = false, $params = array()) {
 		if (empty($url)) {
 			Billrun_Factory::log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
@@ -1186,7 +1186,7 @@ class Billrun_Util {
 		if (!is_null($ssl_verify)) {
 			$curl->setCurlOption(CURLOPT_SSL_VERIFYPEER, $ssl_verify);
 		}
-		$client = new Zend_Http_Client($url);
+		$client = new Billrun_Http_Request($url, $params);
 		$client->setHeaders($headers);
 		$client->setAdapter($curl);
 		$client->setMethod($method);

@@ -28,6 +28,14 @@ class Billrun_Utils_Arrayquery_Expression {
 		'$not' => '_not',
 		'$exists' => '_exists',
 		'$regex' => '_regex',
+		'$lengthEq' => '_lengthEq',
+		'$lengthNe' => '_lengthNe',
+		'$lengthIn' => '_lengthIn',
+		'$lengthNin' => '_lengthNin',
+		'$lengthLt' => '_lengthLt',
+		'$lengthLte' => '_lengthLte',
+		'$lengthGt' => '_lengthGt',
+		'$lengthGte' => '_lengthGte',
 		'*' => '_search',
 		'**' => '_deepSearch',
 		'__callback' => '_callback'
@@ -172,6 +180,98 @@ class Billrun_Utils_Arrayquery_Expression {
 		return  (is_array($field) && !empty(array_filter($field, $arrayRegexFunc)))
 					|| 
 				preg_match($value, $field);
+	}
+
+	//======================================= Array length logic ===============================
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthEq($field, $value) {
+		if (!is_array($field)) {
+			return false;
+		}
+
+		return count($field) == $value;
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthNe($field, $value) {
+		return !$this->_lengthEq($field, $value);
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthIn($field, $value) {
+		if (!is_array($field)) {
+			return false;
+		}
+
+		if (!is_array($value)) {
+			return count($field) == $value;
+		}
+
+		foreach ($value as $count) {
+			if (count($field) == $count) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthNin($field, $value) {
+		return !$this->_lengthIn($field, $value);
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthLt($field, $value) {
+		return is_array($field) && count($field) < $value;
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthLte($field, $value) {
+		return is_array($field) && count($field) <= $value;
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthGt($field, $value) {
+		return is_array($field) && count($field) > $value;
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthGte($field, $value) {
+		return is_array($field) && count($field) >= $value;
 	}
 	
 	//======================================= Searching logic ==================================

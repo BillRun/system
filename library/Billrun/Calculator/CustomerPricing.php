@@ -203,6 +203,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	public function updateRow($row) {
                 if (isset($this->aidsQueuedForRebalance[$row['aid']]) && $row['type'] !== "credit") {
+			Billrun_Factory::log('Cancelling pricing for customer ' . $row['aid'] . ' as he\'s pending for rebalance', Zend_Log::DEBUG);
 			return false;
 		}
                 

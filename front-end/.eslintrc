@@ -1,0 +1,53 @@
+{
+  // "extends": "airbnb",
+  "extends": "react-app",
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "plugins": [
+    "react-hooks"
+  ],
+  "rules": {
+    "react-hooks/rules-of-hooks": "error", // Checks rules of Hooks
+    "react-hooks/exhaustive-deps": "warn", // Checks effect dependencies
+    "no-plusplus": ["warn", { "allowForLoopAfterthoughts": true }],
+    "new-cap": "off",
+    "react/no-array-index-key": "off",
+    "object-curly-newline": "off",
+    "padded-blocks": "off",
+    "implicit-arrow-linebreak": "off",
+    "no-multi-spaces": "warn",
+    "prefer-promise-reject-errors": "off",
+    "import/newline-after-import": "off",
+    "jsx-a11y/click-events-have-key-events": "off",
+    "jsx-a11y/no-static-element-interactions": "off",
+    "react/jsx-filename-extension": ["warn", { "extensions": [".js", ".jsx"] }],
+    "react/jsx-boolean-value": "off",
+    "react/forbid-prop-types": "off",
+    "react/destructuring-assignment": "off",
+    "react/sort-comp": ["warn", {
+      "order": [
+        "static-methods",
+        "lifecycle",
+        "/^init.+$/",
+        "everything-else",
+        "render"
+      ]
+    }],
+    "radix": ["error", "as-needed"],
+    "max-len": ["warn", 120, 2, {
+      "ignoreUrls": true,
+      "ignoreComments": true,
+      "ignoreRegExpLiterals": true,
+      "ignoreStrings": true,
+      "ignoreTemplateLiterals": true,
+      "ignoreTrailingComments": true
+    }]
+  },
+  "parser": "babel-eslint",
+  "globals": {
+      "CKEDITOR": false,
+      "_PRODUCTION_": false
+    }
+}

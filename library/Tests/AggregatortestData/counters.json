@@ -2,7 +2,10 @@
 	"collection": "countersCollection",
 	"data":
 			[
-
-
+				{
+					"_id" : "time*646c793e48c24d7b5a48f4e6",
+					"coll" : "subscribers",
+					"seq" : 100000000
+				}
 			]
 }

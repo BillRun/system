@@ -53,5 +53,9 @@ class Models_Users extends Models_Entity {
 			return in_array('admin', $userToDelete['roles']);
 		}
 	}
+
+	public static function isAllowedChangeDuringClosedCycle() {
+		return true;
+	}
 	
 }

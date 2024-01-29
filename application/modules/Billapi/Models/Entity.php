@@ -372,6 +372,7 @@ class Models_Entity {
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
+            $this->after = $this->update;
 			$this->fixEntityFields($this->before);
 			$this->trackChanges($this->update['_id']);
 			return isset($status['ok']) && $status['ok'];
@@ -1022,6 +1023,14 @@ class Models_Entity {
 	 */
 	public function setUpdate($u) {
 		$this->update = $u;
+	}
+	
+	/**
+	 * method to get the update instruct
+	 * @param array mongo update instruct
+	 */
+	public function getUpdate() {
+		return $this->update;
 	}
 	
 	/**

@@ -59,8 +59,20 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
 			$paymentParams[$payDir][$billData['type']][$id] = $amount;
 		}
+		$accountData = [];
+		$paymentExtraParams = [];
 		try {
-			$ret = Billrun_PaymentManager::getInstance()->pay('cash', array($paymentParams));
+			$accountQuery = ["aid" => $paymentParams['aid']];
+			if (isset($paymentParams['urt'])) {
+				$accountQuery['urt'] = $paymentParams['urt'];
+			}
+			$accountData = Billrun_Factory::account()->loadAccountForQuery($accountQuery)->getRawData();
+			$paymentExtraParams["account"] = $accountData;
+		} catch (Throwable $e) {
+			Billrun_Factory::log()->log("Could not get data for account : " . $paymentParams['aid'] . ". Error: " . $e->getMessage(), Zend_Log::ERR);
+		}
+		try {
+			$ret = Billrun_PaymentManager::getInstance()->pay('cash', array($paymentParams), $paymentExtraParams);
 		} catch (Exception $e) {
 			$message = "Payment process was failed for payment: " . $e->getMessage();
 			Billrun_Factory::log()->log($message, Zend_Log::ALERT);

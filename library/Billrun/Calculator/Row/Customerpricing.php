@@ -35,7 +35,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * 
 	 * @param Billrun_Balance
 	 */
-	protected $balance;
+	public $balance;
 
 	/**
 	 * prepaid minimum balance volume
@@ -680,7 +680,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				}
 				$serviceMaximumQuantity = 1;
 				if($isGroupShared && !$service->isGroupAccountPool($serviceGroup) && $isGroupQuantityAffected) {
-					$serviceMaximumQuantity = $service->getServiceMaximumQuantityByAid($aid, $this->row['urt']->sec);
+					$rowServiceQuantity = $this->row['services_data'][$key]['quantity'] ?? 0;
+					$serviceMaximumQuantity = max($rowServiceQuantity, $service->getServiceMaximumQuantityByAid($aid, $this->row['urt']->sec));
 				}
 				
 				$groupVolume = $service->usageLeftInEntityGroup($balance, $rate, $usageType, $serviceGroup, $this->row['urt']->sec, $serviceQuantity, $serviceMaximumQuantity);

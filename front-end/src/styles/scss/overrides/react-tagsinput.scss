@@ -1,0 +1,106 @@
+/* React-tags */
+.react-tagsinput {
+  padding-top: 4px;
+
+}
+.react-tagsinput-input {
+  margin-bottom: 4px;
+}
+.react-tagsinput--focused {
+  border-color: #dddddd!important;
+}
+.react-tagsinput-tag {
+  color: #6f6f6f!important;
+  vertical-align: bottom;
+  background-color: #e7e7e7!important;
+  border-color: #dddddd!important;
+  border-radius: 0!important;
+  padding: 2px 5px;
+  &:hover, &:focus {
+    background-color: #eeeeee!important;
+    color: #222222!important;
+  }
+}
+
+.react-tagsinput-remove {
+  padding-right: 6px;
+}
+
+.form-group.has-error .react-tagsinput {
+  border-color: red;
+}
+
+/* Overide fied inside tags */
+// .Field.react-tagsinput-input {
+//   display: inline-block;
+//   padding: 0;
+//   margin: 0;
+
+//   input {
+//     border: none;
+//     height: 28px;
+//     box-shadow: none;
+//     padding: 4px 2px;
+//     margin-bottom: 5px;
+//   }
+
+//   &:hover,
+//   &:active,
+//   &:focus {
+//     input {
+//       box-shadow: none;
+//     }
+//   }
+// }
+
+.Field.react-tagsinput-input {
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+  // min-width: 120px;
+  vertical-align: middle;
+
+  input {
+    border: none;
+    height: 28px;
+    box-shadow: none;
+    padding: 4px 2px;
+    margin-bottom: 5px;
+  }
+
+  .input-group-addon {
+    display: none;
+    padding: 0 5px;
+    font-size: 50%;
+    border: none;
+  }
+
+  .input-group {
+    margin-bottom: 2px;
+    margin-top: 2px;
+  }
+
+  .input-group input {
+    border: none;
+    height: 28px;
+    box-shadow: none;
+    padding: 4px 2px;
+  }
+
+  &:hover,
+  &:active,
+  &:focus {
+    input {
+      box-shadow: none;
+    }
+    .input-group-addon {
+      display: table-cell;
+    }
+
+    .input-group input {
+      box-shadow: none;
+    }
+  }
+}
+
+/* ~React-tags */

@@ -22,14 +22,14 @@ class notificationsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var string
 	 */
 	protected $name = 'notifications';
-	
+
 	/**
 	 * notification config container
 	 * 
 	 * @var array
 	 */
 	protected $config = array();
-	
+
 	public function __construct(array $options = array()) {
 		// first try to fetch notification seperately
 		$notificationConfig = Billrun_Factory::config()->getConfigValue('notifications_settings', array());
@@ -37,28 +37,26 @@ class notificationsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			// get input processors settings
 			$notificationConfig = Billrun_Factory::config()->getConfigValue('file_types');
 		}
-		foreach($notificationConfig as $input) {
+		foreach ($notificationConfig as $input) {
 			if (!isset($input['monitoring']['recurrence']) || !isset($input['monitoring']['recurrence']['type']) || !isset($input['monitoring']['recurrence']['value'])) {
 				$input['monitoring']['recurrence'] = array(
-					"type"  => "minutely",
-					"value" =>  15,
-
+					"type" => "minutely",
+					"value" => 15,
 				);
 			}
 			$recurrent_type = $input['monitoring']['recurrence']['type'];
 			$this->config[$recurrent_type][] = $input;
 		}
 	}
-	
+
 	public function cronMinute() {
 		$this->cronIteration('minutely', 'i');
-
 	}
-	
+
 	public function cronHour() {
 		$this->cronIteration('hourly', 'H');
 	}
-	
+
 	public function cronDay() {
 		$this->cronIteration('daily', 'd');
 	}
@@ -84,7 +82,11 @@ class notificationsPlugin extends Billrun_Plugin_BillrunPluginBase {
 					continue;
 				}
 
-
+				if (empty($input['enabled'])) {
+					Billrun_Factory::log($input['file_type'] . ' input processor is not enabled', Zend_Log::INFO);
+					return true;
+				}
+				
 				if (empty($input['monitoring']['enabled'])) {
 					Billrun_Factory::log($input['file_type'] . ' monitoring is not enabled', Zend_Log::INFO);
 					return true;
@@ -100,16 +102,16 @@ class notificationsPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$log['process'][] = $input['file_type'];
 					$this->sendNotifications('process', $input, $processStatus);
 				}
-			} catch(Exception $ex ) {
-				Billrun_Factory::log('Notification plugin failed with the following issue :'. $ex->getCode(). ' - '. $ex->getMessage() . PHP_EOL . $ex->__toString(), Billrun_Log::WARN);
+			} catch (Exception $ex) {
+				Billrun_Factory::log('Notification plugin failed with the following issue :' . $ex->getCode() . ' - ' . $ex->getMessage() . PHP_EOL . $ex->__toString(), Billrun_Log::WARN);
 			}
 		}
-		
+
 		if (count($log)) {
-			Billrun_Factory::log('Notification plugin trigger the next alerts:'. print_R($log, 1), Billrun_Log::WARN);
+			Billrun_Factory::log('Notification plugin trigger the next alerts:' . print_R($log, 1), Billrun_Log::WARN);
 		}
 	}
-	
+
 	/**
 	 * method to check if input processor did not received file in the last configurable time
 	 * 
@@ -152,18 +154,18 @@ class notificationsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lastReceivedFiles = Billrun_Factory::db()->logCollection()->query($query)->cursor()->sort($sortReceived)->limit($files_num);
 
 		$resultCount = $lastReceivedFiles->count();
-		
+
 		if ($resultCount >= $files_num) {
 			// log amount of files not enough to trigger alert
-			Billrun_Factory::log($input['file_type'] . ' received files num less than minimum to trigger', Zend_Log::ALERT);
+			Billrun_Factory::log($input['file_type'] . ' received files num less than minimum to trigger', Zend_Log::INFO);
 			return true;
 		}
-		
+
 		$current = $lastReceivedFiles->current();
 		if (!empty($current) && !$current->isEmpty()) {
 			return $current;
 		}
-		
+
 		unset($query['received_time']);
 		return Billrun_Factory::db()->logCollection()->query($query)->cursor()->sort($sortReceived)->limit(1)->current();
 	}
@@ -196,7 +198,7 @@ class notificationsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$sortProcessed = array(
 			'urt' => -1,
 		);
-		
+
 		if (isset($input['monitoring']['files_num']) && is_numeric($input['monitoring']['files_num']) && $input['monitoring']['files_num'] > 0 && $input['monitoring']['files_num'] < 99999) {
 			$files_num = $input['monitoring']['files_num'];
 		} else {
@@ -218,7 +220,7 @@ class notificationsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!empty($current) && !$current->isEmpty()) {
 			return $current;
 		}
-		
+
 		unset($query['urt']);
 		return Billrun_Factory::db()->linesCollection()->query($query)->cursor()->sort($sortProcessed)->limit(1)->current();
 	}
@@ -235,10 +237,10 @@ class notificationsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function sendNotifications($step, $input, $lastEvent) {
 		$subject = 'BillRun Notification - Input Did Not Received';
 		$body = 'Hello,' . PHP_EOL . '<br />'
-			. 'We have noticed that the input processor ' . $input['file_type'] . ' did not ' . $step . PHP_EOL . '<br />'
-			. '{} <br /><br />' . PHP_EOL
-			. 'Thank you,' . '<br />' . PHP_EOL
-			. 'BillRun Monitoring';
+				. 'We have noticed that the input processor ' . $input['file_type'] . ' did not ' . $step . PHP_EOL . '<br />'
+				. '{} <br /><br />' . PHP_EOL
+				. 'Thank you,' . '<br />' . PHP_EOL
+				. 'BillRun Monitoring';
 
 		if (!empty($lastEvent) && !$lastEvent->isEmpty()) {
 			$lastEventTimeFieldMapping = [
@@ -246,9 +248,9 @@ class notificationsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'process' => 'urt',
 			];
 			$replace = 'The last event info as follow: <ul>' . PHP_EOL
-				. '<li>Date time:  ' . date(Billrun_Base::base_datetimeformat, $lastEvent[$lastEventTimeFieldMapping[$step]]->sec) . '</li>' . PHP_EOL
-				. '<li>File name: ' . ($step == 'receive' ? $lastEvent['file_name'] : $lastEvent['file']) . '</li>' . PHP_EOL
-				. '</ul>' . PHP_EOL;
+					. '<li>Date time:  ' . date(Billrun_Base::base_datetimeformat, $lastEvent[$lastEventTimeFieldMapping[$step]]->sec) . '</li>' . PHP_EOL
+					. '<li>File name: ' . ($step == 'receive' ? $lastEvent['file_name'] : $lastEvent['file']) . '</li>' . PHP_EOL
+					. '</ul>' . PHP_EOL;
 		} else {
 			$replace = '';
 		}
@@ -276,7 +278,7 @@ class notificationsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$mailer->setSubject($emailSubject);
 		$mailer->setBodyHtml($emailBody);
 		$mailer->send();
-		Billrun_Factory::log('Notification alert -  email sent to  recipients : '.implode(",",$recipients), Zend_Log::DEBUG);
+		Billrun_Factory::log('Notification alert -  email sent to  recipients : ' . implode(",", $recipients), Zend_Log::DEBUG);
 	}
 
 	/**
@@ -305,7 +307,7 @@ class notificationsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getEmailList($input) {
 		$ret = array();
-		if (!empty($input['notify_by_email']['use_global_addresses']) &&  !empty(Billrun_Factory::config()->getConfigValue('log.email.writerParams.to'))) {
+		if (!empty($input['notify_by_email']['use_global_addresses']) && !empty(Billrun_Factory::config()->getConfigValue('log.email.writerParams.to'))) {
 			$ret = array_merge($ret, Billrun_Factory::config()->getConfigValue('log.email.writerParams.to'));
 		}
 

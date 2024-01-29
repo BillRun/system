@@ -112,7 +112,7 @@ class OnetimeinvoiceAction extends ApiAction {
 			$this->getController()->setOutput(array(array(
 					'status' => 1,
 					'desc' => 'success',
-					'details' => [ 'invoice_path' => $pdfPath ],
+					'details' => [ 'invoice_path' => $pdfPath , 'invoice_id' => $this->invoice->getInvoiceID()],
 					'input' => $request
 			)));
 			return TRUE;

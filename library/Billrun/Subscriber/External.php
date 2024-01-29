@@ -56,6 +56,8 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
 		$request->setRawData(json_encode($externalQuery));
+		$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
+		$request->setConfig(array('timeout' => $requestTimeout));
 		$results = $request->request(Billrun_Http_Request::POST)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results, Zend_Log::DEBUG);
 		$results = json_decode($results, true);

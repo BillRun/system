@@ -55,7 +55,7 @@ if (!function_exists('mb_detect_order')) {
     function mb_detect_order($encoding = null) { return p\Mbstring::mb_detect_order($encoding); }
 }
 if (!function_exists('mb_parse_str')) {
-    function mb_parse_str($string, &$result = []) { parse_str($string, $result); }
+    function mb_parse_str($string, &$result = []) { parse_str($string, $result); return (bool) $result; }
 }
 if (!function_exists('mb_strlen')) {
     function mb_strlen($string, $encoding = null) { return p\Mbstring::mb_strlen($string, $encoding); }
@@ -130,6 +130,10 @@ if (!function_exists('mb_scrub')) {
 }
 if (!function_exists('mb_str_split')) {
     function mb_str_split($string, $length = 1, $encoding = null) { return p\Mbstring::mb_str_split($string, $length, $encoding); }
+}
+
+if (!function_exists('mb_str_pad')) {
+    function mb_str_pad(string $string, int $length, string $pad_string = ' ', int $pad_type = STR_PAD_RIGHT, ?string $encoding = null): string { return p\Mbstring::mb_str_pad($string, $length, $pad_string, $pad_type, $encoding); }
 }
 
 if (extension_loaded('mbstring')) {

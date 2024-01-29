@@ -34,7 +34,7 @@ class Models_Action_Import extends Models_Action {
 	
 	/**
 	 * Read file content to array
-	 * @return type
+	 * @return array
 	 */
 	protected function getFileRows() {
 		$delimiter = Billrun_Util::getIn($this->update, 'delimiter', ',');
@@ -55,7 +55,7 @@ class Models_Action_Import extends Models_Action {
 				if (count($rows) > $max_imported_rows) {
 					throw new Exception("File can not contain more than {$max_imported_rows} rows");
 				}
-				$entities = $this->getFormatedRows($rows);
+				$entities = $this->getFormattedRows($rows);
 				return $this->runManualMappingQuery($entities);
 			case 'predefined_mapping':
 				return $this->runPredefinedMappingQuery();
@@ -69,7 +69,7 @@ class Models_Action_Import extends Models_Action {
 		return Billrun_Util::getIn($this->update, 'importType', 'manual_mapping');
 	}
 	
-	protected function getFormatedRows($file_rows) {
+	protected function getFormattedRows($file_rows) {
 		$data = [];
 		$mapper_prefix = '__csvindex__';
 		$map = $this->update['map'];
@@ -112,7 +112,7 @@ class Models_Action_Import extends Models_Action {
 				];
 			}
 			
-			// Set updater action for multifields
+			// Set updater action for multi value fields
 			if (!empty($multi_field_action)) {
 				$data[$idx]['__MULTI_FIELD_ACTION__'] = $multi_field_action;
 			}
@@ -173,7 +173,7 @@ class Models_Action_Import extends Models_Action {
 			$csv_rows = isset($entity['__CSVROW__']) ? $entity['__CSVROW__'] : [];
 			
 			foreach ($entity as $field_name => $value) {
-				// build multivalues field value
+				// build multi values field value
 				if (in_array($field_name, $multi_value_fields)) {
 					if(!is_array($value)) {
 						$values = array_map('trim', array_filter(explode(",", $value), 'strlen'));
@@ -197,7 +197,7 @@ class Models_Action_Import extends Models_Action {
 			}
 			// If error from FE exist, skip import and return error details for csv_rows
 			if(!empty($errors)) {
-				// set errro = false for csv_rows without error
+				// set error = false for csv_rows without error
 				if(!empty($csv_rows)) {
 					foreach ($csv_rows as $csv_row) {
 						if(!array_key_exists($csv_row,$errors)) {
@@ -205,7 +205,7 @@ class Models_Action_Import extends Models_Action {
 						}
 					}
 				}
-				// Create Error responce array
+				// Create Error response array
 				foreach ($errors as $row_index => $row_errors) {
 					if(is_array($row_errors)) {
 						foreach ($row_errors as $error) {
@@ -379,10 +379,11 @@ class Models_Action_Import extends Models_Action {
 	
 	protected function getPredefinedMappingEntityData($row, $mapping) {
 		$ret = [];
+		$goodEmptyValues = ['0', false, 0, 0.0];
 		foreach ($mapping as $fieldParams) {
 			$fieldName = $fieldParams['field_name'];
 			$value = $this->translateValue($row, $fieldParams);
-			if (!empty($value)) {
+			if (!empty($value) || in_array($value, $goodEmptyValues, TRUE)) {
 				Billrun_Util::setIn($ret, $fieldName, $value);
 			}
 		}

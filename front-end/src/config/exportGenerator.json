@@ -1,0 +1,37 @@
+{
+  "recordTypeConditions": [
+      { "id": "eq" },
+      { "id": "in" },
+      { "id": "ne" },
+      { "id": "nin" },
+      { "id": "lt" },
+      { "id": "lte" },
+      { "id": "gt" },
+      { "id": "gte" },
+      { "id": "exists" }
+  ],
+  "filtrationConditions": [
+      { "id": "eq" },
+      { "id": "in" },
+      { "id": "ne" },
+      { "id": "nin" },
+      { "id": "lt" },
+      { "id": "lte" },
+      { "id": "gt" },
+      { "id": "gte" },
+      { "id": "regex" },
+      { "id": "exists" }
+  ],
+  "timeRangeOptions": [
+    "minutes", "hours", "days"
+  ],
+  "senderTypes": {
+    "ftp": "FTP",
+    "ssh": "SFTP"
+  },
+  "fileTypes": [
+    {"id": "separator", "title": "CSV - Separator"},
+    {"id": "fixed", "title": "CSV - Fixed width"},
+    {"id": "xml", "title": "XML"}
+  ]
+}

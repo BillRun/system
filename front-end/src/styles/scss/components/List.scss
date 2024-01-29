@@ -1,0 +1,36 @@
+/* List */
+.List {
+  &.invoices-list form {
+      margin-bottom: 0;
+  }
+  &.row .btn-link {
+    padding: 0;
+  }
+  .table > thead > tr > th i.sort-indicator {
+    float: right;
+    line-height: 20px;
+  }
+  .table th {
+    &.long-date {
+      width: 150px;
+    }
+    &.short-date {
+        width: 95px;
+    }
+    &.state {
+      width: 60px;
+    }
+    &.list-status-col {
+        width: 90px;
+    }
+    &.edit-tb {
+      width: 30px;
+    }
+  }
+  .table td {
+    vertical-align: middle;
+  }
+  .List .table td.edit-tb {
+    width: 30px;
+  }
+}

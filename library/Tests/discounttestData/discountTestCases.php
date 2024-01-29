@@ -2196,8 +2196,152 @@ class discountTestCases {
 			'subjectExpected' => [
 				
 						]
+		),
+		//https://billrun.atlassian.net/browse/BRCD-3979
+		array('test_num' => 68, 'test' => array('options' => ['stamp' => '202211'], 'subsAccount' => [['aid' => 21]],
+			'subsRevisions' => [
+				[['firstname' => 'p', 'sid' => 22, 'from' => '2022-09-10', 'to' => '2027-01-01']],
+				[['firstname' => 'p', 'sid' => 23, 'from' => '2022-09-10', 'to' => '2027-01-01',
+					'filter_field_example' => []
+				]],
+				[['firstname' => 'p', 'sid' => 24, 'from' => '2022-09-10', 'to' => '2027-01-01',
+					'filter_field_example' => ['1']
+				]],
+				[['firstname' => 'p', 'sid' => 25, 'from' => '2022-09-10', 'to' => '2027-01-01',
+					'filter_field_example' => ['1', '2']
+				]],
+				[['firstname' => 'p', 'sid' => 26, 'from' => '2022-09-10', 'to' => '2027-01-01',
+					'filter_field_example' => ['1', '2', '3']
+				]],
+				[['firstname' => 'p', 'sid' => 27, 'from' => '2022-09-10', 'to' => '2027-01-01',
+					'filter_field_example' => ['1', '2', '3', '4']
+				]]
+			],
+			'discounts' => [
+				['name' => 'DIS1_LENGTH_IN', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthIn', 'values' => ['2', '3']]]]]
+				],
+				['name' => 'DIS2_LENGTH_NOT_IN', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthNin', 'values' => ['2', '3']]]]]
+				],
+				['name' => 'DIS3_LENGTH_LESS_THAN', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthLt', 'values' => '2']]]]
+				],
+				['name' => 'DIS4_LENGTH_LESS_THAN_EQUAL', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthLte', 'values' => '2']]]]
+				],
+				['name' => 'DIS5_LENGTH_GREATER_THAN', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthGt', 'values' => '2']]]]
+				],
+				['name' => 'DIS6_LENGTH_GREATER_THAN_EQUAL', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthGte', 'values' => '2']]]]
+				],
+				['name' => 'DIS7_LENGTH_EQUALS', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthEq', 'values' => '2']]]]
+				],
+				['name' => 'DIS8_LENGTH_EQUALS_0', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthEq', 'values' => '0']]]]
+				],
+				['name' => 'DIS9_LENGTH_NOT_EQUAL', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthNe', 'values' => '2']]]]
+				],
+				['name' => 'DIS10_LENGTH_NOT_EQUAL_0', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthNe', 'values' => '0']]]]
+				]
+			],
+			'function' => array('checkEligibility')),
+			'expected' => [
+				"DIS1_LENGTH_IN" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"25" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"26" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS2_LENGTH_NOT_IN" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"22" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"23" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"24" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"27" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS3_LENGTH_LESS_THAN" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"23" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"24" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS4_LENGTH_LESS_THAN_EQUAL" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"23" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"24" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"25" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS5_LENGTH_GREATER_THAN" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"26" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"27" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS6_LENGTH_GREATER_THAN_EQUAL" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"25" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"26" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"27" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS7_LENGTH_EQUALS" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"25" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS8_LENGTH_EQUALS_0" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"23" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS9_LENGTH_NOT_EQUAL" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"22" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"23" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"24" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"26" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"27" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS10_LENGTH_NOT_EQUAL_0" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"22" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"24" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"25" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"26" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"27" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					]
+				]
+			]
 		)
-		
+
 	];
 
 }
