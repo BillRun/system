@@ -263,20 +263,6 @@ abstract class Billrun_Bill {
 		return array('total' => $total, 'without_waiting' => $totalWaiting, 'total_pending_amount' => $totalPending);
 	}
 
-	/*public static function payUnpaidBillsByOverPayingBills($aid, $sortByUrt = true) {
-		$query = array(
-			'aid' => $aid,
-		);
-		$sort = array(
-			'urt' => 1,
-		);		
-		$unpaidBills = Billrun_Bill::getUnpaidBills($query, $sort);
-		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort);
-		$fullyUsedBills = Billrun_Bill::getFullyUsedBills($query, $sort);
-		Billrun_Bill::relinkPayingBills($fullyUsedBills, $unpaidBills, true);
-		Billrun_Bill::relinkPayingBills($overPayingBills, $unpaidBills);
-	}*/
-
 	public static function payUnpaidBillsByOverPayingBills($aid, $sortByUrt = true) {
 		$query = array(
 			'aid' => $aid,
@@ -285,55 +271,15 @@ abstract class Billrun_Bill {
 			'urt' => 1,
 		);
 		$unpaidBills = Billrun_Bill::getUnpaidBills($query, $sort);
-		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort);
+		$oldest_unpaid_urt = $unpaidBills[0]['urt'];
+		$payingBills = Billrun_Bill::getOverPayingBills($query, $sort, $oldest_unpaid_urt, true);
+		Billrun_Bill::relinkPendingBills($unpaidBills, $payingBills);
 		foreach ($unpaidBills as $key1 => $unpaidBillRaw) {
 			$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
 			$unpaidBillLeft = $unpaidBill->getLeftToPay();
 			foreach ($overPayingBills as $key2 => $overPayingBill) {
 				$payingBillAmountLeft = $overPayingBill->getLeft();
 				if ($payingBillAmountLeft && (Billrun_Util::isEqual($unpaidBillLeft, $payingBillAmountLeft, static::precision))) {
-					$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $payingBillAmountLeft, $unpaidBill->getRawData())->save();
-					$unpaidBill->attachPayingBill($overPayingBill, $payingBillAmountLeft)->save();
-					unset($unpaidBills[$key1]);
-					unset($overPayingBills[$key2]);
-					break;
-				}
-			}
-		}
-		foreach ($unpaidBills as $unpaidBillRaw) {
-			$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
-			$unpaidBillLeft = $unpaidBill->getLeftToPay();
-			foreach ($overPayingBills as $overPayingBill) {
-				$payingBillAmountLeft = $overPayingBill->getLeft();
-				if ($payingBillAmountLeft) {
-					$amountPaid = min(array($unpaidBillLeft, $payingBillAmountLeft));
-					$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $amountPaid, $unpaidBill->getRawData())->save();
-					$unpaidBill->attachPayingBill($overPayingBill, $amountPaid)->save();
-					$unpaidBillLeft -= $amountPaid;
-				}
-				if (abs($unpaidBillLeft) < static::precision) {
-					break;
-				}
-			}
-		}
-	}
-
-
-	public function relinkPayingBills($payingBills, &$unpaidBills, $fullyUsed = false) {
-		foreach ($unpaidBills as $key1 => $unpaidBillRaw) {
-			$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
-			$unpaidBillLeft = $unpaidBill->getLeftToPay();
-			foreach ($payingBills as $key2 => $payingBill) {
-				$payingBillAmountLeft = $fullyUsed ? $payingBill->getAmount() : $overPayingBill->getLeft();
-				if ($payingBillAmountLeft && (Billrun_Util::isEqual($unpaidBillLeft, $payingBillAmountLeft, static::precision))) {
-					if ($fullyUsed) {
-						$original_paid_by = $fullyUsed->data['paying'];
-						foreach ($original_paid_by as $paid_by_fully_used) {
-							if ($unpaid_bill['urt']->sec < $paid_by_fully_used['urt']->sec) {
-
-							}
-						}
-					}
 					$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $payingBillAmountLeft, $unpaidBill->getRawData())->save();
 					$unpaidBill->attachPayingBill($overPayingBill, $payingBillAmountLeft)->save();
 					unset($unpaidBills[$key1]);
@@ -408,9 +354,21 @@ abstract class Billrun_Bill {
 		return iterator_to_array($billsColl->find($query)->sort($sort), FALSE);
 	}
 
-	public static function getOverPayingBills($query = array(), $sort = array()) {
+	public static function getOverPayingBills($query = array(), $sort = array(), $urt = null, $include_future_non_pending = false) {
 		$billObjs = array();
-		$query = array_merge($query, array('left' => array('$gt' => 0,)), static::getNotRejectedOrCancelledQuery());
+		$bills_query = array('left' => array('$gt' => 0,));
+		$future_non_pending_query = [];
+		if ($include_future_non_pending) {
+			$query_urt = is_null($urt) ? time() : $urt;
+			$future_non_pending_query = array('pending' => false, 'urt' => array('$gt' => new MongoDate($urt)));
+			$bills_query = array(
+				'$or' => [
+					$bills_query,
+					$future_non_pending_query
+				]
+			);
+		}
+		$query = array_merge($query, $bills_query, static::getNotRejectedOrCancelledQuery());
 		$bills = static::getBills($query, $sort);
 		if ($bills) {
 			foreach ($bills as $bill) {
@@ -1569,27 +1527,16 @@ abstract class Billrun_Bill {
 		}
 	}
 
-	public static function getFullyUsedBills($query, $sort) {
-		$billObjs = array();
-		$query = array_merge($query, array('left' => array('$eq' => 0,)), static::getNotRejectedOrCancelledQuery());
-		$bills = static::getBills($query, $sort);
-		if ($bills) {
-			foreach ($bills as $bill) {
-				$billObjs[] = static::getInstanceByData($bill);
-			}
-		}
-		return $billObjs;
-	}
-	
-	public static function relinkFullyUsedBills($fullyUsedBills, $unpaidBills) {
-		foreach ($unpaidBills as $unpaid_key => $unpaid_bill) {
-			foreach ($fullyUsedBills as $fullyUsed) {
-				$original_paid_by = $fullyUsed->data['paying'];
-				foreach ($original_paid_by as $paid_by_fully_used) {
-					if ($unpaid_bill['urt']->sec < $paid_by_fully_used['urt']->sec) {
+	public static function relinkUnpaidPendingBills($unpaid_bills, $fully_used_payments) {
+		foreach ($unpaid_bills as $unpaid_bill) {
+			foreach ($fully_used_payments as $payment){
+				if ($unpaid_bill['urt'] < $payment['urt']) {
+					foreach ($payment->getPaidBills() as $original_paid_by) {
+						if (true) {
 
+						}
 					}
-				}				
+				}
 			}
 		}
 	}
