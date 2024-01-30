@@ -12,7 +12,7 @@ if (trgtColl && daysToRmove && monthsToKeep) {
     var millisecToAdvance = 60000; //how  much to advance one each meta step
     var i = (daysToRmove * 86400 * 1000); //millisecs to  remove X (30) days after first CDR
     var targetDate = firstLineDate + i; //The date to  remove  up to in milli
-    var upperLimitDateMili = ISODate().getTime() - (monthsToKeep * 31 * 86400 * 1000); // The final upper limit for this removal iteration
+    var upperLimitDateMili = ISODate().getTime() - ((monthsToKeep < 3 ? 3 : monthsToKeep) * 31 * 86400 * 1000); // The final upper limit for this removal iteration
     var chunkSize = 500; // how uch lines  to remove  each time
     var interval = 150; //how much  to wait  between removals
     var totalRemoved = 0; //count  of the  total lines  removed
@@ -44,7 +44,7 @@ if (trgtColl && daysToRmove && monthsToKeep) {
             sleep(interval);
             cursor = db.getCollection(trgtColl).find({creation_time:{$lt:new Date(horizon)},_id:{$lte:sectionEnd._id}}).sort({_id:1}).skip(chunkSize).limit(1);
         }
-        print( "Removed " + totalRemoved + " lines.");
+        print( "Removed " + totalRemoved + " lines, from: "+trgtColl);
     }
     print("-------------------------------------------------------------");
 	print( "Total CDRs removed:  " + totalRemoved + " from: "+ trgtColl );
