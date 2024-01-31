@@ -1,36 +1,85 @@
 <?php
 namespace Helper;
-
 // here you can define custom actions
 // all public methods declared in helper class will be available in $I
 
-class Api extends \Codeception\Module
-{
-    
-        public function getToken(ApiTester $I) {
-            $testUser = $_ENV['APP_TEST_USER'];
-            $testSecret = $_ENV['APP_TEST_SECRET'];
-            $I->haveInCollection('oauth_clients', 
-                [
-                    "client_id" => $testUser,
-                    "client_secret" => $testSecret,
-                    "grant_types" => "client_credentials",
-                    "scope" => "global",
-                    "user_id" => null
-                ]
-            );
+use Codeception\Module;
+use Codeception\Module\REST;
 
-            $I->sendPOST('oauth2/token', [
-                'grant_type' => 'client_credentials',
-                'client_id' => $testUser,
-                'client_secret' => $testSecret,
-            ]);
-            
-            $I->seeResponseCodeIs(200);
-            $I->seeResponseContainsJson(['token_type' => 'Bearer']);
-            
-            return $I->grabDataFromResponseByJsonPath('$.access_token')[0];
-            
-        }
-    
+class Api extends Module
+{
+    public function getO2Token() {
+        $testUser = $_ENV['APP_TEST_USER'];
+        $testSecret = $_ENV['APP_TEST_SECRET'];
+
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+
+        // Assuming that the oauth_clients collection setup is done elsewhere
+        $rest->sendPOST('oauth2/token', [
+            'grant_type' => 'client_credentials',
+            'client_id' => $testUser,
+            'client_secret' => $testSecret,
+        ]);
+
+        $rest->seeResponseCodeIs(200);
+        $rest->seeResponseContainsJson(['token_type' => 'Bearer']);
+
+        return $rest->grabDataFromResponseByJsonPath('$.access_token')[0];
+    }
+
+    public function generateAccount(array $override=[]) {
+        $account = array_merge([
+            "invoice_shipping_method"=>"email",
+            "lastname"=>"test",
+            "invoice_detailed"=>false,
+            "invoice_language"=>"en_GB",
+            "from"=>"2024-01-31",
+            "zip_code"=>"123ab",
+            "payment_gateway"=>"",
+            "address"=>"hshalom 7",
+            "country"=>"Israel",
+            "salutation"=>"",
+            "firstname"=>"yossi",
+            "email"=>"test@gmail.com"
+          ], $override);
+        
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getO2Token());
+        $rest->sendPOST('/billapi/accounts/create', [
+           'update' => json_encode($account)
+
+        ]);
+    }
+
+
+
+    // public function generatePlan() {
+    //     // Get the REST module to send requests
+    //     /** @var REST $rest */
+    //     $rest = $this->getModule('REST');
+    //     $rest->amBearerAuthenticated($this->getO2Token());
+    //     $rest->sendPOST('/billapi/accounts/create', [
+    //        'update' => json_encode([
+    //         "invoice_shipping_method"=>"email",
+    //         "lastname"=>"test",
+    //         "invoice_detailed"=>false,
+    //         "invoice_language"=>"en_GB",
+    //         "from"=>"2024-01-31",
+    //         "zip_code"=>"123ab",
+    //         "payment_gateway"=>"",
+    //         "address"=>"hshalom 7",
+    //         "country"=>"Israel",
+    //         "salutation"=>"",
+    //         "firstname"=>"yossi",
+    //         "email"=>"test@gmail.com"
+    //        ])
+
+    //     ]);
+
+        
+    // }
 }

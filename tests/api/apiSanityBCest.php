@@ -3,31 +3,25 @@
 class apiSanityBCest
 {
 
-    protected $accessToken;
-
     public function _before(ApiTester $I)
     {
-        $I->amBearerAuthenticated($I->getToken());
+        $I->amBearerAuthenticated($I->getO2Token());
     }   
 
   
-
-    /**
-    * @depends oauthLogin
-    */
-    public function goodOauthSanity(ApiTester $I)
+    
+    public function testCreateAccount(ApiTester $I)
     {
         
-        $I->sendGet('/api');
+        $I->generateAccount(['firstname'=>'yossi_test']);
         $I->seeResponseCodeIsSuccessful();
         $I->seeResponseIsJson();
 
         $I->seeResponseContains('{"status":1');
         
         $I->seeResponseContainsJson([
-            'status' => 1
+            'firstname' => 'yossi_test'
           ]);
     }
 
-    
 }
