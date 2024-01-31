@@ -16,7 +16,6 @@ class Api extends Module
         /** @var REST $rest */
         $rest = $this->getModule('REST');
 
-        // Assuming that the oauth_clients collection setup is done elsewhere
         $rest->sendPOST('oauth2/token', [
             'grant_type' => 'client_credentials',
             'client_id' => $testUser,
@@ -55,31 +54,4 @@ class Api extends Module
         ]);
     }
 
-
-
-    // public function generatePlan() {
-    //     // Get the REST module to send requests
-    //     /** @var REST $rest */
-    //     $rest = $this->getModule('REST');
-    //     $rest->amBearerAuthenticated($this->getO2Token());
-    //     $rest->sendPOST('/billapi/accounts/create', [
-    //        'update' => json_encode([
-    //         "invoice_shipping_method"=>"email",
-    //         "lastname"=>"test",
-    //         "invoice_detailed"=>false,
-    //         "invoice_language"=>"en_GB",
-    //         "from"=>"2024-01-31",
-    //         "zip_code"=>"123ab",
-    //         "payment_gateway"=>"",
-    //         "address"=>"hshalom 7",
-    //         "country"=>"Israel",
-    //         "salutation"=>"",
-    //         "firstname"=>"yossi",
-    //         "email"=>"test@gmail.com"
-    //        ])
-
-    //     ]);
-
-        
-    // }
 }
