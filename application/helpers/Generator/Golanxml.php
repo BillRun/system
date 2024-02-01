@@ -253,7 +253,10 @@ class Generator_Golanxml extends Billrun_Generator {
 			$plans = isset($subscriber['plans']) ? $subscriber['plans'] : array();
 			if ($this->hasVFPlanInCycle($plans)) {
 				$vfDaysData = Utils_VF::countVFDays(Billrun_Factory::db()->linesCollection(),
-													 $sid, date('Y'), date(Billrun_Base::base_dateformat, time()),[	'$or' => [
+													 $sid,
+													 date('Y', Billrun_Util::getEndTime($billrun_key) ),
+													 date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)),
+																						[	'$or' => [
 																									['type' => 'tap3'],
 																									['type' => 'smsc'],
 																									['type' => "nsn","roaming"=>true],
