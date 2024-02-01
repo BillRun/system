@@ -271,9 +271,7 @@ abstract class Billrun_Bill {
 			'urt' => 1,
 		);
 		$unpaidBills = Billrun_Bill::getUnpaidBills($query, $sort);
-		$oldest_unpaid_urt = $unpaidBills[0]['urt'];
-		$payingBills = Billrun_Bill::getOverPayingBills($query, $sort, $oldest_unpaid_urt, true);
-		Billrun_Bill::relinkPendingBills($unpaidBills, $payingBills);
+		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort);
 		foreach ($unpaidBills as $key1 => $unpaidBillRaw) {
 			$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
 			$unpaidBillLeft = $unpaidBill->getLeftToPay();
@@ -354,21 +352,9 @@ abstract class Billrun_Bill {
 		return iterator_to_array($billsColl->find($query)->sort($sort), FALSE);
 	}
 
-	public static function getOverPayingBills($query = array(), $sort = array(), $urt = null, $include_future_non_pending = false) {
+	public static function getOverPayingBills($query = array(), $sort = array()) {
 		$billObjs = array();
-		$bills_query = array('left' => array('$gt' => 0,));
-		$future_non_pending_query = [];
-		if ($include_future_non_pending) {
-			$query_urt = is_null($urt) ? time() : $urt;
-			$future_non_pending_query = array('pending' => false, 'urt' => array('$gt' => new MongoDate($urt)));
-			$bills_query = array(
-				'$or' => [
-					$bills_query,
-					$future_non_pending_query
-				]
-			);
-		}
-		$query = array_merge($query, $bills_query, static::getNotRejectedOrCancelledQuery());
+		$query = array_merge($query, array('left' => array('$gt' => 0,)), static::getNotRejectedOrCancelledQuery());
 		$bills = static::getBills($query, $sort);
 		if ($bills) {
 			foreach ($bills as $bill) {
@@ -1524,20 +1510,6 @@ abstract class Billrun_Bill {
 			}
 			
 			$paymentParams[$dir] = $newPaymentParam;
-		}
-	}
-
-	public static function relinkUnpaidPendingBills($unpaid_bills, $fully_used_payments) {
-		foreach ($unpaid_bills as $unpaid_bill) {
-			foreach ($fully_used_payments as $payment){
-				if ($unpaid_bill['urt'] < $payment['urt']) {
-					foreach ($payment->getPaidBills() as $original_paid_by) {
-						if (true) {
-
-						}
-					}
-				}
-			}
 		}
 	}
 

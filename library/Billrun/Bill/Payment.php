@@ -853,7 +853,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 
 	public function markApproved($status) {
+		$unpaid_bills = Billrun_Bill::getUnpaidBills(['aid' => $this->getAid()], ['urt' => 1]);
 		foreach ($this->getPaidBills() as $bill) {
+			foreach ($unpaid_bills as $unpaid_bill) {
+				if ($unpaid_bill['urt'] < $bill['urt']) {
+					$amountPaid = min(array($unpaid_bill->getLeft(), $bill->getAmount()));
+					$this->attachPaidBill($unpaid_bill->getType(), $unpaid_bill->getId(), $amountPaid, $unpaid_bill->getRawData())->save();
+					$unpaid_bill->attachPayingBill($this, $amountPaid)->save();
+				}
+			}
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
 			$billObj->updatePendingBillToConfirmed($this->getId(), $status, $this->getType())->save();
 		}
