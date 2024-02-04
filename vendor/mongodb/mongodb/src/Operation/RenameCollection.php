@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@
 namespace MongoDB\Operation;
 
 use MongoDB\Driver\Command;
+use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\Server;
 use MongoDB\Driver\Session;
 use MongoDB\Driver\WriteConcern;
@@ -27,46 +28,37 @@ use MongoDB\Exception\UnsupportedException;
 use function current;
 use function is_array;
 use function is_bool;
-use function MongoDB\server_supports_feature;
 
 /**
  * Operation for the renameCollection command.
  *
- * @api
  * @see \MongoDB\Collection::rename()
  * @see \MongoDB\Database::renameCollection()
- * @see https://docs.mongodb.org/manual/reference/command/renameCollection/
+ * @see https://mongodb.com/docs/manual/reference/command/renameCollection/
  */
 class RenameCollection implements Executable
 {
-    /** @var integer */
-    private static $wireVersionForWriteConcern = 5;
+    private string $fromNamespace;
 
-    /** @var string */
-    private $fromNamespace;
+    private string $toNamespace;
 
-    /** @var string */
-    private $toNamespace;
-
-    /** @var array */
-    private $options;
+    private array $options;
 
     /**
      * Constructs a renameCollection command.
      *
      * Supported options:
      *
-     *  * session (MongoDB\Driver\Session): Client session.
+     *  * comment (mixed): BSON value to attach as a comment to this command.
      *
-     *    Sessions are not supported for server versions < 3.6.
+     *    This is not supported for servers versions < 4.4.
+     *
+     *  * session (MongoDB\Driver\Session): Client session.
      *
      *  * typeMap (array): Type map for BSON deserialization. This will be used
      *    for the returned command result document.
      *
      *  * writeConcern (MongoDB\Driver\WriteConcern): Write concern.
-     *
-     *    This is not supported for server versions < 3.4 and will result in an
-     *    exception at execution time if used.
      *
      *  * dropTarget (boolean): If true, MongoDB will drop the target before
      *    renaming the collection.
@@ -109,32 +101,18 @@ class RenameCollection implements Executable
      * Execute the operation.
      *
      * @see Executable::execute()
-     * @param Server $server
      * @return array|object Command result document
-     * @throws UnsupportedException if writeConcern is used and unsupported
+     * @throws UnsupportedException if write concern is used and unsupported
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
     public function execute(Server $server)
     {
-        if (isset($this->options['writeConcern']) && ! server_supports_feature($server, self::$wireVersionForWriteConcern)) {
-            throw UnsupportedException::writeConcernNotSupported();
-        }
-
         $inTransaction = isset($this->options['session']) && $this->options['session']->isInTransaction();
         if ($inTransaction && isset($this->options['writeConcern'])) {
             throw UnsupportedException::writeConcernNotSupportedInTransaction();
         }
 
-        $cmd = [
-            'renameCollection' => $this->fromNamespace,
-            'to' => $this->toNamespace,
-        ];
-
-        if (isset($this->options['dropTarget'])) {
-            $cmd['dropTarget'] = $this->options['dropTarget'];
-        }
-
-        $cursor = $server->executeWriteCommand('admin', new Command($cmd), $this->createOptions());
+        $cursor = $server->executeWriteCommand('admin', $this->createCommand(), $this->createOptions());
 
         if (isset($this->options['typeMap'])) {
             $cursor->setTypeMap($this->options['typeMap']);
@@ -144,12 +122,30 @@ class RenameCollection implements Executable
     }
 
     /**
+     * Create the renameCollection command.
+     */
+    private function createCommand(): Command
+    {
+        $cmd = [
+            'renameCollection' => $this->fromNamespace,
+            'to' => $this->toNamespace,
+        ];
+
+        foreach (['comment', 'dropTarget'] as $option) {
+            if (isset($this->options[$option])) {
+                $cmd[$option] = $this->options[$option];
+            }
+        }
+
+        return new Command($cmd);
+    }
+
+    /**
      * Create options for executing the command.
      *
-     * @see http://php.net/manual/en/mongodb-driver-server.executewritecommand.php
-     * @return array
+     * @see https://php.net/manual/en/mongodb-driver-server.executewritecommand.php
      */
-    private function createOptions()
+    private function createOptions(): array
     {
         $options = [];
 

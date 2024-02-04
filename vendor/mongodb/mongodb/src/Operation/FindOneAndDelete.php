@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,30 +22,31 @@ use MongoDB\Driver\Server;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnsupportedException;
 
-use function is_array;
-use function is_object;
+use function MongoDB\is_document;
 
 /**
  * Operation for deleting a document with the findAndModify command.
  *
- * @api
  * @see \MongoDB\Collection::findOneAndDelete()
- * @see http://docs.mongodb.org/manual/reference/command/findAndModify/
+ * @see https://mongodb.com/docs/manual/reference/command/findAndModify/
  */
 class FindOneAndDelete implements Executable, Explainable
 {
-    /** @var FindAndModify */
-    private $findAndModify;
+    private FindAndModify $findAndModify;
 
     /**
      * Constructs a findAndModify command for deleting a document.
      *
      * Supported options:
      *
+     *  * codec (MongoDB\Codec\DocumentCodec): Codec used to decode documents
+     *    from BSON to PHP objects.
+     *
      *  * collation (document): Collation specification.
      *
-     *    This is not supported for server versions < 3.4 and will result in an
-     *    exception at execution time if used.
+     *  * comment (mixed): BSON value to attach as a comment to this command.
+     *
+     *    This is not supported for servers versions < 4.4.
      *
      *  * hint (string|document): The index to use. Specify either the index
      *    name as a string or the index key pattern as a document. If specified,
@@ -62,17 +63,17 @@ class FindOneAndDelete implements Executable, Explainable
      *
      *  * session (MongoDB\Driver\Session): Client session.
      *
-     *    Sessions are not supported for server versions < 3.6.
-     *
      *  * sort (document): Determines which document the operation modifies if
      *    the query selects multiple documents.
+     *
+     *  * let (document): Map of parameter names and values. Values must be
+     *    constant or closed expressions that do not reference document fields.
+     *    Parameters can then be accessed as variables in an aggregate
+     *    expression context (e.g. "$$var").
      *
      *  * typeMap (array): Type map for BSON deserialization.
      *
      *  * writeConcern (MongoDB\Driver\WriteConcern): Write concern.
-     *
-     *    This is not supported for server versions < 3.2 and will result in an
-     *    exception at execution time if used.
      *
      * @param string       $databaseName   Database name
      * @param string       $collectionName Collection name
@@ -80,14 +81,14 @@ class FindOneAndDelete implements Executable, Explainable
      * @param array        $options        Command options
      * @throws InvalidArgumentException for parameter/option parsing errors
      */
-    public function __construct($databaseName, $collectionName, $filter, array $options = [])
+    public function __construct(string $databaseName, string $collectionName, $filter, array $options = [])
     {
-        if (! is_array($filter) && ! is_object($filter)) {
-            throw InvalidArgumentException::invalidType('$filter', $filter, 'array or object');
+        if (! is_document($filter)) {
+            throw InvalidArgumentException::expectedDocumentType('$filter', $filter);
         }
 
-        if (isset($options['projection']) && ! is_array($options['projection']) && ! is_object($options['projection'])) {
-            throw InvalidArgumentException::invalidType('"projection" option', $options['projection'], 'array or object');
+        if (isset($options['projection']) && ! is_document($options['projection'])) {
+            throw InvalidArgumentException::expectedDocumentType('"projection" option', $options['projection']);
         }
 
         if (isset($options['projection'])) {
@@ -99,7 +100,7 @@ class FindOneAndDelete implements Executable, Explainable
         $this->findAndModify = new FindAndModify(
             $databaseName,
             $collectionName,
-            ['query' => $filter, 'remove' => true] + $options
+            ['query' => $filter, 'remove' => true] + $options,
         );
     }
 
@@ -107,7 +108,6 @@ class FindOneAndDelete implements Executable, Explainable
      * Execute the operation.
      *
      * @see Executable::execute()
-     * @param Server $server
      * @return array|object|null
      * @throws UnsupportedException if collation or write concern is used and unsupported
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
@@ -121,11 +121,10 @@ class FindOneAndDelete implements Executable, Explainable
      * Returns the command document for this operation.
      *
      * @see Explainable::getCommandDocument()
-     * @param Server $server
      * @return array
      */
-    public function getCommandDocument(Server $server)
+    public function getCommandDocument()
     {
-        return $this->findAndModify->getCommandDocument($server);
+        return $this->findAndModify->getCommandDocument();
     }
 }
