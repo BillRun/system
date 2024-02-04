@@ -14,8 +14,6 @@
  */
 class VfdaysAction extends Action_Base {
 
-	protected $plans = null;
-
 	/**
 	 * method to execute the refund
 	 * it's called automatically by the api main controller
@@ -30,7 +28,7 @@ class VfdaysAction extends Action_Base {
 			$year = date("Y");
 		}
 		$max_datetime = $request->get("max_datetime");
-		$this->plans = Billrun_Factory::config()->getConfigValue('vfdays.target_plans');
+		$plans = Billrun_Factory::config()->getConfigValue('vfdays.target_plans');
 		Billrun_Factory::log()->log("{$sid} - Quering : ".time(), Zend_Log::INFO);
 		$results = Utils_VF::countVFDays(Billrun_Factory::db()->linesCollection(), $sid, $year, $max_datetime);
 		Billrun_Factory::log()->log("{$sid} -  Quering Locally done : ".time(), Zend_Log::INFO);
