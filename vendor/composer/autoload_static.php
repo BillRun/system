@@ -18,11 +18,11 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '0d59ee240a4cd96ddbb4ff164fccea4d' => __DIR__ . '/..' . '/symfony/polyfill-php73/bootstrap.php',
         'b6b991a57620e2fb6b2f66f03fe9ddc2' => __DIR__ . '/..' . '/symfony/string/Resources/functions.php',
+        'e3b2795a8a512b6083af088fb53afe6c' => __DIR__ . '/..' . '/codeception/codeception/functions.php',
         '9c67151ae59aff4788964ce8eb2a0f43' => __DIR__ . '/..' . '/clue/stream-filter/src/functions_include.php',
         '662a729f963d39afe703c9d9b7ab4a8c' => __DIR__ . '/..' . '/symfony/polyfill-php83/bootstrap.php',
-        'e3b2795a8a512b6083af088fb53afe6c' => __DIR__ . '/..' . '/codeception/codeception/functions.php',
-        '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
+        '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
         '23c18046f52bef3eea034657bafda50f' => __DIR__ . '/..' . '/symfony/polyfill-php81/bootstrap.php',
         '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
         '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
@@ -67,8 +67,10 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
             'Symfony\\Component\\HttpFoundation\\' => 33,
             'Symfony\\Component\\Finder\\' => 25,
             'Symfony\\Component\\EventDispatcher\\' => 34,
+            'Symfony\\Component\\DomCrawler\\' => 29,
             'Symfony\\Component\\CssSelector\\' => 30,
             'Symfony\\Component\\Console\\' => 26,
+            'Symfony\\Component\\BrowserKit\\' => 29,
             'Stripe\\' => 7,
         ),
         'P' => 
@@ -96,6 +98,7 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         ),
         'J' => 
         array (
+            'JsonSchema\\' => 11,
             'Jean85\\' => 7,
         ),
         'H' => 
@@ -114,6 +117,7 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         ),
         'F' => 
         array (
+            'Flow\\JSONPath\\' => 14,
             'Facebook\\WebDriver\\' => 19,
         ),
         'D' => 
@@ -220,6 +224,10 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         array (
             0 => __DIR__ . '/..' . '/symfony/event-dispatcher',
         ),
+        'Symfony\\Component\\DomCrawler\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/dom-crawler',
+        ),
         'Symfony\\Component\\CssSelector\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/css-selector',
@@ -227,6 +235,10 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         'Symfony\\Component\\Console\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/console',
+        ),
+        'Symfony\\Component\\BrowserKit\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/browser-kit',
         ),
         'Stripe\\' => 
         array (
@@ -289,6 +301,10 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         array (
             0 => __DIR__ . '/..' . '/markbaker/matrix/classes/src',
         ),
+        'JsonSchema\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/justinrainbow/json-schema/src/JsonSchema',
+        ),
         'Jean85\\' => 
         array (
             0 => __DIR__ . '/..' . '/jean85/pretty-package-versions/src',
@@ -325,6 +341,10 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         'GuzzleHttp\\' => 
         array (
             0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
+        ),
+        'Flow\\JSONPath\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/softcreatr/jsonpath/src',
         ),
         'Facebook\\WebDriver\\' => 
         array (
@@ -433,12 +453,33 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         'CodeCoverage' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/coverage/coverage.php',
         'CodeCoverageTest' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/coverage/test/coverage_test.php',
         'Codeception\\Exception\\ConnectionException' => __DIR__ . '/..' . '/codeception/module-webdriver/src/Codeception/Exception/ConnectionException.php',
+        'Codeception\\Exception\\ExternalUrlException' => __DIR__ . '/..' . '/codeception/lib-innerbrowser/src/Codeception/Exception/ExternalUrlException.php',
+        'Codeception\\Lib\\Connector\\Guzzle' => __DIR__ . '/..' . '/codeception/module-phpbrowser/src/Codeception/Lib/Connector/Guzzle.php',
+        'Codeception\\Lib\\DbPopulator' => __DIR__ . '/..' . '/codeception/module-db/src/Codeception/Lib/DbPopulator.php',
+        'Codeception\\Lib\\Driver\\Db' => __DIR__ . '/..' . '/codeception/module-db/src/Codeception/Lib/Driver/Db.php',
+        'Codeception\\Lib\\Driver\\MongoDb' => __DIR__ . '/..' . '/codeception/module-mongodb/src/Codeception/Lib/Driver/MongoDb.php',
+        'Codeception\\Lib\\Driver\\MySql' => __DIR__ . '/..' . '/codeception/module-db/src/Codeception/Lib/Driver/MySql.php',
+        'Codeception\\Lib\\Driver\\Oci' => __DIR__ . '/..' . '/codeception/module-db/src/Codeception/Lib/Driver/Oci.php',
+        'Codeception\\Lib\\Driver\\PostgreSql' => __DIR__ . '/..' . '/codeception/module-db/src/Codeception/Lib/Driver/PostgreSql.php',
+        'Codeception\\Lib\\Driver\\SqlSrv' => __DIR__ . '/..' . '/codeception/module-db/src/Codeception/Lib/Driver/SqlSrv.php',
+        'Codeception\\Lib\\Driver\\Sqlite' => __DIR__ . '/..' . '/codeception/module-db/src/Codeception/Lib/Driver/Sqlite.php',
+        'Codeception\\Lib\\Framework' => __DIR__ . '/..' . '/codeception/lib-innerbrowser/src/Codeception/Lib/Framework.php',
+        'Codeception\\Lib\\InnerBrowser' => __DIR__ . '/..' . '/codeception/lib-innerbrowser/src/Codeception/Lib/InnerBrowser.php',
+        'Codeception\\Lib\\Interfaces\\Db' => __DIR__ . '/..' . '/codeception/module-db/src/Codeception/Lib/Interfaces/Db.php',
         'Codeception\\Lib\\Interfaces\\ScreenshotSaver' => __DIR__ . '/..' . '/codeception/module-webdriver/src/Codeception/Lib/Interfaces/ScreenshotSaver.php',
         'Codeception\\Lib\\Interfaces\\SessionSnapshot' => __DIR__ . '/..' . '/codeception/module-webdriver/src/Codeception/Lib/Interfaces/SessionSnapshot.php',
         'Codeception\\Module\\AbstractAsserts' => __DIR__ . '/..' . '/codeception/module-asserts/src/Codeception/Module/AbstractAsserts.php',
         'Codeception\\Module\\Asserts' => __DIR__ . '/..' . '/codeception/module-asserts/src/Codeception/Module/Asserts.php',
         'Codeception\\Module\\Cli' => __DIR__ . '/..' . '/codeception/module-cli/src/Codeception/Module/Cli.php',
+        'Codeception\\Module\\Db' => __DIR__ . '/..' . '/codeception/module-db/src/Codeception/Module/Db.php',
+        'Codeception\\Module\\MongoDb' => __DIR__ . '/..' . '/codeception/module-mongodb/src/Codeception/Module/MongoDb.php',
+        'Codeception\\Module\\PhpBrowser' => __DIR__ . '/..' . '/codeception/module-phpbrowser/src/Codeception/Module/PhpBrowser.php',
+        'Codeception\\Module\\REST' => __DIR__ . '/..' . '/codeception/module-rest/src/Codeception/Module/REST.php',
         'Codeception\\Module\\WebDriver' => __DIR__ . '/..' . '/codeception/module-webdriver/src/Codeception/Module/WebDriver.php',
+        'Codeception\\Step\\AsJson' => __DIR__ . '/..' . '/codeception/module-rest/src/Codeception/Step/AsJson.php',
+        'Codeception\\Util\\HttpCode' => __DIR__ . '/..' . '/codeception/lib-innerbrowser/src/Codeception/Util/HttpCode.php',
+        'Codeception\\Util\\JsonArray' => __DIR__ . '/..' . '/codeception/module-rest/src/Codeception/Util/JsonArray.php',
+        'Codeception\\Util\\JsonType' => __DIR__ . '/..' . '/codeception/module-rest/src/Codeception/Util/JsonType.php',
         'Codeception\\Util\\Shared\\Asserts' => __DIR__ . '/..' . '/codeception/lib-asserts/src/Codeception/Util/Shared/Asserts.php',
         'Codeception\\Util\\Shared\\InheritedAsserts' => __DIR__ . '/..' . '/codeception/lib-asserts/src/Codeception/Util/Shared/InheritedAsserts.php',
         'ColorTextReporter' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/colortext_reporter.php',

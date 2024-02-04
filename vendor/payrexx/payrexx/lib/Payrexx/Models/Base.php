@@ -13,6 +13,10 @@ namespace Payrexx\Models;
  */
 abstract class Base
 {
+    /** @var string */
+    protected $uuid;
+
+    /** @var int */
     protected $id;
 
     /**
@@ -68,5 +72,21 @@ abstract class Base
     public function setId($id)
     {
         $this->id = $id;
+    }
+
+    /**
+     * @return string
+     */
+    public function getUuid()
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * @param string $uuid
+     */
+    public function setUuid($uuid)
+    {
+        $this->uuid = $uuid;
     }
 }

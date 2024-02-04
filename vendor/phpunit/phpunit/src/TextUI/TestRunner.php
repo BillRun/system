@@ -135,8 +135,8 @@ final class TestRunner extends BaseTestRunner
 
     /**
      * @throws \PHPUnit\Runner\Exception
-     * @throws \PHPUnit\TextUI\XmlConfiguration\Exception
      * @throws Exception
+     * @throws XmlConfiguration\Exception
      */
     public function run(TestSuite $suite, array $arguments = [], array $warnings = [], bool $exit = true): TestResult
     {
@@ -864,8 +864,8 @@ final class TestRunner extends BaseTestRunner
     }
 
     /**
-     * @throws \PHPUnit\TextUI\XmlConfiguration\Exception
      * @throws Exception
+     * @throws XmlConfiguration\Exception
      */
     private function handleConfiguration(array &$arguments): void
     {
@@ -1006,7 +1006,7 @@ final class TestRunner extends BaseTestRunner
                 $arguments['excludeGroups'] = array_diff($groupConfiguration->exclude()->asArrayOfStrings(), $groupCliArgs);
             }
 
-            if (!isset($this->arguments['noExtensions'])) {
+            if (!isset($arguments['noExtensions'])) {
                 $extensionHandler = new ExtensionHandler;
 
                 foreach ($arguments['configurationObject']->extensions() as $extension) {
