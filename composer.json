@@ -26,6 +26,8 @@
         "codeception/module-rest": "^2.0",
         "codeception/module-phpbrowser": "1.0.1",
         "codeception/module-mongodb": "^2.0",
-        "codeception/module-db": "^2.1"
+        "codeception/module-db": "^2.1",
+        "mongodb/mongodb": "1.7.2",
+        "vlucas/phpdotenv": "^2.0 | ^3.0 | ^4.0 | ^5.0"
     }
 }
