@@ -223,10 +223,11 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$national = $plan->get('include.groups.' . $groupSelected . '.limits.national');
 		if (empty($national) || !$national) {
 			return;
-		}	
+		}
 		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate) {
 			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']);
-		});	
+		});
+		//Check if the  groupSelected is  part of the base plan (given  by the plan  with no need to buy it)
 		if (isset($limits['base_usage']) && $limits['base_usage'] && isset($plan->get('include.groups.' . $groupSelected)[$usageType])) {
 			$baseUsagePlanIncluded = $plan->get('include.groups.' . $groupSelected)[$usageType];
 			$usedUsageInBasePlan = isset($subscriberBalance->get('balance.groups.' . $groupSelected . '.' .$usageType)['usagev']) ? $subscriberBalance->get('balance.groups.' . $groupSelected . '.' .$usageType . '.usagev') : 0;

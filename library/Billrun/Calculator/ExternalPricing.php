@@ -69,6 +69,7 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 				//	move it to the next stage of the queue
 				$associatedQueueLine = Billrun_Factory::db()->queueCollection()->findAndModify(['type'=>'nsn','stamp'=>$row['stamp']],['$set'=>['external_pricing_state'=>static::STATE_PRICED]],$this->FandMOpts);
 				 $this->lines[$row['stamp']]['external_pricing_state'] = static::STATE_PRICED;
+				 $this->updatedBalanceCosts($row);
 			} else if($row['external_pricing_state'] == static::STATE_FAILED) {
 					$associatedQueueLine = Billrun_Factory::db()->queueCollection()->findAndModify(['type'=>'nsn','stamp'=>$row['stamp']],['$set'=>['external_pricing_state'=>static::STATE_FAILED]],$this->FandMOpts);
 					$this->lines[$row['stamp']]['external_pricing_state'] = static::STATE_FAILED;
@@ -78,6 +79,7 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 					//unset from the cycle and mark the  line as waiting.
 					unset($this->lines[$row['stamp']]['billrun']);
 					unset($rawRow['billrun']);
+					$rawRow['billrun_aprice'] = $rawRow['aprice'];
 					$rawRow['external_pricing_state']  = $this->lines[$row['stamp']]['external_pricing_state'] = static::STATE_WAITING;
 					//	line willbe forced to stay in the queue by the overriden setCalculatorTag function
 					// return the updated line to save it to the db (at the  end of the function)
@@ -145,6 +147,8 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 	protected function setCalculatorTag($query = array(), $update = array()) {
 		$calculator_tag = $this->getCalculatorQueueType();
 		$stampsToAdvance  = array();
+		$balancesToClear = [];
+
 		$stampsState = [
 			static::STATE_WAITING => [],
 			static::STATE_PRICED => [],
@@ -155,7 +159,8 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 				&&
 				@$item['external_pricing_state'] !== static::STATE_FAILED
 			) {
-				$stampsToAdvance [] = $item['stamp'];
+				$stampsToAdvance[] = $item['stamp'];
+				$balancesToClear[] = [ 'stamp' => "{$item['stamp']}_external_pricing", 'sid' => $item['sid'] ];
 			}
 			if(!empty($item['external_pricing_state']) && isset($stampsState[$item['external_pricing_state']]) ) {
 				$stampsState[$item['external_pricing_state']][] = $item['stamp'];
@@ -174,9 +179,53 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 		$update = array_merge($update, array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false)));
 		$this->queue_coll->update($query, $update, array('multiple' => true, 'w' => 1));
 
+		// Remove  tx from the balance for lines  that were priced
+		foreach($balancesToClear as $balanceToClear) {
+			$updateQuery = [
+				'sid' => $balanceToClear['sid'],
+				"tx.{$balanceToClear['stamp']}" => ['$exists'=> 1 ]
+			];
+
+			Billrun_Balance::getCollection()->update($updateQuery,['$unset' => ["tx.{$balanceToClear['stamp']}" => 1]]);
+		}
 
 	}
 
+	protected function updatedBalanceCosts($row) {
+		if(!isset($row['billrun_aprice'],$row['aprice']) || !is_numeric($row['billrun_aprice']) || !is_numeric($row['aprice']) ) {
+			Billrun_Factory::log('CDR missing pricing data to allow for balance cost adjustment, stamp :'.$row['stamp'], Zend_log::ERR);
+			return false;
+		}
+
+		$adjutmemtAmount = $row['aprice'] - $row['billrun_aprice'];
+		if(abs($adjutmemtAmount) > 0) {
+			$adjutmentsUpdate = [
+				'balance.totals.cost' => $adjutmemtAmount,
+				'balance.cost' => $adjutmemtAmount,
+			 ];
+			if(!empty($row['arategroup'])) {
+				$adjutmentsUpdate['balance.groups.'.$row['arategroup'].'.'.$row['usaget'].'.cost'] = $adjutmemtAmount;
+			}
+			$billrunKey = Billrun_Util::getBillrunKey($row->get('urt')->sec);
+			$updateQuery = [
+				'sid' => $row['sid'],
+				'billrun_month'=> $billrunKey,
+				"tx.{$row['stamp']}_external_pricing" => ['$exists'=> 0 ]
+			];
+			$options = array(
+				'upsert' => true,
+				'new' => false,
+				'w' => 1,
+			);
+			$mongoBalance = Billrun_Balance::getCollection()->findAndModify($updateQuery, ['$inc'=> $adjutmentsUpdate, '$set' => ["tx.{$row['stamp']}_external_pricing" => 1]],[],$options);
+			$balance =  Billrun_Factory::balance(['sid' => $row['sid'], 'billrun_key' => $billrunKey, 'unique_plan_id' => $row['unique_plan_id'] ]);
+			Billrun_Factory::dispatcher()->trigger('afterPricingDoneWithBalance',[$row, $balance, ['aprice'=> $adjutmemtAmount], $this]);
+		}
+	}
+
+	public function getPricingField() {
+		return 'aprice';
+	}
 
 	protected function getLineAdditionalValues($row){
 		$ret = [];
@@ -188,7 +237,6 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 	}
 
 	protected function getAdditionalProperties() {
-		return array('external_pricing_state','generated');
+		return array('external_pricing_state','generated','billrun_aprice');
 	}
-
 }
