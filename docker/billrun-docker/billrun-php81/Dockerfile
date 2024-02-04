@@ -17,6 +17,9 @@ RUN  wget 'https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3
 
 RUN docker-php-ext-configure calendar && docker-php-ext-install calendar
 
+RUN docker-php-ext-configure pcntl --enable-pcntl \
+    && docker-php-ext-install pcntl
+
 ## install jsignpdf
 RUN wget -O /tmp/jsignpdf.zip https://github.com/JSignPdf/JSignPdfBin/archive/refs/tags/1.0.1.zip
 RUN unzip /tmp/jsignpdf.zip -d /tmp

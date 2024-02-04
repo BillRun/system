@@ -1,0 +1,61 @@
+name: Test
+
+on:
+  push:
+    paths:
+      - '**.php'
+      - 'composer.json'
+    branches:
+      - 'main'
+  pull_request:
+    paths:
+      - '**.php'
+      - 'composer.json'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php:
+        - '8.0'
+        - '8.1'
+        - '8.2'
+    continue-on-error: ${{ matrix.php == '8.2' }}
+    name: PHP ${{ matrix.php }} Test
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: json
+          tools: phpcs
+          coverage: pcov
+        env:
+          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup problem matchers for PHP syntax check
+        run: echo "::add-matcher::.github/php-syntax.json"
+
+      - run: |
+          ! find . -type f -name '*.php' -exec php -l '{}' \; 2>&1 |grep -v '^No syntax errors detected'
+
+      - name: Setup problem matchers for PHPUnit
+        run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction
+
+      - name: Run phpcs
+        run: phpcs -- -v
+
+      - name: Execute tests
+        run: composer test -- -v --coverage-clover=coverage.xml
+
+      - name: Run codecov
+        uses: codecov/codecov-action@v3

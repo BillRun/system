@@ -17,6 +17,7 @@ class Condition extends Component {
     operators: PropTypes.instanceOf(Immutable.List),
     customValueOptions: PropTypes.instanceOf(Immutable.List),
     fields: PropTypes.instanceOf(Immutable.List),
+    conditionsSize:  PropTypes.number,
     error: PropTypes.oneOfType([
       PropTypes.string,
       PropTypes.bool,
@@ -33,6 +34,7 @@ class Condition extends Component {
     disabled: false,
     editable: true,
     fields: Immutable.List(),
+    conditionsSize: 0,
     operators: Immutable.List(),
     customValueOptions: Immutable.List(),
     error: false,
@@ -43,11 +45,12 @@ class Condition extends Component {
   }
 
   shouldComponentUpdate(nextProps) {
-    const { item, index, disabled, fields, operators, editable, error } = this.props;
+    const { item, index, disabled, fields, conditionsSize, operators, editable, error } = this.props;
     return (
       !Immutable.is(item, nextProps.item)
       || !Immutable.is(fields, nextProps.fields)
       || !Immutable.is(operators, nextProps.operators)
+      || conditionsSize !== nextProps.conditionsSize
       || index !== nextProps.index
       || disabled !== nextProps.disabled
       || editable !== nextProps.editable
@@ -151,7 +154,7 @@ class Condition extends Component {
   }
 
   render() {
-    const { item, disabled, editable, error } = this.props;
+    const { item, conditionsSize, disabled, editable, error } = this.props;
     const config = this.getConfig();
     const operator = this.getOperator();
     const fieldOptions = this.getFieldOptions();
@@ -199,6 +202,7 @@ class Condition extends Component {
             field={item}
             config={config}
             operator={operator}
+            conditionsSize={conditionsSize}
             customValueOptions={customValueOptions}
             disabled={disableVal}
             editable={editable}
