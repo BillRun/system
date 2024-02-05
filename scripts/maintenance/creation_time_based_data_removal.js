@@ -3,6 +3,14 @@
 //		daysToRmove : how much days to remove   before the script ends.
 //		monthsToKeep : The minimum amount of data  to keep in the DB in months
 if (trgtColl && daysToRmove && monthsToKeep) {
+    //Do validation and checks before  actuall removal
+	var idxes = db.getCollection(trgtColl).getIndexKeys();
+	var idxFound = false;
+	for(var i of idxes) { idxFound |= typeof i.creation_time !== "undefined"; }
+	if(!idxFound) {
+		print("No idex setup on 'creation_time' field in collection "+ trgtColl +" !!.  exiting...");
+		exit();
+	}
     var firstLine =  db.getCollection(trgtColl).find({creation_time:{$exists:1}}).sort({creation_time:1}).limit(1).next();
     if(!firstLine) {
 		print("No data left in collection "+trgtColl+" !!");

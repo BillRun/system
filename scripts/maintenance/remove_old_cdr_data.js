@@ -3,11 +3,21 @@
 //		daysToRmove : how much days to remove   before the script ends.
 //		monthsToKeep : The minimum amount of data  to keep in the DB in months
 if (trgtColl && daysToRmove && monthsToKeep) {
+	//Do validation and checks before  actuall removal
+	var idxes = db.getCollection(trgtColl).getIndexKeys();
+	var idxFound = false;
+	for(var i of idxes) { idxFound |= typeof i.urt !== "undefined"; }
+	if(!idxFound) {
+		print("No idex setup on 'urt' field in collection "+ trgtColl +" !!.  exiting...");
+		exit();
+	}
 	var firstLine = db.getCollection(trgtColl).find({urt:{$exists:1}}).sort({urt:1}).limit(1).next();
 	if(!firstLine) {
 		print("No data left in collection "+ trgtColl +" !!");
 		exit();
 	}
+
+	///now that the handholding is out of the way lets start remvoing  stuff...
 	var firstLineDate = firstLine.urt.getTime(); //first cdr time  in millisecs
 	var millisecToAdvance = 60000; //how  much to advance one each meta step
 	var i = (daysToRmove * 86400 * 1000); //millisecs to  remove X (30) days after first CDR
