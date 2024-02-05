@@ -354,7 +354,7 @@ abstract class Billrun_Bill {
 
 	public static function getOverPayingBills($query = array(), $sort = array()) {
 		$billObjs = array();
-		$query = array_merge($query, array('left' => array('$gt' => 0,)), static::getNotRejectedOrCancelledQuery());
+		$query = array_merge($query, array('left' => array('$gt' => 0), 'pending' => false), static::getNotRejectedOrCancelledQuery());
 		$bills = static::getBills($query, $sort);
 		if ($bills) {
 			foreach ($bills as $bill) {

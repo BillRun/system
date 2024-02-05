@@ -853,17 +853,16 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 
 	public function markApproved($status) {
-		$unpaid_bills = Billrun_Bill::getUnpaidBills(['aid' => $this->getAid()], ['urt' => 1]);
-		foreach ($this->getPaidBills() as $bill) {
-			foreach ($unpaid_bills as $unpaid_bill) {
-				if ($unpaid_bill['urt'] < $bill['urt']) {
-					$amountPaid = min(array($unpaid_bill->getLeft(), $bill->getAmount()));
-					$this->attachPaidBill($unpaid_bill->getType(), $unpaid_bill->getId(), $amountPaid, $unpaid_bill->getRawData())->save();
-					$unpaid_bill->attachPayingBill($this, $amountPaid)->save();
-				}
-			}
-			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
-			$billObj->updatePendingBillToConfirmed($this->getId(), $status, $this->getType())->save();
+		$switch_links = Billrun_Factory::config()->getConfigValue(/*payments?*/'bills.switch_links', true);
+		if ($switch_links) {
+			static::detachPendingPayments($this->getAid());
+			$this->detachPaidBills();
+			Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
+		} else {
+			foreach ($this->getPaidBills() as $bill) {
+				$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
+				$billObj->updatePendingBillToConfirmed($this->getId(), $status, $this->getType())->save();
+			}	
 		}
 	}
 
@@ -1223,6 +1222,27 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				'$ne' => TRUE,
 			),
 		);
+	}
+
+	public static function detachPendingPayments($aid) {
+		$query = [
+			'aid' => $aid,
+			'$or' => array(
+				['pending' => true],
+				['waiting_payments' => ['$exists' => true, '$ne' => []]]
+			)
+		];
+		$sort = ['urt' => 1];
+		$pending_bills = Billrun_Bill::getBills($query, $sort);
+		foreach ($pending_bills as $bill) {
+			if (isset($bill['pays'])) {
+				$bill_obj = Billrun_Bill::getInstanceByData($bill);
+				$bill_obj->detachPaidBills();
+			} elseif (isset($bill['paid_by'])) {
+				$bill_obj = Billrun_Bill::getInstanceByData($bill);
+				$bill_obj->detachPayingBills();
+			}
+		}
 	}
 
 }
