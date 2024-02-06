@@ -7,7 +7,7 @@ use Codeception\Module\REST;
 
 class BillRunAPI extends \Codeception\Module
 {
-    protected $accessToken;
+    protected $accessToken = false;
     public function getAccessToken()
     {
         $testUser = $_ENV['APP_TEST_USER'];
@@ -29,13 +29,15 @@ class BillRunAPI extends \Codeception\Module
         return $rest->grabDataFromResponseByJsonPath('$.access_token')[0];
     }
     protected function sendApi($data,$entity){
+        if(!$this->accessToken){
+            $this->accessToken = $this->getAccessToken();
+        }
         // Get the REST module to send requests
         /** @var REST $rest */
         $rest = $this->getModule('REST');
-        $rest->amBearerAuthenticated($this->getAccessToken());
+        $rest->amBearerAuthenticated($this->accessToken);
         $rest->sendPOST("/billapi/$entity/create", [
             'update' => json_encode($data)
-
         ]);
     }
     public function generateAccount(array $override = [])
@@ -55,7 +57,7 @@ class BillRunAPI extends \Codeception\Module
             "email" => "test@gmail.com"
         ], $override);
 
-        $this->sendApi($account,'account');
+        $this->sendApi($account,'accounts');
     }
 
     public function generateSubscriber(array $override = [])
@@ -73,14 +75,7 @@ class BillRunAPI extends \Codeception\Module
                 "services" => []
             
         ], $override);
-
-        // Get the REST module to send requests
-        /** @var REST $rest */
-        $rest = $this->getModule('REST');
-        $rest->amBearerAuthenticated($this->getAccessToken());
-        $rest->sendPOST('/billapi/subscribers/create', [
-            'update' => json_encode($subscriber)
-        ]);
+        $this->sendApi($subscriber,'subscribers');
     }
 
     public function generatePlan(array $override = [])
@@ -112,14 +107,7 @@ class BillRunAPI extends \Codeception\Module
                 "description" => "plan"
             
         ], $override);
-
-        // Get the REST module to send requests
-        /** @var REST $rest */
-        $rest = $this->getModule('REST');
-        $rest->amBearerAuthenticated($this->getAccessToken());
-        $rest->sendPOST('/billapi/plans/create', [
-            'update' => json_encode($plan)
-        ]);
+        $this->sendApi($plan,'plans');
     }
     public function generateService(array $override = [])
     {
@@ -134,14 +122,7 @@ class BillRunAPI extends \Codeception\Module
             "from"=>"2024-02-02",
             "prorated"=>true
         ], $override);
-
-        // Get the REST module to send requests
-        /** @var REST $rest */
-        $rest = $this->getModule('REST');
-        $rest->amBearerAuthenticated($this->getAccessToken());
-        $rest->sendPOST('/billapi/services/create', [
-            'update' => json_encode($service)
-        ]);
+        $this->sendApi($service,'services');
     }
 
 

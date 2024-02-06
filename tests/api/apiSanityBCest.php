@@ -8,7 +8,6 @@ class apiSanityBCest
     public $serviceDetails;
     public function _before(ApiTester $I)
     {
-        $I->amBearerAuthenticated($I->getO2Token());
     }
 
 
