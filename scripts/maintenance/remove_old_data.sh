@@ -57,23 +57,23 @@ fi
 echo "Starting to remove old  lines/archived cdrs"
 for coll in "${!USAGE_COLL[@]}"; do
 	COLL_MONTHS_TO_KEEP=$(( ${USAGE_COLL[$coll]} > $MONTHS_TO_KEEP ? ${USAGE_COLL[$coll]} : $MONTHS_TO_KEEP ));
-	echo "var trgtColl='$coll'; var daysToRmove = $DAYS_TO_REMOVE_PER_ITER; var monthsToKeep = $COLL_MONTHS_TO_KEEP;" > /tmp/data_removal_config.js;
+	echo "var trgtColl='$coll'; var daysToRmove = $DAYS_TO_REMOVE_PER_ITER; var monthsToKeep = $COLL_MONTHS_TO_KEEP;" > /tmp/data_urt_removal_config.js;
 
 	if [ -z "$DB_USER" ] && [ -z $DB_PASSWORD ]; then
-		$MONGOEXEC --host $DB_HOST $DB_NAME  /tmp/data_removal_config.js ./remove_old_cdr_data.js
+		$MONGOEXEC --host $DB_HOST $DB_NAME  /tmp/data_urt_removal_config.js ./remove_old_cdr_data.js
 	else
-		$MONGOEXEC --host $DB_HOST --authenticationDatabase=admin -u$DB_USER -p$DB_PASSWORD $DB_NAME  /tmp/data_removal_config.js ./remove_old_cdr_data.js
+		$MONGOEXEC --host $DB_HOST --authenticationDatabase=admin -u$DB_USER -p$DB_PASSWORD $DB_NAME  /tmp/data_urt_removal_config.js ./remove_old_cdr_data.js
 	fi
 done
 
 echo "Starting to remove old  invoices/events"
 for coll in "${!CUSTOMER_COLL[@]}"; do
 	COLL_MONTHS_TO_KEEP=$(( ${CUSTOMER_COLL[$coll]} >  $CUSTOMER_MONTHS_TO_KEEP ? ${CUSTOMER_COLL[$coll]} : $CUSTOMER_MONTHS_TO_KEEP ));
-	echo "var trgtColl='$coll'; var daysToRmove = $DAYS_TO_REMOVE_PER_ITER; var monthsToKeep = $COLL_MONTHS_TO_KEEP;" > /tmp/data_removal_config.js;
+	echo "var trgtColl='$coll'; var daysToRmove = $DAYS_TO_REMOVE_PER_ITER; var monthsToKeep = $COLL_MONTHS_TO_KEEP;" > /tmp/data_creation_time_removal_config.js;
 
 	if [ -z "$DB_USER" ] && [ -z $DB_PASSWORD ]; then
-		$MONGOEXEC --host $DB_HOST $DB_NAME  /tmp/data_removal_config.js ./creation_time_based_data_removal.js
+		$MONGOEXEC --host $DB_HOST $DB_NAME  /tmp/data_creation_time_removal_config.js ./creation_time_based_data_removal.js
 	else
-		$MONGOEXEC --host $DB_HOST --authenticationDatabase=admin -u$DB_USER -p$DB_PASSWORD $DB_NAME  /tmp/data_removal_config.js ./creation_time_based_data_removal.js
+		$MONGOEXEC --host $DB_HOST --authenticationDatabase=admin -u$DB_USER -p$DB_PASSWORD $DB_NAME  /tmp/data_creation_time_removal_config.js ./creation_time_based_data_removal.js
 	fi
 done
