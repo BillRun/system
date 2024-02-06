@@ -180,22 +180,27 @@ class Billrun_PaymentManager {
 		}
 		$method = $prePayment->getMethod();
 		$leftToSpare = $prePayment->getAmount();
-		$relatedBills = $prePayment->getRelatedBills();
-		foreach ($relatedBills as $billData) {
-			$bill = $prePayment->getBill('', $billData);
-			$billAmountLeft = $prePayment->getBillAmountLeft($bill);
-			$amount = min($billAmountLeft, $leftToSpare);
-			if ($amount) {
-				$billType = $bill->getType();
-				$paymentDir = $dir == Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER ? Billrun_DataTypes_PrePayment::PAY_DIR_PAYS : Billrun_DataTypes_PrePayment::PAY_DIR_PAID_BY;
-				$billId = $bill->getId();
-				$relatedBills = $prePayment->getData($paymentDir, []);
-				Billrun_Bill::addRelatedBill($relatedBills, $billType, $billId, $amount, $bill->getRawData());
-				$prePayment->setData($paymentDir, $relatedBills);
-				$paymentData = $prePayment->getData();
-				$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
-				$leftToSpare -= $amount;
-				$prePayment->addUpdatedBill($billType, $bill);
+		$switch_links = Billrun_Factory::config()->getConfigValue(/*payments?*/'bills.switch_links', true);
+		if ($switch_links) {
+			Billrun_Bill_Payment::detachPendingPayments($prePayment->getAid());
+		} else {
+			$relatedBills = $prePayment->getRelatedBills();
+			foreach ($relatedBills as $billData) {
+				$bill = $prePayment->getBill('', $billData);
+				$billAmountLeft = $prePayment->getBillAmountLeft($bill);
+				$amount = min($billAmountLeft, $leftToSpare);
+				if ($amount) {
+					$billType = $bill->getType();
+					$paymentDir = $dir == Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER ? Billrun_DataTypes_PrePayment::PAY_DIR_PAYS : Billrun_DataTypes_PrePayment::PAY_DIR_PAID_BY;
+					$billId = $bill->getId();
+					$relatedBills = $prePayment->getData($paymentDir, []);
+					Billrun_Bill::addRelatedBill($relatedBills, $billType, $billId, $amount, $bill->getRawData());
+					$prePayment->setData($paymentDir, $relatedBills);
+					$paymentData = $prePayment->getData();
+					$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
+					$leftToSpare -= $amount;
+					$prePayment->addUpdatedBill($billType, $bill);
+				}
 			}
 		}
 	}
