@@ -13,11 +13,10 @@ if [ -e $CONFIG_PATH ]; then
 else
  declare -A USAGE_COLL;
  USAGE_COLL["lines"]=24;
- USAGE_COLL["queue"]=24;
- USAGE_COLL["archive"]=24;
+ USAGE_COLL["queue"]=3;
+ USAGE_COLL["archive"]=6;
  declare -A CUSTOMER_COLL;
  CUSTOMER_COLL["billrun"]=24;
- CUSTOMER_COLL["bills"]=24;
 fi
 
 if [ -n "$1" ]; then
