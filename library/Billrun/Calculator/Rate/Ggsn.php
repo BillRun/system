@@ -59,11 +59,21 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query($this->rateKeyMapping)->cursor();
+		$rates_query = array(
+			'$or' => array(
+				$this->rateKeyMapping, 
+				array('key' => 'UNRATED')
+			)
+		);
+		$rates = $rates_coll->query($rates_query)->cursor();
 		$this->rates = array();
 		foreach ($rates as $value) {
 			$value->collection($rates_coll);
-			$this->rates[] = $value;
+			if ($value['key'] == 'UNRATED') {
+				$this->rates['UNRATED'] = $value;
+			} else {
+				$this->rates[] = $value;
+			}
 		}
 	}
 
@@ -73,12 +83,19 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	protected function getLineRate($row, $usage_type) {
 		$line_time = $row['urt'];
 		foreach ($this->rates as $rate) {
-			if (preg_match($rate['params']['sgsn_addresses'], $row['sgsn_address']) && $rate['from'] <= $line_time && $line_time <= $rate['to']) {
+			if ($rate['key'] === 'UNRATED') {
+				continue;
+			}
+			$regex = (is_array($rate['params']['sgsn_addresses']) && !empty($rate['params']['sgsn_addresses']['regex']) )
+							? '/' . $rate['params']['sgsn_addresses']['$regex'] . '/'
+							: $rate['params']['sgsn_addresses'];
+			
+			if (preg_match($regex, $row['sgsn_address']) && $rate['from'] <= $line_time && $line_time <= $rate['to']) {
 				return $rate;
 			}
 		}
 		Billrun_Factory::log()->log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
-		return FALSE;
+		return $this->rates['UNRATED'];
 	}
 
 }
