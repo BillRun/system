@@ -26,7 +26,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $template;
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
-    protected $invoice_extra_params = [];
+	protected $exporterFlags = null;
+        protected $invoice_extra_params = [];
 	protected $header_path = "";
 	protected $footer_path = "";
 	protected $header_content = "";
@@ -386,9 +387,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		Billrun_Factory::dispatcher()->trigger('afterInvoiceHTMLCommit',array(&$invoice_html,$this,$account));
 
 		$this->updateHtmlDynamicData($account);
-		$ExporterFlagsString = Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type');
+		//$ExporterFlagsString = Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type');
 		Billrun_Factory::log('Generating invoice ' . $pdf_name . " to : $pdf", Zend_Log::INFO);
-		exec($this->wkpdf_exec . " {$ExporterFlagsString} --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
+		exec($this->wkpdf_exec . " {$this->exporterFlags} --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 
 		if (Billrun_Factory::config()->getConfigValue(self::$type . '.exclude_pages')) {
 			$firstPage = $this->view_path . 'first_page/main.phtml';
@@ -627,8 +628,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 	}
 
-	public function setBillrunExportPath($object, $paths) {
-		$object->set('export_path', $paths);
+        public function setBillrunExportPath($object, $paths) {
+            $object->set('export_path', $paths);
 	}
 
 	public function setHeaderAndFooterPathAndContent($options) {
@@ -662,6 +663,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 				}
 			}
 		}
+		$this->exporterFlags =   Billrun_Util::getFieldVal($options['exporter_flags'],  Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type'));
 	}
 
     public function signPdf(string $pdf) {
@@ -688,6 +690,6 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		} catch (Exception $e) {
 			Billrun_Factory::log("Failed to sign pdf: " . $e->getMessage(), Zend_Log::ERR);
 		}
-	}
+        }
 
 }

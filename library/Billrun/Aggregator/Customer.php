@@ -144,8 +144,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @var boolean
 	 */
 	public $ignoreCdrs = false;
-
-	/**
+        
+        /**
 	 * Array of invoicing days, extra customer filtration
 	 * @var array
 	 */
