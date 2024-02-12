@@ -4,7 +4,6 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\MathTrig;
 
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 use PhpOffice\PhpSpreadsheet\Calculation\Statistical;
 
 class Subtotal
@@ -18,11 +17,7 @@ class Subtotal
         return array_filter(
             $args,
             function ($index) use ($cellReference) {
-                $explodeArray = explode('.', $index);
-                $row = $explodeArray[1] ?? '';
-                if (!is_numeric($row)) {
-                    return true;
-                }
+                [, $row, ] = explode('.', $index);
 
                 return $cellReference->getWorksheet()->getRowDimension($row)->getVisible();
             },
@@ -39,9 +34,7 @@ class Subtotal
         return array_filter(
             $args,
             function ($index) use ($cellReference) {
-                $explodeArray = explode('.', $index);
-                $row = $explodeArray[1] ?? '';
-                $column = $explodeArray[2] ?? '';
+                [, $row, $column] = explode('.', $index);
                 $retVal = true;
                 if ($cellReference->getWorksheet()->cellExists($column . $row)) {
                     //take this cell out if it contains the SUBTOTAL or AGGREGATE functions in a formula
@@ -60,6 +53,7 @@ class Subtotal
         );
     }
 
+    /** @var callable[] */
     private const CALL_FUNCTIONS = [
         1 => [Statistical\Averages::class, 'average'], // 1 and 101
         [Statistical\Counts::class, 'COUNT'], // 2 and 102
@@ -93,22 +87,7 @@ class Subtotal
     public static function evaluate($functionType, ...$args)
     {
         $cellReference = array_pop($args);
-        $bArgs = Functions::flattenArrayIndexed($args);
-        $aArgs = [];
-        // int keys must come before string keys for PHP 8.0+
-        // Otherwise, PHP thinks positional args follow keyword
-        //    in the subsequent call to call_user_func_array.
-        // Fortunately, order of args is unimportant to Subtotal.
-        foreach ($bArgs as $key => $value) {
-            if (is_int($key)) {
-                $aArgs[$key] = $value;
-            }
-        }
-        foreach ($bArgs as $key => $value) {
-            if (!is_int($key)) {
-                $aArgs[$key] = $value;
-            }
-        }
+        $aArgs = Functions::flattenArrayIndexed($args);
 
         try {
             $subtotal = (int) Helpers::validateNumericNullBool($functionType);
@@ -130,6 +109,6 @@ class Subtotal
             return call_user_func_array($call, $aArgs);
         }
 
-        return ExcelError::VALUE();
+        return Functions::VALUE();
     }
 }

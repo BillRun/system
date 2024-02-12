@@ -3,7 +3,6 @@
 namespace PhpOffice\PhpSpreadsheet\Calculation\Financial\CashFlow\Variable;
 
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class Periodic
 {
@@ -34,7 +33,7 @@ class Periodic
     public static function rate($values, $guess = 0.1)
     {
         if (!is_array($values)) {
-            return ExcelError::VALUE();
+            return Functions::VALUE();
         }
         $values = Functions::flattenArray($values);
         $guess = Functions::flattenSingleValue($guess);
@@ -55,7 +54,7 @@ class Periodic
             }
         }
         if (($f1 * $f2) > 0.0) {
-            return ExcelError::VALUE();
+            return Functions::VALUE();
         }
 
         $f = self::presentValue($x1, $values);
@@ -79,7 +78,7 @@ class Periodic
             }
         }
 
-        return ExcelError::VALUE();
+        return Functions::VALUE();
     }
 
     /**
@@ -102,7 +101,7 @@ class Periodic
     public static function modifiedRate($values, $financeRate, $reinvestmentRate)
     {
         if (!is_array($values)) {
-            return ExcelError::DIV0();
+            return Functions::VALUE();
         }
         $values = Functions::flattenArray($values);
         $financeRate = Functions::flattenSingleValue($financeRate);
@@ -112,7 +111,7 @@ class Periodic
         $rr = 1.0 + $reinvestmentRate;
         $fr = 1.0 + $financeRate;
 
-        $npvPos = $npvNeg = self::$zeroPointZero;
+        $npvPos = $npvNeg = 0.0;
         foreach ($values as $i => $v) {
             if ($v >= 0) {
                 $npvPos += $v / $rr ** $i;
@@ -121,22 +120,15 @@ class Periodic
             }
         }
 
-        if ($npvNeg === self::$zeroPointZero || $npvPos === self::$zeroPointZero) {
-            return ExcelError::DIV0();
+        if (($npvNeg === 0.0) || ($npvPos === 0.0) || ($reinvestmentRate <= -1.0)) {
+            return Functions::VALUE();
         }
 
         $mirr = ((-$npvPos * $rr ** $n)
                 / ($npvNeg * ($rr))) ** (1.0 / ($n - 1)) - 1.0;
 
-        return is_finite($mirr) ? $mirr : ExcelError::NAN();
+        return is_finite($mirr) ? $mirr : Functions::VALUE();
     }
-
-    /**
-     * Sop to Scrutinizer.
-     *
-     * @var float
-     */
-    private static $zeroPointZero = 0.0;
 
     /**
      * NPV.
@@ -144,7 +136,6 @@ class Periodic
      * Returns the Net Present Value of a cash flow series given a discount rate.
      *
      * @param mixed $rate
-     * @param array $args
      *
      * @return float
      */

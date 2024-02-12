@@ -4,7 +4,6 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\MathTrig;
 
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class Lcm
 {
@@ -105,7 +104,7 @@ class Lcm
     private static function testNonNulls(int $anyNonNulls): void
     {
         if (!$anyNonNulls) {
-            throw new Exception(ExcelError::VALUE());
+            throw new Exception(Functions::VALUE());
         }
     }
 }

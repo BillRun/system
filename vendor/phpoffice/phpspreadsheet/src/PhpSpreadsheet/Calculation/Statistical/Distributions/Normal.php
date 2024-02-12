@@ -5,7 +5,7 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\Statistical\Distributions;
 use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Engineering;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
+use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 
 class Normal
 {
@@ -49,7 +49,7 @@ class Normal
         }
 
         if ($stdDev < 0) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
 
         if ($cumulative) {
@@ -90,7 +90,7 @@ class Normal
         }
 
         if ($stdDev < 0) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
 
         return (self::inverseNcdf($probability) * $stdDev) + $mean;
@@ -104,7 +104,7 @@ class Normal
      *    email                : nickersonm@yahoo.com
      *
      */
-    private static function inverseNcdf(float $p): float
+    private static function inverseNcdf($p)
     {
         //    Inverse ncdf approximation by Peter J. Acklam, implementation adapted to
         //    PHP by Michael Nickerson, using Dr. Thomas Ziegler's C implementation as

@@ -8,9 +8,6 @@ use PhpOffice\PhpSpreadsheet\Writer\Pdf;
 
 class Mpdf extends Pdf
 {
-    /** @var bool */
-    protected $isMPdf = true;
-
     /**
      * Gets the implementation of external PDF library that should be used.
      *

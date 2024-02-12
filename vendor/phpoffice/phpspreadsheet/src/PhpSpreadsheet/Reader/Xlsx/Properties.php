@@ -73,9 +73,6 @@ class Properties
             if (isset($xmlCore->Manager)) {
                 $this->docProps->setManager((string) $xmlCore->Manager);
             }
-            if (isset($xmlCore->HyperlinkBase)) {
-                $this->docProps->setHyperlinkBase((string) $xmlCore->HyperlinkBase);
-            }
         }
     }
 
@@ -102,7 +99,7 @@ class Properties
     }
 
     /**
-     * @param null|array|false $array
+     * @param array|false $array
      * @param mixed $key
      */
     private static function getArrayItem($array, $key = 0): ?SimpleXMLElement

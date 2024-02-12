@@ -4,7 +4,7 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\Statistical\Distributions;
 
 use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
+use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 
 class Weibull
 {
@@ -45,7 +45,7 @@ class Weibull
         }
 
         if (($value < 0) || ($alpha <= 0) || ($beta <= 0)) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
 
         if ($cumulative) {

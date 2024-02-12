@@ -5,7 +5,6 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\MathTrig;
 use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class Ceiling
 {
@@ -154,7 +153,7 @@ class Ceiling
             return ceil($number / $significance) * $significance;
         }
 
-        return ExcelError::NAN();
+        return Functions::NAN();
     }
 
     private static function floorCheck1Arg(): void

@@ -2,7 +2,6 @@
 
 namespace PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
-use PhpOffice\PhpSpreadsheet\Reader\Xlsx\Namespaces;
 use PhpOffice\PhpSpreadsheet\Shared\File;
 use PhpOffice\PhpSpreadsheet\Shared\XMLWriter;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -33,7 +32,7 @@ class ContentTypes extends WriterPart
 
         // Types
         $objWriter->startElement('Types');
-        $objWriter->writeAttribute('xmlns', Namespaces::CONTENT_TYPES);
+        $objWriter->writeAttribute('xmlns', 'http://schemas.openxmlformats.org/package/2006/content-types');
 
         // Theme
         $this->writeOverrideContentType($objWriter, '/xl/theme/theme1.xml', 'application/vnd.openxmlformats-officedocument.theme+xml');
@@ -85,16 +84,6 @@ class ContentTypes extends WriterPart
 
         // Shared strings
         $this->writeOverrideContentType($objWriter, '/xl/sharedStrings.xml', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml');
-
-        // Table
-        $table = 1;
-        for ($i = 0; $i < $sheetCount; ++$i) {
-            $tableCount = $spreadsheet->getSheet($i)->getTableCollection()->count();
-
-            for ($t = 1; $t <= $tableCount; ++$t) {
-                $this->writeOverrideContentType($objWriter, '/xl/tables/table' . $table++ . '.xml', 'application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml');
-            }
-        }
 
         // Add worksheet relationship content types
         $unparsedLoadedData = $spreadsheet->getUnparsedLoadedData();

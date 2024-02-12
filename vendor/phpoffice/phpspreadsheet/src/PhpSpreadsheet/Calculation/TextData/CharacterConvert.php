@@ -4,7 +4,6 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\TextData;
 
 use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class CharacterConvert
 {
@@ -29,7 +28,7 @@ class CharacterConvert
         $character = Helpers::validateInt($character);
         $min = Functions::getCompatibilityMode() === Functions::COMPATIBILITY_OPENOFFICE ? 0 : 1;
         if ($character < $min || $character > 255) {
-            return ExcelError::VALUE();
+            return Functions::VALUE();
         }
         $result = iconv('UCS-4LE', 'UTF-8', pack('V', $character));
 
@@ -54,7 +53,7 @@ class CharacterConvert
 
         $characters = Helpers::extractString($characters);
         if ($characters === '') {
-            return ExcelError::VALUE();
+            return Functions::VALUE();
         }
 
         $character = $characters;

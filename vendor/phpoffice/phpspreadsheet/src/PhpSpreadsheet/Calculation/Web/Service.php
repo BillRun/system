@@ -2,7 +2,7 @@
 
 namespace PhpOffice\PhpSpreadsheet\Calculation\Web;
 
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
+use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 use PhpOffice\PhpSpreadsheet\Settings;
 use Psr\Http\Client\ClientExceptionInterface;
 
@@ -22,11 +22,11 @@ class Service
     {
         $url = trim($url);
         if (strlen($url) > 2048) {
-            return ExcelError::VALUE(); // Invalid URL length
+            return Functions::VALUE(); // Invalid URL length
         }
 
         if (!preg_match('/^http[s]?:\/\//', $url)) {
-            return ExcelError::VALUE(); // Invalid protocol
+            return Functions::VALUE(); // Invalid protocol
         }
 
         // Get results from the the webservice
@@ -37,16 +37,16 @@ class Service
         try {
             $response = $client->sendRequest($request);
         } catch (ClientExceptionInterface $e) {
-            return ExcelError::VALUE(); // cURL error
+            return Functions::VALUE(); // cURL error
         }
 
         if ($response->getStatusCode() != 200) {
-            return ExcelError::VALUE(); // cURL error
+            return Functions::VALUE(); // cURL error
         }
 
         $output = $response->getBody()->getContents();
         if (strlen($output) > 32767) {
-            return ExcelError::VALUE(); // Output not a string or too long
+            return Functions::VALUE(); // Output not a string or too long
         }
 
         return $output;
@@ -67,7 +67,7 @@ class Service
     public static function urlEncode($text)
     {
         if (!is_string($text)) {
-            return ExcelError::VALUE();
+            return Functions::VALUE();
         }
 
         return str_replace('+', '%20', urlencode($text));

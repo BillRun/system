@@ -8,7 +8,6 @@ use PhpOffice\PhpSpreadsheet\Calculation\Financial\Constants as FinancialConstan
 use PhpOffice\PhpSpreadsheet\Calculation\Financial\Coupons;
 use PhpOffice\PhpSpreadsheet\Calculation\Financial\Helpers;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class Price
 {
@@ -70,10 +69,10 @@ class Price
             return $e->getMessage();
         }
 
-        $dsc = (float) Coupons::COUPDAYSNC($settlement, $maturity, $frequency, $basis);
-        $e = (float) Coupons::COUPDAYS($settlement, $maturity, $frequency, $basis);
-        $n = (int) Coupons::COUPNUM($settlement, $maturity, $frequency, $basis);
-        $a = (float) Coupons::COUPDAYBS($settlement, $maturity, $frequency, $basis);
+        $dsc = Coupons::COUPDAYSNC($settlement, $maturity, $frequency, $basis);
+        $e = Coupons::COUPDAYS($settlement, $maturity, $frequency, $basis);
+        $n = Coupons::COUPNUM($settlement, $maturity, $frequency, $basis);
+        $a = Coupons::COUPDAYBS($settlement, $maturity, $frequency, $basis);
 
         $baseYF = 1.0 + ($yield / $frequency);
         $rfp = 100 * ($rate / $frequency);
@@ -195,7 +194,7 @@ class Price
             return $e->getMessage();
         }
 
-        $daysPerYear = Helpers::daysPerYear(Functions::scalar(DateTimeExcel\DateParts::year($settlement)), $basis);
+        $daysPerYear = Functions::scalar(Helpers::daysPerYear(DateTimeExcel\DateParts::year($settlement), $basis));
         if (!is_numeric($daysPerYear)) {
             return $daysPerYear;
         }
@@ -271,12 +270,12 @@ class Price
         }
 
         if ($investment <= 0) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
         $daysBetweenSettlementAndMaturity = DateTimeExcel\YearFrac::fraction($settlement, $maturity, $basis);
         if (!is_numeric($daysBetweenSettlementAndMaturity)) {
             //    return date error
-            return Functions::scalar($daysBetweenSettlementAndMaturity);
+            return $daysBetweenSettlementAndMaturity;
         }
 
         return $investment / (1 - ($discount * $daysBetweenSettlementAndMaturity));

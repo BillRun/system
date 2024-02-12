@@ -4,7 +4,6 @@ namespace PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Comment;
-use PhpOffice\PhpSpreadsheet\Reader\Xlsx\Namespaces;
 use PhpOffice\PhpSpreadsheet\Shared\XMLWriter;
 
 class Comments extends WriterPart
@@ -41,7 +40,7 @@ class Comments extends WriterPart
 
         // comments
         $objWriter->startElement('comments');
-        $objWriter->writeAttribute('xmlns', Namespaces::MAIN);
+        $objWriter->writeAttribute('xmlns', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
 
         // Loop through authors
         $objWriter->startElement('authors');
@@ -108,9 +107,9 @@ class Comments extends WriterPart
 
         // xml
         $objWriter->startElement('xml');
-        $objWriter->writeAttribute('xmlns:v', Namespaces::URN_VML);
-        $objWriter->writeAttribute('xmlns:o', Namespaces::URN_MSOFFICE);
-        $objWriter->writeAttribute('xmlns:x', Namespaces::URN_EXCEL);
+        $objWriter->writeAttribute('xmlns:v', 'urn:schemas-microsoft-com:vml');
+        $objWriter->writeAttribute('xmlns:o', 'urn:schemas-microsoft-com:office:office');
+        $objWriter->writeAttribute('xmlns:x', 'urn:schemas-microsoft-com:office:excel');
 
         // o:shapelayout
         $objWriter->startElement('o:shapelayout');
@@ -166,7 +165,7 @@ class Comments extends WriterPart
         // Metadata
         [$column, $row] = Coordinate::indexesFromString($cellReference);
         $id = 1024 + $column + $row;
-        $id = substr("$id", 0, 4);
+        $id = substr($id, 0, 4);
 
         // v:shape
         $objWriter->startElement('v:shape');
@@ -224,10 +223,10 @@ class Comments extends WriterPart
         $objWriter->writeElement('x:AutoFill', 'False');
 
         // x:Row
-        $objWriter->writeElement('x:Row', (string) ($row - 1));
+        $objWriter->writeElement('x:Row', ($row - 1));
 
         // x:Column
-        $objWriter->writeElement('x:Column', (string) ($column - 1));
+        $objWriter->writeElement('x:Column', ($column - 1));
 
         $objWriter->endElement();
 

@@ -52,6 +52,7 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         ),
         'M' => 
         array (
+            'MyCLabs\\Enum\\' => 13,
             'Money\\' => 6,
             'Matrix\\' => 7,
         ),
@@ -133,6 +134,10 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         'Omnipay\\Common\\' => 
         array (
             0 => __DIR__ . '/..' . '/omnipay/common/src/Common',
+        ),
+        'MyCLabs\\Enum\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/myclabs/php-enum/src',
         ),
         'Money\\' => 
         array (
@@ -219,7 +224,7 @@ class ComposerStaticInit29566db855439114bef9bd21a07efecb
         'Override' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/Override.php',
         'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
         'SQLite3Exception' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/SQLite3Exception.php',
-        'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
+        'Stringable' => __DIR__ . '/..' . '/myclabs/php-enum/stubs/Stringable.php',
         'UnhandledMatchError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/UnhandledMatchError.php',
         'ValueError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/ValueError.php',
     );

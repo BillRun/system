@@ -4,7 +4,7 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\Statistical\Distributions;
 
 use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
+use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 
 class Exponential
 {
@@ -43,7 +43,7 @@ class Exponential
         }
 
         if (($value < 0) || ($lambda < 0)) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
 
         if ($cumulative === true) {

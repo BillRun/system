@@ -4,7 +4,7 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel;
 
 use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
+use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 use PhpOffice\PhpSpreadsheet\Shared\Date as SharedDateHelper;
 use PhpOffice\PhpSpreadsheet\Shared\StringHelper;
 
@@ -72,16 +72,16 @@ class Date
         $baseYear = SharedDateHelper::getExcelCalendar();
 
         try {
-            $year = self::getYear($year, $baseYear); // must be int - Scrutinizer is wrong
+            $year = self::getYear($year, $baseYear);
             $month = self::getMonth($month);
             $day = self::getDay($day);
-            self::adjustYearMonth(/** @scrutinizer ignore-type */ $year, $month, $baseYear);
+            self::adjustYearMonth($year, $month, $baseYear);
         } catch (Exception $e) {
             return $e->getMessage();
         }
 
         // Execute function
-        $excelDateValue = SharedDateHelper::formattedPHPToExcel(/** @scrutinizer ignore-type */ $year, $month, $day);
+        $excelDateValue = SharedDateHelper::formattedPHPToExcel($year, $month, $day);
 
         return Helpers::returnIn3FormatsFloat($excelDateValue);
     }
@@ -95,15 +95,15 @@ class Date
     {
         $year = ($year !== null) ? StringHelper::testStringAsNumeric((string) $year) : 0;
         if (!is_numeric($year)) {
-            throw new Exception(ExcelError::VALUE());
+            throw new Exception(Functions::VALUE());
         }
         $year = (int) $year;
 
         if ($year < ($baseYear - 1900)) {
-            throw new Exception(ExcelError::NAN());
+            throw new Exception(Functions::NAN());
         }
         if ((($baseYear - 1900) !== 0) && ($year < $baseYear) && ($year >= 1900)) {
-            throw new Exception(ExcelError::NAN());
+            throw new Exception(Functions::NAN());
         }
 
         if (($year < $baseYear) && ($year >= ($baseYear - 1900))) {
@@ -126,7 +126,7 @@ class Date
 
         $month = ($month !== null) ? StringHelper::testStringAsNumeric((string) $month) : 0;
         if (!is_numeric($month)) {
-            throw new Exception(ExcelError::VALUE());
+            throw new Exception(Functions::VALUE());
         }
 
         return (int) $month;
@@ -145,7 +145,7 @@ class Date
 
         $day = ($day !== null) ? StringHelper::testStringAsNumeric((string) $day) : 0;
         if (!is_numeric($day)) {
-            throw new Exception(ExcelError::VALUE());
+            throw new Exception(Functions::VALUE());
         }
 
         return (int) $day;
@@ -166,7 +166,7 @@ class Date
 
         // Re-validate the year parameter after adjustments
         if (($year < $baseYear) || ($year >= 10000)) {
-            throw new Exception(ExcelError::NAN());
+            throw new Exception(Functions::NAN());
         }
     }
 }

@@ -116,7 +116,10 @@ class Xf
      */
     private $rightBorderColor;
 
-    //private $diag; // theoretically int, not yet implemented
+    /**
+     * @var int
+     */
+    private $diag;
 
     /**
      * @var int
@@ -145,7 +148,7 @@ class Xf
         $this->foregroundColor = 0x40;
         $this->backgroundColor = 0x41;
 
-        //$this->diag = 0;
+        $this->diag = 0;
 
         $this->bottomBorderColor = 0x40;
         $this->topBorderColor = 0x40;
@@ -251,7 +254,7 @@ class Xf
         $biff8_options |= (int) $this->style->getAlignment()->getShrinkToFit() << 4;
 
         $data = pack('vvvC', $ifnt, $ifmt, $style, $align);
-        $data .= pack('CCC', self::mapTextRotation((int) $this->style->getAlignment()->getTextRotation()), $biff8_options, $used_attrib);
+        $data .= pack('CCC', self::mapTextRotation($this->style->getAlignment()->getTextRotation()), $biff8_options, $used_attrib);
         $data .= pack('VVv', $border1, $border2, $icv);
 
         return $header . $data;

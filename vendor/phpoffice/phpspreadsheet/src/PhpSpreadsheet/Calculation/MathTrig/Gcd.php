@@ -4,7 +4,6 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\MathTrig;
 
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class Gcd
 {
@@ -58,7 +57,7 @@ class Gcd
         }
 
         if (count($arrayArgs) <= 0) {
-            return ExcelError::VALUE();
+            return Functions::VALUE();
         }
         $gcd = (int) array_pop($arrayArgs);
         do {

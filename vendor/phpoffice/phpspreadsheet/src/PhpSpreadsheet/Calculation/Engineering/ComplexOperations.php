@@ -6,7 +6,6 @@ use Complex\Complex as ComplexObject;
 use Complex\Exception as ComplexException;
 use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class ComplexOperations
 {
@@ -38,7 +37,7 @@ class ComplexOperations
         try {
             return (string) (new ComplexObject($complexDividend))->divideby(new ComplexObject($complexDivisor));
         } catch (ComplexException $e) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
     }
 
@@ -68,7 +67,7 @@ class ComplexOperations
         try {
             return (string) (new ComplexObject($complexNumber1))->subtract(new ComplexObject($complexNumber2));
         } catch (ComplexException $e) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
     }
 
@@ -96,7 +95,7 @@ class ComplexOperations
                 $returnValue = $returnValue->add(new ComplexObject($complex));
             }
         } catch (ComplexException $e) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
 
         return (string) $returnValue;
@@ -126,7 +125,7 @@ class ComplexOperations
                 $returnValue = $returnValue->multiply(new ComplexObject($complex));
             }
         } catch (ComplexException $e) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
 
         return (string) $returnValue;

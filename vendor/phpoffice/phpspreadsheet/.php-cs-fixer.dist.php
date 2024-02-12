@@ -2,7 +2,6 @@
 
 $finder = PhpCsFixer\Finder::create()
     ->exclude('vendor')
-    ->notPath('src/PhpSpreadsheet/Writer/ZipStream3.php')
     ->in(__DIR__);
 
 $config = new PhpCsFixer\Config();
@@ -22,12 +21,12 @@ $config
         'braces' => true,
         'cast_spaces' => true,
         'class_attributes_separation' => ['elements' => ['method' => 'one', 'property' => 'one']], // const are often grouped with other related const
-        'class_definition' => false,
+        'class_definition' => true,
         'class_keyword_remove' => false, // ::class keyword gives us better support in IDE
         'combine_consecutive_issets' => true,
         'combine_consecutive_unsets' => true,
         'combine_nested_dirname' => true,
-        'comment_to_phpdoc' => false, // interferes with annotations
+        'comment_to_phpdoc' => true,
         'compact_nullable_typehint' => true,
         'concat_space' => ['spacing' => 'one'],
         'constant_case' => true,
@@ -56,10 +55,10 @@ $config
         'function_declaration' => true,
         'function_to_constant' => true,
         'function_typehint_space' => true,
-        'general_phpdoc_annotation_remove' => ['annotations' => ['access', 'category', 'copyright']],
+        'general_phpdoc_annotation_remove' => ['annotations' => ['access', 'category', 'copyright', 'throws']],
         'global_namespace_import' => true,
         'header_comment' => false, // We don't use common header in all our files
-        'heredoc_indentation' => true,
+        'heredoc_indentation' => false, // Requires PHP >= 7.3
         'heredoc_to_nowdoc' => false, // Not sure about this one
         'implode_call' => true,
         'include' => true,
@@ -172,7 +171,7 @@ $config
         'phpdoc_separation' => true,
         'phpdoc_single_line_var_spacing' => true,
         'phpdoc_summary' => true,
-        'phpdoc_to_comment' => false, // interferes with annotations
+        'phpdoc_to_comment' => true,
         'phpdoc_to_param_type' => false, // Because experimental, but interesting for one shot use
         'phpdoc_to_return_type' => false, // idem
         'phpdoc_trim' => true,

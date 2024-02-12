@@ -5,7 +5,6 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel;
 use DateTime;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 use PhpOffice\PhpSpreadsheet\Shared\Date as SharedDateHelper;
 
 class Helpers
@@ -34,7 +33,7 @@ class Helpers
         if (is_object($dateValue)) {
             $retval = SharedDateHelper::PHPToExcel($dateValue);
             if (is_bool($retval)) {
-                throw new Exception(ExcelError::VALUE());
+                throw new Exception(Functions::VALUE());
             }
 
             return $retval;
@@ -47,11 +46,11 @@ class Helpers
             $dateValue = DateValue::fromString($dateValue);
             Functions::setReturnDateType($saveReturnDateType);
             if (!is_numeric($dateValue)) {
-                throw new Exception(ExcelError::VALUE());
+                throw new Exception(Functions::VALUE());
             }
         }
         if ($dateValue < 0 && Functions::getCompatibilityMode() !== Functions::COMPATIBILITY_OPENOFFICE) {
-            throw new Exception(ExcelError::NAN());
+            throw new Exception(Functions::NAN());
         }
 
         return (float) $dateValue;
@@ -254,7 +253,7 @@ class Helpers
             return (float) $number;
         }
 
-        throw new Exception(ExcelError::VALUE());
+        throw new Exception(Functions::VALUE());
     }
 
     /**
@@ -267,13 +266,13 @@ class Helpers
     public static function validateNotNegative($number)
     {
         if (!is_numeric($number)) {
-            throw new Exception(ExcelError::VALUE());
+            throw new Exception(Functions::VALUE());
         }
         if ($number >= 0) {
             return (float) $number;
         }
 
-        throw new Exception(ExcelError::NAN());
+        throw new Exception(Functions::NAN());
     }
 
     public static function silly1900(DateTime $PHPDateObject, string $mod = '-1 day'): void

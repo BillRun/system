@@ -4,7 +4,7 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\MathTrig;
 
 use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
+use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 
 class Round
 {
@@ -144,7 +144,7 @@ class Round
             return round($number * $multiplier) / $multiplier;
         }
 
-        return ExcelError::NAN();
+        return Functions::NAN();
     }
 
     /**

@@ -3,7 +3,7 @@
 namespace PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel;
 
 use DateTimeImmutable;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
+use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 
 class Current
 {
@@ -29,7 +29,7 @@ class Current
         $dti = new DateTimeImmutable();
         $dateArray = Helpers::dateParse($dti->format('c'));
 
-        return Helpers::dateParseSucceeded($dateArray) ? Helpers::returnIn3FormatsArray($dateArray, true) : ExcelError::VALUE();
+        return Helpers::dateParseSucceeded($dateArray) ? Helpers::returnIn3FormatsArray($dateArray, true) : Functions::VALUE();
     }
 
     /**
@@ -54,6 +54,6 @@ class Current
         $dti = new DateTimeImmutable();
         $dateArray = Helpers::dateParse($dti->format('c'));
 
-        return Helpers::dateParseSucceeded($dateArray) ? Helpers::returnIn3FormatsArray($dateArray) : ExcelError::VALUE();
+        return Helpers::dateParseSucceeded($dateArray) ? Helpers::returnIn3FormatsArray($dateArray) : Functions::VALUE();
     }
 }

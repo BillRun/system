@@ -3,7 +3,7 @@
 namespace PhpOffice\PhpSpreadsheet\Calculation\Engineering;
 
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
+use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 
 class EngineeringValidations
 {
@@ -13,7 +13,7 @@ class EngineeringValidations
     public static function validateFloat($value): float
     {
         if (!is_numeric($value)) {
-            throw new Exception(ExcelError::VALUE());
+            throw new Exception(Functions::VALUE());
         }
 
         return (float) $value;
@@ -25,7 +25,7 @@ class EngineeringValidations
     public static function validateInt($value): int
     {
         if (!is_numeric($value)) {
-            throw new Exception(ExcelError::VALUE());
+            throw new Exception(Functions::VALUE());
         }
 
         return (int) floor((float) $value);

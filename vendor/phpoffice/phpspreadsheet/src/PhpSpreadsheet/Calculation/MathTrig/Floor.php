@@ -5,7 +5,6 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\MathTrig;
 use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class Floor
 {
@@ -133,7 +132,7 @@ class Floor
     private static function argumentsOkPrecise(float $number, float $significance)
     {
         if ($significance == 0.0) {
-            return ExcelError::DIV0();
+            return Functions::DIV0();
         }
         if ($number == 0.0) {
             return 0.0;
@@ -150,7 +149,7 @@ class Floor
     private static function argsOk(float $number, float $significance, int $mode)
     {
         if (!$significance) {
-            return ExcelError::DIV0();
+            return Functions::DIV0();
         }
         if (!$number) {
             return 0.0;
@@ -178,7 +177,7 @@ class Floor
     private static function argumentsOk(float $number, float $significance)
     {
         if ($significance == 0.0) {
-            return ExcelError::DIV0();
+            return Functions::DIV0();
         }
         if ($number == 0.0) {
             return 0.0;
@@ -190,6 +189,6 @@ class Floor
             return floor($number / $significance) * $significance;
         }
 
-        return ExcelError::NAN();
+        return Functions::NAN();
     }
 }

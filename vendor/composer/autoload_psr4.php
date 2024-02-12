@@ -20,6 +20,7 @@ return array(
     'PhpOffice\\PhpSpreadsheet\\' => array($vendorDir . '/phpoffice/phpspreadsheet/src/PhpSpreadsheet'),
     'Omnipay\\Payrexx\\' => array($vendorDir . '/payrexx/omnipay-payrexx/src'),
     'Omnipay\\Common\\' => array($vendorDir . '/omnipay/common/src/Common'),
+    'MyCLabs\\Enum\\' => array($vendorDir . '/myclabs/php-enum/src'),
     'Money\\' => array($vendorDir . '/moneyphp/money/src'),
     'Matrix\\' => array($vendorDir . '/markbaker/matrix/classes/src'),
     'Http\\Promise\\' => array($vendorDir . '/php-http/promise/src'),

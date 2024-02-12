@@ -25,9 +25,6 @@ class Styles extends BaseParserClass
     private $theme;
 
     /** @var array */
-    private $workbookPalette = [];
-
-    /** @var array */
     private $styles = [];
 
     /** @var array */
@@ -42,11 +39,6 @@ class Styles extends BaseParserClass
     public function setNamespace(string $namespace): void
     {
         $this->namespace = $namespace;
-    }
-
-    public function setWorkbookPalette(array $palette): void
-    {
-        $this->workbookPalette = $palette;
     }
 
     /**
@@ -127,7 +119,7 @@ class Styles extends BaseParserClass
         }
         if (isset($fontStyleXml->vertAlign)) {
             $attr = $this->getStyleAttributes($fontStyleXml->vertAlign);
-            if (isset($attr['val'])) {
+            if (!isset($attr['val'])) {
                 $verticalAlign = strtolower((string) $attr['val']);
                 if ($verticalAlign === 'superscript') {
                     $fontStyle->setSuperscript(true);
@@ -135,10 +127,6 @@ class Styles extends BaseParserClass
                     $fontStyle->setSubscript(true);
                 }
             }
-        }
-        if (isset($fontStyleXml->scheme)) {
-            $attr = $this->getStyleAttributes($fontStyleXml->scheme);
-            $fontStyle->setScheme((string) $attr['val']);
         }
     }
 
@@ -198,33 +186,21 @@ class Styles extends BaseParserClass
         $diagonalUp = self::boolean($diagonalUp);
         $diagonalDown = $this->getAttribute($borderStyleXml, 'diagonalDown');
         $diagonalDown = self::boolean($diagonalDown);
-        if ($diagonalUp === false) {
-            if ($diagonalDown === false) {
-                $borderStyle->setDiagonalDirection(Borders::DIAGONAL_NONE);
-            } else {
-                $borderStyle->setDiagonalDirection(Borders::DIAGONAL_DOWN);
-            }
-        } elseif ($diagonalDown === false) {
+        if (!$diagonalUp && !$diagonalDown) {
+            $borderStyle->setDiagonalDirection(Borders::DIAGONAL_NONE);
+        } elseif ($diagonalUp && !$diagonalDown) {
             $borderStyle->setDiagonalDirection(Borders::DIAGONAL_UP);
+        } elseif (!$diagonalUp && $diagonalDown) {
+            $borderStyle->setDiagonalDirection(Borders::DIAGONAL_DOWN);
         } else {
             $borderStyle->setDiagonalDirection(Borders::DIAGONAL_BOTH);
         }
 
-        if (isset($borderStyleXml->left)) {
-            $this->readBorder($borderStyle->getLeft(), $borderStyleXml->left);
-        }
-        if (isset($borderStyleXml->right)) {
-            $this->readBorder($borderStyle->getRight(), $borderStyleXml->right);
-        }
-        if (isset($borderStyleXml->top)) {
-            $this->readBorder($borderStyle->getTop(), $borderStyleXml->top);
-        }
-        if (isset($borderStyleXml->bottom)) {
-            $this->readBorder($borderStyle->getBottom(), $borderStyleXml->bottom);
-        }
-        if (isset($borderStyleXml->diagonal)) {
-            $this->readBorder($borderStyle->getDiagonal(), $borderStyleXml->diagonal);
-        }
+        $this->readBorder($borderStyle->getLeft(), $borderStyleXml->left);
+        $this->readBorder($borderStyle->getRight(), $borderStyleXml->right);
+        $this->readBorder($borderStyle->getTop(), $borderStyleXml->top);
+        $this->readBorder($borderStyle->getBottom(), $borderStyleXml->bottom);
+        $this->readBorder($borderStyle->getDiagonal(), $borderStyleXml->diagonal);
     }
 
     private function getAttribute(SimpleXMLElement $xml, string $attribute): string
@@ -247,8 +223,6 @@ class Styles extends BaseParserClass
         $style = $this->getAttribute($borderXml, 'style');
         if ($style !== '') {
             $border->setBorderStyle((string) $style);
-        } else {
-            $border->setBorderStyle(Border::BORDER_NONE);
         }
         if (isset($borderXml->color)) {
             $border->getColor()->setARGB($this->readColor($borderXml->color));
@@ -257,14 +231,10 @@ class Styles extends BaseParserClass
 
     public function readAlignmentStyle(Alignment $alignment, SimpleXMLElement $alignmentXml): void
     {
-        $horizontal = (string) $this->getAttribute($alignmentXml, 'horizontal');
-        if ($horizontal !== '') {
-            $alignment->setHorizontal($horizontal);
-        }
-        $vertical = (string) $this->getAttribute($alignmentXml, 'vertical');
-        if ($vertical !== '') {
-            $alignment->setVertical($vertical);
-        }
+        $horizontal = $this->getAttribute($alignmentXml, 'horizontal');
+        $alignment->setHorizontal($horizontal);
+        $vertical = $this->getAttribute($alignmentXml, 'vertical');
+        $alignment->setVertical((string) $vertical);
 
         $textRotation = (int) $this->getAttribute($alignmentXml, 'textRotation');
         if ($textRotation > 90) {
@@ -298,7 +268,7 @@ class Styles extends BaseParserClass
      */
     public function readStyle(Style $docStyle, $style): void
     {
-        if ($style instanceof SimpleXMLElement) {
+        if ($style->numFmt instanceof SimpleXMLElement) {
             $this->readNumberFormat($docStyle->getNumberFormat(), $style->numFmt);
         } else {
             $docStyle->getNumberFormat()->setFormatCode(self::formatGeneral((string) $style->numFmt));
@@ -385,12 +355,7 @@ class Styles extends BaseParserClass
             return (string) $attr['rgb'];
         }
         if (isset($attr['indexed'])) {
-            $indexedColor = (int) $attr['indexed'];
-            if ($indexedColor >= count($this->workbookPalette)) {
-                return Color::indexedColor($indexedColor - 7, $background)->getARGB() ?? '';
-            }
-
-            return Color::indexedColor($indexedColor, $background, $this->workbookPalette)->getARGB() ?? '';
+            return Color::indexedColor((int) ($attr['indexed'] - 7), $background)->getARGB() ?? '';
         }
         if (isset($attr['theme'])) {
             if ($this->theme !== null) {

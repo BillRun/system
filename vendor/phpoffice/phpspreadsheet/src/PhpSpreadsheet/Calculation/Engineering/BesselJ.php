@@ -4,7 +4,7 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\Engineering;
 
 use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
+use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 
 class BesselJ
 {
@@ -48,12 +48,12 @@ class BesselJ
         }
 
         if ($ord < 0) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
 
         $fResult = self::calculate($x, $ord);
 
-        return (is_nan($fResult)) ? ExcelError::NAN() : $fResult;
+        return (is_nan($fResult)) ? Functions::NAN() : $fResult;
     }
 
     private static function calculate(float $x, int $ord): float
@@ -133,7 +133,7 @@ class BesselJ
         return self::besselj2b($ax, $ord, $x);
     }
 
-    private static function besselj2a(float $ax, int $ord, float $x): float
+    private static function besselj2a(float $ax, int $ord, float $x)
     {
         $tox = 2.0 / $ax;
         $bjm = self::besselJ0($ax);
@@ -148,7 +148,7 @@ class BesselJ
         return ($x < 0.0 && ($ord % 2) == 1) ? -$ans : $ans;
     }
 
-    private static function besselj2b(float $ax, int $ord, float $x): float
+    private static function besselj2b(float $ax, int $ord, float $x)
     {
         $tox = 2.0 / $ax;
         $jsum = false;
@@ -167,7 +167,7 @@ class BesselJ
             if ($jsum === true) {
                 $sum += $bj;
             }
-            $jsum = $jsum === false;
+            $jsum = !$jsum;
             if ($j === $ord) {
                 $ans = $bjp;
             }

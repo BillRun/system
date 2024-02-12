@@ -4,7 +4,6 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\Financial;
 
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class InterestRate
 {
@@ -35,7 +34,7 @@ class InterestRate
         }
 
         if ($nominalRate <= 0 || $periodsPerYear < 1) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
 
         return ((1 + $nominalRate / $periodsPerYear) ** $periodsPerYear) - 1;
@@ -64,7 +63,7 @@ class InterestRate
         }
 
         if ($effectiveRate <= 0 || $periodsPerYear < 1) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
 
         // Calculate

@@ -259,11 +259,10 @@ class PageSetup
     /**
      * First page number.
      *
-     * @var ?int
+     * @var int
      */
     private $firstPageNumber;
 
-    /** @var string */
     private $pageOrder = self::PAGEORDER_DOWN_THEN_OVER;
 
     /**
@@ -376,7 +375,7 @@ class PageSetup
     {
         // Microsoft Office Excel 2007 only allows setting a scale between 10 and 400 via the user interface,
         // but it is apparently still able to handle any scale >= 0, where 0 results in 100
-        if ($scale === null || $scale >= 0) {
+        if (($scale >= 0) || $scale === null) {
             $this->scale = $scale;
             if ($update) {
                 $this->fitToPage = false;
@@ -475,7 +474,7 @@ class PageSetup
      */
     public function isColumnsToRepeatAtLeftSet()
     {
-        if (!empty($this->columnsToRepeatAtLeft)) {
+        if (is_array($this->columnsToRepeatAtLeft)) {
             if ($this->columnsToRepeatAtLeft[0] != '' && $this->columnsToRepeatAtLeft[1] != '') {
                 return true;
             }
@@ -530,7 +529,7 @@ class PageSetup
      */
     public function isRowsToRepeatAtTopSet()
     {
-        if (!empty($this->rowsToRepeatAtTop)) {
+        if (is_array($this->rowsToRepeatAtTop)) {
             if ($this->rowsToRepeatAtTop[0] != 0 && $this->rowsToRepeatAtTop[1] != 0) {
                 return true;
             }
@@ -639,9 +638,9 @@ class PageSetup
     public function getPrintArea($index = 0)
     {
         if ($index == 0) {
-            return (string) $this->printArea;
+            return $this->printArea;
         }
-        $printAreas = explode(',', (string) $this->printArea);
+        $printAreas = explode(',', $this->printArea);
         if (isset($printAreas[$index - 1])) {
             return $printAreas[$index - 1];
         }
@@ -664,7 +663,7 @@ class PageSetup
         if ($index == 0) {
             return $this->printArea !== null;
         }
-        $printAreas = explode(',', (string) $this->printArea);
+        $printAreas = explode(',', $this->printArea);
 
         return isset($printAreas[$index - 1]);
     }
@@ -684,7 +683,7 @@ class PageSetup
         if ($index == 0) {
             $this->printArea = null;
         } else {
-            $printAreas = explode(',', (string) $this->printArea);
+            $printAreas = explode(',', $this->printArea);
             if (isset($printAreas[$index - 1])) {
                 unset($printAreas[$index - 1]);
                 $this->printArea = implode(',', $printAreas);
@@ -732,7 +731,7 @@ class PageSetup
             if ($index == 0) {
                 $this->printArea = $value;
             } else {
-                $printAreas = explode(',', (string) $this->printArea);
+                $printAreas = explode(',', $this->printArea);
                 if ($index < 0) {
                     $index = count($printAreas) - abs($index) + 1;
                 }
@@ -746,9 +745,9 @@ class PageSetup
             if ($index == 0) {
                 $this->printArea = $this->printArea ? ($this->printArea . ',' . $value) : $value;
             } else {
-                $printAreas = explode(',', (string) $this->printArea);
+                $printAreas = explode(',', $this->printArea);
                 if ($index < 0) {
-                    $index = (int) abs($index) - 1;
+                    $index = abs($index) - 1;
                 }
                 if ($index > count($printAreas)) {
                     throw new PhpSpreadsheetException('Invalid index for setting print range.');
@@ -841,7 +840,7 @@ class PageSetup
     /**
      * Get first page number.
      *
-     * @return ?int
+     * @return int
      */
     public function getFirstPageNumber()
     {
@@ -851,7 +850,7 @@ class PageSetup
     /**
      * Set first page number.
      *
-     * @param ?int $value
+     * @param int $value
      *
      * @return $this
      */
@@ -884,5 +883,20 @@ class PageSetup
         }
 
         return $this;
+    }
+
+    /**
+     * Implement PHP __clone to create a deep clone, not just a shallow copy.
+     */
+    public function __clone()
+    {
+        $vars = get_object_vars($this);
+        foreach ($vars as $key => $value) {
+            if (is_object($value)) {
+                $this->$key = clone $value;
+            } else {
+                $this->$key = $value;
+            }
+        }
     }
 }

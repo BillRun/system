@@ -2,14 +2,11 @@
 
 namespace PhpOffice\PhpSpreadsheet\Calculation\LookupRef;
 
-use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
+use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 use PhpOffice\PhpSpreadsheet\Calculation\LookupRef;
 
 class Lookup
 {
-    use ArrayEnabled;
-
     /**
      * LOOKUP
      * The LOOKUP function searches for value either from a one-row or one-column range or from an array.
@@ -22,12 +19,10 @@ class Lookup
      */
     public static function lookup($lookupValue, $lookupVector, $resultVector = null)
     {
-        if (is_array($lookupValue)) {
-            return self::evaluateArrayArgumentsSubset([self::class, __FUNCTION__], 1, $lookupValue, $lookupVector, $resultVector);
-        }
+        $lookupValue = Functions::flattenSingleValue($lookupValue);
 
         if (!is_array($lookupVector)) {
-            return ExcelError::NA();
+            return Functions::NA();
         }
         $hasResultVector = isset($resultVector);
         $lookupRows = self::rowCount($lookupVector);
@@ -39,7 +34,7 @@ class Lookup
             $lookupColumns = self::columnCount($lookupVector);
         }
 
-        $resultVector = self::verifyResultVector($resultVector ?? $lookupVector);
+        $resultVector = self::verifyResultVector($lookupVector, $resultVector);
 
         if ($lookupRows === 2 && !$hasResultVector) {
             $resultVector = array_pop($lookupVector);
@@ -78,8 +73,12 @@ class Lookup
         return $lookupVector;
     }
 
-    private static function verifyResultVector(array $resultVector): array
+    private static function verifyResultVector(array $lookupVector, $resultVector)
     {
+        if ($resultVector === null) {
+            $resultVector = $lookupVector;
+        }
+
         $resultRows = self::rowCount($resultVector);
         $resultColumns = self::columnCount($resultVector);
 

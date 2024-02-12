@@ -5,9 +5,6 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\TextData;
 use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception as CalcExp;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
-use PhpOffice\PhpSpreadsheet\Cell\DataType;
-use PhpOffice\PhpSpreadsheet\Shared\StringHelper;
 
 class Replace
 {
@@ -38,20 +35,16 @@ class Replace
         try {
             $start = Helpers::extractInt($start, 1, 0, true);
             $chars = Helpers::extractInt($chars, 0, 0, true);
-            $oldText = Helpers::extractString($oldText, true);
-            $newText = Helpers::extractString($newText, true);
-            $left = StringHelper::substring($oldText, 0, $start - 1);
+            $oldText = Helpers::extractString($oldText);
+            $newText = Helpers::extractString($newText);
+            $left = mb_substr($oldText, 0, $start - 1, 'UTF-8');
 
-            $right = StringHelper::substring($oldText, $start + $chars - 1, null);
+            $right = mb_substr($oldText, $start + $chars - 1, null, 'UTF-8');
         } catch (CalcExp $e) {
             return $e->getMessage();
         }
-        $returnValue = $left . $newText . $right;
-        if (StringHelper::countCharacters($returnValue) > DataType::MAX_STRING_LENGTH) {
-            $returnValue = ExcelError::VALUE();
-        }
 
-        return $returnValue;
+        return $left . $newText . $right;
     }
 
     /**
@@ -77,42 +70,44 @@ class Replace
         }
 
         try {
-            $text = Helpers::extractString($text, true);
-            $fromText = Helpers::extractString($fromText, true);
-            $toText = Helpers::extractString($toText, true);
+            $text = Helpers::extractString($text);
+            $fromText = Helpers::extractString($fromText);
+            $toText = Helpers::extractString($toText);
             if ($instance === null) {
-                $returnValue = str_replace($fromText, $toText, $text);
-            } else {
-                if (is_bool($instance)) {
-                    if ($instance === false || Functions::getCompatibilityMode() !== Functions::COMPATIBILITY_OPENOFFICE) {
-                        return ExcelError::Value();
-                    }
-                    $instance = 1;
-                }
-                $instance = Helpers::extractInt($instance, 1, 0, true);
-                $returnValue = self::executeSubstitution($text, $fromText, $toText, $instance);
+                return str_replace($fromText, $toText, $text);
             }
+            if (is_bool($instance)) {
+                if ($instance === false || Functions::getCompatibilityMode() !== Functions::COMPATIBILITY_OPENOFFICE) {
+                    return Functions::Value();
+                }
+                $instance = 1;
+            }
+            $instance = Helpers::extractInt($instance, 1, 0, true);
         } catch (CalcExp $e) {
             return $e->getMessage();
         }
-        if (StringHelper::countCharacters($returnValue) > DataType::MAX_STRING_LENGTH) {
-            $returnValue = ExcelError::VALUE();
-        }
 
-        return $returnValue;
+        return self::executeSubstitution($text, $fromText, $toText, $instance);
     }
 
-    private static function executeSubstitution(string $text, string $fromText, string $toText, int $instance): string
+    /**
+     * @return string
+     */
+    private static function executeSubstitution(string $text, string $fromText, string $toText, int $instance)
     {
         $pos = -1;
         while ($instance > 0) {
             $pos = mb_strpos($text, $fromText, $pos + 1, 'UTF-8');
             if ($pos === false) {
-                return $text;
+                break;
             }
             --$instance;
         }
 
-        return Functions::scalar(self::REPLACE($text, ++$pos, StringHelper::countCharacters($fromText), $toText));
+        if ($pos !== false) {
+            return Functions::scalar(self::REPLACE($text, ++$pos, mb_strlen($fromText, 'UTF-8'), $toText));
+        }
+
+        return $text;
     }
 }

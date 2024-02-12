@@ -48,14 +48,6 @@ class Trend
      */
     private static $trendCache = [];
 
-    /**
-     * @param string $trendType
-     * @param array $yValues
-     * @param array $xValues
-     * @param bool $const
-     *
-     * @return mixed
-     */
     public static function calculate($trendType = self::TREND_BEST_FIT, $yValues = [], $xValues = [], $const = true)
     {
         //    Calculate number of points in each dataset
@@ -80,6 +72,7 @@ class Trend
             case self::TREND_POWER:
                 if (!isset(self::$trendCache[$key])) {
                     $className = '\PhpOffice\PhpSpreadsheet\Shared\Trend\\' . $trendType . 'BestFit';
+                    // @phpstan-ignore-next-line
                     self::$trendCache[$key] = new $className($yValues, $xValues, $const);
                 }
 
@@ -90,7 +83,7 @@ class Trend
             case self::TREND_POLYNOMIAL_5:
             case self::TREND_POLYNOMIAL_6:
                 if (!isset(self::$trendCache[$key])) {
-                    $order = (int) substr($trendType, -1);
+                    $order = substr($trendType, -1);
                     self::$trendCache[$key] = new PolynomialBestFit($order, $yValues, $xValues);
                 }
 
@@ -103,13 +96,12 @@ class Trend
                 $bestFitValue = [];
                 foreach (self::$trendTypes as $trendMethod) {
                     $className = '\PhpOffice\PhpSpreadsheet\Shared\Trend\\' . $trendType . 'BestFit';
-                    //* @phpstan-ignore-next-line
                     $bestFit[$trendMethod] = new $className($yValues, $xValues, $const);
                     $bestFitValue[$trendMethod] = $bestFit[$trendMethod]->getGoodnessOfFit();
                 }
                 if ($trendType != self::TREND_BEST_FIT_NO_POLY) {
                     foreach (self::$trendTypePolynomialOrders as $trendMethod) {
-                        $order = (int) substr($trendMethod, -1);
+                        $order = substr($trendMethod, -1);
                         $bestFit[$trendMethod] = new PolynomialBestFit($order, $yValues, $xValues);
                         if ($bestFit[$trendMethod]->getError()) {
                             unset($bestFit[$trendMethod]);

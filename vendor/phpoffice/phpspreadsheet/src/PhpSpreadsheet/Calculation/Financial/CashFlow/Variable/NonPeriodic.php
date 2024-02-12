@@ -5,7 +5,6 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\Financial\CashFlow\Variable;
 use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class NonPeriodic
 {
@@ -42,7 +41,7 @@ class NonPeriodic
         // create an initial range, with a root somewhere between 0 and guess
         $guess = Functions::flattenSingleValue($guess) ?? self::DEFAULT_GUESS;
         if (!is_numeric($guess)) {
-            return ExcelError::VALUE();
+            return Functions::VALUE();
         }
         $guess = ($guess + 0.0) ?: self::DEFAULT_GUESS;
         $x1 = 0.0;
@@ -51,11 +50,8 @@ class NonPeriodic
         $f2 = self::xnpvOrdered($x2, $values, $dates, false);
         $found = false;
         for ($i = 0; $i < self::FINANCIAL_MAX_ITERATIONS; ++$i) {
-            if (!is_numeric($f1)) {
-                return $f1;
-            }
-            if (!is_numeric($f2)) {
-                return $f2;
+            if (!is_numeric($f1) || !is_numeric($f2)) {
+                break;
             }
             $f1 = (float) $f1;
             $f2 = (float) $f2;
@@ -71,32 +67,11 @@ class NonPeriodic
                 $f2 = self::xnpvOrdered($x2, $values, $dates, false);
             }
         }
-        if ($found) {
-            return self::xirrPart3($values, $dates, $x1, $x2);
+        if (!$found) {
+            return Functions::NAN();
         }
 
-        // Newton-Raphson didn't work - try bisection
-        $x1 = $guess - 0.5;
-        $x2 = $guess + 0.5;
-        for ($i = 0; $i < self::FINANCIAL_MAX_ITERATIONS; ++$i) {
-            $f1 = self::xnpvOrdered($x1, $values, $dates, false, true);
-            $f2 = self::xnpvOrdered($x2, $values, $dates, false, true);
-            if (!is_numeric($f1) || !is_numeric($f2)) {
-                break;
-            }
-            if ($f1 * $f2 <= 0) {
-                $found = true;
-
-                break;
-            }
-            $x1 -= 0.5;
-            $x2 += 0.5;
-        }
-        if ($found) {
-            return self::xirrBisection($values, $dates, $x1, $x2);
-        }
-
-        return ExcelError::NAN();
+        return self::xirrPart3($values, $dates, $x1, $x2);
     }
 
     /**
@@ -142,10 +117,10 @@ class NonPeriodic
         $valuesIsArray = count($values) > 1;
         $datesIsArray = count($dates) > 1;
         if (!$valuesIsArray && !$datesIsArray) {
-            return ExcelError::NA();
+            return Functions::NA();
         }
         if (count($values) != count($dates)) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
 
         $datesCount = count($dates);
@@ -168,7 +143,7 @@ class NonPeriodic
         for ($i = 0; $i < $valCount; ++$i) {
             $fld = $values[$i];
             if (!is_numeric($fld)) {
-                return ExcelError::VALUE();
+                return Functions::VALUE();
             } elseif ($fld > 0) {
                 $foundpos = true;
             } elseif ($fld < 0) {
@@ -176,7 +151,7 @@ class NonPeriodic
             }
         }
         if (!self::bothNegAndPos($foundneg, $foundpos)) {
-            return ExcelError::NAN();
+            return Functions::NAN();
         }
 
         return '';
@@ -196,7 +171,7 @@ class NonPeriodic
             $dx = $x1 - $x2;
         }
 
-        $rslt = ExcelError::VALUE();
+        $rslt = Functions::VALUE();
         for ($i = 0; $i < self::FINANCIAL_MAX_ITERATIONS; ++$i) {
             $dx *= 0.5;
             $x_mid = $rtb + $dx;
@@ -215,52 +190,13 @@ class NonPeriodic
     }
 
     /**
-     * @return float|string
-     */
-    private static function xirrBisection(array $values, array $dates, float $x1, float $x2)
-    {
-        $rslt = ExcelError::NAN();
-        for ($i = 0; $i < self::FINANCIAL_MAX_ITERATIONS; ++$i) {
-            $rslt = ExcelError::NAN();
-            $f1 = self::xnpvOrdered($x1, $values, $dates, false, true);
-            $f2 = self::xnpvOrdered($x2, $values, $dates, false, true);
-            if (!is_numeric($f1) || !is_numeric($f2)) {
-                break;
-            }
-            $f1 = (float) $f1;
-            $f2 = (float) $f2;
-            if (abs($f1) < self::FINANCIAL_PRECISION && abs($f2) < self::FINANCIAL_PRECISION) {
-                break;
-            }
-            if ($f1 * $f2 > 0) {
-                break;
-            }
-            $rslt = ($x1 + $x2) / 2;
-            $f3 = self::xnpvOrdered($rslt, $values, $dates, false, true);
-            if (!is_float($f3)) {
-                break;
-            }
-            if ($f3 * $f1 < 0) {
-                $x2 = $rslt;
-            } else {
-                $x1 = $rslt;
-            }
-            if (abs($f3) < self::FINANCIAL_PRECISION) {
-                break;
-            }
-        }
-
-        return $rslt;
-    }
-
-    /**
      * @param mixed $rate
      * @param mixed $values
      * @param mixed $dates
      *
      * @return float|string
      */
-    private static function xnpvOrdered($rate, $values, $dates, bool $ordered = true, bool $capAtNegative1 = false)
+    private static function xnpvOrdered($rate, $values, $dates, bool $ordered = true)
     {
         $rate = Functions::flattenSingleValue($rate);
         $values = Functions::flattenArray($values);
@@ -269,9 +205,6 @@ class NonPeriodic
 
         try {
             self::validateXnpv($rate, $values, $dates);
-            if ($capAtNegative1 && $rate <= -1) {
-                $rate = -1.0 + 1.0E-10;
-            }
             $date0 = DateTimeExcel\Helpers::getDateValue($dates[0]);
         } catch (Exception $e) {
             return $e->getMessage();
@@ -280,7 +213,7 @@ class NonPeriodic
         $xnpv = 0.0;
         for ($i = 0; $i < $valCount; ++$i) {
             if (!is_numeric($values[$i])) {
-                return ExcelError::VALUE();
+                return Functions::VALUE();
             }
 
             try {
@@ -289,9 +222,9 @@ class NonPeriodic
                 return $e->getMessage();
             }
             if ($date0 > $datei) {
-                $dif = $ordered ? ExcelError::NAN() : -((int) DateTimeExcel\Difference::interval($datei, $date0, 'd'));
+                $dif = $ordered ? Functions::NAN() : -((int) DateTimeExcel\Difference::interval($datei, $date0, 'd'));
             } else {
-                $dif = Functions::scalar(DateTimeExcel\Difference::interval($date0, $datei, 'd'));
+                $dif = DateTimeExcel\Difference::interval($date0, $datei, 'd');
             }
             if (!is_numeric($dif)) {
                 return $dif;
@@ -303,7 +236,7 @@ class NonPeriodic
             }
         }
 
-        return is_finite($xnpv) ? $xnpv : ExcelError::VALUE();
+        return is_finite($xnpv) ? $xnpv : Functions::VALUE();
     }
 
     /**
@@ -312,14 +245,14 @@ class NonPeriodic
     private static function validateXnpv($rate, array $values, array $dates): void
     {
         if (!is_numeric($rate)) {
-            throw new Exception(ExcelError::VALUE());
+            throw new Exception(Functions::VALUE());
         }
         $valCount = count($values);
         if ($valCount != count($dates)) {
-            throw new Exception(ExcelError::NAN());
+            throw new Exception(Functions::NAN());
         }
         if ($valCount > 1 && ((min($values) > 0) || (max($values) < 0))) {
-            throw new Exception(ExcelError::NAN());
+            throw new Exception(Functions::NAN());
         }
     }
 }
