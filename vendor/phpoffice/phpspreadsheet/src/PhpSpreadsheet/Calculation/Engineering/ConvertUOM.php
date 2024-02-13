@@ -4,7 +4,7 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\Engineering;
 
 use PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
-use PhpOffice\PhpSpreadsheet\Calculation\Functions;
+use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class ConvertUOM
 {
@@ -106,6 +106,7 @@ class ConvertUOM
         'W' => ['Group' => self::CATEGORY_POWER, 'Unit Name' => 'Watt', 'AllowPrefix' => true],
         'w' => ['Group' => self::CATEGORY_POWER, 'Unit Name' => 'Watt', 'AllowPrefix' => true],
         'PS' => ['Group' => self::CATEGORY_POWER, 'Unit Name' => 'Pferdestärke', 'AllowPrefix' => false],
+        // Magnetism
         'T' => ['Group' => self::CATEGORY_MAGNETISM, 'Unit Name' => 'Tesla', 'AllowPrefix' => true],
         'ga' => ['Group' => self::CATEGORY_MAGNETISM, 'Unit Name' => 'Gauss', 'AllowPrefix' => true],
         // Temperature
@@ -539,18 +540,18 @@ class ConvertUOM
         }
 
         if (!is_numeric($value)) {
-            return Functions::VALUE();
+            return ExcelError::VALUE();
         }
 
         try {
             [$fromUOM, $fromCategory, $fromMultiplier] = self::getUOMDetails($fromUOM);
             [$toUOM, $toCategory, $toMultiplier] = self::getUOMDetails($toUOM);
         } catch (Exception $e) {
-            return Functions::NA();
+            return ExcelError::NA();
         }
 
         if ($fromCategory !== $toCategory) {
-            return Functions::NA();
+            return ExcelError::NA();
         }
 
         // @var float $value

@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Money\Parser;
 
 use Money\Currencies;
@@ -10,57 +8,70 @@ use Money\Exception\ParserException;
 use Money\Money;
 use Money\MoneyParser;
 use Money\Number;
-use NumberFormatter;
-
-use function assert;
-use function ltrim;
-use function str_pad;
-use function str_replace;
-use function strlen;
-use function strpos;
-use function substr;
 
 /**
  * Parses a string into a Money object using intl extension.
+ *
+ * @author Frederik Bosch <f.bosch@genkgo.nl>
  */
 final class IntlMoneyParser implements MoneyParser
 {
-    private NumberFormatter $formatter;
+    /**
+     * @var \NumberFormatter
+     */
+    private $formatter;
 
-    private Currencies $currencies;
+    /**
+     * @var Currencies
+     */
+    private $currencies;
 
-    public function __construct(NumberFormatter $formatter, Currencies $currencies)
+    public function __construct(\NumberFormatter $formatter, Currencies $currencies)
     {
-        $this->formatter  = $formatter;
+        $this->formatter = $formatter;
         $this->currencies = $currencies;
     }
 
-    public function parse(string $money, Currency|null $fallbackCurrency = null): Money
+    /**
+     * {@inheritdoc}
+     */
+    public function parse($money, $forceCurrency = null)
     {
-        $currency = '';
-        // phpcs:ignore
-        /** @var string|float|bool|null $decimal */
+        if (!is_string($money)) {
+            throw new ParserException('Formatted raw money should be string, e.g. $1.00');
+        }
+
+        $currency = null;
         $decimal = $this->formatter->parseCurrency($money, $currency);
 
-        if ($decimal === false || $decimal === null) {
-            throw new ParserException('Cannot parse ' . $money . ' to Money. ' . $this->formatter->getErrorMessage());
+        if (false === $decimal) {
+            throw new ParserException('Cannot parse '.$money.' to Money. '.$this->formatter->getErrorMessage());
         }
 
-        if ($fallbackCurrency === null) {
-            assert($currency !== '');
-
-            $fallbackCurrency = new Currency($currency);
+        if (null !== $forceCurrency) {
+            $currency = $forceCurrency;
+        } else {
+            $currency = new Currency($currency);
         }
 
-        $decimal         = (string) $decimal;
-        $subunit         = $this->currencies->subunitFor($fallbackCurrency);
+        /*
+         * This conversion is only required whilst currency can be either a string or a
+         * Currency object.
+         */
+        if (!$currency instanceof Currency) {
+            @trigger_error('Passing a currency as string is deprecated since 3.1 and will be removed in 4.0. Please pass a '.Currency::class.' instance instead.', E_USER_DEPRECATED);
+            $currency = new Currency($currency);
+        }
+
+        $decimal = (string) $decimal;
+        $subunit = $this->currencies->subunitFor($currency);
         $decimalPosition = strpos($decimal, '.');
 
-        if ($decimalPosition !== false) {
-            $decimalLength  = strlen($decimal);
+        if (false !== $decimalPosition) {
+            $decimalLength = strlen($decimal);
             $fractionDigits = $decimalLength - $decimalPosition - 1;
-            $decimal        = str_replace('.', '', $decimal);
-            $decimal        = Number::roundMoneyValue($decimal, $subunit, $fractionDigits);
+            $decimal = str_replace('.', '', $decimal);
+            $decimal = Number::roundMoneyValue($decimal, $subunit, $fractionDigits);
 
             if ($fractionDigits > $subunit) {
                 $decimal = substr($decimal, 0, $decimalPosition + $subunit);
@@ -71,17 +82,16 @@ final class IntlMoneyParser implements MoneyParser
             $decimal .= str_pad('', $subunit, '0');
         }
 
-        if ($decimal[0] === '-') {
-            $decimal = '-' . ltrim(substr($decimal, 1), '0');
+        if ('-' === $decimal[0]) {
+            $decimal = '-'.ltrim(substr($decimal, 1), '0');
         } else {
             $decimal = ltrim($decimal, '0');
         }
 
-        if ($decimal === '') {
+        if ('' === $decimal) {
             $decimal = '0';
         }
 
-        /** @psalm-var numeric-string $decimal */
-        return new Money($decimal, $fallbackCurrency);
+        return new Money($decimal, $currency);
     }
 }

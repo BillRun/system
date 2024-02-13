@@ -20,12 +20,6 @@
         }
     },
     "require": {
-        "php": "^7.4 || ^8.0"
-    },
-    "require-dev": {
-        "phpstan/phpstan": "^1.9"
-    },
-    "scripts": {
-        "phpstan": "phpstan analyse lib/"
+        "php": ">=5.4"
     }
 }

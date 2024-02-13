@@ -78,7 +78,7 @@ class Parser
     /**
      * The parse tree to be generated.
      *
-     * @var string
+     * @var array|string
      */
     public $parseTree;
 
@@ -531,7 +531,7 @@ class Parser
             {
                 return($this->convertFunction($token, $this->_func_args));
             }*/
-            // if it's an argument, ignore the token (the argument remains)
+        // if it's an argument, ignore the token (the argument remains)
         } elseif ($token == 'arg') {
             return '';
         }
@@ -778,8 +778,7 @@ class Parser
      */
     private function getRefIndex($ext_ref)
     {
-        $ext_ref = preg_replace("/^'/", '', $ext_ref); // Remove leading  ' if any.
-        $ext_ref = preg_replace("/'$/", '', $ext_ref); // Remove trailing ' if any.
+        $ext_ref = (string) preg_replace(["/^'/", "/'$/"], ['', ''], $ext_ref); // Remove leading and trailing ' if any.
         $ext_ref = str_replace('\'\'', '\'', $ext_ref); // Replace escaped '' with '
 
         // Check if there is a sheet range eg., Sheet1:Sheet2.
@@ -1446,6 +1445,9 @@ class Parser
         if (empty($tree)) { // If it's the first call use parseTree
             $tree = $this->parseTree;
         }
+        if (!is_array($tree) || !isset($tree['left'], $tree['right'], $tree['value'])) {
+            throw new WriterException('Unexpected non-array');
+        }
 
         if (is_array($tree['left'])) {
             $converted_tree = $this->toReversePolish($tree['left']);
@@ -1476,7 +1478,7 @@ class Parser
                 $left_tree = '';
             }
 
-            // add it's left subtree and return.
+            // add its left subtree and return.
             return $left_tree . $this->convertFunction($tree['value'], $tree['right']);
         }
         $converted_tree = $this->convert($tree['value']);

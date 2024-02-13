@@ -1,32 +1,41 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Money\Currencies;
 
-use AppendIterator;
 use Money\Currencies;
 use Money\Currency;
 use Money\Exception\UnknownCurrencyException;
-use Traversable;
 
 /**
  * Aggregates several currency repositories.
+ *
+ * @author Márk Sági-Kazár <mark.sagikazar@gmail.com>
  */
 final class AggregateCurrencies implements Currencies
 {
-    /** @var Currencies[] */
-    private array $currencies;
+    /**
+     * @var Currencies[]
+     */
+    private $currencies;
 
     /**
      * @param Currencies[] $currencies
      */
     public function __construct(array $currencies)
     {
+        foreach ($currencies as $c) {
+            if (false === $c instanceof Currencies) {
+                throw new \InvalidArgumentException('All currency repositories must implement '.Currencies::class);
+            }
+        }
+
         $this->currencies = $currencies;
     }
 
-    public function contains(Currency $currency): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function contains(Currency $currency)
     {
         foreach ($this->currencies as $currencies) {
             if ($currencies->contains($currency)) {
@@ -37,7 +46,10 @@ final class AggregateCurrencies implements Currencies
         return false;
     }
 
-    public function subunitFor(Currency $currency): int
+    /**
+     * {@inheritdoc}
+     */
+    public function subunitFor(Currency $currency)
     {
         foreach ($this->currencies as $currencies) {
             if ($currencies->contains($currency)) {
@@ -45,19 +57,19 @@ final class AggregateCurrencies implements Currencies
             }
         }
 
-        throw new UnknownCurrencyException('Cannot find currency ' . $currency->getCode());
+        throw new UnknownCurrencyException('Cannot find currency '.$currency->getCode());
     }
 
-    /** {@inheritDoc} */
-    public function getIterator(): Traversable
+    /**
+     * {@inheritdoc}
+     */
+    #[\ReturnTypeWillChange]
+    public function getIterator()
     {
-        /** @psalm-var AppendIterator&Traversable<int|string, Currency> $iterator */
-        $iterator = new AppendIterator();
+        $iterator = new \AppendIterator();
 
         foreach ($this->currencies as $currencies) {
-            $currencyIterator = $currencies->getIterator();
-            /** @psalm-var AppendIterator&Traversable<int|string, Currency> $currencyIterator */
-            $iterator->append($currencyIterator);
+            $iterator->append($currencies->getIterator());
         }
 
         return $iterator;

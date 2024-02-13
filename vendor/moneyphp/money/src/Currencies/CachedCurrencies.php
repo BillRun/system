@@ -1,79 +1,89 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Money\Currencies;
 
-use ArrayIterator;
-use Cache\TagInterop\TaggableCacheItemInterface;
-use CallbackFilterIterator;
+use Cache\Taggable\TaggableItemInterface;
 use Money\Currencies;
 use Money\Currency;
 use Psr\Cache\CacheItemPoolInterface;
-use Traversable;
-
-use function iterator_to_array;
 
 /**
  * Cache the result of currency checking.
+ *
+ * @author Márk Sági-Kazár <mark.sagikazar@gmail.com>
  */
 final class CachedCurrencies implements Currencies
 {
-    private Currencies $currencies;
+    /**
+     * @var Currencies
+     */
+    private $currencies;
 
-    private CacheItemPoolInterface $pool;
+    /**
+     * @var CacheItemPoolInterface
+     */
+    private $pool;
 
     public function __construct(Currencies $currencies, CacheItemPoolInterface $pool)
     {
         $this->currencies = $currencies;
-        $this->pool       = $pool;
+        $this->pool = $pool;
     }
 
-    public function contains(Currency $currency): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function contains(Currency $currency)
     {
-        $item = $this->pool->getItem('currency|availability|' . $currency->getCode());
+        $item = $this->pool->getItem('currency|availability|'.$currency->getCode());
 
-        if ($item->isHit() === false) {
+        if (false === $item->isHit()) {
             $item->set($this->currencies->contains($currency));
 
-            if ($item instanceof TaggableCacheItemInterface) {
-                $item->setTags(['currency.availability']);
+            if ($item instanceof TaggableItemInterface) {
+                $item->addTag('currency.availability');
             }
 
             $this->pool->save($item);
         }
 
-        return (bool) $item->get();
+        return $item->get();
     }
 
-    public function subunitFor(Currency $currency): int
+    /**
+     * {@inheritdoc}
+     */
+    public function subunitFor(Currency $currency)
     {
-        $item = $this->pool->getItem('currency|subunit|' . $currency->getCode());
+        $item = $this->pool->getItem('currency|subunit|'.$currency->getCode());
 
-        if ($item->isHit() === false) {
+        if (false === $item->isHit()) {
             $item->set($this->currencies->subunitFor($currency));
 
-            if ($item instanceof TaggableCacheItemInterface) {
-                $item->setTags(['currency.subunit']);
+            if ($item instanceof TaggableItemInterface) {
+                $item->addTag('currency.subunit');
             }
 
             $this->pool->save($item);
         }
 
-        return (int) $item->get();
+        return $item->get();
     }
 
-    /** {@inheritDoc} */
-    public function getIterator(): Traversable
+    /**
+     * {@inheritdoc}
+     */
+    #[\ReturnTypeWillChange]
+    public function getIterator()
     {
-        return new CallbackFilterIterator(
-            new ArrayIterator(iterator_to_array($this->currencies->getIterator())),
-            function (Currency $currency): bool {
-                $item = $this->pool->getItem('currency|availability|' . $currency->getCode());
+        return new \CallbackFilterIterator(
+            $this->currencies->getIterator(),
+            function (Currency $currency) {
+                $item = $this->pool->getItem('currency|availability|'.$currency->getCode());
                 $item->set(true);
 
-                if ($item instanceof TaggableCacheItemInterface) {
-                    $item->setTags(['currency.availability']);
+                if ($item instanceof TaggableItemInterface) {
+                    $item->addTag('currency.availability');
                 }
 
                 $this->pool->save($item);

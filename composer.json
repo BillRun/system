@@ -1,7 +1,7 @@
 {
     "require": {
         "php": "^7.0|8.0",
-        "phpoffice/phpspreadsheet": "1.22.*",
+        "phpoffice/phpspreadsheet": "^1.6",
         "league/omnipay": "3.0.2",
         "payrexx/omnipay-payrexx": "^1.1",
         "payrexx/payrexx": "^1.7.6"
@@ -19,10 +19,10 @@
         "codeception/module-webdriver": "^1.4",
         "codeception/module-asserts": "^1.3",
         "codeception/module-cli": "^1.1",
-        "codeception/module-rest": "^2.0",
+        "codeception/module-rest": "1.4.2",
         "codeception/module-phpbrowser": "1.0.1",
-        "codeception/module-mongodb": "^2.0",
-        "codeception/module-db": "^2.1",
+        "codeception/module-mongodb": "1.1.1",
+        "codeception/module-db": "1.2.0",
         "mongodb/mongodb": "^1.0",
         "vlucas/phpdotenv": "^2.0 | ^3.0 | ^4.0 | ^5.0"
     }

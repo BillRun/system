@@ -1,45 +1,49 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Money;
-
-use InvalidArgumentException;
-use JsonSerializable;
-
-use function assert;
-use function is_numeric;
-use function preg_match;
-use function sprintf;
 
 /**
  * Currency Pair holding a base, a counter currency and a conversion ratio.
  *
+ * @author Mathias Verraes
+ *
  * @see http://en.wikipedia.org/wiki/Currency_pair
  */
-final class CurrencyPair implements JsonSerializable
+final class CurrencyPair implements \JsonSerializable
 {
     /**
      * Currency to convert from.
+     *
+     * @var Currency
      */
-    private Currency $baseCurrency;
+    private $baseCurrency;
 
     /**
      * Currency to convert to.
+     *
+     * @var Currency
      */
-    private Currency $counterCurrency;
-
-    /** @psalm-var numeric-string */
-    private string $conversionRatio;
+    private $counterCurrency;
 
     /**
-     * @psalm-param numeric-string $conversionRatio
+     * @var float
      */
-    public function __construct(Currency $baseCurrency, Currency $counterCurrency, string $conversionRatio)
+    private $conversionRatio;
+
+    /**
+     * @param float $conversionRatio
+     *
+     * @throws \InvalidArgumentException If conversion ratio is not numeric
+     */
+    public function __construct(Currency $baseCurrency, Currency $counterCurrency, $conversionRatio)
     {
+        if (!is_numeric($conversionRatio)) {
+            throw new \InvalidArgumentException('Conversion ratio must be numeric');
+        }
+
         $this->counterCurrency = $counterCurrency;
-        $this->baseCurrency    = $baseCurrency;
-        $this->conversionRatio = $conversionRatio;
+        $this->baseCurrency = $baseCurrency;
+        $this->conversionRatio = (float) $conversionRatio;
     }
 
     /**
@@ -47,39 +51,41 @@ final class CurrencyPair implements JsonSerializable
      *
      * @param string $iso String representation of the form "EUR/USD 1.2500"
      *
-     * @throws InvalidArgumentException Format of $iso is invalid.
+     * @return CurrencyPair
+     *
+     * @throws \InvalidArgumentException Format of $iso is invalid
      */
-    public static function createFromIso(string $iso): CurrencyPair
+    public static function createFromIso($iso)
     {
         $currency = '([A-Z]{2,3})';
-        $ratio    = '([0-9]*\.?[0-9]+)'; // @see http://www.regular-expressions.info/floatingpoint.html
-        $pattern  = '#' . $currency . '/' . $currency . ' ' . $ratio . '#';
+        $ratio = "([0-9]*\.?[0-9]+)"; // @see http://www.regular-expressions.info/floatingpoint.html
+        $pattern = '#'.$currency.'/'.$currency.' '.$ratio.'#';
 
         $matches = [];
 
-        if (! preg_match($pattern, $iso, $matches)) {
-            throw new InvalidArgumentException(sprintf('Cannot create currency pair from ISO string "%s", format of string is invalid', $iso));
+        if (!preg_match($pattern, $iso, $matches)) {
+            throw new \InvalidArgumentException(sprintf('Cannot create currency pair from ISO string "%s", format of string is invalid', $iso));
         }
-
-        assert($matches[1] !== '');
-        assert($matches[2] !== '');
-        assert(is_numeric($matches[3]));
 
         return new self(new Currency($matches[1]), new Currency($matches[2]), $matches[3]);
     }
 
     /**
      * Returns the counter currency.
+     *
+     * @return Currency
      */
-    public function getCounterCurrency(): Currency
+    public function getCounterCurrency()
     {
         return $this->counterCurrency;
     }
 
     /**
      * Returns the base currency.
+     *
+     * @return Currency
      */
-    public function getBaseCurrency(): Currency
+    public function getBaseCurrency()
     {
         return $this->baseCurrency;
     }
@@ -87,29 +93,33 @@ final class CurrencyPair implements JsonSerializable
     /**
      * Returns the conversion ratio.
      *
-     * @psalm-return numeric-string
+     * @return float
      */
-    public function getConversionRatio(): string
+    public function getConversionRatio()
     {
         return $this->conversionRatio;
     }
 
     /**
      * Checks if an other CurrencyPair has the same parameters as this.
+     *
+     * @return bool
      */
-    public function equals(CurrencyPair $other): bool
+    public function equals(CurrencyPair $other)
     {
-        return $this->baseCurrency->equals($other->baseCurrency)
+        return
+            $this->baseCurrency->equals($other->baseCurrency)
             && $this->counterCurrency->equals($other->counterCurrency)
-            && $this->conversionRatio === $other->conversionRatio;
+            && $this->conversionRatio === $other->conversionRatio
+        ;
     }
 
     /**
      * {@inheritdoc}
      *
-     * @psalm-return array{baseCurrency: Currency, counterCurrency: Currency, ratio: numeric-string}
+     * @return array
      */
-    public function jsonSerialize(): array
+    public function jsonSerialize()
     {
         return [
             'baseCurrency' => $this->baseCurrency,

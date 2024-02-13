@@ -1,152 +1,127 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Money;
-
-use Money\Exception\InvalidArgumentException;
 
 /**
  * Money calculations abstracted away from the Money value object.
  *
- * @internal the calculator component is an internal detail of this library: it is only supposed to be replaced if
- *           your system requires a custom architecture for operating on large numbers.
+ * @author Frederik Bosch <f.bosch@genkgo.nl>
  */
 interface Calculator
 {
     /**
+     * Returns whether the calculator is supported in
+     * the current server environment.
+     *
+     * @return bool
+     */
+    public static function supported();
+
+    /**
      * Compare a to b.
      *
-     * Retrieves a negative value if $a < $b.
-     * Retrieves a positive value if $a > $b.
-     * Retrieves zero if $a == $b
+     * @param string $a
+     * @param string $b
      *
-     * @psalm-param numeric-string $a
-     * @psalm-param numeric-string $b
-     *
-     * @psalm-pure
+     * @return int
      */
-    public static function compare(string $a, string $b): int;
+    public function compare($a, $b);
 
     /**
      * Add added to amount.
      *
-     * @psalm-param numeric-string $amount
-     * @psalm-param numeric-string $addend
+     * @param string $amount
+     * @param string $addend
      *
-     * @psalm-return numeric-string
-     *
-     * @psalm-pure
+     * @return string
      */
-    public static function add(string $amount, string $addend): string;
+    public function add($amount, $addend);
 
     /**
      * Subtract subtrahend from amount.
      *
-     * @psalm-param numeric-string $amount
-     * @psalm-param numeric-string $subtrahend
+     * @param string $amount
+     * @param string $subtrahend
      *
-     * @psalm-return numeric-string
-     *
-     * @psalm-pure
+     * @return string
      */
-    public static function subtract(string $amount, string $subtrahend): string;
+    public function subtract($amount, $subtrahend);
 
     /**
      * Multiply amount with multiplier.
      *
-     * @psalm-param numeric-string $amount
-     * @psalm-param numeric-string $multiplier
+     * @param string           $amount
+     * @param int|float|string $multiplier
      *
-     * @psalm-return numeric-string
-     *
-     * @psalm-pure
+     * @return string
      */
-    public static function multiply(string $amount, string $multiplier): string;
+    public function multiply($amount, $multiplier);
 
     /**
      * Divide amount with divisor.
      *
-     * @psalm-param numeric-string $amount
-     * @psalm-param numeric-string $divisor
+     * @param string           $amount
+     * @param int|float|string $divisor
      *
-     * @psalm-return numeric-string
-     *
-     * @throws InvalidArgumentException when $divisor is zero.
-     *
-     * @psalm-pure
+     * @return string
      */
-    public static function divide(string $amount, string $divisor): string;
+    public function divide($amount, $divisor);
 
     /**
      * Round number to following integer.
      *
-     * @psalm-param numeric-string $number
+     * @param string $number
      *
-     * @psalm-return numeric-string
-     *
-     * @psalm-pure
+     * @return string
      */
-    public static function ceil(string $number): string;
+    public function ceil($number);
 
     /**
      * Round number to preceding integer.
      *
-     * @psalm-param numeric-string $number
+     * @param string $number
      *
-     * @psalm-return numeric-string
-     *
-     * @psalm-pure
+     * @return string
      */
-    public static function floor(string $number): string;
+    public function floor($number);
 
     /**
      * Returns the absolute value of the number.
      *
-     * @psalm-param numeric-string $number
+     * @param string $number
      *
-     * @psalm-return numeric-string
-     *
-     * @psalm-pure
+     * @return string
      */
-    public static function absolute(string $number): string;
+    public function absolute($number);
 
     /**
      * Round number, use rounding mode for tie-breaker.
      *
-     * @psalm-param numeric-string $number
-     * @psalm-param Money::ROUND_* $roundingMode
+     * @param int|float|string $number
+     * @param int              $roundingMode
      *
-     * @psalm-return numeric-string
-     *
-     * @psalm-pure
+     * @return string
      */
-    public static function round(string $number, int $roundingMode): string;
+    public function round($number, $roundingMode);
 
     /**
      * Share amount among ratio / total portions.
      *
-     * @psalm-param numeric-string $amount
-     * @psalm-param numeric-string $ratio
-     * @psalm-param numeric-string $total
+     * @param string           $amount
+     * @param int|float|string $ratio
+     * @param int|float|string $total
      *
-     * @psalm-return numeric-string
-     *
-     * @psalm-pure
+     * @return string
      */
-    public static function share(string $amount, string $ratio, string $total): string;
+    public function share($amount, $ratio, $total);
 
     /**
      * Get the modulus of an amount.
      *
-     * @psalm-param numeric-string $amount
-     * @psalm-param numeric-string $divisor
+     * @param string           $amount
+     * @param int|float|string $divisor
      *
-     * @psalm-return numeric-string
-     *
-     * @throws InvalidArgumentException when $divisor is zero.
-     *
-     * @psalm-pure
+     * @return string
      */
-    public static function mod(string $amount, string $divisor): string;
+    public function mod($amount, $divisor);
 }

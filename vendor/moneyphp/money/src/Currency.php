@@ -1,59 +1,86 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Money;
-
-use JsonSerializable;
-
-use function strtoupper;
 
 /**
  * Currency Value Object.
  *
  * Holds Currency specific data.
  *
+ * @author Mathias Verraes
+ *
  * @psalm-immutable
  */
-final class Currency implements JsonSerializable
+final class Currency implements \JsonSerializable
 {
     /**
      * Currency code.
      *
-     * @psalm-var non-empty-string
+     * @var string
      */
-    private string $code;
+    private $code;
 
-    /** @psalm-param non-empty-string $code */
-    public function __construct(string $code)
+    /**
+     * @param string $code
+     */
+    public function __construct($code)
     {
-        $this->code = strtoupper($code);
+        if (!is_string($code)) {
+            throw new \InvalidArgumentException('Currency code should be string');
+        }
+
+        if ($code === '') {
+            throw new \InvalidArgumentException('Currency code should not be empty string');
+        }
+
+        $this->code = $code;
     }
 
     /**
      * Returns the currency code.
      *
-     * @psalm-return non-empty-string
+     * @return string
      */
-    public function getCode(): string
+    public function getCode()
     {
         return $this->code;
     }
 
     /**
      * Checks whether this currency is the same as an other.
+     *
+     * @return bool
      */
-    public function equals(Currency $other): bool
+    public function equals(Currency $other)
     {
         return $this->code === $other->code;
     }
 
-    public function __toString(): string
+    /**
+     * Checks whether this currency is available in the passed context.
+     *
+     * @return bool
+     */
+    public function isAvailableWithin(Currencies $currencies)
+    {
+        return $currencies->contains($this);
+    }
+
+    /**
+     * @return string
+     */
+    public function __toString()
     {
         return $this->code;
     }
 
-    public function jsonSerialize(): string
+    /**
+     * {@inheritdoc}
+     *
+     * @return string
+     */
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize()
     {
         return $this->code;
     }
