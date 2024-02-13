@@ -60,7 +60,13 @@ if [ -z $DB_AUTHSRC ]; then
 	DB_AUTHSRC="admin"
 fi
 
-MONGO_ARGS=" $DB_NAME --host $DB_HOST --authenticationDatabase=$DB_AUTHSRC "
+MONGO_ARGS="  --authenticationDatabase=$DB_AUTHSRC "
+if [ -z `echo $DB_HOST | grep 'mongodb://'` ]; then
+        MONGO_ARGS=$MONGO_ARGS" $DB_NAME --host $DB_HOST "
+else
+        MONGO_ARGS=$MONGO_ARGS" $DB_HOST/$DB_NAME "
+fi
+
 if [ -n "$DB_USER" ] && [ -n $DB_PASSWORD ]; then
 	MONGO_ARGS=$MONGO_ARGS" -u$DB_USER -p$DB_PASSWORD "
 fi
