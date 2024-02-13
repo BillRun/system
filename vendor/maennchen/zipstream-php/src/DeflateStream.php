@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace ZipStream;
@@ -59,7 +58,7 @@ class DeflateStream extends Stream
             'comment' => $options->getComment(),
             'method' => $options->getMethod(),
             'deflateLevel' => $options->getDeflateLevel(),
-            'time' => $options->getTime(),
+            'time' => $options->getTime()
         ];
         $this->filter = stream_filter_append(
             $this->stream,
