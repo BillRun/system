@@ -114,6 +114,7 @@ abstract class Supervisor implements IComparable
             }
         }
     }
+<<<<<<< HEAD
 
     /**
      * Export style as array.
@@ -155,4 +156,6 @@ abstract class Supervisor implements IComparable
             $exportedArray[$index] = $objOrValue;
         }
     }
+=======
+>>>>>>> release-5.14
 }

@@ -44,18 +44,10 @@ class Trend
     /**
      * Cached results for each method when trying to identify which provides the best fit.
      *
-     * @var BestFit[]
+     * @var bestFit[]
      */
     private static $trendCache = [];
 
-    /**
-     * @param string $trendType
-     * @param array $yValues
-     * @param array $xValues
-     * @param bool $const
-     *
-     * @return mixed
-     */
     public static function calculate($trendType = self::TREND_BEST_FIT, $yValues = [], $xValues = [], $const = true)
     {
         //    Calculate number of points in each dataset
@@ -63,9 +55,10 @@ class Trend
         $nX = count($xValues);
 
         //    Define X Values if necessary
-        if ($nX === 0) {
+        if ($nX == 0) {
             $xValues = range(1, $nY);
-        } elseif ($nY !== $nX) {
+            $nX = $nY;
+        } elseif ($nY != $nX) {
             //    Ensure both arrays of points are the same size
             trigger_error('Trend(): Number of elements in coordinate arrays do not match.', E_USER_ERROR);
         }
@@ -90,8 +83,8 @@ class Trend
             case self::TREND_POLYNOMIAL_5:
             case self::TREND_POLYNOMIAL_6:
                 if (!isset(self::$trendCache[$key])) {
-                    $order = (int) substr($trendType, -1);
-                    self::$trendCache[$key] = new PolynomialBestFit($order, $yValues, $xValues);
+                    $order = substr($trendType, -1);
+                    self::$trendCache[$key] = new PolynomialBestFit($order, $yValues, $xValues, $const);
                 }
 
                 return self::$trendCache[$key];
@@ -99,18 +92,15 @@ class Trend
             case self::TREND_BEST_FIT_NO_POLY:
                 //    If the request is to determine the best fit regression, then we test each Trend line in turn
                 //    Start by generating an instance of each available Trend method
-                $bestFit = [];
-                $bestFitValue = [];
                 foreach (self::$trendTypes as $trendMethod) {
                     $className = '\PhpOffice\PhpSpreadsheet\Shared\Trend\\' . $trendType . 'BestFit';
-                    //* @phpstan-ignore-next-line
                     $bestFit[$trendMethod] = new $className($yValues, $xValues, $const);
                     $bestFitValue[$trendMethod] = $bestFit[$trendMethod]->getGoodnessOfFit();
                 }
                 if ($trendType != self::TREND_BEST_FIT_NO_POLY) {
                     foreach (self::$trendTypePolynomialOrders as $trendMethod) {
-                        $order = (int) substr($trendMethod, -1);
-                        $bestFit[$trendMethod] = new PolynomialBestFit($order, $yValues, $xValues);
+                        $order = substr($trendMethod, -1);
+                        $bestFit[$trendMethod] = new PolynomialBestFit($order, $yValues, $xValues, $const);
                         if ($bestFit[$trendMethod]->getError()) {
                             unset($bestFit[$trendMethod]);
                         } else {
