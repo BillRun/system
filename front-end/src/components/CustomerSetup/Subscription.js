@@ -23,7 +23,10 @@ import {
   buildPageTitle,
   toImmutableList,
   getFieldName,
+  reCalculateCycles,
 } from '@/common/Util';
+import SubscriptionPlanPrice from './SubscriptionPlanPrice';
+import isNumber from 'is-number';
 
 class Subscription extends Component {
 
@@ -58,7 +61,13 @@ class Subscription extends Component {
     this.state = {
       subscription: props.subscription,
       progress: false,
-      discountsHiddenFields: ['key', 'params.min_subscribers', 'params.max_subscribers']
+      discountsHiddenFields: ['key', 'params.min_subscribers', 'params.max_subscribers'],
+      planCycleUnlimitedValue: getConfig('planCycleUnlimitedValue', 'UNLIMITED'),
+      defaultTariff: Immutable.Map({
+        price: 0,
+        from: 0,
+        to: getConfig('planCycleUnlimitedValue', 'UNLIMITED'),
+      })
     };
   }
 
@@ -89,6 +98,20 @@ class Subscription extends Component {
         return newService;
       }
     }
+  }
+
+  initOverrides = (type, key) => {
+    const {defaultTariff} = this.state;
+    const newOverride = Immutable.Map({
+      key,
+      type,
+      value: Immutable.Map({
+        price: Immutable.List([
+          defaultTariff
+        ])
+      })
+    });
+    return newOverride;
   }
 
   onSave = () => {
@@ -124,6 +147,19 @@ class Subscription extends Component {
   onChangeServiceDetails = (index, key, value) => {
     const path = Array.isArray(key) ? key : [key];
     this.updateSubscriptionField(['services', index, ...path], value);
+  }
+
+  onChangeServiceOverride = (serviceName, e) => {
+    const value = parseFloat(e.target.value);
+    const { subscription } = this.state;
+    const overrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
+    const serviceIndex = overrides.findIndex(override => override.get('key', '') === serviceName);
+
+    if (serviceIndex !== -1) {
+      const updatedOverrides = overrides.update(serviceIndex, service => service.setIn(['value', 'price', 0, 'price'], value));
+      const updatedSubscription = subscription.set('overrides', updatedOverrides);
+      this.setState({ subscription: updatedSubscription });
+    }
   }
 
   onRemoveService = (index) => {
@@ -162,6 +198,45 @@ class Subscription extends Component {
         originServices.forEach((originService, index) => {
           if (originService.get('name', '') === removeService) {
             this.onRemoveService(index);
+          }
+        });
+      });
+    }
+  }
+
+  onRemoveOverrides = (index) => {
+    const { subscription } = this.state;
+    const overrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
+    const newOverrides = overrides.delete(index);
+    this.updateSubscriptionField(['overrides'], newOverrides);
+  }
+
+  onAddOverrides = (type, name) => {
+    const { subscription } = this.state;
+    const newOverride = this.initOverrides(type, name);
+    const overrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
+    const newOverrides = overrides.push(newOverride);
+    this.updateSubscriptionField(['overrides'], newOverrides);
+  }
+
+  onChangeOverrides = (type, overrides) => {
+    const { subscription } = this.state;
+    const overridesNames = Immutable.Set(overrides.split(','));
+    const originOverrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
+    const originOverridesNames = Immutable.Set(originOverrides
+      .filter(originOverride => originOverride.get('type', '') === type)
+      .map(originOverride => originOverride.get('key', '')));
+
+    const addedOverrides = overridesNames.filter(item => !originOverridesNames.has(item));
+    const removedOverrides = originOverridesNames.filter(item => !overridesNames.has(item));
+    if (addedOverrides.size) {
+      addedOverrides.forEach((newOverrideName) => { this.onAddOverrides(type, newOverrideName); });
+    }
+    if (removedOverrides.size) {
+      removedOverrides.forEach((removeOverride) => {
+        originOverrides.forEach((originOverride, index) => {
+          if (originOverride.get('key', '') === removeOverride) {
+            this.onRemoveOverrides(index);
           }
         });
       });
@@ -428,6 +503,111 @@ class Subscription extends Component {
     services => (services ? services.map(service => service.delete('ui_flags')) : Immutable.List()),
   );
 
+  onPlanPriceUpdate = (index, value, planName) => {
+    const newValue = isNumber(value) ? parseFloat(value) : value;
+    const { subscription } = this.state;
+    const overrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
+    const serviceIndex = overrides.findIndex(override => override.get('key', '') === planName);
+
+    if (serviceIndex !== -1) {
+      const updatedOverrides = overrides.update(serviceIndex, service => service.setIn(['value', 'price', index, 'price'], newValue));
+      const updatedSubscription = subscription.set('overrides', updatedOverrides);
+      this.setState({ subscription: updatedSubscription });
+    }
+  }
+
+  onPlanCycleUpdate = (index, value, planName) => {
+    const { subscription } = this.state;
+    const overrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
+    const serviceIndex = overrides.findIndex(override => override.get('key', '') === planName);
+
+    if (serviceIndex !== -1) {
+      const updatedOverrides = overrides.update(serviceIndex, service => service.updateIn(['value', 'price'], list => reCalculateCycles(list, index, value)));
+      const updatedSubscription = subscription.set('overrides', updatedOverrides);
+      this.setState({ subscription: updatedSubscription });
+    }
+  }
+
+  onPlanTariffRemove = (index, planName) => {
+    const { subscription, planCycleUnlimitedValue } = this.state;
+    const overrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
+    const serviceIndex = overrides.findIndex(override => override.get('key', '') === planName);
+    let updatedOverrides;
+    
+    if (serviceIndex !== -1) {
+      
+    if (index === 0) { // removed first item
+      updatedOverrides = overrides.update(serviceIndex, service => service.updateIn(['value', 'price'], Immutable.List(), (list) => {
+        if (list.size > 1) { // there is other items in list, update next item from to 0
+          return list
+            .update(index + 1, Immutable.Map(), item => item.set('from', 0))
+            .delete(index);
+        }
+        return list.delete(index); 
+      }));
+    }
+     // item removed from end and there is other items (index > 0)
+     updatedOverrides = overrides.update(serviceIndex, service => service.updateIn(['value', 'price'], Immutable.List(), list =>
+     list
+       .update(index - 1, item => item.set('to', planCycleUnlimitedValue))
+       .delete(index)
+    ));
+
+      const updatedSubscription = subscription.set('overrides', updatedOverrides);
+      this.setState({ subscription: updatedSubscription });
+    }
+  }
+
+  getPrices = (plan, planName) => {
+    const { mode } = this.props;
+    const count = plan.getIn(['value', 'price'], Immutable.List()).size;
+    const prices = [];
+
+    plan.getIn(['value', 'price'], Immutable.List()).forEach((price, i) => {
+      if (price.get('price') !== true) {
+        prices.push(
+          <SubscriptionPlanPrice
+            key={i}
+            index={i}
+            count={count}
+            item={price}
+            mode={mode}
+            isTrialExist={false}
+            onPlanPriceUpdate={(index, value) => this.onPlanPriceUpdate(index, value, planName)}
+            onPlanCycleUpdate={(index, value) => this.onPlanCycleUpdate(index, value, planName)}
+            onPlanTariffRemove={(index, value) => this.onPlanTariffRemove(index, planName)}
+          />
+        );
+      }
+    });
+    return prices;
+  }
+
+  onPlanTariffInit = (planName) => {
+    const { defaultTariff, subscription } = this.state;
+    const overrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
+    const serviceIndex = overrides.findIndex(override => override.get('key', '') === planName);
+
+    if (serviceIndex !== -1) {
+      if (!overrides.getIn([serviceIndex, 'value', 'price'], Immutable.List()).isEmpty()) {
+        const updatedOverrides = overrides.update(serviceIndex, service => service.updateIn(['value', 'price'], Immutable.List(), list =>
+        list
+          .update(list.size - 1, Immutable.Map(), item => item.set('to', ''))
+          .push(defaultTariff.set('from', 0))));
+        const updatedSubscription = subscription.set('overrides', updatedOverrides);
+        this.setState({ subscription: updatedSubscription });
+      } else {
+        const updatedOverrides = overrides.update(serviceIndex, service => service.updateIn(['value', 'price'], Immutable.List(), list => list.push(defaultTariff)));
+        const updatedSubscription = subscription.set('overrides', updatedOverrides);
+        this.setState({ subscription: updatedSubscription });
+      }
+    } 
+  }
+
+  getAddPriceButton = (planName) => {
+    return (<CreateButton onClick={() => this.onPlanTariffInit(planName)} label="Add New" />);
+  }
+
   renderDiscountRow = (discount, idx) => {
     const dateFormat = getConfig('dateFormat', 'DD/MM/YYYY');
     return (
@@ -523,8 +703,19 @@ class Subscription extends Component {
     const { revisions, mode, allServices, subscription: originSubscription } = this.props;
     const allowEdit = ['update', 'clone', 'closeandnew', 'create'].includes(mode);
     const services = subscription.get('services', Immutable.List()) || Immutable.List();
+    const overrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
     const minStartDate = this.getServiceStartMinDate();
     const originServices = originSubscription.get('services', Immutable.List()) || Immutable.List();
+    const servicesOptions = this.getAvailableServices().toJS();
+    const plansOptions = this.getAvailablePlans().toJS();
+    const overridesServiceList = overrides
+      .filter(override => override.get('type', '') === 'service')
+      .map(override => override.get('key', ''))
+      .join(',');
+    const overridesPlanList = overrides
+      .filter(override => override.get('type', '') === 'plan')
+      .map(override => override.get('key', ''))
+      .join(',');
 
     return (
       <div className="Subscription">
@@ -602,6 +793,83 @@ class Subscription extends Component {
               />
             )}
           </Panel>
+
+          <Panel header={<h3>Override Service Prices</h3>}>
+            <FormGroup key="overrideServices">
+              <Col componentClass={ControlLabel} sm={3} lg={2}>Services</Col>
+              <Col sm={8} lg={9}>
+                <Field
+                  fieldType="select"
+                  multi={true}
+                  options={servicesOptions}
+                  value={overridesServiceList}
+                  onChange={(data) => this.onChangeOverrides('service', data)}
+                  clearable={false}
+                  editable={allowEdit}
+                  />
+              </Col>
+            </FormGroup>
+            {
+              overridesServiceList && (
+                <table style={{ width: '100%' }}>
+                <tbody>
+                  {
+                    overridesServiceList.split(',').map((serviceName) => {
+                      const currentService = overrides.find(override => override.get('key', '') === serviceName);
+                      return (
+                        <tr key={serviceName}>
+                          <td style={{ width: '30%', verticalAlign: 'middle', textAlign: 'right', paddingRight: 20, paddingTop: 20 }}>{serviceName}</td>
+                          <td style={{ width: '70%', paddingTop: 20 }}>
+                            <Field
+                              style={{ display: 'inline-block' }}
+                              fieldType="price"
+                              value={currentService ? currentService.getIn(['value', 'price', 0, 'price']) : 0}
+                              onChange={(e) => this.onChangeServiceOverride(serviceName, e)}
+                              editable={allowEdit}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })
+                  }
+                </tbody>
+              </table>
+              )
+            }
+          </Panel>
+
+          <Panel header={<h3>Override Plan Prices</h3>}>
+            <FormGroup key="overridePlans">
+                <Col componentClass={ControlLabel} sm={3} lg={2}>Plans</Col>
+                <Col sm={8} lg={9} style={{ marginBottom: 20}} >
+                  <Field
+                    fieldType="select"
+                    multi={true}
+                    options={plansOptions}
+                    value={overridesPlanList}
+                    onChange={(data) => this.onChangeOverrides('plan', data)}
+                    clearable={false}
+                    editable={allowEdit}
+                    />
+                </Col>
+              </FormGroup>
+              {
+                overridesPlanList && overridesPlanList.split(',').map((planName) => {
+                  const currentPlan = overrides.find(override => override.get('key', '') === planName);
+                  return (
+                    <div key={planName} style={{marginTop: 30}}>
+                      <Col sm={12}>
+                        <b>{planName}</b>
+                        <br />
+                      </Col>
+                      { this.getPrices(currentPlan, planName) }
+                      <br />
+                      { allowEdit && this.getAddPriceButton(planName) }
+                    </div>
+                  );
+                })
+            }
+            </Panel>
         </Panel>
 
         <ActionButtons
