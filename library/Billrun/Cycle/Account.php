@@ -130,7 +130,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		foreach($subRevisionsFields as $fieldName) {
 			if(empty($revision[$fieldName])) { continue; }
 			foreach($revision[$fieldName] as $subRev) {
-					 if($subRev['from']->sec > $revision['to'] || $subRev['to']->sec < $revision['from'] ||
+					 if($subRev['from']->sec >= $revision['to'] || $subRev['to']->sec < $revision['from'] ||
 						$fieldName == 'services' && $this->isServiceTerminatedDueToConfig($subRev, $revision['from'],$revision['to']) ) { // TODO fix hard coding
 						continue;
 					 }
