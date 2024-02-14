@@ -131,6 +131,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	/**
 	 *  Is the run is fake (for example to get a current balance in the middle of the month)
 	 */
+	/**
+	 * Array of the accounts that were not aggregated but were skipped for some reason.
+	 */
+	protected $skippedAccounts = [];
+
 	public $fakeCycle = false;
 	
 	/**
@@ -604,7 +609,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		// Check if already exists.
 		if(!$this->overrideMode && $invoice->exists()) {
-			Billrun_Factory::log("Billrun " . $this->getCycle()->key() . " already exists for account " . $aid, Zend_Log::ALERT);
+			Billrun_Factory::log("Billrun " . $this->getCycle()->key() . " already exists for account " . $aid, Zend_Log::WARN);
+			$this->skippedAccounts[$aid]=1;
 			return false;
 		}
 
@@ -656,7 +662,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected function handleInvoices($data) {
 		$query = array('billrun_key' => $this->stamp, 'page_number' => (int)$this->page, 'page_size' => $this->size);
-		$dataCount = count($data);
+		$dataCount = count($data) + count($this->skippedAccounts);
 		$update = array('$set' => array('count' => $dataCount));
 		$this->billingCycle->update($query, $update);
 	}
@@ -890,7 +896,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 
 	protected function afterAggregate($results) {
-		$end_msg = "Finished iterating page {$this->page} of size {$this->size}. Memory usage is " . round(memory_get_usage() / 1048576, 1) . " MB. Host:" . Billrun_Util::getHostName() . ". Processed " . (count($this->successfulAccounts)) . " accounts";
+		$end_msg = "Finished iterating page {$this->page} of size {$this->size}. Memory usage is " . round(memory_get_usage() / 1048576, 1) . " MB. Host:" . Billrun_Util::getHostName() . ". Processed " . (count($this->successfulAccounts)) . " accounts, Skipped : " . count($this->skippedAccounts);
 		Billrun_Factory::log($end_msg, Zend_Log::INFO);
 		$this->sendEndMail($end_msg);
 
