@@ -1,16 +1,85 @@
+# BillRun
+http://www.billrun.net
 About
 ======
+BillRun is an open-source billing and anti-fraud system utilized by telecom companies for managing customer usage effectively. It offers sophisticated tools to receive, process, rate, charge, and monitor various types of usage data, including telecom CDRs and pre-paid cards, all handled in real-time. The system supports different output formats such as customer invoices, wholesale reports, system monitoring, alerts, and anti-fraud event triggering. Built with fail-over safety and high-availability support, BillRun ensures reliability even in large volumes and sizes.
 
-BillRun is Open-Source Billing and Anti-Fraud System. 
+The system is developed by BillRun Technologies Ltd., a company committed to supporting open-source initiatives across various fields and fostering innovation.
 
-http://www.billrun.net
+Features
+======
+- Real-Time Usage Handling: Receive, process, rate, charge, and monitor customer usage in real-time.
+- Versatile Output: Generate customer invoices, wholesale reports, system monitoring, alerts, and anti-fraud event triggers.
+- Fail-Over Safety: Built-in fail-over safety mechanisms for enhanced reliability.
+- High-Availability Support: Fully supports high-availability volumes and sizes.
+- Flexible Architecture: Integration of YAF PHP Framework for high performance and Zend Framework toolbox for customization.
+- Open-Source Customization: Modify according to specific needs and requirements, with support from third-party providers.
 
-BillRun used in Telecom companies which required sophisticated system and tools to receive, process, rate, charge and monitor customer usage. The usage can be telecom CDR-s, pre-pay cards, and all can be handle in real-time. The system support different type of output such as customer invoices, wholesale reports for management, system monitor & alerts, anti-fraud system that can be trigger event. The system is fail-over safe and fully support in high-availability volumes and sizes. 
+Installation
+======
+Install BillRun by configuring:
 
-The system built on integration of YAF PHP Framework, for high performance, with Zend Framework toolbox, for custom usage of its open source ready-to-use classes. Because the system is open source, you can change it to your needs and requirements, get support from 3rd party, cause you are not depend on one company.
 
-The database is MongoDB that can support for different type of documents, no matter the size and type, what make the system easy to maintain. In addition, MongoDB is the most widely used NoSQL database that can be scale easily with minimal efforts.
+### Docker Configuration
 
-BillRun built by BillRun Technologies Ltd. - company that support Open-Source in wide different fields and innovations.
+To start the Billrun application for testing purposes using Docker and Docker Compose:
 
+1. Start the Docker Compose stack:
+
+```bash
+docker-compose -f docker-compose-php74.yml up
+```
+
+2. Create the log file to overcome permission issues and crashes:
+
+```bash
+DEBUG_LOG_DIR=../../logs/container
+mkdir ${DEBUG_LOG_DIR} -p
+touch ${DEBUG_LOG_DIR}/debug.log && chmod 666 ${DEBUG_LOG_DIR}/debug.log
+```
+
+3. Build the Docker image:
+
+```bash
+docker-compose -f docker-compose-php74.yml build
+```
+
+4. Stop the Docker Compose stack and delete Docker-created volumes:
+
+```bash
+docker-compose -f docker-compose-php74.yml down -v
+```
+
+### Stripe PHP Bindings
+
+To use the Stripe PHP bindings:
+
+1. Install via Composer:
+
+```bash
+composer require stripe/stripe-php
+```
+
+2. Use Composer's autoload:
+
+```php
+require_once('vendor/autoload.php');
+
+Ensure the following PHP extensions are enabled: curl, json, and mbstring. For more detailed documentation and usage examples, refer to the Stripe API documentation (https://stripe.com/docs/api)
+
+Contribute
+======
+- Issue Tracker: [github.com/BillRun/system/issues](https://github.com/BillRun/system/pulls)
+- Source Code: [github.com/BillRun/system](https://github.com/BillRun/system)
+
+Support
+======
+If you encounter any issues or have questions, feel free to reach out:
+
+- Email : info@billrun.com
+- Phone Number : + 1 (917) 728-1607
+
+License
+======
+This project is licensed under the BSD license.
 
