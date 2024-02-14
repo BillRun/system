@@ -857,7 +857,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if ($switch_links) {
 			static::detachPendingPayments($this->getAid());
 			$this->detachPaidBills();
-			Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
+			Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid(), true, true);
 		} else {
 			foreach ($this->getPaidBills() as $bill) {
 				$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
