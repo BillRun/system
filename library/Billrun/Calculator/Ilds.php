@@ -89,6 +89,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 	 * @todo: refactoring it by mediator or plugin system
 	 */
 	protected function calcChargeLine($type, $charge) {
+
 		switch ($type):
 			case '012':
 			case '015':
@@ -106,6 +107,10 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 				break;
 			default:
 				$rating_charge = floatval($charge);
+				$configuredPriceDivision = Billrun_Factory::config()->getConfigValue("$type.calculator.price_division",0);
+				if(!empty($configuredPriceDivision)) {
+					$rating_charge = round($charge, $configuredPriceDivision);
+				}
 		endswitch;
 		return $rating_charge;
 	}
