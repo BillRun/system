@@ -1,5 +1,4 @@
-```markdown
-# BillRun
+## BillRun
 [http://www.billrun.net](http://www.billrun.net)
 
 ## About
@@ -77,5 +76,5 @@ If you encounter any issues or have questions, feel free to reach out:
 
 ## License
 This project is licensed under the BSD license.
-```
+
 
