@@ -1531,4 +1531,10 @@ abstract class Billrun_Bill {
 		}
 	}
 
+	public function clearPaymentAfterDetachPaidBills() {
+		$this->data['left'] = $this->getAmount();
+		unset($this->data['pays']);
+		$this->save();
+	}
+
 }

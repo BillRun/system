@@ -582,6 +582,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty($chargeOptions['aids'])) {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
+		$switch_links = Billrun_Factory::config()->getConfigValue(/*payments?*/'bills.switch_links', true);
 		$size = !empty($chargeOptions['size']) ? (int) $chargeOptions['size'] : 100;
 		$page = !empty($chargeOptions['page']) ? (int) $chargeOptions['page'] : 0;
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
@@ -748,7 +749,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					}
 					
 					$paymentResponses['completed'] = $completed;
+					if ($switch_links) {
+						$payment->detachPaidBills();
+						$payment->clearPaymentAfterDetachPaidBills();
+					}
 				}
+			}
+			if ($switch_links) {
+				Billrun_Bill_Payment::detachPendingPayments($customerAid);
+				Billrun_Bill::payUnpaidBillsByOverPayingBills($customerAid, true, $switch_links);
 			}
 		}
 		
