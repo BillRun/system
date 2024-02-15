@@ -13,8 +13,7 @@ use Psr\Http\Message\StreamInterface;
 class DeflateStream extends FilteredStream
 {
     /**
-     * @param StreamInterface $stream
-     * @param int             $level
+     * @param int $level
      */
     public function __construct(StreamInterface $stream, $level = -1)
     {
@@ -27,7 +26,7 @@ class DeflateStream extends FilteredStream
     /**
      * {@inheritdoc}
      */
-    protected function readFilter()
+    protected function readFilter(): string
     {
         return 'zlib.deflate';
     }
@@ -35,7 +34,7 @@ class DeflateStream extends FilteredStream
     /**
      * {@inheritdoc}
      */
-    protected function writeFilter()
+    protected function writeFilter(): string
     {
         return 'zlib.inflate';
     }

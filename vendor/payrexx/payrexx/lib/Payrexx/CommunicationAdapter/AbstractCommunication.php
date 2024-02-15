@@ -22,5 +22,5 @@ abstract class AbstractCommunication
      *
      * @return mixed
      */
-    abstract public function requestApi($apiUrl, $params = array(), $method = 'POST');
+    abstract public function requestApi($apiUrl, $params = array(), $method = 'POST', $httpHeader = array());
 }

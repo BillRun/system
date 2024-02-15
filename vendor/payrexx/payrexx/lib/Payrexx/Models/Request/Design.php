@@ -114,7 +114,7 @@ class Design extends Base
     /**
      * @param string $uuid
      */
-    public function setUuid(string $uuid): void
+    public function setUuid($uuid): void
     {
         $this->uuid = $uuid;
     }

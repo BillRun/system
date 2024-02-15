@@ -20,6 +20,12 @@ class QrCode extends \Payrexx\Models\Base
     protected $webshopUrl;
 
     /**
+     * @access  protected
+     * @var string
+     */
+    protected $uuid;
+
+    /**
      * @access  public
      * @return  string
      */
@@ -44,5 +50,21 @@ class QrCode extends \Payrexx\Models\Base
     public function getResponseModel()
     {
         return new \Payrexx\Models\Response\QrCode();
+    }
+
+    /**
+     * @return string
+     */
+    public function getUuid(): string
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * @param string $uuid
+     */
+    public function setUuid($uuid): void
+    {
+        $this->uuid = $uuid;
     }
 }
