@@ -42,7 +42,7 @@ class Billrun_PaymentManager {
 
 		$postPayments = $this->handlePayment($prePayments, $params);
 		$this->handleSuccessPayments($postPayments, $params);
-		$payments = $this->getInvolvedPayments($postPayments);
+		$payments = $this->getInvolvedPayments($postPayments, true);
 		return [
 			'payment' => array_column($payments, 'payments'),
 			'response' => $this->getResponsesFromGateways($postPayments),
@@ -243,10 +243,11 @@ class Billrun_PaymentManager {
 	 * @param array $prePayments - array of Billrun_DataTypes_PrePayment
 	 * @return array
 	 */
-	protected function getInvolvedPayments($prePayments) {
+	protected function getInvolvedPayments($prePayments, $after_save = false) {
 		$payments = [];
+		$switch_links = Billrun_Factory::config()->getConfigValue(/*payments?*/'bills.switch_links', true);
 		foreach ($prePayments as $prePayment) {
-			$payment = $prePayment->getPayment();
+			$payment = ($switch_links && $after_save) ? Billrun_Bill_Payment::getInstanceByid($prePayment->getPayment()->getId()) : $prePayment->getPayment();
 			if ($payment) {
 				$payments[] = ['payments' => $payment, 'payment_data' => $prePayment->getData()];
 			}
@@ -357,6 +358,7 @@ class Billrun_PaymentManager {
 	 * @param array $params
 	 */
 	protected function handleSuccessPayments($postPayments, $params = []) {
+		$switch_links = Billrun_Factory::config()->getConfigValue(/*payments?*/'bills.switch_links', true);
 		foreach ($postPayments as $postPayment) {
 			$payment = $postPayment->getPayment();
 			if (empty($payment)) {
@@ -379,6 +381,7 @@ class Billrun_PaymentManager {
 			switch ($customerDir) {
 				case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
 				case Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER:
+					Billrun_Factory::log()->log("Handling payment with txid " . $transactionId . ", customer direction " . $customerDir, Zend_Log::DEBUG);
 					$relatedBills = $postPayment->getRelatedBills();
 					foreach ($relatedBills as $bill) {
 						$billId = $bill['id'];
@@ -400,8 +403,10 @@ class Billrun_PaymentManager {
 					}
 					break;
 				default:
-					Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+					Billrun_Factory::log()->log("Couldn't find payment direction for txid " . $transactionId, Zend_Log::DEBUG);
 			}
+			Billrun_Factory::log()->log("Paying unpaid bills using over paying/pending payments, for account " . $payment->getAccountNo(), Zend_Log::DEBUG);
+			Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo(), true, $switch_links);
 
 			if (!empty($gatewayDetails)) {
 				$gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];

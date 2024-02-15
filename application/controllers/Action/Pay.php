@@ -121,11 +121,7 @@ class PayAction extends ApiAction {
 					$emailsToSend[$method]['entities'][] = $entity;
 				}
 				$payment->save();
-				$aids[] = $payment->getAccountNo();
 			}
-			foreach (array_unique($aids) as $aid) {
-				Billrun_Bill::payUnpaidBillsByOverPayingBills($aid, true, Billrun_Factory::config()->getConfigValue(/*payments?*/'bills.switch_links', true));
-			}			
 			if ($emailsToSend) {
 				$subscriber = Billrun_Factory::subscriber();
 				foreach ($emailsToSend as $method => $data) {
