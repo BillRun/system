@@ -16,7 +16,7 @@ class Billrun_Utils_ErrorHandler {
 	 */
 	public function errorAction(Throwable $exception, $hideDetails = false) {
 	   // Get exception output
-	   $output = $this->getExceptionOutput($exception);
+	   $output = $this->getExceptionOutput($exception, $hideDetails);
 
 	   // TODO: THIS IS DEBUG CODE!!!!!!!!!!!!!!!!!!
 	   if(php_sapi_name() != "cli") {
@@ -39,7 +39,7 @@ class Billrun_Utils_ErrorHandler {
 	 * @param Exception $exception
 	 * @return json encoded array
 	 */
-	protected function getExceptionOutput(Throwable $exception, $hideDetails) {
+	protected function getExceptionOutput(Throwable $exception, $hideDetails = false) {
 	   // Get exception output
 	   if($exception instanceof Billrun_Exceptions_Base) {
 		   return $this->billrunExceptionOutput($exception);
