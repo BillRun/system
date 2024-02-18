@@ -158,7 +158,7 @@ abstract class Billrun_Base {
 			if (isset($config_type->{$called_class::$type}) &&
 				isset($config_type->{$called_class::$type}->type)) {
 				$class_type = $config_type[$called_class::$type]['type'];
-				$args['type'] = $type;
+				$args['type'] = !empty($config_type[$called_class::$type]['force_type'])  ?  $class_type : $type;
 			}
 		}
 		$class = $called_class . '_' . ucfirst($class_type);
