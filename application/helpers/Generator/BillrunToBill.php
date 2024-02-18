@@ -156,7 +156,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::log('Creating bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice));
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
-		$switch_links = Billrun_Factory::config()->getConfigValue(/*payments?*/'bills.switch_links', true);
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
 		if ($switch_links) {
 			Billrun_Bill_Payment::detachPendingPayments($invoice['aid']);
 		}

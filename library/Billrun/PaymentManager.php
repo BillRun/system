@@ -42,7 +42,7 @@ class Billrun_PaymentManager {
 
 		$postPayments = $this->handlePayment($prePayments, $params);
 		$this->handleSuccessPayments($postPayments, $params);
-		$payments = $this->getInvolvedPayments($postPayments, true);
+		$payments = $this->getInvolvedPayments($postPayments);
 		return [
 			'payment' => array_column($payments, 'payments'),
 			'response' => $this->getResponsesFromGateways($postPayments),
@@ -180,7 +180,7 @@ class Billrun_PaymentManager {
 		}
 		$method = $prePayment->getMethod();
 		$leftToSpare = $prePayment->getAmount();
-		$switch_links = Billrun_Factory::config()->getConfigValue(/*payments?*/'bills.switch_links', true);
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
 		if ($switch_links) {
 			Billrun_Bill_Payment::detachPendingPayments($prePayment->getAid());
 		} else {
@@ -243,11 +243,11 @@ class Billrun_PaymentManager {
 	 * @param array $prePayments - array of Billrun_DataTypes_PrePayment
 	 * @return array
 	 */
-	protected function getInvolvedPayments($prePayments, $after_save = false) {
+	protected function getInvolvedPayments($prePayments) {
 		$payments = [];
-		$switch_links = Billrun_Factory::config()->getConfigValue(/*payments?*/'bills.switch_links', true);
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
 		foreach ($prePayments as $prePayment) {
-			$payment = ($switch_links && $after_save) ? Billrun_Bill_Payment::getInstanceByid($prePayment->getPayment()->getId()) : $prePayment->getPayment();
+			$payment = $switch_links ? Billrun_Bill_Payment::getInstanceByid($prePayment->getPayment()->getId()) : $prePayment->getPayment();
 			if ($payment) {
 				$payments[] = ['payments' => $payment, 'payment_data' => $prePayment->getData()];
 			}
@@ -358,7 +358,7 @@ class Billrun_PaymentManager {
 	 * @param array $params
 	 */
 	protected function handleSuccessPayments($postPayments, $params = []) {
-		$switch_links = Billrun_Factory::config()->getConfigValue(/*payments?*/'bills.switch_links', true);
+		$switch_links = Billrun_Factory::config()->getConfigValue('bills.switch_links', true);
 		foreach ($postPayments as $postPayment) {
 			$payment = $postPayment->getPayment();
 			if (empty($payment)) {

@@ -1537,4 +1537,19 @@ abstract class Billrun_Bill {
 		$this->save();
 	}
 
+	/**
+	 * Function that will return true if the current payments linking should be chagned, because newer invoices/debt was paid before older pending one 
+	 * @param int - urt - relative time 
+	 */
+	public static function shouldSwitchBillsLinks($urt = null) {
+		$switch_links_config = Billrun_Factory::config()->getConfigValue('bills.switch_links', true);
+		$query = [
+			'urt' => array(
+				'$lt' => new Mongodloid_Date(is_null($urt) ? time() : $urt)
+			),
+			'waiting_payments' => ['$exists' => true, '$ne' => []],
+			'paid_by' => ['$elemMatch' => ['pending' => true]]
+		];
+		return $switch_links_config && count(static::getBills($query));
+	}
 }

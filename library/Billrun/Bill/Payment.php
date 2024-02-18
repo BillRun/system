@@ -582,7 +582,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty($chargeOptions['aids'])) {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
-		$switch_links = Billrun_Factory::config()->getConfigValue(/*payments?*/'bills.switch_links', true);
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
 		$size = !empty($chargeOptions['size']) ? (int) $chargeOptions['size'] : 100;
 		$page = !empty($chargeOptions['page']) ? (int) $chargeOptions['page'] : 0;
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
@@ -862,11 +862,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 
 	public function markApproved($status) {
-		$switch_links = Billrun_Factory::config()->getConfigValue(/*payments?*/'bills.switch_links', true);
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
 		if ($switch_links) {
 			static::detachPendingPayments($this->getAid());
 			$this->detachPaidBills();
-			Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid(), true, true);
+			Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid(), true, $switch_links);
 		} else {
 			foreach ($this->getPaidBills() as $bill) {
 				$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
