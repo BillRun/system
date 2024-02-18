@@ -107,9 +107,9 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 				break;
 			default:
 				$rating_charge = floatval($charge);
-				$configuredPriceDivision = Billrun_Factory::config()->getConfigValue("$type.calculator.price_division",0);
+				$configuredPriceDivision = Billrun_Factory::config()->getConfigValue("$type.calculator.price_division_digits",0);
 				if(!empty($configuredPriceDivision)) {
-					$rating_charge = round($charge, $configuredPriceDivision);
+					$rating_charge = round($charge / pow(10,$configuredPriceDivision) , $configuredPriceDivision);
 				}
 		endswitch;
 		return $rating_charge;
