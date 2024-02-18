@@ -1547,9 +1547,14 @@ abstract class Billrun_Bill {
 			'urt' => array(
 				'$lt' => new Mongodloid_Date(is_null($urt) ? time() : $urt)
 			),
-			'waiting_payments' => ['$exists' => true, '$ne' => []],
-			'paid_by' => ['$elemMatch' => ['pending' => true]]
+			'left_to_pay' => array('$gt' => 0),
+			'$or' => array(
+				array('waiting_payments' => ['$exists' => true, '$ne' => []],'paid_by' => ['$elemMatch' => ['pending' => true]]),
+				array('past_rejections' => ['$exists' => true, '$ne' => []])
+			)
+			
 		];
+		$query = array_merge($query, Billrun_Bill::getNotRejectedOrCancelledQuery());
 		return $switch_links_config && count(static::getBills($query));
 	}
 }
