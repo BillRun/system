@@ -222,7 +222,7 @@ abstract class Billrun_PaymentGateway {
 			if (empty($data['amount'])) {
 				throw new Exception("Missing amount when making single payment");
 			}
-			if (isset($data['installments']) && ($data['amount'] != $data['installments']['total_amount'])) {
+			if (isset($data['installments']) && (isset($data['installments']['total_amount']) && $data['amount'] != $data['installments']['total_amount'])) {
 				throw new Exception("Single payment amount different from installments amount");
 			}
 			if (!$this->getActiveAccount($aid)) {
@@ -235,6 +235,12 @@ abstract class Billrun_PaymentGateway {
 		}
 		if (isset($data['installments'])) {
 			$options['installments'] = $data['installments'];
+		}
+		if (isset($data['tokenize_on_single_payment'])) {
+			$options['tokenize_on_single_payment'] = $data['tokenize_on_single_payment'];
+		}
+		if (isset($data['tokenize_option']) && empty($data['tokenize_on_single_payment'])) { // tokenize_option is conflict with tokenize_on_single_payment
+			$options['tokenize_option'] = $data['tokenize_option'];
 		}
 		if ($this->needRequestForToken()){
 			$response = $this->getToken($aid, $tenantReturnUrl, $okPage, $failPage, $singlePaymentParams, $options);
@@ -465,7 +471,7 @@ abstract class Billrun_PaymentGateway {
 			$postString = $postArray;
 		}
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::INFO);
+			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			Billrun_Factory::log("Payment gateway token request: " . print_R($postArray, 1), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			Billrun_Factory::log("Payment gateway token response: " . print_R($result, 1), Zend_Log::DEBUG);
@@ -495,7 +501,10 @@ abstract class Billrun_PaymentGateway {
 		$tenantUrl = $this->getTenantReturnUrl($this->saveDetails['aid']);
 		$this->updateReturnUrlOnEror($tenantUrl);
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
+			Billrun_Factory::log("Requesting transaction details for txId " . $txId, Zend_Log::DEBUG);
+			Billrun_Factory::log("Payment gateway transaction details request: " . print_R($postString, 1), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Payment gateway transaction details response: " . print_R($result, 1), Zend_Log::DEBUG);
 			if (($retParams = $this->getResponseDetails($result)) === FALSE) {
 				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
 				throw new Exception('Operation Failed. Try Again...');
@@ -508,6 +517,9 @@ abstract class Billrun_PaymentGateway {
 
 		if (isset($retParams['action']) && $retParams['action'] == 'SinglePayment') {
 			$this->paySinglePayment($retParams);
+		} else if (isset($retParams['action']) && $retParams['action'] == 'SinglePaymentToken') {
+			$this->paySinglePayment($retParams);
+			$this->savePaymentGateway();
 		} else {
 			$this->savePaymentGateway();
 		}
@@ -734,7 +746,7 @@ abstract class Billrun_PaymentGateway {
 	 * adding params that the payment gateway needs for further integraion.
 	 * 
 	 */
-	public function addAdditionalParameters() {
+	public function addAdditionalParameters($request) {
 		return array();
 	}
 	
@@ -897,6 +909,9 @@ abstract class Billrun_PaymentGateway {
 		}
 		return $account;
 	}
-
+	
+	public function queryTransaction($txId, $params) {
+		return true;
+	}
 
 }

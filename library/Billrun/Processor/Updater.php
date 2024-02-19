@@ -83,7 +83,7 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 	
 	protected function logDB() {
 
-		$log = Billrun_Factory::db()->logCollection();
+		$log = Billrun_Factory::db()->logCollection()->setReadPreference('RP_PRIMARY');
 
 		$header = array();
 		if (isset($this->data['header'])) {

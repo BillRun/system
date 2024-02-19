@@ -39,7 +39,13 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @todo take from customer pricing
 	 */
 	public $pricingField = self::DEF_CALC_DB_FIELD;
-	
+
+	/**
+	 * Is the balance only on sid level
+	 * @var boolean
+	 */
+	protected $isSidLevel = false;
+
 	/**
 	 * constructor of balance entity
 	 * 
@@ -54,9 +60,16 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 
 		$this->row = $values;
 
+		$config = Billrun_Factory::config();
+		$this->isSidLevel = $config->getConfigValue("balances.sid_level", false);
+
 		if (!isset($this->row['sid']) || !isset($this->row['aid'])) {
 			Billrun_Factory::log('Error creating balance, no aid or sid', Zend_Log::ALERT);
 			return;
+		}
+
+		if ($this->isSidLevel && $this->row['sid'] != 0) {
+			$this->row['aid'] = 0;
 		}
 
 		$this->init($values); // this for override behaviour by the inheritance classes
@@ -168,12 +181,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		
 		// this is for balances sharding, although this is _id query
 		if (!isset($query['sid'])) {
-			$query['sid'] = [
-				'$in' => [
-					0,
-					$this->row['sid'],
-				],
-			];
+			$query['sid'] = $this->row['sid'];
 		}
 		if (!isset($query['aid'])) {
 			$query['aid'] = $this->row['aid'];

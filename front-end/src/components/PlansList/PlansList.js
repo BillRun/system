@@ -28,7 +28,7 @@ const PlansList = (props) => {
       return (!periodicity) ? '' : `${changeCase.upperCaseFirst(periodicity)}ly`;
     }
     const frequency = item.getIn(['recurrence', 'frequency'], '')
-    return getFieldName('recurrence.periodicity.1', '', frequency);
+    return getFieldName(`recurrence.periodicity.${frequency}`, '', '');
   };
 
   const parserChargingMode = item => (item.get('upfront') ? 'Upfront' : 'Arrears');
@@ -38,19 +38,14 @@ const PlansList = (props) => {
   const displayPlay = () => props.isPlaysEnabled;
 
   const tableFields = [
-    { id: 'description', title: 'Title', sort: true },
-    { id: 'name', title: 'Key', sort: true },
+    { id: 'description', sort: true },
+    { id: 'name', sort: true },
     { title: 'Trial', parser: parserTrial },
     { id: 'recurrence_charges', title: 'Recurring Charges', parser: parserRecuringCharges },
     { id: 'recurrence_frequency', title: 'Billing Frequency', parser: parserBillingFrequency },
     { id: 'charging_mode', title: 'Charging Mode', parser: parserChargingMode },
     { id: 'connection_type', display: false, showFilter: false },
     { id: 'play', title: 'Play', display: displayPlay(), parser: parsePlay },
-  ];
-
-  const filterFields = [
-    { id: 'name', placeholder: 'Key' },
-    { id: 'description', placeholder: 'Title' },
   ];
 
   const projectFields = {
@@ -78,7 +73,6 @@ const PlansList = (props) => {
     <EntityList
       itemType="plan"
       itemsType="plans"
-      filterFields={filterFields}
       baseFilter={baseFilter}
       tableFields={tableFields}
       projectFields={projectFields}

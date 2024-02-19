@@ -42,7 +42,6 @@ class PaymentGatewaysController extends ApiController {
 				$settings[] = $setting;
 				continue;
 			}
-
 			$setting['title'] = $paymentGateway->getTitle();
 			$fields = $paymentGateway->getDefaultParameters();
 			$setting['params'] = $fields;
@@ -84,9 +83,9 @@ class PaymentGatewaysController extends ApiController {
 			$requestData['fail_page'] = urlencode($requestData['fail_page']);
 		}
 		if (!Billrun_Utils_Security::validateData($requestData)) {
-            $ex = new Billrun_Exceptions_Api(999, array(), "Failed to authenticate");
-            $ex->logLevel = Zend_Log::DEBUG;
-            throw $ex;
+			$ex = new Billrun_Exceptions_Api(999, array(), "Failed to authenticate");
+			$ex->logLevel = Zend_Log::DEBUG;
+			throw $ex;
 		} else {
 			$data = $originalRequestData;
 			unset($data[Billrun_Utils_Security::SIGNATURE_FIELD]);
@@ -110,8 +109,10 @@ class PaymentGatewaysController extends ApiController {
 			return $this->setError("In single payment mode amount must be positive value", $request);
 		}
 		
-		if (isset($data['installments']) && (!is_array($data['installments']) || !isset($data['installments']['total_amount']) || 
-			$data['installments']['total_amount'] <= 0 || !isset($data['installments']['number_of_payments']) || $data['installments']['number_of_payments'] <= 1)) {
+		if (isset($data['installments']) && 
+				(!is_array($data['installments']) || 
+				!isset($data['installments']['number_of_payments']) || 
+				$data['installments']['number_of_payments'] < 1)) {
 			return $this->setError("Installment structure is invalid", $request);
 		}
 

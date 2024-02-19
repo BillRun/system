@@ -464,11 +464,30 @@ export const runningPaymentFilesListQuery = (paymentGateway, fileType) => ({
     { project: JSON.stringify({ stamp: 1}) },
     { sort: JSON.stringify({}) },
     { query: JSON.stringify({
-      source: "custom_payment_files",
-      cpg_name: paymentGateway,
-      cpg_file_type: fileType,
-      start_process_time:{ $exists: true },
-      process_time :{ $exists: false },
+      cpg_name: { $in: [paymentGateway]},
+      cpg_file_type: { $in: [fileType]},
+      start_process_time: { $exists: true },
+      process_time: { $exists: false },
+    }) },
+  ],
+});
+
+export const runningRequestPaymentFilesListQuery = (paymentGateway, fileType) => 
+  runningPaymentFilesListQuery(paymentGateway, fileType);
+
+export const runningResponsePaymentFilesListQuery = (paymentGateway, fileType) => ({
+  action: 'get',
+  entity: 'log',
+  params: [
+    { page: 0 },
+    { size: 9999 },
+    { project: JSON.stringify({ stamp: 1}) },
+    { sort: JSON.stringify({}) },
+    { query: JSON.stringify({
+      cpg_name: { $in: [paymentGateway]},
+      pg_file_type: fileType,
+      start_process_time: { $exists: true },
+      process_time: { $exists: false },
     }) },
   ],
 });
@@ -484,6 +503,21 @@ export const sendGenerateNewFileQuery = (paymentGateway, fileType, data) => {
     action: 'generateTransactionsRequestFile',
     params,
   };
+}
+
+export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file, paymentsFileType) => {
+  const formData = new FormData();
+  formData.append('payment_gateway', paymentGateway);
+  formData.append('file_type', fileType);
+  formData.append('payments_file_type', paymentsFileType);
+  formData.append('file', file);
+  return ({
+    api: 'uploadfile',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
 }
 
 export const generateOneTimeInvoiceQuery = (aid, lines, sendMail) => {
@@ -692,22 +726,34 @@ export const getCollectionDebtQuery = aid => ({
   ],
 });
 
-export const getOfflinePaymentQuery = (method, aid, amount, payerName, chequeNo) => ({
-  api: 'pay',
-  params: [
-    { method },
-    { payments: JSON.stringify([{
-      amount,
-      aid,
-      payer_name: payerName,
-      dir: 'fc',
-      deposit_slip: '',
-      deposit_slip_bank: '',
-      cheque_no: chequeNo,
-      source: 'web',
-    }]) },
-  ],
-});
+export const getOfflinePaymentQuery = (method, aid, amount, payerName, chequeNo, dir, uf, note, urt) => {
+  const payment = {
+    amount,
+    aid,
+    payer_name: payerName,
+    dir,
+    deposit_slip: '',
+    deposit_slip_bank: '',
+    cheque_no: chequeNo,
+    source: 'web',
+  };
+  if (urt !== '') {
+    payment['urt'] = urt;
+  }
+  if ( note !== '') {
+    payment['note'] = note;
+  }
+  if (uf !== undefined && uf.size !== 0) {
+    payment['uf'] = uf;
+  }
+  return {
+    api: 'pay',
+    params: [
+      { method },
+      { payments:  JSON.stringify([payment])},
+    ]
+  }
+};
 
 export const getConfirmationOperationAllQuery = () => ({
   api: 'operations',

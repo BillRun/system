@@ -212,6 +212,9 @@ class Billrun_Factory {
 		try {
 			if (!self::$cache) {
 				$args = self::config()->getConfigValue('cache', array());
+				if (isset($args[2]['is_relative_path']) && $args[2]['is_relative_path']) {
+					$args[2]['cache_dir'] = APPLICATION_PATH . '/' . $args[2]['cache_dir'];
+				}
 				if (isset($args[2]['cache_id_prefix'])) {
 					$args[2]['cache_id_prefix'] .= '_' . Billrun_Factory::config()->getTenant() . '_';
 				}
@@ -223,7 +226,7 @@ class Billrun_Factory {
 
 			return self::$cache;
 		} catch (Exception $e) {
-			Billrun_Factory::log('Cache instance cannot be generated', Zend_Log::ALERT);
+			Billrun_Factory::log('Cache instance cannot be generated. Exception type: ' . gettype($e) . '. Error: ' . $e->getMessage() . '. Line #' . $e->getLine(), Zend_Log::ALERT);
 		}
 		return false;
 	}

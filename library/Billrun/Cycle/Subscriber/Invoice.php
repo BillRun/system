@@ -33,6 +33,7 @@ class Billrun_Cycle_Subscriber_Invoice {
         
         protected $groupingExtraFields = array();
         protected $groupingEnabled = true;
+		protected $groupingSumExtraFields = array();
 
         /**
 	 * 
@@ -49,6 +50,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		}
                 $this->groupingExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', array()); 
                 $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
+				$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array()); 
 	}
 
 	/**
@@ -144,7 +146,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 		}
 		$rate_key = $rate['key'];
 		foreach ($this->data['breakdown'][$breakdownKey] as &$breakdowns) {
-			if ($breakdowns['name'] === $rate_key) {
+			if (($breakdowns['name'] === $rate_key) || (!$rate_key && ($breakdowns['name'] == 'Plans and Services'))) {
+				Billrun_Factory::log("Found relevant billrun breakdown for rate " . $rate_key,Zend_Log::DEBUG);
 				$breakdowns['cost'] = !$overridePreviouslyAggregatedResults ? $breakdowns['cost'] + $cost : $cost;
 				$breakdowns['usagev'] = !$overridePreviouslyAggregatedResults ? $breakdowns['usagev'] + $usagev : $usagev;
 				$breakdowns['count'] += 1;
@@ -163,9 +166,11 @@ class Billrun_Cycle_Subscriber_Invoice {
 		}
 		
 		if(!$rate_key) {
+			Billrun_Factory::log("Didn't find rate data to update. Updating " . $row['stamp'] . " data under 'Plans and Services' breakdown",Zend_Log::DEBUG);
 			$rate_key = "Plans and Services";
 		}
 		
+		Billrun_Factory::log("Creating new breakdown object for " . $rate_key,Zend_Log::DEBUG);
 		$newBrkDown =  array('name' => $rate_key, 'count' => 1 , 'usagev' => $usagev, 'cost' => $cost);
 		if(!empty($addedData)) {
 			$newBrkDown = array_merge( $newBrkDown, $addedData);
@@ -217,11 +222,24 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$col_str = strval($raw_rate['$ref']);
 		if(!isset($this->rates[$col_str][$id_str])) {
 			if (isset($this->rates[$id_str])) {
+				Billrun_Factory::log("Found rate " . $row['arate_key'] . " in cycle rates cache, using ref " . $id_str ,Zend_Log::DEBUG);
 				return $this->rates[$id_str];
+			} else {
+				Billrun_Factory::log("Didn't find rate " . $row['arate_key'] . " in rates cache. Searching relevant rate by Db ref " . $id_str ,Zend_Log::DEBUG);
+				$rate = Billrun_Rates_Util::getRateByRef($raw_rate, true)->getRawData();
+				if (empty($rate)) {
+					Billrun_Factory::log("Didn't find rate " . $row['arate_key'] . " using db ref " . $id_str . ". Searching relevant rate by time" ,Zend_Log::DEBUG);
+					$rate = Billrun_Rates_Util::getRateByName($row['arate_key'], $row['urt']->sec);
+				} else {
+					Billrun_Factory::log("Found rate " . $row['arate_key'] . " using ref " . $id_str ,Zend_Log::DEBUG);
+				}
+				$res = $rate;
 			}
-			return null;
+		} else {
+			$res = $this->rates[$col_str][$id_str];
 		}
-		return $this->rates[$col_str][$id_str];
+			
+		return $res;
 	}
 	
 	/**
@@ -234,9 +252,11 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @todo remove billrun_key parameter
 	 */
 	public function addLine($counters, $row, $pricingData, $vatable) {
+		Billrun_Factory::log("Adding line " . $row['stamp'] . " to billrun breakdown" ,Zend_Log::DEBUG);
 		if (!$breakdownKey = $this->getBreakdownKey($row)) {
 			return;
 		}
+		Billrun_Factory::log("Searching rate for row " . $row['stamp'] ,Zend_Log::DEBUG);
 		$rate = $this->getRowRate($row);
                 if($this->groupingEnabled){
                         $this->addGroupToTotalGrouping($row);
@@ -248,6 +268,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		if(!empty($row['end'])) {
 			$addedData['end'] = $row['end'];
 		}
+		Billrun_Factory::log("Updating billrun breakdown with row " . $row['stamp'] . " data",Zend_Log::DEBUG);
 		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes'], $addedData);
 		// TODO: apply arategroup to new billrun object
 		if (isset($row['arategroup'])) {
@@ -312,6 +333,11 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @return integer Price after vat.
 	 */
 	protected function addLineVatableData($pricingData, $breakdownKey,$taxData = array()) {
+		Billrun_Factory::dispatcher()->trigger('beforeAddLineVatableData', array($this, $pricingData, $breakdownKey,&$taxData));
+		if (isset($taxData['add_to_breakdown']) && !$taxData['add_to_breakdown']) {
+			Billrun_Factory::log('Tax data should not be added to billrun ' . $breakdownKey . ' breakdown', Zend_Log::DEBUG);
+			return $pricingData['aprice'];
+		}
 		if(!empty($taxData['total_amount']) ) {
 			$this->data['totals']['vatable'] = Billrun_Util::getFieldVal($this->data['totals']['vatable'], 0) + $pricingData['aprice'];
 			$this->data['totals'][$breakdownKey]['vatable'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['vatable'], 0) + $pricingData['aprice'];
@@ -324,7 +350,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			}
 			return $newPrice;
 		} else if( empty($taxData) ) {
-			Billrun_Factory::log('addLineVatableData failed: Tax data missing. data: ' . print_R($this->data, 1), Zend_Log::CRIT);
+			Billrun_Factory::log('addLineVatableData failed: Tax data missing. account: ' . $this->data['aid'] . ', subscriber: ' . $this->data['sid'] . ', billrun: ' . $this->data['key'] . ', breakdown key: ' . $breakdownKey, Zend_Log::CRIT);
 		}
 		//else 
 		return $pricingData['aprice'];
@@ -570,6 +596,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->data['totals']['grouping'][$index]['before_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['before_taxes'], 0) + Billrun_Util::getIn($row, 'aprice', 0);
 		$this->data['totals']['grouping'][$index]['taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['taxes'], 0) + Billrun_Util::getIn($row, 'tax_data.total_amount', 0);
 		$this->data['totals']['grouping'][$index]['after_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['after_taxes'], 0) + Billrun_Util::getIn($row, 'final_charge', 0);
+		// Sum extra grouping fields
+		foreach ($this->groupingSumExtraFields as $field) {
+			Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field, Billrun_Util::getIn($this->data['totals']['grouping'][$index], $field, 0) + Billrun_Util::getIn($row, $field, 0));
+		}		
 	}
 
 	protected function addGroupToTotalGrouping($row) {

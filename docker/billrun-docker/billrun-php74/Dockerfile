@@ -3,14 +3,14 @@ from php:7.4-fpm
 
 RUN apt-get update && apt-get install -y \
         wkhtmltopdf wget  \
-		libpng-dev zlib1g-dev libzip-dev \
+		libpng-dev zlib1g-dev libzip-dev libgmp-dev \
+                unzip openjdk-11-jre-headless \
                 unzip openjdk-11-jre-headless \
     && pecl install yaf-3.1.4 \
     && pecl install mongodb-1.11.1 \
     && pecl install xdebug-3.1.6 \
     && docker-php-ext-enable yaf mongodb xdebug \
-    && docker-php-ext-install pcntl bcmath gd zip sockets
-
+    && docker-php-ext-install pcntl bcmath gd zip sockets gmp
 
 RUN  wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb' \
 	&& apt install -y ./wkhtmltox_0.12.5-1.buster_amd64.deb

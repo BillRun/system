@@ -23,7 +23,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 	protected $subInvoiceType = 'regular';
 	protected $invoicingConfig = array();
 	protected $customer_uf = array();
-	
+	protected $lastAggregatedEntity = null;
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -56,29 +56,69 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		return ;
 	}
 	
+	public function setExternalChargesForAID($aid, $externalCharges)  {
+		return $this->externalCharges[$aid] =$externalCharges;
+	}
 	
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
 			$customCollName = Billrun_Util::getFieldVal($this->invoicingConfig[$this->subInvoiceType]['collection_name'], 'billrun');
+			$this->lastAggregatedEntity = $aggregatedEntity;
 			if(!$this->isFakeCycle()) {
+				$externalCharges = $this->addExternalCharges($aggregatedEntity);
 				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
 				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
 				//Save Account services / plans
 				$this->saveLines($aggregatedResults);
+				//Save external charges
+				$this->saveLines($externalCharges);
 				//Save Account discounts.
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
 				//Save Customer user fields
 				$aggregatedEntity->setUserFields($this->customer_uf);
 				//Close & Save the billrun document
 				$aggregatedEntity->closeInvoice($this->min_invoice_id, FALSE, $customCollName);
+				//Save configurable/aggretaion data
+				$aggregatedEntity->addConfigurableData();
 				$aggregatedEntity->save();
 			} else {
+				$this->addExternalCharges($aggregatedEntity);
 				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
-				$aggregatedEntity->closeInvoice($this->min_invoice_id , $this->isFakeCycle() , $customCollName );
+				$aggregatedEntity->closeInvoice(str_pad('0', strlen($this->min_invoice_id), '0') , $this->isFakeCycle() , $customCollName );
+				//Save configurable/aggretaion data
+				$aggregatedEntity->addConfigurableData();
 			}
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;
 	}
+
+	public function getLastBillrunObj() {
+		return $this->lastAggregatedEntity;
+	}
+
+
+	protected function addExternalCharges(&$aggregatedEntity) {
+		$externalCharges = $this->getExternalChargesForAID($aggregatedEntity->getInvoice()->getAid());
+
+		foreach($externalCharges as &$externalCharge) {
+			$externalCharge['billrun'] = $this->getCycle()->key();
+			$externalCharge['source'] = 'billrun';
+			$externalCharge['billrun_cycle_credit'] = true;
+			$sub = $aggregatedEntity->getSubscriber($externalCharge['sid']);
+			if(!empty($sub)) {
+				$sub->getInvoice()->addLines([$externalCharge]);
+			} else {
+				Billrun_Factory::log("Cloud not  find subscriber for external charge with stamp {$externalCharge['stamp']}, check the plugin logic!",Zend_Log::ERR);
+			}
+		}
+		return $externalCharges;
+	}
+
+	protected function getExternalChargesForAID($aid)  {
+		return empty($this->externalCharges[$aid]) ?  [] : $this->externalCharges[$aid];
+	}
+
+
 	
 	/**
 	 *

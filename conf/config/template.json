@@ -126,6 +126,15 @@
 	"report":{
 		"fields": []
 	},
+	"paymentsFiles":{
+		"fields": []
+	},
+	"paymentsTransactionsResponse":{
+		"fields": []
+	},
+	"paymentsTransactionsRequest":{
+		"fields": []
+	},
 	"taxes": {
 		"fields": [
 			{

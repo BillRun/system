@@ -144,8 +144,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @var boolean
 	 */
 	public $ignoreCdrs = false;
-
-	/**
+        
+        /**
 	 * Array of invoicing days, extra customer filtration
 	 * @var array
 	 */
@@ -332,7 +332,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	public static function removeBeforeAggregate($billrunKey, $aids = array(),$override = true) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		$billrunQuery = array('billrun_key' => $billrunKey, 'aid' => ['$in' => $aids]);
+		$billrunQuery = array('billrun_key' => $billrunKey);
+		if ($aids) {
+			$billrunQuery['aid']['$in'] = $aids;
+		}
 		//if in overirde mode only protect billed account if not then protect any invoiced account
 		if($override) {
 			$billrunQuery['billed'] = array('$eq' => 1) ;
@@ -447,7 +450,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		$rawResults = $this->loadRawData($this->getCycle());
 		$data = $rawResults['data'];
-		Billrun_Factory::log('No data loaded by customer aggregator', Zend_Log::DEBUG);
+		if (empty($data)) {
+			Billrun_Factory::log('No data loaded by customer aggregator', Zend_Log::DEBUG);
+		}
 		$accounts = $this->parseToAccounts($data, $this);
 		
 		return $accounts;
@@ -782,7 +787,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				'$regex' => new Mongodloid_Regex('/^\d{6}$/i'), // 6 digits length billrun keys only
 			],
 			'urt' => [
-				'$gt' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrun_key)),
+				'$gte' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrun_key)),
 			],
 			'installments' => [
 				'$exists' => true,
