@@ -69,7 +69,7 @@ class Billrun_Account_External extends Billrun_Account {
 			
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
 			
-			$results = json_decode($results, true);		
+			$results = json_decode($results, true);
 			//Check for errors
 			if(empty($results)) {
 				Billrun_Factory::log('Failed to retrive valid results for billable, remote returned no data.',Zend_Log::WARN);
@@ -91,7 +91,26 @@ class Billrun_Account_External extends Billrun_Account {
 				}
 
 			}
+			if(Billrun_Factory::config()->getConfigValue('subscribers.account.cache_gba_to_gsd',true) ) {
+				$this->saveRevisionsToCache($results['data'],$cycle);
+			}
 			return $results;
+	}
+
+	protected function saveRevisionsToCache($revs,$cycleData) {
+		if(!$this->cacheEnabled) { return false;}
+		$idFieldsToples = Billrun_Factory::config()->getConfigValue('',[['sid','aid'],['sid']]);
+		foreach($revs as $rev) {
+			foreach($idFieldsToples as $idTople) {
+				$query = array_intersect_key($rev,array_flip($idTople));
+				array_walk($query,function(&$val, $key)  {
+					$val = ['key' => $key, 'operator'=> 'equal','value'=>$val];
+				},);
+				$query['time'] = date(Billrun_Base::base_datetimeformat,($rev['to'] && $cycleData->end() < $rev['to'] ? $cycleData->end() : $rev['to'])->sec) ;
+				$this->cacheExternalData([$query],$rev);
+			}
+		}
+		return true;
 	}
 
 	/**
