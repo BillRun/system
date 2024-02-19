@@ -865,6 +865,7 @@ class Subscription extends Component {
                       { this.getPrices(currentPlan, planName) }
                       <br />
                       { allowEdit && this.getAddPriceButton(planName) }
+                      <hr className="page-separator" />
                     </div>
                   );
                 })
