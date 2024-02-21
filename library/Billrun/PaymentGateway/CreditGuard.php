@@ -94,6 +94,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 		if ($additionalParams['terminalNumber']) {
 			$params['terminalNumber'] = $additionalParams['terminalNumber'];
+			$this->saveDetails['terminal_number'] = $additionalParams['terminalNumber'];
 		}
 
 		return $this->buildInquireQuery($params, $additionalParams['terminal'] ?? 'redirect_terminal');
@@ -124,6 +125,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['credit_company'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->creditCompany->attributes()->code;
 			$this->saveDetails['card_brand'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardBrand->attributes()->code;
 			$this->saveDetails['card_acquirer'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardAcquirer->attributes()->code;
+			$this->saveDetails['terminal_number'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->terminalNumber;
 			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
 			$retParams['action'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
 			$retParams['transferred_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
@@ -138,7 +140,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$fourDigits = substr($cardNum, -4);
 			$retParams['four_digits'] = $this->saveDetails['four_digits'] = $fourDigits;
 			$retParams['expiration_date'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
-			$retParams['terminal_number'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->terminalNumber;
+			$retParams['terminal_number'] = $this->saveDetails['terminal_number'];
 			$retParams['uid'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->ashraitEmvData->uid;
 			if ($retParams['action'] == 'SinglePayment' || $retParams['action'] == 'SinglePaymentToken') {
 				$this->transactionId = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->tranId;
@@ -197,6 +199,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'credit_company' => (string) $this->saveDetails['credit_company'],
 				'card_type' => (string) $this->saveDetails['card_type'],
 				'keepCCDetails' => $this->saveDetails['keepCCDetails'],
+				'terminal_number' => $this->saveDetails['terminal_number'],
 			)
 		);
 	}
