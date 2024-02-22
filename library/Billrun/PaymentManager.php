@@ -247,7 +247,8 @@ class Billrun_PaymentManager {
 		$payments = [];
 		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
 		foreach ($prePayments as $prePayment) {
-			$payment = $switch_links ? Billrun_Bill_Payment::getInstanceByid($prePayment->getPayment()->getId()) : $prePayment->getPayment();
+			$db_payment = Billrun_Bill_Payment::getInstanceByid($prePayment->getPayment()->getId());
+			$payment = ($switch_links && !is_null($db_payment)) ? $db_payment : $prePayment->getPayment();
 			if ($payment) {
 				$payments[] = ['payments' => $payment, 'payment_data' => $prePayment->getData()];
 			}
