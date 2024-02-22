@@ -79,7 +79,9 @@ class Billrun_Account_External extends Billrun_Account {
 				Billrun_Factory::log("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams), Zend_Log::ALERT);
 				return [];
 			}
-			
+			if(Billrun_Factory::config()->getConfigValue('subscribers.account.cache_gba_to_gsd.enabled',false) ) {
+				$this->saveRevisionsToCache($results['data'],$cycle);
+			}
 			// Preform translation if needed and return results
 			$fieldMapping = ['firstname' => 'first_name', 'lastname' => 'last_name'];
 			foreach($results['data'] as &$rev) {
@@ -91,23 +93,38 @@ class Billrun_Account_External extends Billrun_Account {
 				}
 
 			}
-			if(Billrun_Factory::config()->getConfigValue('subscribers.account.cache_gba_to_gsd',true) ) {
-				$this->saveRevisionsToCache($results['data'],$cycle);
-			}
+
 			return $results;
 	}
 
 	protected function saveRevisionsToCache($revs,$cycleData) {
 		if(!$this->cacheEnabled) { return false;}
-		$idFieldsToples = Billrun_Factory::config()->getConfigValue('',[['sid','aid'],['sid']]);
+		$idFieldsToples = Billrun_Factory::config()->getConfigValue('subscribers.account.cache_gba_to_gsd.query_fields',['subscriber'=> [['sid','aid'],['sid']], 'account'=>[['aid']]]);
 		foreach($revs as $rev) {
-			foreach($idFieldsToples as $idTople) {
-				$query = array_intersect_key($rev,array_flip($idTople));
-				array_walk($query,function(&$val, $key)  {
-					$val = ['key' => $key, 'operator'=> 'equal','value'=>$val];
+			foreach($idFieldsToples[$rev['type']] as $idTople) {
+				$queryParams = array_intersect_key($rev, array_flip($idTople));
+				if(count($queryParams) !=  count($idTople)) { continue; }
+				array_walk($queryParams,function(&$val, $key)  {
+					$val = ['key' => $key, 'operator'=> 'equal','value'=>intval($val)];
 				},);
-				$query['time'] = date(Billrun_Base::base_datetimeformat,($rev['to'] && $cycleData->end() < $rev['to'] ? $cycleData->end() : $rev['to'])->sec) ;
-				$this->cacheExternalData([$query],$rev);
+				$queryParams = array_values($queryParams);
+				if(!empty($queryParams)) {
+					$revTo = empty($rev['to']) ? PHP_INT_MAX : strtotime($rev['to']);
+					$time = ( $cycleData->end() < $revTo ? $cycleData->end() : $revTo);
+
+					$query = [
+								'time' =>  date(Billrun_Base::base_datetimeformat, $time->sec),
+								'params' => $queryParams,
+								'id' => md5(serialize($queryParams))
+							];
+					$rev['id'] = $query['id'];
+
+					if($rev['type']=='subscriber') {
+						Billrun_Factory::subscriber()->cacheExternalData(['query'=> [$query]],[$rev]);
+					} else {
+						$this->cacheExternalData(['query'=> [$query]],[$rev]);
+					}
+				}
 			}
 		}
 		return true;
@@ -116,7 +133,7 @@ class Billrun_Account_External extends Billrun_Account {
 	/**
 	 * @return string
 	 */
-	protected function getCachePrefix(): string {
+	protected static function getCachePrefix(): string {
 		return 'external_account_';
 	}
 
@@ -132,18 +149,18 @@ class Billrun_Account_External extends Billrun_Account {
 			$requestData['date'] = $globalDate;
 		}
 
-		$res = $this->loadCache($requestData, function($requestData) {
-		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
-		$params = [
-			'authentication' => $this->remote_authentication,
-		];
-		$request = new Billrun_Http_Request($this->remote, $params);
-		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
-		$request->setRawData(json_encode($requestData));
-		$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.account.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
-		$request->setConfig(array('timeout' => $requestTimeout));
-		$res = $request->request(Billrun_Http_Request::POST)->getBody();
-		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
+			$res = $this->loadCache($requestData, function($requestData) {
+			Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
+			$params = [
+				'authentication' => $this->remote_authentication,
+			];
+			$request = new Billrun_Http_Request($this->remote, $params);
+			$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
+			$request->setRawData(json_encode($requestData));
+			$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.account.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
+			$request->setConfig(array('timeout' => $requestTimeout));
+			$res = $request->request(Billrun_Http_Request::POST)->getBody();
+			Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
 			return json_decode($res);
 		});
 		

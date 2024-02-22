@@ -13,18 +13,24 @@ trait Billrun_Subscriber_External_Cacheable {
 	 * @param $id
 	 * @return void
 	 */
-	public static function cleanExternalCache($id) {
-		$tagKey = static::buildCacheTagKey($id);
+	public static function cleanExternalCache($id = false) {
+
 		$cache = Billrun_Factory::cache();
 		if($cache) {
-			$cacheKeysList = $cache->get($tagKey, static::getCacheTagPrefix());
+			if( false !== $id) {
+				$tagKey = static::buildCacheTagKey($id);
+				$cacheKeysList = $cache->get($tagKey, static::getCacheTagPrefix());
 
-			foreach ($cacheKeysList as $cacheKey) {
-				$cache->remove($cacheKey, static::getCachePrefix());
+				foreach ($cacheKeysList as $cacheKey) {
+					$cache->remove($cacheKey, static::getCachePrefix());
+				}
+
+				$cache->remove($tagKey, static::getCacheTagPrefix());
+			} else {
+				$cache->clean();
 			}
-
-			$cache->remove($tagKey, static::getCacheTagPrefix());
 		}
+
 		return true;
 	}
 
@@ -38,7 +44,7 @@ trait Billrun_Subscriber_External_Cacheable {
 	/**
 	 * @param bool $cacheEnabled
 	 */
-	protected function setCacheEnabled(bool $cacheEnabled) {
+	public function setCacheEnabled(bool $cacheEnabled) {
 		$this->cacheEnabled = $cacheEnabled;
 	}
 
@@ -52,7 +58,7 @@ trait Billrun_Subscriber_External_Cacheable {
 	/**
 	 * @param int $cachingTTL
 	 */
-	protected function setCachingTTL(int $cachingTTL) {
+	public function setCachingTTL(int $cachingTTL) {
 		$this->cachingTTL = $cachingTTL;
 	}
 
@@ -112,6 +118,7 @@ trait Billrun_Subscriber_External_Cacheable {
 			}
 			return $value;
 		});
+		$keyFields = array_values($keyFields);
 
 		return md5(serialize($keyFields));
 	}
@@ -119,7 +126,7 @@ trait Billrun_Subscriber_External_Cacheable {
 	private function getCachedExternalEntry(string $cacheKey, int $time) {
 		$cache = Billrun_Factory::cache();
 
-		$cachedEntries = $cache->get($cacheKey, static::getCachePrefix());
+		$cachedEntries = $cache->get($cacheKey, $this->getCachePrefix());
 
 		if (!is_array($cachedEntries)) {
 			return null;
@@ -147,7 +154,7 @@ trait Billrun_Subscriber_External_Cacheable {
 		}
 
 		if ($needToUpdateCache) {
-			$cache->set($cacheKey, $cachedEntries, static::getCachePrefix());
+			$cache->set($cacheKey, $cachedEntries, $this->getCachePrefix());
 		}
 
 		return $returnEntry;
@@ -184,7 +191,7 @@ trait Billrun_Subscriber_External_Cacheable {
 		return $filteredResults;
 	}
 
-	private function cacheExternalData(array $externalQuery, array $results) {
+	public function cacheExternalData(array $externalQuery, array $results) {
 		$cache = Billrun_Factory::cache();
 
 		$queries = $externalQuery['query'] ?? [];
@@ -205,7 +212,7 @@ trait Billrun_Subscriber_External_Cacheable {
 			}
 
 			$cacheKey = $this->buildExternalDataCacheKey($query);
-			$cachedEntries = $cache->get($cacheKey, static::getCachePrefix());
+			$cachedEntries = $cache->get($cacheKey, $this->getCachePrefix());
 
 			if (!is_array($cachedEntries)) {
 				$cachedEntries = [];
@@ -225,7 +232,7 @@ trait Billrun_Subscriber_External_Cacheable {
 
 			$cachedEntries = array_merge($cachedEntries, $queryResults);
 
-			$cache->set($cacheKey, $cachedEntries, static::getCachePrefix());
+			$cache->set($cacheKey, $cachedEntries, $this->getCachePrefix());
 			$this->tagCache($cacheKey, $cachedEntries);
 		}
 	}
@@ -264,7 +271,6 @@ trait Billrun_Subscriber_External_Cacheable {
 		$results = [];
 
 		if (!empty($requestParams['query'])) {
-
 			$results = $fallback($requestParams);
 
 			$this->cacheExternalData($requestParams, $results);
