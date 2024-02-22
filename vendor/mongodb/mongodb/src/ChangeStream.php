@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2017-present MongoDB, Inc.
+ * Copyright 2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ use MongoDB\Driver\Exception\RuntimeException;
 use MongoDB\Driver\Exception\ServerException;
 use MongoDB\Exception\ResumeTokenException;
 use MongoDB\Model\ChangeStreamIterator;
-use ReturnTypeWillChange;
-
 use function call_user_func;
 use function in_array;
 
@@ -42,7 +40,7 @@ class ChangeStream implements Iterator
      * @deprecated 1.4
      * @todo Remove this in 2.0 (see: PHPLIB-360)
      */
-    public const CURSOR_NOT_FOUND = 43;
+    const CURSOR_NOT_FOUND = 43;
 
     /** @var int */
     private static $cursorNotFound = 43;
@@ -56,11 +54,11 @@ class ChangeStream implements Iterator
         189, // PrimarySteppedDown
         262, // ExceededTimeLimit
         9001, // SocketException
-        10107, // NotPrimary
+        10107, // NotMaster
         11600, // InterruptedAtShutdown
         11602, // InterruptedDueToReplStateChange
-        13435, // NotPrimaryNoSecondaryOk
-        13436, // NotPrimaryOrSecondary
+        13435, // NotMasterNoSlaveOk
+        13436, // NotMasterOrSecondary
         63, // StaleShardVersion
         150, // StaleEpoch
         13388, // StaleConfig
@@ -103,7 +101,6 @@ class ChangeStream implements Iterator
      * @see http://php.net/iterator.current
      * @return mixed
      */
-    #[ReturnTypeWillChange]
     public function current()
     {
         return $this->iterator->current();
@@ -135,7 +132,6 @@ class ChangeStream implements Iterator
      * @see http://php.net/iterator.key
      * @return mixed
      */
-    #[ReturnTypeWillChange]
     public function key()
     {
         if ($this->valid()) {
@@ -150,7 +146,6 @@ class ChangeStream implements Iterator
      * @return void
      * @throws ResumeTokenException
      */
-    #[ReturnTypeWillChange]
     public function next()
     {
         try {
@@ -166,7 +161,6 @@ class ChangeStream implements Iterator
      * @return void
      * @throws ResumeTokenException
      */
-    #[ReturnTypeWillChange]
     public function rewind()
     {
         try {
@@ -184,7 +178,6 @@ class ChangeStream implements Iterator
      * @see http://php.net/iterator.valid
      * @return boolean
      */
-    #[ReturnTypeWillChange]
     public function valid()
     {
         return $this->iterator->valid();

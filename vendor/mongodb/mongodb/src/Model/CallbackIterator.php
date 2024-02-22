@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2017-present MongoDB, Inc.
+ * Copyright 2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ namespace MongoDB\Model;
 use Closure;
 use Iterator;
 use IteratorIterator;
-use ReturnTypeWillChange;
 use Traversable;
 
 /**
@@ -33,12 +32,12 @@ class CallbackIterator implements Iterator
     /** @var Closure */
     private $callback;
 
-    /** @var Iterator */
+    /** @var IteratorIterator */
     private $iterator;
 
     public function __construct(Traversable $traversable, Closure $callback)
     {
-        $this->iterator = $traversable instanceof Iterator ? $traversable : new IteratorIterator($traversable);
+        $this->iterator = new IteratorIterator($traversable);
         $this->callback = $callback;
     }
 
@@ -46,7 +45,6 @@ class CallbackIterator implements Iterator
      * @see http://php.net/iterator.current
      * @return mixed
      */
-    #[ReturnTypeWillChange]
     public function current()
     {
         return ($this->callback)($this->iterator->current());
@@ -56,7 +54,6 @@ class CallbackIterator implements Iterator
      * @see http://php.net/iterator.key
      * @return mixed
      */
-    #[ReturnTypeWillChange]
     public function key()
     {
         return $this->iterator->key();
@@ -66,7 +63,6 @@ class CallbackIterator implements Iterator
      * @see http://php.net/iterator.next
      * @return void
      */
-    #[ReturnTypeWillChange]
     public function next()
     {
         $this->iterator->next();
@@ -76,7 +72,6 @@ class CallbackIterator implements Iterator
      * @see http://php.net/iterator.rewind
      * @return void
      */
-    #[ReturnTypeWillChange]
     public function rewind()
     {
         $this->iterator->rewind();
@@ -86,7 +81,6 @@ class CallbackIterator implements Iterator
      * @see http://php.net/iterator.valid
      * @return boolean
      */
-    #[ReturnTypeWillChange]
     public function valid()
     {
         return $this->iterator->valid();

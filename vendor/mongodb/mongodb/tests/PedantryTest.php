@@ -7,7 +7,6 @@ use RecursiveIteratorIterator;
 use ReflectionClass;
 use ReflectionMethod;
 use RegexIterator;
-
 use function array_filter;
 use function array_map;
 use function realpath;
@@ -16,7 +15,6 @@ use function strcasecmp;
 use function strlen;
 use function substr;
 use function usort;
-
 use const DIRECTORY_SEPARATOR;
 
 /**
@@ -27,7 +25,7 @@ class PedantryTest extends TestCase
     /**
      * @dataProvider provideProjectClassNames
      */
-    public function testMethodsAreOrderedAlphabeticallyByVisibility($className): void
+    public function testMethodsAreOrderedAlphabeticallyByVisibility($className)
     {
         $class = new ReflectionClass($className);
         $methods = $class->getMethods();
@@ -43,11 +41,9 @@ class PedantryTest extends TestCase
             if ($method->getModifiers() & ReflectionMethod::IS_PRIVATE) {
                 return '2' . $method->getName();
             }
-
             if ($method->getModifiers() & ReflectionMethod::IS_PROTECTED) {
                 return '1' . $method->getName();
             }
-
             if ($method->getModifiers() & ReflectionMethod::IS_PUBLIC) {
                 return '0' . $method->getName();
             }

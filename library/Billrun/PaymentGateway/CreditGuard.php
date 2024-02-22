@@ -250,7 +250,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$customParams = $this->getGatewayCustomParams();
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
 		$terminal_type = isset($addonData['terminal_type']) ? $addonData['terminal_type'] : 'charging_terminal';
-		$terminalNumber = $credentials[$terminal_type] ?? $credentials['charging_terminal'];
+		$terminalNumber = $credentials[$terminal_type] ? $credentials[$terminal_type] : $credentials['charging_terminal'];
 		$ZParameter = '';
 		if (!empty($customParams['send_z_param'])) {
 			$aidStringVal = strval($addonData['aid']);
