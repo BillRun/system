@@ -50,9 +50,6 @@
         "autoEncryptOpts": {
           "kmsProviders": {
             "aws": {}
-          },
-          "extraOptions": {
-            "mongocryptdBypassSpawn": true
           }
         }
       },

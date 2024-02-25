@@ -187,6 +187,24 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 		}
 	}
 }
+
+//BRCD-4274 - Insert notification plugin
+var notification_plugin_exists = false;
+for (var i = 0; i < lastConfig['plugins'].length; i++) {
+    if (lastConfig.plugins[i]['name'] == 'notificationsPlugin') {
+        notification_plugin_exists = true;
+    }
+};
+
+if(!notification_plugin_exists) {
+	lastConfig.plugins.push({
+		"name": "notificationsPlugin",
+		"enabled": false,
+		"system": true,
+		"hide_from_ui": false
+	})
+};
+
 //-------------------------------------------------------------------
 // BRCD-1278 - backward support for new template
 if(lastConfig.invoice_export) {
