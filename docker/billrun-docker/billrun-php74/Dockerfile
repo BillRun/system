@@ -23,7 +23,6 @@ RUN rm -rf /tmp/*
 COPY php-fpm.conf /usr/local/etc/
 COPY php.ini /usr/local/etc/php/
 COPY xdebug.ini /usr/local/etc/php/conf.d/
-
+COPY --from=composer:2.6.6 /usr/bin/composer /usr/bin/composer
 WORKDIR /billrun
-
 CMD ["php-fpm"]
