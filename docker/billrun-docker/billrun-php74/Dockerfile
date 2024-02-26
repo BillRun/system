@@ -16,4 +16,6 @@ RUN  wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/w
 COPY php-fpm.conf /usr/local/etc/
 COPY php.ini /usr/local/etc/php/
 COPY xdebug.ini /usr/local/etc/php/conf.d/
+COPY --from=composer:2.6.6 /usr/bin/composer /usr/bin/composer
+WORKDIR /billrun
 CMD ["php-fpm"]
