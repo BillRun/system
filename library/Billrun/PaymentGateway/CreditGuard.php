@@ -502,7 +502,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$XParameter = !empty($addonData['txid']) ? '<user>' . $addonData['txid']  . '</user>' : '';
 		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
 		$terminal_type = isset($xmlParams['terminal_type']) ? $xmlParams['terminal_type'] : 'redirect_terminal';
-		$this->terminalNumber = $credentials[$terminal_type] ?? $credentials['redirect_terminal'];
+		$this->terminalNumber = $credentials[$terminal_type] ? $credentials[$terminal_type] : $credentials['redirect_terminal'];
 		$ashraitEmvData = '<ashraitEmvData>
 						<recurringTotalNo>999</recurringTotalNo>
 						<recurringTotalSum></recurringTotalSum>
