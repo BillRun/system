@@ -40,14 +40,23 @@ class ClearcacheAction extends ApiAction {
 	}
 
 	protected function clearCacheForSubscriber($query) {
-		$id = $query[Billrun_Subscriber_External::getCachingEntityIdKey()];
-		return Billrun_Subscriber_External::cleanExternalCache($id);
+		$subscriber = Billrun_Factory::subscriber();
+		if($subscriber->getType() == 'external') {
+			$id = $query[$subscriber->getCachingEntityIdKey()];
+
+			return $subscriber->cleanExternalCache($id);
+		}
+		return FALSE;
 	}
 
 
 	protected function clearCacheForAccount($query) {
-		$id = $query[Billrun_Account_External::getCachingEntityIdKey()];
-		return Billrun_Account_External::cleanExternalCache($id);
+		$account = Billrun_Factory::account();
+		if($account->getType() == 'external') {
+			$id = $query[$account->getCachingEntityIdKey()];
+			return $account->cleanExternalCache($id);
+		}
+		return FALSE;
 	}
 
 	protected function setReponse($retValue) {

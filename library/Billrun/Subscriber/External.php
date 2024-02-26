@@ -11,6 +11,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	
 	static $queriesLoaded = false;
 	
+	//static protected  $cachePrefix = 'ext_sub_';
 	static protected $type = 'external';
 	
 	protected static $queryBaseKeys = [ 'limit','time','id'];
@@ -91,7 +92,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	}
 	
 	//------------------------------- STATIC ------------------------------
-	public static function getCachingEntityIdKey() {
+	public function getCachingEntityIdKey() {
 		return 'sid';
 	}
 

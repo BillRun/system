@@ -1,31 +1,34 @@
 <?php
 
 trait Billrun_Subscriber_External_Cacheable {
-	private $cacheEnabled = true;
-	private $cachingTTL = 300;
+	protected  $cacheEnabled = true;
+	protected  $cachingTTL = 300;
+	protected  $cachePrefix = 'ext_sub_';
 
 	/**
 	 * @return string
 	 */
-	abstract public static function getCachingEntityIdKey();
+	abstract public function getCachingEntityIdKey();
 
 	/**
 	 * @param $id
 	 * @return void
 	 */
-	public static function cleanExternalCache($id = false) {
+	public function cleanExternalCache($id = false) {
 
 		$cache = Billrun_Factory::cache();
 		if($cache) {
 			if( false !== $id) {
-				$tagKey = static::buildCacheTagKey($id);
-				$cacheKeysList = $cache->get($tagKey, static::getCacheTagPrefix());
-
+				$tagKey = $this->buildCacheTagKey($id);
+				Billrun_Factory::log(json_encode([$tagKey, $this->getCacheTagPrefix()]));
+				$cacheKeysList = $cache->get($tagKey, $this->getCacheTagPrefix());
+				Billrun_Factory::log(json_encode([$cacheKeysList]));
 				foreach ($cacheKeysList as $cacheKey) {
-					$cache->remove($cacheKey, static::getCachePrefix());
+					Billrun_Factory::log(json_encode([$cacheKey, $this->getCachePrefix()]));
+					$cache->remove($cacheKey, $this->getCachePrefix());
 				}
-
-				$cache->remove($tagKey, static::getCacheTagPrefix());
+				Billrun_Factory::log(json_encode([$tagKey, $this->getCacheTagPrefix()]));
+				$cache->remove($tagKey, $this->getCacheTagPrefix());
 			} else {
 				$cache->clean();
 			}
@@ -62,35 +65,44 @@ trait Billrun_Subscriber_External_Cacheable {
 		$this->cachingTTL = $cachingTTL;
 	}
 
+
+
 	/**
-	 * @return string
+	 * @param int $cachingTTL
 	 */
-	protected static function getCachePrefix(): string {
-		return 'external_subscriber_';
+	public function setCachePrefix(string $newPrefix) {
+		$this->cachePrefix = $newPrefix;
 	}
 
 	/**
 	 * @return string
 	 */
-	private static function getCacheTagPrefix() {
-		return static::getCachePrefix() . '_tag_';
+	protected function getCachePrefix(): string {
+		return $this->cachePrefix;
 	}
 
-	private static function buildCacheTagKey($entityId) {
-		return md5(serialize([static::getCachingEntityIdKey() => $entityId]));
+	/**
+	 * @return string
+	 */
+	private function getCacheTagPrefix() {
+		return $this->getCachePrefix() . '_tag_';
+	}
+
+	private function buildCacheTagKey($entityId) {
+		return md5(serialize([$this->getCachingEntityIdKey() => $entityId]));
 	}
 
 	private function tagCache($cacheKey, $cachedEntries) {
 		$cache = Billrun_Factory::cache();
 		foreach ($cachedEntries as $cachedEntry) {
-			$id = $cachedEntry[static::getCachingEntityIdKey()];
+			$id = $cachedEntry[$this->getCachingEntityIdKey()];
 
 			if (!$id) {
 				continue;
 			}
 
-			$tagKey = static::buildCacheTagKey($id);
-			$cacheKeysList = $cache->get($tagKey, static::getCacheTagPrefix());
+			$tagKey = $this->buildCacheTagKey($id);
+			$cacheKeysList = $cache->get($tagKey, $this->getCacheTagPrefix());
 
 			if (!is_array($cacheKeysList)) {
 				$cacheKeysList = [];
@@ -99,7 +111,7 @@ trait Billrun_Subscriber_External_Cacheable {
 			if (!in_array($cacheKey, $cacheKeysList)) {
 				$cacheKeysList[] = $cacheKey;
 			}
-			$cache->set($tagKey, $cacheKeysList, static::getCacheTagPrefix());
+			$cache->set($tagKey, $cacheKeysList, $this->getCacheTagPrefix());
 		}
 	}
 

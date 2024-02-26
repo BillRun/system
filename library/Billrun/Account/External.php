@@ -8,7 +8,8 @@
 
 class Billrun_Account_External extends Billrun_Account {
 	use Billrun_Subscriber_External_Cacheable;
-	
+
+	//static protected $cachePrefix = 'ext_acc_';
 	protected static $type = 'external';
 	
 	protected static $queryBaseKeys = ['id', 'time', 'limit'];
@@ -31,9 +32,10 @@ class Billrun_Account_External extends Billrun_Account {
 
 		$this->setCacheEnabled(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_enabled', false));
 		$this->setCachingTTL(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_ttl', 300));
+		$this->setCachePrefix('ext_acc_');
 	}
 	
-	public static function getCachingEntityIdKey() {
+	public function getCachingEntityIdKey() {
 		return 'aid';
 	}
 
@@ -128,13 +130,6 @@ class Billrun_Account_External extends Billrun_Account {
 			}
 		}
 		return true;
-	}
-
-	/**
-	 * @return string
-	 */
-	protected static function getCachePrefix(): string {
-		return 'external_account_';
 	}
 
 	/**

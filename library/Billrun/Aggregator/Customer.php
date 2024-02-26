@@ -267,6 +267,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				Billrun_Factory::subscriber()->cleanExternalCache();
 				Billrun_Factory::account()->cleanExternalCache();
 			}
+			if(!empty(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.prefix',''))) {
+				Billrun_Factory::account()->setCachePrefix(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.prefix',''));
+			}
+			if(!empty(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.prefix',''))) {
+				Billrun_Factory::account()->setCachePrefix(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.prefix',''));
+			}
 			Billrun_Factory::subscriber()->setCacheEnabled(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.enabled',false));
 			Billrun_Factory::subscriber()->setCachingTTL(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.ttl',600));
 			Billrun_Factory::account()->setCacheEnabled(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.enabled',false));
