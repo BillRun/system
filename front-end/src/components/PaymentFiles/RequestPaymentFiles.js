@@ -269,6 +269,19 @@ class RequestPaymentFiles extends Component {
     return "-";
   };
 
+  parserError = (item) => {
+    const errors = item.get('errors', List());
+    if (!errors.isEmpty()) {
+      const data = errors.join(', ');
+      const maxLen = 25;
+      
+      if (typeof data === 'string' && maxLen < data.length) {
+        return <span title={data}>{data.slice(0, maxLen)}...</span>;
+      }
+    }
+    return null; 
+  };
+
   getDetailsFields = () => [
     { field_name: 'stamp' },
     { field_name: 'creation_time', type: 'datetime' },
@@ -278,7 +291,7 @@ class RequestPaymentFiles extends Component {
     { field_name: 'process_time', type: 'datetime' },
     { field_name: 'file_name' },
     { field_name: 'created_by' },
-    { field_name: 'errors', multiple: true },
+    { field_name: 'errors', multiple: true, lineBreaks: true},
     { field_name: 'warnings', multiple: true },
     { field_name: 'info', multiple: true },
     { field_name: 'affects_bills' },
@@ -294,7 +307,7 @@ class RequestPaymentFiles extends Component {
     { id: "process_time", title: this.getLabel("process_time"), type: "mongodatetime", cssClass: "long-date" },
     { id: "file_name", title: this.getLabel("file_name") },
     { id: "created_by", title: this.getLabel("created_by") },
-    { id: "errors", title: this.getLabel("errors") },
+    { id: "errors", title: this.getLabel("errors"), parser: this.parserError },
   ];
 
   getProjectFields = () => ({
