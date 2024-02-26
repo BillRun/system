@@ -1557,4 +1557,11 @@ abstract class Billrun_Bill {
 		$query = array_merge($query, Billrun_Bill::getNotRejectedOrCancelledQuery());
 		return $switch_links_config && count(static::getBills($query));
 	}
+
+	public function setBillData($data) {
+		if (!is_array($data)) {
+			return false;
+		}
+		$this->setRawData($data);
+	}
 }

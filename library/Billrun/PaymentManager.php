@@ -247,10 +247,9 @@ class Billrun_PaymentManager {
 		$payments = [];
 		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
 		foreach ($prePayments as $prePayment) {
-			$db_payment = Billrun_Bill_Payment::getInstanceByid($prePayment->getPayment()->getId());
-			$payment = ($switch_links && !is_null($db_payment)) ? $db_payment : $prePayment->getPayment();
+			list($payment, $payment_data) = $this->getPaymentMostUpdatedData($prePayment, $switch_links);
 			if ($payment) {
-				$payments[] = ['payments' => $payment, 'payment_data' => $prePayment->getData()];
+				$payments[] = ['payments' => $payment, 'payment_data' => $payment_data];
 			}
 		}
 
@@ -448,6 +447,16 @@ class Billrun_PaymentManager {
 
 	protected function getForeignFieldsEntity() {
 		return 'bills';
+	}
+
+	protected function getPaymentMostUpdatedData($prePayment, $switch_links) {
+		$payment = $prePayment->getPayment();
+		$paymant_data = Billrun_Bill_Payment::getInstanceByid($prePayment->getPayment()->getId());
+		if ($switch_links && !is_null($paymant_data)) {
+			$data = $paymant_data->getRawData();
+			$payment->setBillData($data);
+		}
+		return array($payment, $data);
 	}
 
 }
