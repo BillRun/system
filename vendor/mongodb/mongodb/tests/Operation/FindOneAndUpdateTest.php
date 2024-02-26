@@ -10,7 +10,7 @@ class FindOneAndUpdateTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testConstructorFilterArgumentTypeCheck($filter): void
+    public function testConstructorFilterArgumentTypeCheck($filter)
     {
         $this->expectException(InvalidArgumentException::class);
         new FindOneAndUpdate($this->getDatabaseName(), $this->getCollectionName(), $filter, []);
@@ -19,13 +19,13 @@ class FindOneAndUpdateTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testConstructorUpdateArgumentTypeCheck($update): void
+    public function testConstructorUpdateArgumentTypeCheck($update)
     {
         $this->expectException(InvalidArgumentException::class);
         new FindOneAndUpdate($this->getDatabaseName(), $this->getCollectionName(), [], $update);
     }
 
-    public function testConstructorUpdateArgumentRequiresOperatorsOrPipeline(): void
+    public function testConstructorUpdateArgumentRequiresOperatorsOrPipeline()
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Expected an update document with operator as first key or a pipeline');
@@ -35,7 +35,7 @@ class FindOneAndUpdateTest extends TestCase
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options): void
+    public function testConstructorOptionTypeChecks(array $options)
     {
         $this->expectException(InvalidArgumentException::class);
         new FindOneAndUpdate($this->getDatabaseName(), $this->getCollectionName(), [], ['$set' => ['x' => 1]], $options);
@@ -59,7 +59,7 @@ class FindOneAndUpdateTest extends TestCase
     /**
      * @dataProvider provideInvalidConstructorReturnDocumentOptions
      */
-    public function testConstructorReturnDocumentOption($returnDocument): void
+    public function testConstructorReturnDocumentOption($returnDocument)
     {
         $this->expectException(InvalidArgumentException::class);
         new FindOneAndUpdate($this->getDatabaseName(), $this->getCollectionName(), [], [], ['returnDocument' => $returnDocument]);
