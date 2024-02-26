@@ -8,6 +8,13 @@ use Codeception\Module\REST;
 class BillRunAPI extends \Codeception\Module
 {
     protected $accessToken = false;
+
+
+    /**
+     *get access token, it run once.
+     * 
+     * @return String  access_token.
+     */
     public function getAccessToken()
     {
         $testUser = $_ENV['APP_TEST_USER'];
@@ -28,8 +35,15 @@ class BillRunAPI extends \Codeception\Module
 
         return $rest->grabDataFromResponseByJsonPath('$.access_token')[0];
     }
-    protected function sendApi($data,$entity){
-        if(!$this->accessToken){
+    /**
+     * send post billapi requset to create entitys.
+     * @param Array $data - entity fields 
+     * @param String $entity - entity name
+     * 
+     */
+    protected function sendBillapiCreate($data, $entity)
+    {
+        if (!$this->accessToken) {
             $this->accessToken = $this->getAccessToken();
         }
         // Get the REST module to send requests
@@ -40,6 +54,12 @@ class BillRunAPI extends \Codeception\Module
             'update' => json_encode($data)
         ]);
     }
+   
+
+    /**
+     * create an account.
+     * @param Array $override - fields to override the default values 
+     */
     public function generateAccount(array $override = [])
     {
         $account = array_merge([
@@ -57,72 +77,90 @@ class BillRunAPI extends \Codeception\Module
             "email" => "test@gmail.com"
         ], $override);
 
-        $this->sendApi($account,'accounts');
+        $this->sendBillapiCreate($account, 'accounts');
     }
-
+    /**
+     * create an subscriber.
+     * @param Array $override - fields to override the default values 
+     */
     public function generateSubscriber(array $override = [])
     {
         $subscriber = array_merge([
-            
-                "lastname" => "test",
-                "plan" => "D",
-                "from" => "2024-01-31",
-                "play" => "Default",
-                "address" => "hshalom 7",
-                "country" => "Israel",
-                "firstname" => "yossi",
-                "aid" => 1,
-                "services" => []
-            
-        ], $override);
-        $this->sendApi($subscriber,'subscribers');
-    }
 
+            "lastname" => "test",
+            "plan" => "D",
+            "from" => "2024-01-31",
+            "play" => "Default",
+            "address" => "hshalom 7",
+            "country" => "Israel",
+            "firstname" => "yossi",
+            "aid" => 1,
+            "services" => []
+
+        ], $override);
+        $this->sendBillapiCreate($subscriber, 'subscribers');
+    }
+    /**
+     * create an plan.
+     * @param Array $override - fields to override the default values 
+     */
     public function generatePlan(array $override = [])
     {
         $plan = array_merge([
-            
-                "price" => [
-                    [
-                        "price" => 100,
-                        "from" => 0,
-                        "to" => "UNLIMITED"
-                    ]
-                ],
-                "from" => "2024-02-02",
-                "name" => "PLAN",
-                "tax" => [
-                    [
-                        "type" => "vat",
-                        "taxation" => "global"
-                    ]
-                ],
-                "upfront" => false,
-                "recurrence" => ["periodicity" => "month"],
-                "prorated_end" => true,
-                "rates" => [],
-                "prorated_start" => true,
-                "connection_type" => "postpaid",
-                "prorated_termination" => true,
-                "description" => "plan"
-            
+
+            "price" => [
+                [
+                    "price" => 100,
+                    "from" => 0,
+                    "to" => "UNLIMITED"
+                ]
+            ],
+            "from" => "2024-02-02",
+            "name" => "PLAN",
+            "tax" => [
+                [
+                    "type" => "vat",
+                    "taxation" => "global"
+                ]
+            ],
+            "upfront" => false,
+            "recurrence" => ["periodicity" => "month"],
+            "prorated_end" => true,
+            "rates" => [],
+            "prorated_start" => true,
+            "connection_type" => "postpaid",
+            "prorated_termination" => true,
+            "description" => "plan"
+
         ], $override);
-        $this->sendApi($plan,'plans');
+        $this->sendBillapiCreate($plan, 'plans');
     }
+    /**
+     * create an service.
+     * @param Array $override - fields to override the default values 
+     */
     public function generateService(array $override = [])
     {
         $service = array_merge([
-            "description"=>"service_",
-            "name"=>"SERVICE_",
-            "price"=>[["from"=>0,
-            "to"=>"UNLIMITED",
-            "price"=>10]],
-            "tax"=>[["type"=>"vat",
-            "taxation"=>"global"]],
-            "from"=>"2024-02-02",
-            "prorated"=>true
+            "description" => "service_",
+            "name" => "SERVICE_",
+            "price" => [
+                [
+                    "from" => 0,
+                    "to" => "UNLIMITED",
+                    "price" => 10
+                ]
+            ],
+            "tax" => [
+                [
+                    "type" => "vat",
+                    "taxation" => "global"
+                ]
+            ],
+            "from" => "2024-02-02",
+            "prorated" => true
         ], $override);
-        $this->sendApi($service,'services');
+        $this->sendBillapiCreate($service, 'services');
     }
 
 
