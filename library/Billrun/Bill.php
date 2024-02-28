@@ -270,6 +270,7 @@ abstract class Billrun_Bill {
 		$sort = array(
 			'urt' => 1,
 		);
+		$updated_payments = [];
 		$unpaidBills = Billrun_Bill::getUnpaidBills($query, $sort);
 		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort);
 		$pending_paying_bills = $include_pending_payments ? Billrun_Bill::getPendingBills($query, $sort) : [];
@@ -284,6 +285,8 @@ abstract class Billrun_Bill {
 						$unpaidBill->attachPayingBill($overPayingBill, $payingBillAmountLeft)->save();
 						unset($unpaidBills[$key1]);
 						unset($overPayingBills[$key2]);
+						$updated_payments[$overPayingBill->data['txid']] = $overPayingBill->getRawData();
+						$updated_payments[$unpaidBill->getId()] = $unpaidBill->getRawData();
 						break;
 					}
 				}
@@ -298,6 +301,8 @@ abstract class Billrun_Bill {
 						$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $amountPaid, $unpaidBill->getRawData())->save();
 						$unpaidBill->attachPayingBill($overPayingBill, $amountPaid)->save();
 						$unpaidBillLeft -= $amountPaid;
+						$updated_payments[$overPayingBill->data['txid']] = $overPayingBill->getRawData();
+						$updated_payments[$unpaidBill->getId()] = $unpaidBill->getRawData();
 					}
 					if (abs($unpaidBillLeft) < static::precision) {
 						break;
@@ -305,6 +310,7 @@ abstract class Billrun_Bill {
 				}
 			}
 		}
+		return $updated_payments;
 	}
 
 	public static function getUnpaidBills($query = array(), $sort = array()) {
@@ -1547,7 +1553,10 @@ abstract class Billrun_Bill {
 			'urt' => array(
 				'$lt' => new Mongodloid_Date(is_null($urt) ? time() : $urt)
 			),
-			'left_to_pay' => array('$gt' => 0),
+			'$or' => array(
+				array('left_to_pay' => ['$gt' => 0]),
+				array('pending_covering_amount' => ['$gt' => 0])
+			),
 			'$or' => array(
 				array('waiting_payments' => ['$exists' => true, '$ne' => []],'paid_by' => ['$elemMatch' => ['pending' => true]]),
 				array('past_rejections' => ['$exists' => true, '$ne' => []])
