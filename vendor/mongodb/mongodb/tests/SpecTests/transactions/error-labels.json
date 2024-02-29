@@ -10,8 +10,7 @@
       "minServerVersion": "4.1.8",
       "topology": [
         "sharded"
-      ],
-      "serverless": "forbid"
+      ]
     }
   ],
   "database_name": "transaction-tests",
@@ -103,7 +102,7 @@
       }
     },
     {
-      "description": "NotWritablePrimary errors contain transient label",
+      "description": "NotMaster errors contain transient label",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {

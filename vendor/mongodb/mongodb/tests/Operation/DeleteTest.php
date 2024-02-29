@@ -4,7 +4,6 @@ namespace MongoDB\Tests\Operation;
 
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Operation\Delete;
-
 use function array_merge;
 
 class DeleteTest extends TestCase
@@ -12,7 +11,7 @@ class DeleteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testConstructorFilterArgumentTypeCheck($filter): void
+    public function testConstructorFilterArgumentTypeCheck($filter)
     {
         $this->expectException(InvalidArgumentException::class);
         new Delete($this->getDatabaseName(), $this->getCollectionName(), $filter, 0);
@@ -21,7 +20,7 @@ class DeleteTest extends TestCase
     /**
      * @dataProvider provideInvalidLimitValues
      */
-    public function testConstructorLimitArgumentMustBeOneOrZero($limit): void
+    public function testConstructorLimitArgumentMustBeOneOrZero($limit)
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('$limit must be 0 or 1');
@@ -36,7 +35,7 @@ class DeleteTest extends TestCase
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options): void
+    public function testConstructorOptionTypeChecks(array $options)
     {
         $this->expectException(InvalidArgumentException::class);
         new Delete($this->getDatabaseName(), $this->getCollectionName(), [], 1, $options);

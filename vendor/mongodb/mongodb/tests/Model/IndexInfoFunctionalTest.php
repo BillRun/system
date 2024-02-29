@@ -4,15 +4,17 @@ namespace MongoDB\Tests\Model;
 
 use MongoDB\Collection;
 use MongoDB\Tests\FunctionalTestCase;
-
+use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
 use function version_compare;
 
 class IndexInfoFunctionalTest extends FunctionalTestCase
 {
+    use SetUpTearDownTrait;
+
     /** @var Collection */
     private $collection;
 
-    public function setUp(): void
+    private function doSetUp()
     {
         parent::setUp();
 
@@ -20,18 +22,16 @@ class IndexInfoFunctionalTest extends FunctionalTestCase
         $this->collection->drop();
     }
 
-    public function tearDown(): void
+    private function doTearDown()
     {
         if ($this->hasFailed()) {
             return;
         }
 
         $this->collection->drop();
-
-        parent::tearDown();
     }
 
-    public function testIs2dSphere(): void
+    public function testIs2dSphere()
     {
         $indexName = $this->collection->createIndex(['pos' => '2dsphere']);
         $result = $this->collection->listIndexes();
@@ -47,15 +47,8 @@ class IndexInfoFunctionalTest extends FunctionalTestCase
         $this->assertEquals($expectedVersion, $index['2dsphereIndexVersion']);
     }
 
-    /**
-     * @group matrix-testing-exclude-server-5.0-driver-4.0
-     * @group matrix-testing-exclude-server-5.0-driver-4.2
-     * @group matrix-testing-exclude-server-5.0-driver-4.4
-     */
-    public function testIsGeoHaystack(): void
+    public function testIsGeoHaystack()
     {
-        $this->skipIfGeoHaystackIndexIsNotSupported();
-
         $indexName = $this->collection->createIndex(['pos' => 'geoHaystack', 'x' => 1], ['bucketSize' => 5]);
         $result = $this->collection->listIndexes();
 
@@ -68,7 +61,7 @@ class IndexInfoFunctionalTest extends FunctionalTestCase
         $this->assertEquals(5, $index['bucketSize']);
     }
 
-    public function testIsText(): void
+    public function testIsText()
     {
         $indexName = $this->collection->createIndex(['x' => 'text']);
         $result = $this->collection->listIndexes();
