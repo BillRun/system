@@ -8,7 +8,7 @@ use MongoDB\Tests\TestCase;
 
 class IndexInfoTest extends TestCase
 {
-    public function testBasicIndex(): void
+    public function testBasicIndex()
     {
         $info = new IndexInfo([
             'v' => 1,
@@ -29,7 +29,7 @@ class IndexInfoTest extends TestCase
         $this->assertFalse($info->isUnique());
     }
 
-    public function testSparseIndex(): void
+    public function testSparseIndex()
     {
         $info = new IndexInfo([
             'v' => 1,
@@ -51,7 +51,7 @@ class IndexInfoTest extends TestCase
         $this->assertFalse($info->isUnique());
     }
 
-    public function testUniqueIndex(): void
+    public function testUniqueIndex()
     {
         $info = new IndexInfo([
             'v' => 1,
@@ -73,7 +73,7 @@ class IndexInfoTest extends TestCase
         $this->assertTrue($info->isUnique());
     }
 
-    public function testTtlIndex(): void
+    public function testTtlIndex()
     {
         $info = new IndexInfo([
             'v' => 1,
@@ -97,7 +97,7 @@ class IndexInfoTest extends TestCase
         $this->assertSame(100, $info['expireAfterSeconds']);
     }
 
-    public function testDebugInfo(): void
+    public function testDebugInfo()
     {
         $expectedInfo = [
             'v' => 1,
@@ -110,7 +110,7 @@ class IndexInfoTest extends TestCase
         $this->assertSame($expectedInfo, $info->__debugInfo());
     }
 
-    public function testImplementsArrayAccess(): void
+    public function testImplementsArrayAccess()
     {
         $info = new IndexInfo([
             'v' => 1,
@@ -124,7 +124,7 @@ class IndexInfoTest extends TestCase
         $this->assertSame('x_1', $info['name']);
     }
 
-    public function testOffsetSetCannotBeCalled(): void
+    public function testOffsetSetCannotBeCalled()
     {
         $info = new IndexInfo([
             'v' => 1,
@@ -138,7 +138,7 @@ class IndexInfoTest extends TestCase
         $info['v'] = 2;
     }
 
-    public function testOffsetUnsetCannotBeCalled(): void
+    public function testOffsetUnsetCannotBeCalled()
     {
         $info = new IndexInfo([
             'v' => 1,
@@ -152,7 +152,7 @@ class IndexInfoTest extends TestCase
         unset($info['v']);
     }
 
-    public function testIs2dSphere(): void
+    public function testIs2dSphere()
     {
         $info = new IndexInfo([
             'v' => 2,
@@ -173,7 +173,7 @@ class IndexInfoTest extends TestCase
         $this->assertFalse($info->isUnique());
     }
 
-    public function testIsGeoHaystack(): void
+    public function testIsGeoHaystack()
     {
         $info = new IndexInfo([
             'v' => 2,
@@ -194,7 +194,7 @@ class IndexInfoTest extends TestCase
         $this->assertFalse($info->isUnique());
     }
 
-    public function testIsText(): void
+    public function testIsText()
     {
         $info = new IndexInfo([
             'v' => 2,

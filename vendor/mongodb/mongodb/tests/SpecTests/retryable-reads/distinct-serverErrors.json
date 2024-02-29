@@ -10,8 +10,7 @@
     {
       "minServerVersion": "4.1.7",
       "topology": [
-        "sharded",
-        "load-balanced"
+        "sharded"
       ]
     }
   ],
@@ -159,7 +158,7 @@
       ]
     },
     {
-      "description": "Distinct succeeds after NotWritablePrimary",
+      "description": "Distinct succeeds after NotMaster",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -222,7 +221,7 @@
       ]
     },
     {
-      "description": "Distinct succeeds after NotPrimaryNoSecondaryOk",
+      "description": "Distinct succeeds after NotMasterNoSlaveOk",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -285,7 +284,7 @@
       ]
     },
     {
-      "description": "Distinct succeeds after NotPrimaryOrSecondary",
+      "description": "Distinct succeeds after NotMasterOrSecondary",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -726,7 +725,7 @@
       ]
     },
     {
-      "description": "Distinct fails after two NotWritablePrimary errors",
+      "description": "Distinct fails after two NotMaster errors",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -786,7 +785,7 @@
       ]
     },
     {
-      "description": "Distinct fails after NotWritablePrimary when retryReads is false",
+      "description": "Distinct fails after NotMaster when retryReads is false",
       "clientOptions": {
         "retryReads": false
       },

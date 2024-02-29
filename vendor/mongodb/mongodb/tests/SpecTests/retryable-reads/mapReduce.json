@@ -10,10 +10,8 @@
     {
       "minServerVersion": "4.1.7",
       "topology": [
-        "sharded",
-        "load-balanced"
-      ],
-      "serverless": "forbid"
+        "sharded"
+      ]
     }
   ],
   "database_name": "retryable-reads-tests",
@@ -52,8 +50,8 @@
           },
           "result": [
             {
-              "_id": 0,
-              "value": 6
+              "_id": 0.0,
+              "value": 6.0
             }
           ]
         }

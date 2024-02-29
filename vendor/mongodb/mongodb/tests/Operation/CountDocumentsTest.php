@@ -10,7 +10,7 @@ class CountDocumentsTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testConstructorFilterArgumentTypeCheck($filter): void
+    public function testConstructorFilterArgumentTypeCheck($filter)
     {
         $this->expectException(InvalidArgumentException::class);
         new CountDocuments($this->getDatabaseName(), $this->getCollectionName(), $filter);
@@ -19,7 +19,7 @@ class CountDocumentsTest extends TestCase
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options): void
+    public function testConstructorOptionTypeChecks(array $options)
     {
         $this->expectException(InvalidArgumentException::class);
         new CountDocuments($this->getDatabaseName(), $this->getCollectionName(), [], $options);
