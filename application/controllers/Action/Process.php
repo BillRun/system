@@ -42,7 +42,7 @@ class ProcessAction extends Action_Base {
 			$options = array_merge($extraParams, $options);
 		}
 		// If not type all process normaly.
-		if(!$this->handleTypeAll($options)) {
+		if(!$this->handleTypeAll($options, Billrun_Factory::config()->getConfigValue('processor.type_all.run_in_series',false))) {
 			$this->loadProcessor($options);	
 		}
 	}
