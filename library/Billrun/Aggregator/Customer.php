@@ -263,9 +263,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->isValid = true;
 		$this->merge_credit_installments = [];
 		if(Billrun_Factory::subscriber()->getType() == 'external' && Billrun_Factory::account()->getType() == 'external' ) {
-			if(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.clear_on_start',false)) {
-				Billrun_Factory::subscriber()->cleanExternalCache();
-				Billrun_Factory::account()->cleanExternalCache();
+			if( Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.clear_on_start',false) &&
+				( !$this->isCycle || $this->page == 0 ) ) {
+					Billrun_Factory::subscriber()->cleanExternalCache();
+					Billrun_Factory::account()->cleanExternalCache();
 			}
 			if(!empty(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.prefix',''))) {
 				Billrun_Factory::account()->setCachePrefix(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.prefix',''));
