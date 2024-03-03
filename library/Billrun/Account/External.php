@@ -18,6 +18,7 @@ class Billrun_Account_External extends Billrun_Account {
 	protected $remote_authentication;
     protected $remote_billable_url;
 	protected $remote_billable_authentication;
+	protected $cacheGBAtoGSD = false;
 
 	const API_DATETIME_REGEX='/^\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}$/';
 
@@ -33,6 +34,8 @@ class Billrun_Account_External extends Billrun_Account {
 		$this->setCacheEnabled(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_enabled', false));
 		$this->setCachingTTL(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_ttl', 300));
 		$this->setCachePrefix('ext_acc_');
+		$this->setCacheGBAtoGSD( Billrun_Factory::config()->getConfigValue('subscribers.account.cache_gba_to_gsd.enabled',false));
+
 	}
 	
 	public function getCachingEntityIdKey() {
@@ -81,7 +84,8 @@ class Billrun_Account_External extends Billrun_Account {
 				Billrun_Factory::log("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams), Zend_Log::ALERT);
 				return [];
 			}
-			if(Billrun_Factory::config()->getConfigValue('subscribers.account.cache_gba_to_gsd.enabled',false) ) {
+			//cache results forfuture GSD/GAD calls
+			if($this->cacheGBAtoGSD ) {
 				$this->saveRevisionsToCache($results['data'],$cycle);
 			}
 			// Preform translation if needed and return results
@@ -265,6 +269,10 @@ class Billrun_Account_External extends Billrun_Account {
 		}
 		$query['params'] = $params;
 		return $query;
+	}
+
+	public function setCacheGBAtoGSD($newValue ) {
+		$this->cacheGBAtoGSD = $newValue;
 	}
 
 }
