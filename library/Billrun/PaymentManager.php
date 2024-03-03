@@ -456,10 +456,10 @@ class Billrun_PaymentManager {
 		}
 		$switch_links = isset($params['switch_links']) ? $params['switch_links'] : Billrun_Bill::shouldSwitchBillsLinks();
 		$payment = $prePayment->getPayment();
-		$data = $payment->getRawData();
+		$data = $prePayment->getData();
 		$updated_payment = isset($this->account_involved_payments[$prePayment->getPayment()->getId()]) ? $this->account_involved_payments[$prePayment->getPayment()->getId()] : null;
 		if ($switch_links && !is_null($updated_payment)) {
-			$data = $updated_payment;
+			$data = array_merge($data, $updated_payment);
 			$payment->setBillData($updated_payment);
 		}
 		return array($payment, $data);
