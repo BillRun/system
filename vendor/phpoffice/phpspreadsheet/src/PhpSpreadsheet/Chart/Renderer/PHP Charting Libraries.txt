@@ -5,10 +5,7 @@ GraPHPite
 	http://graphpite.sourceforge.net/
 
 JpGraph
-	https://jpgraph.net/
-	Used composer packages:
-        https://packagist.org/packages/jpgraph/jpgraph (\PhpOffice\PhpSpreadsheet\Chart\Renderer\JpGraph)
-        https://packagist.org/packages/mitoteam/jpgraph (\PhpOffice\PhpSpreadsheet\Chart\Renderer\MtJpGraphRenderer)
+	http://www.aditus.nu/jpgraph/
 
 LibChart
 	https://naku.dohcrew.com/libchart/pages/introduction/
