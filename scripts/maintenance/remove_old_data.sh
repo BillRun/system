@@ -91,9 +91,5 @@ for coll in "${!CUSTOMER_COLL[@]}"; do
 	COLL_MONTHS_TO_KEEP=$(( ${CUSTOMER_COLL[$coll]} >  $CUSTOMER_MONTHS_TO_KEEP ? ${CUSTOMER_COLL[$coll]} : $CUSTOMER_MONTHS_TO_KEEP ));
 	echo "var trgtColl='$coll'; var daysToRmove = $DAYS_TO_REMOVE_PER_ITER; var monthsToKeep = $COLL_MONTHS_TO_KEEP;" > /tmp/data_creation_time_removal_config.js;
 
-	if [ -z "$DB_USER" ] && [ -z $DB_PASSWORD ]; then
-		$MONGOEXEC --host $DB_HOST $DB_NAME  /tmp/data_creation_time_removal_config.js ./creation_time_based_data_removal.js
-	else
-		$MONGOEXEC --host $DB_HOST --authenticationDatabase=admin -u$DB_USER -p$DB_PASSWORD $DB_NAME  /tmp/data_creation_time_removal_config.js ./creation_time_based_data_removal.js
-	fi
+	$MONGOEXEC $MONGO_ARGS /tmp/data_creation_time_removal_config.js ./creation_time_based_data_removal.js
 done
