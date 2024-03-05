@@ -421,18 +421,26 @@ abstract class Billrun_Bill {
 		return isset($this->data['left']) ? $this->data['left'] : 0;
 	}
 
-	public function detachPaidBills() {
+	public function detachPaidBills($reset_bill = false) {
 		foreach ($this->getPaidBills() as $bill) {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
-				$billObj->detachPayingBill($this->getType(), $this->getId())->save();
+			$billObj->detachPayingBill($this->getType(), $this->getId());
+			if ($reset_bill) {
+				$billObj->clearPaymentAfterDetachPaidBills();
 			}
+			$billObj->save();
 		}
+	}
 	
-	public function detachPayingBills() {
+	public function detachPayingBills($reset_bill = false) {
 		foreach ($this->getPaidByBills() as $bill) {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
-				$billObj->detachPaidBill($this->getType(), $this->getId())->save();
+				$billObj->detachPaidBill($this->getType(), $this->getId());
 			}
+			if ($reset_bill) {
+				$billObj->clearPaymentAfterDetachPayingBills();
+			}
+			$billObj->save();
 		}
 
 	public function getType() {
@@ -1544,7 +1552,6 @@ abstract class Billrun_Bill {
 	public function clearPaymentAfterDetachPaidBills() {
 		$this->data['left'] = $this->getAmount();
 		unset($this->data['pays']);
-		$this->save();
 	}
 
 	public function clearPaymentAfterDetachPayingBills() {
@@ -1553,7 +1560,6 @@ abstract class Billrun_Bill {
 		$this->data['paid'] = false;
 		$this->data['waiting_payments'] = [];
 		unset($this->data['paid_by']);
-		$this->save();
 	}
 
 	/**

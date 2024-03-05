@@ -750,8 +750,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					
 					$paymentResponses['completed'] = $completed;
 					if ($switch_links) {
-						$payment->detachPaidBills();
-						$payment->clearPaymentAfterDetachPaidBills();
+						$payment->detachPaidBills(true);
 					}
 				}
 			}
@@ -865,7 +864,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
 		if ($switch_links) {
 			static::detachPendingPayments($this->getAid());
-			$this->detachPaidBills();
+			$this->detachPaidBills(true);
 			Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid(), true, $switch_links);
 		} else {
 			foreach ($this->getPaidBills() as $bill) {
@@ -1246,11 +1245,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		foreach ($pending_bills as $bill) {
 			if (isset($bill['pays'])) {
 				$bill_obj = Billrun_Bill::getInstanceByData($bill);
-				$bill_obj->detachPaidBills();
+				$bill_obj->detachPaidBills(true);
 			} elseif (isset($bill['paid_by'])) {
 				$bill_obj = Billrun_Bill::getInstanceByData($bill);
-				$bill_obj->detachPayingBills();
-				$bill_obj->clearPaymentAfterDetachPayingBills();
+				$bill_obj->detachPayingBills(true);
 			}
 		}
 	}
