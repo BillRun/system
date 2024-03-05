@@ -275,37 +275,41 @@ abstract class Billrun_Bill {
 		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort);
 		$pending_paying_bills = $include_pending_payments ? Billrun_Bill::getPendingBills($query, $sort) : [];
 		foreach (['over_paying_bills' => $overPayingBills, 'pending_bills' => $pending_paying_bills] as $type => $payments) {
-			foreach ($unpaidBills as $key1 => $unpaidBillRaw) {
+			foreach ($unpaidBills as $key1 => &$unpaidBillRaw) {
 				$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
 				$unpaidBillLeft = $unpaidBill->getLeftToPay();
-				foreach ($payments as $key2 => $overPayingBill) {
-					$payingBillAmountLeft = $overPayingBill->getLeft();
-					if ($payingBillAmountLeft && (Billrun_Util::isEqual($unpaidBillLeft, $payingBillAmountLeft, static::precision))) {
-						$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $payingBillAmountLeft, $unpaidBill->getRawData())->save();
-						$unpaidBill->attachPayingBill($overPayingBill, $payingBillAmountLeft)->save();
-						unset($unpaidBills[$key1]);
-						unset($overPayingBills[$key2]);
-						$updated_payments[$overPayingBill->data['txid']] = $overPayingBill->getRawData();
-						$updated_payments[$unpaidBill->getId()] = $unpaidBill->getRawData();
-						break;
+				if (!Billrun_Util::isEqual($unpaidBillLeft, 0, static::precision)) {
+					foreach ($payments as $key2 => &$overPayingBill) {
+						$payingBillAmountLeft = $overPayingBill->getLeft();
+						if ($payingBillAmountLeft && (Billrun_Util::isEqual($unpaidBillLeft, $payingBillAmountLeft, static::precision))) {
+							$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $payingBillAmountLeft, $unpaidBill->getRawData())->save();
+							$unpaidBill->attachPayingBill($overPayingBill, $payingBillAmountLeft)->save();
+							$unpaidBillRaw = $unpaidBill->getRawData();
+							$updated_payments[$overPayingBill->data['txid']] = $overPayingBill->getRawData();
+							$updated_payments[$unpaidBill->getId()] = $unpaidBillRaw;
+							break;
+						}
 					}
 				}
 			}
-			foreach ($unpaidBills as $unpaidBillRaw) {
+			foreach ($unpaidBills as &$unpaidBillRaw) {
 				$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
 				$unpaidBillLeft = $unpaidBill->getLeftToPay();
-				foreach ($payments as $overPayingBill) {
-					$payingBillAmountLeft = $overPayingBill->getLeft();
-					if ($payingBillAmountLeft) {
-						$amountPaid = min(array($unpaidBillLeft, $payingBillAmountLeft));
-						$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $amountPaid, $unpaidBill->getRawData())->save();
-						$unpaidBill->attachPayingBill($overPayingBill, $amountPaid)->save();
-						$unpaidBillLeft -= $amountPaid;
-						$updated_payments[$overPayingBill->data['txid']] = $overPayingBill->getRawData();
-						$updated_payments[$unpaidBill->getId()] = $unpaidBill->getRawData();
-					}
-					if (abs($unpaidBillLeft) < static::precision) {
-						break;
+				if (!Billrun_Util::isEqual($unpaidBillLeft, 0, static::precision)) {
+					foreach ($payments as &$overPayingBill) {
+						$payingBillAmountLeft = $overPayingBill->getLeft();
+						if ($payingBillAmountLeft) {
+							$amountPaid = min(array($unpaidBillLeft, $payingBillAmountLeft));
+							$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $amountPaid, $unpaidBill->getRawData())->save();
+							$unpaidBill->attachPayingBill($overPayingBill, $amountPaid)->save();
+							$unpaidBillLeft -= $amountPaid;
+							$unpaidBillRaw = $unpaidBill->getRawData();
+							$updated_payments[$overPayingBill->data['txid']] = $overPayingBill->getRawData();
+							$updated_payments[$unpaidBill->getId()] = $unpaidBillRaw;
+						}
+						if (abs($unpaidBillLeft) < static::precision) {
+							break;
+						}
 					}
 				}
 			}
@@ -1540,6 +1544,15 @@ abstract class Billrun_Bill {
 	public function clearPaymentAfterDetachPaidBills() {
 		$this->data['left'] = $this->getAmount();
 		unset($this->data['pays']);
+		$this->save();
+	}
+
+	public function clearPaymentAfterDetachPayingBills() {
+		$this->data['left_to_pay'] = $this->getAmount();
+		$this->data['total_paid'] = 0;
+		$this->data['paid'] = false;
+		$this->data['waiting_payments'] = [];
+		unset($this->data['paid_by']);
 		$this->save();
 	}
 
