@@ -105,6 +105,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->buffer = $options['buffer'];
 		}
 
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Utils");
+
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
 		$this->loadRates();
@@ -250,7 +252,19 @@ class Generator_Golanxml extends Billrun_Generator {
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			$plans = isset($subscriber['plans']) ? $subscriber['plans'] : array();
 			if ($this->hasVFPlanInCycle($plans)) {
-				$vfCountDays = $this->queryVFDaysApi($sid, date('Y'), date(Billrun_Base::base_dateformat, time()));
+				$vfDaysData = Utils_VF::countVFDays(Billrun_Factory::db()->linesCollection(),
+													 $sid,
+													 date('Y', Billrun_Util::getEndTime($billrun_key) ),
+													 date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)),
+																						[	'$or' => [
+																									['type' => 'tap3'],
+																									['type' => 'smsc'],
+																									['type' => "nsn","roaming"=>true],
+																								],
+																							]);
+				if(!empty($vfDaysData['VF'])) {
+					$vfCountDays = $vfDaysData['VF']['day_sum'];
+				}
 			}
 			$this->plansToCharge = !empty($plans) ? $this->getPlanNames($plans): array();
 			if (empty($plans) && !isset($subscriber['breakdown'])) {
@@ -2021,6 +2035,8 @@ EOI;
 
 	public function queryVFDaysApi($sid, $year = null, $max_datetime = null) {
 		try {
+			$vfrateGroups = ['VF'];
+
 			$from = strtotime($year . '-01-01' . ' 00:00:00');
 			if (is_null($max_datetime)) {
 				$to = strtotime($year . '-12-31' . ' 23:59:59');
@@ -2050,7 +2066,7 @@ EOI;
 						array('type' => "nsn","roaming"=>true),
 					),
 				//	'plan' => array('$in' => $this->plans),
-					'arategroup' => "VF",
+					'arategroup' => [ '$in' => $vfrateGroups],
 					'billrun' => array(
 						'$exists' => true,
 					),
@@ -2086,6 +2102,7 @@ EOI;
 
 			$match2 = array(
 				'$match' => array(
+					'arategroup' => [ '$in' => $vfrateGroups],
 					'urt' => array(
 						'$gte' => $start_of_year,
 						'$lte' => $end_date,
@@ -2094,22 +2111,32 @@ EOI;
 			);
 			$group = array(
 				'$group' => array(
-					'_id' => array(
-						'day_key' => array(
-							'$dayOfMonth' => array('$isr_time'),
-						),
-						'month_key' => array(
-							'$month' => array('$isr_time'),
-						),
-					),
+					'_id' => [
+							'plan'=> '$plan',
+							'date' =>['$dateToString'=>['format' => '%Y-%j','date'=>'$urt']],
+							'arategroup' => '$arategroup'
+						],
+					'count' => array('$sum' => 1),
 				),
 			);
 			$group2 = array(
 				'$group' => array(
-					'_id' => 'null',
-					'day_sum' => array(
-						'$sum' => 1,
-					),
+				'_id' => [
+						'arategroup' =>'$_id.arategroup',
+						'plan'=>'$_id.plan'
+					],
+				'max_date' => ['$max'=>'$_id.date' ],
+				'count' => array('$sum' => 1),
+				),
+			);
+			$sortPlans = [
+				'$sort' => ['max_date'=> -1]
+			];
+			//$limitRes = ['$limit'=> 1];
+			$group3 = array(
+				'$group' => array(
+					'_id' => '$_id.arategroup',
+					'day_sum' => array('$max' => '$count'),
 				),
 			);
 			$lines_coll = Billrun_Factory::db()->linesCollection();
