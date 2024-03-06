@@ -9,7 +9,6 @@ class BillRunAPI extends \Codeception\Module
 {
     protected $accessToken = false;
 
-
     /**
      *get access token, it run once.
      * 
@@ -17,23 +16,41 @@ class BillRunAPI extends \Codeception\Module
      */
     public function getAccessToken()
     {
-        $testUser = $_ENV['APP_TEST_USER'];
-        $testSecret = $_ENV['APP_TEST_SECRET'];
+        if (!$this->accessToken) {
+            $testUser = $_ENV['APP_TEST_USER'];
+            $db = $this->getModule('MongoDb');
+            // try {
+                //$shani = new \Codeception\Step\ConditionalAssertion('seeNumElementsInCollection', func_get_args())
+                // $db->tryToSeeInCollection('oauth_clients', ["client_id" => $testUser]);
+            // } catch (Throwable $e) {
+                $testSecret = $_ENV['APP_TEST_SECRET'];
+                $db->haveInCollection('oauth_clients', 
+                    [
+                        "client_id" => $testUser,
+                        "client_secret" => $testSecret,
+                        "grant_types" => "client_credentials",
+                        "scope" => "global",
+                        "user_id" => null
+                    ]
+                );
+            // }
+            
+            // Get the REST module to send requests
+            /** @var REST $rest */
+            $rest = $this->getModule('REST');
 
-        // Get the REST module to send requests
-        /** @var REST $rest */
-        $rest = $this->getModule('REST');
+            $rest->sendPOST('oauth2/token', [
+                'grant_type' => 'client_credentials',
+                'client_id' => $testUser,
+                'client_secret' => $testSecret,
+            ]);
 
-        $rest->sendPOST('oauth2/token', [
-            'grant_type' => 'client_credentials',
-            'client_id' => $testUser,
-            'client_secret' => $testSecret,
-        ]);
+            $rest->seeResponseCodeIs(200);
+            $rest->seeResponseContainsJson(['token_type' => 'Bearer']);
 
-        $rest->seeResponseCodeIs(200);
-        $rest->seeResponseContainsJson(['token_type' => 'Bearer']);
-
-        return $rest->grabDataFromResponseByJsonPath('$.access_token')[0];
+            $this->accessToken = $rest->grabDataFromResponseByJsonPath('$.access_token')[0];
+        }
+        return $this->accessToken;
     }
     /**
      * send post billapi requset to create entitys.
@@ -43,13 +60,10 @@ class BillRunAPI extends \Codeception\Module
      */
     protected function sendBillapiCreate($data, $entity)
     {
-        if (!$this->accessToken) {
-            $this->accessToken = $this->getAccessToken();
-        }
         // Get the REST module to send requests
         /** @var REST $rest */
         $rest = $this->getModule('REST');
-        $rest->amBearerAuthenticated($this->accessToken);
+        $rest->amBearerAuthenticated($this->getAccessToken());
         $rest->sendPOST("/billapi/$entity/create", [
             'update' => json_encode($data)
         ]);
@@ -163,5 +177,16 @@ class BillRunAPI extends \Codeception\Module
         $this->sendBillapiCreate($service, 'services');
     }
 
+    /**
+    * @depends apiSanityCest:oauthLogin
+    */
+    public function sendAuthenticatedGET($url) {
+        if (!$this->accessToken) {
+            $this->accessToken = $this->getAccessToken();
+        }
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->accessToken);
+        $rest->sendGet($url);
+    }
 
 }
