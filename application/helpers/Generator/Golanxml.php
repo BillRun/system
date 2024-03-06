@@ -859,7 +859,7 @@ class Generator_Golanxml extends Billrun_Generator {
 								foreach ($plan['intl'] as $zone_name => $zone) {
 									foreach ($zone['totals'] as $usage_type => $usage_totals) {
 										if ($usage_totals['cost'] > 0 || $usage_totals['usagev'] > 0) {
-											if (isset($subscriber_intl[$zone_name][$usage_type])) {
+											if (isset($subscriber_intl[$zone_name]['totals'][$usage_type])) {
 												$subscriber_intl[$zone_name]['totals'][$usage_type]['usagev']+=$usage_totals['usagev'];
 												$subscriber_intl[$zone_name]['totals'][$usage_type]['cost']+=$usage_totals['cost'];
 											} else {
