@@ -426,7 +426,7 @@ abstract class Billrun_Bill {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
 			$billObj->detachPayingBill($this->getType(), $this->getId());
 			if ($reset_bill) {
-				$billObj->clearPaymentAfterDetachPaidBills();
+				$billObj->recalculatePaymentFields();			
 			}
 			$billObj->save();
 		}
@@ -438,7 +438,8 @@ abstract class Billrun_Bill {
 				$billObj->detachPaidBill($this->getType(), $this->getId());
 			}
 			if ($reset_bill) {
-				$billObj->clearPaymentAfterDetachPayingBills();
+				$billObj->data['waiting_payments'] = [];
+				$billObj->recalculatePaymentFields();			
 			}
 			$billObj->save();
 		}
@@ -1547,19 +1548,6 @@ abstract class Billrun_Bill {
 			
 			$paymentParams[$dir] = $newPaymentParam;
 		}
-	}
-
-	public function clearPaymentAfterDetachPaidBills() {
-		$this->data['left'] = $this->getAmount();
-		unset($this->data['pays']);
-	}
-
-	public function clearPaymentAfterDetachPayingBills() {
-		$this->data['left_to_pay'] = $this->getAmount();
-		$this->data['total_paid'] = 0;
-		$this->data['paid'] = false;
-		$this->data['waiting_payments'] = [];
-		unset($this->data['paid_by']);
 	}
 
 	/**
