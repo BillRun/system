@@ -7970,7 +7970,15 @@
 								
 								}
 								
+							},
+							{
+								"check_pending_covering_amount": {
+									"aid":{"$in":[87]}
+								
+								}
+								
 							}
+							
 						],
 						"postTest": [
 							{
