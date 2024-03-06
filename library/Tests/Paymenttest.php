@@ -264,8 +264,8 @@ class Tests_paymenttest extends UnitTestCase
 		foreach ($bills as $bill) {
 			if (isset($bill['paid_by'])) {
 				$identify = isset($bill['invoice_id']) ? $bill['invoice_id'] : $bill['txid'];
-
-				foreach ($bill['paid_by'] as $pay) {
+                 $data=  isset($bill['paid_by']) ? $bill['paid_by'] : $bill['pays'];
+				foreach ($data as $pay) {
 
 					if (isset($pay['pending']) && $pay['pending'] == true) {
 						$PaidBy[$identify][$pay['id']]['pending'] = $pay;
