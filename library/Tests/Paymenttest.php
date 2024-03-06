@@ -143,6 +143,8 @@ class Tests_paymenttest extends UnitTestCase
 			//run tests functios 
 			if (isset($row['testFunctions'])) {
 				$function = $row['testFunctions'];
+				//add check_pending_covering_amount function 
+				array_push($function,['check_pending_covering_amount'=>['aid'=>(int)$row['params']['aid']]]);
 				if (!is_array($function)) {
 					$function = array($row['testFunctions']);
 				}
@@ -248,12 +250,30 @@ class Tests_paymenttest extends UnitTestCase
 	}
 
 	/**
-	 * check pending_covering_amount filed + check pendig amount and flag between payd_by and pays 
-	 */
+ * Validates the alignment of the pending amounts and flags across the "paid_by" and "pays" relationships within the financial records of bills. 
+ * Specifically, it checks if the total pending amount recorded in the "paid_by" field matches the corresponding amounts and flags in the "pays" field for each bill. 
+ * The function also verifies that the sum of all pending amounts matches the "pending_covering_amount" for each bill.
+ * 
+ * @param array $row Not used within the function, included for interface compatibility or future use.
+ * @param mixed $params Optional parameters to build the query for retrieving bills. Can be null or any structure that the buildQuery method supports.
+ * 
+ * The function operates by:
+ * - Retrieving bills based on the provided query parameters.
+ * - Iterating through each bill to check conditions on the "paid_by" and "pays" fields.
+ * - Verifying if:
+ *   - There's a mismatch in the pending flags between "paid_by" and corresponding "pays" entries.
+ *   - The pending amounts in "paid_by" match their counterparts in "pays".
+ *   - The total pending amount matches the bill's "pending_covering_amount".
+ * - Logging detailed information about the process and any discrepancies found.
+ * 
+ * @return bool Returns true if all checks pass without discrepancies; otherwise, false. Also logs detailed error messages in case of failures.
+ * 
+ * 
+ */
 	public function check_pending_covering_amount($row, $params = null)
 	{
 		$pass = true;
-		sleep(2);
+		
 		$bills = $this->getBills($this->buildQuery($params));
 		print_r("***params");
 		print_r($params);
@@ -262,16 +282,21 @@ class Tests_paymenttest extends UnitTestCase
 		$PaidBy = [];
 		$pendingAmount = 0;
 		foreach ($bills as $bill) {
-			if (isset($bill['paid_by'])) {
-				$identify = isset($bill['invoice_id']) ? $bill['invoice_id'] : $bill['txid'];
-                 $data=  isset($bill['paid_by']) ? $bill['paid_by'] : $bill['pays'];
+			if( isset($bill['paid_by'])||isset($bill['pays'])){
+				$data=  isset($bill['paid_by']) ? $bill['paid_by'] : $bill['pays'] ;
+			}
+			
+			if(empty($data))
+			    continue;
+			$identify = isset($bill['invoice_id']) ? $bill['invoice_id'] : $bill['txid'];
+
 				foreach ($data as $pay) {
 
 					if (isset($pay['pending']) && $pay['pending'] == true) {
 						$PaidBy[$identify][$pay['id']]['pending'] = $pay;
 						$pendingAmount += $pay['amount'];
 
-						$paysBill = array_values(array_filter($bills, function ($item) use ($pay) {
+						$paysBill = array_values(array_filter((array)$bills, function ($item) use ($pay) {
 							if ($pay['type'] == 'rec') {
 								return $item['txid'] === $pay['id'];
 							} else {
@@ -302,8 +327,8 @@ class Tests_paymenttest extends UnitTestCase
 					Billrun_Factory::log("The sum of pending_covering_amount not equel to pending amount , sum of pending amount in payd_by is $pendingAmount and in pending_covering_amount is {$bill['pending_covering_amount']} ", Zend_Log::ERR);
 					$pass = false;
 				}
-			}
 		}
+		$this->message .= ($pass)?"check_pending_covering_amount function pass " . $this->pass :"";
 		return $pass;
 	}
 
