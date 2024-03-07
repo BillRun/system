@@ -435,14 +435,14 @@ abstract class Billrun_Bill {
 	public function detachPayingBills($reset_bill = false) {
 		foreach ($this->getPaidByBills() as $bill) {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
-				$billObj->detachPaidBill($this->getType(), $this->getId());
-			}
+			$billObj->detachPaidBill($this->getType(), $this->getId());
 			if ($reset_bill) {
 				$billObj->data['waiting_payments'] = [];
 				$billObj->recalculatePaymentFields();			
 			}
 			$billObj->save();
 		}
+	}
 
 	public function getType() {
 		return $this->type;
