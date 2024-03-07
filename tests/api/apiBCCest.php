@@ -6,50 +6,50 @@ class bcCest
     public function updateRowT(ApiTester $I)
     {
         $I->sendAuthenticatedGET('/test/updaterowt?rebalance=1');
-        $response = substr($I->grabResponse(), -110);
-        $I->assertStringContainsString('<strong>0</strong> fails', $response);
+        $response = $I->grabResponse();
+        $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
     }
 
     public function Aggregatortest(ApiTester $I)
     {
-        $I->sendAuthenticatedGET('/test/Aggregatortest?skip=1,2,40');
+        $I->sendAuthenticatedGET('/test/Aggregatortest?skip=1,2,40,200');
         $response = $I->grabResponse();
-        $I->assertStringContainsString('<strong>0</strong> fails', $response);
+        $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
     }
 
     public function RateTest(ApiTester $I)
     {
         $I->sendAuthenticatedGET('/test/RateTest');
         $response = $I->grabResponse();
-        $I->assertStringContainsString('<strong>0</strong> fails', $response);
+        $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
     }
 
     public function monthsdifftest(ApiTester $I)
     {
         $I->sendAuthenticatedGET('/test/monthsdifftest');
         $response = $I->grabResponse();
-        $I->assertStringContainsString('<strong>0</strong> fails', $response);
+        $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
     }
 
     public function CustomerCalculatorTest(ApiTester $I)
     {
         $I->sendAuthenticatedGET('/test/CustomerCalculatorTest');
         $response = $I->grabResponse();
-        $I->assertStringContainsString('<strong>0</strong> fails', $response);
+        $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
     }
 
     public function Taxmappingtest(ApiTester $I)
     {
         $I->sendAuthenticatedGET('/test/Taxmappingtest');
         $response = $I->grabResponse();
-        $I->assertStringContainsString('<strong>0</strong> fails', $response);
+        $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
     }
 
     public function discounttest(ApiTester $I)
     {
         $I->sendAuthenticatedGET('/test/discounttest');
         $response = $I->grabResponse();
-        $I->assertStringContainsString('<strong>0</strong> fails', $response);
+        $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
     }
 
 }
