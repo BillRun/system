@@ -15,6 +15,7 @@
         }
     },
     "require-dev": {
+        "simpletest/simpletest": "^1.1",
         "codeception/codeception": "^4.2",
         "codeception/module-webdriver": "^1.4",
         "codeception/module-asserts": "^1.3",
