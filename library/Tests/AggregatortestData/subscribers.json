@@ -2418,14 +2418,14 @@
 					"country": "d",
 					"type": "subscriber",
 					"plan_activation": "time*2018-07-04T21:00:00Z",
-					"to": "time*2020-03-05T22:00:00Z",
+					"to": "time*2020-03-05T20:00:00Z",
 					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
 					"activation_date": "time*2018-07-04T21:00:00Z",
-					"plan_deactivation": "time*2020-03-20T22:00:00Z"
+					"plan_deactivation": "time*2020-03-05T20:00:00Z"
 				},
 				{
-					"from": "time*2020-03-25T22:00:00Z",
+					"from": "time*2020-03-25T20:00:00Z",
 					"aid": 1503,
 					"sid": 503,
 					"plan": "FTT",
@@ -2434,11 +2434,11 @@
 					"address": "d",
 					"country": "d",
 					"type": "subscriber",
-					"plan_activation": "time*2020-03-25T22:00:00Z",
+					"plan_activation": "time*2020-03-25T20:00:00Z",
 					"to": "time*2119-03-05T22:00:00Z",
 					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
-					"activation_date": "time*2020-03-25T22:00:00Z",
+					"activation_date": "time*2020-03-25T20:00:00Z",
 					"plan_deactivation": "time*2119-03-05T22:00:00Z"
 				},
 				{
