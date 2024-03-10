@@ -421,25 +421,35 @@ abstract class Billrun_Bill {
 		return isset($this->data['left']) ? $this->data['left'] : 0;
 	}
 
-	public function detachPaidBills($reset_bill = false) {
+	/**
+	 * @param boolean $recalculate_bill_fields - recalculate bill fields after detach it's paying bills
+	 * Function to detach bill paying bills. You can choose to recalculate the bill fields after detaching it's paying bills.
+	 */
+	public function detachPaidBills($recalculate_bill_fields = false) {
 		foreach ($this->getPaidBills() as $bill) {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
 			$billObj->detachPayingBill($this->getType(), $this->getId());
-			if ($reset_bill) {
+			if ($recalculate_bill_fields) {
 				$billObj->recalculatePaymentFields();			
 			}
 			$billObj->save();
 		}
 	}
 	
-	public function detachPayingBills($reset_bill = false, $only_pending = false) {
+	/**
+	 * @param boolean $recalculate_bill_fields - recalculate bill fields after detach it's paying bills
+	 * @param boolean $only_pending - detach only pending paying bills
+	 * Function to detach bill paying bills. You can choose to recalculate the bill fields after detaching it's paying bills.
+	 * You can also choose to detach only it's pending paying bills.
+	 */
+	public function detachPayingBills($recalculate_bill_fields = false, $only_pending = false) {
 		foreach ($this->getPaidByBills() as $bill) {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
 			$billObj->detachPaidBill($this->getType(), $this->getId());
 			if (!$billObj->isPendingPayment() && $only_pending) {
 				continue;
 			}
-			if ($reset_bill) {
+			if ($recalculate_bill_fields) {
 				$billObj->data['waiting_payments'] = [];
 				$billObj->recalculatePaymentFields();			
 			}
