@@ -1248,7 +1248,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$bill_obj->detachPaidBills(true);
 			} elseif (isset($bill['paid_by'])) {
 				$bill_obj = Billrun_Bill::getInstanceByData($bill);
-				$bill_obj->detachPayingBills(true);
+				$bill_obj->detachPayingBills(true, true);
 			}
 		}
 	}
