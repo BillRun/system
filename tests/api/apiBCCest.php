@@ -12,7 +12,7 @@ class bcCest
 
     public function Aggregatortest(ApiTester $I)
     {
-        $I->sendAuthenticatedGET('/test/Aggregatortest?skip=28,29,30,32,48,50,52,54,56,57,58,60,61,62,63,64,65,71,68,69,72');
+        $I->sendAuthenticatedGET('/test/Aggregatortest?skip=30,61,62,63,65,71');
         $response = $I->grabResponse();
         $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
     }
