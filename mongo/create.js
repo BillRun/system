@@ -89,8 +89,9 @@ db.billing_cycle.createIndex({'billrun_key': 1, 'page_number': 1, 'page_size': 1
 
 db.createCollection('balances');
 db.balances.createIndex( { aid: 1, sid: 1, from: 1, to: 1, priority: 1 },{ unique: true, background: true });
+db.balances.createIndex( { aid: "hashed", sid: 1}, { background: true }); // this index for sharding
 db.balances.createIndex( { sid: 1, from: 1, to: 1, priority: 1 },{ background: true});
-db.balances.createIndex( { to: 1 },{ background: true});
+db.balances.createIndex( { to: 1 , from: 1},{ background: true});
 
 //Prepaid includes Collection
 db.createCollection('prepaidincludes');
