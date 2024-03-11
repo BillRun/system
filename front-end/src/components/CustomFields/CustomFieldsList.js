@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { List, Map } from 'immutable';
-import { Col, Row, ControlLabel, Button } from 'react-bootstrap';
+import { Col, Row, ControlLabel, Button, Panel } from 'react-bootstrap';
 import CustomFieldsListRowContainer from './CustomFieldsListRowContainer';
 import { CreateButton, SortableFieldsContainer } from '../Elements';
 import {
@@ -42,8 +42,23 @@ class CustomFieldsList extends Component {
 
   getprintableFields = () => {
     const { entity, fields, fieldsConfig, onRemove, onEdit, reordering } = this.props;
-    return fields.reduce((acc, field, index) => (
-      (!isFieldPrintable(field, fieldsConfig)) ? acc : acc.push(
+  
+    // Group fields by category
+    const fieldsByCategory = fields.reduce((acc, field) => {
+      const category = field.get('category');
+      if (category) {
+        if (!acc[category]) {
+          acc[category] = [];
+        }
+        acc[category].push(field);
+      } else {
+        acc['category'].push(field);
+      }
+      return acc;
+    }, { 'category': [] });
+  
+    return Object.entries(fieldsByCategory).map(([category, fields], index) => {
+      const rows = fields.map((field, index) => (
         <CustomFieldsListRowContainer
           key={`item-${entity}-${field.get('field_name', '')}-${index}`}
           index={index}
@@ -56,8 +71,14 @@ class CustomFieldsList extends Component {
           onRemove={onRemove}
           onEdit={onEdit}
         />
-      )
-    ), List());
+      ));
+  
+      return category === 'category' ? rows : (
+        <Panel header={category} key={`panel-${category}-${index}`} collapsible className="collapsible">
+          {rows}
+        </Panel>
+      );
+    });
   }
 
   render() {
