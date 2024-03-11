@@ -10,7 +10,7 @@
   * @package  calculator
   * @since    0.5
   */
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 //known isuss fails in 5.13 is : |---|30|--|61|---|62|---|63|---|65|---|71
  define('UNIT_TESTING', 'true');
 
