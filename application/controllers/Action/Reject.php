@@ -47,7 +47,7 @@ class RejectAction extends ApiAction {
 									return $this->setError('Payment ' . $payment->getId() . ' already rejected', $request->getPost());
 								}
 							} else {
-								return $this->setError('Unknown id', $request->getPost());
+								return $this->setError('Unknown id ' . $rawRejection['id'], $request->getPost());
 							}
 						} else {
 							return $this->setError('Missing rejection params', $request->getPost());
