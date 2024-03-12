@@ -429,9 +429,8 @@ abstract class Billrun_Bill {
 		foreach ($this->getPaidBills() as $bill) {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
 			$billObj->detachPayingBill($this->getType(), $this->getId());
-			$this->clearPaymentAfterDetachPaidBills();
-			$this->save();
 			if ($recalculate_bill_fields) {
+				$this->clearPaymentAfterDetachPaidBills()->save();
 				$billObj->recalculatePaymentFields();			
 			}
 			$billObj->save();
@@ -1599,5 +1598,6 @@ abstract class Billrun_Bill {
 	public function clearPaymentAfterDetachPaidBills() {
 		$this->data['left'] = $this->getAmount();
 		unset($this->data['pays']);
+		return $this;
 	}
 }
