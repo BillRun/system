@@ -5,7 +5,7 @@ db.lines.createIndex({'stamp': 1 }, { unique: true });
 db.lines.createIndex({'urt': 1 }, { unique: false , sparse: false, background: true });
 db.lines.createIndex({'type': 1 }, { unique: false , sparse: true, background: true });
 db.lines.createIndex({'sid': 1, 'urt' : 1}, { unique: false , sparse: true, background: true }); // index necessary for admin panel(?)
-db.lines.ensureIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true }); // rebalance index (might be useful by other processes)
+db.lines.createIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true }); // rebalance index (might be useful by other processes)
 db.lines.createIndex({'billrun': 1, 'usaget' : 1, 'type' : 1}, { unique: false , sparse: true, background: true });
 db.lines.createIndex({'sid': 1 ,'session_id':1,'request_num':-1}, { unique: false, background: true });
 db.lines.createIndex({'session_id':1,'request_num':-1}, { unique: false, background: true });
@@ -89,8 +89,9 @@ db.billing_cycle.createIndex({'billrun_key': 1, 'page_number': 1, 'page_size': 1
 
 db.createCollection('balances');
 db.balances.createIndex( { aid: 1, sid: 1, from: 1, to: 1, priority: 1 },{ unique: true, background: true });
+db.balances.createIndex( { aid: "hashed", sid: 1}, { background: true }); // this index for sharding
 db.balances.createIndex( { sid: 1, from: 1, to: 1, priority: 1 },{ background: true});
-db.balances.createIndex( { to: 1 },{ background: true});
+db.balances.createIndex( { to: 1 , from: 1},{ background: true});
 
 //Prepaid includes Collection
 db.createCollection('prepaidincludes');
@@ -154,7 +155,7 @@ db.bills.createIndex({'txid': 1 }, { unique: false , sparse: true, background: t
 db.bills.createIndex({'invoice_id': 1 }, { unique: false, background: true});
 db.bills.createIndex({'billrun_key': 1 }, { unique: false, background: true});
 db.bills.createIndex({'invoice_date': 1 }, { unique: false, background: true});
-db.bills.ensureIndex({'urt': 1 }, { unique: false, background: true});
+db.bills.createIndex({'urt': 1 }, { unique: false, background: true});
 
 //Discounts Collection
 db.createCollection('discounts');
