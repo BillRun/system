@@ -591,11 +591,11 @@ class Billrun_Util {
 	 * 
 	 * @return Boolean true on success else FALSE
 	 */
-	public static function forkProcessCli($cmd) {
+	public static function forkProcessCli($cmd, $dontFork = false) {
 		if (!defined('STDERR')) {
 			define('STDERR', fopen('php://stderr', 'w'));
 		}
-		$syscmd = $cmd . " > /dev/null & ";
+		$syscmd = $cmd . " > /dev/null ".(!$dontFork ? "&" : "");
 		if (defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT) {
 			$syscmd = 'export APPLICATION_MULTITENANT=1 ; ' . $syscmd;
 		}

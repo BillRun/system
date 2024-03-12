@@ -21,7 +21,7 @@ trait Billrun_Traits_TypeAll {
 	 * Handle input type "all"
 	 * @param array $options Array of input options.
 	 */
-	protected function handleTypeAll($options) {
+	protected function handleTypeAll($options, $runInSeries = false) {
 		// Validate the input options.
 		if(!isset($options['type']) || (strtolower($options['type']) != "all")) {
 			// Nothing to do.
@@ -44,7 +44,7 @@ trait Billrun_Traits_TypeAll {
 				
 			$tempCmd = $cmd . " " . $type;
 			Billrun_Factory::log('TypeAll invokes command: ' . $tempCmd, Zend_Log::DEBUG);
-			Billrun_Util::forkProcessCli($tempCmd);
+			Billrun_Util::forkProcessCli($tempCmd, $runInSeries);
 			
 			// TODO: UNCOMMENT THIS TO USE FORK INSTEAD OF SYSTEM CALL
 //			$tempOptions['type'] = $type;
@@ -52,7 +52,7 @@ trait Billrun_Traits_TypeAll {
 //			$this->$handleFunction($tempOptions);
 //			exit();
 		}
-		
+
 		return true;
 	}
 	
