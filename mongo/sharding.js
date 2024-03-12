@@ -1,5 +1,5 @@
 // script to enable sharding on the billing collections
-
+// if you're updating this file please also update script.js -> sharding/mongos section
 var _dbName = db.getName();
 print('running sharding on db: ' + _dbName);
 sh.enableSharding(_dbName);
