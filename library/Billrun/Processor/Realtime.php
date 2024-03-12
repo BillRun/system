@@ -36,7 +36,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 	 * override abstract method
 	 * @return true
 	 */
-	public function parse($config) {
+	public function parse() {
 		foreach (array_keys($this->data['data']) as $rowKey) {
 		$row = &$this->data['data'][$rowKey];
 		$row['usaget'] = $this->getLineUsageType($row);
