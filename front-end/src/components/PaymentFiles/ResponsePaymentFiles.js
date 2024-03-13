@@ -209,7 +209,7 @@ class ResponsePaymentFiles extends Component {
         { key: uuid.v4(), field_name: "due", label: "Due Amount (Sum)", op: "", entity: entity},
       ],
       conditions: [
-        { field: "generated_pg_file_log", op: "in", value: line.get('stamp', ''), type: "string", entity: entity },
+        { field: "file", op: "in", value: line.get('file_name', ''), type: "string", entity: entity },
         { field: "rejection", op: "ne", value: true, type: "boolean", entity: "bills" },
       ],
       sorts: [
