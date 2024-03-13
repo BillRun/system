@@ -21,8 +21,8 @@
     },
     "config": {
         "platform": {
-            "php": ">=8.0",
-            "ext-mongo": "~1.6"
+            "php": "8.0",
+            "ext-mongo": "1.6"
         },
         "allow-plugins": {
             "php-http/discovery": true
