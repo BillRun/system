@@ -27,6 +27,7 @@ services:
         - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9092 mode=develop"
         volumes:
             - ./../..:/billrun
+        command: sh -c "cp -r /var/www/html/vendor/* /billrun/vendor/&& php-fpm "
     mongodb:
         image: mongo:5.0
         container_name: billrun-mongodb
