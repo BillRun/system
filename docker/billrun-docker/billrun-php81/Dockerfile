@@ -32,4 +32,10 @@ COPY xdebug.ini /usr/local/etc/php/conf.d/
 
 WORKDIR /billrun
 
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+COPY composer.json /var/www/html/
+
+RUN composer install -d /var/www/html/  # in production we need to add --no-dev
+
 CMD ["php-fpm"]

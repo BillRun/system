@@ -37,23 +37,26 @@ function removeFieldFromConfig(lastConf, field_names, entityName) {
 // Perform specific migrations only once
 // Important note: runOnce is guaranteed to run some migration code once per task code only if the whole migration script completes without errors.
 function runOnce(lastConfig, taskCode, callback) {
-    print("running task " + taskCode);
     if (typeof lastConfig.past_migration_tasks === 'undefined') {
         lastConfig['past_migration_tasks'] = [];
     }
     taskCode = taskCode.toUpperCase();
     if (!lastConfig.past_migration_tasks.includes(taskCode)) {
         if (new RegExp(/.*-\d+$/).test(taskCode)) {
+            print("running task " + taskCode);
             callback();
             lastConfig.past_migration_tasks.push(taskCode);
         }
         else {
             print('Illegal task code ' + taskCode);
         }
+    } else {
+//        print('task ' + taskCode + ' already applied in this environment');
     }
     return lastConfig;
 }
 
+// add createCollection wrapper function as mongosh throw exception on create existing collection
 function _createCollection(newcoll) {
     var _existsingColls = db.getCollectionNames();
     if (_existsingColls.indexOf(newcoll) >= 0) { // collection already exists
@@ -62,14 +65,16 @@ function _createCollection(newcoll) {
     return db.createCollection(newcoll);
 }
 
+// backward compatability for save function (required to start using insertOne or replaceOne instead)
 function _collectionSave(coll, record) {
-    if (!Object.hasOwn(record, '_id')) {
+    if (!record.hasOwnProperty('_id')) {
         coll.insertOne(record);
     } else {
         coll.replaceOne({"_id":record._id}, record, {"upsert":true}); // upsert in case of someone save in parallel
     }
 }
 
+// add dropIndex wrapper function as mongosh throw exception on drop non-existing collection
 function _dropIndex(collname, indexname) {
     indexes = db.getCollection(collname).getIndexes();
     let i = indexes.find(obj => obj.name === indexname);
@@ -182,6 +187,24 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 		}
 	}
 }
+
+//BRCD-4274 - Insert notification plugin
+var notification_plugin_exists = false;
+for (var i = 0; i < lastConfig['plugins'].length; i++) {
+    if (lastConfig.plugins[i]['name'] == 'notificationsPlugin') {
+        notification_plugin_exists = true;
+    }
+};
+
+if(!notification_plugin_exists) {
+	lastConfig.plugins.push({
+		"name": "notificationsPlugin",
+		"enabled": false,
+		"system": true,
+		"hide_from_ui": false
+	})
+};
+
 //-------------------------------------------------------------------
 // BRCD-1278 - backward support for new template
 if(lastConfig.invoice_export) {
@@ -1244,19 +1267,19 @@ if (db.serverStatus().ok == 0) {
 	print('Cannot shard archive collection - no permission')
 } else if (db.serverStatus().process == 'mongos') {
     // sharding/cluster/mongos support - taken from sharding.js
-    var _dbName = db.getName();
+	var _dbName = db.getName();
     print('running sharding on db: ' + _dbName);
     sh.enableSharding(_dbName);
     sh.shardCollection(_dbName + ".lines", {"stamp": 1});
-    sh.shardCollection(_dbName + ".archive", {"stamp": 1});
-    sh.shardCollection(_dbName + ".rates", {"key": 1});
+	sh.shardCollection(_dbName + ".archive", {"stamp": 1});
+	sh.shardCollection(_dbName + ".rates", { "key" : 1 } );
     sh.shardCollection(_dbName + ".billrun", {"aid": "hashed", "billrun_key": 1});
     sh.shardCollection(_dbName + ".balances", {"aid": "hashed", sid: 1});
     if (Number(db.version().charAt(0)) >= 6) {
         sh.shardCollection(_dbName + ".bills", {"aid": "hashed"});
     }
-    sh.shardCollection(_dbName + ".audit", {"stamp": 1});
-    sh.shardCollection(_dbName + ".queue", {"stamp": 1});
+	sh.shardCollection(_dbName + ".audit",  { "stamp" : 1 } );
+	sh.shardCollection(_dbName + ".queue", { "stamp" : 1 } );
     //sh.shardCollection(_dbName + ".events", { "stamp" : 1 } );
     sh.shardCollection(_dbName + ".subscribers", {"aid": "hashed", "sid": 1});
     //sh.shardCollection(_dbName + ".cards", { "batch_number":1, "serial_number":1 } );
@@ -1856,8 +1879,10 @@ runOnce(lastConfig, 'BRCD-4306', function () {
 });
 
 db.config.insertOne(lastConfig);
+
 db.lines.createIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 _dropIndex("lines", "aid_1_urt_1");
+
 db.rebalance_queue.createIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});
 _dropIndex("rebalance_queue", "aid_1_billrun_key_1");
 db.rebalance_queue.createIndex({"aid": 1, "billrun_key": 1}, {unique: false, "background": true});
