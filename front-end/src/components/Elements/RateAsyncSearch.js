@@ -9,9 +9,9 @@ import { entitySearchByQuery } from '@/actions/entityActions';
 
 const RateAsyncSearch = ({ editable, onChange, searchPlaceholder, noResultsPlaceholder, dispatch }) => {
   const findRates = (inputValue, callback) => {
-    if (inputValue === '') {
-      return callback([]);
-    }
+    // if (inputValue === '') {
+    //   return callback([]);
+    // }
     const query = {
       key: { $regex: inputValue, $options: 'i' },
       description: { $regex: inputValue, $options: 'i' },
@@ -51,6 +51,7 @@ const RateAsyncSearch = ({ editable, onChange, searchPlaceholder, noResultsPlace
       isAsync={true}
       isControlled={false}
       cacheOptions={true}
+      defaultOptions={true}
       placeholder={searchPlaceholder}
       loadAsyncOptions={debounceFindRates}
       noResultsText={noResultsPlaceholder}
@@ -62,7 +63,7 @@ const RateAsyncSearch = ({ editable, onChange, searchPlaceholder, noResultsPlace
 RateAsyncSearch.defaultProps = {
   editable: true,
   accountsOptions: [],
-  searchPlaceholder: "Enter key or title",
+  searchPlaceholder: "Type to filter products…",
   noResultsPlaceholder: "No rates found",
 };
 

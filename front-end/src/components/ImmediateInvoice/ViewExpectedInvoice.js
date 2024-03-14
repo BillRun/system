@@ -34,12 +34,14 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
     setInConfirmProgress(true);
     dispatch(generateOneTimeInvoice(aid, lines ,sendMail))
     .then((success) => {
+      if (success.data) {
         // TODO: get the Invoice ID
-        const invoiceId = success.details[0].invoiceId;
+        const invoiceId = success.data.invoice_id;
         setInvoiceId(invoiceId)
         if (onConfirm) {
           onConfirm(invoiceId);
         }
+      }
     }).finally(() => {
       setInConfirmProgress(false);
     })
