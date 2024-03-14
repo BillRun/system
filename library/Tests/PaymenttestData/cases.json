@@ -8051,6 +8051,63 @@
 							]
 						,
 						"testRailId": 566
+					},
+					{
+						"description": "charge_flow=charge_before_invoice onetime step 2 (PG=CG) after reject onetime step 2",
+						"test_id": 89,
+						"api": "onetimeinvoice",
+						"params": {
+							"api": "onetimeinvoice",
+							"aid": "89",
+							"step": "2",
+							"invoice_unixtime": "past",
+							"charge_flow":"charge_before_invoice",
+							"cdrs": [
+								{
+									"aid": "89",
+									"sid": "0",
+									"rate": "CALL",
+									"credit_time": "2021-03-18T17:18:56.385Z",
+									"usagev": 1,
+									"type": "credit",
+									"aprice": "10.00"
+								}
+							]
+						},
+						"source": "api",
+						"request_method": "GET",
+						"preTest": [
+					
+						],
+						"testFunctions": [
+						
+							{
+								"FieldComparison": {
+									"aid":{"$in":[89]},
+									"invoice_id" : "8100000006"								
+								}
+								
+							}
+						],
+						"postTest": [
+							{
+								"cleanDB": {
+									"aid": 89
+								}
+							}
+						],
+						"expected": [
+							    {
+									"invoice_id" : "8100000006",
+									"aid": 89,
+									"paid":true,
+									"amount": 23.4,
+									"paid_by.0.type" : "rec",
+									"paid_by.0.amount" : 23.4
+								}
+							]
+						,
+						"testRailId": 566
 					}
 					
 ]
