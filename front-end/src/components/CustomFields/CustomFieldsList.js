@@ -5,7 +5,6 @@ import { Col, Row, ControlLabel, Button, Panel } from 'react-bootstrap';
 import CustomFieldsListRowContainer from './CustomFieldsListRowContainer';
 import { CreateButton, SortableFieldsContainer } from '../Elements';
 import {
-  isFieldPrintable,
   isFieldSortable,
 } from '../../selectors/customFieldsSelectors';
 
@@ -45,19 +44,11 @@ class CustomFieldsList extends Component {
   
     // Group fields by category
     const fieldsByCategory = fields.reduce((acc, field) => {
-      const category = field.get('category');
-      if (category) {
-        if (!acc[category]) {
-          acc[category] = [];
-        }
-        acc[category].push(field);
-      } else {
-        acc['category'].push(field);
-      }
-      return acc;
-    }, { 'category': [] });
-  
-    return Object.entries(fieldsByCategory).map(([category, fields], index) => {
+      const category = field.get('category', '') || 'uncategorized';
+      return acc.update(category, List(), cat => cat.push(field));
+    }, Map());
+
+    return fieldsByCategory.map((fields, category) => {
       const rows = fields.map((field, index) => (
         <CustomFieldsListRowContainer
           key={`item-${entity}-${field.get('field_name', '')}-${index}`}
@@ -71,14 +62,14 @@ class CustomFieldsList extends Component {
           onRemove={onRemove}
           onEdit={onEdit}
         />
-      ));
-  
-      return category === 'category' ? rows : (
-        <Panel header={category} key={`panel-${category}-${index}`} collapsible className="collapsible">
+      ))
+
+      return category === 'uncategorized' ? rows : (
+        <Panel header={category} key={`panel-${category}`} collapsible className="collapsible">
           {rows}
         </Panel>
       );
-    });
+    }).toList();
   }
 
   render() {
