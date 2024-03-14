@@ -30,6 +30,7 @@ services:
         - "BR_MDB_DBNAME=billing_container"
         volumes:
             - ./../..:/billrun
+        command: sh -c "cp -r /var/www/html/vendor/* /billrun/vendor/&& php-fpm "
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongodb
