@@ -18,8 +18,14 @@ class Mongodloid_Db {
 	}
 
 	public function getCollection($name) {
-		if (!isset($this->_collections[$name]) || !$this->_collections[$name])
-			$this->_collections[$name] = new Mongodloid_Collection($this->_db->selectCollection($name), $this);
+		if (!isset($this->_collections[$name]) || !$this->_collections[$name]) {
+			// The option is to avoid fatal SEGFAULT
+			$options = array(
+				'codec' => null,
+			);
+			$selectedDb = $this->_db->selectCollection($name, $options);
+			$this->_collections[$name] = new Mongodloid_Collection($selectedDb, $this);
+		}
 
 		return $this->_collections[$name];
 	}
