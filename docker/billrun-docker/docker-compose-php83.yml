@@ -29,7 +29,7 @@ services:
             - ./../..:/billrun
         command: sh -c "cp -r /var/www/html/vendor/* /billrun/vendor/&& php-fpm "
     mongodb:
-        image: mongo:6.0
+        image: mongo:7.0
         container_name: billrun-mongodb
         restart: always
         volumes:
