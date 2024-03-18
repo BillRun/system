@@ -384,23 +384,27 @@ class Billrun_PaymentManager {
 				case Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER:
 					Billrun_Factory::log()->log("Handling payment with txid " . $transactionId . ", customer direction " . $customerDir, Zend_Log::DEBUG);
 					$relatedBills = $postPayment->getRelatedBills();
-					foreach ($relatedBills as $bill) {
-						$billId = $bill['id'];
-						$billType = $bill['type'];
-						$amountPaid = $bill['amount'];
-						if ($this->isFileBasedCharge($params) && $payment->isWaiting()) {
-							$payment->setPending(true);
-						}
+					if (!empty($relatedBills)) {
+						foreach ($relatedBills as $bill) {
+							$billId = $bill['id'];
+							$billType = $bill['type'];
+							$amountPaid = $bill['amount'];
+							if ($this->isFileBasedCharge($params) && $payment->isWaiting()) {
+								$payment->setPending(true);
+							}
 
-						if ($pgResponse && $pgResponse['stage'] != 'Pending') {
-							$payment->setPending(false);
+							if ($pgResponse && $pgResponse['stage'] != 'Pending') {
+								$payment->setPending(false);
+							}
+							$updatedBill = $postPayment->getUpdatedBill($billType, $billId);
+							if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
+								$updatedBill->attachPayingBill($payment, $amountPaid, (!empty($pgResponse) && empty($pgResponse['stage']) || ($this->isFileBasedCharge($params) && $payment->isWaiting())) ? 'Pending' : @$pgResponse['stage'])->save();
+							} else {
+								$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid, $payment->getRawData())->save();
+							}
 						}
-						$updatedBill = $postPayment->getUpdatedBill($billType, $billId);
-						if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
-							$updatedBill->attachPayingBill($payment, $amountPaid, (!empty($pgResponse) && empty($pgResponse['stage']) || ($this->isFileBasedCharge($params) && $payment->isWaiting())) ? 'Pending' : @$pgResponse['stage'])->save();
-						} else {
-							$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid, $payment->getRawData())->save();
-						}
+					} else {
+						$payment->save();
 					}
 					break;
 				default:
