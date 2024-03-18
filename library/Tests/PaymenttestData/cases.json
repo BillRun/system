@@ -8070,7 +8070,7 @@
 									"credit_time": "2021-03-18T17:18:56.385Z",
 									"usagev": 1,
 									"type": "credit",
-									"aprice": "10.00"
+									"aprice": "20.00"
 								}
 							]
 						},
@@ -8084,7 +8084,7 @@
 							{
 								"FieldComparison": {
 									"aid":{"$in":[89]},
-									"invoice_id" : "8100000006"								
+									"invoice_id" : 8107								
 								}
 								
 							}
@@ -8098,7 +8098,7 @@
 						],
 						"expected": [
 							    {
-									"invoice_id" : "8100000006",
+									"invoice_id" : 8107,
 									"aid": 89,
 									"paid":true,
 									"amount": 23.4,

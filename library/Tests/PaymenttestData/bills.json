@@ -757,10 +757,10 @@
 					"txid" : "0000000000036"
 				},
 				{
-				
+
 					"aid" : 89,
-					"billrun_key" : "20240114165821",
-					"invoice_id" : "8100066666",
+					"billrun_key" : "20240114185501",
+					"invoice_id" : 8107,
 					"type" : "inv",
 					"BIC" : null,
 					"IBAN" : null,
@@ -769,33 +769,34 @@
 					"bank_name" : null,
 					"bill_unit" : null,
 					"charge" : {
-						"not_before" : "time*2024-02-02T16:58:21Z"
+						"not_before" : "time*2024-02-02T16:55:01Z"
 					},
 					"country_code" : null,
 					"customer_status" : "open",
 					"due" : 23.4,
 					"due_before_vat" : 20,
-					"due_date" : "time*2024-02-02T16:58:21Z",
+					"due_date" : "time*2024-02-02T16:55:01Z",
 					"firstname" : "yossi",
-					"invoice_date" : "time*2024-01-14T16:58:21Z",
-					"invoice_file" : "/billrun/shared/container/files/invoices//one_time/20240114165821/pdf/20240114165821_1_8100066666.pdf",
+					"invoice_date" : "time*2024-01-14T16:55:01Z",
+					"invoice_file" : "/billrun/shared/container/files/invoices//one_time/20240114185501/pdf/20240114185501_89_8107.pdf",
 					"invoice_type" : "immediate",
-					"lastname" : "test",
+					"lastname" : "yoss",
 					"left_to_pay" : 23.4,
 					"method" : "automatic",
 					"paid" : false,
-					"payer_name" : "test yossi",
+					"payer_name" : "yoss yossi",
 					"total_paid" : 0,
-					"urt" : "time*2024-03-11T15:55:41.922Z",
+					"urt" : "time*2024-03-18T13:29:44.363Z",
 					"vatable_left_to_pay" : 20,
 					"past_rejections" : [
-						"0000000000043"
+						"0000004000014"
 					],
 					"paid_by" : [ ],
 					"waiting_payments" : [ ],
 					"pending_covering_amount" : 0
 				},
 				{
+				
 					"dir" : "fc",
 					"method" : "automatic",
 					"aid" : 89,
@@ -818,31 +819,23 @@
 						"card_type" : "00",
 						"keepCCDetails" : null,
 						"amount" : 23.4,
-						"currency" : "AED"
+						"currency" : "AFA"
 					},
-					"due_date" : "time*2024-03-11T15:55:41.955Z",
-					"urt" : "time*2024-03-11T15:55:41.955Z",
-					"pays" : [
-						{
-							"type" : "inv",
-							"id" : "8100066666",
-							"amount" : 23.4,
-							"total_amount" : 23.4,
-							"date" : "time*2024-01-14T16:58:21Z"
-						}
-					],
-					"left" : 0,
+					"due_date" : "time*2024-03-18T13:29:44.400Z",
+					"urt" : "time*2024-03-18T13:29:44.400Z",
+					"left" : 23.4,
 					"pending_covering_amount" : 0,
 					"waiting_for_confirmation" : false,
-					"txid" : "0000000000043",
+					"txid" : "0000004000014",
 					"pending" : false,
 					"payment_gateway" : {
 						"name" : "CreditGuard",
-						"transactionId" : "104922332"
+						"transactionId" : "105087548"
 					},
 					"rejected" : true
 				},
 				{
+				
 					"dir" : "fc",
 					"method" : "automatic",
 					"aid" : 89,
@@ -865,27 +858,27 @@
 						"card_type" : "00",
 						"keepCCDetails" : null,
 						"amount" : 23.4,
-						"currency" : "AED"
+						"currency" : "AFA"
 					},
-					"due_date" : "time*2024-03-11T15:55:41.955Z",
-					"urt" : "time*2024-03-11T15:55:42Z",
+					"due_date" : "time*2024-03-18T13:29:44.400Z",
+					"urt" : "time*2024-03-18T13:29:44Z",
 					"rejection" : true,
-					"original_txid" : "0000000000043",
-					"rejection_code" : "831",
+					"original_txid" : "0000004000014",
+					"rejection_code" : "331",
 					"pays" : [
 						{
 							"type" : "inv",
-							"id" : "8100066666",
+							"id" : 8107,
 							"amount" : 23.4,
 							"total_amount" : 23.4,
-							"date" : "time*2024-01-14T16:58:21Z"
+							"date" : "time*2024-01-14T16:55:01Z"
 						}
 					],
 					"vendor_response" : {
 						"card_acquirer" : "",
-						"card_brand" : "1",
-						"credit_company" : "1",
-						"card_type" : "00",
+						"card_brand" : "",
+						"credit_company" : "",
+						"card_type" : "",
 						"uid" : ""
 					},
 					"left_to_pay" : 23.4,
@@ -894,9 +887,9 @@
 					"paid" : false,
 					"pending_covering_amount" : 0,
 					"waiting_for_confirmation" : false,
-					"txid" : "0000000000044"
+					"txid" : "0000050000015"
 				}
-				
+								
 				
 	
 			]

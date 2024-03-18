@@ -351,17 +351,23 @@
 					"creation_time": "time*2018-01-10T00:00:00Z",
 					"tenant_return_url": "http://billrun/#/customers/customer/5a55cf756d5b993da318bad6?tab=2",
 					"payment_gateway": {
-							"active" : {
-								"name" : "CreditGuard",
-								"instance_name" : "CreditGuard",
-								"card_token" : "1054420065935607",
-								"card_expiration" : "1225",
-								"personal_id" : "890108566",
-								"transaction_exhausted" : true,
-								"generate_token_time" : "time*2023-08-10T13:36:31Z",
-								"auth_number" : "8508994",
-								"four_digits" : "5606"
-							}
+						"active" : {
+							"name" : "CreditGuard",
+							"instance_name" : "CreditGuard",
+							"card_token" : "1022273188555606",
+							"card_expiration" : "1225",
+							"personal_id" : "890108566",
+							"transaction_exhausted" : true,
+							"generate_token_time" :"time*2024-03-06T16:00:34Z",
+							"auth_number" : "0003597",
+							"four_digits" : "5606",
+							"card_acquirer" : "1",
+							"card_brand" : "1",
+							"credit_company" : "1",
+							"card_type" : "00",
+							"keepCCDetails" : null
+
+						}
 					}
 				},
 				{
