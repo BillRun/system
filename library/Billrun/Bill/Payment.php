@@ -401,7 +401,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function markRejected() {
 		$this->data['rejected'] = true;
 		$this->data['waiting_for_confirmation'] = false;
-		$this->detachPaidBills(true);
+		$this->detachPaidBills();
 		$this->detachPayingBills();
                 $this->unsetAllPendingLinkedBills();
 		$this->save();

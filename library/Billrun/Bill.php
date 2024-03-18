@@ -422,21 +422,20 @@ abstract class Billrun_Bill {
 	}
 
 	/**
-	 * @param boolean $recalculate_bill_fields - recalculate bill fields after detach it's paying bills
-	 * Function to detach bill paying bills. You can choose to recalculate the bill fields after detaching it's paying bills.
+	 * @param boolean $save_paying_bill - boolean value - choose to save source bill after changes or not
+	 * Function to detach bill paid bills. You can choose to save source bill after recalculating it's fields.
+	 * Paid bills will be saved after detach anyway.
 	 */
-	public function detachPaidBills($recalculate_bill_fields = false) {
+	public function detachPaidBills($save_paying_bill = false) {
 		$paid_bills = $this->getPaidBills();
 		foreach ($paid_bills as $bill) {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
 			$billObj->detachPayingBill($this->getType(), $this->getId());
-			if ($recalculate_bill_fields) {
-				$this->clearPaymentAfterDetachPaidBills();
-				$billObj->recalculatePaymentFields();			
-			}
+			$this->clearPaymentAfterDetachPaidBills();
+			$billObj->recalculatePaymentFields();
 			$billObj->save();
 		}
-		if (($recalculate_bill_fields) && count($paid_bills) > 0) {
+		if ($save_paying_bill && count($paid_bills) > 0) {
 			$this->save();
 		}
 	}
