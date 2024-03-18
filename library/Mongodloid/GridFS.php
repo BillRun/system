@@ -33,8 +33,8 @@ class Mongodloid_GridFS extends Mongodloid_Collection{
         $this->filesName = $prefix . '.files';
         $this->chunksName = $prefix . '.chunks';
 
-        $this->chunks = $db->getDB()->selectCollection($this->chunksName);
-        parent::__construct($db->getDB()->selectCollection($this->filesName), $db);
+        $this->chunks = $db->getDB()->selectCollection($this->chunksName, ['codec' => null]);
+        parent::__construct($db->getDB()->selectCollection($this->filesName, ['codec' => null]), $db);
     }
 	
 	/**
