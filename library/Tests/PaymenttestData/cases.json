@@ -7938,7 +7938,7 @@
 						"testRailId": 566
 					},
 					{
-						"description": "switch links - partially paid invoice + link to the pending bill, make offline payment (fc)about the invoiceleft to pay amount ",
+						"description": "switch links - partially paid invoice + link to the pending bill, make offline payment (fc)about the invoice left to pay amount ",
 						"test_id": 87,
 						"api": "pay",
 						"params": {
@@ -7984,7 +7984,7 @@
 						],
 						"expected": [
 							
-							{
+						    	{
 									"aid": 87,
 									"type": "rec",
 									"amount": 10,
@@ -8070,7 +8070,7 @@
 									"credit_time": "2021-03-18T17:18:56.385Z",
 									"usagev": 1,
 									"type": "credit",
-									"aprice": "20.00"
+									"aprice": "10.00"
 								}
 							]
 						},
@@ -8084,7 +8084,7 @@
 							{
 								"FieldComparison": {
 									"aid":{"$in":[89]},
-									"invoice_id" : 8107								
+									"invoice_id" : "8100000006"								
 								}
 								
 							}
@@ -8098,7 +8098,7 @@
 						],
 						"expected": [
 							    {
-									"invoice_id" : 8107,
+									"invoice_id" : "8100000006",
 									"aid": 89,
 									"paid":true,
 									"amount": 23.4,
@@ -8109,6 +8109,90 @@
 						,
 						"testRailId": 566
 					}
+				   ,{
+						"description": "switch links - partially paid invoice + link to the pending bill, make online payment (chargeAccount api)",
+						"test_id": 90,
+						"api": "chargeAccount",
+						"params": {
+							"aids" :90
+						},
+						"source": "api",
+						"request_method": "GET",
+						"preTest": [
+
+						],
+						"testFunctions": [
+						
+							{
+								"FieldComparison": {
+									"aid":{"$in":[90]},
+									"invoice_id" : "8100000006"								
+								}
+								
+							}
+						],
+						"postTest": [
+							{
+								"cleanDB": {
+									"aid": 90
+								}
+							}
+						],
+						"expected": [
+								{
+									"invoice_id" : "8100000006",
+									"aid": 90,
+									"paid":true,
+									"amount": 23.4,
+									"paid_by.0.type" : "rec",
+									"paid_by.0.amount" : 23.4
+								}
+							]
+						,
+						"testRailId": 566
+				}
+				,{
+					"description": "switch links - partially paid invoice + link to the pending bill, make online payment (onetimeinvoice step 2)",
+					"test_id": 91,
+					"api": "chargeAccount",
+					"params": {
+						"aids" :91
+					},
+					"source": "api",
+					"request_method": "GET",
+					"preTest": [
+
+					],
+					"testFunctions": [
 					
+						{
+							"FieldComparison": {
+								"aid":{"$in":[91]},
+								"invoice_id" : "8100000006"								
+							}
+							
+						}
+					],
+					"postTest": [
+						{
+							"cleanDB": {
+								"aid": 91
+							}
+						}
+					],
+					"expected": [
+							{
+								"invoice_id" : "8100000006",
+								"aid": 91,
+								"paid":true,
+								"amount": 23.4,
+								"paid_by.0.type" : "rec",
+								"paid_by.0.amount" : 23.4
+							}
+						]
+					,
+					"testRailId": 566
+				}
+
 ]
 
