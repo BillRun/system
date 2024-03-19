@@ -8154,10 +8154,25 @@
 				,{
 					"description": "switch links - partially paid invoice + link to the pending bill, make online payment (onetimeinvoice step 2)",
 					"test_id": 91,
-					"api": "chargeAccount",
-					"params": {
-						"aids" :91
-					},
+					"api": "onetimeinvoice",
+						"params": {
+							"api": "onetimeinvoice",
+							"aid": "91",
+							"step": "2",
+							"invoice_unixtime": "past",
+							"charge_flow":"charge_before_invoice",
+							"cdrs": [
+								{
+									"aid": "91",
+									"sid": "0",
+									"rate": "CALL",
+									"credit_time": "2021-03-18T17:18:56.385Z",
+									"usagev": 1,
+									"type": "credit",
+									"aprice": "4.27"
+								}
+							]
+						},
 					"source": "api",
 					"request_method": "GET",
 					"preTest": [
