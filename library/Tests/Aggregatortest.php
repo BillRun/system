@@ -11,7 +11,7 @@
   * @since    0.5
   */
 require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
-
+//known isuss fails in 5.13 is : |---|30|--|61|---|62|---|63|---|65|---|71
  define('UNIT_TESTING', 'true');
 
  class Tests_Aggregator extends UnitTestCase {
@@ -46,9 +46,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span><br>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span><br>';
 	public function test_cases() {
-    
-	}
 
+	}
+ 
      public function __construct($label = false) {
          parent::__construct("test Aggregatore");
          $this->autoload_tests('aggregatorTestCases');
@@ -100,7 +100,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
         $this->tests =  $this->getTestCases();
         if (empty($this->test_cases_to_run)) {
             $this->tests = $this->skip_tests($this->tests, 'test.test_number');
-          }
+        }
          foreach ($this->tests as $key => $row) {
 
              $aid = $row['test']['aid'];
