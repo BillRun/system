@@ -482,7 +482,7 @@ abstract class Billrun_Bill {
 			$this->data['left_to_pay'] = round($this->getLeftToPay(), 2);
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
 			if (is_null($status)){
-				$this->data['paid'] = $this->isPaid();
+				$this->data['paid'] = !empty($this->data['waiting_payments']) ? '2' : $this->isPaid();
 			} else {
 				$this->data['paid'] = $this->calcPaidStatus($billId, $status, $billType);
 			}
