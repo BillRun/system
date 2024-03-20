@@ -8126,10 +8126,18 @@
 							{
 								"FieldComparison": {
 									"aid":{"$in":[90]},
-									"invoice_id" : "8100000006"								
+									"txid" : "1100000000005"
+							
 								}
 								
-							}
+							},
+							{
+							"checkApiRespons": {
+								"desc": "success",
+								"details.responses": []
+								
+						 	}
+					    	}
 						],
 						"postTest": [
 							{
@@ -8139,20 +8147,25 @@
 							}
 						],
 						"expected": [
-								{
-									"invoice_id" : "8100000006",
-									"aid": 90,
-									"paid":true,
-									"amount": 23.4,
-									"paid_by.0.type" : "rec",
-									"paid_by.0.amount" : 23.4
+						{
+							"paid_by.0.type" : "rec",
+							"paid_by.0.id" : "1100000000006",
+							"paid_by.0.amount" : 5,
+							"paid_by.0.total_amount" : 5,							
+							"paid_by.1.type" : "rec",
+							"paid_by.1.id" : "1100000000007",
+							"paid_by.1.amount" : 5,
+							"paid_by.1.total_amount" : 5,
+							"paid_by.1.pending" : true
 								}
+							
 							]
 						,
 						"testRailId": 566
 				}
+
 				,{
-					"description": "switch links - partially paid invoice + link to the pending bill, make online payment (onetimeinvoice step 2)",
+					"description": "switch links - partially paid invoice + link to the pending bill, make online payment amount (onetimeinvoice step 2)",
 					"test_id": 91,
 					"api": "onetimeinvoice",
 						"params": {
@@ -8160,7 +8173,7 @@
 							"aid": "91",
 							"step": "2",
 							"invoice_unixtime": "past",
-							"charge_flow":"charge_before_invoice",
+							
 							"cdrs": [
 								{
 									"aid": "91",
@@ -8183,7 +8196,7 @@
 						{
 							"FieldComparison": {
 								"aid":{"$in":[91]},
-								"invoice_id" : "8100000006"								
+								"txid" : "1110000000005"								
 							}
 							
 						}
@@ -8197,17 +8210,149 @@
 					],
 					"expected": [
 							{
-								"invoice_id" : "8100000006",
-								"aid": 91,
-								"paid":true,
-								"amount": 23.4,
+								"txid" : "1110000000005",
+										
 								"paid_by.0.type" : "rec",
-								"paid_by.0.amount" : 23.4
+								"paid_by.0.id" : "1110000000006",
+								"paid_by.0.amount" : 5,
+								"paid_by.0.total_amount" : 5,							
+								"paid_by.1.type" : "rec",
+								"paid_by.1.amount" : 5,
+								"paid_by.1.total_amount" : 5
+							
 							}
 						]
 					,
 					"testRailId": 566
 				}
+
+
+				,{
+					"description": "switch links -partially paid invoice  by approved payment and partial by pending bill,make online payment (onetime-invoice step 2) with  amount less then the  pending payment",
+					"test_id": 92,
+					"api": "onetimeinvoice",
+						"params": {
+							"api": "onetimeinvoice",
+							"aid": "92",
+							"step": "2",
+							"invoice_unixtime": "past",
+							
+							"cdrs": [
+								{
+									"aid": "92",
+									"sid": "0",
+									"rate": "CALL",
+									"credit_time": "2021-03-18T17:18:56.385Z",
+									"usagev": 1,
+									"type": "credit",
+									"aprice": "2"
+								}
+							]
+						},
+					"source": "api",
+					"request_method": "GET",
+					"preTest": [
+
+					],
+					"testFunctions": [
+					
+						{
+							"FieldComparison": {
+								"aid":{"$in":[92]},
+								"txid" : "1120000000005"								
+							}
+							
+						}
+					],
+					"postTest": [
+						{
+							"cleanDB": {
+								"aid": 92
+							}
+						}
+					],
+					"expected": [
+							{
+								
+							"paid_by.0.type" : "rec",
+							"paid_by.0.id" : "1120000000006",
+							"paid_by.0.amount" : 5,
+							"paid_by.0.total_amount" : 5,							
+							"paid_by.1.type" : "rec",
+							"paid_by.1.id" : "1120000000007",
+							"paid_by.1.amount" : 2.66,
+							"paid_by.1.total_amount" : 2.66,
+							"paid_by.1.pending" : true,
+							"paid_by.2.type" : "rec",
+							"paid_by.2.amount" : 2.34,
+							"paid_by.2.total_amount" : 2.34
+							}
+						]
+					,
+					"testRailId": 566
+				}
+
+				,{
+					"description": "switch links - partially paid invoice  by approved payment and partial by pending bill, make online payment (onetime-invoice step 2) with  amount bigger than the pending payment",
+					"test_id": 93,
+					"api": "onetimeinvoice",
+						"params": {
+							"api": "onetimeinvoice",
+							"aid": "93",
+							"step": "2",
+							"invoice_unixtime": "past",
+							
+							"cdrs": [
+								{
+									"aid": "93",
+									"sid": "0",
+									"rate": "CALL",
+									"credit_time": "2021-03-18T17:18:56.385Z",
+									"usagev": 1,
+									"type": "credit",
+									"aprice": "10"
+								}
+							]
+						},
+					"source": "api",
+					"request_method": "GET",
+					"preTest": [
+
+					],
+					"testFunctions": [
+					
+						{
+							"FieldComparison": {
+								"aid":{"$in":[93]},
+								"txid" : "1130000000005"								
+							}
+							
+						}
+					],
+					"postTest": [
+						{
+							"cleanDB": {
+								"aid": 93
+							}
+						}
+					],
+					"expected": [
+							{
+								"paid_by.0.type" : "rec",
+								"paid_by.0.id" : "1130000000006",
+								"paid_by.0.amount" : 5,
+								"paid_by.0.total_amount" : 5,							
+								"paid_by.1.type" : "rec",
+								"paid_by.1.amount" : 5,
+								"paid_by.1.total_amount" : 5
+							
+							}
+						]
+					,
+					"testRailId": 566
+				}
+
+
 
 ]
 

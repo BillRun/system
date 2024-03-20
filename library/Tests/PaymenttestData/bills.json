@@ -1101,6 +1101,208 @@
 				}
 
 				
-	
+				,
+				{
+					"dir" : "tc",
+					"method" : "cash",
+					"aid" : 92,
+					"type" : "rec",
+					"amount" : 10,
+					"due" : 10,
+					"due_date" :"time*2024-03-04T11:53:13.194Z",
+					"urt" :"time*2024-03-03T22:00:00Z",
+					"payer_name" : "yossi test",
+					"source" : "web",
+					"left_to_pay" : 0,
+					"total_paid" : 10,
+					"vatable_left_to_pay" : 0,
+					"paid" : "2",
+					"pending_covering_amount" : 5,
+					"txid" : "1120000000005",
+					"process_time" :"time*2024-03-04T11:53:13Z",
+					"paid_by" : [
+						{
+							"type" : "rec",
+							"id" : "1120000000006",
+							"amount" : 5,
+							"total_amount" : 5,
+							"date" :"time*2024-03-03T22:00:00Z"
+						},
+						{
+							"type" : "rec",
+							"id" : "1120000000007",
+							"amount" : 5,
+							"total_amount" : 5,
+							"date" :"time*2024-03-04T12:34:55.867Z",
+							"pending" : true
+						}
+					],
+					"waiting_payments" : [
+						"1120000000007"
+					]
+				},
+				{
+					"dir" : "fc",
+					"method" : "cash",
+					"aid" : 92,
+					"type" : "rec",
+					"amount" : 5,
+					"due" : -5,
+					"due_date" :"time*2024-03-04T12:33:16.512Z",
+					"urt" :"time*2024-03-03T22:00:00Z",
+					"payer_name" : "yossi test",
+					"source" : "web",
+					"pays" : [
+						{
+							"type" : "rec",
+							"id" : "1120000000005",
+							"amount" : 5,
+							"total_amount" : 10,
+							"date" :"time*2024-03-03T22:00:00Z"
+						}
+					],
+					"left" : 0,
+					"pending_covering_amount" : 0,
+					"txid" : "1120000000006",
+					"process_time" :"time*2024-03-04T12:33:16Z"
+				},
+				{
+					"dir" : "fc",
+					"method" : "automatic",
+					"aid" : 92,
+					"type" : "rec",
+					"amount" : 5,
+					"due" : -5,
+					"due_date" :"time*2024-03-04T12:34:55.867Z",
+					"generated_pg_file_log" : "91175823421e3db186a9382ae3f3e7f4",
+					"urt" :"time*2024-03-04T12:34:55.867Z",
+					"source" : "web",
+					"pays" : [
+						{
+							"type" : "rec",
+							"id" : "1120000000005",
+							"amount" : 5,
+							"pending" : true
+						}
+					],
+					"left" : 0,
+					"pending_covering_amount" : 0,
+					"waiting_for_confirmation" : true,
+					"txid" : "1120000000007",
+					"pending" : true,
+					"cpg_name" : [
+						"Credit_Card"
+					],
+					"cpg_type" : [
+						"transactions_request"
+					],
+					"cpg_file_type" : [
+						"transactions1"
+					],
+					"pg_request" : [ ]
+				}	
+
+
+
+,
+				{
+					"dir" : "tc",
+					"method" : "cash",
+					"aid" : 93,
+					"type" : "rec",
+					"amount" : 10,
+					"due" : 10,
+					"due_date" :"time*2024-03-04T11:53:13.194Z",
+					"urt" :"time*2024-03-03T22:00:00Z",
+					"payer_name" : "yossi test",
+					"source" : "web",
+					"left_to_pay" : 0,
+					"total_paid" : 10,
+					"vatable_left_to_pay" : 0,
+					"paid" : "2",
+					"pending_covering_amount" : 5,
+					"txid" : "1130000000005",
+					"process_time" :"time*2024-03-04T11:53:13Z",
+					"paid_by" : [
+						{
+							"type" : "rec",
+							"id" : "1130000000006",
+							"amount" : 5,
+							"total_amount" : 5,
+							"date" :"time*2024-03-03T22:00:00Z"
+						},
+						{
+							"type" : "rec",
+							"id" : "1130000000007",
+							"amount" : 5,
+							"total_amount" : 5,
+							"date" :"time*2024-03-04T12:34:55.867Z",
+							"pending" : true
+						}
+					],
+					"waiting_payments" : [
+						"1130000000007"
+					]
+				},
+				{
+					"dir" : "fc",
+					"method" : "cash",
+					"aid" : 93,
+					"type" : "rec",
+					"amount" : 5,
+					"due" : -5,
+					"due_date" :"time*2024-03-04T12:33:16.512Z",
+					"urt" :"time*2024-03-03T22:00:00Z",
+					"payer_name" : "yossi test",
+					"source" : "web",
+					"pays" : [
+						{
+							"type" : "rec",
+							"id" : "1130000000005",
+							"amount" : 5,
+							"total_amount" : 10,
+							"date" :"time*2024-03-03T22:00:00Z"
+						}
+					],
+					"left" : 0,
+					"pending_covering_amount" : 0,
+					"txid" : "1130000000006",
+					"process_time" :"time*2024-03-04T12:33:16Z"
+				},
+				{
+					"dir" : "fc",
+					"method" : "automatic",
+					"aid" : 93,
+					"type" : "rec",
+					"amount" : 5,
+					"due" : -5,
+					"due_date" :"time*2024-03-04T12:34:55.867Z",
+					"generated_pg_file_log" : "91175823421e3db186a9382ae3f3e7f4",
+					"urt" :"time*2024-03-04T12:34:55.867Z",
+					"source" : "web",
+					"pays" : [
+						{
+							"type" : "rec",
+							"id" : "1130000000005",
+							"amount" : 5,
+							"pending" : true
+						}
+					],
+					"left" : 0,
+					"pending_covering_amount" : 0,
+					"waiting_for_confirmation" : true,
+					"txid" : "1130000000007",
+					"pending" : true,
+					"cpg_name" : [
+						"Credit_Card"
+					],
+					"cpg_type" : [
+						"transactions_request"
+					],
+					"cpg_file_type" : [
+						"transactions1"
+					],
+					"pg_request" : [ ]
+				}
 			]
 }
