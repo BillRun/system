@@ -271,50 +271,76 @@ abstract class Billrun_Bill {
 			'urt' => 1,
 		);
 		$updated_payments = [];
-		$unpaidBills = Billrun_Bill::getUnpaidBills($query, $sort);
+		//Get unpaid & paying bills
+		$unpaidBills = array_map(function ($unpaid_bill)  use ($query, $sort) {
+			return Billrun_Bill::getInstanceByData($unpaid_bill);
+		}, Billrun_Bill::getUnpaidBills($query, $sort));
 		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort);
 		$pending_paying_bills = $include_pending_payments ? Billrun_Bill::getPendingBills($query, $sort) : [];
+		//Go over paying bills, to link to the unpaid ones, by priority
 		foreach (['over_paying_bills' => $overPayingBills, 'pending_bills' => $pending_paying_bills] as $type => $payments) {
-			foreach ($unpaidBills as $key1 => &$unpaidBillRaw) {
-				$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
+			foreach ($unpaidBills as &$unpaidBill) {
 				$unpaidBillLeft = $unpaidBill->getLeftToPay();
+				//Make sure there's still amount left to pay
 				if (!Billrun_Util::isEqual($unpaidBillLeft, 0, static::precision)) {
-					foreach ($payments as $key2 => &$overPayingBill) {
-						$payingBillAmountLeft = $overPayingBill->getLeft();
-						if ($payingBillAmountLeft && (Billrun_Util::isEqual($unpaidBillLeft, $payingBillAmountLeft, static::precision))) {
-							$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $payingBillAmountLeft, $unpaidBill->getRawData())->save();
-							$unpaidBill->attachPayingBill($overPayingBill, $payingBillAmountLeft)->save();
-							$unpaidBillRaw = $unpaidBill->getRawData();
-							$updated_payments[$overPayingBill->data['txid']] = $overPayingBill->getRawData();
-							$updated_payments[$unpaidBill->getId()] = $unpaidBillRaw;
-							break;
-						}
-					}
-				}
-			}
-			foreach ($unpaidBills as &$unpaidBillRaw) {
-				$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
-				$unpaidBillLeft = $unpaidBill->getLeftToPay();
-				if (!Billrun_Util::isEqual($unpaidBillLeft, 0, static::precision)) {
-					foreach ($payments as &$overPayingBill) {
-						$payingBillAmountLeft = $overPayingBill->getLeft();
+					foreach ($payments as $paying_index => &$paying_bill) {
+						$payingBillAmountLeft = $paying_bill->getLeft();
 						if ($payingBillAmountLeft) {
-							$amountPaid = min(array($unpaidBillLeft, $payingBillAmountLeft));
-							$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $amountPaid, $unpaidBill->getRawData())->save();
-							$unpaidBill->attachPayingBill($overPayingBill, $amountPaid)->save();
-							$unpaidBillLeft -= $amountPaid;
-							$unpaidBillRaw = $unpaidBill->getRawData();
-							$updated_payments[$overPayingBill->data['txid']] = $overPayingBill->getRawData();
-							$updated_payments[$unpaidBill->getId()] = $unpaidBillRaw;
-						}
-						if (abs($unpaidBillLeft) < static::precision) {
-							break;
+							//Prioritization of fully paying bill
+							if (Billrun_Util::isEqual($unpaidBillLeft, $payingBillAmountLeft, static::precision)) {
+								Billrun_Bill::payBillExactAmount($paying_bill, $unpaidBill, $payingBillAmountLeft);
+								$updated_payments[$paying_bill->data['txid']] = $paying_bill->getRawData();
+								$updated_payments[$unpaidBill->getId()] = $unpaidBill->getRawData();
+								break;
+							} else {
+								//Checking the next sorted bills amount by urt. The chances to find another bill with the exact same urt, and exact unpaid amount is low - that is why I used "while"
+								if ($paying_index !== count($payments) -1) {
+									$next_paying_index = $paying_index++;
+									$unpaid_bill_was_paid = 0;
+									while ($payments[$next_paying_index]['urt'] === $paying_bill['urt']) {
+										//Checking if the next bill with the same urt covers the exact unpaid amount
+										$next_paying_bill_left = $payments[$next_paying_index]->getLeft();
+										if ($next_paying_bill_left && (Billrun_Util::isEqual($unpaidBillLeft, $next_paying_bill_left, static::precision))) {
+											Billrun_Bill::payBillExactAmount($paying_bill, $unpaidBill, $payingBillAmountLeft);
+											$unpaid_bill_was_paid = 1;
+											$updated_payments[$paying_bill->data['txid']] = $paying_bill->getRawData();
+											$updated_payments[$unpaidBill->getId()] = $unpaidBill->getRawData();
+											break;
+										} else {
+											if ($next_paying_index !== count($payments) -1) {
+												$next_paying_index++;	
+											}
+										}
+									}
+								}
+								//If we didn't find another bill with the same urt as the loop' original one & exact cover of the unpaid amount - use the original bill
+								if (!$unpaid_bill_was_paid) {
+									Billrun_Bill::payBillpartlyAmount($unpaidBillLeft, $payingBillAmountLeft, $unpaidBill, $paying_bill);
+									$updated_payments[$paying_bill->data['txid']] = $paying_bill->getRawData();
+									$updated_payments[$unpaidBill->getId()] = $unpaidBill->getRawData();
+								}
+							}
+							if (abs($unpaidBillLeft) < static::precision) {
+								break;
+							}
 						}
 					}
 				}
-			}
+			}	
 		}
 		return $updated_payments;
+	}
+
+	public static function payBillExactAmount(&$payingBill, &$unpaidBill, $payingBillAmountLeft) {
+		$payingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $payingBillAmountLeft, $unpaidBill->getRawData())->save();
+		$unpaidBill->attachPayingBill($payingBill, $payingBillAmountLeft)->save();
+	}
+
+	public static function payBillpartlyAmount(&$unpaidBillLeft, $payingBillAmountLeft, &$unpaidBill, &$payingBill) {
+		$amountPaid = min(array($unpaidBillLeft, $payingBillAmountLeft));
+		$payingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $amountPaid, $unpaidBill->getRawData())->save();
+		$unpaidBill->attachPayingBill($payingBill, $amountPaid)->save();
+		$unpaidBillLeft -= $amountPaid;
 	}
 
 	public static function getUnpaidBills($query = array(), $sort = array()) {
