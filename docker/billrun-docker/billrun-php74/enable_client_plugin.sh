@@ -1,17 +1,21 @@
 #!/bin/sh
 
-cd /plugin/application/plugins/
-for f in *.php
-do
-     rm -f "/billrun/application/plugins/"$f
-     ln -s /plugin/application/plugins/$f "/billrun/application/plugins/"$f
-done
-cd /plugin/application/views/
-for d in *
-do
-     rm -rf "/billrun/application/views/"$d
-     ln -s /plugin/application/views/$d "/billrun/application/views/"$d
-done
+if test -d "/plugin/application/plugins/"; then
+     cd /plugin/application/plugins/
+     for f in *.php
+     do
+          rm -f "/billrun/application/plugins/"$f
+          ln -s /plugin/application/plugins/$f "/billrun/application/plugins/"$f
+     done
+fi
+if test -d "/plugin/application/views/"; then
+     cd /plugin/application/views/
+     for d in *
+     do
+          rm -rf "/billrun/application/views/"$d
+          ln -s /plugin/application/views/$d "/billrun/application/views/"$d
+     done
+fi
 if test -d "/plugin/conf/translations/overrides/"; then
     rm -rf /billrun/conf/translations/overrides/
     mkdir -p /billrun/conf/translations/overrides/
