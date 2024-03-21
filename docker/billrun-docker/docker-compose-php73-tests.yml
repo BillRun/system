@@ -24,7 +24,7 @@ services:
         restart: always
         environment:
         - "APPLICATION_ENV=container"
-        - "XDEBUG_CONFIG=remote_host=10.103.0.1 remote_port=9090 remote_enable=1"
+        - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
         volumes:
             - ${PWD}/../..:/billrun
         command: sh -c "composer update && php-fpm "

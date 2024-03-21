@@ -10,5 +10,10 @@ FILE=/billrun/mongo/first_users.json
 if test -f "$FILE"; then
     mongoimport -d billing_container -c users $FILE
 fi 
-
+sleep 1 # remove once BRCD-4430 is done
 mongo billing_container /billrun/mongo/migration/script.js
+for f in /plugin/mongo/migration/*.js
+do
+    sleep 1 # remove once BRCD-4430 is done
+    mongo billing_container $f
+done
