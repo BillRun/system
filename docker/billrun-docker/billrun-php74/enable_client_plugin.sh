@@ -7,6 +7,10 @@ if test -d "/plugin/application/plugins/"; then
           rm -f "/billrun/application/plugins/"$f
           ln -s /plugin/application/plugins/$f "/billrun/application/plugins/"$f
      done
+     for f in /plugin/application/plugins/*.json
+     do
+          echo "configuration.include[] = $f" >> /billrun/conf/container.ini
+     done
 fi
 if test -d "/plugin/application/views/"; then
      cd /plugin/application/views/
@@ -25,5 +29,6 @@ if test -d "/plugin/conf/translations/overrides/"; then
           ln -s /plugin/conf/translations/overrides/$f /billrun/conf/translations/overrides/$f
      done
 fi 
+ln -s /usr/local/bin/wkhtmltopdf /bin/wkhtmltopdf
 
 exec "$@"
