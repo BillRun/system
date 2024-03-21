@@ -12,6 +12,11 @@ if test -d "/plugin/application/plugins/"; then
           [ -f "$f" ] || break
           echo "configuration.include[] = $f" >> /billrun/conf/container.ini
      done
+     for f in /plugin/conf/*.json
+     do
+          [ -f "$f" ] || break
+          echo "configuration.include[] = $f" >> /billrun/conf/container.ini
+     done
 fi
 if test -d "/plugin/application/views/"; then
      cd /plugin/application/views/
