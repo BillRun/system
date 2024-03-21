@@ -16,7 +16,7 @@ class Test_Case_200
       
             $plan = generat_plans::generatePlan(['name' => "TEST_GENRATE",
             "price" => [ json_encode(["price" => 10, "from" => 0, "to" => "UNLIMITED"])]]);
-            $service = generat_services::generateService(['name' => "TEST_GENRATE_SERVICE", 
+            $service = generat_services::generateService(['name' => "TEST_GENRATE_SERVICE1", 
             'from' => $now->format('Y-m-d'),"price" => [ ["price" => 10, "from" => 0, "to" => "UNLIMITED"]]]);
             $discount = generat_discounts::generateDiscount();
             $account = generat_subscribers::generateAccount();
