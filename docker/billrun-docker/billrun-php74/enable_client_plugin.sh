@@ -9,6 +9,7 @@ if test -d "/plugin/application/plugins/"; then
      done
      for f in /plugin/application/plugins/*.json
      do
+          [ -f "$f" ] || break
           echo "configuration.include[] = $f" >> /billrun/conf/container.ini
      done
 fi
