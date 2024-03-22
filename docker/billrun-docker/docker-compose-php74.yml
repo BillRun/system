@@ -36,6 +36,7 @@ services:
         container_name: billrun-mongodb
         restart: always
         volumes:
+            - ./data/mongodb36:/data/db/
             - ./../..:/billrun:ro
             - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
         ports:
