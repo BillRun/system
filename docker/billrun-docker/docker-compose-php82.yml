@@ -33,6 +33,7 @@ services:
         container_name: billrun-mongodb
         restart: always
         volumes:
+            - ./data/mongodb6:/data/db/
             - ./../..:/billrun:ro
             - ./init-mongosh.sh:/docker-entrypoint-initdb.d/init-mongosh.sh
         ports:
