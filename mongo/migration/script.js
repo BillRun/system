@@ -1730,7 +1730,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
 				}
 			}
 		}
-		db.subscribers.save(subscriber);
+		_collectionSave(db.subscribers, subscriber);
 	})
 	
 	var services_with_revisions_with_differernt_cycles = db.services.aggregate([{$match: {balance_period: {$exists: false}, prorated: true, price: {$elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {$expr: {$gt: [{$size: "$month_limit"}, 1]}}}])
