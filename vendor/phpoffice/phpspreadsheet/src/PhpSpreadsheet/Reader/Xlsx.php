@@ -661,9 +661,6 @@ class Xlsx extends BaseReader
                                             $coordinates = Coordinate::coordinateFromString($r);
 
                                             if (!$this->getReadFilter()->readCell($coordinates[0], (int) $coordinates[1], $docSheet->getTitle())) {
-                                                if (isset($c->f)) {
-                                                    $this->castToFormula($c, $r, $cellDataType, $value, $calculatedValue, $sharedFormulas, 'castToError');
-                                                }
                                                 ++$rowIndex;
 
                                                 continue;
@@ -1280,7 +1277,7 @@ class Xlsx extends BaseReader
                                     }
 
                                     // Valid range?
-                                    if ($extractedRange == '') {
+                                    if (stripos((string) $definedName, '#REF!') !== false || $extractedRange == '') {
                                         continue;
                                     }
 
@@ -1350,7 +1347,7 @@ class Xlsx extends BaseReader
                                 $extractedRange = (string) $definedName;
 
                                 // Valid range?
-                                if ($extractedRange == '') {
+                                if (stripos((string) $definedName, '#REF!') !== false || $extractedRange == '') {
                                     continue;
                                 }
 
@@ -1398,9 +1395,6 @@ class Xlsx extends BaseReader
                                         $locatedSheet = $excel->getSheetByName($extractedSheetName);
                                     }
 
-                                    if ($locatedSheet === null && !DefinedName::testIfFormula($definedRange)) {
-                                        $definedRange = '#REF!';
-                                    }
                                     $excel->addDefinedName(DefinedName::createInstance((string) $definedName['name'], $locatedSheet, $definedRange, false));
                                 }
                             }
@@ -1971,7 +1965,7 @@ class Xlsx extends BaseReader
 
         $unparsedPrinterSettings = &$unparsedLoadedData['sheets'][$docSheet->getCodeName()]['printerSettings'];
         foreach ($sheetPrinterSettings as $rId => $printerSettings) {
-            $rId = substr($rId, 3) . 'ps'; // rIdXXX, add 'ps' suffix to avoid identical resource identifier collision with unparsed vmlDrawing
+            $rId = substr($rId, 3); // rIdXXX
             $unparsedPrinterSettings[$rId] = [];
             $unparsedPrinterSettings[$rId]['filePath'] = self::dirAdd("$dir/$fileWorksheet", $printerSettings['Target']);
             $unparsedPrinterSettings[$rId]['relFilePath'] = (string) $printerSettings['Target'];

@@ -1108,10 +1108,6 @@ class MathTrig
         $digits = Functions::flattenSingleValue($digits);
 
         if ((is_numeric($number)) && (is_numeric($digits))) {
-            if ($number == 0.0) {
-                return 0.0;
-            }
-
             if ($number < 0.0) {
                 return round($number - 0.5 * 0.1 ** $digits, $digits, PHP_ROUND_HALF_DOWN);
             }
@@ -1138,10 +1134,6 @@ class MathTrig
         $digits = Functions::flattenSingleValue($digits);
 
         if ((is_numeric($number)) && (is_numeric($digits))) {
-            if ($number == 0.0) {
-                return 0.0;
-            }
-
             if ($number < 0.0) {
                 return round($number + 0.5 * 0.1 ** $digits, $digits, PHP_ROUND_HALF_UP);
             }

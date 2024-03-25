@@ -27,15 +27,15 @@ class TextData
     {
         $character = Functions::flattenSingleValue($character);
 
-        if (!is_numeric($character)) {
-            return Functions::VALUE();
-        }
-        $character = (int) $character;
-        if ($character < 1 || $character > 255) {
+        if ((!is_numeric($character)) || ($character < 0)) {
             return Functions::VALUE();
         }
 
-        return iconv('UCS-4LE', 'UTF-8', pack('V', $character));
+        if (function_exists('iconv')) {
+            return iconv('UCS-4LE', 'UTF-8', pack('V', $character));
+        }
+
+        return mb_convert_encoding('&#' . (int) $character . ';', 'UTF-8', 'HTML-ENTITIES');
     }
 
     /**
@@ -160,7 +160,7 @@ class TextData
 
         // Validate parameters
         if (!is_numeric($value) || !is_numeric($decimals)) {
-            return Functions::VALUE();
+            return Functions::NAN();
         }
         $decimals = floor($decimals);
 
@@ -174,7 +174,6 @@ class TextData
             }
             $value = MathTrig::MROUND($value, $round);
         }
-        $mask = "$mask;($mask)";
 
         return NumberFormat::toFormattedString($value, $mask);
     }
@@ -266,7 +265,7 @@ class TextData
 
         // Validate parameters
         if (!is_numeric($value) || !is_numeric($decimals)) {
-            return Functions::VALUE();
+            return Functions::NAN();
         }
         $decimals = (int) floor($decimals);
 

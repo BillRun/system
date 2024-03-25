@@ -2,11 +2,6 @@
 
 namespace PhpOffice\PhpSpreadsheet\Shared;
 
-<<<<<<< HEAD
-use GdImage;
-
-=======
->>>>>>> release-5.14
 class Drawing
 {
     /**
@@ -103,11 +98,7 @@ class Drawing
      */
     public static function pixelsToPoints($pValue)
     {
-<<<<<<< HEAD
-        return $pValue * 0.75;
-=======
         return $pValue * 0.67777777;
->>>>>>> release-5.14
     }
 
     /**
@@ -120,11 +111,7 @@ class Drawing
     public static function pointsToPixels($pValue)
     {
         if ($pValue != 0) {
-<<<<<<< HEAD
-            return (int) ceil($pValue / 0.75);
-=======
             return (int) ceil($pValue * 1.333333333);
->>>>>>> release-5.14
         }
 
         return 0;
@@ -165,11 +152,7 @@ class Drawing
      *
      * @param string $p_sFile Path to Windows DIB (BMP) image
      *
-<<<<<<< HEAD
-     * @return GdImage|resource
-=======
      * @return resource
->>>>>>> release-5.14
      */
     public static function imagecreatefrombmp($p_sFile)
     {
