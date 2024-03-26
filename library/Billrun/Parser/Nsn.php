@@ -47,7 +47,7 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary {
 					}
 				}
 			}
-			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) && $data['charging_start_time'] ? $data['charging_start_time'] : $data['call_reference_time']), date("P", strtotime($data['call_reference_time']))));
+			$data['urt'] = new Mongodloid_Date(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) && $data['charging_start_time'] ? $data['charging_start_time'] : $data['call_reference_time']), date("P", strtotime($data['call_reference_time']))));
 			Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$data, $this));
 		} else {
 			Billrun_Factory::log()->log("unsupported NSN record type : {$data['record_type']}",Zend_log::DEBUG);
