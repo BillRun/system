@@ -94,6 +94,8 @@ trait Billrun_Subscriber_External_Cacheable {
 
 	private function tagCache($cacheKey, $cachedEntries) {
 		$cache = Billrun_Factory::cache();
+		if(empty($cache)) { return false; }
+
 		foreach ($cachedEntries as $cachedEntry) {
 			$id = $cachedEntry[$this->getCachingEntityIdKey()];
 
@@ -137,8 +139,9 @@ trait Billrun_Subscriber_External_Cacheable {
 
 	private function getCachedExternalEntry(string $cacheKey, int $time) {
 		$cache = Billrun_Factory::cache();
-
-		$cachedEntries = $cache->get($cacheKey, $this->getCachePrefix());
+		if($cache) {
+			$cachedEntries = $cache->get($cacheKey, $this->getCachePrefix());
+		}
 
 		if (!is_array($cachedEntries)) {
 			return null;
@@ -205,6 +208,7 @@ trait Billrun_Subscriber_External_Cacheable {
 
 	public function cacheExternalData(array $externalQuery, array $results) {
 		$cache = Billrun_Factory::cache();
+		if(empty($cache)) {return false;}
 
 		$queries = $externalQuery['query'] ?? [];
 

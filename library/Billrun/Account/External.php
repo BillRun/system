@@ -103,8 +103,8 @@ class Billrun_Account_External extends Billrun_Account {
 			return $results;
 	}
 
-	protected function saveRevisionsToCache($revs,$cycleData) {
-		if(!$this->cacheEnabled) { return false;}
+	protected function saveRevisionsToCache($revs, $cycleData) {
+		if(!$this->cacheEnabled && !$this->cacheGBAtoGSD) { return false;}
 		$idFieldsToples = Billrun_Factory::config()->getConfigValue('subscribers.account.cache_gba_to_gsd.query_fields',['subscriber'=> [['sid','aid'],['sid']], 'account'=>[['aid']]]);
 		foreach($revs as $rev) {
 			foreach($idFieldsToples[$rev['type']] as $idTople) {
@@ -148,7 +148,7 @@ class Billrun_Account_External extends Billrun_Account {
 			$requestData['date'] = $globalDate;
 		}
 
-			$res = $this->loadCache($requestData, function($requestData) {
+		$res = $this->loadCache($requestData, function($requestData) {
 			Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
 			$params = [
 				'authentication' => $this->remote_authentication,
