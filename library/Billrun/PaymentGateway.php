@@ -109,6 +109,8 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $htmlForm;
+
+	protected $requestHeaders = array('Accept-encoding' => 'deflate');
 	
 	protected function __construct($instanceName =  null) {
 
@@ -473,7 +475,7 @@ abstract class Billrun_PaymentGateway {
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			Billrun_Factory::log("Payment gateway token request: " . print_R($postArray, 1), Zend_Log::DEBUG);
-			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, $this->requestHeaders, null, 0);
 			Billrun_Factory::log("Payment gateway token response: " . print_R($result, 1), Zend_Log::DEBUG);
 			if ($this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage))) {
 				$response = $this->getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $options, $maxTries - 1);
@@ -503,7 +505,7 @@ abstract class Billrun_PaymentGateway {
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
 			Billrun_Factory::log("Requesting transaction details for txId " . $txId, Zend_Log::DEBUG);
 			Billrun_Factory::log("Payment gateway transaction details request: " . print_R($postString, 1), Zend_Log::DEBUG);
-			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, $this->requestHeaders, null, 0);
 			Billrun_Factory::log("Payment gateway transaction details response: " . print_R($result, 1), Zend_Log::DEBUG);
 			if (($retParams = $this->getResponseDetails($result)) === FALSE) {
 				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
@@ -562,13 +564,7 @@ abstract class Billrun_PaymentGateway {
 
 	protected function signalStartingProcess($aid, $timestamp) {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array(
-			"name" => $this->billrunName,
-			"instance_name" => $this->instanceName,
-			"tx" => (string) $this->transactionId,
-			"stamp" => md5($timestamp . $this->transactionId),
-			"aid" => (int) $aid
-		);
+		$query = $this->getSignalStartingProcessQuery($aid, $timestamp);
 		$textualQuery = json_encode($query);
 		Billrun_Factory::log('Querying creditproxy with ' . $textualQuery, Zend_Log::DEBUG);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
@@ -636,10 +632,7 @@ abstract class Billrun_PaymentGateway {
 	 * @return Int - Account id
 	 */
 	protected function getAidFromProxy($txId) {
-		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "instance_name" => $this->instanceName, "tx" => (string) $txId);
-		$paymentRow = $paymentColl->query($query)->cursor()->current();
-		return $paymentRow['aid'];
+		return $this->getFieldFromProxy('aid', $txId);
 	}
 
 	/**
@@ -914,4 +907,33 @@ abstract class Billrun_PaymentGateway {
 		return true;
 	}
 
+	/**
+	 * Returns relevant data for ok page response
+	 */
+	public function getTransactionDetails($details) {
+		return array('credit_card' => $details['creditCard'], 'expiration_date' => $details['expirationDate']);
+	}
+
+	/**
+	 * Get field from proxy collection if doesn't passed through the payment gateway.
+	 * 
+	 * @param string $txId -String that represents the transaction.
+	 * @return Int - Account id
+	 */
+	protected function getFieldFromProxy($field, $txId) {
+		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
+		$query = array("name" => $this->billrunName, "instance_name" => $this->instanceName, "tx" => (string) $txId);
+		$paymentRow = $paymentColl->query($query)->cursor()->current();
+		return $paymentRow[$field];
+	}
+
+	protected function getSignalStartingProcessQuery($aid, $timestamp) {
+		return array(
+			"name" => $this->billrunName,
+			"instance_name" => $this->instanceName,
+			"tx" => (string) $this->transactionId,
+			"stamp" => md5($timestamp . $this->transactionId),
+			"aid" => (int) $aid
+		);
+	}
 }
