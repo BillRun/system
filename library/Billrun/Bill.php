@@ -264,6 +264,7 @@ abstract class Billrun_Bill {
 	}
 
 	public static function payUnpaidBillsByOverPayingBills($aid, $sortByUrt = true, $include_pending_payments = false) {
+		Billrun_Factory::log("Paying unpaid bills by over paying bills for aid " . $aid, Zend_Log::DEBUG);
 		$query = array(
 			'aid' => $aid,
 		);
@@ -277,30 +278,39 @@ abstract class Billrun_Bill {
 		}, Billrun_Bill::getUnpaidBills($query, $sort));
 		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort);
 		$pending_paying_bills = $include_pending_payments ? Billrun_Bill::getPendingBills($query, $sort) : [];
+		Billrun_Factory::log("Found " . count($unpaidBills) . " unpaid bills," . count($overPayingBills) . " over paying bills, and " . count($pending_paying_bills) . " pending paying bills"  , Zend_Log::DEBUG);
 		//Go over paying bills, to link to the unpaid ones, by priority
 		foreach (['over_paying_bills' => $overPayingBills, 'pending_bills' => $pending_paying_bills] as $type => $payments) {
+			Billrun_Factory::log("Processing " . $type . " payments"  , Zend_Log::DEBUG);
 			foreach ($unpaidBills as &$unpaidBill) {
+				Billrun_Factory::log("Trying to pay unpaid bill of type " . $unpaidBill->getType() . ", id: " . $unpaidBill->getId(), Zend_Log::DEBUG);
 				$unpaidBillLeft = $unpaidBill->getLeftToPay();
 				//Make sure there's still amount left to pay
 				if (!Billrun_Util::isEqual($unpaidBillLeft, 0, static::precision)) {
+					Billrun_Factory::log("Bill with id " . $unpaidBill->getId() . " left debt is " . $unpaidBillLeft, Zend_Log::DEBUG);
 					foreach ($payments as $paying_index => &$paying_bill) {
 						$payingBillAmountLeft = $paying_bill->getLeft();
 						if ($payingBillAmountLeft) {
 							//Prioritization of fully paying bill
 							if (Billrun_Util::isEqual($unpaidBillLeft, $payingBillAmountLeft, static::precision)) {
+								Billrun_Factory::log("Payment " . $paying_bill->getId() . " left is equal to the unpaid bill left - " . $unpaidBillLeft . ".Paying the exact amount" , Zend_Log::DEBUG);
 								Billrun_Bill::payBillExactAmount($paying_bill, $unpaidBill, $payingBillAmountLeft);
 								$updated_payments[$paying_bill->data['txid']] = $paying_bill->getRawData();
 								$updated_payments[$unpaidBill->getId()] = $unpaidBill->getRawData();
 								break;
 							} else {
 								//Checking the next sorted bills amount by urt. The chances to find another bill with the exact same urt, and exact unpaid amount is low - that is why I used "while"
+								Billrun_Factory::log("Payment " . $paying_bill->getId() . " left is not equal to the unpaid bill left - " . $unpaidBillLeft . ".Checking other payments with the same urt" , Zend_Log::DEBUG);
 								if ($paying_index !== (count($payments) -1)) {
+									Billrun_Factory::log("Payment " . $paying_bill->getId() . " isn't the last payment, checking if the exact amount exists in other payments with the same urt" , Zend_Log::DEBUG);
 									$next_paying_index = $paying_index + 1;
 									$unpaid_bill_was_paid = false;
 									while ($payments[$next_paying_index]->getTime()->sec === $paying_bill->getTime()->sec) {
+										Billrun_Factory::log("Found payment " . $payments[$next_paying_index]->getId() . " with the same urt, checking it's left amount" , Zend_Log::DEBUG);
 										//Checking if the next bill with the same urt covers the exact unpaid amount
 										$next_paying_bill_left = $payments[$next_paying_index]->getLeft();
 										if ($next_paying_bill_left && (Billrun_Util::isEqual($unpaidBillLeft, $next_paying_bill_left, static::precision))) {
+											Billrun_Factory::log("Payment " . $payments[$next_paying_index]->getId() . " left is equal to the unpaid bill left - " . $unpaidBillLeft . ".Paying the exact amount" , Zend_Log::DEBUG);
 											Billrun_Bill::payBillExactAmount($payments[$next_paying_index], $unpaidBill, $next_paying_bill_left);
 											$unpaidBillLeft = $unpaidBill->getLeft();
 											$unpaid_bill_was_paid = true;
@@ -308,14 +318,20 @@ abstract class Billrun_Bill {
 											$updated_payments[$unpaidBill->getId()] = $unpaidBill->getRawData();
 											break;
 										} else {
+											Billrun_Factory::log("Payment " . $payments[$next_paying_index]->getId() . " left is not equal to the unpaid bill left - " . $unpaidBillLeft, Zend_Log::DEBUG);
 											if ($next_paying_index !== (count($payments) -1)) {
-												$next_paying_index++;	
+												Billrun_Factory::log("Checking if the next payment has the same urt & exact debt amount", Zend_Log::DEBUG);
+												$next_paying_index++;
+											} else {
+												Billrun_Factory::log("Reached the end of the payments array, and didn't find payment with the same urt that pays the exact debt amount " . $unpaidBillLeft, Zend_Log::DEBUG);
+												break;
 											}
 										}
 									}
 								}
 								//If we didn't find another bill with the same urt as the loop' original one & exact cover of the unpaid amount - use the original bill
 								if (!$unpaid_bill_was_paid) {
+									Billrun_Factory::log("No payment with the exact debt amount " . $unpaidBillLeft . " was found. Paying with partly/over paying bill " . $paying_bill->getId() , Zend_Log::DEBUG);
 									Billrun_Bill::payBillPartlyAmount($unpaidBillLeft, $payingBillAmountLeft, $unpaidBill, $paying_bill);
 									$updated_payments[$paying_bill->data['txid']] = $paying_bill->getRawData();
 									$updated_payments[$unpaidBill->getId()] = $unpaidBill->getRawData();
