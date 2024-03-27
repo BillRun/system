@@ -39,7 +39,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					array('account_id' => array('$exists' => false)),
 					array('subscriber_id' => array('$exists' => false))
 				)
-		));
+		))->cursor()->limit(Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.limit',1000));
 	}
 
 	/**
