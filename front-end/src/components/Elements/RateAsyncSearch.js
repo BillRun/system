@@ -7,7 +7,7 @@ import Field from '@/components/Field';
 import { entitySearchByQuery } from '@/actions/entityActions';
 
 
-const RateAsyncSearch = ({ editable, onChange, searchPlaceholder, noResultsPlaceholder, dispatch }) => {
+const RateAsyncSearch = ({ rate, label, editable, onChange, searchPlaceholder, noResultsPlaceholder, dispatch }) => {
   const findRates = (inputValue, callback) => {
     // if (inputValue === '') {
     //   return callback([]);
@@ -39,17 +39,23 @@ const RateAsyncSearch = ({ editable, onChange, searchPlaceholder, noResultsPlace
     findRates(inputValue, callback);
   });
 
-  const onChangeRate = (key) => {
-    onChange(key);
+  const onChangeRate = (key, { option }) => {
+    onChange(key, option);
+  }
+
+  let defaultInputValue = undefined;
+  if (rate.length > 0) {
+    defaultInputValue = {value: rate, label};
   }
 
   return (
     <Field
       fieldType="select"
+      value={defaultInputValue}
       onChange={onChangeRate}
       clearable={false}
       isAsync={true}
-      isControlled={false}
+      isControlled={true}
       cacheOptions={true}
       defaultOptions={true}
       placeholder={searchPlaceholder}
@@ -61,14 +67,18 @@ const RateAsyncSearch = ({ editable, onChange, searchPlaceholder, noResultsPlace
 }
 
 RateAsyncSearch.defaultProps = {
+  rate: '',
+  label: '',
   editable: true,
   accountsOptions: [],
-  searchPlaceholder: "Type to filter products…",
-  noResultsPlaceholder: "No rates found",
+  searchPlaceholder: "Type keys or titles for search.",
+  noResultsPlaceholder: "No rates were found. Try searching by another key or title.",
 };
 
 RateAsyncSearch.propTypes = {
   editable: PropTypes.bool,
+  rate: PropTypes.string,
+  label: PropTypes.string,
   searchPlaceholder: PropTypes.string,
   noResultsPlaceholder: PropTypes.string,
   accountsOptions: PropTypes.array,
