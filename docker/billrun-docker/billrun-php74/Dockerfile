@@ -25,5 +25,9 @@ COPY php-fpm.conf /usr/local/etc/
 COPY php.ini /usr/local/etc/php/
 COPY xdebug.ini /usr/local/etc/php/conf.d/
 COPY --from=composer:2.6.6 /usr/bin/composer /usr/bin/composer
+COPY enable_client_plugin.sh /enable_client_plugin.sh
+RUN chmod ug+x /enable_client_plugin.sh
+ENTRYPOINT ["/enable_client_plugin.sh"]
 WORKDIR /billrun
+
 CMD ["php-fpm"]
