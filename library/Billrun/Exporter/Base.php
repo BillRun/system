@@ -37,7 +37,7 @@ abstract class Billrun_Exporter_Base extends Billrun_Base {
 	protected $logCollection = null;
 
 
-	protected $whitelistFunctions = ['hexdec','intval','preg_replace'];
+	protected $whitelistFunctions = ['hexdec','intval','preg_replace','pow','fdiv'];
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
