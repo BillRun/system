@@ -8317,8 +8317,13 @@
 					"source": "api",
 					"request_method": "GET",
 					"preTest": [
-
-					],
+						{
+							"setConfigValue":{
+								"key":"bills.switch_links",
+								"value" :true
+							}
+						}
+										],
 					"testFunctions": [
 					
 						{

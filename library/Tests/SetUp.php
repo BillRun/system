@@ -372,4 +372,26 @@ trait Tests_SetUp
 		$this->setConfig($this->originalConfig);
 	}
 
+
+
+    /**
+	*function to set new config value during the test run 
+	*@param array $newConfig['key'] config key, can be singel key or path seperate by .
+	*@param array $newConfig['value']
+	 */
+	public function setConfigValue($row = [],$newConfig){
+
+		$config = Billrun_Factory::db()->configCollection();
+		$data = $this->config->query()
+			->cursor()
+			->sort(array('_id' => -1))
+			->limit(1)
+			->current()
+			->getRawData();
+		unset($data['_id']);
+		Billrun_Util::setIn($data, $newConfig['key'],$newConfig['value']);
+		$config->insert($data);
+		Billrun_Config::getInstance()->loadDbConfig();
+  }
+
 }
