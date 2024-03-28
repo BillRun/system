@@ -762,8 +762,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$data = &$this->getData();
 		foreach ($data['data'] as &$row) {
 			$filters = $this->getFilters($row);
-			foreach ($filters as $filter) {
+			foreach ($filters as $idx => $filter) {
 				if ($this->isFilterConditionsMet($row, $filter)) {
+										$row['skipped_rules_applied'] = array_merge($row['skipped_rules_applied'] ?? [] , [$filter['comment'] ?? 'Skipped by rule #'.$idx]);
                                         if(isset($row['skip_calc'])) {
                                                 $row['skip_calc'] = array_unique(array_merge($row['skip_calc'],$this->getCalcsToSkip($filter)));
                                         } else {

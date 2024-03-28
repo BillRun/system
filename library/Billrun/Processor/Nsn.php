@@ -107,7 +107,7 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 						Billrun_Factory::dispatcher()->trigger('beforeLineMediation', array($this, static::$type, &$parsedRow));
 						$row['usaget'] = $this->getLineUsageType($row['uf']);
 						$row['usagev'] = $this->getLineVolume($row['uf']);
-						$row['urt'] = !empty($row['uf']['urt']) ? $row['uf']['urt'] : new MongoDate();
+						$row['urt'] = !empty($row['uf']['urt']) ? $row['uf']['urt'] : new Mongodloid_Date();
 						Billrun_Factory::dispatcher()->trigger('afterLineMediation', array($this, static::$type, &$row));
 						$this->addDataRow($row);
 					}
