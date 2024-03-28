@@ -641,6 +641,9 @@ abstract class Billrun_Bill {
 		$relatedBillId = Billrun_Bill::findRelatedBill($paymentRawData['pays'], $billType, $billId);
 		if ($relatedBillId == -1) {
 			Billrun_Bill::addRelatedBill($paymentRawData['pays'], $billType, $billId, $amount, $bill);
+			if ($paymentRawData['pending'] === true) {
+				$paymentRawData['pays'][0]['pending'] = true;
+			}
 		} else {
 			$paymentRawData['pays'][$relatedBillId]['amount'] += floatval($amount);
 		}
