@@ -112,8 +112,6 @@ abstract class Billrun_PaymentGateway {
 
 	protected $requestHeaders = array('Accept-encoding' => 'deflate');
 	
-	protected $requestHeaders = array('Accept-encoding' => 'deflate');
-	
 	protected function __construct($instanceName =  null) {
 
 		if ($this->supportsOmnipay()) {
