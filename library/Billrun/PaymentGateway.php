@@ -109,7 +109,7 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $htmlForm;
-	
+
 	protected $requestHeaders = array('Accept-encoding' => 'deflate');
 	
 	protected function __construct($instanceName =  null) {
