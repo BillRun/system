@@ -8273,19 +8273,18 @@
 					],
 					"expected": [
 							{
-								
-							"paid_by.0.type" : "rec",
-							"paid_by.0.id" : "1120000000006",
-							"paid_by.0.amount" : 5,
-							"paid_by.0.total_amount" : 5,							
-							"paid_by.1.type" : "rec",
-							"paid_by.1.id" : "1120000000007",
-							"paid_by.1.amount" : 2.66,
-							"paid_by.1.total_amount" : 2.66,
-							"paid_by.1.pending" : true,
-							"paid_by.2.type" : "rec",
-							"paid_by.2.amount" : 2.34,
-							"paid_by.2.total_amount" : 2.34
+								"paid_by.0.type" : "rec",
+								"paid_by.0.id" : "1120000000006",
+								"paid_by.0.amount" : 5,
+								"paid_by.0.total_amount" : 5,							
+								"paid_by.2.type" : "rec",
+								"paid_by.2.id" : "1120000000007",
+								"paid_by.2.amount" : 2.66,
+								"paid_by.2.total_amount" : 2.66,
+								"paid_by.2.pending" : true,
+								"paid_by.1.type" : "rec",
+								"paid_by.1.amount" : 2.34,
+								"paid_by.1.total_amount" : 2.34
 							}
 						]
 					,

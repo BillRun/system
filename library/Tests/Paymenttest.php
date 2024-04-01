@@ -280,8 +280,9 @@ class Tests_paymenttest extends UnitTestCase
 		Billrun_Factory::log("run check_pending_covering_amount function with params : " . print_r($params, 1), Zend_Log::INFO);
 		Billrun_Factory::log(" check_pending_covering_amount function match bills : " . print_r($bills, 1), Zend_Log::INFO);
 		$PaidBy = [];
-		$pendingAmount = 0;
+		
 		foreach ($bills as $bill) {
+		$pendingAmount = 0;
 			if( isset($bill['paid_by'])||isset($bill['pays'])){
 				$data=  isset($bill['paid_by']) ? $bill['paid_by'] : $bill['pays'] ;
 			}
@@ -305,19 +306,27 @@ class Tests_paymenttest extends UnitTestCase
 
 						}));
 						
-						$pay_ = array_filter($paysBill[0]['pays'], function ($item) use ($identify ) {
+						$pay_ = array_values(array_filter($paysBill[0]['pays'], function ($item) use ($identify ) {
 							return $item['id'] === $identify;
-						});
-						if(!isset($pay_[0]['pending']) || $pay_[0]['pending'] ==false ){
+						}));
+
+						if(!is_null($pay_) ){
+							if( !isset($pay_[0]['pending']) || $pay_[0]['pending'] ==false ){
 							    $this->message .= "pending flag not not equel in pays and its payd_by " . $this->fail;
+								$this->message .= "pay VS paid_by :".$this->arrayToHtmlTable($pay)." & ".$this->arrayToHtmlTable($pay_[0]);
+								// var_dump($pay);
+								// var_dump($pay_[0]);
 								Billrun_Factory::log($this->message .= "pending flag not not equel in pays and its payd_by " . $this->fail, Zend_Log::ERR);
 								$pass = false;
 						}
+
 						if (!Billrun_Util::isEqual($pay_[0]['amount'], $pay['amount'], $this->epsilon)) {
 							$this->message .= "The sum of pending amount not equel to pending amount , pending amount in payd_by is {$pay['amount']} and in pending amount in its pays bill is {$pay_['amount']} " . $this->fail;
 							Billrun_Factory::log("The sum of pending amount not equel to pending amount , pending amount in payd_by is {$pay['amount']} and in pending amount in its pays bill is {$pay_['amount']} " , Zend_Log::ERR);
 							$pass = false;
 						}
+						}
+					
 					}
 
 
@@ -331,6 +340,59 @@ class Tests_paymenttest extends UnitTestCase
 		$this->message .= ($pass)?"check_pending_covering_amount function pass " . $this->pass :"";
 		return $pass;
 	}
+	function arrayToHtmlTable($array, $includeKeys = true) {
+		if (empty($array)) {
+			return '<p>No data to display.</p>';
+		}
+	
+		$html = '<table border="1" style="border-collapse: collapse;">';
+	
+		// Check if the array is multidimensional and if keys should be included for headers
+		$firstRow = reset($array);
+		if ($includeKeys && is_array($firstRow)) {
+			$html .= '<tr>';
+			foreach ($firstRow as $key => $value) {
+				$html .= '<th>' . htmlspecialchars($key) . '</th>';
+			}
+			$html .= '</tr>';
+		} else if (!$includeKeys && is_array($firstRow)) {
+			// If keys are not to be included but the array is multidimensional, don't print headers
+		} else if ($includeKeys && !is_array($firstRow)) {
+			// If it's a single-dimensional associative array, print one header titled "Value"
+			// $html .= '<tr><th>Value</th></tr>';
+		}
+	
+		// Populate the table rows
+		foreach ($array as $key => $row) {
+			$html .= '<tr>';
+			if (is_array($row)) {
+				// If it's a row from a multidimensional array
+				foreach ($row as $cellKey => $cellValue) {
+					if ($includeKeys) {
+						// Include key and value
+						$html .= '<td>' . htmlspecialchars($cellKey) . ': ' . htmlspecialchars($cellValue) . '</td>';
+					} else {
+						// Only include value
+						$html .= '<td>' . htmlspecialchars($cellValue) . '</td>';
+					}
+				}
+			} else {
+				// For a single-dimensional array or a non-associative value
+				if ($includeKeys) {
+					// Include key and value
+					$html .= '<td>' . htmlspecialchars($key) . ': ' . htmlspecialchars($row) . '</td>';
+				} else {
+					// Only include value
+					$html .= '<td>' . htmlspecialchars($row) . '</td>';
+				}
+			}
+			$html .= '</tr>';
+		}
+	
+		$html .= '</table>';
+		return $html;
+	}
+			
 
 	/**
 	 * 
