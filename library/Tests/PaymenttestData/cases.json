@@ -8371,7 +8371,7 @@
 
 
 				,{
-					"description": "conf switch_links=false, switch links - partially paid invoice + link to the pending bill, make online payment (chargeAccount api)",
+					"description": "(as 90 but with conf switch_links=false), switch links - partially paid invoice + link to the pending bill, make online payment (chargeAccount api)",
 					"test_id": 94,
 					"api": "chargeAccount",
 					"params": {
@@ -8501,7 +8501,7 @@
 
 
 			,{
-				"description": "conf switch_links=false, switch links -partially paid invoice  by approved payment and partial by pending bill,make online payment (onetime-invoice step 2) with  amount less then the  pending payment",
+				"description": "(as 92 but with conf switch_links=false), switch links -partially paid invoice  by approved payment and partial by pending bill,make online payment (onetime-invoice step 2) with  amount less then the  pending payment",
 				"test_id": 96,
 				"api": "onetimeinvoice",
 					"params": {
@@ -8568,7 +8568,7 @@
 			}
 
 			,{
-				"description": "conf switch_links=false, switch links - partially paid invoice  by approved payment and partial by pending bill, make online payment (onetime-invoice step 2) with  amount bigger than the pending payment",
+				"description": "(as 93 but with conf switch_links=false), switch links - partially paid invoice  by approved payment and partial by pending bill, make online payment (onetime-invoice step 2) with  amount bigger than the pending payment",
 				"test_id": 97,
 				"api": "onetimeinvoice",
 					"params": {
