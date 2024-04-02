@@ -313,7 +313,7 @@ class Tests_paymenttest extends UnitTestCase
 						if(!is_null($pay_) ){
 							if( !isset($pay_[0]['pending']) || $pay_[0]['pending'] ==false ){
 							    $this->message .= "pending flag not not equel in pays and its payd_by " . $this->fail;
-								$this->message .= "pay VS paid_by :".$this->arrayToHtmlTable($pay)." & ".$this->arrayToHtmlTable($pay_[0]);
+								$this->message .= "pay VS paid_by :".$this->arrayToPrettyJsonHtml($pay)." & ".$this->arrayToPrettyJsonHtml($pay_[0]);
 								// var_dump($pay);
 								// var_dump($pay_[0]);
 								Billrun_Factory::log($this->message .= "pending flag not not equel in pays and its payd_by " . $this->fail, Zend_Log::ERR);
@@ -332,7 +332,8 @@ class Tests_paymenttest extends UnitTestCase
 
 				}
 				if (!Billrun_Util::isEqual($bill['pending_covering_amount'], $pendingAmount, $this->epsilon)) {
-					$this->message .= "The sum of pending_covering_amount not equel to pending amount , sum of pending amount in payd_by is $pendingAmount and in pending_covering_amount is {$bill['pending_covering_amount']} " . $this->fail;
+					$this->message .= "The sum of pending_covering_amount not equel to pending amount , sum of pending amount in payd_by is $pendingAmount and in pending_covering_amount is {$bill['pending_covering_amount']}  " .$this->arrayToPrettyJsonHtml($bill). $this->fail;
+
 					Billrun_Factory::log("The sum of pending_covering_amount not equel to pending amount , sum of pending amount in payd_by is $pendingAmount and in pending_covering_amount is {$bill['pending_covering_amount']} ", Zend_Log::ERR);
 					$pass = false;
 				}
@@ -340,60 +341,24 @@ class Tests_paymenttest extends UnitTestCase
 		$this->message .= ($pass)?"check_pending_covering_amount function pass " . $this->pass :"";
 		return $pass;
 	}
-	function arrayToHtmlTable($array, $includeKeys = true) {
+	function arrayToPrettyJsonHtml($array) {
+		// Check if the array is empty
 		if (empty($array)) {
 			return '<p>No data to display.</p>';
 		}
 	
-		$html = '<table border="1" style="border-collapse: collapse;">';
-	
-		// Check if the array is multidimensional and if keys should be included for headers
-		$firstRow = reset($array);
-		if ($includeKeys && is_array($firstRow)) {
-			$html .= '<tr>';
-			foreach ($firstRow as $key => $value) {
-				$html .= '<th>' . htmlspecialchars($key) . '</th>';
-			}
-			$html .= '</tr>';
-		} else if (!$includeKeys && is_array($firstRow)) {
-			// If keys are not to be included but the array is multidimensional, don't print headers
-		} else if ($includeKeys && !is_array($firstRow)) {
-			// If it's a single-dimensional associative array, print one header titled "Value"
-			// $html .= '<tr><th>Value</th></tr>';
+		// Convert the array to a pretty-printed JSON string
+		$jsonPrettyPrint = json_encode($array, JSON_PRETTY_PRINT);
+		if ($jsonPrettyPrint === false) {
+			// In case json_encode fails
+			return '<p>Error encoding data to JSON.</p>';
 		}
 	
-		// Populate the table rows
-		foreach ($array as $key => $row) {
-			$html .= '<tr>';
-			if (is_array($row)) {
-				// If it's a row from a multidimensional array
-				foreach ($row as $cellKey => $cellValue) {
-					if ($includeKeys) {
-						// Include key and value
-						$html .= '<td>' . htmlspecialchars($cellKey) . ': ' . htmlspecialchars($cellValue) . '</td>';
-					} else {
-						// Only include value
-						$html .= '<td>' . htmlspecialchars($cellValue) . '</td>';
-					}
-				}
-			} else {
-				// For a single-dimensional array or a non-associative value
-				if ($includeKeys) {
-					// Include key and value
-					$html .= '<td>' . htmlspecialchars($key) . ': ' . htmlspecialchars($row) . '</td>';
-				} else {
-					// Only include value
-					$html .= '<td>' . htmlspecialchars($row) . '</td>';
-				}
-			}
-			$html .= '</tr>';
-		}
-	
-		$html .= '</table>';
-		return $html;
+		// Return the JSON string wrapped in <pre> tags for formatting
+		return '<pre>' . htmlspecialchars($jsonPrettyPrint) . '</pre>';
 	}
-			
-
+	
+	
 	/**
 	 * 
 	 * @param type $params
@@ -493,6 +458,7 @@ class Tests_paymenttest extends UnitTestCase
 		echo '<pre>';
 		print_r($row['expected']);
 		print_r($bills);
+		echo '</pre>';
 
 		$i = 0;
 		foreach ($bills as $bill) {
@@ -774,9 +740,10 @@ class Tests_paymenttest extends UnitTestCase
 			$api = $row['api'];
 		}
 		$baseApi = ($api != 'chargeAccount') ? 'api' : 'billrun';
-		$url = "http://10.103.0.1:8074/$baseApi/$api";
+		$url = "http://web/$baseApi/$api";
 		echo '<pre> URL:';
 		print_r($url);
+		echo '</pre>';
 		$paramsToSend = !empty($params) ? $params : $row['params'];
 		foreach ($paramsToSend as $key => $val) {
 
@@ -918,9 +885,10 @@ class Tests_paymenttest extends UnitTestCase
 			sleep(2);
 		$respons = json_decode(Billrun_Util::sendRequest($url, $request), true);
 		Billrun_Factory::log("response is :" . print_r($respons, 1), Zend_Log::INFO);
-		echo '<pre>';
+		//echo '<pre>';
 		//print_r($$url);
-		print_r($respons);
+		// print_r($respons);
+		//echo '</pre>';
 		//print_r($this->getBills(['aid' =>['$in'=>[72,722]]]));
 		return $respons;
 	}
