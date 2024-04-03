@@ -7,15 +7,18 @@
  */
 
 class Billrun_Account_External extends Billrun_Account {
-	
+	use Billrun_Subscriber_External_Cacheable;
+
+	//static protected $cachePrefix = 'ext_acc_';
 	protected static $type = 'external';
 	
 	protected static $queryBaseKeys = ['id', 'time', 'limit'];
 	
 	protected $remote;
 	protected $remote_authentication;
-	protected $remote_billable_url;
+    protected $remote_billable_url;
 	protected $remote_billable_authentication;
+	protected $cacheGBAtoGSD = false;
 
 	const API_DATETIME_REGEX='/^\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}$/';
 
@@ -27,8 +30,17 @@ class Billrun_Account_External extends Billrun_Account {
 		$this->remote_authentication = Billrun_Factory::config()->getConfigValue('subscribers.account.external_authentication', $defaultAuthentication);
 		$this->remote_billable_url = Billrun_Factory::config()->getConfigValue('subscribers.billable.url', '');
 		$this->remote_billable_authentication = Billrun_Factory::config()->getConfigValue('subscribers.billable.external_authentication', $defaultAuthentication);
+
+		$this->setCacheEnabled(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_enabled', false));
+		$this->setCachingTTL(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_ttl', 300));
+		$this->setCachePrefix('ext_acc_');
+		$this->setCacheGBAtoGSD( Billrun_Factory::config()->getConfigValue('subscribers.account.cache_gba_to_gsd.enabled',false));
+
 	}
 	
+	public function getCachingEntityIdKey() {
+		return 'aid';
+	}
 
 	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = [], $invoicing_days = null) {
 			$dateFormat = ( (abs($cycle->end()->sec - $cycle->start()->sec) <= 86400 &&
@@ -59,10 +71,10 @@ class Billrun_Account_External extends Billrun_Account {
 			$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.billable.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
 			$request->setConfig(array('timeout' => $requestTimeout));
 			$results = $request->request(Billrun_Http_Request::POST)->getBody();
-
+			
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
 			
-			$results = json_decode($results, true);		
+			$results = json_decode($results, true);
 			//Check for errors
 			if(empty($results)) {
 				Billrun_Factory::log('Failed to retrive valid results for billable, remote returned no data.',Zend_Log::WARN);
@@ -72,7 +84,10 @@ class Billrun_Account_External extends Billrun_Account {
 				Billrun_Factory::log("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams), Zend_Log::ALERT);
 				return [];
 			}
-
+			//cache results forfuture GSD/GAD calls
+			if($this->cacheGBAtoGSD ) {
+				$this->saveRevisionsToCache($results['data'],$cycle);
+			}
 			// Preform translation if needed and return results
 			$fieldMapping = ['firstname' => 'first_name', 'lastname' => 'last_name'];
 			foreach($results['data'] as &$rev) {
@@ -84,9 +99,42 @@ class Billrun_Account_External extends Billrun_Account {
 				}
 
 			}
+
 			return $results;
 	}
 
+	protected function saveRevisionsToCache($revs, $cycleData) {
+		if(!$this->cacheEnabled && !$this->cacheGBAtoGSD) { return false;}
+		$idFieldsToples = Billrun_Factory::config()->getConfigValue('subscribers.account.cache_gba_to_gsd.query_fields',['subscriber'=> [['sid','aid'],['sid']], 'account'=>[['aid']]]);
+		foreach($revs as $rev) {
+			foreach($idFieldsToples[$rev['type']] as $idTople) {
+				$queryParams = array_intersect_key($rev, array_flip($idTople));
+				if(count($queryParams) !=  count($idTople)) { continue; }
+				array_walk($queryParams,function(&$val, $key)  {
+					$val = ['key' => $key, 'operator'=> 'equal','value'=>intval($val)];
+				},);
+				$queryParams = array_values($queryParams);
+				if(!empty($queryParams)) {
+					$revTo = empty($rev['to']) ? PHP_INT_MAX : strtotime($rev['to']);
+					$time = ( $cycleData->end() < $revTo ? $cycleData->end() : $revTo);
+
+					$query = [
+								'time' =>  date(Billrun_Base::base_datetimeformat, $time->sec),
+								'params' => $queryParams,
+								'id' => md5(serialize($queryParams))
+							];
+					$rev['id'] = $query['id'];
+
+					if($rev['type']=='subscriber') {
+						Billrun_Factory::subscriber()->cacheExternalData(['query'=> [$query]],[$rev]);
+					} else {
+						$this->cacheExternalData(['query'=> [$query]],[$rev]);
+					}
+				}
+			}
+		}
+		return true;
+	}
 
 	/**
 	 * Overrides parent abstract method
@@ -99,18 +147,22 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$requestData['date'] = $globalDate;
 		}
-		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
-		$params = [
-			'authentication' => $this->remote_authentication,
-		];
-		$request = new Billrun_Http_Request($this->remote, $params);
-		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
-		$request->setRawData(json_encode($requestData));
-		$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.account.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
-		$request->setConfig(array('timeout' => $requestTimeout));
-		$res = $request->request(Billrun_Http_Request::POST)->getBody();
-		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
-		$res = json_decode($res);
+
+		$res = $this->loadCache($requestData, function($requestData) {
+			Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
+			$params = [
+				'authentication' => $this->remote_authentication,
+			];
+			$request = new Billrun_Http_Request($this->remote, $params);
+			$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
+			$request->setRawData(json_encode($requestData));
+			$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.account.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
+			$request->setConfig(array('timeout' => $requestTimeout));
+			$res = $request->request(Billrun_Http_Request::POST)->getBody();
+			Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
+			return json_decode($res);
+		});
+		
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
@@ -141,6 +193,8 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
+
+		$results = $this->loadCache($externalQuery, function($externalQuery) {
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
 		$params = [
 			'authentication' => $this->remote_authentication,
@@ -150,7 +204,10 @@ class Billrun_Account_External extends Billrun_Account {
 		$request->setRawData(json_encode($externalQuery));
 		$results = $request->request(Billrun_Http_Request::POST)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
-		$results = json_decode($results, true);
+
+			return json_decode($results, true);
+		});
+
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
@@ -170,7 +227,7 @@ class Billrun_Account_External extends Billrun_Account {
 	public function closeAndNew($set_values, $remove_values = array()) {
 		return true;
 	}
-	
+		
 	/**
 	 * method to make permanent change
 	 * on external subscribers mode no need to make updates to account as account is managed by 3rd party
@@ -212,6 +269,10 @@ class Billrun_Account_External extends Billrun_Account {
 		}
 		$query['params'] = $params;
 		return $query;
+	}
+
+	public function setCacheGBAtoGSD($newValue ) {
+		$this->cacheGBAtoGSD = $newValue;
 	}
 
 }
