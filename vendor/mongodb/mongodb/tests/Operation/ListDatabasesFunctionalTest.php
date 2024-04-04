@@ -7,12 +7,11 @@ use MongoDB\Model\DatabaseInfoIterator;
 use MongoDB\Operation\InsertOne;
 use MongoDB\Operation\ListDatabases;
 use MongoDB\Tests\CommandObserver;
-
 use function version_compare;
 
 class ListDatabasesFunctionalTest extends FunctionalTestCase
 {
-    public function testListDatabases(): void
+    public function testListDatabases()
     {
         $server = $this->getPrimaryServer();
 
@@ -22,12 +21,12 @@ class ListDatabasesFunctionalTest extends FunctionalTestCase
 
         $databases = null;
         (new CommandObserver())->observe(
-            function () use (&$databases, $server): void {
+            function () use (&$databases, $server) {
                 $operation = new ListDatabases();
 
                 $databases = $operation->execute($server);
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectNotHasAttribute('authorizedDatabases', $event['started']->getCommand());
             }
         );
@@ -39,23 +38,23 @@ class ListDatabasesFunctionalTest extends FunctionalTestCase
         }
     }
 
-    public function testAuthorizedDatabasesOption(): void
+    public function testAuthorizedDatabasesOption()
     {
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new ListDatabases(
                     ['authorizedDatabases' => true]
                 );
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('authorizedDatabases', $event['started']->getCommand());
             }
         );
     }
 
-    public function testFilterOption(): void
+    public function testFilterOption()
     {
         if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
             $this->markTestSkipped('listDatabase command "filter" option is not supported');
@@ -80,21 +79,21 @@ class ListDatabasesFunctionalTest extends FunctionalTestCase
         }
     }
 
-    public function testSessionOption(): void
+    public function testSessionOption()
     {
         if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
             $this->markTestSkipped('Sessions are not supported');
         }
 
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new ListDatabases(
                     ['session' => $this->createSession()]
                 );
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );

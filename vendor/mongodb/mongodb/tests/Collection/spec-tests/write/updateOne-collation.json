@@ -10,7 +10,6 @@
     }
   ],
   "minServerVersion": "3.4",
-  "serverless": "forbid",
   "tests": [
     {
       "description": "UpdateOne when one document matches with collation",

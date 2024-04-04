@@ -6,12 +6,11 @@ use MongoDB\Operation\DropDatabase;
 use MongoDB\Operation\InsertOne;
 use MongoDB\Operation\ListCollectionNames;
 use MongoDB\Tests\CommandObserver;
-
 use function version_compare;
 
 class ListCollectionNamesFunctionalTest extends FunctionalTestCase
 {
-    public function testListCollectionNamesForNewlyCreatedDatabase(): void
+    public function testListCollectionNamesForNewlyCreatedDatabase()
     {
         $server = $this->getPrimaryServer();
 
@@ -31,14 +30,14 @@ class ListCollectionNamesFunctionalTest extends FunctionalTestCase
         }
     }
 
-    public function testSessionOption(): void
+    public function testSessionOption()
     {
         if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
             $this->markTestSkipped('Sessions are not supported');
         }
 
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new ListCollectionNames(
                     $this->getDatabaseName(),
                     ['session' => $this->createSession()]
@@ -46,7 +45,7 @@ class ListCollectionNamesFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );

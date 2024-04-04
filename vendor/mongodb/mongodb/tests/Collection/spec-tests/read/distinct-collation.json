@@ -10,7 +10,6 @@
     }
   ],
   "minServerVersion": "3.4",
-  "serverless": "forbid",
   "tests": [
     {
       "description": "Distinct with a collation",
