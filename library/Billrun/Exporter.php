@@ -681,7 +681,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $this->fileName = $file_name;
     }
 
-    public function setMoveConnectionDetails($connection) {
+    public function setSenderConnectionDetails($connection) {
         $this->config['senders']['connections'] = [$connection];
         $updated_config = $this->config;
         unset($updated_config['type']);
