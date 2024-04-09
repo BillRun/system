@@ -97,8 +97,13 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
                 <label className="text-danger"><strong> -</strong></label>
               )}
             </span>
+            <form  method="post" action={downloadExpectedInvoiceUrl} target="_blank" className='mt10 mb10 ml15'>
+                <Button bsStyle='primary' type="submit" disabled={isInvoiceConfirmed}>
+                  <i className="fa fa-download" /> {getFieldName('btn_download_expected_invoice', 'immediate_invoice')}
+                </Button>
+              </form>
             <hr />
-            <p>More advanced options:</p>
+            <p>Advanced options:</p>
             <div>
               <Field
                 fieldType="radio"
@@ -143,21 +148,10 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
               disabled={isInvoiceConfirmed}
             />
             <hr />
-            <p>You can download and review it.</p>
-            <form method="post" action={downloadExpectedInvoiceUrl} target="_blank" className='mt10 mb10 ml15'>
-              <Button bsStyle='primary' type="submit" disabled={isInvoiceConfirmed}>
-                <i className="fa fa-download" /> {getFieldName('btn_download_expected_invoice', 'immediate_invoice')}
-              </Button>
-            </form>
-            <hr />
-            <p>Do not send the expected invoice to customer.</p>
-            <hr />
-            <p>Once invoice is confirmed, please click confirm button.</p>
               <Button onClick={onConfirmInvoice} bsStyle='success' className='mt10 mb10 ml15' disabled={isInvoiceConfirmed}>
                 <i className={iconClass} /> {getFieldName('btn_confirm_expected_invoice', 'immediate_invoice')}
               </Button>
             <hr />
-            <p>The invoice will be added to the account receivable.</p>
         </Col>
       </Row>
       {isInvoiceConfirmed && (
