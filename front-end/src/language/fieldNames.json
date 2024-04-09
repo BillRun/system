@@ -228,7 +228,7 @@
   },
   "immediate_invoice": {
     "list_title": "Invoice Lines",
-    "popup_title": "Expected Invoice",
+    "popup_title": "View and confirm invoice",
     "error_generate_invoice": "Error, can not generate expected invoice",
     "error_retrieving_invoice": "Error retrieving invoice data",
     "no_pg_more_options_text": "This customer does not have an associated payment method - the invoice will be issued but won’t be charged",
@@ -246,7 +246,7 @@
     "confirm_reset_form": "Are you sure you want to reset invoice ?",
     "confirm_reset_lines": "Are you sure you want to remove lines ?",
     "reset_form": "Clear",
-    "send_invoice_email": "Send Email",
+    "send_invoice_email": "Send invoice to customer by email",
     "view_expected_invoice_btn": "View Expected Invoice",
     "add_line_btn": "Add Line",
     "empty_table_results": "No lines. Click the 'Add Line' button to add a line",
@@ -256,7 +256,7 @@
     "select_customer_help": "Type your customer name or ID for search.",
     "btn_download_invoice": "Download Invoice",
     "btn_download_expected_invoice": "Download Expected Invoice",
-    "btn_confirm_expected_invoice": "Confirm Expected Invoice"
+    "btn_confirm_expected_invoice": "Confirm and issue invoice"
   },
   "export_generator": {
     "name": "Name",
