@@ -30,6 +30,7 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 		if (empty($size)) {
 			$size = 100;
 		}
+
 		$result = Billrun_Factory::account()->getBillable($cycle, $page, $size, $aids, $invoicing_days);
 		$billableResults = $this->filterConfirmedAccounts($result['data'], $cycle);
 		usort($billableResults, function($a, $b){ return strcmp($a['from'],$b['from']);});
@@ -76,7 +77,7 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 			}
 		}
 
-		usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
+		usort($retResults, function($a, $b){ return @$a['from'] - @$b['from'];});
 		//usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
 		return ["data" => array_map(function($item){ return new Mongodloid_Entity($item);}, array_values($retResults)), "options" => $result['options']];
 

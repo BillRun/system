@@ -261,7 +261,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->aggregationLogic = Billrun_Account::getAccountAggregationLogic($aggregateOptions);
 
 		$this->isValid = true;
-                $this->merge_credit_installments = [];
+		$this->merge_credit_installments = [];
+
+		$this->initializeCache($options);
 	}
 
 	public function getCycle() {
@@ -1125,6 +1127,31 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			return !is_array($options['invoicing_days']) ? [$options['invoicing_days']] : $options['invoicing_days'];
 		}else {
 			return array_map('strval', $this->allowPrematureRun ? range(1, 28) : range(1, date("d", strtotime("yesterday"))));
+		}
+	}
+
+	protected function initializeCache($options = []) {
+		if(in_array('Billrun_Subscriber_External_Cacheable',class_uses(Billrun_Factory::subscriber())) &&
+			in_array ('Billrun_Subscriber_External_Cacheable',class_uses(Billrun_Factory::account())) ) {
+			if( Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.clear_on_start',false) &&
+				( !$this->isCycle || $this->page == 0 ) ) {
+					Billrun_Factory::subscriber()->cleanExternalCache();
+					Billrun_Factory::account()->cleanExternalCache();
+			}
+			if(!empty(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.prefix',''))) {
+				Billrun_Factory::account()->setCachePrefix(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.prefix',''));
+			}
+			if(!empty(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.prefix',''))) {
+				Billrun_Factory::subscriber()->setCachePrefix(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.prefix',''));
+			}
+			Billrun_Factory::subscriber()->setCacheEnabled(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.enabled',false));
+			Billrun_Factory::subscriber()->setCachingTTL(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.ttl',600));
+			Billrun_Factory::account()->setCacheEnabled(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.enabled',false));
+			Billrun_Factory::account()->setCacheEnabled(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.ttl',600));
+
+			Billrun_Factory::account()->setCacheGBAtoGSD(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gba_to_gsd.enabled',false));
+		} else {
+			Billrun_Factory::log('Account or Subscriber classes are not cacheable. not altering cache behavior.',Zend_Log::INFO);
 		}
 	}
 

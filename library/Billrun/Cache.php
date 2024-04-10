@@ -202,15 +202,17 @@ class Billrun_Cache {
 			$prevPrefix = $this->addPrefix($prefix);
 		}
 
+		$returnValue = false;
+
 		if ($this->cache->remove($key) !== FALSE) {
-			return $value;
+			$returnValue = $value;
 		}
 
 		if (!is_null($prefix)) {
 			$this->setPrefix($prevPrefix);
 		}
 
-		return FALSE;
+		return $returnValue;
 	}
 
 	/**
