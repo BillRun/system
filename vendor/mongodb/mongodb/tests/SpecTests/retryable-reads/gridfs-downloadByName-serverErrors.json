@@ -10,8 +10,7 @@
     {
       "minServerVersion": "4.1.7",
       "topology": [
-        "sharded",
-        "load-balanced"
+        "sharded"
       ]
     }
   ],
@@ -180,7 +179,7 @@
       ]
     },
     {
-      "description": "DownloadByName succeeds after NotWritablePrimary",
+      "description": "DownloadByName succeeds after NotMaster",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -244,7 +243,7 @@
       ]
     },
     {
-      "description": "DownloadByName succeeds after NotPrimaryNoSecondaryOk",
+      "description": "DownloadByName succeeds after NotMasterNoSlaveOk",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -308,7 +307,7 @@
       ]
     },
     {
-      "description": "DownloadByName succeeds after NotPrimaryOrSecondary",
+      "description": "DownloadByName succeeds after NotMasterOrSecondary",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -756,7 +755,7 @@
       ]
     },
     {
-      "description": "DownloadByName fails after two NotWritablePrimary errors",
+      "description": "DownloadByName fails after two NotMaster errors",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -805,7 +804,7 @@
       ]
     },
     {
-      "description": "DownloadByName fails after NotWritablePrimary when retryReads is false",
+      "description": "DownloadByName fails after NotMaster when retryReads is false",
       "clientOptions": {
         "retryReads": false
       },

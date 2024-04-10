@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2015-present MongoDB, Inc.
+ * Copyright 2015-2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
 namespace MongoDB\Model;
 
 use Iterator;
-use ReturnTypeWillChange;
 
 /**
  * IndexInfoIterator interface.
@@ -35,6 +34,5 @@ interface IndexInfoIterator extends Iterator
      *
      * @return IndexInfo
      */
-    #[ReturnTypeWillChange]
     public function current();
 }

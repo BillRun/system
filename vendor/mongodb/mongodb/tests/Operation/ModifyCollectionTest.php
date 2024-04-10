@@ -7,7 +7,7 @@ use MongoDB\Operation\ModifyCollection;
 
 class ModifyCollectionTest extends TestCase
 {
-    public function testConstructorEmptyCollectionOptions(): void
+    public function testConstructorEmptyCollectionOptions()
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('$collectionOptions is empty');
@@ -17,7 +17,7 @@ class ModifyCollectionTest extends TestCase
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options): void
+    public function testConstructorOptionTypeChecks(array $options)
     {
         $this->expectException(InvalidArgumentException::class);
         new ModifyCollection($this->getDatabaseName(), $this->getCollectionName(), [], $options);

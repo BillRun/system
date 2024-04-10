@@ -1,7 +1,6 @@
 # MongoDB PHP Library
 
-![Tests](https://github.com/mongodb/mongo-php-library/workflows/Tests/badge.svg)
-![Coding Standards](https://github.com/mongodb/mongo-php-library/workflows/Coding%20Standards/badge.svg)
+[![Build Status](https://api.travis-ci.org/mongodb/mongo-php-library.png?branch=master)](https://travis-ci.org/mongodb/mongo-php-library)
 
 This library provides a high-level abstraction around the lower-level
 [PHP driver](https://github.com/mongodb/mongo-php-driver) (`mongodb` extension).

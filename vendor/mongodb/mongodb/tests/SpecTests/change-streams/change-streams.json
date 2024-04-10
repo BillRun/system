@@ -82,7 +82,7 @@
           }
         }
       ],
-      "expectations": null,
+      "expectations": [],
       "result": {
         "success": [
           {
