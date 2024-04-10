@@ -10429,6 +10429,102 @@ lastConfig = runOnce(lastConfig, 'EPICIC-162', function () {
         }
     ]
 });
+
+//EPICIC-204: re-add missing ERP mapping import mapper if deleted
+var found_mapping = false;
+for (var i = 0; i < lastConfig.import.mapping.length; i++) {
+    if (lastConfig.import.mapping[i].label === "Missing ERP Mappings") {
+    	found_mapping = true;
+    }
+}
+
+if (!found_mapping) {
+    lastConfig.import.mapping.push({
+		"label": "Missing ERP Mappings",
+		"map": [
+			{
+				"field": "price_from",
+				"value": "0"
+			},
+			{
+				"field": "params.product",
+				"value": "__csvindex__2"
+			},
+			{
+				"field": "mtn_ind",
+				"value": "__csvindex__5"
+			},
+			{
+				"field": "usage_type_value",
+				"value": "erp_mapping"
+			},
+			{
+				"field": "usage_type_unit",
+				"value": "counter"
+			},
+			{
+				"field": "params.operator",
+				"value": "__csvindex__3"
+			},
+			{
+				"field": "params.user_summarisation",
+				"value": "__csvindex__10"
+			},
+			{
+				"field": "gl_account_description",
+				"value": "__csvindex__9"
+			},
+			{
+				"field": "price_to",
+				"value": "UNLIMITED"
+			},
+			{
+				"field": "params.cash_flow",
+				"value": "__csvindex__7"
+			},
+			{
+				"field": "gl_account",
+				"value": "__csvindex__6"
+			},
+			{
+				"field": "params.component",
+				"value": "__csvindex__11"
+			},
+			{
+				"field": "params.scenario",
+				"value": "__csvindex__4"
+			},
+			{
+				"field": "tariff_category",
+				"value": "retail"
+			},
+			{
+				"field": "object_id",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "price_interval",
+				"value": "1"
+			},
+			{
+				"field": "price_value",
+				"value": "0"
+			},
+			{
+				"field": "prod_serv",
+				"value": "__csvindex__1"
+			},
+			{
+				"field": "key",
+				"value": "__csvindex__0"
+			}
+		],
+		"updater": [],
+		"linker": [],
+		"multiFieldAction": []
+	})
+}
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
