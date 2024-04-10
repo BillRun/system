@@ -71,7 +71,7 @@ RateAsyncSearch.defaultProps = {
   label: '',
   editable: true,
   accountsOptions: [],
-  searchPlaceholder: "Type keys or titles for search.",
+  searchPlaceholder: "Type a key or a title to search.",
   noResultsPlaceholder: "No rates were found. Try searching by another key or title.",
 };
 

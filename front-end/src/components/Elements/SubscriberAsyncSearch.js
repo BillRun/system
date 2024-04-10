@@ -102,7 +102,7 @@ SubscriberAsyncSearch.defaultProps = {
   currency: '',
   editable: true,
   accountsOptions: [],
-  searchPlaceholder: "Type your subscriber ID, first, or last name for search.",
+  searchPlaceholder: "Type a subscriber ID, first, or last name to search.",
   noResultsPlaceholder: "No subscriber were found. Try searching by another ID or name.",
 };
 

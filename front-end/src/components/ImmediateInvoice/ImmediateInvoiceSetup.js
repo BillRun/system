@@ -48,7 +48,6 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
   const invoiceId = immediateInvoice.getIn(['id'], '');
   const isInvoiceConfirmed = invoiceId && invoiceId !== '';
   const isEditable = !isInvoiceConfirmed;
-
   
   const [expectedInvoiceInProgress, setExpectedInvoiceInProgress] = useState(false);
 
@@ -141,10 +140,6 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
     dispatch(updateImmediateInvoiceLines(Immutable.List()));
   }
 
-  const onResetFormOk = () => {
-    dispatch(clearImmediateInvoice());
-  }
-
   const onViewExpectedInvoice = () => {
     if (!isLinesValid()) {
       return false;
@@ -180,13 +175,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
   }
   
   const onResetFormClick = () => {
-    const confirm = {
-      message: getFieldName('confirm_reset_form', 'immediate_invoice'),
-      onOk: onResetFormOk,
-      type: 'delete',
-      labelOk: getFieldName('delete'),
-    };
-    dispatch(showConfirmModal(confirm));
+    dispatch(clearImmediateInvoice())
   }
 
   const onRemoveClick = () => {
@@ -249,7 +238,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
             />
           </Col>
           <Col sm={2} lg={2} className="text-right">
-            <Button type="submit" onClick={onResetFormClick} bsStyle="danger" className="ml10">
+            <Button disabled={expectedInvoiceInProgress} type="submit" onClick={onResetFormClick} bsStyle="danger" className="ml10">
               <i className="danger-red fa fa-fw fa-trash-o" /> {getFieldName('reset_form', 'immediate_invoice')}
             </Button>
           </Col>
@@ -296,7 +285,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
               <CreateButton
                 onClick={onAddLine}
                 label={getFieldName('add_line_btn', 'immediate_invoice')}
-                disabled={!isNumber(aid)}
+                disabled={!isNumber(aid) || expectedInvoiceInProgress}
               />
             )}
           </Col>

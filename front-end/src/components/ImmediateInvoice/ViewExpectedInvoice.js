@@ -98,7 +98,7 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
               )}
             </span>
             <form  method="post" action={downloadExpectedInvoiceUrl} target="_blank" className='mt10 mb10 ml15'>
-                <Button bsStyle='primary' type="submit" disabled={isInvoiceConfirmed}>
+                <Button bsStyle='primary' type="submit" disabled={isInvoiceConfirmed || inConfirmProgress}>
                   <i className="fa fa-download" /> {getFieldName('btn_download_expected_invoice', 'immediate_invoice')}
                 </Button>
               </form>
@@ -113,7 +113,7 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
                 label={getFieldName('select_invoice_without_charge', 'immediate_invoice')}
                 checked={invoiceType === "without_charge"}
                 className="mr15 inline"
-                disabled={isInvoiceConfirmed}
+                disabled={isInvoiceConfirmed || inConfirmProgress}
               />
               <Field
                 fieldType="radio"
@@ -123,7 +123,7 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
                 label={getFieldName('select_invoice_charge', 'immediate_invoice')}
                 checked={invoiceType === "charge"}
                 className="mr15 inline"
-                disabled={!hasPaymentGateway || isInvoiceConfirmed}
+                disabled={!hasPaymentGateway || isInvoiceConfirmed || inConfirmProgress}
               />
               <Field
                 fieldType="radio"
@@ -133,7 +133,7 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
                 label={getFieldName('select_invoice_successful_charge', 'immediate_invoice')}
                 checked={invoiceType === "successful_charge"}
                 className="inline"
-                disabled={!hasPaymentGateway || isInvoiceConfirmed}
+                disabled={!hasPaymentGateway || isInvoiceConfirmed || inConfirmProgress}
               />
             </div>
             { !hasPaymentGateway && (
@@ -145,10 +145,10 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
               value={sendMail}
               className="inline ml10 mt5"
               label={getFieldName('send_invoice_email', 'immediate_invoice')}
-              disabled={isInvoiceConfirmed}
+              disabled={isInvoiceConfirmed || inConfirmProgress}
             />
             <hr />
-              <Button onClick={onConfirmInvoice} bsStyle='success' className='mt10 mb10 ml15' disabled={isInvoiceConfirmed}>
+              <Button onClick={onConfirmInvoice} bsStyle='success' className='mt10 mb10 ml15' disabled={isInvoiceConfirmed || inConfirmProgress}>
                 <i className={iconClass} /> {getFieldName('btn_confirm_expected_invoice', 'immediate_invoice')}
               </Button>
             <hr />
