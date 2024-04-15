@@ -501,23 +501,28 @@ class Billrun_Util {
 	}
 
 	public static function sendMail($subject, $body, $recipients, $attachments = array(), $html = false) {
-		$mailer = Billrun_Factory::mailer()->setSubject($subject);
-		if($html){
-			$mailer->setBodyHtml($body, "UTF-8");
-		} else {
-			$mailer->setBodyText($body);
+		try {
+			$mailer = Billrun_Factory::mailer()->setSubject($subject);
+			if($html){
+				$mailer->setBodyHtml($body, "UTF-8");
+			} else {
+				$mailer->setBodyText($body);
+			}
+			//add attachments
+			foreach ($attachments as $attachment) {
+				$mailer->addAttachment($attachment);
+			}
+			//set recipents
+	//		foreach ($recipients as $recipient) {
+	//			$mailer->addTo($recipient);
+	//		}
+			$mailer->addTo($recipients);
+			//sen email
+			return $mailer->send();
+		} catch (Exception $ex) {
+			Billrun_Factory::log("Error send end email. " . $ex->getCode() . ': ' . $ex->getMessage());
+			return false;
 		}
-		//add attachments
-		foreach ($attachments as $attachment) {
-			$mailer->addAttachment($attachment);
-		}
-		//set recipents
-//		foreach ($recipients as $recipient) {
-//			$mailer->addTo($recipient);
-//		}
-		$mailer->addTo($recipients);
-		//sen email
-		return $mailer->send();
 	}
 
 	public static function getForkUrl() {
