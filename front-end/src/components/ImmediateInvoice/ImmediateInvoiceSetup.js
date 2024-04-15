@@ -148,6 +148,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
       title: getFieldName('popup_title', 'immediate_invoice'),
       labelCancel: getFieldName('close'),
       showOnOk: false,
+      skipConfirmOnClose:true
     };
     setExpectedInvoiceInProgress(true);
 
