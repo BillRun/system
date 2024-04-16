@@ -252,8 +252,8 @@
     "empty_table_results": "No lines. Click the 'Add Line' button to add a line",
     "rate_input_help": "Type a product key or title for search",
     "price_input_help": "Value can be empty, will be auto-calculate by volume field and product",
-    "subscriber_input_help": "Type your subscriber ID, first, or last name for search.",
-    "select_customer_help": "Type your customer name or ID for search.",
+    "subscriber_input_help": "Type a subscriber ID, first, or last name to search.",
+    "select_customer_help": "Type a customer name or ID to search.",
     "btn_download_invoice": "Download Invoice",
     "btn_download_expected_invoice": "Download Expected Invoice",
     "btn_confirm_expected_invoice": "Confirm and issue invoice"
