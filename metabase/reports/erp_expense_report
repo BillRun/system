@@ -67,9 +67,11 @@ ITEM_PRODUCT_GROUP:"",
 MTN_IND:'$res.mtn_ind',
 MISC_SUB_L : "PRO",
 PROD_SERV:'$res.prod_serv',
-DEBIT_AMOUNT: "$aprice",
-CREDIT_AMOUNT:"0"
+aprice: "$aprice", 
 }},
+
+{$addFields:{'CREDIT_AMOUNT':0,'DEBIT_AMOUNT':"$aprice"}},
+
 {$group:{
 _id:{
 CSG_VOUCHER_DATE:"$CSG_VOUCHER_DATE",
@@ -78,14 +80,16 @@ MTN_IND:"$MTN_IND",
 PROD_SERV:"$PROD_SERV",
 TRANS_DATE:"$TRANS_DATE",
 REFERENCE_NO:"$REFERENCE_NO",
-DEBIT_AMOUNT:"$DEBIT_AMOUNT",
-CREDIT_AMOUNT:"$CREDIT_AMOUNT",
-operator:"$operator",
-}}},
+operator:"$operator"},
+DEBIT_AMOUNT:{ "$sum":"$DEBIT_AMOUNT" },
+CREDIT_AMOUNT:{ "$sum":"$CREDIT_AMOUNT" },
+}},
 
-{$group:{"_id":"$_id.REFERENCE_NO", rows: { $push: "$$ROOT" },"CREDIT_AMOUNT": { "$sum":"$_id.DEBIT_AMOUNT" }}},
+{$group:{"_id":"$_id.REFERENCE_NO", rows: { $push: "$$ROOT" },
+"CREDIT_AMOUNT_BY_REF": { "$sum":"$DEBIT_AMOUNT" },
+}},
 
-{$addFields:{CREDIT_AMOUNT:"$CREDIT_AMOUNT",res_rows: {$arrayElemAt: ["$rows" , 0 ]}}},
+{$addFields:{CREDIT_AMOUNT_BY_REF:"$CREDIT_AMOUNT_BY_REF",res_rows: {$arrayElemAt: ["$rows" , 0 ]}}},
 
 {$group:{_id :{ID:"$_id",
 items:{$concatArrays : ["$rows", [
@@ -99,8 +103,7 @@ items:{$concatArrays : ["$rows", [
 "REFERENCE_NO" : "$res_rows._id.REFERENCE_NO",
 "ITEM_PRODUCT_GROUP" : "$res_rows._id.ITEM_PRODUCT_GROUP",
 "MTN_IND" : "", "MISC_SUB_L" : "PRO",
-"PROD_SERV" : "$res_rows._id.PROD_SERV", "DEBIT_AMOUNT" : "0.00",
-CREDIT_AMOUNT: "$CREDIT_AMOUNT",
+"PROD_SERV" : "$res_rows._id.PROD_SERV", 
 GL_ACCOUNT_NO:{$switch: {branches: [
 { case: {$eq: ["$res_rows._id.operator","AGI"] }, then: "90800668" },
 { case: {$eq: ["$res_rows._id.operator","ALNFA"] }, then: "90800665" },
@@ -136,8 +139,10 @@ GL_ACCOUNT_NO:{$switch: {branches: [
 { case: {$eq: ["$res_rows._id.operator","TIS"] }, then: "90800662" },
 { case: {$eq: ["$res_rows._id.operator","TPOINT"] }, then: "90800663" },
 { case: {$eq: ["$res_rows._id.operator","YEMAN"] }, then: "90800676" },
-],default: "90800675"}}
-}
+],default: "90800675"}},
+},
+"DEBIT_AMOUNT" : 0,
+"CREDIT_AMOUNT": "$CREDIT_AMOUNT_BY_REF",
 }
 ]
 ]
@@ -158,6 +163,9 @@ ITEM_PRODUCT_GROUP:"",
 MTN_IND : "$_id.items._id.MTN_IND",
 MISC_SUB_L : "PRO",
 PROD_SERV : "$_id.items._id.PROD_SERV",
-DEBIT_AMOUNT : "$_id.items._id.DEBIT_AMOUNT",
-CREDIT_AMOUNT: "$_id.items._id.CREDIT_AMOUNT"}}
+DEBIT_AMOUNT : {'$divide': [{'$trunc': {'$add': [{'$multiply': ["$_id.items.DEBIT_AMOUNT", 100]}, 0.5]}}, 100]},
+CREDIT_AMOUNT: {'$divide': [{'$trunc': {'$add': [{'$multiply': ["$_id.items.CREDIT_AMOUNT", 100]}, 0.5]}}, 100]},
+}},
+				
+{ $match: { $or: [ { 'DEBIT_AMOUNT': { $ne: 0} }, { 'CREDIT_AMOUNT': { $ne: 0 } } ] } },
 ]
