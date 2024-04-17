@@ -23,33 +23,80 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 	 * @return array 
 	 */
 	public function getCustomerAggregationForPage($cycle, $page, $size, $aids = null, $invoicing_days = null) {
-		if (is_null($page)) {
+	if (is_null($page)) {
 			$page = 0;
 		}
-		$pipelines=[];
 
-		$pipelines[] = $this->getMatchPipeline($cycle);
-		if ($aids) {
-			$pipelines[count($pipelines) - 1]['$match']['$and'][] = array('aid' => array('$in' => $aids));
-		}
-		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
-		$mainAggregationLogic = $this->getCycleAggregationPipeline($addedPassthroughFields,$page,$size, $invoicing_days);
-		if(!empty($this->generalOptions['is_onetime_invoice'])) {
-			$mainAggregationLogic = $this->alterMainLogicForOnetime($mainAggregationLogic);
+		if (empty($size)) {
+			$size = 100;
 		}
 
-		$pipelines = array_merge($pipelines,array_values($mainAggregationLogic));
+		$result = Billrun_Factory::account()->getBillable($cycle, $page, $size, $aids, $invoicing_days);
+		$billableResults = $this->filterConfirmedAccounts($result, $cycle);
+		usort($billableResults, function($a, $b){ return strcmp($a['from'],$b['from']);});
+		$retResults = [];
+		$customIDFields =Billrun_Factory::config()->getConfigValue('customer.aggregator.revision_identification_fields',[]);
+		$idFields = array_merge($customIDFields, ['aid','sid','plan','play','first_name','last_name','type','email','address','services']);
+		foreach($billableResults as $revision) {
+			$revision = $revision instanceof Mongodloid_Entity ? $revision->getRawData() : $revision;
+			$fieldMapping = ['firstname' => 'first_name', 'lastname' => 'last_name'];
+			foreach($fieldMapping as $srcField => $dstField) {
+				if(isset($revision[$srcField])) {
+					$revision[$dstField] = $revision[$srcField];
+				}
+			}
+			if(!in_array($revision['aid'],$this->exclusionQuery)) {
+				$revStamp = @Billrun_Util::generateArrayStamp($revision, $idFields);
+				if(empty($retResults[$revStamp])) {
+					$retResults[$revStamp] = [];
+				}
+				if(empty($this->generalOptions['is_onetime_invoice'])) {
+				if(!empty($revision['plan'])) {
+					$planDate = [
+						'from' => $revision['from'],
+						'to' => $revision['to'],
+					];
 
+						$planDate['plan'] = $revision['plan'];
+						$planDate['plan_activation'] = @$revision['plan_activation'];
+						$planDate['plan_deactivation'] = @$revision['plan_deactivation'];
+						foreach($customIDFields as $CIDF) {
+							 if(!empty($revision[$CIDF]) ) {
+								 $planDate[$CIDF] = $revision[$CIDF];
+							 }
+						}
 
-		$pipelines[] = $this->getSortPipeline();
+					$retResults[$revStamp]['plan_dates'][] = $planDate;
+				} else {
+					$retResults[$revStamp]['plan_dates'][] = [
+						'from' => $revision['from'],
+						'to' => $revision['to']
+					];
+				}
+				}
+				$retResults[$revStamp]['id'] = array_filter($revision, function ($key) use ($idFields) { return in_array($key, $idFields); }, ARRAY_FILTER_USE_KEY);
+				$passthroughFields = ($revision['type'] == 'account') ? $this->passthroughFields : $this->subsPassthroughFields;
+				foreach ($passthroughFields as $passthroughField) {
+					if(isset($revision[$passthroughField])) {
+						$retResults[$revStamp]['passthrough'][$passthroughField] = $revision[$passthroughField];
+					}
+				}
+			}
+		}
 
-		$pipelines[] = $this->getFinalProject($addedPassthroughFields);
-
-		$collection = Billrun_Factory::db()->subscribersCollection();
-		return ["data" => $this->aggregatePipelines($pipelines,$collection), "options" => Billrun_Factory::config()->getConfigValue("customer.aggregator.options", [])];
+		usort($retResults, function($a, $b){ return @$a['from'] - @$b['from'];});
+		//usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
+		return ["data" => array_map(function($item){ return new Mongodloid_Entity($item);}, array_values($retResults)), "options" => Billrun_Factory::config()->getConfigValue("customer.aggregator.options", [])];
 	}
 
 	//--------------------------------------------------------------------------------------------
+
+	public function filterConfirmedAccounts($billableResults, $mongoCycle) {
+		$confirmedAids = $this->getConfirmedAids($mongoCycle);
+		return array_filter(iterator_to_array($billableResults), function($billableAccount) use($confirmedAids) {
+			return !in_array($billableAccount['aid'], $confirmedAids);
+		});
+	}
 
 	/**
 	 * Retrive the final projection of the  aggregate.

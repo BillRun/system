@@ -61,8 +61,29 @@ class Billrun_Account_Db extends Billrun_Account {
 
 
 	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = [], $invoicing_days = null) {
-		//TODO implement the  pipline aggregation here , when doing thre  refatoring of aggregation logic
-		throw new Exception("Dont use this function until refatoring of the aggregation is done");
+		$subsActiveQuery =Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $cycle->start()->sec, $cycle->end()->sec);
+		//
+		$accountsQuery = array_merge(['type' => 'account'],$subsActiveQuery);;
+		if(!empty($aids)) {
+			$accountsQuery['aid'] = ['$in' => $aids ];
+		}
+
+		if (!empty($invoicing_days)) {
+			$config = Billrun_Factory::config();
+			/*if one of the searched "invoicing_day" is the default one, then we'll search for all the accounts with "invoicing_day"
+			field that is different from all the undeclared invoicing_days. */
+			$negativeSearch = in_array(strval($config->getConfigChargingDay()), $invoicing_days);
+			$inDayOp = $negativeSearch ? '$nin' : '$in';
+			$daysToInovice = $negativeSearch ?  array_values(array_diff(array_map('strval', range(1, 28)), $invoicing_days)) : $invoicing_days;
+			$accountsQuery['invoicing_day'] = [ $inDayOp =>  $daysToInovice ];
+		}
+
+		$activeAidsRevs = $this->collection->query($accountsQuery)->cursor()->fields(['aid'])->sort(['aid'=>1])->skip($page * $size)->limit($size);
+		$activeAids = array_values(array_map(function($ar) { return $ar['aid'];},iterator_to_array($activeAidsRevs)));
+		$finalQuery = array_merge(['aid'=> ['$in' =>$activeAids ] ], $subsActiveQuery);
+		$results = $this->collection->query($finalQuery)->cursor()->sort([	'from' => -1]);
+		return $results;
+
 	}
 
 	/**
