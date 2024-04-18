@@ -39,8 +39,6 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		$this->_command = $command;
 		$this->_options = $options;
 		$this->_query = $query;
-		
-		$this->_isValid = true;
 	}
 
 	/**
@@ -296,7 +294,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 					// TODO: Report error?
 					return;
 				}
-
+				$this->_isValid = true;
 				$this->_iterator = new IteratorIterator($this->_cursor);
 				$this->_iterator->rewind();
 			}
