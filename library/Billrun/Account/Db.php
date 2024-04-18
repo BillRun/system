@@ -82,7 +82,7 @@ class Billrun_Account_Db extends Billrun_Account {
 		$activeAids = array_values(array_map(function($ar) { return $ar['aid'];},iterator_to_array($activeAidsRevs)));
 		$finalQuery = array_merge(['aid'=> ['$in' =>$activeAids ] ], $subsActiveQuery);
 		$results = $this->collection->query($finalQuery)->cursor()->sort([	'from' => -1]);
-		return $results;
+		return iterator_to_array($results);
 
 	}
 
