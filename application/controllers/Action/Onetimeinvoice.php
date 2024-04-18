@@ -121,13 +121,6 @@ class OnetimeinvoiceAction extends ApiAction {
 	}
 
 	protected function invoiceChargeFlow($chargingOptions) {
-
-		$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp']);
-		if ($this->processsedCdrs === false) {
-			//Error message will be provided  for the  spesific CDR for within processCDRs  function
-			return false;
-		}
-
 		// run aggregate on cdrs generate invoice
 		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
 					'stamp' => $chargingOptions['oneTimeStamp'],
@@ -135,6 +128,20 @@ class OnetimeinvoiceAction extends ApiAction {
 					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'uf' => $chargingOptions['uf']]);
+
+		// if  we cache the gba  results to gsd do that before the cdr processing
+		if(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gba_to_gsd.enabled',false)) {
+			Billrun_Factory::account()->getBillable(new Billrun_DataTypes_MongoCycleTime($aggregator->getCycle()),0,1,[$this->aid]);
+		}
+
+
+		$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp']);
+		if ($this->processsedCdrs === false) {
+			//Error message will be provided  for the  spesific CDR for within processCDRs  function
+			return false;
+		}
+
+
 		$aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
@@ -181,14 +188,6 @@ class OnetimeinvoiceAction extends ApiAction {
 	}
 	
 	protected function expectedInvoice($chargingOptions, $expected = false) {
-		//Process and price onetime  CDRs in memory
-		if (empty($this->processsedCdrs)) {
-			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
-		}
-		if ($this->processsedCdrs === false) {
-			//Error message will be provided  for the  spesific CDR for within processCDRs  function
-			return false;
-		}
 
 		// run aggregate on cdrs and fake invoice generate invoice
 		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
@@ -199,6 +198,21 @@ class OnetimeinvoiceAction extends ApiAction {
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'generate_pdf' => $expected,
 					'uf' => $chargingOptions['uf']]);
+
+		// if  we cache the gba  results to gsd do that before the cdr processing
+		if(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gba_to_gsd.enabled',false)) {
+			Billrun_Factory::account()->getBillable($aggregator->getCycle(),0,1,[$this->aid]);
+		}
+
+		//Process and price onetime  CDRs in memory
+		if (empty($this->processsedCdrs)) {
+			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
+		}
+		if ($this->processsedCdrs === false) {
+			//Error message will be provided  for the  spesific CDR for within processCDRs  function
+			return false;
+		}
+
 
 		$aggregator->setExternalChargesForAid($this->aid, $this->processsedCdrs);
 		$aggregator->aggregate();
@@ -211,14 +225,16 @@ class OnetimeinvoiceAction extends ApiAction {
 
 	protected function chargeBeforeInvoiceFlow($chargingOptions) {
 
-		if (empty($this->processsedCdrs)) {
-			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
-		}
+
 		$fakeInvoice = $this->expectedInvoice($chargingOptions);
 		if ($fakeInvoice) {
 			$expectedTotals = $fakeInvoice->getInvoice()->getRawData()['totals'];
 		} else {
 			throw new Exception("Invoice cannot be pretend before charge");
+		}
+
+		if (empty($this->processsedCdrs)) {
+			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
 		}
 
 		//Charge the account on the resulting fake in voice totals (TODO REPLACE WITH ACTUAL CHARGING LOGIC)
