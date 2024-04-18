@@ -35,15 +35,8 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * @param MongoDB\Driver\Cursor $cursor - Mongo cursor pointing to a collection.
 	 */
 	public function __construct($command, $collection, $query, $options = array()) {
-		$cursor = $collection->$command($query, $options);
-		// Check that the cursor is a MongoDB\Driver\Cursor
-		if (!$this->validateInputCursor($cursor)) {
-			// TODO: Report error?
-			return;
-		}
 		$this->_collection = $collection;
 		$this->_command = $command;
-		$this->_cursor = $cursor;
 		$this->_options = $options;
 		$this->_query = $query;
 		
@@ -52,10 +45,13 @@ class Mongodloid_Cursor implements Iterator, Countable {
 
 	/**
 	 * Check if input cursor is of mongo cursor type.
-	 * @param MongoCursor $cursor
+	 * @param MongoDB\Driver\Cursor $cursor if null, use current cursor
 	 * @return type
 	 */
-	protected function validateInputCursor($cursor) {
+	protected function validateCursor($cursor = null) {
+		if (is_null($cursor)) {
+			$cursor = $this->_cursor;
+		}
 		return ($cursor) && ($cursor instanceof MongoDB\Driver\Cursor || (is_object($cursor) && get_class($cursor) == 'Traversable'));
 	}
 	
@@ -186,7 +182,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function explain() {
-		if (method_exists($this->_cursor, 'explain')) {
+		if ($this->validateCursor() && method_exists($this->_cursor, 'explain')) {
 			return $this->_cursor->explain();
 		}
 		return false;
@@ -222,7 +218,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * @return mixed array in case of include tage else string (the string would be the rp constant)
 	 */
 	public function getReadPreference($includeTage = false) {
-		if (!method_exists($this->_cursor, 'getReadPreference')) {
+		if (!$this->validateCursor() || !method_exists($this->_cursor, 'getReadPreference')) {
 			return false;
 		}
 		$ret = $this->_cursor->getReadPreference();
@@ -295,6 +291,12 @@ class Mongodloid_Cursor implements Iterator, Countable {
         try {
 			if(method_exists($this->_collection, $command)){
 				$this->_cursor = $this->_collection->$command($this->_query, $this->_options);
+				// Check that the cursor is a MongoDB\Driver\Cursor
+				if (!$this->validateCursor()) {
+					// TODO: Report error?
+					return;
+				}
+
 				$this->_iterator = new IteratorIterator($this->_cursor);
 				$this->_iterator->rewind();
 			}
