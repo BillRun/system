@@ -25,6 +25,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $confirmDate;
 	protected $sendEmail = true;
 	protected $filtration = null;
+	protected $confirm_date_by_invoice_id = [];
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -68,7 +69,10 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				$result['alreadyRunning'] = true;
 				continue;
 			}
-			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
+			$res = $this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
+			if (!$res) {
+				continue;
+			}
 			$invoicesIds[] = $invoice['invoice_id'];
 			$invoices[] = $invoice->getRawData();
 			if (!$this->release()) {
@@ -136,10 +140,15 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$foreignData = $this->getForeignFields(array('account' => $account->loadAccountForQuery(['aid' => $invoice['aid']])));
 		$bill = array_merge_recursive($bill, $foreignData);
 		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
+		$this->setConfirmationDate($invoice);
 		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice));
+		if (isset($bill['should_be_confirmed']) && empty($bill['should_be_confirmed'])) {
+			return false;
+		}
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
 		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill));
+		return true;
  	}
 	
 	/**
@@ -147,7 +156,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $data
 	 */
 	protected function updateBillrunONBilled($data) {
-		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1)));
+		$confirmation_time = Billrun_Util::getIn($data, 'confirmation_time', new Mongodloid_Date());
+		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1, 'confirmation_time' => $confirmation_time)));
+		$data['billed'] = 1;
+		$data['confirmation_time'] = $confirmation_time;
+		return $data;
 	}
 	
 	/**
@@ -179,7 +192,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $data
 	 * @param type $afterSaveCallback
 	 */
-	protected function safeInsert($collection, $uniqueKeys, $data, $afterSaveCallback = FALSE) {
+	protected function safeInsert($collection, $uniqueKeys, &$data, $afterSaveCallback = FALSE) {
 		$uniqueQuery = array_intersect_key( $data, array_flip($uniqueKeys) );
 		$transactionStamp = Billrun_Util::generateArrayStamp($uniqueQuery);
 		$uniqueQuery['tx'] = array('$exists'=>FALSE);
@@ -189,7 +202,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		
 		if($afterSaveCallback) { 
-			call_user_func($afterSaveCallback, $data);
+			$data = call_user_func($afterSaveCallback, $data);
 		}
 		
 		$uniqueQuery['tx'] = $transactionStamp;
@@ -286,4 +299,12 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected function getForeignFieldsEntity () {
 		return 'bills';
 	}
+
+	protected function setConfirmationDate(&$invoice) {
+		if (!isset($this->confirm_date_by_invoice_id[$invoice['invoice_id']])) {
+			$this->confirm_date_by_invoice_id[$invoice['invoice_id']] = new Mongodloid_Date($this->confirmDate);
+		}
+		$invoice['confirmation_time'] = $this->confirm_date_by_invoice_id[$invoice['invoice_id']];
+	}
+
 }
