@@ -509,10 +509,16 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	protected function getASNDataByConfig($data, $config, $fields) {
 		$dataArr = Asn_Base::getDataArray($data, true, true);
 		$valueArr = array();
-		foreach ($config as $key => $val) {
-			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields);
-			if ($tmpVal !== FALSE) {
-				$valueArr[preg_replace('/_\d$/','',$key)] = $tmpVal;
+		foreach ($config as $key => $vals) {
+			if(!is_array($vals)) {
+				$vals = [$vals];
+			}
+			foreach ( $vals as $val ) {
+				$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields);
+				if ($tmpVal !== FALSE) {
+					$valueArr[preg_replace('/_\d$/','',$key)] = $tmpVal;
+					break;
+				}
 			}
 		}
 		return count($valueArr) ? $valueArr : false;
