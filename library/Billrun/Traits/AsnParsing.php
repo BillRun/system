@@ -66,7 +66,7 @@ trait Billrun_Traits_AsnParsing {
 				return $ret;
 			},
 			'ip' => function($fieldData) {
-				return implode('.', unpack('C*', $fieldData));
+				return @implode('.', unpack('C*', $fieldData));
 			},
 			'ip6' => function($fieldData) {
 				return implode(':', unpack('H*', $fieldData));
