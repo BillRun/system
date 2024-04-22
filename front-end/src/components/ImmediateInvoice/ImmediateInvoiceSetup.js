@@ -25,6 +25,7 @@ import {
   clearImmediateInvoice,
   getImmediateInvoiceCustomer,
   updateImmediateInvoiceLines,
+  updateImmediateInvoiceCustomer,
 } from '@/actions/invoiceActions';
 import {
   getFieldName,
@@ -107,8 +108,11 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
     return true;
   }
 
-  const onChangeAccount = (aid, { option }) => {
-    dispatch(getImmediateInvoiceCustomer(option.id));
+  const onChangeAccount = (aid, obj) => {
+    if (aid)
+      dispatch(getImmediateInvoiceCustomer(obj.option.id));
+    else
+      return dispatch(updateImmediateInvoiceCustomer(Immutable.Map()));
   }
 
   const onChangeLine = (path, value) => {
