@@ -108,11 +108,11 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
     return true;
   }
 
-  const onChangeAccount = (aid, obj) => {
-    if (aid)
-      dispatch(getImmediateInvoiceCustomer(obj.option.id));
+  const onChangeAccount = (aid, {option,action}) => {
+    if (action === 'clear')
+      dispatch(updateImmediateInvoiceCustomer(Immutable.Map()));
     else
-      return dispatch(updateImmediateInvoiceCustomer(Immutable.Map()));
+      dispatch(getImmediateInvoiceCustomer(option.id));
   }
 
   const onChangeLine = (path, value) => {
