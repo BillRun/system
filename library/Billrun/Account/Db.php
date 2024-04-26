@@ -78,10 +78,10 @@ class Billrun_Account_Db extends Billrun_Account {
 			$accountsQuery['invoicing_day'] = [ $inDayOp =>  $daysToInovice ];
 		}
 
-		$activeAidsRevs = $this->collection->query($accountsQuery)->cursor()->fields(['aid'])->sort(['aid'=>1])->skip($page * $size)->limit($size);
+		$activeAidsRevs = $this->collection->query($accountsQuery)->cursor()->setRawReturn(true)->fields(['aid'])->sort(['aid'=>1])->skip($page * $size)->limit($size);
 		$activeAids = array_values(array_map(function($ar) { return $ar['aid'];},iterator_to_array($activeAidsRevs)));
 		$finalQuery = array_merge(['aid'=> ['$in' =>$activeAids ] ], $subsActiveQuery);
-		$results = $this->collection->query($finalQuery)->cursor()->sort([	'from' => -1]);
+		$results = $this->collection->query($finalQuery)->cursor()->setRawReturn(true)->sort([	'from' => -1]);
 		return iterator_to_array($results);
 
 	}
