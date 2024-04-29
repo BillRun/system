@@ -120,7 +120,7 @@ export const apiBillRunSuccessHandler = (success, message = false) => (dispatch)
   }
 
 
-  return ({ status, data: responseData });
+  return ({ status, data: responseData, fullData: success.data[0].data});
 };
 
 // Handel API errors (ugly code to handle non standard API responses
