@@ -1,10 +1,11 @@
+
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { withRouter } from "react-router";
 import { List, Map, fromJS } from "immutable";
 import moment from "moment";
-import uuid from "uuid";
+import uuid from 'uuid';
 import pluralize from "pluralize";
 import { titleCase } from "change-case";
 import { Form, FormGroup, ControlLabel, Col, Panel } from "react-bootstrap";
@@ -30,12 +31,13 @@ import {
   cleanPaymentFilesTable,
   sendTransactionsReceiveFile,
 } from "@/actions/paymentFilesActions";
-import { gotEntity } from "@/actions/entityActions";
-import { setPageTitle } from "@/actions/guiStateActions/pageActions";
-import { reportBillsFieldsSelector } from "@/selectors/reportSelectors";
+import { gotEntity } from '@/actions/entityActions';
+import { setPageTitle } from '@/actions/guiStateActions/pageActions';
+import { reportBillsFieldsSelector} from '@/selectors/reportSelectors';
 import { getFieldName } from "@/common/Util";
 
 class PaymentsFiles extends Component {
+
   static propTypes = {
     reportBillsFields: PropTypes.instanceOf(List),
     paymentGateway: PropTypes.string,
@@ -50,8 +52,8 @@ class PaymentsFiles extends Component {
   };
 
   static defaultProps = {
-    paymentGateway: "",
-    fileType: "",
+    paymentGateway: '',
+    fileType: '',
     reportBillsFields: List(),
     paymentGatewayOptions: [],
     fileTypeOptionsOptions: Map(),
@@ -63,14 +65,14 @@ class PaymentsFiles extends Component {
   static secAutoReloadData = [1, 2, 4, 8, 16, 32, 60]; // last delay will repeat until reached the the limit (maxAutoReloadData)
 
   state = {
-    refreshString: "",
+    refreshString: '',
     autoReloadCount: 0,
   };
 
   componentDidMount() {
     const { paymentGateway, fileType } = this.props;
     this.props.dispatch(getSettings("payment_gateways"));
-    if (paymentGateway !== "" && fileType !== "") {
+    if (paymentGateway !== '' && fileType !== '') {
       this.props.dispatch(getRunningPaymentFiles(paymentGateway, fileType));
     }
   }
@@ -81,8 +83,7 @@ class PaymentsFiles extends Component {
     const { autoReloadCount } = this.state;
     const isRunningPaymentFilesChanged = isRunningPaymentFiles !== prevProps.isRunningPaymentFiles;
     const isRequiredSelected = paymentGateway !== "" && fileType !== "";
-    const isRequiredChanged =
-      `${paymentGateway}_${fileType}` !== `${prevProps.paymentGateway}_${prevProps.fileType}`;
+    const isRequiredChanged = `${paymentGateway}_${fileType}` !== `${prevProps.paymentGateway}_${prevProps.fileType}`;
     const isAutoReloadCountChanged = autoReloadCount !== prevProps.autoReloadCount;
     if (isRequiredChanged) {
       this.props.dispatch(cleanRunningPaymentFiles());
@@ -138,10 +139,9 @@ class PaymentsFiles extends Component {
   getAutoReloadNextDelay = () => {
     const { autoReloadCount } = this.state;
     const index = autoReloadCount - 1;
-    const sec =
-      index < PaymentsFiles.secAutoReloadData.length
-        ? PaymentsFiles.secAutoReloadData[index]
-        : PaymentsFiles.secAutoReloadData[PaymentsFiles.secAutoReloadData.length - 1];
+    const sec = index < PaymentsFiles.secAutoReloadData.length
+      ? PaymentsFiles.secAutoReloadData[index]
+      : PaymentsFiles.secAutoReloadData[PaymentsFiles.secAutoReloadData.length - 1];
     return sec * 1000;
   };
 
@@ -151,12 +151,12 @@ class PaymentsFiles extends Component {
 
   onChangePaymentGatewayValue = (value) => {
     const paymentGateway = value && value.length ? value : "";
-    this.props.dispatch(setPaymentGateway(paymentGateway, "paymentsFiles"));
+    this.props.dispatch(setPaymentGateway(paymentGateway, 'paymentsFiles'));
   };
 
   onChangeFileTypeValue = (value) => {
     const fileType = value && value.length ? value : "";
-    this.props.dispatch(setFileType(fileType, "paymentsFiles"));
+    this.props.dispatch(setFileType(fileType, 'paymentsFiles'));
   };
 
   onShowDetails = (data) => {
@@ -182,15 +182,9 @@ class PaymentsFiles extends Component {
   getRowActions = () => {
     return [
       { type: "view", onClick: this.onShowDetails, helpText: "Details", onClickColumn: "stamp" },
-      {
-        type: "report",
-        onClick: this.goToReport,
-        helpText: this.getHelpTextForReport,
-        show: this.isFinished,
-        enable: this.getAffectsBills,
-      },
+      { type: "report", onClick: this.goToReport, helpText: this.getHelpTextForReport, show: this.isFinished, enable: this.getAffectsBills},
     ];
-  };
+  }
 
   getFilterFields = () => [{ id: "creation_time", placeholder: this.getLabel("creation_time") }];
 
@@ -201,183 +195,113 @@ class PaymentsFiles extends Component {
     const keyCreationTime = uuid.v4();
     const entity = "bills";
     let report = {
-      key: `File name: ${line.get("file_name", "")}`,
+      key: `File name: ${line.get('file_name', '')}`,
       entity: entity,
       type: 0,
       columns: [
-        { key: keyCreationTime, field_name: "urt", label: "Creation Time", op: "", entity: entity },
-        { key: uuid.v4(), field_name: "aid", label: "Customer ID", op: "", entity: entity },
-        {
-          key: uuid.v4(),
-          field_name: "txid",
-          label: "BillRun Transaction ID",
-          op: "",
-          entity: entity,
-        },
-        {
-          key: uuid.v4(),
-          field_name: "amount",
-          label: "Original Absolute Due Amount",
-          op: "",
-          entity: entity,
-        },
-        {
-          key: uuid.v4(),
-          field_name: "rejected",
-          label: "Rejected Payment?",
-          op: "",
-          entity: entity,
-        },
-        {
-          key: uuid.v4(),
-          field_name: "waiting_for_confirmation",
-          label: "Waiting For Confirmation?",
-          op: "",
-          entity: entity,
-        },
-        { key: uuid.v4(), field_name: "type", label: "Type", op: "", entity: entity },
-        {
-          key: uuid.v4(),
-          field_name: "generated_pg_file_log",
-          label: "Payment Gateway File ID",
-          op: "",
-          entity: entity,
-        },
-        { key: uuid.v4(), field_name: "due", label: "Due Amount (Sum)", op: "", entity: entity },
+        { key: keyCreationTime, field_name: "urt", label: "Creation Time", op: "", entity: entity},
+        { key: uuid.v4(), field_name: "aid", label: "Customer ID", op: "", entity: entity},
+        { key: uuid.v4(), field_name: "txid", label: "BillRun Transaction ID", op: "", entity: entity},
+        { key: uuid.v4(), field_name: "amount", label: "Original Absolute Due Amount", op: "", entity: entity},
+        { key: uuid.v4(), field_name: "rejected", label: "Rejected Payment?", op: "", entity: entity},
+        { key: uuid.v4(), field_name: "waiting_for_confirmation", label: "Waiting For Confirmation?", op: "", entity: entity},
+        { key: uuid.v4(), field_name: "type", label: "Type", op: "", entity: entity},
+        { key: uuid.v4(), field_name: "generated_pg_file_log", label: "Payment Gateway File ID", op: "", entity: entity},
+        { key: uuid.v4(), field_name: "due", label: "Due Amount (Sum)", op: "", entity: entity},
       ],
       conditions: [
-        {
-          field: "generated_pg_file_log",
-          op: "in",
-          value: line.get("stamp", ""),
-          type: "string",
-          entity: entity,
-        },
+        { field: "generated_pg_file_log", op: "in", value: line.get('stamp', ''), type: "string", entity: entity },
         { field: "rejection", op: "ne", value: true, type: "boolean", entity: "bills" },
       ],
-      sorts: [{ field: keyCreationTime, op: -1 }],
-      formats: [{ field: keyCreationTime, op: "datetime_format", value: "d/m/Y H:i" }],
+      sorts: [
+        { "field": keyCreationTime, "op": -1 },
+      ],
+      formats: [
+        { field: keyCreationTime, op: "datetime_format", value: "d/m/Y H:i" },
+      ],
     };
 
     //add addition field to columns array
     reportBillsFields.forEach((reportBillsFiled) => {
-      if (
-        !reportBillsFiled.get("payment_gateway", false) ||
-        reportBillsFiled.get("payment_gateway") === paymentGateway
-      ) {
+      if(!reportBillsFiled.get('payment_gateway', false) || reportBillsFiled.get('payment_gateway') === paymentGateway){
         let column = {
-          key: uuid.v4(),
-          field_name: reportBillsFiled.get("field_name", ""),
-          label: reportBillsFiled.get("title", ""),
-          entity: entity,
+          'key': uuid.v4(),
+          'field_name': reportBillsFiled.get('field_name', ''),
+          'label': reportBillsFiled.get('title', ''),
+          'entity': entity
         };
         report.columns.push(column);
       }
     });
     return report;
-  };
+  }
 
   goToReport = (data) => {
-    this.props.dispatch(gotEntity("reports", this.getPredefinedReportConfiguration(data)));
-    this.props.dispatch(setPageTitle("Payments Files Report"));
+    this.props.dispatch(gotEntity('reports', this.getPredefinedReportConfiguration(data)));
+    this.props.dispatch(setPageTitle('Payments Files Report'));
     this.props.router.push({
-      pathname: "reports/report",
+      pathname: 'reports/report',
       query: {
-        type: "predefined",
-      },
+        type: 'predefined',
+      }
     });
   };
 
-  isRunning = (item) =>
-    item.get("start_process_time", "") !== "" && item.get("process_time", "") === "";
+  isRunning = (item) => item.get("start_process_time", "") !== "" && item.get("process_time", "") === "";
 
-  isFinished = (item) =>
-    item.get("start_process_time", "") !== "" && item.get("process_time", "") !== "";
+  isFinished = (item) => item.get("start_process_time", "") !== "" && item.get("process_time", "") !== "";
 
-  isFailed = (item) =>
-    item.get("start_process_time", "") === "" &&
-    item.get("process_time", "") === "" &&
-    item.get("errors", "") !== "";
+  isFailed = (item) => item.get("start_process_time", "") === "" && item.get("process_time", "") === "" && item.get("errors", "") !== "";
 
   parserStatus = (item) => {
     if (this.isRunning(item)) {
-      return <i className="fa fa-spinner fa-pulse" title={this.getLabel("status_running_files")} />;
+      return <i className='fa fa-spinner fa-pulse' title={this.getLabel("status_running_files")} />;
     }
     if (this.isFinished(item)) {
-      return (
-        <i
-          className="fa fa-check-circle success-green"
-          title={this.getLabel("status_finished_files")}
-        />
-      );
+      return <i className='fa fa-check-circle success-green' title={this.getLabel("status_finished_files")} />;
     }
     if (this.isFailed(item)) {
-      return (
-        <i
-          className="fa fa-exclamation-circle danger-red"
-          title={this.getLabel("status_failed_files")}
-        />
-      );
+      return <i className='fa fa-exclamation-circle danger-red' title={this.getLabel("status_failed_files")} />;
     }
     return "-";
   };
 
   parserError = (item) => {
-    const errors = item.get("errors", List());
+    const errors = item.get('errors', List());
     if (!errors.isEmpty()) {
-      const data = errors.join(", ");
+      const data = errors.join(', ');
       const maxLen = 25;
-
-      if (typeof data === "string" && maxLen < data.length) {
+      
+      if (typeof data === 'string' && maxLen < data.length) {
         return <span title={data}>{data.slice(0, maxLen)}...</span>;
       }
     }
-    return null;
+    return null; 
   };
 
   getDetailsFields = () => [
-    { field_name: "stamp" },
-    { field_name: "creation_time", type: "datetime" },
-    { field_name: "parameters_string", multiple: true },
-    { field_name: "transactions" },
-    { field_name: "start_process_time", type: "datetime" },
-    { field_name: "process_time", type: "datetime" },
-    { field_name: "file_name" },
-    { field_name: "created_by" },
-    { field_name: "errors", multiple: true, lineBreaks: true },
-    { field_name: "warnings", multiple: true },
-    { field_name: "info", multiple: true },
-    { field_name: "affects_bills" },
+    { field_name: 'stamp' },
+    { field_name: 'creation_time', type: 'datetime' },
+    { field_name: 'parameters_string', multiple: true },
+    { field_name: 'transactions' },
+    { field_name: 'start_process_time', type: 'datetime' },
+    { field_name: 'process_time', type: 'datetime' },
+    { field_name: 'file_name' },
+    { field_name: 'created_by' },
+    { field_name: 'errors', multiple: true, lineBreaks: true },
+    { field_name: 'warnings', multiple: true },
+    { field_name: 'info', multiple: true },
+    { field_name: 'affects_bills' },
   ];
 
   getTableFields = () => [
-    {
-      id: "status",
-      title: this.getLabel("status"),
-      parser: this.parserStatus,
-      cssClass: "state text-center",
-    },
+    { id: "status", title: this.getLabel("status"), parser: this.parserStatus, cssClass: "state text-center" },
     { id: "stamp", title: this.getLabel("stamp") },
-    {
-      id: "creation_time",
-      title: this.getLabel("creation_time"),
-      type: "datetime",
-      cssClass: "long-date",
-    },
+    { id: "creation_time", title: this.getLabel("creation_time"), type: "datetime", cssClass: "long-date" },
     { id: "parameters_string", title: this.getLabel("parameters_string") },
     { id: "transactions", title: this.getLabel("transactions") },
-    {
-      id: "start_process_time",
-      title: this.getLabel("start_process_time"),
-      type: "mongodatetime",
-      cssClass: "long-date",
-    },
-    {
-      id: "process_time",
-      title: this.getLabel("process_time"),
-      type: "mongodatetime",
-      cssClass: "long-date",
-    },
+    { id: "start_process_time", title: this.getLabel("start_process_time"), type: "mongodatetime", cssClass: "long-date" },
+    { id: "process_time", title: this.getLabel("process_time"), type: "mongodatetime", cssClass: "long-date" },
     { id: "file_name", title: this.getLabel("file_name") },
     { id: "created_by", title: this.getLabel("created_by") },
     { id: "errors", title: this.getLabel("errors"), parser: this.parserError },
@@ -395,7 +319,7 @@ class PaymentsFiles extends Component {
     errors: 1,
     warnings: 1,
     info: 1,
-    affects_bills: 1,
+    affects_bills:1
   });
 
   getDefaultSort = () => Map({ creation_time: -1 });
@@ -416,8 +340,7 @@ class PaymentsFiles extends Component {
 
   fixDetailsFields = (field) => this.fixGeneratePaymentFileFields(field);
 
-  fixDetailsValues = (value) =>
-    Map.isMap(value) && value.has("sec") ? moment.unix(value.get("sec")) : value;
+  fixDetailsValues = (value) => Map.isMap(value) && value.has('sec') ? moment.unix(value.get('sec')) : value;
 
   fixGeneratePaymentFileFields = (field) =>
     field.withMutations((fieldWithMutations) => {
@@ -441,7 +364,7 @@ class PaymentsFiles extends Component {
       title: "Upload Payments File",
       labelOk: "Upload",
       onOk: this.onUploadTransactionsFileClickOK,
-      skipConfirmOnClose: true,
+      skipConfirmOnClose: true, 
     };
 
     const item = Map({});
@@ -452,7 +375,7 @@ class PaymentsFiles extends Component {
     const { paymentGateway, fileType } = this.props;
     const file = paymentFile.get("file", null);
     return this.props
-      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, "payments"))
+      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'payments'))
       .then(this.afterSuccessUploadTransactionsFile)
       .catch((error) => Promise.reject());
   };
@@ -473,19 +396,17 @@ class PaymentsFiles extends Component {
     const { isRunningPaymentFiles, paymentGateway, fileType } = this.props;
     const isRequiredFieldsSelected = paymentGateway !== "" && fileType !== "";
     const showGeneratePaymentFile = isRunningPaymentFiles === 0 && isRequiredFieldsSelected;
-    const label = isRequiredFieldsSelected
-      ? `${isRunningPaymentFiles} running ${pluralize("file", isRunningPaymentFiles)}`
-      : "\u00A0";
+    const label = isRequiredFieldsSelected ? `${isRunningPaymentFiles} running ${pluralize("file", isRunningPaymentFiles)}` : "\u00A0";
     return (
       <div>
         {label}
-        <div className="pull-right">
+        <div className='pull-right'>
           <WithTooltip helpText={this.getGeneratePaymentFileTooltipText()}>
             <CreateButton
               onClick={this.onClickUploadTransactionsFile}
               buttonStyle={{}}
-              action=""
-              label="Upload Payments File"
+              action=''
+              label='Upload Payments File'
               disabled={!showGeneratePaymentFile}
             />
           </WithTooltip>
@@ -498,8 +419,8 @@ class PaymentsFiles extends Component {
     const { paymentGateway, fileType, paymentGatewayOptions, fileTypeOptionsOptions } = this.props;
     const { refreshString } = this.state;
     const fileTypeOptions = fileTypeOptionsOptions.get(paymentGateway, []);
-    const disabledFileType = paymentGateway === "";
-    const showTable = paymentGateway !== "" && fileType !== "";
+    const disabledFileType = paymentGateway === '';
+    const showTable = paymentGateway !== '' && fileType !== '';
 
     return (
       <Panel header={this.renderPanelHeader()}>
@@ -507,29 +428,18 @@ class PaymentsFiles extends Component {
           <Form horizontal>
             <FormGroup>
               <Col componentClass={ControlLabel} sm={3}>
-                {this.getLabel("payment_gateway")}
+                {this.getLabel('payment_gateway')}
               </Col>
               <Col sm={5} lg={4}>
-                <Field
-                  fieldType="select"
-                  value={paymentGateway}
-                  options={paymentGatewayOptions}
-                  onChange={this.onChangePaymentGatewayValue}
-                />
+                <Field fieldType="select" value={paymentGateway} options={paymentGatewayOptions} onChange={this.onChangePaymentGatewayValue} />
               </Col>
             </FormGroup>
             <FormGroup>
               <Col componentClass={ControlLabel} sm={3}>
-                {this.getLabel("file_type")}
+                {this.getLabel('file_type')}
               </Col>
               <Col sm={5} lg={4}>
-                <Field
-                  fieldType="select"
-                  value={fileType}
-                  options={fileTypeOptions}
-                  onChange={this.onChangeFileTypeValue}
-                  disabled={disabledFileType}
-                />
+                <Field fieldType="select" value={fileType} options={fileTypeOptions} onChange={this.onChangeFileTypeValue} disabled={disabledFileType} />
               </Col>
             </FormGroup>
           </Form>
@@ -542,8 +452,8 @@ class PaymentsFiles extends Component {
               api="get"
               showRevisionBy={false}
               baseFilter={{
-                source: paymentGateway + "Payments",
-                cpg_file_type: { $in: [fileType] },
+                source: paymentGateway + 'Payments',
+                cpg_file_type: {"$in" : [fileType]},
               }}
               // filterFields={this.getFilterFields()}
               tableFields={this.getTableFields()}
@@ -566,8 +476,8 @@ const mapStateToProps = (state, props) => ({
   fileTypeOptionsOptions: paymentFileTypeOptionsOptionsSelector(state, props) || undefined,
   isRunningPaymentFiles: isRunningPaymentFilesSelector(state, props) || undefined,
   reportBillsFields: reportBillsFieldsSelector(state, props) || undefined,
-  paymentGateway: selectedPaymentGatewaySelector(state, props, "paymentsFiles"),
-  fileType: selectedFileTypeSelector(state, props, "paymentsFiles"),
+  paymentGateway: selectedPaymentGatewaySelector(state, props, 'paymentsFiles'),
+  fileType: selectedFileTypeSelector(state, props, 'paymentsFiles'),
 });
 
 export default withRouter(connect(mapStateToProps)(PaymentsFiles));
