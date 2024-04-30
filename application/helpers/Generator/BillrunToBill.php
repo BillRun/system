@@ -156,7 +156,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $data
 	 */
 	protected function updateBillrunONBilled($data) {
-		$confirmation_time = Billrun_Util::getIn($data, 'confirmation_time', new Mongodloid_Date());
+		$confirmation_time = Billrun_Util::getIn($data, 'confirmation_time', new MongoDate());
 		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1, 'confirmation_time' => $confirmation_time)));
 		$data['billed'] = 1;
 		$data['confirmation_time'] = $confirmation_time;
@@ -302,7 +302,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 
 	protected function setConfirmationDate(&$invoice) {
 		if (!isset($this->confirm_date_by_invoice_id[$invoice['invoice_id']])) {
-			$this->confirm_date_by_invoice_id[$invoice['invoice_id']] = new Mongodloid_Date($this->confirmDate);
+				$this->confirm_date_by_invoice_id[$invoice['invoice_id']] = new MongoDate($this->confirmDate);
 		}
 		$invoice['confirmation_time'] = $this->confirm_date_by_invoice_id[$invoice['invoice_id']];
 	}

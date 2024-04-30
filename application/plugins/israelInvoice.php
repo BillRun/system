@@ -22,6 +22,17 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $name = 'israelInvoice';
 
     /**
+     * access token cache
+     * @var Billrun_Cache
+     */
+    protected $cache = null;
+
+    /**
+     * @var boolean
+     */
+    protected $use_cache = true;
+    protected const ACCESS_TOKEN_CACHE_KEY = "israel_invoice_access_token";
+    /**
      * Invoices approval refresh token
      * @var string
      */
@@ -75,6 +86,12 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
     protected $accounting_software_number;
 
     /**
+     * Customer licensed practitioner boolean fieldname
+     * @var string
+     */
+    protected $account_licensed_practitioner_field_name;
+
+    /**
      * @var boolean
      */
     protected $apply_to_refund_invoices;
@@ -97,11 +114,17 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $this->invoice_approval_api = Billrun_Util::getIn($options, "invoice_approval_api", "https://ita-api.taxes.gov.il/shaam/tsandbox/Invoices/v1/Approval");
         $this->company_vat_number = Billrun_Util::getIn($options, "company_vat_number", 0);
         $this->union_vat_number = Billrun_Util::getIn($options, "union_vat_number", 0);
-        $this->account_vat_number_field_name = Billrun_Util::getIn($options, "account_vat_number_field", "account_vat_number");
+        $this->account_vat_number_field_name = $this->getAccountNumberFieldName($options);
         $this->accounting_software_number = Billrun_Util::getIn($options, "accounting_software_number", 99999999);
         $this->apply_to_refund_invoices = Billrun_Util::getIn($options, "apply_to_refund_invoices", false);
+        $this->account_licensed_practitioner_field_name = Billrun_Util::getIn($options, "account_licensed_practitioner_field", "");
         $this->checkConfigurationValidation();
 	}
+
+    public function getAccountNumberFieldName($options) {
+        return Billrun_Util::getIn($options, "account_vat_number_field", 
+            Billrun_Util::getIn($options, "account_corporate_number_field", Billrun_Util::getIn($options, "account_id_number_field", "account_vat_number")));
+    }
 
     public function checkConfigurationValidation() {
         if(empty($this->refresh_token) || empty($this->client_key) ||  empty($this->client_secret) || empty($this->company_vat_number) || empty($this->union_vat_number) || empty($this->accounting_software_number)) {
@@ -156,6 +179,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
     public function invoiceNeedsApproval($invoice_data) {
         Billrun_Factory::log("Israel Invoice:check if invoice " . $invoice_data['invoice_id'] . " needs an approval number", Zend_Log::DEBUG);
         if (!$this->apply_to_refund_invoices && ($invoice_data['totals']['before_vat'] < 0)) {
+            Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'refund' check", Zend_Log::DEBUG);
             return false;
         }
         $invoice_tax = 0;
@@ -164,6 +188,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             $invoice_tax += $tax_amount;
         }
         if ($invoice_tax == 0) {
+            Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'tax' check", Zend_Log::DEBUG);
             return false;
         }
         $relative_date = $this->getInvoiceRelativeDate($invoice_data);
@@ -171,14 +196,35 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             $from = strtotime($threshold['from']);
             $to =  strtotime($threshold['to']);
             if (($from <= $relative_date) && ($to > $relative_date) && !($invoice_data['totals']['before_vat'] > $threshold['amount'])) {
+                Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'threshold' check", Zend_Log::DEBUG);
                 return false;
             }
+        }
+
+        if (!empty($this->account_licensed_practitioner_field_name) && !empty(Billrun_Util::getIn($invoice_bill, 'foreign.account.'. $this->account_licensed_practitioner_field_name, false))) {
+            Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'licensed practitioner' check", Zend_Log::DEBUG);
+            return false;
+        }
+
+        $this->cache = Billrun_Factory::cache();
+        if (empty($this->cache)) {
+            throw new Exception("Couldn't create Billrun cache for israel invoice access token");
         }
 
         return true;
     }
 
     public function getAccessToken() {
+        if ($this->use_cache && !empty($this->cache)) {
+            Billrun_Factory::log("Trying to pull access token from cache", Zend_Log::DEBUG);
+            $access_token = $this->cache->get($this->getAccessTokenCacheKey());
+            if (!empty($access_token)) {
+                Billrun_Factory::log("Successfully pulled access token from cache", Zend_Log::DEBUG);
+                return [$access_token, true, ""];
+            } else {
+                Billrun_Factory::log("Coludn't pull access token from cache. Trying via access token API", Zend_Log::ERR);
+            }
+        }
         // Build the POST data
         $postData = array(
             'client_id' => $this->client_key,
@@ -207,6 +253,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         if (isset($response['access_token'])) {
             $this->setRefreshToken($response['refresh_token']);
             $response = $response['access_token'];
+            $this->cache->set(self::ACCESS_TOKEN_CACHE_KEY, $response);
             $valid_access_token = true;
         }
         // Close cURL session
@@ -214,6 +261,9 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         return [$response,$valid_access_token,$output];
     }
 
+    public function getAccessTokenCacheKey() {
+        return self::ACCESS_TOKEN_CACHE_KEY;
+    }
     public function setRefreshToken($token) {
         $config = new ConfigModel();			
         if (is_null($this->plugin_configuration)) {
@@ -231,7 +281,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
      * @param array $invoice_data - invoice billrun data
      */
     public function buildRequest($invoice_bill, $invoice_data) {
-        $customer_vat_number = Billrun_Util::getIn($invoice_bill, 'foreign'. $this->account_vat_number_field_name, 18);
+        $customer_vat_number = Billrun_Util::getIn($invoice_bill, 'foreign.account.'. $this->account_vat_number_field_name, 18);
         $amount_before_discount = round($invoice_data['totals']['after_vat'] - $invoice_data['totals']['discount']['after_vat'],2);
         $request = [
             "Invoice_ID" => strval($invoice_bill['invoice_id']), //BillRun invoice id
@@ -364,6 +414,15 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'nullable' => false,
 				'default' => true
 			], [
+				'type' => 'boolean',
+				'field_name' => 'apply_to_refund_invoices',
+				'title' => 'Approve refund invoices',
+				'mandatory' => false,
+				'editable' => true,
+				'display' => true,
+				'nullable' => false,
+				'default' => false
+			], [
 				"type" => "string",
 				"field_name" => "invoice_approval_api",
 				"title" => "Approval API",
@@ -399,13 +458,37 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 				"mandatory" => true
 			], [
 				"type" => "string",
-				"field_name" => "account_vat_number_field",
-				"title" => "Account VAT number field name",
+				"field_name" => "account_licensed_practitioner_field",
+				"title" => "Account licensed practitioner field name",
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
-				"mandatory" => true
+				"mandatory" => false
 			], [
+				"type" => "string",
+				"field_name" => "account_vat_number_field",
+				"title" => "Account vat number field name",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => false
+            ], [
+				"type" => "string",
+				"field_name" => "account_corporate_number_field",
+				"title" => "Account corporate number field name",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => false
+            ], [
+				"type" => "string",
+				"field_name" => "account_id_number_field",
+				"title" => "Account id number field name",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => false
+            ], [
 				"type" => "number",
 				"field_name" => "accounting_software_number",
 				"title" => "Accounting software number",
