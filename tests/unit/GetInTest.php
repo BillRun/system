@@ -1,5 +1,4 @@
 <?php
-require_once 'library/Billrun/Util.php';
 
 class GetInTest extends \Codeception\Test\Unit
 {
