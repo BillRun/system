@@ -121,19 +121,8 @@ class OnetimeinvoiceAction extends ApiAction {
 	}
 
 	protected function invoiceChargeFlow($chargingOptions) {
-		// run aggregate on cdrs generate invoice
-		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
-					'stamp' => $chargingOptions['oneTimeStamp'],
-					'force_accounts' => [$this->aid],
-					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
-					'affected_sids' => $chargingOptions['affectedSids'],
-					'uf' => $chargingOptions['uf']]);
 
-		// if  we cache the gba  results to gsd do that before the cdr processing
-		if(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gba_to_gsd.enabled',false)) {
-			Billrun_Factory::account()->getBillable(new Billrun_DataTypes_MongoCycleTime($aggregator->getCycle()),0,1,[$this->aid]);
-		}
-
+		$this->setupCache($chargingOptions['oneTimeStamp']);
 
 		$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp']);
 		if ($this->processsedCdrs === false) {
@@ -141,6 +130,13 @@ class OnetimeinvoiceAction extends ApiAction {
 			return false;
 		}
 
+		// run aggregate on cdrs generate invoice
+		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
+					'stamp' => $chargingOptions['oneTimeStamp'],
+					'force_accounts' => [$this->aid],
+					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
+					'affected_sids' => $chargingOptions['affectedSids'],
+					'uf' => $chargingOptions['uf']]);
 
 		$aggregator->aggregate();
 
@@ -189,20 +185,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	
 	protected function expectedInvoice($chargingOptions, $expected = false) {
 
-		// run aggregate on cdrs and fake invoice generate invoice
-		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
-					'stamp' => $chargingOptions['oneTimeStamp'],
-					'force_accounts' => [$this->aid],
-					'fake_cycle' => true,
-					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
-					'affected_sids' => $chargingOptions['affectedSids'],
-					'generate_pdf' => $expected,
-					'uf' => $chargingOptions['uf']]);
-
-		// if  we cache the gba  results to gsd do that before the cdr processing
-		if(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gba_to_gsd.enabled',false)) {
-			Billrun_Factory::account()->getBillable($aggregator->getCycle(),0,1,[$this->aid]);
-		}
+		$this->setupCache($chargingOptions['oneTimeStamp']);
 
 		//Process and price onetime  CDRs in memory
 		if (empty($this->processsedCdrs)) {
@@ -213,6 +196,15 @@ class OnetimeinvoiceAction extends ApiAction {
 			return false;
 		}
 
+		// run aggregate on cdrs and fake invoice generate invoice
+		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
+					'stamp' => $chargingOptions['oneTimeStamp'],
+					'force_accounts' => [$this->aid],
+					'fake_cycle' => true,
+					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
+					'affected_sids' => $chargingOptions['affectedSids'],
+					'generate_pdf' => $expected,
+					'uf' => $chargingOptions['uf']]);
 
 		$aggregator->setExternalChargesForAid($this->aid, $this->processsedCdrs);
 		$aggregator->aggregate();
@@ -595,6 +587,14 @@ class OnetimeinvoiceAction extends ApiAction {
 			sleep(1);
 			Billrun_Factory::log('BillrunToBill is already running, try to generate again. Try number: ' . $tries, Zend_Log::DEBUG);
 			$result = $billrunToBill->generate();
+		}
+	}
+
+	protected function setupCache($stamp) {
+		// if  we cache the gba  results to gsd do that before the cdr processing
+		if(Billrun_Factory::config()->getConfigValue('customeronetime.aggregator.cache.gba_to_gsd.enabled',false)) {
+			Billrun_Aggregator_Customer::setupCycleCache();
+			Billrun_Factory::account()->getBillable(new Billrun_DataTypes_MongoCycleTime(new Billrun_DataTypes_CycleTime($stamp)),0,1,[$this->aid]);
 		}
 	}
 
