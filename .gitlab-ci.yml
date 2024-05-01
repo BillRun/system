@@ -39,7 +39,7 @@ print-info:
   # Run php testcases
   script:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/
-    - docker exec -w /billrun -it billrun-app php vendor/bin/codecept run $TEST_NAME
+    - docker exec -w /billrun billrun-app php vendor/bin/codecept run $TEST_NAME
     #- docker logs testing
     #- docker logs -f testing &> docker.log &
     - cd $CI_PROJECT_DIR/docker/billrun-docker
