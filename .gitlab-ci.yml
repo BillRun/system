@@ -38,6 +38,7 @@ print-info:
 
   # Run php testcases
   script:
+    - sleep 30 
     - cd $CI_PROJECT_DIR/docker/billrun-docker/
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run $TEST_NAME
     #- docker logs testing
