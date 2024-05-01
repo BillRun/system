@@ -253,7 +253,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         if (isset($response['access_token'])) {
             $this->setRefreshToken($response['refresh_token']);
             $response = $response['access_token'];
-            $this->cache->set(self::ACCESS_TOKEN_CACHE_KEY, $response);
+            $this->cache->set(self::ACCESS_TOKEN_CACHE_KEY, $response, null, 13800);
             $valid_access_token = true;
         }
         // Close cURL session
@@ -268,7 +268,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $config = new ConfigModel();			
         if (is_null($this->plugin_configuration)) {
             $this->plugin_configuration = current(array_filter($config->getFromConfig('plugins',[]), function ($plugin) {
-                return $plugin['name'] === 'israelInvoicePlugin';
+                return isset($plugin['name']) && ($plugin['name'] === 'israelInvoicePlugin');
             }));
         }
         $this->plugin_configuration['configuration']['values']['refresh_token'] = $token;
