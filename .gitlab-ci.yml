@@ -32,6 +32,7 @@ print-info:
     # build and run BillRun app in docker
     - mkdir logs cache
     - chmod 777 logs/ cache/
+    - cp $TEST_ENV_CODECEPT $CI_PROJECT_DIR/tests/.env
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php73-tests.yml up --build --detach
 
