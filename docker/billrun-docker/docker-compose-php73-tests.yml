@@ -27,7 +27,7 @@ services:
         - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
         volumes:
             - ${PWD}/../..:/billrun
-        command: sh -c "composer update && php-fpm "
+        command: sh -c "php-fpm "
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongodb
