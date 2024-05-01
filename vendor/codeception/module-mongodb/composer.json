@@ -1,0 +1,25 @@
+{
+    "name":"codeception/module-mongodb",
+    "description":"MongoDB module for Codeception",
+    "keywords":["codeception", "mongodb"],
+    "homepage":"http://codeception.com/",
+    "type":"library",
+    "license":"MIT",
+    "authors":[
+        {
+            "name":"Michael Bodnarchuk"
+        }
+    ],
+    "minimum-stability": "RC",
+
+    "require": {
+        "php": ">=5.6.0 <9.0",
+        "codeception/codeception": "^4.0"
+    },
+    "autoload":{
+        "classmap": ["src/"]
+    },
+    "config": {
+        "classmap-authoritative": true
+    }
+}

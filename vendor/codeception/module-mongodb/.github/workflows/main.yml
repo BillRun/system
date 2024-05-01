@@ -1,0 +1,41 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo
+        ports: 
+          - 27017:27017
+
+    strategy:
+      matrix:
+        php: [7.0, 7.1, 7.2, 7.3, 7.4, 8.0]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php }}
+        extensions: mbstring, xml, dom, mongodb
+        tools: pecl
+        coverage: none
+      env:
+        fail-fast: true
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate
+
+    - name: Install dependencies
+      run: |
+        composer require mongodb/mongodb --no-update
+        composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Run test suite
+      run: php ./vendor/bin/codecept run

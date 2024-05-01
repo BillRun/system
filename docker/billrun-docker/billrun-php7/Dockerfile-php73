@@ -15,7 +15,4 @@ COPY php.ini /usr/local/etc/php/
 COPY xdebug.ini /usr/local/etc/php/conf.d/
 COPY --from=composer:2.6.6 /usr/bin/composer /usr/bin/composer
 WORKDIR /billrun
-COPY composer.json composer.json
-COPY composer.lock composer.lock
-RUN composer update
 CMD ["php-fpm"]
