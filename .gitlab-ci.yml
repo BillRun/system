@@ -13,55 +13,11 @@ print-info:
    - 'echo "Job start: $CI_JOB_STARTED_AT"'
    - 'echo "Branch: $CI_COMMIT_BRANCH"'
    - 'echo "Commit Author: $CI_COMMIT_AUTHOR"'
-   
-   
-python_testcases:
+
+.codecept:
   services:
    - name: docker:dind
      alias: dockerhost
-
-  variables:
-    DOCKER_HOST: tcp://dockerhost:2375/
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ""
-
-  stage: test
-  tags:
-    - new_docker_runner
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS != "skip_ci"
-  before_script:
-    # build and run BillRun app in docker
-    - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - docker compose -f docker-compose-php74.yml up -d
-
-    # create test virtual env
-    - cd $CI_PROJECT_DIR/tests/legacy/integration_tests/
-    - echo ENV = $TEST_ENV > .env
-    - python3 --version  # for debugging
-    - pip3 install virtualenv
-    - python3 -m venv venv
-    - source venv/bin/activate
-    - pip3 install -e .
-
-  # run python testcases
-  script:
-    - pytest -m smoke -s --junitxml=xml_report_backend.xml --testrail --tr-config=$CI_PROJECT_DIR/tests/legacy/integration_tests/testrail.cfg --tr-email=$TESTRAIL_EMAIL --tr-password=$TESTRAIL_APIKEY --tr-testrun-description="Merge Request title = $CI_MERGE_REQUEST_TITLE, Commit SHA = $CI_COMMIT_SHORT_SHA"
-
-  artifacts:
-    when: always
-    paths:
-      - $CI_PROJECT_DIR/tests/legacy/integration_tests/allure-results/*
-      - $CI_PROJECT_DIR/tests/legacy/integration_tests/xml_report_backend.xml
-    reports:
-      junit: $CI_PROJECT_DIR/tests/legacy/integration_tests/xml_report_backend.xml
-    expire_in: 1 week
-
-php_testcases:
-  services:
-   - name: docker:dind
-     alias: dockerhost
-
   variables:
     DOCKER_HOST: tcp://dockerhost:2375/
     DOCKER_DRIVER: overlay2
@@ -76,28 +32,37 @@ php_testcases:
     - mkdir logs cache
     - chmod 777 logs/ cache/
     - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - docker-compose -f docker-compose-php74.yml up --build --detach
+    - docker-compose -f docker-compose-php73-tests.yml up --build --detach
 
 
   # Run php testcases
   script:
-    - cd $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing
-    - docker build -t test:v1 .
-    - docker run -d --name testing test:v1
-    - docker logs --follow testing > docker.log
+    - cd $CI_PROJECT_DIR/docker/billrun-docker/
+    - docker exec -w /billrun -it billrun-app php vendor/bin/codecept run $TEST_NAME
     #- docker logs testing
     #- docker logs -f testing &> docker.log &
     - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - docker-compose -f docker-compose-php74.yml down -v
-    - docker stop testing
-    - docker rm testing
-    - docker image rm test:v1 nginx:latest mongo:3.6 billrun-php74
+    - docker-compose -f docker-compose-php73-tests.yml down --remove-orphans
 
-  artifacts:
-    when: always
-    paths:
-      - $CI_PROJECT_DIR/docker/billrun-docker/Docker-Testing/docker.log
+acceptance:
+  extends: .codecept
+  variables:
+  TEST_NAME: "acceptance"
 
-include:
-  - template: Jobs/Secret-Detection.gitlab-ci.yml
+all:
+  extends: .codecept
+  variables:
+  TEST_NAME: "all"
 
+api:
+  extends: .codecept
+  variables:
+  TEST_NAME: "api"
+funcitonal:
+  extends: .codecept
+  variables:
+  TEST_NAME: "functional"
+unit:
+  extends: .codecept
+  variables:
+  TEST_NAME: "unit"
