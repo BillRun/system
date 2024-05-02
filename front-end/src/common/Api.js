@@ -92,7 +92,14 @@ export const apiBillRunSuccessHandler = (success, message = false) => (dispatch)
   const { entity, details, data, status, warnings = 'warning' } = success.data[0].data;
   dispatch(finishProgressIndicator());
 
-  const responseData = entity || details || data || null;
+  const responseData =
+    entity !== undefined
+      ? entity
+      : details !== undefined
+      ? details
+      : data !== undefined
+      ? data
+      : null;
 
   if (status === API_STATUS_SUCCESS && message) {
     dispatch(showSuccess(message));
