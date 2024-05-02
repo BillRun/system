@@ -631,7 +631,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 		
 		foreach ($row_grouping_fields as $field) {
 			if($field['op'] == 'sum') {
-				$this->data['totals']['grouping'][$index][$field['field_name']] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index][$field['field_name']], 0) + Billrun_Util::getIn($row, $field['field_name'], 0);
+				$current_grouping_value = Billrun_Util::getIn($this->data['totals']['grouping'][$index], $field['field_name'], 0);
+				$row_value = Billrun_Util::getIn($row, $field['field_name'], 0);
+				Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field['field_name'], $current_grouping_value + $row_value);
 			}
 		}
 	}
