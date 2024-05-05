@@ -149,7 +149,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param array $invoice_bill - invoice bill data
      * @param array $invoice_data - invoice billrun data
 	 */
-	public function beforeInvoiceConfirmed(&$invoice_bill, $invoice_data) {
+	public function beforeInvoiceConfirmed(&$invoice_bill, $invoice_data, &$should_be_confirmed) {
         try {
             $inv_id = $invoice_bill['invoice_id'];
             if (!$this->invoiceNeedsApproval($invoice_data)) {
@@ -183,7 +183,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             }
         } catch (Exception $ex) {
 			Billrun_Factory::log("Israel Invoice:invoice " . $inv_id . " will not be confirmed. Error " . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ALERT);
-			$invoice_bill['should_be_confirmed'] = false;
+			$should_be_confirmed = false;
 			return;
 		}
 	}
@@ -373,10 +373,29 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
     }
 
     public function recreateInvoiceFile($invoice_data) {
-        $billrun = $invoice_data['billrun_key'];
-        $basePdfGenCmd = 'php -t '.APPLICATION_PATH.'/ '.APPLICATION_PATH.'/public/index.php --env '.Billrun_Factory::config()->getEnv()." --generate --type invoice_export --stamp {$billrun}";
-        exec("$basePdfGenCmd accounts={$invoice_data['aid']}");
-        Billrun_Factory::db()->billrunCollection()->update(array('invoice_id' => $invoice_data['invoice_id'],'billrun_key' => $invoice_data['billrun_key'], 'aid' => $invoice_data['aid']), array('$set'=> array('invoice_confirmation_number' => $invoice_data['invoice_confirmation_number'])));
+        Billrun_Factory::log()->log("Trying to regenerate invoice " . $invoice_data['invoice_id'], Zend_Log::DEBUG);
+        $options = [
+            'stamp' => $invoice_data['billrun_key'],
+            'accounts' => strval($invoice_data['aid']),
+            'type' => 'invoice_export'
+        ];
+        try{
+            $generator = Billrun_Generator::getInstance($options);
+        } catch(Exception $ex){
+            Billrun_Factory::log()->log('Something went wrong while building the generator. Invoice ' . $invoice_data['invoice_id'] . "wasn't regenerated", Zend_Log::ALERT);
+            return false;
+        }
+        if (!$generator) {
+            Billrun_Factory::log()->log('Generator cannot be loaded, invoice ' . $invoice_data['invoice_id'] . "wasn't regenerated", Zend_Log::ALERT);
+            return false;
+        }
+        Billrun_Factory::log()->log('Generator loaded to regenerate invoice ' . $invoice_data['invoice_id'], Zend_Log::DEBUG);
+        $res = $generator->regenerateInvoice();
+        if (!$res) {
+            Billrun_Factory::log()->log("Invoice " . $invoice_data['invoice_id'] . " couldn't be re-generate", Zend_Log::ALERT);
+            return false;
+        }
+        return true;
     }
 
 

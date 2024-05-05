@@ -143,8 +143,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$bill = array_merge_recursive($bill, $foreignData);
 		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
 		$invoice['confirmation_time'] = new MongoDate($this->confirmDate);
-		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice));
-		if (isset($bill['should_be_confirmed']) && empty($bill['should_be_confirmed'])) {
+		$should_be_confirmed = true;
+		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice, &$should_be_confirmed));
+		if (!$should_be_confirmed) {
 			return false;
 		}
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
