@@ -108,9 +108,9 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $this->refresh_token = Billrun_Util::getIn($options, "refresh_token", "");
         $this->client_key = Billrun_Util::getIn($options, "client_key", "");
         $this->client_secret = Billrun_Util::getIn($options, "client_secret", "");
-        $this->approval_amount_thresholds = Billrun_Util::getIn($options, "invoice_thresholds", null);
+        $this->approval_amount_thresholds = $this->getApprovalAmountThresholds($options);
         $this->cancel_invoice_generation_on_error = Billrun_Util::getIn($options, "cancel_invoice_generation_on_error", true);
-        $this->new_access_token_api = Billrun_Util::getIn($options, "access_token_api", "https://openapi.taxes.gov.il/shaam/tsandbox/longtimetoken/oauth2/token");
+        $this->new_access_token_api = Billrun_Util::getIn($options, "access_token_api", "https://ita-api.taxes.gov.il/shaam/tsandbox/longtimetoken/oauth2/token");
         $this->invoice_approval_api = Billrun_Util::getIn($options, "invoice_approval_api", "https://ita-api.taxes.gov.il/shaam/tsandbox/Invoices/v1/Approval");
         $this->company_vat_number = Billrun_Util::getIn($options, "company_vat_number", 0);
         $this->union_vat_number = Billrun_Util::getIn($options, "union_vat_number", 0);
@@ -120,6 +120,18 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $this->account_licensed_practitioner_field_name = Billrun_Util::getIn($options, "account_licensed_practitioner_field", "");
         $this->checkConfigurationValidation();
 	}
+
+    public function getApprovalAmountThresholds($options) {
+        $config_thresholds = Billrun_Util::getIn($options, "invoice_thresholds", null);
+        if (empty($config_thresholds)) {
+            return array([
+                'amount' => 25000,
+                'from' => '2024-05-01T00:00:00',
+                'to' => '2196-05-01T00:00:00'
+            ]);
+        }
+        return $config_thresholds;
+    }
 
     public function getAccountNumberFieldName($options) {
         return Billrun_Util::getIn($options, "account_vat_number_field", 
@@ -185,7 +197,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $invoice_tax = 0;
         //Check if all the invoice items are non taxable (non-vatable)
         foreach ($invoice_data['totals']['taxes'] as $tax_key => $tax_amount) {
-            $invoice_tax += $tax_amount;
+            $invoice_tax += abs($tax_amount);
         }
         if ($invoice_tax == 0) {
             Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'tax' check", Zend_Log::DEBUG);
@@ -403,7 +415,8 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
                 "title" => "Invoice threshold amounts by date rang",
                 "editable" => true,
                 "display" => true,
-                "nullable" => false
+                "nullable" => false,
+                "default" => "[{'amount':25000, 'from':'2024-05-01T00:00:00', 'to':'2224-05-01T00:00:00'}]"
             ], [
 				'type' => 'boolean',
 				'field_name' => 'cancel_invoice_generation_on_error',

@@ -25,7 +25,6 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $confirmDate;
 	protected $sendEmail = true;
 	protected $filtration = null;
-	protected $confirm_date_by_invoice_id = [];
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -69,10 +68,13 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				$result['alreadyRunning'] = true;
 				continue;
 			}
+			Billrun_Factory::log("Creating bill from invoice " . $invoice['invoice_id'], Zend_Log::DEBUG);
 			$res = $this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
 			if (!$res) {
+				Billrun_Factory::log("Failed to create bill from invoice " . $invoice['invoice_id'] . ". Continue to the next invoice", Zend_Log::ALERT);
 				continue;
 			}
+			Billrun_Factory::log("Successfully created bill from invoice " . $invoice['invoice_id'], Zend_Log::DEBUG);
 			$invoicesIds[] = $invoice['invoice_id'];
 			$invoices[] = $invoice->getRawData();
 			if (!$this->release()) {
@@ -140,7 +142,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$foreignData = $this->getForeignFields(array('account' => $account->loadAccountForQuery(['aid' => $invoice['aid']])));
 		$bill = array_merge_recursive($bill, $foreignData);
 		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
-		$this->setConfirmationDate($invoice);
+		$invoice['confirmation_time'] = new MongoDate($this->confirmDate);
 		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice));
 		if (isset($bill['should_be_confirmed']) && empty($bill['should_be_confirmed'])) {
 			return false;
@@ -298,13 +300,6 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	
 	protected function getForeignFieldsEntity () {
 		return 'bills';
-	}
-
-	protected function setConfirmationDate(&$invoice) {
-		if (!isset($this->confirm_date_by_invoice_id[$invoice['invoice_id']])) {
-				$this->confirm_date_by_invoice_id[$invoice['invoice_id']] = new MongoDate($this->confirmDate);
-		}
-		$invoice['confirmation_time'] = $this->confirm_date_by_invoice_id[$invoice['invoice_id']];
 	}
 
 }
