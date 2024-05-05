@@ -416,7 +416,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
                 "editable" => true,
                 "display" => true,
                 "nullable" => false,
-                "default" => "[{'amount':25000, 'from':'2024-05-01T00:00:00', 'to':'2224-05-01T00:00:00'}]"
+                "default" => json_encode("[{'amount':25000, 'from':'2024-05-01T00:00:00', 'to':'2224-05-01T00:00:00'}]")
             ], [
 				'type' => 'boolean',
 				'field_name' => 'cancel_invoice_generation_on_error',
