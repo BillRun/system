@@ -179,7 +179,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $this->checkConfigurationValidation();
         try {
             $inv_id = $invoice_bill['invoice_id'];
-            if (!$this->invoiceNeedsApproval($invoice_data)) {
+            if (!$this->invoiceNeedsApproval($invoice_data, $invoice_bill)) {
                 Billrun_Factory::log("Israel Invoice:invoice " . $inv_id . " shouldn't get approval number", Zend_Log::DEBUG);
                 return;
             } else {
@@ -215,7 +215,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-    public function invoiceNeedsApproval($invoice_data) {
+    public function invoiceNeedsApproval($invoice_data, $invoice_bill) {
         Billrun_Factory::log("Israel Invoice:check if invoice " . $invoice_data['invoice_id'] . " needs an approval number", Zend_Log::DEBUG);
         if (!$this->apply_to_refund_invoices && ($invoice_data['totals']['before_vat'] < 0)) {
             Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'refund' check", Zend_Log::DEBUG);
