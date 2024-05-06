@@ -1,0 +1,10 @@
+cd /var/www/we4g-billrun-plugin
+sudo su billrun
+git fetch origin --tags
+git checkout 1.3.0
+
+git diff conf/petah.json
+
+git checkout conf/petah.json
+git checkout 1.3.0
+
