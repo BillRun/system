@@ -125,10 +125,27 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $config_thresholds = Billrun_Util::getIn($options, "invoice_thresholds", null);
         if (empty($config_thresholds)) {
             return array([
-                'amount' => 25000,
-                'from' => '2024-05-01T00:00:00',
-                'to' => '2196-05-01T00:00:00'
-            ]);
+                    'amount' => 25000,
+                    'from' => '2024-05-01T00:00:00',
+                    'to' => '2024-12-31T23:59:59'
+                ],[
+                    'amount' => 20000,
+                    'from' => '2025-01-01T00:00:00',
+                    'to' => '2025-12-31T23:59:59'
+                ],[
+                    'amount' => 15000,
+                    'from' => '2026-01-01T00:00:00',
+                    'to' => '2026-12-31T59:59:59'
+                ],[
+                    'amount' => 10000,
+                    'from' => '2027-01-01T00:00:00',
+                    'to' => '2027-12-31T23:59:59'
+                ],[
+                    'amount' => 5000,
+                    'from' => '2028-01-01T00:00:00',
+                    'to' => '2028-12-31T23:59:59'
+                ]
+            );
         }
         return $config_thresholds;
     }
@@ -382,7 +399,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         try{
             $generator = Billrun_Generator::getInstance($options);
         } catch(Exception $ex){
-            Billrun_Factory::log()->log('Something went wrong while building the generator. Invoice ' . $invoice_data['invoice_id'] . "wasn't regenerated", Zend_Log::ALERT);
+            Billrun_Factory::log()->log('Something went wrong while building the generator. Invoice ' . $invoice_data['invoice_id'] . " wasn't regenerated", Zend_Log::ALERT);
             return false;
         }
         if (!$generator) {
