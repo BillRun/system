@@ -22,6 +22,11 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $name = 'israelInvoice';
 
     /**
+     * @var boolean
+     */
+    protected $valid_config = null;
+
+    /**
      * access token cache
      * @var Billrun_Cache
      */
@@ -118,7 +123,6 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $this->accounting_software_number = Billrun_Util::getIn($options, "accounting_software_number", 99999999);
         $this->apply_to_refund_invoices = Billrun_Util::getIn($options, "apply_to_refund_invoices", false);
         $this->account_licensed_practitioner_field_name = Billrun_Util::getIn($options, "account_licensed_practitioner_field", "");
-        $this->checkConfigurationValidation();
 	}
 
     public function getApprovalAmountThresholds($options) {
@@ -156,8 +160,13 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
     }
 
     public function checkConfigurationValidation() {
-        if(empty($this->refresh_token) || empty($this->client_key) ||  empty($this->client_secret) || empty($this->company_vat_number) || empty($this->union_vat_number) || empty($this->accounting_software_number)) {
+        if (!is_null($this->valid_config)) {
+            return $this->valid_config;
+        }
+        if($this->isEnabled() && empty($this->refresh_token) || empty($this->client_key) ||  empty($this->client_secret) || empty($this->company_vat_number) || empty($this->union_vat_number) || empty($this->accounting_software_number)) {
             throw new Exception("Missing Israel invoice plugin configuration");
+        } else {
+            $this->valid_config = true;
         }
     }
 
@@ -167,6 +176,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
      * @param array $invoice_data - invoice billrun data
 	 */
 	public function beforeInvoiceConfirmed(&$invoice_bill, $invoice_data, &$should_be_confirmed) {
+        $this->checkConfigurationValidation();
         try {
             $inv_id = $invoice_bill['invoice_id'];
             if (!$this->invoiceNeedsApproval($invoice_data)) {
