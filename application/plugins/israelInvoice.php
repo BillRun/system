@@ -127,23 +127,23 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             return array([
                     'amount' => 25000,
                     'from' => '2024-05-01T00:00:00',
-                    'to' => '2024-12-31T23:59:59'
+                    'to' => '2025-01-01T00:00:00'
                 ],[
                     'amount' => 20000,
                     'from' => '2025-01-01T00:00:00',
-                    'to' => '2025-12-31T23:59:59'
+                    'to' => '2026-01-01T00:00:00'
                 ],[
                     'amount' => 15000,
                     'from' => '2026-01-01T00:00:00',
-                    'to' => '2026-12-31T59:59:59'
+                    'to' => '2027-01-01T00:00:00'
                 ],[
                     'amount' => 10000,
                     'from' => '2027-01-01T00:00:00',
-                    'to' => '2027-12-31T23:59:59'
+                    'to' => '2028-01-01T00:00:00'
                 ],[
                     'amount' => 5000,
                     'from' => '2028-01-01T00:00:00',
-                    'to' => '2028-12-31T23:59:59'
+                    'to' => '2029-01-01T00:00:00'
                 ]
             );
         }
@@ -403,7 +403,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             return false;
         }
         if (!$generator) {
-            Billrun_Factory::log()->log('Generator cannot be loaded, invoice ' . $invoice_data['invoice_id'] . "wasn't regenerated", Zend_Log::ALERT);
+            Billrun_Factory::log()->log('Generator cannot be loaded, invoice ' . $invoice_data['invoice_id'] . " wasn't regenerated", Zend_Log::ALERT);
             return false;
         }
         Billrun_Factory::log()->log('Generator loaded to regenerate invoice ' . $invoice_data['invoice_id'], Zend_Log::DEBUG);
