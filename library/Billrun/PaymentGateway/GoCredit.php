@@ -49,8 +49,8 @@ class Billrun_PaymentGateway_GoCredit extends Billrun_PaymentGateway {
 		$postParams['RequestParams']['TransactionSum'] = (int) Billrun_Factory::config()->getConfigValue('GC.conf.amount', 1);
 		$postParams['RequestParams']['TransactionMode'] = 'RequestApprovalJ5';
 		$postParams['RequestParams']['Currency'] = 'ILS';
-		$postParams['RequestParams']['URLSuccess'] = urlencode($okPage);
-		$postParams['RequestParams']['URLBack'] = urlencode($returnUrl);
+		$postParams['RequestParams']['URLSuccess'] = $okPage;
+		$postParams['RequestParams']['URLBack'] = $returnUrl;
 		$postParams['RequestParams']['RefCustomerCode'] = $aid;
 		return $this->buildSoapRequest('CreatePaymentRequest', $postParams);
 	}
