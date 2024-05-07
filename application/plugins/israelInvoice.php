@@ -91,10 +91,10 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
     protected $accounting_software_number;
 
     /**
-     * Customer licensed practitioner boolean fieldname
-     * @var string
+     * Invoice approval should be only for accounts with account vat number field mapped
+     * @var boolean
      */
-    protected $account_licensed_practitioner_field_name;
+    protected $approve_accounts_with_vat_number_field;
 
     /**
      * @var boolean
@@ -122,7 +122,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $this->account_vat_number_field_name = $this->getAccountNumberFieldName($options);
         $this->accounting_software_number = Billrun_Util::getIn($options, "accounting_software_number", 99999999);
         $this->apply_to_refund_invoices = Billrun_Util::getIn($options, "apply_to_refund_invoices", false);
-        $this->account_licensed_practitioner_field_name = Billrun_Util::getIn($options, "account_licensed_practitioner_field", "");
+        $this->approve_accounts_with_vat_number_field = Billrun_Util::getIn($options, "approve_accounts_with_vat_number_field", true);
 	}
 
     public function getApprovalAmountThresholds($options) {
@@ -218,7 +218,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-    public function invoiceNeedsApproval($invoice_data, $invoice_bill) {
+    public function invoiceNeedsApproval($invoice_data) {
         Billrun_Factory::log("Israel Invoice:check if invoice " . $invoice_data['invoice_id'] . " needs an approval number", Zend_Log::DEBUG);
         if (!$this->apply_to_refund_invoices && ($invoice_data['totals']['before_vat'] < 0)) {
             Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'refund' check", Zend_Log::DEBUG);
@@ -255,8 +255,8 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             return false;
         }
 
-        if (empty($this->account_licensed_practitioner_field_name) || empty(Billrun_Util::getIn($invoice_bill, 'foreign.account.'. $this->account_licensed_practitioner_field_name, false))) {
-            Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'licensed practitioner' check", Zend_Log::DEBUG);
+        if ($this->approve_accounts_with_vat_number_field && is_null(Billrun_Util::getIn($invoice_data, 'attributes.' . $this->account_vat_number_field_name, null))) {
+            Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'vat_number_field' exists check", Zend_Log::DEBUG);
             return false;
         }
 
@@ -335,7 +335,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
      * @param array $invoice_data - invoice billrun data
      */
     public function buildRequest($invoice_bill, $invoice_data) {
-        $customer_vat_number = Billrun_Util::getIn($invoice_bill, 'foreign.account.'. $this->account_vat_number_field_name, 18);
+        $customer_vat_number = Billrun_Util::getIn($invoice_data, 'attributes.' . $this->account_vat_number_field_name, null);
         $amount_before_discount = round($invoice_data['totals']['after_vat'] - $invoice_data['totals']['discount']['after_vat'],2);
         $request = [
             "Invoice_ID" => strval($invoice_bill['invoice_id']), //BillRun invoice id
@@ -535,13 +535,14 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 				"nullable" => false,
 				"mandatory" => true
 			], [
-				"type" => "string",
-				"field_name" => "account_licensed_practitioner_field",
-				"title" => "Account licensed practitioner field name",
+				"type" => "boolean",
+				"field_name" => "approve_accounts_with_vat_number_field",
+				"title" => "Approve only accounts with vat number field",
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
-				"mandatory" => false
+				"mandatory" => false,
+                "default_value" => true
 			], [
 				"type" => "string",
 				"field_name" => "account_vat_number_field",
