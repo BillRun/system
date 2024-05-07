@@ -220,7 +220,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 
     public function invoiceNeedsApproval($invoice_data) {
         Billrun_Factory::log("Israel Invoice:check if invoice " . $invoice_data['invoice_id'] . " needs an approval number", Zend_Log::DEBUG);
-        if (!$this->apply_to_refund_invoices && ($invoice_data['totals']['before_vat'] < 0)) {
+        if ($this->apply_to_refund_invoices && ($invoice_data['totals']['before_vat'] > 0)) {
             Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'refund' check", Zend_Log::DEBUG);
             return false;
         }
@@ -235,16 +235,16 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         }
         $relative_date = $this->getInvoiceRelativeDate($invoice_data);
         $found_relevant_threshold = false;
-        foreach ($this->approval_amount_thresholds as $threshold) {
+        foreach ($this->approval_amount_thresholds as $index => $threshold) {
             $from = strtotime($threshold['from']);
             $to =  strtotime($threshold['to']);
-            if ($relative_date < $from) {
+            if (($index == 0) && ($relative_date < $from)) {
                 Billrun_Factory::log("Didn't find relevant threshold dates&amount for invoice " . $invoice_data['invoice_id'] . " relative date", Zend_Log::ERR);
                 return false;
             }
             if (($from <= $relative_date) && ($to > $relative_date)) {
                 $found_relevant_threshold = true;
-                if ($invoice_data['totals']['before_vat'] > $threshold['amount']) {
+                if ($invoice_data['totals']['before_vat'] < $threshold['amount']) {
                     Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'threshold' check", Zend_Log::DEBUG);
                     return false;
                 }
