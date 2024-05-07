@@ -231,13 +231,25 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             return false;
         }
         $relative_date = $this->getInvoiceRelativeDate($invoice_data);
+        $found_relevant_threshold = false;
         foreach ($this->approval_amount_thresholds as $threshold) {
             $from = strtotime($threshold['from']);
             $to =  strtotime($threshold['to']);
-            if (($from <= $relative_date) && ($to > $relative_date) && !($invoice_data['totals']['before_vat'] > $threshold['amount'])) {
-                Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'threshold' check", Zend_Log::DEBUG);
+            if ($relative_date < $from) {
+                Billrun_Factory::log("Didn't find relevant threshold dates&amount for invoice " . $invoice_data['invoice_id'] . " relative date", Zend_Log::ERR);
                 return false;
             }
+            if (($from <= $relative_date) && ($to > $relative_date)) {
+                $found_relevant_threshold = true;
+                if ($invoice_data['totals']['before_vat'] > $threshold['amount']) {
+                    Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'threshold' check", Zend_Log::DEBUG);
+                    return false;
+                }
+            }
+        }
+        if (!$found_relevant_threshold) {
+            Billrun_Factory::log("Didn't find relevant threshold dates&amount for invoice " . $invoice_data['invoice_id'] . " relative date", Zend_Log::ERR);
+            return false;
         }
 
         if (!empty($this->account_licensed_practitioner_field_name) && !empty(Billrun_Util::getIn($invoice_bill, 'foreign.account.'. $this->account_licensed_practitioner_field_name, false))) {
