@@ -199,8 +199,11 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             list($response, $api_output) = $this->getInvoiceApproval($curl);
             Billrun_Factory::log("Israel Invoice:Received approval API response for invoice " . $inv_id . "- " . json_encode($response), Zend_Log::DEBUG);
             if ($this->validateApprovalResponse($response)) {
-                Billrun_Factory::log("Israel Invoice:Approval API response is valid for invoice " . $inv_id . ". Regenerating invoice file", Zend_Log::DEBUG);            
+                Billrun_Factory::log("Israel Invoice:Approval API response is valid for invoice " . $inv_id, Zend_Log::DEBUG);
                 $invoice_data['invoice_confirmation_number'] = $response['Confirmation_Number'];
+                Billrun_Factory::log("Saving confirmation number to the billrun object, for invoice " . $inv_id, Zend_Log::DEBUG);
+                $this->updateBillrunObject($invoice_data);
+                Billrun_Factory::log("Regenerating invoice file for invoice " . $inv_id, Zend_Log::DEBUG);
                 $this->recreateInvoiceFile($invoice_data);
             } else {
                 Billrun_Factory::log("Israel Invoice:Approval API response is not valid for invoice " . $inv_id . ". Headers output - " . $api_output, Zend_Log::DEBUG);
@@ -252,7 +255,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             return false;
         }
 
-        if (!empty($this->account_licensed_practitioner_field_name) && !empty(Billrun_Util::getIn($invoice_bill, 'foreign.account.'. $this->account_licensed_practitioner_field_name, false))) {
+        if (empty($this->account_licensed_practitioner_field_name) || empty(Billrun_Util::getIn($invoice_bill, 'foreign.account.'. $this->account_licensed_practitioner_field_name, false))) {
             Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'licensed practitioner' check", Zend_Log::DEBUG);
             return false;
         }
@@ -409,6 +412,10 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 
     public function validateApprovalResponse($response) {
         return $response['Confirmation_Number'] !== 0;
+    }
+
+    public function updateBillrunObject($invoice_data) {
+        Billrun_Factory::db()->billrunCollection()->update(array('invoice_id' => $invoice_data['invoice_id'],'billrun_key' => $invoice_data['billrun_key'], 'aid' => $invoice_data['aid']), array('$set'=> array('invoice_confirmation_number' => $invoice_data['invoice_confirmation_number'])));
     }
 
     public function recreateInvoiceFile($invoice_data) {
