@@ -411,7 +411,10 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
     }
 
     public function validateApprovalResponse($response) {
-        return $response['Confirmation_Number'] !== 0;
+        if (isset($response['Status']) && ($response['Status'] == 200) && ($response['Confirmation_Number'] !== 0)) {
+            return true;
+        }
+        return false;
     }
 
     public function updateBillrunObject($invoice_data) {
