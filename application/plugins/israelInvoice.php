@@ -335,7 +335,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
      * @param array $invoice_data - invoice billrun data
      */
     public function buildRequest($invoice_bill, $invoice_data) {
-        $customer_vat_number = Billrun_Util::getIn($invoice_data, 'attributes.' . $this->account_vat_number_field_name, null);
+        $customer_vat_number = intval(Billrun_Util::getIn($invoice_data, 'attributes.' . $this->account_vat_number_field_name, null));
         $amount_before_discount = round($invoice_data['totals']['after_vat'] - $invoice_data['totals']['discount']['after_vat'],2);
         $request = [
             "Invoice_ID" => strval($invoice_bill['invoice_id']), //BillRun invoice id
