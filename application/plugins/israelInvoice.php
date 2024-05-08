@@ -536,7 +536,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
-				"mandatory" => true
+				"mandatory" => false
 			], [
 				"type" => "boolean",
 				"field_name" => "approve_accounts_with_vat_number_field",
