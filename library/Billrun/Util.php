@@ -520,7 +520,7 @@ class Billrun_Util {
 			//sen email
 			return $mailer->send();
 		} catch (Throwable $th) {
-			Billrun_Factory::log("Error send end email. " . $ex->getCode() . ': ' . $ex->getMessage());
+			Billrun_Factory::log("Error send end email. " . $th->getCode() . ': ' . $th->getMessage());
 			return false;
 		}
 	}
