@@ -200,7 +200,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             Billrun_Factory::log("Israel Invoice:Received approval API response for invoice " . $inv_id . "- " . json_encode($response), Zend_Log::DEBUG);
             if ($this->validateApprovalResponse($response)) {
                 Billrun_Factory::log("Israel Invoice:Approval API response is valid for invoice " . $inv_id, Zend_Log::DEBUG);
-                $invoice_data['invoice_confirmation_number'] = $response['Confirmation_Number'];
+                $this->setInvoiceConfirmationNumber($response, $invoice_data, $invoice_bill);
                 Billrun_Factory::log("Saving confirmation number to the billrun object, for invoice " . $inv_id, Zend_Log::DEBUG);
                 $this->updateBillrunObject($invoice_data);
                 Billrun_Factory::log("Regenerating invoice file for invoice " . $inv_id, Zend_Log::DEBUG);
@@ -415,6 +415,15 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             return true;
         }
         return false;
+    }
+
+    public function setInvoiceConfirmationNumber($response, &$invoice_data, &$invoice_bill) {
+        $conf_num = $response['Confirmation_Number'];
+        $conf_num_suffix = substr($response['Confirmation_Number'], -9);
+        $invoice_data['invoice_confirmation_number'] = $conf_num;
+        $invoice_data['invoice_confirmation_number_suffix'] = $conf_num_suffix;
+        $invoice_bill['invoice_confirmation_number'] = $conf_num;
+        $invoice_bill['invoice_confirmation_number_suffix'] = $conf_num_suffix;
     }
 
     public function updateBillrunObject($invoice_data) {
