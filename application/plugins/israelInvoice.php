@@ -155,15 +155,23 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
     }
 
     public function getAccountNumberFieldName($options) {
-        return Billrun_Util::getIn($options, "account_vat_number_field", 
-            Billrun_Util::getIn($options, "account_corporate_number_field", Billrun_Util::getIn($options, "account_id_number_field", "account_vat_number")));
+        $vat_num = Billrun_Util::getIn($options, "account_vat_number_field", null);
+        $corp_num = Billrun_Util::getIn($options, "account_corporate_number_field", null);
+        $id_num = Billrun_Util::getIn($options, "account_id_number_field", null);
+        if (!empty($vat_num)) {
+            return $vat_num;
+        } elseif (!empty($corp_num)) {
+            return $corp_num;
+        } else {
+            return $id_num;
+        }
     }
 
     public function checkConfigurationValidation() {
         if (!is_null($this->valid_config)) {
             return $this->valid_config;
         }
-        if($this->isEnabled() && empty($this->refresh_token) || empty($this->client_key) ||  empty($this->client_secret) || empty($this->company_vat_number) || empty($this->union_vat_number) || empty($this->accounting_software_number)) {
+        if($this->isEnabled() && empty($this->refresh_token) || empty($this->client_key) ||  empty($this->client_secret) || empty($this->company_vat_number) || empty($this->accounting_software_number)) {
             throw new Exception("Missing Israel invoice plugin configuration");
         } else {
             $this->valid_config = true;
@@ -342,16 +350,16 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $request = [
             "Invoice_ID" => strval($invoice_bill['invoice_id']), //BillRun invoice id
             "Invoice_Type" => 305, //tax invoice code
-            "Vat_Number" => $this->company_vat_number,
+            "Vat_Number" => intval($this->company_vat_number),
             "Invoice_Date" => date('Y-m-d', $invoice_bill['invoice_date']->sec),
             "Invoice_Issuance_Date" => date('Y-m-d', $invoice_data['confirmation_time']->sec),
-            "Accounting_Software_Number" => $this->accounting_software_number,
+            "Accounting_Software_Number" => intval($this->accounting_software_number),
             "Amount_Before_Discount" => round($amount_before_discount, 2),
             "Discount" => round($invoice_data['totals']['discount']['after_vat'], 2),
             "Payment_Amount_Including_VAT" => round($invoice_bill['due'], 2),
             "Payment_Amount" => round($invoice_bill['due_before_vat'], 2),
             "VAT_Amount" => round($invoice_bill['due'] - $invoice_bill['due_before_vat'], 2),
-            "Union_Vat_Number" => $this->union_vat_number,
+            "Union_Vat_Number" => intval($this->union_vat_number),
             "Invoice_Reference_Number" => strval($invoice_bill['invoice_id']),
             "Customer_VAT_Number" => $customer_vat_number
         ];
@@ -545,7 +553,8 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
-				"mandatory" => false
+				"mandatory" => false,
+                "default_value" => 0
 			], [
 				"type" => "boolean",
 				"field_name" => "approve_accounts_with_vat_number_field",
