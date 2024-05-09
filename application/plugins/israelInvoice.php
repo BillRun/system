@@ -115,7 +115,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $this->client_secret = Billrun_Util::getIn($options, "client_secret", "");
         $this->approval_amount_thresholds = $this->getApprovalAmountThresholds($options);
         $this->cancel_invoice_generation_on_error = Billrun_Util::getIn($options, "cancel_invoice_generation_on_error", true);
-        $this->new_access_token_api = Billrun_Util::getIn($options, "access_token_api", "https://ita-api.taxes.gov.il/shaam/tsandbox/longtimetoken/oauth2/token");
+        $this->new_access_token_api = Billrun_Util::getIn($options, "new_access_token_api", "https://ita-api.taxes.gov.il/shaam/tsandbox/longtimetoken/oauth2/token");
         $this->invoice_approval_api = Billrun_Util::getIn($options, "invoice_approval_api", "https://ita-api.taxes.gov.il/shaam/tsandbox/Invoices/v1/Approval");
         $this->company_vat_number = Billrun_Util::getIn($options, "company_vat_number", 0);
         $this->union_vat_number = Billrun_Util::getIn($options, "union_vat_number", 0);
@@ -346,7 +346,10 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
      */
     public function buildRequest($invoice_bill, $invoice_data) {
         $customer_vat_number = intval(Billrun_Util::getIn($invoice_data, 'attributes.' . $this->account_vat_number_field_name, null));
-        $amount_before_discount = round($invoice_data['totals']['after_vat'] - $invoice_data['totals']['discount']['after_vat'],2);
+        $discount_absolute_amount_before_vat = abs(round($invoice_data['totals']['discount']['before_vat'], 2));
+        $total_invoice_amount_before_vat = round($invoice_bill['due_before_vat'], 2);
+        $total_invoice_amount_after_vat = round($invoice_bill['due'], 2);
+        $amount_before_discount = round($total_invoice_amount_before_vat - $discount_absolute_amount_before_vat,2);
         $request = [
             "Invoice_ID" => strval($invoice_bill['invoice_id']), //BillRun invoice id
             "Invoice_Type" => 305, //tax invoice code
@@ -355,9 +358,9 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             "Invoice_Issuance_Date" => date('Y-m-d', $invoice_data['confirmation_time']->sec),
             "Accounting_Software_Number" => intval($this->accounting_software_number),
             "Amount_Before_Discount" => round($amount_before_discount, 2),
-            "Discount" => round($invoice_data['totals']['discount']['after_vat'], 2),
-            "Payment_Amount_Including_VAT" => round($invoice_bill['due'], 2),
-            "Payment_Amount" => round($invoice_bill['due_before_vat'], 2),
+            "Discount" => $discount_absolute_amount_before_vat,
+            "Payment_Amount_Including_VAT" => $total_invoice_amount_after_vat,
+            "Payment_Amount" => $total_invoice_amount_before_vat,
             "VAT_Amount" => round($invoice_bill['due'] - $invoice_bill['due_before_vat'], 2),
             "Union_Vat_Number" => intval($this->union_vat_number),
             "Invoice_Reference_Number" => strval($invoice_bill['invoice_id']),
