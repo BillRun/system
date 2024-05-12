@@ -66,10 +66,10 @@ trait Billrun_Traits_AsnParsing {
 				return $ret;
 			},
 			'ip' => function($fieldData) {
-				return implode('.', unpack('C*', $fieldData));
+				return @implode('.', unpack('C*', $fieldData));
 			},
 			'ip6' => function($fieldData) {
-				return implode(':', unpack('H*', $fieldData));
+				return implode(':', str_split(implode('',unpack('H*', $fieldData)),2));
 			},
 			'datetime' => function($fieldData) {
 				$tempTime = DateTime::createFromFormat('ymdHisT', str_replace('2b', '+', implode(unpack('H*', $fieldData))));

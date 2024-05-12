@@ -53,7 +53,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					'fields' => array(
 						'$set' => array('process_time','data_flag_5g'),
 						'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan', 'billrun', 'rat_type', 'served_imeisv'),
-						'$inc' => array('usagev', 'aprice', 'apr', 'fbc_downlink_volume', 'fbc_uplink_volume', 'duration', 'in_plan', 'out_plan', 'over_plan'),
+						'$inc' => array('usagev', 'aprice', 'apr', 'fbc_downlink_volume', 'fbc_uplink_volume','data_volume_5g', 'duration', 'in_plan', 'out_plan', 'over_plan'),
 						'_array_map'=> [
                             [
                                 'field' => 'addon_balances',
