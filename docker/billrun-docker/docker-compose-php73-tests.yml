@@ -27,6 +27,11 @@ services:
         - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
         volumes:
             - ${PWD}/../..:/billrun
+        healthcheck:
+            test: if [[ -f vendor/bin/codecep ]]; then echo "found"; fi || exit 1
+            interval: 10s
+            timeout: 3s
+            retries: 5
         command: sh -c "composer update && php-fpm"
     mongodb:
         image: mongo:3.6
