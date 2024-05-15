@@ -27,6 +27,7 @@ services:
         - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
         volumes:
             - ${PWD}/../..:/billrun
+        command: sh -c "composer update && php-fpm "
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongodb
@@ -38,6 +39,10 @@ services:
             - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
         ports:
             - 27018:27017
+    chrome:
+        image: selenium/standalone-chrome
+        container_name: billrun-standalone-chrome
+        restart: always
 
 networks:
   default:

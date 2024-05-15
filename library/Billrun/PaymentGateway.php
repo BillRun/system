@@ -562,13 +562,7 @@ abstract class Billrun_PaymentGateway {
 
 	protected function signalStartingProcess($aid, $timestamp) {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array(
-			"name" => $this->billrunName,
-			"instance_name" => $this->instanceName,
-			"tx" => (string) $this->transactionId,
-			"stamp" => md5($timestamp . $this->transactionId),
-			"aid" => (int) $aid
-		);
+		$query = $this->getSignalStartingProcessQuery($aid, $timestamp);
 		$textualQuery = json_encode($query);
 		Billrun_Factory::log('Querying creditproxy with ' . $textualQuery, Zend_Log::DEBUG);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
@@ -636,10 +630,7 @@ abstract class Billrun_PaymentGateway {
 	 * @return Int - Account id
 	 */
 	protected function getAidFromProxy($txId) {
-		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "instance_name" => $this->instanceName, "tx" => (string) $txId);
-		$paymentRow = $paymentColl->query($query)->cursor()->current();
-		return $paymentRow['aid'];
+		return $this->getFieldFromProxy('aid', $txId);
 	}
 
 	/**
@@ -914,4 +905,26 @@ abstract class Billrun_PaymentGateway {
 		return true;
 	}
 
+	/**
+	 * Get field from proxy collection if doesn't passed through the payment gateway.
+	 * 
+	 * @param string $txId -String that represents the transaction.
+	 * @return Int - Account id
+	 */
+	protected function getFieldFromProxy($field, $txId) {
+		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
+		$query = array("name" => $this->billrunName, "instance_name" => $this->instanceName, "tx" => (string) $txId);
+		$paymentRow = $paymentColl->query($query)->cursor()->current();
+		return $paymentRow[$field];
+	}
+
+	protected function getSignalStartingProcessQuery($aid, $timestamp) {
+		return array(
+			"name" => $this->billrunName,
+			"instance_name" => $this->instanceName,
+			"tx" => (string) $this->transactionId,
+			"stamp" => md5($timestamp . $this->transactionId),
+			"aid" => (int) $aid
+		);
+	}
 }

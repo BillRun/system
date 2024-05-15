@@ -30,7 +30,8 @@ class generat_test_data{
       $request['update']['generate_by_test']=true;
     }
     $request['update'] = json_encode($request['update']);
-    $url = "http://{$_SERVER['SERVER_NAME']}/billapi/$entity/create";
+    $baseUrl =  (Billrun_Factory::config()->getEnv() == 'container' ) ? "web":$_SERVER['SERVER_NAME'];
+    $url = "http://$baseUrl/billapi/$entity/create";
     $secret = Billrun_Utils_Security::getValidSharedKey();
     $signed = Billrun_Utils_Security::addSignature($request, $secret['key']);
     $request['_sig_'] = $signed['_sig_'];

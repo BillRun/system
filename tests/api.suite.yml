@@ -3,6 +3,7 @@ modules:
     enabled:
         - Asserts
         - \Helper\Api
+        - \Helper\BillRunAPI
         - REST:
             url: http://web
             depends: PhpBrowser
