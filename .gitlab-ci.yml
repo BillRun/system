@@ -1,5 +1,3 @@
-image: serhii22ua/docker-compose-python10:latest-amd64
-
 stages:
   - build
   - test
@@ -26,8 +24,8 @@ print-info:
   stage: test
   tags:
     - new_docker_runner
-  # rules:
-  #   - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS != "skip_ci"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS != "skip_ci"
   before_script:
     # build and run BillRun app in docker
     - mkdir logs cache
@@ -39,7 +37,6 @@ print-info:
 
   # Run php testcases
   script:
-    - sleep 30 
     - cd $CI_PROJECT_DIR/docker/billrun-docker/
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run $TEST_NAME
     - cd $CI_PROJECT_DIR/docker/billrun-docker
