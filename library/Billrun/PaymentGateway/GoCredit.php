@@ -17,6 +17,7 @@ class Billrun_PaymentGateway_GoCredit extends Billrun_PaymentGateway {
 	protected $billrunName = "GoCredit";
 	protected $pendingCodes = "/$^/";
 	protected $completionCodes = "/^Success$/";
+	protected $validUrlLength = 255;
 	protected $account;
 
 	protected function __construct($instanceName =  null) {
@@ -49,8 +50,12 @@ class Billrun_PaymentGateway_GoCredit extends Billrun_PaymentGateway {
 		$postParams['RequestParams']['TransactionSum'] = (int) Billrun_Factory::config()->getConfigValue('GC.conf.amount', 1);
 		$postParams['RequestParams']['TransactionMode'] = 'RequestApprovalJ5';
 		$postParams['RequestParams']['Currency'] = 'ILS';
-		$postParams['RequestParams']['URLSuccess'] = $okPage;
-		$postParams['RequestParams']['URLBack'] = $returnUrl;
+		$postParams['RequestParams']['URLSuccess'] = htmlspecialchars($okPage);
+		$postParams['RequestParams']['URLBack'] = $failPage ? htmlspecialchars($failPage) : htmlspecialchars($returnUrl);
+		// Validate that the URL's length are in the API range
+		if (strlen($postParams['RequestParams']['URLBack']) > $this->validUrlLength || strlen($postParams['RequestParams']['URLSuccess']) > $this->validUrlLength) {
+			throw new Exception("Go Credit error, the length of the ok page or back url's are bigger than " . $this->validUrlLength);
+		}
 		$postParams['RequestParams']['RefCustomerCode'] = $aid;
 		return $this->buildSoapRequest('CreatePaymentRequest', $postParams);
 	}
