@@ -75,7 +75,13 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				$result['alreadyRunning'] = true;
 				continue;
 			}
-			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
+			Billrun_Factory::log("Creating bill from invoice " . $invoice['invoice_id'], Zend_Log::DEBUG);
+			$res = $this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
+			if (!$res) {
+				Billrun_Factory::log("Failed to create bill from invoice " . $invoice['invoice_id'] . ". Continue to the next invoice", Zend_Log::ALERT);
+				continue;
+			}
+			Billrun_Factory::log("Successfully created bill from invoice " . $invoice['invoice_id'], Zend_Log::DEBUG);
 			$invoicesIds[] = $invoice['invoice_id'];
 			$invoices[] = $invoice->getRawData();
 			if (!$this->release()) {
@@ -149,10 +155,16 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$foreignData = $this->getForeignFields(array('account' => $account->loadAccountForQuery(['aid' => $invoice['aid']])));
 		$bill = array_merge_recursive($bill, $foreignData);
 		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
-		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice));
+		$invoice['confirmation_time'] = new MongoDate($this->confirmDate);
+		$should_be_confirmed = true;
+		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice, &$should_be_confirmed));
+		if (!$should_be_confirmed) {
+			return false;
+		}
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
 		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill, $invoice));
+		return true;
  	}
 	
 	/**
@@ -160,7 +172,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $data
 	 */
 	protected function updateBillrunONBilled($data) {
-		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1, 'confirmation_time' => new MongoDate())));
+		$confirmation_time = Billrun_Util::getIn($data, 'confirmation_time', new MongoDate());
+		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1, 'confirmation_time' => $confirmation_time)));
+		$data['billed'] = 1;
+		$data['confirmation_time'] = $confirmation_time;
+		return $data;
 	}
 	
 	/**
@@ -192,7 +208,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $data
 	 * @param type $afterSaveCallback
 	 */
-	protected function safeInsert($collection, $uniqueKeys, $data, $afterSaveCallback = FALSE) {
+	protected function safeInsert($collection, $uniqueKeys, &$data, $afterSaveCallback = FALSE) {
 		$uniqueQuery = array_intersect_key( $data, array_flip($uniqueKeys) );
 		$transactionStamp = Billrun_Util::generateArrayStamp($uniqueQuery);
 		$uniqueQuery['tx'] = array('$exists'=>FALSE);
@@ -202,7 +218,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		
 		if($afterSaveCallback) { 
-			call_user_func($afterSaveCallback, $data);
+			$data = call_user_func($afterSaveCallback, $data);
 		}
 		
 		$uniqueQuery['tx'] = $transactionStamp;
