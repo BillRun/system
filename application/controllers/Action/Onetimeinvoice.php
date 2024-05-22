@@ -17,7 +17,6 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class OnetimeinvoiceAction extends ApiAction {
 
 	use Billrun_Traits_Api_UserPermissions;
-	use Billrun_Traits_Api_OperationsLock;
 	use Billrun_Traits_ForeignFields;
 
 	const STEP_PDF_ONLY = 0;
@@ -113,13 +112,6 @@ class OnetimeinvoiceAction extends ApiAction {
 		return $this->sendBackInvoice($results['pdfPath']);
 	}
 
-	protected function getInsertData() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty($this->aid) ? 'all' : $this->aid),
-		);
-	}
-
 	protected function invoiceChargeFlow($chargingOptions) {
 
 		$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp']);
@@ -155,11 +147,6 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 
 		if ($chargingOptions['step'] >= self::STEP_FULL) {
-			if (!$this->lock()) {
-				Billrun_Factory::log("makePayment is already running", Zend_Log::NOTICE);
-				return [];
-			}
-
 			Billrun_Factory::log('One time invoice action paying invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
 			$chargeOptions = [
 				'aids' => [$this->aid],
@@ -169,10 +156,6 @@ class OnetimeinvoiceAction extends ApiAction {
 				],
 			];
 			$paymentResponse = Billrun_Bill_Payment::makePayment($chargeOptions); // todo: handle payment response
-			if (!$this->release()) {
-				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-				return [];
-			}
 		}
 		$results['invoiceData'] = $this->invoice->getRawData();
 		$results['paymentData'] = $paymentResponse;
@@ -235,11 +218,6 @@ class OnetimeinvoiceAction extends ApiAction {
 
 		if (!Billrun_Util::isEqual($expectedTotals['after_vat_rounded'], 0, Billrun_Bill::precision)) {
 			try {
-				if (!$this->lock()) {
-					Billrun_Factory::log("makePayment is already running", Zend_Log::NOTICE);
-					return [];
-				}
-
 				$paymentOptions = [
 					'bills' => array(
 						array(
@@ -258,11 +236,6 @@ class OnetimeinvoiceAction extends ApiAction {
 					$paymentOptions['bills'][0]['left'] = (-1) * $expectedTotals['after_vat_rounded'];
 				}
 				$paymentStatus = Billrun_Bill_Payment::makePayment($paymentOptions);
-
-				if (!$this->release()) {
-					Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-					return [];
-				}
 
 			} catch (\Exception $ex) {
 				$this->setError("Failed  when  trying to preform payment  for AID: ${inputPayment['aid']} for an amount of ${inputPayment['amount']}");
@@ -339,25 +312,6 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 
 		return $processedCdrs;
-	}
-
-	protected function getConflictingQuery() {
-		if (!empty($this->aid)) {
-			return array(
-				'$or' => array(
-					array('filtration' => 'all'),
-					array('filtration' => array('$in' => array($this->aid))),
-				),
-			);
-		}
-	}
-
-	protected function getReleaseQuery() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty($this->aid) ? 'all' : $this->aid),
-			'end_time' => array('$exists' => false)
-		);
 	}
 
 	/**

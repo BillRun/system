@@ -5,9 +5,22 @@
  */
 class Billrun_PaymentManager {
 
+	use Billrun_Traits_Api_OperationsLock;
 	use Billrun_Traits_ForeignFields;
 
 	protected static $instance;
+
+	/**
+	 * Lock action name
+	 * @var string
+	 */
+	protected $lock_action;
+
+	/**
+	 * Aid to lock
+	 * @var int
+	 */
+	protected $locked_aid;
 
 	public function __construct($params = []) {
 		
@@ -437,6 +450,61 @@ class Billrun_PaymentManager {
 
 	protected function getForeignFieldsEntity() {
 		return 'bills';
+	}
+
+	/**
+	 * Function to allow payment manager uses to be locked in account level
+	 * @var array $options - has to include action & aid
+	 */
+	public function lockPaymentAction($options = []) {
+		if (!isset($options['action']) || !isset($options['aid'])) {
+			Billrun_Factory::log("Billrun_PaymentManager::Missing lock information, action/aid", Zend_Log::DEBUG);
+			return false;
+		}
+		$this->lock_action = $options['action'];
+		$this->locked_aid = $options['aid'];
+		if (!$this->lock()) {
+			Billrun_Factory::log("Action " . $options['action'] . " is already running for account " . $options['aid'], Zend_Log::NOTICE);
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Function to allow payment manager uses to be released in account level
+	 * @var array $options - has to include action & aid
+	 */
+	public function releasePaymentAction($options = []) {
+		if (!isset($options['action']) || !isset($options['aid'])) {
+			Billrun_Factory::log("Billrun_PaymentManager::Missing release information, action/aid", Zend_Log::DEBUG);
+			return false;
+		}
+		$this->lock_action = $options['action'];
+		$this->locked_aid = $options['aid'];
+		if (!$this->release()) {
+			Billrun_Factory::log("Problem in releasing action " . $options['action'] . " for account " . $options['aid'], Zend_Log::ALERT);
+			return false;
+		}
+		return true;
+	}
+
+	protected function getConflictingQuery() {
+		return array('filtration' => $this->locked_aid);
+	}
+
+	protected function getInsertData() {
+		return array(
+			'action' => $this->lock_action,
+			'filtration' => $this->locked_aid
+		);
+	}
+
+	protected function getReleaseQuery() {
+		return array(
+			'action' => $this->lock_action,
+			'filtration' => $this->locked_aid,
+			'end_time' => array('$exists' => false)
+		);
 	}
 
 }
