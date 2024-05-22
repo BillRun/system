@@ -509,10 +509,16 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	protected function getASNDataByConfig($data, $config, $fields) {
 		$dataArr = Asn_Base::getDataArray($data, true, true);
 		$valueArr = array();
-		foreach ($config as $key => $val) {
-			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields);
-			if ($tmpVal !== FALSE) {
-				$valueArr[preg_replace('/_\d$/','',$key)] = $tmpVal;
+		foreach ($config as $key => $vals) {
+			if(!is_array($vals)) {
+				$vals = [$vals];
+			}
+			foreach ( $vals as $val ) {
+				$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields);
+				if ($tmpVal !== FALSE) {
+					$valueArr[preg_replace('/_\d$/','',$key)] = $tmpVal;
+					break;
+				}
 			}
 		}
 		return count($valueArr) ? $valueArr : false;
@@ -538,26 +544,25 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			return $ret;
 		}
 
-		foreach ($struct as $val) {
-			if (($val == "*" || $val == "+" || $val == "-" || $val == ".")) {  // This is  here to handle cascading  data arrays
-				if (isset($asnData[0])) {// Taking as an assumption there will never be a 0 key in the ASN types 
-					$newStruct = $struct;
-					array_shift($newStruct);
-					$sum = null;
-					foreach ($asnData as $subData) {
-						$sum = $this->doParsingAction($val, $this->parseASNData($newStruct, $subData, $fields), $sum);
-					}
-					return $sum;
-				} else {
-					$val = next($struct);
-					array_shift($struct);
-				}
-			}
-			if (isset($asnData[$val])) {
+		$val = reset($struct);
+		if (($val == "*" || $val == "+" || $val == "-" || $val == ".")) {  // This is  here to handle cascading  data arrays
+			if (isset($asnData[0])) {// Taking as an assumption there will never be a 0 key in the ASN types
 				$newStruct = $struct;
 				array_shift($newStruct);
-				return $this->parseASNData($newStruct, $asnData[$val], $fields);
+				$sum = null;
+				foreach ($asnData as $subData) {
+					$sum = $this->doParsingAction($val, $this->parseASNData($newStruct, $subData, $fields), $sum);
+				}
+				return $sum;
+			} else {
+				$val = next($struct);
+				array_shift($struct);
 			}
+		}
+		if (isset($asnData[$val])) {
+			$newStruct = $struct;
+			array_shift($newStruct);
+			return $this->parseASNData($newStruct, $asnData[$val], $fields);
 		}
 
 		return false;
