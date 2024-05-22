@@ -591,7 +591,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$customersAids = array_column($chargeOptions['bills'], 'aid');
 		} else {
 			$paginationQuery = self::getPaginationQuery($filtersQuery, $page, $size);
-			$paginationAids = iterator_to_array(Billrun_Factory::db()->billsCollection()>aggregateWithOptions($paginationQuery, array('allowDiskUse' => true)));
+			$paginationAids = iterator_to_array(Billrun_Factory::db()->billsCollection()->aggregate($paginationQuery));
 			$customersAids = array();
 			foreach ($paginationAids as $paginationResult) {
 				$customersAids[] = $paginationResult->getRawData()['_id'];
