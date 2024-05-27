@@ -114,6 +114,8 @@ class OnetimeinvoiceAction extends ApiAction {
 
 	protected function invoiceChargeFlow($chargingOptions) {
 
+		$this->setupCache($chargingOptions['oneTimeStamp']);
+
 		$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp']);
 		if ($this->processsedCdrs === false) {
 			//Error message will be provided  for the  spesific CDR for within processCDRs  function
@@ -127,6 +129,7 @@ class OnetimeinvoiceAction extends ApiAction {
 					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'uf' => $chargingOptions['uf']]);
+
 		$aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
@@ -164,6 +167,9 @@ class OnetimeinvoiceAction extends ApiAction {
 	}
 	
 	protected function expectedInvoice($chargingOptions, $expected = false) {
+
+		$this->setupCache($chargingOptions['oneTimeStamp']);
+
 		//Process and price onetime  CDRs in memory
 		if (empty($this->processsedCdrs)) {
 			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
@@ -194,9 +200,12 @@ class OnetimeinvoiceAction extends ApiAction {
 
 	protected function chargeBeforeInvoiceFlow($chargingOptions) {
 
+		$this->setupCache($chargingOptions['oneTimeStamp']);
+
 		if (empty($this->processsedCdrs)) {
 			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
 		}
+
 		$fakeInvoice = $this->expectedInvoice($chargingOptions);
 		if ($fakeInvoice) {
 			$expectedTotals = $fakeInvoice->getInvoice()->getRawData()['totals'];
@@ -533,6 +542,14 @@ class OnetimeinvoiceAction extends ApiAction {
 			sleep(1);
 			Billrun_Factory::log('BillrunToBill is already running, try to generate again. Try number: ' . $tries, Zend_Log::DEBUG);
 			$result = $billrunToBill->generate();
+		}
+	}
+
+	protected function setupCache($stamp) {
+		// if  we cache the gba  results to gsd do that before the cdr processing
+		if(Billrun_Factory::config()->getConfigValue('customeronetime.aggregator.cache.gba_to_gsd.enabled',false)) {
+			Billrun_Aggregator_Customer::setupCycleCache();
+			Billrun_Factory::account()->getBillable(new Billrun_DataTypes_MongoCycleTime(new Billrun_DataTypes_CycleTime($stamp)),0,1,[$this->aid]);
 		}
 	}
 
