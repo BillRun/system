@@ -242,19 +242,21 @@ class Mongodloid_Collection {
 	 * @return mongodloid save result.
 	 */
 	public function save(Mongodloid_Entity $entity, $w = null) {
-		$options['upsert'] = true;
-		$options['w'] = $w;
+		$options = array(
+			'w' => $w
+		);
 		$this->convertWriteConcernOptions($options);
 		$data = $entity->getRawData();
-		if($entity->getId()){
-			$id = $entity->getId();
+		$id = $entity->getId();
+		if($id){
+			$options['upsert'] = true;
+			$result = Mongodloid_Result::getResult($this->update(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id)), $data, $options));
+			$entity->setRawData($data);
 		}else{
-			$id = (new Mongodloid_Id());
-			$data['_id'] =  $id;
+			$result = Mongodloid_Result::getResult($this->insert($data, $options));
+			$entity->setRawData($data);
 		}
 		
-		$result = Mongodloid_Result::getResult($this->update(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id)), $data, $options));
-		$entity->setRawData($data);
 		return $result;
 	}
 
@@ -639,7 +641,6 @@ class Mongodloid_Collection {
 	 */
 	public function insert(&$ins, array $options = array()) {
 		$this->convertWriteConcernOptions($options);
-		$this->ensureDocumentHasMongoId($ins);
 		if ($ins instanceof Mongodloid_Entity) {
 			$a = $ins->getRawData();
 			$ret = $this->_collection->insertOne(Mongodloid_TypeConverter::fromMongodloid($a), $options);
@@ -654,19 +655,6 @@ class Mongodloid_Collection {
 		return Mongodloid_Result::getResult($ret);
 	}
 	
-	/**
-	 * verify _id field is exists; if not exists create it
-	 * @param Mongodloid_Id $document
-	 */
-	protected function ensureDocumentHasMongoId(&$document) {
-		if ((is_array($document) || $document instanceof ArrayObject) && !isset($document['_id'])) {
-			$document['_id'] = new \MongoId();
-		} else if ($document instanceof Mongodloid_Entity && !$document->getId()) {
-			$document['_id'] = new Mongodloid_Id();
-		}
-		return $document['_id'];
-	}
-
 	/**
 	 * Method to create auto increment of document based on an entity.
 	 * To use this method require counters collection (see create.ini)
