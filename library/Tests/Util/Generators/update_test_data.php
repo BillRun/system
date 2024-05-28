@@ -19,16 +19,34 @@ class update_test_data{
   public static function setTestNumber($test_number=null){
      self::$test_number = $test_number;
   }
+
+  public static function convertTimestamps(&$array) {
+    foreach ($array['update']['services'] as &$service) {
+        if (isset($service['from']['sec'])) {
+            $service['from']= date('Y-m-d H:i:s', $service['from']['sec']);
+        }
+        if (isset($service['to']['sec'])) {
+          $service['to']= date('Y-m-d H:i:s', $service['to']['sec']);
+      }
+        
+        if (isset($service['creation_time']['sec'])) {
+            $service['creation_time'] = date('Y-m-d H:i:s', $service['creation_time']['sec']);
+        }
+    }
+}
   public static function bulidAPI($entity, $params){
+    self::convertTimestamps($params);
     foreach ($params['update'] as $key => $val) {
       if (!is_array($val)) {
-        $request['update'][$key] = (string)$val;
+        $request['update'][$key] = $val;
       }else{
         $request['update'][$key] = $val;
 
       }
+     
       $request['update']['generate_by_test']=true;
     }
+    unset($request['update']['_id']);
     $request['update'] = json_encode($request['update']);
     $request['query'] = json_encode($params['query']);
     $baseUrl =  (Billrun_Factory::config()->getEnv() == 'container' ) ? "web":$_SERVER['SERVER_NAME'];
