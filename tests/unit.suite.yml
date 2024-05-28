@@ -3,8 +3,10 @@
 # Suite for unit or integration tests.
 
 actor: UnitTester
+bootstrap: ../_support/Helper/BillRun/bootstrap.php
 modules:
     enabled:
-        - Asserts
-        - \Helper\Unit
+ #       - Asserts
+ #       - \Helper\Unit
+    extends: _support/Helper/BillRun.php
     step_decorators: ~        
