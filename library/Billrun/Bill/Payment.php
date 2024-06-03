@@ -401,7 +401,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function markRejected() {
 		$this->data['rejected'] = true;
 		$this->data['waiting_for_confirmation'] = false;
-		$this->detachPaidBills();
+		$this->detachPaidBills(false, false);
 		$this->detachPayingBills();
                 $this->unsetAllPendingLinkedBills();
 		$this->save();
@@ -582,6 +582,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty($chargeOptions['aids'])) {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
 		$size = !empty($chargeOptions['size']) ? (int) $chargeOptions['size'] : 100;
 		$page = !empty($chargeOptions['page']) ? (int) $chargeOptions['page'] : 0;
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
@@ -762,7 +763,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					}
 					
 					$paymentResponses['completed'] = $completed;
+					if ($switch_links) {
+						$payment->detachPaidBills(true);
+					}
 				}
+			}
+			if ($switch_links) {
+				Billrun_Bill_Payment::detachPendingPayments($customerAid);
+				Billrun_Bill::payUnpaidBillsByOverPayingBills($customerAid, true, $switch_links);
 			}
 			Billrun_Factory::log("Trying to release charge action for account " . $customerAid, Zend_Log::DEBUG);
 			if (!$payment_manager->releasePaymentAction(['action' => 'charge_account', 'aid' => $customerAid])) {
@@ -871,6 +879,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 
 	public function markApproved($status) {
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
+		if ($switch_links) {
+			static::detachPendingPayments($this->getAid());
+			$this->detachPaidBills(true);
+			$this->setUpdatedPaymentAfterPayingUnpaidBills(Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid(), true, $switch_links));
+		}
 		foreach ($this->getPaidBills() as $bill) {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
 			$billObj->updatePendingBillToConfirmed($this->getId(), $status, $this->getType())->save();
@@ -879,6 +893,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function setPending($pending = true) {
 		$this->data['pending'] = $pending;
+		if (!$pending) {
+			$this->data['pending_covering_amount'] = 0;
+		}
 	}
 	
 	public function getRejectionPayments($aid) {
@@ -1233,6 +1250,35 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				'$ne' => TRUE,
 			),
 		);
+	}
+
+	public static function detachPendingPayments($aid) {
+		$query = [
+			'aid' => $aid,
+			'$or' => array(
+				['pending' => true],
+				['waiting_payments' => ['$exists' => true, '$ne' => []]]
+			)
+		];
+		$sort = ['urt' => 1];
+		$pending_bills = Billrun_Bill::getBills($query, $sort);
+		foreach ($pending_bills as $bill) {
+			if (isset($bill['pays'])) {
+				$bill_obj = Billrun_Bill::getInstanceByData($bill);
+				$bill_obj->detachPaidBills(true);
+			} elseif (isset($bill['paid_by'])) {
+				$bill_obj = Billrun_Bill::getInstanceByData($bill);
+				$bill_obj->detachPayingBills(true, true);
+			}
+		}
+	}
+
+	public function setUpdatedPaymentAfterPayingUnpaidBills($payments = []) {
+		$updated_payment = isset($payments[$this->getId()]) ? $payments[$this->getId()] : null;
+		if (!is_null($updated_payment)) {
+			$data = array_merge(($this instanceof Billrun_Bill) ? $this->getRawData() : $this->getData(), $updated_payment);
+			$this->setBillData($data);
+		}
 	}
 
 }
