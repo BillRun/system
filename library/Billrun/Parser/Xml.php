@@ -356,4 +356,10 @@ class Billrun_Parser_Xml {
 		return $GivenXml;
 	}
 
+	public function resetData() {
+		$this->dataRows = [];
+		$this->headerRows = [];
+		$this->trailerRows = [];	
+	}
+
 }
