@@ -33,6 +33,11 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 	* @var int $generationTime The generation time in seconds since  epoch.
 	*/
 	protected $generationTime = 0;
+	/**
+	 * This variable is true if the priced row is rebalanced
+	 * @var boolean
+	 */
+	protected $rebalanced_row = false;
 
 
 	public function __construct(array $options) {
@@ -142,6 +147,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
      */
 	protected function extractFields($row, $dataStruct = [], $generationMapping = []) {
 		$retRow = [];
+		$this->rebalanced_row = isset($row['rebalance']);
 		foreach($dataStruct as $srcField => $dstField) {
 			$mapping = @$generationMapping[$srcField];
 			if(empty($mapping)) {
@@ -249,8 +255,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 	}
 
 	protected function isRebalance() {
-		$args = func_get_args();
-		return intval(!empty($args[1]));
+		$this->rebalanced_row;
 	}
 }
 
