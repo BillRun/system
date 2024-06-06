@@ -227,6 +227,11 @@
     "billrun_key": "Billing cycle"
   },
   "immediate_invoice": {
+    "list_title": "Invoice Lines",
+    "popup_title": "View and confirm invoice",
+    "error_generate_invoice": "Error, can not generate expected invoice",
+    "error_retrieving_invoice": "Error retrieving invoice data",
+    "no_pg_more_options_text": "This customer does not have an associated payment method - the invoice will be issued but won’t be charged",
     "volume": "Volume",
     "date": "Date",
     "price": "Charge",
@@ -235,7 +240,23 @@
     "select_rate_help": "Select Product",
     "select_subscriber_help": "Select Subscriber",
     "select_customer": "Select Customer",
-    "select_customer_help": "Type customer name or ID..."
+    "select_invoice_without_charge": "Issue invoice only, without charge",
+    "select_invoice_charge": "Issue invoice and charge it",
+    "select_invoice_successful_charge": "Issue invoice upon successful charge",
+    "confirm_reset_form": "Are you sure you want to reset invoice ?",
+    "confirm_reset_lines": "Are you sure you want to remove lines ?",
+    "reset_form": "Clear",
+    "send_invoice_email": "Send invoice to customer by email",
+    "view_expected_invoice_btn": "View Expected Invoice",
+    "add_line_btn": "Add Line",
+    "empty_table_results": "No lines. Click the 'Add Line' button to add a line",
+    "rate_input_help": "Type a product key or title for search",
+    "price_input_help": "Value can be empty, will be auto-calculate by volume field and product",
+    "subscriber_input_help": "Type a subscriber ID, first, or last name to search.",
+    "select_customer_help": "Type a customer name or ID to search.",
+    "btn_download_invoice": "Download Invoice",
+    "btn_download_expected_invoice": "Download Expected Invoice",
+    "btn_confirm_expected_invoice": "Confirm and issue invoice"
   },
   "export_generator": {
     "name": "Name",
@@ -255,6 +276,8 @@
     "key": "Product",
     "amount": "Correction Amount"
   },
+  "delete": "Delete",
+  "close": "Close",
   "status": "Status",
   "amount": "Amount",
   "type": "Type",

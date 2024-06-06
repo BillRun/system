@@ -5,9 +5,23 @@
  */
 class Billrun_PaymentManager {
 
+	use Billrun_Traits_Api_OperationsLock;
 	use Billrun_Traits_ForeignFields;
 
 	protected static $instance;
+	public $account_involved_payments = [];
+
+	/**
+	 * Lock action name
+	 * @var string
+	 */
+	protected $lock_action;
+
+	/**
+	 * Aid to lock
+	 * @var int
+	 */
+	protected $locked_aid;
 
 	public function __construct($params = []) {
 		
@@ -36,13 +50,14 @@ class Billrun_PaymentManager {
 		}
 
 		$prePayments = $this->preparePayments($method, $paymentsData, $params);
-		if (!$this->savePayments($prePayments)) {
+		if (!$this->savePayments($prePayments, $params)) {
 			return $this->handleError('Error encountered while saving the payments');
 		}
 
 		$postPayments = $this->handlePayment($prePayments, $params);
 		$this->handleSuccessPayments($postPayments, $params);
-		$payments = $this->getInvolvedPayments($postPayments);
+		$params['after_save'] = true;
+		$payments = $this->getInvolvedPayments($postPayments, $params);
 		return [
 			'payment' => array_column($payments, 'payments'),
 			'response' => $this->getResponsesFromGateways($postPayments),
@@ -58,7 +73,7 @@ class Billrun_PaymentManager {
 	 * @param array $params
 	 * @returns array of pre-payment data for every payment
 	 */
-	protected function preparePayments($method, $paymentsData, $params = []) {
+	protected function preparePayments($method, $paymentsData, &$params = []) {
 		$account = !empty($params['account']) ? $params['account'] : null;
 		$prePayments = [];
 		foreach ($paymentsData as $paymentData) {
@@ -104,7 +119,7 @@ class Billrun_PaymentManager {
 	 * @param Billrun_DataTypes_PrePayment $prePayment - by reference
 	 * @param array $params
 	 */
-	protected function handleInvoicesAndPaymentsAttachment(&$prePayment, $params = []) {
+	protected function handleInvoicesAndPaymentsAttachment(&$prePayment, &$params = []) {
 		$dir = $prePayment->getCustomerDirection();
 		if (!in_array($dir, [Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER, Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER]) && !is_null($dir)) {
 			return;
@@ -174,28 +189,33 @@ class Billrun_PaymentManager {
 	 * @param string $dir
 	 * @param array $params
 	 */
-	protected function attachAllInvoicesAndPayments(&$prePayment, $dir, $params = []) {
+	protected function attachAllInvoicesAndPayments(&$prePayment, $dir, &$params = []) {
 		if (is_null($dir)) {
 			return;
 		}
 		$method = $prePayment->getMethod();
 		$leftToSpare = $prePayment->getAmount();
-		$relatedBills = $prePayment->getRelatedBills();
-		foreach ($relatedBills as $billData) {
-			$bill = $prePayment->getBill('', $billData);
-			$billAmountLeft = $prePayment->getBillAmountLeft($bill);
-			$amount = min($billAmountLeft, $leftToSpare);
-			if ($amount) {
-				$billType = $bill->getType();
-				$paymentDir = $dir == Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER ? Billrun_DataTypes_PrePayment::PAY_DIR_PAYS : Billrun_DataTypes_PrePayment::PAY_DIR_PAID_BY;
-				$billId = $bill->getId();
-				$relatedBills = $prePayment->getData($paymentDir, []);
-				Billrun_Bill::addRelatedBill($relatedBills, $billType, $billId, $amount, $bill->getRawData());
-				$prePayment->setData($paymentDir, $relatedBills);
-				$paymentData = $prePayment->getData();
-				$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
-				$leftToSpare -= $amount;
-				$prePayment->addUpdatedBill($billType, $bill);
+		$params['switch_links'] = Billrun_Bill::shouldSwitchBillsLinks();
+		if ($params['switch_links']) {
+			Billrun_Bill_Payment::detachPendingPayments($prePayment->getAid());
+		} else {
+			$relatedBills = $prePayment->getRelatedBills();
+			foreach ($relatedBills as $billData) {
+				$bill = $prePayment->getBill('', $billData);
+				$billAmountLeft = $prePayment->getBillAmountLeft($bill);
+				$amount = min($billAmountLeft, $leftToSpare);
+				if ($amount) {
+					$billType = $bill->getType();
+					$paymentDir = $dir == Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER ? Billrun_DataTypes_PrePayment::PAY_DIR_PAYS : Billrun_DataTypes_PrePayment::PAY_DIR_PAID_BY;
+					$billId = $bill->getId();
+					$relatedBills = $prePayment->getData($paymentDir, []);
+					Billrun_Bill::addRelatedBill($relatedBills, $billType, $billId, $amount, $bill->getRawData());
+					$prePayment->setData($paymentDir, $relatedBills);
+					$paymentData = $prePayment->getData();
+					$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
+					$leftToSpare -= $amount;
+					$prePayment->addUpdatedBill($billType, $bill);
+				}
 			}
 		}
 	}
@@ -221,8 +241,8 @@ class Billrun_PaymentManager {
 	 * @param array $prePayments - array of Billrun_DataTypes_PrePayment
 	 * @return boolean
 	 */
-	protected function savePayments($prePayments) {
-		$response = $this->getInvolvedPayments($prePayments);
+	protected function savePayments($prePayments, $params = []) {
+		$response = $this->getInvolvedPayments($prePayments, $params);
 		$payments = array_column($response, 'payments');
 		$ret = Billrun_Bill_Payment::savePayments($payments);
 		if (!$ret || empty($ret['ok'])) {
@@ -238,12 +258,12 @@ class Billrun_PaymentManager {
 	 * @param array $prePayments - array of Billrun_DataTypes_PrePayment
 	 * @return array
 	 */
-	protected function getInvolvedPayments($prePayments) {
+	protected function getInvolvedPayments($prePayments, $params = []) {
 		$payments = [];
 		foreach ($prePayments as $prePayment) {
-			$payment = $prePayment->getPayment();
+			list($payment, $payment_data) = $this->getPaymentMostUpdatedData($prePayment, $params);
 			if ($payment) {
-				$payments[] = ['payments' => $payment, 'payment_data' => $prePayment->getData()];
+				$payments[] = ['payments' => $payment, 'payment_data' => $payment_data];
 			}
 		}
 
@@ -352,6 +372,7 @@ class Billrun_PaymentManager {
 	 * @param array $params
 	 */
 	protected function handleSuccessPayments($postPayments, $params = []) {
+		$switch_links = Billrun_Factory::config()->getConfigValue('bills.switch_links', true);
 		foreach ($postPayments as $postPayment) {
 			$payment = $postPayment->getPayment();
 			if (empty($payment)) {
@@ -374,29 +395,36 @@ class Billrun_PaymentManager {
 			switch ($customerDir) {
 				case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
 				case Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER:
+					Billrun_Factory::log()->log("Handling payment with txid " . $transactionId . ", customer direction " . $customerDir, Zend_Log::DEBUG);
 					$relatedBills = $postPayment->getRelatedBills();
-					foreach ($relatedBills as $bill) {
-						$billId = $bill['id'];
-						$billType = $bill['type'];
-						$amountPaid = $bill['amount'];
-						if ($this->isFileBasedCharge($params) && $payment->isWaiting()) {
-							$payment->setPending(true);
-						}
+					if (!empty($relatedBills)) {
+						foreach ($relatedBills as $bill) {
+							$billId = $bill['id'];
+							$billType = $bill['type'];
+							$amountPaid = $bill['amount'];
+							if ($this->isFileBasedCharge($params) && $payment->isWaiting()) {
+								$payment->setPending(true);
+							}
 
-						if ($pgResponse && $pgResponse['stage'] != 'Pending') {
-							$payment->setPending(false);
+							if ($pgResponse && $pgResponse['stage'] != 'Pending') {
+								$payment->setPending(false);
+							}
+							$updatedBill = $postPayment->getUpdatedBill($billType, $billId);
+							if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
+								$updatedBill->attachPayingBill($payment, $amountPaid, (!empty($pgResponse) && empty($pgResponse['stage']) || ($this->isFileBasedCharge($params) && $payment->isWaiting())) ? 'Pending' : @$pgResponse['stage'])->save();
+							} else {
+								$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid, $payment->getRawData())->save();
+							}
 						}
-						$updatedBill = $postPayment->getUpdatedBill($billType, $billId);
-						if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
-							$updatedBill->attachPayingBill($payment, $amountPaid, (!empty($pgResponse) && empty($pgResponse['stage']) || ($this->isFileBasedCharge($params) && $payment->isWaiting())) ? 'Pending' : @$pgResponse['stage'])->save();
-						} else {
-							$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid, $payment->getRawData())->save();
-						}
+					} else {
+						$payment->save();
 					}
 					break;
 				default:
-					Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+					Billrun_Factory::log()->log("Couldn't find payment direction for txid " . $transactionId, Zend_Log::DEBUG);
 			}
+			Billrun_Factory::log()->log("Paying unpaid bills using over paying/pending payments, for account " . $payment->getAccountNo(), Zend_Log::DEBUG);
+			$this->account_involved_payments = Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo(), true, $switch_links);
 
 			if (!empty($gatewayDetails)) {
 				$gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];
@@ -437,6 +465,76 @@ class Billrun_PaymentManager {
 
 	protected function getForeignFieldsEntity() {
 		return 'bills';
+	}
+
+	protected function getPaymentMostUpdatedData($prePayment, $params) {
+		if (empty($params['after_save'])) {
+			return array($prePayment->getPayment(), $prePayment->getData());
+		}
+		$switch_links = isset($params['switch_links']) ? $params['switch_links'] : Billrun_Bill::shouldSwitchBillsLinks();
+		$payment = $prePayment->getPayment();
+		$data = $prePayment->getData();
+		$updated_payment = isset($this->account_involved_payments[$prePayment->getPayment()->getId()]) ? $this->account_involved_payments[$prePayment->getPayment()->getId()] : null;
+		if ($switch_links && !is_null($updated_payment)) {
+			$data = array_merge($data, $updated_payment);
+			$payment->setBillData($updated_payment);
+		}
+		return array($payment, $data);
+	}
+
+	/**
+	 * Function to allow payment manager uses to be locked in account level
+	 * @var array $options - has to include action & aid
+	 */
+	public function lockPaymentAction($options = []) {
+		if (!isset($options['action']) || !isset($options['aid'])) {
+			Billrun_Factory::log("Billrun_PaymentManager::Missing lock information, action/aid", Zend_Log::DEBUG);
+			return false;
+		}
+		$this->lock_action = $options['action'];
+		$this->locked_aid = $options['aid'];
+		if (!$this->lock()) {
+			Billrun_Factory::log("Action " . $options['action'] . " is already running for account " . $options['aid'], Zend_Log::NOTICE);
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Function to allow payment manager uses to be released in account level
+	 * @var array $options - has to include action & aid
+	 */
+	public function releasePaymentAction($options = []) {
+		if (!isset($options['action']) || !isset($options['aid'])) {
+			Billrun_Factory::log("Billrun_PaymentManager::Missing release information, action/aid", Zend_Log::DEBUG);
+			return false;
+		}
+		$this->lock_action = $options['action'];
+		$this->locked_aid = $options['aid'];
+		if (!$this->release()) {
+			Billrun_Factory::log("Problem in releasing action " . $options['action'] . " for account " . $options['aid'], Zend_Log::ALERT);
+			return false;
+		}
+		return true;
+	}
+
+	protected function getConflictingQuery() {
+		return array('filtration' => $this->locked_aid);
+	}
+
+	protected function getInsertData() {
+		return array(
+			'action' => $this->lock_action,
+			'filtration' => $this->locked_aid
+		);
+	}
+
+	protected function getReleaseQuery() {
+		return array(
+			'action' => $this->lock_action,
+			'filtration' => $this->locked_aid,
+			'end_time' => array('$exists' => false)
+		);
 	}
 
 }

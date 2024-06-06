@@ -276,12 +276,14 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		$invoiceRawData = $this->getRawData();
 		
-		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
+		if (Billrun_Factory::config()->getConfigValue('billrun.save_subs', true, "bool")) {
+			$invoiceRawData = $this->setSubscribers($invoiceRawData);
+		}
 		if (!$isFake ) {
-			$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId, $customCollName);
+			$newRawData = $this->setInvoiceID($invoiceRawData, $invoiceId, $customCollName);
 		} else {
-			$rawDataWithSubs['invoice_id'] = $invoiceId;
-			$newRawData = $rawDataWithSubs;
+			$invoiceRawData['invoice_id'] = $invoiceId;
+			$newRawData = $invoiceRawData;
 		}
 		$this->data->setRawData($newRawData);		
 

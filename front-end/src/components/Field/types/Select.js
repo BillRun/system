@@ -165,6 +165,7 @@ Select.propTypes = {
     PropTypes.string,
     PropTypes.number,
     PropTypes.bool,
+    PropTypes.object,
   ]),
   allowCreate: PropTypes.bool,
   disabled: PropTypes.bool,
