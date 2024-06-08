@@ -125,6 +125,7 @@ db.subscribers.createIndex({'invoicing_day': 1 }, { unique: false, sparse: false
 db.subscribers.createIndex({'sid': 1 }, { unique: false, sparse: true, background: true });
 db.subscribers.createIndex({'from': 1 , 'to': 1}, { unique: false, sparse: true, background: true });
 db.subscribers.createIndex({'to': 1 }, { unique: false, sparse: true, background: true });
+db.subscribers.createIndex({'aid': "hashed", "sid":1 }, { unique: false, sparse: false, background: true }); // this index for the sharding
 
 // Subscribers Auto Renew
 db.subscribers_auto_renew_services.createIndex({'sid': 1 , 'from' : 1, 'to' : 1}, { unique: false, sparse: true, background: true });
