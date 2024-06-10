@@ -699,18 +699,13 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				$pricingData = $update = array();
 			}
-		} else if($row['type'] == "nrtrde" ) {
+		} else if(  @isset($arate['rates'][$row['usaget']]['category']) &&
+					$arate['rates'][$row['usaget']]['category']  == 'roaming' ) {
 			$usage_type = $row['usaget'];
-// 			foreach($update['$set'] as $key => $val) {
-// 				if($key != 'tx.'. $row['stamp']) {
-// 					unset($update['$set'][$key]);
-// 				}
-// 			}
-			//unset($update['$inc']);
-			$update['$inc']['balance.groups.' . 'nrtrde' . '.' . $usage_type . '.usagev'] = $row['usagev'];
-			$update['$inc']['balance.groups.' . 'nrtrde' . '.' . $usage_type . '.cost'] = $pricingData[$calculator->pricingField];
-			$update['$inc']['balance.groups.' . 'nrtrde' . '.' . $usage_type . '.count'] = 1;
-			$update['$inc']['balance.groups.' . 'nrtrde.cost'] = $pricingData[$calculator->pricingField];
+			$update['$inc']['balance.groups.' . 'roaming' . '.' . $usage_type . '.usagev'] = $row['usagev'];
+			$update['$inc']['balance.groups.' . 'roaming' . '.' . $usage_type . '.cost'] = $pricingData[$calculator->pricingField];
+			$update['$inc']['balance.groups.' . 'roaming' . '.' . $usage_type . '.count'] = 1;
+			$update['$inc']['balance.groups.' . 'roaming.cost'] = $pricingData[$calculator->pricingField];
 		}
 	}
 	
