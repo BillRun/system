@@ -342,7 +342,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 
 		$taxCalc = new self();
 		$taxRate = $taxCalc->getLineTaxRate($taxedLine);
-		if (empty($taxRate) && $taxRate !== 0) {
+		if (!is_numeric($taxRate)) {
 			return false;
 		}
 
