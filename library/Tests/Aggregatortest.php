@@ -166,7 +166,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 			$this->message .= $this->fails;
          }
          print_r($this->message);
-        $this->restoreColletions();
+        // $this->restoreColletions();
      }
 
      /**
@@ -881,7 +881,7 @@ public function passthrough($key, $returnBillrun, $row) {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
 	}
 
-	public function testMultiDay($row) {
+	public function testMultiDay($key, $returnBillrun, $row) {
 		$passed = true;
 		
 		$aids = [];
@@ -947,7 +947,7 @@ public function passthrough($key, $returnBillrun, $row) {
 		$this->billrunCol->remove(['billrun_key' => ['$ne' => 'abc']]);
 	}
 
-	public function testMultiDayNotallowPremature( $row) {
+	public function testMultiDayNotallowPremature($key, $returnBillrun, $row) {
 		$now = date('d');
 		$billruns = $this->getBillruns();
 		$billruns_ = [];

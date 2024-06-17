@@ -4,8 +4,8 @@ class Test_Case_3439_75 {
     public function test_case() {
         return [
     'preRun' => [
-        'allowPremature',
-        'removeBillruns',
+         'notallowPremature',
+         'removeBillruns',
     ],
     'test' => [
         'test_number' => 753439,
@@ -15,7 +15,7 @@ class Test_Case_3439_75 {
         ],
         'options' => [
             'options' => [
-                'stamp' => '202311',
+                'stamp' => '202407',
             ],
             'invoicing_days' => [
                 '1',
