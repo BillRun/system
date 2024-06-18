@@ -14,9 +14,9 @@ class Test_Case_3439_75 {
             'testMultiDayNotallowPremature',
         ],
         'options' => [
-            'options' => [
-                'stamp' => '202407',
-            ],
+           
+                'stamp' => '202406',
+        
             'invoicing_days' => [
                 '1',
                 '2',

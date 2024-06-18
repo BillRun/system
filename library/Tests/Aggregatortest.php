@@ -77,8 +77,16 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
      public function aggregator($row) {
          $options = array_merge($this->defaultOptions, $row['test']['options']);
          $aggregator = Billrun_Aggregator::getInstance($options);
-         $aggregator->load();
-         $aggregator->aggregate();
+         Billrun_Factory::log('puchifff'.  json_encode($aggregator),Zend_Log::INFO);
+        // Check if 'aggregationLogic' exists, if not,dont run the cycle 
+        if (property_exists($aggregator,"aggregationLogic")) {
+            $aggregator->load();
+            $aggregator->aggregate();
+        } else {
+            $this->message .= "The cycle should not be run ";
+            return;
+        }
+        
      }
 
      /**
@@ -166,7 +174,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 			$this->message .= $this->fails;
          }
          print_r($this->message);
-        // $this->restoreColletions();
+         $this->restoreColletions();
      }
 
      /**
@@ -871,14 +879,17 @@ public function passthrough($key, $returnBillrun, $row) {
     public function multi_day_cycle_false()
     {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/multi_day_cycle_false.ini');
+        $this->loadConfig();
 	}
     public function allowPremature($param)
     {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/allow_premature_run.ini');
+        $this->loadConfig();
 }
     public function notallowPremature($param)
     {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
+        $this->loadConfig();
 	}
 
 	public function testMultiDay($key, $returnBillrun, $row) {
