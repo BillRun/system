@@ -2,6 +2,7 @@
 
 class Test_Case_3439_75 {
     public function test_case() {
+    $stamp = Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month'));
         return [
     'preRun' => [
          'notallowPremature',
@@ -11,12 +12,11 @@ class Test_Case_3439_75 {
         'test_number' => 753439,
         'aid' => 'NaN',
         'function' => [
-            'testMultiDayNotallowPremature',
+            'shouldRun_Aggregate',
+            'MultiDayNotallowPremature',
         ],
         'options' => [
-           
-                'stamp' => '202406',
-        
+            'stamp' => $stamp,
             'invoicing_days' => [
                 '1',
                 '2',
@@ -80,44 +80,9 @@ class Test_Case_3439_75 {
         ],
     ],
     'expected' => [
-        'billrun_key' => '202207',
-        'accounts' => [
-            100003439 => '1',
-            100013439 => '2',
-            100023439 => '3',
-            100033439 => '4',
-            100043439 => '5',
-            100053439 => '6',
-            100063439 => '7',
-            100073439 => '8',
-            100083439 => '9',
-            100093439 => '10',
-            100103439 => '11',
-            100113439 => '12',
-            100123439 => '13',
-            100133439 => '14',
-            100143439 => '15',
-            100153439 => '16',
-            100163439 => '17',
-            100173439 => '18',
-            100183439 => '19',
-            100193439 => '20',
-            100203439 => '21',
-            100213439 => '22',
-            100223439 => '23',
-            100233439 => '24',
-            100243439 => '25',
-            100253439 => '26',
-            100263439 => '27',
-            100273439 => '28',
-        ],
+        'shouldRunAggregate'=>false
     ],
-    'line' => [
-        'types' => [
-            'flat',
-            'credit',
-        ],
-    ],
+    
     'postRun' => [
         'multi_day_cycle_false',
     ],
