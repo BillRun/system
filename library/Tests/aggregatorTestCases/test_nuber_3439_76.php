@@ -9,6 +9,7 @@ class Test_Case_3439_76 {
         }
         return $days;
     }
+
     function getAccountNumbersForDays($daysArray) {
         $accountNumbers = [];
     
@@ -22,9 +23,7 @@ class Test_Case_3439_76 {
 
     public  function getAccountNumbersWithDays() {
         $daysArray = self::getDaysUntilToday();
-
         $accountNumbersWithDays = [];
-
         foreach ($daysArray as $day) {
             $accountNumber = '100' . str_pad($day - 1, 2, '0', STR_PAD_LEFT) . '3439';
                     $accountNumbersWithDays[$accountNumber] = $day;
@@ -38,6 +37,10 @@ class Test_Case_3439_76 {
     'preRun' => [
          'notallowPremature',
          'removeBillruns',
+         'overrideConfig' => [
+            'key' => 'billrun.multi_day_cycle',
+            'value' => true,
+        ]
     ],
     'test' => [
         'test_number' => 763439,

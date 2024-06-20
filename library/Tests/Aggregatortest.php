@@ -131,15 +131,36 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 	             $this->message .= '<br>test label :  ' . $row['test']['label'];
 	          }
 			// run fenctions before the test begin 
-             if (isset($row['preRun']) && !empty($row['preRun'])) {
-                 $preRun = $row['preRun'];
-                 if (!is_array($preRun)) {
-                     $preRun = array($row['preRun']);
-                 }
-                 foreach ($preRun as $pre) {
-                     $this->$pre($key, $row);
-                 }
-              }
+            //  if (isset($row['preRun']) && !empty($row['preRun'])) {
+            //      $preRun = $row['preRun'];
+            //      if (!is_array($preRun)) {
+            //          $preRun = array($row['preRun']);
+            //      }
+            //     //  foreach ($preRun as $pre) {
+            //     //      $this->$pre($key, $row);
+            //     //  }
+                
+            //   }
+
+            if (isset($row['preRun'])) {
+                $preRun = $row['preRun'];
+                if (!is_array($preRun)) {
+                    $preRun = array($preRun);
+                }
+                foreach ($preRun as $pre) {
+                    if (is_string($pre)) {
+                        // Invoke the function with no parameters
+                        $this->$pre($key, $row);
+                    } elseif (is_array($pre) && isset($pre['function']) && isset($pre['params'])) {
+                        // Extract function name and parameters
+                        $function = $pre['function'];
+                        $params = $pre['params'];
+                        // Invoke the function with parameters
+                        call_user_func_array(array($this, $function), array_merge(array($key, $row), $params));
+                    }
+                }
+            }
+            
              // run aggregator
              if (array_key_exists('aid', $row['test'])) {
                  $returnBillrun = $this->runT($row);
@@ -909,9 +930,8 @@ public function passthrough($key, $returnBillrun, $row) {
     {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/allow_premature_run.ini');
         $this->loadConfig();
-}
-    public function notallowPremature($param)
-    {
+    }
+    public function notallowPremature($param){
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
         $this->loadConfig();
 	}
@@ -988,6 +1008,10 @@ public function passthrough($key, $returnBillrun, $row) {
 		$billruns = $this->getBillruns();
 		$billruns_ = [];
 		$aid_and_days = $row['expected']['accounts'];
+        
+        if($row['test']['test_number']==763439){
+            $a=1;
+        };
 		foreach ($billruns as $bill) {
 			$billruns_[] = $bill->getRawData();
 		}
