@@ -249,7 +249,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 	}
 
 	protected function isRebalance($rebalanceDate = null) {
-		return !empty($rebalanceDate);
+		return intval(!empty($rebalanceDate));
 	}
 }
 
