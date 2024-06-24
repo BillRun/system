@@ -51,10 +51,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 		} else {
 			$this->data = $data;
 		}
-		$this->invoiceGrouping = $this->getInvoiceGrouping();
 		$this->groupingExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', array()); 
-                $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
-				$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array()); 
+        $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
+		$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array()); 
+		$this->invoiceGrouping = $this->getInvoiceGrouping();
 	}
 
 	/**
@@ -62,11 +62,14 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @return array
 	 */
 	public function getInvoiceGrouping() {
-		$fields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', []);
-		if (!empty($fields)) {
-			return array(['conditions' => [], 'name' => 'default', 'fields' => array_map(function ($field) {
+		if (!empty($this->groupingExtraFields) || !empty($this->groupingSumExtraFields)) {
+			$group_array = array(['conditions' => [], 'name' => 'default', 'fields' => array_map(function ($field) {
                     return ['field_name' => $field, 'op' => 'group'];
-                }, $fields)]);
+                }, $this->groupingExtraFields)]);
+			foreach ($this->groupingSumExtraFields as $sum_field) {
+				$group_array[0]['fields'][] = ['field_name' => $sum_field, 'op' => 'sum'];
+			}
+			return $group_array;		
 		} else {
 			return Billrun_Factory::config()->getConfigValue('billrun.grouping', []);
 		}
