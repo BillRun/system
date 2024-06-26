@@ -67,6 +67,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
 		Billrun_Factory::log("Parsing data...", Zend_Log::DEBUG);
 		$parser = $this->getParser();
+		$parser->resetData();
 		$parser->setHeaderStructure($headerStructure);
 		$parser->setDataStructure($dataStructure);
 		try{
