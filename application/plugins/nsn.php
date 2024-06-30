@@ -230,7 +230,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 				$data['org_dur'] = $data['duration']; // save the original duration.
 			}
 			if(!empty($data['inside_user_plane_name'])  && in_array($data['inside_user_plane_name'],Billrun_Factory::config()->getConfigValue('nsn.processor.duration_in_centiseconds_plane_names',[])) ) {
-				$data['duration'] = $data['duration'] /100;
+				$data['duration_centisec'] = $data['duration'];
+				$data['duration'] = round($data['duration'] / 100);
+
 			}
 			if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
 					(strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
