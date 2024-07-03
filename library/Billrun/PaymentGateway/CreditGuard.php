@@ -861,17 +861,22 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	 * refund historic transaction
 	 * 
 	 * @param array $transaction the transaction from bill collection
+	 * @param fload $amount the amount to refund; if null is passed refund full amount
 	 * 
 	 * @return mixed the refund transaction details on success, false on failure
 	 * @throws Exception
 	 */
-	public function refundTransaction($transaction) {
+	public function refundTransaction($transaction, $amount = null) {
 		$tranId = $transaction['payment_gateway']['transactionId'];
 		if (!isset($transaction['gateway_details']['terminal_number'])) {
 			$transactionCGDetails = $this->queryTransaction($tranId, $transaction);
 			$terminal = $transactionCGDetails['terminalNumber'];
 		} else {
 			$terminal = $transaction['gateway_details']['terminal_number'];
+		}
+		
+		if (!is_null($amount)) {
+			$amount = $transaction['gateway_details']['amount'] ?? $transaction['gateway_details']['transferred_amount'];
 		}
 		$xml = '<ashrait>
 			<request>
@@ -883,16 +888,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				<refundDeal>
 					<terminalNumber>' . $terminal . '</terminalNumber>
 					<tranId>' . $transaction['payment_gateway']['transactionId'] . '</tranId>
-					<cardNo>' . $transaction['gateway_details']['card_token'] . '</cardNo>
-					<total>' . $this->convertAmountToSend($transaction['gateway_details']['transferred_amount']) . '</total>
+					<cardId>' . $transaction['gateway_details']['card_token'] . '</cardId>
+					<total>' . $this->convertAmountToSend($amount) . '</total>
 					<authNumber>' . $transaction['gateway_details']['auth_number'] . '</authNumber>
-					<firstPayment>' . ($transaction['installments']['first_payment'] ? $this->convertAmountToSend($transaction['installments']['first_payment']) : '') . '</firstPayment>
-					<periodicalPayment>' . ($transaction['installments']['periodical_payment'] ? $this->convertAmountToSend($transaction['installments']['periodical_payment']) : '') . '</periodicalPayment>
-					<numberOfPayments>' . ($transaction['installments']['number_of_payments'] ?? '') . '</numberOfPayments>
-					<shiftId1></shiftId1>
-					<shiftId2></shiftId2>
-					<shiftId3></shiftId3>
-					<shiftTxnDate></shiftTxnDate>
 				</refundDeal>
 			</request>
 		</ashrait>';
@@ -905,14 +903,81 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		Billrun_Factory::log('CreditGuard send refund request: ' . print_R($req, 1));
 		$res = Billrun_Util::sendRequest($this->EndpointUrl, http_build_query($req), Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		Billrun_Factory::log('CreditGuard send refund response: ' . print_R($res, 1));
-		if (($params = $this->getResponseDetails($res)) === FALSE) {
-			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
-			throw new Exception('Operation Failed. Try Again...');
+
+		$xml = simplexml_load_string($this->convertXml($res));
+
+		if (!isset($xml->response->refundDeal->status)) {
+			Billrun_Factory::log('refund transaction failed without code', Zend_Log::ALERT);
+			return false;
 		}
-		// add refund to bills
-		$this->paySinglePayment($params);
-		return $params;
+		
+		$status = (string) $xml->response->refundDeal->status;
+		if ($status !== '000') {
+			Billrun_Factory::log('refund transaction failed code: ' . $status, Zend_Log::ALERT);
+			return false;
+		}
+		
+		return $xml;
 	}
+	
+	/**
+	 *  cancel transaction that happened at the same day
+	 * 
+	 * @param array $transaction the transaction from bill collection
+	 * 
+	 * @return mixed the refund transaction details on success, false on failure
+	 * @throws Exception
+	 */
+	public function cancelTransaction($transaction) {
+		$tranId = $transaction['payment_gateway']['transactionId'];
+		if (!isset($transaction['gateway_details']['terminal_number'])) {
+			$transactionCGDetails = $this->queryTransaction($tranId, $transaction);
+			$terminal = $transactionCGDetails['terminalNumber'];
+		} else {
+			$terminal = $transaction['gateway_details']['terminal_number'];
+		}
+		$xml = '<ashrait>
+			<request>
+				<command>cancelDeal</command>
+				<requesteId>' . time() . '</requesteId>
+				<dateTime>' . date('Y-m-d H:i:s') . '</dateTime>
+				<version>2000</version>
+				<language>HEB</language>
+				<cancelDeal>
+					<terminalNumber>' . $terminal . '</terminalNumber>
+					<tranId>' . $transaction['payment_gateway']['transactionId'] . '</tranId>
+					<cardId>' . $transaction['gateway_details']['card_token'] . '</cardId>
+					<total>' . $this->convertAmountToSend($transaction['gateway_details']['amount'] ?? $transaction['gateway_details']['transferred_amount']) . '</total>
+					<authNumber>' . $transaction['gateway_details']['auth_number'] . '</authNumber>
+				</cancelDeal>
+			</request>
+		</ashrait>';
+		$params = $this->getGatewayCredentials();
+		$req = array(
+			'user' => $params['user'],
+			'password' => $params['password'],
+			'int_in' => $xml
+		);
+		Billrun_Factory::log('CreditGuard send cancel request: ' . print_R($req, 1));
+		$res = Billrun_Util::sendRequest($this->EndpointUrl, http_build_query($req), Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		Billrun_Factory::log('CreditGuard send cancel response: ' . print_R($res, 1));
+
+		$xml = simplexml_load_string($this->convertXml($res));
+
+		if (!isset($xml->response->cancelDeal->status)) {
+			Billrun_Factory::log('cancel transaction failed without code', Zend_Log::ALERT);
+			return false;
+		}
+		
+		$status = (string) $xml->response->cancelDeal->status;
+		if ($status !== '000') {
+			Billrun_Factory::log('cancel transaction failed code: ' . $status, Zend_Log::ALERT);
+			return false;
+		}
+		
+		return $xml;
+	}
+
 	
 	protected function buildInquireTransactionQuery($params, $terminal = 'redirect_terminal') {
 		$credentials = $this->getGatewayCredentials();
