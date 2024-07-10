@@ -86,6 +86,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 			$plmn = preg_match('/^incoming_/',$usage_type) ? $row['out_mgw_name'] : $row['in_mgw_name'] ;
 			if(empty($plmn) && preg_match('/^incoming_/',$usage_type) && preg_match('/^[A-Z0-9]{5}$/',$row['in_mgw_name'])) {
 				$plmn = $row['in_mgw_name'];
+				$called_number = $row->get('calling_number');
 			}
 			$matchedRate = $this->getIntlRoamingRateByParams($called_number, $usage_type, $line_time, $plmn);
 		} else if ($record_type == "01" || //MOC call
