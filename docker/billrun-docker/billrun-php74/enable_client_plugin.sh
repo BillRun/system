@@ -31,7 +31,7 @@ if test -d "/plugin/application/views/"; then
 fi
 
 if test -d "/plugin/conf/translations/overrides/"; then
-    rm -rf /billrun/conf/translations/overrides/
+    unlink /billrun/conf/translations/overrides/
     mkdir -p /billrun/conf/translations/
     ln -s /plugin/conf/translations/overrides /billrun/conf/translations/overrides
 fi 
