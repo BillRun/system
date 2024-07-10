@@ -1,17 +1,19 @@
 #!/bin/bash
 
-if test -d "/plugin/application/plugins/"; then
+if test -d "/plugin/application/"; then
+     if test -d "/plugin/application/plugins/"; then
      cd /plugin/application/plugins/
-     for f in *.php
-     do
-          rm -f "/billrun/application/plugins/"$f
-          ln -s /plugin/application/plugins/$f "/billrun/application/plugins/"$f
-     done
-     for f in /plugin/application/plugins/*.json
-     do
-          [ -f "$f" ] || break
-          echo "configuration.include[] = $f" >> /billrun/conf/container.ini
-     done
+         for f in *.php
+         do
+              rm -f "/billrun/application/plugins/"$f
+              ln -s /plugin/application/plugins/$f "/billrun/application/plugins/"$f
+         done
+         for f in /plugin/application/plugins/*.json
+         do
+              [ -f "$f" ] || break
+              echo "configuration.include[] = $f" >> /billrun/conf/container.ini
+         done
+     fi
      for f in /plugin/conf/*.json
      do
           [ -f "$f" ] || break
