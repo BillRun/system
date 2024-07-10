@@ -875,7 +875,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$terminal = $transaction['gateway_details']['terminal_number'];
 		}
 		
-		if (!is_null($amount)) {
+		if (is_null($amount)) {
 			$amount = $transaction['gateway_details']['amount'] ?? $transaction['gateway_details']['transferred_amount'];
 		}
 		$xml = '<ashrait>
@@ -886,11 +886,13 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				<version>2000</version>
 				<language>HEB</language>
 				<refundDeal>
+					<creditType>RegularCredit</creditType>
 					<terminalNumber>' . $terminal . '</terminalNumber>
 					<tranId>' . $transaction['payment_gateway']['transactionId'] . '</tranId>
 					<cardId>' . $transaction['gateway_details']['card_token'] . '</cardId>
 					<total>' . $this->convertAmountToSend($amount) . '</total>
 					<authNumber>' . $transaction['gateway_details']['auth_number'] . '</authNumber>
+					<orgUid>' . ($transaction['gateway_details']['uid'] ??  $transaction['vendor_response']['uid']) . '</orgUid>
 				</refundDeal>
 			</request>
 		</ashrait>';
@@ -914,7 +916,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$status = (string) $xml->response->refundDeal->status;
 		if ($status !== '000') {
 			Billrun_Factory::log('refund transaction failed code: ' . $status, Zend_Log::ALERT);
-			return false;
+			return $xml;
 		}
 		
 		return $xml;
@@ -944,11 +946,13 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				<version>2000</version>
 				<language>HEB</language>
 				<cancelDeal>
+					<creditType>RegularCredit</creditType>
 					<terminalNumber>' . $terminal . '</terminalNumber>
 					<tranId>' . $transaction['payment_gateway']['transactionId'] . '</tranId>
 					<cardId>' . $transaction['gateway_details']['card_token'] . '</cardId>
 					<total>' . $this->convertAmountToSend($transaction['gateway_details']['amount'] ?? $transaction['gateway_details']['transferred_amount']) . '</total>
 					<authNumber>' . $transaction['gateway_details']['auth_number'] . '</authNumber>
+					<orgUid>' . $transaction['gateway_details']['uid'] . '</orgUid>
 				</cancelDeal>
 			</request>
 		</ashrait>';
@@ -972,7 +976,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$status = (string) $xml->response->cancelDeal->status;
 		if ($status !== '000') {
 			Billrun_Factory::log('cancel transaction failed code: ' . $status, Zend_Log::ALERT);
-			return false;
+			return $xml;
 		}
 		
 		return $xml;
