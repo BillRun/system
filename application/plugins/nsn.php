@@ -237,13 +237,14 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
 					(strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
 				//Handle Day light  saving  time  transistions
-				$DSTCrosses = Billrun_Util::getTimeTransitionsBetweenTimes( strtotime($data['charging_start_time']), strtotime($data['charging_end_time'])+3600 );
+				$DSTCrosses = Billrun_Util::getTimeTransitionsBetweenTimes( strtotime($data['charging_start_time']), strtotime($data['charging_end_time']) );
 				$addDST=0;
 				//If there was a transition  during the  call then add remove  one  hour  from the  calculated duration.
-				if(!empty($DSTCrosses) && strtotime($DSTCrosses[0]['time']) >  strtotime($data['charging_start_time']) &&
-				strtotime($DSTCrosses[0]['time']) <=  strtotime($data['charging_end_time'])
+				if(!empty($DSTCrosses[1]) && strtotime($DSTCrosses[1]['time']) >  strtotime($data['charging_start_time']) &&
+				strtotime($DSTCrosses[1]['time']) <=  strtotime($data['charging_end_time'])
 				) {
-					$addDST = ($DSTCrosses[0]['isdst'] ? -1 : 1) * 3600 ;
+					//when  moving  forward (IDT)  strtotime translate it correctly so no nood to  adjust but  when  moving back we need to  adjust
+					$addDST = ($DSTCrosses[1]['isdst'] ? 0 : 1) * 3600 ;
 				}
 				$computed_dur = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']) + $addDST;
 				if ($computed_dur >= 0) {
