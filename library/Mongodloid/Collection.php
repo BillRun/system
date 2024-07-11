@@ -7,6 +7,11 @@
  */
 class Mongodloid_Collection {
 
+	/**
+	 * the mongodb library collection object
+	 * 
+	 * @var MongoDB\Collection
+	 */
 	private $_collection;
 	private $_db;
 
@@ -290,6 +295,22 @@ class Mongodloid_Collection {
 	 */
 	public function count() {
 		return Mongodloid_Result::getResult($this->_collection->count());
+	}
+
+	/**
+	 * Count the number of documents in this collection
+	 * @return mongodloid count result.
+	 */
+	public function countDocuments() {
+		return $this->count();
+	}
+
+	/**
+	 * Count the number of documents in this collection
+	 * @return mongodloid count result.
+	 */
+	public function estimatedDocumentCount() {
+		return Mongodloid_Result::getResult($this->_collection->estimatedDocumentCount());
 	}
 
 	public function clear() {//TODO:: check this - I dont think this works also before changes
