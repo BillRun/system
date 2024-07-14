@@ -229,9 +229,24 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			if (isset($data['duration'])) {
 				$data['org_dur'] = $data['duration']; // save the original duration.
 			}
+			if(!empty($data['inside_user_plane_name'])  && in_array($data['inside_user_plane_name'],Billrun_Factory::config()->getConfigValue('nsn.processor.duration_in_centiseconds_plane_names',[])) ) {
+				$data['duration_centisec'] = $data['duration'];
+				$data['duration'] = round($data['duration'] / 100);
+
+			}
 			if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
 					(strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
-				$computed_dur = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
+				//Handle Day light  saving  time  transistions
+				$DSTCrosses = Billrun_Util::getTimeTransitionsBetweenTimes( strtotime($data['charging_start_time']), strtotime($data['charging_end_time']) );
+				$addDST=0;
+				//If there was a transition  during the  call then add remove  one  hour  from the  calculated duration.
+				if(!empty($DSTCrosses[1]) && strtotime($DSTCrosses[1]['time']) >  strtotime($data['charging_start_time']) &&
+				strtotime($DSTCrosses[1]['time']) <=  strtotime($data['charging_end_time'])
+				) {
+					//when  moving  forward (IDT)  strtotime translate it correctly so no nood to  adjust but  when  moving back we need to  adjust
+					$addDST = ($DSTCrosses[1]['isdst'] ? 0 : 1) * 3600 ;
+				}
+				$computed_dur = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']) + $addDST;
 				if ($computed_dur >= 0) {
 					$data['duration'] = $computed_dur;
 				} else {
