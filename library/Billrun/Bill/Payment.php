@@ -575,6 +575,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 *
 	 */
 	public static function makePayment($chargeOptions) {
+		Billrun_Factory::log("Running make payment function", Zend_Log::DEBUG);
 		$paymentResponses = [
 			'completed' => 1,
 			'responses' => [],
@@ -583,17 +584,21 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
 		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
+		Billrun_Factory::log("Switch links flag value is " . ($switch_links ? "true" : "false"), Zend_Log::DEBUG);
 		$size = !empty($chargeOptions['size']) ? (int) $chargeOptions['size'] : 100;
 		$page = !empty($chargeOptions['page']) ? (int) $chargeOptions['page'] : 0;
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
 		$payMode = isset($chargeOptions['pay_mode']) ? $chargeOptions['pay_mode'] : 'one_payment';
+		Billrun_Factory::log("Page " . $page . ", size " . $size . ", pay mode " . $payMode, Zend_Log::DEBUG);
 		$paymentData = Billrun_Util::getIn($chargeOptions, 'payment_data', []);
 		if (!empty($chargeOptions['bills'])) {
+			Billrun_Factory::log("Pulling aids data from " . count($chargeOptions['bills']) . " bills" , Zend_Log::DEBUG);
 			$customersAids = array_column($chargeOptions['bills'], 'aid');
 		} else {
 			$paginationQuery = self::getPaginationQuery($filtersQuery, $page, $size);
 			$paginationAids = iterator_to_array(Billrun_Factory::db()->billsCollection()->aggregateWithOptions($paginationQuery, array('allowDiskUse' => true)));
 			$customersAids = array();
+			Billrun_Factory::log("Pulling aids data from " . count($paginationAids) . " bills" , Zend_Log::DEBUG);
 			foreach ($paginationAids as $paginationResult) {
 				$customersAids[] = $paginationResult->getRawData()['_id'];
 			}
@@ -601,11 +606,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE, 'payment_data' => $paymentData);
 		$options['pretend_bills'] = !empty($chargeOptions['bills']);
-
+		Billrun_Factory::log("Trying to pull relevant accounts according to the pulled aids" , Zend_Log::DEBUG);
 		$query['aid'] = array(
 			'$in' => $customersAids
 		);
 		$accounts = Billrun_Factory::account()->loadAccountsForQuery($query);
+		Billrun_Factory::log("Pulled " . count($accounts) . " accounts" , Zend_Log::DEBUG);
 		if (!empty($accounts)) {
 			foreach ($accounts as $account) {
 				$accounts_in_array[$account['aid']] = $account;
@@ -620,6 +626,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			$accountIdQuery = self::buildFilterQuery(array('aids' => array($customerAid)));
 			$filtersQuery['$and'] = array($accountIdQuery);
+			Billrun_Factory::log("Preparing bills details to pay" , Zend_Log::DEBUG);
 			if (!empty($chargeOptions['bills'])) {
 				$billsDetails = array_filter($chargeOptions['bills'], function ($bill) use ($customerAid) {
 					return $bill['aid'] == $customerAid;
@@ -627,7 +634,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			} else {
 				$billsDetails = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
 			}
+			Billrun_Factory::log("Processing and trying to pay " . count($billsDetails) . " bills" , Zend_Log::DEBUG);
 			foreach ($billsDetails as $billDetails) {
+				Billrun_Factory::log("Processing bills for account " . $billDetails['aid'], Zend_Log::DEBUG);
 				$paymentParams = array();
 				$subscriber = $accounts_in_array[$billDetails['aid']];
 				$gatewayDetails = Billrun_Util::getIn($paymentData, $billDetails['aid'], $subscriber['payment_gateway']['active']);
@@ -635,34 +644,42 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					Billrun_Factory::log("Non valid payment gateway for aid = " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				}
+				Billrun_Factory::log("Payment gateway is valid for account " . $billDetails['aid'] . ". Checking left to pay and left values", Zend_Log::DEBUG);
 				if (!Billrun_Util::isEqual($billDetails['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($billDetails['left'], 0, Billrun_Bill::precision)) {
 					Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				}
+				Billrun_Factory::log("Left to pay & left values are relevant for account " . $billDetails['aid'], Zend_Log::DEBUG);
 				if (Billrun_Util::isEqual($billDetails['left_to_pay'], 0, Billrun_Bill::precision) && Billrun_Util::isEqual($billDetails['left'], 0, Billrun_Bill::precision)) {
 					Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				} else if (!empty($billDetails['left_to_pay'])) {
+					Billrun_Factory::log("left_to_pay value isn't empty. Setting payment params", Zend_Log::DEBUG);
 					$paymentParams['amount'] = $gatewayDetails['amount'] = $billDetails['left_to_pay'];
 					if ($payMode == 'multiple_payments') {
 						if (!isset($paymentParams['pays'])) {
 							$paymentParams['pays'] = [];
 						}
+						Billrun_Factory::log("Adding related bill according to the 'pays' field value, which includes " . count($paymentParams['pays']) . " bills", Zend_Log::DEBUG);
 						Billrun_Bill::addRelatedBill($paymentParams['pays'], $billDetails['type'], $billDetails['unique_id'], $paymentParams['amount'], $billDetails['invoices'][0]); //assume that could be only one invoice 
 					}
 					$paymentParams['dir'] = 'fc';
 				} else if (!empty($billDetails['left'])) {
+					Billrun_Factory::log("left value isn't empty. Setting payment params", Zend_Log::DEBUG);
 					$paymentParams['amount'] = $billDetails['left'];
 					$gatewayDetails['amount'] = -$billDetails['left'];
 					if ($payMode == 'multiple_payments') {
 						if (!isset($paymentParams['paid_by'])) {
 							$paymentParams['paid_by'] = [];
 						}
+						Billrun_Factory::log("Adding related bill according to the 'paid_by' field value, which includes " . count($paymentParams['paid_by']) . " bills", Zend_Log::DEBUG);
 						Billrun_Bill::addRelatedBill($paymentParams['paid_by'], $billDetails['type'], $billDetails['unique_id'], $paymentParams['amount'], $billDetails['invoices'][0]); //assume that could be only one invoice 
 					}
 					$paymentParams['dir'] = 'tc';
 				}
+				Billrun_Factory::log("Payment direction is " . $paymentParams['dir'], Zend_Log::DEBUG);
 				if ($payMode == 'one_payment' && !empty($billDetails['invoices']) && is_array($billDetails['invoices'])) {
+					Billrun_Factory::log("Pay mode is 'one payment', and invoices array was specified. Processing invoices array with " . count($billDetails['invoices']) . " invoices", Zend_Log::DEBUG);
 					foreach ($billDetails['invoices'] as $invoice) {
 						$id = isset($invoice['invoice_id']) ? $invoice['invoice_id'] : $invoice['txid'];
 						$amount = isset($invoice['left']) ? $invoice['left'] : $invoice['left_to_pay'];
@@ -673,12 +690,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 						if (!isset($paymentParams[$payDir])) {
 							$paymentParams[$payDir] = [];
 						}
+						Billrun_Factory::log("Adding related invoice bill, according to the payment direction", Zend_Log::DEBUG);
 						Billrun_Bill::addRelatedBill($paymentParams[$payDir], $invoice['type'], $id, $amount, $invoice);
 					}
 				}
 				if (Billrun_Util::isEqual($paymentParams['amount'], 0, Billrun_Bill::precision)) {
 					continue;
 				}
+				Billrun_Factory::log("Building payment & gateway params before charging account " . $billDetails['aid'], Zend_Log::DEBUG);
 				$involvedAccounts[] = $paymentParams['aid'] = $billDetails['aid'];
 				$paymentParams['billrun_key'] = $billDetails['billrun_key'];
 				$gatewayDetails['currency'] = !empty($billDetails['currency']) ? $billDetails['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
@@ -712,6 +731,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					}
 					continue;
 				}
+				Billrun_Factory::log("Processing payment response payments", Zend_Log::DEBUG);
 				foreach ($paymentResponse['payment'] as $payment) {
 					$paymentData = $payment->getRawData();
 					$transactionId = $paymentData['payment_gateway']['transactionId'];
@@ -764,12 +784,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					
 					$paymentResponses['completed'] = $completed;
 					if ($switch_links) {
+						Billrun_Factory::log("Switch links flag value is true. Detaching paid bills for payment " . $payment->getId(), Zend_Log::DEBUG);
 						$payment->detachPaidBills(true);
 					}
 				}
 			}
 			if ($switch_links) {
+				Billrun_Factory::log("Switch links flag value is true. Detaching pending payments for account " . $customerAid, Zend_Log::DEBUG);
 				Billrun_Bill_Payment::detachPendingPayments($customerAid);
+				Billrun_Factory::log("Switch links flag value is true. paying unpaid bills by over paying bills for account " . $customerAid, Zend_Log::DEBUG);
 				Billrun_Bill::payUnpaidBillsByOverPayingBills($customerAid, true, $switch_links);
 			}
 			Billrun_Factory::log("Trying to release charge action for account " . $customerAid, Zend_Log::DEBUG);
