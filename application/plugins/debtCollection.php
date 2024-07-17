@@ -93,7 +93,9 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterUpdateConfirmation($bill) {
-		$this->collection->collect(array($bill['aid']), 'exit_collection');
+		if ($this->options['immediateExit']) {
+			$this->collection->collect(array($bill['aid']), 'exit_collection');
+		}
 	}		
 
 	public function getConfigurationDefinitions() {
