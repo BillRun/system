@@ -330,6 +330,9 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$roundedUsage = floor($UsageIncluded / $this->coefficient);
 		if (!empty($UsageIncluded) && $roundedUsage > 0) {
 			$rateUsageIncluded = $roundedUsage;
+			if(!empty($this->partialBaseUsage)) {
+				$rateUsageIncluded += array_sum(array_column($this->partialBaseUsage,'usage'));
+			}
 		} else {
 			$rateUsageIncluded = 0;
 		}
