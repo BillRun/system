@@ -130,7 +130,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		foreach($subRevisionsFields as $fieldName) {
 			if(empty($revision[$fieldName])) { continue; }
 			foreach($revision[$fieldName] as $subRev) {
-					 if($subRev['from']->sec > $revision['to'] || $subRev['to']->sec < $revision['from'] ||
+					 if($subRev['from']->sec >= $revision['to'] || $subRev['to']->sec < $revision['from'] ||
 						$fieldName == 'services' && $this->isServiceTerminatedDueToConfig($subRev, $revision['from'],$revision['to']) ) { // TODO fix hard coding
 						continue;
 					 }
@@ -248,7 +248,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$servicesArr = is_array($mongoServices[$subRev['name']]) ? $mongoServices[$subRev['name']]  :  [$mongoServices[$subRev['name']]];
 			foreach($servicesArr as $service) {
 				$creationTime = min((!empty($subRev['creation_time']) ? $subRev['creation_time'] : new Mongodloid_Date()), $subRev['from']);
-				if( $maxTo >= $service['from']->sec && $maxTo < $service['to']->sec ) {
+				if( $maxTo > $service['from']->sec && $maxTo <= $service['to']->sec ) {
 					if(Billrun_Plans_Util::hasPriceWithinDates($service,$creationTime->sec,$minFrom,$maxTo) &&
 					   Billrun_Plans_Util::balancePeriodWithInDates($service,$creationTime->sec,$minFrom,$maxTo) ) {
 						return FALSE;
