@@ -173,7 +173,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				foreach($fromCuts as $to => $toCuts) {
 					foreach($toCuts as $fieldName => $fieldCuts) {
 						foreach($fieldCuts as  $fieldCut) {
-							//should we break the revision?
+							//should we break the revision? (as the  cut  start after the  revisoin started)
 							if($activeRev['from'] < $fieldCut['from'] ) {
 								$revClosed = unserialize(serialize($activeRev));
 								$revClosed['to'] = min($fieldCut['from'],$activeRev['to']);
@@ -187,6 +187,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 								}
 							}
 							if($activeRev['to'] > $fieldCut['to']) {
+								//current revision is  ending  after the current cut save the cut and advance the  revision to the end of the cut
+								$activeRev['from'] = $fieldCut['to'];
 								$fieldsEnded[] = [
 								'from' => $fieldCut['from'],
 								'to' => $fieldCut['to'],
