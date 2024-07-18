@@ -93,10 +93,12 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterUpdateConfirmation($bill) {
-		if ($this->options['immediateExit']) {
-			$this->collection->collect(array($bill['aid']), 'exit_collection');
+		if ($bill['due'] > (0 + Billrun_Bill::precision) && $this->options['immediateEnter']) {
+			$this->collection->collect([$bill['aid']], 'enter_collection');
+		} else if ($bill['due'] < (0 - Billrun_Bill::precision) && $this->options['immediateExit']) {
+			$this->collection->collect([$bill['aid']], 'exit_collection');
 		}
-	}		
+	}	
 
 	public function getConfigurationDefinitions() {
 		return [[
