@@ -30,6 +30,15 @@ if test -d "/plugin/application/views/"; then
      done
 fi
 
+if test -d "/plugin/library/Billrun/PaymentGateway/"; then
+cd /plugin/library/Billrun/PaymentGateway/
+     for f in *.php
+     do
+          rm -f "/billrun/library/Billrun/PaymentGateway/"$f
+          ln -s /plugin/library/Billrun/PaymentGateway/$f "/billrun/library/Billrun/PaymentGateway/"$f
+     done
+fi
+
 if test -d "/plugin/conf/translations/overrides/"; then
     unlink /billrun/conf/translations/overrides
     mkdir -p /billrun/conf/translations/
