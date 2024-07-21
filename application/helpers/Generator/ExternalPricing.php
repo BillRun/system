@@ -20,7 +20,7 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 
 	static protected $type = 'external_pricing';
 
-	protected $validFuncs = ['intval','floatval','date','sprintf','sumArguments'];
+	protected $validFuncs = ['intval','floatval','date','sprintf','sumArguments', 'isRebalance'];
 	 /**
      * Data structure for mapping CDR fields to CSV file columns.
      *
@@ -246,6 +246,10 @@ class Generator_ExternalPricing  extends Billrun_Generator {
 			'line_count' => count($this->stamps)
 		];
 		return $this->lockFileForGeneration($fileData['file_name'], static::$type.'_export', $fileData);
+	}
+
+	protected function isRebalance($rebalanceDate = null) {
+		return intval(!empty($rebalanceDate));
 	}
 }
 
