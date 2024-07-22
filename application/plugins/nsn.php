@@ -224,18 +224,37 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					}
 				}
 			}
+
 			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) && $data['charging_start_time'] ? $data['charging_start_time'] : $data['call_reference_time']), date("P", strtotime($data['call_reference_time']))));
 			//Use the  actual charing time duration instead of the  duration  that  was set by the switch
 			if (isset($data['duration'])) {
 				$data['org_dur'] = $data['duration']; // save the original duration.
 			}
+			if(!empty($data['inside_user_plane_name'])  && in_array($data['inside_user_plane_name'],Billrun_Factory::config()->getConfigValue('nsn.processor.duration_in_centiseconds_plane_names',[])) ) {
+				$data['duration_centisec'] = $data['duration'];
+				$data['duration'] = intval(round($data['duration'] / 100));
+
+			}
 			if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
 					(strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
+				//Handle Day light  saving  time  transistions
+				$DSTCrosses = Billrun_Util::getTimeTransitionsBetweenTimes( strtotime($data['charging_start_time']), strtotime($data['charging_end_time']) );
 				$computed_dur = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
-				if ($computed_dur >= 0) {
+
+				$useOriginalDur = false;
+				//If there was a transition  during the  call then add remove  one  hour  from the  calculated duration.
+				if(!empty($DSTCrosses[1]) &&
+					strtotime($DSTCrosses[1]['time']) >  strtotime($data['charging_start_time']) &&
+					strtotime($DSTCrosses[1]['time']) <=  strtotime($data['charging_end_time'])
+					) {
+					//when  moving forward (IDT) strtotime translate it correctly so no need to adjust but when moving back in time (IDT->IST) we need to adjust
+					$useOriginalDur = (empty($DSTCrosses[1]['isdst']) && $DSTCrosses[1]['ts'] < time()) || $computed_dur < 0;
+				}
+
+				if ($computed_dur >= 0 && !$useOriginalDur) {
 					$data['duration'] = $computed_dur;
 				} else {
-					Billrun_Factory::log("Processor received line (cf : " . $data['call_reference'] . " , cft : " . $data['call_reference_time'] . " ) with computed duration of $computed_dur using orginal duration field : {$data['duration']} ", Zend_Log::ALERT);
+					Billrun_Factory::log("Processor received line (cf : " . $data['call_reference'] . " , cft : " . $data['call_reference_time'] . " ) with computed duration of $computed_dur using orginal duration field : {$data['duration']} ", Zend_Log::WARN);
 				}
 			}
 			//Remove  the  "10" in front of the national call with an international prefix

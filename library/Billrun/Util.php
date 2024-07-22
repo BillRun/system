@@ -943,6 +943,10 @@ class Billrun_Util {
 	public static function getTimeTransitionsByTimezone(){
  		return timezone_transitions_get(new DateTimeZone(date_default_timezone_get()), strtotime('January 1st'), strtotime('December 31'));
  	}
+
+ 	public static function getTimeTransitionsBetweenTimes($startTime,$endTime){
+ 		return timezone_transitions_get(new DateTimeZone(date_default_timezone_get()), $startTime, $endTime);
+ 	}
  	
  	public static function getTransitionTime($transitions, $index){
  		return $transitions[$index]['time'];
