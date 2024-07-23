@@ -570,7 +570,7 @@ abstract class Billrun_Bill {
 		throw new Exception('Unknown bill type');
 	}
 
-	public function attachPayingBill($bill, $amount, $status = null) {
+	public function attachPayingBill(&$bill, $amount, $status = null) {
 		$billId = $bill->getId();
 		$billType = $bill->getType();
 		if ($amount) {
@@ -590,7 +590,8 @@ abstract class Billrun_Bill {
 			$this->updatePaidBy($paidBy, $billId, $status, $billType);
 			if ($bill->isPendingPayment()) {
 				$this->setPendingLinkedBills($billType, $billId);
-                                $bill->setPendingLinkedBills($this->getType(), $this->getId());                               
+				$bill->setPendingLinkedBills($this->getType(), $this->getId());
+				$bill->setPendingCoveringAmount();
 			}
 		}
 		$this->setPendingCoveringAmount();
@@ -644,8 +645,10 @@ abstract class Billrun_Bill {
 		$relatedBillId = Billrun_Bill::findRelatedBill($paymentRawData['pays'], $billType, $billId);
 		if ($relatedBillId == -1) {
 			Billrun_Bill::addRelatedBill($paymentRawData['pays'], $billType, $billId, $amount, $bill);
-			if ($paymentRawData['pending'] === true) {
-				$paymentRawData['pays'][array_key_last($paymentRawData['pays'])]['pending'] = true;
+			if (isset($paymentRawData['pending'])) {
+				if ($paymentRawData['pending'] === true) {
+					$paymentRawData['pays'][array_key_last($paymentRawData['pays'])]['pending'] = true;
+				}
 			}
 		} else {
 			$paymentRawData['pays'][$relatedBillId]['amount'] += floatval($amount);
