@@ -507,6 +507,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
                 $this->unsetAllPendingLinkedBills();
 		$this->setBalanceEffectiveDate();
 		$this->save();
+		Billrun_Factory::dispatcher()->trigger('afterUpdateConfirmation', array($this->data));
 	}
 
 	/**
