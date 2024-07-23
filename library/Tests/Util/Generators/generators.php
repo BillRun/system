@@ -4,3 +4,5 @@ require_once(APPLICATION_PATH. '/library/Tests/Util/Generators/subscribersGenera
 require_once(APPLICATION_PATH. '/library/Tests/Util/Generators/planGenerator.php');
 require_once(APPLICATION_PATH. '/library/Tests/Util/Generators/serviceGenerator.php');
 require_once(APPLICATION_PATH. '/library/Tests/Util/Generators/discountGenerator.php');
+require_once(APPLICATION_PATH. '/library/Tests/Util/Generators/update_test_data.php');
+
