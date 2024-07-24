@@ -128,7 +128,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$this->data['bills_merged'] = $options['bills_merged'];
 			}
 
+			if (isset($options['force_urt'])) {
+				$this->data['urt'] = $options['force_urt'];
+			} else {
 			$this->data['urt'] = isset($options['urt']) ? new Mongodloid_Date(strtotime($options['urt'])) : new Mongodloid_Date();
+			}
 			foreach ($this->optionalFields as $optionalField) {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];
@@ -244,7 +248,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function getCancellationPayment() {
 		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
                 $this->unsetAllPendingLinkedBills();
-		$rawData = $this->getRawData();
+                $rawData = $this->getRawData();
 		unset($rawData['_id'], $rawData['generated_pg_file_log']);
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['cancel'] = $this->getId();
@@ -264,7 +268,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function getRejectionPayment($response) {
 		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
 		$this->unsetAllPendingLinkedBills();
-		$rawData = $this->getRawData();
+                $rawData = $this->getRawData();
 		unset($rawData['_id']);
 		$rawData['original_txid'] = $this->getId();
 		$rawData['due'] = $rawData['due'] * -1;
@@ -274,9 +278,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (isset($response['additional_params'])) {
 			$rawData['vendor_response'] = $response['additional_params'];
 		}
+        if (isset($response['urt'])) {
+			$rawData['force_urt'] = $response['urt'];
+		}
 		return new $className($rawData);
 	}
-
+        
 	public function getId() {
 		if (isset($this->data['txid'])) {
 			return $this->data['txid'];
@@ -501,6 +508,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
                 $this->unsetAllPendingLinkedBills();
 		$this->setUrt();
 		$this->save();
+		Billrun_Factory::dispatcher()->trigger('afterUpdateConfirmation', array($this->data));
 	}
 
 	/**
@@ -1265,7 +1273,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
                     $this->unsetPendingLinkedBills($pay['type'], $pay['id']);
                 }
             }
-	}
+        }
 
 	public static function getNotWaitingPaymentsQuery() {
 		return array(

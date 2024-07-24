@@ -40,21 +40,23 @@ cd /plugin/library/Billrun/PaymentGateway/
 fi
 
 if test -d "/plugin/conf/translations/overrides/"; then
-    unlink /billrun/conf/translations/overrides/
+    unlink /billrun/conf/translations/overrides
     mkdir -p /billrun/conf/translations/
     ln -s /plugin/conf/translations/overrides /billrun/conf/translations/overrides
 fi 
 
-cd /plugin/tests/
-for f in {acceptance,all,api,functional,unit,bc}/plugin/*
-do
-    if test -e $f; then
-         if ! test -e /billrun/tests/$f; then
-            mkdir -p /billrun/tests/$(dirname "$f")
-            ln -s /plugin/tests/$f /billrun/tests/$f
-         fi
-    fi
-done
+if test -d "/plugin/tests/"; then
+     cd /plugin/tests/
+     for f in {acceptance,all,api,functional,unit,bc}/plugin/*
+     do
+     if test -e $f; then
+          if ! test -e /billrun/tests/$f; then
+               mkdir -p /billrun/tests/$(dirname "$f")
+               ln -s /plugin/tests/$f /billrun/tests/$f
+          fi
+     fi
+     done
+fi
 
 cd /billrun
 
