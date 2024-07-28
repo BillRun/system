@@ -178,6 +178,7 @@ db.autorenew.createIndex({ 'sid': 1, 'aid': 1}, { unique: false, sparse: true, b
 
 //operations
 db.operations.createIndex({action:1,filtration:1,start_time:1,end_time:1},{ background: true });
+db.operations.createIndex({action:1,end_time:1},{ background: true });
 
 // Taxes Collection
 db.createCollection('taxes');
