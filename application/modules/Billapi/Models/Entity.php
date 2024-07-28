@@ -326,6 +326,20 @@ class Models_Entity {
 		});
 	}
 
+	public function getMandatoryFields() {
+		$fields = $this->getCustomFields();
+		return array_filter($fields, function($customField) {
+			return Billrun_Util::getFieldVal($customField['mandatory'], false);
+		});
+	}
+
+	public function getMandatoryCustomFields() {
+		$fields = $this->getCustomFields();
+		return array_filter($fields, function($customField) {
+			return !Billrun_Util::getFieldVal($customField['system'], false) && Billrun_Util::getFieldVal($customField['mandatory'], false);
+		});
+	}
+
 	public function getCustomFieldsPath() {
 		return $this->collectionName . ".fields";
 	}
