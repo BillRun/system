@@ -36,7 +36,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->log = Billrun_Factory::db()->logCollection();
 		$this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
 		$this->informationArray['type'] = 'custom_payment_gateway';
-		$this->informationArray['creation_type'] = new Mongodloid_Date();
+		$this->informationArray['creation_time'] = new Mongodloid_Date();
 		$this->resetInformationArray();
 		$this->now = time();
 	}
@@ -67,6 +67,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
 		Billrun_Factory::log("Parsing data...", Zend_Log::DEBUG);
 		$parser = $this->getParser();
+		$parser->resetData();
 		$parser->setHeaderStructure($headerStructure);
 		$parser->setDataStructure($dataStructure);
 		try{

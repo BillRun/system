@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Link } from 'react-router';
+import { Link, withRouter } from 'react-router';
 import { connect } from 'react-redux';
 import Immutable, { List } from 'immutable';
 import moment from 'moment';
 import { Form, FormGroup, Col, Button, ControlLabel, Row } from 'react-bootstrap';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import classNames from 'classnames';
+import Help from '@/components/Help';
 import OfflinePayment from '../Payments/OfflinePayment';
 import CyclesSelector from '../Cycle/CyclesSelector';
 import { EntityFields } from '../Entity';
@@ -20,6 +21,9 @@ import { buildRequestUrl } from '@/common/Api';
 import { getExpectedInvoiceQuery, getCyclesQuery } from '@/common/ApiQueries';
 import { getConfig } from '@/common/Util';
 import { getList, clearList } from '@/actions/listActions';
+import {
+  updateEntityField,
+} from '@/actions/entityActions';
 
 class Customer extends Component {
 
@@ -281,6 +285,9 @@ class Customer extends Component {
             </Row>
           </FormGroup>
         </ConfirmModal>
+        <br />
+        <br />
+        <Button bsSize="xsmall" className="btn-primary" onClick={this.createImmediateInvoice}>Immediate Invoice</Button>
       </div>
     );
   }
@@ -336,10 +343,18 @@ class Customer extends Component {
     const aid = customer.get('aid', null);
     return (
       <div>
-        <Button bsSize="xsmall" className="btn-primary" onClick={this.onShowCreditCharge}>Manual charge / refund</Button>
+        <Button bsSize="xsmall" className="btn-primary" onClick={this.onShowCreditCharge}>
+          Manual charge / refund <Help contents="To the next monthly invoice" />
+        </Button>
         { showCreditCharge && (<Credit aid={aid} onClose={this.onCloseCreditCharge} />) }
       </div>
     );
+  }
+
+  createImmediateInvoice = () => {
+    const { customer } = this.props;
+    this.props.dispatch(updateEntityField('immediate-invoice', 'customer', customer));
+    this.props.router.push('/immediate-invoice');
   }
 
   onShowCreditCharge = () => {
@@ -393,4 +408,4 @@ const mapStateToProps = (state, props) => ({
   cycles: state.list.get('cycles_list'),
 });
 
-export default connect(mapStateToProps)(Customer);
+export default withRouter(connect(mapStateToProps)(Customer));
