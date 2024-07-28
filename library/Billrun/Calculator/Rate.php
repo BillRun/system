@@ -454,6 +454,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			),
 			'from_no' => array('$lte' => $formattedNumber),
 			'to_no' => array('$gte' => $formattedNumber),
+			'$expr' => ['$eq' => [['$strLenCP' => '$from_no'], strlen($formattedNumber)]],
 			'status_ind' => 'Y',
 		);
 		$row = $vpnColl->query($query)->cursor()->limit(1)->current();
