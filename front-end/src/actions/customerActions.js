@@ -16,11 +16,14 @@ import {
   setCloneEntity,
   updateEntityField,
   deleteEntityField,
+  getEntityByAid,
 } from './entityActions';
 import { startProgressIndicator } from './progressIndicatorActions';
 
 
 export const getCustomer = id => getEntityById('customer', 'accounts', id);
+
+export const getCustomerByAid = (aid) => getEntityByAid('customer', 'accounts', aid);
 
 export const getSubscription = id => (dispatch) => {
   dispatch(startProgressIndicator());

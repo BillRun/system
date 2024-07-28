@@ -230,6 +230,11 @@ export const getEntityById = (name, collection, id) => (dispatch) => {
   return dispatch(fetchEntity(name, query));
 };
 
+export const getEntityByAid = (name, collection, aid) => (dispatch) => {
+  const query = getEntitesQuery(collection, {}, `aid=${aid}`);
+  return dispatch(fetchEntity(name, query));
+};
+
 export const deleteEntity = (collection, item) => dispatch =>
   dispatch(saveEntity(collection, item, 'delete'));
 
