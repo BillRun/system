@@ -167,7 +167,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			return false;
 		}
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
-		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
+		if ($switch_links) {
+			Billrun_Bill_Payment::detachPendingPayments($invoice['aid']);
+		}
+		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid'], true, $switch_links);
 		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill, $invoice));
 		return true;
  	}

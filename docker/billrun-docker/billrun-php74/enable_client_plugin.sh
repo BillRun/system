@@ -1,17 +1,19 @@
 #!/bin/bash
 
-if test -d "/plugin/application/plugins/"; then
+if test -d "/plugin/application/"; then
+     if test -d "/plugin/application/plugins/"; then
      cd /plugin/application/plugins/
-     for f in *.php
-     do
-          rm -f "/billrun/application/plugins/"$f
-          ln -s /plugin/application/plugins/$f "/billrun/application/plugins/"$f
-     done
-     for f in /plugin/application/plugins/*.json
-     do
-          [ -f "$f" ] || break
-          echo "configuration.include[] = $f" >> /billrun/conf/container.ini
-     done
+         for f in *.php
+         do
+              rm -f "/billrun/application/plugins/"$f
+              ln -s /plugin/application/plugins/$f "/billrun/application/plugins/"$f
+         done
+         for f in /plugin/application/plugins/*.json
+         do
+              [ -f "$f" ] || break
+              echo "configuration.include[] = $f" >> /billrun/conf/container.ini
+         done
+     fi
      for f in /plugin/conf/*.json
      do
           [ -f "$f" ] || break
@@ -28,22 +30,33 @@ if test -d "/plugin/application/views/"; then
      done
 fi
 
+if test -d "/plugin/library/Billrun/PaymentGateway/"; then
+cd /plugin/library/Billrun/PaymentGateway/
+     for f in *.php
+     do
+          rm -f "/billrun/library/Billrun/PaymentGateway/"$f
+          ln -s /plugin/library/Billrun/PaymentGateway/$f "/billrun/library/Billrun/PaymentGateway/"$f
+     done
+fi
+
 if test -d "/plugin/conf/translations/overrides/"; then
-    rm -rf /billrun/conf/translations/overrides/
+    unlink /billrun/conf/translations/overrides
     mkdir -p /billrun/conf/translations/
     ln -s /plugin/conf/translations/overrides /billrun/conf/translations/overrides
 fi 
 
-cd /plugin/tests/
-for f in {acceptance,all,api,functional,unit,bc}/plugin/*
-do
-    if test -e $f; then
-         if ! test -e /billrun/tests/$f; then
-            mkdir -p /billrun/tests/$(dirname "$f")
-            ln -s /plugin/tests/$f /billrun/tests/$f
-         fi
-    fi
-done
+if test -d "/plugin/tests/"; then
+     cd /plugin/tests/
+     for f in {acceptance,all,api,functional,unit,bc}/plugin/*
+     do
+     if test -e $f; then
+          if ! test -e /billrun/tests/$f; then
+               mkdir -p /billrun/tests/$(dirname "$f")
+               ln -s /plugin/tests/$f /billrun/tests/$f
+          fi
+     fi
+     done
+fi
 
 cd /billrun
 

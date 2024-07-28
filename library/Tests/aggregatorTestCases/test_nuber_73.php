@@ -11,7 +11,7 @@ class Test_Case_73 {
         'test_number' => 73,
         'aid' => 1,
         'function' => [
-            'testMultiDay',
+            'MultiDay',
         ],
         'options' => [
             'stamp' => '202311',
