@@ -434,7 +434,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @return boolean true if the number if under the vpn range
 	 */
 	protected function isNumberVpnRange($number, $vpn) {
-		$vpnColl = Billrun_Factory::db()->getCollection('vpn_ranges');
+		$vpnColl = Billrun_Factory::db()->getCollection('vpns_ranges');
 		$formattedNumber = Billrun_Util::localNumber($number, '972');
 		if (is_numeric($vpn)) {
 			$vpnList = array((int) $vpn);
