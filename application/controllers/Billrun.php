@@ -142,9 +142,7 @@ class BillrunController extends ApiController {
 	public function confirmCycleAction() {
 		$request = $this->getRequest();
 		$invoices = $request->get('invoices');
-		if (!empty($invoices)) {
-			$invoicesId = explode(',', $invoices);
-		}
+		$invoicesId = !empty($invoices) ? explode(',', $invoices) : [];
 		$billrunKey = $request->get('stamp');
 		$invoicingDay = !empty($request->get('invoicing_day')) ? ltrim($request->get('invoicing_day'), "0") : null;
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
@@ -153,12 +151,9 @@ class BillrunController extends ApiController {
 		if (Billrun_Factory::config()->isMultiDayCycle() && (empty($invoicingDay) || (!empty($invoicingDay) && !is_numeric($invoicingDay)))) {
 			return $this->setError('Need to pass numeric invoicing day when on multi day cycle mode.', $request);
 		}
+		$success = false;
 		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay) && (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices))){
-			if (is_null($invoices)) {
-				$success = self::processConfirmCycle($billrunKey, [], [$invoicingDay]);
-			} else {
-				$success = self::processConfirmCycle($billrunKey, $invoicesId, $invoicingDay);
-			}
+			$success = self::processConfirmCycle($billrunKey, $invoicesId, $invoicingDay);
 		}
 		$output = array (
 			'status' => $success ? 1 : 0,
