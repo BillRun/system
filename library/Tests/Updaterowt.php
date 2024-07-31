@@ -585,6 +585,25 @@ class Tests_Updaterowt extends UnitTestCase {
 					'multiDayCycle' => true, 'runCycle' => ['stamp' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [8]],
 					'stamp' => 'z9', "aid" => 10021, 'sid' => 20021, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date('Y-m-d',strtotime('-1 day')), "foreign" => ["account" => ["invoicing_day" => date('d',strtotime('-1 day'))]],),
 				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0), 'billrun' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()))),
+			//brcd 3471 -  same service in same period , the usage group will duplicate 
+				array('row' => array('stamp' => 'z10', 'aid' => 3471, 'sid' => 34711, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 220,
+					'urt' => '2022-02-05', 'services_data' => [
+						[
+							"name" => "A",
+							"from" => "time*2020-02-23",
+							"to" => "time*2122-02-23",
+							"service_id" =>"1725648430542577",
+							"creation_time" => "time*2022-02-24"
+						],
+						[
+							"name" => "A",
+							"from" => "time*2020-02-23T22:00:00Z",
+							"to" => "time*2122-02-23T22:00:00Z",
+							"service_id" => "1725648430542649",
+							"creation_time" => "time*2022-02-24"
+						]
+					],),
+				'expected' => array('in_group' => 200, 'over_group' => 20, 'aprice' => 20, 'charge' => array('retail' => 23.4,))),
 		];
 	}
 
@@ -613,6 +632,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	}
 
 	public function testUpdateRow() {
+		$this->rows  = $this->skip_tests($this->rows ,'row.stamp');
 		//running test
 		$this->rows = $this->tests();
 		foreach ($this->rows as $key => $row) {
@@ -678,7 +698,8 @@ class Tests_Updaterowt extends UnitTestCase {
 		$aids = [$row['aid']];
 		$billrun_key = $row['billrun'];
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/process_time_offset.ini');
-		$rebalance = new ResetLinesModel($aids, $billrun_key, $conditions);
+		$stamp[$row['stamp']] = $row['stamp'];
+		$rebalance = new ResetLinesModel($aids, $billrun_key, $conditions,$stamp);
 		$rebalance->reset();
 		$this->balances = $this->getBalance($row);
 		if (isset($this->row['conditions'])) {
@@ -897,14 +918,14 @@ class Tests_Updaterowt extends UnitTestCase {
 	protected function fixRow($row, $key) {
 
 		if (!array_key_exists('process_time', $row)) {
-			$row['process_time'] = new MongoDate(time() - 200);
+			$row['process_time'] = new Mongodloid_Date(time() - 200);
 		} else {
-			$row['process_time'] = new MongoDate(strtotime($row['urt']) - 200);
+			$row['process_time'] = new Mongodloid_Date(strtotime($row['urt']) - 200);
 		}
 		if (!array_key_exists('urt', $row)) {
-			$row['urt'] = new MongoDate(time() + $key);
+			$row['urt'] = new Mongodloid_Date(time() + $key);
 		} else {
-			$row['urt'] = new MongoDate(strtotime($row['urt']));
+			$row['urt'] = new Mongodloid_Date(strtotime($row['urt']));
 		}
 		if (!isset($row['aid'])) {
 			$row['aid'] = 1234;
@@ -925,13 +946,13 @@ class Tests_Updaterowt extends UnitTestCase {
 					$row['services_data'][$key]['service_id'] = $this->calcServiceId($row['aid'], $row['sid'], $service);
 				}
 				if (isset($service['from'])) {
-					$row['services_data'][$key]['from'] = new MongoDate(strtotime($service['from']));
+					$row['services_data'][$key]['from'] = new Mongodloid_Date(strtotime($service['from']));
 				}
 				if (isset($service['to'])) {
-					$row['services_data'][$key]['to'] = new MongoDate(strtotime($service['to']));
+					$row['services_data'][$key]['to'] = new Mongodloid_Date(strtotime($service['to']));
 				}
 				if (isset($service['creation_time'])) {
-					$row['services_data'][$key]['creation_time'] = new MongoDate(strtotime($service['creation_time']));
+					$row['services_data'][$key]['creation_time'] = new Mongodloid_Date(strtotime($service['creation_time']));
 				}
 			}
 		}
@@ -943,13 +964,13 @@ class Tests_Updaterowt extends UnitTestCase {
 		foreach ($row['rates'] as $rate_key => $tariff_category) {
 			$rate = $this->ratesCol->setReadPreference('RP_PRIMARY')->query(array('key' => $rate_key))->cursor()->current();
 			$keys[] = array(
-				'rate' => MongoDBRef::create('rates', (new MongoId((string) $rate['_id']))),
+				'rate' => Mongodloid_Ref::create('rates', (new Mongodloid_Id((string) $rate['_id']))),
 				'tariff_category' => $tariff_category,
 			);
 		}
 		$row['rates'] = $keys;
 		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();
-		$row['plan_ref'] = MongoDBRef::create('plans', (new MongoId((string) $plan['_id'])));
+		$row['plan_ref'] = Mongodloid_Ref::create('plans', (new Mongodloid_Id((string) $plan['_id'])));
 		return $row;
 	}
 
@@ -978,7 +999,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	 */
 	public function calcBillrun($invoiceDay, $urt) {
 		$now = date('d');
-		if (time($urt) >= time($invoiceDay)) {
+		if ($urt >= $invoiceDay) {
 			return date('Ym', strtotime('+1 month'));
 		} else {
 			return date('Ym');

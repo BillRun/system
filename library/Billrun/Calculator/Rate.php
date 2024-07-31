@@ -139,7 +139,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array_merge(parent::getPossiblyUpdatedFields(), array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField, 'rates' ));
+		return array_merge(parent::getPossiblyUpdatedFields(), array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField, 'rates', 'cf' ));
 	}
 	
 	protected static function getRateCalculatorClassName($type) {
@@ -200,45 +200,57 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * make the calculation
 	 */
 	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
-		$current = $row->getRawData();
-		$rate = $this->getLineRate($row);
-		// TODO: need to refactoring the real-time handling
-		if (is_null($rate) || $rate === false) {
+		try {
+			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
+			$current = $row->getRawData();
+			$rate = $this->getLineRate($row);
+			// TODO: need to refactoring the real-time handling
+			if (is_null($rate) || $rate === false) {
+				$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.rate');
+				$row['usagev'] = 0;
+				return false;
+			}
+
+			// TODO: need to refactoring the real-time handling
+			if (isset($row['realtime']) && $row['realtime'] && $this->isRateBlockedByPlan($row, $rate)) {
+				$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.rate');
+				$row['usagev'] = 0;
+				return false;
+			}
+
+			if (isset($rate['key']) && $rate['key'] == "UNRATED") {
+				return false;
+			}
+
+			// TODO: Create the ref using the collection, not the entity object.
+			$rate->collection(Billrun_Factory::db()->ratesCollection());
+			$added_values = array(
+				$this->ratingField => $rate ? $rate->createRef() : $rate,
+			);
+
+			if (isset($rate['key'])) {
+				$added_values[$this->ratingKeyField] = $rate['key'];
+			}
+
+			if ($rate) {
+				// TODO: push plan to the function to enable market price by plan
+				$added_values[$this->aprField] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], $row['plan'], array(), 0, $row['urt']->sec);
+			}
+			$row->setRawData( array_merge($current, $added_values , $this->getForeignFields(array('rating_data' => $added_values),$current)) );
+		
+        	if(isset($rate['rounding_rules'])){
+        	    $row['rounding_rules'] = $rate['rounding_rules'];
+        	}
+				
+			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+			return $row;
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log("Failed to update rate row with the following error: " . $e->getMessage(), Zend_Log::ALERT);
+			Billrun_Factory::log()->log($e->getTrace(), Zend_Log::DEBUG);
 			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.rate');
 			$row['usagev'] = 0;
 			return false;
 		}
-
-		// TODO: need to refactoring the real-time handling
-		if (isset($row['realtime']) && $row['realtime'] && $this->isRateBlockedByPlan($row, $rate)) {
-			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.rate');
-			$row['usagev'] = 0;
-			return false;
-		}
-
-		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
-			return false;
-		}
-
-		// TODO: Create the ref using the collection, not the entity object.
-		$rate->collection(Billrun_Factory::db()->ratesCollection());
-		$added_values = array(
-			$this->ratingField => $rate ? $rate->createRef() : $rate,
-		);
-
-		if (isset($rate['key'])) {
-			$added_values[$this->ratingKeyField] = $rate['key'];
-		}
-
-		if ($rate) {
-			// TODO: push plan to the function to enable market price by plan
-			$added_values[$this->aprField] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], $row['plan'], array(), 0, $row['urt']->sec);
-		}
-		$row->setRawData( array_merge($current, $added_values , $this->getForeignFields(array('rating_data' => $added_values),$current)) );
-
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
-		return $row;
 	}
 
 	/**
@@ -293,7 +305,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 
  		$rawData = $matchedRate->getRawData();
- 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
+ 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof Mongodloid_Id)) {
  			return false;	
  		}
  		$idQuery = array(

@@ -1,0 +1,15 @@
+version: '3.7'
+
+services:
+    sftpgo:
+          image: "drakkan/sftpgo:latest"
+          restart: always
+          ports:
+            - "8080:8080"
+            - "443:443"
+            - "5007:5007"
+          volumes:
+            - ./sftp-go/:/etc/sftpgo
+          networks:
+              default:
+                ipv4_address: 10.103.0.5

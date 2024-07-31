@@ -162,14 +162,44 @@ class Billrun_Config {
 		$stamp = Billrun_Util::generateArrayStamp($config);
 		if (empty(self::$instance[$stamp])) {
 			if (empty($config)) {
-			$config = Yaf_Application::app()->getConfig();
-		}
+				$config = new Yaf_Config_Simple(Yaf_Application::app()->getConfig()->toArray());
+				// convert ini to simple to be able to update it with env
+				self::setDbEnvConfig($config);
+			}
 			self::$instance[$stamp] = new self($config);
 			self::$instance[$stamp]->loadDbConfig();
 		}
 		return self::$instance[$stamp];
 	}
 	
+	/**
+	 * method to set db config from environment variables
+	 * the env variables are useful for docker
+	 */
+	static protected function setDbEnvConfig($config) {
+		$mdbConfigEnv = array(
+			'BR_MDB_HOST'   => 'host',
+			'BR_MDB_PORT'   => 'port',
+			'BR_MDB_DBNAME' => 'name',
+			'BR_MDB_USER'   => 'user',
+			'BR_MDB_PASS'   => 'password',
+			'BR_MDB_AUTHDB' => 'authSource',
+		);
+
+		$dbConfig = $config['db'];
+		$changed = false;
+		foreach ($mdbConfigEnv as $envVar => $confVar) {
+			if (empty($config['db'][$confVar]) && !empty($envVal = getenv($envVar))) {
+				$dbConfig->set($confVar, $envVal);
+				$changed = true;
+			}
+		}
+		if ($changed) {
+			$config->set('db', $dbConfig);
+		}
+	}
+
+
 	public function getFileTypeSettings($fileType, $enabledOnly = false) {
 		$fileType = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($fileType, $enabledOnly) {
 			return $fileSettings['file_type'] === $fileType &&
@@ -179,6 +209,17 @@ class Billrun_Config {
 			$fileType = current($fileType);
 		}
 		return $fileType;
+	}
+	
+	public function getPluginSettings($pluginName, $enabledOnly = false) {
+		$plugin = array_filter($this->getConfigValue('plugins'), function($pluginSettings) use ($pluginName, $enabledOnly) {
+			return $pluginSettings['name'] === "{$pluginName}Plugin" &&
+				(!$enabledOnly || Billrun_Config::isEnabled($pluginSettings));
+		});
+		if ($plugin) {
+			$plugin = current($plugin);
+		}
+		return $plugin;
 	}
 	
 	public function getExportGeneratorSettings($exportGenerator, $enabledOnly = true) {
@@ -221,7 +262,7 @@ class Billrun_Config {
 			}
 		} catch (MongoException $e) {
 			// TODO: Exception should be thrown and handled by the error controller.
-			error_log('cannot load database config');
+			error_log('MongoException - cannot load database config. Message: ' . $e->getMessage() . '. Trace: ' . $e->getTraceAsString());
 //			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
 //			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Zend_Log::CRIT);
 			throw $e;
@@ -362,7 +403,7 @@ class Billrun_Config {
 	 * @return true if complex.
 	 */
 	public static function isComplex($obj) {
-		if(empty($obj) || is_scalar($obj) || $obj instanceof MongoDate) {
+		if(empty($obj) || is_scalar($obj) || $obj instanceof MongoDate || $obj instanceof Mongodloid_Date) {
 			return false;
 		}
 		
@@ -481,6 +522,10 @@ class Billrun_Config {
 		return (!isset($exportGeneratorSettings['enabled']) || $exportGeneratorSettings['enabled']);
 	}
 
+	public static function isEnabled($settings) {
+		return (!isset($settings['enabled']) || $settings['enabled']);
+	}
+
 	public static function getParserStructure($fileTypeName) {
 		$fileType = Billrun_Factory::config()->getFileTypeSettings($fileTypeName);
 		if (!empty($fileType)) {
@@ -536,4 +581,5 @@ class Billrun_Config {
 	public function getConfigChargingDay() {
 		return !is_null($this->getConfigValue('billrun.invoicing_day', null)) ? $this->getConfigValue('billrun.invoicing_day', 1) : $this->getConfigValue('billrun.charging_day', 1);
 	}
+
 }

@@ -53,6 +53,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	protected $settings = array();
 
 	public function init() {
+		Billrun_Util::setHttpSessionTimeout();
 		$request = $this->getRequest();
 		$this->collection = $request->getParam('collection');
 		$this->params['options'] = json_decode($request->get('options', '{}'), JSON_OBJECT_AS_ARRAY);
@@ -91,6 +92,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$this->params['collection'] = $this->collection;
 		$entityModel = Models_Entity::getInstance($this->params);
 		$this->output->status = 1;
+		Billrun_Factory::dispatcher()->trigger('beforeBillApiRunAction', array($this->collection, $this->action, $entityModel));
 		$this->output->details = $entityModel->{$this->action}();
 		$entity = $entityModel->getAfter();
 		$line = $entityModel->getAffectedLine();

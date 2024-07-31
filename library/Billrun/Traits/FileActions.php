@@ -96,13 +96,13 @@ trait Billrun_Traits_FileActions {
 		$query = array(
 			'stamp' => $logData['stamp'],
 			'file_name' => $filename,
-			'fetching_time' => array('$lt' => new MongoDate(time() - $orphan_window)),
+			'fetching_time' => array('$lt' => new Mongodloid_Date(time() - $orphan_window)),
 			'received_time' => array('$exists' => false)
 		);
 
 		$update = array(
 			'$set' => array(
-				'fetching_time' => new MongoDate(time()),
+				'fetching_time' => new Mongodloid_Date(time()),
 				'fetching_host' => Billrun_Util::getHostName(),
 			),
 			'$setOnInsert' => $logData

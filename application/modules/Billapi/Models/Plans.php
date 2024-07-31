@@ -14,6 +14,13 @@
  */
 class Models_Plans extends Models_Entity {
 	
+	protected function init($params) {
+		parent::init($params);
+		if ($this->update['connection_type'] == "postpaid") {
+			$this->validateRecurrence();
+		}
+	}
+	
 	/**
 	 * method to add entity custom fields values from request
 	 * 
@@ -24,5 +31,30 @@ class Models_Plans extends Models_Entity {
 		$plays = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', []));
 		return Billrun_Utils_Plays::filterCustomFields($customFields, $plays);
 	}
+	
+	/**
+	* Verify services has all price parameters required.
+	*/
+	protected function validateRecurrence() {
+            $update_parameters = Billrun_Util::getIn($this->config, [$this->action, 'update_parameters'], []);
+            $recurrence_field = array_reduce($update_parameters, function ($acc, $field) {
+                return $field['name'] == 'recurrence' ? $field : $acc;
+            }, null);
+            if (!is_null($recurrence_field)) {
+		$periodicity = Billrun_Util::getIn($this->update, 'recurrence.periodicity', null);
+		if (empty($periodicity)) {
+			$frequency = Billrun_Util::getIn($this->update, 'recurrence.frequency', null);
+			if (empty($frequency) ) {
+				throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Missing Billing Frequency - Type parameter');
+			}
+			$start = Billrun_Util::getIn($this->update, 'recurrence.start', null);
+			if (empty($start)) {
+				throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Missing Billing Frequency - Start parameter');
+			}
+		}
+            }
+            return true;
+	}
+	
 
 }

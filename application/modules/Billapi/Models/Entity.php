@@ -6,6 +6,8 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/modules/Billapi/Models/Verification.php';
+
 /**
  * Billapi model for operations on BillRun entities
  *
@@ -144,6 +146,11 @@ class Models_Entity {
 	 */
 	protected $availableOperations = array('query', 'update', 'sort');
 
+	/**
+	 * Flag to indicate that action triggered by import
+	 * @var Boolean
+	 */
+	protected $is_import = false;
 	public static function getInstance($params) {
 		$modelPrefix = 'Models_';
 		$className = $modelPrefix . ucfirst($params['collection']);
@@ -203,9 +210,10 @@ class Models_Entity {
 		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
 			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
 		}
+		$this->is_import = isset($params['request']['is_import']) ? boolval($params['request']['is_import']) : false;
 
 		//transalte all date fields
-		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
+		Billrun_Utils_Mongo::convertQueryMongodloidDates($this->update);
 	}
 
 	/**
@@ -239,6 +247,7 @@ class Models_Entity {
 		$uniqueFields = array();
 		$defaultFieldsValues = array();
 		$fieldTypes = array();
+		$multipleFields = array();
 		//all the options that value can be, so if selected will not throw an api exception.
 		$selectOptionsFields = array();
 
@@ -249,6 +258,7 @@ class Models_Entity {
 			$defaultFieldsValues[$fieldName] = Billrun_Util::getFieldVal($customField['default_value'], null);
 			$fieldTypes[$fieldName] = Billrun_Util::getFieldVal($customField['type'], 'string');
 			$selectOptionsFields[$fieldName] = Billrun_Util::getFieldVal($customField['select_options'], null);
+			$multipleFields[$fieldName] = Billrun_Util::getFieldVal($customField['multiple'], false);
 		}
 
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
@@ -268,7 +278,8 @@ class Models_Entity {
 			}
 			if (!is_null($selectOptionsFields[$field])) {
 				$selectOptions = is_string($selectOptionsFields[$field]) ? explode(",", $selectOptionsFields[$field]) : $selectOptionsFields[$field];
-				if (!in_array($val, $selectOptions)) {
+				$isMultiple = $multipleFields[$field];
+				if ((!$isMultiple && !in_array($val, $selectOptions)) || ($isMultiple && array_diff($val, $selectOptions))) {
 					if(!$mandatoryFields[$field] && empty($val)){
 						$val = null;
 					}else{
@@ -339,6 +350,20 @@ class Models_Entity {
 		});
 	}
 
+	public function getMandatoryFields() {
+		$fields = $this->getCustomFields();
+		return array_filter($fields, function($customField) {
+			return Billrun_Util::getFieldVal($customField['mandatory'], false);
+		});
+	}
+
+	public function getMandatoryCustomFields() {
+		$fields = $this->getCustomFields();
+		return array_filter($fields, function($customField) {
+			return !Billrun_Util::getFieldVal($customField['system'], false) && Billrun_Util::getFieldVal($customField['mandatory'], false);
+		});
+	}
+
 	public function getCustomFieldsPath() {
 		return $this->collectionName . ".fields";
 	}
@@ -353,16 +378,17 @@ class Models_Entity {
 		$this->action = 'create';
 		unset($this->update['_id']);
 		if (empty($this->update['from'])) {
-			$this->update['from'] = new MongoDate();
+			$this->update['from'] = new Mongodloid_Date();
 		}
 		if (empty($this->update['to'])) {
-			$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
+			$this->update['to'] = new Mongodloid_Date(strtotime(self::UNLIMITED_DATE));
 		}
 		if (empty($this->update['creation_time'])) {
 			$this->update['creation_time'] = $this->update['from'];
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
+            $this->after = $this->update;
 			$this->fixEntityFields($this->before);
 			$this->trackChanges($this->update['_id']);
 			return isset($status['ok']) && $status['ok'];
@@ -400,14 +426,19 @@ class Models_Entity {
 		$permanentQuery = $this->getPermanentChangeQuery();
 		$permanentUpdate = $this->getPermanentChangeUpdate();
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
+		$field = $this->getKeyField();
 		if ($this->update['from']->sec != $this->before['from']->sec && $this->update['from']->sec != $this->before['to']->sec) {
 			$res = $this->collection->update($this->query, array('$set' => array('to' => $this->update['from'])));
 			if (!isset($res['nModified']) || !$res['nModified']) {
 				return false;
 			}
 			if($this->before === null){
-				throw new Exception('No entity before the change was found. stack:' . print_r(debug_backtrace(), 1));
+				throw new Exception('No entity before the change was found. Query: ' . json_encode($this->query));
 			}
+                        $newRevision = $this->before->getRawData();
+                        $newRevision['to'] = $this->update['from'];
+                        $key = $this->before[$field];
+                        Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $this->before->getRawData(), $newRevision);
 			$prevEntity = $this->before->getRawData();
 			unset($prevEntity['_id']);
 			$prevEntity['from'] = $this->update['from'];
@@ -418,17 +449,16 @@ class Models_Entity {
 		$this->collection->update($permanentQuery, $permanentUpdate, array('multiple' => true));
 		$afterChangeRevisions = $this->collection->query($permanentQuery)->cursor();
 		$this->fixEntityFields($this->before);
-		$field = $this->getKeyField();
 		foreach ($afterChangeRevisions as $newRevision) {
 			$currentId = $newRevision['_id']->getMongoId()->{'$id'};
 			$oldRevision = $oldRevisions[$currentId];
 			
 			$key = $oldRevision[$field];
 			if($oldRevision === null){
-				throw new Exception('No old Revision was found. stack:' . print_r(debug_backtrace(), 1));
+				throw new Exception('No old revision was found. Query: ' . json_encode($permanentQuery));
 			}
 			if ($newRevision === null){
-				throw new Exception('No new Revision was found. stack:' . print_r(debug_backtrace(), 1));
+				throw new Exception('No new revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate));
 			}
 			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
 		}
@@ -467,6 +497,9 @@ class Models_Entity {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
 		}
+                if (!$this->update || empty($this->update)) {
+			return;
+		}
 
 		$this->protectKeyField();
 
@@ -500,6 +533,9 @@ class Models_Entity {
 	 * @return true if check success else false
 	 */
 	protected function checkDateRangeFields($time = null) {
+		if (static::isAllowedChangeDuringClosedCycle()) {
+			return true;
+		}
 		if (is_null($time)) {
 			$time = time();
 		}
@@ -520,7 +556,7 @@ class Models_Entity {
 	public function closeandnew() {
 		$this->action = 'closeandnew';
 		if (!isset($this->update['from'])) {
-			$this->update['from'] = new MongoDate();
+			$this->update['from'] = new Mongodloid_Date();
 		}
 		if (!is_null($this->before)) {
 			$prevEntity = $this->before->getRawData();
@@ -564,7 +600,7 @@ class Models_Entity {
 	protected function getCloseAndNewPreUpdateCommand() {
 		return array(
 			'$set' => array(
-				'to' => new MongoDate($this->update['from']->sec)
+				'to' => new Mongodloid_Date($this->update['from']->sec)
 			)
 		);
 	}
@@ -733,7 +769,7 @@ class Models_Entity {
 
 		if (!isset($this->update['to'])) {
 			$this->update = array(
-				'to' => new MongoDate()
+				'to' => new Mongodloid_Date()
 			);
 		}
 
@@ -793,7 +829,7 @@ class Models_Entity {
 		$prevEntity = $this->before->getRawData();
 		$this->update = array_merge($prevEntity, $this->update);
 		unset($this->update['_id']);
-		$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
+		$this->update['to'] = new Mongodloid_Date(strtotime(self::UNLIMITED_DATE));
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
 		$this->fixEntityFields($this->before);
@@ -814,7 +850,7 @@ class Models_Entity {
 		}
 		if (!isset($this->update[$edge])) {
 			$this->update = array(
-				$edge => new MongoDate()
+				$edge => new Mongodloid_Date()
 			);
 		}
 
@@ -871,7 +907,7 @@ class Models_Entity {
 
 		if (!empty($followingEntry) && !$followingEntry->isEmpty() && ($this->before[$edge]->sec === $followingEntry[$otherEdge]->sec)) {
 			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
-			$this->setUpdate(array($otherEdge => new MongoDate($this->update[$edge]->sec)));
+			$this->setUpdate(array($otherEdge => new Mongodloid_Date($this->update[$edge]->sec)));
 			$this->setBefore($followingEntry);
 			return $this->update();
 		}
@@ -881,11 +917,11 @@ class Models_Entity {
 	/**
 	 * Convert keys that was received as dot annotation back to dot annotation
 	 */	
-	protected function dataToDbUpdateFormat(&$data, $originalUpdate) {
+	protected function dataToDbUpdateFormat(&$data) {
 		foreach ($this->originalUpdate as $update_key => $value) {
 			$keys = explode('.', $update_key);
 			if (count($keys) > 1) {
-				$val = Billrun_Util::getIn($originalUpdate, $update_key);
+				$val = Billrun_Util::getIn($data, $update_key);
 				$data[$update_key] = $val;
 				Billrun_Util::unsetInPath($data, $keys, true);
 			}
@@ -896,7 +932,7 @@ class Models_Entity {
 		$update = array();
 		unset($data['_id']);
 		if(!empty($data)) {
-			$this->dataToDbUpdateFormat($data, $this->originalUpdate);
+			$this->dataToDbUpdateFormat($data);
 			$update = array(
 				'$set' => $data,
 			);
@@ -939,7 +975,7 @@ class Models_Entity {
 
 		$records = array_values(iterator_to_array($res));
 		foreach ($records as &$record) {
-			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongodloidDatetimeFields($record);
 		}
 		return $records;
 	}
@@ -1003,6 +1039,14 @@ class Models_Entity {
 	 */
 	public function setUpdate($u) {
 		$this->update = $u;
+	}
+	
+	/**
+	 * method to get the update instruct
+	 * @param array mongo update instruct
+	 */
+	public function getUpdate() {
+		return $this->update;
 	}
 	
 	/**
@@ -1088,7 +1132,7 @@ class Models_Entity {
 		}
 
 		if ($newId) {
-			$this->after = $this->loadById($newId);
+			$this->after = $this->loadById($newId, true);
 		}
 
 		$old = !is_null($this->before) ? $this->before->getRawData() : null;
@@ -1105,9 +1149,13 @@ class Models_Entity {
 	 * 
 	 * @return array the entity loaded
 	 */
-	protected function loadById($id) {
-		$fetchQuery = array('_id' => ($id instanceof MongoId) ? $id : new MongoId($id));
-		return $this->collection->query($fetchQuery)->cursor()->current();
+	protected function loadById($id, $readPrimary = false) {
+		$fetchQuery = array('_id' => ($id instanceof Mongodloid_Id) ? $id : new Mongodloid_Id($id));
+		$cursor = $this->collection->query($fetchQuery)->cursor();
+		if ($readPrimary) {
+			$cursor->setReadPreference('RP_PRIMARY');
+		}
+		return $cursor->current();
 	}
 
 	/**

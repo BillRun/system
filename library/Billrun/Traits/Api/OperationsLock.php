@@ -40,7 +40,7 @@ trait Billrun_Traits_Api_OperationsLock {
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
 		$data = static::getInsertData();
 		$newInsert = array(
-			'start_time' => new MongoDate(),
+			'start_time' => new Mongodloid_Date(),
 		);
 		$conflict = static::getConflictingQuery();
 		$updateQuery = array_merge($data, $newInsert);
@@ -48,7 +48,7 @@ trait Billrun_Traits_Api_OperationsLock {
 			$lockCondition = array(
 				'$and' => array(
 					array('end_time' => array('$exists' => false)),
-					array('start_time' => array('$gt' => new MongoDate(strtotime(static::$orphanTime)))),
+					array('start_time' => array('$gt' => new Mongodloid_Date(strtotime(static::$orphanTime)))),
 					$conflict
 				)
 			);
@@ -56,7 +56,7 @@ trait Billrun_Traits_Api_OperationsLock {
 			$lockCondition = array(
 				'$and' => array(
 					array('end_time' => array('$exists' => false)),
-					array('start_time' => array('$gt' => new MongoDate(strtotime(static::$orphanTime)))),
+					array('start_time' => array('$gt' => new Mongodloid_Date(strtotime(static::$orphanTime)))),
 				)
 			);
 		}
@@ -80,7 +80,7 @@ trait Billrun_Traits_Api_OperationsLock {
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
 		$query = static::getReleaseQuery();
 		Billrun_Factory::log("Releasing operation " . $query['action'], Zend_Log::DEBUG);
-		$releaseOperation = $operationsColl->findAndModify($query, array('$set' => array('end_time' => new MongoDate())));
+		$releaseOperation = $operationsColl->findAndModify($query, array('$set' => array('end_time' => new Mongodloid_Date())));
 		Billrun_Factory::log("Operation " . $query['action'] . ' was released', Zend_Log::DEBUG);
 		if (!$releaseOperation->isEmpty()){
 			return true;

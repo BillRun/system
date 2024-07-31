@@ -15,6 +15,7 @@
 abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
 	use Billrun_Traits_ForeignFields;
+
 	/**
 	 *
 	 * @var string
@@ -38,12 +39,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @var array
 	 */
 	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by', 'vendor_response');
-
 	protected $known_sources;
-	
 	protected static $aids;
         
         const txIdLength = 13;
+
 	/**
 	 * 
 	 * @param type $options
@@ -66,7 +66,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$this->data['aid'] = intval($options['aid']);
 			$this->data['type'] = $this->type;
 			$this->data['amount'] = round(floatval($options['amount']), 2);
-                        if(isset($options['is_denial'])){
+			if (isset($options['is_denial'])) {
                             $this->data['is_denial'] = $options['is_denial'];
                         }
 			if (isset($options['due'])) {
@@ -74,7 +74,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			} else {
 				$this->data['due'] = $this->getDir() == 'fc' ? -$this->data['amount'] : $this->data['amount'];
 			}
-			if (isset($options['gateway_details'])){
+			if (isset($options['gateway_details'])) {
 				$this->data['gateway_details'] = $options['gateway_details'];
 			}
 			if (isset($options['transaction_status'])) {
@@ -83,7 +83,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['due_date'])) {
 				$this->data['due_date'] = $options['due_date'];
 			} else {
-				$this->data['due_date'] = new MongoDate();
+				$this->data['due_date'] = new Mongodloid_Date();
 			}
 			if (isset($options['charge'])) {
 				$this->data['charge'] = $options['charge'];
@@ -128,7 +128,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$this->data['bills_merged'] = $options['bills_merged'];
 			}
 
-			$this->data['urt'] = new MongoDate();
+			if (isset($options['force_urt'])) {
+				$this->data['urt'] = $options['force_urt'];
+			} else {
+			$this->data['urt'] = isset($options['urt']) ? new Mongodloid_Date(strtotime($options['urt'])) : new Mongodloid_Date();
+			}
 			foreach ($this->optionalFields as $optionalField) {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];
@@ -138,10 +142,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$data = array_merge($this->getRawData(), ['uf' => $options['uf']]);
 				$this->data->setRawData($data);
                                }
-			$this->known_sources = Billrun_Factory::config()->getConfigValue('payments.offline.sources') !== null? array_merge(Billrun_Factory::config()->getConfigValue('payments.offline.sources'),array('POS','web')) : array('POS','web');
+			$this->known_sources = Billrun_Factory::config()->getConfigValue('payments.offline.sources') !== null ? array_merge(Billrun_Factory::config()->getConfigValue('payments.offline.sources'), array('POS', 'web')) : array('POS', 'web');
 			$this->forced_uf = !empty($options['forced_uf']) ? $options['forced_uf'] : [];
-			if(isset($options['source'])){
-				if(!in_array($options['source'], $this->known_sources)){
+			if (isset($options['source'])) {
+				if (!in_array($options['source'], $this->known_sources)) {
 					throw new Exception("Undefined payment source: " . $options['source'] . ", for account id: " . $this->data['aid'] . ", amount: " . $this->data['amount'] . ". This payment wasn't saved.");
 				}
 				$this->data['source'] = $options['source'];
@@ -176,6 +180,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!isset($this->data['txid'])) {
 			$this->setTxid();
 		}
+		Billrun_Factory::dispatcher()->trigger('beforeSavingPayment', array(&$this->data));
 		return parent::save();
 	}
 
@@ -183,7 +188,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if ($txid) {
 			$this->data['txid'] = $txid;
 		} else {
-			$this->data['_id'] = new MongoId();
+			$this->data['_id'] = new Mongodloid_Id();
 			$this->data['txid'] = isset($this->data['gateway_details']['txid']) ? $this->data['gateway_details']['txid'] : self::createTxid();
 		}
 	}
@@ -242,10 +247,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public function getCancellationPayment() {
 		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
-		$rawData = $this->getRawData();
+                $this->unsetAllPendingLinkedBills();
+                $rawData = $this->getRawData();
 		unset($rawData['_id'], $rawData['generated_pg_file_log']);
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['cancel'] = $this->getId();
+		$rawData['urt'] = date('c');
 		return new $className($rawData);
 	}
 
@@ -260,18 +267,23 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public function getRejectionPayment($response) {
 		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
-		$rawData = $this->getRawData();
+		$this->unsetAllPendingLinkedBills();
+                $rawData = $this->getRawData();
 		unset($rawData['_id']);
 		$rawData['original_txid'] = $this->getId();
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['rejection'] = TRUE;
 		$rawData['rejection_code'] = $response['status'];
+		$rawData['urt'] = date('c');
 		if (isset($response['additional_params'])) {
 			$rawData['vendor_response'] = $response['additional_params'];
 		}
+        if (isset($response['urt'])) {
+			$rawData['force_urt'] = $response['urt'];
+		}
 		return new $className($rawData);
 	}
-
+        
 	public function getId() {
 		if (isset($this->data['txid'])) {
 			return $this->data['txid'];
@@ -359,8 +371,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		if ($to && $from) {
 			$query['urt'] = array(
-				'$gte' => new MongoDate(strtotime($from . ' 00:00:00')),
-				'$lte' => new MongoDate(strtotime($to . ' 23:59:59')),
+				'$gte' => new Mongodloid_Date(strtotime($from . ' 00:00:00')),
+				'$lte' => new Mongodloid_Date(strtotime($to . ' 23:59:59')),
 			);
 		}
 		if (!is_null($amount)) {
@@ -396,8 +408,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function markRejected() {
 		$this->data['rejected'] = true;
 		$this->data['waiting_for_confirmation'] = false;
-		$this->detachPaidBills();
+		$this->detachPaidBills(false, false);
 		$this->detachPayingBills();
+                $this->unsetAllPendingLinkedBills();
 		$this->save();
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
 	}
@@ -443,6 +456,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function markCancelled() {
 		$this->data['cancelled'] = true;
+                $this->unsetAllPendingLinkedBills();
                 $this->setPending(false);
                 $this->setConfirmationStatus(false);
 		return $this;
@@ -490,9 +504,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public function updateConfirmation() {
 		$this->data['waiting_for_confirmation'] = false;
-		$this->data['confirmation_time'] = new MongoDate();
-		$this->setBalanceEffectiveDate();
+		$this->data['confirmation_time'] = new Mongodloid_Date();
+                $this->unsetAllPendingLinkedBills();
+		$this->setUrt();
 		$this->save();
+		Billrun_Factory::dispatcher()->trigger('afterUpdateConfirmation', array($this->data));
 	}
 
 	/**
@@ -501,7 +517,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @return boolean - true if the payment is still not got through.
 	 */
 	public function isWaiting() {
-		if (isset($this->data['waiting_for_confirmation'])){
+		if (isset($this->data['waiting_for_confirmation'])) {
 			$status = $this->data['waiting_for_confirmation'];
 		}
 		return !empty($status);
@@ -521,7 +537,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public function setPaymentStatus($response, $gatewayName) {
 		$vendorResponse = array('name' => $gatewayName, 'status' => $response['status']);
-		$this->data['last_checked_pending'] = new MongoDate();
+		$this->data['last_checked_pending'] = new Mongodloid_Date();
 		$extraParams = isset($response['additional_params']) ? $response['additional_params'] : array();
 		$vendorResponse = array_merge($vendorResponse, $extraParams);
 		$this->data['vendor_response'] = $vendorResponse;
@@ -533,7 +549,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * 
 	 */
 	public function updateLastPendingCheck() {
-		$this->data['last_checked_pending'] = new MongoDate();
+		$this->data['last_checked_pending'] = new Mongodloid_Date();
 		$this->save();
 	}
 	
@@ -543,7 +559,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public static function loadPending() {
 		$lastTimeChecked = Billrun_Factory::config()->getConfigValue('PaymentGateways.orphan_check_time');
-		$paymentsOrphan = new MongoDate(strtotime('-' . $lastTimeChecked, time()));
+		$paymentsOrphan = new Mongodloid_Date(strtotime('-' . $lastTimeChecked, time()));
 		$query = array(
 			'waiting_for_confirmation' => true,
 			'last_checked_pending' => array('$lte' => $paymentsOrphan)
@@ -567,6 +583,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 *
 	 */
 	public static function makePayment($chargeOptions) {
+		Billrun_Factory::log("Running make payment function", Zend_Log::DEBUG);
 		$paymentResponses = [
 			'completed' => 1,
 			'responses' => [],
@@ -574,17 +591,22 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty($chargeOptions['aids'])) {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
+		Billrun_Factory::log("Switch links flag value is " . ($switch_links ? "true" : "false"), Zend_Log::DEBUG);
 		$size = !empty($chargeOptions['size']) ? (int) $chargeOptions['size'] : 100;
 		$page = !empty($chargeOptions['page']) ? (int) $chargeOptions['page'] : 0;
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
 		$payMode = isset($chargeOptions['pay_mode']) ? $chargeOptions['pay_mode'] : 'one_payment';
+		Billrun_Factory::log("Page " . $page . ", size " . $size . ", pay mode " . $payMode, Zend_Log::DEBUG);
 		$paymentData = Billrun_Util::getIn($chargeOptions, 'payment_data', []);
 		if (!empty($chargeOptions['bills'])) {
+			Billrun_Factory::log("Pulling aids data from " . count($chargeOptions['bills']) . " bills" , Zend_Log::DEBUG);
 			$customersAids = array_column($chargeOptions['bills'], 'aid');
 		} else {
 			$paginationQuery = self::getPaginationQuery($filtersQuery, $page, $size);
-			$paginationAids = iterator_to_array(Billrun_Factory::db()->billsCollection()->aggregate($paginationQuery));
+			$paginationAids = iterator_to_array(Billrun_Factory::db()->billsCollection()->aggregateWithOptions($paginationQuery, array('allowDiskUse' => true)));
 			$customersAids = array();
+			Billrun_Factory::log("Pulling aids data from " . count($paginationAids) . " bills" , Zend_Log::DEBUG);
 			foreach ($paginationAids as $paginationResult) {
 				$customersAids[] = $paginationResult->getRawData()['_id'];
 			}
@@ -592,27 +614,37 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE, 'payment_data' => $paymentData);
 		$options['pretend_bills'] = !empty($chargeOptions['bills']);
-
+		Billrun_Factory::log("Trying to pull relevant accounts according to the pulled aids" , Zend_Log::DEBUG);
 		$query['aid'] = array(
 			'$in' => $customersAids
 		);
 		$accounts = Billrun_Factory::account()->loadAccountsForQuery($query);
-		if(!empty($accounts)){
+		Billrun_Factory::log("Pulled " . count($accounts) . " accounts" , Zend_Log::DEBUG);
+		if (!empty($accounts)) {
 			foreach ($accounts as $account) {
 				$accounts_in_array[$account['aid']] = $account;
 			}
 		}
+		$payment_manager = Billrun_PaymentManager::getInstance();
 		foreach ($customersAids as $customerAid) {
+			Billrun_Factory::log("Trying to lock charge action for account " . $customerAid, Zend_Log::DEBUG);
+			if (!$payment_manager->lockPaymentAction(['action' => 'charge_account', 'aid' => $customerAid])) {
+				Billrun_Factory::log("Failed locking charge_account action for account " . $customerAid . ". Continue to the next account", Zend_Log::ALERT);
+				continue;
+			}
 			$accountIdQuery = self::buildFilterQuery(array('aids' => array($customerAid)));
 			$filtersQuery['$and'] = array($accountIdQuery);
+			Billrun_Factory::log("Preparing bills details to pay" , Zend_Log::DEBUG);
 			if (!empty($chargeOptions['bills'])) {
-				$billsDetails = array_filter($chargeOptions['bills'], function($bill) use ($customerAid) {
+				$billsDetails = array_filter($chargeOptions['bills'], function ($bill) use ($customerAid) {
 					return $bill['aid'] == $customerAid;
 				});
 			} else {
 				$billsDetails = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
 			}
+			Billrun_Factory::log("Processing and trying to pay " . count($billsDetails) . " bills" , Zend_Log::DEBUG);
 			foreach ($billsDetails as $billDetails) {
+				Billrun_Factory::log("Processing bills for account " . $billDetails['aid'], Zend_Log::DEBUG);
 				$paymentParams = array();
 				$subscriber = $accounts_in_array[$billDetails['aid']];
 				$gatewayDetails = Billrun_Util::getIn($paymentData, $billDetails['aid'], $subscriber['payment_gateway']['active']);
@@ -620,34 +652,42 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					Billrun_Factory::log("Non valid payment gateway for aid = " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				}
+				Billrun_Factory::log("Payment gateway is valid for account " . $billDetails['aid'] . ". Checking left to pay and left values", Zend_Log::DEBUG);
 				if (!Billrun_Util::isEqual($billDetails['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($billDetails['left'], 0, Billrun_Bill::precision)) {
 					Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				}
+				Billrun_Factory::log("Left to pay & left values are relevant for account " . $billDetails['aid'], Zend_Log::DEBUG);
 				if (Billrun_Util::isEqual($billDetails['left_to_pay'], 0, Billrun_Bill::precision) && Billrun_Util::isEqual($billDetails['left'], 0, Billrun_Bill::precision)) {
 					Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				} else if (!empty($billDetails['left_to_pay'])) {
+					Billrun_Factory::log("left_to_pay value isn't empty. Setting payment params", Zend_Log::DEBUG);
 					$paymentParams['amount'] = $gatewayDetails['amount'] = $billDetails['left_to_pay'];
 					if ($payMode == 'multiple_payments') {
 						if (!isset($paymentParams['pays'])) {
 							$paymentParams['pays'] = [];
 						}
-						Billrun_Bill::addRelatedBill($paymentParams['pays'], $billDetails['type'], $billDetails['unique_id'], $paymentParams['amount']);
+						Billrun_Factory::log("Adding related bill according to the 'pays' field value, which includes " . count($paymentParams['pays']) . " bills", Zend_Log::DEBUG);
+						Billrun_Bill::addRelatedBill($paymentParams['pays'], $billDetails['type'], $billDetails['unique_id'], $paymentParams['amount'], $billDetails['invoices'][0]); //assume that could be only one invoice 
 					}
 					$paymentParams['dir'] = 'fc';
 				} else if (!empty($billDetails['left'])) {
+					Billrun_Factory::log("left value isn't empty. Setting payment params", Zend_Log::DEBUG);
 					$paymentParams['amount'] = $billDetails['left'];
 					$gatewayDetails['amount'] = -$billDetails['left'];
 					if ($payMode == 'multiple_payments') {
 						if (!isset($paymentParams['paid_by'])) {
 							$paymentParams['paid_by'] = [];
 						}
-						Billrun_Bill::addRelatedBill($paymentParams['paid_by'], $billDetails['type'], $billDetails['unique_id'], $paymentParams['amount']);
+						Billrun_Factory::log("Adding related bill according to the 'paid_by' field value, which includes " . count($paymentParams['paid_by']) . " bills", Zend_Log::DEBUG);
+						Billrun_Bill::addRelatedBill($paymentParams['paid_by'], $billDetails['type'], $billDetails['unique_id'], $paymentParams['amount'], $billDetails['invoices'][0]); //assume that could be only one invoice 
 					}
 					$paymentParams['dir'] = 'tc';
 				}
+				Billrun_Factory::log("Payment direction is " . $paymentParams['dir'], Zend_Log::DEBUG);
 				if ($payMode == 'one_payment' && !empty($billDetails['invoices']) && is_array($billDetails['invoices'])) {
+					Billrun_Factory::log("Pay mode is 'one payment', and invoices array was specified. Processing invoices array with " . count($billDetails['invoices']) . " invoices", Zend_Log::DEBUG);
 					foreach ($billDetails['invoices'] as $invoice) {
 						$id = isset($invoice['invoice_id']) ? $invoice['invoice_id'] : $invoice['txid'];
 						$amount = isset($invoice['left']) ? $invoice['left'] : $invoice['left_to_pay'];
@@ -658,18 +698,22 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 						if (!isset($paymentParams[$payDir])) {
 							$paymentParams[$payDir] = [];
 						}
-						Billrun_Bill::addRelatedBill($paymentParams[$payDir], $invoice['type'], $id, $amount);
+						Billrun_Factory::log("Adding related invoice bill, according to the payment direction", Zend_Log::DEBUG);
+						Billrun_Bill::addRelatedBill($paymentParams[$payDir], $invoice['type'], $id, $amount, $invoice);
 					}
 				}
 				if (Billrun_Util::isEqual($paymentParams['amount'], 0, Billrun_Bill::precision)) {
 					continue;
 				}
+				Billrun_Factory::log("Building payment & gateway params before charging account " . $billDetails['aid'], Zend_Log::DEBUG);
 				$involvedAccounts[] = $paymentParams['aid'] = $billDetails['aid'];
 				$paymentParams['billrun_key'] = $billDetails['billrun_key'];
 				$gatewayDetails['currency'] = !empty($billDetails['currency']) ? $billDetails['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 				$gatewayName = $gatewayDetails['name'];
+				$gatewayInstanceName = $gatewayDetails['instance_name'];
 				$paymentParams['gateway_details'] = $gatewayDetails;
 				if ((self::isChargeMode($chargeOptions) && $gatewayDetails['amount'] < 0) || (self::isRefundMode($chargeOptions) && $gatewayDetails['amount'] > 0)) {
+					Billrun_Factory::log('Skipping account ' . $paymentParams['aid'] . ' with amount ' . $gatewayDetails['amount'] . ' due to requested charge mode', Zend_Log::DEBUG);
 					continue;
 				}
 				if ($gatewayDetails['amount'] > 0) {
@@ -679,7 +723,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				}
 				Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 				try {
-					$paymentResponse = Billrun_PaymentManager::getInstance()->pay($billDetails['payment_method'], array($paymentParams), $options);
+					$options['account'] = $subscriber;
+					$paymentResponse = $payment_manager->pay($billDetails['payment_method'], array($paymentParams), $options);
 					if (empty($paymentResponse['response'])) {
 						$paymentResponses['completed'] = 0;
 					} else {
@@ -688,8 +733,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				} catch (Exception $e) {
 					$paymentResponses['completed'] = 0;
 					Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
+					Billrun_Factory::log("Trying to release charge action for account " . $customerAid, Zend_Log::DEBUG);
+					if (!$payment_manager->releasePaymentAction(['action' => 'charge_account', 'aid' => $customerAid])) {
+						Billrun_Factory::log("Failed releasing charge_account action for account " . $customerAid, Zend_Log::ALERT);	
+					}
 					continue;
 				}
+				Billrun_Factory::log("Processing payment response payments", Zend_Log::DEBUG);
 				foreach ($paymentResponse['payment'] as $payment) {
 					$paymentData = $payment->getRawData();
 					$transactionId = $paymentData['payment_gateway']['transactionId'];
@@ -707,7 +757,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					}
 					
 					if ($paymentResponse['response'][$transactionId]['stage'] == 'Rejected') {
-						$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+						$gateway = Billrun_PaymentGateway::getInstance($gatewayInstanceName);
 						$newPaymentParams['amount'] = $paymentData['amount'];
 						$newPaymentParams['aid'] = $paymentData['aid'];
 						$newPaymentParams['gateway_details'] = $paymentData['gateway_details'];
@@ -733,11 +783,29 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 							}
 						} catch (Exception $ex) {
 							Billrun_Factory::log($ex->getMessage(), Zend_Log::ALERT);
+							Billrun_Factory::log("Trying to release charge action for account " . $customerAid, Zend_Log::DEBUG);
+							if (!$payment_manager->releasePaymentAction(['action' => 'charge_account', 'aid' => $customerAid])) {
+								Billrun_Factory::log("Failed releasing charge_account action for account " . $customerAid, Zend_Log::ALERT);	
+							}
 						}
 					}
 					
 					$paymentResponses['completed'] = $completed;
+					if ($switch_links) {
+						Billrun_Factory::log("Switch links flag value is true. Detaching paid bills for payment " . $payment->getId(), Zend_Log::DEBUG);
+						$payment->detachPaidBills(true);
+					}
 				}
+			}
+			if ($switch_links) {
+				Billrun_Factory::log("Switch links flag value is true. Detaching pending payments for account " . $customerAid, Zend_Log::DEBUG);
+				Billrun_Bill_Payment::detachPendingPayments($customerAid);
+				Billrun_Factory::log("Switch links flag value is true. paying unpaid bills by over paying bills for account " . $customerAid, Zend_Log::DEBUG);
+				Billrun_Bill::payUnpaidBillsByOverPayingBills($customerAid, true, $switch_links);
+			}
+			Billrun_Factory::log("Trying to release charge action for account " . $customerAid, Zend_Log::DEBUG);
+			if (!$payment_manager->releasePaymentAction(['action' => 'charge_account', 'aid' => $customerAid])) {
+				Billrun_Factory::log("Failed releasing charge_account action for account " . $customerAid, Zend_Log::ALERT);	
 			}
 		}
 		
@@ -772,14 +840,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 	}
 	
-	public static function checkPendingStatus($pendingOptions){
+	public static function checkPendingStatus($pendingOptions) {
 		if (!empty($pendingOptions['aids'])) {
 			self::$aids = Billrun_Util::verify_array($pendingOptions['aids'], 'int');
 		}
 		$pendingPayments = self::loadPending();
 		foreach ($pendingPayments as $payment) {
 			$gatewayName = $payment->getPaymentGatewayName();
-			$paymentGateway = Billrun_PaymentGateway::getInstance($gatewayName);
+			$gatewayInstanceName = $payment->getPaymentGatewayInstanceName();
+			$paymentGateway = Billrun_PaymentGateway::getInstance($gatewayInstanceName);
 			if (is_null($paymentGateway) || !$paymentGateway->hasPendingStatus()) {
 				continue;
 			}
@@ -797,7 +866,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 	}
 	
-	public function updateDetailsForPaymentGateway($gatewayName, $txId){
+	public function updateDetailsForPaymentGateway($gatewayName, $txId) {
 		if (is_null($txId)) {
 			$this->data['payment_gateway'] = array('name' => $gatewayName);
 		} else {
@@ -806,23 +875,27 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->save();
 	}
 	
-	public function getPaymentGatewayDetails(){
+	public function getPaymentGatewayDetails() {
 		return $this->data['gateway_details'];
 	}
 	
-	public function getAid(){
+	public function getAid() {
 		return $this->data['aid'];
 	}
 	
-	protected function getPaymentGatewayTransactionId(){
+	protected function getPaymentGatewayTransactionId() {
 		return $this->data['payment_gateway']['transactionId'];
 	}
 			
-	protected function getPaymentGatewayName(){
+	protected function getPaymentGatewayName() {
 		return $this->data['payment_gateway']['name'];
 	}
+        
+	protected function getPaymentGatewayInstanceName() {
+		return $this->data['payment_gateway']['instance_name'];
+	}
 	
-	public function setGatewayChargeFailure($message){
+	public function setGatewayChargeFailure($message) {
 		return $this->data['failure_message'] = $message;
 	}
 	
@@ -837,14 +910,23 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 
 	public function markApproved($status) {
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
+		if ($switch_links) {
+			static::detachPendingPayments($this->getAid());
+			$this->detachPaidBills(true);
+			$this->setUpdatedPaymentAfterPayingUnpaidBills(Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid(), true, $switch_links));
+		}
 		foreach ($this->getPaidBills() as $bill) {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
-			$billObj->updatePendingBillToConfirmed($this->getId(), $status)->save();
+			$billObj->updatePendingBillToConfirmed($this->getId(), $status, $this->getType())->save();
 		}
 	}
 
 	public function setPending($pending = true) {
 		$this->data['pending'] = $pending;
+		if (!$pending) {
+			$this->data['pending_covering_amount'] = 0;
+		}
 	}
 	
 	public function getRejectionPayments($aid) {
@@ -899,7 +981,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 
 		if (isset($chargeFilters['min_invoice_date'])) {
-			$minInvoiceDateQuery = array('invoice_date' => array('$gte' => new MongoDate(strtotime($chargeFilters['min_invoice_date']))));
+			$minInvoiceDateQuery = array('invoice_date' => array('$gte' => new Mongodloid_Date(strtotime($chargeFilters['min_invoice_date']))));
 			$filtersQuery = array_merge($filtersQuery, $minInvoiceDateQuery);
 		}
 
@@ -922,10 +1004,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (isset($filters['min_invoice_date']) && strtotime($filters['min_invoice_date']) === false) {
 			$errorMessage = "Wrong input! min_invoice_date filter is invalid";
 		}
-		if (isset($filters['pay_mode']) && !in_array($filters['pay_mode'], array('one_payment','multiple_payments'))) {
+		if (isset($filters['pay_mode']) && !in_array($filters['pay_mode'], array('one_payment', 'multiple_payments'))) {
 			$errorMessage = "Wrong input! pay_mode can be multiple_payments or one_payment";
 		}
-		if (isset($filters['mode']) && !in_array($filters['mode'], array('charge','refund'))) {
+		if (isset($filters['mode']) && !in_array($filters['mode'], array('charge', 'refund'))) {
 			$errorMessage = "Wrong input! mode can be charge or refund";
 		}
 		if (!$errorMessage) {
@@ -962,9 +1044,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 	
 	public static function payAndUpdateStatus($paymentMethod, $paymentParams, $options = array()) {
-		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($paymentMethod, array($paymentParams), $options);
+		$paymentManager = Billrun_PaymentManager::getInstance();
+		$paymentResponse = $paymentManager->pay($paymentMethod, array($paymentParams), $options);
 		$gatewayName = $paymentParams['gateway_details']['name'];
-		$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+		$gatewayInstanceName = $paymentParams['gateway_details']['instance_name'];
+		$gateway = Billrun_PaymentGateway::getInstance($gatewayInstanceName);
 		foreach ($paymentResponse['payment'] as $payment) {
 			$paymentData = $payment->getRawData();
 			$transactionId = $paymentData['payment_gateway']['transactionId'];
@@ -973,6 +1057,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			self::updateAccordingToStatus($paymentResponse['response'][$transactionId], $payment, $gatewayName);
 		}
+		return $paymentResponse;
 	}
 	
 	protected static function getPaginationQuery($filtersQuery, $page, $size) {
@@ -1004,7 +1089,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$pipelines[] = array(
 			'$limit' => intval($size),
 		);
-		
+		Billrun_Factory::log('Paginated debts query: ' . json_encode($pipelines), Zend_Log::DEBUG);
 		return $pipelines;
 	}
 	
@@ -1017,12 +1102,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
             return str_pad($txId, self::txIdLength, '0', STR_PAD_LEFT);
         }
 
-
 	public static function createInstallmentAgreement($params) {
 		$installmentAgreement = new Billrun_Bill_Payment_InstallmentAgreement($params);
 		return $installmentAgreement->splitBill();
 	}
-	
 	
 	/**
 	 * Checks if payment is a deposit.
@@ -1035,10 +1118,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	/**
 	 * Method to unfreeze deposit.
+	 * @param int - timestamp - to save the deposit's unfreeze date
 	 * 
 	 * @return true if the deposit got unfreezed.
 	 */
-	public function unfreezeDeposit() {
+	public function unfreezeDeposit($urt = null) {
 		if (!$this->isDeposit()) {
 			throw new Exception('Payment is not a deposit');
 		}
@@ -1050,7 +1134,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['amount'] = $depositAmount;
 		$this->data['due'] = -$depositAmount;
 		$this->data['left'] = $depositAmount;
-		$this->setBalanceEffectiveDate();
+		$this->setUrt($urt);
 		$this->save();
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->data['aid']);
 		return true;
@@ -1088,12 +1172,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!$paymentSaved) {
 			$message = "Denied flagging failed for rec " . $txId;
 			Billrun_Factory::log($message, Zend_Log::ALERT);
-			return array('status'=> false, 'massage' => $message);
+			return array('status' => false, 'massage' => $message);
 		} else {
 			$this->updatePastRejectionsOnProcessingFiles();
 			Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
 		}
-		return array('status'=> true);
+		return array('status' => true);
 	}
 	
 	public function isDenied($denialAmount) {
@@ -1101,12 +1185,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (isset($this->data['denied_amount'])) {
 			$alreadyDenied = $this->data['denied_amount'];
 		}
-		$totalAmountToDeny =  $denialAmount + $alreadyDenied;
+		$totalAmountToDeny = $denialAmount + $alreadyDenied;
 		return $totalAmountToDeny > $this->data['amount'];
 	}
 
 	public function addUserFields($fields = array()) {
-		$this->data['uf'] = $fields;
+		$this->data['uf'] = !empty($fields) ? $fields : new stdClass();
 	}
 	
 	/**
@@ -1120,7 +1204,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (isset($this->data['denied_amount'])) {
 			$alreadyDenied = $this->data['denied_amount'];
 		}
-		$totalAmountToDeny =  $denialAmount + $alreadyDenied;
+		$totalAmountToDeny = $denialAmount + $alreadyDenied;
 		return $totalAmountToDeny > $this->data['amount'];
 	}
 
@@ -1145,17 +1229,17 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
         }
     }
 	
-	public function setForeignFields ($foreignData = []) {
+	public function setForeignFields($foreignData = []) {
 		$paymentData = $this->getRawData();
 		$paymentData = array_merge_recursive($paymentData, $foreignData);
 		$this->setRawData($paymentData);
 	}
 	
-	public function getForeignFieldsEntity () {
+	public function getForeignFieldsEntity() {
 		return 'bills';
 	}
 	
-	public function setUserFields ($data, $unsetOriginalUfFromData = false) {
+	public function setUserFields($data, $unsetOriginalUfFromData = false) {
 		$paymentUf = [];
 		$config = Billrun_Factory::config();
 		$confUserFields = $config->getConfigValue('payments.offline.uf', []);
@@ -1181,4 +1265,51 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$paymentData = array_merge_recursive($paymentData, $paymentUf);
 		$this->setRawData($paymentData);
 	}
+        
+        protected function unsetAllPendingLinkedBills() {
+            $pays = $this->getPaidBills();
+		foreach ($pays as $pay) {
+			if (isset($pay['pending'])) {
+                    $this->unsetPendingLinkedBills($pay['type'], $pay['id']);
+                }
+            }
+        }
+
+	public static function getNotWaitingPaymentsQuery() {
+		return array(
+			'waiting_for_confirmation' => array(
+				'$ne' => TRUE,
+			),
+		);
+	}
+
+	public static function detachPendingPayments($aid) {
+		$query = [
+			'aid' => $aid,
+			'$or' => array(
+				['pending' => true],
+				['waiting_payments' => ['$exists' => true, '$ne' => []]]
+			)
+		];
+		$sort = ['urt' => 1];
+		$pending_bills = Billrun_Bill::getBills($query, $sort);
+		foreach ($pending_bills as $bill) {
+			if (isset($bill['pays'])) {
+				$bill_obj = Billrun_Bill::getInstanceByData($bill);
+				$bill_obj->detachPaidBills(true);
+			} elseif (isset($bill['paid_by'])) {
+				$bill_obj = Billrun_Bill::getInstanceByData($bill);
+				$bill_obj->detachPayingBills(true, true);
+			}
+		}
+	}
+
+	public function setUpdatedPaymentAfterPayingUnpaidBills($payments = []) {
+		$updated_payment = isset($payments[$this->getId()]) ? $payments[$this->getId()] : null;
+		if (!is_null($updated_payment)) {
+			$data = array_merge(($this instanceof Billrun_Bill) ? $this->getRawData() : $this->getData(), $updated_payment);
+			$this->setBillData($data);
+		}
+	}
+
 }

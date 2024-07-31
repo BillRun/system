@@ -6,7 +6,7 @@
 				if ($line_index == 0) { ?>
 					<thead><tr>
 					<?php foreach (array_keys($line_data) as $index => $key) { ?>
-						<th> <?php echo $key ?> </th>
+						<th> <?php echo Generator_Translations::stranslate(getDefInvi18nSlug($key), [], $key); ?> </th>
 					<?php } ?>
 					</tr></thead>
 				<?php } 

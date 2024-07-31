@@ -224,7 +224,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * method to initialize the data and the file handler of the processor
 	 * useful when processing files in iterations one after another
 	 */
-	protected function init() {
+	public function init() {
 		$this->data = array('data' => array());
 		$this->queue_data = array();
 		if (is_resource($this->fileHandler)) {
@@ -245,7 +245,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 
 			if ($this->processLines() === FALSE) {
-				Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
+				Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ALERT);
 				return FALSE;
 			}
 			
@@ -319,7 +319,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$resource->set('trailer', $trailer);
 			}
 			$resource->set('process_hostname', Billrun_Util::getHostName());
-			$resource->set('process_time', new MongoDate());
+			$resource->set('process_time', new Mongodloid_Date());
 			return $log->save($resource);
 		} else {
 			// backward compatibility
@@ -455,22 +455,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log("Processor orphan time less than one hour: " . $this->orphandFilesAdoptionTime . ". Please set value greater than or equal to one hour. We will take one hour for now", Zend_Log::NOTICE);
 			$adoptThreshold = time() - 3600;
 		}
-		$query = array(
-			'source' => !empty($this->receiverSource) ? $this->receiverSource :static::$type,
-			'process_time' => array(
-				'$exists' => false,
-			),
-			'$or' => array(
-				array('start_process_time' => array('$exists' => false)),
-				array('start_process_time' => array('$lt' => new MongoDate($adoptThreshold))),
-			),
-			'received_time' => array(
-				'$exists' => true,
-			),
-		);
+		$query = $this->getLogFileQuery($adoptThreshold);
 		$update = array(
 			'$set' => array(
-				'start_process_time' => new MongoDate(time()),
+				'start_process_time' => new Mongodloid_Date(time()),
 				'start_process_host' => Billrun_Util::getHostName(),
 			),
 		);
@@ -483,6 +471,22 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$file = $log->findAndModify($query, $update, array(), $options);
 		$file->collection($log);
 		return $file;
+	}
+
+	protected function getLogFileQuery($adoptThreshold) {
+		return array(
+			'source' => !empty($this->receiverSource) ? $this->receiverSource :static::$type,
+			'process_time' => array(
+				'$exists' => false,
+			),
+			'$or' => array(
+				array('start_process_time' => array('$exists' => false)),
+				array('start_process_time' => array('$lt' => new Mongodloid_Date($adoptThreshold))),
+			),
+			'received_time' => array(
+				'$exists' => true,
+			),
+		);
 	}
 
 	public function fgetsIncrementLine($file_handler) {
@@ -506,7 +510,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 
 		try {
-			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true && Billrun_Factory::db()->compareClientVersion('1.5', '>=') === true) {
+			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
 				// we are on 2.6
 				$bulkOptions = array(
 					'continueOnError' => true,
@@ -552,7 +556,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
 		}
 		try {
-			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true && Billrun_Factory::db()->compareClientVersion('1.5', '>=') === true) {
+			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
 				// we are on 2.6
 				$bulkOptions = array(
 					'continueOnError' => true,
@@ -624,7 +628,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$queueRow = $dataRow;
 			$queueRow['calc_name'] = false;
 			$queueRow['calc_time'] = false;
-			$queueRow['in_queue_since'] = new MongoDate();
+			$queueRow['in_queue_since'] = new Mongodloid_Date();
 			$this->setQueueRow($queueRow);
 		}
 	}
@@ -836,5 +840,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	protected function setPgFileType($fileType) {
 		return;
+	}
+
+	public function setFullCalculationTime(&$entity) {
+		if (in_array('full_calculation', Billrun_Factory::config()->getConfigValue('lines.reference_fields', []))) {
+			$entity['full_calculation'] = new MongoDate();
+		}
 	}
 }

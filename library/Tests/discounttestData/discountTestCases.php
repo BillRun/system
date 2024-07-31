@@ -14,6 +14,7 @@
 class discountTestCases {
 
 	public $tests = [
+	
 		//min_max Account with 1 subscriber who is standing in the condition - eligibility for MaxSubscribers 
 		array('test_num' => 1, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 1]], 'subsRevisions' => [
 					[['sid' => 2, 'plan' => 'planMinMax', 'plan_activation' => '2019-01-01', 'from' => '2019-01-01', 'to' => '2119-07-02']]],
@@ -162,12 +163,12 @@ class discountTestCases {
 						]]
 				],
 				'cdrs' => [
-					['stamp' => 'a1', 'start' => '2019-04-01', 'end' => '2019-05-01', 'usaget' => 'flat', 'type' => 'flat', 'aid' => 18, 'sid' => 19, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'planMinMax'],
-					['stamp' => 'a2', 'start' => '2019-04-01', 'end' => '2019-04-05', 'usaget' => 'flat', 'type' => 'flat', 'aid' => 18, 'sid' => 20, 'final_charge' => 19.49988, 'full_price' => 16.666666, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'abc'],
-					['stamp' => 'a3', 'start' => '2019-04-05', 'end' => '2019-04-10', 'usaget' => 'flat', 'type' => 'flat', 'aid' => 18, 'sid' => 20, 'final_charge' => 19.49988, 'full_price' => 16.666666, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'planMinMax'],
-					['stamp' => 'a4', 'start' => '2019-04-10', 'end' => '2019-05-01', 'usaget' => 'flat', 'type' => 'flat', 'aid' => 18, 'sid' => 20, 'final_charge' => 81.9, 'full_price' => 70, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'abc'],
-					['stamp' => 'a5', 'start' => '2019-04-01', 'end' => '2019-04-05', 'usaget' => 'flat', 'type' => 'flat', 'aid' => 18, 'sid' => 21, 'final_charge' => 19.49988, 'full_price' => 16.666666, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'abc'],
-					['stamp' => 'a6', 'start' => '2019-04-05', 'end' => '2019-05-01', 'usaget' => 'flat', 'type' => 'flat', 'aid' => 18, 'sid' => 21, 'final_charge' => 97.49999, 'full_price' => 83.33333, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'planMinMax']
+					['stamp' => 'a1', 'start' => '2019-04-01', 'end' => '2019-05-01', 'usaget' => 'flat', 'type' => 'flat', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'planMinMax'],
+					['stamp' => 'a2', 'start' => '2019-04-01', 'end' => '2019-04-05', 'usaget' => 'flat', 'type' => 'flat', 'aid' => 18, 'sid' => 20, 'final_charge' => 19.49988,'aprice'=>16.666564102564102, 'full_price' => 16.666666, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'abc'],
+					['stamp' => 'a3', 'start' => '2019-04-05', 'end' => '2019-04-10', 'usaget' => 'flat', 'type' => 'flat', 'aid' => 18, 'sid' => 20, 'final_charge' => 19.49988,'aprice'=>16.666564102564102, 'full_price' => 16.666666, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'planMinMax'],
+					['stamp' => 'a4', 'start' => '2019-04-10', 'end' => '2019-05-01', 'usaget' => 'flat', 'type' => 'flat', 'aid' => 18, 'sid' => 20, 'final_charge' => 81.9,'aprice'=>70, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'abc'],
+					['stamp' => 'a5', 'start' => '2019-04-01', 'end' => '2019-04-05', 'usaget' => 'flat', 'type' => 'flat', 'aid' => 18, 'sid' => 21, 'final_charge' => 19.49988,'aprice'=>16.666564102564102, 'full_price' => 16.666666, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'abc'],
+					['stamp' => 'a6', 'start' => '2019-04-05', 'end' => '2019-05-01', 'usaget' => 'flat', 'type' => 'flat', 'aid' => 18, 'sid' => 21, 'final_charge' =>97.49999,'aprice'=>83.33332478632478, 'full_price' => 83.33333, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'planMinMax']
 				],
 				'function' => array('checkEligibility')),
 			'expected' => array(
@@ -524,7 +525,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
 				],
 				'function' => array('checkEligibility')),
 			'expected' => array(
@@ -685,7 +686,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-06-01", 'end' => '2019-06-15', 'aid' => 18, 'sid' => 19, 'final_charge' => 54.599988667, 'full_price' => 46.66666, 'billrun' => '201907', 'tax_data' => [], 'service' => 'A'],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-06-01", 'end' => '2019-06-15', 'aid' => 18, 'sid' => 19, 'final_charge' =>54.599988667,'aprice'=>46.666656980341884, 'full_price' => 46.66666, 'billrun' => '201907', 'tax_data' => [], 'service' => 'A'],
 				],
 				'function' => array('checkEligibility')),
 			'expected' => array(
@@ -844,7 +845,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
 				],
 				'function' => array('checkEligibility')),
 			'expected' => array(
@@ -869,7 +870,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-04-15', 'aid' => 18, 'sid' => 19, 'final_charge' => 54.599998, 'full_price' => 46.66666, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-04-15', 'aid' => 18, 'sid' => 19, 'final_charge' =>54.599998,'aprice'=>46.666664957264956, 'full_price' => 46.66666, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
 				],
 				'function' => array('checkEligibility')),
 			'expected' => array(
@@ -894,7 +895,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 58.5, 'full_price' => 50, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' =>58.5,'aprice'=>50, 'full_price' => 50, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
 				],
 				'function' => array('checkEligibility')),
 			'expected' => array(
@@ -919,14 +920,14 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
 				],
 				'function' => array()),
 			'expected' => array(
 				"abc" => ["eligibility" => [["from" => "2019-04-01", "to" => "2019-05-01"]]]
 			),
 			'subjectExpected' => [
-			/* ['key' => 'abfc', 'full_price' => 0, 'billrun' => '201905', 'final_charge' => 0, 'discount' => ['PLAN_X' => 0], 'plan' => 'PLAN_X','affected_sections' => ['plan']], */
+			/* ['key' => 'abfc', 'full_price' => 0, 'billrun' => '201905', 'final_charge' =>0,'aprice'=>0, 'discount' => ['PLAN_X' => 0], 'plan' => 'PLAN_X','affected_sections' => ['plan']], */
 			]
 		),
 		/* montly_fees - plan full_price 0 service full_price 100 */
@@ -945,8 +946,8 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A']
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A']
 				],
 				'function' => array('checkEligibility')),
 			'expected' => array(
@@ -972,8 +973,8 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A']
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A']
 				],
 				'function' => array('checkEligibility')),
 			'expected' => array(
@@ -1007,8 +1008,8 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-04-15', 'aid' => 18, 'sid' => 19, 'final_charge' => 54.599998, 'full_price' => 46.666666, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-15", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 62.343333, 'full_price' => 53.333333, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_Y']
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-04-15', 'aid' => 18, 'sid' => 19, 'final_charge' =>54.599998,'aprice'=>46.666664957264956, 'full_price' => 46.666666, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-15", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' =>62.343333,'aprice'=>53.2849, 'full_price' => 53.333333, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_Y']
 				],
 				'function' => array()),
 			'expected' => array(
@@ -1046,17 +1047,17 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-04-15', 'aid' => 18, 'sid' => 19, 'final_charge' => 54.599998, 'full_price' => 46.666666, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-15", 'end' => '2019-04-20', 'aid' => 18, 'sid' => 19, 'final_charge' => 16.66666, 'full_price' => 19.499999, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_Y'],
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-20", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 42.8998, 'full_price' => 36.6666, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X']
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-04-15', 'aid' => 18, 'sid' => 19, 'final_charge' =>54.599998,'aprice'=>46.666664957264956, 'full_price' =>100/* 46.666666*/, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-15", 'end' => '2019-04-20', 'aid' => 18, 'sid' => 19, 'final_charge' =>19.5,'aprice'=>16.666666666666664, 'full_price' =>100/* 19.499999*/, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_Y'],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-20", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' =>42.8998,'aprice'=>36.666495726495725, 'full_price' =>100/* 36.6666*/, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X']
 				],
 				'function' => array()),
 			'expected' => array(
 			),
 			'subjectExpected' => [
-				['sid' => 19, 'key' => 'abc', 'full_price' => -46.66666, 'billrun' => '201905', 'final_charge' => -54.599998, 'discount' => ['PLAN_X' => -46.66666], 'plan' => 'PLAN_X', 'affected_sections' => ['plan']],
-				['sid' => 19, 'key' => 'ab', 'full_price' => -16.66666, 'billrun' => '201905', 'final_charge' => -19.499999, 'discount' => ['PLAN_Y' => -16.66666], 'plan' => 'PLAN_Y', 'affected_sections' => ['plan']],
-				['sid' => 19, 'key' => 'abc', 'full_price' => -36.6666, 'billrun' => '201905', 'final_charge' => -42.89998, 'discount' => ['PLAN_X' => -36.6666], 'plan' => 'PLAN_X', 'affected_sections' => ['plan']],
+				['sid' => 19, 'key' => 'abc', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => -54.599998, 'discount' => ['PLAN_X' => -46.66666], 'plan' => 'PLAN_X', 'affected_sections' => ['plan']],
+				['sid' => 19, 'key' => 'ab', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => -19.499999, 'discount' => ['PLAN_Y' => -16.66666], 'plan' => 'PLAN_Y', 'affected_sections' => ['plan']],
+				['sid' => 19, 'key' => 'abc', 'full_price' =>100, 'billrun' => '201905', 'final_charge' => -42.89998, 'discount' => ['PLAN_X' => -36.6666], 'plan' => 'PLAN_X', 'affected_sections' => ['plan']],
 			]
 		),
 		/* mutch services -service  + plan  mutchd_service A  */
@@ -1076,8 +1077,8 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_Y'],
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A'],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_Y'],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A'],
 				],
 				'function' => array()),
 			'expected' => array(
@@ -1103,8 +1104,8 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-04-15', 'aid' => 18, 'sid' => 19, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-04-15', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A'],
 				],
 				'function' => array()),
 			'expected' => array(
@@ -1147,9 +1148,9 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-04-15', 'aid' => 18, 'sid' => 19, 'final_charge' => 54.599998, 'full_price' => 46.666666, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A'],
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-15", 'end' => '2019-04-20', 'aid' => 18, 'sid' => 19, 'final_charge' => 16.66666, 'full_price' => 19.499999, 'billrun' => '201905', 'tax_data' => [], 'service' => 'B'],
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-20", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 33.3333, 'full_price' => 38.99999, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A']
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-04-15', 'aid' => 18, 'sid' => 19, 'final_charge' =>54.599998,'aprice'=>46.666664957264956, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A'],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-15", 'end' => '2019-04-20', 'aid' => 18, 'sid' => 19, 'final_charge' =>19.5,'aprice'=>16.666666666666664, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'B'],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-20", 'end' => '2019-04-30', 'aid' => 18, 'sid' => 19, 'final_charge' =>42.900000000000006,'aprice'=>36.66666666666667, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A']
 				],
 				'function' => array()),
 			'expected' => array(
@@ -1157,7 +1158,7 @@ class discountTestCases {
 			'subjectExpected' => [
 				['sid' => 19, 'key' => 'abc', 'full_price' => -46.66666, 'billrun' => '201905', 'final_charge' => -54.599998, 'discount' => ['A' => -46.66666], 'service' => 'A', 'affected_sections' => ['service']],
 				['sid' => 19, 'key' => 'ab', 'full_price' => -16.66666, 'billrun' => '201905', 'final_charge' => -19.499999, 'discount' => ['B' => -16.66666], 'service' => 'B', 'affected_sections' => ['service']],
-				['sid' => 19, 'key' => 'abc', 'full_price' => -33.33333, 'billrun' => '201905', 'final_charge' => -38.99999, 'discount' => ['A' => -33.33333], 'service' => 'A', 'affected_sections' => ['service']],
+				['sid' => 19, 'key' => 'abc', 'full_price' => -33.33333, 'billrun' => '201905', 'final_charge' => -39, 'discount' => ['A' => -33.333333333333336], 'service' => 'A', 'affected_sections' => ['service']],
 			]
 		),
 		/* service */
@@ -1176,7 +1177,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 100, 'full_price' => 117, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A'],],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A'],],
 				'function' => array('checkEligibility')),
 			'expected' => array(
 				"ab" => ["eligibility" => [["from" => "2019-04-01", "to" => "2019-05-01"]]]
@@ -1215,7 +1216,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'service', 'quantity' => 10, 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 1000, 'price' => 1000, 'full_price' => 1117, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A', 'usagev' => 100]
+					['usaget' => 'flat', 'type' => 'service', 'quantity' => 10, 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'aprice'=>1000,'final_charge' => 1117, 'price' => 1000, 'full_price' => 1000, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A', 'usagev' => 100]
 				],
 				'function' => array('checkEligibility')),
 			'expected' => array(
@@ -1238,7 +1239,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 100, 'full_price' => 117, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'A'],],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'A'],],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1246,7 +1247,7 @@ class discountTestCases {
 				['sid' => '19', 'key' => 'abc', 'full_price' => -100, 'billrun' => '201905', 'final_charge' => -117, 'discount' => ['A' => -100], 'plan' => 'A', 'affected_sections' => ['plan']],
 			]
 		),
-		/* plan */
+//		/* plan */
 		array('test_num' => 43, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 18]], 'subsRevisions' => [
 					[['sid' => 19, 'plan' => 'A', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"],
 					]],
@@ -1259,7 +1260,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 100, 'full_price' => 117, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'A'],],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'A'],],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1281,8 +1282,8 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 100, 'full_price' => 117, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'A'],
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 20, 'final_charge' => 100, 'full_price' => 117, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'A'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'A'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 20, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'A'],
 				],
 				'function' => array()),
 			'expected' => array(
@@ -1315,7 +1316,7 @@ class discountTestCases {
 //			),
 //			'subjectExpected' => [
 //				
-//					['sid'=>19,'key' => 'ab', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => 117 , 'discount' => ['A' => 100], 'service' => 'A','affected_sections' => ['service']],	
+//					['sid'=>19,'key' => 'ab', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => 117,'aprice'=>100 , 'discount' => ['A' => 100], 'service' => 'A','affected_sections' => ['service']],	
 //				
 //			]
 //		),
@@ -1334,8 +1335,8 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 77, 'sid' => 78, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 77, 'sid' => 78, 'final_charge' => 100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'A']
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 77, 'sid' => 78, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 77, 'sid' => 78, 'final_charge' => 100,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'A']
 				],
 				'function' => array('checkEligibility')),
 			'expected' => array(
@@ -1360,8 +1361,8 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 77, 'sid' => 78, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 77, 'sid' => 78, 'final_charge' => 100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'A']
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 77, 'sid' => 78, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 77, 'sid' => 78, 'final_charge' => 100,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'A']
 				],
 				'function' => array('checkEligibility')),
 			'expected' => array(
@@ -1397,7 +1398,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1438,7 +1439,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' =>351,'aprice'=>300, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1480,7 +1481,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' =>351,'aprice'=>300, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1514,7 +1515,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' =>351,'aprice'=>300, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1544,8 +1545,8 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2']
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2']
 				],
 				'function' => array()),
 			'expected' => array(
@@ -1582,8 +1583,8 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2']
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2']
 				],
 				'function' => array()),
 			'expected' => array(
@@ -1630,10 +1631,10 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2'],
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2']],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' =>351,'aprice'=>300, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' =>351,'aprice'=>300, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2']],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1740,7 +1741,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1776,7 +1777,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1814,7 +1815,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1853,7 +1854,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1879,12 +1880,12 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 24, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 24, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2'],
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2'],
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2']],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 24, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 24, 'final_charge' =>351,'aprice'=>300, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' =>351,'aprice'=>300, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' =>351,'aprice'=>300, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2']],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1915,12 +1916,12 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 24, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 24, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2'],
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2'],
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2']],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 24, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 24, 'final_charge' =>351,'aprice'=>300, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' =>351,'aprice'=>300, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' =>0,'aprice'=>0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' =>351,'aprice'=>300, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => ["total_amount" => 0, "total_tax" => 0, "taxes" => []], 'service' => 'SERVICE2']],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1962,7 +1963,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
 				'function' => array()),
 			'expected' => array(
 			),
@@ -1998,9 +1999,9 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905',
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905',
 						'tax_data' => ["total_amount" => 17, "total_tax" => 17, "taxes" => [], 'plan' => 'PLAN2'], 'plan' => 'PLAN2'],
-					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905',
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905',
 						'tax_data' => ["total_amount" => 17, "total_tax" => 17, "taxes" => []], 'service' => 'SERVICE2']
 				],
 				'function' => array()),
@@ -2053,7 +2054,7 @@ class discountTestCases {
 				],
 				'cdrs' => [
 					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22,
-						'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905',
+						'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905',
 						'tax_data' => [], 'plan' => 'PLAN2'],
 				],
 				'function' => array()),
@@ -2105,7 +2106,7 @@ class discountTestCases {
 				],
 				'cdrs' => [
 					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22,
-						'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905',
+						'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905',
 						'tax_data' => [], 'plan' => 'PLAN2'],
 				],
 				'function' => array()),
@@ -2138,12 +2139,12 @@ class discountTestCases {
 				'cdrs' => [
 					[
 						'prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2020-12-01", 'end' => '2020-12-10', 'aid' => 21, 'sid' => 22,
-						'final_charge' => 33.967741936, 'full_price' => 100, 'billrun' => '202101',
+						'final_charge' =>33.967741936,'aprice'=>29.03225806495727, 'full_price' => 100, 'billrun' => '202101',
 						'tax_data' => [], 'plan' => 'PLAN2'
 					],
 					[
 						'prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => '2020-12-10', 'end' => '2021-01-01', 'aid' => 21, 'sid' => 22,
-						'final_charge' => 166.064516129, 'full_price' => 200, 'billrun' => '202101',
+						'final_charge' =>166.064516129,'aprice'=>141.93548387094017, 'full_price' => 200, 'billrun' => '202101',
 						'tax_data' => [], 'plan' => 'PLAN2'
 					],
 				],
@@ -2184,7 +2185,7 @@ class discountTestCases {
 					
 					[
 						'prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => '2020-12-10', 'end' => '2021-01-01', 'aid' => 21, 'sid' => 22,
-						'final_charge' => 166.064516129, 'full_price' => 200, 'billrun' => '202101',
+						'final_charge' =>166.064516129,'aprice'=>141.93548387094017, 'full_price' => 200, 'billrun' => '202101',
 						'tax_data' => [], 'plan' => 'PLAN2'
 					],
 				],
@@ -2196,6 +2197,151 @@ class discountTestCases {
 				
 						]
 		),
+		//https://billrun.atlassian.net/browse/BRCD-3979
+		array('test_num' => 68, 'test' => array('options' => ['stamp' => '202211'], 'subsAccount' => [['aid' => 21]],
+			'subsRevisions' => [
+				[['firstname' => 'p', 'sid' => 22, 'from' => '2022-09-10', 'to' => '2027-01-01']],
+				[['firstname' => 'p', 'sid' => 23, 'from' => '2022-09-10', 'to' => '2027-01-01',
+					'filter_field_example' => []
+				]],
+				[['firstname' => 'p', 'sid' => 24, 'from' => '2022-09-10', 'to' => '2027-01-01',
+					'filter_field_example' => ['1']
+				]],
+				[['firstname' => 'p', 'sid' => 25, 'from' => '2022-09-10', 'to' => '2027-01-01',
+					'filter_field_example' => ['1', '2']
+				]],
+				[['firstname' => 'p', 'sid' => 26, 'from' => '2022-09-10', 'to' => '2027-01-01',
+					'filter_field_example' => ['1', '2', '3']
+				]],
+				[['firstname' => 'p', 'sid' => 27, 'from' => '2022-09-10', 'to' => '2027-01-01',
+					'filter_field_example' => ['1', '2', '3', '4']
+				]]
+			],
+			'discounts' => [
+				['name' => 'DIS1_LENGTH_IN', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthIn', 'values' => ['2', '3']]]]]
+				],
+				['name' => 'DIS2_LENGTH_NOT_IN', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthNin', 'values' => ['2', '3']]]]]
+				],
+				['name' => 'DIS3_LENGTH_LESS_THAN', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthLt', 'values' => '2']]]]
+				],
+				['name' => 'DIS4_LENGTH_LESS_THAN_EQUAL', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthLte', 'values' => '2']]]]
+				],
+				['name' => 'DIS5_LENGTH_GREATER_THAN', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthGt', 'values' => '2']]]]
+				],
+				['name' => 'DIS6_LENGTH_GREATER_THAN_EQUAL', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthGte', 'values' => '2']]]]
+				],
+				['name' => 'DIS7_LENGTH_EQUALS', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthEq', 'values' => '2']]]]
+				],
+				['name' => 'DIS8_LENGTH_EQUALS_0', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthEq', 'values' => '0']]]]
+				],
+				['name' => 'DIS9_LENGTH_NOT_EQUAL', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthNe', 'values' => '2']]]]
+				],
+				['name' => 'DIS10_LENGTH_NOT_EQUAL_0', 'root' => ['priority' => 1, 'from' => '2022-04-01', 'to' => '2023-12-03', 'type' => 'percentage'],
+					'params_override' => ['condition' => [[['type' => 'subscriber', 'field' => 'filter_field_example',
+						'op' => '$lengthNe', 'values' => '0']]]]
+				]
+			],
+			'function' => array('checkEligibility')),
+			'expected' => [
+				"DIS1_LENGTH_IN" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"25" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"26" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS2_LENGTH_NOT_IN" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"22" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"23" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"24" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"27" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS3_LENGTH_LESS_THAN" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"23" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"24" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS4_LENGTH_LESS_THAN_EQUAL" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"23" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"24" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"25" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS5_LENGTH_GREATER_THAN" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"26" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"27" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS6_LENGTH_GREATER_THAN_EQUAL" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"25" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"26" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"27" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS7_LENGTH_EQUALS" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"25" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS8_LENGTH_EQUALS_0" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"23" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS9_LENGTH_NOT_EQUAL" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"22" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"23" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"24" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"26" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"27" => [["from" => "2022-10-01",  "to" => "2022-11-01"]]
+					]
+				],
+				"DIS10_LENGTH_NOT_EQUAL_0" => [
+					"eligibility" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					"subs" => [
+						"22" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"24" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"25" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"26" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+						"27" => [["from" => "2022-10-01",  "to" => "2022-11-01"]],
+					]
+				]
+			]
+		)
+
 	];
 
 }

@@ -20,17 +20,17 @@ class Models_Subscribers extends Models_Entity {
 
 		// TODO: move to translators?
 		if (empty($this->before)) { // this is new subscriber
-			$this->update['plan_activation'] = isset($this->update['from']) ? $this->update['from'] : new MongoDate();
+			$this->update['plan_activation'] = isset($this->update['from']) ? $this->update['from'] : new Mongodloid_Date();
 		} else if (isset($this->before['plan_activation']) && isset($this->update['plan']) && isset($this->before['plan']) && $this->before['plan'] !== $this->update['plan']) { // plan was changed
-			$this->update['plan_activation'] = isset($this->update['from']) ? $this->update['from'] : new MongoDate();
+			$this->update['plan_activation'] = isset($this->update['from']) ? $this->update['from'] : new Mongodloid_Date();
 		} else { // plan was not changed
 			$this->update['plan_activation'] = $this->before['plan_activation'];
 		}
 
 		//transalte to and from fields
-		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
+		Billrun_Utils_Mongo::convertQueryMongodloidDates($this->update);
 		if ($this->action == 'create' && !isset($this->update['to'])) {
-			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+			$this->update['to'] = new Mongodloid_Date(strtotime('+149 years'));
 		}
 		
 		$this->verifyServices();
@@ -50,7 +50,9 @@ class Models_Subscribers extends Models_Entity {
 	protected function getCustomFields($update = array()) {
 		$customFields = parent::getCustomFields();
 		$subscriberFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
-		$subscriberPlay = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
+		$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+		$defaultPlayName = isset($defaultPlay['name'])? $defaultPlay['name'] : '';
+		$subscriberPlay = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', $defaultPlayName));
 		$subscriberFields = Billrun_Utils_Plays::filterCustomFields($subscriberFields, $subscriberPlay);
 		return array_merge($subscriberFields, $customFields);
 	}
@@ -81,40 +83,41 @@ class Models_Subscribers extends Models_Entity {
 					$service = array('name' => $service);
 				}
 				if (gettype($service['from']) == 'string') {
-					$service['from'] = new MongoDate(strtotime($service['from']));
+					$service['from'] = new Mongodloid_Date(strtotime($service['from']));
 				}
 				if (empty($this->before)) { // this is new subscriber
 					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
 				}
 				if (!empty($service['to']) && gettype($service['to']) == 'string') {
-					$service['to'] = new MongoDate(strtotime($service['to']));
+					$service['to'] = new Mongodloid_Date(strtotime($service['to']));
 				}
 				// handle custom period service or limited cycles service
-				$serviceRate = new Billrun_Service(array('name' => $service['name']));
+				$serviceTime = $service['from']->sec ?? time();
+				$serviceRate = new Billrun_Service(array('name' => $service['name'], 'time' => $serviceTime));
 				// if service not found, throw exception
 				if (empty($serviceRate) || empty($serviceRate->get('_id'))) {
 					throw new Billrun_Exceptions_Api(66601, array(), "Service was not found");
 				}
 				if (!empty($servicePeriod = @$serviceRate->get('balance_period')) && $servicePeriod !== "default") {
-					$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
+					$service['to'] = new Mongodloid_Date(strtotime($servicePeriod, $service['from']->sec));
 				} else {
 					// Handle limited cycle services
 					$serviceAvailableCycles = $serviceRate->getServiceCyclesCount();
 					if ($serviceAvailableCycles !== Billrun_Service::UNLIMITED_VALUE) {
 						$vDate = date(Billrun_Base::base_datetimeformat, $service['from']->sec);
-						$to = strtotime('+' . $serviceAvailableCycles . ' months', Billrun_Billingcycle::getBillrunStartTimeByDate($vDate));
-						$service['to'] = new MongoDate($to);
+						$to = strtotime('+' . $serviceAvailableCycles . ' months', $service['from']->sec);
+						$service['to'] = new Mongodloid_Date($to);
 					}
 				}
 				if (empty($service['to'])) {
-					$service['to'] =  new MongoDate(strtotime('+149 years'));
+					$service['to'] =  new Mongodloid_Date(strtotime('+149 years'));
 				}
 				if (!isset($service['service_id'])) {
 					$service['service_id'] = hexdec(uniqid());
 				}
 
 				if (!isset($service['creation_time'])) {
-					$service['creation_time'] = new MongoDate();
+					$service['creation_time'] = new Mongodloid_Date();
 				}
 				
 				$this->validateServicePlay($service['name']);
@@ -181,7 +184,7 @@ class Models_Subscribers extends Models_Entity {
 		}
 		if (!isset($this->update[$edge])) {
 			$this->update = array(
-				$edge => new MongoDate()
+				$edge => new Mongodloid_Date()
 			);
 		}
 
@@ -252,7 +255,7 @@ class Models_Subscribers extends Models_Entity {
 		$this->trackChanges($this->query['_id']);
 
 		if (!empty($followingEntry) && !$followingEntry->isEmpty()) {
-			$update = array($otherEdge => new MongoDate($this->update[$edge]->sec));
+			$update = array($otherEdge => new Mongodloid_Date($this->update[$edge]->sec));
 			if ($edge == 'to' && isset($followingEntry['plan_activation']->sec) && $followingEntry['plan_activation']->sec == $this->before[$edge]->sec) {
 				$update['plan_activation'] = $update[$otherEdge];
 			}
@@ -282,7 +285,7 @@ class Models_Subscribers extends Models_Entity {
 		if (isset($this->update['to'])) {
 			$this->update['deactivation_date'] = $this->update['to'];
 		} else {
-			$this->update['to'] = $this->update['deactivation_date'] = new MongoDate();
+			$this->update['to'] = $this->update['deactivation_date'] = new Mongodloid_Date();
 		}
 		return parent::close();
 	}
@@ -350,7 +353,7 @@ class Models_Subscribers extends Models_Entity {
 
 	public function create() {
 		if (empty($this->update['to'])) {
-			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+			$this->update['to'] = new Mongodloid_Date(strtotime('+149 years'));
 		}
 		if (empty($this->update['deactivation_date'])) {
 			$this->update['deactivation_date'] = $this->update['to'];
@@ -431,7 +434,7 @@ class Models_Subscribers extends Models_Entity {
 
 		foreach ($needUpdate as $revisionId => $updateValue) {
 			$update = array();
-			$query = array('_id' => new MongoId($revisionId));
+			$query = array('_id' => new Mongodloid_Id($revisionId));
 			foreach ($updateValue as $field => $value) {
 				if ($field == 'former_plan' && $value == 'unset') {
 					$update['$unset'][$field] = true;
@@ -476,6 +479,6 @@ class Models_Subscribers extends Models_Entity {
 	public function permanentChange() {
 		unset($this->update['plan_activation']);
 		unset($this->update['type']);
-		parent::permanentChange();
+		return parent::permanentChange();
 	}
 }

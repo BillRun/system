@@ -56,9 +56,11 @@ class Billrun_Cycle_Account_Invoice {
 
 	protected $invoicedLines = array();
 
-        protected $totalGroupHashMap = array();
-        protected $groupingEnabled = true;
+	protected $totalGroupHashMap = array();
+	protected $groupingSumExtraFields = array();
+	protected $groupingEnabled = true;
 
+	protected $aggregationTranslations = [];
 
         /**
 	 * @todo used only in current balance API. Needs refactoring
@@ -70,6 +72,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->populateInvoiceWithAccountData($options['attributes']);
 		$this->initInvoiceDates();
                 $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
+				$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array()); 
 	}
 
 	/**
@@ -136,18 +139,26 @@ class Billrun_Cycle_Account_Invoice {
 	/**
 	 * 
 	 * @param string $billrunDate
-	 * @return \MongoDate
+	 * @return Mongodloid_Date
 	 */
-	protected function generateDueDate($billrunDate) {
+	protected function generateDueDate($billrunDate, $initData = []) {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
 		$invoiceType = isset($this->data['attributes']['invoice_type']) ? $this->data['attributes']['invoice_type'] : null; 
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet(array('invoice_type' => $invoiceType), $option['conditions'])) { //TODO: transfer the entity instead of just array with invoice_type
-				 return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));										  // once BRCD-2351 is fixed
+				 return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));										  // once BRCD-2351 is fixed
+			}
+			if (!empty($initData[$option['anchor_field']]) && $initData[$option['anchor_field']] instanceof Mongodloid_Date &&
+				$this->isConditionsMeet(array('invoice_type' => $invoiceType), $option['conditions'])) {
+					return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $initData[$option['anchor_field']]->sec));
+			}
+			if (!empty($this->data[$option['anchor_field']]) && $this->data[$option['anchor_field']] instanceof Mongodloid_Date &&
+				$this->isConditionsMeet(array('invoice_type' => $invoiceType), $option['conditions'])) {
+					return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $this->data[$option['anchor_field']]->sec));
 			}
 		}
-		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
-		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
+		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::DEBUG);
+		return new Mongodloid_Date(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
 	}
 
 	/**
@@ -205,7 +216,7 @@ class Billrun_Cycle_Account_Invoice {
 				$subscriber->aggregateLinesToBreakdown($sidDiscounts[$sid], true);
 			}
 		}
-		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array())) ? : Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data');
+		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data',array())) ?  Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data') : [];
 		$this->aggregateIntoInvoice($configValue);
 		$this->updateTotals();
 	}
@@ -221,7 +232,9 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	public function aggregateIntoInvoice($untranslatedAggregationConfig) {
 		$invoiceData = $this->data->getRawData();
-		$translations = array(
+		$accountLastMonthlyBillrun = Billrun_Billrun::getAccountLastMonthlyBillrun($invoiceData['aid'], $invoiceData['billrun_key']);
+		$followingBillrunKey = Billrun_Billingcycle::getFollowingBillrunKey($accountLastMonthlyBillrun['billrun_key'] ?? null);
+		$this->aggregationTranslations = array_merge($this->aggregationTranslations,[
 			'BillrunKey' => $invoiceData['billrun_key'],
 			'Aid' => $invoiceData['aid'],
 			'StartTime' => $invoiceData['start_date']->sec,
@@ -229,14 +242,15 @@ class Billrun_Cycle_Account_Invoice {
 			'NextBillrunKey' => Billrun_Billingcycle::getFollowingBillrunKey($invoiceData['billrun_key']),
 			'PreviousBillrunKey' => Billrun_Billingcycle::getPreviousBillrunKey($invoiceData['billrun_key']),
 			'NextNextBillrunKey' => Billrun_Billingcycle::getFollowingBillrunKey(Billrun_Billingcycle::getFollowingBillrunKey($invoiceData['billrun_key'])),
-			'NextBillrunKeyOfLastMonthlyBillrun' => Billrun_Billingcycle::getFollowingBillrunKey(Billrun_Billrun::getAccountLastMonthlyBillrun($invoiceData['aid'], $invoiceData['billrun_key'])['billrun_key'])
-		);
-		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
+			'NextBillrunKeyOfLastMonthlyBillrun' => $followingBillrunKey,
+		]);
+		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig), $this->aggregationTranslations),JSON_OBJECT_AS_ARRAY);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $addedvalueKey => $aggregateConf) {
 			foreach ($aggregateConf['pipelines'] as $pipeline) {
+				 Billrun_Utils_Mongo::convertQueryMongodloidDates($pipeline);
 				if (empty($aggregateConf['use_db'])) {
-					$aggrResults = $aggregate->aggregate($pipeline, [$invoiceData]);
+					$aggrResults = $aggregate->aggregate( $pipeline, [$invoiceData]);
 				} else {
 					$aggrResults = Billrun_Factory::Db()->getCollection($aggregateConf['collection'])->aggregate($pipeline)->setRawReturn(true);
 				}
@@ -262,12 +276,14 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		$invoiceRawData = $this->getRawData();
 		
-		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
+		if (Billrun_Factory::config()->getConfigValue('billrun.save_subs', true, "bool")) {
+			$invoiceRawData = $this->setSubscribers($invoiceRawData);
+		}
 		if (!$isFake ) {
-			$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId, $customCollName);
+			$newRawData = $this->setInvoiceID($invoiceRawData, $invoiceId, $customCollName);
 		} else {
-			$rawDataWithSubs['invoice_id'] = $invoiceId;
-			$newRawData = $rawDataWithSubs;
+			$invoiceRawData['invoice_id'] = $invoiceId;
+			$newRawData = $invoiceRawData;
 		}
 		$this->data->setRawData($newRawData);		
 
@@ -306,6 +322,15 @@ class Billrun_Cycle_Account_Invoice {
 			$invoiceRawData['invoice_id'] = $currentId;
 		}
 		return $invoiceRawData;
+	}
+
+	/**
+	 * Add user fields data to the invoice.
+	 */
+	public function setUserFields(array $user_fields) {
+		$invoiceRawData = $this->getRawData();
+		$invoiceRawData['uf'] = $user_fields;
+		$this->data->setRawData($invoiceRawData);
 	}
 	
 	/**
@@ -360,6 +385,7 @@ class Billrun_Cycle_Account_Invoice {
 		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), $past_balance_date);
 		if(!Billrun_Util::isEqual($pastBalance['total'], 0, Billrun_Billingcycle::PRECISION)) {
 			$newTotals['past_balance']['after_vat'] = $pastBalance['total'];
+			$newTotals['past_balance']['without_waiting']['after_vat'] = $pastBalance['without_waiting'];
 		}
 		$newTotals['current_balance']['after_vat'] = $newTotals['past_balance']['after_vat'] + $newTotals['after_vat_rounded'];
 		$rawData['totals'] = $newTotals;
@@ -405,6 +431,7 @@ class Billrun_Cycle_Account_Invoice {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
 			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
+			Billrun_Factory::dispatcher()->trigger('afterAccountInvoiceSaved', array($this->data, &$this));
 		}
 	}
 	
@@ -417,13 +444,13 @@ class Billrun_Cycle_Account_Invoice {
 		$initData = $this->data->getRawData();
 		$invoicing_day = !empty($initData['invoicing_day']) ? $initData['invoicing_day'] : null;
 		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey(), $invoicing_day);
-		$initData['creation_time'] = new MongoDate(time());
+		$initData['creation_time'] = new Mongodloid_Date(time());
 		$isOneTimeInvoice = isset($initData['attributes']['invoice_type']) && $initData['attributes']['invoice_type'] == 'immediate' ? true : false;
 		$invoiceDate = $isOneTimeInvoice ? strtotime($initData['billrun_key']) : strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate);
-		$initData['invoice_date'] = new MongoDate($invoiceDate);
-		$initData['end_date'] = new MongoDate($billrunDate);
-		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey(), $invoicing_day));
-		$initData['due_date'] = $this->generateDueDate($billrunDate);
+		$initData['invoice_date'] = new Mongodloid_Date($invoiceDate);
+		$initData['end_date'] = new Mongodloid_Date($billrunDate);
+		$initData['start_date'] = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($this->getBillrunKey(), $invoicing_day));
+		$initData['due_date'] = $this->generateDueDate($billrunDate, $initData);
 		$chargeNotBefore = $this->generateChargeDate($initData);
 		if (!empty($chargeNotBefore)) {
 			$initData['charge'] = ['not_before' => $chargeNotBefore];
@@ -435,8 +462,18 @@ class Billrun_Cycle_Account_Invoice {
     //======================================================
     
 	function isAccountActive() {
-		if(!empty(array_filter($this->subscribers ,function($sub){ return !empty($sub->getData()['sid']);})) || !empty(array_filter($this->data['subs'] ,function($sub){ return !empty($sub['sid']);}))) {
-			return true;
+		$ignoreSubsWithNoPlans = Billrun_Factory::config()->getConfigValue('billrun.ignore_no_plans_invoices',true);
+		$hasActiveSubscribers = !empty(array_filter($this->subscribers ,function($sub) use ($ignoreSubsWithNoPlans) {
+									$subData = $sub->getData();
+									return !empty($subData['sid']) && (!$ignoreSubsWithNoPlans || !is_null($subData['totals']['flat']['after_vat'])) ;
+								}))
+							||
+								!empty(array_filter($this->data['subs'] ,function($sub) use ($ignoreSubsWithNoPlans) {
+									return !empty($sub['sid']) && (!$ignoreSubsWithNoPlans || !is_null($sub['totals']['flat']['after_vat']) );
+								}));
+
+		if(	$hasActiveSubscribers || !empty($this->data['totals']['after_vat_rounded']) ) {
+			 return true;
 		}
 		$accountActivenessLinesHistory = Billrun_Factory::config()->getConfigValue("pricing.months_limit", 3);
 		if (is_numeric($accountActivenessLinesHistory)) {
@@ -446,7 +483,7 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		$query = [
 			'aid'=>$this->aid,
-			'urt' => ['$gte' => new MongoDate($accountActivenessDate)],
+			'urt' => ['$gte' => new Mongodloid_Date($accountActivenessDate)],
 			'billrun'=>$this->key,
 			'usaget'=>['$nin'=>['flat']],
 		];
@@ -472,7 +509,7 @@ class Billrun_Cycle_Account_Invoice {
 	}
 		$invoicedLines =  $this->invoicedLines;
 		foreach($this->subscribers as $subscriber) {
-			$invoicedLines += $subscriber->getInvoicedLines(); //+ works as the array is  actually hashed by the line stamp
+			$invoicedLines += $subscriber->getInvoicedLines(); //+ *only* works as the array is  actually hashed by the line stamp
 		}
 		return $invoicedLines;
 	}
@@ -488,7 +525,7 @@ class Billrun_Cycle_Account_Invoice {
 			}
 			
 			if (!empty($initData[$option['anchor_field']]) && in_array($invoiceType, $option['invoice_type'])) {
-				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $initData[$option['anchor_field']]->sec));
+				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $initData[$option['anchor_field']]->sec));
 			}
 		}
 		
@@ -499,11 +536,11 @@ class Billrun_Cycle_Account_Invoice {
 		
 		// else - get config default value or temporerily use 'invoice_date' with offset
 		Billrun_Factory::log()->log('Failed to match charge date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
-		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $initData['invoice_date']));
+		return new Mongodloid_Date(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $initData['invoice_date']));
 	}
 
 	/**
-	 * This function add to the account totals grouping his subscriber totals group.
+	 * This function add to the account totals grouping the provided subscriber totals group.
 	 * @param type $currentTotalGroups 
 	 * @param type $subTotalGroups 
 	 * @return the new sum up of the account totals grouping
@@ -520,6 +557,12 @@ class Billrun_Cycle_Account_Invoice {
 			unset($group['taxes']);
 			$afterTax = $group['after_taxes'];
 			unset($group['after_taxes']);
+			$extraSumGroupData = [];
+			// Unset extra sum grouping fields
+			foreach ($this->groupingSumExtraFields as $field) {
+				Billrun_Util::setIn($extraSumGroupData, $field, Billrun_Util::getIn($group, $field, 0));
+				Billrun_Util::unsetInPath($group, $field);
+			}
 			$stamp = Billrun_Util::generateArrayStamp($group);
 			$index = Billrun_Util::getIn($this->totalGroupHashMap, $stamp, null);
 			if (!isset($index)) {
@@ -532,6 +575,10 @@ class Billrun_Cycle_Account_Invoice {
 			$currentTotalGroups[$index]['before_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['before_taxes'], 0) + $beforeTax;
 			$currentTotalGroups[$index]['taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['taxes'], 0) + $taxes;
 			$currentTotalGroups[$index]['after_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['after_taxes'], 0) + $afterTax;
+			// Sum extra grouping fields
+			foreach ($this->groupingSumExtraFields as $field) {
+				Billrun_Util::setIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($currentTotalGroups[$index], $field, 0) + Billrun_Util::getIn($extraSumGroupData, $field, 0));
+			}	
 		}
 		return $currentTotalGroups;
 	}
@@ -541,4 +588,7 @@ class Billrun_Cycle_Account_Invoice {
 		$rawData['invoicing_day'] = !empty($attributes['invoicing_day']) ? $attributes['invoicing_day'] : $config->getConfigChargingDay();
 	}
 
+	public function addAggragtionTranslations($translations) {
+		$this->aggregationTranslations = array_merge($this->aggregationTranslations,$translations);
+	}
 }

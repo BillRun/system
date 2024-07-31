@@ -10,41 +10,33 @@
  * Billing abstract exporter bulk (multiple rows at once) to a file
  *
  * @package  Billing
- * @since    5.9
+ * @since    2.8
  */
-abstract class Billrun_Exporter_File extends Billrun_Exporter {
+abstract class Billrun_Exporter_File extends Billrun_Exporter_Bulk {
 	
 	static protected $type = 'file';
+	
+	const SEQUENCE_NUM_INIT = 1;
+	
+	protected $lastLogSequenceNum = null;
+	protected $sequenceNum = null;
 	
 	/**
 	 * get file name
 	 */
-	protected function getFileName() {
-		$fileName = $this->config['file_name'];
-		$searchesAndReplaces = $this->getSearchesAndReplaces();
-		Billrun_Factory::dispatcher()->trigger('ExportFileGetFileName', array(&$fileName, &$searchesAndReplaces, $this));
-		return str_replace(array_keys($searchesAndReplaces), array_values($searchesAndReplaces), $fileName);
-	}
-	
-	protected function getSearchesAndReplaces() {
-		return array(
-			'{$sequence_num}' => $this->getSequenceNumber(),
-			'{$date_YYYYMMDDHHMMSS}' => $this->getTimeStamp(),
-			'{$date}' => $this->getTimeStamp(),
-		);
-	}
+	abstract protected function getFileName();
 	
 	/**
 	 * export 1 line to a file
 	 */
-	protected abstract function exportRowToFile($fp, $row, $type = 'data');
+	protected abstract function exportRowToFile($fp, $row);
 	
 	/**
 	 * get file path
 	 */
 	protected function getFilePath() {
-		$sharedPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getIn($this->config, 'workspace', 'workspace'));
-		return rtrim($sharedPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'export' . DIRECTORY_SEPARATOR . date("Ym") . DIRECTORY_SEPARATOR . substr(md5(serialize($this->config)), 0, 7) . DIRECTORY_SEPARATOR;
+		$defaultExportPath = Billrun_Factory::config()->getConfigValue(static::$type . '.export'. '') .'/';
+		return dirname(Billrun_Util::getIn($this->options,'file_path', $defaultExportPath));
 	}
 	
 	/**
@@ -53,11 +45,7 @@ abstract class Billrun_Exporter_File extends Billrun_Exporter {
 	 * @return string
 	 */
 	protected function getExportFilePath() {
-		$filePath = $this->getFilePath();
-		if (!file_exists($filePath)) {
-			mkdir($filePath, 0777, true);
-		}
-		return rtrim($filePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->getFileName();
+		return rtrim($this->getFilePath(), '/') . '/' . $this->getFileName();
 	}
 
 	/**
@@ -67,68 +55,80 @@ abstract class Billrun_Exporter_File extends Billrun_Exporter {
 	 */
 	function handleExport() {
 		$filePath = $this->getExportFilePath();
+		if(!file_exists($this->getFilePath())) {
+			$dirMask = Billrun_Util::getIn($this->config,'directory_create_mask',0777);
+			mkdir($this->getFilePath(), $dirMask, true);
+		}
 		$fp = fopen($filePath, 'w');
+
 		if (!$fp) {
 			Billrun_Log::getInstance()->log('File bulk export: Cannot open file "' . $filePath . '"', Zend_log::ERR);
 			return false;
 		}
-		$exportedData = array();
-		if (!empty($this->headerToExport)) {
-			Billrun_Factory::dispatcher()->trigger('BeforeExportHeader', array(&$this->headerToExport, $this));
-			$this->exportRowToFile($fp, $this->headerToExport, 'header');
-			$exportedData[] = $this->headerToExport;
-		}
-
-		foreach ($this->rowsToExport as $row) {
-			Billrun_Factory::dispatcher()->trigger('BeforeExportRow', array(&$row, $this));
+		$dataToExport = $this->getDataToExport();
+		foreach ($dataToExport as $row) {
 			$this->exportRowToFile($fp, $row);
-			$exportedData[] = $row;
-		}
-		if (!empty($this->footerToExport)) {
-			Billrun_Factory::dispatcher()->trigger('BeforeExportFooter', array(&$this->footerToExport, $this));
-			$this->exportRowToFile($fp, $this->footerToExport, 'footer');
-			$exportedData[] = $this->footerToExport;
 		}
 		fclose($fp);
-		return $exportedData;
+		$this->afterExport();
+		return $dataToExport;
 	}
 	
-	/**
-	 * see parent::afterExport
-	 */
-	public function afterExport() {
-		$this->sendFile();
-		parent::afterExport();
-	}
-	
-	/**
-	 * sends the exported file to the location/server configured
-	 */
-	protected function sendFile() {
-		foreach (Billrun_Util::getIn($this->config, 'senders', array()) as $senderConfig) {
-			$sender = Billrun_Sender::getInstance($senderConfig);
-			if (!$sender) {
-				Billrun_Factory::log()->log("Cannot get sender. details: " . print_R($senderConfig, 1), Zend_Log::ERR);
-				continue;
-			}
-			$sender->send($this->getExportFilePath());
-		}
-	}
-
-
 	/**
 	 * gets data to update log in DB
 	 * 
 	 * @return type
 	 */
 	protected function getLogData() {
-		$logData = parent::getLogData();
 		$fileName = $this->getFileName();
 		$filePath = rtrim($this->getFilePath(), '/') . '/' . $fileName;
-		$logData['file_name'] = $fileName;
-		$logData['path'] = $filePath;
 		
-		return $logData;
+		return array(
+			'exported_time' => date(self::base_dateformat),
+			'file_name' => $fileName,
+			'path' => $filePath,
+			'sequence_num' => $this->getNextLogSequenceNumber(),
+		);
+	}
+	
+	protected function getNextLogSequenceNumberQuery() {
+		return [
+			'source' => 'export',
+			'type' => static::$type,
+		];
+	}
+		
+	/**
+	 * gets the next sequence number of the VPMN from log collection
+	 */
+	protected function getNextLogSequenceNumber() {
+		if (is_null($this->lastLogSequenceNum)) {
+			$query = $this->getNextLogSequenceNumberQuery();
+			$sort = array(
+				'export_time' => -1,
+			);
+			$lastSeq = $this->logCollection->query($query)->cursor()->sort($sort)->limit(1)->current()->get('sequence_num');
+			if (is_null($lastSeq)) {
+				$this->lastLogSequenceNum = self::SEQUENCE_NUM_INIT;
+			} else {
+				$this->lastLogSequenceNum = $lastSeq + 1;
+			}
+		}
+		return $this->lastLogSequenceNum;
+	}
+	
+	/**
+	 * gets current sequence number for the file
+	 * 
+	 * @return string - number in the range of 00001-99999
+	 */
+	protected function getSequenceNumber() {
+		if (is_null($this->sequenceNum)) {
+			$seqNumLength = $this->getConfig('sequence_num_length', 5);
+			$nextSequenceNum = $this->getNextLogSequenceNumber();
+			$this->sequenceNum = sprintf('%0' . $seqNumLength . 'd', $nextSequenceNum % pow(10, $seqNumLength));
+		}
+		return $this->sequenceNum;
 	}
 	
 }

@@ -15,199 +15,390 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 * @author eran
 */
 class OnetimeinvoiceAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
-	use Billrun_Traits_Api_OperationsLock;
-	
+	use Billrun_Traits_ForeignFields;
+
 	const STEP_PDF_ONLY = 0;
 	const STEP_PDF_AND_BILL = 1;
 	const STEP_FULL = 2;
 
 	protected $aid;
 	
-    public function execute($arg = null) {
-        $this->allowed();
-        
-        //validate input		
-        $request = $this->getRequest()->getRequest();
-        if(!$this->validateInputs($request) ) {
-            return FALSE;
-        }
-        
-        $oneTimeStamp = date('YmdHis', Billrun_Util::getFieldVal($request['invoice_unixtime'],time()));
-		$inputCdrs = json_decode($request['cdrs'],JSON_OBJECT_AS_ARRAY);
+	/**
+	 * container for processed cdrs
+	 * @var array
+	 */
+	protected $processsedCdrs = array();
+
+	public function execute($arg = null) {
+		$this->allowed();
+
+		//validate input		
+		$request = $this->getRequest()->getRequest();
+		if (!$this->validateInputs($request)) {
+			return FALSE;
+		}
+
+		$oneTimeStamp = date('YmdHis', Billrun_Util::getFieldVal($request['invoice_unixtime'], time()));
+		$inputCdrs = json_decode($request['cdrs'], JSON_OBJECT_AS_ARRAY);
 		$step = isset($request['step']) ? intval($request['step']) : self::STEP_FULL;
 		$sendEmail = isset($request['send_email']) ? intval($request['send_email']) : true;
 		$allowBill = isset($request['allow_bill']) ? intval($request['allow_bill']) : 1;
-        $cdrs = [];
-        $this->aid = intval($request['aid']);
-		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''),JSON_OBJECT_AS_ARRAY);
-        $affectedSids = [];
-        Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($this->aid, $inputCdrs, $paymentData, $allowBill, $step, $oneTimeStamp, $sendEmail));
+		$uf = isset($request['uf']) ? json_decode($request['uf'], JSON_OBJECT_AS_ARRAY) : [];
+		$chargeFlow = isset($request['charge_flow']) ? $request['charge_flow'] : 'regular';
+		$expected = isset($request['expected']) ? $request['expected'] : 0;
+		$cdrs = [];
+		$this->aid = intval($request['aid']);
+		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''), JSON_OBJECT_AS_ARRAY);
+		$affectedSids = [];
+		Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($this->aid, $inputCdrs, $paymentData, $allowBill, $step, $oneTimeStamp, $sendEmail));
 		Billrun_Factory::log('One time invoice action running for account ' . $this->aid, Zend_Log::INFO);
-        //Verify the cdrs data
-        foreach($inputCdrs as &$cdr) {
-            if($this->aid != $cdr['aid']) {
-                $this->setError("One of the CDRs AID doesn't match the account AID");
-                return;
-            }
-            $affectedSids[] = $cdr['sid'] ?: 0;
-            $cdr['billrun'] = $oneTimeStamp;
-			$cdr = $this->parseCDR($cdr);
-			$cdr['onetime_invoice'] = $oneTimeStamp;
-			if(!$this->processCDR($cdr) ) {
-                return FALSE;
+
+		$chargingOptions = [
+			'affectedSids' => $affectedSids,
+			'oneTimeStamp' => $oneTimeStamp,
+			'inputCdrs' => $inputCdrs,
+			'step' => $step,
+			'sendEmail' => $sendEmail,
+			'allowBill' => $allowBill,
+			'uf' => $uf,
+			'request' => $request,
+			'paymentData' => $paymentData
+		];
+
+		if ($expected) {
+			if ($step != self::STEP_PDF_ONLY) {
+				$this->setError('Expected must to be with step 0 only');
+				return false;
 			}
-        }
+			$expectedInvoice = $this->expectedInvoice($chargingOptions, $expected ? true : false);
+			$expectedInvoiceData = $expectedInvoice->getInvoice()->getRawData();
+			$results = [
+				'pdfPath' => Generator_WkPdf::getTempDir($chargingOptions['oneTimeStamp']) . "/pdf/{$chargingOptions['oneTimeStamp']}_{$this->aid}_{$expectedInvoiceData['invoice_id']}.pdf",
+				'invoiceData' => $expectedInvoiceData,
+			];
+		} else if ($chargeFlow === 'charge_before_invoice') {
+			if ($step != self::STEP_FULL) {
+				$this->setError('charge_before_invoice must to be with step 2 only');
+				return false;
+			}
+			$results = $this->chargeBeforeInvoiceFlow($chargingOptions);
+		} else {
+			$results = $this->invoiceChargeFlow($chargingOptions);
+		}
 
-        // run aggregate on cdrs generate invoice
-        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  'stamp' => $oneTimeStamp , 'force_accounts' => [$this->aid], 'invoice_subtype' => Billrun_Util::getFieldVal($request['type'], 'regular'),'affected_sids' => $affectedSids ]);
-        $aggregator->aggregate();
+		if ($results === false) {
+			return;
+		}
 
+		if (empty($request['send_back_invoices'])) {
+			$ret = array(
+					'status' => 1,
+					'desc' => 'success',
+					'details' => ['invoice_path' => basename($results['pdfPath']), 'invoice_id' => !$expected ? $this->invoice->getInvoiceID() : $results['invoiceData']['invoice_id']],
+					'input' => $request
+			);
+			if ($expected) {
+				$ret['details']['invoiceData'] = $results['invoiceData'] ?? false;
+			} else {
+				$ret['details']['paymentData'] = $results['paymentData'] ?? false;
+			}
+			unset($ret['details']['invoiceData']['pdfPath']);
+			$this->getController()->setOutput(array($ret));
+			return TRUE;
+		} // else 
 
-        $this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $oneTimeStamp , 'autoload'=>true]);
-        $pdfPath = $this->invoice->getInvoicePath();
-		
+		return $this->sendBackInvoice($results['pdfPath']);
+	}
+
+	protected function invoiceChargeFlow($chargingOptions) {
+
+		$this->setupCache($chargingOptions['oneTimeStamp']);
+
+		$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp']);
+		if ($this->processsedCdrs === false) {
+			//Error message will be provided  for the  spesific CDR for within processCDRs  function
+			return false;
+		}
+
+		// run aggregate on cdrs generate invoice
+		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
+					'stamp' => $chargingOptions['oneTimeStamp'],
+					'force_accounts' => [$this->aid],
+					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
+					'affected_sids' => $chargingOptions['affectedSids'],
+					'uf' => $chargingOptions['uf']]);
+
+		$aggregator->aggregate();
+
+		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
+		$results['pdfPath'] = $this->invoice->getInvoicePath();
+
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
-		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill','stamp' => $oneTimeStamp,'invoices'=> [$this->invoice->getInvoiceID()], 'send_email' => $sendEmail]);
-		
-		if ($step >= self::STEP_PDF_AND_BILL) {
+		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail']]);
+
+		if ($chargingOptions['step'] >= self::STEP_PDF_AND_BILL) {
 			$billrunToBill->load();
 			$result = $billrunToBill->generate();
 			$this->isValidGenerateResult($result, $billrunToBill);
 		} else {
 			$invoiceData = $this->invoice->getRawData();
-			$invoiceData['allow_bill'] = $allowBill;
+			$invoiceData['allow_bill'] = $chargingOptions['allowBill'];
 			$billrunToBill->updateBillrunNotForBill($invoiceData);
 			$billrunToBill->handleSendInvoicesByMail([$invoiceData['invoice_id']]);
 		}
 
-		if ($step >= self::STEP_FULL) {
-			if (!$this->lock()) {
-				Billrun_Factory::log("makePayment is already running", Zend_Log::NOTICE);
-				return;
-			}
-
+		if ($chargingOptions['step'] >= self::STEP_FULL) {
 			Billrun_Factory::log('One time invoice action paying invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
 			$chargeOptions = [
 				'aids' => [$this->aid],
 				'invoices' => [$this->invoice->getInvoiceID()],
 				'payment_data' => [
-					$this->aid => $paymentData,
+					$this->aid => $chargingOptions['paymentData'],
 				],
 			];
-            Billrun_Bill_Payment::makePayment($chargeOptions);
-			if (!$this->release()) {
-				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-				return;
-			}
+			$paymentResponse = Billrun_Bill_Payment::makePayment($chargeOptions); // todo: handle payment response
 		}
+		$results['invoiceData'] = $this->invoice->getRawData();
+		$results['paymentData'] = $paymentResponse;
+
+		return $results;
+	}
+	
+	protected function expectedInvoice($chargingOptions, $expected = false) {
+
+		$this->setupCache($chargingOptions['oneTimeStamp']);
+
+		//Process and price onetime  CDRs in memory
+		if (empty($this->processsedCdrs)) {
+			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
+		}
+		if ($this->processsedCdrs === false) {
+			//Error message will be provided  for the  spesific CDR for within processCDRs  function
+			return false;
+		}
+
+		// run aggregate on cdrs and fake invoice generate invoice
+		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
+					'stamp' => $chargingOptions['oneTimeStamp'],
+					'force_accounts' => [$this->aid],
+					'fake_cycle' => true,
+					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
+					'affected_sids' => $chargingOptions['affectedSids'],
+					'generate_pdf' => $expected,
+					'uf' => $chargingOptions['uf']]);
+
+		$aggregator->setExternalChargesForAid($this->aid, $this->processsedCdrs);
+		$aggregator->aggregate();
+
+		//Get The fake invoice totals
+		$fakeInvoice = $aggregator->getLastBillrunObj();
 		
-		if(empty($request['send_back_invoices'])) {
-			$this->getController()->setOutput(array(array(
-					'status' => 1,
-					'desc' => 'success',
-					'details' => [ 'invoice_path' => $pdfPath ],
-					'input' => $request
-			)));
-			return TRUE;
-		} // else 
-        return  $this->sendBackInvoice($pdfPath);
-    }
-	
-	protected function getInsertData() {
-	return array(
-			'action' => 'charge_account',
-			'filtration' => (empty($this->aid) ? 'all' : $this->aid),
-		);
-	}
-	
-	protected function getConflictingQuery() {
-		if (!empty($this->aid)) {
-			return array(
-				'$or' => array(
-					array('filtration' => 'all'),
-					array('filtration' => array('$in' => array($this->aid))),
-				),
-			);
-		}
-	}
-	
-	protected function getReleaseQuery() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty($this->aid) ? 'all' : $this->aid),
-			'end_time' => array('$exists' => false)
-		);
+		return $fakeInvoice;
 	}
 
-    /**
-    * Validate the API inputs 
-    */
-    protected function validateInputs($request) {
-        $requiredParameters = array(
-            'cdrs' => 'string',
-            'aid' => 'int',
-        );
-        $msg = '';
-        foreach($requiredParameters as $key => $type) {
-            if(empty($request[$key]) /*|| !Billrun_Util::verify_array($request[$key], $type)*/ ) {
-                $msg  .= "Required input '{$key}' is missing or of incorrect type.\n";
-            }
-        }
-        if(!empty($msg)) {
-            $this->setError($msg,$request);
-        }
-        return empty($msg);
-    }
-    
-    
-    /**
-    * Adjust th CDRs billrun stamp to be the one time stamp
-    */
-    protected static function adjustBillrun($cdr, $params) {
-        $cdr['billrun'] = $params['stamp'];
-        return $cdr;
-    }
-    
-    
-    protected function sendBackInvoice($pdfPath ) {
+	protected function chargeBeforeInvoiceFlow($chargingOptions) {
+
+		$this->setupCache($chargingOptions['oneTimeStamp']);
+
+		if (empty($this->processsedCdrs)) {
+			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
+		}
+
+		$fakeInvoice = $this->expectedInvoice($chargingOptions);
+		if ($fakeInvoice) {
+			$expectedTotals = $fakeInvoice->getInvoice()->getRawData()['totals'];
+		} else {
+			throw new Exception("Invoice cannot be pretend before charge");
+		}
+
+		//Charge the account on the resulting fake in voice totals (TODO REPLACE WITH ACTUAL CHARGING LOGIC)
+		$current_account = Billrun_Factory::account()->loadAccountForQuery(['aid' => (int) $this->aid]);
+
+		if (empty($current_account['payment_gateway']['active'])) {
+			$error = array(
+				'status' => 0,
+				'desc' => 'No payment method for account',
+			);
+			$this->getController()->setOutput(array($error));
+			return false;
+		}
+
+		if (!Billrun_Util::isEqual($expectedTotals['after_vat_rounded'], 0, Billrun_Bill::precision)) {
+			try {
+				$paymentOptions = [
+					'bills' => array(
+						array(
+							'aid' => $current_account['aid'],
+							'gateway_details' => $current_account['payment_gateway']['active'],
+							'payer_name' => $current_account['first_name'] . ' ' . $current_account['last_name'],
+							'payment_method' => 'automatic',
+						)
+					),
+					'aids' => array($current_account['aid']),
+				];
+				
+				if ($expectedTotals['after_vat_rounded'] > 0) {
+					$paymentOptions['bills'][0]['left_to_pay'] = $expectedTotals['after_vat_rounded'];
+				} else {
+					$paymentOptions['bills'][0]['left'] = (-1) * $expectedTotals['after_vat_rounded'];
+				}
+				$paymentStatus = Billrun_Bill_Payment::makePayment($paymentOptions);
+
+			} catch (\Exception $ex) {
+				$this->setError("Failed  when  trying to preform payment  for AID: ${inputPayment['aid']} for an amount of ${inputPayment['amount']}");
+				Billrun_Factory::log()->logCrash($ex, Zend_Log::ERR);
+				return false;
+			}
+			
+			if (empty($paymentStatus['completed'])) {
+				$error = array(
+					'status' => 0,
+					'desc' => 'Charge failed before invoicing',
+				);
+				$this->getController()->setOutput(array($error));
+				return false;
+			}
+		}
+		//Actually save the onetime  CDRs to the DB. (By pulling the CDR processors and saving theprcessed CDRs to DB)
+		foreach ($this->processsedCdrs as $cdr) {
+			$processor = $this->getProcessorForCDR($cdr, true);
+			$processor->storeWhenInMemory();
+		}
+
+		//Actually generte te invoice
+		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
+					'stamp' => $chargingOptions['oneTimeStamp'],
+					'force_accounts' => [$this->aid],
+					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
+					'affected_sids' => $chargingOptions['affectedSids'],
+					'uf' => $chargingOptions['uf']]);
+		$aggregator->aggregate();
+
+		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
+
+		//Create bill for the invioce and attach the payment to it. (TODO ACTUALLY LIMIT THE INVOICE/PAYMENT ASSOCIATION)
+		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
+		$billrunToBillParams = [
+			'type' => 'BillrunToBill',
+			'stamp' => $chargingOptions['oneTimeStamp'],
+			'invoices' => [$this->invoice->getInvoiceID()],
+			'send_email' => $chargingOptions['sendEmail'],
+				/* 'force_payment_to_invoice' => [ $this->invoice->getInvoiceID() => $deposit->getId() ] */
+		];
+		$billrunToBill = Billrun_Generator::getInstance($billrunToBillParams);
+
+		$billrunToBill->load();
+		$result = $billrunToBill->generate();
+		$this->isValidGenerateResult($result, $billrunToBill);
+
+		$results = [
+			'pdfPath' => $this->invoice->getInvoicePath(),
+			'invoiceData' => $this->invoice->getRawData(),
+			'paymentData' => $paymentStatus,
+		];
+
+		return $results;
+	}
+
+	protected function processCDRs($inputCdrs, $oneTimeStamp, $inMemory = false) {
+		$processedCdrs = [];
+		//Verify the cdrs data
+		foreach ($inputCdrs as &$cdr) {
+			if ($this->aid != $cdr['aid']) {
+				$this->setError("One of the CDRs AID doesn't match the account AID");
+				return false;
+			}
+			$affectedSids[] = $cdr['sid'] ?: 0;
+			$cdr['billrun'] = $oneTimeStamp;
+			$cdr = $this->parseCDR($cdr);
+			$cdr['onetime_invoice'] = $oneTimeStamp;
+			if (!($processedCDR = $this->processCDR($cdr, $inMemory))) {
+				return FALSE;
+			}
+			$processedCdrs[] = $processedCDR;
+		}
+
+		return $processedCdrs;
+	}
+
+	/**
+	 * Validate the API inputs 
+	 */
+	protected function validateInputs($request) {
+		$requiredParameters = array(
+			'cdrs' => 'string',
+			'aid' => 'int',
+		);
+		$msg = '';
+		foreach ($requiredParameters as $key => $type) {
+			if (empty($request[$key]) /* || !Billrun_Util::verify_array($request[$key], $type) */) {
+				$msg .= "Required input '{$key}' is missing or of incorrect type.\n";
+			}
+		}
+		//Validate the uf data
+		if (!empty($request['uf'])) {
+			$uf = json_decode($request['uf'], JSON_OBJECT_AS_ARRAY);
+			$uf_config = Billrun_Factory::config()->getConfigValue('billrun.immediate_invoice.uf', array());
+			foreach ($uf as $uf_key => $uf_val) {
+				if (!in_array($uf_key, $uf_config)) {
+					$msg .= "Field '{$uf_key}' is not configured as a valid user field\n";
+				}
+			}
+		}
+		if (!empty($msg)) {
+			$this->setError($msg, $request);
+		}
+		return empty($msg);
+	}
+
+	/**
+	 * Adjust th CDRs billrun stamp to be the one time stamp
+	 */
+	protected static function adjustBillrun($cdr, $params) {
+		$cdr['billrun'] = $params['stamp'];
+		return $cdr;
+	}
+
+	protected function sendBackInvoice($pdfPath) {
 		$cont = file_get_contents($pdfPath);
 		if ($cont) {
-			header('Content-disposition: inline; filename="'.$file_name.'"');
+			header('Content-disposition: inline; filename="' . $file_name . '"');
 			header('Cache-Control: public, must-revalidate, max-age=0');
 			header('Pragma: public');
-			header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
+			header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
 			header('Content-Type: application/pdf');
-			Billrun_Factory::log('Transfering file content from : '.$pdfPath .' to http connection');
+			Billrun_Factory::log('Transfering file content from : ' . $pdfPath . ' to http connection');
 			echo $cont;
 			die();
-		}  else {
+		} else {
 			$this->setError("Failed when trying to access the file at  {$pdfPath}");
 			return FALSE;
 		}
 		return TRUE;
 	}
-	
+
 	protected function parseCDR($cdr) {
-        //TODO add further  CDR types support here
-        switch($cdr['type']) {
-            case "credit" :
-                return $this->parseCredit($cdr);
-            default:
-                $this->setError("Unknown CDR type {$cdr['type']}");
-        }
-        return FALSE;
+		//TODO add further  CDR types support here
+		switch ($cdr['type']) {
+			case "credit" :
+				return $this->parseCredit($cdr);
+			default:
+				$this->setError("Unknown CDR type {$cdr['type']}");
+		}
+		return FALSE;
 	}
-	
-    protected function parseCredit($credit_row) {
+
+	protected function parseCredit($credit_row) {
 		$credit_row['rand'] = rand(1, 1000000);
 		$ret = $this->validateCDRFields($credit_row);
 		$ret['source'] = 'credit';
 		$ret['stamp'] = Billrun_Util::generateArrayStamp($credit_row);
-		$ret['process_time'] = new MongoDate();
-		$ret['urt'] = new MongoDate( empty($credit_row['credit_time']) ? time() : strtotime($credit_row['credit_time']));
+		$ret['process_time'] = new Mongodloid_Date();
+		$ret['urt'] = new Mongodloid_Date(empty($credit_row['credit_time']) ? time() : strtotime($credit_row['credit_time']));
 		$rate = Billrun_Rates_Util::getRateByName($credit_row['rate']);
-		$ret['usaget'] = $this->getCreditUsaget($ret,$rate);
+		$ret['usaget'] = $this->getCreditUsaget($ret, $rate);
 		if ($rate->isEmpty()) {
 			throw new Exception("Rate doesn't exist");
 		}
@@ -220,71 +411,82 @@ class OnetimeinvoiceAction extends ApiAction {
 		if ($this->isCreditByPrice($ret)) {
 			$this->parseCreditByPrice($ret);
 		} else {
-			$this->parseCreditByUsagev($ret,$rate);
+			$this->parseCreditByUsagev($ret, $rate);
 		}
 		$ret['skip_calc'] = $this->getSkipCalcs($ret);
 		return $ret;
 	}
-	
-	protected function processCDR($cdr) {
+
+	protected function processCDR($cdr, $inMemory = false) {
 		Billrun_Factory::log("Process of credit starting", Zend_Log::INFO);
 		$options = array(
 			'type' => 'Credit',
 			'parser' => 'none',
-			'rand' => $cdr['rand']
+			'rand' => $cdr['rand'],
+			'in_memory' => $inMemory,
 		);
-		$processor = Billrun_Processor::getInstance($options);
+		$processor = $this->getProcessorForCDR($cdr, $inMemory);
 		$processor->addDataRow($cdr);
 		if ($processor->process() === false) {
-			$this->setError('Processing Error for CDR'.json_encode($cdr));
+			$this->setError('Processing Error for CDR' . json_encode($cdr));
 			return FALSE;
 		}
 		Billrun_Factory::log("Process of credit ended", Zend_Log::INFO);
 		return current($processor->getAllLines());
 	}
-	
+
+	protected function getProcessorForCDR($cdr, $inMemoryProcessing = false) {
+		$options = [
+			'type' => 'Credit',
+			'parser' => 'none',
+			'rand' => $cdr['rand'],
+			'in_memory' => $inMemoryProcessing,
+		];
+		return Billrun_Processor::getInstance($options);
+	}
+
 	protected function getSkipCalcs($row) {
 		$skipArray = array('unify');
-		if(empty($row['sid']) && !empty($row['aid'])) {
-            $skipArray[] = 'customer';
+		if (empty($row['sid']) && !empty($row['aid'])) {
+			$skipArray[] = 'customer';
 		}
-		if(!empty($row['prepriced'])) {
-		$skipArray[] = 'pricing';
+		if (!empty($row['prepriced'])) {
+			$skipArray[] = 'pricing';
 		}
 		return $skipArray;
 	}
-	
+
 	protected function parseCreditByPrice(&$row) {
 		$row['credit']['aprice'] = $row['aprice'];
 		$row['aprice'] = $row['aprice'] * $row['usagev'];
 		$row['prepriced'] = true;
 	}
-	
+
 	protected function parseCreditByUsagev(&$row, $rate) {
 		//$row['usagev'] = 1;
 		$row['aprice'] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], null, array(), 0, $row['urt']->sec);
 		$row['prepriced'] = true;
 	}
-	
+
 	protected function isCreditByPrice($row) {
 		return isset($row['aprice']);
 	}
-	
+
 	protected function getCreditUsaget($row, $rate) {
 		if (!isset($row['aprice'])) {
 			return key(@$rate['rates']);
 		}
 		return ($row['aprice'] >= 0 ? 'charge' : 'refund');
 	}
-	
+
 	protected function getUsageTypeFromRate($rate) {
 		return key(@$rate['rates']);
 	}
-	
+
 	protected function validateCDRFields($credit_row) {
 		$fields = Billrun_Factory::config()->getConfigValue('credit.fields', array());
 		$ret = $credit_row;
-		
+
 		foreach ($fields as $fieldName => $field) {
 			if (isset($field['mandatory']) && $field['mandatory']) {
 				if (isset($credit_row[$fieldName])) {
@@ -305,11 +507,11 @@ class OnetimeinvoiceAction extends ApiAction {
 			} else {
 				continue;
 			}
-			
+
 			if (!empty($field['validator'])) {
 				$validator = Billrun_TypeValidator_Manager::getValidator($field['validator']);
 				if (!$validator) {
-					Billrun_Factory::log('Cannot get validator for field ' .  $fieldName . '. Details: ' . print_r($field, 1));
+					Billrun_Factory::log('Cannot get validator for field ' . $fieldName . '. Details: ' . print_r($field, 1));
 					$this->setError('General error');
 				}
 				$params = isset($field['validator_params']) ? $field['validator_params'] : array();
@@ -317,29 +519,38 @@ class OnetimeinvoiceAction extends ApiAction {
 					$this->setError('Field ' . $fieldName . ' should be of type ' . ucfirst($field['validator']));
 				}
 			}
-			
+
 			if (!empty($field['conversionMethod'])) {
 				$ret[$fieldName] = call_user_func($field['conversionMethod'], $ret[$fieldName]);
 			}
 		}
-		
+
 		return $ret;
 	}
-	
+
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
-	
+
 	protected function isValidGenerateResult($result, $billrunToBill) {
 		$tries = 0;
-		while($result['alreadyRunning']){
-			if ($tries >= 3) {	
+		while ($result['alreadyRunning']) {
+			if ($tries >= 3) {
 				throw new Exception("BillrunToBill is already running after " . $tries . " tries");
 			}
 			$tries++;
 			sleep(1);
-			Billrun_Factory::log('BillrunToBill is already running, try to generate again. Try number: '. $tries, Zend_Log::DEBUG);
+			Billrun_Factory::log('BillrunToBill is already running, try to generate again. Try number: ' . $tries, Zend_Log::DEBUG);
 			$result = $billrunToBill->generate();
 		}
 	}
+
+	protected function setupCache($stamp) {
+		// if  we cache the gba  results to gsd do that before the cdr processing
+		if(Billrun_Factory::config()->getConfigValue('customeronetime.aggregator.cache.gba_to_gsd.enabled',false)) {
+			Billrun_Aggregator_Customer::setupCycleCache();
+			Billrun_Factory::account()->getBillable(new Billrun_DataTypes_MongoCycleTime(new Billrun_DataTypes_CycleTime($stamp)),0,1,[$this->aid]);
+		}
+	}
+
 }

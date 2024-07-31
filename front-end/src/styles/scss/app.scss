@@ -1,0 +1,63 @@
+/*Start scss */
+
+.form-input-with-hint-60 {
+  input {
+    float: left;
+    width: 60%;
+    margin-right: 10px;
+  }
+  .help-block {
+    display: inline-block;
+    line-height: 2;
+  }
+}
+
+.btn-link {
+  cursor: pointer;
+}
+
+@media all and (max-width: 768px) {
+  body {
+    margin-top: 0;
+  }
+  #footer {
+      margin-left: 0!important;
+  }
+  #top-nav.collapse-sizebar ~ #footer {
+      margin-left: 0!important;
+  }
+  #top-nav.collapse-sizebar + #page-wrapper {
+    margin-left: 0!important;
+  }
+  .col-xs-pr5 { padding-right: 5px !important; }
+
+}
+
+.form-horizontal .radio,
+.form-horizontal .checkbox,
+.form-horizontal .radio-inline,
+.form-horizontal .checkbox-inline {
+  padding-top: 0;
+}
+
+.subscription-services-details .react-datepicker-popper,
+.discount-setup .react-datepicker-popper {
+  top: 38px!important;
+}
+
+// $baseZIndex: 2000;
+// $modalsDepth: 5;
+// @for $i from 1 through $modalsDepth {
+//   body:nth-child(#{$i}) {
+//     & .modal-backdrop.fade.in {
+//       z-index: #{$i * 10 + $baseZIndex};
+//     }
+//     & .fade.in.modal{
+//       z-index: #{$i * 10 + $baseZIndex + 1};
+//     }
+//   }
+// }
+
+.expectedInvoicePopupContainer {
+  margin: 0 100px;
+}

@@ -158,9 +158,10 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			return false;
 		}
 		
-		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));
+		$row['eurt'] = $row['urt'] = new Mongodloid_Date($datetime->format('U'));
 		$row['timezone'] = $datetime->getOffset();
-		$row['usaget'] = $this->getLineUsageType($row);
+		Billrun_Factory::dispatcher()->trigger('beforeGetLineUsageType', array(&$row, &$this->usagevUnit, &$this->volumeType, &$this->volumeSrc, &$this->stampFields, static::$type));               
+		$row['usaget'] = $row['usaget'] ?? $this->getLineUsageType($row);
 		$usagev = $this->getLineUsageVolume($row['uf'], $row['usaget']);
 		if ($usagev === false) {
 			return false;
@@ -176,7 +177,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
 		$row['log_stamp'] = $this->getFileStamp();
-		$row['process_time'] = new MongoDate();
+		$row['process_time'] = new Mongodloid_Date();
 		return $row;
 	}
 	
@@ -249,7 +250,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = new MongoDate();
+		$trailer['process_time'] = new Mongodloid_Date();
 		return $trailer;
 	}
 

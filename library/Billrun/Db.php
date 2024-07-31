@@ -27,25 +27,24 @@ class Billrun_Db extends Mongodloid_Db {
 	 * @param \MongoDb $db
 	 * @param \Mongodloid_Connection $connection
 	 */
-	public function __construct(\MongoDb $db, \Mongodloid_Connection $connection) {
+	public function __construct(\MongoDB\Database $db, \Mongodloid_Connection $connection) {
 		parent::__construct($db, $connection);
 		// TODO: refatoring the collections to factory (loose coupling)
 		$this->collections = Billrun_Factory::config()->getConfigValue('db.collections', array());
 		$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 3600000); // default 60 minutes
-		if ($this->compareClientVersion('1.5.3', '<')) {
-			Billrun_Factory::log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
-			@MongoCursor::$timeout = $timeout;
-		} else {
-			// see also bugs: 
-			// https://jira.mongodb.org/browse/PHP-1099
-			// https://jira.mongodb.org/browse/PHP-1080
-			$db->setWriteConcern($db->getWriteConcern()['w'], $timeout);
-		}
+		// see also bugs: 
+		// https://jira.mongodb.org/browse/PHP-1099
+		// https://jira.mongodb.org/browse/PHP-1080
+		$options = [
+			'readPreference' => $this->_db->getReadPreference(),
+			'writeConcern' => new \MongoDB\Driver\WriteConcern($this->_db->getWriteConcern()->getW() ?? 1, max($timeout, 0))
+		];
+		$this->_db = $this->_db->withOptions($options);
 	}
 	
 	/**
-	 * Get the current MongoDB
-	 * @return MongoDB
+	 * Get the current MongoDB\Database
+	 * @return MongoDB\Database
 	 */
 	public function getDb() {
 		return $this->_db;
@@ -99,13 +98,17 @@ class Billrun_Db extends Mongodloid_Db {
 		if (substr($name, (-1) * strlen($suffix)) == $suffix) {
 			$collectionName = substr($name, 0, (strpos($name, $suffix)));
 			if (!empty($this->collections[$collectionName])) {
-				return $this->getCollection($this->collections[$collectionName]);
-			}
-		} else if ($arguments['force']) {
-			return $this->getCollection($name);
+                            $name = $this->collections[$collectionName];
+			}else if ($arguments[0]['force']){
+                            $name = $collectionName;
+                        } else {
+                            Billrun_Factory::log('Collection or property ' . $name . ' was not found in the DB layer', Zend_Log::ALERT);
+                            return false;
+                        }
+                        return $this->getCollection($name);
 		}
 
-		Billrun_Factory::log('Collection or property ' . $name . ' did not found in the DB layer', Zend_Log::ALERT);
+		Billrun_Factory::log('Collection or property ' . $name . ' was not found in the DB layer', Zend_Log::ALERT);
 		return false;
 	}
 
@@ -118,7 +121,7 @@ class Billrun_Db extends Mongodloid_Db {
 		if (!empty($this->collections[$name])) {
 			return $this->collections[$name];
 		}
-		Billrun_Factory::log('Collection or property ' . $name . ' did not found in the DB layer', Zend_Log::ALERT);
+		Billrun_Factory::log('Collection or property ' . $name . ' was not found in the DB layer', Zend_Log::ALERT);
 	}
 
 	public function execute($code, $args = array()) {
@@ -126,26 +129,26 @@ class Billrun_Db extends Mongodloid_Db {
 	}
 
 	/**
-	 * Change numeric references to MongoDate object in a given filed in an array.
-	 * @param MongoDate $arr 
+	 * Change numeric references to MongodloidDate object in a given filed in an array.
+	 * @param Mongodloid_Date $arr 
 	 * @param type $fieldName the filed in the array to alter
 	 * @return the translated array
 	 */
-	public static function intToMongoDate($arr) {
+	public static function intToMongodloidDate($arr) {
 		if (is_array($arr)) {
 			foreach ($arr as $key => $value) {
 				if (is_numeric($value)) {
-					$arr[$key] = new MongoDate((int) $value);
+					$arr[$key] = new Mongodloid_Date((int) $value);
 				}
 			}
 		} else if (is_numeric($arr)) {
-			$arr = new MongoDate((int) $arr);
+			$arr = new Mongodloid_Date((int) $arr);
 		}
 		return $arr;
 	}
 	
 	public function getByDBRef($dbRef) {
-		if(MongoDBRef::isRef($dbRef)) {
+		if(Mongodloid_Ref::isRef($dbRef)) {
 			$coll = $this->getCollection($dbRef['$ref']);
 			if($coll) {
 				return $coll->getRef($dbRef);

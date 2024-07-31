@@ -212,6 +212,9 @@ class Billrun_Factory {
 		try {
 			if (!self::$cache) {
 				$args = self::config()->getConfigValue('cache', array());
+				if (isset($args[2]['is_relative_path']) && $args[2]['is_relative_path']) {
+					$args[2]['cache_dir'] = APPLICATION_PATH . '/' . $args[2]['cache_dir'];
+				}
 				if (isset($args[2]['cache_id_prefix'])) {
 					$args[2]['cache_id_prefix'] .= '_' . Billrun_Factory::config()->getTenant() . '_';
 				}
@@ -223,7 +226,7 @@ class Billrun_Factory {
 
 			return self::$cache;
 		} catch (Exception $e) {
-			Billrun_Factory::log('Cache instance cannot be generated', Zend_Log::ALERT);
+			Billrun_Factory::log('Cache instance cannot be generated. Exception type: ' . gettype($e) . '. Error: ' . $e->getMessage() . '. Line #' . $e->getLine(), Zend_Log::ALERT);
 		}
 		return false;
 	}
@@ -269,7 +272,7 @@ class Billrun_Factory {
 		}
 		$stamp = Billrun_Util::generateArrayStamp($options);
 		if (!isset(self::$smser[$stamp])) {
-			self::$smser[$stamp] = new Billrun_Sms($options);
+			self::$smser[$stamp] = Billrun_Sms_Abstract::getInstance($options);
 		}
 
 		return self::$smser[$stamp];
@@ -590,9 +593,10 @@ class Billrun_Factory {
 				}
 			}
 			OAuth2\Autoloader::register();
-			$storage = new OAuth2\Storage\MongoDB(Billrun_Factory::db()->getDb()->getDb());
+			$storage = new Billrun_OAuth2_Storage_MongoDB(Billrun_Factory::db()->getDb());
 			self::$oauth2[$stamp] = new OAuth2\Server($storage, $params);
 			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\ClientCredentials($storage));
+			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\UserCredentials($storage));
 			// Future compatibility
 //			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\AuthorizationCode($storage));
 //			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\JwtBearer($storage));

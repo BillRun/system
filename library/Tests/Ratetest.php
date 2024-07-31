@@ -40,8 +40,13 @@ class Tests_Ratetest extends UnitTestCase {
 		array('row' => array('stamp' => 'd1', 'aid' => 27, 'sid' => 30, 'type' => 'prefix', 'plan' => 'WITH_NOTHING', 'prefix' => '770', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
 			'expected' => array('CALL' => 'retail')),
 		//Test num 5 d2 test tow fildes with longest prefix 
-		array('row' => array('stamp' => 'd2', 'aid' => 27, 'sid' => 31, 'type' => 'longest_prefix', 'plan' => 'WITH_NOTHING', 'phone' => '972533406999', 'code' => '1234', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
+		array('row' => array('stamp' => 'd2', 'aid' => 27, 'sid' => 31, 'type' => 'longest_prefix', 'plan' => 'WITH_NOTHING', 'phone' => '9725123456', 'code' => '1234', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
 			'expected' => array('CALL_A' => 'retail')),
+		//https://billrun.atlassian.net/browse/BRCD-3037
+		array('row' => array('stamp' => 'd21', 'aid' => 27, 'sid' => 31, 'type' => '2longest_prefix_realtime', 'plan' => 'WITH_NOTHING', "number" => "8990", "vlr" => "6829", 'usaget' => 'call', 'usagev' => 60, 'urt' => '2021-05-14 11:00:00+03:00'),
+			'expected' => array('ROAMING_CALLS' => 'retail')),
+		array('row' => array('stamp' => 'e21', 'aid' => 27, 'sid' => 31, 'type' => '2longest_prefix', 'plan' => 'WITH_NOTHING', "number" => "8990", "vlr" => "6829", 'usaget' => 'call', 'usagev' => 60, 'urt' => '2021-05-14 11:00:00+03:00'),
+			'expected' => array('ROAMING_CALLS' => 'retail')),
 		//Test num 6 d3 test Long prefix exists but it's in an expired revision: Take the shorter prefix from an active revision
 		array('row' => array('stamp' => 'd3', 'aid' => 27, 'sid' => 31, 'type' => 'old_revision', 'plan' => 'WITH_NOTHING', 'code' => '033060985', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-04-14 11:00:00+03:00'),
 			'expected' => array('SMS' => 'retail')),
@@ -142,6 +147,7 @@ class Tests_Ratetest extends UnitTestCase {
 	}
 
 	public function TestPerform() {
+		$this->rows  = $this->skip_tests($this->rows ,'row.stamp');
 		foreach ($this->rows as $key => $row) {
 			$fixrow = $this->fixRow($row['row'], $key);
 			$this->linesCol->insert($fixrow);
@@ -178,7 +184,7 @@ class Tests_Ratetest extends UnitTestCase {
 		if (!empty($retunrRates)) {
 			foreach ($row['expected'] as $rate => $tariff) {
 				$message .= (array_keys($row['expected'])[0] != $rate) ? '</br>' : '';
-				$checkRate = current(array_filter($retunrRates, function(array $cat) use ($tariff) {
+				$checkRate = current(array_filter($retunrRates, function (array $cat) use ($tariff) {
 						return $cat['tariff_category'] === $tariff;
 					}));
 
@@ -207,9 +213,9 @@ class Tests_Ratetest extends UnitTestCase {
 	protected function fixRow($row, $key) {
 
 		if (!array_key_exists('urt', $row)) {
-			$row['urt'] = new MongoDate(time() + $key);
+			$row['urt'] = new Mongodloid_Date(time() + $key);
 		} else {
-			$row['urt'] = new MongoDate(strtotime($row['urt']));
+			$row['urt'] = new Mongodloid_Date(strtotime($row['urt']));
 		}
 		if (!isset($row['aid'])) {
 			$row['aid'] = 1234;
@@ -227,16 +233,16 @@ class Tests_Ratetest extends UnitTestCase {
 					);
 				}
 				if (isset($service['from'])) {
-					$row['services_data'][$key]['from'] = new MongoDate(strtotime($service['from']));
+					$row['services_data'][$key]['from'] = new Mongodloid_Date(strtotime($service['from']));
 				}
 				if (isset($service['to'])) {
-					$row['services_data'][$key]['to'] = new MongoDate(strtotime($service['to']));
+					$row['services_data'][$key]['to'] = new Mongodloid_Date(strtotime($service['to']));
 				}
 			}
 		}
 
 		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();
-		$row['plan_ref'] = MongoDBRef::create('plans', (new MongoId((string) $plan['_id'])));
+		$row['plan_ref'] = Mongodloid_Ref::create('plans', (new Mongodloid_Id((string) $plan['_id'])));
 		return $row;
 	}
 

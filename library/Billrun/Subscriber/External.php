@@ -7,18 +7,28 @@
  */
 
 class Billrun_Subscriber_External extends Billrun_Subscriber {
+	use Billrun_Subscriber_External_Cacheable;
 	
 	static $queriesLoaded = false;
 	
+	//static protected  $cachePrefix = 'ext_sub_';
 	static protected $type = 'external';
 	
 	protected static $queryBaseKeys = [ 'limit','time','id'];
 	
 	protected $remote;
+	protected $remote_authentication;
+
+	const API_DATETIME_REGEX='/^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}:\d{2}(\.\d{3}|)?(Z|[+-]\d\d\:?\d\d|)$/';
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url', '');
+		$defaultAuthentication = Billrun_Factory::config()->getConfigValue('subscribers.external_authentication', []);
+		$this->remote_authentication = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_authentication', $defaultAuthentication);
+
+		$this->setCacheEnabled(Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_cache_enabled', false));
+		$this->setCachingTTL(Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_cache_ttl', 300));
 	}
 	
 	public function delete() {
@@ -44,18 +54,30 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
+
+		$results = $this->loadCache($externalQuery, function($externalQuery) {
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
-		$results = Billrun_Util::sendRequest($this->remote,
-														 json_encode($externalQuery),
-														 Zend_Http_Client::POST,
-														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);
+
+		$params = [
+			'authentication' => $this->remote_authentication,
+		];
+		$request = new Billrun_Http_Request($this->remote, $params);
+		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
+		$request->setRawData(json_encode($externalQuery));
+		$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
+		$request->setConfig(array('timeout' => $requestTimeout));
+		$results = $request->request(Billrun_Http_Request::POST)->getBody();
+
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results, Zend_Log::DEBUG);
-		$results = json_decode($results, true);
+			return json_decode($results, true);
+		});
+
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
 		return array_reduce($results, function($acc, $currentSub) {
+			Billrun_Utils_Mongo::convertQueryMongodloidDates($currentSub,static::API_DATETIME_REGEX);
 			$acc[] = new Mongodloid_Entity($currentSub);
 			return $acc;
 		}, []);
@@ -69,6 +91,12 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		return true;
 	}
 	
+	//------------------------------- STATIC ------------------------------
+	public function getCachingEntityIdKey() {
+		return 'sid';
+	}
+
+	//-------------------------------- PROTECTED --------------------------
 	protected function buildParams(&$query) {
 
 		if (isset($query['EXTRAS'])) {
@@ -89,6 +117,5 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		$query['params'] = $params;
 		return $query;
 	}
-	
 }
 

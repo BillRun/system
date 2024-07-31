@@ -171,7 +171,7 @@ trait Billrun_Traits_AsnParsing {
 	 * @param array $fieldData the raw data to be parsed.
 	 * @return mixed the parsed value from the field.
 	 */
-	protected function parseField($type, $fieldData) {
+	public function parseField($type, $fieldData) {
 		$ret = isset($this->parsingMethods[$type]) ? $this->parsingMethods[$type]($fieldData) : null;
 		if (null === $ret && $this->parsingMethods['default']) {
 			$ret = $this->parsingMethods['default']($type, $fieldData);

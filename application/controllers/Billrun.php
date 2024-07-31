@@ -152,9 +152,15 @@ class BillrunController extends ApiController {
 			return $this->setError('Need to pass numeric invoicing day when on multi day cycle mode.', $request);
 		}
 		$success = false;
-		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay) && (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices))){
-			$success = self::processConfirmCycle($billrunKey, $invoicesId, $invoicingDay);
+		if(!Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay)){
+			return $this->setError("Can't confirm invoices while the billing cycle run is ongoing", $request);
 		}
+		if (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices)) {
+				$success = self::processConfirmCycle($billrunKey, $invoicesId, $invoicingDay);
+		} else {
+			return $this->setError("Cycle was confirmed already, or no invoices were found to confirm", $request);
+		}
+
 		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
@@ -268,7 +274,7 @@ class BillrunController extends ApiController {
 	 */
 	protected function canSyncCharge($request) {
 		$aids = Billrun_Util::verify_array($request->get('aids', []), 'int');
-		return (count($aids) == 1 && $request->get('pay_mode', '') == 'one_payment');
+		return count($aids) == 1;
 	}
 
 	/**
@@ -330,6 +336,7 @@ class BillrunController extends ApiController {
 		if (empty($invoicingDay) && $config->isMultiDayCycle()) {
 			throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
 		}
+		$setting['billrun_key'] = $billrunKey;
 		$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey, $invoicingDay));
 		$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey, $invoicingDay));
 		$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey, null, $invoicingDay);
@@ -407,14 +414,14 @@ class BillrunController extends ApiController {
 			$invoicesId = implode(',', $invoicesArray);			
 		}
 		if (!empty($invoicesId)) {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . escapeshellarg($billrunKey) . ' invoices=' . escapeshellarg($invoicesId);
 		} else {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey;
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . escapeshellarg($billrunKey);
 		}
 		if (!empty($invoicing_day)) {
-			$cmd .= ' invoicing_days=' . $invoicing_day;
+			$cmd .= ' invoicing_days=' . escapeshellarg($invoicing_day);
 		}
-		return Billrun_Util::forkProcessCli(escapeshellarg($cmd));
+		return Billrun_Util::forkProcessCli(escapeshellcmd($cmd));
 	}
 	
 	protected function processCharge($mode, $params = array()) {

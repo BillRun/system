@@ -3,7 +3,7 @@
     "cg_return_url": "",
     "shared_secret": [],
     "usage_types": [],
-    "plugins": ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"],
+    "plugins": ["calcCpuPlugin", "csiPlugin", "autorenewPlugin", "notificationsPlugin"],
     "resetlines": {
         "limit": {
             "v": 10,
@@ -216,6 +216,10 @@
                 "editable": true,
                 "display": true,
                 "title": "Salutation"
+            }, {
+                "field_name": "in_collection",
+                "system": true,
+                "display": false
             }]
         }
     },
@@ -385,6 +389,7 @@
         },
     "invoice_export": {
       "export": "files/invoices/",
+	  "onetime_view_path" : "/views/invoices/onetime/",
       "generator": {
         "type": "WkPdf"
       },

@@ -164,9 +164,9 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	protected function setAdditionalFields() {
 		$this->query['type'] = $this->type;
 		// Set the from and to values.
-		$this->query['from'] = new MongoDate();
-		$this->query['plan_activation'] = new MongoDate();
-		$this->query['to'] = new MongoDate(strtotime('+100 years'));
+		$this->query['from'] = new Mongodloid_Date();
+		$this->query['plan_activation'] = new Mongodloid_Date();
+		$this->query['to'] = new Mongodloid_Date(strtotime('+100 years'));
 
 		$this->setGeneratedFields();
 	}
@@ -194,7 +194,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			// TODO: Create some sort of polymorphic behaviour to correctly handle
 			// the updating fields.
 			if($fieldName === 'services') {
-				$toSet = $this->getSubscriberServices($queryData['services'], new MongoDate(), new MongoDate(strtotime('+100 years')));
+				$toSet = $this->getSubscriberServices($queryData['services'], new Mongodloid_Date(), new Mongodloid_Date(strtotime('+100 years')));
 			} else {
 				$toSet = $queryData[$fieldName];
 			}

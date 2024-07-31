@@ -39,7 +39,13 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @todo take from customer pricing
 	 */
 	public $pricingField = self::DEF_CALC_DB_FIELD;
-	
+
+	/**
+	 * Is the balance only on sid level
+	 * @var boolean
+	 */
+	protected $isSidLevel = false;
+
 	/**
 	 * constructor of balance entity
 	 * 
@@ -54,9 +60,16 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 
 		$this->row = $values;
 
+		$config = Billrun_Factory::config();
+		$this->isSidLevel = $config->getConfigValue("balances.sid_level", false);
+
 		if (!isset($this->row['sid']) || !isset($this->row['aid'])) {
 			Billrun_Factory::log('Error creating balance, no aid or sid', Zend_Log::ALERT);
 			return;
+		}
+
+		if ($this->isSidLevel && $this->row['sid'] != 0) {
+			$this->row['aid'] = 0;
 		}
 
 		$this->init($values); // this for override behaviour by the inheritance classes
@@ -159,7 +172,6 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @param array $update the update command
 	 * 
 	 * @return array update command results
-	 * @throws MongoResultException
 	 */
 	public function update($query, $update) {
 		$skipEvents = false;
@@ -243,7 +255,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		if (empty($arateGroups)) {
 			return $usagev;
 		}
-		
+
 		$usagev = 0;
 
 		if (!empty($pricingData['over_group'])) {
@@ -253,7 +265,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		}
 
 		foreach ($arateGroups as $arateGroup) {
-			if ($arateGroup['balance_ref']['$id'] === $this->getId()->getMongoId()) {
+			if ($arateGroup['balance_ref']['$id'] instanceof Mongodloid_Id &&  $arateGroup['balance_ref']['$id']->__toString() === $this->getId()->__toString()) {
 				$usagev += $arateGroup['usagev'] ?? 0;
 			}
 		}

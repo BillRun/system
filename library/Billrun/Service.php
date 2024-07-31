@@ -62,7 +62,7 @@ class Billrun_Service {
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
 		} else if (isset($params['id'])) {
-			$this->load(new MongoId($params['id']));
+			$this->load(new Mongodloid_Id($params['id']));
 		} else if (isset($params['name'])) {
 			$this->load($params['name'], $time, 'name');
 		}
@@ -92,9 +92,9 @@ class Billrun_Service {
 	 */
 	protected function load($param, $time = null, $loadByField = '_id') {
 		if (is_null($time)) {
-			$queryTime = new MongoDate();
+			$queryTime = new Mongodloid_Date();
 		} else {
-			$queryTime = new MongoDate($time);
+			$queryTime = new Mongodloid_Date($time);
 		}
 		
 		switch ($loadByField) {
@@ -119,9 +119,9 @@ class Billrun_Service {
 	 */
 	protected function loadFromDb($param, $time = null, $loadByField = '_id') {
 		if (is_null($time)) {
-			$queryTime = new MongoDate();
-		} else if (!$time instanceof MongoDate) {
-			$queryTime = new MongoDate($time);
+			$queryTime = new Mongodloid_Date();
+		} else if (!$time instanceof Mongodloid_Date) {
+			$queryTime = new Mongodloid_Date($time);
 		}
 		$serviceQuery = array(
 			$loadByField => $param,
@@ -158,11 +158,21 @@ class Billrun_Service {
 		return $this->data;
 	}
 	
+	/**
+	 * 
+	 * @param string $name the property name;
+	 * @param Mongodloid_Date $time the property time
+	 * 
+	 * @return mixed the property value
+	 */
 	public static function getByNameAndTime($name, $time) {
 		$items = self::getCacheItems();
 		if (isset($items['by_name'][$name])) {
 			foreach ($items['by_name'][$name] as $itemTimes) {
-				if ($itemTimes['from'] <= $time && (!isset($itemTimes['to']) || is_null($itemTimes['to']) || $itemTimes['to'] >= $time)) {
+				$time = $time->sec ?? $time;
+				$from = $itemTimes['from']->sec ?? $itemTimes['from'];
+				$to = isset($itemTimes['to']) ? ($itemTimes['to']->sec ?? $itemTimes['to']) : null;
+				if ($from <= $time && (is_null($to) || $to >= $time)) {
 					return $itemTimes['plan'];
 				}
 			}
@@ -201,7 +211,7 @@ class Billrun_Service {
 	 * @return boolean true if exhausted, else false
 	 */
 	public function isExhausted($serviceStartDate, $rowTime = null) {
-		if ($serviceStartDate instanceof MongoDate) {
+		if ($serviceStartDate instanceof Mongodloid_Date) {
 			$serviceStartDate = $serviceStartDate->sec;
 		}
 		
@@ -343,7 +353,7 @@ class Billrun_Service {
 				// on some cases we have limits to check through plugin
 				$limits = $this->data['include']['groups'][$staticGroup]['limits'];
 				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$staticGroup, $limits, $this, $usageType, $rate, $subscriberBalance));
-				if ($groupSelected === FALSE) {
+				if ($staticGroup === FALSE) {
 					return array('usagev' => 0);
 				}
 			}
@@ -423,7 +433,7 @@ class Billrun_Service {
 			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
 				// on some cases we have limits to check through plugin
 				$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$groupSelected, $limits, $this, $usageType, $rate));
+				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$groupSelected, $limits, $this, $usageType, $rate, false));
 				if ($groupSelected === FALSE) {
 					$this->unsetGroup($this->getEntityGroup());
 				}
@@ -536,8 +546,8 @@ class Billrun_Service {
 		$query = array(
 			'aid' => $aid,
 			'type' => 'subscriber',
-			'to' => array('$gt' => new MongoDate($time)),
-			'from' => array('$lt' => new MongoDate($time)),
+			'to' => array('$gt' => new Mongodloid_Date($time)),
+			'from' => array('$lt' => new Mongodloid_Date($time)),
 		);
 		$isPlan = $this instanceof Billrun_Plan;
 		$isService = $this instanceof Billrun_Service;
@@ -705,28 +715,23 @@ class Billrun_Service {
 	}
 	
 	/**
-	 * 
+	 * Returns service\'s maximum quantity between all account\'s subscribers, in a specific time.
 	 * @param type $aid
 	 * @param timestamp $time
-	 * @return Service maximum quantity
+	 * @return Service maximum quantity - int
 	 */
-	public function getServiceMaximumQuantityByAid($aid, $time = 'now') {
-		$entity_time = ($time === 'now') ? time() : $time;
-		if(isset(self::$serviceMaximumQuantityByAid[$aid])) {
-			foreach (self::$serviceMaximumQuantityByAid[$aid] as $service_quantity_data) {
-				if ($service_quantity_data['from'] <= $time && (!isset($service_quantity_data['to']) || is_null($service_quantity_data['to']) || $service_quantity_data['to'] >= $time)) {
-					return $service_quantity_data['quantity'];
-				}
-			}
-		} else {
-			$service_data = $this->calculateServiceMaximumQuantity($aid, $entity_time);
-			self::$serviceMaximumQuantityByAid[$aid][] = $service_data;
-			return $service_data['quantity'];
+	public function getServiceMaximumQuantityByAid($aid, $time) {
+		$index = $aid . $time;
+		if (isset(self::$serviceMaximumQuantityByAid[$index])) {
+			return self::$serviceMaximumQuantityByAid[$index]['quantity'];
 		}
+		$quantity = $this->calculateServiceMaximumQuantity($aid, $time);
+		self::$serviceMaximumQuantityByAid[$index] = $quantity;
+		return self::$serviceMaximumQuantityByAid[$index]['quantity'];
 	}
-	
+
 	/**
-	 * 
+	 * Calculates service\'s maximum quantity between all account\'s subscribers, in a specific time.
 	 * @param type $aid
 	 * @param timestamp $time
 	 * @return Service data after calculating it's maximum quantity for this aid

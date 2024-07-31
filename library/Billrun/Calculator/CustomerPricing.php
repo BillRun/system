@@ -152,8 +152,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->active_billrun = Billrun_Billrun::getActiveBillrun();
 		$this->active_billrun_end_time = Billrun_Billingcycle::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($this->active_billrun);
-
-		$this->aidsQueuedForRebalance = array_flip(Billrun_Util::verify_array(Billrun_Factory::db()->rebalance_queueCollection()->distinct('aid'), 'int'));
+		
+		$this->aidsQueuedForRebalance = array_flip(Billrun_Util::verify_array(Billrun_Factory::db()->rebalance_queueCollection()->distinct('aid', array('end_time' => array('$exists' => false))), 'int'));
 	}
 
 	protected function getLines() {
@@ -202,10 +202,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function updateRow($row) {
-		if (isset($this->aidsQueuedForRebalance[$row['aid']])) {
+                if (isset($this->aidsQueuedForRebalance[$row['aid']]) && $row['type'] !== "credit") {
+			Billrun_Factory::log('Cancelling pricing for customer ' . $row['aid'] . ' as he\'s pending for rebalance', Zend_Log::DEBUG);
 			return false;
 		}
-
+                
 		try {
 			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 			$rateField = 'arate';
@@ -336,7 +337,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array_merge(parent::getPossiblyUpdatedFields(), array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroups', 'over_arate', 'over_group', 'in_group', 'in_arate', 'rates', 'out_group'));
+		return array_merge(parent::getPossiblyUpdatedFields(), array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroups', 'over_arate', 'over_group', 'in_group', 'in_arate', 'rates', 'out_group', 'cf'));
 	}
 
 	public function getPricingField() {
