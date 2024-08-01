@@ -337,6 +337,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		foreach ($subscribers as $sid => $subscriberList) {
 			usort($subscriberList,function($a,$b){ return  $a['from'] - $b['from'];});
 			Billrun_Factory::log("Constructing records for sid " . $sid);
+			Billrun_Factory::dispatcher()->trigger('beforeConstructSubscriber',[&$data, &$subscriberList, &$invoiceData, $subsCount, $this]);
 			$aggregatableRecords[] = $this->constructSubscriber($subscriberList, $invoiceData, $subsCount);
 		}
 		Billrun_Factory::log("Constructed: " . count($aggregatableRecords));
