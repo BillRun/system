@@ -14,8 +14,7 @@ class apiSanityBCest
 
     public function testCreateAccount(ApiTester $I)
     {
-
-        $I->generateAccount(['firstname' => 'yossi_test']);
+        $I->createAccountWithAllMandatoryCustomFields(['firstname' => 'yossi_test']);
         $I->seeResponseIsJson();
         $I->seeResponseContains('{"status":1');
         $I->seeResponseContainsJson([

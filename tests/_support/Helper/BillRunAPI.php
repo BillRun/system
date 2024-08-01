@@ -64,17 +64,18 @@ class BillRunAPI extends \Codeception\Module
         /** @var REST $rest */
         $rest = $this->getModule('REST');
         $rest->amBearerAuthenticated($this->getAccessToken());
-        $rest->sendPOST("/billapi/$entity/create", [
+        $ret = $rest->sendPOST("/billapi/$entity/create", [
             'update' => json_encode($data)
         ]);
+        return json_decode($ret, true);
     }
    
 
     /**
      * create an account.
-     * @param Array $override - fields to override the default values 
+     * @param Array $override - fields to override the default values / fields to add
      */
-    public function generateAccount(array $override = [])
+    public function createAccountWithAllMandatorySystemFields(array $override = [])
     {
         $account = array_merge([
             "invoice_shipping_method" => "email",
@@ -91,8 +92,18 @@ class BillRunAPI extends \Codeception\Module
             "email" => "test@gmail.com"
         ], $override);
 
-        $this->sendBillapiCreate($account, 'accounts');
+        return $this->generateAccount($account);
     }
+
+      /**
+     * create an account.
+     * @param Array $override - fields to override the default values 
+     */
+    public function generateAccount(array $account = [])
+    {
+        return $this->sendBillapiCreate($account, 'accounts');
+    }
+
     /**
      * create an subscriber.
      * @param Array $override - fields to override the default values 
@@ -187,6 +198,21 @@ class BillRunAPI extends \Codeception\Module
         $rest = $this->getModule('REST');
         $rest->amBearerAuthenticated($this->accessToken);
         $rest->sendGet($url);
+    }
+
+    /**
+     * create an account.
+     * @param Array $override - fields to override the default values / fields to add
+     */
+    public function createAccountWithAllMandatoryCustomFields(array $override = []) {
+        $model = new \Models_Accounts(['collection' => 'accounts', 'no_init' => true]);
+        $mandatoryFields = $model->getMandatoryCustomFields();
+        $populatedValues = [];
+        foreach ($mandatoryFields as $field) {
+            $populatedValues[$field['field_name']] = '1';
+        }
+        $populatedValues = array_merge($populatedValues, $override);
+        return $this->createAccountWithAllMandatorySystemFields($populatedValues);
     }
 
 }

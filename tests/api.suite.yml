@@ -1,4 +1,5 @@
 actor: ApiTester
+bootstrap: ../_support/Helper/BillRun/bootstrap.php
 modules:
     enabled:
         - Asserts
