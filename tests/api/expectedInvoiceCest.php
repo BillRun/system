@@ -16,13 +16,14 @@ class expectedInvoiceCest
 
     protected function CreateData(ApiTester $I)
     {
-        $I->generateAccount(['firstname' => 'yossi_test']);
+        $I->createAccountWithAllMandatorySystemFields([]);
         $this->accountDetails = json_decode($I->grabResponse(), true)['entity'];
         $I->generatePlan(['name' => 'TEST_PLAN_2' . time()]);
         $this->planDetails = json_decode($I->grabResponse(), true)['entity'];
         $I->generateSubscriber(
             [
                 'firstname' => 'yossi_test',
+                'lastname' => 'yossi_test',
                 'aid' => $this->accountDetails['aid'],
                 'plan' => $this->planDetails['name']
             ]
