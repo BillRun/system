@@ -78,7 +78,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 				$retResults[$revStamp]['id'] = array_filter($revision, function ($key) use ($customIDFields) { return in_array($key, $customIDFields); }, ARRAY_FILTER_USE_KEY);
 				$passthroughFields = ($revision['type'] == 'account') ? $this->passthroughFields : $this->subsPassthroughFields;
 				foreach ($passthroughFields as $passthroughField) {
-					if(isset($revision[$passthroughField])) {
+					if(is_scalar($passthroughField) && isset($revision[$passthroughField])) {
 						$retResults[$revStamp]['passthrough'][$passthroughField] = $revision[$passthroughField];
 					}
 				}
