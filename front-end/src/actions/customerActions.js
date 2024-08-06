@@ -7,6 +7,7 @@ import {
   getEntityByIdQuery,
   getRebalanceAccountQuery,
   getCollectionDebtQuery,
+  getEntitesQuery,
 } from '@/common/ApiQueries';
 import {
   saveEntity,
@@ -16,14 +17,19 @@ import {
   setCloneEntity,
   updateEntityField,
   deleteEntityField,
-  getEntityByAid,
+  fetchEntity,
 } from './entityActions';
 import { startProgressIndicator } from './progressIndicatorActions';
 
 
 export const getCustomer = id => getEntityById('customer', 'accounts', id);
 
-export const getCustomerByAid = (aid) => getEntityByAid('customer', 'accounts', aid);
+// export const getCustomerByAid = (aid) => getEntityByAid('customer', 'accounts', aid);
+export const getCustomerByAid = (aid) => (dispatch) => {
+  // const query = getEntitesQuery('accounts', {}, `aid=${aid}`);
+  const query = getEntitesQuery('accounts', {}, {aid:aid});
+  return dispatch(fetchEntity('customer', query));
+};
 
 export const getSubscription = id => (dispatch) => {
   dispatch(startProgressIndicator());

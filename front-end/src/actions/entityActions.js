@@ -212,7 +212,7 @@ export const exportEntities = (entityType, params) => (dispatch) => {
   return true;
 };
 
-const fetchEntity = (collection, query) => (dispatch) => {
+export const fetchEntity = (collection, query) => (dispatch) => {
   dispatch(startProgressIndicator());
   return apiBillRun(query, { timeOutMessage: apiTimeOutMessage })
     .then((success) => {
@@ -227,11 +227,6 @@ export const getEntity = (collection, query) => dispatch =>
 
 export const getEntityById = (name, collection, id) => (dispatch) => {
   const query = getEntityByIdQuery(collection, id);
-  return dispatch(fetchEntity(name, query));
-};
-
-export const getEntityByAid = (name, collection, aid) => (dispatch) => {
-  const query = getEntitesQuery(collection, {}, `aid=${aid}`);
   return dispatch(fetchEntity(name, query));
 };
 
