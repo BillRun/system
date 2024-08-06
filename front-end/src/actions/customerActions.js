@@ -25,7 +25,7 @@ import { startProgressIndicator } from './progressIndicatorActions';
 export const getCustomer = id => getEntityById('customer', 'accounts', id);
 
 export const getCustomerByAid = (aid) => {
-  const query = getEntitesQuery('accounts', {}, {aid:aid});
+  const query = getEntitesQuery('accounts', {}, {aid});
   return getEntity('customer', query);
 };
 

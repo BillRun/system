@@ -212,7 +212,7 @@ export const exportEntities = (entityType, params) => (dispatch) => {
   return true;
 };
 
-export const fetchEntity = (collection, query) => (dispatch) => {
+const fetchEntity = (collection, query) => (dispatch) => {
   dispatch(startProgressIndicator());
   return apiBillRun(query, { timeOutMessage: apiTimeOutMessage })
     .then((success) => {
