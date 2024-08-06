@@ -146,7 +146,7 @@ class CustomerSetup extends Component {
 
   fetchItem = (itemId = this.props.itemId) => {
     if(this.props?.location?.query?.aid){
-      this.props.dispatch(getCustomerByAid(this.props?.location?.query?.aid)).then(this.afterItemReceived);
+      this.props.dispatch(getCustomerByAid(parseInt(this.props?.location?.query?.aid))).then(this.afterItemReceived);
     } else if (itemId) {
       this.props.dispatch(getCustomer(itemId)).then(this.afterItemReceived);
     }
