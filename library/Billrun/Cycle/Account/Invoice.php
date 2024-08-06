@@ -547,6 +547,9 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	protected function sumUpGroupingTotalForAccount($currentTotalGroups, $subTotalGroups) {
 		foreach ($subTotalGroups as $group) {
+			if (isset($group['sid'])) {
+				continue;
+			}
 			$usagev = $group['usagev'];
 			unset($group['usagev']);
 			$count = $group['count'];
