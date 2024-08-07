@@ -53,6 +53,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	protected $settings = array();
 
 	public function init() {
+		Billrun_Factory::log("Start billapi");
 		Billrun_Util::setHttpSessionTimeout();
 		$request = $this->getRequest();
 		$this->collection = $request->getParam('collection');
