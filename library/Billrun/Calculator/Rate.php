@@ -198,6 +198,12 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			return false;
 		}
 
+		if ($this->isBlockedByKosherVPN($row)) {
+			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.block_rate');
+			$row['usagev'] = 0;
+			return false;
+		}
+
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
 			return false;
 		}
@@ -365,6 +371,99 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 
 		return false;
+	}
+
+	/**
+	 * method to check if the usage is blocked for kosher ranges (origin & destination)
+	 * 
+	 * @param Mongodloid_Entity $row the line
+	 * 
+	 * @return boolean true if required to block else false
+	 */
+	protected function isBlockedByKosherVPN($row) {
+		$block_vpn_kosher_call_states = Billrun_Factory::config()->getConfigValue('prepaid.kosher_block_call_stages', array());
+		if ($row['type'] != 'callrt' || !isset($row['api_name']) || !in_array($row['api_name'], $block_vpn_kosher_call_states)) {
+			return false;
+		}
+		// check row origin 
+		if (!$this->isNumberKosher($row['calling_number'])) {
+			return false;
+		}
+		
+		// check row destination ranges
+		if (method_exists($this, 'get_called_number')) {
+			$destination = $this->get_called_number($row);
+		} elseif (!empty($row['called_number'])) {
+			$destination = $row['called_number'];
+		} else {
+			$destination = $row['dialed_digits'];
+		}
+		
+		$kosher_vpn_range = Billrun_Factory::config()->getConfigValue('prepaid.kosher_vpn_range', array());
+		if (!$this->isNumberVpnRange($destination, $kosher_vpn_range)) {
+			return false;
+		}
+
+		return true;
+	}
+	/**
+	 * check if number is in the kosher origin range
+	 * 
+	 * @param string $number phone number
+	 * 
+	 * @return boolean true if in kosher range else false
+	 */
+	protected function isNumberKosher($number) {
+		$kosherColl = Billrun_Factory::db()->getCollection('kosher_ranges');
+		$formattedNumber = Billrun_Util::localNumber($number, '972');
+		$query = array(
+			'from_no' => array('$lte' => $formattedNumber),
+			'to_no' => array('$gte' => $formattedNumber),
+		);
+		$row = $kosherColl->query($query)->cursor()->limit(1)->current();
+		if (!$row || $row->isEmpty()) {
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * method to check if phone number if under vpn range
+	 * 
+	 * @param string $number the phone number to check
+	 * @param mixed $vpn vpn range id or array list of vpn range ids
+	 * 
+	 * @return boolean true if the number if under the vpn range
+	 */
+	protected function isNumberVpnRange($number, $vpn) {
+		$vpnColl = Billrun_Factory::db()->getCollection('vpns_ranges');
+		$formattedNumber = Billrun_Util::localNumber($number, '972');
+		if (is_numeric($vpn)) {
+			$vpnList = array((int) $vpn);
+		} else if (is_array($vpn)) {
+			$vpnList = array_map(
+					function($value) {
+						return intval($value);
+					},
+			$vpn);
+		} else {
+			return false;
+		}
+
+		$query = array(
+			'vpn_number' => array(
+				'$in' => $vpnList
+			),
+			'from_no' => array('$lte' => $formattedNumber),
+			'to_no' => array('$gte' => $formattedNumber),
+			'$expr' => ['$eq' => [['$strLenCP' => '$from_no'], strlen($formattedNumber)]],
+			'status_ind' => 'Y',
+		);
+		$row = $vpnColl->query($query)->cursor()->limit(1)->current();
+		if (!$row || $row->isEmpty()) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
