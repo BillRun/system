@@ -306,7 +306,7 @@ class Mongodloid_Collection {
 	}
 
 	/**
-	 * Count the number of documents in this collection
+	 * Estimated count the number of documents in this collection
 	 * @return mongodloid count result.
 	 */
 	public function estimatedDocumentCount() {
