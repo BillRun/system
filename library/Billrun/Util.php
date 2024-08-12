@@ -1606,6 +1606,7 @@ class Billrun_Util {
 			);
 			ini_set('session.cookie_samesite', $samesite);
 		}
+		ini_set('session.gc_maxlifetime', $sessionTimeout);
 	}
 	
 	public static function isValidIP($subject) {
