@@ -1577,21 +1577,30 @@ class Billrun_Util {
 		return is_numeric($value) && $value > strtotime('-30 years') &&  $value < strtotime('+30 years');
 	}
 	
-	
-	public static function setHttpSessionTimeout($timeout = null) {
+	/**
+	 * 
+	 * @param int $timeout duration in second session ttl 
+	 * @param string $samesite same cookie
+	 */
+	public static function setHttpSessionTimeout($timeout = null, $samesite = 'Strict') {
 		if (!is_null($timeout)) {
 			$sessionTimeout = $timeout;
 		} else {
 			$sessionTimeout = Billrun_Factory::config()->getConfigValue('session.timeout', 3600);
 		}
 		
-		ini_set('session.gc_maxlifetime', $sessionTimeout);
-		ini_set("session.cookie_lifetime", $sessionTimeout);
-        
 		$cookieParams = session_get_cookie_params();
-		session_set_cookie_params(
-			(int) $sessionTimeout, $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure']
-		);
+		
+		if (version_compare(PHP_VERSION, '7.3.0') >= 0) {
+			$cookieParams['lifetime'] = $sessionTimeout;
+			$cookieParams['samesite'] = $samesite;
+			session_set_cookie_params($cookieParams);
+		} else {
+			session_set_cookie_params(
+				(int) $sessionTimeout, $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure']
+			);
+			ini_set('session.cookie_samesite', $samesite);
+		}
 	}
 	
 	public static function isValidIP($subject) {

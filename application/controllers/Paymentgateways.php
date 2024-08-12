@@ -22,6 +22,7 @@ class PaymentGatewaysController extends ApiController {
 	
 	public function init() {
 		parent::init();
+		Billrun_Util::setHttpSessionTimeout(null, 'Lax');
 	}
 
 	public function listAction() {
