@@ -1186,7 +1186,10 @@ abstract class Billrun_Bill {
 		$match = array(
 			'$match' => $nonRejectedOrCanceled,
 		);
-
+		$match['$match']['$or'] = array(
+			array('left' => array('$exists' => true, '$ne' => 0)),
+			array('left_to_pay' => array('$exists' => true, '$ne' => 0))
+		);
 		if (!empty($aids)) {
 			$match['$match']['aid'] = $is_aids_query ? $aids['aid'] : array('$in' => $aids);
 		}
