@@ -12,7 +12,7 @@ print-info:
    - 'echo "Branch: $CI_COMMIT_BRANCH"'
    - 'echo "Commit Author: $CI_COMMIT_AUTHOR"'
 
-.codecept:
+codecept:
   services:
    - name: docker:dind
      alias: dockerhost
@@ -33,38 +33,16 @@ print-info:
     - cp $TEST_ENV_CODECEPT $CI_PROJECT_DIR/tests/.env
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php73-tests.yml up --wait --build --detach
-
-
-  # Run php testcases
   script:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/
+    - docker exec -w /billrun billrun-app php vendor/bin/codecept run acceptance
+    - docker exec -w /billrun billrun-app php vendor/bin/codecept run all 
+    - docker exec -w /billrun billrun-app php vendor/bin/codecept run api
+    - docker exec -w /billrun billrun-app php vendor/bin/codecept run functional
+    - docker exec -w /billrun billrun-app php vendor/bin/codecept run unit
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run $TEST_NAME
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php73-tests.yml down --remove-orphans
-
-acceptance:
-  extends: .codecept
-  variables:
-    TEST_NAME: "acceptance"
-
-all:
-  extends: .codecept
-  variables:
-    TEST_NAME: "all"
-
-api:
-  extends: .codecept
-  variables:
-    TEST_NAME: "api"
-funcitonal:
-  extends: .codecept
-  variables:
-    TEST_NAME: "functional"
-unit:
-  extends: .codecept
-  variables:
-    TEST_NAME: "unit"
-
 include:
   - template: Jobs/Secret-Detection.gitlab-ci.yml
 
