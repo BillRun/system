@@ -26,10 +26,10 @@ services:
         volumes:
             - ${PWD}/../..:/billrun
         healthcheck:
-            test: if [[ -f vendor/bin/codecept ]]; then echo "found"; fi || exit 1
-            interval: 10s
-            timeout: 3s
-            retries: 5
+            test: if [[ -f vendor/bin/codecept ]]; then echo "found"; else return 1; fi
+            interval: 30s
+            timeout: 5s
+            retries: 6
         command: sh -c "composer update && php-fpm"
     mongodb:
         image: mongo:3.6
