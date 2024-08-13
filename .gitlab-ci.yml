@@ -40,7 +40,6 @@ codecept:
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run api
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run functional
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run unit
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run $TEST_NAME
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php73-tests.yml down --remove-orphans
 include:
