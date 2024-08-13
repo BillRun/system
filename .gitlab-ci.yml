@@ -24,8 +24,8 @@ codecept:
   stage: test
   tags:
     - new_docker_runner
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS != "skip_ci"
+  # rules:
+  #   - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS != "skip_ci"
   before_script:
     # build and run BillRun app in docker
     - mkdir logs cache
