@@ -29,6 +29,7 @@ import {
   getCustomer,
   getSubscription,
   setCloneSubscription,
+  getCustomerByAid,
 } from '@/actions/customerActions';
 import {
   clearItems,
@@ -92,12 +93,9 @@ class CustomerSetup extends Component {
     allowancesEnabled: false,
   };
 
-  componentWillMount() {
-    this.fetchItem();
-  }
-
   componentDidMount() {
     const { mode, message, allowancesEnabled } = this.props;
+    this.fetchItem();
     this.props.dispatch(getSettings(['subscribers']));
     if (message) {
       this.props.dispatch(showAlert(message.content, message.type));
@@ -147,7 +145,9 @@ class CustomerSetup extends Component {
   }
 
   fetchItem = (itemId = this.props.itemId) => {
-    if (itemId) {
+    if(this.props?.location?.query?.aid){
+      this.props.dispatch(getCustomerByAid(parseInt(this.props?.location?.query?.aid))).then(this.afterItemReceived);
+    } else if (itemId) {
       this.props.dispatch(getCustomer(itemId)).then(this.afterItemReceived);
     }
   }
@@ -189,7 +189,7 @@ class CustomerSetup extends Component {
 
   onClickChangePaymentGateway = (customer) => {
     const aid = customer.get('aid', null);
-    const returnUrlParam = `return_url=${encodeURIComponent(this.getReturnUrl())}`;
+    const returnUrlParam = `return_url=${encodeURIComponent(this.getReturnUrl(aid))}`;
     const aidParam = `aid=${encodeURIComponent(aid)}`;
     const action = `action=${encodeURIComponent('updatePaymentGateway')}`;
     window.location = `${getConfig(['env','serverApiUrl'], '')}/internalpaypage?${aidParam}&${returnUrlParam}&${action}`;
@@ -240,9 +240,9 @@ class CustomerSetup extends Component {
       return null;
     });
 
-  getReturnUrl = () => {
+  getReturnUrl = (aid=null) => {
     const { itemId } = this.props;
-    return `${window.location.origin}/#/customers/customer/${itemId}?tab=1`;
+    return `${window.location.origin}/#/customers/customer/${itemId}?tab=1&aid=${aid}`;
   }
 
   handleSelectTab = (tab) => {
