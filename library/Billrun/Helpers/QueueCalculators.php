@@ -68,6 +68,7 @@ class Billrun_Helpers_QueueCalculators {
 
                 $allExtraLines =  array_merge($allExtraLines, $extraLines);
             }
+			unset($line); // see warning at https://www.php.net/manual/en/control-structures.foreach.php
             $data['data'] =  array_merge($data['data'], $allExtraLines);
             $index++;
         }
