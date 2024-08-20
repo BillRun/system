@@ -24,6 +24,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 	protected $invoicingConfig = array();
 	protected $customer_uf = array();
 	protected $lastAggregatedEntity = null;
+	protected $constructOptions = [];
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -49,6 +50,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		$this->aggregationLogic = Billrun_Account::getAccountAggregationLogic($aggregateOptions);
 
 		$this->affectedSids = Billrun_Util::getFieldVal($options['affected_sids'],[]);
+		$this->constructOptions = $options;
 	}
 	
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
@@ -132,7 +134,8 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		$accounts = array();
 		$billrunData = array(
 			'billrun_key' => $this->getCycle()->key(),
-			'autoload' => !empty($this->overrideMode)
+			'autoload' => !empty($this->overrideMode),
+			'force_active' => !empty($this->constructOptions['force_active_invoice'])
 			);
 
 		foreach ($outputArr as $subscriberPlan) {
