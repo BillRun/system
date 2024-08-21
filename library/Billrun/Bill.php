@@ -275,7 +275,7 @@ abstract class Billrun_Bill {
 		//Get unpaid & paying bills
 		$unpaidBills = array_map(function ($unpaid_bill)  use ($query, $sort) {
 			return Billrun_Bill::getInstanceByData($unpaid_bill);
-		}, Billrun_Bill::getUnpaidBills($query, $sort, 'RP_PRIMARY'));
+		}, Billrun_Bill::getUnpaidBills($query, $sort, 'RP_PRIMARY')); //BRCD-4521:Force read preference - in order to get the most updated bills data
 		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort, 'RP_PRIMARY');
 		$pending_paying_bills = $include_pending_payments ? Billrun_Bill::getPendingBills($query, $sort, 'RP_PRIMARY') : [];
 		Billrun_Factory::log("Found " . count($unpaidBills) . " unpaid bills," . count($overPayingBills) . " over paying bills, and " . count($pending_paying_bills) . " pending paying bills"  , Zend_Log::DEBUG);
@@ -418,12 +418,7 @@ abstract class Billrun_Bill {
 
 	public static function getBills($query = array(), $sort = array(), $read_preference = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		if (!is_null($read_preference)) {
-			$res = $billsColl->find($query)->sort($sort)->setReadPreference($read_preference);
-		} else {
-			$res = $billsColl->find($query)->sort($sort);
-		}
-		return iterator_to_array($res, FALSE);
+		return iterator_to_array($billsColl->find($query)->sort($sort)->setReadPreference($read_preference), FALSE);
 	}
 
 	public static function getOverPayingBills($query = array(), $sort = array(), $read_preference = null) {
