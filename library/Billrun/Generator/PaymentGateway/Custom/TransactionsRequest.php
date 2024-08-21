@@ -217,6 +217,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				Billrun_Factory::log($message, Zend_Log::WARN);
 				$this->logFile->updateLogFileField('warnings', $message);
 			}
+			Billrun_Factory::dispatcher()->trigger('beforeGetTransactionsRequestDataLine', array($this, $account, &$params, $customer, $currentPayment));
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
 			$extraFields = array_merge_recursive($this->getCustomPaymentGatewayFields(), ['pg_request' => $this->billSavedFields]);
