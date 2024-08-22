@@ -130,11 +130,18 @@ trait Tests_SetUp
 			}
 		}
 	}
-
 	public function getTestCases($legacy_tests = [])
 	{
 		$all_test_cases = [];
-
+		$request = new Yaf_Request_Http;
+		$test_cases_to_skip = !empty($request->get('skip'))?$request->get('skip') :[] ;
+		$test_cases_to_run = !empty($request->get('tests'))?$request->get('tests') :[];
+		if(!empty($test_cases_to_skip)){
+			$test_cases_to_skip = explode(',',$test_cases_to_skip);
+		}
+		if(!empty($test_cases_to_run)){
+			$test_cases_to_run = explode(',',$test_cases_to_run);
+		}
 		// Get all declared classes
 		$classes = get_declared_classes();
 
@@ -142,14 +149,19 @@ trait Tests_SetUp
 		foreach ($classes as $class) {
 			// Check if the class name starts with 'Test_Case_'
 			if (strpos($class, 'Test_Case_') === 0) {
-				// Create an instance of the class
-				$instance = new $class();
+				$test_number = filter_var($class, FILTER_SANITIZE_NUMBER_INT);
+                 if(($test_cases_to_skip==[]&&$test_cases_to_run==[])
+				 ||($test_cases_to_skip==[] && ( $test_cases_to_run !==[] && in_array($test_number,$test_cases_to_run)) 
+				 ||$test_cases_to_skip!==[] &&!in_array($test_number,$test_cases_to_skip))){
+						// Create an instance of the class
+						$instance = new $class();
 
-				// Call the test_case method and store the result
-				if (method_exists($instance, 'test_case')) {
-					$test_case = $instance->test_case();
-					$all_test_cases[] = $test_case;
-				}
+						// Call the test_case method and store the result
+						if (method_exists($instance, 'test_case')) {
+							$test_case = $instance->test_case();
+							$all_test_cases[] = $test_case;
+}				 }
+				
 			}
 		}
 
