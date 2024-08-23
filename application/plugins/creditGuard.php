@@ -56,8 +56,9 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
      * @var array $bill - relevnat bill to pay
      * @var array $payment - request pending payment
      */
-    public function beforeGetTransactionsRequestDataLine ($cpf_generatore, $account, &$params, $bill, $payment) {
+    public function beforeGetTransactionsRequestDataLine ($cpf_generator, $account, &$params, $bill, $payment) {
         $gatewayDetails = $account['payment_gateway'];
+        $pg_config = $cpf_generator->getPgConfig();
         Billrun_Factory::log()->log("creditGuardPlugin : calculating card expiration extension for account " . $account['aid'], Zend_Log::DEBUG);
         if (!$this->extend_card_expiration) {
             Billrun_Factory::log()->log("creditGuardPlugin : Extend card expiration flag is off", Zend_Log::DEBUG);
@@ -84,6 +85,11 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
             $params['terminal_type'] = 'charging_terminal';
         }
         Billrun_Factory::log()->log("creditGuardPlugin : according to the terminal conditions, account " . $account['aid'] . " terminal type is " . $params['terminal_type'], Zend_Log::DEBUG);
+        if (!empty($terminal_number = Billrun_Util::getIn($pg_config, 'params'.$params['terminal_type'], null))) {
+            $params['terminal_number'] = $terminal_number;
+            Billrun_Factory::log()->log("creditGuardPlugin : according to the terminal conditions and pg config, account " . $account['aid'] . " terminal number is " . $params['terminal_number'], Zend_Log::DEBUG);
+        }
+        
     }
 
 

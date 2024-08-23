@@ -437,4 +437,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             }
         }
     }
+
+    public function getPgConfig() {
+        return $this->configByType;
+    }
 }
