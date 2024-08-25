@@ -1,8 +1,11 @@
 actor: AcceptanceTester
+bootstrap: ../_support/Helper/BillRun/bootstrap.php
 
 modules:
     enabled:
         - Asserts
+        - \Helper\Api
+        - \Helper\BillRunAPI
         - WebDriver:
             url: http://web
             host: chrome
