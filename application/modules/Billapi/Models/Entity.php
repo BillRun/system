@@ -190,7 +190,9 @@ class Models_Entity {
 
 		$customFields = $this->getCustomFields($update);
 		$duplicateCheck = isset($this->config['duplicate_check']) ? $this->config['duplicate_check'] : array();
-		$config = array_merge(array('fields' => Billrun_Factory::config()->getConfigValue($this->getCustomFieldsPath(), [])), $this->config[$this->action]);
+		$fieldConfig = array('fields' => Billrun_Factory::config()->getConfigValue($this->getCustomFieldsPath(), []));
+		$actionConfig = $this->config[$this->action];
+		$config = array_merge($fieldConfig, is_array($actionConfig) ? $actionConfig : []);
 		list($translatedQuery, $translatedUpdate, $translatedQueryOptions) = $this->validateRequest($query, $update, $this->action, $config, 999999, true, $options, $duplicateCheck, $customFields);
 		$this->setQuery($translatedQuery);
 		$this->setUpdate($translatedUpdate);

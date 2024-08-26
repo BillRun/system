@@ -50,7 +50,7 @@ class Mongodloid_TypeConverter
 			case $value instanceof MongoDB\Model\BSONDocument:
 			case $value instanceof MongoDB\Model\BSONArray:
 				return array_map(
-					['self', 'toMongodloid'],
+					[self::class, 'toMongodloid'],
 					$value->getArrayCopy()
 				);
 			default:
