@@ -400,7 +400,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		
 		$kosher_vpn_range = Billrun_Factory::config()->getConfigValue('prepaid.kosher_vpn_range', array());
-		if ($this->isNumberVpnRange($destination, $kosher_vpn_range)) {
+		if (!$this->isNumberVpnRange($destination, $kosher_vpn_range)) {
 			return false;
 		}
 
