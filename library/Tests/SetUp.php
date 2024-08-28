@@ -57,6 +57,8 @@ trait Tests_SetUp
 	 */
 	protected $dataPath = '/data/';
 
+	protected static $request = null;
+
 	public function construct($unitTestName = null, $dataToLoad = null)
 	{
 		$this->unitTestName = $unitTestName;
@@ -68,6 +70,14 @@ trait Tests_SetUp
 			$this->importData = array_merge($this->importData, $dataToLoad);
 		}
 	}
+
+	public function  getRequset(){
+		if(self::$request == null){
+			self::$request = new Yaf_Request_Http;
+		}
+		return self::$request;
+	}
+
 
 	/**
 	 * executes set up for the unit runing unit test 
@@ -102,9 +112,7 @@ trait Tests_SetUp
 
 	public function skip_tests($tests, $path)
 	{
-		$request = new Yaf_Request_Http;
-		$this->test_cases_to_skip = $request->get('skip');
-
+		$this->test_cases_to_skip = $this->getRequset()->get('skip');
 		if ($this->test_cases_to_skip !== null && !empty($this->test_cases_to_skip)) {
 			$this->test_cases_to_skip = explode(',', $this->test_cases_to_skip);
 			foreach ($tests as $case) {
@@ -130,12 +138,16 @@ trait Tests_SetUp
 			}
 		}
 	}
+
+
+	
+
 	public function getTestCases($legacy_tests = [])
 	{
 		$all_test_cases = [];
-		$request = new Yaf_Request_Http;
-		$test_cases_to_skip = !empty($request->get('skip'))?$request->get('skip') :[] ;
-		$test_cases_to_run = !empty($request->get('tests'))?$request->get('tests') :[];
+		
+		$test_cases_to_skip = !empty($this->getRequset()->get('skip'))?$this->getRequset()->get('skip') :[] ;
+		$test_cases_to_run = !empty($this->getRequset()->get('tests'))?$this->getRequset()->get('tests') :[];
 		if(!empty($test_cases_to_skip)){
 			$test_cases_to_skip = explode(',',$test_cases_to_skip);
 		}
