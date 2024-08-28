@@ -400,7 +400,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		
 		$kosher_vpn_range = Billrun_Factory::config()->getConfigValue('prepaid.kosher_vpn_range', array());
-		if (!$this->isNumberVpnRange($destination, $kosher_vpn_range)) {
+		if ($this->isNumberVpnRange($destination, $kosher_vpn_range)) {
 			return false;
 		}
 
@@ -454,9 +454,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			'vpn_number' => array(
 				'$in' => $vpnList
 			),
-			'from_no' => array('$lte' => $formattedNumber),
+			'from_no' => array('$lte' => $formattedNumber, '$type' => 2, '$regex' => '^.{' . strlen($formattedNumber) . '}$'),
 			'to_no' => array('$gte' => $formattedNumber),
-			'$expr' => ['$eq' => [['$strLenCP' => '$from_no'], strlen($formattedNumber)]],
 			'status_ind' => 'Y',
 		);
 		$row = $vpnColl->query($query)->cursor()->limit(1)->current();
