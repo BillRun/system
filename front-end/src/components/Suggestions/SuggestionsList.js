@@ -168,7 +168,11 @@ class SuggestionsList extends Component {
   getSuggestions = () => {
     const { aid } = this.props;
     if (aid !== null) {
-      this.props.dispatch(getSuggestionsByAid(aid));
+      this.setState(() => ({ creditInProcess: true }));
+      return this.props.dispatch(getSuggestionsByAid(aid))
+        .then(() => {
+          this.setState(() => ({ creditInProcess: false }));
+        });
     }
   }
 
