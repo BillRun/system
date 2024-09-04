@@ -441,4 +441,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     public function getPgConfig() {
         return $this->configByType;
     }
+
+    public function setPgConfig($pg_config) {
+        return $this->configByType = $pg_config;
+    }
 }

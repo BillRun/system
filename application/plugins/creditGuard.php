@@ -21,12 +21,6 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
      * @var string
      */
 	protected $card_expiration_field;
-
-    /**
-     * credit guard config
-     * @var array
-     */
-    protected $cgConfig;
     
     /**
      * Extend card expiration flag
@@ -35,17 +29,28 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
     protected $extend_card_expiration;
 
     /**
+     * years to extend card expiration
+     * @var int
+     */
+    protected $years_to_extend_card_exp;
+
+    /**
      * Card types array
      * @var array 
      */
-
-     
     protected $cardTypes = array("Regular" => "00", "Debit" => "01", "Rechargeable" => "06");
+
+    /**
+     * Credit guard online params
+     * @var array 
+     */
+    protected $cg_params;
 
     public function __construct($options = array()) {
         $this->card_expiration_field = Billrun_Util::getIn($options, "card_expiration_field_name", "card_expiration");
-        $this->cgConfig = Billrun_Factory::config()->getConfigValue('creditguard');
+        $this->years_to_extend_card_exp = Billrun_Util::getIn($options, "years_to_extend_card_expiration", 3);
         $this->extend_card_expiration = Billrun_Util::getIn($options, "extend_card_expiration", true);
+        $this->cg_params = Billrun_Util::getIn($options, "params", []);
 	}
 
     /**
@@ -57,14 +62,33 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
      * @var array $payment - request pending payment
      */
     public function beforeGetTransactionsRequestDataLine ($cpf_generator, $account, &$params, $bill, $payment) {
+        $config = $cpf_generator->getPgConfig();
+        foreach ($config['generator']['data_structure'] as $index => &$param_obj) {
+            switch ($param_obj['name']) {
+                case 'terminal_type':
+                case 'terminal_number':
+                    $terminal_type = $this->getTerminalType($account);
+                    $terminal_number = $this->getTerminalNumber($account, $terminal_type);
+                    $param_obj['hard_coded_value'] = $param_obj['name'] == 'terminal_type' ? $terminal_type : $terminal_number;
+                    break;
+                case 'card_expiration':
+                    $param_obj['hard_coded_value'] = $this->getCardExpiration($account);
+                    break;
+                default:
+                    continue;
+                    break;
+            }
+        }
+        $cpf_generator->setPgConfig($config);
+    }
+
+    protected function getCardExpiration($account) {
         $gatewayDetails = $account['payment_gateway'];
-        $pg_config = $cpf_generator->getPgConfig();
         Billrun_Factory::log()->log("creditGuardPlugin : calculating card expiration extension for account " . $account['aid'], Zend_Log::DEBUG);
         if (!$this->extend_card_expiration) {
             Billrun_Factory::log()->log("creditGuardPlugin : Extend card expiration flag is off", Zend_Log::DEBUG);
         } else {
             Billrun_Factory::log()->log("creditGuardPlugin : Extend card expiration flag is on", Zend_Log::DEBUG);
-            $years = $this->cgConfig['years_to_extend_card_expiration'];
             $current_gateway_details = Billrun_Util::getIn($gatewayDetails, "active", null);
             if (empty($current_gateway_details)) {
                 Billrun_Factory::log()->log("creditGuardPlugin : No active payment_gateway details of account " . $account['aid'] . ". Missing card expiration field data in request file line", Zend_Log::ALERT);
@@ -73,26 +97,26 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
             Billrun_Factory::log()->log("creditGuardPlugin : Found active payment_gateway details of account " . $account['aid'], Zend_Log::DEBUG);
             $current_card_expiration = $current_gateway_details[$this->card_expiration_field];
             Billrun_Factory::log()->log("creditGuardPlugin : Current card expiration of account " . $account['aid'] . " is " . $current_card_expiration, Zend_Log::DEBUG);
-            $file_card_expiration = substr($current_card_expiration, 0, 2) . ((substr($current_card_expiration, 2, 4) + $years) % 100);
+            $file_card_expiration = substr($current_card_expiration, 0, 2) . ((substr($current_card_expiration, 2, 4) + $this->years_to_extend_card_exp) % 100);
             Billrun_Factory::log()->log("creditGuardPlugin : Card expiration value that will be insert to the request file for account " . $account['aid'] . " is " . $file_card_expiration, Zend_Log::DEBUG);
-            $params['card_expiration'] = $file_card_expiration;
+            return $file_card_expiration;
         }
-
-        Billrun_Factory::log()->log("creditGuardPlugin : calculating CG terminal for account " . $account['aid'], Zend_Log::DEBUG);
-        if (isset($gatewayDetails['card_type']) && (in_array($gatewayDetails['card_type'], [$this->cardTypes['Debit'], $this->cardTypes['Rechargeable']]))) {
-			$params['terminal_type'] = 'onetime_terminal';
-		} else {
-            $params['terminal_type'] = 'charging_terminal';
-        }
-        Billrun_Factory::log()->log("creditGuardPlugin : according to the terminal conditions, account " . $account['aid'] . " terminal type is " . $params['terminal_type'], Zend_Log::DEBUG);
-        if (!empty($terminal_number = Billrun_Util::getIn($pg_config, 'params'.$params['terminal_type'], null))) {
-            $params['terminal_number'] = $terminal_number;
-            Billrun_Factory::log()->log("creditGuardPlugin : according to the terminal conditions and pg config, account " . $account['aid'] . " terminal number is " . $params['terminal_number'], Zend_Log::DEBUG);
-        }
-        
     }
 
+    protected function getTerminalType($account) {
+        Billrun_Factory::log()->log("creditGuardPlugin : calculating CG terminal for account " . $account['aid'], Zend_Log::DEBUG);
+        if (isset($gatewayDetails['card_type']) && (in_array($gatewayDetails['card_type'], [$this->cardTypes['Debit'], $this->cardTypes['Rechargeable']]))) {
+			return 'onetime_terminal';
+		} else {
+            return 'charging_terminal';
+        }
+    }
 
-
-
+    protected function getTerminalNumber($account, $terminal_type) {
+        Billrun_Factory::log()->log("creditGuardPlugin : according to the terminal conditions, account " . $account['aid'] . " terminal type is " . $terminal_type, Zend_Log::DEBUG);
+        if (!empty($terminal_number = Billrun_Util::getIn($this->cg_params, 'params'.$terminal_type, null))) {
+            Billrun_Factory::log()->log("creditGuardPlugin : according to the terminal conditions and pg config, account " . $account['aid'] . " terminal number is " . $terminal_number, Zend_Log::DEBUG);
+        }
+        return $terminal_number;
+    }
 }
