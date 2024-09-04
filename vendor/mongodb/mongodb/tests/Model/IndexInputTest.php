@@ -10,13 +10,13 @@ use stdClass;
 
 class IndexInputTest extends TestCase
 {
-    public function testConstructorShouldRequireKey(): void
+    public function testConstructorShouldRequireKey()
     {
         $this->expectException(InvalidArgumentException::class);
         new IndexInput([]);
     }
 
-    public function testConstructorShouldRequireKeyToBeArrayOrObject(): void
+    public function testConstructorShouldRequireKeyToBeArrayOrObject()
     {
         $this->expectException(InvalidArgumentException::class);
         new IndexInput(['key' => 'foo']);
@@ -25,7 +25,7 @@ class IndexInputTest extends TestCase
     /**
      * @dataProvider provideInvalidFieldOrderValues
      */
-    public function testConstructorShouldRequireKeyFieldOrderToBeNumericOrString($order): void
+    public function testConstructorShouldRequireKeyFieldOrderToBeNumericOrString($order)
     {
         $this->expectException(InvalidArgumentException::class);
         new IndexInput(['key' => ['x' => $order]]);
@@ -36,7 +36,7 @@ class IndexInputTest extends TestCase
         return $this->wrapValuesForDataProvider([true, [], new stdClass()]);
     }
 
-    public function testConstructorShouldRequireNameToBeString(): void
+    public function testConstructorShouldRequireNameToBeString()
     {
         $this->expectException(InvalidArgumentException::class);
         new IndexInput(['key' => ['x' => 1], 'name' => 1]);
@@ -45,7 +45,7 @@ class IndexInputTest extends TestCase
     /**
      * @dataProvider provideExpectedNameAndKey
      */
-    public function testNameGeneration($expectedName, array $key): void
+    public function testNameGeneration($expectedName, array $key)
     {
         $this->assertSame($expectedName, (string) new IndexInput(['key' => $key]));
     }
@@ -61,7 +61,7 @@ class IndexInputTest extends TestCase
         ];
     }
 
-    public function testBsonSerialization(): void
+    public function testBsonSerialization()
     {
         $expected = [
             'key' => ['x' => 1],

@@ -14,9 +14,9 @@ class Billrun_Utils_ErrorHandler {
 	 * you can also call to Yaf_Request_Abstract::getException to get the 
 	 * un-caught exception.
 	 */
-	public function errorAction(Exception $exception) {	
+	public function errorAction(Throwable $exception, $hideDetails = false) {
 	   // Get exception output
-	   $output = $this->getExceptionOutput($exception);
+	   $output = $this->getExceptionOutput($exception, $hideDetails);
 
 	   // TODO: THIS IS DEBUG CODE!!!!!!!!!!!!!!!!!!
 	   if(php_sapi_name() != "cli") {
@@ -39,13 +39,13 @@ class Billrun_Utils_ErrorHandler {
 	 * @param Exception $exception
 	 * @return json encoded array
 	 */
-	protected function getExceptionOutput(Exception $exception) {
+	protected function getExceptionOutput(Throwable $exception, $hideDetails = false) {
 	   // Get exception output
 	   if($exception instanceof Billrun_Exceptions_Base) {
 		   return $this->billrunExceptionOutput($exception);
 	   }
 
-	   return $this->generalExceptionOutput($exception);
+	   return $this->generalExceptionOutput($exception, $hideDetails);
 	}
 
 	/**
@@ -62,7 +62,7 @@ class Billrun_Utils_ErrorHandler {
 	 * @param type $exception
 	 * @return string
 	 */
-	protected function generalExceptionOutput(Exception $exception) {
+	protected function generalExceptionOutput(Throwable $exception, $hideDetails = false) {
 	   $output = array();
 	   $output['status'] = 0;
 	   $output['code'] = 500;
@@ -83,6 +83,9 @@ class Billrun_Utils_ErrorHandler {
 			   $output['data']['message'] = $exception->getMessage() . "\n";
 			   break;
 	   }
+		if ($hideDetails) {
+			$output['data']['message'] = 'Internal error raised';
+		}
 
 	   return json_encode($output);
 	}

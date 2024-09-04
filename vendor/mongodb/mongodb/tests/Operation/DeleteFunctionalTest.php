@@ -7,25 +7,26 @@ use MongoDB\DeleteResult;
 use MongoDB\Driver\BulkWrite;
 use MongoDB\Driver\WriteConcern;
 use MongoDB\Exception\BadMethodCallException;
-use MongoDB\Exception\UnsupportedException;
 use MongoDB\Operation\Delete;
 use MongoDB\Tests\CommandObserver;
-
+use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
 use function version_compare;
 
 class DeleteFunctionalTest extends FunctionalTestCase
 {
+    use SetUpTearDownTrait;
+
     /** @var Collection */
     private $collection;
 
-    public function setUp(): void
+    private function doSetUp()
     {
         parent::setUp();
 
         $this->collection = new Collection($this->manager, $this->getDatabaseName(), $this->getCollectionName());
     }
 
-    public function testDeleteOne(): void
+    public function testDeleteOne()
     {
         $this->createFixtures(3);
 
@@ -45,7 +46,7 @@ class DeleteFunctionalTest extends FunctionalTestCase
         $this->assertSameDocuments($expected, $this->collection->find());
     }
 
-    public function testDeleteMany(): void
+    public function testDeleteMany()
     {
         $this->createFixtures(3);
 
@@ -64,54 +65,14 @@ class DeleteFunctionalTest extends FunctionalTestCase
         $this->assertSameDocuments($expected, $this->collection->find());
     }
 
-    public function testHintOptionUnsupportedClientSideError(): void
-    {
-        if (version_compare($this->getServerVersion(), '3.4.0', '>=')) {
-            $this->markTestSkipped('server reports error for unsupported delete options');
-        }
-
-        $operation = new Delete(
-            $this->getDatabaseName(),
-            $this->getCollectionName(),
-            [],
-            0,
-            ['hint' => '_id_']
-        );
-
-        $this->expectException(UnsupportedException::class);
-        $this->expectExceptionMessage('Hint is not supported by the server executing this operation');
-
-        $operation->execute($this->getPrimaryServer());
-    }
-
-    public function testHintOptionAndUnacknowledgedWriteConcernUnsupportedClientSideError(): void
-    {
-        if (version_compare($this->getServerVersion(), '4.4.0', '>=')) {
-            $this->markTestSkipped('hint is supported');
-        }
-
-        $operation = new Delete(
-            $this->getDatabaseName(),
-            $this->getCollectionName(),
-            [],
-            0,
-            ['hint' => '_id_', 'writeConcern' => new WriteConcern(0)]
-        );
-
-        $this->expectException(UnsupportedException::class);
-        $this->expectExceptionMessage('Hint is not supported by the server executing this operation');
-
-        $operation->execute($this->getPrimaryServer());
-    }
-
-    public function testSessionOption(): void
+    public function testSessionOption()
     {
         if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
             $this->markTestSkipped('Sessions are not supported');
         }
 
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new Delete(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -122,7 +83,7 @@ class DeleteFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );
@@ -144,10 +105,10 @@ class DeleteFunctionalTest extends FunctionalTestCase
     /**
      * @depends testUnacknowledgedWriteConcern
      */
-    public function testUnacknowledgedWriteConcernAccessesDeletedCount(DeleteResult $result): void
+    public function testUnacknowledgedWriteConcernAccessesDeletedCount(DeleteResult $result)
     {
         $this->expectException(BadMethodCallException::class);
-        $this->expectExceptionMessageMatches('/[\w:\\\\]+ should not be called for an unacknowledged write result/');
+        $this->expectExceptionMessageRegExp('/[\w:\\\\]+ should not be called for an unacknowledged write result/');
         $result->getDeletedCount();
     }
 
@@ -156,7 +117,7 @@ class DeleteFunctionalTest extends FunctionalTestCase
      *
      * @param integer $n
      */
-    private function createFixtures(int $n): void
+    private function createFixtures($n)
     {
         $bulkWrite = new BulkWrite(['ordered' => true]);
 

@@ -2,8 +2,9 @@
 
 // Example: php scripts/tools/RebuildBillsLinks.php --accounts=123 --env <env> --tenant <tenant>
 
-$dir = '/var/www/billrun/';
-defined('APPLICATION_PATH') || define('APPLICATION_PATH', $dir);
+chdir(dirname(dirname(__DIR__)));
+
+defined('APPLICATION_PATH') || define('APPLICATION_PATH', getcwd());
 require_once(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARATOR . 'config.php');
 $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
 $app->bootstrap();
@@ -58,11 +59,11 @@ function rebuildBillsLinks($accounts) {
 function rebuildRejectionsAndCancelledLinks($aid) {
 	$rejections = Billrun_Bill_Payment::getRejectionPayments($aid);
 	$cancellations = Billrun_Bill_Payment::getCancellationPayments($aid);
-	$matchedPayments = array();
 	$complementaryPayments = array();
 	$originalPayments = array();
 	
 	foreach (array('rej' => $rejections, 'can' => $cancellations) as $key => $payments) {
+		$matchedPayments = [];
 		foreach ($payments as $payment) {
 			$linkField = ($key == 'rej') ?  'original_txid' : 'cancel';
 			$originalPaymentField = ($key == 'rej') ?  'rejected' : 'cancelled';

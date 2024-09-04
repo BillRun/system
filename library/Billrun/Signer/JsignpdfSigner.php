@@ -68,14 +68,18 @@ class Billrun_Signer_JsignpdfSigner extends Billrun_Signer_SignerAbstract
         ];
         
         if (isset($this->config['image'])) {
-            $imageConfig = escapeshellarg($this->config['image']);
+            $imageConfig = $this->config['image'];
             $params['--visible-signature'] = '';
-            $params['--bg-scale'] = escapeshellarg($imageConfig['bg_scale']);
-            $params['--bg-path'] = escapeshellarg($imageConfig['bg_path']);
-            $params['-urx'] = escapeshellarg($imageConfig['urx']);
-            $params['-ury'] = escapeshellarg($imageConfig['ury']);
-            $params['-llx'] = escapeshellarg($imageConfig['llx']);
-            $params['-lly'] = escapeshellarg($imageConfig['lly']);
+            $availableKeys = array(
+                '--bg-scale', '--bg-path', '-urx', '-ury', '-llx', '-lly'
+            );
+            foreach ($availableKeys as $k) {
+                $cleanKey = ltrim($k, '-');
+                if (!isset($imageConfig[$cleanKey])) {
+                    continue;
+                }
+                $params[$k] = $imageConfig[$cleanKey];
+            }
         }
         
         $paramsStr = join(' ', array_map(function ($key, $value) {

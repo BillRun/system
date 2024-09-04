@@ -649,6 +649,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         if ($options['type'] == 'separator') {
             $options['delimiter'] = $this->config['generator']['separator'] ?? ",";
         }
+        $options['row_separator_after_last_line'] = $this->config['generator']['row_separator_after_last_line'] ?? false;
         return $options;
     }
 

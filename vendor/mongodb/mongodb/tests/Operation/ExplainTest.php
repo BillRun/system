@@ -11,7 +11,7 @@ class ExplainTest extends TestCase
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options): void
+    public function testConstructorOptionTypeChecks(array $options)
     {
         $explainable = $this->getMockBuilder(Explainable::class)->getMock();
         $this->expectException(InvalidArgumentException::class);

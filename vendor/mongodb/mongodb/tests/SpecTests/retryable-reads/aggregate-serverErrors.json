@@ -10,8 +10,7 @@
     {
       "minServerVersion": "4.1.7",
       "topology": [
-        "sharded",
-        "load-balanced"
+        "sharded"
       ]
     }
   ],
@@ -219,7 +218,7 @@
       ]
     },
     {
-      "description": "Aggregate succeeds after NotWritablePrimary",
+      "description": "Aggregate succeeds after NotMaster",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -312,7 +311,7 @@
       ]
     },
     {
-      "description": "Aggregate succeeds after NotPrimaryNoSecondaryOk",
+      "description": "Aggregate succeeds after NotMasterNoSlaveOk",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -405,7 +404,7 @@
       ]
     },
     {
-      "description": "Aggregate succeeds after NotPrimaryOrSecondary",
+      "description": "Aggregate succeeds after NotMasterOrSecondary",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -1056,7 +1055,7 @@
       ]
     },
     {
-      "description": "Aggregate fails after two NotWritablePrimary errors",
+      "description": "Aggregate fails after two NotMaster errors",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -1140,7 +1139,7 @@
       ]
     },
     {
-      "description": "Aggregate fails after NotWritablePrimary when retryReads is false",
+      "description": "Aggregate fails after NotMaster when retryReads is false",
       "clientOptions": {
         "retryReads": false
       },

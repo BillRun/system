@@ -89,38 +89,28 @@ const buildQueryString = (params = null) => {
 // Handel API success (ugly code to handle non standard
 // API responses - should be improved with BillAPI)
 export const apiBillRunSuccessHandler = (success, message = false) => (dispatch) => {
-  const { details, data, status, warnings = 'warning' } = success.data[0].data;
+  const { entity, details, data, status, warnings = 'warning' } = success.data[0].data;
   dispatch(finishProgressIndicator());
-  let responseData = null;
-  try {
-    if (typeof details === 'undefined') {
-      throw new Error();
-    }
-    responseData = details;
-  } catch (e3) {
-    try {
-      if (typeof data === 'undefined') {
-        throw new Error();
-      }
-      responseData = data;
-    } catch (e1) { /* already set to null */ }
-  }
 
-  if (status === API_STATUS_SUCCESS) {
-    if (message) {
-      dispatch(showSuccess(message));
-    }
+  const responseData =
+    entity !== undefined
+      ? entity
+      : details !== undefined
+      ? details
+      : data !== undefined
+      ? data
+      : null;
+
+  if (status === API_STATUS_SUCCESS && message) {
+    dispatch(showSuccess(message));
   } else if (status === API_STATUS_WARNING) { // Check for warning
-    try {
-      const warningMessages = Array.isArray(warnings) ? warnings : [warnings];
-      warningMessages.forEach((warningMessage) => {
-        dispatch(showWarning(warningMessage, 15000));
-      });
-    } catch (e3) { /* No success object or status */ }
+    const warningMessages = Array.isArray(warnings) ? warnings : [warnings];
+    warningMessages.forEach((warningMessage) => {
+      dispatch(showWarning(warningMessage, 15000));
+    });
   }
 
-
-  return ({ status, data: responseData });
+  return ({ status, data: responseData});
 };
 
 // Handel API errors (ugly code to handle non standard API responses

@@ -4,8 +4,7 @@
       "minServerVersion": "4.1.8",
       "topology": [
         "sharded"
-      ],
-      "serverless": "forbid"
+      ]
     }
   ],
   "database_name": "transaction-tests",
@@ -307,8 +306,7 @@
               "data": {
                 "failCommands": [
                   "commitTransaction",
-                  "isMaster",
-                  "hello"
+                  "isMaster"
                 ],
                 "closeConnection": true
               }

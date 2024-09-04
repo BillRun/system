@@ -142,6 +142,10 @@ export const getSettings = (categories = [], data = {}) => (dispatch) => {
       return true;
     })
     .catch((error) => {
+      // in case of error in one of categories, save the data that was successfully received
+      if (error.data && typeof error.data == 'object' && error.data.length > 0) {
+        dispatch(gotSettings(error.data));
+      }
       dispatch(apiBillRunErrorHandler(error));
       return false;
     });

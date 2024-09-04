@@ -9,10 +9,8 @@
     {
       "minServerVersion": "4.1.7",
       "topology": [
-        "sharded",
-        "load-balanced"
-      ],
-      "serverless": "forbid"
+        "sharded"
+      ]
     }
   ],
   "database_name": "retryable-reads-tests",
@@ -135,7 +133,7 @@
       ]
     },
     {
-      "description": "db.coll.watch succeeds after NotWritablePrimary",
+      "description": "db.coll.watch succeeds after NotMaster",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -186,7 +184,7 @@
       ]
     },
     {
-      "description": "db.coll.watch succeeds after NotPrimaryNoSecondaryOk",
+      "description": "db.coll.watch succeeds after NotMasterNoSlaveOk",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -237,7 +235,7 @@
       ]
     },
     {
-      "description": "db.coll.watch succeeds after NotPrimaryOrSecondary",
+      "description": "db.coll.watch succeeds after NotMasterOrSecondary",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -594,7 +592,7 @@
       ]
     },
     {
-      "description": "db.coll.watch fails after two NotWritablePrimary errors",
+      "description": "db.coll.watch fails after two NotMaster errors",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -646,7 +644,7 @@
       ]
     },
     {
-      "description": "db.coll.watch fails after NotWritablePrimary when retryReads is false",
+      "description": "db.coll.watch fails after NotMaster when retryReads is false",
       "clientOptions": {
         "retryReads": false
       },

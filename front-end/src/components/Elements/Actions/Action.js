@@ -63,6 +63,7 @@ const Action = (props) => {
     'fa-arrow-left': type === 'back',
     'fa-minus': type === 'collapse',
     'fa-cog': type === 'settings',
+    'fa-th-list': type === 'list',
     'fa-exclamation': type === 'tooltip',
   }), [type]);
 

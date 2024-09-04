@@ -9,8 +9,7 @@
     {
       "minServerVersion": "4.1.7",
       "topology": [
-        "sharded",
-        "load-balanced"
+        "sharded"
       ]
     }
   ],
@@ -118,7 +117,7 @@
       }
     },
     {
-      "description": "InsertOne succeeds after NotWritablePrimary",
+      "description": "InsertOne succeeds after NotMaster",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -167,7 +166,7 @@
       }
     },
     {
-      "description": "InsertOne succeeds after NotPrimaryOrSecondary",
+      "description": "InsertOne succeeds after NotMasterOrSecondary",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -216,7 +215,7 @@
       }
     },
     {
-      "description": "InsertOne succeeds after NotPrimaryNoSecondaryOk",
+      "description": "InsertOne succeeds after NotMasterNoSlaveOk",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -967,10 +966,7 @@
           ],
           "writeConcernError": {
             "code": 91,
-            "errmsg": "Replication is being shut down",
-            "errorLabels": [
-              "RetryableWriteError"
-            ]
+            "errmsg": "Replication is being shut down"
           }
         }
       },

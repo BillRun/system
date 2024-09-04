@@ -5,7 +5,6 @@ namespace MongoDB\Tests\Model;
 use MongoDB\Exception\UnexpectedValueException;
 use MongoDB\Model\BSONIterator;
 use MongoDB\Tests\TestCase;
-
 use function array_map;
 use function implode;
 use function iterator_to_array;
@@ -17,7 +16,7 @@ class BSONIteratorTest extends TestCase
     /**
      * @dataProvider provideTypeMapOptionsAndExpectedDocuments
      */
-    public function testValidValues(?array $typeMap = null, $binaryString, array $expectedDocuments): void
+    public function testValidValues(array $typeMap = null, $binaryString, array $expectedDocuments)
     {
         $bsonIt = new BSONIterator($binaryString, ['typeMap' => $typeMap]);
 
@@ -88,7 +87,7 @@ class BSONIteratorTest extends TestCase
         ];
     }
 
-    public function testCannotReadLengthFromFirstDocument(): void
+    public function testCannotReadLengthFromFirstDocument()
     {
         $binaryString = substr(fromPHP([]), 0, 3);
 
@@ -99,7 +98,7 @@ class BSONIteratorTest extends TestCase
         $bsonIt->rewind();
     }
 
-    public function testCannotReadLengthFromSubsequentDocument(): void
+    public function testCannotReadLengthFromSubsequentDocument()
     {
         $binaryString = fromPHP([]) . substr(fromPHP([]), 0, 3);
 
@@ -111,7 +110,7 @@ class BSONIteratorTest extends TestCase
         $bsonIt->next();
     }
 
-    public function testCannotReadFirstDocument(): void
+    public function testCannotReadFirstDocument()
     {
         $binaryString = substr(fromPHP([]), 0, 4);
 
@@ -122,7 +121,7 @@ class BSONIteratorTest extends TestCase
         $bsonIt->rewind();
     }
 
-    public function testCannotReadSecondDocument(): void
+    public function testCannotReadSecondDocument()
     {
         $binaryString = fromPHP([]) . substr(fromPHP([]), 0, 4);
 

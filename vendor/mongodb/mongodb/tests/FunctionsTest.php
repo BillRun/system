@@ -2,18 +2,15 @@
 
 namespace MongoDB\Tests;
 
-use MongoDB\Driver\WriteConcern;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
-
 use function MongoDB\apply_type_map_to_document;
 use function MongoDB\create_field_path_type_map;
 use function MongoDB\generate_index_name;
 use function MongoDB\is_first_key_operator;
 use function MongoDB\is_mapreduce_output_inline;
 use function MongoDB\is_pipeline;
-use function MongoDB\is_write_concern_acknowledged;
 
 /**
  * Unit tests for utility functions.
@@ -23,7 +20,7 @@ class FunctionsTest extends TestCase
     /**
      * @dataProvider provideDocumentAndTypeMap
      */
-    public function testApplyTypeMapToDocument($document, array $typeMap, $expectedDocument): void
+    public function testApplyTypeMapToDocument($document, array $typeMap, $expectedDocument)
     {
         $this->assertEquals($expectedDocument, apply_type_map_to_document($document, $typeMap));
     }
@@ -95,7 +92,7 @@ class FunctionsTest extends TestCase
     /**
      * @dataProvider provideIndexSpecificationDocumentsAndGeneratedNames
      */
-    public function testGenerateIndexName($document, $expectedName): void
+    public function testGenerateIndexName($document, $expectedName)
     {
         $this->assertSame($expectedName, generate_index_name($document));
     }
@@ -114,7 +111,7 @@ class FunctionsTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testGenerateIndexNameArgumentTypeCheck($document): void
+    public function testGenerateIndexNameArgumentTypeCheck($document)
     {
         $this->expectException(InvalidArgumentException::class);
         generate_index_name($document);
@@ -123,7 +120,7 @@ class FunctionsTest extends TestCase
     /**
      * @dataProvider provideIsFirstKeyOperatorDocuments
      */
-    public function testIsFirstKeyOperator($document, $isFirstKeyOperator): void
+    public function testIsFirstKeyOperator($document, $isFirstKeyOperator)
     {
         $this->assertSame($isFirstKeyOperator, is_first_key_operator($document));
     }
@@ -143,7 +140,7 @@ class FunctionsTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testIsFirstKeyOperatorArgumentTypeCheck($document): void
+    public function testIsFirstKeyOperatorArgumentTypeCheck($document)
     {
         $this->expectException(InvalidArgumentException::class);
         is_first_key_operator($document);
@@ -152,7 +149,7 @@ class FunctionsTest extends TestCase
     /**
      * @dataProvider provideMapReduceOutValues
      */
-    public function testIsMapReduceOutputInline($out, $isInline): void
+    public function testIsMapReduceOutputInline($out, $isInline)
     {
         $this->assertSame($isInline, is_mapreduce_output_inline($out));
     }
@@ -170,7 +167,7 @@ class FunctionsTest extends TestCase
     /**
      * @dataProvider provideTypeMapValues
      */
-    public function testCreateFieldPathTypeMap(array $expected, array $typeMap, $fieldPath = 'field'): void
+    public function testCreateFieldPathTypeMap(array $expected, array $typeMap, $fieldPath = 'field')
     {
         $this->assertEquals($expected, create_field_path_type_map($typeMap, $fieldPath));
     }
@@ -232,7 +229,7 @@ class FunctionsTest extends TestCase
     /**
      * @dataProvider providePipelines
      */
-    public function testIsPipeline($expected, $pipeline): void
+    public function testIsPipeline($expected, $pipeline)
     {
         $this->assertSame($expected, is_pipeline($pipeline));
     }
@@ -255,33 +252,6 @@ class FunctionsTest extends TestCase
             ],
             'False positive with DbRef in numeric field' => [true, ['0' => ['$ref' => 'foo', '$id' => 'bar']]],
             'DbRef in numeric field as object' => [false, (object) ['0' => ['$ref' => 'foo', '$id' => 'bar']]],
-        ];
-    }
-
-    /**
-     * @dataProvider provideWriteConcerns
-     */
-    public function testIsWriteConcernAcknowledged($expected, WriteConcern $writeConcern): void
-    {
-        $this->assertSame($expected, is_write_concern_acknowledged($writeConcern));
-    }
-
-    public function provideWriteConcerns(): array
-    {
-        // Note: WriteConcern constructor prohibits w=-1 or w=0 and journal=true
-        return [
-            'MONGOC_WRITE_CONCERN_W_MAJORITY' => [true, new WriteConcern(-3)],
-            'MONGOC_WRITE_CONCERN_W_DEFAULT' => [true, new WriteConcern(-2)],
-            'MONGOC_WRITE_CONCERN_W_DEFAULT and journal=true' => [true, new WriteConcern(-2, 0, true)],
-            'MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED' => [false, new WriteConcern(-1)],
-            'MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED and journal=false' => [false, new WriteConcern(-1, 0, false)],
-            'MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED' => [false, new WriteConcern(0)],
-            'MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED and journal=false' => [false, new WriteConcern(0, 0, false)],
-            'w=1' => [true, new WriteConcern(1)],
-            'w=1 and journal=false' => [true, new WriteConcern(1, 0, false)],
-            'w=1 and journal=true' => [true, new WriteConcern(1, 0, true)],
-            'majority' => [true, new WriteConcern(WriteConcern::MAJORITY)],
-            'tag' => [true, new WriteConcern('tag')],
         ];
     }
 }

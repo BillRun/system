@@ -19,9 +19,11 @@ $secret = 'YOUR_SECRET';
 $payrexx = new \Payrexx\Payrexx($instanceName, $secret);
 
 $qrCode = new \Payrexx\Models\Request\QrCode();
-$qrCode->setId('QR_CODE_ID');
+// UUIDv4
+$qrCode->setUuid('QR_CODE_UUID');
 
 try {
+    /** @var \Payrexx\Models\Response\QrCode $response */
     $response = $payrexx->delete($qrCode);
     var_dump($response);
 } catch (\Payrexx\PayrexxException $e) {

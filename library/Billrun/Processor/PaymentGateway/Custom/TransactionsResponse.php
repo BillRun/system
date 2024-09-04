@@ -33,9 +33,6 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
                 $this->updatePaymentAccordingTheResponse($paymentResponse, $payment, $row);
-				if ($paymentResponse['stage'] == 'Rejected') {
-					$payment->updatePastRejectionsOnProcessingFiles();
-				}
                 if ($paymentResponse['stage'] == 'Completed') {
                         $payment->markApproved($paymentResponse['stage']);
                         $billData = $payment->getRawData();
@@ -70,9 +67,9 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		if (empty($processorDefinition['processor']['amount_field']) ||
 			(!isset($processorDefinition['processor']['transaction_identifier_field']) && 
 			!isset($processorDefinition['processor']['transaction_identifier_fields']))) {
-                        $message = "Missing definitions for file type " . $processorDefinition['file_type'];
+            $message = "Missing definitions for file type " . $processorDefinition['file_type'];
 			Billrun_Factory::log($message, Zend_Log::DEBUG);
-                        $this->informationArray['errors'][] = $message;
+            $this->informationArray['errors'][] = $message;
 			return false;
 		}
 		if (isset($processorDefinition['processor']['transaction_identifier_field'])){
@@ -139,6 +136,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 				$rejection->save();
 				$payment->markRejected();
 				$payment->setUrt($urt);
+				$payment->updatePastRejectionsOnProcessingFiles();
 				$this->informationArray['transactions']['rejected']++;
 				$this->informationArray['total_rejected_amount']+=$payment->getAmount();
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));

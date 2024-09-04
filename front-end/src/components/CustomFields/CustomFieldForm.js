@@ -11,7 +11,7 @@ const CustomFieldForm = ({
   onChangeEntityField,
   disableUnique, disableMandatory, disableFieldType, disabledEditable, disabledDisplay,
   disabledShowInList, disableSearchable, disableMultiple, disableSelectList, disableSelectOptions,
-  disableTitle, disableFieldName, disableHelp, disableDescription, disableDefaultValue,
+  disableTitle, disableFieldName, disableHelp, disableDescription, disableDefaultValue, disableCategoryValue,
   isErrorTitle, isErrorFieldName,
   fieldTypesOptions, playsOptions,
   fieldType, showPlays, plays,
@@ -76,6 +76,14 @@ const CustomFieldForm = ({
         entity={item}
         onChange={onChangeEntityField}
         disabled={disableHelp}
+      />
+    )}
+    {!disableCategoryValue && (
+      <EntityField
+        field={Map({ title: 'Category', field_name: 'category'})}
+        entity={item}
+        onChange={onChangeEntityField}
+        disabled={disableCategoryValue}
       />
     )}
 

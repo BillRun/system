@@ -10,15 +10,17 @@ use MongoDB\InsertOneResult;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Operation\InsertOne;
 use MongoDB\Tests\CommandObserver;
-
+use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
 use function version_compare;
 
 class InsertOneFunctionalTest extends FunctionalTestCase
 {
+    use SetUpTearDownTrait;
+
     /** @var Collection */
     private $collection;
 
-    public function setUp(): void
+    private function doSetUp()
     {
         parent::setUp();
 
@@ -28,7 +30,7 @@ class InsertOneFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider provideDocumentWithExistingId
      */
-    public function testInsertOneWithExistingId($document): void
+    public function testInsertOneWithExistingId($document)
     {
         $operation = new InsertOne($this->getDatabaseName(), $this->getCollectionName(), $document);
         $result = $operation->execute($this->getPrimaryServer());
@@ -53,7 +55,7 @@ class InsertOneFunctionalTest extends FunctionalTestCase
         ];
     }
 
-    public function testInsertOneWithGeneratedId(): void
+    public function testInsertOneWithGeneratedId()
     {
         $document = ['x' => 11];
 
@@ -71,14 +73,14 @@ class InsertOneFunctionalTest extends FunctionalTestCase
         $this->assertSameDocuments($expected, $this->collection->find());
     }
 
-    public function testSessionOption(): void
+    public function testSessionOption()
     {
         if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
             $this->markTestSkipped('Sessions are not supported');
         }
 
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new InsertOne(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -88,20 +90,20 @@ class InsertOneFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );
     }
 
-    public function testBypassDocumentValidationSetWhenTrue(): void
+    public function testBypassDocumentValidationSetWhenTrue()
     {
         if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
             $this->markTestSkipped('bypassDocumentValidation is not supported');
         }
 
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new InsertOne(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -111,21 +113,21 @@ class InsertOneFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('bypassDocumentValidation', $event['started']->getCommand());
                 $this->assertEquals(true, $event['started']->getCommand()->bypassDocumentValidation);
             }
         );
     }
 
-    public function testBypassDocumentValidationUnsetWhenFalse(): void
+    public function testBypassDocumentValidationUnsetWhenFalse()
     {
         if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
             $this->markTestSkipped('bypassDocumentValidation is not supported');
         }
 
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new InsertOne(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -135,7 +137,7 @@ class InsertOneFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectNotHasAttribute('bypassDocumentValidation', $event['started']->getCommand());
             }
         );
@@ -157,17 +159,17 @@ class InsertOneFunctionalTest extends FunctionalTestCase
     /**
      * @depends testUnacknowledgedWriteConcern
      */
-    public function testUnacknowledgedWriteConcernAccessesInsertedCount(InsertOneResult $result): void
+    public function testUnacknowledgedWriteConcernAccessesInsertedCount(InsertOneResult $result)
     {
         $this->expectException(BadMethodCallException::class);
-        $this->expectExceptionMessageMatches('/[\w:\\\\]+ should not be called for an unacknowledged write result/');
+        $this->expectExceptionMessageRegExp('/[\w:\\\\]+ should not be called for an unacknowledged write result/');
         $result->getInsertedCount();
     }
 
     /**
      * @depends testUnacknowledgedWriteConcern
      */
-    public function testUnacknowledgedWriteConcernAccessesInsertedId(InsertOneResult $result): void
+    public function testUnacknowledgedWriteConcernAccessesInsertedId(InsertOneResult $result)
     {
         $this->assertInstanceOf(ObjectId::class, $result->getInsertedId());
     }

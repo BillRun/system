@@ -64,6 +64,7 @@ const mapStateToProps = (state, props) => {
     disableHelp: inConfigOptionBlackList(fieldTypeConfig, 'help') || !isEditableFiledProperty(item, editable, 'help'),
     disableDescription: inConfigOptionBlackList(fieldTypeConfig, 'description') || !isEditableFiledProperty(item, editable, 'description'),
     disableDefaultValue: inConfigOptionBlackList(fieldTypeConfig, 'default_value') || !isEditableFiledProperty(item, editable, 'default_value'),
+    disableCategoryValue: inConfigOptionBlackList(fieldTypeConfig, 'category') || !isEditableFiledProperty(item, editable, 'category'),
     isErrorTitle: (props.errors) && props.errors.get('title', false),
     isErrorFieldName: (props.errors) && props.errors.get('fieldName', false),
   });
@@ -102,6 +103,14 @@ const mapDispatchToProps = (dispatch, {
         removeField('default_value');
       } else if (value === '') {
         removeField('default_value');
+      } else {
+        updateField(path, value);
+      }
+    } else if (path[0] === 'category') {
+      if (item.get('type', 'text') === 'ranges' && value.isEmpty()) {
+        removeField('category');
+      } else if (value === '') {
+        removeField('category');
       } else {
         updateField(path, value);
       }

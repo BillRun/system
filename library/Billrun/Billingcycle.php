@@ -568,7 +568,7 @@ class Billrun_Billingcycle {
 			$query['invoicing_day'] = !is_null($invoicing_day) ? $invoicing_day : Billrun_Factory::config()->getConfigChargingDay();
 		}
 		$sort = array("billrun_key" => -1);
-		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
+		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->project(['billrun_key' => 1])->cursor()->sort($sort)->limit(1)->current();
 		if ($entry->isEmpty()) {
 			return FALSE;
 		}

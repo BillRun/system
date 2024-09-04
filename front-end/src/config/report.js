@@ -138,6 +138,7 @@ export default {
       { id: 'returned_value', searchable: false },
     ],
     logFile: [
+      { id: 'fetching_time', type: 'date', title: 'Receiving start time'},
       { id: 'file_name', title: 'File name' },
       { id: 'stamp', title: 'Unique record ID' },
       { id: 'start_process_time', type: 'date' },
@@ -414,8 +415,8 @@ export default {
     { id: 'like', title: 'Contains', include: ['string', 'number'], exclude: ['fieldid:logfile_status', 'fieldid:errors','fieldid:warnings', 'fieldid:info', 'fieldid:subscriber.play'] },
     { id: 'starts_with', title: 'Starts with', include: ['string'], exclude: ['fieldid:logfile_status', 'fieldid:errors','fieldid:warnings', 'fieldid:info', 'fieldid:subscriber.play'] },
     { id: 'ends_with', title: 'Ends with', include: ['string'], exclude: ['fieldid:logfile_status', 'fieldid:errors','fieldid:warnings', 'fieldid:info', 'fieldid:subscriber.play'] },
-    { id: 'in_range', title: 'Include‎', include: ['ranges', 'range', 'daterange'] },
-    { id: 'nin_range', title: 'Does not include‎', include: ['ranges', 'range', 'daterange'] },
+    { id: 'in_range', title: 'Include', include: ['ranges', 'range', 'daterange'] },
+    { id: 'nin_range', title: 'Does not include', include: ['ranges', 'range', 'daterange'] },
     { id: 'exists', title: 'Exists', type: 'boolean',
       include: ['string', 'number', 'boolean', 'date', 'datetime', 'ranges', 'range', 'daterange', 'json'],
       exclude: [ 'fieldid:billrun_status', 'fieldid:logfile_status', 'fieldid:subscriber.play'],

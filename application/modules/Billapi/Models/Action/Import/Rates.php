@@ -153,10 +153,11 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		$service_rates = array();
 		foreach ($entities as $rate) {
 			$keyField = !empty($rate['__UPDATER__']['value']) ? $rate['__UPDATER__']['value'] : 'key';
+			$keyField = $rate[$keyField];
 			$rates[$keyField] = array();
 			if (!empty($rate['rates'])) {
 				foreach ($rate['rates'] as $usaget => $pricing) {
-					if (!isset($plan_rates[$keyField])) {
+					if (!isset($plan_rates[$rate->{$keyField}])) {
 						$plan_rates[$keyField] = [];
 					}
 					$plan_rates[$keyField] = array_merge($plan_rates[$keyField], array_keys($pricing['plans']));
@@ -464,10 +465,10 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	
 	protected function importEntity($entity) {
 		$keyField = !empty($entity['__UPDATER__']['value']) ? $entity['__UPDATER__']['value'] : 'key';
-		$plans_names = isset($this->rates_by_plan[$keyField]) ? $this->rates_by_plan[$keyField] : [];
+		$plans_names = isset($this->rates_by_plan[$entity[$keyField]]) ? $this->rates_by_plan[$entity[$keyField]] : [];
 		$unique_plan_rates_count = count(array_unique($plans_names));
 		$plan_rates_count = count($plans_names);
-		$services_names = isset($this->rates_by_service[$keyField]) ? $this->rates_by_service[$keyField] : [];
+		$services_names = isset($this->rates_by_service[$entity[$keyField]]) ? $this->rates_by_service[$entity[$keyField]] : [];
 		$unique_service_rates_count = count(array_unique($services_names));
 		$service_rates_count = count($services_names);
 		if ($this->getImportOperation() == 'create' && ($unique_plan_rates_count != $plan_rates_count || $unique_service_rates_count != $service_rates_count)) {

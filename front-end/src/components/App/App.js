@@ -17,6 +17,7 @@ import { initMainMenu } from '@/actions/guiStateActions/menuActions';
 import { getSettings, fetchFile } from '@/actions/settingsActions';
 import { onBoardingIsRunnigSelector } from '@/selectors/guiSelectors';
 import { taxationTypeSelector } from '@/selectors/settingsSelector';
+import { showDanger } from '@/actions/alertsActions';
 
 class App extends Component {
 
@@ -76,7 +77,14 @@ class App extends Component {
     if (auth !== true && nextProps.auth === true) { // user did success login
       // get global system settings
       this.props.dispatch(getSettings(['pricing', 'tenant', 'menu', 'billrun', 'usage_types', 'property_types', 'plays', 'taxation']))
-        .then(responce => ((responce) ? this.props.logoName : ''))
+        .then(response => {
+          if (response) {
+            return response;
+          }
+          this.props.dispatch(showDanger('Error, can not load required settings'));
+          throw new Error();
+        })
+        .then(response => response ? this.props.logoName : '')
         .then((logoFileName) => {
           if (logoFileName && logoFileName.length > 0) {
             return this.props.dispatch(fetchFile({ filename: logoFileName }, 'logo'));
@@ -85,7 +93,8 @@ class App extends Component {
         })
         .then(() => {
           this.props.dispatch(systemRequirementsLoadingComplete());
-        });
+        })
+        .catch(() => {});
     }
   }
 

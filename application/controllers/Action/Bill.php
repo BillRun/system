@@ -16,7 +16,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class BillAction extends ApiAction {
 
 	use Billrun_Traits_Api_UserPermissions;
-
+	
 	public function execute() {
 		$this->allowed();
 		$request = $this->getRequest();
@@ -32,7 +32,7 @@ class BillAction extends ApiAction {
 					$response = $this->getBalances($request); // aids list
 					break;
 				case 'collection_debt' :
-					$response = $this->getCollectionDebt($request); //aids json array
+					$response = $this->getCollectionDebt($request); //aids json array & threshold (optional)
 					break;
 				case 'all_collection_debts' :
 					$response = $this->getAllCollectionDebts($request);
@@ -105,6 +105,9 @@ class BillAction extends ApiAction {
 	 */
 	protected function getBalances($request) {
 		$aids = explode(',', $request->get('aids'));
+		$date = !empty($request->get('date')) ? $request->get('date') : null;
+		$include_future_chargeable = filter_var($request->get('include_future_chargeable', FALSE), FILTER_VALIDATE_BOOLEAN);
+
 		if (empty($aids)) {
 			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
@@ -115,7 +118,7 @@ class BillAction extends ApiAction {
 		}
 		$balances = array();
 		foreach ($aids as $aid) {
-			$balances[$aid] = Billrun_Bill::getTotalDueForAccount(intval($aid));
+			$balances[$aid] = Billrun_Bill::getTotalDueForAccount(intval($aid), $date, false, $include_future_chargeable);
 		}
 
 		return $balances;
@@ -133,8 +136,8 @@ class BillAction extends ApiAction {
 
 		Billrun_Factory::log('queryBillsInvoices query  : ' . print_r($query, 1));
 		if (is_array($queryAsArray = json_decode($query, JSON_OBJECT_AS_ARRAY))) {
-			Billrun_Utils_Mongo::convertQueryMongodloidDates($queryAsArray);
-		}
+                    Billrun_Utils_Mongo::convertQueryMongodloidDates($queryAsArray);               
+                }
 		return Billrun_Bill_Invoice::getInvoices($queryAsArray);
 	}
 
@@ -147,13 +150,24 @@ class BillAction extends ApiAction {
 	 */
 	public function getCollectionDebt($request, $only_debt = true) {
 		if ($request instanceof Yaf_Request_Abstract) {
-			$jsonAids = $request->get('aids', '[]');
+		$jsonAids = $request->get('aids', '[]');
 			$requestBody = $request->getPost();
 		} else {
 			$jsonAids = $request['aids'] ?? [];
 			$requestBody = $request;
 		}
 		$aids = json_decode($jsonAids, TRUE);
+		if (!is_null($request->get('threshold', null))) {
+			$min_debt = $request->get('threshold', null);
+			Billrun_Factory::log("Using api threshold parameter value " . $min_debt, Zend_Log::DEBUG);
+		} else {
+			$min_debt = Billrun_Factory::config()->getConfigValue('api.bill.collection_debt.threshold', null);
+			if (!is_null($min_debt)) {
+				Billrun_Factory::log("Using configured threshold value " . $min_debt, Zend_Log::DEBUG);
+			} else {
+				Billrun_Factory::log("No threshold value was found", Zend_Log::DEBUG);
+			}
+		}
 		if (!is_array($aids) || json_last_error()) {
 			$this->setError('Illegal account ids', $requestBody);
 			return FALSE;
@@ -162,11 +176,11 @@ class BillAction extends ApiAction {
 			$this->setError('Must supply at least one aid', $requestBody);
 			return FALSE;
 		}
-		$contractors = Billrun_Bill::getBalanceByAids($aids, false, $only_debt);
+		$contractors = Billrun_Bill::getBalanceByAids($aids, false, $only_debt, true, $min_debt);
 		$result = array();
 		foreach ($contractors as $contractor) {
 			$result[$contractor['aid']] = current($contractor);
-		}
+		}	
 		return $result;
 	}
 
@@ -182,7 +196,7 @@ class BillAction extends ApiAction {
 		}
 		return $result;
 	}
-
+	
 	/**
 	 * Validate that aids are valid aids (numric type)
 	 * @param type $aids

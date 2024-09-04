@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2015-present MongoDB, Inc.
+ * Copyright 2015-2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,9 @@ use MongoDB\Driver\Session;
 use MongoDB\Driver\WriteConcern;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnsupportedException;
-
 use function is_array;
 use function is_object;
 use function is_string;
-use function MongoDB\is_write_concern_acknowledged;
 use function MongoDB\server_supports_feature;
 
 /**
@@ -46,11 +44,8 @@ class Delete implements Executable, Explainable
     /** @var integer */
     private static $wireVersionForCollation = 5;
 
-    /** @var integer */
-    private static $wireVersionForHint = 9;
-
     /** @var int */
-    private static $wireVersionForUnsupportedOptionServerSideError = 5;
+    private static $wireVersionForHintServerSideError = 5;
 
     /** @var string */
     private $databaseName;
@@ -150,18 +145,10 @@ class Delete implements Executable, Explainable
             throw UnsupportedException::collationNotSupported();
         }
 
-        /* Server versions >= 3.4.0 raise errors for unsupported update options.
-         * For previous versions, the CRUD spec requires a client-side error. */
-        if (isset($this->options['hint']) && ! server_supports_feature($server, self::$wireVersionForUnsupportedOptionServerSideError)) {
-            throw UnsupportedException::hintNotSupported();
-        }
-
-        /* CRUD spec requires a client-side error when using "hint" with an
-         * unacknowledged write concern on an unsupported server. */
-        if (
-            isset($this->options['writeConcern']) && ! is_write_concern_acknowledged($this->options['writeConcern']) &&
-            isset($this->options['hint']) && ! server_supports_feature($server, self::$wireVersionForHint)
-        ) {
+        /* Server versions >= 3.4.0 raise errors for unknown update
+         * options. For previous versions, the CRUD spec requires a client-side
+         * error. */
+        if (isset($this->options['hint']) && ! server_supports_feature($server, self::$wireVersionForHintServerSideError)) {
             throw UnsupportedException::hintNotSupported();
         }
 
@@ -178,13 +165,6 @@ class Delete implements Executable, Explainable
         return new DeleteResult($writeResult);
     }
 
-    /**
-     * Returns the command document for this operation.
-     *
-     * @see Explainable::getCommandDocument()
-     * @param Server $server
-     * @return array
-     */
     public function getCommandDocument(Server $server)
     {
         $cmd = ['delete' => $this->collectionName, 'deletes' => [['q' => $this->filter] + $this->createDeleteOptions()]];

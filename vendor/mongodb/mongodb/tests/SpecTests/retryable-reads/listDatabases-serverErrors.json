@@ -10,8 +10,7 @@
     {
       "minServerVersion": "4.1.7",
       "topology": [
-        "sharded",
-        "load-balanced"
+        "sharded"
       ]
     }
   ],
@@ -94,7 +93,7 @@
       ]
     },
     {
-      "description": "ListDatabases succeeds after NotWritablePrimary",
+      "description": "ListDatabases succeeds after NotMaster",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -131,7 +130,7 @@
       ]
     },
     {
-      "description": "ListDatabases succeeds after NotPrimaryNoSecondaryOk",
+      "description": "ListDatabases succeeds after NotMasterNoSlaveOk",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -168,7 +167,7 @@
       ]
     },
     {
-      "description": "ListDatabases succeeds after NotPrimaryOrSecondary",
+      "description": "ListDatabases succeeds after NotMasterOrSecondary",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -427,7 +426,7 @@
       ]
     },
     {
-      "description": "ListDatabases fails after two NotWritablePrimary errors",
+      "description": "ListDatabases fails after two NotMaster errors",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -465,7 +464,7 @@
       ]
     },
     {
-      "description": "ListDatabases fails after NotWritablePrimary when retryReads is false",
+      "description": "ListDatabases fails after NotMaster when retryReads is false",
       "clientOptions": {
         "retryReads": false
       },

@@ -120,7 +120,7 @@ class DiscountDetails extends Component {
         }
       break;
       case 'key':
-        const valueKey = value.toUpperCase();
+        const valueKey = value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), "_");
         if (value !== '') {
           const { errorMessages: { name: { allowedCharacters } } } = this.props;
           const { errors } = this.state;

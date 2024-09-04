@@ -70,7 +70,7 @@ export default class Plan extends Component {
   onChangePlanName = (e) => {
     const { errorMessages: { name: { allowedCharacters } } } = this.props;
     const { errors } = this.state;
-    const value = e.target.value.toUpperCase();
+    const value = e.target.value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), "_");
     const newError = (!getConfig('keyUppercaseRegex', /./).test(value)) ? allowedCharacters : '';
     this.setState({ errors: Object.assign({}, errors, { name: newError }) });
     this.props.onChangeFieldValue(['name'], value);
@@ -255,7 +255,7 @@ export default class Plan extends Component {
               </FormGroup>
 
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>Proration‎</Col>
+                <Col componentClass={ControlLabel} sm={3} lg={2}>Proration</Col>
                 <Col sm={8} lg={9} className="pt5">
                   <Field
                     fieldType="checkbox"
@@ -282,7 +282,6 @@ export default class Plan extends Component {
                     id="prorated_termination"
                   />
                 </Col>
-                )}
                 {!editable && (
                   <Col sm={8} lg={9} className="non-editable-field">
                     {this.getProrationLabel()}

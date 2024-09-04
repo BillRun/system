@@ -7,7 +7,7 @@ use MongoDB\Operation\DropIndexes;
 
 class DropIndexesTest extends TestCase
 {
-    public function testDropIndexShouldNotAllowEmptyIndexName(): void
+    public function testDropIndexShouldNotAllowEmptyIndexName()
     {
         $this->expectException(InvalidArgumentException::class);
         new DropIndexes($this->getDatabaseName(), $this->getCollectionName(), '');
@@ -16,7 +16,7 @@ class DropIndexesTest extends TestCase
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options): void
+    public function testConstructorOptionTypeChecks(array $options)
     {
         $this->expectException(InvalidArgumentException::class);
         new DropIndexes($this->getDatabaseName(), $this->getCollectionName(), '*', $options);

@@ -10,8 +10,7 @@
     {
       "minServerVersion": "4.1.7",
       "topology": [
-        "sharded",
-        "load-balanced"
+        "sharded"
       ]
     }
   ],
@@ -94,7 +93,7 @@
       ]
     },
     {
-      "description": "ListCollections succeeds after NotWritablePrimary",
+      "description": "ListCollections succeeds after NotMaster",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -131,7 +130,7 @@
       ]
     },
     {
-      "description": "ListCollections succeeds after NotPrimaryNoSecondaryOk",
+      "description": "ListCollections succeeds after NotMasterNoSlaveOk",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -168,7 +167,7 @@
       ]
     },
     {
-      "description": "ListCollections succeeds after NotPrimaryOrSecondary",
+      "description": "ListCollections succeeds after NotMasterOrSecondary",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -427,7 +426,7 @@
       ]
     },
     {
-      "description": "ListCollections fails after two NotWritablePrimary errors",
+      "description": "ListCollections fails after two NotMaster errors",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -465,7 +464,7 @@
       ]
     },
     {
-      "description": "ListCollections fails after NotWritablePrimary when retryReads is false",
+      "description": "ListCollections fails after NotMaster when retryReads is false",
       "clientOptions": {
         "retryReads": false
       },

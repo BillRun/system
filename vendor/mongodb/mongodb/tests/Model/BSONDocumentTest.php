@@ -9,19 +9,18 @@ use MongoDB\Model\BSONDocument;
 use MongoDB\Tests\TestCase;
 use ReflectionClass;
 use stdClass;
-
 use function json_encode;
 
 class BSONDocumentTest extends TestCase
 {
-    public function testConstructorDefaultsToPropertyAccess(): void
+    public function testConstructorDefaultsToPropertyAccess()
     {
         $document = new BSONDocument(['foo' => 'bar']);
         $this->assertEquals(ArrayObject::ARRAY_AS_PROPS, $document->getFlags());
         $this->assertSame('bar', $document->foo);
     }
 
-    public function testBsonSerializeCastsToObject(): void
+    public function testBsonSerializeCastsToObject()
     {
         $data = [0 => 'foo', 2 => 'bar'];
 
@@ -30,7 +29,7 @@ class BSONDocumentTest extends TestCase
         $this->assertEquals((object) [0 => 'foo', 2 => 'bar'], $document->bsonSerialize());
     }
 
-    public function testClone(): void
+    public function testClone()
     {
         $document = new BSONDocument([
             'a' => [
@@ -55,7 +54,7 @@ class BSONDocumentTest extends TestCase
         $this->assertNotSame($document['b']['c'][1], $documentClone['b']['c'][1]);
     }
 
-    public function testCloneRespectsUncloneableObjects(): void
+    public function testCloneRespectsUncloneableObjects()
     {
         $this->assertFalse((new ReflectionClass(UncloneableObject::class))->isCloneable());
 
@@ -71,7 +70,7 @@ class BSONDocumentTest extends TestCase
         $this->assertSame($document['b']['a'], $documentClone['b']['a']);
     }
 
-    public function testCloneSupportsBSONTypes(): void
+    public function testCloneSupportsBSONTypes()
     {
         /* Note: this test does not check that the BSON type itself is cloned,
          * as that is not yet supported in the driver (see: PHPC-1230). */
@@ -85,7 +84,7 @@ class BSONDocumentTest extends TestCase
         $this->assertNotSame($document['b'], $documentClone['b']);
     }
 
-    public function testJsonSerialize(): void
+    public function testJsonSerialize()
     {
         $document = new BSONDocument([
             'foo' => 'bar',
@@ -99,7 +98,7 @@ class BSONDocumentTest extends TestCase
         $this->assertSame($expectedJson, json_encode($document));
     }
 
-    public function testJsonSerializeCastsToObject(): void
+    public function testJsonSerializeCastsToObject()
     {
         $data = [0 => 'foo', 2 => 'bar'];
 
@@ -108,7 +107,7 @@ class BSONDocumentTest extends TestCase
         $this->assertEquals((object) [0 => 'foo', 2 => 'bar'], $document->jsonSerialize());
     }
 
-    public function testSetState(): void
+    public function testSetState()
     {
         $data = ['foo' => 'bar'];
 

@@ -5,7 +5,7 @@ namespace MongoDB\Tests\GridFS;
 use MongoDB\Collection;
 use MongoDB\GridFS\Bucket;
 use MongoDB\Tests\FunctionalTestCase as BaseFunctionalTestCase;
-
+use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
 use function fopen;
 use function fwrite;
 use function get_resource_type;
@@ -17,6 +17,8 @@ use function stream_get_contents;
  */
 abstract class FunctionalTestCase extends BaseFunctionalTestCase
 {
+    use SetUpTearDownTrait;
+
     /** @var Bucket */
     protected $bucket;
 
@@ -26,7 +28,7 @@ abstract class FunctionalTestCase extends BaseFunctionalTestCase
     /** @var Collection */
     protected $filesCollection;
 
-    public function setUp(): void
+    private function doSetUp()
     {
         parent::setUp();
 
@@ -45,7 +47,7 @@ abstract class FunctionalTestCase extends BaseFunctionalTestCase
      * @param string   $expectedContents
      * @param resource $stream
      */
-    protected function assertStreamContents(string $expectedContents, $stream): void
+    protected function assertStreamContents($expectedContents, $stream)
     {
         $this->assertIsResource($stream);
         $this->assertSame('stream', get_resource_type($stream));
@@ -58,7 +60,7 @@ abstract class FunctionalTestCase extends BaseFunctionalTestCase
      * @param string $data
      * @return resource
      */
-    protected function createStream(string $data = '')
+    protected function createStream($data = '')
     {
         $stream = fopen('php://temp', 'w+b');
         fwrite($stream, $data);

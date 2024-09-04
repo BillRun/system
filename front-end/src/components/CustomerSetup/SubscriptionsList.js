@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import Immutable from 'immutable';
 import changeCase from 'change-case';
 import EntityList from '../EntityList';
-import { getItemDateValue, getConfig } from '@/common/Util';
+import { getItemDateValue, getConfig, getFieldName } from '@/common/Util';
 import { isPlaysEnabledSelector } from '@/selectors/settingsSelector';
 
 
@@ -17,17 +17,17 @@ class SubscriptionsList extends Component {
       PropTypes.string,
       PropTypes.number,
     ]),
-    defaultListFields: PropTypes.arrayOf(PropTypes.string),
     onNew: PropTypes.func.isRequired,
     onClickEdit: PropTypes.func.isRequired,
   };
 
   static defaultProps = {
     settings: Immutable.List(),
-    defaultListFields: [],
     isPlaysEnabled: false,
     aid: '',
   };
+
+  static defaultListFields = getConfig(['systemItems', 'subscription', 'defaultListFields'], Immutable.List());
 
   planActivationParser = (subscription) => {
     const date = getItemDateValue(subscription, 'plan_activation', false);
@@ -67,36 +67,36 @@ class SubscriptionsList extends Component {
   }
 
   getFields = () => {
-    const { settings, defaultListFields } = this.props;
+    const { settings } = this.props;
     return settings
       .filter(this.filterPlayField)
-      .filter(field => (field.get('show_in_list', false) || defaultListFields.includes(field.get('field_name', ''))))
+      .filter(field => (field.get('show_in_list', false) || SubscriptionsList.defaultListFields.includes(field.get('field_name', ''))))
       .map((field) => {
         const fieldname = field.get('field_name');
+        const fieldTitle = field.get('title', getFieldName(fieldname, 'subscription', changeCase.sentenceCase(fieldname)));
         switch (fieldname) {
           case 'plan_activation':
-            return { id: fieldname, parser: this.planActivationParser, cssClass: 'long-date text-center' };
+            return { id: fieldname, title: fieldTitle, parser: this.planActivationParser, cssClass: 'long-date text-center' };
           case 'services':
-            return { id: fieldname, parser: this.servicesParser };
+            return { id: fieldname, title: fieldTitle, parser: this.servicesParser };
           case 'address':
-            return { id: fieldname, parser: this.addressParser };
+            return { id: fieldname, title: fieldTitle, parser: this.addressParser };
           case 'sid':
-            return { id: fieldname, title: 'ID', type: 'number', sort: true };
+            return { id: fieldname, title: fieldTitle, type: 'number', sort: true };
           case 'play':
-            return { id: fieldname, sort: true };
+            return { id: fieldname, title: fieldTitle, sort: true };
           default: {
-            let title = fieldname;
-            if (fieldname === 'firstname') {
-              title = 'first name';
-            } else if (fieldname === 'lastname') {
-              title = 'last name';
-            }
-            return { id: fieldname, title: changeCase.sentenceCase(title) };
+            return { id: fieldname, title: fieldTitle };
           }
         }
       })
       .toArray();
   }
+
+
+  getFilterOverrides = () => [{
+    id: 'sid', type: 'number'
+  }];
 
   getActions = () => [
     { type: 'edit', helpText: 'Edit', onClick: this.props.onClickEdit, onClickColumn: 'sid' },
@@ -117,20 +117,14 @@ class SubscriptionsList extends Component {
     this.props.onClickEdit(item, 'subscription', 'clone');
   }
 
-  filterFields = () => [
-    { id: 'sid', placeholder: 'ID', type: 'number' },
-    { id: 'firstname', placeholder: 'First Name' },
-    { id: 'lastname', placeholder: 'Last Name' },
-  ];
-
   getSubsctiptionListProject = () => {
-    const { settings, defaultListFields } = this.props;
+    const { settings } = this.props;
     return Immutable.Map().withMutations((fieldsWithMutations) => {
       fieldsWithMutations.set('from', 1);
       fieldsWithMutations.set('to', 1);
       fieldsWithMutations.set('revision_info', 1);
       fieldsWithMutations.set('aid', 1);
-      defaultListFields.forEach((defaultSubsctiptionListField) => {
+      SubscriptionsList.defaultListFields.forEach((defaultSubsctiptionListField) => {
         fieldsWithMutations.set(defaultSubsctiptionListField, 1);
       });
       settings
@@ -144,6 +138,7 @@ class SubscriptionsList extends Component {
   render() {
     const { aid } = this.props;
     const fields = this.getFields();
+    const filterOverrides = this.getFilterOverrides();
     const actions = this.getActions();
     const listActions = this.getListActions();
     const projectFields = this.getSubsctiptionListProject();
@@ -154,8 +149,8 @@ class SubscriptionsList extends Component {
           <EntityList
             itemsType="subscribers"
             itemType="subscription"
-            filterFields={this.filterFields()}
             tableFields={fields}
+            filterFields={filterOverrides}
             projectFields={projectFields}
             showRevisionBy={true}
             actions={actions}

@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2016-present MongoDB, Inc.
+ * Copyright 2016-2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@
 
 namespace MongoDB\GridFS;
 
-use MongoDB\Driver\CursorInterface;
+use IteratorIterator;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\GridFS\Exception\CorruptFileException;
 use stdClass;
-
 use function ceil;
 use function floor;
 use function is_integer;
@@ -49,7 +48,7 @@ class ReadableStream
     /** @var integer */
     private $chunkOffset = 0;
 
-    /** @var CursorInterface|null */
+    /** @var IteratorIterator|null */
     private $chunksIterator;
 
     /** @var CollectionWrapper */
@@ -96,7 +95,7 @@ class ReadableStream
 
         if ($this->length > 0) {
             $this->numChunks = (integer) ceil($this->length / $this->chunkSize);
-            $this->expectedLastChunkSize = $this->length - (($this->numChunks - 1) * $this->chunkSize);
+            $this->expectedLastChunkSize = ($this->length - (($this->numChunks - 1) * $this->chunkSize));
         }
     }
 
@@ -316,7 +315,9 @@ class ReadableStream
      */
     private function initChunksIterator()
     {
-        $this->chunksIterator = $this->collectionWrapper->findChunksByFileId($this->file->_id, $this->chunkOffset);
+        $cursor = $this->collectionWrapper->findChunksByFileId($this->file->_id, $this->chunkOffset);
+
+        $this->chunksIterator = new IteratorIterator($cursor);
         $this->chunksIterator->rewind();
     }
 }

@@ -4,32 +4,25 @@ namespace MongoDB\Tests;
 
 use InvalidArgumentException;
 use MongoDB\BSON\ObjectId;
-use MongoDB\Client;
 use MongoDB\Driver\Command;
 use MongoDB\Driver\Exception\CommandException;
 use MongoDB\Driver\Manager;
 use MongoDB\Driver\Query;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\Server;
-use MongoDB\Driver\ServerApi;
 use MongoDB\Driver\WriteConcern;
 use MongoDB\Operation\CreateCollection;
 use MongoDB\Operation\DatabaseCommand;
 use MongoDB\Operation\DropCollection;
-use MongoDB\Operation\ListCollections;
 use stdClass;
+use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
 use UnexpectedValueException;
-
 use function array_merge;
-use function call_user_func;
 use function count;
 use function current;
 use function explode;
-use function filter_var;
-use function getenv;
 use function implode;
 use function is_array;
-use function is_callable;
 use function is_object;
 use function is_string;
 use function key;
@@ -39,55 +32,36 @@ use function parse_url;
 use function phpinfo;
 use function preg_match;
 use function preg_quote;
-use function preg_replace;
 use function sprintf;
 use function version_compare;
-
-use const FILTER_VALIDATE_BOOLEAN;
 use const INFO_MODULES;
 
 abstract class FunctionalTestCase extends TestCase
 {
+    use SetUpTearDownTrait;
+
     /** @var Manager */
     protected $manager;
 
     /** @var array */
     private $configuredFailPoints = [];
 
-    public function setUp(): void
+    private function doSetUp()
     {
         parent::setUp();
 
-        $this->manager = static::createTestManager();
+        $this->manager = new Manager(static::getUri());
         $this->configuredFailPoints = [];
     }
 
-    public function tearDown(): void
+    private function doTearDown()
     {
         $this->disableFailPoints();
 
         parent::tearDown();
     }
 
-    public static function createTestClient(?string $uri = null, array $options = [], array $driverOptions = []): Client
-    {
-        return new Client(
-            $uri ?? static::getUri(),
-            static::appendAuthenticationOptions($options),
-            static::appendServerApiOption($driverOptions)
-        );
-    }
-
-    public static function createTestManager(?string $uri = null, array $options = [], array $driverOptions = []): Manager
-    {
-        return new Manager(
-            $uri ?? static::getUri(),
-            static::appendAuthenticationOptions($options),
-            static::appendServerApiOption($driverOptions)
-        );
-    }
-
-    public static function getUri($allowMultipleMongoses = false): string
+    public static function getUri($allowMultipleMongoses = false)
     {
         $uri = parent::getUri();
 
@@ -111,14 +85,14 @@ abstract class FunctionalTestCase extends TestCase
             return $uri;
         }
 
-        $manager = static::createTestManager($uri);
+        $manager = new Manager($uri);
         if ($manager->selectServer(new ReadPreference(ReadPreference::RP_PRIMARY))->getType() !== Server::TYPE_MONGOS) {
             return $uri;
         }
 
         // Re-append port to last host
         if (isset($urlParts['port'])) {
-            $hosts[$numHosts - 1] .= ':' . $urlParts['port'];
+            $hosts[$numHosts-1] .= ':' . $urlParts['port'];
         }
 
         $parts = ['mongodb://'];
@@ -137,7 +111,6 @@ abstract class FunctionalTestCase extends TestCase
         if (isset($urlParts['path'])) {
             $parts[] = $urlParts['path'];
         }
-
         if (isset($urlParts['query'])) {
             $parts = array_merge($parts, [
                 '?',
@@ -148,9 +121,9 @@ abstract class FunctionalTestCase extends TestCase
         return implode('', $parts);
     }
 
-    protected function assertCollectionCount($namespace, $count): void
+    protected function assertCollectionCount($namespace, $count)
     {
-        [$databaseName, $collectionName] = explode('.', $namespace, 2);
+        list($databaseName, $collectionName) = explode('.', $namespace, 2);
 
         $cursor = $this->manager->executeCommand($databaseName, new Command(['count' => $collectionName]));
         $cursor->setTypeMap(['root' => 'array', 'document' => 'array']);
@@ -160,72 +133,7 @@ abstract class FunctionalTestCase extends TestCase
         $this->assertEquals($count, $document['n']);
     }
 
-    /**
-     * Asserts that a collection with the given name does not exist on the
-     * server.
-     *
-     * $databaseName defaults to TestCase::getDatabaseName() if unspecified.
-     */
-    protected function assertCollectionDoesNotExist(string $collectionName, ?string $databaseName = null): void
-    {
-        if (! isset($databaseName)) {
-            $databaseName = $this->getDatabaseName();
-        }
-
-        $operation = new ListCollections($this->getDatabaseName());
-        $collections = $operation->execute($this->getPrimaryServer());
-
-        $foundCollection = null;
-
-        foreach ($collections as $collection) {
-            if ($collection->getName() === $collectionName) {
-                $foundCollection = $collection;
-                break;
-            }
-        }
-
-        $this->assertNull($foundCollection, sprintf('Collection %s exists', $collectionName));
-    }
-
-    /**
-     * Asserts that a collection with the given name exists on the server.
-     *
-     * $databaseName defaults to TestCase::getDatabaseName() if unspecified.
-     * An optional $callback may be provided, which should take a CollectionInfo
-     * argument as its first and only parameter. If a CollectionInfo matching
-     * the given name is found, it will be passed to the callback, which may
-     * perform additional assertions.
-     */
-    protected function assertCollectionExists(string $collectionName, ?string $databaseName = null, ?callable $callback = null): void
-    {
-        if (! isset($databaseName)) {
-            $databaseName = $this->getDatabaseName();
-        }
-
-        if ($callback !== null && ! is_callable($callback)) {
-            throw new InvalidArgumentException('$callback is not a callable');
-        }
-
-        $operation = new ListCollections($databaseName);
-        $collections = $operation->execute($this->getPrimaryServer());
-
-        $foundCollection = null;
-
-        foreach ($collections as $collection) {
-            if ($collection->getName() === $collectionName) {
-                $foundCollection = $collection;
-                break;
-            }
-        }
-
-        $this->assertNotNull($foundCollection, sprintf('Found %s collection in the database', $collectionName));
-
-        if ($callback !== null) {
-            call_user_func($callback, $foundCollection);
-        }
-    }
-
-    protected function assertCommandSucceeded($document): void
+    protected function assertCommandSucceeded($document)
     {
         $document = is_object($document) ? (array) $document : $document;
 
@@ -233,7 +141,7 @@ abstract class FunctionalTestCase extends TestCase
         $this->assertEquals(1, $document['ok']);
     }
 
-    protected function assertSameObjectId($expectedObjectId, $actualObjectId): void
+    protected function assertSameObjectId($expectedObjectId, $actualObjectId)
     {
         $this->assertInstanceOf(ObjectId::class, $expectedObjectId);
         $this->assertInstanceOf(ObjectId::class, $actualObjectId);
@@ -249,7 +157,7 @@ abstract class FunctionalTestCase extends TestCase
      * @param array|stdClass $command configureFailPoint command document
      * @throws InvalidArgumentException if $command is not a configureFailPoint command
      */
-    public function configureFailPoint($command, ?Server $server = null): void
+    public function configureFailPoint($command, Server $server = null)
     {
         if (! $this->isFailCommandSupported()) {
             $this->markTestSkipped('failCommand is only supported on mongod >= 4.0.0 and mongos >= 4.1.5.');
@@ -292,7 +200,7 @@ abstract class FunctionalTestCase extends TestCase
      *
      * @param array $options
      */
-    protected function createCollection(array $options = []): void
+    protected function createCollection(array $options = [])
     {
         if (version_compare($this->getServerVersion(), '3.4.0', '>=')) {
             $options += ['writeConcern' => new WriteConcern(WriteConcern::MAJORITY)];
@@ -311,7 +219,7 @@ abstract class FunctionalTestCase extends TestCase
      *
      * @param array $options
      */
-    protected function dropCollection(array $options = []): void
+    protected function dropCollection(array $options = [])
     {
         if (version_compare($this->getServerVersion(), '3.4.0', '>=')) {
             $options += ['writeConcern' => new WriteConcern(WriteConcern::MAJORITY)];
@@ -321,7 +229,7 @@ abstract class FunctionalTestCase extends TestCase
         $operation->execute($this->getPrimaryServer());
     }
 
-    protected function getFeatureCompatibilityVersion(?ReadPreference $readPreference = null)
+    protected function getFeatureCompatibilityVersion(ReadPreference $readPreference = null)
     {
         if ($this->isShardedCluster()) {
             return $this->getServerVersion($readPreference);
@@ -358,22 +266,25 @@ abstract class FunctionalTestCase extends TestCase
         return $this->manager->selectServer(new ReadPreference(ReadPreference::RP_PRIMARY));
     }
 
-    protected function getServerVersion(?ReadPreference $readPreference = null)
+    protected function getServerVersion(ReadPreference $readPreference = null)
     {
-        $buildInfo = $this->manager->executeCommand(
+        $cursor = $this->manager->executeCommand(
             $this->getDatabaseName(),
             new Command(['buildInfo' => 1]),
             $readPreference ?: new ReadPreference(ReadPreference::RP_PRIMARY)
-        )->toArray()[0];
+        );
 
-        if (isset($buildInfo->version) && is_string($buildInfo->version)) {
-            return preg_replace('#^(\d+\.\d+\.\d+).*$#', '\1', $buildInfo->version);
+        $cursor->setTypeMap(['root' => 'array', 'document' => 'array']);
+        $document = current($cursor->toArray());
+
+        if (isset($document['version']) && is_string($document['version'])) {
+            return $document['version'];
         }
 
         throw new UnexpectedValueException('Could not determine server version');
     }
 
-    protected function getServerStorageEngine(?ReadPreference $readPreference = null)
+    protected function getServerStorageEngine(ReadPreference $readPreference = null)
     {
         $cursor = $this->manager->executeCommand(
             $this->getDatabaseName(),
@@ -390,41 +301,14 @@ abstract class FunctionalTestCase extends TestCase
         throw new UnexpectedValueException('Could not determine server storage engine');
     }
 
-    protected function isLoadBalanced()
-    {
-        return $this->getPrimaryServer()->getType() == Server::TYPE_LOAD_BALANCER;
-    }
-
     protected function isReplicaSet()
     {
         return $this->getPrimaryServer()->getType() == Server::TYPE_RS_PRIMARY;
     }
 
-    protected function isMongos()
-    {
-        return $this->getPrimaryServer()->getType() == Server::TYPE_MONGOS;
-    }
-
-    /**
-     * Return whether serverless (i.e. proxy as mongos) is being utilized.
-     */
-    protected static function isServerless(): bool
-    {
-        $isServerless = getenv('MONGODB_IS_SERVERLESS');
-
-        return $isServerless !== false ? filter_var($isServerless, FILTER_VALIDATE_BOOLEAN) : false;
-    }
-
     protected function isShardedCluster()
     {
-        $type = $this->getPrimaryServer()->getType();
-
-        if ($type == Server::TYPE_MONGOS) {
-            return true;
-        }
-
-        // Assume that load balancers are properly configured and front mongos
-        if ($type == Server::TYPE_LOAD_BALANCER) {
+        if ($this->getPrimaryServer()->getType() == Server::TYPE_MONGOS) {
             return true;
         }
 
@@ -453,26 +337,22 @@ abstract class FunctionalTestCase extends TestCase
         return preg_match('@^.*/.*:\d+@', $document['host']);
     }
 
-    protected function skipIfChangeStreamIsNotSupported(): void
+    protected function skipIfChangeStreamIsNotSupported()
     {
         switch ($this->getPrimaryServer()->getType()) {
             case Server::TYPE_MONGOS:
-            case Server::TYPE_LOAD_BALANCER:
                 if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
                     $this->markTestSkipped('$changeStream is only supported on MongoDB 3.6 or higher');
                 }
-
                 if (! $this->isShardedClusterUsingReplicasets()) {
                     $this->markTestSkipped('$changeStream is only supported with replicasets');
                 }
-
                 break;
 
             case Server::TYPE_RS_PRIMARY:
                 if (version_compare($this->getFeatureCompatibilityVersion(), '3.6', '<')) {
                     $this->markTestSkipped('$changeStream is only supported on FCV 3.6 or higher');
                 }
-
                 break;
 
             default:
@@ -480,30 +360,25 @@ abstract class FunctionalTestCase extends TestCase
         }
     }
 
-    protected function skipIfCausalConsistencyIsNotSupported(): void
+    protected function skipIfCausalConsistencyIsNotSupported()
     {
         switch ($this->getPrimaryServer()->getType()) {
             case Server::TYPE_MONGOS:
-            case Server::TYPE_LOAD_BALANCER:
                 if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
                     $this->markTestSkipped('Causal Consistency is only supported on MongoDB 3.6 or higher');
                 }
-
                 if (! $this->isShardedClusterUsingReplicasets()) {
                     $this->markTestSkipped('Causal Consistency is only supported with replicasets');
                 }
-
                 break;
 
             case Server::TYPE_RS_PRIMARY:
                 if (version_compare($this->getFeatureCompatibilityVersion(), '3.6', '<')) {
                     $this->markTestSkipped('Causal Consistency is only supported on FCV 3.6 or higher');
                 }
-
                 if ($this->getServerStorageEngine() !== 'wiredTiger') {
                     $this->markTestSkipped('Causal Consistency requires WiredTiger storage engine');
                 }
-
                 break;
 
             default:
@@ -511,7 +386,7 @@ abstract class FunctionalTestCase extends TestCase
         }
     }
 
-    protected function skipIfClientSideEncryptionIsNotSupported(): void
+    protected function skipIfClientSideEncryptionIsNotSupported()
     {
         if (version_compare($this->getFeatureCompatibilityVersion(), '4.2', '<')) {
             $this->markTestSkipped('Client Side Encryption only supported on FCV 4.2 or higher');
@@ -522,14 +397,7 @@ abstract class FunctionalTestCase extends TestCase
         }
     }
 
-    protected function skipIfGeoHaystackIndexIsNotSupported(): void
-    {
-        if (version_compare($this->getServerVersion(), '4.9', '>=')) {
-            $this->markTestSkipped('GeoHaystack indexes cannot be created in version 4.9 and above');
-        }
-    }
-
-    protected function skipIfTransactionsAreNotSupported(): void
+    protected function skipIfTransactionsAreNotSupported()
     {
         if ($this->getPrimaryServer()->getType() === Server::TYPE_STANDALONE) {
             $this->markTestSkipped('Transactions are not supported on standalone servers');
@@ -556,54 +424,30 @@ abstract class FunctionalTestCase extends TestCase
         }
     }
 
-    private static function appendAuthenticationOptions(array $options): array
-    {
-        if (isset($options['username']) || isset($options['password'])) {
-            return $options;
-        }
-
-        $username = getenv('MONGODB_USERNAME') ?: null;
-        $password = getenv('MONGODB_PASSWORD') ?: null;
-
-        if ($username !== null) {
-            $options['username'] = $username;
-        }
-
-        if ($password !== null) {
-            $options['password'] = $password;
-        }
-
-        return $options;
-    }
-
-    private static function appendServerApiOption(array $driverOptions): array
-    {
-        if (getenv('API_VERSION') && ! isset($driverOptions['serverApi'])) {
-            $driverOptions['serverApi'] = new ServerApi(getenv('API_VERSION'));
-        }
-
-        return $driverOptions;
-    }
-
     /**
      * Disables any fail points that were configured earlier in the test.
      *
      * This tracks fail points set via configureFailPoint() and should be called
      * during tearDown().
      */
-    private function disableFailPoints(): void
+    private function disableFailPoints()
     {
         if (empty($this->configuredFailPoints)) {
             return;
         }
 
-        foreach ($this->configuredFailPoints as [$failPoint, $server]) {
+        foreach ($this->configuredFailPoints as list($failPoint, $server)) {
             $operation = new DatabaseCommand('admin', ['configureFailPoint' => $failPoint, 'mode' => 'off']);
             $operation->execute($server);
         }
     }
 
-    private function getModuleInfo(string $row): ?string
+    /**
+     * @param string $row
+     *
+     * @return string|null
+     */
+    private function getModuleInfo($row)
     {
         ob_start();
         phpinfo(INFO_MODULES);
@@ -623,7 +467,7 @@ abstract class FunctionalTestCase extends TestCase
      *
      * @return bool
      */
-    private function isFailCommandSupported(): bool
+    private function isFailCommandSupported()
     {
         $minVersion = $this->isShardedCluster() ? '4.1.5' : '4.0.0';
 
@@ -635,7 +479,7 @@ abstract class FunctionalTestCase extends TestCase
      *
      * @return bool
      */
-    private function isFailCommandEnabled(): bool
+    private function isFailCommandEnabled()
     {
         try {
             $cursor = $this->manager->executeCommand(

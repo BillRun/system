@@ -12,7 +12,7 @@ use stdClass;
  */
 class WatchTest extends FunctionalTestCase
 {
-    public function testConstructorCollectionNameShouldBeNullIfDatabaseNameIsNull(): void
+    public function testConstructorCollectionNameShouldBeNullIfDatabaseNameIsNull()
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('$collectionName should also be null if $databaseName is null');
@@ -20,7 +20,7 @@ class WatchTest extends FunctionalTestCase
         new Watch($this->manager, null, 'foo', []);
     }
 
-    public function testConstructorPipelineArgumentMustBeAList(): void
+    public function testConstructorPipelineArgumentMustBeAList()
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('$pipeline is not a list (unexpected index: "foo")');
@@ -34,7 +34,7 @@ class WatchTest extends FunctionalTestCase
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options): void
+    public function testConstructorOptionTypeChecks(array $options)
     {
         $this->expectException(InvalidArgumentException::class);
         new Watch($this->manager, $this->getDatabaseName(), $this->getCollectionName(), [], $options);

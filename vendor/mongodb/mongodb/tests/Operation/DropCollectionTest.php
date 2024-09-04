@@ -10,7 +10,7 @@ class DropCollectionTest extends TestCase
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options): void
+    public function testConstructorOptionTypeChecks(array $options)
     {
         $this->expectException(InvalidArgumentException::class);
         new DropCollection($this->getDatabaseName(), $this->getCollectionName(), $options);

@@ -14,20 +14,12 @@ class Drawing extends BaseDrawing
     private $path;
 
     /**
-     * Whether or not we are dealing with a URL.
-     *
-     * @var bool
-     */
-    private $isUrl;
-
-    /**
      * Create a new Drawing.
      */
     public function __construct()
     {
         // Initialise values
         $this->path = '';
-        $this->isUrl = false;
 
         // Initialize parent
         parent::__construct();
@@ -45,8 +37,10 @@ class Drawing extends BaseDrawing
 
     /**
      * Get indexed filename (using image index).
+     *
+     * @return string
      */
-    public function getIndexedFilename(): string
+    public function getIndexedFilename()
     {
         $fileName = $this->getFilename();
         $fileName = str_replace(' ', '_', $fileName);
@@ -79,63 +73,27 @@ class Drawing extends BaseDrawing
     /**
      * Set Path.
      *
-     * @param string $path File path
-     * @param bool $verifyFile Verify file
+     * @param string $pValue File path
+     * @param bool $pVerifyFile Verify file
      *
      * @return $this
      */
-    public function setPath($path, $verifyFile = true)
+    public function setPath($pValue, $pVerifyFile = true)
     {
-        if ($verifyFile) {
-            // Check if a URL has been passed. https://stackoverflow.com/a/2058596/1252979
-            if (filter_var($path, FILTER_VALIDATE_URL)) {
-                $this->path = $path;
-                // Implicit that it is a URL, rather store info than running check above on value in other places.
-                $this->isUrl = true;
-                $imageContents = file_get_contents($path);
-                $filePath = tempnam(sys_get_temp_dir(), 'Drawing');
-                if ($filePath) {
-                    file_put_contents($filePath, $imageContents);
-                    if (file_exists($filePath)) {
-                        if ($this->width == 0 && $this->height == 0) {
-                            // Get width/height
-                            [$this->width, $this->height] = getimagesize($filePath);
-                        }
-                        unlink($filePath);
-                    }
-                }
-            } elseif (file_exists($path)) {
-                $this->path = $path;
+        if ($pVerifyFile) {
+            if (file_exists($pValue)) {
+                $this->path = $pValue;
+
                 if ($this->width == 0 && $this->height == 0) {
                     // Get width/height
-                    [$this->width, $this->height] = getimagesize($path);
+                    [$this->width, $this->height] = getimagesize($pValue);
                 }
             } else {
-                throw new PhpSpreadsheetException("File $path not found!");
+                throw new PhpSpreadsheetException("File $pValue not found!");
             }
         } else {
-            $this->path = $path;
+            $this->path = $pValue;
         }
-
-        return $this;
-    }
-
-    /**
-     * Get isURL.
-     */
-    public function getIsURL(): bool
-    {
-        return $this->isUrl;
-    }
-
-    /**
-     * Set isURL.
-     *
-     * @return $this
-     */
-    public function setIsURL(bool $isUrl): self
-    {
-        $this->isUrl = $isUrl;
 
         return $this;
     }

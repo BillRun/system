@@ -3,7 +3,6 @@
 namespace MongoDB\Tests\SpecTests;
 
 use stdClass;
-
 use function array_diff;
 use function basename;
 use function file_get_contents;
@@ -26,7 +25,7 @@ class CommandMonitoringSpecTest extends FunctionalTestCase
      * @param stdClass $expected Expected command document
      * @param stdClass $actual   Actual command document
      */
-    public static function assertCommandMatches(stdClass $expected, stdClass $actual): void
+    public static function assertCommandMatches(stdClass $expected, stdClass $actual)
     {
         if (isset($expected->getMore) && $expected->getMore === 42) {
             static::assertObjectHasAttribute('getMore', $actual);
@@ -66,7 +65,7 @@ class CommandMonitoringSpecTest extends FunctionalTestCase
      * @param stdClass $expected Expected command reply document
      * @param stdClass $actual   Actual command reply document
      */
-    public static function assertCommandReplyMatches(stdClass $expected, stdClass $actual): void
+    public static function assertCommandReplyMatches(stdClass $expected, stdClass $actual)
     {
         if (isset($expected->cursor->id) && $expected->cursor->id === 42) {
             static::assertObjectHasAttribute('cursor', $actual);
@@ -142,7 +141,7 @@ class CommandMonitoringSpecTest extends FunctionalTestCase
      * @param string   $databaseName   Name of database under test
      * @param string   $collectionName Name of collection under test
      */
-    public function testCommandMonitoring(stdClass $test, array $data, ?string $databaseName = null, ?string $collectionName = null): void
+    public function testCommandMonitoring(stdClass $test, array $data, $databaseName = null, $collectionName = null)
     {
         $this->checkServerRequirements($this->createRunOn($test));
 
@@ -176,10 +175,8 @@ class CommandMonitoringSpecTest extends FunctionalTestCase
             $json = $this->decodeJson(file_get_contents($filename));
             $group = basename($filename, '.json');
             $data = $json->data ?? [];
-            // phpcs:disable Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
             $databaseName = $json->database_name ?? null;
             $collectionName = $json->collection_name ?? null;
-            // phpcs:enable Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
 
             foreach ($json->tests as $test) {
                 $name = $group . ': ' . $test->description;
@@ -197,7 +194,7 @@ class CommandMonitoringSpecTest extends FunctionalTestCase
      * @param stdClass $test
      * @return array
      */
-    private function createRunOn(stdClass $test): array
+    private function createRunOn(stdClass $test)
     {
         $req = new stdClass();
 
@@ -207,7 +204,6 @@ class CommandMonitoringSpecTest extends FunctionalTestCase
             self::TOPOLOGY_SHARDED,
         ];
 
-        // phpcs:disable Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
         /* Append ".99" as patch version, since command monitoring tests expect
          * the minor version to be an inclusive upper bound. */
         if (isset($test->ignore_if_server_version_greater_than)) {
@@ -221,8 +217,6 @@ class CommandMonitoringSpecTest extends FunctionalTestCase
         if (isset($test->ignore_if_topology_type)) {
             $req->topology = array_diff($topologies, $test->ignore_if_topology_type);
         }
-
-        // phpcs:enable Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
 
         return [$req];
     }

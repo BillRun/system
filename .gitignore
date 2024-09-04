@@ -17,3 +17,4 @@ shared
 docker/persist
 .vscode/
 node_modules
+tests/.env

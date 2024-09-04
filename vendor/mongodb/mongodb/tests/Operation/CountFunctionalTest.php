@@ -6,15 +6,14 @@ use MongoDB\Operation\Count;
 use MongoDB\Operation\CreateIndexes;
 use MongoDB\Operation\InsertMany;
 use MongoDB\Tests\CommandObserver;
-
 use function version_compare;
 
 class CountFunctionalTest extends FunctionalTestCase
 {
-    public function testDefaultReadConcernIsOmitted(): void
+    public function testDefaultReadConcernIsOmitted()
     {
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new Count(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -24,13 +23,13 @@ class CountFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectNotHasAttribute('readConcern', $event['started']->getCommand());
             }
         );
     }
 
-    public function testHintOption(): void
+    public function testHintOption()
     {
         $insertMany = new InsertMany($this->getDatabaseName(), $this->getCollectionName(), [
             ['x' => 1],
@@ -71,14 +70,14 @@ class CountFunctionalTest extends FunctionalTestCase
         }
     }
 
-    public function testSessionOption(): void
+    public function testSessionOption()
     {
         if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
             $this->markTestSkipped('Sessions are not supported');
         }
 
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new Count(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -88,7 +87,7 @@ class CountFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );

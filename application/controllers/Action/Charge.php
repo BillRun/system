@@ -14,10 +14,6 @@
  */
 class ChargeAction extends Action_Base {
 
-	use Billrun_Traits_Api_OperationsLock;
-	
-	protected $aids = array();
-
 	/**
 	 * method to execute the pay process for payment gateways.
 	 * it's called automatically by the cli main controller
@@ -47,46 +43,9 @@ class ChargeAction extends Action_Base {
 	}
 	
 	public function charge($options) {
-		$this->aids = isset($options['aids']) ? Billrun_Util::verify_array($options['aids'], 'int') : array();
-		if (!$this->lock()) {
-			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
-			return false;
-		}
 		$response = Billrun_Bill_Payment::makePayment($options);
-		if (!$this->release()) {
-			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-			return false;
-		}
 		
 		return $response;
-	}
-
-	protected function getConflictingQuery() {
-		if (!empty($this->aids)) {
-			return array(
-				'$or' => array(
-					array('filtration' => 'all'),
-					array('filtration' => array('$in' => $this->aids)),
-				),
-			);
-		}
-
-		return array();
-	}
-
-	protected function getInsertData() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty($this->aids) ? 'all' : $this->aids),
-		);
-	}
-
-	protected function getReleaseQuery() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty($this->aids) ? 'all' : $this->aids),
-			'end_time' => array('$exists' => false)
-		);
 	}
 
 }

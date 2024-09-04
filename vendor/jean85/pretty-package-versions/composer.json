@@ -1,17 +1,13 @@
 {
     "name": "jean85/pretty-package-versions",
-    "description": "A library to get pretty versions strings of installed dependencies",
+    "description": "A wrapper for ocramius/package-versions to get pretty versions strings",
     "type": "library",
     "require": {
-        "php": "^7.1|^8.0",
-        "composer-runtime-api": "^2.0.0"
+        "php": "^7.0|^8.0",
+        "composer/package-versions-deprecated": "^1.8.0"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^2.17",
-        "jean85/composer-provided-replaced-stub-package": "^1.0",
-        "phpstan/phpstan": "^0.12.66",
-        "phpunit/phpunit": "^7.5|^8.5|^9.4",
-        "vimeo/psalm": "^4.3"
+        "phpunit/phpunit": "^6.0|^8.5|^9.2"
     },
     "license": "MIT",
     "authors": [
@@ -29,9 +25,6 @@
         "composer",
         "release"
     ],
-    "config": {
-        "sort-packages": true
-    },
     "extra": {
         "branch-alias": {
             "dev-master": "1.x-dev"

@@ -3,7 +3,6 @@
 namespace MongoDB\Tests\SpecTests;
 
 use stdClass;
-
 use function basename;
 use function file_get_contents;
 use function glob;
@@ -12,7 +11,6 @@ use function glob;
  * Retryable writes spec tests.
  *
  * @see https://github.com/mongodb/specifications/tree/master/source/retryable-writes
- * @group serverless
  */
 class RetryableWritesSpecTest extends FunctionalTestCase
 {
@@ -24,13 +22,13 @@ class RetryableWritesSpecTest extends FunctionalTestCase
      * @param array    $runOn Top-level "runOn" array with server requirements
      * @param array    $data  Top-level "data" array to initialize collection
      */
-    public function testRetryableWrites(stdClass $test, ?array $runOn = null, array $data): void
+    public function testRetryableWrites(stdClass $test, array $runOn = null, array $data)
     {
         if ($this->isShardedCluster() && ! $this->isShardedClusterUsingReplicasets()) {
             $this->markTestSkipped('Transaction numbers are only allowed on a replica set member or mongos (PHPC-1415)');
         }
 
-        $useMultipleMongoses = isset($test->useMultipleMongoses) && $test->useMultipleMongoses && $this->isMongos();
+        $useMultipleMongoses = isset($test->useMultipleMongoses) && $test->useMultipleMongoses && $this->isShardedCluster();
 
         if (isset($runOn)) {
             $this->checkServerRequirements($runOn);

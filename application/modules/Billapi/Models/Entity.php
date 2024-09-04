@@ -350,6 +350,20 @@ class Models_Entity {
 		});
 	}
 
+	public function getMandatoryFields() {
+		$fields = $this->getCustomFields();
+		return array_filter($fields, function($customField) {
+			return Billrun_Util::getFieldVal($customField['mandatory'], false);
+		});
+	}
+
+	public function getMandatoryCustomFields() {
+		$fields = $this->getCustomFields();
+		return array_filter($fields, function($customField) {
+			return !Billrun_Util::getFieldVal($customField['system'], false) && Billrun_Util::getFieldVal($customField['mandatory'], false);
+		});
+	}
+
 	public function getCustomFieldsPath() {
 		return $this->collectionName . ".fields";
 	}
@@ -441,10 +455,10 @@ class Models_Entity {
 			
 			$key = $oldRevision[$field];
 			if($oldRevision === null){
-				throw new Exception('No old Revision was found. Query: ' . json_encode($permanentQuery));
+				throw new Exception('No old revision was found. Query: ' . json_encode($permanentQuery));
 			}
 			if ($newRevision === null){
-				throw new Exception('No new Revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate));
+				throw new Exception('No new revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate));
 			}
 			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
 		}
