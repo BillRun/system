@@ -126,6 +126,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['card_brand'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardBrand->attributes()->code;
 			$this->saveDetails['card_acquirer'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardAcquirer->attributes()->code;
 			$this->saveDetails['terminal_number'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->terminalNumber;
+			$this->saveDetails['credit_type'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->creditType->attributes()->code;
 			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
 			$retParams['action'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
 			$retParams['transferred_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
@@ -200,6 +201,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'card_type' => (string) $this->saveDetails['card_type'],
 				'keepCCDetails' => $this->saveDetails['keepCCDetails'],
 				'terminal_number' => $this->saveDetails['terminal_number'],
+				'credit_type' => (string) $this->saveDetails['credit_type']
 			)
 		);
 	}
