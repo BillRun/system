@@ -357,12 +357,33 @@ class PaymentFiles extends Component {
     if (!showGeneratePaymentFile) {
       return List();
     }
-    return paymentFiles
+
+    const additionalFields = List([
+      Map({ name: 'aids', title: 'Include Customer IDs', type: 'text' }),
+      Map({ name: 'invoices', title: 'Include Invoices IDs', type: 'text' }),
+      Map({ name: 'exclude_accounts', title: 'Exclude Customer IDs', type: 'text' }),
+      Map({ name: 'billrun_key', title: 'Invoice BillRun Key', type: 'text' }),
+      Map({ name: 'min_invoice_date', title: 'Minimum Invoice Date', type: 'date' }),
+      Map({
+        name: 'mode',
+        title: 'Charge/Refund',
+        type: 'dropdown',
+        values: [
+          { label: '', value: '' },
+          { label: 'Charges only', value: 'charge' },
+          { label: 'Refunds only', value: 'refund' },
+        ],
+      }),
+      Map({ name: 'pay_mode', title: 'Payment per invoice?', type: 'boolean' }),
+    ]);
+
+    const fields = paymentFiles
       .find((paymentFile) => paymentFile.get("name", "") === paymentGateway, null, Map())
       .get("transactions_request", List())
       .find((transactionsRequest) => transactionsRequest.get("file_type", "") === fileType, null, Map())
       .get("parameters", List())
-      .map(this.fixGeneratePaymentFileFields);
+
+      return additionalFields.concat(fields).map(this.fixGeneratePaymentFileFields);;
   };
 
   onGenerateNewFileClickOK = (paymentFile) => {
