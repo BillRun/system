@@ -367,16 +367,17 @@ class PaymentFiles extends Component {
       Map({
         name: 'mode',
         title: 'Charge/Refund',
-        type: 'dropdown',
-        values: [
-          { label: '', value: '' },
-          { label: 'Charges only', value: 'charge' },
-          { label: 'Refunds only', value: 'refund' },
-        ],
+        type: 'select',
+        select_list: true,
+        select_options: List([
+          Map({ label: '', value: '' }),
+          Map({ label: 'Charges only', value: 'charge' }),
+          Map({ label: 'Refunds only', value: 'refund' })
+        ]),
       }),
       Map({ name: 'pay_mode', title: 'Payment per invoice?', type: 'boolean' }),
     ]);
-
+    
     const fields = paymentFiles
       .find((paymentFile) => paymentFile.get("name", "") === paymentGateway, null, Map())
       .get("transactions_request", List())
@@ -391,7 +392,14 @@ class PaymentFiles extends Component {
     if (!this.props.dispatch(validateGeneratePaymentFile(paymentFile))) {
       return false;
     }
-    const data = paymentFile.get("values", Map());
+    let data = paymentFile.get("values", Map());
+    if (data.get('mode') === '') {
+      data = data.delete('mode');
+    }
+    if (data.has('pay_mode')) {
+      const payModeValue = data.get('pay_mode') ? 'multiple_payments' : 'one_payment';
+      data = data.set('pay_mode', payModeValue);
+    }
     return this.props
       .dispatch(sendGenerateNewFile(paymentGateway, fileType, data))
       .then(this.afterSuccessGenerateNewFile)
