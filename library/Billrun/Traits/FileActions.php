@@ -93,7 +93,7 @@ trait Billrun_Traits_FileActions {
 	 * @return bollean true  if the file wasn't receive and can be fetched to the workspace or false if another process allready received the file.
 	 */
 	protected function lockFileForReceive($filename, $type, $more_fields = array(), $orphan_window = false) {
-		$log = Billrun_Factory::db()->logCollection();
+		$log = Billrun_Factory::db()->logCollection()->setReadPreference('RP_PRIMARY');
 		$orphan_window = $orphan_window ? $orphan_window : $this->file_fetch_orphan_time;
 		$logData = $this->getFileLogData($filename, $type, $more_fields);
 		$query = array(
@@ -260,7 +260,10 @@ trait Billrun_Traits_FileActions {
 	 * @param type $filepath the stamp to the file to remove from workspace
 	 */
 	protected function removeFromWorkspace($filestamp) {
-		$file = Billrun_Factory::db()->logCollection()->query(array('stamp' => $filestamp))->cursor()->limit(1)->current();
+		$file = Billrun_Factory::db()->logCollection()->setReadPreference('RP_PRIMARY')
+														->query(array('stamp' => $filestamp))
+														->cursor()->limit(1)
+														->current();
 		if (!$file->isEmpty()) {
 			$defaultBackup = Billrun_Factory::config()->getConfigValue('backup.default_backup_path', FALSE);
 			if (empty($file['backed_to'])) {
