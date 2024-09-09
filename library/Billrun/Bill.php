@@ -275,9 +275,9 @@ abstract class Billrun_Bill {
 		//Get unpaid & paying bills
 		$unpaidBills = array_map(function ($unpaid_bill)  use ($query, $sort) {
 			return Billrun_Bill::getInstanceByData($unpaid_bill);
-		}, Billrun_Bill::getUnpaidBills($query, $sort));
-		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort);
-		$pending_paying_bills = $include_pending_payments ? Billrun_Bill::getPendingBills($query, $sort) : [];
+		}, Billrun_Bill::getUnpaidBills($query, $sort, 'RP_PRIMARY')); //BRCD-4521:Force read preference - in order to get the most updated bills data
+		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort, 'RP_PRIMARY');
+		$pending_paying_bills = $include_pending_payments ? Billrun_Bill::getPendingBills($query, $sort, 'RP_PRIMARY') : [];
 		Billrun_Factory::log("Found " . count($unpaidBills) . " unpaid bills," . count($overPayingBills) . " over paying bills, and " . count($pending_paying_bills) . " pending paying bills"  , Zend_Log::DEBUG);
 		//Go over paying bills, to link to the unpaid ones, by priority
 		foreach (['over_paying_bills' => $overPayingBills, 'pending_bills' => $pending_paying_bills] as $type => $payments) {
@@ -373,10 +373,10 @@ abstract class Billrun_Bill {
 		$unpaid_amount -= $amountPaid;
 	}
 
-	public static function getUnpaidBills($query = array(), $sort = array()) {
+	public static function getUnpaidBills($query = array(), $sort = array(), $read_preference = null) {
 		$mandatoryQuery = static::getUnpaidQuery();
 		$query = array_merge($query, $mandatoryQuery);
-		return static::getBills($query, $sort);
+		return static::getBills($query, $sort, $read_preference);
 	}
 
 	protected function updateLeft() {
@@ -416,12 +416,12 @@ abstract class Billrun_Bill {
 		);
 	}
 
-	public static function getBills($query = array(), $sort = array()) {
+	public static function getBills($query = array(), $sort = array(), $read_preference = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		return iterator_to_array($billsColl->find($query)->sort($sort), FALSE);
+		return iterator_to_array($billsColl->find($query)->sort($sort)->setReadPreference($read_preference), FALSE);
 	}
 
-	public static function getOverPayingBills($query = array(), $sort = array()) {
+	public static function getOverPayingBills($query = array(), $sort = array(), $read_preference = null) {
 		$billObjs = array();
 		$over_paying_query = array(
 			'left' => array('$gt' => 0), 
@@ -430,7 +430,7 @@ abstract class Billrun_Bill {
 				array('pending' => false)
 			));
 		$query = array_merge($query, $over_paying_query, static::getNotRejectedOrCancelledQuery());
-		$bills = static::getBills($query, $sort);
+		$bills = static::getBills($query, $sort, $read_preference);
 		if ($bills) {
 			foreach ($bills as $bill) {
 				$billObjs[] = static::getInstanceByData($bill);
@@ -439,10 +439,10 @@ abstract class Billrun_Bill {
 		return $billObjs;
 	}
 
-	public static function getPendingBills($query, $sort) {
+	public static function getPendingBills($query, $sort, $read_preference = null) {
 		$pending_query = array('pending' => true, 'left' => array('$gt' => 0));
 		$query = array_merge($query, $pending_query, static::getNotRejectedOrCancelledQuery());
-		$bills = static::getBills($query, $sort);
+		$bills = static::getBills($query, $sort, $read_preference);
 		return array_map(function ($bill) {
 			return static::getInstanceByData($bill);
 		}, $bills);
