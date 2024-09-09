@@ -384,7 +384,7 @@ class PaymentFiles extends Component {
       .find((transactionsRequest) => transactionsRequest.get("file_type", "") === fileType, null, Map())
       .get("parameters", List())
 
-      return additionalFields.concat(fields).map(this.fixGeneratePaymentFileFields);;
+      return additionalFields.concat(fields).map(this.fixGeneratePaymentFileFields);
   };
 
   onGenerateNewFileClickOK = (paymentFile) => {
@@ -399,6 +399,12 @@ class PaymentFiles extends Component {
     if (data.has('pay_mode')) {
       const payModeValue = data.get('pay_mode') ? 'multiple_payments' : 'one_payment';
       data = data.set('pay_mode', payModeValue);
+    }
+    if (data.has('min_invoice_date')) {
+      data = data.set('min_invoice_date', moment(data.get('min_invoice_date')).format('YYYY-MM-DD'));
+    }
+    if (data.has('collection_date')) {
+      data = data.set('collection_date', moment(data.get('collection_date')).format('YYYY-MM-DD'));
     }
     return this.props
       .dispatch(sendGenerateNewFile(paymentGateway, fileType, data))
