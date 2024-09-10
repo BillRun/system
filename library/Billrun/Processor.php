@@ -162,7 +162,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	public function process_files() {
 
-		$log = Billrun_Factory::db()->logCollection();
+		$log = Billrun_Factory::db()->logCollection()->setReadPreference('RP_PRIMARY');
 
 		$linesCount = 0;
 
@@ -257,7 +257,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 
-		$log = Billrun_Factory::db()->logCollection();
+		$log = Billrun_Factory::db()->logCollection()->setReadPreference('RP_PRIMARY');
 
 		$header = array();
 		if (isset($this->data['header'])) {
@@ -288,7 +288,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 			$resource->set('process_hostname', Billrun_Util::getHostName(), true);
 			$resource->set('process_time', date(self::base_dateformat), true);
-			return $resource->save($log);
+			return $resource->save($log,1);
 		} else {
 			// backward compatibility
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
@@ -297,7 +297,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				Billrun_Factory::log()->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				return FALSE;
 			}
-			return $entity->save($log);
+			return $entity->save($log,1);
 		}
 	}
 
@@ -404,17 +404,20 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return Mongodloid_Entity the file to process on sucessful update false otherwise
 	 */
 	protected function getFileForProcessing() {
-		$log = Billrun_Factory::db()->logCollection();
+		$log = Billrun_Factory::db()->logCollection()->setReadPreference('RP_PRIMARY');
 		$adoptThreshold = strtotime('-' . $this->orphandFilesAdoptionTime);
+		$currentTime = time();
 
 		// verify minimum orphan time to avoid parallel processing
-		if (Billrun_Factory::config()->isProd() && (time() - $adoptThreshold) < 3600) {
+		if (Billrun_Factory::config()->isProd() && ($currentTime - $adoptThreshold) < 3600) {
 			Billrun_Factory::log()->log("Processor orphan time less than one hour: " . $this->orphandFilesAdoptionTime . ". Please set value greater than or equal to one hour. We will take one hour for now", Zend_Log::NOTICE);
-			$adoptThreshold = time() - 3600;
+			$adoptThreshold = $currentTime - 3600;
 		}
 		
 		$receivedHorizion = date('Y-m-d H:i:s' , strtotime(Billrun_Factory::config()->getConfigValue($this->getType() . '.receiver_horizion', '8 weeks ago')));
-		
+		$receivedGap = date('Y-m-d H:i:s' , strtotime(Billrun_Factory::config()->getConfigValue($this->getType() . '.receiver_gap', '1 seconds ago')));
+		$currentMongoTime = new MongoDate($currentTime);
+
 		$query = array(
 			'source' => static::$type,
 			'process_time' => array(
@@ -426,11 +429,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 			),
 			'received_time' => array(
 				'$gt' => $receivedHorizion,
+				'$lt' => $receivedGap
 			),
 		);
 		$update = array(
 			'$set' => array(
-				'start_process_time' => new MongoDate(time()),
+				'start_process_time' => $currentMongoTime,
 				'start_process_host' => Billrun_Util::getHostName(),
 			),
 		);
