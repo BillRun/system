@@ -532,7 +532,8 @@ abstract class Billrun_Bill {
 		if ($this->getBillMethod() == 'denial') {
 			return $this;
 		}
-		if ($this->getDue() > 0) {
+		$due = $this->getDue();
+		if ($due > 0) {
 			$amount = 0;
 			foreach (Billrun_Util::getIn($this->data, 'paid_by', []) as $relatedBill) {
 				$amount += floatval($relatedBill['amount']);
@@ -540,17 +541,18 @@ abstract class Billrun_Bill {
 			$this->data['total_paid'] = $amount;
 			$this->data['left_to_pay'] = round($this->getLeftToPay(), 2);
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
-			if (is_null($status)){
-				$this->data['paid'] = !empty($this->data['waiting_payments']) ? '2' : $this->isPaid();
-			} else {
-				$this->data['paid'] = $this->calcPaidStatus($billId, $status, $billType);
-			}
-		} else if ($this->getDue() < 0){
+		} else if ($due < 0){
 			$amount = 0;
 			foreach (Billrun_Util::getIn($this->data, 'pays', []) as $relatedBill) {
 				$amount += floatval($relatedBill['amount']);
 			}
+			$this->data['total_paid'] = $amount;
 			$this->data['left'] = round($this->data['amount'] - $amount, 2);				
+		}
+		if (is_null($status)){
+			$this->data['paid'] = !empty($this->data['waiting_payments']) ? '2' : $this->isPaid();
+		} else {
+			$this->data['paid'] = $this->calcPaidStatus($billId, $status, $billType);
 		}
 		$this->setPendingCoveringAmount();
 		return $this;
@@ -656,6 +658,7 @@ abstract class Billrun_Bill {
 		$this->data->setRawData($paymentRawData);
 		$this->updateLeft();
 		$this->setPendingCoveringAmount();
+		$this->recalculatePaymentFields();
 		return $this;
 	}
 
@@ -747,7 +750,7 @@ abstract class Billrun_Bill {
 	}
 
 	public function isPaid() {
-		return $this->getDue() <= ($this->getPaidAmount() + static::precision);
+		return abs($this->getDue()) <= ($this->getPaidAmount() + static::precision);
 	}
 	
 	public static function pay($method, $paymentsArr, $options = array()) {

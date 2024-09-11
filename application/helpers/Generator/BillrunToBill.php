@@ -135,7 +135,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'urt' => new Mongodloid_Date(),
 				'invoice_date' => $invoice['invoice_date'],
 				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
-                                'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
+        'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
+				'paid' => '0',
+				'total_paid' => 0
 			);
 		if (!empty($invoice['invoicing_day'])) {
 			$bill['invoicing_day'] = $invoice['invoicing_day'];
@@ -147,10 +149,8 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			$bill['left'] = $bill['amount'];
 		}
 		else {
-			$bill['total_paid'] = 0;
 			$bill['left_to_pay'] = $bill['due'];
 			$bill['vatable_left_to_pay'] = $invoice['totals']['before_vat'];
-			$bill['paid'] = '0';
 		}
 		if(!empty($invoice['attributes']['suspend_debit'])) {
 			$bill['suspend_debit'] = $invoice['attributes']['suspend_debit'];
