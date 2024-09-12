@@ -926,6 +926,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['pending'] = $pending;
 		if (!$pending) {
 			$this->data['pending_covering_amount'] = 0;
+		}else{
+			$this->data['paid'] = "2";
 		}
 	}
 	

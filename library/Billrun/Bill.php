@@ -550,7 +550,8 @@ abstract class Billrun_Bill {
 			$this->data['left'] = round($this->data['amount'] - $amount, 2);				
 		}
 		if (is_null($status)){
-			$this->data['paid'] = !empty($this->data['waiting_payments']) ? '2' : $this->isPaid();
+			$pending = !empty($this->data['waiting_payments']) || $this->data['pending'] ?? false;
+			$this->data['paid'] = $pending ? '2' : $this->isPaid();
 		} else {
 			$this->data['paid'] = $this->calcPaidStatus($billId, $status, $billType);
 		}
