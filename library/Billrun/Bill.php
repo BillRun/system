@@ -751,7 +751,7 @@ abstract class Billrun_Bill {
 	}
 
 	public function isPaid() {
-		return abs($this->getDue()) <= ($this->getPaidAmount() + static::precision);
+		return $this->getDue() <= ($this->getPaidAmount() + static::precision);
 	}
 	
 	public static function pay($method, $paymentsArr, $options = array()) {
