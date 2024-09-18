@@ -38,6 +38,9 @@ lastConfig['subscribers']['subscriber']['type'] = 'external';
 lastConfig['subscribers']['subscriber']['external_url'] = GSD_URL;
 lastConfig['subscribers']['account']['type'] = 'external';
 lastConfig['subscribers']['account']['external_url'] = GAD_URL;
+if (typeof lastConfig['subscribers']['billable'] === 'undefined') {
+    lastConfig['subscribers']['billable'] = {};
+}
 lastConfig['subscribers']['billable']['url'] = GBA_URL;
 
 if (typeof EXTERNAL_AUTHENTICATION !== 'undefined') {
