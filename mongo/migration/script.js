@@ -1898,6 +1898,11 @@ runOnce(lastConfig, 'BRCD-4306', function () {
 	}
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-2820', function () {
+	db.bills.createIndex({'aid': "hashed" }, { unique: false , background: true});
+	_dropIndex("bills", "aid_1");
+})
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
