@@ -3,7 +3,7 @@ version: '3.7'
 services:
     web:
         image: nginx:latest
-        container_name: nginx
+        container_name: billrun-nginx
         ports:
             - "8080:80"
         restart: always
@@ -20,16 +20,16 @@ services:
             context: ./billrun-php7
             dockerfile: Dockerfile-php73
         image: billrun-php73
-        container_name: billrun
+        container_name: billrun-app
         restart: always
         environment:
         - "APPLICATION_ENV=container"
-        - "XDEBUG_CONFIG=remote_host=10.103.0.1 remote_port=9090 remote_enable=1"
+        - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
         volumes:
             - ${PWD}/../..:/billrun
     mongodb:
         image: mongo:3.6
-        container_name: billrun-mongo
+        container_name: billrun-mongodb
         restart: always
         volumes:
             - ${PWD}/../..:/billrun:ro

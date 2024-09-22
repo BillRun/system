@@ -59,14 +59,9 @@ var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 var fields = lastConfig['rates']['fields'];
 var found = false;
-var invoice_label_found = false;
 for (var field_key in fields) {
 	if (fields[field_key].field_name === "tariff_category") {
 		found = true;
-	}
-	if (fields[field_key].field_name === "invoice_label") {
-		invoice_label_found = true;
-		fields[field_key].default_value = "";
 	}
 }
 if(!found) {
@@ -84,17 +79,7 @@ if(!found) {
 		"changeable_props": ["select_options"]
 	});
 }
-if(!invoice_label_found) {
-	fields.push({
-		"system":true,
-		"display":true,
-		"editable":true,
-		"field_name":"invoice_label",
-		"default_value":"",
-		"show_in_list":true,
-		"title":"Invoice label"
-	});
-}
+
 lastConfig['rates']['fields'] = fields;
 
 var invoice_language_field = {
@@ -133,7 +118,7 @@ if (typeof lastConfig['billrun']['generate_pdf']  === 'undefined') {
 
 // BRCD-441 -Add plugin support
 if (!lastConfig['plugins']) {
-	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"];
+	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin", "notificationsPlugin"];
 }
 
 for (var i = 0; i < lastConfig['plugins'].length; i++) {
@@ -152,6 +137,13 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 				"system": true,
 				"hide_from_ui": false
 			};
+		} else if (lastConfig['plugins'][i] === "notificationsPlugin") {
+			lastConfig['plugins'][i] = {
+				"name": lastConfig['plugins'][i],
+				"enabled": false,
+				"system": true,
+				"hide_from_ui": false
+			};
 		} else {
 				lastConfig['plugins'][i] = {
 				"name": lastConfig['plugins'][i],
@@ -162,11 +154,35 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 		}
 	}
 }
+
+//BRCD-4274 - Insert notification plugin
+var notification_plugin_exists = false;
+for (var i = 0; i < lastConfig['plugins'].length; i++) {
+    if (lastConfig.plugins[i]['name'] == 'notificationsPlugin') {
+        notification_plugin_exists = true;
+    }
+};
+
+if(!notification_plugin_exists) {
+	lastConfig.plugins.push({
+		"name": "notificationsPlugin",
+		"enabled": false,
+		"system": true,
+		"hide_from_ui": false
+	})
+};
+
 //-------------------------------------------------------------------
 // BRCD-1278 - backward support for new template
 if(lastConfig.invoice_export) {
-	lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
-	lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.header) &&
+		!lastConfig.invoice_export.header) {
+			lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
+	}
+	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.footer) &&
+		!lastConfig.invoice_export.footer) {
+			lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+	}
 }
 
 //BRCD-1229 - Input processor re-enabled when not requested
@@ -803,12 +819,12 @@ db.taxes.ensureIndex({'key':1, 'from': 1, 'to': 1}, { unique: true, background: 
 db.taxes.ensureIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
 db.taxes.ensureIndex({'to': 1 }, { unique: false , sparse: true, background: true });
 
-lastConfig = runOnce(lastConfig, 'BRCD-3678', function () {
+lastConfig = runOnce(lastConfig, 'BRCD-3678-1', function () {
     //Suggestions Collection
     db.createCollection('suggestions');
     db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1_estimated_billrun_1");
     db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculationType_1");
-    db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: true , background: true});
+    db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
     db.suggestions.ensureIndex({'status': 1 }, { unique: false , background: true});
 });
 // BRCD-1936: Migrate old discount structure to new discount structure
@@ -1196,10 +1212,10 @@ lastConfig = runOnce(lastConfig, 'BRCD-3227', function () {
     lastConfig['rates']['fields'] = fields;
 });
 // BRCD-2888 -adjusting config to the new invoice templates
-if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.header)) {
+if(lastConfig.invoice_export && /\/header\/header_tpl\.html$/.test(lastConfig.invoice_export.header)) {
 	lastConfig.invoice_export.header = "/header/header_tpl.phtml";
 }
-if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.footer)) {
+if(lastConfig.invoice_export && /\/footer\/footer_tpl\.html$/.test(lastConfig.invoice_export.footer)) {
 	lastConfig.invoice_export.footer = "/footer/footer_tpl.phtml";
 }
 // BRCD-2888 -adjusting config to the new invoice templates
@@ -1230,31 +1246,40 @@ if (db.serverStatus().ok == 0) {
 }
 /*** BRCD-2634 Fix limited cycle(s) service (addon) align to the cycle. ***/
 lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
-    // Find all services that are limited by cycles and align to the cycle
-    var _limited_aligned_cycles_services = db.services.distinct("name", {balance_period:{$exists:0}, "price.to":{$ne:"UNLIMITED"}});
-    //printjson(_limited_aligned_cycles_services);
-    // we are assuming that the script will be run until 2030 (services will be created until 2030), and will be expired until 2050 (limited cycles applied)
-    db.subscribers.find({to:{$gt:ISODate()}, services:{$elemMatch:{name:{$in:_limited_aligned_cycles_services}, to:{$gt:ISODate("2050-01-01")}, creation_time:{$lt:ISODate("2030-01-01")}}}}).forEach(
-                function(obj) {
-    //                printjson(obj); // debug log
-                    for (var subServiceObj in obj.services) {
-    //                    print("handle " + subServiceObj + " " + obj.services[subServiceObj].name);
-                        serviceObj = db.services.findOne({name:obj.services[subServiceObj].name, to:{$gt:ISODate()}});
-                        cycleCount = serviceObj.price[serviceObj.price.length-1].to;
-    //                    print("add months: " + cycleCount);
-                        if (cycleCount != 'UNLIMITED' && !(serviceObj.hasOwnProperty('balance_period'))) {
-//                            print("to before: " + obj.services[subServiceObj].to);
-                            obj.services[subServiceObj].to = new Date(obj.services[subServiceObj].from);
-                            obj.services[subServiceObj].to.setMonth(obj.services[subServiceObj].to.getMonth()+parseInt(cycleCount));
-                            obj.services[subServiceObj].to.setDate(lastConfig.billrun.charging_day.v)
-                            obj.services[subServiceObj].to.setHours(0,0,0,0);
-    //                        print("to after: " + obj.services[subServiceObj].to);
-                        }
-                    }
-    //                printjson(obj); // debug log
-                    db.subscribers.save(obj);
-                }
-    );
+	// Find all services that are limited by cycles and align to the cycle
+	var _limited_aligned_cycles_services = db.services.distinct("name", { balance_period: { $exists: 0 }, "price.to": { $ne: "UNLIMITED" } });
+	//printjson(_limited_aligned_cycles_services);
+	// we are assuming that the script will be run until 2030 (services will be created until 2030), and will be expired until 2050 (limited cycles applied)
+	db.subscribers.find({ to: { $gt: ISODate() }, services: { $elemMatch: { name: { $in: _limited_aligned_cycles_services }, to: { $gt: ISODate("2050-01-01") }, creation_time: { $lt: ISODate("2030-01-01") } } } }).forEach(
+		function (obj) {
+			//                printjson(obj); // debug log
+			for (var subServiceObj in obj.services) {
+				//                    print("handle " + subServiceObj + " " + obj.services[subServiceObj].name);
+				serviceObj = db.services.findOne({ name: obj.services[subServiceObj].name, to: { $gt: ISODate() } });
+				if (serviceObj) {
+					cycleCount = serviceObj.price[serviceObj.price.length - 1].to;
+					//                    print("add months: " + cycleCount);
+					if (cycleCount != 'UNLIMITED' && !(serviceObj.hasOwnProperty('balance_period'))) {
+						//                            print("to before: " + obj.services[subServiceObj].to);
+						var origToDay = obj.services[subServiceObj].to.getDate();
+						obj.services[subServiceObj].to = new Date(obj.services[subServiceObj].from);
+						obj.services[subServiceObj].to.setMonth(obj.services[subServiceObj].from.getMonth() + parseInt(cycleCount));
+						//did  we  rolled  over to the next month
+						if (origToDay - 1 > obj.services[subServiceObj].to.getDate()) {
+							obj.services[subServiceObj].to.setMonth(obj.services[subServiceObj].from.getMonth() + parseInt(cycleCount) + 1);
+							obj.services[subServiceObj].to.setDate(lastConfig.billrun.charging_day.v)
+							obj.services[subServiceObj].to.setHours(0, 0, 0, 0);
+						}
+						//obj.services[subServiceObj].to.setDate(lastConfig.billrun.charging_day.v)
+						//obj.services[subServiceObj].to.setHours(0,0,0,0);
+						//                        print("to after: " + obj.services[subServiceObj].to);
+					}
+				}
+			}
+			//                printjson(obj); // debug log
+			db.subscribers.save(obj);
+		}
+	);
 });
 
 db.subscribers.ensureIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
@@ -1279,6 +1304,7 @@ db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEa
 		db.billrun.save(obj);
 	}
 )
+
 //BRCD-2452 reformat paid_by and pays objects to array format
 var bills = db.bills.find({
 	$or: [
@@ -1384,15 +1410,150 @@ lastConfig = runOnce(lastConfig, 'BRCD-3325', function () {
 		lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
 });
 
-lastConfig = runOnce(lastConfig, 'BRCD-3806', function () {
-    //Suggestions Collection
-    db.suggestions.dropIndex("aid_1_sid_1_billrun_key_1_status_1_key_1_recalculation_type_1_estimated_billrun_1");
-	db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculation_type':1, 'estimated_billrun':1}, { unique: false , background: true});
+var invoice_lang_field = {
+	"select_list": true,
+	"display": true,
+	"editable": true,
+	"system": true,
+	"field_name": "invoice_language",
+	"default_value": "en_GB",
+	"show_in_list": true,
+	"title": "Invoice language",
+	"mandatory": true,
+	"changeable_props": [
+		"select_options"
+	],
+	"select_options": "en_GB,fr_CH,de_CH"
+};
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoice_lang_field, 'account');
+
+// BRCD-3942
+var debtCollectionPluginFound = false;
+for (var i = 0; i < lastConfig.plugins.length; i++) {
+	if (lastConfig.plugins[i]['name'] === "debtCollectionPlugin") {
+		debtCollectionPluginFound = true;
+		if (lastConfig.plugins[i]['configuration'] === undefined){
+			lastConfig.plugins[i]['configuration'] = {};
+		}
+		if (lastConfig.plugins[i]['configuration']['values'] === undefined){
+			lastConfig.plugins[i]['configuration']['values'] = {};
+		}
+		if (lastConfig.plugins[i]['configuration']['values']['immediateEnter'] === undefined){
+			lastConfig.plugins[i]['configuration']['values']['immediateEnter'] = false;
+		}
+		if (lastConfig.plugins[i]['configuration']['values']['immediateExit'] === undefined){
+			lastConfig.plugins[i]['configuration']['values']['immediateExit'] = true;
+		}
+	}
+}
+
+if (!debtCollectionPluginFound) {
+	lastConfig.plugins.push({
+		'name' : 'debtCollectionPlugin',
+		'enabled' : true,
+		'system' : true,
+		'hide_from_ui' : false,
+		'configuration' : {'values' : {'immediateEnter' : false, 'immediateExit' : true}}
+	})
+}
+
+// BRCD-3890 Remove invoice_label' core field
+lastConfig = runOnce(lastConfig, 'BRCD-3890', function () {
+	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'rates');
+	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'plans');
+	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'services');
+	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'discounts');
+	lastConfig = removeFieldFromConfig(lastConfig, 'invoice_label', 'charges');
 });
 
-// BRCD-3618 configure full_calculation date field
-lastConfig = runOnce(lastConfig, 'BRCD-3618', function () {
-	lastConfig['lines']['reference_fields'] = ['full_calculation'];
+// BRCD-4010 : Set default value for missing instance_name
+lastConfig = runOnce(lastConfig, 'BRCD-4010', function () {
+	db.subscribers.find({
+		'payment_gateway.active': {$exists: 1},
+		'payment_gateway.active.instance_name': {$exists: 0},
+		type: 'account'
+	}).forEach(
+		function(account) {
+			account.payment_gateway.active.instance_name = account.payment_gateway.active.name;
+			db.subscribers.save(account);
+		}
+	);
+});
+
+lastConfig = runOnce(lastConfig, 'BRCD-4172', function () {
+	db.bills.ensureIndex({'urt': 1 }, { unique: false, background: true});
+});
+// BRCD-4297 Correct end date of services with limited cycles
+lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
+	function addMonthsToDate(fromDate, monthsToAdd) {
+		const newDate = new Date(fromDate); // Create a new Date object from the provided fromDate
+	  
+		// Add the specified number of months to the newDate
+		newDate.setMonth(newDate.getMonth() + parseInt(monthsToAdd));
+	  
+		return newDate.toISOString(); // Return the new date as an ISO string
+	  }
+	
+	var limited_cycle_services = db.services.aggregate([{$match: {balance_period: {$exists: false}, prorated: true, price: {$size: 1, $elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {month_limit: {$size: 1}}}, {$unwind: "$month_limit"},{$unwind: "$month_limit"}])
+	var today = new Date();
+	var lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+	var lastYearISO = lastYear.toISOString();
+	
+	var all_service_keys = [];
+	var service_and_cycle_limit = [];
+	
+	limited_cycle_services.forEach(service => {
+		all_service_keys.push(service._id);
+		service_and_cycle_limit[service._id] = service.month_limit;
+	});
+	
+	print("Subscriber ID, Service Key, Start Date, cycles, Original End Date, Corrected End Date")
+	var subscribers = db.subscribers.find({'services.name': {$in: all_service_keys}, to: {$gt: ISODate(lastYearISO)}});
+	subscribers.forEach(subscriber => {
+		for (var i = 0; i < subscriber.services.length; i++) {
+			if(all_service_keys.includes(subscriber.services[i].name)) {
+				var corrected_end_date = addMonthsToDate(subscriber.services[i].from, service_and_cycle_limit[subscriber.services[i].name]);
+				if (subscriber.services[i].to.toISOString() != corrected_end_date) {
+					print(subscriber.sid + "," + subscriber.services[i].name + "," + subscriber.services[i].from.toISOString() + "," + service_and_cycle_limit[subscriber.services[i].name] + "," + subscriber.services[i].to.toISOString() + "," + corrected_end_date);
+					subscriber.services[i].to = ISODate(corrected_end_date);
+				}
+			}
+		}
+		db.subscribers.save(subscriber);
+	})
+	
+	var services_with_revisions_with_differernt_cycles = db.services.aggregate([{$match: {balance_period: {$exists: false}, prorated: true, price: {$elemMatch: {to: {$ne: "UNLIMITED"}}}}}, {$group: {_id: "$name", month_limit: {$addToSet: "$price.to"}}}, {$match: {$expr: {$gt: [{$size: "$month_limit"}, 1]}}}])
+	services_with_revisions_with_differernt_cycles.forEach(service => {
+		printjson("BRCD-4297: Service with that the month limit has been changed and will require a more complex fix: " + service._id);
+	});
+});
+
+// BRCD-3432 add BillRun' metabase plugin
+runOnce(lastConfig, 'BRCD-3432', function () {
+    var mbPluginsSettings = {
+        "name": "metabaseReportsPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": true,
+				"configuration" : {
+					"values" : {
+						"metabase_details" : {},
+						"export" : {},
+						"added_data" : {},
+						"reports" : []
+					}
+				}
+    };
+    lastConfig['plugins'].push(mbPluginsSettings);
+});
+
+//BRCD-4306 MB plugin shouldn't be hide from UI
+runOnce(lastConfig, 'BRCD-4306', function () {
+	for (var i = 0; i < lastConfig['plugins'].length; i++) {
+		if (lastConfig['plugins'][i]['name'] == "metabaseReportsPlugin") {
+			lastConfig['plugins'][i]['hide_from_ui'] = false;
+		}
+	}
 });
 
 db.config.insert(lastConfig);
@@ -1402,3 +1563,4 @@ db.lines.dropIndex("aid_1_urt_1");
 db.rebalance_queue.ensureIndex({"creation_date": 1, "end_time" : 1}, {unique: false, "background": true});
 db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
 db.rebalance_queue.ensureIndex({"aid": 1, "billrun_key": 1}, {unique: false, "background": true});
+

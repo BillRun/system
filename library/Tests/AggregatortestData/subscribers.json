@@ -2626,32 +2626,7 @@
 					"to": "time*2167-06-28T10:16:31Z",
 					"creation_time": "time*2018-06-27T21:00:00Z"
 				},
-				{
-					"from": "time*2020-03-25T20:00:00Z",
-					"aid": 1770,
-					"sid": 1771,
-					"plan": "NOT_TAXABLE_PLAN",
-					"services": [
-						{
-							"name": "NOT_TAXABLE_SERVICE",
-							"from": "time*2019-03-30T21:00:00Z",
-							"to": "time*2118-03-10T14:24:43Z",
-							"service_id": "1600087131219770",
-							"creation_time": "time*2018-03-10T14:24:47.165Z"
-						}
-					],
-					"firstname": "d",
-					"lastname": "d",
-					"address": "d",
-					"country": "d",
-					"type": "subscriber",
-					"plan_activation": "time*2020-03-25T20:00:00Z",
-					"to": "time*2119-03-05T22:00:00Z",
-					"deactivation_date": "time*2119-03-05T22:00:00Z",
-					"creation_time": "time*2019-03-04T22:00:00Z",
-					"activation_date": "time*2020-03-25T20:00:00Z",
-					"plan_deactivation": "time*2119-03-05T22:00:00Z"
-				}, {
+			 {
 
 					"aid": 187501,
 					"firstname": "יוסיggj",
@@ -2743,60 +2718,7 @@
 						}
 					]
 				},
-				{
-					"sid": 290,
-					"aid": 2000000784,
-					"type": "subscriber",
-					"from": "time*2020-12-24T14:57:49Z",
-					"to": "time*2120-12-24T14:57:49Z",
-					"plan": "BOX_1",
-					"services": [
-						{
-							"name": "LEGACY_CUSTOMER",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2200-12-24T14:57:49Z",
-							"service_id": 2044,
-							"creation_time": "time*2020-12-24T14:57:49Z"
-						},
-						{
-							"name": "TOP_UP_1",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2120-12-24T14:57:49Z",
-							"service_id": 2051,
-							"creation_time": "time*2020-12-24T14:57:49Z"
-						},
-						{
-							"name": "TOP_UP_1",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2021-12-24T14:57:49Z",
-							"service_id": 2052,
-							"creation_time": "time*2020-12-24T14:57:49Z"
-						},
-						{
-							"name": "TOP_UP_1",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2120-12-24T14:57:49Z",
-							"service_id": 2053,
-							"creation_time": "time*2020-12-24T14:57:49Z"
-						}
-					],
-					"play": "mobile",
-					"firstname": "Legacy",
-					"lastname": "First",
-					"address": null,
-					"activation_date": "time*2020-12-24T14:57:49Z",
-					"deactivation_date": null,
-					"plan_activation": "time*2020-12-24T14:57:49Z",
-					"plan_deactivation": null,
-					"creation_time": "time*2020-12-24T14:57:49Z",
-					"former_plan": null,
-					"imsi": [
-						"236"
-					],
-					"sub_number": "35790000495",
-					"portability_code": "P7RZI5DZ",
-					"discounts": null
-				},
+				
 				{
 					"aid": 230,
 					"sid": 80018,
@@ -3196,7 +3118,6 @@
 					"creation_time": "time*2021-06-02T00:00:00Z"
 				},
 				{
-
 					"from": "time*2019-06-02T00:00:00Z",
 					"aid": 3082,
 					"sid": 3083,
@@ -3214,8 +3135,8 @@
 					"creation_time": "time*2019-06-02T00:00:00Z",
 					"activation_date": "time*2019-06-02T00:00:00Z",
 					"plan_deactivation": "time*2170-06-02T15:55:59Z"
-						},
-						{
+				},
+				{
 					"from": "time*2019-06-02T00:00:00Z",
 					"aid": 3082,
 					"sid": 3084,
@@ -3234,8 +3155,8 @@
 					"activation_date": "time*2019-06-02T00:00:00Z",
 					"plan_deactivation": "time*2170-06-02T15:56:10Z"
 				},
-				{
-					
+{
+
 					"aid": 13261,
 					"firstname": "aa",
 					"lastname": "aa bb",
@@ -3250,7 +3171,7 @@
 					"to": "time*2167-09-03T09:20:57Z",
 					"creation_time": "time*2018-09-03T08:20:57.963Z"
 				},
-						{
+				{
 
 					"aid": 13261,
 					"sid": 82329,
@@ -3273,14 +3194,14 @@
 							"from": "time*2020-12-02T14:44:37Z",
 							"name": "3_MONTHS_FREE_SERVICE",
 							"service_id": "1684978037267263"
-				},
-				{
+						},
+						{
 							"from": "time*2020-12-02T14:44:38Z",
 							"name": "DISCOUNT_A_SERVICE_2",
 							"to": "time*2169-12-02T14:44:37Z",
 							"service_id": "1684978038187743",
 							"creation_time": "time*2020-12-02T14:44:38.763Z"
-				}
+						}
 					]
 				},
 				{
@@ -3329,7 +3250,7 @@
 							"to": "time*2169-12-02T14:44:37Z",
 							"service_id": "1684978038187743",
 							"creation_time": "time*2020-12-02T14:44:38.763Z"
-				}
+						}
 					]
 				},
 				{
@@ -3371,7 +3292,7 @@
 							"from": "time*2020-12-03T14:44:37Z",
 							"name": "3_MONTHS_FREE_SERVICE",
 							"service_id": "1684978037267263"
-				}
+						}
 					]
 				},
 				{
@@ -3411,7 +3332,7 @@
 							"to": "time*2170-03-29T16:07:00Z",
 							"service_id": "1695579292838721",
 							"creation_time": "time*2021-03-29T15:07:03.011Z"
-				}
+						}
 					]
 				},
 					{
@@ -3493,7 +3414,7 @@
 							"to": "time*2170-03-29T16:07:00Z",
 							"service_id": "1695579292838721",
 							"creation_time":"time*2020-12-01T15:06:59.101Z"
-				}
+						}
 					]
 				},
 				{
@@ -3550,7 +3471,7 @@
 							"to": "time*2170-03-29T16:07:00Z",
 							"service_id": "1695579292838721",
 							"creation_time":"time*2020-12-02T15:06:59.101Z"
-				}
+						}
 					]
 				},
 				
@@ -3608,7 +3529,7 @@
 							"to": "time*2170-03-29T16:07:00Z",
 							"service_id": "1695579292838721",
 							"creation_time":"time*2020-12-30T15:06:59.101Z"
-				}
+						}
 					]
 				},
 				
@@ -3666,7 +3587,7 @@
 							"to": "time*2170-03-29T16:07:00Z",
 							"service_id": "1695579292838721",
 							"creation_time":"time*2020-12-31T15:06:59.101Z"
-				}
+						}
 					]
 				}
 
@@ -3732,7 +3653,7 @@
 							"to": "time*2170-03-29T16:07:00Z",
 							"service_id": "1695579292838722",
 							"creation_time":"time*2020-12-02T15:06:59.101Z"
-				}
+						}
 					]
 				}
 ,
@@ -3797,7 +3718,7 @@
 							"to": "time*2170-03-29T16:07:00Z",
 							"service_id": "1695579292838755",
 							"creation_time":"time*2020-12-02T15:06:59.101Z"
-				}
+						}
 					]
 				},
 				
@@ -3856,7 +3777,7 @@
 							"to": "time*2170-03-29T16:07:00Z",
 							"service_id": "1695579292838721",
 							"creation_time":"time*2020-12-02T15:06:59.101Z"
-				}
+						}
 					]
 				},
 					{
@@ -3888,7 +3809,7 @@
 							"to": "time*2170-03-29T16:07:00Z",
 							"service_id": "1695579292838721",
 							"creation_time":"time*2020-12-15T15:06:59.101Z"
-				}
+						}
 					]
 				},
 				
@@ -3948,7 +3869,7 @@
 							"to": "time*2170-03-29T16:07:00Z",
 							"service_id": "1695579292838721",
 							"creation_time":"time*2020-12-02T15:06:59.101Z"
-				}
+						}
 					]
 				},
 					{
@@ -3980,24 +3901,10 @@
 							"to": "time*2170-03-29T16:07:00Z",
 							"service_id": "16955792928384441",
 							"creation_time":"time*2020-12-02T15:06:59.101Z"
-				}
+						}
 					]
 				},
-					{
-
-					"from": "time*2018-01-27T22:00:00Z",
-					"aid": 1770,
-					"firstname": "a",
-					"lastname": "s",
-					"email": "s",
-					"country": "s",
-					"address": "s",
-					"zip_code": "s",
-					"salutation": "s",
-					"type": "account",
-					"to": "time*2167-06-28T10:16:31Z",
-					"creation_time": "time*2018-06-27T21:00:00Z"
-				},
+					
 				{
 					"from": "time*2020-03-25T20:00:00Z",
 					"aid": 1770,
@@ -4010,7 +3917,7 @@
 							"to": "time*2118-03-10T14:24:43Z",
 							"service_id": "1600087131219770",
 							"creation_time": "time*2018-03-10T14:24:47.165Z"
-				}
+						}
 					],
 					"firstname": "d",
 					"lastname": "d",
@@ -4023,52 +3930,8 @@
 					"creation_time": "time*2019-03-04T22:00:00Z",
 					"activation_date": "time*2020-03-25T20:00:00Z",
 					"plan_deactivation": "time*2119-03-05T22:00:00Z"
-				},
-				{
+				},{
 
-					"from": "time*2018-01-27T22:00:00Z",
-					"aid": 3798,
-					"firstname": "a",
-					"lastname": "s",
-					"email": "s",
-					"country": "s",
-					"address": "s",
-					"zip_code": "s",
-					"salutation": "s",
-					"type": "account",
-					"to": "time*2167-06-28T10:16:31Z",
-					"creation_time": "time*2018-06-27T21:00:00Z"
-				},
-				{
-
-					"from" : "time*2022-02-28T08:00:00Z",
-					"aid": 3798,
-					"sid" : 37981,
-					"plan" : "1GB",
-					"services" : [
-						{
-							"creation_time" : "time*2022-04-19T04:27:44Z",
-							"quantity" : 101,
-							"service_id" : 1730509499705243,
-							"name" : "Q",
-							"from" : "time*2022-02-28T08:00:00Z",
-							"to" : "time*2171-04-19T05:27:44Z"
-						}
-					],
-					"firstname" : "yossi",
-					"lastname" : "yossi",
-					"playossictivation" : "time*2022-02-28T08:00:00Z",
-					"address" : "2139",
-					"country" : "USA",
-					"type" : "subscriber",
-					"to" : "time*2022-03-31T07:00:00Z",
-					"deactivation_date" : "time*2171-04-19T05:27:44Z",
-					"creation_time" : "time*2022-02-28T08:00:00Z",
-					"activation_date" : "time*2022-02-28T08:00:00Z",
-					"plan_deactivation" : "time*2171-04-19T05:27:44Z"
-				}
-				,{
-				
 					"from" : "time*2022-03-31T07:00:00Z",
 					"aid": 3798,
 					"sid" : 37981,
@@ -4096,7 +3959,7 @@
 					"plan_deactivation" : "time*2171-04-19T05:27:44Z"
 				}
 				,{
-				
+
 					"from" : "time*2022-04-22T07:00:00Z",
 					"aid": 3798,
 					"sid" : 37981,
@@ -4124,7 +3987,7 @@
 					"plan_deactivation" : "time*2171-04-19T05:27:44Z"
 				}
 				,{
-				
+
 					"from" : "time*2022-07-12T07:00:00Z",
 					"aid": 3798,
 					"sid" : 37981,
@@ -4207,15 +4070,76 @@
 					"activation_date" : "time*2022-02-28T08:00:00Z",
 					"plan_deactivation" : "time*2171-04-19T05:27:44Z"
 				}
+,
+				{
 
-
+					"from": "time*2018-01-27T22:00:00Z",
+					"aid": 80798,
+					"firstname": "a",
+					"lastname": "s",
+					"email": "s",
+					"country": "s",
+					"address": "s",
+					"zip_code": "s",
+					"salutation": "s",
+					"type": "account",
+					"to": "time*2167-06-28T10:16:31Z",
+					"creation_time": "time*2018-06-27T21:00:00Z"
+				},
+				{
+					"from" : "time*2022-11-21T16:00:00Z",
+					"aid" : 80798,
+					"sid" : 80806,
+					"plan" : "FREE_WITH_NOTHING",
+					"firstname" : "AA",
+					"lastname" : "BB",
+					"address" : "Technopôle 3",
+					"type" : "subscriber",
+					"plan_activation" : "time*2020-11-16T23:00:00Z",
+					"to" : "time*2023-01-20T22:00:00Z",
+					"deactivation_date" : "time*2169-11-17T08:28:06Z",
+					"creation_time" : "time*2020-11-16T23:00:00Z",
+					"activation_date" : "time*2020-11-16T23:00:00Z",
+					"plan_deactivation" : "time*2169-11-17T08:28:06Z",
+					"services" : [
+						{
+							"from" : "time*2020-11-16T23:00:00Z",
+							"name" : "CENTREX",
+							"creation_time" : "time*2020-11-17T08:28:07Z",
+							"to" : "time*2169-11-17T08:28:06Z",
+							"service_id" : "1683595394867646",
+							"quantity" : 104
+						}
+					]
+				},
+				{
+					"from" : "time*2023-01-20T22:00:00Z",
+					"aid" : 80798,
+					"sid" : 80806,
+					"plan" : "FREE_WITH_NOTHING",
+					"firstname" : "AA",
+					"lastname" : "BB",
+					"address" : "Technopôle 3",
+					"type" : "subscriber",
+					"plan_activation" : "time*2020-11-16T23:00:00Z",
+					"to" : "time*2222-12-31T23:00:00Z",
+					"deactivation_date" : "time*2169-11-17T08:28:06Z",
+					"creation_time" : "time*2020-11-16T23:00:00Z",
+					"activation_date" : "time*2020-11-16T23:00:00Z",
+					"plan_deactivation" : "time*2169-11-17T08:28:06Z",
+					"services" : [
+						{
+							"from" : "time*2020-11-16T23:00:00Z",
+							"name" : "CENTREX",
+							"creation_time" : "time*2020-11-17T08:28:07Z",
+							"to" : "time*2169-11-17T08:28:06Z",
+							"service_id" : "1683595394867646",
+							"quantity" : 103
+						}	]
+				}
 
 
 
 			]
 }
-
-
-
-
 

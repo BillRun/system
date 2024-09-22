@@ -233,7 +233,8 @@ abstract class Billrun_Bill {
 	 * @return array
 	 */
 	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false) {
-		$query = array('aid' => $aid);
+		$query = Billrun_Bill::getNotRejectedOrCancelledQuery();
+		$query['aid'] = $aid;
 		if (!empty($date)) {
 			$relative_date = new MongoDate(strtotime($date));
 			$query['$or'] = array(
@@ -769,7 +770,8 @@ abstract class Billrun_Bill {
 					foreach ($payments as $payment) {
 						$gatewayDetails = $payment->getPaymentGatewayDetails();
 						$gatewayName = $gatewayDetails['name'];
-						$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+						$gatewayInstanceName = $gatewayDetails['instance_name'];
+						$gateway = Billrun_PaymentGateway::getInstance($gatewayInstanceName);
 						if (is_null($gateway)) {
 							Billrun_Factory::log("Illegal payment gateway object", Zend_Log::ALERT);
 						} else {
@@ -874,7 +876,7 @@ abstract class Billrun_Bill {
 
 			case 'Completed':
 				$pending = $this->data['waiting_payments'];
-				if (count($pending)) {
+				if (!empty($pending)) {
 					$this->removeFromWaitingPayments($billId, $billType);
 					$result = count($this->data['waiting_payments']) ? '2' : ($this->isPaid() ? '1' : '0');
 				}
@@ -1173,7 +1175,7 @@ abstract class Billrun_Bill {
 		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
 		$rejection_required_aids = array_column(array_map(function($account) {
 				return $account->getRawData();
-			}, $currentAccounts), 'aid');
+			}, $currentAccounts), 'aid') ?? [];
 
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$match = array(
@@ -1301,7 +1303,7 @@ abstract class Billrun_Bill {
 				)
 			);
 		}
-		$results = iterator_to_array($billsColl->aggregate($match, $project, $addFields, $group, $project3, $match2));
+		$results = iterator_to_array($billsColl->aggregateWithOptions([$match, $project, $addFields, $group, $project3, $match2], ['allowDiskUse' => true]));
 		return array_combine(array_map(function($ele) {
 				return $ele['aid'];
 			}, $results), $results);

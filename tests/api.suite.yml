@@ -1,0 +1,18 @@
+actor: ApiTester
+modules:
+    enabled:
+        - Asserts
+        - \Helper\Api
+        - \Helper\BillRunAPI
+        - REST:
+            url: http://web
+            depends: PhpBrowser
+            part: Json
+        - MongoDb:
+              dsn: "mongodb://mongodb:27017/billing_container"
+              user: ""
+              password: ""
+#              dump_type: "mongodump-tar-gz"
+#              dump: "tests/_data/db_test_dump.tar.gz"
+              populate: false
+              cleanup: false

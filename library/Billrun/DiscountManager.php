@@ -1124,7 +1124,7 @@ class Billrun_DiscountManager {
 				$this->discountedLinesAmounts[$line['stamp']] = 0;
 			}
 			$lineQuantity = Billrun_Util::getIn($line, 'usagev', 1);
-			$lineAmountLimit = $line['aprice'] * $lineQuantity;
+			$lineAmountLimit = $line['aprice'];
 			$lineEligibility = $this->getLineEligibility($line, $discount, $eligibility);
 			if (empty($lineEligibility)) {
 				continue;
