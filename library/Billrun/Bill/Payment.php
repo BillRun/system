@@ -129,7 +129,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$this->data['bills_merged'] = $options['bills_merged'];
 			}
 
-			$this->data['urt'] = new MongoDate();
+			if (isset($options['force_urt'])) {
+				$this->data['urt'] = $options['force_urt'];
+			} else {
+				$this->data['urt'] = new MongoDate();
+			}
 			foreach ($this->optionalFields as $optionalField) {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];
@@ -273,7 +277,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (isset($response['additional_params'])) {
 			$rawData['vendor_response'] = $response['additional_params'];
 		}
-                               
+        if (isset($response['urt'])) {
+			$rawData['force_urt'] = $response['urt'];
+		}
 		return new $className($rawData);
 	}
         
@@ -501,6 +507,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
                 $this->unsetAllPendingLinkedBills();
 		$this->setBalanceEffectiveDate();
 		$this->save();
+		Billrun_Factory::dispatcher()->trigger('afterUpdateConfirmation', array($this->data));
 	}
 
 	/**
