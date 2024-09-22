@@ -1528,6 +1528,34 @@ lastConfig = runOnce(lastConfig, 'BRCD-4297', function () {
 	});
 });
 
+
+//BRCD-4455 Israel invoice plugin
+runOnce(lastConfig, 'BRCD-4455', function () {
+	var israelInvoicePluginsSettings = {
+        "name": "israelInvoicePlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": true,
+				"configuration" : {
+					"values" : {
+						"company_vat_number" : 0,
+						"client_secret" : "",
+						"client_key" : "",
+						"account_vat_number_field" : "",
+						"union_vat_number" : 0,
+						"invoice_approval_api" : "",
+						"refresh_token" : "",
+						"accounting_software_number" : 0,
+						"new_access_token_api" : "",
+						"cancel_invoice_generation_on_error" : true,
+						"apply_to_refund_invoices" : false,
+						"invoice_thresholds" : ""
+					}
+				}
+    };
+    lastConfig['plugins'].push(israelInvoicePluginsSettings);
+});
+
 // BRCD-3432 add BillRun' metabase plugin
 runOnce(lastConfig, 'BRCD-3432', function () {
     var mbPluginsSettings = {
