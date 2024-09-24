@@ -1489,7 +1489,7 @@ runOnce(lastConfig, 'BRCD-4455', function () {
 });
 
 //BRCD-4415 CG plugin
-runOnce(lastConfig, 'BRCD-4455', function () {
+runOnce(lastConfig, 'BRCD-4415', function () {
 	var cg_pg_config_index = -1;
 	for (var j = 0; j < lastConfig.payment_gateways.length; j++) {
         if (lastConfig.payment_gateways[j]['name'] === "CreditGuard") {
