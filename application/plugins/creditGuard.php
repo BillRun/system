@@ -41,17 +41,38 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
     protected $cardTypes = array("Regular" => "00", "Debit" => "01", "Rechargeable" => "06");
 
     /**
-     * Credit guard online params
+     * Transaction types array
      * @var array 
      */
-    protected $cg_params;
+    protected $tranTypes = array("RecurringDebit" => "11", "Debit" => "01");
+
+    /**
+     * Terminals
+     * @var array
+     */
+    protected $terminals;
+
+    /**
+     * Mid
+     * @var string
+     */
+    protected $mid;
 
     public function __construct($options = array()) {
         $this->card_expiration_field = Billrun_Util::getIn($options, "card_expiration_field_name", "card_expiration");
         $this->years_to_extend_card_exp = Billrun_Util::getIn($options, "years_to_extend_card_expiration", 3);
         $this->extend_card_expiration = Billrun_Util::getIn($options, "extend_card_expiration", true);
-        $this->cg_params = Billrun_Util::getIn($options, "params", []);
+        $this->mid = Billrun_Util::getIn($options, "mid", null);
+        $this->setTerminals($options);
 	}
+
+    protected function setTerminals($options) {
+        $this->terminals = [
+            'charging_terminal' => Billrun_Util::getIn($options, "charging_terminal", null),
+            'redirect_terminal' => Billrun_Util::getIn($options, "redirect_terminal", null),
+            'onetime_terminal' => Billrun_Util::getIn($options, "onetime_terminal", null)
+        ];
+    }
 
     /**
      * Function to update cp request file line fields
@@ -63,16 +84,34 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
      */
     public function beforeGetTransactionsRequestDataLine ($cpf_generator, $account, &$params, $bill, $payment) {
         $config = $cpf_generator->getPgConfig();
+        $terminal_and_tran_type = $this->getTerminalAndTransactionType($account);
         foreach ($config['generator']['data_structure'] as $index => &$param_obj) {
             switch ($param_obj['name']) {
                 case 'terminal_type':
                 case 'terminal_number':
-                    $terminal_type = $this->getTerminalType($account);
+                    $terminal_type = $terminal_and_tran_type['terminal'];
                     $terminal_number = $this->getTerminalNumber($account, $terminal_type);
                     $param_obj['hard_coded_value'] = $param_obj['name'] == 'terminal_type' ? $terminal_type : $terminal_number;
                     break;
                 case 'card_expiration':
                     $param_obj['hard_coded_value'] = $this->getCardExpiration($account);
+                    break;
+                case 'transaction_type':
+                    $tran_type = $terminal_and_tran_type['transaction'];
+                    $param_obj['hard_coded_value'] = $tran_type;
+                    break;
+                case 'auth_number':
+                    if ($terminal_and_tran_type['transaction'] === $this->tranTypes['RecurringDebit']) {
+                        Billrun_Factory::log()->log("creditGuardPlugin : transaction type is RecurringDebit for account " . $account['aid'] . ". Getting it's auth number", Zend_Log::DEBUG);
+                        $auth = $this->getAuthNumber($account);
+                        if (empty($auth)) {
+                            unset($param_obj['hard_coded_value']);
+                        } else {
+                            $param_obj['hard_coded_value'] = $auth;
+                        }
+                    } else {
+                        unset($config[$index]);
+                    }
                     break;
                 default:
                     continue;
@@ -103,20 +142,34 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
         }
     }
 
-    protected function getTerminalType($account) {
-        Billrun_Factory::log()->log("creditGuardPlugin : calculating CG terminal for account " . $account['aid'], Zend_Log::DEBUG);
+    protected function getTerminalAndTransactionType($account) {
+        $gatewayDetails = $account['payment_gateway']['active'];
+        Billrun_Factory::log()->log("creditGuardPlugin : calculating CG terminal and transaction type for account " . $account['aid'], Zend_Log::DEBUG);
         if (isset($gatewayDetails['card_type']) && (in_array($gatewayDetails['card_type'], [$this->cardTypes['Debit'], $this->cardTypes['Rechargeable']]))) {
-            return 'onetime_terminal';
+            return ['terminal' => 'onetime_terminal', 'transaction' => $this->tranTypes['Debit']];
         } else {
-            return 'charging_terminal';
+            return ['terminal' => 'charging_terminal', 'transaction' => $this->tranTypes['RecurringDebit']];
         }
     }
 
     protected function getTerminalNumber($account, $terminal_type) {
         Billrun_Factory::log()->log("creditGuardPlugin : according to the terminal conditions, account " . $account['aid'] . " terminal type is " . $terminal_type, Zend_Log::DEBUG);
-        if (!empty($terminal_number = Billrun_Util::getIn($this->cg_params, 'params'.$terminal_type, null))) {
+        if (!empty($terminal_number = Billrun_Util::getIn($this->terminals, $terminal_type, null))) {
             Billrun_Factory::log()->log("creditGuardPlugin : according to the terminal conditions and pg config, account " . $account['aid'] . " terminal number is " . $terminal_number, Zend_Log::DEBUG);
+        } else {
+            Billrun_Factory::log()->log("creditGuardPlugin : couldn't find terminal " . $terminal_type . " number in config for account " . $account['aid'] . ". Charging terminal value was taken", Zend_Log::ALERT);
+            $terminal_number = $this->terminals['charging_terminal'];            
         }
         return $terminal_number;
+    }
+
+    protected function getAuthNumber($account) {
+        $gatewayDetails = $account['payment_gateway']['active'];
+        Billrun_Factory::log()->log("creditGuardPlugin : calculating auth number for account " . $account['aid'], Zend_Log::DEBUG);
+        $auth_num = Billrun_Util::getIn($gatewayDetails, "auth_number", null);
+        if (empty($auth_num)) {
+            return null;
+        }
+        return $auth_num;
     }
 }
