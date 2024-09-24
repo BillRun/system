@@ -936,7 +936,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return isset($options['mode']) && $options['mode'] == 'charge';
 	}
 	
-	protected static function validateChargeFilters($filters) {
+	public static function validateChargeFilters($filters) {
 		$errorMessage = false;
 		if (isset($filters['aids']) && isset($filters['exclude_accounts'])) {
 			$errorMessage = "Wrong input! please choose between aids filter to exclude_accounts filter";
