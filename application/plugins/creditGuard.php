@@ -106,8 +106,8 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
     protected function getTerminalType($account) {
         Billrun_Factory::log()->log("creditGuardPlugin : calculating CG terminal for account " . $account['aid'], Zend_Log::DEBUG);
         if (isset($gatewayDetails['card_type']) && (in_array($gatewayDetails['card_type'], [$this->cardTypes['Debit'], $this->cardTypes['Rechargeable']]))) {
-			return 'onetime_terminal';
-		} else {
+            return 'onetime_terminal';
+        } else {
             return 'charging_terminal';
         }
     }
