@@ -58,7 +58,7 @@ class Models_Entity {
 	 * @var array
 	 */
 	protected $update = array();
-
+	
 	/**
 	 * The update data from request without changes
 	 * @var array
@@ -214,7 +214,7 @@ class Models_Entity {
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
 	}
 
-	/**
+	/** 
 	 * method to retrieve entity name that we are running on
 	 * 
 	 * @return string
@@ -370,6 +370,7 @@ class Models_Entity {
 	 * @throws Billrun_Exceptions_Api
 	 */
 	public function create() {
+		$this->setReadPrefForAction(__FUNCTION__);
 		$this->action = 'create';
 		unset($this->update['_id']);
 		if (empty($this->update['from'])) {
@@ -397,6 +398,7 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	public function update() {
+		$this->setReadPrefForAction(__FUNCTION__);
 		$this->action = 'update';
 		$this->checkUpdate();
 		$this->fixEntityFields($this->before);
@@ -408,6 +410,7 @@ class Models_Entity {
 	 * Performs the permanentchange action by a query.
 	 */
 	public function permanentChange() {
+		$this->setReadPrefForAction(__FUNCTION__);
 		Billrun_Factory::log("Performs the permanentchange action", Zend_Log::DEBUG);
 		$this->action = 'permanentchange';
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
@@ -545,6 +548,7 @@ class Models_Entity {
 	 * @todo avoid overlapping of entities
 	 */
 	public function closeandnew() {
+		$this->setReadPrefForAction(__FUNCTION__);
 		$this->action = 'closeandnew';
 		if (!isset($this->update['from'])) {
 			$this->update['from'] = new MongoDate();
@@ -623,7 +627,7 @@ class Models_Entity {
 		}
 		return is_null($invoicing_day) ? self::$minUpdateDatetime[0] : self::$minUpdateDatetime[$invoicing_day];
 	}
-
+	
 	public static function isAllowedChangeDuringClosedCycle() {
 		return Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false);
 	}
@@ -635,6 +639,7 @@ class Models_Entity {
 	 * @return array the entities found
 	 */
 	public function get() {
+		$this->setReadPrefForAction(__FUNCTION__);
 		if (isset($this->config['active_documents']) && $this->config['active_documents']) {
 			$add_query = Billrun_Utils_Mongo::getDateBoundQuery();
 			$this->query = array_merge($add_query, $this->query);
@@ -794,7 +799,7 @@ class Models_Entity {
 		$this->fixEntityFields($this->before);
 		return $ret;
 	}
-
+	
 	public function reopen() {
 		$this->action = 'reopen';
 
@@ -834,6 +839,7 @@ class Models_Entity {
 	 * @return boolean true on success else false
 	 */
 	protected function moveEntry($edge = 'from') {
+		$this->setReadPrefForAction(__FUNCTION__);
 		if ($edge == 'from') {
 			$otherEdge = 'to';
 		} else { // $current == 'to'
@@ -904,7 +910,7 @@ class Models_Entity {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * Convert keys that was received as dot annotation back to dot annotation
 	 */	
@@ -940,6 +946,7 @@ class Models_Entity {
 	 * @param type $data
 	 */
 	protected function dbUpdate($query, $data) {
+		$this->setReadPrefForAction(__FUNCTION__);
 		$update = $this->generateUpdateParameter($data, $this->queryOptions);
 		return $this->collection->update($query, $update);
 	}
@@ -976,6 +983,7 @@ class Models_Entity {
 	 * @param array $query
 	 */
 	protected function remove($query) {
+		$this->setReadPrefForAction(__FUNCTION__);
 		return $this->collection->remove($query);
 	}
 
@@ -1133,6 +1141,7 @@ class Models_Entity {
 	 * @return array the entity loaded
 	 */
 	protected function loadById($id, $readPrimary = false) {
+		$this->setReadPrefForAction(__FUNCTION__);
 		$fetchQuery = array('_id' => ($id instanceof MongoId) ? $id : new MongoId($id));
 		$cursor = $this->collection->query($fetchQuery)->cursor();
 		if ($readPrimary) {
@@ -1146,6 +1155,7 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	protected function insert(&$data) {
+		$this->setReadPrefForAction(__FUNCTION__);
 		$ret = $this->collection->insert($data, array('w' => 1, 'j' => true));
 		return $ret;
 	}
@@ -1364,6 +1374,13 @@ class Models_Entity {
 			return [];
 		}
 		return $additional;
+	}
+
+	protected function setReadPrefForAction($actionName) {
+		if(	$this->getCollection() &&
+			!empty($readPref = Billrun_Util::getIn($this->config,strtolower($actionName).'.read_prefernces','')) ) {
+				$this->getCollection()->setReadPreference($readPref);
+		}
 	}
 
 }
