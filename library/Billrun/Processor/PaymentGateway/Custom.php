@@ -96,18 +96,18 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return true;
 	}
         
-        protected function formatLine($row,$dataStructure) {
-            foreach($dataStructure as $index => $paramObj){
-				if (isset($paramObj['value_mult'])) {
-					$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
-				}
-                if(isset($paramObj['decimals'])){
-                    $value = intval($row[$paramObj['name']]);
-                    $row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
-                }
-            }
-            return $row;
-        }
+	protected function formatLine($row,$dataStructure) {
+		foreach($dataStructure as $index => $paramObj){
+			if (isset($paramObj['value_mult'])) {
+				$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
+			}
+			if(isset($paramObj['decimals'])){
+				$value = intval($row[$paramObj['name']]);
+				$row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
+			}
+		}
+		return $row;
+	}
         
 	protected function getBillRunLine($rawLine, $line_index) {
 		$row = $this->ignoreDuplicates ? $rawLine : array_merge($rawLine, ['parser_record_number' => $line_index]);
