@@ -79,9 +79,9 @@ class Billrun_PaymentManager {
 	 * @returns array of pre-payment data for every payment
 	 */
 	protected function preparePayments($method, $paymentsData, &$params = []) {
-		$account = !empty($params['account']) ? (is_array($params['account']) ? $params['account'] : $params['account']->getData()) : null;
+		$account = !empty($params['account']) ? $params['account'] : null;
 		if (!is_null($account)) {
-			Billrun_Factory::log("Preparing payments for account " . $account['aid'], Zend_Log::DEBUG);
+			Billrun_Factory::log("Preparing payments for account " . (is_array($account) ? $account['aid'] : $account->aid), Zend_Log::DEBUG);
 		}
 		$prePayments = [];
 		foreach ($paymentsData as $index => $paymentData) {
