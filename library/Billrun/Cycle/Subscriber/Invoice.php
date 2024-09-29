@@ -642,20 +642,19 @@ class Billrun_Cycle_Subscriber_Invoice {
 	}
 
 	protected function addGroupToTotalGrouping($row) {
-		if($row_grouping_options = $this->getRowGroupOptions($row)) {
-			$groupingKeys = $this->getGroupingKeysforRow($row, $row_grouping_options['fields']);
-			if (isset($groupingKeys['tax_key'])) {
-				foreach ($groupingKeys['tax_key'] as $key => $types) {
-					foreach ($types as $type) {
-						$uniqeGroupingKeys = $groupingKeys;
-						$uniqeGroupingKeys['tax_key'] = !empty($key) ? $key : null;
-						$uniqeGroupingKeys['tax_type'] = !empty($type) ? $type : null;
-						$this->addGroup($uniqeGroupingKeys, $row, $row_grouping_options);
-					}
+		$row_grouping_options = $this->getRowGroupOptions($row);
+		$groupingKeys = $this->getGroupingKeysforRow($row, $row_grouping_options['fields'] ?? []);
+		if (isset($groupingKeys['tax_key'])) {
+			foreach ($groupingKeys['tax_key'] as $key => $types) {
+				foreach ($types as $type) {
+					$uniqeGroupingKeys = $groupingKeys;
+					$uniqeGroupingKeys['tax_key'] = !empty($key) ? $key : null;
+					$uniqeGroupingKeys['tax_type'] = !empty($type) ? $type : null;
+					$this->addGroup($uniqeGroupingKeys, $row, $row_grouping_options);
 				}
-			} else {
-				$this->addGroup($groupingKeys, $row, $row_grouping_options);
 			}
+		} else {
+			$this->addGroup($groupingKeys, $row, $row_grouping_options);
 		}
 	}
 	
@@ -670,7 +669,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 				return ['fields' => $grouping_object['fields'], 'name' => $grouping_object['name']];
 			}
 		}
-		return false;
+		return [];
 	}
 
 	protected function addGroup($uniqeGroupingKeys, $row, $row_grouping_options) {
