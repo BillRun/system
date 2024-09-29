@@ -756,7 +756,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected function getRowCurrentUsagev() {
 		try {
-			if ($this->isPostpayChargeRequest()) {
+			if ($this->isPostpayChargeRequest() || $this->row['type'] === 'credit') {
 				return 0;
 			}
 			$lines_coll = Billrun_Factory::db()->linesCollection();

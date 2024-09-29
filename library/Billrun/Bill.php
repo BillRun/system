@@ -562,6 +562,7 @@ abstract class Billrun_Bill {
 
 	public static function getContractorsInCollection($aids = array()) {
 		$account = Billrun_Factory::account();
+		Billrun_Factory::log()->log("Pulling excluded/included accounts from/in collection, according to the configuration", Zend_Log::DEBUG);
 		$exempted = $account->getExcludedFromCollection($aids);
 		$subject_to = $account->getIncludedInCollection($aids);
 
@@ -583,6 +584,7 @@ abstract class Billrun_Bill {
 			$aidsQuery = array();
 		}
 
+		Billrun_Factory::log()->log("Calculating balance for the accounts that were found relevant for collection", Zend_Log::DEBUG);
 		return static::getBalanceByAids($aidsQuery, true, true, true);
 	}
 
@@ -1179,18 +1181,24 @@ abstract class Billrun_Bill {
 	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false, $include_pending = false) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
+		Billrun_Factory::log()->log("Building 'rejection required' query according to the configuration", Zend_Log::DEBUG);
 		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
 		$accountQuery = Billrun_Account::getBalanceAccountQuery($aids, $is_aids_query, $rejection_required_conditions);
+		Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
+		Billrun_Factory::log()->log("Pulled " . count($currentAccounts) . " accounts. Filtering aids", Zend_Log::DEBUG);
 		$rejection_required_aids = array_column(array_map(function($account) {
 				return $account->getRawData();
 			}, $currentAccounts), 'aid') ?? [];
-
+		Billrun_Factory::log()->log("Building aggregate query", Zend_Log::DEBUG);
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$match = array(
 			'$match' => $nonRejectedOrCanceled,
 		);
-
+		$match['$match']['$or'] = array(
+			array('left' => array('$exists' => true, '$ne' => 0)),
+			array('left_to_pay' => array('$exists' => true, '$ne' => 0))
+		);
 		if (!empty($aids)) {
 			$match['$match']['aid'] = $is_aids_query ? $aids['aid'] : array('$in' => $aids);
 		}
@@ -1313,6 +1321,7 @@ abstract class Billrun_Bill {
 			);
 		}
 		$results = iterator_to_array($billsColl->aggregateWithOptions([$match, $project, $addFields, $group, $project3, $match2], ['allowDiskUse' => true]));
+		Billrun_Factory::log()->log("Combining bills to aids", Zend_Log::DEBUG);
 		return array_combine(array_map(function($ele) {
 				return $ele['aid'];
 			}, $results), $results);
