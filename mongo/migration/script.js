@@ -1490,27 +1490,28 @@ runOnce(lastConfig, 'BRCD-4455', function () {
 
 //BRCD-4415 CG plugin
 runOnce(lastConfig, 'BRCD-4415', function () {
-	var cg_pg_config_index = -1;
-	for (var j = 0; j < lastConfig.payment_gateways.length; j++) {
-        if (lastConfig.payment_gateways[j]['name'] === "CreditGuard") {
-            cg_pg_config_index = j;
-        }
-	}
-
-	var israelInvoicePluginsSettings = {
+	var cgPluginSettings = {
         "name": "creditGuardPlugin",
         "enabled": true,
         "system": true,
         "hide_from_ui": false,
+        "configuration" : {
+            "values" : {
+                "card_expiration_field_name" : "card_expiration",
+                "years_to_extend_card_expiration" : 3,
+                "extend_card_expiration" : true
+            }
+        }
 	}
-	israelInvoicePluginsSettings['configuration'] = {"values" : {}};
-	if (cg_pg_config_index !== -1) {
-		israelInvoicePluginsSettings['configuration']['values'] = lastConfig['payment_gateways'][cg_pg_config_index]['params'];
+	for (var j = 0; j < lastConfig.payment_gateways.length; j++) {
+        if (lastConfig.payment_gateways[j]['name'] === "CreditGuard") {
+            for (let pg_field_name in lastConfig.payment_gateways[j]) {
+                cgPluginSettings['configuration']['values'][pg_field_name] = JSON.parse(JSON.stringify(lastConfig.payment_gateways[j][pg_field_name]));
+            }
+       
+        }
 	}
-	israelInvoicePluginsSettings.configuration.values.card_expiration_field_name = "card_expiration";
-	israelInvoicePluginsSettings.configuration.values.years_to_extend_card_expiration = 0;
-	israelInvoicePluginsSettings.configuration.values.extend_card_expiration = true;
-    lastConfig['plugins'].push(israelInvoicePluginsSettings);
+    lastConfig['plugins'].push(cgPluginSettings);
 });
 
 db.config.insert(lastConfig);

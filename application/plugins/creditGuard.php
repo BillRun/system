@@ -62,8 +62,8 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
         $this->card_expiration_field = Billrun_Util::getIn($options, "card_expiration_field_name", "card_expiration");
         $this->years_to_extend_card_exp = Billrun_Util::getIn($options, "years_to_extend_card_expiration", 3);
         $this->extend_card_expiration = Billrun_Util::getIn($options, "extend_card_expiration", true);
-        $this->mid = Billrun_Util::getIn($options, "mid", null);
-        $this->setTerminals($options);
+        $this->mid = Billrun_Util::getIn($options, "params.mid", null);
+        $this->setTerminals(Billrun_Util::getIn($options, "params", []));
 	}
 
     protected function setTerminals($options) {
