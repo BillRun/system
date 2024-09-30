@@ -1492,7 +1492,7 @@ runOnce(lastConfig, 'BRCD-4455', function () {
 runOnce(lastConfig, 'BRCD-4415', function () {
 	var cgPluginSettings = {
         "name": "creditGuardPlugin",
-        "enabled": true,
+        "enabled": false,
         "system": true,
         "hide_from_ui": false,
         "configuration" : {

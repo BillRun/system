@@ -76,13 +76,18 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
 
     /**
      * Function to update cp request file line fields
-     * @var Billrun_Generator_PaymentGateway_Custom - cpf generator
-     * @var array $account - account data
-     * @var array $params - list of params that the data line will pull from
-     * @var array $bill - relevnat bill to pay
+     * @var array $type - cpf type
      * @var array $payment - request pending payment
+     * @var array $params - list of params that the data line will pull from
+     * @var array $extra_saved_fields - array of custom field_name => field_value that are added to cpf bills
+     * @var array $cpf_custom_field_names - array of custom field names that are added to cpf bills
+     * @var array $account - account data
+     * @var Billrun_Generator_PaymentGateway_Custom - cpf generator
      */
-    public function beforeGetTransactionsRequestDataLine ($cpf_generator, $account, &$params, $bill, $payment) {
+    public function beforeGettingRequestFilePaymentDataLine($type,$payment, &$params, &$extra_saved_fields ,&$cpf_custom_field_names, $account, $cpf_generator) {
+        if ($type != 'transactions_request') {
+			return;
+		}
         $config = $cpf_generator->getPgConfig();
         $terminal_and_tran_type = $this->getTerminalAndTransactionType($account);
         foreach ($config['generator']['data_structure'] as $index => &$param_obj) {
@@ -168,8 +173,10 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
         Billrun_Factory::log()->log("creditGuardPlugin : calculating auth number for account " . $account['aid'], Zend_Log::DEBUG);
         $auth_num = Billrun_Util::getIn($gatewayDetails, "auth_number", null);
         if (empty($auth_num)) {
+            Billrun_Factory::log()->log("creditGuardPlugin : auth number is empty for account " . $account['aid'], Zend_Log::ALERT);
             return null;
         }
+        Billrun_Factory::log()->log("creditGuardPlugin : found auth number for account " . $account['aid'], Zend_Log::DEBUG);
         return $auth_num;
     }
 }
