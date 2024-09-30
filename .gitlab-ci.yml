@@ -35,11 +35,12 @@ codecept:
     - docker-compose -f docker-compose-php73-tests.yml up --wait --build --detach
   script:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/
+    - docker exec -w /billrun billrun-app php vendor/bin/codecept build
+    - docker exec -w /billrun billrun-app php vendor/bin/codecept run unit
+    - docker exec -w /billrun billrun-app php vendor/bin/codecept run functional
+    - docker exec -w /billrun billrun-app php vendor/bin/codecept run api
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run acceptance
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run all 
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run api
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run functional
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run unit
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php73-tests.yml down --remove-orphans
 include:
