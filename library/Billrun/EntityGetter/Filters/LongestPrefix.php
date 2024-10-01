@@ -28,7 +28,7 @@ class Billrun_EntityGetter_Filters_LongestPrefix extends Billrun_EntityGetter_Fi
 	protected function updateGroupQuery(&$group, $row) {
 		$group['_id'] = array_merge(
 			$group['_id'],
-			array("pref" => "$" . $this->params['entity_key'])
+			array($this->getAggregatedPrefixFieldName() => "$" . $this->params['entity_key'])
 		);
 		$group[$this->getAggregatedPrefixFieldName()] = array('$first' => "$" . $this->params['entity_key']);
 	}
