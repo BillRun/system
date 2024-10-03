@@ -120,7 +120,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$subData = $sub->getData();
 				$key = !empty($subData['id']) ? $subData['id'] :
 					(!empty($subData['stamp']) ? $subData['stamp'] : $key );
-				$subs_by_stamp[$key] = $sub;
+				if(!empty($subData['sid'])) {
+					$subs_by_stamp[$key] = $sub;
+				}
 			}
 			$this->subscribers = $subs_by_stamp;
 			$this->subscribers_by_stamp = true;
@@ -134,7 +136,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$accountData = $account->getData();
 				$key = !empty($accountData['id']) ? $accountData['id'] :
 					(!empty($accountData['stamp']) ? $accountData['stamp'] : $key );
-				$accounts_by_stamp[$key] = $account;
+				if(!empty($accountData['aid'])) {
+					$accounts_by_stamp[$key] = $account;
+				}
 			}
 			$this->accounts = $accounts_by_stamp;
 			$this->accounts_by_stamp = true;
