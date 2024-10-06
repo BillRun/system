@@ -189,12 +189,11 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			if (isset($exhaustedBalancesKeys)) {
 				$balancesIncludeRow = array_merge($balancesIncludeRow, $exhaustedBalancesKeys);
-			} else {
-				if ($this->extraUsage < $row['usagev']) {
-					$row['plan_usage'] = $row['usagev'] - $this->extraUsage;
-					if(!empty( $this->partialBaseUsage)) {
-						$row['base_arategroups'] = $this->partialBaseUsage;
-					}
+			}
+			if ($this->extraUsage < $row['usagev']) {
+				$row['plan_usage'] = $row['usagev'] - $this->extraUsage;
+				if(!empty( $this->partialBaseUsage)) {
+					$row['base_arategroups'] = $this->partialBaseUsage;
 				}
 			}
 			if (isset($balancesIncludeRow)) {
