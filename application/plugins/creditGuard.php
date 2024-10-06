@@ -44,7 +44,7 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
      * Transaction types array
      * @var array 
      */
-    protected $tranTypes = array("RecurringDebit" => "11", "Debit" => "01");
+    protected $tranTypes = array("RecurringDebit" => "11", "Debit" => "01", "credit" => "51");
 
     /**
      * Terminals
@@ -89,7 +89,7 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return;
 		}
         $config = $cpf_generator->getPgConfig();
-        $terminal_and_tran_type = $this->getTerminalAndTransactionType($account);
+        $terminal_and_tran_type = $this->getTerminalAndTransactionType($account, $payment);
         foreach ($config['generator']['data_structure'] as $index => &$param_obj) {
             switch ($param_obj['name']) {
                 case 'terminal_type':
@@ -147,14 +147,18 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
         }
     }
 
-    protected function getTerminalAndTransactionType($account) {
+    protected function getTerminalAndTransactionType($account, $payment) {
         $gatewayDetails = $account['payment_gateway']['active'];
         Billrun_Factory::log()->log("creditGuardPlugin : calculating CG terminal and transaction type for account " . $account['aid'], Zend_Log::DEBUG);
         if (isset($gatewayDetails['card_type']) && (in_array($gatewayDetails['card_type'], [$this->cardTypes['Debit'], $this->cardTypes['Rechargeable']]))) {
-            return ['terminal' => 'onetime_terminal', 'transaction' => $this->tranTypes['Debit']];
+            $res = ['terminal' => 'onetime_terminal', 'transaction' => $this->tranTypes['Debit']];
         } else {
-            return ['terminal' => 'charging_terminal', 'transaction' => $this->tranTypes['RecurringDebit']];
+            $res = ['terminal' => 'charging_terminal', 'transaction' => $this->tranTypes['RecurringDebit']];
         }
+        if ($payment->getDir() == 'tc') {
+            $res['transaction'] = $this->tranTypes['credit'];
+        }
+        return $res;
     }
 
     protected function getTerminalNumber($account, $terminal_type) {
