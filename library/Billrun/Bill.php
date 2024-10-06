@@ -1646,7 +1646,10 @@ abstract class Billrun_Bill {
 	 * @param int - urt - relative time 
 	 */
 	public static function shouldSwitchBillsLinks($urt = null) {
-		$switch_links_config = Billrun_Factory::config()->getConfigValue('bills.switch_links', true);
+		$switch_links_config = Billrun_Factory::config()->getConfigValue('bills.switch_links', false);
+		if (!$switch_links_config) {
+			return false;
+		}
 		$query = [
 			'urt' => array(
 				'$lt' => new Mongodloid_Date(is_null($urt) ? time() : $urt)
@@ -1662,7 +1665,7 @@ abstract class Billrun_Bill {
 			
 		];
 		$query = array_merge($query, Billrun_Bill::getNotRejectedOrCancelledQuery());
-		return $switch_links_config && count(static::getBills($query));
+		return count(static::getBills($query));
 	}
 
 	public function setBillData($data) {
