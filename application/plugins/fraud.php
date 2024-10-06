@@ -345,6 +345,7 @@ public function afterPricingDoneWithBalance($row, $balance, $pricingData, $calcu
 		}
 
 		$usaget = $row['usaget'];
+		$rowBaseARateGroups = $baseARateGroups = [];
 
 		// if the limit for specific plans
 		// @todo: make the first if-condition as override (means be able to apply limit & exclude together)
@@ -354,7 +355,16 @@ public function afterPricingDoneWithBalance($row, $balance, $pricingData, $calcu
 		) {
 			return false;
 		} else if (isset($rule['limitGroups'])) { // if limit by specific groups
-			if ((is_array($rule['limitGroups']) && isset($row['arategroup']) && !in_array(strtoupper($row['arategroup']), $rule['limitGroups'])) || !isset($row['arategroup'])) {
+			//if there  are  partial  base group (group included in plan)  usage  on the row then  filter the  groups  by the liit  groups
+			$baseARateGroups = @is_array($rule['limitGroups']) && !empty($row['base_arategroups']) && is_array($row['base_arategroups']) ?
+									array_filter( function($v) use ($rule) {
+													return in_array(strtoupper($v['group']),['limitGroups']);
+												},$row['base_arategroups'] ) :
+									[];
+			$rowBaseARateGroups = array_combine(array_column($baseARateGroups,'group'),array_column($baseARateGroups,'usage'));
+			if ((is_array($rule['limitGroups']) && isset($row['arategroup']) && !in_array(strtoupper($row['arategroup']), $rule['limitGroups']))  &&
+				( empty($baseARateGroups) )
+				|| !isset($row['arategroup'])) {
 				return false;
 			}
 		}
@@ -381,17 +391,24 @@ public function afterPricingDoneWithBalance($row, $balance, $pricingData, $calcu
 				$before+=$value;
 			}
 		} else if (isset($rule['limitGroups'])) {
-			$before = isset($balance['groups'][$row['arategroup']][$usaget]['usagev']) ? $balance['groups'][$row['arategroup']][$usaget]['usagev'] : 0;
+			if( empty($baseARateGroups) ) {
+				$before = isset($balance['groups'][$row['arategroup']][$usaget]['usagev']) ? $balance['groups'][$row['arategroup']][$usaget]['usagev'] : 0;
+			} else {
+				foreach($rowBaseARateGroups as $groupName => $groupVal ) {
+					$prevGroupUsage += isset($balance['groups'][$groupName][$usaget]['usagev']) ? $balance['groups'][$groupName][$usaget]['usagev'] : 0;
+				}
+				$before = $prevGroupUsage;
+			}
 		} else { // fallback: rule based on general usage 
 			$before = $balance['totals'][$usaget]['usagev'];
 		}
 		if (isset($rule['inPlanThreshold']) && $rule['inPlanThreshold']) {
 			$overPlan = isset($row['over_plan']) && empty($rule['only_in_plan_threshold']) ? $row['over_plan'] : 0;
-			$inPlan = isset($row['in_plan']) ? $row['in_plan'] : 0;
+			$inPlan = isset($row['plan_usage']) ? $row['plan_usage'] : (isset($row['in_plan']) ? $row['in_plan'] : 0);
 			$adjustAfter = isset($rule['in_plan_after_adjustment']) ? $rule['in_plan_after_adjustment'] : 0;
 			$after = $before + $inPlan + $overPlan + $adjustAfter;
 		} else {
-			$after = $before + $row['usagev'];
+			$after = $before + ( !empty($rowBaseARateGroups) ? array_sum(array_values($rowBaseARateGroups)) : $row['usagev'] );
 		}
 
 		if ($rule['threshold'] == 'from_plan') {
