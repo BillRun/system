@@ -192,6 +192,9 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				if ($this->extraUsage < $row['usagev']) {
 					$row['plan_usage'] = $row['usagev'] - $this->extraUsage;
+					if(!empty( $this->partialBaseUsage)) {
+						$row['base_arategroups'] = $this->partialBaseUsage;
+					}
 				}
 			}
 			if (isset($balancesIncludeRow)) {
@@ -301,6 +304,15 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 		ksort($addonBalancesByOrder);
+		//If No  addon is legitimate and there was a partial usage  using a base group use the  base group.
+		if(empty($addonBalancesByOrder)) {
+			if(!empty($this->partialBaseUsage)) {
+				$rateUsageIncluded += array_sum(array_column($this->partialBaseUsage,'usage'));
+				$groupSelected = end(array_column($this->partialBaseUsage,'group'));
+			}
+			return;
+		}
+
 		foreach ($addonBalancesByOrder as $balance) {
 			$balancePackage = $balance['service_name'];
 			if (!isset($plan->get('include.groups.' . $balancePackage)[$usageType])) {
@@ -337,7 +349,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$rateUsageIncluded = 0;
 		}
 		
-		if(floor($roundedUsage - $subscriberBalance['balance']['groups'][$groupSelected][$this->row['usaget']]['usagev']) <= 0) {
+		if(floor($rateUsageIncluded - $subscriberBalance['balance']['groups'][$groupSelected][$this->row['usaget']]['usagev']) <= 0) {
 			$this->balanceToUpdate = null;
 			$this->exhaustedBalances = array();
 			$groupSelected = FALSE;
