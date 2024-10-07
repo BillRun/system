@@ -357,9 +357,9 @@ public function afterPricingDoneWithBalance($row, $balance, $pricingData, $calcu
 		} else if (isset($rule['limitGroups'])) { // if limit by specific groups
 			//if there  are  partial  base group (group included in plan)  usage  on the row then  filter the  groups  by the liit  groups
 			$baseARateGroups = @is_array($rule['limitGroups']) && !empty($row['base_arategroups']) && is_array($row['base_arategroups']) ?
-									array_filter( function($v) use ($rule) {
-													return in_array(strtoupper($v['group']),['limitGroups']);
-												},$row['base_arategroups'] ) :
+									array_filter($row['base_arategroups'], function($v) use ($rule) {
+													return in_array(strtoupper($v['group']),$rule['limitGroups']);
+												} ) :
 									[];
 			$rowBaseARateGroups = array_combine(array_column($baseARateGroups,'group'),array_column($baseARateGroups,'usage'));
 			if ((is_array($rule['limitGroups']) && isset($row['arategroup']) && !in_array(strtoupper($row['arategroup']), $rule['limitGroups']))  &&
