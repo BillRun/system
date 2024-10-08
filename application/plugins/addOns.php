@@ -246,7 +246,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			$this->extraUsage = $currentVolume - $baseUsagePlanIncluded;
 			$this->basePlanCurrentUse = $baseUsagePlanIncluded - $usedUsageInBasePlan;
-			array_push($this->partialBaseUsage, array('group' => $groupSelected, 'usage' => $this->basePlanCurrentUse));
+			array_push($this->partialBaseUsage, array('group' => $groupSelected, 'usage' => $this->basePlanCurrentUse,'included_usage'=> $baseUsagePlanIncluded));
 			$this->isBaseUsage = true;
 			if (empty($matchedPackages)) {
 				return;
@@ -306,7 +306,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		//If No  addon is legitimate and there was a partial usage  using a base group use the  base group.
 		if(empty($addonBalancesByOrder)) {
 			if(!empty($this->partialBaseUsage)) {
-				$rateUsageIncluded = array_sum(array_column($this->partialBaseUsage,'usage'));
+				$rateUsageIncluded = array_sum(array_column($this->partialBaseUsage,'included_usage'));
 				$groupSelected = end(array_column($this->partialBaseUsage,'group'));
 				return;
 			}
