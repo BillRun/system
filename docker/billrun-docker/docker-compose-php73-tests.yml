@@ -38,7 +38,7 @@ services:
         volumes:
             - ${PWD}/../..:/billrun:ro
             # - ${PWD}/../persist/data/db/mongo-3.6:/data/db
-            # - ${PWD}/../persist/backup:/backup
+            # - ${PWD}/../persist/backup:/backup 
             - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
         ports:
             - 27018:27017
