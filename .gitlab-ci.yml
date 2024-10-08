@@ -16,7 +16,8 @@ codecept:
   services:
    - name: docker:dind
      alias: dockerhost
-  when: manual
+  rules:
+   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   variables:
     DOCKER_HOST: tcp://dockerhost:2375/
     DOCKER_DRIVER: overlay2
