@@ -16,7 +16,9 @@ class Billrun_Collection extends Billrun_Base {
 
 	public function collect($aids = array(), $collectDir = '') {
 		$account = Billrun_Factory::account();
+		Billrun_Factory::log()->log("Pulling accounts that are subject to collection", Zend_Log::DEBUG);
 		$markedAsInCollection = $account->getInCollection($aids);
+		Billrun_Factory::log()->log("Processing accounts that are actually in collection", Zend_Log::DEBUG);
 		$reallyInCollection = Billrun_Bill::getContractorsInCollection($aids);
 		if ($collectDir == 'enter_collection' || empty($collectDir)) {
 			$updateCollectionStateChanged['in_collection'] = array_diff_key($reallyInCollection, $markedAsInCollection);
@@ -24,6 +26,7 @@ class Billrun_Collection extends Billrun_Base {
 		if ($collectDir == 'exit_collection' || empty($collectDir)) {
 			$updateCollectionStateChanged['out_of_collection'] = array_diff_key($markedAsInCollection, $reallyInCollection);
 		}
+		Billrun_Factory::log()->log("Updating crm if needed", Zend_Log::DEBUG);
 		$result = $account->updateCrmInCollection($updateCollectionStateChanged);
 		return $result;
 	}

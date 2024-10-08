@@ -146,7 +146,8 @@ class SuggestionsList extends Component {
     this.setState(() => ({ creditInProcess: true }));
     this.props.dispatch(creditSuggestion(suggestion))
       .then(() => {
-        this.getSuggestions();
+        return this.getSuggestions();
+      }).finally(() => {
         this.setState(() => ({ creditInProcess: false }));
       });
   }
@@ -168,7 +169,11 @@ class SuggestionsList extends Component {
   getSuggestions = () => {
     const { aid } = this.props;
     if (aid !== null) {
-      this.props.dispatch(getSuggestionsByAid(aid));
+      this.setState(() => ({ creditInProcess: true }));
+      return this.props.dispatch(getSuggestionsByAid(aid))
+        .then(() => {
+          this.setState(() => ({ creditInProcess: false }));
+        });
     }
   }
 

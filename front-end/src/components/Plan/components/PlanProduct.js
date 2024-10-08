@@ -184,7 +184,7 @@ export default class PlanProduct extends Component {
                   value={percentage}
                   editable={editable}
                   suffix="%"
-                  max={100}
+                  max={10000}
                   min={0}
                   step={1}
                 />

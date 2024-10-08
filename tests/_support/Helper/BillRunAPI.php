@@ -183,7 +183,10 @@ class BillRunAPI extends \Codeception\Module
                 ]
             ],
             "from" => "2024-02-02",
-            "prorated" => true
+            "prorated" => true,
+            "recurrence" =>[
+                "periodicity" => "month"
+            ]
         ], $override);
         $this->sendBillapiCreate($service, 'services');
     }
