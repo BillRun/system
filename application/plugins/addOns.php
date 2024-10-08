@@ -308,8 +308,9 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if(!empty($this->partialBaseUsage)) {
 				$rateUsageIncluded = array_sum(array_column($this->partialBaseUsage,'usage'));
 				$groupSelected = end(array_column($this->partialBaseUsage,'group'));
+				return;
 			}
-			return;
+
 		}
 
 		foreach ($addonBalancesByOrder as $balance) {
