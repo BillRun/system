@@ -677,23 +677,24 @@ array('row' => array('stamp' => 'ow28', 'aid' => 95017, 'sid' => 95019, 'rates' 
 		array('rebalance' => true, 'row' => array('stamp' => 'ow20', 'aid' => 95017, 'sid' => 95019, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'POOLD_CUSTOM', 'from' => '2017-09-01', 'to' => '2017-09-14', "quantity_affected" => true, "quantity" => 1]], 'urt' => '2017-09-14 23:11:45+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 50, 'aprice' => 50, 'charge' => array('retail' => 50,))),
 // 		//1st sub multiple quantity by 1 ,2nd not have any group
-// 		array('rebalance' => true, 'row' => array('stamp' => 'ow21', 'aid' => 43, 'sid' => 44, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'POOLD_CUSTOM', 'from' => '2017-09-01', 'to' => '2017-09-14', "quantity_affected" => true, "quantity" => 1]], 'urt' => '2017-09-14 23:11:45+03:00',),
-// 			'expected' => array('in_group' => 50, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
-// 	
+		array('rebalance' => true, 'row' => array('stamp' => 'ow21', 'aid' => 43, 'sid' => 44, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'POOLD_CUSTOM', 'from' => '2017-09-01', 'to' => '2017-09-14', "quantity_affected" => true, "quantity" => 1]], 'urt' => '2017-09-14 23:11:45+03:00',),
+			'expected' => array('in_group' => 50, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
+			array('rebalance' => true, 'row' => array('stamp' => 'ow29', 'aid' => 43, 'sid' => 45, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'urt' => '2017-09-14 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 0, 'out_group' => 50, 'aprice' => 50, 'charge' => array('retail' => 50,))),
 
-// 		//w19 + w20 are test for https://billrun.atlassian.net/browse/BRCD-1493
-// 		array('row' => array('stamp' => 'ow22', 'aid' => 50, 'sid' => 551, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 110, 'urt' => '2018-11-16 23:11:45+03:00',
-// 				'services_data' => [
-// 					['name' => 'CALL', 'from' => '2017-08-01', 'to' => '2030-09-01', "plan_included" => false, "service_id" => "123", "quantity" => 1],
-// 					['name' => 'CALL', 'from' => '2017-08-01', 'to' => '2030-09-01', "plan_included" => false, "service_id" => "1234", "quantity" => 1]
-// 				]),
-// 			'expected' => array('in_group' => 110, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 110,))),
-// 		array('rebalance' => true, 'row' => array('stamp' => 'ow23', 'aid' => 50, 'sid' => 551, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 100, 'urt' => '2018-11-16 23:11:45+03:00',
-// 				'services_data' => [
-// 					['name' => 'CALL', 'from' => '2017-08-01 ', 'to' => '2030-09-01', "plan_included" => false, "service_id" => "123", "quantity" => 1],
-// 					['name' => 'CALL', 'from' => '2017-08-01', 'to' => '2030-09-01', "plan_included" => false, "service_id" => "1234", "quantity" => 1]
-// 				]),
-// 			'expected' => array('in_group' => 90, 'over_group' => 10, 'aprice' => 10, 'charge' => array('retail' => 110,))),
+// 		// are test for https://billrun.atlassian.net/browse/BRCD-1493
+		array('row' => array('stamp' => 'ow22', 'aid' => 95025, 'sid' => 95026, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 110, 'urt' => '2017-09-01 23:11:45+03:00',
+				'services_data' => [
+					['name' => 'MUL_CUSTOM', 'from' => '2017-09-01', 'to' => '2017-09-14', "plan_included" => false, "quantity" => 1],
+					['name' => 'MUL_CUSTOM', 'from' => '2017-09-01', 'to' => '2017-09-14', "plan_included" => false, "quantity" => 1]
+				]),
+			'expected' => array('in_group' => 110, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 110,))),
+		array('rebalance' => true, 'row' => array('stamp' => 'ow23', 'aid' => 95025, 'sid' => 95026, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 100, 'urt' => '2017-09-01 23:11:45+03:00',
+				'services_data' => [
+					['name' => 'MUL_CUSTOM', 'from' => '2017-09-01 ', 'to' => '2017-09-14', "plan_included" => false,  "quantity" => 1],
+					['name' => 'MUL_CUSTOM', 'from' => '2017-09-01', 'to' => '2017-09-14', "plan_included" => false, "quantity" => 1]
+				]),
+			'expected' => array('in_group' => 90, 'over_group' => 10, 'aprice' => 10, 'charge' => array('retail' => 110,))),
 		];
 	}
 
