@@ -26,7 +26,8 @@ class Tests_Updaterowt extends UnitTestCase {
 	protected $servicesToUse = ["SERVICE1", "SERVICE2"];
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
-	protected $rows = [
+	public function tests() { 
+		return [
 		//New tests for new override price and includes format
 //		case F: NEW-PLAN-X3+NEW-SERVICE1+NEW-SERVICE2
 //Test num 1 f1
@@ -150,10 +151,12 @@ class Tests_Updaterowt extends UnitTestCase {
 			'expected' => array('in_group' => 0, 'over_group' => 8, 'aprice' => 0.8, 'charge' => array('retail' => 0.8,))),
 		//case C: PLAN-A0 (without groups)+SERVICE1+SERVICE4  
 //Test num 38 c1
-		array('row' => array('stamp' => 'c1', 'sid' => 53, 'rates' => array('VEG' => 'retail'), 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services_data' => ['SERVICE4',],),
+		array('row' => array('stamp' => 'c1', 'sid' => 53, 'rates' => array('VEG' => 'retail'), 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 35,
+		 'services_data' => ['SERVICE4',],),
 			'expected' => array('in_group' => 35, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 //Test num 39 c2
-		array('row' => array('stamp' => 'c2', 'sid' => 53, 'rates' => array('CALL-USA' => 'retail'), 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 35.5, 'services_data' => ['SERVICE1',],),
+		array('row' => array('stamp' => 'c2', 'sid' => 53, 'rates' => array('CALL-USA' => 'retail'), 'plan' => 'PLAN-A0', 'usaget' => 'call', 
+		'usagev' => 35.5, 'services_data' => ['SERVICE1',],),
 			'expected' => array('in_group' => 35.5, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 //Test num 40 c3
 		array('row' => array('stamp' => 'c3', 'sid' => 53, 'rates' => array('VEG' => 'retail'), 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 180, 'services_data' => ['SERVICE4',],),
@@ -451,11 +454,11 @@ class Tests_Updaterowt extends UnitTestCase {
 				],
 				'urt' => '2020-06-05 23:11:45+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 50, 'aprice' => 50, 'charge' => array('retail' => 50,))),
-	];
+	];}
 
 	public function __construct($label = false) {
 		parent::__construct("test UpdateRow");
-
+		$this->autoload_tests('updaterowtTestCases');
 		date_default_timezone_set('Asia/Jerusalem');
 		$this->ratesCol = Billrun_Factory::db()->ratesCollection();
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
@@ -471,6 +474,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	}
 
 	public function testUpdateRow() {
+		$this->rows =  $this->getTestCases($this->tests());
 		$this->rows  = $this->skip_tests($this->rows ,'row.stamp');
 		//running test
 		foreach ($this->rows as $key => $row) {
