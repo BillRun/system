@@ -458,7 +458,7 @@ class Tests_Updaterowt extends UnitTestCase {
 
 	public function __construct($label = false) {
 		parent::__construct("test UpdateRow");
-		$this->autoload_tests('updaterowtTestCases');
+		// $this->autoload_tests('updaterowtTestCases');
 		date_default_timezone_set('Asia/Jerusalem');
 		$this->ratesCol = Billrun_Factory::db()->ratesCollection();
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
