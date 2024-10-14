@@ -128,17 +128,19 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
 
     protected function getCardExpiration($account) {
         $gatewayDetails = $account['payment_gateway'];
+        $current_gateway_details = Billrun_Util::getIn($gatewayDetails, "active", null);
+        if (empty($current_gateway_details)) {
+            Billrun_Factory::log()->log("creditGuardPlugin : No active payment_gateway details of account " . $account['aid'] . ". Missing card expiration field data in request file line", Zend_Log::ALERT);
+            return false;
+        } else {
+            Billrun_Factory::log()->log("creditGuardPlugin : Found active payment_gateway details of account " . $account['aid'], Zend_Log::DEBUG);
+        }
         Billrun_Factory::log()->log("creditGuardPlugin : calculating card expiration extension for account " . $account['aid'], Zend_Log::DEBUG);
         if (!$this->extend_card_expiration) {
-            Billrun_Factory::log()->log("creditGuardPlugin : Extend card expiration flag is off", Zend_Log::DEBUG);
+            Billrun_Factory::log()->log("creditGuardPlugin : Extend card expiration flag is off. Saving the original card expiration field value", Zend_Log::DEBUG);
+            return $current_gateway_details[$this->card_expiration_field];
         } else {
             Billrun_Factory::log()->log("creditGuardPlugin : Extend card expiration flag is on", Zend_Log::DEBUG);
-            $current_gateway_details = Billrun_Util::getIn($gatewayDetails, "active", null);
-            if (empty($current_gateway_details)) {
-                Billrun_Factory::log()->log("creditGuardPlugin : No active payment_gateway details of account " . $account['aid'] . ". Missing card expiration field data in request file line", Zend_Log::ALERT);
-                return;
-            }
-            Billrun_Factory::log()->log("creditGuardPlugin : Found active payment_gateway details of account " . $account['aid'], Zend_Log::DEBUG);
             $current_card_expiration = $current_gateway_details[$this->card_expiration_field];
             Billrun_Factory::log()->log("creditGuardPlugin : Current card expiration of account " . $account['aid'] . " is " . $current_card_expiration, Zend_Log::DEBUG);
             $file_card_expiration = substr($current_card_expiration, 0, 2) . ((substr($current_card_expiration, 2, 4) + $this->years_to_extend_card_exp) % 100);
@@ -183,4 +185,39 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
         Billrun_Factory::log()->log("creditGuardPlugin : found auth number for account " . $account['aid'], Zend_Log::DEBUG);
         return $auth_num;
     }
+
+    public function getConfigurationDefinitions() {
+		return [
+            [
+				'type' => 'boolean',
+				'field_name' => 'extend_card_expiration',
+				'title' => 'Extend card expiration',
+				'mandatory' => false,
+				'editable' => true,
+				'display' => true,
+				'nullable' => false,
+				'default' => true
+			],
+            [
+				"type" => "string",
+				"field_name" => "card_expiration_field_name",
+				"title" => "Card expiration field name",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true,
+                "default" => "card_expiration"
+			],
+            [
+				"type" => "number",
+				"field_name" => "years_to_extend_card_expiration",
+				"title" => "Years to extend card expiration",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true,
+                "default" => 3
+			]
+		];
+	}
 }
