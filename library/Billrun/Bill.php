@@ -557,15 +557,17 @@ abstract class Billrun_Bill {
 	}
 	
 	/**
-	 * 
-	 * @param int $id
+	 * Function to get bill instance, using it's type (inv/rec) and id
+	 * @param string $type - inv/rec
+	 * @param int $id - entity BillRun id
+	 * @param string read_preference - caller can choose the read preference that is used to pull the data of the returned bill 
 	 * @return Billrun_Bill_Invoice
 	 */
-	public static function getInstanceByTypeAndid($type, $id) {
+	public static function getInstanceByTypeAndid($type, $id, $read_preference = null) {
 		if ($type == 'inv') {
-			return Billrun_Bill_Invoice::getInstanceByid($id);
+			return Billrun_Bill_Invoice::getInstanceByid($id, $read_preference);
 		} else if ($type == 'rec') {
-			return Billrun_Bill_Payment::getInstanceByid($id);
+			return Billrun_Bill_Payment::getInstanceByid($id, $read_preference);
 		}
 		throw new Exception('Unknown bill type');
 	}
@@ -1646,7 +1648,10 @@ abstract class Billrun_Bill {
 	 * @param int - urt - relative time 
 	 */
 	public static function shouldSwitchBillsLinks($urt = null) {
-		$switch_links_config = Billrun_Factory::config()->getConfigValue('bills.switch_links', true);
+		$switch_links_config = Billrun_Factory::config()->getConfigValue('bills.switch_links', false);
+		if (!$switch_links_config) {
+			return false;
+		}
 		$query = [
 			'urt' => array(
 				'$lt' => new Mongodloid_Date(is_null($urt) ? time() : $urt)
@@ -1662,7 +1667,7 @@ abstract class Billrun_Bill {
 			
 		];
 		$query = array_merge($query, Billrun_Bill::getNotRejectedOrCancelledQuery());
-		return $switch_links_config && count(static::getBills($query));
+		return count(static::getBills($query));
 	}
 
 	public function setBillData($data) {

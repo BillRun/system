@@ -99,12 +99,13 @@ class Billrun_Bill_Invoice extends Billrun_Bill {
 	}
 
 	/**
-	 * 
+	 * * Function to get bill instance, using it's id
 	 * @param int $id
+	 * @param string read_preference - caller can choose the read preference that is used to pull the data of the returned bill 
 	 * @return Billrun_Bill_Invoice
 	 */
-	public static function getInstanceByid($id) {
-		$data = Billrun_Factory::db()->billsCollection()->query('type', 'inv')->query('invoice_id', $id)->cursor()->current();
+	public static function getInstanceByid($id, $read_preference = null) {
+		$data = Billrun_Factory::db()->billsCollection()->query('type', 'inv')->query('invoice_id', $id)->cursor()->setReadPreference($read_preference)->current();
 		if ($data->isEmpty()) {
 			return NULL;
 		}

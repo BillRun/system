@@ -424,7 +424,7 @@ class Billrun_PaymentManager {
 	 */
 	protected function handleSuccessPayments($postPayments, $params = []) {
 		Billrun_Factory::log("Handling success payments function was called", Zend_Log::DEBUG);
-		$switch_links = Billrun_Factory::config()->getConfigValue('bills.switch_links', true);
+		$switch_links = Billrun_Factory::config()->getConfigValue('bills.switch_links', false);
 		Billrun_Factory::log("Switch links flag value is " . ($switch_links ? "true" : "false"), Zend_Log::DEBUG);
 		foreach ($postPayments as $index => $postPayment) {
 			Billrun_Factory::log("Handling post payment number " . $index, Zend_Log::DEBUG);
