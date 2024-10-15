@@ -1,7 +1,7 @@
 from php:7.4-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install --no-install-recommends -y \
         wkhtmltopdf wget  \
 		libpng-dev zlib1g-dev libzip-dev libgmp-dev \
                 unzip openjdk-11-jre-headless \
