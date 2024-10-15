@@ -151,7 +151,8 @@ class Tests_Updaterowt extends UnitTestCase {
 			'expected' => array('in_group' => 0, 'over_group' => 8, 'aprice' => 0.8, 'charge' => array('retail' => 0.8,))),
 		//case C: PLAN-A0 (without groups)+SERVICE1+SERVICE4  
 //Test num 38 c1
-		array('row' => array('stamp' => 'c1', 'sid' => 53, 'rates' => array('VEG' => 'retail'), 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 35,'services_data' => ['SERVICE4',],),'expected' => array('in_group' => 35, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
+		array('row' => array('stamp' => 'c1', 'sid' => 53, 'rates' => array('VEG' => 'retail'), 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 35,'services_data' => ['SERVICE4',],),
+		    'expected' => array('in_group' => 35, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 //Test num 39 c2
 		array('row' => array('stamp' => 'c2', 'sid' => 53, 'rates' => array('CALL-USA' => 'retail'), 'plan' => 'PLAN-A0', 'usaget' => 'call', 
 		'usagev' => 35.5, 'services_data' => ['SERVICE1',],),
