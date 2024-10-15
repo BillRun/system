@@ -215,13 +215,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 
 	/**
-	 * 
+	 * Function to get bill instance, using it's id
 	 * @param string $id
+	 * @param string read_preference - caller can choose the read preference that is used to pull the data of the returned bill 
 	 * @return Billrun_Bill_Payment
 	 */
-	public static function getInstanceByid($id) {
+	public static function getInstanceByid($id, $read_preference = null) {
                 $id = self::padTxId($id);
-		$data = Billrun_Factory::db()->billsCollection()->query('txid', $id)->cursor()->current();
+		$data = Billrun_Factory::db()->billsCollection()->query('txid', $id)->cursor()->setReadPreference($read_preference)->current();
 		if ($data->isEmpty()) {
 			return NULL;
 		}
@@ -909,7 +910,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return $ids;
 	}
 
-	public function markApproved($status) {
+	public function markApproved($status, $read_preference = null) {
 		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
 		if ($switch_links) {
 			static::detachPendingPayments($this->getAid());
@@ -917,7 +918,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$this->setUpdatedPaymentAfterPayingUnpaidBills(Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid(), true, $switch_links));
 		}
 		foreach ($this->getPaidBills() as $bill) {
-			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
+			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id'], $read_preference);
 			$billObj->updatePendingBillToConfirmed($this->getId(), $status, $this->getType())->save();
 		}
 	}

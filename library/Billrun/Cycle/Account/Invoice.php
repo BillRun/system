@@ -61,6 +61,8 @@ class Billrun_Cycle_Account_Invoice {
 	protected $groupingEnabled = true;
 
 	protected $aggregationTranslations = [];
+	protected $constructOptions = [];
+
 
         /**
 	 * @todo used only in current balance API. Needs refactoring
@@ -71,8 +73,9 @@ class Billrun_Cycle_Account_Invoice {
 		$this->constructByOptions($options);
 		$this->populateInvoiceWithAccountData($options['attributes']);
 		$this->initInvoiceDates();
-                $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
-				$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array()); 
+		$this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true);
+		$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array());
+		$this->constructOptions = $options;
 	}
 
 	/**
@@ -472,7 +475,7 @@ class Billrun_Cycle_Account_Invoice {
 									return !empty($sub['sid']) && (!$ignoreSubsWithNoPlans || !is_null($sub['totals']['flat']['after_vat']) );
 								}));
 
-		if(	$hasActiveSubscribers || !empty($this->data['totals']['after_vat_rounded']) ) {
+		if(	$hasActiveSubscribers || !empty($this->data['totals']['after_vat_rounded'])  || !empty($this->constructOptions['force_active']) ) {
 			 return true;
 		}
 		$accountActivenessLinesHistory = Billrun_Factory::config()->getConfigValue("pricing.months_limit", 3);
@@ -547,6 +550,9 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	protected function sumUpGroupingTotalForAccount($currentTotalGroups, $subTotalGroups) {
 		foreach ($subTotalGroups as $group) {
+			if (isset($group['sid'])) {
+				continue;
+			}
 			$usagev = $group['usagev'];
 			unset($group['usagev']);
 			$count = $group['count'];
