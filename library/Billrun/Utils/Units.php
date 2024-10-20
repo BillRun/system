@@ -237,7 +237,7 @@ class Billrun_Utils_Units {
         }
     }
 
-	public function getPropertyTypeByUsaget($usaget) {
+	public static function getPropertyTypeByUsaget($usaget) {
 		$usageTypeData = self::getUsageTypeData($usaget);
 		if (!$usageTypeData || !isset($usageTypeData['property_type'])) {
 			return false;

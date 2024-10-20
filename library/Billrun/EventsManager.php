@@ -81,7 +81,7 @@ class Billrun_EventsManager {
 		
 		foreach ($eventSettings as $event) {
 			$conditionSettings = [];
-			foreach ($event['conditions'] as $rawsEventSettings) {
+			foreach ($event['conditions'] as $conditionsIndex => $rawsEventSettings) {
 				$conditionSettings = [];
 				$additionalEventData = array(
 					'unit' => $rawsEventSettings['unit'] ?? '',
@@ -91,9 +91,10 @@ class Billrun_EventsManager {
 					'value' => $rawsEventSettings['value'] ?? '',
 				);
 				$pathsMatched = [];
-				if($rawsEventSettings['all_groups'] === true && $eventType == 'balance') {
-					Billrun_Factory::log('Create All Grroups Event', Billrun_Log::DEBUG);
+				if(isset($rawsEventSettings['all_groups']) && $rawsEventSettings['all_groups'] === true && $eventType == 'balance') {
+					Billrun_Factory::log('Create All Groups Event, code: ' . $event['event_code'] . ' description : ' .  $event['event_description'], Billrun_Log::DEBUG);
 					$rawsEventSettingsPaths = $this->createPathsByBalance($rawsEventSettings, $extraParams, $entityBefore, $entityAfter);
+					unset($event['conditions'][$conditionsIndex]['paths']);
 				}else{
 					$rawsEventSettingsPaths = $rawsEventSettings['paths'];
 				}
@@ -118,6 +119,11 @@ class Billrun_EventsManager {
 						$path_data = ['event_settings' => $rawEventSettings, 'extra_values' => $extraValues];
 						$path_stamp = Billrun_Util::generateArrayStamp($path_data);
 						$pathsMatched[$path_stamp] = $path_data;
+						$event['matched_path'] = [
+							'path' => $rawEventSettings['path'], 
+							'total_path' => $rawEventSettings['total_path'],
+							'related_entities' => $rawEventSettings['related_entities']
+						];
 					}
 				}
 				
@@ -133,6 +139,14 @@ class Billrun_EventsManager {
 
 	}
 
+	/**
+	 * Create groups paths by the balance entity 
+	 * @param array $rawEventSettings
+	 * @param array $extraParams
+	 * @param array $entityBefore
+	 * @param array $entityAfter
+	 * @return paths.
+	 */
 	protected function createPathsByBalance($rawEventSettings, $extraParams, $entityBefore, $entityAfter){
 		$paths = [];
 		$eventPropertyType =  $rawEventSettings['property_type'];
@@ -149,7 +163,7 @@ class Billrun_EventsManager {
 		$groups = 	$entity['balance']['groups'];
 		$rowUsaget = $extraParams['row']['usaget'];
 		$rowPropertyType = Billrun_Utils_Units::getPropertyTypeByUsaget($rowUsaget);
-		Billrun_Factory::log('Finding relevant groups of property type: '  . $rowPropertyType . ' by balance entity: ' . print_R($entity, 1) , Billrun_Log::DEBUG);
+		Billrun_Factory::log('Finding relevant groups of property type: '  . $rowPropertyType . ' by balance id: ' .$entity['_id'] , Billrun_Log::DEBUG);
 		foreach ($groups as $groupKey => $group) {
 			$groupPath = [];
 			$groupKeys = [];
