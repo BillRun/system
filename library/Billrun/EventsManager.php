@@ -82,6 +82,7 @@ class Billrun_EventsManager {
 		foreach ($eventSettings as $event) {
 			$conditionSettings = [];
 			foreach ($event['conditions'] as $rawsEventSettings) {
+				$conditionSettings = [];
 				$additionalEventData = array(
 					'unit' => $rawsEventSettings['unit'] ?? '',
 					'usaget' => $rawsEventSettings['usaget'] ?? '',
