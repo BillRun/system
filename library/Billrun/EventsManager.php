@@ -148,16 +148,19 @@ class Billrun_EventsManager {
 		$groups = 	$entity['balance']['groups'];
 		$rowUsaget = $extraParams['row']['usaget'];
 		$rowPropertyType = Billrun_Utils_Units::getPropertyTypeByUsaget($rowUsaget);
-		Billrun_Factory::log('Finding relevant groups of property type: '  . $rowPropertyType . 'by balance entity: ' . print_R($entity, 1) , Billrun_Log::DEBUG);
+		Billrun_Factory::log('Finding relevant groups of property type: '  . $rowPropertyType . ' by balance entity: ' . print_R($entity, 1) , Billrun_Log::DEBUG);
 		foreach ($groups as $groupKey => $group) {
 			$groupPath = [];
+			$groupKeys = [];
 			if($eventPropertyType === $rowPropertyType){
 				$groupPath['path'] = 'balance.groups.' . $groupKey . '.usagev';
 				$groupPath['total_path'] = 'balance.groups.' . $groupKey . '.total';
 				$groupPath['related_entities'] = [['type' => 'service', 'key' => $serviceName], ['type' => 'group', 'key' => $groupKey]];
+				$paths[] = $groupPath;
+				$groupKeys [] = $groupKey;
 			}
-			$paths[] = $groupPath;
 		}
+		Billrun_Factory::log('Find relevant groups: '  . print_R($groupKey, 1) , Billrun_Log::DEBUG);
 		return $paths;
 	}
 
