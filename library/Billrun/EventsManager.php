@@ -95,6 +95,8 @@ class Billrun_EventsManager {
 					Billrun_Factory::log('Create All Groups Event, code: ' . $event['event_code'] . ' description : ' .  $event['event_description'], Billrun_Log::DEBUG);
 					$rawsEventSettingsPaths = $this->createPathsByBalance($rawsEventSettings, $extraParams, $entityBefore, $entityAfter);
 					unset($event['conditions'][$conditionsIndex]['paths']);
+					unset($event['conditions'][$conditionsIndex]['unit']);
+					unset($event['conditions'][$conditionsIndex]['usaget']);
 				}else{
 					$rawsEventSettingsPaths = $rawsEventSettings['paths'];
 				}

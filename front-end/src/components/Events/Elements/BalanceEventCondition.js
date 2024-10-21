@@ -173,15 +173,23 @@ class BalanceEventCondition extends Component {
   };
 
   onChangeGroupNames = (value) => {
-    const { onChangeField, item, index, trigger, limitation, servicesData } = this.props;
+    const { onChangeField, item, index, trigger, limitation, servicesData } = this.props;    
+    const condition = item.withMutations((itemWithMutation) => {  
     const paths = buildBalanceConditionPath(trigger, limitation, { activityType: '', groupNames: value, servicesData });
     const unit = value !== '' ? this.getGroupUnit(value.split(',').pop()) : '';
-    const usaget = value !== '' ? this.getGroupActivityType(value.split(',').pop()) : '';
+    const usaget = value !== '' ? this.getGroupActivityType(value.split(',').pop()) : '';    
+    itemWithMutation.set('unit', unit);
+    itemWithMutation.set('usaget', usaget);
+    itemWithMutation.set('paths', paths);
+      if (value.includes('all_groups')) {
+        // Handle logic for "All Time groups"
+        itemWithMutation.set('all_groups', true);
+       }
+      //   else {
+      //   // Proceed with normal group names selection
 
-    const condition = item.withMutations((itemWithMutation) => {
-      itemWithMutation.set('paths', paths);
-      itemWithMutation.set('unit', unit);
-      itemWithMutation.set('usaget', usaget);
+      // }
+
     });
     onChangeField(['conditions', index], condition);
   };
@@ -250,10 +258,22 @@ class BalanceEventCondition extends Component {
     return false;
   }
 
-  getGroupNamesOptions = () => this.props.groupsOptions
-    .filter(this.filterRelevantGroups)
-    .map(group => createGroupOption(group, this.props.servicesData))
-    .toArray();
+  getGroupNamesOptions = () => {
+    const { item,  trigger } = this.props;
+    let groupOptions = this.props.groupsOptions
+      .filter(this.filterRelevantGroups)
+      .map(group => createGroupOption(group, this.props.servicesData))
+      .toArray();
+  
+    // Add "All groups" for selected property type
+    if (trigger === 'usagev') {
+      groupOptions.unshift({ 
+        value: 'all_groups', 
+        label: 'All ' + (item.get('property_type', '').charAt(0).toUpperCase() + item.get('property_type', '').slice(1)) + ' groups' 
+      });
+    }
+    return groupOptions;
+  };
 
   getPropertyTypesOptions = () => this.props.propertyTypeOptions
     .map(propType => ({ value: propType, label: upperCaseFirst(propType) }))
