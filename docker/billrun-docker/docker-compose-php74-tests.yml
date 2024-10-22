@@ -3,7 +3,7 @@ services:
         image: nginx:latest
         container_name: billrun-nginx
         ports:
-            - "8080:80"
+            - "8074:80"
         restart: always
         volumes:
             - ${PWD}/../..:/billrun:ro
@@ -43,7 +43,7 @@ services:
             # - ${PWD}/../persist/backup:/backup
             - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
         ports:
-            - 27018:27017
+            - 27017:27017
     chrome:
         image: selenium/standalone-chrome
         container_name: billrun-standalone-chrome
