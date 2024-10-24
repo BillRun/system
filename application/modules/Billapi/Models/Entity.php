@@ -381,6 +381,7 @@ class Models_Entity {
 	 * @throws Billrun_Exceptions_Api
 	 */
 	public function create() {
+		$this->setReadPrefForAction(__FUNCTION__);
 		$this->action = 'create';
 		unset($this->update['_id']);
 		if (empty($this->update['from'])) {
@@ -409,6 +410,7 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	public function update() {
+		$this->setReadPrefForAction(__FUNCTION__);
 		$this->action = 'update';
 		$this->checkUpdate();
 		$this->fixEntityFields($this->before);
@@ -420,6 +422,7 @@ class Models_Entity {
 	 * Performs the permanentchange action by a query.
 	 */
 	public function permanentChange() {
+		$this->setReadPrefForAction(__FUNCTION__);
 		Billrun_Factory::log("Performs the permanentchange action", Zend_Log::DEBUG);
 		$this->action = 'permanentchange';
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
@@ -451,10 +454,12 @@ class Models_Entity {
 			$this->insert($prevEntity);
 		}
 		$beforeChangeRevisions = $this->collection->query($permanentQuery)->cursor();
-		$oldRevisions = iterator_to_array($beforeChangeRevisions);
+		$oldRevisions = array_map(function ($e) {return $e->getRawData();}, iterator_to_array($beforeChangeRevisions));
 		$this->collection->update($permanentQuery, $permanentUpdate, array('multiple' => true));
 		$afterChangeRevisions = $this->collection->query($permanentQuery)->cursor();
 		$this->fixEntityFields($this->before);
+		$newRevisions = [];
+		// Map and validate new revisions
 		foreach ($afterChangeRevisions as $newRevision) {
 			$currentId = $newRevision['_id']->getMongoId()->{'$id'};
 			$oldRevision = $oldRevisions[$currentId];
@@ -466,8 +471,9 @@ class Models_Entity {
 			if ($newRevision === null){
 				throw new Exception('No new revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate));
 			}
-			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
+			$newRevisions[$currentId] = $newRevision->getRawData();
 		}
+		Billrun_AuditTrail_Util::trackMultipleChanges($this->action, $field, $this->entityName, $oldRevisions, $newRevisions);
 		return true;
 	}
 
@@ -560,6 +566,7 @@ class Models_Entity {
 	 * @todo avoid overlapping of entities
 	 */
 	public function closeandnew() {
+		$this->setReadPrefForAction(__FUNCTION__);
 		$this->action = 'closeandnew';
 		if (!isset($this->update['from'])) {
 			$this->update['from'] = new Mongodloid_Date();
@@ -650,6 +657,7 @@ class Models_Entity {
 	 * @return array the entities found
 	 */
 	public function get() {
+		$this->setReadPrefForAction(__FUNCTION__);
 		if (isset($this->config['active_documents']) && $this->config['active_documents']) {
 			$add_query = Billrun_Utils_Mongo::getDateBoundQuery();
 			$this->query = array_merge($add_query, $this->query);
@@ -849,6 +857,7 @@ class Models_Entity {
 	 * @return boolean true on success else false
 	 */
 	protected function moveEntry($edge = 'from') {
+		$this->setReadPrefForAction(__FUNCTION__);
 		if ($edge == 'from') {
 			$otherEdge = 'to';
 		} else { // $current == 'to'
@@ -955,6 +964,7 @@ class Models_Entity {
 	 * @param type $data
 	 */
 	protected function dbUpdate($query, $data) {
+		$this->setReadPrefForAction(__FUNCTION__);
 		$update = $this->generateUpdateParameter($data, $this->queryOptions);
 		return $this->collection->update($query, $update);
 	}
@@ -991,6 +1001,7 @@ class Models_Entity {
 	 * @param array $query
 	 */
 	protected function remove($query) {
+		$this->setReadPrefForAction(__FUNCTION__);
 		return $this->collection->remove($query);
 	}
 
@@ -1156,6 +1167,7 @@ class Models_Entity {
 	 * @return array the entity loaded
 	 */
 	protected function loadById($id, $readPrimary = false) {
+		$this->setReadPrefForAction(__FUNCTION__);
 		$fetchQuery = array('_id' => ($id instanceof Mongodloid_Id) ? $id : new Mongodloid_Id($id));
 		$cursor = $this->collection->query($fetchQuery)->cursor();
 		if ($readPrimary) {
@@ -1169,6 +1181,7 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	protected function insert(&$data) {
+		$this->setReadPrefForAction(__FUNCTION__);
 		$ret = $this->collection->insert($data, array('w' => 1, 'j' => true));
 		return $ret;
 	}
@@ -1387,6 +1400,13 @@ class Models_Entity {
 			return [];
 		}
 		return $additional;
+	}
+
+	protected function setReadPrefForAction($actionName) {
+		if(	$this->getCollection() &&
+			!empty($readPref = Billrun_Util::getIn($this->config,strtolower($actionName).'.read_prefernces','')) ) {
+				$this->getCollection()->setReadPreference($readPref);
+		}
 	}
 
 }

@@ -151,7 +151,7 @@ db.collection_steps.createIndex({'trigger_date': 1 }, { unique: false , sparse: 
 db.collection_steps.createIndex({'extra_params.aid': 1 }, { unique: false , sparse: true, background: true });
 
 db.createCollection('bills');
-db.bills.createIndex({'aid': 1 }, { unique: false , background: true});
+db.bills.createIndex({'aid': "hashed" }, { unique: false , background: true});
 db.bills.createIndex({'txid': 1 }, { unique: false , sparse: true, background: true});
 db.bills.createIndex({'invoice_id': 1 }, { unique: false, background: true});
 db.bills.createIndex({'billrun_key': 1 }, { unique: false, background: true});

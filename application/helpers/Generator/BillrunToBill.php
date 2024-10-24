@@ -42,6 +42,14 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
 			$this->invoicing_days = !empty($options['invoicing_days']) ? [$options['invoicing_days']] : null;
 		}
+		if (isset($options['page'])) {
+			$this->page = (int) $options['page'];
+		}
+		if (isset($options['size'])) {
+			$this->setLimit($options['size']);
+		} else {
+			$this->setLimit(-1);
+		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
 		$this->confirmDate = time();
@@ -52,15 +60,24 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$invoiceQuery = !empty($this->invoices) ? array('$in' => $this->invoices) : array('$exists' => 1);
 		$query = array(
 			'billrun_key' => (string) $this->stamp,
-			'billed' => array('$ne' => 1),
 			'invoice_id' => $invoiceQuery,
 			'allow_bill' => ['$ne' => 0],
 		);
 		if (!empty($this->invoicing_days)) {
 			$query['invoicing_day'] = array('$in' => $this->invoicing_days);
 		}
-		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 
+		$invoicesLimit = (int) $this->getLimit();
+		if ($invoicesLimit != -1) {
+			$page = (int) $this->page;
+			$invoicesCursor = $this->billrunColl->query($query)->cursor()
+				->sort(array('aid' => 1))
+				->limit($invoicesLimit)->skip($invoicesLimit * $page);
+		} else {
+			$query['billed'] = array('$ne' => 1);
+			$invoicesCursor = $this->billrunColl->query($query)->cursor()->sort(array('aid' => 1));
+		}
+		$invoices = $invoicesCursor->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
@@ -73,6 +90,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$result = array('alreadyRunning' => false, 'releasingProblem'=> false);//help in case it's a onetimeinvoice generate
 		$invoices = array();
 		foreach ($this->data as $invoice) {
+			if (!empty($invoice['billed'])) {
+				Billrun_Factory::log("Generator for aid " . $invoice['aid'] . " billrun " . $invoice['billrun_key'] .
+					" invoice_id " . $invoice['invoice_id'] . " was already confirmed", Zend_Log::INFO);
+				continue;
+			}
 			$this->filtration = $invoice['aid'];
 			if (!$this->lock()) {
 				Billrun_Factory::log("Generator for aid " . $invoice['aid'] . " is already running", Zend_Log::NOTICE);
