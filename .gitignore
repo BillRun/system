@@ -18,3 +18,4 @@ docker/persist
 .vscode/
 node_modules
 tests/.env
+docker/billrun-docker/data/
