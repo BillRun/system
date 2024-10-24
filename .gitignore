@@ -19,3 +19,4 @@ docker/persist
 node_modules
 tests/.env
 composer.lock
+docker/billrun-docker/data/
