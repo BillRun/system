@@ -247,7 +247,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			if ($fileStatus == 'only_rejections') {
 				$customFields = $this->getCustomPaymentGatewayFields();
 				$bill->setExtraFields($customFields, array_keys($customFields));
-				$bill->markApproved('Completed');
+				$bill->markApproved('Completed', 'RP_PRIMARY');
 				$bill->setPending(false);
 				$bill->updateConfirmation();
 				$bill->save();

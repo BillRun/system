@@ -175,7 +175,13 @@ class CustomerSetup extends Component {
       const action = (['clone', 'create'].includes(mode)) ? 'created' : 'updated';
       this.props.dispatch(showSuccess(`The customer was ${action}`));
       if (mode === 'create') {
-        this.handleBack();
+        let customerId;
+        if (response && response.data && response.data._id && response.data._id.$id) {
+          customerId = response.data._id.$id;
+        }
+        if (customerId) {
+          this.props.router.push(`/customers/customer/${customerId}`);
+        }
       }
       const pageTitle = buildPageTitle(mode, 'customer', customer);
       this.props.dispatch(setPageTitle(pageTitle));
