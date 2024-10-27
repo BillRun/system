@@ -148,10 +148,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		//TODO: check how to remove call to loadRates
 		$this->balances = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
-
-		$this->active_billrun = Billrun_Billrun::getActiveBillrun();
-		$this->active_billrun_end_time = Billrun_Billingcycle::getEndTime($this->active_billrun);
-		$this->next_active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($this->active_billrun);
 		
 		$this->aidsQueuedForRebalance = array_flip(Billrun_Util::verify_array(Billrun_Factory::db()->rebalance_queueCollection()->distinct('aid', array('end_time' => array('$exists' => false))), 'int'));
 	}
@@ -397,16 +393,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	public static function getPrecision() {
 		return static::$precision;
-	}
-	
-	public function getActiveBillrunEndTime() {
-		return $this->active_billrun_end_time;
-	}
-	public function getActiveBillrun() {
-		return $this->active_billrun;
-	}
-	public function getNextActiveBillrun() {
-		return $this->next_active_billrun;
 	}
 	
 }
