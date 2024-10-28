@@ -77,7 +77,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
 
 	protected function addBillrunField(&$row){
-		if($row['connection_type'] != 'prepaid'){
+		if($row['connection_type'] != 'prepaid' && !isset($row['billrun'])){
 			$customerInvoicingDay = isset($row['foreign']['account']) ? isset($row['foreign']['account']['invoicing_day'])? $row['foreign']['account']['invoicing_day'] : null : null;
 			if ($row['sid'] == 0 && $row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
 				$plan = null;
