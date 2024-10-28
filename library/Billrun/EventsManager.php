@@ -147,7 +147,7 @@ class Billrun_EventsManager {
 	 * @param array $extraParams
 	 * @param array $entityBefore
 	 * @param array $entityAfter
-	 * @return paths.
+	 * @return array paths.
 	 */
 	protected function createPathsByBalance($rawEventSettings, $extraParams, $entityBefore, $entityAfter){
 		$paths = [];
@@ -166,9 +166,9 @@ class Billrun_EventsManager {
 		$rowUsaget = $extraParams['row']['usaget'];
 		$rowPropertyType = Billrun_Utils_Units::getPropertyTypeByUsaget($rowUsaget);
 		Billrun_Factory::log('Finding relevant groups of property type: '  . $rowPropertyType . ' by balance id: ' .$entity['_id'] , Billrun_Log::DEBUG);
+		$groupKeys = [];
 		foreach ($groups as $groupKey => $group) {
 			$groupPath = [];
-			$groupKeys = [];
 			if($eventPropertyType === $rowPropertyType){
 				$groupPath['path'] = 'balance.groups.' . $groupKey . '.usagev';
 				$groupPath['total_path'] = 'balance.groups.' . $groupKey . '.total';
@@ -177,7 +177,7 @@ class Billrun_EventsManager {
 				$groupKeys [] = $groupKey;
 			}
 		}
-		Billrun_Factory::log('Find relevant groups: '  . print_R($groupKey, 1) , Billrun_Log::DEBUG);
+		Billrun_Factory::log('Find relevant groups: '  . implode($groupKeys, ", ") , Billrun_Log::DEBUG);
 		return $paths;
 	}
 
