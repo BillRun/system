@@ -1488,5 +1488,15 @@ runOnce(lastConfig, 'BRCD-4455', function () {
     lastConfig['plugins'].push(israelInvoicePluginsSettings);
 });
 
+//BRCD-4455 - add user_id field to Israel invoice plugin conf
+runOnce(lastConfig, 'CON-BRCD-4455', function () {
+	for (var i = 0; i < lastConfig.plugins.length; i++) {
+			if (lastConfig.plugins[i]['name'] === "israelInvoicePlugin") {
+					lastConfig.plugins[i]['configuration']['values']['user_id'] = "";
+			}
+	}       
+});
+
+	
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
