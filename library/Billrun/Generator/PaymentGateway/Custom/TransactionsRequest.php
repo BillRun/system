@@ -122,8 +122,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::INFO);
 		$this->setFileMandatoryFields();
 		$current_loop_bills = $this->customers;
-		$loop_counter = 1;
+		$loop_counter = 0;
 		do {
+			$loop_counter++;
 			$this->locked_aid_bills_to_recharge = [];
 			$locked_aids = [];
 			Billrun_Factory::log()->log("Starting transactions request file charging loop number " . $loop_counter . " with " . count($current_loop_bills) . " bills", Zend_Log::DEBUG);
@@ -252,11 +253,10 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$current_loop_bills = $this->locked_aid_bills_to_recharge;
 			if (count($current_loop_bills) > 0) {
 				Billrun_Factory::log()->log("There are " . count($current_loop_bills) . " skipped bills in charging loop number " . $loop_counter . ". Starting a new one", Zend_Log::DEBUG);
-				$loop_counter++;
 			}
-		} while ((!empty($current_loop_bills)) &&  ($loop_counter < 4));
-		if ($loop_counter == 4) {
-			Billrun_Factory::log()->log("Stopped waiting for the skipped accounts to be released after 3 attempts. Failed to load data to the request file, of aids " . implode(",", $locked_aids), Zend_Log::ALERT);
+		} while ((!empty($current_loop_bills)) &&  ($loop_counter < 3));
+		if ($loop_counter == 3) {
+			Billrun_Factory::log()->log("Stopped waiting for the skipped accounts to be released after " . $loop_counter . " charging attempts. Failed to load data to the request file, of aids " . implode(",", $locked_aids), Zend_Log::ALERT);
 		}
 		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;
