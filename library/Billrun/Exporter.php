@@ -669,4 +669,24 @@ class Billrun_Exporter extends Billrun_Generator_File {
         return "export_generators";
     }
 
+    public function getConfig() {
+        return $this->config;
+    }
+
+    public function getExportTime() {
+        return $this->exportTime;
+    }
+
+    public function setFileName($file_name) {
+        $this->fileName = $file_name;
+    }
+
+    public function setSenderConnectionDetails($connection) {
+        $this->config['senders']['connections'] = [$connection];
+        $updated_config = $this->config;
+        unset($updated_config['type']);
+        $model = new ConfigModel();
+        $model->updateConfig("export_generators", $updated_config);
+    }
+
 }
