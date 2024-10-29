@@ -181,10 +181,12 @@ class BalanceEventCondition extends Component {
     itemWithMutation.set('unit', unit);
     itemWithMutation.set('usaget', usaget);
     itemWithMutation.set('paths', paths);
-      if (value.includes('all_groups')) {
-        // Handle logic for "All Time groups"
-        itemWithMutation.set('all_groups', true);
-       }
+    if (value.includes('all_groups')) {
+      // Handle logic for "All Time groups"
+      itemWithMutation.set('all_groups', true);
+    } else {
+      itemWithMutation.set('all_groups', false);
+    }
       //   else {
       //   // Proceed with normal group names selection
 
@@ -259,18 +261,22 @@ class BalanceEventCondition extends Component {
   }
 
   getGroupNamesOptions = () => {
-    const { item,  trigger } = this.props;
+    const { item, trigger } = this.props;
     let groupOptions = this.props.groupsOptions
       .filter(this.filterRelevantGroups)
       .map(group => createGroupOption(group, this.props.servicesData))
       .toArray();
   
     // Add "All groups" for selected property type
-    if (trigger === 'usagev') {
+    if (trigger === 'usagev' ) {
       groupOptions.unshift({ 
         value: 'all_groups', 
         label: 'All ' + (item.get('property_type', '').charAt(0).toUpperCase() + item.get('property_type', '').slice(1)) + ' groups' 
       });
+    }
+    // If "all_groups" is selected, clear other options
+    if (item.get('all_groups', '') === true) {
+      return [{ value: 'all_groups', label: 'All groups' }]; // Only return "All groups" option
     }
     return groupOptions;
   };
