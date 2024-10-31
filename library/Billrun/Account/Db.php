@@ -78,7 +78,13 @@ class Billrun_Account_Db extends Billrun_Account {
 			}
 
 			if (isset($query['time'])) {
-				$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
+				$dateTime = DateTime::createFromFormat('Y-m-d H:i:s.u', $query['time']);
+				if ($dateTime !== false) {
+					$microSeconds = (int) $dateTime->format('u'); // Get milliseconds
+					$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']), false, $microSeconds);
+				} else {
+					$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
+				}
 				$query = array_merge($query, $time);
 				unset($query['time']);
 			}
