@@ -46,7 +46,7 @@ codecept:
     - docker-compose -f docker-compose-php74-tests.yml down --remove-orphans
 
 build:
- stage: ci
+ stage: build
  image: docker:20.10.16
  services:
  - docker:dind
@@ -58,7 +58,7 @@ build:
    - if: '$CI_COMMIT_TAG =~ /^5\.\d+\.\d+(-beta\d+(\.\d+)?)?$/'
 
 push:
- stage: ci
+ stage: build
  image: docker:20.10.16
  services:
  - docker:dind
