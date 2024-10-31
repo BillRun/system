@@ -140,12 +140,35 @@ trait Tests_SetUp
 	}
 
 
-	
-
 	public function getTestCases($legacy_tests = [])
 	{
 		$all_test_cases = [];
-		
+		$label= explode(" ", $this->getLabel())[1];
+		$first='';
+		$secound='';
+		switch ($label) {
+				case 'Aggregatore':
+					$first='test';
+					$secound='test_number';
+					break;
+				case 'Customercalculatortest':
+					$first='row';
+					$secound='stamp';
+					break;
+				case 'Ratetest':
+					$first='row';
+					$secound='stamp';
+					break;
+				case 'UpdateRow':
+					$first='row';
+					$secound='stamp';
+					break;
+				default:
+					throw new Exception("Unknown label: $label");
+			}
+	
+
+	
 		$test_cases_to_skip = !empty($this->getRequset()->get('skip'))?$this->getRequset()->get('skip') :[] ;
 		$test_cases_to_run = !empty($this->getRequset()->get('tests'))?$this->getRequset()->get('tests') :[];
 		if(!empty($test_cases_to_skip)){
@@ -178,16 +201,17 @@ trait Tests_SetUp
 		}
 
 		// Sort the test cases by test_number
-		usort($legacy_tests, function ($a, $b) {
-			return $a['test']['test_number'] <=> $b['test']['test_number'];
+		usort($legacy_tests, function ($a, $b)use ($first, $secound) {
+			return $a[$first][$secound] <=> $b[$first][$secound];
 		});
-		usort($all_test_cases, function ($a, $b) {
-			return $a['test']['test_number'] <=> $b['test']['test_number'];
+		usort($all_test_cases, function ($a, $b)use ($first, $secound) {
+			return $a[$first][$secound]<=> $b[$first][$secound];
 		});
 		//merge legacy test withe all the test cases 
-		return $this->mergeArraysByKey($all_test_cases,$legacy_tests, 'test.test_number');
+		return $this->mergeArraysByKey($all_test_cases,$legacy_tests, "$first".'.'."$secound");
 
 	}
+
 	function mergeArraysByKey($array1, $array2, $path) {
 		$mergedArray = [];
 	
