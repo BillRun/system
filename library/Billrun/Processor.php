@@ -347,7 +347,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$lines = Billrun_Factory::db()->linesCollection();
 		Billrun_Factory::log("Store data of file " . basename($this->filePath) . " with " . count($this->data['data']) . " lines", Zend_Log::INFO);
-		$queue_data = $this->getQueueData();
+		$queue_data = &$this->getQueueData();
 		$queue_stamps = array_keys($queue_data);
 		$line_stamps = array_keys($this->data['data']);
 		$lines_in_queue = array_intersect($line_stamps, $queue_stamps);
@@ -660,7 +660,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * 
 	 * @return array
 	 */
-	public function getQueueData() {
+	public function &getQueueData() {
 		return $this->queue_data;
 	}
 

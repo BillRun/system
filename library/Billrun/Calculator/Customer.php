@@ -146,6 +146,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	public function prepareData($lines) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorPrepareData', ['data' => &$lines, $this]);
 		if ($this->isBulk() ) {
 			$this->subscribers = $this->loadSubscribers($lines);
 		}
@@ -153,6 +154,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$this->account = Billrun_Factory:: account();
 			$this->accounts = $this->loadAccounts($lines);
 		}
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorPrepareData', ['data' => &$lines, $this]);
 	}
 
 	/**
@@ -531,7 +533,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function isOutgoingCall($line) {
 		$outgoing = true;
 		if ($line['type'] == 'nsn') {
-			$outgoing = in_array($line['record_type'], array('01', '11'));
+			$outgoing = $line['usaget'] !== 'incoming_call';
 		}
 		if (in_array($line['usaget'], Billrun_Factory::config()->getConfigValue('realtimeevent.incomingCallUsageTypes', array()))) {
 			return false;

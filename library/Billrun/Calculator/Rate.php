@@ -111,7 +111,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 	
 	public function prepareData($lines) {
-		
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorPrepareData', ['data' => &$lines, $this]);
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorPrepareData', ['data' => &$lines, $this]);
 	}
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
