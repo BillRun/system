@@ -24,6 +24,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^972/'=>'0');
 	public $invoice_flat_tabels = [];
 	public $invoice_usage_tabels = [];
+	public $details_keys = [];
 	
 	/*
 	 * get and set lines of the account

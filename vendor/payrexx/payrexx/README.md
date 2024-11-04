@@ -72,6 +72,22 @@ For the Version 1.0.0 you can use the following content of composer.json:
     }
     ```
 
+Platform API
+--------------
+
+When working with Platform accounts, you will need to specify your custom domain as the API Base URL when instantiating the client:
+
+```php
+$apiBaseDomain = 'your.domain.com';
+$payrexx = new \Payrexx\Payrexx(
+    $instance, 
+    $apiSecret, 
+    Communicator::DEFAULT_COMMUNICATION_HANDLER,
+    $apiBaseDomain
+);
+```
+
+The `$instance` is still expected to be the subdomain portion of their unique domain. For example, a Platform account that logs in on `client.platform.yourcompany.com` has `$instance` set to `client`, and `$apiBaseDomain` is set to `platform.yourcompany.com`. 
 
 Documentation
 --------------

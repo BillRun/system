@@ -19,7 +19,7 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 		parent::__construct($plan);;
 		$this->recurrenceConfig = $plan['recurrence'];
 		$this->updateCycleByConfig($plan);
-		if($this->recurrenceConfig['frequency'] !== 1) {
+		if($this->recurrenceConfig['frequency'] != 1) {
 			$this->setSpanCover();
 		}
 	}
@@ -32,8 +32,8 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 		return Billrun_Plan::getPriceByTariff($tariff, $startOffset, $endOffset ,$activation);
 	}
 
-		/**
-	 * Get the price of the current plan.
+	/**
+	 * Get the amount the current plan/service covers the  current cycle.
 	 */
 	protected function setSpanCover() {
 		$formatActivation = $this->proratedStart  ?

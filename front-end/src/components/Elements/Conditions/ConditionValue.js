@@ -26,6 +26,7 @@ class ConditionValue extends Component {
     operator: PropTypes.instanceOf(Immutable.Map),
     dynamicSelectOptions: PropTypes.instanceOf(Immutable.List),
     customValueOptions: PropTypes.instanceOf(Immutable.List),
+    conditionsSize:  PropTypes.number,
     disabled: PropTypes.bool,
     editable: PropTypes.bool,
     onChange: PropTypes.func,
@@ -38,6 +39,7 @@ class ConditionValue extends Component {
     operator: Immutable.Map(),
     dynamicSelectOptions: Immutable.List(),
     customValueOptions: Immutable.List(),
+    conditionsSize: 0,
     disabled: false,
     editable: true,
     onChange: () => {},
@@ -49,19 +51,20 @@ class ConditionValue extends Component {
   }
 
   shouldComponentUpdate(nextProps) {
-    const { field, config, operator, dynamicSelectOptions, disabled, editable } = this.props;
+    const { field, config, conditionsSize, operator, dynamicSelectOptions, disabled, editable } = this.props;
     return (
       !Immutable.is(field, nextProps.field)
       || !Immutable.is(config, nextProps.config)
       || !Immutable.is(dynamicSelectOptions, nextProps.dynamicSelectOptions)
       || !Immutable.is(operator, nextProps.operator)
+      || conditionsSize !== nextProps.conditionsSize
       || disabled !== nextProps.disabled
       || editable !== nextProps.editable
     );
   }
 
   componentDidUpdate(prevProps) {
-    const { config, dynamicSelectOptions, operator, customValueOptions } = this.props;
+    const { config, conditionsSize, dynamicSelectOptions, operator, customValueOptions } = this.props;
     if (!Immutable.is(prevProps.config, config)) {
       this.initFieldOptions(config, dynamicSelectOptions);
     }
@@ -75,10 +78,12 @@ class ConditionValue extends Component {
       customValueOptions: prevProps.customValueOptions
     }));
     const isSelectOptionsChanged = !oldOptions.isEmpty()
+      && conditionsSize >= prevProps.conditionsSize
       // options was removed 
       && !oldOptions.every(element => newOptions.includes(element));
 
-    const isTypeChanged = prevProps.config.get('type', '') !== ''
+    const isTypeChanged = conditionsSize >= prevProps.conditionsSize
+      && prevProps.config.get('type', '') !== ''
       && prevProps.config.get('type', '') !== config.get('type', '');
 
     // If type of value changed or select options, reset the value

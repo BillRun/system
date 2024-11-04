@@ -15,8 +15,8 @@
     { "id": "regex", "title": "Matches regular expression", "include": ["string", "textarea"], "exclude": [] },
     { "id": "starts_with", "title": "Starts with", "include": ["string"], "exclude": [] },
     { "id": "ends_with", "title": "Ends with", "include": ["string"], "exclude": [] },
-    { "id": "in_range", "title": "Include‎", "include": ["ranges", "range", "daterange"] },
-    { "id": "nin_range", "title": "Does not include‎", "include": ["ranges", "range", "daterange"] },
+    { "id": "in_range", "title": "Include", "include": ["ranges", "range", "daterange"] },
+    { "id": "nin_range", "title": "Does not include", "include": ["ranges", "range", "daterange"] },
     { "id": "exists", "title": "Exists", "type": "boolean", "options": ["yes", "no"] }
   ],
   "aggregate": [

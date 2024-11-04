@@ -12,7 +12,7 @@ export default {
   productUnlimitedValue: 'UNLIMITED',
   fieldKeyRegex: /^[A-Za-z0-9._]*$/,
   keyUppercaseRegex: /^[A-Z0-9_]+$/,
-  keyUppercaseCleanRegex: /[^A-Z|0-9_]/g,
+  keyUppercaseCleanRegex: /[^A-Z0-9_]/g,
   keyRegex: /^[A-Za-z0-9_]*$/,
   keyCleanRegex: /[^a-z|A-Z|0-9_]/g,
   defaultLogo: 'billRun-cloud-logo.png',

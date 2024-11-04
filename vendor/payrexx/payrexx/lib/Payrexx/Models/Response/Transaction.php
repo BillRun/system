@@ -16,7 +16,6 @@ namespace Payrexx\Models\Response;
 class Transaction extends \Payrexx\Models\Request\Transaction
 {
 
-    private $uuid;
     private $time;
     private $status;
     private $lang;
@@ -28,6 +27,9 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     private $contact;
     private $pageUuid;
     private $payrexxFee;
+    private $fee;
+    private $refundable;
+    private $partiallyRefundable;
 
     const CONFIRMED = 'confirmed';
     const INITIATED = 'initiated';
@@ -196,7 +198,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     /**
      * @param array $invoice
      */
-    public function setInvoice($invoice): void
+    public function setInvoice($invoice)
     {
         $this->invoice = $invoice;
     }
@@ -212,7 +214,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     /**
      * @param array $contact
      */
-    public function setContact($contact): void
+    public function setContact($contact)
     {
         $this->contact = $contact;
     }
@@ -228,7 +230,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     /**
      * @param string $pageUuid
      */
-    public function setPageUuid($pageUuid): void
+    public function setPageUuid($pageUuid)
     {
         $this->pageUuid = $pageUuid;
     }
@@ -236,7 +238,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     /**
      * @return integer
      */
-    public function getPayrexxFee(): int
+    public function getPayrexxFee()
     {
         return $this->payrexxFee;
     }
@@ -244,8 +246,58 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     /**
      * @param int $payrexxFee
      */
-    public function setPayrexxFee(int $payrexxFee): void
+    public function setPayrexxFee(int $payrexxFee)
     {
         $this->payrexxFee = $payrexxFee;
+    }
+
+    /**
+     * @return integer
+     */
+    public function getFee()
+    {
+        return $this->fee;
+    }
+
+    /**
+     * @param int $fee
+     */
+    public function setFee(int $fee)
+    {
+        $this->fee = $fee;
+    }
+
+    /**
+     * Supported since version 1.2
+     * @return bool|null
+     */
+    public function getRefundable()
+    {
+        return $this->refundable;
+    }
+
+    /**
+     * @param mixed $refundable
+     */
+    public function setRefundable($refundable)
+    {
+        $this->refundable = $refundable;
+    }
+
+    /**
+     * Supported since version 1.2
+     * @return bool|null
+     */
+    public function getPartiallyRefundable()
+    {
+        return $this->partiallyRefundable;
+    }
+
+    /**
+     * @param mixed $partiallyRefundable
+     */
+    public function setPartiallyRefundable($partiallyRefundable)
+    {
+        $this->partiallyRefundable = $partiallyRefundable;
     }
 }

@@ -501,6 +501,7 @@ class Billrun_Util {
 	}
 
 	public static function sendMail($subject, $body, $recipients, $attachments = array(), $html = false) {
+		try {
 		$mailer = Billrun_Factory::mailer()->setSubject($subject);
 		if($html){
 			$mailer->setBodyHtml($body, "UTF-8");
@@ -518,6 +519,10 @@ class Billrun_Util {
 		$mailer->addTo($recipients);
 		//sen email
 		return $mailer->send();
+		} catch (Throwable $th) {
+			Billrun_Factory::log("Error send email. " . $th->getCode() . ': ' . $th->getMessage());
+			return false;
+		}
 	}
 
 	public static function getForkUrl() {
@@ -1590,17 +1595,18 @@ class Billrun_Util {
 		}
 		
 		$cookieParams = session_get_cookie_params();
-		
+        
 		if (version_compare(PHP_VERSION, '7.3.0') >= 0) {
 			$cookieParams['lifetime'] = $sessionTimeout;
 			$cookieParams['samesite'] = $samesite;
 			session_set_cookie_params($cookieParams);
 		} else {
-			session_set_cookie_params(
-				(int) $sessionTimeout, $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure']
-			);
+		session_set_cookie_params(
+			(int) $sessionTimeout, $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure']
+		);
 			ini_set('session.cookie_samesite', $samesite);
 		}
+		ini_set('session.gc_maxlifetime', $sessionTimeout);
 	}
 	
 	public static function isValidIP($subject) {
@@ -1658,6 +1664,12 @@ class Billrun_Util {
 						} else {
 							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::DEBUG);
 						}
+						break;
+					//Handle date translation - assuimng mongo date was sent
+					case 'date' :
+						$dateFormat = isset($trans['format']) ? $trans['format'] : Billrun_Base::base_datetimeformat;
+						$dateValue = $source[$sourceKey]->sec;
+						$val = date($dateFormat, $dateValue);
 						break;
 					default :
 							Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
@@ -1818,6 +1830,7 @@ class Billrun_Util {
 	/**
 	 * Maps a nested array  where the identifing key is in the object (as a field values ) to an hash  where the identifing key is the field name.
 	 * (used to  convert querable objects from the DB to a faster structure in PHP (keyed hash))
+	 * ( last entiry override the first entry with the same identifing value )
 	 * @param type $arrayData the  nested
 	 * @param type $hashKeys the  keys to search for.
 	 * @return type
@@ -2087,7 +2100,7 @@ class Billrun_Util {
 		$value = substr($value, $formatObj['substring']['offset'], $formatObj['substring']['length']);
             }
             return $value;
-        }
+	}
 
 	public static function mergeArrayByRules($mainArr, $secArr, $rules) {
 

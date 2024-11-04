@@ -1,15 +1,15 @@
 # chillerlan/php-settings-container
 
-A container class for immutable settings objects. Not a DI container. PHP 7.4+
-- [`SettingsContainerInterface`](https://github.com/chillerlan/php-settings-container/blob/main/src/SettingsContainerInterface.php) provides immutable properties with magic getter & setter and some fancy - decouple configuration logic from your application!
+A container class for settings objects - decouple configuration logic from your application! Not a DI container.
+- [`SettingsContainerInterface`](https://github.com/chillerlan/php-settings-container/blob/main/src/SettingsContainerInterface.php) provides immutable properties with magic getter & setter and some fancy.
 
 [![PHP Version Support][php-badge]][php]
 [![version][packagist-badge]][packagist]
 [![license][license-badge]][license]
-[![Coverage][coverage-badge]][coverage]
-[![Scrunitizer][scrutinizer-badge]][scrutinizer]
-[![Packagist downloads][downloads-badge]][downloads]
 [![Continuous Integration][gh-action-badge]][gh-action]
+[![Coverage][coverage-badge]][coverage]
+[![Codacy][codacy-badge]][codacy]
+[![Packagist downloads][downloads-badge]][downloads]
 
 [php-badge]: https://img.shields.io/packagist/php-v/chillerlan/php-settings-container?logo=php&color=8892BF
 [php]: https://www.php.net/supported-versions.php
@@ -19,8 +19,8 @@ A container class for immutable settings objects. Not a DI container. PHP 7.4+
 [license]: https://github.com/chillerlan/php-settings-container/blob/main/LICENSE
 [coverage-badge]: https://img.shields.io/codecov/c/github/chillerlan/php-settings-container.svg?logo=codecov
 [coverage]: https://codecov.io/github/chillerlan/php-settings-container
-[scrutinizer-badge]: https://img.shields.io/scrutinizer/g/chillerlan/php-settings-container.svg?logo=scrutinizer
-[scrutinizer]: https://scrutinizer-ci.com/g/chillerlan/php-settings-container
+[codacy-badge]: https://img.shields.io/codacy/grade/bd2467799e2943d2853ce3ebad5af490/v2.x-php7.4?logo=codacy
+[codacy]: https://app.codacy.com/gh/chillerlan/php-settings-container/dashboard?branch=v2.x-php7.4
 [downloads-badge]: https://img.shields.io/packagist/dt/chillerlan/php-settings-container.svg?logo=packagist
 [downloads]: https://packagist.org/packages/chillerlan/php-settings-container/stats
 [gh-action-badge]: https://github.com/chillerlan/php-settings-container/workflows/CI/badge.svg

@@ -61,6 +61,8 @@ class Billrun_Cycle_Account_Invoice {
 	protected $groupingEnabled = true;
 
 	protected $aggregationTranslations = [];
+	protected $constructOptions = [];
+
 
         /**
 	 * @todo used only in current balance API. Needs refactoring
@@ -71,8 +73,9 @@ class Billrun_Cycle_Account_Invoice {
 		$this->constructByOptions($options);
 		$this->populateInvoiceWithAccountData($options['attributes']);
 		$this->initInvoiceDates();
-                $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
-				$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array()); 
+		$this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true);
+		$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array());
+		$this->constructOptions = $options;
 	}
 
 	/**
@@ -276,12 +279,14 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		$invoiceRawData = $this->getRawData();
 		
-		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
+		if (Billrun_Factory::config()->getConfigValue('billrun.save_subs', true, "bool")) {
+			$invoiceRawData = $this->setSubscribers($invoiceRawData);
+		}
 		if (!$isFake ) {
-			$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId, $customCollName);
+			$newRawData = $this->setInvoiceID($invoiceRawData, $invoiceId, $customCollName);
 		} else {
-			$rawDataWithSubs['invoice_id'] = $invoiceId;
-			$newRawData = $rawDataWithSubs;
+			$invoiceRawData['invoice_id'] = $invoiceId;
+			$newRawData = $invoiceRawData;
 		}
 		$this->data->setRawData($newRawData);		
 
@@ -429,6 +434,7 @@ class Billrun_Cycle_Account_Invoice {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
 			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
+			Billrun_Factory::dispatcher()->trigger('afterAccountInvoiceSaved', array($this->data, &$this));
 		}
 	}
 	
@@ -469,7 +475,7 @@ class Billrun_Cycle_Account_Invoice {
 									return !empty($sub['sid']) && (!$ignoreSubsWithNoPlans || !is_null($sub['totals']['flat']['after_vat']) );
 								}));
 
-		if(	$hasActiveSubscribers || !empty($this->data['totals']['after_vat_rounded']) ) {
+		if(	$hasActiveSubscribers || !empty($this->data['totals']['after_vat_rounded'])  || !empty($this->constructOptions['force_active']) ) {
 			 return true;
 		}
 		$accountActivenessLinesHistory = Billrun_Factory::config()->getConfigValue("pricing.months_limit", 3);
@@ -544,6 +550,9 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	protected function sumUpGroupingTotalForAccount($currentTotalGroups, $subTotalGroups) {
 		foreach ($subTotalGroups as $group) {
+			if (isset($group['sid'])) {
+				continue;
+			}
 			$usagev = $group['usagev'];
 			unset($group['usagev']);
 			$count = $group['count'];

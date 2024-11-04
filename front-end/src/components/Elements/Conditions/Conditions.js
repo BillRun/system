@@ -76,7 +76,7 @@ class Conditions extends Component {
   }
 
   renderRow = (filter, index) => {
-    const { operators, fields, customValueOptions, disabled, editable, errors } = this.props;
+    const { conditions, operators, fields, customValueOptions, disabled, editable, errors } = this.props;
     return (
       <Condition
         key={index}
@@ -84,6 +84,7 @@ class Conditions extends Component {
         index={index}
         fields={fields}
         operators={operators}
+        conditionsSize={conditions.size}
         customValueOptions={customValueOptions}
         disabled={disabled}
         editable={editable}
