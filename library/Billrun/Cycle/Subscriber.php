@@ -389,7 +389,11 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$to = $endTime;
 			Billrun_Factory::log("Taking the end time! " . $endTime);
 		}
-		$aggregatorData["$to"]['plans'][] = $toAdd;
+
+		if($toAdd['start'] !== $toAdd['end']  &&  $toAdd['start'] !== $to && Billrun_Factory::config()->getConfigValue('billrun.no_upfront_plans',false)) {
+			// If  this is not a zero length plan (sound not be charged )  add it to  the plans revisions
+			$aggregatorData["$to"]['plans'][] = $toAdd;
+		}
 
 		return $aggregatorData;
 	}
