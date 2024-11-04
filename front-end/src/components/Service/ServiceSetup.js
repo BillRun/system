@@ -25,6 +25,9 @@ import {
   deleteServiceField,
   saveService,
   setCloneService,
+  onServiceTariffAdd,
+  onServiceCycleUpdate,
+  onServiceTariffRemove
 } from '@/actions/serviceActions';
 import { showSuccess } from '@/actions/alertsActions';
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
@@ -121,6 +124,18 @@ class ServiceSetup extends Component {
       const key = item.get('name', '');
       this.props.dispatch(getRevisions('services', 'name', key));
     }
+  }
+
+  onServiceTariffAdd = () => {
+    this.props.dispatch(onServiceTariffAdd());
+  }
+
+  onServiceCycleUpdate = (index, value) => {
+    this.props.dispatch(onServiceCycleUpdate(index, value));
+  }
+
+  onServiceTariffRemove = (index, value) => {
+    this.props.dispatch(onServiceTariffRemove(index, value));
   }
 
   fetchItem = (itemId = this.props.itemId) => {
@@ -230,6 +245,9 @@ class ServiceSetup extends Component {
                 mode={mode}
                 updateItem={this.onUpdateItem}
                 onFieldRemove={this.onRemoveFieldValue}
+                onServiceTariffAdd={this.onServiceTariffAdd}
+                onServiceCycleUpdate={this.onServiceCycleUpdate}
+                onServiceTariffRemove={this.onServiceTariffRemove}
               />
             </Panel>
           </Tab>
