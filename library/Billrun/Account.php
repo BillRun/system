@@ -47,7 +47,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 */
 	protected $customerExtraData = array();
 	
-	protected static $allowedQueryKeys = ['id', 'time'];
+	protected static $allowedQueryKeys = ['id', 'time', 'read_primary'];
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -282,6 +282,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		$results = array();
 		$subject_to = $this->getIncludedInCollection($aids);
 		$params['in_collection'] = true;
+		$params['read_primary'] = true; 
 		// white list exists but aids not included
 		if (!is_null($subject_to) && empty($subject_to)) {
 			return $results;

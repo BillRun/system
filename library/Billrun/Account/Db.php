@@ -93,7 +93,15 @@ class Billrun_Account_Db extends Billrun_Account {
 				$id = $query['id'];
 				unset($query['id']);
 			}
+			$readPrimary = false;
+			if (isset($query['read_primary']) && $query['read_primary'] === true){
+				$readPrimary = true;
+				unset($query['read_primary']);
+			}
 			$result = $this->collection->query($query)->cursor();
+			if($readPrimary){
+				$result->setReadPreference('RP_PRIMARY');
+			}
 			if (isset($limit) && $limit === 1) {
 				$account = $result->limit(1)->current();
 				if ($account->isEmpty()) {
@@ -104,7 +112,7 @@ class Billrun_Account_Db extends Billrun_Account {
 				}
 				$accounts[] = $account;
 			} else {
-				$accountsForQuery = iterator_to_array($this->collection->query($query)->cursor());
+				$accountsForQuery = iterator_to_array($result);
 				if (empty($accountsForQuery)) {
 					continue;
 				}
