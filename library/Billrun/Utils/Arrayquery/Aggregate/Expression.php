@@ -25,6 +25,7 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		'$substr' => '_substr',
 		'$min' => '_min',
 		'$max' => '_max',
+		'$abs' => '_abs',
 		'__aggregate' => '_aggregate',
 		'__callback' => '_callback'
 	);
@@ -168,6 +169,10 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		return is_null($pastValue) || $currValue > $pastValue ? $currValue : $pastValue ;
 	}
 
+	protected function _abs($data, $expression, $pastValue = null) {
+		$currValue = $this->evaluate($data, $expression);
+		return  abs($currValue);
+	}
 
 	//======================================= String operations ===============================
 	
