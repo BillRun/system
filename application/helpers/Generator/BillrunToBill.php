@@ -70,12 +70,12 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$invoicesLimit = (int) $this->getLimit();
 		if ($invoicesLimit != -1) {
 			$page = (int) $this->page;
-			$invoicesCursor = $this->billrunColl->query($query)->cursor()
+			$invoicesCursor = $this->billrunColl->query($query)->cursor()->immortal()
 				->sort(array('aid' => 1))
 				->limit($invoicesLimit)->skip($invoicesLimit * $page);
 		} else {
 			$query['billed'] = array('$ne' => 1);
-			$invoicesCursor = $this->billrunColl->query($query)->cursor()->sort(array('aid' => 1));
+			$invoicesCursor = $this->billrunColl->query($query)->cursor()->immortal()->sort(array('aid' => 1));
 		}
 		$invoices = $invoicesCursor->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
