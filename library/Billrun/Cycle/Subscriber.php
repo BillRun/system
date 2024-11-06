@@ -389,9 +389,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$to = $endTime;
 			Billrun_Factory::log("Taking the end time! " . $endTime);
 		}
-
 		$aggregatorData["$to"]['plans'][] = $toAdd;
-
 
 		return $aggregatorData;
 	}
