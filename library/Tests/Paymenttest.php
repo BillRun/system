@@ -15,7 +15,8 @@ require_once(APPLICATION_PATH . '/library/Tests/testrail.php');
 
 define('UNIT_TESTING', 'true');
 
-class Tests_paymenttest extends UnitTestCase {
+class Tests_paymenttest extends UnitTestCase
+{
 
 	use Tests_SetUp;
 
@@ -32,11 +33,13 @@ class Tests_paymenttest extends UnitTestCase {
 	 * 
 	 * @param type $label
 	 */
-	public function __construct($label = false) {
+	public function __construct($label = false)
+	{
 		//for PHP<7.3
 		if (!function_exists('array_key_first')) {
 
-			function array_key_first(array $arr) {
+			function array_key_first(array $arr)
+			{
 				foreach ($arr as $key => $unused) {
 					return $key;
 				}
@@ -66,7 +69,8 @@ class Tests_paymenttest extends UnitTestCase {
 	/**
 	 * 
 	 */
-	public function loadDbConfig() {
+	public function loadDbConfig()
+	{
 		Billrun_Config::getInstance()->loadDbConfig();
 	}
 
@@ -74,7 +78,8 @@ class Tests_paymenttest extends UnitTestCase {
 	 * init the tests to run
 	 * @throws Exception
 	 */
-	public function readCases() {
+	public function readCases()
+	{
 		try {
 			$request = new Yaf_Request_Http;
 			$this->test_cases = $request->get('tests');
@@ -102,14 +107,15 @@ class Tests_paymenttest extends UnitTestCase {
 	 * print the test result
 	 * and restore the original data 
 	 */
-	public function TestRunner() {
+	public function TestRunner()
+	{
 
 		foreach ($this->cases as $key => $row) {
 			Billrun_Factory::log("***** start test number " . $row['test_id'], Zend_Log::INFO);
 			$this->message .= "<span id={$row['test_id']}>test number : " . $row['test_id'] . '</span><br>';
 			$this->message .= "<span>test description : " . $row['description'] . '</span><br>';
 			Billrun_Factory::log("test description : " . print_r($row['description'], 1), Zend_Log::INFO);
-// run fenctions before the test begin 
+			// run fenctions before the test begin 
 			if (isset($row['preTest']) && !empty($row['preTest'])) {
 				$preRun = $row['preTest'];
 				if (!is_array($preRun)) {
@@ -124,19 +130,21 @@ class Tests_paymenttest extends UnitTestCase {
 					}
 				}
 			}
-// run case 
+			// run case 
 			if (!empty($row['api'])) {
 				try {
 					$this->respons = $this->bulidAPI($row);
-//					echo '<pre>';
+					//					echo '<pre>';
 //					print_r($this->respons);
 				} catch (Exception $ex) {
 					throw new Exception($ex);
 				}
 			}
-//run tests functios 
+			//run tests functios 
 			if (isset($row['testFunctions'])) {
 				$function = $row['testFunctions'];
+				//add check_pending_covering_amount function 
+				array_push($function,['check_pending_covering_amount'=>['aid'=>(int)$row['params']['aid']]]);
 				if (!is_array($function)) {
 					$function = array($row['testFunctions']);
 				}
@@ -159,7 +167,7 @@ class Tests_paymenttest extends UnitTestCase {
 
 			$post = (isset($row['postTest']) && !empty($row['postTest'])) ? $row['postTest'] : null;
 
-// run functions after the test run 
+			// run functions after the test run 
 			if (!is_array($post) && isset($post)) {
 				$post = array($row['postRun']);
 			}
@@ -176,32 +184,33 @@ class Tests_paymenttest extends UnitTestCase {
 			Billrun_Factory::log("***** finish test number " . $row['test_id'], Zend_Log::INFO);
 		}
 		if (!empty($this->fails)) {
-			$this->message .='<b>list of fails</b><br>'. $this->fails;
+			$this->message .= '<b>list of fails</b><br>' . $this->fails;
 		}
 		print_r($this->message);
 		if ($this->reportTR) {
 			$this->ReportTestRail();
 		}
-       $this->restoreColletions();
-		
+		$this->restoreColletions();
+
 	}
 
 	/** 	
 	 * report the result to test rail 
 	 */
-	public function ReportTestRail() {
+	public function ReportTestRail()
+	{
 
 		$line = '';
 		$f = fopen(APPLICATION_PATH . '/.git/logs/HEAD', 'r');
 		$cursor = -1;
 		fseek($f, $cursor, SEEK_END);
 		$char = fgetc($f);
-//Trim trailing newline characters in the file
+		//Trim trailing newline characters in the file
 		while ($char === "\n" || $char === "\r") {
 			fseek($f, $cursor--, SEEK_END);
 			$char = fgetc($f);
 		}
-//Read until the next line of the file begins or the first newline char
+		//Read until the next line of the file begins or the first newline char
 		while ($char !== false && $char !== "\n" && $char !== "\r") {
 			//Prepend the new character
 			$line = $char . $line;
@@ -217,10 +226,10 @@ class Tests_paymenttest extends UnitTestCase {
 		foreach ($this->TestRailCases as $id => $test) {
 			$status = isset($test['status']) == 5 ? 5 : 1;
 			$comment = isset($test['status']) == 5 ? $test['comment'] : "";
-			if($status ==5){
-				$comment .= "<br> to run this case "."http://$_SERVER[HTTP_HOST]$_SERVER[REDIRECT_URL]?tests=$id <br>";
+			if ($status == 5) {
+				$comment .= "<br> to run this case " . "http://$_SERVER[HTTP_HOST]$_SERVER[REDIRECT_URL]?tests=$id <br>";
 			}
-			
+
 			$results[] = [
 				"case_id" => $id,
 				"status_id" => $status,
@@ -241,24 +250,136 @@ class Tests_paymenttest extends UnitTestCase {
 	}
 
 	/**
+ * Validates the alignment of the pending amounts and flags across the "paid_by" and "pays" relationships within the financial records of bills. 
+ * Specifically, it checks if the total pending amount recorded in the "paid_by" field matches the corresponding amounts and flags in the "pays" field for each bill. 
+ * The function also verifies that the sum of all pending amounts matches the "pending_covering_amount" for each bill.
+ * 
+ * @param array $row Not used within the function, included for interface compatibility or future use.
+ * @param mixed $params Optional parameters to build the query for retrieving bills. Can be null or any structure that the buildQuery method supports.
+ * 
+ * The function operates by:
+ * - Retrieving bills based on the provided query parameters.
+ * - Iterating through each bill to check conditions on the "paid_by" and "pays" fields.
+ * - Verifying if:
+ *   - There's a mismatch in the pending flags between "paid_by" and corresponding "pays" entries.
+ *   - The pending amounts in "paid_by" match their counterparts in "pays".
+ *   - The total pending amount matches the bill's "pending_covering_amount".
+ * - Logging detailed information about the process and any discrepancies found.
+ * 
+ * @return bool Returns true if all checks pass without discrepancies; otherwise, false. Also logs detailed error messages in case of failures.
+ * 
+ * 
+ */
+	public function check_pending_covering_amount($row, $params = null)
+	{
+		$pass = true;
+		
+		$bills = $this->getBills($this->buildQuery($params));
+		print_r("***params");
+		print_r($params);
+		Billrun_Factory::log("run check_pending_covering_amount function with params : " . print_r($params, 1), Zend_Log::INFO);
+		Billrun_Factory::log(" check_pending_covering_amount function match bills : " . print_r($bills, 1), Zend_Log::INFO);
+		$PaidBy = [];
+		
+		foreach ($bills as $bill) {
+		$pendingAmount = 0;
+			if( isset($bill['paid_by'])||isset($bill['pays'])){
+				$data=  isset($bill['paid_by']) ? $bill['paid_by'] : $bill['pays'] ;
+			}
+			
+			if(empty($data))
+			    continue;
+			$identify = isset($bill['invoice_id']) ? $bill['invoice_id'] : $bill['txid'];
+
+				foreach ($data as $pay) {
+
+					if (isset($pay['pending']) && $pay['pending'] == true) {
+						$PaidBy[$identify][$pay['id']]['pending'] = $pay;
+						$pendingAmount += $pay['amount'];
+
+						$paysBill = array_values(array_filter((array)$bills, function ($item) use ($pay) {
+							if ($pay['type'] == 'rec') {
+								return $item['txid'] === $pay['id'];
+							} else {
+								return $item['invoice_id'] === $pay['id'];
+							}
+
+						}));
+						
+						$pay_ = array_values(array_filter($paysBill[0]['pays'], function ($item) use ($identify ) {
+							return $item['id'] === $identify;
+						}));
+
+						if(!is_null($pay_) ){
+							if( !isset($pay_[0]['pending']) || $pay_[0]['pending'] ==false ){
+							    $this->message .= "pending flag not not equel in pays and its payd_by " . $this->fail;
+								$this->message .= "pay VS paid_by :".$this->arrayToPrettyJsonHtml($pay)." & ".$this->arrayToPrettyJsonHtml($pay_[0]);
+								// var_dump($pay);
+								// var_dump($pay_[0]);
+								Billrun_Factory::log($this->message .= "pending flag not not equel in pays and its payd_by " . $this->fail, Zend_Log::ERR);
+								$pass = false;
+						}
+
+						if (!Billrun_Util::isEqual($pay_[0]['amount'], $pay['amount'], $this->epsilon)) {
+							$this->message .= "The sum of pending amount not equel to pending amount , pending amount in payd_by is {$pay['amount']} and in pending amount in its pays bill is {$pay_['amount']} " . $this->fail;
+							Billrun_Factory::log("The sum of pending amount not equel to pending amount , pending amount in payd_by is {$pay['amount']} and in pending amount in its pays bill is {$pay_['amount']} " , Zend_Log::ERR);
+							$pass = false;
+						}
+						}
+					
+					}
+
+
+				}
+				if (!Billrun_Util::isEqual($bill['pending_covering_amount'], $pendingAmount, $this->epsilon)) {
+					$this->message .= "The sum of pending_covering_amount not equel to pending amount , sum of pending amount in payd_by is $pendingAmount and in pending_covering_amount is {$bill['pending_covering_amount']}  " .$this->arrayToPrettyJsonHtml($bill). $this->fail;
+
+					Billrun_Factory::log("The sum of pending_covering_amount not equel to pending amount , sum of pending amount in payd_by is $pendingAmount and in pending_covering_amount is {$bill['pending_covering_amount']} ", Zend_Log::ERR);
+					$pass = false;
+				}
+		}
+		$this->message .= ($pass)?"check_pending_covering_amount function pass " . $this->pass :"";
+		return $pass;
+	}
+	function arrayToPrettyJsonHtml($array) {
+		// Check if the array is empty
+		if (empty($array)) {
+			return '<p>No data to display.</p>';
+		}
+	
+		// Convert the array to a pretty-printed JSON string
+		$jsonPrettyPrint = json_encode($array, JSON_PRETTY_PRINT);
+		if ($jsonPrettyPrint === false) {
+			// In case json_encode fails
+			return '<p>Error encoding data to JSON.</p>';
+		}
+	
+		// Return the JSON string wrapped in <pre> tags for formatting
+		return '<pre>' . htmlspecialchars($jsonPrettyPrint) . '</pre>';
+	}
+	
+	
+	/**
 	 * 
 	 * @param type $params
 	 * @return mongo query 
 	 */
-	public function buildQuery($params) {
+	public function buildQuery($params)
+	{
 		Billrun_Factory::log("run buildQuery function with params : " . print_r($params, 1), Zend_Log::INFO);
 		$query = [];
 		foreach ($params as $key => $value) {
-			if(($key=='$in')) {
-				$value = ['$in'=>$value['$in']];
+			if (($key == '$in')) {
+				$value = ['$in' => $value['$in']];
 			}
 			$query[$key] = $value;
 		}
 		return $query;
 	}
 
-	public function isBillCreated($query) {
-		
+	public function isBillCreated($query)
+	{
+
 	}
 
 	/**
@@ -267,16 +388,17 @@ class Tests_paymenttest extends UnitTestCase {
 	 * @param type $params
 	 * @return boolean
 	 */
-	public function FieldComparison($row, $params = null) {
+	public function FieldComparison($row, $params = null)
+	{
 		$pass = true;
-	 	sleep(2);
+		sleep(2);
 		$bills = $this->getBills($this->buildQuery($params));
 		print_r("***params");
-		print_r( $params);
+		print_r($params);
 		Billrun_Factory::log("run FieldComparison function with params : " . print_r($params, 1), Zend_Log::INFO);
 		Billrun_Factory::log(" FieldComparison function match bills : " . print_r($bills, 1), Zend_Log::INFO);
-		$this->TestRailCases[$row['testRailId']]['comment'].="run FieldComparison function with params : " . print_r($params, 1);
-		$this->TestRailCases[$row['testRailId']]['comment'].=" FieldComparison function match bills : " . print_r($bills, 1);
+		$this->TestRailCases[$row['testRailId']]['comment'] .= "run FieldComparison function with params : " . print_r($params, 1);
+		$this->TestRailCases[$row['testRailId']]['comment'] .= " FieldComparison function match bills : " . print_r($bills, 1);
 		// echo '<pre>';
 		// 		print_r($row['expected']);
 		// 		print_r($bills);
@@ -289,7 +411,7 @@ class Tests_paymenttest extends UnitTestCase {
 
 		$sort = function ($a, $b) {
 
-			$fields = (empty($row['sort']))?[
+			$fields = (empty ($row['sort'])) ? [
 				'aid',
 				'total_paid',
 				'left_to_pay',
@@ -302,7 +424,7 @@ class Tests_paymenttest extends UnitTestCase {
 				'left',
 				'paid',
 				'bills_merged',
-			]: $row['sort'];
+			] : $row['sort'];
 			// $fields = [
 			// 	'aid',
 			// 	'total_paid',
@@ -320,11 +442,11 @@ class Tests_paymenttest extends UnitTestCase {
 
 			foreach ($fields as $field) {
 				if (strpos($field, '.')) {
-					if (!empty(Billrun_Util::getIn($b, $field)) && Billrun_Util::getIn($a, $field) != Billrun_Util::getIn($b, $field)) {
+					if (!empty (Billrun_Util::getIn($b, $field)) && Billrun_Util::getIn($a, $field) != Billrun_Util::getIn($b, $field)) {
 						return Billrun_Util::getIn($a, $field) < Billrun_Util::getIn($b, $field);
 					}
 				} else {
-					if (!empty($a[$field]) && !empty($b[$field]) && $a[$field] != $b[$field]) {
+					if (!empty ($a[$field]) && !empty ($b[$field]) && $a[$field] != $b[$field]) {
 						return $a[$field] < $b[$field];
 					}
 				}
@@ -336,6 +458,7 @@ class Tests_paymenttest extends UnitTestCase {
 		echo '<pre>';
 		print_r($row['expected']);
 		print_r($bills);
+		echo '</pre>';
 
 		$i = 0;
 		foreach ($bills as $bill) {
@@ -370,7 +493,7 @@ class Tests_paymenttest extends UnitTestCase {
 					continue;
 				}
 				$DataField = $nested ? $DataField : $bill[$k];
-                //  if(is_null($DataField))
+				//  if(is_null($DataField))
 				//     $DataField = Billrun_Util::getIn($bill, $k);
 
 
@@ -415,8 +538,8 @@ class Tests_paymenttest extends UnitTestCase {
 					$this->message .= '-- the result is empty' . $this->fail;
 					$this->TestRailCases[$row['testRailId']]['comment'] .= "  test field  **$k** Expected is $v<br> ";
 					$this->TestRailCases[$row['testRailId']]['comment'] .= '-- the result is empty<br>';
-	
-				$pass = false;
+
+					$pass = false;
 				}
 				if (!is_numeric($DataField)) {
 					if ($DataField != $v) {
@@ -432,7 +555,7 @@ class Tests_paymenttest extends UnitTestCase {
 				} else {
 					if (!Billrun_Util::isEqual($DataField, $v, $this->epsilon)) {
 						Billrun_Factory::log("Actual result  : . $DataField .", Zend_Log::ERR);
-						$this->message .=  ' ----- ' . $DataField . $this->fail;
+						$this->message .= ' ----- ' . $DataField . $this->fail;
 						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test field  **$k** Expected is $v<br> ";
 						$this->TestRailCases[$row['testRailId']]['comment'] .= '	--  actual result  is : ' . $DataField . '<br>';
 						$pass = false;
@@ -453,12 +576,13 @@ class Tests_paymenttest extends UnitTestCase {
 	 * @param type $query
 	 * @return type
 	 */
-	public function getBills($query) {
+	public function getBills($query)
+	{
 		$allBills = [];
-		
+
 		$BillsCollection = Billrun_Factory::db()->billsCollection();
 		$bills = $BillsCollection->query($query)->cursor()->setReadPreference('RP_PRIMARY')->timeout(10800000);
-		
+
 		foreach ($bills as $bill) {
 			$allBills[] = $bill->getRawData();
 		}
@@ -471,9 +595,10 @@ class Tests_paymenttest extends UnitTestCase {
 	 * @param type $params
 	 * @return boolean
 	 */
-	public function checkLink($row, $params = null) {
+	public function checkLink($row, $params = null)
+	{
 		Billrun_Factory::log("test function checkLink with params " . print_r($params, 1), Zend_Log::INFO);
-		$this->TestRailCases[$row['testRailId']]['comment'] .= "test function checkLink with params " .print_r($params, 1);
+		$this->TestRailCases[$row['testRailId']]['comment'] .= "test function checkLink with params " . print_r($params, 1);
 		$pass = true;
 		$bills = $this->getBills($this->buildQuery($params));
 		$pays = $this->getPays($bills);
@@ -565,7 +690,8 @@ class Tests_paymenttest extends UnitTestCase {
 	 * @param type $billls
 	 * @return type
 	 */
-	public function getPays($bills) {
+	public function getPays($bills)
+	{
 		$pays = [];
 		foreach ($bills as $bill) {
 			if (isset($bill['pays'])) {
@@ -584,7 +710,8 @@ class Tests_paymenttest extends UnitTestCase {
 	 * 
 	 * @param type $bills
 	 */
-	public function getPaidBy($bills) {
+	public function getPaidBy($bills)
+	{
 		$PaidBy = [];
 		foreach ($bills as $bill) {
 			if (isset($bill['paid_by'])) {
@@ -592,7 +719,7 @@ class Tests_paymenttest extends UnitTestCase {
 
 				foreach ($bill['paid_by'] as $pay) {
 					$PaidBy[$identify][$pay['id']] = $pay;
-					@$PaidBy[$identify] ['total'] += $pay['amount'];
+					@$PaidBy[$identify]['total'] += $pay['amount'];
 				}
 			}
 		}
@@ -605,16 +732,18 @@ class Tests_paymenttest extends UnitTestCase {
 	 * @param type $row
 	 * @return type
 	 */
-	public function bulidAPI($row, $params = null) {
+	public function bulidAPI($row, $params = null)
+	{
 		if (!empty($params)) {
 			$api = $params['api'];
 		} else {
 			$api = $row['api'];
 		}
-		$baseApi =($api != 'chargeAccount') ? 'api' :'billrun';
-		$url = "http://$this->serverName/$baseApi/$api";
+		$baseApi = ($api != 'chargeAccount') ? 'api' : 'billrun';
+		$url = "http://web/$baseApi/$api";
 		echo '<pre> URL:';
 		print_r($url);
+		echo '</pre>';
 		$paramsToSend = !empty($params) ? $params : $row['params'];
 		foreach ($paramsToSend as $key => $val) {
 
@@ -622,7 +751,7 @@ class Tests_paymenttest extends UnitTestCase {
 			if ($key == 'invoice_unixtime') {
 				if ($val == 'future') {
 					$val = time() + 2592000;
-				} else if($val == 'past') {
+				} else if ($val == 'past') {
 					$val = time() - 2592000;
 				}
 			}
@@ -652,7 +781,7 @@ class Tests_paymenttest extends UnitTestCase {
 					}
 				}
 				$request['adjustments'] = json_encode($adjustments);
-//				$request[$key] = json_encode(['id' => $bills[0]['txid']]);
+				//				$request[$key] = json_encode(['id' => $bills[0]['txid']]);
 				continue;
 			}
 			//in case that we need to pass replace  any  paramter  , we get it by passing a query 
@@ -715,13 +844,13 @@ class Tests_paymenttest extends UnitTestCase {
 
 						foreach ($val as $k => &$v) {
 							if (is_array($v['txid'])) {
-								$query=[];
-								$query['aid']=1;
-								foreach ($v['txid'] as $field=>$fvualue){
-									$query[$field]=$fvualue;
+								$query = [];
+								$query['aid'] = 1;
+								foreach ($v['txid'] as $field => $fvualue) {
+									$query[$field] = $fvualue;
 								}
 								$KeyQueryField = array_key_first($v['txid']);
-								$Bill = $this->getBills($this->buildQuery(/*['aid' => 1, $KeyQueryField => $v['txid'][$KeyQueryField],'left' => ['$exists' => 1]]*/$query));
+								$Bill = $this->getBills($this->buildQuery(/*['aid' => 1, $KeyQueryField => $v['txid'][$KeyQueryField],'left' => ['$exists' => 1]]*/ $query));
 								$v['txid'] = $Bill[0]['txid'];
 							}
 						}
@@ -733,7 +862,7 @@ class Tests_paymenttest extends UnitTestCase {
 		}
 		$secret = Billrun_Utils_Security::getValidSharedKey();
 		$signed = Billrun_Utils_Security::addSignature($request, $secret['key']);
-	//	$request['XDEBUG_SESSION_START'] ="VSCODE";
+		//	$request['XDEBUG_SESSION_START'] ="VSCODE";
 		$request['_sig_'] = $signed['_sig_'];
 		$request['_t_'] = $signed['_t_'];
 		// echo '<pre>';
@@ -748,16 +877,18 @@ class Tests_paymenttest extends UnitTestCase {
 	 * @param type $request
 	 * @return type
 	 */
-	public function sendAPI($url, $request) {
+	public function sendAPI($url, $request)
+	{
 		Billrun_Factory::log("send api API to $url with params l" . print_r($request, 1), Zend_Log::INFO);
 		$api = explode('/', $url);
 		if (in_array('onetimeinvoice', $api))
-	     	sleep(2);
+			sleep(2);
 		$respons = json_decode(Billrun_Util::sendRequest($url, $request), true);
 		Billrun_Factory::log("response is :" . print_r($respons, 1), Zend_Log::INFO);
-		echo '<pre>';
+		//echo '<pre>';
 		//print_r($$url);
-		print_r($respons);
+		// print_r($respons);
+		//echo '</pre>';
 		//print_r($this->getBills(['aid' =>['$in'=>[72,722]]]));
 		return $respons;
 	}
@@ -768,10 +899,11 @@ class Tests_paymenttest extends UnitTestCase {
 	 * @param type $params
 	 * @return boolean
 	 */
-	public function checkApiRespons($row, $params = null) {
+	public function checkApiRespons($row, $params = null)
+	{
 		$pass = true;
 		Billrun_Factory::log("test function checkApiRespons, with array  of pathes and valuses  with params " . print_r($params, 1), Zend_Log::INFO);
-		$this->TestRailCases[$row['testRailId']]['comment'] .="test function checkApiRespons with params " . print_r($params, 1);
+		$this->TestRailCases[$row['testRailId']]['comment'] .= "test function checkApiRespons with params " . print_r($params, 1);
 		Billrun_Factory::log("test API respons for {$row['api']} API", Zend_Log::INFO);
 		$this->message .= "test API respons for {$row['api']} API </br>";
 		foreach ($params as $path => $message) {
@@ -810,7 +942,8 @@ class Tests_paymenttest extends UnitTestCase {
 		return $pass;
 	}
 
-	public function checkMergeBillDueDate($row, $params = null) {
+	public function checkMergeBillDueDate($row, $params = null)
+	{
 		$pass = true;
 		Billrun_Factory::log("test function checkMergeBillDueDate with params " . print_r($params, 1), Zend_Log::INFO);
 		$bill = $this->getBills($this->buildQuery($params));
@@ -839,7 +972,8 @@ class Tests_paymenttest extends UnitTestCase {
 	 * @param type $row
 	 * @param type $params
 	 */
-	public function cleanDB($row, $params = null) {
+	public function cleanDB($row, $params = null)
+	{
 		if ($params) {
 			foreach ($params as $key => $value) {
 				@$paramToprint = "$key = $value";
@@ -848,7 +982,7 @@ class Tests_paymenttest extends UnitTestCase {
 			$this->billsCol->remove($this->buildQuery($params));
 			$this->billsCol->remove($this->buildQuery($params));
 			$this->billrunCol->remove($this->buildQuery($params));
-			$this->operationsCol->remove(['filtration'=>$params['aid']]);
+			$this->operationsCol->remove(['filtration' => $params['aid']]);
 		}
 	}
 
