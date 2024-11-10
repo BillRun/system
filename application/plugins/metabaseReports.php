@@ -102,6 +102,11 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$billrun_key = $accountBillrun->getBillrunKey();
 		$invoice_data = $invoice->getRawData();
 		Billrun_Factory::log("Checking if any metabase report should run after account " . $aid . " invoice " . $invoice_data['invoice_id'] . " created", Zend_Log::DEBUG);
+		$shouldSkip = false;
+		Billrun_Factory::dispatcher()->trigger('skipInvoiceReport', array(&$invoice_data, &$shouldSkip));
+		if($shouldSkip){
+			return;
+		}
 		$params = [
 			'invoices' => [$invoice_data],
 			'event' => 'customer_invoice_created'
@@ -118,6 +123,11 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return;
 		}
 		Billrun_Factory::log("Checking if any metabase report should run after account " . $invoice_bill['aid'] . " invoice " . $invoice_bill['invoice_id'] . " confirmed", Zend_Log::DEBUG);
+		$shouldSkip = false;
+		Billrun_Factory::dispatcher()->trigger('skipInvoiceReport', array(&$invoice_data, &$shouldSkip));
+		if($shouldSkip){
+			return;
+		}
 		$params = [
 			'invoices' => [$invoice_data],
 			'event' => 'customer_invoice_confirmed'
@@ -136,6 +146,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return;
 		}
 		Billrun_Factory::log("Checking if any metabase report should run after cycle " . $cycle->key() . " finished", Zend_Log::DEBUG);
+		Billrun_Factory::dispatcher()->trigger('skipInvoicesReport', array(&$data));
 		$params = [
 			'invoices' => array_map(function($invoice) {
 				return $invoice->getInvoice()->getRawData();
@@ -159,6 +170,10 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return;
 		}
 		Billrun_Factory::log("Checking if any metabase report should run after cycle " . $billrun_key . " confirmed", Zend_Log::DEBUG);
+		Billrun_Factory::dispatcher()->trigger('skipInvoicesReport', array(&$invoices));
+		if(empty($invoices)){
+			return;
+		}
 		$params = [
 			'invoices' => $invoices,
 			'billrun_key' => $billrun_key,
