@@ -6,14 +6,14 @@
 // var GBA_URL // Get Billable Accounts API endpoint
 // var EXTERNAL_AUTHENTICATION // CRM authentication configuration (json)
 
-// example comnand (without authentication):
+// example command (without authentication):
 //     mongo DB_NAME -uUSER -pPASSWORD --eval 
 //         'var GSD_URL="http://CRM/Api/V8/custom/external/gsd";
 //          var GAD_URL="http://CRM/Api/V8/custom/external/gad";
 //          var GBA_URL="http://CRM/Api/V8/custom/external/gba";'
 //     mongo/override_configuration/subscribers/set_external_subscribers_mode.js
 
-// example comnand (with authentication):
+// example command (with authentication):
 //     mongo DB_NAME -uUSER -pPASSWORD --eval 
 //         'var GSD_URL="http://CRM/Api/V8/custom/external/gsd";
 //          var GAD_URL="http://CRM/Api/V8/custom/external/gad";
