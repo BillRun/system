@@ -140,14 +140,34 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
             Billrun_Factory::log()->log("creditGuardPlugin : Extend card expiration flag is off. Pulling the original card expiration field value from the account", Zend_Log::DEBUG);
             return $current_gateway_details[$this->card_expiration_field];
         } else {
-            Billrun_Factory::log()->log("creditGuardPlugin : Extend card expiration flag is on", Zend_Log::DEBUG);
+            Billrun_Factory::log()->log("creditGuardPlugin : Extend card expiration flag is on. Checking if card expiration expired", Zend_Log::DEBUG);
             $current_card_expiration = $current_gateway_details[$this->card_expiration_field];
             Billrun_Factory::log()->log("creditGuardPlugin : Original card expiration value for account " . $account['aid'] . " is " . $current_card_expiration, Zend_Log::DEBUG);
-            $file_card_expiration = substr($current_card_expiration, 0, 2) . ((substr($current_card_expiration, 2, 4) + $this->years_to_extend_card_exp) % 100);
-            Billrun_Factory::log()->log("creditGuardPlugin : Card expiration value that will be insert to the request file line for account " . $account['aid'] . " is " . $file_card_expiration, Zend_Log::DEBUG);
-            return $file_card_expiration;
+            $card_expiration_expired = $this->isCreditCardExpired($current_card_expiration);
+            if (!$card_expiration_expired) {
+                Billrun_Factory::log()->log("Account " . $account['aid'] . " card expiration is not expired. Original card expiration value was taken to the file", Zend_Log::DEBUG);
+                return $current_card_expiration;
+            } else {
+                Billrun_Factory::log()->log("Account " . $account['aid'] . " card expiration expired. Calculating the value that will be pulled to the file", Zend_Log::DEBUG);
+                $file_card_expiration = substr($current_card_expiration, 0, 2) . ((substr($current_card_expiration, 2, 4) + $this->years_to_extend_card_exp) % 100);
+                Billrun_Factory::log()->log("creditGuardPlugin : Card expiration value that will be insert to the request file line for account " . $account['aid'] . " is " . $file_card_expiration, Zend_Log::DEBUG);
+                return $file_card_expiration;
+            }
         }
     }
+
+    public function isCreditCardExpired($expiration) {
+		$cgConfig = Billrun_Factory::config()->getConfigValue('creditguard');
+		$oldestCardExpiration = $cgConfig['oldest_card_expiration'];
+		$expires = \DateTime::createFromFormat('my', $expiration);
+		$dateTooOld = new DateTime($oldestCardExpiration);
+		if ($expires < $dateTooOld) {
+			Billrun_Factory::log("Expiration date " . $expires->date . " is too old", Zend_Log::DEBUG);
+			return false;
+		}
+		
+		return $expires < new DateTime();
+	}
 
     protected function getTerminalAndTransactionType($account, $payment) {
         $gatewayDetails = $account['payment_gateway']['active'];
