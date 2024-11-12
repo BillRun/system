@@ -35,6 +35,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 				$pricingData['billrun'] = $billrunKey;
 			}else{
 				Billrun_Factory::log("Line {$this->row['stamp']} failed to get billrun field." , Zend_Log::ALERT);
+				return false;
 			} 
 		}
 		return $pricingData;
