@@ -203,7 +203,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function updateRow($row) {
-        if (isset($this->aidsQueuedForRebalance[$row['aid']]) && $row['type'] !== "credit") {
+		if (isset($this->aidsQueuedForRebalance[$row['aid']]) && $row['type'] !== "credit") {
 			return false;
 		}
                 
