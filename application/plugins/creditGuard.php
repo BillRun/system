@@ -35,6 +35,12 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
     protected $years_to_extend_card_exp;
 
     /**
+     * oldest card expiration
+     * @var string
+     */
+    protected $oldest_card_expiration;
+
+    /**
      * Card types array
      * @var array 
      */
@@ -61,6 +67,7 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
     public function __construct($options = array()) {
         $this->card_expiration_field = Billrun_Util::getIn($options, "card_expiration_field_name", "card_expiration");
         $this->years_to_extend_card_exp = Billrun_Util::getIn($options, "years_to_extend_card_expiration", 3);
+        $this->oldest_card_expiration = Billrun_Util::getIn($options, "oldest_card_expiration", '20 years ago');
         $this->extend_card_expiration = Billrun_Util::getIn($options, "extend_card_expiration", true);
         $this->mid = Billrun_Util::getIn($options, "params.mid", null);
         $this->setTerminals(Billrun_Util::getIn($options, "params", []));
@@ -145,10 +152,10 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
             Billrun_Factory::log()->log("creditGuardPlugin : Original card expiration value for account " . $account['aid'] . " is " . $current_card_expiration, Zend_Log::DEBUG);
             $card_expiration_expired = $this->isCreditCardExpired($current_card_expiration);
             if (!$card_expiration_expired) {
-                Billrun_Factory::log()->log("Account " . $account['aid'] . " card expiration is not expired. Original card expiration value was taken to the file", Zend_Log::DEBUG);
+                Billrun_Factory::log()->log("creditGuardPlugin : Account " . $account['aid'] . " card expiration is not expired. Original card expiration value was taken to the file", Zend_Log::DEBUG);
                 return $current_card_expiration;
             } else {
-                Billrun_Factory::log()->log("Account " . $account['aid'] . " card expiration expired. Calculating the value that will be pulled to the file", Zend_Log::DEBUG);
+                Billrun_Factory::log()->log("creditGuardPlugin : Account " . $account['aid'] . " card expiration expired. Calculating the value that will be pulled to the file", Zend_Log::DEBUG);
                 $file_card_expiration = substr($current_card_expiration, 0, 2) . ((substr($current_card_expiration, 2, 4) + $this->years_to_extend_card_exp) % 100);
                 Billrun_Factory::log()->log("creditGuardPlugin : Card expiration value that will be insert to the request file line for account " . $account['aid'] . " is " . $file_card_expiration, Zend_Log::DEBUG);
                 return $file_card_expiration;
@@ -157,12 +164,10 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
     }
 
     public function isCreditCardExpired($expiration) {
-		$cgConfig = Billrun_Factory::config()->getConfigValue('creditguard');
-		$oldestCardExpiration = $cgConfig['oldest_card_expiration'];
 		$expires = \DateTime::createFromFormat('my', $expiration);
-		$dateTooOld = new DateTime($oldestCardExpiration);
+		$dateTooOld = new DateTime($this->oldest_card_expiration);
 		if ($expires < $dateTooOld) {
-			Billrun_Factory::log("Expiration date " . $expires->date . " is too old", Zend_Log::DEBUG);
+			Billrun_Factory::log("creditGuardPlugin : Expiration date " . $expires->format('Y-m-d H:i:s') . " is too old", Zend_Log::DEBUG);
 			return false;
 		}
 		
@@ -237,6 +242,16 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"nullable" => false,
 				"mandatory" => true,
                 "default" => 3
+			],
+            [
+				"type" => "text",
+				"field_name" => "oldest_card_expiration",
+				"title" => "Oldest card expiration",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true,
+                "default" => '20 years ago'
 			]
 		];
 	}

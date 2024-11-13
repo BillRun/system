@@ -1498,6 +1498,7 @@ runOnce(lastConfig, 'BRCD-4415', function () {
         "configuration" : {
             "values" : {
                 "card_expiration_field_name" : "card_expiration",
+				"oldest_card_expiration" : "20 years ago",
                 "years_to_extend_card_expiration" : 3,
                 "extend_card_expiration" : true
             }
