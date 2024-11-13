@@ -165,8 +165,8 @@ class Billrun_Account_External extends Billrun_Account {
 		if (isset($query['EXTRAS'])) {
 			unset($query['EXTRAS']);
 		}
-		if (isset($query['read_primary'])) {
-			unset($query['read_primary']);
+		if (isset($query['read_preference'])) {
+			unset($query['read_preference']);
 		}
 		$params = [];
 		foreach ($query as $key => $value) {
