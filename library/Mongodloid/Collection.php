@@ -48,14 +48,14 @@ class Mongodloid_Collection {
 				unset($options['upsert']);
 				$upsert = true;
 			}
-			$res = Mongodloid_Result::getResult($this->replaceOne($query, $values, $options));
+			$res = Mongodloid_Result::getResult($this->replaceOne($query, $values, $options),__FUNCTION__);
 			if($upsert && $res['n'] === 0){
 				$res = $this->insert($values, $options);
 			}
 		} else if ($multiple) {
-			$res =  Mongodloid_Result::getResult($this->updateMany($query, $values, $options));
+			$res =  Mongodloid_Result::getResult($this->updateMany($query, $values, $options),__FUNCTION__);
 		} else {
-			$res = Mongodloid_Result::getResult($this->updateOne($query, $values, $options));
+			$res = Mongodloid_Result::getResult($this->updateOne($query, $values, $options),__FUNCTION__);
 		}
 		return $res;
 	}
@@ -131,7 +131,7 @@ class Mongodloid_Collection {
 		// This function changes fields, should I clone fields before sending?
 		$this->setEntityFields($entity, $fields);
 
-		return Mongodloid_Result::getResult($this->updateOne($data, array('$set' => $fields)));
+		return Mongodloid_Result::getResult($this->updateOne($data, array('$set' => $fields)),__FUNCTION__);
 	}
 
 	/**
@@ -139,7 +139,7 @@ class Mongodloid_Collection {
 	 * @return mongodloid getName result
 	 */
 	public function getName() {
-		return Mongodloid_Result::getResult($this->_collection->getCollectionName());
+		return Mongodloid_Result::getResult($this->_collection->getCollectionName(),__FUNCTION__);
 	}
 
 	/**
@@ -148,7 +148,7 @@ class Mongodloid_Collection {
 	 * @return mongodloid dropIndexes result
 	 */
 	public function dropIndexes() {
-		return Mongodloid_Result::getResult($this->_collection->dropIndexes());
+		return Mongodloid_Result::getResult($this->_collection->dropIndexes(),__FUNCTION__);
 	}
 
 	/**
@@ -157,7 +157,7 @@ class Mongodloid_Collection {
 	 * @return mongodloid dropIndexe result
 	 */
 	public function dropIndex($field) {
-		return Mongodloid_Result::getResult($this->_collection->dropIndex($field));
+		return Mongodloid_Result::getResult($this->_collection->dropIndex($field),__FUNCTION__);
 	}
 
 	/**
@@ -220,7 +220,7 @@ class Mongodloid_Collection {
 	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-listIndexes/#phpmethod.MongoDB\Collection::listIndexes
 	 */
 	public function getIndexes() {
-		return Mongodloid_Result::getResult($this->_collection->listIndexes());
+		return Mongodloid_Result::getResult($this->_collection->listIndexes(),__FUNCTION__);
 	}
 
 	/**
@@ -253,7 +253,7 @@ class Mongodloid_Collection {
 			$data['_id'] =  $id;
 		}
 		
-		$result = Mongodloid_Result::getResult($this->update(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id)), $data, $options));
+		$result = Mongodloid_Result::getResult($this->update(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id)), $data, $options),__FUNCTION__);
 		$entity->setRawData($data);
 		return $result;
 	}
@@ -265,7 +265,7 @@ class Mongodloid_Collection {
 	 * @return array\Mongodloid_Entity - dependence on $want_array
 	 */
 	public function findOne($id, $want_array = false) {
-		$values = Mongodloid_Result::getResult($this->_collection->findOne(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id))));
+		$values = Mongodloid_Result::getResult($this->_collection->findOne(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id))),__FUNCTION__);
 
 		if ($want_array) {
 			return $values;
@@ -343,7 +343,7 @@ class Mongodloid_Collection {
 		}else{
 			$ret = $this->deleteOne($query, $options);
 		}
-		return Mongodloid_Result::getResult($ret);
+		return Mongodloid_Result::getResult($ret,__FUNCTION__);
 	}
 
 	/**
@@ -561,7 +561,7 @@ class Mongodloid_Collection {
 				$ret = $this->findOneAndUpdate($query, $update, $options);
 			}
 		}
-		$ret = Mongodloid_Result::getResult($ret);
+		$ret = Mongodloid_Result::getResult($ret,__FUNCTION__);
 		if ($retEntity) {
 			return new Mongodloid_Entity($ret, $this);
 		}
@@ -621,7 +621,7 @@ class Mongodloid_Collection {
 			$documents[] = $doc;
 		}
 		$this->convertWriteConcernOptions($options);
-		return Mongodloid_Result::getResult($this->insertMany(Mongodloid_TypeConverter::fromMongodloid($documents), $options));
+		return Mongodloid_Result::getResult($this->insertMany(Mongodloid_TypeConverter::fromMongodloid($documents), $options),__FUNCTION__);
 	}
 
 	private function insertMany(array $documents, array $options = array()) {
@@ -649,7 +649,7 @@ class Mongodloid_Collection {
 			$ret = $this->_collection->insertOne(Mongodloid_TypeConverter::fromMongodloid($a), $options);
 			$ins = $a;
 		}
-		return Mongodloid_Result::getResult($ret);
+		return Mongodloid_Result::getResult($ret,__FUNCTION__);
 	}
 	
 	/**
@@ -771,7 +771,7 @@ class Mongodloid_Collection {
 
 	public function distinct($key, array $query = array()) {
 		$query = Mongodloid_TypeConverter::fromMongodloid($query);
-		return Mongodloid_Result::getResult($this->_collection->distinct($key, $query));
+		return Mongodloid_Result::getResult($this->_collection->distinct($key, $query),__FUNCTION__);
 	}
 
 	public function getWriteConcern($var = null) {
