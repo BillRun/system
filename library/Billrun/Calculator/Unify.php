@@ -217,7 +217,15 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				$linesArchivedStamps = array_keys($this->archivedLines);
 			} catch (Exception $e) {
 				Billrun_Factory::log("Failed to insert to archive. " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ALERT);
-				// todo: dump lines into file
+				foreach ($this->archivedLines as $archivedLine) {
+					try {
+						$archLinesColl->insert($archivedLine);
+					} catch (Exception $ex) {//NOTE: in this case 1. the unify line will still update
+						$failedArchived [] = $archivedLine;
+						Billrun_Factory::log("Failed to insert to archive."  . $ex->getMessage() . " stamp: " . $archivedLine['stamp'], Zend_Log::ALERT);
+						// todo: dump lines into file 
+					}
+				}
 			}
 			Billrun_Factory::log('Removing Lines from the lines collection....', Zend_Log::INFO);
 			$localLines->remove(array('stamp' => array('$in' => $linesArchivedStamps)), $saveOptions);
@@ -274,7 +282,12 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			}
 		}
 		//add lines to archive 
-		$this->saveLinesToArchive();
+		$failedArchived = $this->saveLinesToArchive();
+		foreach ($failedArchived as $failedArchived) {
+			
+				unset($this->lines[ $failedArchived['stamp']]);
+			
+		}
 
 		parent::write();
 	}
