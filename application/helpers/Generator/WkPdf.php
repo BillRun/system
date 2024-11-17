@@ -28,7 +28,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $is_onetime = FALSE;
 	protected $loadFromFile = FALSE;
 	protected $exporterFlags = null;
-        protected $invoice_extra_params = [];
+	protected $invoice_extra_params = [];
 	protected $header_path = "";
 	protected $footer_path = "";
 	protected $header_content = "";

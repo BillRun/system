@@ -422,13 +422,22 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		try {
 			$ret = $this->billrun_coll->save($this->data);
-		} catch(Exception  $ex ) {
-			if( $ex->getCode() == 0 && count($this->data['subs']) > Billrun_Factory::config()->getConfigValue('billrun.save_to_file_subs_limit',10000)) {
+		} catch( Exception  $ex ) {
+			Billrun_Factory::log("Crashed when saving invoice for account {$this->aid} ", Zend_Log::NOTICE);
+			//Try and remove the uneeded data from  he  invioce  document
+			if( $ex->getCode() == 0 && count($this->data['subs']) > Billrun_Factory::config()->getConfigValue('billrun.save_subs_limit.limit',10000)) {
 				$rawData = $this->data->getRawData();
 				$failedPath = Billrun_Factory::config()->getConfigValue('billrun.failed_invoices_path','/tmp').DIRECTORY_SEPARATOR."{$rawData['aid']}_{$rawData['billrun_key']}_{$rawData['invoice_id']}.json";
 				Billrun_Factory::log("Crashed when saving invoice for account {$this->aid} as it might be too large, saving instead to {$failedPath} ", Zend_Log::NOTICE);
 				if( file_put_contents($failedPath,json_encode($rawData)) ) {
-					$rawData['subs'] = [];
+					if( !empty($fieldsToClear = Billrun_Factory::config()->getConfigValue('billrun.save_subs_limit.fields_to_rm',[])) ) {
+						array_walk($rawData['subs'], function($s) use ($fieldsToClear) {
+							foreach($fieldsToClear as $field) { $s[$field] = []; }
+						});
+					} else {
+						$rawData['subs'] = [];
+					}
+					$rawData['full_invoice_saved_to'] = $failedPath;
 					$this->data->setRawData($rawData);
 					$ret = $this->billrun_coll->save($this->data);
 				} else {
