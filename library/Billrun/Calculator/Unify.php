@@ -230,8 +230,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		
 		$query = array('stamp' => array('$in' => array_keys($this->archivedLines)));
 		$duplicateArchiveLines =  Billrun_Factory::db()->archiveCollection()->query($query)->cursor();
-		foreach ($duplicateArchiveLines as $stamp => $line) {
-			Billrun_Factory::log("Failed to insert line to archive. stamp already exist. stamp: $stamp" , Zend_Log::ALERT);
+		foreach ($duplicateArchiveLines as $line) {
+			Billrun_Factory::log("Failed to insert line to archive. stamp already exist. stamp: " .  $line['stamp'] , Zend_Log::ALERT);
 			unset($this->archivedLines[$line['stamp']]);
 			$failedArchived[] = $line;
 		}
