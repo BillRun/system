@@ -130,7 +130,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$updatedRowStamp = $this->getLineUnifiedLineStamp($newRow);
 		$rawRow['u_s'] = $updatedRowStamp;
 		$this->archivedLines[$newRow['stamp']] = $rawRow->getRawData();
-		$this->unifiedToRawLines[$updatedRowStamp]['remove'][] = $newRow['stamp'];
+		$this->unifiedToRawLines[$updatedRowStamp]['remove'][$newRow['stamp']] = $newRow['stamp'];
 
 		if (($this->protectedConcurrentFiles && $this->isLinesLocked($updatedRowStamp, array($newRow['stamp']))) ||
 			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {
@@ -283,8 +283,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		//add lines to archive 
 		$failedArchived = $this->saveLinesToArchive();
+		// update db.lines don't update the queue if  a given line not save to archive.
 		foreach ($failedArchived as $failedArchived) {
-			
+				unset($this->unifiedToRawLines[$failedArchived["u_s"]]['remove'][ $failedArchived['stamp']]);
 				unset($this->lines[ $failedArchived['stamp']]);
 			
 		}
@@ -453,12 +454,12 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	/**
 	 * Release lock for given lines in a unified line in the DB.
 	 * @param type $unifiedStamp the unified line stamp to release the single line on.
-	 * @param type $lineStamps the stamp of the single lines to release from lock.
+	 * @param type $linesStamps all the stamps of single unifed line to release from lock.
 	 */
 	protected function releaseLines($unifiedStamp, $lineStamps) {
 		$query = array('stamp' => $unifiedStamp);
 
-		$update = array('$pullAll' => array('tx' => $lineStamps));
+		$update = array('$pullAll' => array('tx' => array_values($lineStamps)));
 		Billrun_Factory::db()->linesCollection()->update($query, $update);
 	}
 
@@ -568,7 +569,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	protected function tryUpdatingExistingRecord($query, $update) {
 		foreach ($update as $action => $def) {
-			if (!in_array($action, ['$set', '$inc'])) {
+			if (!in_array($action, ['$set', '$inc', '$push'])) {
 				unset($update[$action]);
 			}
 		}
