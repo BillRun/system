@@ -288,7 +288,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		//add lines to archive 
 		$failedArchived = $this->saveLinesToArchive();
-		// update db.lines don't update the queue if  a given line not save to archive.
+		// update db.lines don't update the queue + not remove tx(from unifed line) if a given line not save to archive.
 		foreach ($failedArchived as $failedArchived) {
 				unset($this->unifiedToRawLines[$failedArchived["u_s"]]['remove'][ $failedArchived['stamp']]);
 				unset($this->lines[ $failedArchived['stamp']]);
