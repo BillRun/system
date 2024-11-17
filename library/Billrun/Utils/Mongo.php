@@ -324,6 +324,31 @@ class Billrun_Utils_Mongo {
 	}
 
 	/**
+	* Translate Saved MOngo  Document in JSON format back to a JSON document.
+	*
+	* @param array $row - decoded JSON Record to change to Mongo record
+	*
+	* @return The record with translated time.
+	*/
+	public static function recursiveConvertJSONToMongo($record) {
+		foreach($record as &$subRecord) {
+			if(is_array($subRecord)) {
+				if(empty(array_diff_key(['sec'=>1,'usec'=>1],$subRecord)) && empty(array_diff_key($subRecord,['sec'=>1,'usec'=>1])) ) {
+					$subRecord = new MongoDate($subRecord['sec']);
+				} else if(empty(array_diff_key(['$id'=>1],$subRecord)) && empty(array_diff_key($subRecord,['$id'=>1])) ) {
+					$subRecord = new MongoId($subRecord['$id']);
+				} else if(empty(array_diff_key(['coll'=>1,'$id'=>1],$subRecord)) && empty(array_diff_key($subRecord,['coll'=> 1,'$id'=>1])) ) {
+					$subRecord = new MongoDBRef($subRecord['coll'],$subRecord['$id']);
+				} else {
+					$subRecord = static::recursiveConvertJSONToMongo($subRecord);
+				}
+			}
+		}
+
+		return $record;
+	}
+
+	/**
 	 * Get an overlapping dates query
 	 * @param type $searchKeys - Array, must include the from and to fields.
 	 * @param type $new
