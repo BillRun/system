@@ -80,12 +80,6 @@ class Billrun_Utils_Cycle {
 		return $months;
 	}
 
-
-	public static function shouldBeInCycle($entryConfig,\Billrun_DataTypes_CycleTime $cycle) {
-
-		return !(empty($entryConfig['upfront']) && $entryConfig['start'] >= $cycle->end()  ) ;// dont include falto in the future that are not upfront
-	}
-
 	/**
 	 * Merge subscriber revisions into one revision  by a given  rules
 	 **/
