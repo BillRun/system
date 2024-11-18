@@ -116,6 +116,14 @@ class Billrun_EventsManager {
 						$conditionEntityAfter = $entityAfter;
 						$conditionEntityBefore = $entityBefore;
 					}
+
+					//check if blance path as changed 
+					$balancePathAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], null);
+					$balancePathBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], null);
+					if($balancePathAfter === $balancePathBefore){
+						continue;//continue to the next path 
+					}
+					
 					$extraValues = $this->getValuesPerCondition($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityAfter);
 					if ($extraValues !== false) {
 						$path_data = ['event_settings' => $rawEventSettings, 'extra_values' => $extraValues];
