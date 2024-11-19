@@ -32,6 +32,9 @@ services:
 #        - "BR_MDB_AUTHDB="
         volumes:
             - ./../..:/billrun
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+
 
 networks:
   default:
