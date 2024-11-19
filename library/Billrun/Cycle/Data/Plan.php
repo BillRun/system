@@ -42,10 +42,12 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	protected function getCharges($options) {
 		$charger = new Billrun_Plans_Charge();
+		if(Billrun_Utils_Cycle::shouldBeInCycle($options,  $options['cycle'])) {
 		//Only charge  if the configuration suggest it should be in the cycle
 		return empty($options['cycle']) || Billrun_Utils_Cycle::shouldBeInCycle($options,$options['cycle'])  ?
 					$charger->charge($options, $options['cycle']) :
 					[];
+		}
 	}
 
 	protected function getLine($chargeingKey, $chargeData) {
