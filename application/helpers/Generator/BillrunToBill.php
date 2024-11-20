@@ -189,11 +189,17 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			return false;
 		}
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
-		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
+		Billrun_Factory::log("Checking if bills links should be switched for account " . $invoice['aid'], Zend_Log::DEBUG);
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks($invoice['aid']);
 		if ($switch_links) {
+			Billrun_Factory::log("System should switch links for aid " . $invoice['aid'] . ". Detaching pending payments for account " . $invoice['aid'], Zend_Log::DEBUG);
 			Billrun_Bill_Payment::detachPendingPayments($invoice['aid']);
+		} else {
+			Billrun_Factory::log("System should not switch links for aid " . $invoice['aid'], Zend_Log::DEBUG);
 		}
+		Billrun_Factory::log("Paying unpaid bills by over paying bills for aid " . $invoice['aid'], Zend_Log::DEBUG);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid'], true, $switch_links);
+		Billrun_Factory::log("Finished paying unpaid bills by over paying bills for aid " . $invoice['aid'], Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill, $invoice));
 		return true;
  	}
