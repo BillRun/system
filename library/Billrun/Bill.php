@@ -1651,24 +1651,28 @@ abstract class Billrun_Bill {
 	 * Function that will return true if the current payments linking should be chagned, because newer invoices/debt was paid before older pending one 
 	 * @param int - urt - relative time 
 	 */
-	public static function shouldSwitchBillsLinks($urt = null) {
+	public static function shouldSwitchBillsLinks($aid, $urt = null) {
+		if (empty($aid) || !is_numeric($aid)) {
+			Billrun_Factory::log("Aid field is empty or not numeric in 'shouldSwitchBillsLinks function'. return false", Zend_Log::DEBUG);
+			return false;
+		}
 		$switch_links_config = Billrun_Factory::config()->getConfigValue('bills.switch_links', false);
 		if (!$switch_links_config) {
 			return false;
 		}
 		$query = [
+			'aid' => $aid,
 			'urt' => array(
 				'$lt' => new Mongodloid_Date(is_null($urt) ? time() : $urt)
 			),
 			'$or' => array(
+				//Old unpaid bill
 				array('left_to_pay' => ['$gt' => 0]),
-				array('pending_covering_amount' => ['$gt' => 0])
-			),
-			'$or' => array(
-				array('waiting_payments' => ['$exists' => true, '$ne' => []],'paid_by' => ['$elemMatch' => ['pending' => true]]),
-				array('past_rejections' => ['$exists' => true, '$ne' => []])
+				//Old bill paid by pending bill - check no 1
+				array('pending_covering_amount' => ['$gt' => 0]),
+				//Old bill paid by pending bill - check no 2
+				array('waiting_payments' => ['$exists' => true, '$ne' => []],'paid_by' => ['$elemMatch' => ['pending' => true]])
 			)
-			
 		];
 		$query = array_merge($query, Billrun_Bill::getNotRejectedOrCancelledQuery());
 		return count(static::getBills($query));
