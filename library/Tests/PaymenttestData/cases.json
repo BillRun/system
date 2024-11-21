@@ -1117,6 +1117,7 @@
 		"description": "pay 2 debt  bills  by unfreeze the customer's deposit bills",
 		"test_id": 15,
 		"api": "pay",
+		"sort":["dir"],
 		"params": {
 			"aid": "1",
 			"action": "use_deposit",
@@ -1233,6 +1234,7 @@
 		"description": "pay part of 2 debt  bills  by unfreeze the customer's deposit bills, each invoice amount is 15 and the deposit amount is 20",
 		"test_id": 16,
 		"api": "pay",
+		"sort":["amount"],
 		"params": {
 			"aid": "1",
 			"action": "use_deposit",
@@ -1318,7 +1320,8 @@
 				"due": -20,
 				"deposit": "true",
 				"deposit_amount": 0,
-				"left": 0
+				"left": 0,
+				"paid":true
 			},
 			{
 				"dir": "tc",
@@ -2901,7 +2904,9 @@
 				"type": "rec",
 				"amount": 15,
 				"due": -15,
-				"left": 0
+				"left": 0,
+				"total_paid" : 15,
+				"paid" : true
 			},
 			{
 				"dir": "tc",
@@ -3071,6 +3076,8 @@
 				"due": -15,
 				"pays": [],
 				"left": 0,
+				"total_paid" : 15,
+				"paid" : true,
 				"payment_agreement": {
 
 				}
@@ -3122,7 +3129,9 @@
 				"amount": 15,
 				"due": -15,
 				"pays": [],
-				"left": 0
+				"left": 0,
+				"total_paid" : 15,
+				"paid" : true
 			},
 			{
 				"dir": "tc",
@@ -3286,6 +3295,8 @@
 				"due": -15,
 				"pays": [],
 				"left": 0,
+				"total_paid" : 15,
+				"paid" : true,
 				"payment_agreement": {
 
 				}
@@ -3333,7 +3344,9 @@
 				"type": "rec",
 				"amount": 3,
 				"due": -3,
-				"left": 0
+				"left": 0,
+				"total_paid" : 3,
+				"paid" : true
 			},
 			{
 				"dir": "fc",
@@ -3343,7 +3356,9 @@
 				"amount": 12,
 				"due": -12,
 				"pays": [],
-				"left": 0
+				"left": 0,
+				"total_paid" : 12,
+				"paid" : true
 			},
 			{
 				"dir": "tc",
@@ -3599,6 +3614,8 @@
 				"due": -15,
 				"pays": [],
 				"left": 0,
+				"total_paid" : 15,
+				"paid" : true,
 				"payment_agreement": {
 
 				}
@@ -3646,7 +3663,9 @@
 				"type": "rec",
 				"amount": 3,
 				"due": -3,
-				"left": 0
+				"left": 0,
+				"total_paid" : 3,
+				"paid" : true
 			},
 			{
 				"dir": "fc",
@@ -3656,7 +3675,9 @@
 				"amount": 12,
 				"due": -12,
 				"pays": [],
-				"left": 0
+				"left": 0,
+				"total_paid" : 12,
+				"paid" : true
 			},
 			{
 				"dir": "tc",

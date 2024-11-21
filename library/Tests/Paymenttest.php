@@ -408,23 +408,24 @@ class Tests_paymenttest extends UnitTestCase
 			Billrun_Factory::log("The number of invoices does not match the expected number of invoices", Zend_Log::ERR);
 			$pass = false;
 		}
+		$fields = (empty ($row['sort'])) ? [
+			'aid',
+			'total_paid',
+			'left_to_pay',
+			"payment_agreement.installment_index",
+			'type',
+			'cancelled',
+			'correction',
+			'dir',
+			'amount',
+			'left',
+			'paid',
+			'bills_merged',
+		] : $row['sort'];
 
-		$sort = function ($a, $b) {
+		$sort = function  ($a, $b)use ($fields) {
 
-			$fields = (empty ($row['sort'])) ? [
-				'aid',
-				'total_paid',
-				'left_to_pay',
-				"payment_agreement.installment_index",
-				'type',
-				'cancelled',
-				'correction',
-				'dir',
-				'amount',
-				'left',
-				'paid',
-				'bills_merged',
-			] : $row['sort'];
+			
 			// $fields = [
 			// 	'aid',
 			// 	'total_paid',
