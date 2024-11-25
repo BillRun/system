@@ -507,6 +507,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['waiting_for_confirmation'] = false;
 		$this->data['confirmation_time'] = new Mongodloid_Date();
                 $this->unsetAllPendingLinkedBills();
+								$this->data['paid'] = $this->isPaid();
 		$this->setUrt();
 		$this->save();
 		Billrun_Factory::dispatcher()->trigger('afterUpdateConfirmation', array($this->data));
@@ -931,6 +932,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['pending'] = $pending;
 		if (!$pending) {
 			$this->data['pending_covering_amount'] = 0;
+		}else{
+			$this->data['paid'] = "2";
 		}
 	}
 	
