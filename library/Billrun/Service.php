@@ -157,6 +157,12 @@ class Billrun_Service {
 		}
 		return $this->data;
 	}
+
+	public function setData($path, $value) {
+		$data =  $this->data->getRawData();
+		Billrun_Util::setIn($data, $path, $value);
+		$this->data->setRawData($data);
+	}
 	
 	/**
 	 * 
