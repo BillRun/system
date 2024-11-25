@@ -452,9 +452,9 @@ class ConfigModel {
 				}
 			}
 			
-			if (isset($field['unique']) && $field['unique']) {
-				$field['mandatory'] = true;
-			}
+			// if (isset($field['unique']) && $field['unique']) {
+			// 	$field['mandatory'] = true;
+			// }
 
 			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
 				$mandatoryFields[] = [
