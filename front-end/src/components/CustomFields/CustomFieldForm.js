@@ -103,7 +103,7 @@ const CustomFieldForm = ({
           </Col>
         </FormGroup>
       )}
-      {(!disableMandatory || (disableMandatory && item.get('unique', false))) && (
+      {!disableMandatory && (
         <FormGroup>
           <Col sm={3} lg={2} componentClass={ControlLabel}>Mandatory</Col>
           <Col sm={8} lg={9} style={checkboxStyle}>
@@ -111,12 +111,12 @@ const CustomFieldForm = ({
               id="mandatory"
               onChange={onChangeOptions}
               value={item.get('mandatory', '')}
-              fieldType="checkbox" disabled={disableMandatory}
+              fieldType="checkbox"
+              disabled={disableMandatory
+              } 
               className="inline mr10"
             />
-            { disableMandatory && item.get('unique', false) && (
-              <small style={helpTextStyle}>Unique field must be mandatory</small>
-            )}
+            
           </Col>
         </FormGroup>
       )}
