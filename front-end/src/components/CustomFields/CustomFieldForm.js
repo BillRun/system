@@ -112,8 +112,7 @@ const CustomFieldForm = ({
               onChange={onChangeOptions}
               value={item.get('mandatory', '')}
               fieldType="checkbox"
-              disabled={disableMandatory
-              } 
+              disabled={disableMandatory} 
               className="inline mr10"
             />
             
