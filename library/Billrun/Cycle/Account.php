@@ -125,6 +125,11 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$revision['to'] = min($maxTo,$revision['to']);
 		$subRevisionsFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields',['services','plans']);
 		$mongoServices = $this->cycleAggregator->getServices();
+		$allFroms = call_user_func_array('array_merge', array_map(function($v) use ($revision) {
+									return isset ($revision[$v]) 	? array_map(function ($iv) { return $iv->sec;}, array_column($revision[$v], 'from'))
+																	: [];
+							}, $subRevisionsFields));
+		sort($allFroms);
 
 		//Retrive all the relevent change dates
 		foreach($subRevisionsFields as $fieldName) {
@@ -188,7 +193,11 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 							}
 							if($activeRev['to'] > $fieldCut['to']) {
 								//current revision is  ending  after the current cut save the cut and advance the  revision to the end of the cut
-								$activeRev['from'] = $fieldCut['to'];
+								$activeRev['from'] = min( array_merge( [ $fieldCut['to']],
+																		 array_filter($allFroms,
+																			function ($v) use($activeRev) {
+																				return $v > $activeRev['from'];
+																			}) ));
 								$fieldsEnded[] = [
 								'from' => $fieldCut['from'],
 								'to' => $fieldCut['to'],
