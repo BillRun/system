@@ -316,6 +316,8 @@ class Billrun_Plan {
 				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, &$subscriberBalance));
 				if ($rateUsageIncluded === FALSE) {
 					$this->unsetGroup($this->getPlanGroup());
+				} else if($groupSelected !== FALSE && $this->getPlanGroup() !== $groupSelected )  {
+					$this->setPlanGroup($groupSelected);
 				}
 			}
 		}

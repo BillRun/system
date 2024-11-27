@@ -189,9 +189,11 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			if (isset($exhaustedBalancesKeys)) {
 				$balancesIncludeRow = array_merge($balancesIncludeRow, $exhaustedBalancesKeys);
-			} else {
-				if ($this->extraUsage < $row['usagev']) {
-					$row['plan_usage'] = $row['usagev'] - $this->extraUsage;
+			}
+			if ($this->extraUsage < $row['usagev']) {
+				$row['plan_usage'] = $row['usagev'] - $this->extraUsage;
+				if(!empty( $this->partialBaseUsage)) {
+					$row['base_arategroups'] = $this->partialBaseUsage;
 				}
 			}
 			if (isset($balancesIncludeRow)) {
@@ -244,7 +246,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			$this->extraUsage = $currentVolume - $baseUsagePlanIncluded;
 			$this->basePlanCurrentUse = $baseUsagePlanIncluded - $usedUsageInBasePlan;
-			array_push($this->partialBaseUsage, array('group' => $groupSelected, 'usage' => $this->basePlanCurrentUse));
+			array_push($this->partialBaseUsage, array('group' => $groupSelected, 'usage' => $this->basePlanCurrentUse,'included_usage'=> $baseUsagePlanIncluded));
 			$this->isBaseUsage = true;
 			if (empty($matchedPackages)) {
 				return;
@@ -301,6 +303,16 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 		ksort($addonBalancesByOrder);
+		//If No  addon is legitimate and there was a partial usage  using a base group use the  base group.
+		if(empty($addonBalancesByOrder)) {
+			if(!empty($this->partialBaseUsage)) {
+				$rateUsageIncluded = array_sum(array_column($this->partialBaseUsage,'included_usage'));
+				$groupSelected = end(array_column($this->partialBaseUsage,'group'));
+				return;
+			}
+
+		}
+
 		foreach ($addonBalancesByOrder as $balance) {
 			$balancePackage = $balance['service_name'];
 			if (!isset($plan->get('include.groups.' . $balancePackage)[$usageType])) {
@@ -337,7 +349,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$rateUsageIncluded = 0;
 		}
 		
-		if(floor($roundedUsage - $subscriberBalance['balance']['groups'][$groupSelected][$this->row['usaget']]['usagev']) <= 0) {
+		if(floor($rateUsageIncluded - $subscriberBalance['balance']['groups'][$groupSelected][$this->row['usaget']]['usagev']) <= 0) {
 			$this->balanceToUpdate = null;
 			$this->exhaustedBalances = array();
 			$groupSelected = FALSE;
