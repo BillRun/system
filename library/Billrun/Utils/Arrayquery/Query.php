@@ -45,9 +45,11 @@ class Billrun_Utils_Arrayquery_Query {
 				$key = substr($key,0,$pos);
 				$value = static::translateQueryKeys(array( $left => $value ), $separator);
 			}
-			$translatedQuery[$key] = is_array($value) ?
-										array_merge(Billrun_Util::getFieldVal($translatedQuery[$key],array()),static::translateQueryKeys( $value , $separator))
-										: $value;
+			$translatedQuery[$key] = (is_array($value)  ?
+										array_merge_recursive(Billrun_Util::getFieldVal($translatedQuery[$key],array()),static::translateQueryKeys( $value , $separator))
+										: ( !empty($translatedQuery[$key]) && is_array($translatedQuery[$key])  && !empty($value) ? array_merge_recursive($translatedQuery[$key],[$value]) : $value
+										)
+									  );
 		}
 		return $translatedQuery;
 	}
