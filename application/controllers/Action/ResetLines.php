@@ -58,6 +58,7 @@ class ResetLinesAction extends ApiAction {
 			static::insertToRebalanceQueue($aids, $billrun_key, $conditions);
 		} catch (Exception $exc) {
 			Billrun_Util::logFailedResetLines($aids, $billrun_key, $invoicing_day);
+			$this->setError($exc->getMessage());				
 			return FALSE;
 		}
 
@@ -83,6 +84,7 @@ class ResetLinesAction extends ApiAction {
 			$query = [
 				'aid' => $aid,
 				'billrun_key' => $billrun_key,
+									'conditions_hash' => md5(serialize($conditions)),
 				'$or' => array(
 					array('start_time' => array('$exists' => true), 'end_time' => array('$exists' => false)),
 					array('start_time' => array('$exists' => false), 'end_time' => array('$exists' => false)),
@@ -90,19 +92,19 @@ class ResetLinesAction extends ApiAction {
 			];
 			$exist_rebalance_object = $rebalance_queue->query($query)->count();
 			if(empty($exist_rebalance_object)) {
-			$rebalanceLine = array(
-				'aid' => $aid,
-				'billrun_key' => $billrun_key,
-				'conditions' => !empty($conditions) ? $conditions : array(),
-				'conditions_hash' => md5(serialize($conditions)),
-				'creation_date' => new Mongodloid_Date()
-			);
-                            $rebalanceLine['stamp'] =  md5(serialize($rebalanceLine));
+				$rebalanceLine = array(
+					'aid' => $aid,
+					'billrun_key' => $billrun_key,
+					'conditions' => !empty($conditions) ? $conditions : array(),
+					'conditions_hash' => md5(serialize($conditions)),
+			'creation_date' => new Mongodloid_Date()
+				);
+				$rebalanceLine['stamp'] =  md5(serialize($rebalanceLine));
 				$rebalance_queue->insert($rebalanceLine);
 			}
 		}
 	}
-
+	
 	/**
 	 * Gets aids from the request.
 	 * If aid (list or string) received - returns it as array of integers.
