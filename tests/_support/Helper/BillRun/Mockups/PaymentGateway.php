@@ -1,0 +1,43 @@
+<?php
+namespace Helper\BillRun\Mockups;
+
+// here you can define custom actions
+// all public methods declared in helper class will be available in $I
+use Codeception\Module\REST;
+
+class PaymentGateway extends \Helper\BillRun\Mockups\Mockup
+{
+  public function getUrl() {
+    return $this->getDomain() . 'payment-gateways';
+  }
+
+  public function enableCreditGuardPGWithSettings($data = []) {
+    $model = new \ConfigModel();
+    $model->updateConfig('payment_gateways', $this->getSampleConfiguration());
+  }
+
+  protected function getSampleConfiguration2() {
+
+  }
+
+  public function getSampleConfiguration() {
+    return [
+        'name' => 'CreditGuard',
+        'params' => [
+            'custom_style' => " ",
+//            'endpoint_url' => "https://cguat2.creditguard.co.il/xpo/Relay",
+            'endpoint_url' => $this->getUrl() . '/creditguard/xpo/Relay',
+            'mid' => "13092",
+            'onetime_terminal' => "0882828013",
+            'charging_terminal' => "0882828013",
+            'user' => "",
+            'ancestor_urls' => " ",
+            'version' => " ",
+            'custom_text' => " ",
+            'password' => "",
+            'redirect_terminal' => "0882828013"
+    ]
+];
+}
+
+}
