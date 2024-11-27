@@ -78,31 +78,44 @@ class ResetLinesAction extends ApiAction {
 	 * 
 	 */
 	public static function insertToRebalanceQueue($aids, $billrun_key, $conditions = array()) {
-		$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
-		foreach ($aids as $aid) {
-			$query = [
-				'aid' => $aid,
-				'billrun_key' => $billrun_key,
-				'$or' => array(
-					array('start_time' => array('$exists' => true), 'end_time' => array('$exists' => false)),
-					array('start_time' => array('$exists' => false), 'end_time' => array('$exists' => false)),
-				)
-			];
-			$exist_rebalance_object = $rebalance_queue->query($query)->count();
-			if(empty($exist_rebalance_object)) {
-			$rebalanceLine = array(
-				'aid' => $aid,
-				'billrun_key' => $billrun_key,
-				'conditions' => !empty($conditions) ? $conditions : array(),
-				'conditions_hash' => md5(serialize($conditions)),
+			$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
+			foreach ($aids as $aid) {
+				$query = [
+					'aid' => $aid,
+					'billrun_key' => $billrun_key,
+                                        'conditions_hash' => md5(serialize($conditions)),
+					'$or' => array(
+						array('start_time' => array('$exists' => true), 'end_time' => array('$exists' => false)),
+						array('start_time' => array('$exists' => false), 'end_time' => array('$exists' => false)),
+					)
+				];
+				$exist_rebalance_object = $rebalance_queue->query($query)->count();
+				if(empty($exist_rebalance_object)) {
+					$rebalanceLine = array(
+						'aid' => $aid,
+						'billrun_key' => $billrun_key,
+						'conditions' => !empty($conditions) ? $conditions : array(),
+						'conditions_hash' => md5(serialize($conditions)),
 				'creation_date' => new Mongodloid_Date()
-			);
-                            $rebalanceLine['stamp'] =  md5(serialize($rebalanceLine));
-				$rebalance_queue->insert($rebalanceLine);
+					);
+					$rebalanceLine['stamp'] =  md5(serialize($rebalanceLine));
+					$rebalance_queue->insert($rebalanceLine);
+				}
 			}
+		} catch (Exception $exc) {
+			Billrun_Util::logFailedResetLines($aids, $billrun_key, $invoicing_day);
+						$this->setError($exc->getMessage());				
+			return FALSE;
 		}
-	}
 
+		$this->getController()->setOutput(array(array(
+				'status' => 1,
+				'desc' => 'success',
+				'input' => $request,
+		)));
+		return TRUE;
+	}
+	
 	/**
 	 * Gets aids from the request.
 	 * If aid (list or string) received - returns it as array of integers.
