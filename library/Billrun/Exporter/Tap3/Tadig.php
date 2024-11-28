@@ -177,26 +177,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	 */
 	protected function getHeader() {
 		return array(
-			'BatchControlInfo' => array(
-				'Sender' => $this->getHpmnTadig(),
-				'Recipient' => $this->getVpmnTadig(),
-				'FileSequenceNumber' => $this->getSequenceNumber(),
-				'FileCreationTimeStamp' => array(
-					'LocalTimeStamp' => $this->startTimeStamp,
-					'UtcTimeOffset' => $this->timeZoneOffset,
-				),
-				'TransferCutOffTimeStamp' => array(
-					'LocalTimeStamp' => $this->startTimeStamp,
-					'UtcTimeOffset' => $this->timeZoneOffset,
-				),
-				'FileAvailableTimeStamp' => array(
-					'LocalTimeStamp' => $this->startTimeStamp,
-					'UtcTimeOffset' => $this->timeZoneOffset,
-				),
-				'SpecificationVersionNumber' => intval($this->getConfig('header.version_number')),
-				'ReleaseVersionNumber' => intval($this->getConfig('header.release_version_number')),
-				'FileTypeIndicator' => $this->getConfig('header.file_type_indicator'),
-			),
+			'BatchControlInfo' => $this->getInfo(),
 			'AccountingInfo' => array(
 				'LocalCurrency' => $this->getConfig('header.local_currency'),
 				'TapCurrency' => $this->getConfig('header.tap_currency'),
@@ -214,6 +195,29 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				),
 				'RecEntityInfoList' => $this->getRecEntityInfoList(),
 			),
+		);
+	}
+
+	protected function getInfo(){
+		return array(
+			'Sender' => $this->getHpmnTadig(),
+			'Recipient' => $this->getVpmnTadig(),
+			'FileSequenceNumber' => $this->getSequenceNumber(),
+			'FileCreationTimeStamp' => array(
+				'LocalTimeStamp' => $this->startTimeStamp,
+				'UtcTimeOffset' => $this->timeZoneOffset,
+			),
+			'TransferCutOffTimeStamp' => array(
+				'LocalTimeStamp' => $this->startTimeStamp,
+				'UtcTimeOffset' => $this->timeZoneOffset,
+			),
+			'FileAvailableTimeStamp' => array(
+				'LocalTimeStamp' => $this->startTimeStamp,
+				'UtcTimeOffset' => $this->timeZoneOffset,
+			),
+			'SpecificationVersionNumber' => intval($this->getConfig('header.version_number')),
+			'ReleaseVersionNumber' => intval($this->getConfig('header.release_version_number')),
+			'FileTypeIndicator' => $this->getConfig('header.file_type_indicator'),
 		);
 	}
 	
@@ -316,6 +320,15 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	 * see parent::getDataToExport
 	 */
 	protected function getDataToExport() {
+		if (empty($this->rowsToExport)){
+			return $this->getNotification();
+		}else{
+			return $this->getTransferBatch();
+		}
+	}
+
+	protected function getTransferBatch()
+	{
 		$dataToExport = [ 	'CallEventDetailList' => $this->mapCDRs( $this->rowsToExport ) ];
 		$header = $this->getHeader();
 		$footer = $this->getFooter();
@@ -328,6 +341,12 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		}
 		return array(
 			'TransferBatch' => $dataToExport,
+		);
+	}
+	protected function getNotification()
+	{
+		return array(
+			'Notification' => $this->getInfo()
 		);
 	}
 	

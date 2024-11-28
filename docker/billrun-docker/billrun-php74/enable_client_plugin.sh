@@ -58,6 +58,15 @@ if test -d "/plugin/tests/"; then
      done
 fi
 
+if test -d "/plugin/conf/exporter/"; then
+cd /plugin/conf/exporter/
+     for f in *.ini
+     do
+          rm -f "/billrun/conf/exporter/"$f
+          ln -s /plugin/conf/exporter/$f "/billrun/conf/exporter/"$f
+     done
+fi 
+
 cd /billrun
 
 ln -s /usr/local/bin/wkhtmltopdf /bin/wkhtmltopdf
