@@ -148,7 +148,7 @@ class Billrun_Utils_Arrayquery_Expression {
         }
     }
     return false;
-}
+	}
 
 	protected function _nin($field, $value) {
 		return  !$this->_in($field, $value);
