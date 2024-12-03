@@ -140,11 +140,24 @@ class Billrun_Utils_Arrayquery_Expression {
 	
 	protected function _in($field, $value) {
 		return  is_array($value) && is_array($field) && !empty(array_intersect($value,$field))
-				|| is_array($value) && in_array($field,$value, true)
-				|| is_array($field) && in_array($value,$field, true)
+				|| is_array($value) && $this->in_array_custom($field,$value)
+				|| is_array($field) && $this->in_array_custom($value,$field)
 				|| $this->_equal($field, $value);
 	}
 	
+	protected function in_array_custom($needle, $haystack) {
+    foreach ($haystack as $value) {
+        if ((is_int($needle) || is_float($needle)) && (is_int($value) || is_float($value))) {
+            if ($needle == $value) {
+                return true;
+            }
+        } elseif (gettype($needle) === gettype($value) && $needle === $value) {
+            return true;
+        }
+    }
+    return false;
+}
+
 	protected function _nin($field, $value) {
 		return  !$this->_in($field, $value);
 	}
