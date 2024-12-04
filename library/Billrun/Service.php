@@ -157,6 +157,17 @@ class Billrun_Service {
 		}
 		return $this->data;
 	}
+
+	public function setGroupValue($groupName, $newValue) {
+		$data =  $this->data->getRawData();
+		$path = 'include.groups.'. $groupName;
+		$group =	Billrun_Util::getIn($data, $path, false);
+		if ($group){
+			Billrun_Util::setIn($data, $path . '.value', $newValue);
+			$this->data->setRawData($data);
+		}
+
+	}
 	
 	/**
 	 * 
