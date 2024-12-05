@@ -65,8 +65,7 @@ class ResetLinesModel {
     protected $linesStampsByRebalanceStamp = [];
 
 	public function __construct($aids, $billrun_key, $conditions, $rebalanceStamps, $stampsToRecoverByAidAndSid = array()) {
-		$config = Billrun_Factory::config();
-		$this->isSidLevel = $config->getConfigValue("balances.sid_level", false);
+		
 		$config = Billrun_Factory::config();
 		$this->isSidLevel = $config->getConfigValue("balances.sid_level", false);
 		$this->initBalances($aids, $billrun_key);
