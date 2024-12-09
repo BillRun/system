@@ -58,7 +58,11 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         $generatorOptions = $this->buildTap3Options($generatorOptions);
 		$lines = $this->getLinesToExport();
 		foreach ($lines as $tadig => $rows) {
-			$this->createLogDB($this->getLogStamp());
+			$extraDataLog = ['tadig' => $tadig];
+			if(empty($rows)){
+				$extraDataLog = array_merge($extraDataLog,['notification' => true]);
+			}
+			$this->createLogDB($this->getLogStamp($tadig), $extraDataLog);
 			$options = array(
 				'tadig' => $tadig,
 				'data' => $rows,
@@ -145,7 +149,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 			}
 			$ret[$tadig][] = $row;
 		}
-
+		Billrun_Factory::dispatcher()->trigger('afterGetLinesToExport', array(&$ret));
 		return $ret;
 	}
 

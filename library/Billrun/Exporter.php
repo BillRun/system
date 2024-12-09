@@ -478,14 +478,14 @@ class Billrun_Exporter extends Billrun_Generator_File {
      * 
      * @return type
      */
-    protected function getLogStamp() {
-        if (empty($this->logStamp)) {
-            $stampArr = array(
-                'export_stamp' => $this->exportStamp,
-                'sequence_num' => $this->getSequenceNumber(),
-            );
-            $this->logStamp = Billrun_Util::generateArrayStamp($stampArr);
-        }
+    protected function getLogStamp($extraData = []) { 
+        $stampArr = array(
+            'export_stamp' => $this->exportStamp,
+            'sequence_num' => $this->getSequenceNumber(),
+            'extra_data' => $extraData,
+        );
+        $this->logStamp = Billrun_Util::generateArrayStamp($stampArr);
+        
         return $this->logStamp;
     }
 

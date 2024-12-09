@@ -54,6 +54,7 @@ abstract class Billrun_Exporter_Base extends Billrun_Base {
 	 * optional actions to perform before export begins
 	 */
 	function beforeExport() {
+		
 	}
 	
 	/**
