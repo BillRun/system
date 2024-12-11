@@ -85,6 +85,32 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         return true;
 	}
 
+	protected function buildGeneratorOptions() {
+        $this->fileNameParams = isset($this->config['filename_params']) ? $this->config['filename_params'] : self::DEFAULT_FILENAME_PARMS;
+        $this->fileNameStructure = isset($this->config['filename']) ? $this->config['filename'] : self::DEFAULT_FILENAME;
+        //$this->fileName = $this->getFilename();
+        //$options['file_name'] = $this->fileName;
+        $options['file_type'] = $this->getType();
+        $this->localDir = $this->getFilePath();
+        $options['local_dir'] = $this->localDir;
+        //$options['file_path'] = $this->localDir . DIRECTORY_SEPARATOR . $this->fileName;
+        $this->rowsToExport = $this->loadRows();
+        $options['data'] = $this->rowsToExport;
+        $this->headerToExport[0] = $this->getHeaderLine();
+        $options['headers'] = $this->headerToExport;
+        $this->footerToExport[0] = $this->getTrailerLine();
+        $options['trailers'] = $this->footerToExport;
+        $options['type'] = $this->config['generator']['type'];
+        $options['force_header'] = $this->config['generator']['force_header'] ?? false;
+        $options['force_footer'] = $this->config['generator']['force_footer'] ?? false;
+        $options['configByType'] = $this->config;
+        if ($options['type'] == 'separator') {
+            $options['delimiter'] = $this->config['generator']['separator'] ?? ",";
+        }
+        return $options;
+    }
+
+
 	public function getGeneratedFiles() {
 		return $this->filesExported;
 	}
@@ -101,20 +127,25 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         return  $this->getFileName();
 	}
 
+	public function getSequenceNumber() {
+		 return $this->params['param1'];
+	}
+
 
     protected function getExportFilePath() {
 		return  $this->getFilePathForTadig('EMPTY');
     }
 
 
+
 	protected function setTap3FileNameSttructure($tadig) {
 		$this->fileName='';
 		if (Billrun_Factory::config()->isProd()) {
-			$pref = Billrun_Util::getIn($this->config,'file_name.prefix.prod', '');
+			$pref = Billrun_Util::getIn($this->config,'filename_structure.prefix.prod', '');
 		} else {
-			$pref =  Billrun_Util::getIn($this->config,'file_name.prefix.test', '');
+			$pref =  Billrun_Util::getIn($this->config,'filename_structure.prefix.test', '');
 		}
-		$suffix =  Billrun_Util::getIn($this->config,'file_name.suffix', '');
+		$suffix =  Billrun_Util::getIn($this->config,'filename_structure.suffix', '');
 		$hpmnTadig = Billrun_Util::getIn($this->config,'hmpn_tadig', '');
 		$vpmnTadig = $tadig;
 		$sequenceNum =   Billrun_Util::getIn($this->config,'file_seq_param', '[[param1]]');
@@ -125,8 +156,9 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	protected function buildTap3Options($currentGenOptions) {
 		$this->getFileName();
 		$currentGenOptions['parent_exporter'] = $this;
-		return $currentGenOptions;
+		$currentGenOptions['filename_params'] = $this->params;
 
+		return $currentGenOptions;
 	}
 
 	/**
@@ -138,10 +170,11 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 		$ret = array();
 		$this->loadTadigs();
 
-		foreach ($this->rowsToExport as $row) {
+		foreach ($this->rowsToExport as $key => $row) {
 			$tadig = $this->getTadig($row);
 			if ($tadig === false) {
 				Billrun_Log::getInstance()->log('Tadigs ' . $this->exporterType . ' exporter: Cannot get TADIG for row. stamp: ' . $row['stamp'], Zend_log::WARN);
+				unset($this->rowsStamps[$row['stamp']]);
 				continue;
 			}
 			if (!isset($ret[$tadig])) {
