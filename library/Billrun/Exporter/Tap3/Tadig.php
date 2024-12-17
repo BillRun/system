@@ -418,7 +418,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 
 	protected function getServingBID($row) {
-		$servingBID = '0000';
+		$servingBID = '00000';
 		Billrun_Factory::dispatcher()->trigger('afterGetServingBID', array(&$servingBID, $row));
 		return $servingBID;
 	}
