@@ -254,7 +254,8 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
         
         protected function roundingFinalCharge(&$row) {
-                $current = $row->getRawData();
+                $current = $row instanceOf Mongodloid_Entity ?  $row->getRawData() : $row;
+
                 if($current['final_charge'] == 0){
                     return;
                 }
@@ -285,8 +286,12 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
                     $current['tax_data']['taxes'][$index]['amount_before_rounding'] = $tax['amount'];
                     $current['tax_data']['taxes'][$index]['amount'] = $tax['amount'] * $div;
                 }
-                $row->setRawData($current);
+
+                if($row instanceOf Mongodloid_Entity ) {
+					$row->setRawData($current);
+				} else {
+					$row = $current;
+				}
 	}
-        
 
 }
