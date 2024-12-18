@@ -484,8 +484,8 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getChargeInformationList($row, $fieldMapping) {
-		return array(
-			'ChargeInformation' => array(
+		return array( array (
+			'ChargeInformation' => 
 				$this->getChargeInformation($row, $fieldMapping)
 			)
 		);
@@ -609,7 +609,13 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	
 	protected function getOperatorSpecInfoList($row, $fieldMapping) {
 		$retInfo= [];
-		foreach($this->getConfig('operator_spec_info',[]) as $infoEntry) {
+		$operatorSpecInfo = Billrun_Util::getIn($this->config, 'operator_spec_info.'.$this->getCallEventDetail($row), Billrun_Util::getIn($this->config, 'operator_spec_info.common', []));
+		$stamp = Billrun_Util::getIn($row, 'stamp', '');
+		if(isset($stamp)){
+			$retInfo[] = [ 'OperatorSpecInformation' => 'stamp : ' . $stamp ];
+		}
+		foreach($operatorSpecInfo as $key => $mapping) {
+			$infoEntry = $key. " : " .Billrun_Util::getIn($row, $mapping, '');
 			$retInfo[] = [ 'OperatorSpecInformation' => $infoEntry ];
 		}
 		return $retInfo;
