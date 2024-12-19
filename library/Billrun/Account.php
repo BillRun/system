@@ -47,7 +47,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 */
 	protected $customerExtraData = array();
 	
-	protected static $allowedQueryKeys = ['id', 'time'];
+	protected static $allowedQueryKeys = ['id', 'time', 'read_preference'];
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -262,7 +262,8 @@ abstract class Billrun_Account extends Billrun_Base {
 		
 		$query = [];
 		if (!isset($params['time'])) {
-			$query['time'] = date(Billrun_Base::base_datetimeformat);
+			$now = new MongoDate();
+			$query['time'] = date('Y-m-d H:i:s', $now->sec) . '.' . sprintf('%06d', $now->usec);
 		}
 		
 		foreach ($params as $key => $value) {
@@ -281,6 +282,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		$results = array();
 		$subject_to = $this->getIncludedInCollection($aids);
 		$params['in_collection'] = true;
+		$params['read_preference'] = 'RP_PRIMARY'; 
 		// white list exists but aids not included
 		if (!is_null($subject_to) && empty($subject_to)) {
 			return $results;
