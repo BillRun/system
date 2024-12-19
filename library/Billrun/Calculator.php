@@ -185,7 +185,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				if ($this->isLineLegitimate($line)) {
 					if ($this->updateRow($line) === FALSE) {
 						unset($this->lines[$line['stamp']]);
-                                return;
 					}
 					$this->data[$line['stamp']] = $line;
 				}
