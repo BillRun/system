@@ -472,6 +472,8 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			case self::$LINE_TYPE_INCOMING_SMS:
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.international');
 				break;
+			case self::$LINE_TYPE_CHARGE:
+				return null;
 			default:
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.unknown');
 		}
@@ -508,6 +510,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				break;
 			case self::$LINE_TYPE_SMS:
 			case self::$LINE_TYPE_INCOMING_SMS:
+			case self::$LINE_TYPE_CHARGE:
 				$chargedItem = $this->getConfig('charged_item.event_based_charge');
 				$chargedUnits = $chargeableUnits; // TODO: currentlty, no "rounded" volume field
 				$chargeableUnits = null;
@@ -644,6 +647,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	protected function getCallEventStartTimeStamp($row) {
 		return $this->formatDate($row['urt']);
 	}
+
 	
 	/**
 	 * format date to file format
