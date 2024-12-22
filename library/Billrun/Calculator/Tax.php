@@ -71,8 +71,24 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
                 if($this->ifLineNeedFinalChargeRounding($current)){
                     $this->roundingFinalCharge($row);
                 }
+		if(!$this->addBillrunField($row)){
+			return false;
+		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
+	}
+
+	protected function addBillrunField(&$row){
+		if(!isset($row['billrun'])){
+			$billrunKey = Billrun_Billingcycle::getBillrunKeyByRow($row);
+			if($billrunKey){
+				$row['billrun'] = $billrunKey;
+			}else{
+				Billrun_Factory::log("Line {$row['stamp']} failed to get billrun field." , Zend_Log::ALERT);
+				return false;
+			} 
+		}
+		return true;
 	}
 
 	/**
