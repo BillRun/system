@@ -1907,7 +1907,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-2820', function () {
 	_dropIndex("bills", "aid_1");
 })
 
-if (db.version() >= "6") {
+if (db.version() >= "6" && db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos') {
 	sh.shardCollection(_dbName + ".bills", { "aid" : "hashed" } );
 }
 
