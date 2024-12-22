@@ -363,42 +363,24 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$ret = array();
 		foreach ($this->rowsToExport as $row) {
 			$recEntityInfos = $this->getRecEntityInformation($row);
-			$missingEnitities = array_diff($recEntityInfos,$ret);
-			if ( !empty($missingEnitities) ) {
-				$ret = array_merge( $missingEnitities, $ret );
-			}
+			$ret = array_unique(array_merge( $recEntityInfos, $ret ), SORT_REGULAR);
 		}
 		return  $ret  ;
 	}
 	
 	protected function getRecEntityInformation($row) {
+		$callEventDetails = $this->getCallEventDetail($row) ?? 'common';
 		$recIdFields=  Billrun_Util::getIn($this->config,
-										  'helper_field_mappings.'.$this->getCallEventDetail($row).'.RecEntityId',
-										  Billrun_Util::getIn($this->config,'helper_field_mappings.common.RecEntityId'));
+										  'helper_field_mappings.'.$callEventDetails.'.RecEntityId');
 		foreach($recIdFields as  $recIdField) {
+			if(false === Billrun_Util::getIn($row,$recIdField, false)){
+				continue;
+			}
+			$recEntityType = $this->getConfig('record_entity.sub_field_type.mapping.'.$callEventDetails.'.'.$recIdField,
+										$this->getConfig('record_entity.type.mapping.'.$callEventDetails,0));
 
-			$typeMappingPath = implode('.',array_map(function($key) use($row){
-					return Billrun_Util::getIn($row,$key,'_KEY_'.$key.'_DONT_EXISTS');
-				}	,$this->getConfig('record_entity.type.fields',[])));
-
-		switch ($this->getLineType($row)) {
-			case self::$LINE_TYPE_DATA:	
-			case self::$LINE_TYPE_CALL:
-			case self::$LINE_TYPE_INCOMING_CALL:
-			case self::$LINE_TYPE_SMS:
-			case self::$LINE_TYPE_INCOMING_SMS:
-
-				$recEntityType = $this->getConfig('record_entity.sub_field_type.mapping.'.$typeMappingPath.'.'.$recIdField,
-											$this->getConfig('record_entity.type.mapping.'.$typeMappingPath,0));
-
-				$recEntityId = Billrun_Util::getIn($row, $recIdField, '');
-				$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
-				break;
-			
-			default:
-				$recEntityCode = $recEntityType = 0;
-				$recEntityId = '';
-		}
+			$recEntityId = Billrun_Util::getIn($row, $recIdField, '');
+			$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
 
 			$recEntityArr[] = ['RecEntityInformation' => [
 				'RecEntityCode' => intval($recEntityCode),
@@ -559,7 +541,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$price = $row['aprice'];
 		$decimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
 		$sdrPrice = $price / $this->getExchangeRate($row);
-		return $sdrPrice * pow(10, $decimalPlaces);
+		return intval($sdrPrice * pow(10, $decimalPlaces));
 	}
 	
 	protected function getTotalCallEventDuration($row) {
