@@ -108,7 +108,7 @@ class InternalPaypageController extends ExternalPaypageController {
 		$secret = Billrun_Utils_Security::getValidSharedKey();
 		$data = array(
 			"aid" => $request['aid'],
-			"name" => $request['payment_gateway'],
+			"name" => urlencode($request['payment_gateway']),
 			"type" => $type,
 			"return_url" => urlencode($request['return_url']),
 		);

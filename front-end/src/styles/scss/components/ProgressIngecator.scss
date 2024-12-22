@@ -1,0 +1,45 @@
+/* System Progress Ingecator */
+.progressindicator-enter {
+  opacity: 1;
+  &.progressindicator-enter-active {
+    opacity: 1;
+  }
+}
+
+.progressindicator-leave {
+  opacity: 1;
+  &.progressindicator-leave-active {
+    opacity: 0.01;
+    transition: opacity 500ms ease-in;
+  }
+}
+
+@keyframes progressindicator-in-progress {
+  from {
+    width: 0;
+  }
+  25% {
+    width: 25%;
+    animation-timing-function: ease-out;
+  }
+  50% {
+    width: 50%;
+    animation-timing-function: ease-out;
+  }
+  75% {
+    width: 75%;
+    animation-timing-function: ease-out;
+  }
+  to {
+    width: 100%;
+    animation-timing-function: ease-out;
+  }
+}
+.system-progress-indecator {
+    background-color:#2595ED;
+    height:2px;
+    box-shadow: 1px 1px 1px rgba(0,0,0,0.4);
+    animation-name: progressindicator-in-progress;
+    animation-duration: 500ms;
+}
+/* ~System Progress Ingecator */

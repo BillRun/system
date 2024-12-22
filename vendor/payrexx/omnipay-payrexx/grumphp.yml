@@ -1,0 +1,22 @@
+parameters:
+    git_dir: .
+    bin_dir: vendor/bin
+    tasks:
+        phpunit:
+            config_file: ~
+            testsuite: ~
+            group: []
+            always_execute: false
+        phpcs:
+            standard: PSR2
+            warning_severity: ~
+            ignore_patterns:
+              - tests/
+            triggered_by: [php]
+        phpmd:
+            exclude: []
+            ruleset: ['cleancode', 'codesize', 'naming']
+            triggered_by: ['php']
+        phplint:
+            exclude: []
+            triggered_by: ['php', 'phtml', 'php3', 'php4', 'php5']

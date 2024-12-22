@@ -11,7 +11,6 @@ use MongoDB\InsertManyResult;
 use MongoDB\InsertOneResult;
 use MongoDB\UpdateResult;
 use stdClass;
-
 use function call_user_func;
 use function is_array;
 use function is_object;
@@ -22,19 +21,19 @@ use function property_exists;
  */
 final class ResultExpectation
 {
-    public const ASSERT_NOTHING = 0;
-    public const ASSERT_BULKWRITE = 1;
-    public const ASSERT_DELETE = 2;
-    public const ASSERT_INSERTMANY = 3;
-    public const ASSERT_INSERTONE = 4;
-    public const ASSERT_UPDATE = 5;
-    public const ASSERT_SAME = 6;
-    public const ASSERT_SAME_DOCUMENT = 7;
-    public const ASSERT_SAME_DOCUMENTS = 8;
-    public const ASSERT_MATCHES_DOCUMENT = 9;
-    public const ASSERT_NULL = 10;
-    public const ASSERT_CALLABLE = 11;
-    public const ASSERT_DOCUMENTS_MATCH = 12;
+    const ASSERT_NOTHING = 0;
+    const ASSERT_BULKWRITE = 1;
+    const ASSERT_DELETE = 2;
+    const ASSERT_INSERTMANY = 3;
+    const ASSERT_INSERTONE = 4;
+    const ASSERT_UPDATE = 5;
+    const ASSERT_SAME = 6;
+    const ASSERT_SAME_DOCUMENT = 7;
+    const ASSERT_SAME_DOCUMENTS = 8;
+    const ASSERT_MATCHES_DOCUMENT = 9;
+    const ASSERT_NULL = 10;
+    const ASSERT_CALLABLE = 11;
+    const ASSERT_DOCUMENTS_MATCH = 12;
 
     /** @var integer */
     private $assertionType = self::ASSERT_NOTHING;
@@ -49,7 +48,7 @@ final class ResultExpectation
      * @param integer $assertionType
      * @param mixed   $expectedValue
      */
-    private function __construct(int $assertionType, $expectedValue)
+    private function __construct($assertionType, $expectedValue)
     {
         switch ($assertionType) {
             case self::ASSERT_BULKWRITE:
@@ -60,14 +59,12 @@ final class ResultExpectation
                 if (! is_object($expectedValue)) {
                     throw InvalidArgumentException::invalidType('$expectedValue', $expectedValue, 'object');
                 }
-
                 break;
 
             case self::ASSERT_SAME_DOCUMENTS:
                 if (! self::isArrayOfObjects($expectedValue)) {
                     throw InvalidArgumentException::invalidType('$expectedValue', $expectedValue, 'object[]');
                 }
-
                 break;
         }
 
@@ -173,7 +170,7 @@ final class ResultExpectation
      * @param mixed              $result Result (if any) from the actual outcome
      * @throws LogicException if the assertion type is unsupported
      */
-    public function assert(FunctionalTestCase $test, $actual): void
+    public function assert(FunctionalTestCase $test, $actual)
     {
         $expected = $this->expectedValue;
 
@@ -219,7 +216,6 @@ final class ResultExpectation
                 if (isset($expected->upsertedIds)) {
                     $test->assertSameDocument($expected->upsertedIds, $actual->getUpsertedIds());
                 }
-
                 break;
 
             case self::ASSERT_CALLABLE:
@@ -232,7 +228,6 @@ final class ResultExpectation
                 if (isset($expected->deletedCount)) {
                     $test->assertSame($expected->deletedCount, $actual->getDeletedCount());
                 }
-
                 break;
 
             case self::ASSERT_INSERTMANY:
@@ -252,7 +247,6 @@ final class ResultExpectation
                 if (isset($expected->insertedIds) && $actual instanceof BulkWriteResult) {
                     $test->assertSameDocument($expected->insertedIds, $actual->getInsertedIds());
                 }
-
                 break;
 
             case self::ASSERT_INSERTONE:
@@ -271,7 +265,6 @@ final class ResultExpectation
                         ['insertedId' => $actual->getInsertedId()]
                     );
                 }
-
                 break;
 
             case self::ASSERT_MATCHES_DOCUMENT:
@@ -332,7 +325,6 @@ final class ResultExpectation
                         ['upsertedId' => $actual->getUpsertedId()]
                     );
                 }
-
                 break;
 
             default:
@@ -367,7 +359,7 @@ final class ResultExpectation
      * @param mixed $result
      * @return boolean
      */
-    private static function isErrorResult($result): bool
+    private static function isErrorResult($result)
     {
         if (! is_object($result)) {
             return false;

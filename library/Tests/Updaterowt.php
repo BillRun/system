@@ -41,9 +41,8 @@ class Tests_Updaterowt extends UnitTestCase {
 	);
 
 	public function tests() {
-
 		return [
-			////	New tests for new override price and includes format
+		//New tests for new override price and includes format
 //		case F: NEW-PLAN-X3+NEW-SERVICE1+NEW-SERVICE2
 //Test num 1 f1
 			array('row' => array('stamp' => 'f1', "aid" => 2345, 'sid' => 62, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-X3', 'usagev' => 60, 'services_data' => ['NEW-SERVICE1', 'NEW-SERVICE2']),
@@ -74,7 +73,7 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 9 g5
 			array('rebalance' => true, 'row' => array('stamp' => 'g5', "aid" => 2345, 'sid' => 63, 'rates' => array('NEW-CALL-EUROPE' => 'retail'), 'plan' => 'NEW-PLAN-X3', 'usagev' => 8, 'services_data' => ['NEW-SERVICE3',],),
 				'expected' => array('in_group' => 0, 'over_group' => 8, 'aprice' => 0.8, 'charge' => array('retail' => 0.8,))),
-			//	case H: NEW-PLAN-A0 (without groups)+NEW-SERVICE1+NEW-SERVICE4  
+		//case H: NEW-PLAN-A0 (without groups)+NEW-SERVICE1+NEW-SERVICE4  
 //Test num 10 h1
 			array('row' => array('stamp' => 'h1', 'aid' => 2345, 'sid' => 64, 'rates' => array('NEW-VEG' => 'retail'), 'plan' => 'NEW-PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services_data' => ['NEW-SERVICE4',],),
 				'expected' => array('in_group' => 35, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -458,7 +457,7 @@ class Tests_Updaterowt extends UnitTestCase {
 						['name' => 'CALL', 'from' => '2017-08-01', 'to' => '2030-09-01', "plan_included" => false, "service_id" => "1234", "quantity" => 1]
 					]),
 				'expected' => array('in_group' => 90, 'over_group' => 10, 'aprice' => 10, 'charge' => array('retail' => 110,))),
-			/* test for BRCD-2627 - subscriber purchase service for one cycle at 2020-05-10, the cdr is from 2020-06-05, it will not create/use in the service balance */
+		/*test for BRCD-2627 - subscriber purchase service for one cycle at 2020-05-10, the cdr is from 2020-06-05, it will not create/use in the service balance */
 			array('row' => array('stamp' => 'x1', 'aid' => 52, 'sid' => 53, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [
 						["name" => "ONE_CYCLE_ADDON",
 							"from" => "2020-05-10",
@@ -604,14 +603,15 @@ class Tests_Updaterowt extends UnitTestCase {
 						]
 					],),
 				'expected' => array('in_group' => 200, 'over_group' => 20, 'aprice' => 20, 'charge' => array('retail' => 23.4,))),
-		];
-	}
+	];}
+	
 
 
 	protected $stampsToRun = []; // empty means "run all"
 
 	public function __construct($label = false) {
 		parent::__construct("test UpdateRow");
+		// $this->autoload_tests('updaterowtTestCases');
 		$request = new Yaf_Request_Http;
 		$this->runRebalnce = $request->get('rebalance');
 		date_default_timezone_set('Asia/Jerusalem');
@@ -632,6 +632,8 @@ class Tests_Updaterowt extends UnitTestCase {
 	}
 
 	public function testUpdateRow() {
+		$this->rows =  $this->getTestCases($this->tests());
+		$this->rows  = $this->skip_tests($this->rows ,'row.stamp');
 		//running test
 		$this->rows = $this->tests();
 		foreach ($this->rows as $key => $row) {
