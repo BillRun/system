@@ -697,7 +697,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	 */
 	protected function rebalance($row, $conditions = null) {
 		$aids = [$row['aid']];
-		$billrun_key = $row['billrun'];
+		$billrun_key =Billrun_Billingcycle::getBillrunKeyByTimestamp($row['process_time']->sec);
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/process_time_offset.ini');
 		$stamp[$row['stamp']] = $row['stamp'];
 		$rebalance = new ResetLinesModel($aids, $billrun_key, $conditions,$stamp);
