@@ -37,7 +37,7 @@ console.log(url);
 Output in development environment: **_http://billrun_**<br>
 Output in production environment:<br>
 
-All valuables in enviermets files must start with `REACT_APP_` for example `REACT_APP_serverApiUrl=http://billrun`
+All valuables in environment files must start with `REACT_APP_` for example `REACT_APP_serverApiUrl=http://billrun`
 
 ### General environment file
 

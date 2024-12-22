@@ -20,9 +20,9 @@ class CustomFieldsList extends Component {
     onEdit: PropTypes.func.isRequired,
     onRemove: PropTypes.func.isRequired,
     onReorder: PropTypes.func.isRequired,
-    onReorederStart: PropTypes.func.isRequired,
-    onReorederSave: PropTypes.func.isRequired,
-    onReorederCancel: PropTypes.func.isRequired,
+    onReorderStart: PropTypes.func.isRequired,
+    onReorderSave: PropTypes.func.isRequired,
+    onReorderCancel: PropTypes.func.isRequired,
   };
 
   static defaultProps = {
@@ -33,15 +33,15 @@ class CustomFieldsList extends Component {
   };
 
   componentWillUnmount() {
-    const { onReorederCancel, reordering } = this.props;
+    const { onReorderCancel, reordering } = this.props;
     if (reordering) {
-      onReorederCancel();
+      onReorderCancel();
     }
   }
 
   getprintableFields = () => {
     const { entity, fields, fieldsConfig, onRemove, onEdit, reordering } = this.props;
-  
+
     // Group fields by category
     const fieldsByCategory = fields.reduce((acc, field) => {
       const category = field.get('category', '') || 'uncategorized';
@@ -74,8 +74,13 @@ class CustomFieldsList extends Component {
 
   render() {
     const {
-      fields, reordering,
-      onReorder, onNew, onReorederStart, onReorederSave, onReorederCancel,
+      fields,
+      reordering,
+      onReorder,
+      onNew,
+      onReorderStart,
+      onReorderSave,
+      onReorderCancel,
     } = this.props;
     return (
       <div className="CustomFieldsList">
@@ -93,13 +98,13 @@ class CustomFieldsList extends Component {
           </Col>
         </Row>
         {!fields.isEmpty() && (
-          <SortableFieldsContainer
+        <SortableFieldsContainer
             lockAxis="y"
             helperClass="draggable-row"
             useDragHandle={true}
             items={this.getprintableFields()}
             onSortEnd={onReorder}
-          />
+        />
         )}
         {fields.isEmpty() && (
           <Col sm={12} className="text-center mb10">No custom field</Col>
@@ -107,19 +112,19 @@ class CustomFieldsList extends Component {
         { !reordering && (
           <Col sm={12} className="mt10">
             <CreateButton onClick={onNew} type="Field" action="Add" buttonStyle={{ marginTop: 0 }} />
-              {!fields.isEmpty() && (
-                <Button bsSize="xsmall" className="btn-primary" onClick={onReorederStart} title="Change fields order" style={{ float: 'right', minWidth: 90 }}>
-                  <i className="fa fa-arrows-alt" /> Reorder
-                </Button>
-              )}
+            {!fields.isEmpty() && (
+                <Button bsSize="xsmall" className="btn-primary" onClick={onReorderStart} title="Change fields order" style={{ float: 'right', minWidth: 90 }}>
+                <i className="fa fa-arrows-alt" /> Reorder
+              </Button>
+            )}
           </Col>
         )}
         { reordering && (
           <Col sm={12} className="text-right mt10">
-            <Button bsSize="xsmall" onClick={onReorederSave} title="Save new order" bsStyle="primary" style={{ minWidth: 90, marginRight: 10 }}>
+            <Button bsSize="xsmall" onClick={onReorderSave} title="Save new order" bsStyle="primary" style={{ minWidth: 90, marginRight: 10 }}>
               Save order
             </Button>
-            <Button bsSize="xsmall" onClick={onReorederCancel} title="Cancel new order" style={{ minWidth: 90 }}>
+            <Button bsSize="xsmall" onClick={onReorderCancel} title="Cancel new order" style={{ minWidth: 90 }}>
               Cancel order
             </Button>
           </Col>
