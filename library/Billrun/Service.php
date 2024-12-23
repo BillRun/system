@@ -540,7 +540,7 @@ class Billrun_Service {
 			return $this->data['include']['groups'][$group][$usaget];
 		}
 		$value = $this->data['include']['groups'][$group]['value'];
-		return $value == Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX: $value;
+		return $value === Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX: $value;
 	}
 	
 	/**
