@@ -1190,6 +1190,10 @@ abstract class Billrun_Bill {
 			array('left' => array('$exists' => true, '$ne' => 0)),
 			array('left_to_pay' => array('$exists' => true, '$ne' => 0))
 		);
+		if ($include_pending) {
+			array_push($match['$match']['$or'], array(
+					'paid' => array('$in' => array('2', 2))));
+		}
 		if (!empty($aids)) {
 			$match['$match']['aid'] = $is_aids_query ? $aids['aid'] : array('$in' => $aids);
 		}

@@ -26,7 +26,8 @@ class Tests_Updaterowt extends UnitTestCase {
 	protected $servicesToUse = ["SERVICE1", "SERVICE2"];
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
-	protected $rows = [
+	public function tests() { 
+		return [
 		//New tests for new override price and includes format
 //		case F: NEW-PLAN-X3+NEW-SERVICE1+NEW-SERVICE2
 //Test num 1 f1
@@ -451,11 +452,11 @@ class Tests_Updaterowt extends UnitTestCase {
 				],
 				'urt' => '2020-06-05 23:11:45+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 50, 'aprice' => 50, 'charge' => array('retail' => 50,))),
-	];
+	];}
 
 	public function __construct($label = false) {
 		parent::__construct("test UpdateRow");
-
+		// $this->autoload_tests('updaterowtTestCases');
 		date_default_timezone_set('Asia/Jerusalem');
 		$this->ratesCol = Billrun_Factory::db()->ratesCollection();
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
@@ -471,6 +472,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	}
 
 	public function testUpdateRow() {
+		$this->rows =  $this->getTestCases($this->tests());
 		$this->rows  = $this->skip_tests($this->rows ,'row.stamp');
 		//running test
 		foreach ($this->rows as $key => $row) {
