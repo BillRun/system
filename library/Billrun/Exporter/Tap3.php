@@ -19,6 +19,8 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 
 	protected $exporterType = array();
 	protected $tadigs = array();
+	protected $tadig = 'EMPTY';
+	protected $filename = '';//filename by tadig
 	protected $periodStartTime = null;
 	protected $periodEndTime = null;
 	protected $tadigsStorageConfig = [
@@ -58,6 +60,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         $generatorOptions = $this->buildTap3Options($generatorOptions);
 		$lines = $this->getLinesToExport();
 		foreach ($lines as $tadig => $rows) {
+			$this->tadig = $tadig;
 			$extraDataLog = ['tadig' => $tadig];
 			if(empty($rows)){
 				$extraDataLog = array_merge($extraDataLog,['notification' => true]);
@@ -118,32 +121,33 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 
 	public function getFilePathForTadig($tadig) {
 		$filePath = $this->getFilePath();
-		$this->setTap3FileNameSttructure($tadig);
-        return rtrim($filePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->getFileName();
+    return rtrim($filePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->filename;
 	}
 
 	public function getFileNameForTadig($tadig) {
 		$this->setTap3FileNameSttructure($tadig);
-        return  $this->getFileName();
+        return  parent::getFileName();
 	}
 
 	public function getSequenceNumber() {
 		 return $this->params['param1'];
 	}
-
-
-    protected function getExportFilePath() {
-		return  $this->getFilePathForTadig('EMPTY');
-    }
+	protected function getExportFilePath() {
+		return  $this->getFilePathForTadig($this->tadig);
+	}
+	protected function getFileName() {
+		$this->filename = $this->getFileNameForTadig($this->tadig);
+		return $this->filename;
+	}
 
 
 
 	protected function setTap3FileNameSttructure($tadig) {
 		$this->fileName='';
 		if (Billrun_Factory::config()->isProd()) {
-			$pref = Billrun_Util::getIn($this->config,'filename_structure.prefix.prod', '');
+			$pref = Billrun_Util::getIn($this->config,'filename_structure.prefix.prod', 'CD');
 		} else {
-			$pref =  Billrun_Util::getIn($this->config,'filename_structure.prefix.test', '');
+			$pref =  Billrun_Util::getIn($this->config,'filename_structure.prefix.test', 'TD');
 		}
 		$suffix =  Billrun_Util::getIn($this->config,'filename_structure.suffix', '');
 		$hpmnTadig = Billrun_Util::getIn($this->config,'hmpn_tadig', '');
