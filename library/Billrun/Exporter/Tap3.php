@@ -141,9 +141,9 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	protected function setTap3FileNameSttructure($tadig) {
 		$this->fileName='';
 		if (Billrun_Factory::config()->isProd()) {
-			$pref = Billrun_Util::getIn($this->config,'filename_structure.prefix.prod', '');
+			$pref = Billrun_Util::getIn($this->config,'filename_structure.prefix.prod', 'CD');
 		} else {
-			$pref =  Billrun_Util::getIn($this->config,'filename_structure.prefix.test', '');
+			$pref =  Billrun_Util::getIn($this->config,'filename_structure.prefix.test', 'TD');
 		}
 		$suffix =  Billrun_Util::getIn($this->config,'filename_structure.suffix', '');
 		$hpmnTadig = Billrun_Util::getIn($this->config,'hmpn_tadig', '');

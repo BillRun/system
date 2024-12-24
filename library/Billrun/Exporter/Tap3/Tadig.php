@@ -363,21 +363,25 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$ret = array();
 		foreach ($this->rowsToExport as $row) {
 			$recEntityInfos = $this->getRecEntityInformation($row);
-			$ret = array_unique(array_merge( $recEntityInfos, $ret ), SORT_REGULAR);
+			$missingEnitities = array_diff($recEntityInfos,$ret);
+			if ( !empty($missingEnitities) ) {
+				$ret = array_merge( $missingEnitities, $ret );
+			}
 		}
 		return  $ret  ;
 	}
 	
 	protected function getRecEntityInformation($row) {
-		$callEventDetails = $this->getCallEventDetail($row) ?? 'common';
+		$tapRecordType = $this->getCallEventDetail($row);
 		$recIdFields=  Billrun_Util::getIn($this->config,
-										  'helper_field_mappings.'.$callEventDetails.'.RecEntityId');
+										  'helper_field_mappings.'.$tapRecordType.'.RecEntityId', $this->config,
+										  'helper_field_mappings.common.RecEntityId');
 		foreach($recIdFields as  $recIdField) {
 			if(false === Billrun_Util::getIn($row,$recIdField, false)){
 				continue;
 			}
-			$recEntityType = $this->getConfig('record_entity.sub_field_type.mapping.'.$callEventDetails.'.'.$recIdField,
-										$this->getConfig('record_entity.type.mapping.'.$callEventDetails,0));
+			$recEntityType = $this->getConfig('record_entity.sub_field_type.mapping.'.$tapRecordType.'.'.$recIdField,
+										$this->getConfig('record_entity.type.mapping.'.$tapRecordType,0));
 
 			$recEntityId = Billrun_Util::getIn($row, $recIdField, '');
 			$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
@@ -400,7 +404,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 
 	protected function getServingBID($row) {
-		$servingBID = '00000';
+		//unimplemented -supplay by the plugin for now 
 		Billrun_Factory::dispatcher()->trigger('afterGetServingBID', array(&$servingBID, $row));
 		return $servingBID;
 	}
