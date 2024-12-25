@@ -431,7 +431,7 @@ class Billrun_PaymentManager {
 			if (empty($payment)) {
 				return $this->handleError("Cannot get payment");
 			}
-			Billrun_Factory::log("Pullong payment data, pg transacion id, and pg response", Zend_Log::DEBUG);
+			Billrun_Factory::log("Pulling payment data, pg transacion id, and pg response", Zend_Log::DEBUG);
 			$paymantData = $payment->getRawData();
 			$transactionId = Billrun_Util::getIn($paymantData, 'payment_gateway.transactionId');
 			$pgResponse = $postPayment->getPgResponse();
@@ -449,7 +449,7 @@ class Billrun_PaymentManager {
 			switch ($customerDir) {
 				case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
 				case Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER:
-					Billrun_Factory::log()->log("Handling payment with txid " . $transactionId . ", customer direction " . $customerDir, Zend_Log::DEBUG);
+					Billrun_Factory::log()->log("Handling payment with transaction id " . $transactionId . ", customer direction " . $customerDir, Zend_Log::DEBUG);
 					$relatedBills = $postPayment->getRelatedBills();
 					Billrun_Factory::log("Found " . count($relatedBills) . " related bills", Zend_Log::DEBUG);
 					if (!empty($relatedBills)) {
