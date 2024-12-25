@@ -372,33 +372,19 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getRecEntityInformation($row) {
+		$tapRecordType = $this->getCallEventDetail($row);
 		$recIdFields=  Billrun_Util::getIn($this->config,
-										  'helper_field_mappings.'.$this->getCallEventDetail($row).'.RecEntityId',
-										  Billrun_Util::getIn($this->config,'helper_field_mappings.common.RecEntityId'));
+										  'helper_field_mappings.'.$tapRecordType.'.RecEntityId', $this->config,
+										  'helper_field_mappings.common.RecEntityId');
 		foreach($recIdFields as  $recIdField) {
+			if(false === Billrun_Util::getIn($row,$recIdField, false)){
+				continue;
+			}
+			$recEntityType = $this->getConfig('record_entity.sub_field_type.mapping.'.$tapRecordType.'.'.$recIdField,
+										$this->getConfig('record_entity.type.mapping.'.$tapRecordType,0));
 
-			$typeMappingPath = implode('.',array_map(function($key) use($row){
-					return Billrun_Util::getIn($row,$key,'_KEY_'.$key.'_DONT_EXISTS');
-				}	,$this->getConfig('record_entity.type.fields',[])));
-
-		switch ($this->getLineType($row)) {
-			case self::$LINE_TYPE_DATA:	
-			case self::$LINE_TYPE_CALL:
-			case self::$LINE_TYPE_INCOMING_CALL:
-			case self::$LINE_TYPE_SMS:
-			case self::$LINE_TYPE_INCOMING_SMS:
-
-				$recEntityType = $this->getConfig('record_entity.sub_field_type.mapping.'.$typeMappingPath.'.'.$recIdField,
-											$this->getConfig('record_entity.type.mapping.'.$typeMappingPath,0));
-
-				$recEntityId = Billrun_Util::getIn($row, $recIdField, '');
-				$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
-				break;
-			
-			default:
-				$recEntityCode = $recEntityType = 0;
-				$recEntityId = '';
-		}
+			$recEntityId = Billrun_Util::getIn($row, $recIdField, '');
+			$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
 
 			$recEntityArr[] = ['RecEntityInformation' => [
 				'RecEntityCode' => intval($recEntityCode),
@@ -418,7 +404,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 
 	protected function getServingBID($row) {
-		$servingBID = '0000';
+		//unimplemented -supplay by the plugin for now 
 		Billrun_Factory::dispatcher()->trigger('afterGetServingBID', array(&$servingBID, $row));
 		return $servingBID;
 	}
@@ -472,6 +458,8 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			case self::$LINE_TYPE_INCOMING_SMS:
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.international');
 				break;
+			case self::$LINE_TYPE_CHARGE:
+				return null;
 			default:
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.unknown');
 		}
@@ -484,8 +472,8 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getChargeInformationList($row, $fieldMapping) {
-		return array(
-			'ChargeInformation' => array(
+		return array( array (
+			'ChargeInformation' => 
 				$this->getChargeInformation($row, $fieldMapping)
 			)
 		);
@@ -508,6 +496,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				break;
 			case self::$LINE_TYPE_SMS:
 			case self::$LINE_TYPE_INCOMING_SMS:
+			case self::$LINE_TYPE_CHARGE:
 				$chargedItem = $this->getConfig('charged_item.event_based_charge');
 				$chargedUnits = $chargeableUnits; // TODO: currentlty, no "rounded" volume field
 				$chargeableUnits = null;
@@ -556,7 +545,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$price = $row['aprice'];
 		$decimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
 		$sdrPrice = $price / $this->getExchangeRate($row);
-		return $sdrPrice * pow(10, $decimalPlaces);
+		return intval($sdrPrice * pow(10, $decimalPlaces));
 	}
 	
 	protected function getTotalCallEventDuration($row) {
@@ -609,7 +598,13 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	
 	protected function getOperatorSpecInfoList($row, $fieldMapping) {
 		$retInfo= [];
-		foreach($this->getConfig('operator_spec_info',[]) as $infoEntry) {
+		$operatorSpecInfo = Billrun_Util::getIn($this->config, 'operator_spec_info.'.$this->getCallEventDetail($row), Billrun_Util::getIn($this->config, 'operator_spec_info.common', []));
+		$stamp = Billrun_Util::getIn($row, 'stamp', '');
+		if(isset($stamp)){
+			$retInfo[] = [ 'OperatorSpecInformation' => 'stamp : ' . $stamp ];
+		}
+		foreach($operatorSpecInfo as $key => $mapping) {
+			$infoEntry = $key. " : " .Billrun_Util::getIn($row, $mapping, '');
 			$retInfo[] = [ 'OperatorSpecInformation' => $infoEntry ];
 		}
 		return $retInfo;
@@ -638,6 +633,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	protected function getCallEventStartTimeStamp($row) {
 		return $this->formatDate($row['urt']);
 	}
+
 	
 	/**
 	 * format date to file format
