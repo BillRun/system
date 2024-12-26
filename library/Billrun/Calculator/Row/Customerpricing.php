@@ -637,7 +637,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			if ($valueRequired < 0) {
 				break;
 			}
-			
+			Billrun_Factory::dispatcher()->trigger('beforeUsageLeftInServiceGroups', array(&$service, $this->row));
+
 			$serviceName = $service->getName();
 			$serviceQuantity = 1;
 			$serviceGroups = $service->getRateGroups($rate, $usageType);
@@ -758,7 +759,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected function getRowCurrentUsagev() {
 		try {
-			if ($this->isPostpayChargeRequest()) {
+			if ($this->isPostpayChargeRequest() || $this->row['type'] === 'credit') {
 				return 0;
 			}
 			$lines_coll = Billrun_Factory::db()->linesCollection();

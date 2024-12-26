@@ -71,8 +71,24 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
                 if($this->ifLineNeedFinalChargeRounding($current)){
                     $this->roundingFinalCharge($row);
                 }
+		if(!$this->addBillrunField($row)){
+			return false;
+		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
+	}
+
+	protected function addBillrunField(&$row){
+		if(!isset($row['billrun'])){
+			$billrunKey = Billrun_Billingcycle::getBillrunKeyByRow($row);
+			if($billrunKey){
+				$row['billrun'] = $billrunKey;
+			}else{
+				Billrun_Factory::log("Line {$row['stamp']} failed to get billrun field." , Zend_Log::ALERT);
+				return false;
+			} 
+		}
+		return true;
 	}
 
 	/**
@@ -236,7 +252,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	protected function getRateForLine($line) {
 		$rate = FALSE;
 		if(!empty($line['arate'])) {
-			$rate = Billrun_Rates_Util::getRateByRef($line['arate'], true)->getRawData();
+			$rate = Billrun_Rates_Util::getRateByRef($line['arate'])->getRawData();
 		} else {
 			$flatRate = $line['type'] == 'flat' ?
 				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
@@ -254,7 +270,8 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
         
         protected function roundingFinalCharge(&$row) {
-                $current = $row->getRawData();
+                $current = $row instanceOf Mongodloid_Entity ?  $row->getRawData() : $row;
+
                 if($current['final_charge'] == 0){
                     return;
                 }
@@ -285,8 +302,12 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
                     $current['tax_data']['taxes'][$index]['amount_before_rounding'] = $tax['amount'];
                     $current['tax_data']['taxes'][$index]['amount'] = $tax['amount'] * $div;
                 }
-                $row->setRawData($current);
+
+                if($row instanceOf Mongodloid_Entity ) {
+					$row->setRawData($current);
+				} else {
+					$row = $current;
+				}
 	}
-        
 
 }

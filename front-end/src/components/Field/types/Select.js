@@ -20,8 +20,13 @@ const Select = ({
     }
     return value;
   }
+  const notEmptyValue = value => 
+    value !== ''
+    && value !== null
+    && typeof value !== 'undefined';
+
   /* Support old existing Select fileds from v0.9.x*/
-  const legacyValues = ((multi) ? value.split(',').map(fixBoolValues) : [value]).filter(val => val !== '');
+  const legacyValues = ((multi && typeof value === 'string') ? value.split(',').map(fixBoolValues) : [value]).filter(notEmptyValue);
 
   if (!editable) {
     const displayValue = options

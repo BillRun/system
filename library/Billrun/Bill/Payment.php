@@ -215,13 +215,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 
 	/**
-	 * 
+	 * Function to get bill instance, using it's id
 	 * @param string $id
+	 * @param string read_preference - caller can choose the read preference that is used to pull the data of the returned bill 
 	 * @return Billrun_Bill_Payment
 	 */
-	public static function getInstanceByid($id) {
+	public static function getInstanceByid($id, $read_preference = null) {
                 $id = self::padTxId($id);
-		$data = Billrun_Factory::db()->billsCollection()->query('txid', $id)->cursor()->current();
+		$data = Billrun_Factory::db()->billsCollection()->query('txid', $id)->cursor()->setReadPreference($read_preference)->current();
 		if ($data->isEmpty()) {
 			return NULL;
 		}
@@ -506,6 +507,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['waiting_for_confirmation'] = false;
 		$this->data['confirmation_time'] = new Mongodloid_Date();
                 $this->unsetAllPendingLinkedBills();
+								$this->data['paid'] = $this->isPaid();
 		$this->setUrt();
 		$this->save();
 		Billrun_Factory::dispatcher()->trigger('afterUpdateConfirmation', array($this->data));
@@ -591,8 +593,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty($chargeOptions['aids'])) {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
-		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
-		Billrun_Factory::log("Switch links flag value is " . ($switch_links ? "true" : "false"), Zend_Log::DEBUG);
 		$size = !empty($chargeOptions['size']) ? (int) $chargeOptions['size'] : 100;
 		$page = !empty($chargeOptions['page']) ? (int) $chargeOptions['page'] : 0;
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
@@ -627,7 +627,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		$payment_manager = Billrun_PaymentManager::getInstance();
 		foreach ($customersAids as $customerAid) {
-			Billrun_Factory::log("Trying to lock charge action for account " . $customerAid, Zend_Log::DEBUG);
+			Billrun_Factory::log("Checking if bills links should be switched for account " . $customerAid, Zend_Log::DEBUG);
+			$switch_links = Billrun_Bill::shouldSwitchBillsLinks($customerAid);
+			Billrun_Factory::log("Switch links value is " . ($switch_links ? "true" : "false") . " for account " . $customerAid . ". Trying to lock charge action for account " . $customerAid, Zend_Log::DEBUG);
 			if (!$payment_manager->lockPaymentAction(['action' => 'charge_account', 'aid' => $customerAid])) {
 				Billrun_Factory::log("Failed locking charge_account action for account " . $customerAid . ". Continue to the next account", Zend_Log::ALERT);
 				continue;
@@ -792,15 +794,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					
 					$paymentResponses['completed'] = $completed;
 					if ($switch_links) {
-						Billrun_Factory::log("Switch links flag value is true. Detaching paid bills for payment " . $payment->getId(), Zend_Log::DEBUG);
+						Billrun_Factory::log("Switch links value is true. Detaching paid bills for payment " . $payment->getId(), Zend_Log::DEBUG);
 						$payment->detachPaidBills(true);
 					}
 				}
 			}
 			if ($switch_links) {
-				Billrun_Factory::log("Switch links flag value is true. Detaching pending payments for account " . $customerAid, Zend_Log::DEBUG);
+				Billrun_Factory::log("Switch links value is true. Detaching pending payments for account " . $customerAid, Zend_Log::DEBUG);
 				Billrun_Bill_Payment::detachPendingPayments($customerAid);
-				Billrun_Factory::log("Switch links flag value is true. paying unpaid bills by over paying bills for account " . $customerAid, Zend_Log::DEBUG);
+				Billrun_Factory::log("Switch links value is true. paying unpaid bills by over paying bills for account " . $customerAid, Zend_Log::DEBUG);
 				Billrun_Bill::payUnpaidBillsByOverPayingBills($customerAid, true, $switch_links);
 			}
 			Billrun_Factory::log("Trying to release charge action for account " . $customerAid, Zend_Log::DEBUG);
@@ -909,15 +911,19 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return $ids;
 	}
 
-	public function markApproved($status) {
-		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
+	public function markApproved($status, $read_preference = null) {
+		$aid = $this->getAid();
+		Billrun_Factory::log("Checking if bills links should be switched for account " . $aid, Zend_Log::DEBUG);
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks($aid);
 		if ($switch_links) {
+			Billrun_Factory::log("System should switch links for aid " . $aid . ". Detaching pending payments for account " . $aid, Zend_Log::DEBUG);
 			static::detachPendingPayments($this->getAid());
 			$this->detachPaidBills(true);
+			Billrun_Factory::log("Setting updated payment data after paying unpaid bills by over paying bills for aid " . $aid, Zend_Log::DEBUG);
 			$this->setUpdatedPaymentAfterPayingUnpaidBills(Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid(), true, $switch_links));
 		}
 		foreach ($this->getPaidBills() as $bill) {
-			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
+			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id'], $read_preference);
 			$billObj->updatePendingBillToConfirmed($this->getId(), $status, $this->getType())->save();
 		}
 	}
@@ -926,6 +932,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['pending'] = $pending;
 		if (!$pending) {
 			$this->data['pending_covering_amount'] = 0;
+		}else{
+			$this->data['paid'] = "2";
 		}
 	}
 	

@@ -24,7 +24,7 @@ class Billrun_Version {
 	public static $DEV_LEVEL = '0';
 
 	/** @var  string  Development STATUS. */
-	public static $DEV_STATUS = 'beta6';
+	public static $DEV_STATUS = 'beta32';
 
 	/** @var  string  Build number. */
 	public static $BUILD = '';

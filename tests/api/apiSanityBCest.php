@@ -26,25 +26,23 @@ class apiSanityBCest
     public function testCreatePlan(ApiTester $I)
     {
 
-        $I->generatePlan(['name' => 'TEST_PLAN_2']);
+        $I->generatePlan(['name' => 'TEST_PLAN_2'.time()]);
+        $this->planDetails = json_decode($I->grabResponse(), true)['entity'];
         $I->seeResponseIsJson();
         $I->seeResponseContains('{"status":1');
-        $I->seeResponseContainsJson([
-            'name' => 'TEST_PLAN_2'
-        ]);
-        $this->planDetails = json_decode($I->grabResponse(), true)['entity'];
+        $I->seeResponseContainsJson(['name' => $this->planDetails['name']]);
     }
 
     public function testCreateService(ApiTester $I)
     {
 
-        $I->generateService(['name' => 'TEST_SERVICE']);
+        $I->generateService(['name' => 'TEST_SERVICE'.time()]);
+        $this->serviceDetails = json_decode($I->grabResponse(), true)['entity'];
         $I->seeResponseIsJson();
         $I->seeResponseContains('{"status":1');
         $I->seeResponseContainsJson([
-            'name' => 'TEST_SERVICE'
+            'name' => $this->serviceDetails['name']
         ]);
-        $this->serviceDetails = json_decode($I->grabResponse(), true)['entity'];
     }
 
     /**

@@ -275,9 +275,9 @@ abstract class Billrun_Bill {
 		//Get unpaid & paying bills
 		$unpaidBills = array_map(function ($unpaid_bill)  use ($query, $sort) {
 			return Billrun_Bill::getInstanceByData($unpaid_bill);
-		}, Billrun_Bill::getUnpaidBills($query, $sort));
-		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort);
-		$pending_paying_bills = $include_pending_payments ? Billrun_Bill::getPendingBills($query, $sort) : [];
+		}, Billrun_Bill::getUnpaidBills($query, $sort, 'RP_PRIMARY')); //BRCD-4521:Force read preference - in order to get the most updated bills data
+		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort, 'RP_PRIMARY');
+		$pending_paying_bills = $include_pending_payments ? Billrun_Bill::getPendingBills($query, $sort, 'RP_PRIMARY') : [];
 		Billrun_Factory::log("Found " . count($unpaidBills) . " unpaid bills," . count($overPayingBills) . " over paying bills, and " . count($pending_paying_bills) . " pending paying bills"  , Zend_Log::DEBUG);
 		//Go over paying bills, to link to the unpaid ones, by priority
 		foreach (['over_paying_bills' => $overPayingBills, 'pending_bills' => $pending_paying_bills] as $type => $payments) {
@@ -373,10 +373,10 @@ abstract class Billrun_Bill {
 		$unpaid_amount -= $amountPaid;
 	}
 
-	public static function getUnpaidBills($query = array(), $sort = array()) {
+	public static function getUnpaidBills($query = array(), $sort = array(), $read_preference = null) {
 		$mandatoryQuery = static::getUnpaidQuery();
 		$query = array_merge($query, $mandatoryQuery);
-		return static::getBills($query, $sort);
+		return static::getBills($query, $sort, $read_preference);
 	}
 
 	protected function updateLeft() {
@@ -416,12 +416,12 @@ abstract class Billrun_Bill {
 		);
 	}
 
-	public static function getBills($query = array(), $sort = array()) {
+	public static function getBills($query = array(), $sort = array(), $read_preference = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		return iterator_to_array($billsColl->find($query)->sort($sort), FALSE);
+		return iterator_to_array($billsColl->find($query)->sort($sort)->setReadPreference($read_preference), FALSE);
 	}
 
-	public static function getOverPayingBills($query = array(), $sort = array()) {
+	public static function getOverPayingBills($query = array(), $sort = array(), $read_preference = null) {
 		$billObjs = array();
 		$over_paying_query = array(
 			'left' => array('$gt' => 0), 
@@ -430,7 +430,7 @@ abstract class Billrun_Bill {
 				array('pending' => false)
 			));
 		$query = array_merge($query, $over_paying_query, static::getNotRejectedOrCancelledQuery());
-		$bills = static::getBills($query, $sort);
+		$bills = static::getBills($query, $sort, $read_preference);
 		if ($bills) {
 			foreach ($bills as $bill) {
 				$billObjs[] = static::getInstanceByData($bill);
@@ -439,10 +439,10 @@ abstract class Billrun_Bill {
 		return $billObjs;
 	}
 
-	public static function getPendingBills($query, $sort) {
+	public static function getPendingBills($query, $sort, $read_preference = null) {
 		$pending_query = array('pending' => true, 'left' => array('$gt' => 0));
 		$query = array_merge($query, $pending_query, static::getNotRejectedOrCancelledQuery());
-		$bills = static::getBills($query, $sort);
+		$bills = static::getBills($query, $sort, $read_preference);
 		return array_map(function ($bill) {
 			return static::getInstanceByData($bill);
 		}, $bills);
@@ -532,7 +532,8 @@ abstract class Billrun_Bill {
 		if ($this->getBillMethod() == 'denial') {
 			return $this;
 		}
-		if ($this->getDue() > 0) {
+		$due = $this->getDue();
+		if ($due > 0) {
 			$amount = 0;
 			foreach (Billrun_Util::getIn($this->data, 'paid_by', []) as $relatedBill) {
 				$amount += floatval($relatedBill['amount']);
@@ -540,32 +541,36 @@ abstract class Billrun_Bill {
 			$this->data['total_paid'] = $amount;
 			$this->data['left_to_pay'] = round($this->getLeftToPay(), 2);
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
-			if (is_null($status)){
-				$this->data['paid'] = !empty($this->data['waiting_payments']) ? '2' : $this->isPaid();
-			} else {
-				$this->data['paid'] = $this->calcPaidStatus($billId, $status, $billType);
-			}
-		} else if ($this->getDue() < 0){
+		} else if ($due < 0){
 			$amount = 0;
 			foreach (Billrun_Util::getIn($this->data, 'pays', []) as $relatedBill) {
 				$amount += floatval($relatedBill['amount']);
 			}
+			$this->data['total_paid'] = $amount;
 			$this->data['left'] = round($this->data['amount'] - $amount, 2);				
+		}
+		if (is_null($status)){
+			$pending = !empty($this->data['waiting_payments']) || $this->data['pending'] ?? false;
+			$this->data['paid'] = $pending ? '2' : $this->isPaid();
+		} else {
+			$this->data['paid'] = $this->calcPaidStatus($billId, $status, $billType);
 		}
 		$this->setPendingCoveringAmount();
 		return $this;
 	}
 	
 	/**
-	 * 
-	 * @param int $id
+	 * Function to get bill instance, using it's type (inv/rec) and id
+	 * @param string $type - inv/rec
+	 * @param int $id - entity BillRun id
+	 * @param string read_preference - caller can choose the read preference that is used to pull the data of the returned bill 
 	 * @return Billrun_Bill_Invoice
 	 */
-	public static function getInstanceByTypeAndid($type, $id) {
+	public static function getInstanceByTypeAndid($type, $id, $read_preference = null) {
 		if ($type == 'inv') {
-			return Billrun_Bill_Invoice::getInstanceByid($id);
+			return Billrun_Bill_Invoice::getInstanceByid($id, $read_preference);
 		} else if ($type == 'rec') {
-			return Billrun_Bill_Payment::getInstanceByid($id);
+			return Billrun_Bill_Payment::getInstanceByid($id, $read_preference);
 		}
 		throw new Exception('Unknown bill type');
 	}
@@ -656,6 +661,7 @@ abstract class Billrun_Bill {
 		$this->data->setRawData($paymentRawData);
 		$this->updateLeft();
 		$this->setPendingCoveringAmount();
+		$this->recalculatePaymentFields();
 		return $this;
 	}
 
@@ -688,6 +694,7 @@ abstract class Billrun_Bill {
 
 	public static function getContractorsInCollection($aids = array()) {
 		$account = Billrun_Factory::account();
+		Billrun_Factory::log()->log("Pulling excluded/included accounts from/in collection, according to the configuration", Zend_Log::DEBUG);
 		$exempted = $account->getExcludedFromCollection($aids);
 		$subject_to = $account->getIncludedInCollection($aids);
 
@@ -709,6 +716,7 @@ abstract class Billrun_Bill {
 			$aidsQuery = array();
 		}
 
+		Billrun_Factory::log()->log("Calculating balance for the accounts that were found relevant for collection", Zend_Log::DEBUG);
 		return static::getBalanceByAids($aidsQuery, true, true, true);
 	}
 
@@ -747,7 +755,7 @@ abstract class Billrun_Bill {
 	}
 
 	public function isPaid() {
-		return $this->getDue() <= ($this->getPaidAmount() + static::precision);
+		return abs($this->getDue()) <= ($this->getPaidAmount() + static::precision);
 	}
 	
 	public static function pay($method, $paymentsArr, $options = array()) {
@@ -1308,18 +1316,28 @@ abstract class Billrun_Bill {
 	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false, $include_pending = false, $min_debt = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
+		Billrun_Factory::log()->log("Building 'rejection required' query according to the configuration", Zend_Log::DEBUG);
 		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
 		$accountQuery = Billrun_Account::getBalanceAccountQuery($aids, $is_aids_query, $rejection_required_conditions);
+		Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
+		Billrun_Factory::log()->log("Pulled " . count($currentAccounts) . " accounts. Filtering aids", Zend_Log::DEBUG);
 		$rejection_required_aids = array_column(array_map(function($account) {
 				return $account->getRawData();
 			}, $currentAccounts), 'aid') ?? [];
-
+		Billrun_Factory::log()->log("Building aggregate query", Zend_Log::DEBUG);
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$match = array(
 			'$match' => $nonRejectedOrCanceled,
 		);
-
+		$match['$match']['$or'] = array(
+			array('left' => array('$exists' => true, '$ne' => 0)),
+			array('left_to_pay' => array('$exists' => true, '$ne' => 0))
+		);
+		if ($include_pending) {
+			array_push($match['$match']['$or'], array(
+					'paid' => array('$in' => array('2', 2))));
+		}
 		if (!empty($aids)) {
 			$match['$match']['aid'] = $is_aids_query ? $aids['aid'] : array('$in' => $aids);
 		}
@@ -1442,6 +1460,7 @@ abstract class Billrun_Bill {
 			);
 		}
 		$results = iterator_to_array($billsColl->aggregateWithOptions([$match, $project, $addFields, $group, $project3, $match2], ['allowDiskUse' => true]));
+		Billrun_Factory::log()->log("Combining bills to aids", Zend_Log::DEBUG);
 		return array_combine(array_map(function($ele) {
 				return $ele['aid'];
 			}, $results), $results);
@@ -1636,24 +1655,31 @@ abstract class Billrun_Bill {
 	 * Function that will return true if the current payments linking should be chagned, because newer invoices/debt was paid before older pending one 
 	 * @param int - urt - relative time 
 	 */
-	public static function shouldSwitchBillsLinks($urt = null) {
-		$switch_links_config = Billrun_Factory::config()->getConfigValue('bills.switch_links', true);
+	public static function shouldSwitchBillsLinks($aid, $urt = null) {
+		if (empty($aid) || !is_numeric($aid)) {
+			Billrun_Factory::log("Aid field is empty or not numeric in 'shouldSwitchBillsLinks function'. return false", Zend_Log::DEBUG);
+			return false;
+		}
+		$switch_links_config = Billrun_Factory::config()->getConfigValue('bills.switch_links', false);
+		if (!$switch_links_config) {
+			return false;
+		}
 		$query = [
+			'aid' => $aid,
 			'urt' => array(
 				'$lt' => new Mongodloid_Date(is_null($urt) ? time() : $urt)
 			),
 			'$or' => array(
+				//Old unpaid bill
 				array('left_to_pay' => ['$gt' => 0]),
-				array('pending_covering_amount' => ['$gt' => 0])
-			),
-			'$or' => array(
-				array('waiting_payments' => ['$exists' => true, '$ne' => []],'paid_by' => ['$elemMatch' => ['pending' => true]]),
-				array('past_rejections' => ['$exists' => true, '$ne' => []])
+				//Old bill paid by pending bill - check no 1
+				array('pending_covering_amount' => ['$gt' => 0]),
+				//Old bill paid by pending bill - check no 2
+				array('waiting_payments' => ['$exists' => true, '$ne' => []],'paid_by' => ['$elemMatch' => ['pending' => true]])
 			)
-			
 		];
 		$query = array_merge($query, Billrun_Bill::getNotRejectedOrCancelledQuery());
-		return $switch_links_config && count(static::getBills($query));
+		return count(static::getBills($query));
 	}
 
 	public function setBillData($data) {

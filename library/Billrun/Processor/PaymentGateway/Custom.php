@@ -240,19 +240,30 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		Billrun_Factory::log("Found original file' stamp : " . $origFileStamp . ". Pulling relevant bills...", Zend_Log::DEBUG);
 		$relevantBills = $this->getOrigFileBills($origFileStamp);
 		Billrun_Factory::log("Updating " . count($relevantBills) . " relevant bills", Zend_Log::DEBUG);
+		$bills_counter = 0;
 		foreach ($relevantBills as $bill) {
+			$bills_counter++;
 			if (!($bill instanceof Billrun_Bill)) {
 				$bill = Billrun_Bill::getInstanceByData($bill);
-			} 
+			}
+			$txid = $bill->getId();
+			Billrun_Factory::log("Updating bill number " . $bills_counter . ", with txid " . $txid, Zend_Log::DEBUG);
 			if ($fileStatus == 'only_rejections') {
+				Billrun_Factory::log("Trying to approve bill with txid " . $txid, Zend_Log::DEBUG);
 				$customFields = $this->getCustomPaymentGatewayFields();
+				Billrun_Factory::log("Setting and saving cpf extra fields to bill with txid " . $txid, Zend_Log::DEBUG);
 				$bill->setExtraFields($customFields, array_keys($customFields));
-				$bill->markApproved('Completed');
+				Billrun_Factory::log("Marking bill with txid " . $txid . " as approved", Zend_Log::DEBUG);
+				$bill->markApproved('Completed', 'RP_PRIMARY');
+				Billrun_Factory::log("Setting bill with txid " . $txid . " pending flag", Zend_Log::DEBUG);
 				$bill->setPending(false);
+				Billrun_Factory::log("Updating and saving bill with txid " . $txid . " confirmation fields", Zend_Log::DEBUG);
 				$bill->updateConfirmation();
+				Billrun_Factory::log("Saving bill with txid " . $txid, Zend_Log::DEBUG);
 				$bill->save();
                 $this->informationArray['transactions']['confirmed']++;
 				$billData = $bill->getRawData();
+				Billrun_Factory::log("Calling triggered 'afterRefundSuccess'/'afterChargeSuccess' relevant function", Zend_Log::DEBUG);
 				if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
 					Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
 				}
@@ -260,15 +271,22 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 					Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
 				}
 			} else if ($fileStatus == 'only_acceptance') {
+				Billrun_Factory::log("Trying to reject bill with txid " . $txid, Zend_Log::DEBUG);
 				$billData = $bill->getRawData();
+				Billrun_Factory::log("Parsing bill with txid " . $txid . " method", Zend_Log::DEBUG);
 				$billData['method'] = isset($billData['payment_method']) ? $billData['payment_method'] : (isset($billData['method']) ? $billData['method'] : 'automatic');
+				Billrun_Factory::log("Bill with txid " . $txid . " method is " . $billData['method'], Zend_Log::DEBUG);
 				$billToReject = Billrun_Bill_Payment::getInstanceByData($billData);
+				Billrun_Factory::log("Setting and saving cpf extra fields to bill with txid " . $txid, Zend_Log::DEBUG);
 				$customFields = $this->getCustomPaymentGatewayFields();
 				$billToReject->setExtraFields($customFields, array_keys($customFields));
 				Billrun_Factory::log('Rejecting transaction ' . $billToReject->getId(), Zend_Log::INFO);
 				$rejection = $billToReject->getRejectionPayment(array('status' => 'acceptance_file'));
+				Billrun_Factory::log("Setting confirmation status to bill with txid " . $txid, Zend_Log::DEBUG);
 				$rejection->setConfirmationStatus(false);
+				Billrun_Factory::log("Saving bill with txid " . $txid, Zend_Log::DEBUG);
 				$rejection->save();
+				Billrun_Factory::log("Marking rejected bill", Zend_Log::DEBUG);
 				$billToReject->markRejected();
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($billToReject->getRawData()));
                 $this->informationArray['transactions']['rejected']++;
