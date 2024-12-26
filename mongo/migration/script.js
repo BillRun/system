@@ -862,12 +862,6 @@ lastConfig = runOnce(lastConfig, 'BRCD-2244', function() {
     );
 })
 
-// BRCD-1837: convert rates' "vatable" field to new tax mapping
-db.rates.updateMany({ tax: { $exists: 0 }, $or: [{ vatable: true }, { vatable: { $exists: 0 } }] }, { $set: { tax: [{ type: "vat", taxation: "global" }] }, $unset: { vatable: 1 } });
-db.rates.updateMany({ tax: { $exists: 0 }, vatable: false }, { $set: { tax: [{ type: "vat", taxation: "no" }] }, $unset: { vatable: 1 } });
-db.services.updateMany({ tax: { $exists: 0 }, $or: [{ vatable: true }, { vatable: { $exists: 0 } }] }, { $set: { tax: [{ type: "vat", taxation: "global" }] }, $unset: { vatable: 1 } });
-db.services.updateMany({ tax: { $exists: 0 }, vatable: false }, { $set: { tax: [{ type: "vat", taxation: "no" }] }, $unset: { vatable: 1 } });
-
 // taxes collection indexes
 _createCollection('taxes');
 db.taxes.createIndex({ 'key': 1, 'from': 1, 'to': 1 }, { unique: true, background: true });
