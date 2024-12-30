@@ -601,10 +601,10 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$operatorSpecInfo = Billrun_Util::getIn($this->config, 'operator_spec_info.'.$this->getCallEventDetail($row), Billrun_Util::getIn($this->config, 'operator_spec_info.common', []));
 		$stamp = Billrun_Util::getIn($row, 'stamp', '');
 		if(isset($stamp)){
-			$retInfo[] = [ 'OperatorSpecInformation' => 'stamp : ' . $stamp ];
+			$retInfo[] = [ 'OperatorSpecInformation' => 'STAMP: ' . $stamp ];
 		}
 		foreach($operatorSpecInfo as $key => $mapping) {
-			$infoEntry = $key. " : " .Billrun_Util::getIn($row, $mapping, '');
+			$infoEntry = $key. ": " .Billrun_Util::getIn($row, $mapping, '');
 			$retInfo[] = [ 'OperatorSpecInformation' => $infoEntry ];
 		}
 		return $retInfo;
