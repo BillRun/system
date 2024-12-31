@@ -305,7 +305,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			array('row' => array('stamp' => 'p4', 'aid' => 9503, 'sid' => 952, 'rates' => array('INTERNET' => 'retail'), 'plan' => 'NEW-PLAN-O4', 'usaget' => 'data', 'usagev' => 7500000, 'services_data' => [['name' => '2GB_INTERNET_FOR_1_CYCLE', 'from' => '2017-09-01', 'to' => '2018-09-01',]], 'urt' => '2017-10-01 00:00:01+03:00',),
 				'expected' => array('in_group' => 0, 'over_group' => 7500000, 'aprice' => 8, 'charge' => array('retail' => 8,))),
 //Test num 80 p5
-			array('rebalance' => true, 'row' => array('stamp' => 'p5', 'aid' => 9503, 'sid' => 952, 'rates' => array('INTERNET' => 'retail'), 'plan' => 'NEW-PLAN-O4', 'usaget' => 'data', 'usagev' => 75000000, 'services_data' => [['name' => '2GB_INTERNET_FOR_1_CYCLE', 'from' => '2017-09-01', 'to' => '2018-09-01',]], 'urt' => '2017-10-14',),
+			array('rebalance' => true, 'row' => array('stamp' => 'p5', 'aid' => 9503, 'sid' => 952, 'rates' => array('INTERNET' => 'retail'), 'plan' => 'NEW-PLAN-O4', 'usaget' => 'data', 'usagev' => 75000000, 'services_data' => [['name' => '2GB_INTERNET_FOR_1_CYCLE', 'from' => '2017-09-01', 'to' => '2018-09-01',]],'balances'=>['201710','201711'], 'urt' => '2017-10-14',),
 				'expected' => array('in_group' => 0, 'over_group' => 75000000, 'aprice' => 75, 'charge' => array('retail' => 75,))),
 ////Test num 81 q1
 			array('row' => array('stamp' => 'q1', 'aid' => 9702, 'sid' => 971, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'NEW-PLAN-Q1', 'usaget' => 'call', 'usagev' => 70, 'services_data' => [['name' => 'SERVICE-Q1', 'from' => '2017-09-20', 'to' => '2017-10-01',], ["name" => "SERVICE-Q2", "from" => "2017-09-25", "to" => "2017-09-30", "service_id" => 4568]], 'urt' => '2017-09-25 11:00:00+03:00',),
@@ -352,7 +352,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			'expected' => array('in_group' => 25, 'over_group' => 50, 'aprice' => 0.5, 'charge' => array('retail' => 0.5,))),
 ////should not be included
 ////Test num 94 is5
-		array('rebalance' => true, 'row' => array('stamp' => 'is5', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'service_id' => 10002, 'from' => '2017-09-10', 'to' => '2017-12-21',]], 'urt' => '2017-09-14 11:00:00+03:00',),
+		array('rebalance' => true, 'row' => array('stamp' => 'is5', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'service_id' => 10002, 'from' => '2017-09-10', 'to' => '2017-12-21',]],'balances'=>['201710','201712'], 'urt' => '2017-09-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8, 'charge' => array('retail' => 0.8,))),
 //		// s custom period with pooled/shard
 //		// s1 & s2 are one test case for check service period pooled
@@ -697,11 +697,18 @@ class Tests_Updaterowt extends UnitTestCase {
 	 */
 	protected function rebalance($row, $conditions = null) {
 		$aids = [$row['aid']];
-		$billrun_key =Billrun_Billingcycle::getBillrunKeyByTimestamp($row['process_time']->sec);
+		$billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp($row['urt']->sec);
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/process_time_offset.ini');
 		$stamp[$row['stamp']] = $row['stamp'];
-		$rebalance = new ResetLinesModel($aids, $billrun_key, $conditions,$stamp);
-		$rebalance->reset();
+		if (isset($row['balances']) && is_array($row['balances'])) {
+			foreach ($row['balances'] as $balance) {
+				$rebalance = new ResetLinesModel($aids, $balance, $conditions,$stamp);
+				$rebalance->reset();
+			}
+		}else{
+				$rebalance = new ResetLinesModel($aids, $billrun_key, $conditions,$stamp);
+	 			$rebalance->reset();
+		}
 		$this->balances = $this->getBalance($row);
 		if (isset($this->row['conditions'])) {
 			$this->conditionRebalance();
