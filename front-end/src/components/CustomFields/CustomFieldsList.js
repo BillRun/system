@@ -39,14 +39,40 @@ class CustomFieldsList extends Component {
     }
   }
 
-  getprintableFields = () => {
-    const { entity, fields, fieldsConfig, onRemove, onEdit, reordering } = this.props;
-
+  getFieldsByCategory = () => {
+    const { 
+      fields
+    } = this.props;
+  
     // Group fields by category
-    const fieldsByCategory = fields.reduce((acc, field) => {
+    const groupedFields = fields.reduce((acc, field) => {
       const category = field.get('category', '') || 'uncategorized';
       return acc.update(category, List(), cat => cat.push(field));
     }, Map());
+  
+    const sortedCategories = groupedFields.keySeq().sort((a, b) => {
+      if (a === 'uncategorized') return -1;
+      if (b === 'uncategorized') return 1;
+      return a.localeCompare(b);
+    });
+
+    return sortedCategories.reduce((acc, category) => {
+      return acc.set(category, groupedFields.get(category));
+    }, Map());
+  };
+  
+
+  renderFieldsByCategory = () => {
+    const {
+      entity,
+      fieldsConfig,
+      reordering,
+      onReorder,
+      onRemove,
+      onEdit,
+    } = this.props;
+
+    const fieldsByCategory = this.getFieldsByCategory();
 
     return fieldsByCategory.map((fields, category) => {
       const rows = fields.map((field, index) => (
@@ -54,7 +80,7 @@ class CustomFieldsList extends Component {
           key={`item-${entity}-${field.get('field_name', '')}-${index}`}
           index={index}
           disabled={!isFieldSortable(field, fieldsConfig) || (isFieldSortable(field, fieldsConfig) && !reordering)}
-          collection={entity}
+          collection={category}
           entity={entity}
           field={field}
           fieldsConfig={fieldsConfig}
@@ -64,9 +90,34 @@ class CustomFieldsList extends Component {
         />
       ))
 
-      return category === 'uncategorized' ? rows : (
-        <Panel header={category} key={`panel-${category}`} collapsible className="collapsible">
+      return category === 'uncategorized' ? (
+        <SortableFieldsContainer
+          key={`sortable-container-${category}`}
+          lockAxis="y"
+          helperClass="draggable-row"
+          useDragHandle={true}
+          items={rows}
+          onSortEnd={onReorder}
+        >
           {rows}
+        </SortableFieldsContainer>
+      ) : (
+        <Panel
+          header={category}
+          key={`panel-${category}`}
+          collapsible
+          className="collapsible"
+        >
+          <SortableFieldsContainer
+            key={`sortable-container-${category}`}
+            lockAxis="y"
+            helperClass="draggable-row"
+            useDragHandle={true}
+            items={rows}
+            onSortEnd={onReorder}
+          >
+            {rows}
+          </SortableFieldsContainer>
         </Panel>
       );
     }).toList();
@@ -76,7 +127,6 @@ class CustomFieldsList extends Component {
     const {
       fields,
       reordering,
-      onReorder,
       onNew,
       onReorderStart,
       onReorderSave,
@@ -97,15 +147,7 @@ class CustomFieldsList extends Component {
             <hr style={{ marginTop: 5, marginBottom: 0 }} />
           </Col>
         </Row>
-        {!fields.isEmpty() && (
-        <SortableFieldsContainer
-            lockAxis="y"
-            helperClass="draggable-row"
-            useDragHandle={true}
-            items={this.getprintableFields()}
-            onSortEnd={onReorder}
-        />
-        )}
+        {!fields.isEmpty() && this.renderFieldsByCategory()}
         {fields.isEmpty() && (
           <Col sm={12} className="text-center mb10">No custom field</Col>
         )}
@@ -113,7 +155,7 @@ class CustomFieldsList extends Component {
           <Col sm={12} className="mt10">
             <CreateButton onClick={onNew} type="Field" action="Add" buttonStyle={{ marginTop: 0 }} />
             {!fields.isEmpty() && (
-                <Button bsSize="xsmall" className="btn-primary" onClick={onReorderStart} title="Change fields order" style={{ float: 'right', minWidth: 90 }}>
+              <Button bsSize="xsmall" className="btn-primary" onClick={onReorderStart} title="Change fields order" style={{ float: 'right', minWidth: 90 }}>
                 <i className="fa fa-arrows-alt" /> Reorder
               </Button>
             )}
