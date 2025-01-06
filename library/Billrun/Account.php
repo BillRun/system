@@ -263,7 +263,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		$query = [];
 		if (!isset($params['time'])) {
 			$now = new MongoDate();
-			$query['time'] = $now->toDateTime()->format('Y-m-d H:i:s.u');
+			$query['time'] = date('Y-m-d H:i:s', $now->sec) . '.' . sprintf('%06d', $now->usec);
 		}
 		
 		foreach ($params as $key => $value) {
