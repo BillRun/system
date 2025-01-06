@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { List, Map } from 'immutable';
+import { List, Map, OrderedMap } from 'immutable';
 import { Col, Row, ControlLabel, Button, Panel } from 'react-bootstrap';
 import CustomFieldsListRowContainer from './CustomFieldsListRowContainer';
 import { CreateButton, SortableFieldsContainer } from '../Elements';
@@ -40,25 +40,13 @@ class CustomFieldsList extends Component {
   }
 
   getFieldsByCategory = () => {
-    const { 
-      fields
-    } = this.props;
+    const { fields } = this.props;
   
-    // Group fields by category
-    const groupedFields = fields.reduce((acc, field) => {
-      const category = field.get('category', '') || 'uncategorized';
-      return acc.update(category, List(), cat => cat.push(field));
-    }, Map());
-  
-    const sortedCategories = groupedFields.keySeq().sort((a, b) => {
-      if (a === 'uncategorized') return -1;
-      if (b === 'uncategorized') return 1;
-      return a.localeCompare(b);
-    });
-
-    return sortedCategories.reduce((acc, category) => {
-      return acc.set(category, groupedFields.get(category));
-    }, Map());
+    return fields.reduce(
+      (acc, field) => {
+        const category = field.get('category', '') || 'uncategorized';
+        return acc.update(category, List(), cat => cat.push(field));
+      }, OrderedMap()).sortBy((_, category) => (category === 'uncategorized' ? -1 : category));
   };
   
 
