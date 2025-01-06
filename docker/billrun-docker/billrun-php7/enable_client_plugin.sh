@@ -10,12 +10,12 @@ if test -d "/plugin/application/plugins/"; then
      for f in /plugin/application/plugins/*.json
      do
           [ -f "$f" ] || break
-          echo "configuration.include[] = $f" >> /billrun/conf/container.ini
+          echo -e "\nconfiguration.include[] = $f" >> /billrun/conf/container.ini
      done
      for f in /plugin/conf/*.json
      do
           [ -f "$f" ] || break
-          echo "configuration.include[] = $f" >> /billrun/conf/container.ini
+          echo -e "\nconfiguration.include[] = $f" >> /billrun/conf/container.ini
      done
 fi
 
