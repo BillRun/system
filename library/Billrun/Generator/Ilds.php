@@ -92,7 +92,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			// @todo refactoring the xml generation to another class
 			$xml = $this->basic_xml();
 			$xml->TELECOM_INFORMATION->LASTTIMECDRPROCESSED = date('Y-m-d h:i:s');
-			$xml->TELECOM_INFORMATION->VAT_VALUE = (string) (($this->vat * 100) - 100); //'17';
+			$xml->TELECOM_INFORMATION->VAT_VALUE = (string) (($this->vat * 100) - 100); //'18';
 			$xml->TELECOM_INFORMATION->COMPANY_NAME_IN_ENGLISH = 'GOLAN';
 			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $row->get('account_id');
 			;
