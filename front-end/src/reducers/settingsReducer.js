@@ -97,9 +97,19 @@ export default function (state = defaultState, action) {
     }
 
     case actions.SET_FIELD_POSITION: {
-      const curr = state.getIn([...action.path, action.oldIndex]);
+      const getIndexOffset = () => {
+        if (action.category) {
+          const fields = state.getIn([...action.path]);
+          const index = fields.findIndex(field => field.get("category") === action.category);
+          return index
+        }
+        return 0;
+      }
+      const newIndex = action.newIndex + getIndexOffset();
+      const oldIndex = action.oldIndex + getIndexOffset();
+      const curr = state.getIn([...action.path, oldIndex]);
       return state.updateIn(action.path, Immutable.List(), list =>
-        list.delete(action.oldIndex).insert(action.newIndex, curr),
+        list.delete(oldIndex).insert(newIndex, curr),
       );
     }
 
