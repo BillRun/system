@@ -44,6 +44,18 @@ services:
         image: selenium/standalone-chrome
         container_name: billrun-standalone-chrome
         restart: always
+    mockup:
+        #image: php:7.3-fpm
+        build:
+            context: ./mockup-servers
+            dockerfile: Dockerfile-webserver
+        container_name: billrun-mockups
+        volumes:
+            - ${PWD}/mockup-servers:/mockups
+        command: php -S 0.0.0.0:8081 router.php
+        ports:
+        - 8081:8081
+        restart: always
 
 networks:
   default:
