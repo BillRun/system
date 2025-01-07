@@ -34,6 +34,8 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	// Helper OOP hacks
 	protected $lastTadig = '';
 
+	protected $splitFilesKey = 'tadig';
+
 	public function __construct($options = array()) {
 		$this->periodEndTime = time();
 		parent::__construct($options);
@@ -53,39 +55,50 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         Billrun_Factory::dispatcher()->trigger('beforeExport', array($this));
         $this->beforeExport();
 
-		$exported = [];
-		$transactionCounter =0;
-
         $generatorOptions = $this->buildGeneratorOptions();
         $generatorOptions = $this->buildTap3Options($generatorOptions);
-		$lines = $this->getLinesToExport();
-		foreach ($lines as $tadig => $rows) {
-			$this->tadig = $tadig;
-			$extraDataLog = ['tadig' => $tadig];
+				$shouldExportByCustomer =  Billrun_Util::getIn($generatorOptions['configByType'],'export_by_customer', false);
+				if($shouldExportByCustomer){
+					$this->splitFilesKey = 'aid';
+					$exportLinesByKey = $this->getLinesByCustomerToExport();
+				}else{
+					$this->splitFilesKey = 'tadig';
+					$exportLinesByKey = $this->getLinesToExport();
+				}
+				$this->exportByType($exportLinesByKey, $generatorOptions);
+        return true;
+	}
+
+	protected function exportByType($exportLinesByKey, $generatorOptions){
+		$exported = [];
+		$transactionCounter =0;
+		
+		foreach ($exportLinesByKey as $key => $values) {
+			$rows = $values['rows'] ?? [];
+			$this->tadig = $values['tadig'] ?? null;
+			$extraDataLog = [$this->splitFilesKey => $key];
 			if(empty($rows)){
 				$extraDataLog = array_merge($extraDataLog,['notification' => true]);
 			}
-			$this->createLogDB($this->getLogStamp($tadig), $extraDataLog);
+			$this->createLogDB($this->getLogStamp($key), $extraDataLog);
 			$options = array(
-				'tadig' => $tadig,
+				'tadig' => $this->tadig,
 				'data' => $rows,
 				'time' => $this->getPeriodEndTime(),
+
 			);
 			$this->fileGenerator = $this->getTadigExporter(array_merge($generatorOptions,$options));
 			$fileExported = $this->fileGenerator->export();
 			$this->created_successfully &= !empty($fileExported);
 			$exported[] = $fileExported;
-			$transactionCounter = $this->fileGenerator->getTransactionsCounter();
+			$transactionCounter += $this->fileGenerator->getTransactionsCounter();		
 		}
+		Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
 		$this->filesExported = $exported;
-
-        if (!$this->created_successfully) {
-            Billrun_Factory::log()->log("Export generator was faild writing to the file. File creation failed..", Zend_Log::ALERT);
-            return false;
-        }
-
-        Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
-        return true;
+		if (!$this->created_successfully) {
+				Billrun_Factory::log()->log("Export generator was faild writing to the file. File creation failed..", Zend_Log::ALERT);
+				return false;
+		}
 	}
 
 	protected function buildGeneratorOptions() {
@@ -182,11 +195,44 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 				continue;
 			}
 			if (!isset($ret[$tadig])) {
-				$ret[$tadig] = array();
+				$ret['rows'][$tadig] = array();
 			}
-			$ret[$tadig][] = $row;
+			$ret[$tadig]['rows'][] = $row;
+			$ret[$tadig]['tadig'][] = $tadig;
 		}
-		Billrun_Factory::dispatcher()->trigger('afterGetLinesToExport', array(&$ret));
+		Billrun_Factory::dispatcher()->trigger('afterGetLinesToExport', array(&$ret, $this->splitFilesKey));
+		return $ret;
+	}
+
+		/**
+	 * get lines to export ordered by TADIGs as key, and stamps as values
+	 *
+	 * @return array
+	 */
+	protected function getLinesByCustomerToExport() {
+		$ret = array();
+		$this->loadTadigs();
+
+		foreach ($this->rowsToExport as $key => $row) {
+			$aid = $row['aid'];
+			$tadig = $this->getTadig($row);
+			if ($tadig === false) {
+				Billrun_Log::getInstance()->log('Tadigs ' . $this->exporterType . ' exporter: Cannot get TADIG for row. stamp: ' . $row['stamp'], Zend_log::WARN);
+				unset($this->rowsStamps[$row['stamp']]);
+				continue;
+			}
+			if (!isset($ret[$aid])) {
+				$ret[$aid] = array();
+			}
+			$ret[$aid]['rows'][] = $row;
+			if(isset($ret[$aid]['tadig']) && $tadig != $ret[$aid]['tadig']){
+				Billrun_Log::getInstance()->log('Tadigs ' . $this->exporterType . ' exporter: have different tadigs to the same account for aid : $aid. Cannot export row stamp: ' . $row['stamp'], Zend_log::WARN);
+				unset($this->rowsStamps[$row['stamp']]);
+				continue;
+			}
+			$ret[$aid]['tadig'] = $tadig;
+		}
+		Billrun_Factory::dispatcher()->trigger('afterGetLinesToExport', array(&$ret, $this->splitFilesKey));
 		return $ret;
 	}
 
