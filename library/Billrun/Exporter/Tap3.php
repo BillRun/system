@@ -65,8 +65,8 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 					$this->splitFilesKey = 'tadig';
 					$exportLinesByKey = $this->getLinesToExport();
 				}
-				$this->exportByType($exportLinesByKey, $generatorOptions);
-        return true;
+				$res = $this->exportByType($exportLinesByKey, $generatorOptions);
+        return $res;
 	}
 
 	protected function exportByType($exportLinesByKey, $generatorOptions){
@@ -93,12 +93,13 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 			$exported[] = $fileExported;
 			$transactionCounter += $this->fileGenerator->getTransactionsCounter();		
 		}
-		Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
 		$this->filesExported = $exported;
 		if (!$this->created_successfully) {
 				Billrun_Factory::log()->log("Export generator was faild writing to the file. File creation failed..", Zend_Log::ALERT);
 				return false;
 		}
+		Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
+		return true;
 	}
 
 	protected function buildGeneratorOptions() {
