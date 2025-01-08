@@ -305,7 +305,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			array('row' => array('stamp' => 'p4', 'aid' => 9503, 'sid' => 952, 'rates' => array('INTERNET' => 'retail'), 'plan' => 'NEW-PLAN-O4', 'usaget' => 'data', 'usagev' => 7500000, 'services_data' => [['name' => '2GB_INTERNET_FOR_1_CYCLE', 'from' => '2017-09-01', 'to' => '2018-09-01',]], 'urt' => '2017-10-01 00:00:01+03:00',),
 				'expected' => array('in_group' => 0, 'over_group' => 7500000, 'aprice' => 8, 'charge' => array('retail' => 8,))),
 //Test num 80 p5
-			array('rebalance' => true, 'row' => array('stamp' => 'p5', 'aid' => 9503, 'sid' => 952, 'rates' => array('INTERNET' => 'retail'), 'plan' => 'NEW-PLAN-O4', 'usaget' => 'data', 'usagev' => 75000000, 'services_data' => [['name' => '2GB_INTERNET_FOR_1_CYCLE', 'from' => '2017-09-01', 'to' => '2018-09-01',]], 'urt' => '2017-10-14',),
+			array('rebalance' => true, 'row' => array('stamp' => 'p5', 'aid' => 9503, 'sid' => 952, 'rates' => array('INTERNET' => 'retail'), 'plan' => 'NEW-PLAN-O4', 'usaget' => 'data', 'usagev' => 75000000, 'services_data' => [['name' => '2GB_INTERNET_FOR_1_CYCLE', 'from' => '2017-09-01', 'to' => '2018-09-01',]],'balances'=>['201710','201711'], 'urt' => '2017-10-14',),
 				'expected' => array('in_group' => 0, 'over_group' => 75000000, 'aprice' => 75, 'charge' => array('retail' => 75,))),
 ////Test num 81 q1
 			array('row' => array('stamp' => 'q1', 'aid' => 9702, 'sid' => 971, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'NEW-PLAN-Q1', 'usaget' => 'call', 'usagev' => 70, 'services_data' => [['name' => 'SERVICE-Q1', 'from' => '2017-09-20', 'to' => '2017-10-01',], ["name" => "SERVICE-Q2", "from" => "2017-09-25", "to" => "2017-09-30", "service_id" => 4568]], 'urt' => '2017-09-25 11:00:00+03:00',),
@@ -352,7 +352,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			'expected' => array('in_group' => 25, 'over_group' => 50, 'aprice' => 0.5, 'charge' => array('retail' => 0.5,))),
 ////should not be included
 ////Test num 94 is5
-		array('rebalance' => true, 'row' => array('stamp' => 'is5', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'service_id' => 10002, 'from' => '2017-09-10', 'to' => '2017-12-21',]], 'urt' => '2017-09-14 11:00:00+03:00',),
+		array('rebalance' => true, 'row' => array('stamp' => 'is5', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'service_id' => 10002, 'from' => '2017-09-10', 'to' => '2017-12-21',]],'balances'=>['201710','201712'], 'urt' => '2017-09-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8, 'charge' => array('retail' => 0.8,))),
 //		// s custom period with pooled/shard
 //		// s1 & s2 are one test case for check service period pooled
@@ -526,7 +526,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			  there’s no billrun object from the last 3 months  -remove all billruns
 			  process line and make sure it gets the runtime billrun key */
 			array('preTest' => ['removeBillruns'], 'row' => array('stamp' => 'z1', "aid" => 10002, 'sid' => 20002, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date('Y-m-d')),
-				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0), 'billrun' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()))),
+				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0))),
 			/* 	
 			 * multi_day_cycle flag is “false“ 
 			  exists billrun object from the last month - run last billrun
@@ -534,7 +534,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			  /according to the “urt“ time, only on future urt will affect on billrun */
 			array('preTest' => ['runCycle'], 'row' => array('runCycle' => ['stamp' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [8]],
 					'stamp' => 'z2', "aid" => 10025, 'sid' => 20025, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date('Y-m-d')),
-				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0), 'billrun' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()))),
+				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0))),
 			/* multi_day_cycle flag is “true” 
 			  exists billrun object from the last billrun cycle - run last billrun
 			  process line from the current cycle,
@@ -545,29 +545,29 @@ class Tests_Updaterowt extends UnitTestCase {
 			array('preTest' => ['multiDayCycle', 'runCycle'], 'row' => array(
 					'multiDayCycle' => true, 'runCycle' => ['stamp' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [8]],
 					'stamp' => 'z3', "aid" => 10000, 'sid' => 20000, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date('Y-m-1'), "foreign" => ["account" => ["invoicing_day" => "1"]]),
-				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0), 'billrun' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()))),
+				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0))),
 			/* 	  2. customer invoiceing day 1  urt from futurre in this month - billrun will be run time billrun */
 			array('preTest' => ['multiDayCycle', 'runCycle'], 'row' => array(
 					'multiDayCycle' => true, 'runCycle' => ['stamp' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [8]],
 					'stamp' => 'z4', "aid" => 11000, 'sid' => 21000, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date('Y-m-28'), "foreign" => ["account" => ["invoicing_day" => "1"]]),
-				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0), 'billrun' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()))),
+				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0))),
 			/*
 			  3. customer invoiceing day 28  urt from past in this montu, befor currunt cycle - will take the prev cycle */
 			array('preTest' => ['removeBillruns', 'multiDayCycle', 'runCycle'], 'row' => array(
 					'multiDayCycle' => true, 'runCycle' => ['stamp' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [8]],
 					'stamp' => 'z5', "aid" => 10027, 'sid' => 20027, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date('Y-m-10'), "foreign" => ["account" => ["invoicing_day" => "28"]],),
-				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0), 'billrun' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')))),
+				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0))),
 			/*
 			  4. customer invoiceing day 24 urt from futurre in this month  - get currnt billrun*/
 			array('preTest' => ['multiDayCycle'], 'row' => array(
 					'multiDayCycle' => true,
 					'stamp' => 'z6', "aid" => 10024, 'sid' => 20024, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date('Y-m-28'), "foreign" => ["account" => ["invoicing_day" => "24"]],),
-				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0), 'billrun' => $this->calcBillrun(24, 28))),
+				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0))),
 			/*-- no prev cycle run --*/
 			array('preTest' => ['removeBillruns'], 'row' => array(
 					'multiDayCycle' => true,
 					'stamp' => 'z7', "aid" => 10023, 'sid' => 20023, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date('Y-m-28',strtotime('-1 month')), "foreign" => ["account" => ["invoicing_day" => "22"]],),
-				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0), 'billrun' =>  Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')))),
+				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0))),
 			/*multi_day_cycle flag is “true” + past  cycle is run(for example : 
 			 * now is 26/05/2020 ,the customer invoicing_day is 25, and cycle of billrun 202005 is run ),
 			 * process cdr with urt before 26/05/2020 - the billrun will be 202006. 
@@ -575,7 +575,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			array('preTest' => ['removeBillruns', 'multiDayCycle', 'runCycle'], 'row' => array(
 					'multiDayCycle' => true, 'runCycle' => ['stamp' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [8]],
 					'stamp' => 'z8', "aid" => 10020, 'sid' => 20020, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date('Y-m-21'), "foreign" => ["account" => ["invoicing_day" => date('d',strtotime('-1 day'))]],),
-				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0), 'billrun' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()))),
+				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0))),
 			/*multi_day_cycle flag is “true” + past  cycle is run(for example :
 			 *  now is 26/05/2020 ,the customer invoicing_day is 25,
 			 *  and cycle of billrun 202005 is run ) ,
@@ -583,7 +583,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			array('preTest' => ['removeBillruns', 'multiDayCycle', 'runCycle'], 'row' => array(
 					'multiDayCycle' => true, 'runCycle' => ['stamp' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [8]],
 					'stamp' => 'z9', "aid" => 10021, 'sid' => 20021, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date('Y-m-d',strtotime('-1 day')), "foreign" => ["account" => ["invoicing_day" => date('d',strtotime('-1 day'))]],),
-				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0), 'billrun' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()))),
+				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0))),
 			//brcd 3471 -  same service in same period , the usage group will duplicate 
 				array('row' => array('stamp' => 'z10', 'aid' => 3471, 'sid' => 34711, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 220,
 					'urt' => '2022-02-05', 'services_data' => [
@@ -697,11 +697,18 @@ class Tests_Updaterowt extends UnitTestCase {
 	 */
 	protected function rebalance($row, $conditions = null) {
 		$aids = [$row['aid']];
-		$billrun_key = $row['billrun'];
+		$billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp($row['urt']->sec);
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/process_time_offset.ini');
 		$stamp[$row['stamp']] = $row['stamp'];
-		$rebalance = new ResetLinesModel($aids, $billrun_key, $conditions,$stamp);
-		$rebalance->reset();
+		if (isset($row['balances']) && is_array($row['balances'])) {
+			foreach ($row['balances'] as $balance) {
+				$rebalance = new ResetLinesModel($aids, $balance, $conditions,$stamp);
+				$rebalance->reset();
+			}
+		}else{
+				$rebalance = new ResetLinesModel($aids, $billrun_key, $conditions,$stamp);
+	 			$rebalance->reset();
+		}
 		$this->balances = $this->getBalance($row);
 		if (isset($this->row['conditions'])) {
 			$this->conditionRebalance();

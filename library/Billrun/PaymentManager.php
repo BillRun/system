@@ -224,13 +224,12 @@ class Billrun_PaymentManager {
 		Billrun_Factory::log("Method " . $method, Zend_Log::DEBUG);
 		$leftToSpare = $prePayment->getAmount();
 		Billrun_Factory::log("Pre payment amount left to spare " . $leftToSpare, Zend_Log::DEBUG);
-		$params['switch_links'] = Billrun_Bill::shouldSwitchBillsLinks();
-		Billrun_Factory::log("Switch links flag value is " . ($params['switch_links'] ? "true" : "false"), Zend_Log::DEBUG);
+		$params['switch_links'] = Billrun_Bill::shouldSwitchBillsLinks($prePayment->getAid());
 		if ($params['switch_links']) {
-			Billrun_Factory::log("Detaching pending payments for account " . $prePayment->getAid(), Zend_Log::DEBUG);
+			Billrun_Factory::log("System should switch links for aid " . $prePayment->getAid() . ". Detaching pending payments for account " . $prePayment->getAid(), Zend_Log::DEBUG);
 			Billrun_Bill_Payment::detachPendingPayments($prePayment->getAid());
 		} else {
-			Billrun_Factory::log("Pulling related bills of the pre payment", Zend_Log::DEBUG);
+			Billrun_Factory::log("System should not switch links for aid " . $prePayment->getAid() . ". Pulling related bills of the pre payment", Zend_Log::DEBUG);
 			$relatedBills = $prePayment->getRelatedBills();
 			Billrun_Factory::log("Found " . count($relatedBills) . " related bills", Zend_Log::DEBUG);
 			foreach ($relatedBills as $index => $billData) {
@@ -432,7 +431,7 @@ class Billrun_PaymentManager {
 			if (empty($payment)) {
 				return $this->handleError("Cannot get payment");
 			}
-			Billrun_Factory::log("Pullong payment data, pg transacion id, and pg response", Zend_Log::DEBUG);
+			Billrun_Factory::log("Pulling payment data, pg transacion id, and pg response", Zend_Log::DEBUG);
 			$paymantData = $payment->getRawData();
 			$transactionId = Billrun_Util::getIn($paymantData, 'payment_gateway.transactionId');
 			$pgResponse = $postPayment->getPgResponse();
@@ -450,7 +449,7 @@ class Billrun_PaymentManager {
 			switch ($customerDir) {
 				case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
 				case Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER:
-					Billrun_Factory::log()->log("Handling payment with txid " . $transactionId . ", customer direction " . $customerDir, Zend_Log::DEBUG);
+					Billrun_Factory::log()->log("Handling payment with transaction id " . $transactionId . ", customer direction " . $customerDir, Zend_Log::DEBUG);
 					$relatedBills = $postPayment->getRelatedBills();
 					Billrun_Factory::log("Found " . count($relatedBills) . " related bills", Zend_Log::DEBUG);
 					if (!empty($relatedBills)) {
@@ -537,12 +536,14 @@ class Billrun_PaymentManager {
 		if (empty($params['after_save'])) {
 			return array($prePayment->getPayment(), $prePayment->getData());
 		}
-		$switch_links = isset($params['switch_links']) ? $params['switch_links'] : Billrun_Bill::shouldSwitchBillsLinks();
 		$payment = $prePayment->getPayment();
 		$data = $prePayment->getData();
+		Billrun_Factory::log("Checking if bills links should be switched for account " . $data['aid'], Zend_Log::DEBUG);
+		$switch_links = isset($params['switch_links']) ? $params['switch_links'] : Billrun_Bill::shouldSwitchBillsLinks($data['aid']);
 		$updated_payment = isset($this->account_involved_payments[$prePayment->getPayment()->getId()]) ? $this->account_involved_payments[$prePayment->getPayment()->getId()] : null;
-		Billrun_Factory::log(("Switch links flag value is " . ($switch_links ? "true" : "false") . ",") . (is_null($updated_payment) ? (" and no updated payment value for payment " . $prePayment->getPayment()->getId()) : (" and updated payment was found for payment " . $prePayment->getPayment()->getId())), Zend_Log::DEBUG);
+		Billrun_Factory::log(("Switch links value is " . ($switch_links ? "true" : "false") . ",") . (is_null($updated_payment) ? (" and no updated payment value for payment " . $prePayment->getPayment()->getId()) : (" and updated payment was found for payment " . $prePayment->getPayment()->getId())), Zend_Log::DEBUG);
 		if ($switch_links && !is_null($updated_payment)) {
+			Billrun_Factory::log("Setting updated payment data for payment " . $prePayment->getPayment()->getId(), Zend_Log::DEBUG);
 			$data = array_merge($data, $updated_payment);
 			$payment->setBillData($updated_payment);
 		}

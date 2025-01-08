@@ -130,7 +130,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$updatedRowStamp = $this->getLineUnifiedLineStamp($newRow);
 		$rawRow['u_s'] = $updatedRowStamp;
 		$this->archivedLines[$newRow['stamp']] = $rawRow->getRawData();
-		$this->unifiedToRawLines[$updatedRowStamp]['remove'][] = $newRow['stamp'];
+		$this->unifiedToRawLines[$updatedRowStamp]['remove'][$newRow['stamp']] = $newRow['stamp'];
 
 		if (($this->protectedConcurrentFiles && $this->isLinesLocked($updatedRowStamp, array($newRow['stamp']))) ||
 			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {
@@ -212,15 +212,28 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			$saveOptions = array('w' => $this->writeConcern);
 			try {
 				Billrun_Factory::log('Saving ' . $archivedLinesCount . ' source lines to archive.', Zend_Log::INFO);
+				$failedArchived = $this->dealWithDuplicateArchivedLines($failedArchived);
 				$archLinesColl->batchInsert($this->archivedLines, $saveOptions);
 				$this->data = array_diff_key($this->data, $this->archivedLines);
 				$linesArchivedStamps = array_keys($this->archivedLines);
 			} catch (Exception $e) {
 				Billrun_Factory::log("Failed to insert to archive. " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ALERT);
-				// todo: dump lines into file
+				// todo: dump lines into file 
 			}
 			Billrun_Factory::log('Removing Lines from the lines collection....', Zend_Log::INFO);
 			$localLines->remove(array('stamp' => array('$in' => $linesArchivedStamps)), $saveOptions);
+		}
+		return $failedArchived;
+	}
+
+	protected function dealWithDuplicateArchivedLines($failedArchived){
+		
+		$query = array('stamp' => array('$in' => array_keys($this->archivedLines)));
+		$duplicateArchiveLines =  Billrun_Factory::db()->archiveCollection()->query($query)->cursor();
+		foreach ($duplicateArchiveLines as $line) {
+			Billrun_Factory::log("Failed to insert line to archive. stamp already exist. stamp: " .  $line['stamp'] , Zend_Log::ALERT);
+			unset($this->archivedLines[$line['stamp']]);
+			$failedArchived[] = $line;
 		}
 		return $failedArchived;
 	}
@@ -274,7 +287,13 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			}
 		}
 		//add lines to archive 
-		$this->saveLinesToArchive();
+		$failedArchived = $this->saveLinesToArchive();
+		// update db.lines don't update the queue + not remove tx(from unifed line) if a given line not save to archive.
+		foreach ($failedArchived as $failedArchived) {
+				unset($this->unifiedToRawLines[$failedArchived["u_s"]]['remove'][ $failedArchived['stamp']]);
+				unset($this->lines[ $failedArchived['stamp']]);
+			
+		}
 
 		parent::write();
 	}
@@ -440,12 +459,12 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	/**
 	 * Release lock for given lines in a unified line in the DB.
 	 * @param type $unifiedStamp the unified line stamp to release the single line on.
-	 * @param type $lineStamps the stamp of the single lines to release from lock.
+	 * @param type $linesStamps all the stamps of single unifed line to release from lock.
 	 */
 	protected function releaseLines($unifiedStamp, $lineStamps) {
 		$query = array('stamp' => $unifiedStamp);
 
-		$update = array('$pullAll' => array('tx' => $lineStamps));
+		$update = array('$pullAll' => array('tx' => array_values($lineStamps)));
 		Billrun_Factory::db()->linesCollection()->update($query, $update);
 	}
 
@@ -555,7 +574,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	protected function tryUpdatingExistingRecord($query, $update) {
 		foreach ($update as $action => $def) {
-			if (!in_array($action, ['$set', '$inc'])) {
+			if (!in_array($action, ['$set', '$inc', '$push'])) {
 				unset($update[$action]);
 			}
 		}

@@ -608,7 +608,7 @@ class Report {
 	}
 
 	public function reportPostProcess ($values = []) {
-		$data = array_map('str_getcsv', explode("\n", $report->getData()));
+		$data = array_map('str_getcsv', explode("\n", $this->getData()));
 		return;
 	}
 

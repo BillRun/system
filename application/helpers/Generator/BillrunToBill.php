@@ -70,12 +70,12 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$invoicesLimit = (int) $this->getLimit();
 		if ($invoicesLimit != -1) {
 			$page = (int) $this->page;
-			$invoicesCursor = $this->billrunColl->query($query)->cursor()
+			$invoicesCursor = $this->billrunColl->query($query)->cursor()->immortal()
 				->sort(array('aid' => 1))
 				->limit($invoicesLimit)->skip($invoicesLimit * $page);
 		} else {
 			$query['billed'] = array('$ne' => 1);
-			$invoicesCursor = $this->billrunColl->query($query)->cursor()->sort(array('aid' => 1));
+			$invoicesCursor = $this->billrunColl->query($query)->cursor()->immortal()->sort(array('aid' => 1));
 		}
 		$invoices = $invoicesCursor->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
@@ -157,7 +157,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'urt' => new Mongodloid_Date(),
 				'invoice_date' => $invoice['invoice_date'],
 				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
-                                'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
+        'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
+				'paid' => '0',
+				'total_paid' => 0
 			);
 		if (!empty($invoice['invoicing_day'])) {
 			$bill['invoicing_day'] = $invoice['invoicing_day'];
@@ -169,10 +171,8 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			$bill['left'] = $bill['amount'];
 		}
 		else {
-			$bill['total_paid'] = 0;
 			$bill['left_to_pay'] = $bill['due'];
 			$bill['vatable_left_to_pay'] = $invoice['totals']['before_vat'];
-			$bill['paid'] = '0';
 		}
 		if(!empty($invoice['attributes']['suspend_debit'])) {
 			$bill['suspend_debit'] = $invoice['attributes']['suspend_debit'];
@@ -189,11 +189,17 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			return false;
 		}
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
-		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
+		Billrun_Factory::log("Checking if bills links should be switched for account " . $invoice['aid'], Zend_Log::DEBUG);
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks($invoice['aid']);
 		if ($switch_links) {
+			Billrun_Factory::log("System should switch links for aid " . $invoice['aid'] . ". Detaching pending payments for account " . $invoice['aid'], Zend_Log::DEBUG);
 			Billrun_Bill_Payment::detachPendingPayments($invoice['aid']);
+		} else {
+			Billrun_Factory::log("System should not switch links for aid " . $invoice['aid'], Zend_Log::DEBUG);
 		}
+		Billrun_Factory::log("Paying unpaid bills by over paying bills for aid " . $invoice['aid'], Zend_Log::DEBUG);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid'], true, $switch_links);
+		Billrun_Factory::log("Finished paying unpaid bills by over paying bills for aid " . $invoice['aid'], Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill, $invoice));
 		return true;
  	}
