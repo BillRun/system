@@ -1040,7 +1040,7 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
 							$this->writer->writeElement('UNITS', 1);
 							$charge_entry_COST_WITHOUTVAT = $cost;
-							$this->writer->writeElement('COST_WITHOUTVAT', $charge_entry_COST_WITHOUTVAT);
+							$this->writer->writeElement('COST_EXEMPT_VAT', $charge_entry_COST_WITHOUTVAT);
 							$charge_entry_VAT = 0;
 							$this->writer->writeElement('VAT', $charge_entry_VAT);
 							$charge_entry_VAT_COST = $charge_entry_COST_WITHOUTVAT * $charge_entry_VAT / 100;
