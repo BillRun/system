@@ -8,6 +8,7 @@ modules:
         - \Helper\BillRunAPI
         - \Helper\BillRun\Mockups\israelInvoice
         - \Helper\Aggregate
+        - \Helper\BillRun\Mockups\PaymentGateway
         - WebDriver:
             url: http://web
             host: chrome

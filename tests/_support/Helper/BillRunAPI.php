@@ -242,4 +242,32 @@ class BillRunAPI extends \Codeception\Module
         return $this->createAccountWithAllMandatorySystemFields($populatedValues);
     }
 
+    protected function sendpayApi($data)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $ret = $rest->sendPOST("/api/pay", [
+             'method' => 'cash',
+            'payments' => json_encode($data)
+        ]);
+        return json_decode($ret, true);
+    }
+
+   
+    public function payApi($params = []){
+
+        $payment = array_merge([
+            "amount"=>10,
+        "aid"=>1,
+        "payer_name"=>"yossi test",
+        "dir"=>"fc",
+        "deposit_slip"=>"",
+        "deposit_slip_bank"=>"",
+        "source"=>"web"
+        ], $params);
+        return  $this->sendpayApi($payment);
+    }
+
 }

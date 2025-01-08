@@ -30,11 +30,11 @@ class PaymentGateway extends \Helper\BillRun\Mockups\Mockup
             'mid' => "13092",
             'onetime_terminal' => "0882828013",
             'charging_terminal' => "0882828013",
-            'user' => "",
+            'user' => "yossi",
             'ancestor_urls' => " ",
-            'version' => " ",
+            'version' => "2000",
             'custom_text' => " ",
-            'password' => "",
+            'password' => "123",
             'redirect_terminal' => "0882828013"
     ]
 ];
