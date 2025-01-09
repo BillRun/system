@@ -9,7 +9,7 @@ class CreditguardTest extends \Codeception\Test\Unit
     
     protected function _before()
     {
-      //  $this->tester->enableCreditGuardPGWithSettings();
+      // $this->tester->enableCreditGuardPGWithSettings();
     }
 
     protected function _after()
@@ -43,5 +43,14 @@ class CreditguardTest extends \Codeception\Test\Unit
             ]]);
         $account = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->tester->payApi(['aid'=>$account['aid'], 'amount'=>10,'dir'=>'tc']);
+        $a =  $this->tester->getRequest(['aid'=>(int)$account['aid'], 'amount'=>10]);
+        $a = $a;
+
+        $this->tester->iframe();
+
+        //sent to iframe and check the response
+
+
+
     }
 }

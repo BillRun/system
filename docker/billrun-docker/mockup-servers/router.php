@@ -1,5 +1,6 @@
 <?php
 // router.php
+file_put_contents('creditguard.xml',print_r($_SERVER,1));
 if (preg_match('/^\/payment-gateways\/creditguard\//', $_SERVER["REQUEST_URI"])) {
     require 'creditguard.php';
 }elseif(preg_match('/^\/crm\//', $_SERVER["REQUEST_URI"])){

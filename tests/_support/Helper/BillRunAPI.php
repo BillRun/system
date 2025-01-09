@@ -250,7 +250,18 @@ class BillRunAPI extends \Codeception\Module
         $rest->amBearerAuthenticated($this->getAccessToken());
         $ret = $rest->sendPOST("/api/pay", [
              'method' => 'cash',
-            'payments' => json_encode($data)
+            'payments' => json_encode([$data])
+        ]);
+        return json_decode($ret, true);
+    }
+    protected function sendGetRequset($data)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $ret = $rest->sendPOST("/paymentgateways/getRequest", [
+            'data' => json_encode($data)
         ]);
         return json_decode($ret, true);
     }
@@ -259,7 +270,7 @@ class BillRunAPI extends \Codeception\Module
     public function payApi($params = []){
 
         $payment = array_merge([
-            "amount"=>10,
+        "amount"=>10,
         "aid"=>1,
         "payer_name"=>"yossi test",
         "dir"=>"fc",
@@ -269,5 +280,26 @@ class BillRunAPI extends \Codeception\Module
         ], $params);
         return  $this->sendpayApi($payment);
     }
+
+    public function getRequest($params = []){
+
+        $body = array_merge([
+            "iframe"=>true,
+            "aid"=>1,
+            "name"=>"CreditGuard",
+            "type"=>"account",
+            "amount"=>5,
+            "action"=>"single_payment",
+            "ok_page"=>"http://web/paymentgateways/okpage?name=CreditGuard",
+            "fail_page"=>"http://web/paymentgateways/okpage",
+            "_t_"=>time()
+        ], $params);
+        return  $this->sendGetRequset($body);
+    }
+
+  
+    
+
+    
 
 }
