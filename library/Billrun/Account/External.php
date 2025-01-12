@@ -8,7 +8,7 @@
 
 class Billrun_Account_External extends Billrun_Account {
 	use Billrun_Subscriber_External_Cacheable;
-	
+
 	//static protected $cachePrefix = 'ext_acc_';
 	protected static $type = 'external';
 	
@@ -16,7 +16,7 @@ class Billrun_Account_External extends Billrun_Account {
 	
 	protected $remote;
 	protected $remote_authentication;
-	protected $remote_billable_url;
+    protected $remote_billable_url;
 	protected $remote_billable_authentication;
 	protected $cacheGBAtoGSD = false;
 
@@ -73,10 +73,10 @@ class Billrun_Account_External extends Billrun_Account {
 			$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.billable.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
 			$request->setConfig(array('timeout' => $requestTimeout));
 			$results = $request->request(Billrun_Http_Request::POST)->getBody();
-
+			
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
 			
-			$results = json_decode($results, true);		
+			$results = json_decode($results, true);
 			Billrun_Factory::dispatcher()->trigger('afterGetExternalBillableDetails', array(&$results));
 			//Check for errors
 			if(empty($results)) {
@@ -166,7 +166,7 @@ class Billrun_Account_External extends Billrun_Account {
 			Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountsDetailsResponse', array(&$res));
 			return $res;
 		});
-
+		
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
@@ -200,13 +200,15 @@ class Billrun_Account_External extends Billrun_Account {
 		$results = $this->loadCache($externalQuery, function($externalQuery) {
 			$request_type = Billrun_Http_Request::POST;
 			Billrun_Factory::dispatcher()->trigger('beforeGetExternalAccountDetails', array(&$externalQuery, &$request_type, &$this));
-			Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
-			$params = [
-				'authentication' => $this->remote_authentication,
-			];
-			$request = new Billrun_Http_Request($this->remote, $params);
-			$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
-			$request->setRawData(json_encode($externalQuery));
+		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
+		$params = [
+			'authentication' => $this->remote_authentication,
+		];
+		$request = new Billrun_Http_Request($this->remote, $params);
+		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
+		$request->setRawData(json_encode($externalQuery));
+		$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.account.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
+		$request->setConfig(array('timeout' => $requestTimeout));
 			$resjson = $request->request($request_type)->getBody();
 			Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $resjson ,Zend_Log::DEBUG);
 			$results = json_decode($resjson, true);
@@ -233,7 +235,7 @@ class Billrun_Account_External extends Billrun_Account {
 	public function closeAndNew($set_values, $remove_values = array()) {
 		return true;
 	}
-	
+		
 	/**
 	 * method to make permanent change
 	 * on external subscribers mode no need to make updates to account as account is managed by 3rd party
@@ -251,6 +253,9 @@ class Billrun_Account_External extends Billrun_Account {
 
 		if (isset($query['EXTRAS'])) {
 			unset($query['EXTRAS']);
+		}
+		if (isset($query['read_preference'])) {
+			unset($query['read_preference']);
 		}
 		$params = [];
 		foreach ($query as $key => $value) {

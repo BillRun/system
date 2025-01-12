@@ -532,7 +532,8 @@ abstract class Billrun_Bill {
 		if ($this->getBillMethod() == 'denial') {
 			return $this;
 		}
-		if ($this->getDue() > 0) {
+		$due = $this->getDue();
+		if ($due > 0) {
 			$amount = 0;
 			foreach (Billrun_Util::getIn($this->data, 'paid_by', []) as $relatedBill) {
 				$amount += floatval($relatedBill['amount']);
@@ -540,17 +541,19 @@ abstract class Billrun_Bill {
 			$this->data['total_paid'] = $amount;
 			$this->data['left_to_pay'] = round($this->getLeftToPay(), 2);
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
-			if (is_null($status)){
-				$this->data['paid'] = !empty($this->data['waiting_payments']) ? '2' : $this->isPaid();
-			} else {
-				$this->data['paid'] = $this->calcPaidStatus($billId, $status, $billType);
-			}
-		} else if ($this->getDue() < 0){
+		} else if ($due < 0){
 			$amount = 0;
 			foreach (Billrun_Util::getIn($this->data, 'pays', []) as $relatedBill) {
 				$amount += floatval($relatedBill['amount']);
 			}
+			$this->data['total_paid'] = $amount;
 			$this->data['left'] = round($this->data['amount'] - $amount, 2);				
+		}
+		if (is_null($status)){
+			$pending = !empty($this->data['waiting_payments']) || $this->data['pending'] ?? false;
+			$this->data['paid'] = $pending ? '2' : $this->isPaid();
+		} else {
+			$this->data['paid'] = $this->calcPaidStatus($billId, $status, $billType);
 		}
 		$this->setPendingCoveringAmount();
 		return $this;
@@ -658,6 +661,7 @@ abstract class Billrun_Bill {
 		$this->data->setRawData($paymentRawData);
 		$this->updateLeft();
 		$this->setPendingCoveringAmount();
+		$this->recalculatePaymentFields();
 		return $this;
 	}
 
@@ -751,7 +755,7 @@ abstract class Billrun_Bill {
 	}
 
 	public function isPaid() {
-		return $this->getDue() <= ($this->getPaidAmount() + static::precision);
+		return abs($this->getDue()) <= ($this->getPaidAmount() + static::precision);
 	}
 	
 	public static function pay($method, $paymentsArr, $options = array()) {
@@ -1330,6 +1334,10 @@ abstract class Billrun_Bill {
 			array('left' => array('$exists' => true, '$ne' => 0)),
 			array('left_to_pay' => array('$exists' => true, '$ne' => 0))
 		);
+		if ($include_pending) {
+			array_push($match['$match']['$or'], array(
+					'paid' => array('$in' => array('2', 2))));
+		}
 		if (!empty($aids)) {
 			$match['$match']['aid'] = $is_aids_query ? $aids['aid'] : array('$in' => $aids);
 		}
@@ -1647,24 +1655,28 @@ abstract class Billrun_Bill {
 	 * Function that will return true if the current payments linking should be chagned, because newer invoices/debt was paid before older pending one 
 	 * @param int - urt - relative time 
 	 */
-	public static function shouldSwitchBillsLinks($urt = null) {
+	public static function shouldSwitchBillsLinks($aid, $urt = null) {
+		if (empty($aid) || !is_numeric($aid)) {
+			Billrun_Factory::log("Aid field is empty or not numeric in 'shouldSwitchBillsLinks function'. return false", Zend_Log::DEBUG);
+			return false;
+		}
 		$switch_links_config = Billrun_Factory::config()->getConfigValue('bills.switch_links', false);
 		if (!$switch_links_config) {
 			return false;
 		}
 		$query = [
+			'aid' => $aid,
 			'urt' => array(
 				'$lt' => new Mongodloid_Date(is_null($urt) ? time() : $urt)
 			),
 			'$or' => array(
+				//Old unpaid bill
 				array('left_to_pay' => ['$gt' => 0]),
-				array('pending_covering_amount' => ['$gt' => 0])
-			),
-			'$or' => array(
-				array('waiting_payments' => ['$exists' => true, '$ne' => []],'paid_by' => ['$elemMatch' => ['pending' => true]]),
-				array('past_rejections' => ['$exists' => true, '$ne' => []])
+				//Old bill paid by pending bill - check no 1
+				array('pending_covering_amount' => ['$gt' => 0]),
+				//Old bill paid by pending bill - check no 2
+				array('waiting_payments' => ['$exists' => true, '$ne' => []],'paid_by' => ['$elemMatch' => ['pending' => true]])
 			)
-			
 		];
 		$query = array_merge($query, Billrun_Bill::getNotRejectedOrCancelledQuery());
 		return count(static::getBills($query));

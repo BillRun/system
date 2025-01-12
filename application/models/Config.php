@@ -451,11 +451,7 @@ class ConfigModel {
 					break;
 				}
 			}
-			
-			if (isset($field['unique']) && $field['unique']) {
-				$field['mandatory'] = true;
-			}
-
+		
 			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
 				$mandatoryFields[] = [
 					'name' => $fieldName,

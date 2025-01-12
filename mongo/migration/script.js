@@ -46,8 +46,7 @@ function runOnce(lastConfig, taskCode, callback) {
             print("running task " + taskCode);
             callback();
             lastConfig.past_migration_tasks.push(taskCode);
-        }
-        else {
+        } else {
             print('Illegal task code ' + taskCode);
         }
     } else {
@@ -81,12 +80,12 @@ function _dropIndex(collname, indexname) {
     if (i === undefined) {
         return false;
     }
-    return db.getCollection(collname).dropIndex(indexname);
+	return db.getCollection(collname).dropIndex(indexname);
 }
 
 // =============================================================================
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty().next();
-delete lastConfig	['_id'];
+delete lastConfig['_id'];
 // =============================================================================
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
@@ -210,12 +209,12 @@ if(!notification_plugin_exists) {
 if(lastConfig.invoice_export) {
 	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.header) &&
 		!lastConfig.invoice_export.header) {
-			lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
+	lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
 	}
 	if((!lastConfig.invoice_export.status || !lastConfig.invoice_export.status.footer) &&
 		!lastConfig.invoice_export.footer) {
-			lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
-	}
+	lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+}
 }
 
 //BRCD-1229 - Input processor re-enabled when not requested
@@ -282,6 +281,7 @@ for (var paymentGateway in paymentGateways) {
 }
 
 // BRCD-1390 - Add activation_date field to subscriber
+lastConfig = runOnce(lastConfig, 'BRCD-1390', function() {
 db.subscribers.find({activation_date:{$exists:0}, type:'subscriber'}).forEach(
 	function(obj) {
 		var activationDate = -1;
@@ -295,7 +295,8 @@ db.subscribers.find({activation_date:{$exists:0}, type:'subscriber'}).forEach(
 			}
 		);
 	}
-);
+    )
+});
 
 // BRCD-1402 - Add activation_date field to subscriber
 if(lastConfig.invoice_export) {
@@ -424,8 +425,12 @@ for (var i in propertyTypes) {
 db.rebalance_queue.createIndex({"creation_date": 1}, {unique: false, "background": true})
 
 // BRCD-1443 - Wrong billrun field after a rebalance
+lastConfig = runOnce(lastConfig, 'BRCD-1443', function() {
 db.billrun.updateMany({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}});
+});
+
 // BRCD-1457 - Fix creation_time field in subscriber services
+lastConfig = runOnce(lastConfig, 'BRCD-1457', function() {
 db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
 	function(obj) {
 		var services = obj.services;
@@ -442,7 +447,8 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 		
 		_collectionSave(db.subscribers, obj);
 	}
-);
+    )
+});
 // BRCD-1552 collection
 if (typeof lastConfig['collection'] === 'undefined') {
 	lastConfig['collection'] = {'settings': {}};
@@ -541,11 +547,21 @@ _dropIndex("collection_steps", "trigger_date_1_done_1");
 db.collection_steps.createIndex({'trigger_date': 1}, { unique: false , sparse: true, background: true });
 db.collection_steps.createIndex({'extra_params.aid':1 }, { unique: false , sparse: true, background: true });
 
+//BRCD-3474
+db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
+db.rebalance_queue.ensureIndex({"aid": 1, "billrun_key": 1, "conditions_hash": 1}, {unique: true, "background": true});
+
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
+lastConfig = runOnce(lastConfig, 'BRCD-1541', function() {
 db.bills.updateMany({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}});
+});
 
 //BRCD-1621 - Service quantity based quota
-var subscribers = db.subscribers.find({type:'subscriber', "services":{$type:4, $ne:[]}, $where: function() {
+lastConfig = runOnce(lastConfig, 'BRCD-1621', function() {
+    var subscribers = db.subscribers.find({
+        type: 'subscriber',
+        "services": { $type: 4, $ne: [] },
+        $where: function() {
 	var services = this.services; 
 		var hasStringQuantity = false; 
 		services.forEach(function (service) {
@@ -554,7 +570,8 @@ var subscribers = db.subscribers.find({type:'subscriber', "services":{$type:4, $
 			}
 		});
 		return hasStringQuantity;
-}});
+        }
+    });
 subscribers.forEach(function (sub) {
 	var services = sub.services;
 	services.forEach(function (service) {
@@ -563,6 +580,7 @@ subscribers.forEach(function (sub) {
 			_collectionSave(db.subscribers, sub);
 		}
 	});
+    })
 });
 
 //// BRCD-1624: add default Plays to config
@@ -629,6 +647,7 @@ if (typeof lastConfig['taxation']['default']['key'] === 'undefined') {
 }
 
 // BRCD-1837: convert legacy VAT taxation to default taxation rate
+lastConfig = runOnce(lastConfig, 'BRCD-1837', function() {
 if (lastConfig['taxation']['tax_type'] == 'vat') {
 	var vatRate = lastConfig['taxation']['vat']['v'];
 	var vatLabel = typeof lastConfig['taxation']['vat_label'] !== 'undefined' ? lastConfig['taxation']['vat_label'] : "Vat";
@@ -653,7 +672,13 @@ if (lastConfig['taxation']['tax_type'] == 'vat') {
 	};
 	
 	db.taxes.insertOne(vat);
-}
+    };
+    // BRCD-1837: convert rates' "vatable" field to new tax mapping
+    db.rates.update({ tax: { $exists: 0 }, $or: [{ vatable: true }, { vatable: { $exists: 0 } }] }, { $set: { tax: [{ type: "vat", taxation: "global" }] }, $unset: { vatable: 1 } }, { multi: true });
+    db.rates.update({ tax: { $exists: 0 }, vatable: false }, { $set: { tax: [{ type: "vat", taxation: "no" }] }, $unset: { vatable: 1 } }, { multi: true });
+    db.services.update({ tax: { $exists: 0 }, $or: [{ vatable: true }, { vatable: { $exists: 0 } }] }, { $set: { tax: [{ type: "vat", taxation: "global" }] }, $unset: { vatable: 1 } }, { multi: true });
+    db.services.update({ tax: { $exists: 0 }, vatable: false }, { $set: { tax: [{ type: "vat", taxation: "no" }] }, $unset: { vatable: 1 } }, { multi: true });
+});
 
 //BRCD-1834 : Add tax field
 var taxField ={
@@ -820,8 +845,7 @@ db.subscribers.getIndexes().forEach(function(index){
 	if (index.unique && indexFields.length == 3 && indexFields[0] == 'sid' && indexFields[1] == 'from' && indexFields[2] == 'aid') {
                 _dropIndex("subscribers", index.name)
 		db.subscribers.createIndex({'sid': 1}, { unique: false, sparse: true, background: true });
-	}
-	else if ((indexFields.length == 1) && index.key.aid && index.sparse) {
+    } else if ((indexFields.length == 1) && index.key.aid && index.sparse) {
                 _dropIndex("subscribers", index.name)
 		db.subscribers.createIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
 	}
@@ -832,19 +856,15 @@ db.subscribers.getIndexes().forEach(function(index){
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
 
-// Migrate audit records in log collection into separated audit collection
+//BRCD-2244 - Migrate audit records in log collection into separated audit collection
+lastConfig = runOnce(lastConfig, 'BRCD-2244', function() {
 db.log.find({"source":"audit"}).forEach(
 	function(obj) {
 		db.audit.insertOne(obj);
 		db.log.deleteOne({_id:obj._id});
 	}
 );
-
-// BRCD-1837: convert rates' "vatable" field to new tax mapping
-db.rates.updateMany({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}});
-db.rates.updateMany({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}});
-db.services.updateMany({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}});
-db.services.updateMany({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}});
+})
 
 // taxes collection indexes
 _createCollection('taxes');
@@ -861,6 +881,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-3678-1', function () {
     db.suggestions.createIndex({'status': 1 }, { unique: false , background: true});
 });
 // BRCD-1936: Migrate old discount structure to new discount structure
+lastConfig = runOnce(lastConfig, 'BRCD-1936', function() {
 function isEmpty(obj) {
     for(var key in obj) {
         if(obj.hasOwnProperty(key))
@@ -952,14 +973,17 @@ db.discounts.find({"discount_subject":{$exists: true}}).forEach(
 		_collectionSave(db.discounts, obj);
 	}
 )
+});
 
 // BRCD-1971 - update prorated field
+lastConfig = runOnce(lastConfig, 'BRCD-1971', function() {
 db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	plan.prorated_start = plan.prorated;
 	plan.prorated_end = plan.prorated;
 	plan.prorated_termination = plan.prorated;
 	delete plan.prorated;
 	_collectionSave(db.plans, plan);
+    })
 });
 // BRCD-1241: convert events to new structure
 if (typeof lastConfig.events !== 'undefined') {
@@ -1012,7 +1036,12 @@ for (var i in lastConfig['usage_types']) {
     db.balances.find(_query).forEach(
         function(obj) {
             print("balance id: " + obj._id + " sid: " + obj.sid + " balance unset key " + _balance_unset_key);
-            var _inc_query_part = {}, _set_query_part = {}, _update_query = {}, _inc_entry_key = "$inc", _set_entry_key = "$set", _unset_entry_key = "$unset";
+                var _inc_query_part = {},
+                    _set_query_part = {},
+                    _update_query = {},
+                    _inc_entry_key = "$inc",
+                    _set_entry_key = "$set",
+                    _unset_entry_key = "$unset";
             for (var j in obj.balance.totals['out_plan_' + _usage_type]) {
                 _inc_query_part[_balance_set_key + "." + j] = obj.balance.totals['out_plan_' + _usage_type][j];
             }
@@ -1127,8 +1156,7 @@ function getServices() {
 			{balance_period: 'default'}
 		]
 	});
-	var servicesIncludedInPlans = db.plans.aggregate([
-		{
+        var servicesIncludedInPlans = db.plans.aggregate([{
 			$match: {
 				from: {$lte: time},
 				to: {$gt: time},
@@ -1326,7 +1354,9 @@ lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
 db.subscribers.createIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
 db.billrun.createIndex( { 'billrun_key': -1, 'attributes.invoicing_day': -1 },{unique: false, background: true });
 _dropIndex("billrun", "billrun_key_-1");
+
 //BRCD-2042 - charge.not_before migration script
+lastConfig = runOnce(lastConfig, 'BRCD-2042', function() {
 db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
 	function(obj) {
 		if (typeof obj['charge'] === 'undefined') {
@@ -1345,8 +1375,10 @@ db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEa
 		_collectionSave(db.billrun, obj);
 	}
 )
+})
 
 //BRCD-2452 reformat paid_by and pays objects to array format
+lastConfig = runOnce(lastConfig, 'BRCD-2452', function() {
 var bills = db.bills.find({
 	$or: [
 		{"pays.inv": {$exists: 1}},
@@ -1379,6 +1411,7 @@ bills.forEach(function (bill) {
 		bill[currentBillsKey] = relatedBills;
 		_collectionSave(db.bills, bill);
 	}
+    })
 });
 
 // BRCD-2772 - add webhooks supports all audit collection field should be lowercase
@@ -1429,6 +1462,9 @@ runOnce(lastConfig, 'BRCD-2772', function () {
         "hide_from_ui": false
     };
     lastConfig['plugins'].push(_webhookPluginsSettings);
+
+    // BRCD-2772 - add webhooks supports all audit collection field should be lowercase
+    db.audit.update({ "collection": "Login" }, { $set: { "collection": "login" } }, { "multi": 1 });
 });
 
 // BRCD-2936: add email authentication template
@@ -1446,8 +1482,7 @@ if (typeof lastConfig['email_templates']['email_authentication'] === 'undefined'
 	};
 }
 lastConfig = runOnce(lastConfig, 'BRCD-3527', function () {
-    var inCollectionField = 
-            {
+    var inCollectionField = {
                     "field_name": "in_collection",
                     "system": true,
                     "display": false
@@ -1520,35 +1555,30 @@ runOnce(lastConfig, 'BRCD-3413', function () {
         if(lastConfig['email_templates']['invoice_ready']['placeholders'] === undefined){
             lastConfig['email_templates']['invoice_ready']['placeholders'] = [];
         }
-	lastConfig['email_templates']['invoice_ready']['placeholders'].push(
-            {
+    lastConfig['email_templates']['invoice_ready']['placeholders'].push({
                 name: "start_date",
                 title: "Billing cycle start date",
                 path: "start_date",
                 type: "date",
                 system:true
-            }, 
-            {
+    }, {
                 name: "end_date",
                 title: "Billing cycle end date",
                 path: "end_date",
                 type: "date",
                 system:true
-            },
-            {
+    }, {
                 name: "invoice_current_balance",
                 title: "Invoice current balance",
                 path: "totals.current_balance.after_vat",
                 system:true
-            }, 
-            {
+    }, {
                 name: "invoice_due_date",
                 title: "Invoice due date",
                 path: "due_date",
                 type: "date",
                 system:true
-            }
-        );
+    });
 });
 
 //BRCD-3421: migrate webhooks from config to separate collection
@@ -1664,21 +1694,21 @@ lastConfig = runOnce(lastConfig, 'BRCD-4172', function () {
 lastConfig = runOnce(lastConfig, 'BRCD-4102', function () {
 	var cancelBills = db.bills.find({cancel:{$exists:1}, urt:ISODate("1970-01-01T00:00:00.000Z")});
 	var bulkUpdate = [];
-	var maxWriteBatchSize =db.runCommand(
-		{
+    var maxWriteBatchSize = db.runCommand({
 		  hello: 1
-		}
-	 )['maxWriteBatchSize'];
+    })['maxWriteBatchSize'];
 	var _cancelBillsCount = cancelBills.toArray().length;
 	print("Starts to update " + _cancelBillsCount + " bills");
 	if (_cancelBillsCount === 0) {
 		return;
 	}
 	for (var i=0; i<cancelBills.toArray().length; i++) {
-	    var update = { "updateOne" : {
+        var update = {
+            "updateOne": {
 	        "filter" : {"_id" : cancelBills[i]['_id']},
 	        "update" :  {"$set" : {"urt" : cancelBills[i]['_id'].getTimestamp()}}
-	    }};
+            }
+        };
 	    bulkUpdate.push(update);
 		if (i!=0 && i%maxWriteBatchSize==0) {
 			db.bills.bulkWrite(bulkUpdate);
@@ -1779,10 +1809,12 @@ lastConfig = runOnce(lastConfig, 'BRCD-4217', function () {
 		return;
 	}
 	for (var i=0; i<rejectionBills.toArray().length; i++) {
-	    var update = { "updateOne" : {
+        var update = {
+            "updateOne": {
 	        "filter" : {"_id" : rejectionBills[i]['_id']},
 	        "update" :  {"$set" : {"urt" : rejectionBills[i]['_id'].getTimestamp()}}
-	    }};
+            }
+        };
 	    bulkUpdate.push(update);
 		if (i!=0 && i%maxWriteBatchSize==0) {
 			db.bills.bulkWrite(bulkUpdate);
@@ -1906,12 +1938,22 @@ runOnce(lastConfig, 'BRCD-4306', function () {
 	}
 });
 
+//BRCD-4455 - add user_id field to Israel invoice plugin conf
+runOnce(lastConfig, 'BRCD-4455-1', function () {
+	for (var i = 0; i < lastConfig.plugins.length; i++) {
+			if (lastConfig.plugins[i]['name'] === "israelInvoicePlugin") {
+					lastConfig.plugins[i]['configuration']['values']['user_id'] = "";
+					lastConfig.plugins[i]['configuration']['values']['invoice_approval_api'] = "https://ita-api.taxes.gov.il/shaam/production/Invoices/v2/Approval";
+			}
+	}
+});
+
 lastConfig = runOnce(lastConfig, 'BRCD-2820', function () {
 	db.bills.createIndex({'aid': "hashed" }, { unique: false , background: true});
 	_dropIndex("bills", "aid_1");
 })
 
-if (db.version() >= "6") {
+if (db.version() >= "6" && db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos') {
 	sh.shardCollection(_dbName + ".bills", { "aid" : "hashed" } );
 }
 
