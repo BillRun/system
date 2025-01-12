@@ -12,6 +12,7 @@
  */
 abstract class Billrun_EmailSender_Base {
 	
+	use Billrun_Traits_ConditionsCheck;
 	protected $type = '';
 	protected $params = array();
 	
@@ -131,10 +132,16 @@ abstract class Billrun_EmailSender_Base {
                         Billrun_Factory::log("translateMessage - error translate message for placeholder: " . print_r($placeholder, 1) . ", there's already placeholder with the same name.", Billrun_Log::ALERT);
                         continue; 
                     }
-                    $value = Billrun_Util::getIn($data, $placeholder['path']);
+					$value_format = [];
+					if (isset($placeholder['conditions'])) {
+						list($value, $value_format) = $this->getComplexConditionsResult($data, $placeholder);
+					} else {
+						$value = Billrun_Util::getIn($data, $placeholder['path']);
+						$value_format = $placeholder;
+					}
                     if(!empty($value) || is_numeric($value)){
                         $warningMessages = [];
-                        $replaces["[[". $name ."]]"] = Billrun_Util::formattingValue($placeholder, $value, $warningMessages, Billrun_Base::base_dateformat);
+                        $replaces["[[". $name ."]]"] = Billrun_Util::formattingValue($value_format, $value, $warningMessages, Billrun_Base::base_dateformat);
                     }
                 }
                 return str_replace(array_keys($replaces), array_values($replaces), $msg);
@@ -166,10 +173,10 @@ abstract class Billrun_EmailSender_Base {
 		$attachments = is_array($attachment) ? $attachment : array($attachment);
 		$email = $this->getEmailAddress($data);
 		$emails = is_array($email) ? $email : array($email);
-		$msg = $this->translateMessage($this->getEmailBody($data), $data);
-		$subject = $this->translateMessage($this->getEmailSubject($data), $data);
-		$encodedSubject = '=?UTF-8?B?'.base64_encode($subject).'?=';
 		try {
+			$msg = $this->translateMessage($this->getEmailBody($data), $data);
+			$subject = $this->translateMessage($this->getEmailSubject($data), $data);
+			$encodedSubject = '=?UTF-8?B?'.base64_encode($subject).'?=';
 			if (!Billrun_Util::sendMail($encodedSubject, $msg, $emails, $attachments, true)) {
 				Billrun_Factory::log('sendEmail - error sending email. Data: ' . print_R($data, 1), Billrun_Log::ERR);
 			}

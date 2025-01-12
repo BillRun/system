@@ -763,5 +763,54 @@ class Billrun_Billingcycle {
 		}
 		return !empty($customer['invoicing_day']) ? $customer['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 	}
+
+	
+	public static  function getBillrunKeyByRow($row){
+		if($row['connection_type'] != 'prepaid'){
+			$customerInvoicingDay = isset($row['foreign']['account']) ? isset($row['foreign']['account']['invoicing_day'])? $row['foreign']['account']['invoicing_day'] : null : null;
+			if ($row['sid'] == 0 && $row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
+				$plan = null;
+			} else {
+				$planSettings = array(
+					'name' => $row['plan'],
+					'time' => $row['urt']->sec,
+				);
+				$plan = Billrun_Factory::plan($planSettings);
+			}
+			$nonMonthlyPlanConfig = $plan && $plan->isNonMonthly() ? $plan->getRecurrenceConfig() : null;
+			$config = Billrun_Factory::config();
+			if(!empty($nonMonthlyPlanConfig)) {
+				$noneMonthlyConfig['recurrence'] = $nonMonthlyPlanConfig;
+				$noneMonthlyConfig['activation_date'] = Billrun_Util::getFieldVal($row['foreign']['subscriber']['activation_date'],null);
+				$activeBillrun = Billrun_Billrun::getActiveBillrun($customerInvoicingDay,$noneMonthlyConfig);
+				$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun, $customerInvoicingDay,$noneMonthlyConfig);
+				$nextActiveBillrun = Billrun_Billingcycle::getFollowingBillrunKey($activeBillrun,$noneMonthlyConfig);
+				$nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($nextActiveBillrun, $customerInvoicingDay,$noneMonthlyConfig);
+			} else if($config->isMultiDayCycle() && !empty($customerInvoicingDay)) {
+				$activeBillrun = Billrun_Billrun::getActiveBillrun($customerInvoicingDay); 
+				$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun, $customerInvoicingDay);
+				$nextActiveBillrun = Billrun_Billingcycle::getFollowingBillrunKey($activeBillrun);
+				$nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($nextActiveBillrun, $customerInvoicingDay);
+			} else {
+				$activeBillrun =  Billrun_Billrun::getActiveBillrun();
+				$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun);
+				$nextActiveBillrun = Billrun_Billingcycle::getFollowingBillrunKey($activeBillrun); 
+				$nextActiveBillrunEndTime =  Billrun_Billingcycle::getEndTime($nextActiveBillrun);
+			}		
+
+			if (!isset($row['retail_rate']) || $row['retail_rate']) {
+				$urt = $row['urt']->sec;
+				if ($urt < $activeBillrunEndTime) { // lines in current billing cycle
+					$billrunKey = $activeBillrun;
+				} else if ($urt < $nextActiveBillrunEndTime) { // late lines
+					$billrunKey = $nextActiveBillrun;
+				} else { // future lines
+					$billrunKey = ($config->isMultiDayCycle() && !empty($customerInvoicingDay)) ? Billrun_Billingcycle::getBillrunKeyByTimestamp($urt, $customerInvoicingDay) : Billrun_Billingcycle::getBillrunKeyByTimestamp($urt);
+				}
+				return $billrunKey;
+			}
+			return false;
+		}
+	}
 	
 }
