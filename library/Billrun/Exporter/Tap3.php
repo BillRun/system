@@ -201,7 +201,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 			$ret[$tadig]['rows'][] = $row;
 			$ret[$tadig]['tadig'][] = $tadig;
 		}
-		Billrun_Factory::dispatcher()->trigger('afterGetLinesToExport', array(&$ret, $this->splitFilesKey));
+		Billrun_Factory::dispatcher()->trigger('afterGetLinesToExport', array(&$ret, $this->splitFilesKey, $this->config));
 		return $ret;
 	}
 
@@ -233,7 +233,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 			}
 			$ret[$aid]['tadig'] = $tadig;
 		}
-		Billrun_Factory::dispatcher()->trigger('afterGetLinesToExport', array(&$ret, $this->splitFilesKey));
+		Billrun_Factory::dispatcher()->trigger('afterGetLinesToExport', array(&$ret, $this->splitFilesKey, $this->config));
 		return $ret;
 	}
 
