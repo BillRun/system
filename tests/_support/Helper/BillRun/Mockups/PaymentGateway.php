@@ -32,6 +32,7 @@ class PaymentGateway extends \Helper\BillRun\Mockups\Mockup
             'charging_terminal' => "0882828013",
             'user' => "yossi",
             'ancestor_urls' => " ",
+            "tokenize_on_single_payment"=>true,
             'version' => "2000",
             'custom_text' => " ",
             'password' => "123",
@@ -45,7 +46,8 @@ public function iframe($params = []){
          /** @var REST $rest */
          $rest = $this->getModule('REST');
          $rest->_setConfig(['url' => 'http://mockup:8081']);
-         $ret =  $rest->sendGet("/payment-gateways/creditguard/iframe/ffff");
+         $ret =  $rest->sendGet("/payment-gateways/creditguard/iframe", $params);
+         $rest->_setConfig(['url' => 'http://web']);
 
         //  $ret = $rest->sendGet("/paymentgateways/getRequest/iframe");          
          return json_decode($ret, true);

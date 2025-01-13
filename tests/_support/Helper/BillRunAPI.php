@@ -290,6 +290,7 @@ class BillRunAPI extends \Codeception\Module
             "type"=>"account",
             "amount"=>5,
             "action"=>"single_payment",
+          
             "ok_page"=>"http://web/paymentgateways/okpage?name=CreditGuard",
             "fail_page"=>"http://web/paymentgateways/okpage",
             "_t_"=>time()
@@ -298,7 +299,6 @@ class BillRunAPI extends \Codeception\Module
     }
 
   
-    
 
     
 
