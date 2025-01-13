@@ -40,10 +40,83 @@ function manageTemporaryFiles($action, $filename, $data = null)
 /**
  * Generate rejection response for transaction
  */
-function getRejectResponse()
-{
-    $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
-    return '<?xml version="1.0" encoding="ISO-8859-8"?><ashrait><response><command>doDeal</command><dateTime>2025-01-08 18:19</dateTime><requestId></requestId><tranId>112348371</tranId><result>003</result><message>סירוב</message><userMessage>סירוב</userMessage><additionalInfo>Transaction Rejected - Amount too high</additionalInfo><version>2000</version><language>Heb</language><doDeal><status>003</status><statusText>סירוב</statusText><extendedStatus></extendedStatus><extendedStatusText></extendedStatusText><terminalNumber>0883111010</terminalNumber><cardId></cardId><cardExpiration></cardExpiration><cardType code=""></cardType><creditType code="1">RegularCredit</creditType><currency code="1">ILS</currency><transactionCode code="50">Phone</transactionCode><total>2000000</total><validation code="3">Reject</validation><authSource code="2">CreditCompany</authSource><customerData><userData1>' . $userData1 . '</userData1><userData2>SinglePayment</userData2></customerData></doDeal></response></ashrait>';
+function getErrorXmlResponse($userData1, $message = '', $errorCode = '401') {
+    $dateTime = date('Y-m-d H:i');
+    return "<?xml version='1.0' encoding='ISO-8859-8'?>" .
+           "<ashrait>" .
+               "<response>" .
+                   "<command>doDeal</command>" .
+                   "<dateTime>{$dateTime}</dateTime>" .
+                   "<requestId/>" .
+                   "<tranId>112436464</tranId>" .
+                   "<result>{$errorCode}</result>" .
+                   "<message>תווים אסורים במחרוזת INT_IN</message>" .
+                   "<userMessage>נא לפנות למנהל המערכת ולמסור את קוד התשובה</userMessage>" .
+                   "<additionalInfo>{$message}</additionalInfo>" .
+                   "<version>2000</version>" .
+                   "<language>Heb</language>" .
+                   "<doDeal>" .
+                       "<status>{$errorCode}</status>" .
+                       "<statusText>תווים אסורים במחרוזת INT_IN</statusText>" .
+                       "<extendedStatus/>" .
+                       "<extendedStatusText/>" .
+                       "<extendedUserMessage/>" .
+                       "<terminalNumber>0883111010</terminalNumber>" .
+                       "<cardBin>CG</cardBin>" .
+                       "<cardMask>CGGMPI</cardMask>" .
+                       "<cardLength>5</cardLength>" .
+                       "<cardName/>" .
+                       "<cardExpiration/>" .
+                       "<cardType code=\"\"/>" .
+                       "<creditCompany code=\"\"/>" .
+                       "<cardBrand code=\"\"/>" .
+                       "<cardAcquirer code=\"\"/>" .
+                       "<serviceCode/>" .
+                       "<transactionType code=\"01\">RegularDebit</transactionType>" .
+                       "<creditType code=\"1\">RegularCredit</creditType>" .
+                       "<currency code=\"1\">ILS</currency>" .
+                       "<baseCurrency/>" .
+                       "<baseAmount/>" .
+                       "<transactionCode code=\"50\">Phone</transactionCode>" .
+                       "<total/>" .
+                       "<firstPayment/>" .
+                       "<periodicalPayment/>" .
+                       "<numberOfPayments/>" .
+                       "<clubId/>" .
+                       "<validation code=\"106\">TxnSetup</validation>" .
+                       "<idStatus code=\"\"/>" .
+                       "<cvvStatus code=\"\"/>" .
+                       "<authSource code=\"\"/>" .
+                       "<authNumber/>" .
+                       "<fileNumber/>" .
+                       "<slaveTerminalNumber/>" .
+                       "<slaveTerminalSequence/>" .
+                       "<eci/>" .
+                       "<clientIp/>" .
+                       "<email/>" .
+                       "<cavv code=\"\"/>" .
+                       "<user>0000000000007</user>" .
+                       "<addonData/>" .
+                       "<supplierNumber/>" .
+                       "<id/>" .
+                       "<shiftId1/>" .
+                       "<shiftId2/>" .
+                       "<shiftId3/>" .
+                       "<shiftTxnDate/>" .
+                       "<cgUid/>" .
+                       "<cardHash/>" .
+                       "<customerData>" .
+                           "<userData1>{$userData1}</userData1>" .
+                           "<userData2>SinglePayment</userData2>" .
+                       "</customerData>" .
+                       "<ashraitEmvData>" .
+                           "<mti>100</mti>" .
+                       "</ashraitEmvData>" .
+                       "<extendedTranCode/>" .
+                       "<sendNotification/>" .
+                   "</doDeal>" .
+               "</response>" .
+           "</ashrait>";
 }
 
 /**
@@ -257,6 +330,23 @@ function handlePaymentGatewayRelay($xml)
     if ($xml->request->inquireTransactions->mpiTransactionId == 1) {
         echo getEnableResponse();
     }
+            $total = $xml->request->doDeal->total;
+        // Check if amount is valid
+        
+        if( isset($xml->request->doDeal->successUrl)){
+            manageTemporaryFiles('write', '349.txt', 349);
+        if (!isset($total) || empty($total) || !is_numeric((int)$total) || $total > 2000000000){
+            manageTemporaryFiles('write', '350.txt', 350);
+
+            $errorMessage = "Invalid value: $total for field: total, should be number";
+            $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
+
+            echo getErrorXmlResponse($userData1, $errorMessage);
+            
+            return;
+        }
+
+
     // Handle doDeal request
     elseif ($xml->request->doDeal->total > 100) {
         $total = $xml->request->doDeal->total;
@@ -270,12 +360,8 @@ function handlePaymentGatewayRelay($xml)
             manageTemporaryFiles('write', 'payment_type.txt', $paymentType);
         }
 
-        //TODO make it work 
-        // Check if amount is over limit
-        if ($total > 200000000) {
-            echo getRejectResponse();
-            return;
-        }
+    
+    }
 
         echo getXmlResponse($token, $successUrl, $total);
     }
