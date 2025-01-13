@@ -242,6 +242,19 @@ class Billrun_Exporter extends Billrun_Generator_File {
         return true;
     }
 
+    public function shouldGenerateByFrequency(){
+        $prevGenerateTime = $this->config['frequency']['previous_generate_time'] ?? null;
+        $value = 0; //$this->config['frequency']['date_range']['value'] ?? 0;//todo:: remove this comment 
+        $type = $this->config['frequency']['date_range']['type'] ?? 'hours';
+        $timeRange = "-" . $value . " " . $type;
+        //get 
+        if(isset($prevGenerateTime) && strtotime($timeRange, $this->exportTime) < $prevGenerateTime){
+            Billrun_Factory::log()->log("Export generator still should not run. frequency: $timeRange, previous generate: " . date(Billrun_Base::base_datetimeformat, $prevGenerateTime), Zend_Log::DEBUG);
+            return false;
+        }
+        return true;
+    }
+
 	protected function getExporterClassName() {
         if (!isset($this->config['exporter']['type'])) {
             $message = 'Missing exporter type for ' . $this->getFileType();
@@ -484,9 +497,9 @@ class Billrun_Exporter extends Billrun_Generator_File {
             'sequence_num' => $this->getSequenceNumber(),
             'extra_data' => $extraData,
         );
-        $this->logStamp = Billrun_Util::generateArrayStamp($stampArr);
-        
-        return $this->logStamp;
+        $stamp = Billrun_Util::generateArrayStamp($stampArr);
+        $this->logStamp[] = $stamp;// in case export run by tadig //see tap3 
+        return $stamp;
     }
 
     /**
@@ -496,7 +509,13 @@ class Billrun_Exporter extends Billrun_Generator_File {
         if ($this->shouldMarkAsExported()) {
             $this->markAsExported();
         }
-        
+        $transactionCounter = count($this->rowsToExport);
+        if($transactionCounter < $this->limit){
+            $updated_config = Billrun_Factory::config()->getExportGeneratorSettings($this->config['name']);
+            $updated_config['frequency']['previous_generate_time'] = $this->exportTime;
+            $model = new ConfigModel();
+            $model->updateConfig("export_generators", $updated_config);
+        }
         Billrun_Factory::dispatcher()->trigger('afterExport', array(&$this->rowsToExport, $this));
     }
 
@@ -532,7 +551,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
 
         $collection = $this->getCollection();
         $collection->update($query, $update, $options);
-        $this->logDB($this->getLogStamp(), $this->getLogData());
+        $this->logDB($this->logStamp ?? $this->getLogStamp(), $this->getLogData());
     }
 
     /**

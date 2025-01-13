@@ -270,7 +270,8 @@
     "date": "Date",
     "export_file_type": "Export File Type",
     "time_range": "Time Range",
-    "record_type": "Record Type"
+    "record_type": "Record Type",
+    "frequency": "Frequency"
   },
   "suggestions": {
     "key": "Product",

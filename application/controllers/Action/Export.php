@@ -61,6 +61,9 @@ class ExportAction extends Action_Base {
 			if ($exporter) {
 				$this->getController()->addOutput("Starting to export. This action can take a while...");
 				try {
+					if(!$exporter->shouldGenerateByFrequency()){
+            return false;
+        	}
 					if ($exporter->generate() == false) {
 						return false;
 					}
