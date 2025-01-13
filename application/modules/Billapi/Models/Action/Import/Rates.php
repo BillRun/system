@@ -119,12 +119,12 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	
 	protected function setPriceValue($data, $params) {
 		$export_config = $this->getExportMapper();
-		$from = $this->fromArray($data[$export_config['price.from']['title']]);
-		$to = $this->fromArray($data[$export_config['price.to']['title']]);
-		$interval = $this->fromArray($data[$export_config['price.interval']['title']]);
-		$price = $this->fromArray($data[$export_config['price.price']['title']]);
-		$uom_range = $this->fromArray($data[$export_config['price.uom_display.range']['title']]);
-		$uom_interval = $this->fromArray($data[$export_config['price.uom_display.interval']['title']]);
+		$from = $this->fromArray($data[$export_config['price.from']['field_name']]);
+		$to = $this->fromArray($data[$export_config['price.to']['field_name']]);
+		$interval = $this->fromArray($data[$export_config['price.interval']['field_name']]);
+		$price = $this->fromArray($data[$export_config['price.price']['field_name']]);
+		$uom_range = $this->fromArray($data[$export_config['price.uom_display.range']['field_name']]);
+		$uom_interval = $this->fromArray($data[$export_config['price.uom_display.interval']['field_name']]);
 
 		$rate = [];
 		foreach ($from as $idx => $value) {
@@ -140,8 +140,8 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 			];
 		}
 		return [
-			$data[$export_config['usaget']['title']] => [
-				$data[$export_config['plan']['title']] => [
+			$data[$export_config['usaget']['field_name']] => [
+				$data[$export_config['plan']['field_name']] => [
 					'rate' => $rate,
 				]
 			],
@@ -760,6 +760,14 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		} else {
 			return parent::importPredefinedMappingEntity($row, $mapping);
 		}
+	}
+
+	protected function getDefaultColumnName($export_field) {
+		return Billrun_Util::getIn($export_field, 'field_name', $export_field['title']);
+	}
+
+	protected function getRowFieldName($params, $export_field) {
+		return Billrun_Util::getIn($params, 'field_name', $this->getDefaultColumnName($export_field));
 	}
 	
 }

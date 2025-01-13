@@ -428,8 +428,7 @@ class Models_Action_Import extends Models_Action {
 	protected function translateValue($row, $params) {
 		$export_config = $this->getExportMapper();
 		$export_field = $export_config[$params['field_name']];
-		$defaultColumnName = Billrun_Util::getIn($export_field, 'title', $export_field['field_name']);
-		$rowFieldName = Billrun_Util::getIn($params, 'title', $defaultColumnName);
+		$rowFieldName = $this->getRowFieldName($params, $export_field);
 		$type = Billrun_Util::getIn($params, 'type', 'string');
 		$isMultiple = Billrun_Util::getIn($params, 'multiple', false);
 		$callback = Billrun_Util::getIn($params, 'callback', false);
@@ -571,4 +570,11 @@ class Models_Action_Import extends Models_Action {
 		return $configs;
 	}
 
+	protected function getDefaultColumnName($export_field) {
+		return Billrun_Util::getIn($export_field, 'title', $export_field['field_name']);
+	}
+
+	protected function getRowFieldName($params, $export_field) {
+		return Billrun_Util::getIn($params, 'title', $this->getDefaultColumnName($export_field));
+	}
 }
