@@ -244,12 +244,21 @@ class Billrun_Exporter extends Billrun_Generator_File {
 
     public function shouldGenerateByFrequency(){
         $prevGenerateTime = $this->config['frequency']['previous_generate_time'] ?? null;
-        $value = 0; //$this->config['frequency']['date_range']['value'] ?? 0;//todo:: remove this comment 
+        $value = $this->config['frequency']['date_range']['value'] ?? 0;
         $type = $this->config['frequency']['date_range']['type'] ?? 'hours';
         $timeRange = "-" . $value . " " . $type;
-        //get 
         if(isset($prevGenerateTime) && strtotime($timeRange, $this->exportTime) < $prevGenerateTime){
-            Billrun_Factory::log()->log("Export generator still should not run. frequency: $timeRange, previous generate: " . date(Billrun_Base::base_datetimeformat, $prevGenerateTime), Zend_Log::DEBUG);
+            Billrun_Factory::log()->log("Export generator should not run. frequency: $timeRange, previous generate: " . date(Billrun_Base::base_datetimeformat, $prevGenerateTime), Zend_Log::DEBUG);
+            $query = [
+                'exported_time' => ['$exists' => false],
+                'source' => 'export',
+                'type' => static::$type
+            ];
+            $unfinishExportLog = Billrun_Factory::db()->logCollection()->query($query)->cursor()->current();
+            if(!$unfinishExportLog->isEmpty()){
+                Billrun_Factory::log()->log("Export generator " . static::$type ." have at least one failed/unfinish export log, ignore frequency. log:" . $unfinishExportLog['stamp'], Zend_Log::DEBUG);
+                return true;
+            }
             return false;
         }
         return true;
@@ -497,9 +506,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
             'sequence_num' => $this->getSequenceNumber(),
             'extra_data' => $extraData,
         );
-        $stamp = Billrun_Util::generateArrayStamp($stampArr);
-        $this->logStamp[] = $stamp;// in case export run by tadig //see tap3 
-        return $stamp;
+        $this->logStamp = Billrun_Util::generateArrayStamp($stampArr);
+        return $this->logStamp;
     }
 
     /**
@@ -551,7 +559,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
 
         $collection = $this->getCollection();
         $collection->update($query, $update, $options);
-        $this->logDB($this->logStamp ?? $this->getLogStamp(), $this->getLogData());
+        $this->logDB($this->getLogStamp(), $this->getLogData());
     }
 
     /**

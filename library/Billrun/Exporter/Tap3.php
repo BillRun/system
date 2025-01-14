@@ -34,6 +34,8 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	// Helper OOP hacks
 	protected $lastTadig = '';
 
+	protected $logStamps = array();
+
 	public function __construct($options = array()) {
 		$this->periodEndTime = time();
 		parent::__construct($options);
@@ -65,7 +67,9 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 			if(empty($rows)){
 				$extraDataLog = array_merge($extraDataLog,['notification' => true]);
 			}
-			$this->createLogDB($this->getLogStamp($tadig), $extraDataLog);
+			$this->logStamp = $this->getLogStamp($tadig);
+			$this->logStamps[] = $this->logStamp;
+			$this->createLogDB($this->logStamp, $extraDataLog);
 			$options = array(
 				'tadig' => $tadig,
 				'data' => $rows,
@@ -334,5 +338,10 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         return parent::getFileType() . $lastTadig;
     }
 
+		protected function logDB($stamp, $data) {
+			foreach ($this->logStamps as $logStamp){
+				parent::logDB($logStamp, $data);
+			}  
+		}
 
 }
