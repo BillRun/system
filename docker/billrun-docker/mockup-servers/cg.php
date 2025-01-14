@@ -1,14 +1,17 @@
 <?php
 
+
+
 /**
  * Generate XML response for setup transaction
  */
-function getXmlResponse($token, $url, $total)
+function getXmlResponse($token, $url, $total, $creditType, $numberOfPayments = null)
 {
-
+    manageTemporaryFiles('write', 'temp_creditType.txt', $creditType);
+    manageTemporaryFiles('write', 'temp_numberOfPayments.txt', $numberOfPayments);
     $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
     $paymentType = manageTemporaryFiles('read', 'payment_type.txt') ?: 'SinglePayment';
-    return '<?xml version="1.0" encoding="ISO-8859-8"?><ashrait><response><command>doDeal</command><dateTime>2025-01-08 18:19</dateTime><requestId></requestId><tranId>112348371</tranId><result>000</result><message>עסקה תקינה</message><userMessage>עסקה תקינה</userMessage><additionalInfo></additionalInfo><version>2000</version><language>Heb</language><doDeal><status>000</status><statusText>עסקה תקינה</statusText><extendedStatus></extendedStatus><extendedStatusText></extendedStatusText><extendedUserMessage></extendedUserMessage><terminalNumber>0883111010</terminalNumber><cardBin>CG</cardBin><cardMask>CGGMPI</cardMask><cardLength>5</cardLength><cardNo>xGMPI</cardNo><cardName></cardName><cardExpiration></cardExpiration><cardType code=""></cardType><extendedCardType code="0">Credit</extendedCardType><blockedCard></blockedCard><lifeStyle></lifeStyle><customCardType></customCardType><creditCompany code=""></creditCompany><cardBrand code=""></cardBrand><cardAcquirer code=""></cardAcquirer><serviceCode></serviceCode><transactionType code="01">RegularDebit</transactionType><creditType code="1">RegularCredit</creditType><currency code="1">ILS</currency><baseCurrency></baseCurrency><baseAmount></baseAmount><transactionCode code="50">Phone</transactionCode><total>' . $total . '</total><firstPayment></firstPayment><periodicalPayment></periodicalPayment><numberOfPayments></numberOfPayments><paymentsInterest></paymentsInterest><mid>13607</mid><uniqueid>1736353163858</uniqueid><mpiValidation>AutoComm</mpiValidation><token>' . $token . '</token><mpiHostedPageUrl>http://ppsuat.mockup' . '?txId=' . $token . '</mpiHostedPageUrl><returnUrl></returnUrl><successUrl>http://billrun-nginx:80/paymentgateways/okpage?name=CreditGuard</successUrl><errorUrl>http://billrun-nginx:80/paymentgateways/okpage</errorUrl><cancelUrl></cancelUrl><clubId></clubId><validation code="106">TxnSetup</validation><idStatus code=""></idStatus><cvvStatus code=""></cvvStatus><authSource code="6">MPIServer</authSource><authNumber></authNumber><fileNumber></fileNumber><slaveTerminalNumber></slaveTerminalNumber><slaveTerminalSequence></slaveTerminalSequence><eci></eci><clientIp></clientIp><email></email><cavv code=""></cavv><user>0000000000044</user><addonData></addonData><supplierNumber></supplierNumber><id></id><shiftId1></shiftId1><shiftId2></shiftId2><shiftId3></shiftId3><shiftTxnDate></shiftTxnDate><cgUid>112348371</cgUid><cardHash></cardHash><customerData><userData1>' . $userData1 . '</userData1><userData2>' . $paymentType . '</userData2></customerData><ashraitEmvData><mti>100</mti></ashraitEmvData><extendedTranCode></extendedTranCode><sendNotification></sendNotification></doDeal></response></ashrait>';
+    return '<?xml version="1.0" encoding="ISO-8859-8"?><ashrait><response><command>doDeal</command><dateTime>2025-01-08 18:19</dateTime><requestId></requestId><tranId>112348371</tranId><result>000</result><message>עסקה תקינה</message><userMessage>עסקה תקינה</userMessage><additionalInfo></additionalInfo><version>2000</version><language>Heb</language><doDeal><status>000</status><statusText>עסקה תקינה</statusText><extendedStatus></extendedStatus><extendedStatusText></extendedStatusText><extendedUserMessage></extendedUserMessage><terminalNumber>0883111010</terminalNumber><cardBin>CG</cardBin><cardMask>CGGMPI</cardMask><cardLength>5</cardLength><cardNo>xGMPI</cardNo><cardName></cardName><cardExpiration></cardExpiration><cardType code=""></cardType><extendedCardType code="0">Credit</extendedCardType><blockedCard></blockedCard><lifeStyle></lifeStyle><customCardType></customCardType><creditCompany code=""></creditCompany><cardBrand code=""></cardBrand><cardAcquirer code=""></cardAcquirer><serviceCode></serviceCode><transactionType code="01">RegularDebit</transactionType><creditType code="1">' . $creditType . '</creditType><currency code="1">ILS</currency><baseCurrency></baseCurrency><baseAmount></baseAmount><transactionCode code="50">Phone</transactionCode><total>' . $total . '</total><firstPayment></firstPayment><periodicalPayment></periodicalPayment><numberOfPayments>' . $numberOfPayments . '</numberOfPayments><paymentsInterest></paymentsInterest><mid>13607</mid><uniqueid>1736353163858</uniqueid><mpiValidation>AutoComm</mpiValidation><token>' . $token . '</token><mpiHostedPageUrl>http://ppsuat.mockup' . '?txId=' . $token . '</mpiHostedPageUrl><returnUrl></returnUrl><successUrl>http://billrun-nginx:80/paymentgateways/okpage?name=CreditGuard</successUrl><errorUrl>http://billrun-nginx:80/paymentgateways/okpage</errorUrl><cancelUrl></cancelUrl><clubId></clubId><validation code="106">TxnSetup</validation><idStatus code=""></idStatus><cvvStatus code=""></cvvStatus><authSource code="6">MPIServer</authSource><authNumber></authNumber><fileNumber></fileNumber><slaveTerminalNumber></slaveTerminalNumber><slaveTerminalSequence></slaveTerminalSequence><eci></eci><clientIp></clientIp><email></email><cavv code=""></cavv><user>0000000000044</user><addonData></addonData><supplierNumber></supplierNumber><id></id><shiftId1></shiftId1><shiftId2></shiftId2><shiftId3></shiftId3><shiftTxnDate></shiftTxnDate><cgUid>112348371</cgUid><cardHash></cardHash><customerData><userData1>' . $userData1 . '</userData1><userData2>' . $paymentType . '</userData2></customerData><ashraitEmvData><mti>100</mti></ashraitEmvData><extendedTranCode></extendedTranCode><sendNotification></sendNotification></doDeal></response></ashrait>';
 }
 
 function manageTemporaryFiles($action, $filename, $data = null)
@@ -131,16 +134,43 @@ function getEnableResponse()
 /**
  * Generate transaction details response
  */
+
+function calculateFirstPayment($total, $numberOfPayments)
+{
+    if ($numberOfPayments <= 0) {
+        return $total;
+    }
+    $regularPayment = ceil($total / $numberOfPayments);
+    $firstPayment = $total - ($regularPayment * ($numberOfPayments - 1));
+    return $firstPayment;
+}
+
 function getTransactionDetailsResponse($token, $total)
 {
-
+    $creditType = manageTemporaryFiles('read', 'temp_creditType.txt')?: 'RegularCredit';
+    $numberOfPayments = manageTemporaryFiles('read', 'temp_numberOfPayments.txt')?:0;
     $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
     $paymentType = manageTemporaryFiles('read', 'payment_type.txt') ?: 'SinglePayment';
     $cardExpiration = date('my', strtotime('+3 years'));
-
+    
+    $paymentDetails = '';
+    if($numberOfPayments > 0){
+       $firstPayment = calculateFirstPayment($total, $numberOfPayments);
+       $numberOfPayments = $numberOfPayments - 1;
+       $paymentDetails = "                                <creditType code=\"8\">{$creditType}</creditType>\n";
+       $paymentDetails .= "                                <firstPayment>{$firstPayment}</firstPayment>\n";
+       $paymentDetails .= "                                <periodicalPayment>100</periodicalPayment>\n";
+       $paymentDetails .= "                                <numberOfPayments>{$numberOfPayments}</numberOfPayments>\n";
+    } else {
+       $paymentDetails = "                                <creditType code=\"1\">{$creditType}</creditType>\n";
+    }
+    
+    manageTemporaryFiles('clean', 'temp_creditType.txt'); 
+    manageTemporaryFiles('clean', 'temp_numberOfPayments.txt'); 
+   
     $xmlResponse = <<<EOT
- <?xml version='1.0' encoding='ISO-8859-8'?>
- <ashrait>
+<?xml version='1.0' encoding='ISO-8859-8'?>
+<ashrait>
     <response>
         <command>inquireTransactions</command>
         <dateTime>2025-01-09 17:28</dateTime>
@@ -190,7 +220,7 @@ function getTransactionDetailsResponse($token, $total)
                                 <cardMask>532610******5606</cardMask>
                                 <cardLength>16</cardLength>
                                 <cardNo>XXXXXXXXXXXX5606</cardNo>
-                                <cardName>יורוקרד מסטרקרד</cardName>
+{$paymentDetails}                                <cardName>יורוקרד מסטרקרד</cardName>
                                 <cardExpiration>1228</cardExpiration>
                                 <total>{$total}</total>
                                 <customerData>
@@ -204,16 +234,15 @@ function getTransactionDetailsResponse($token, $total)
             </row>
         </inquireTransactions>
     </response>
- </ashrait>
- EOT;
+</ashrait>
+EOT;
     return $xmlResponse;
 }
-
 function getTokenTransactionDetailsResponseJ5($token, $terminalNumber)
 {
-   $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
+    $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
 
-   $xmlResponse = <<<EOT
+    $xmlResponse = <<<EOT
 <?xml version='1.0' encoding='ISO-8859-8'?>
 <ashrait>
    <response>
@@ -306,7 +335,7 @@ function getTokenTransactionDetailsResponseJ5($token, $terminalNumber)
    </response>
 </ashrait>
 EOT;
-   return $xmlResponse;
+    return $xmlResponse;
 }
 
 // for J5
@@ -420,13 +449,14 @@ function getRecurringResponse($cardId, $cardExpiration, $terminalNumber)
 }
 
 
-function getTransactionDetailsResponseJ5($token, $total, $terminalNumber, $cardId = '1022273188555606') {
+function getTransactionDetailsResponseJ5($token, $total, $terminalNumber, $cardId = '1022273188555606')
+{
     $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
-    $cardExpiration = date('my', strtotime('+3 years')); 
+    $cardExpiration = date('my', strtotime('+3 years'));
     $currentDateTime = date('Y-m-d H:i');
     $uid = '25011409500308831107753';
     $authNumber = '1382028';
- 
+
     $xmlResponse = <<<EOT
  <?xml version='1.0' encoding='ISO-8859-8'?>
  <ashrait>
@@ -581,43 +611,44 @@ function getTransactionDetailsResponseJ5($token, $total, $terminalNumber, $cardI
  </ashrait>
  EOT;
     return $xmlResponse;
- }
+}
 
 
- function chargeCommandResponse($requestXml) {
+function chargeCommandResponse($requestXml)
+{
     // Load the XML string
     $xml = new SimpleXMLElement($requestXml);
-    
+
     // Extract request values
-    $command = (string)$xml->command;
-    $requestId = (string)$xml->requestId;
-    $version = (string)$xml->version;
-    $language = (string)$xml->language;
-    
+    $command = (string) $xml->command;
+    $requestId = (string) $xml->requestId;
+    $version = (string) $xml->version;
+    $language = (string) $xml->language;
+
     // Extract doDeal values
     $doDeal = $xml->doDeal;
-    $terminalNumber = (string)$doDeal->terminalNumber;
-    $cardId = (string)$doDeal->cardId;
-    $cardExpiration = (string)$doDeal->cardExpiration;
-    $creditType = (string)$doDeal->creditType;
-    $currency = (string)$doDeal->currency;
-    $transactionCode = (string)$doDeal->transactionCode;
-    $transactionType = (string)$doDeal->transactionType;
-    $total = (string)$doDeal->total;
-    $authNumber = (string)$doDeal->authNumber;
-    $user = (string)$doDeal->user;
-    $validation = (string)$doDeal->validation;
-    
+    $terminalNumber = (string) $doDeal->terminalNumber;
+    $cardId = (string) $doDeal->cardId;
+    $cardExpiration = (string) $doDeal->cardExpiration;
+    $creditType = (string) $doDeal->creditType;
+    $currency = (string) $doDeal->currency;
+    $transactionCode = (string) $doDeal->transactionCode;
+    $transactionType = (string) $doDeal->transactionType;
+    $total = (string) $doDeal->total;
+    $authNumber = (string) $doDeal->authNumber;
+    $user = (string) $doDeal->user;
+    $validation = (string) $doDeal->validation;
+
     // Get userData1 if exists
     $userData1 = "";
     if (isset($doDeal->customerData->userData1)) {
-        $userData1 = (string)$doDeal->customerData->userData1;
+        $userData1 = (string) $doDeal->customerData->userData1;
     }
-    
+
     // Get current datetime in Israel timezone
     date_default_timezone_set('Asia/Jerusalem');
     $currentTime = date('Y-m-d H:i');
-    
+
     // Generate response XML
     $response = <<<XML
 <?xml version='1.0' encoding='ISO-8859-8'?>
@@ -720,13 +751,13 @@ function handlePaymentGatewayRelay($xml)
     }
 
     //Handle Charge command/API
-    if(isset($xml->mayBeDuplicate)){
-       echo  chargeCommandResponse($xml);
-       return;
+    if (isset($xml->mayBeDuplicate)) {
+        echo chargeCommandResponse($xml);
+        return;
     }
 
     $total = $xml->request->doDeal->total;
-    
+
 
     if (isset($xml->request->doDeal->successUrl) && isset($xml->request->doDeal->errorUrl)) {
 
@@ -742,7 +773,7 @@ function handlePaymentGatewayRelay($xml)
             return;
         }
 
-       
+
 
         // Handle doDeal request
         elseif ($xml->request->doDeal->total > 100) {
@@ -760,17 +791,21 @@ function handlePaymentGatewayRelay($xml)
 
         }
 
-        echo getXmlResponse($token, $successUrl, $total);
-    }elseif (isset($xml->request->doDeal->successUrl) && !isset($xml->request->doDeal->errorUrl)) {
+        //first response for getRequest (singelPayment | singelPaymentToken | payments)
+        $creditType = $xml->request->doDeal->creditType;
+        $numberOfPayments = $xml->request->doDeal->numberOfPayments;
+        echo getXmlResponse($token, $successUrl, $total, $creditType, $numberOfPayments);
+        // return;
+    } elseif (isset($xml->request->doDeal->successUrl) && !isset($xml->request->doDeal->errorUrl)) {
         //Handle J5 only token without singel payment
-        file_put_contents('j5',print_r($xml,1),FILE_APPEND);
+        file_put_contents('j5', print_r($xml, 1), FILE_APPEND);
         $token = 100;
-        $terminalNumber= $xml->request->doDeal->terminalNumber;
+        $terminalNumber = $xml->request->doDeal->terminalNumber;
         $userData1 = $xml->request->doDeal->userData1;
         manageTemporaryFiles('write', 'temp_userData1.txt', $userData1);
         manageTemporaryFiles('write', 'iiiiii.txt', $userData1);
         echo getTokenTransactionDetailsResponseJ5($token, $total);
-     }
+    }
     // Handle transaction query
     elseif (
         $xml->request->command == 'inquireTransactions' &&
@@ -780,10 +815,10 @@ function handlePaymentGatewayRelay($xml)
         $token = $xml->request->inquireTransactions->mpiTransactionId;
         $total = $token * 100;
         //Handle respone for only J5
-        if($token == 100){
+        if ($token == 100) {
             $terminalNumber = (string) $xml->request->doDeal->terminalNumber;
-           echo  getTransactionDetailsResponseJ5(100,100,  $terminalNumber);
-           return;
+            echo getTransactionDetailsResponseJ5(100, 100, $terminalNumber);
+            return;
         }
 
         //Handle respone for regular singel payment 

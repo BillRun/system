@@ -219,4 +219,134 @@ class CreditguardTest extends \Codeception\Test\Unit
    
     }
 
+
+    public function testSingelPaymentWithInstallmentsWithoutTokenize()
+    {
+        $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "auth_number" => "9433084",
+                    "transaction_exhausted" => true,
+                    "card_type" => "00",
+                    "card_token" => "1022273188555888",
+                    "name" => "CreditGuard",
+                    "card_acquirer" => "1",
+                    "instance_name" => "CreditGuard",
+                    "credit_company" => "1",
+                    "card_brand" => "1",
+                    "personal_id" => "890108566",
+                    "generate_token_time" => "2023-11-29T08:55:32Z",
+                    "keepCCDetails" => null,
+                    "card_expiration" => "1225",
+                    "four_digits" => "5606"
+                ]
+            ]
+        ]);
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->tester->payApi(['aid' => $account['aid'], 'amount' => 500, 'dir' => 'tc']);
+        $this->tester->getRequest(['aid' => (int) $account['aid'], 'amount' => 500, "installments"=>["number_of_payments"=>3]]);
+        $this->tester->iframe(['aid' => (int) $account['aid'], 'txid' => 500]);
+
+        //test that the token changed
+        $this->tester->seeInCollection(
+            'subscribers',
+            [
+                'aid' => (int) $account['aid'],
+                'to'=> ['$gt' => new MongoDB\BSON\UTCDateTime(time() * 1000)],
+                'payment_gateway.active.card_token' => "1022273188555888"
+            ]
+        );
+
+        //test that the recept 
+        $this->tester->seeInCollection(
+            'bills',
+            [
+                'aid' => (int) $account['aid'],
+                'amount' => 500,
+                "gateway_details.action" => "SinglePayment",
+                "gateway_details.transferred_amount" => 500,
+                "gateway_details.transaction_status" => "000",
+                "pending" => false,
+                "installments.total_amount" => 500,
+                "installments.number_of_payments" =>3,
+                "installments.first_payment" => 166.66,
+                "installments.periodical_payment" => 1
+                
+            
+            ]);
+        //test the bill
+        $this->tester->seeInCollection(
+            'bills',
+            [
+                'aid' => (int) $account['aid'],
+                'amount' => 500,
+                'paid'=>['$in'=>['true',true,1,'1']]
+            ]);
+    }
+
+    public function testSingelPaymentWithInstallmentsWithTokenize()
+    {
+        $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "auth_number" => "9433084",
+                    "transaction_exhausted" => true,
+                    "card_type" => "00",
+                    "card_token" => "1022273188555888",
+                    "name" => "CreditGuard",
+                    "card_acquirer" => "1",
+                    "instance_name" => "CreditGuard",
+                    "credit_company" => "1",
+                    "card_brand" => "1",
+                    "personal_id" => "890108566",
+                    "generate_token_time" => "2023-11-29T08:55:32Z",
+                    "keepCCDetails" => null,
+                    "card_expiration" => "1225",
+                    "four_digits" => "5606"
+                ]
+            ]
+        ]);
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->tester->payApi(['aid' => $account['aid'], 'amount' => 500, 'dir' => 'tc']);
+        $this->tester->getRequest(['aid' => (int) $account['aid'], 'amount' => 500, "tokenize_on_single_payment" => true,"installments"=>["number_of_payments"=>3]]);
+        $this->tester->iframe(['aid' => (int) $account['aid'], 'txid' => 500]);
+
+        //test that the token changed
+        $this->tester->seeInCollection(
+            'subscribers',
+            [
+                'aid' => (int) $account['aid'],
+                'to'=> ['$gt' => new MongoDB\BSON\UTCDateTime(time() * 1000)],
+                'payment_gateway.active.card_token' => "1022273188555607"
+            ]
+        );
+
+        //test that the recept 
+        $this->tester->seeInCollection(
+            'bills',
+            [
+                'aid' => (int) $account['aid'],
+                'amount' => 500,
+                "gateway_details.action" => "SinglePaymentToken",
+                "gateway_details.transferred_amount" => 500,
+                "gateway_details.transaction_status" => "000",
+                "pending" => false,
+                "installments.total_amount" => 500,
+                "installments.number_of_payments" =>3,
+                "installments.first_payment" => 166.66,
+                "installments.periodical_payment" => 1
+                
+            
+            ]);
+        //test the bill
+        $this->tester->seeInCollection(
+            'bills',
+            [
+                'aid' => (int) $account['aid'],
+                'amount' => 500,
+                'paid'=>['$in'=>['true',true,1,'1']]
+            ]);
+    }
+
+
 }
