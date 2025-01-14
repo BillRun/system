@@ -118,6 +118,9 @@ class Billrun_Exporter extends Billrun_Generator_File {
 
     protected $baseQuery = [];
 
+    protected $exportLimitRecords = false;
+
+
     public function __construct($options = array()) {
         parent::__construct($options);
         if(!empty($options['base_query'])) {
@@ -239,26 +242,25 @@ class Billrun_Exporter extends Billrun_Generator_File {
         }
         $transactionCounter = $this->fileGenerator->getTransactionsCounter();
         Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
+        $this->exportLimitRecords =  $transactionCounter == $this->limit ? true : false;
         return true;
     }
 
     public function shouldGenerateByFrequency(){
-        $prevGenerateTime = $this->config['frequency']['previous_generate_time'] ?? null;
         $value = $this->config['frequency']['date_range']['value'] ?? 0;
         $type = $this->config['frequency']['date_range']['type'] ?? 'hours';
         $timeRange = "-" . $value . " " . $type;
-        if(isset($prevGenerateTime) && strtotime($timeRange, $this->exportTime) < $prevGenerateTime){
-            Billrun_Factory::log()->log("Export generator should not run. frequency: $timeRange, previous generate: " . date(Billrun_Base::base_datetimeformat, $prevGenerateTime), Zend_Log::DEBUG);
-            $query = [
-                'exported_time' => ['$exists' => false],
-                'source' => 'export',
-                'type' => static::$type
-            ];
-            $unfinishExportLog = Billrun_Factory::db()->logCollection()->query($query)->cursor()->current();
-            if(!$unfinishExportLog->isEmpty()){
-                Billrun_Factory::log()->log("Export generator " . static::$type ." have at least one failed/unfinish export log, ignore frequency. log:" . $unfinishExportLog['stamp'], Zend_Log::DEBUG);
-                return true;
-            }
+        $query = [
+            'exported_time' => ['$exists' => true],
+            'source' => 'export',
+            'type' => static::$type,
+            'export_start_time' => ['$gt' => new Mongodloid_Date(strtotime($timeRange, $this->exportTime))],
+            'limit_records' => false
+        ];
+        $successExportLog = Billrun_Factory::db()->logCollection()->query($query)->cursor()->sort(['export_start_time' => -1])->current();
+
+        if(!$successExportLog->isEmpty()){
+            Billrun_Factory::log()->log("Export generator should not run. frequency: $timeRange, previous generate: " . date(Billrun_Base::base_datetimeformat, $successExportLog['export_start_time']->sec), Zend_Log::DEBUG);
             return false;
         }
         return true;
@@ -492,6 +494,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         return array(
             'sequence_num' => $this->getSequenceNumber(),
             'exported_time' => new Mongodloid_Date(),
+            'limit_records'  => $this->exportLimitRecords
         );
     }
 
@@ -516,13 +519,6 @@ class Billrun_Exporter extends Billrun_Generator_File {
     public function afterExport() {
         if ($this->shouldMarkAsExported()) {
             $this->markAsExported();
-        }
-        $transactionCounter = count($this->rowsToExport);
-        if($transactionCounter < $this->limit){
-            $updated_config = Billrun_Factory::config()->getExportGeneratorSettings($this->config['name']);
-            $updated_config['frequency']['previous_generate_time'] = $this->exportTime;
-            $model = new ConfigModel();
-            $model->updateConfig("export_generators", $updated_config);
         }
         Billrun_Factory::dispatcher()->trigger('afterExport', array(&$this->rowsToExport, $this));
     }

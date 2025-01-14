@@ -79,7 +79,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 			$fileExported = $this->fileGenerator->export();
 			$this->created_successfully &= !empty($fileExported);
 			$exported[] = $fileExported;
-			$transactionCounter = $this->fileGenerator->getTransactionsCounter();
+			$transactionCounter += $this->fileGenerator->getTransactionsCounter();
 		}
 		$this->filesExported = $exported;
 
@@ -89,6 +89,8 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         }
 
         Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
+				$this->exportLimitRecords =  $transactionCounter == $this->limit ? true : false;
+
         return true;
 	}
 
