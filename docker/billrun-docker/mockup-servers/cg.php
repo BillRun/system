@@ -5,7 +5,7 @@
  */
 function getXmlResponse($token, $url, $total)
 {
-   
+
     $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
     $paymentType = manageTemporaryFiles('read', 'payment_type.txt') ?: 'SinglePayment';
     return '<?xml version="1.0" encoding="ISO-8859-8"?><ashrait><response><command>doDeal</command><dateTime>2025-01-08 18:19</dateTime><requestId></requestId><tranId>112348371</tranId><result>000</result><message>עסקה תקינה</message><userMessage>עסקה תקינה</userMessage><additionalInfo></additionalInfo><version>2000</version><language>Heb</language><doDeal><status>000</status><statusText>עסקה תקינה</statusText><extendedStatus></extendedStatus><extendedStatusText></extendedStatusText><extendedUserMessage></extendedUserMessage><terminalNumber>0883111010</terminalNumber><cardBin>CG</cardBin><cardMask>CGGMPI</cardMask><cardLength>5</cardLength><cardNo>xGMPI</cardNo><cardName></cardName><cardExpiration></cardExpiration><cardType code=""></cardType><extendedCardType code="0">Credit</extendedCardType><blockedCard></blockedCard><lifeStyle></lifeStyle><customCardType></customCardType><creditCompany code=""></creditCompany><cardBrand code=""></cardBrand><cardAcquirer code=""></cardAcquirer><serviceCode></serviceCode><transactionType code="01">RegularDebit</transactionType><creditType code="1">RegularCredit</creditType><currency code="1">ILS</currency><baseCurrency></baseCurrency><baseAmount></baseAmount><transactionCode code="50">Phone</transactionCode><total>' . $total . '</total><firstPayment></firstPayment><periodicalPayment></periodicalPayment><numberOfPayments></numberOfPayments><paymentsInterest></paymentsInterest><mid>13607</mid><uniqueid>1736353163858</uniqueid><mpiValidation>AutoComm</mpiValidation><token>' . $token . '</token><mpiHostedPageUrl>http://ppsuat.mockup' . '?txId=' . $token . '</mpiHostedPageUrl><returnUrl></returnUrl><successUrl>http://billrun-nginx:80/paymentgateways/okpage?name=CreditGuard</successUrl><errorUrl>http://billrun-nginx:80/paymentgateways/okpage</errorUrl><cancelUrl></cancelUrl><clubId></clubId><validation code="106">TxnSetup</validation><idStatus code=""></idStatus><cvvStatus code=""></cvvStatus><authSource code="6">MPIServer</authSource><authNumber></authNumber><fileNumber></fileNumber><slaveTerminalNumber></slaveTerminalNumber><slaveTerminalSequence></slaveTerminalSequence><eci></eci><clientIp></clientIp><email></email><cavv code=""></cavv><user>0000000000044</user><addonData></addonData><supplierNumber></supplierNumber><id></id><shiftId1></shiftId1><shiftId2></shiftId2><shiftId3></shiftId3><shiftTxnDate></shiftTxnDate><cgUid>112348371</cgUid><cardHash></cardHash><customerData><userData1>' . $userData1 . '</userData1><userData2>' . $paymentType . '</userData2></customerData><ashraitEmvData><mti>100</mti></ashraitEmvData><extendedTranCode></extendedTranCode><sendNotification></sendNotification></doDeal></response></ashrait>';
@@ -13,7 +13,7 @@ function getXmlResponse($token, $url, $total)
 
 function manageTemporaryFiles($action, $filename, $data = null)
 {
-    $tempDir = 'temp/';  
+    $tempDir = 'temp/';
 
     if (!is_dir($tempDir)) {
         mkdir($tempDir, 0777, true);
@@ -40,83 +40,84 @@ function manageTemporaryFiles($action, $filename, $data = null)
 /**
  * Generate rejection response for transaction
  */
-function getErrorXmlResponse($userData1, $message = '', $errorCode = '401') {
+function getErrorXmlResponse($userData1, $message = '', $errorCode = '401')
+{
     $dateTime = date('Y-m-d H:i');
     return "<?xml version='1.0' encoding='ISO-8859-8'?>" .
-           "<ashrait>" .
-               "<response>" .
-                   "<command>doDeal</command>" .
-                   "<dateTime>{$dateTime}</dateTime>" .
-                   "<requestId/>" .
-                   "<tranId>112436464</tranId>" .
-                   "<result>{$errorCode}</result>" .
-                   "<message>תווים אסורים במחרוזת INT_IN</message>" .
-                   "<userMessage>נא לפנות למנהל המערכת ולמסור את קוד התשובה</userMessage>" .
-                   "<additionalInfo>{$message}</additionalInfo>" .
-                   "<version>2000</version>" .
-                   "<language>Heb</language>" .
-                   "<doDeal>" .
-                       "<status>{$errorCode}</status>" .
-                       "<statusText>תווים אסורים במחרוזת INT_IN</statusText>" .
-                       "<extendedStatus/>" .
-                       "<extendedStatusText/>" .
-                       "<extendedUserMessage/>" .
-                       "<terminalNumber>0883111010</terminalNumber>" .
-                       "<cardBin>CG</cardBin>" .
-                       "<cardMask>CGGMPI</cardMask>" .
-                       "<cardLength>5</cardLength>" .
-                       "<cardName/>" .
-                       "<cardExpiration/>" .
-                       "<cardType code=\"\"/>" .
-                       "<creditCompany code=\"\"/>" .
-                       "<cardBrand code=\"\"/>" .
-                       "<cardAcquirer code=\"\"/>" .
-                       "<serviceCode/>" .
-                       "<transactionType code=\"01\">RegularDebit</transactionType>" .
-                       "<creditType code=\"1\">RegularCredit</creditType>" .
-                       "<currency code=\"1\">ILS</currency>" .
-                       "<baseCurrency/>" .
-                       "<baseAmount/>" .
-                       "<transactionCode code=\"50\">Phone</transactionCode>" .
-                       "<total/>" .
-                       "<firstPayment/>" .
-                       "<periodicalPayment/>" .
-                       "<numberOfPayments/>" .
-                       "<clubId/>" .
-                       "<validation code=\"106\">TxnSetup</validation>" .
-                       "<idStatus code=\"\"/>" .
-                       "<cvvStatus code=\"\"/>" .
-                       "<authSource code=\"\"/>" .
-                       "<authNumber/>" .
-                       "<fileNumber/>" .
-                       "<slaveTerminalNumber/>" .
-                       "<slaveTerminalSequence/>" .
-                       "<eci/>" .
-                       "<clientIp/>" .
-                       "<email/>" .
-                       "<cavv code=\"\"/>" .
-                       "<user>0000000000007</user>" .
-                       "<addonData/>" .
-                       "<supplierNumber/>" .
-                       "<id/>" .
-                       "<shiftId1/>" .
-                       "<shiftId2/>" .
-                       "<shiftId3/>" .
-                       "<shiftTxnDate/>" .
-                       "<cgUid/>" .
-                       "<cardHash/>" .
-                       "<customerData>" .
-                           "<userData1>{$userData1}</userData1>" .
-                           "<userData2>SinglePayment</userData2>" .
-                       "</customerData>" .
-                       "<ashraitEmvData>" .
-                           "<mti>100</mti>" .
-                       "</ashraitEmvData>" .
-                       "<extendedTranCode/>" .
-                       "<sendNotification/>" .
-                   "</doDeal>" .
-               "</response>" .
-           "</ashrait>";
+        "<ashrait>" .
+        "<response>" .
+        "<command>doDeal</command>" .
+        "<dateTime>{$dateTime}</dateTime>" .
+        "<requestId/>" .
+        "<tranId>112436464</tranId>" .
+        "<result>{$errorCode}</result>" .
+        "<message>תווים אסורים במחרוזת INT_IN</message>" .
+        "<userMessage>נא לפנות למנהל המערכת ולמסור את קוד התשובה</userMessage>" .
+        "<additionalInfo>{$message}</additionalInfo>" .
+        "<version>2000</version>" .
+        "<language>Heb</language>" .
+        "<doDeal>" .
+        "<status>{$errorCode}</status>" .
+        "<statusText>תווים אסורים במחרוזת INT_IN</statusText>" .
+        "<extendedStatus/>" .
+        "<extendedStatusText/>" .
+        "<extendedUserMessage/>" .
+        "<terminalNumber>0883111010</terminalNumber>" .
+        "<cardBin>CG</cardBin>" .
+        "<cardMask>CGGMPI</cardMask>" .
+        "<cardLength>5</cardLength>" .
+        "<cardName/>" .
+        "<cardExpiration/>" .
+        "<cardType code=\"\"/>" .
+        "<creditCompany code=\"\"/>" .
+        "<cardBrand code=\"\"/>" .
+        "<cardAcquirer code=\"\"/>" .
+        "<serviceCode/>" .
+        "<transactionType code=\"01\">RegularDebit</transactionType>" .
+        "<creditType code=\"1\">RegularCredit</creditType>" .
+        "<currency code=\"1\">ILS</currency>" .
+        "<baseCurrency/>" .
+        "<baseAmount/>" .
+        "<transactionCode code=\"50\">Phone</transactionCode>" .
+        "<total/>" .
+        "<firstPayment/>" .
+        "<periodicalPayment/>" .
+        "<numberOfPayments/>" .
+        "<clubId/>" .
+        "<validation code=\"106\">TxnSetup</validation>" .
+        "<idStatus code=\"\"/>" .
+        "<cvvStatus code=\"\"/>" .
+        "<authSource code=\"\"/>" .
+        "<authNumber/>" .
+        "<fileNumber/>" .
+        "<slaveTerminalNumber/>" .
+        "<slaveTerminalSequence/>" .
+        "<eci/>" .
+        "<clientIp/>" .
+        "<email/>" .
+        "<cavv code=\"\"/>" .
+        "<user>0000000000007</user>" .
+        "<addonData/>" .
+        "<supplierNumber/>" .
+        "<id/>" .
+        "<shiftId1/>" .
+        "<shiftId2/>" .
+        "<shiftId3/>" .
+        "<shiftTxnDate/>" .
+        "<cgUid/>" .
+        "<cardHash/>" .
+        "<customerData>" .
+        "<userData1>{$userData1}</userData1>" .
+        "<userData2>SinglePayment</userData2>" .
+        "</customerData>" .
+        "<ashraitEmvData>" .
+        "<mti>100</mti>" .
+        "</ashraitEmvData>" .
+        "<extendedTranCode/>" .
+        "<sendNotification/>" .
+        "</doDeal>" .
+        "</response>" .
+        "</ashrait>";
 }
 
 /**
@@ -132,7 +133,7 @@ function getEnableResponse()
  */
 function getTransactionDetailsResponse($token, $total)
 {
-    
+
     $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
     $paymentType = manageTemporaryFiles('read', 'payment_type.txt') ?: 'SinglePayment';
     $cardExpiration = date('my', strtotime('+3 years'));
@@ -208,7 +209,105 @@ function getTransactionDetailsResponse($token, $total)
     return $xmlResponse;
 }
 
+function getTokenTransactionDetailsResponseJ5($token, $terminalNumber)
+{
+   $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
 
+   $xmlResponse = <<<EOT
+<?xml version='1.0' encoding='ISO-8859-8'?>
+<ashrait>
+   <response>
+       <command>doDeal</command>
+       <dateTime>2025-01-14 09:47</dateTime>
+       <requestId/>
+       <tranId>112448750</tranId>
+       <result>000</result>
+       <message>עסקה תקינה</message>
+       <userMessage>עסקה תקינה</userMessage>
+       <additionalInfo/>
+       <version>2000</version>
+       <language>Heb</language>
+       <doDeal>
+           <status>000</status>
+           <statusText>עסקה תקינה</statusText>
+           <extendedStatus/>
+           <extendedStatusText/>
+           <extendedUserMessage/>
+           <terminalNumber>{$terminalNumber}</terminalNumber>
+           <cardBin>CG</cardBin>
+           <cardMask>CGGMPI</cardMask>
+           <cardLength>5</cardLength>
+           <cardNo>xGMPI</cardNo>
+           <cardName/>
+           <cardExpiration/>
+           <cardType code=""/>
+           <extendedCardType code="0">Credit</extendedCardType>
+           <blockedCard/>
+           <lifeStyle/>
+           <customCardType/>
+           <creditCompany code=""/>
+           <cardBrand code=""/>
+           <cardAcquirer code=""/>
+           <serviceCode/>
+           <transactionType code="11">RecurringDebit</transactionType>
+           <creditType code="1">RegularCredit</creditType>
+           <currency code="1">ILS</currency>
+           <baseCurrency/>
+           <baseAmount/>
+           <transactionCode code="50">Phone</transactionCode>
+           <total>100</total>
+           <firstPayment/>
+           <periodicalPayment/>
+           <numberOfPayments/>
+           <paymentsInterest/>
+           <mid>13607</mid>
+           <uniqueid>1736840874688</uniqueid>
+           <mpiValidation>Verify</mpiValidation>
+           <token>{$token}</token>
+           <mpiHostedPageUrl>https://ppsuat.creditguard.co.il?txId={$token}</mpiHostedPageUrl>
+           <returnUrl/>
+           <successUrl>http://localhost:8074/paymentgateways/OkPage?name=CreditGuard</successUrl>
+           <errorUrl/>
+           <cancelUrl/>
+           <clubId/>
+           <validation code="106">TxnSetup</validation>
+           <idStatus code=""/>
+           <cvvStatus code=""/>
+           <authSource code="6">MPIServer</authSource>
+           <authNumber/>
+           <fileNumber/>
+           <slaveTerminalNumber/>
+           <slaveTerminalSequence/>
+           <eci/>
+           <clientIp/>
+           <email/>
+           <cavv code=""/>
+           <user/>
+           <addonData/>
+           <supplierNumber/>
+           <id/>
+           <shiftId1/>
+           <shiftId2/>
+           <shiftId3/>
+           <shiftTxnDate/>
+           <cgUid>112448750</cgUid>
+           <cardHash/>
+           <customerData>
+               <userData1>{$userData1}</userData1>
+           </customerData>
+           <ashraitEmvData>
+               <recurringTotalNo>999</recurringTotalNo>
+               <recurringFrequency>04</recurringFrequency>
+               <mti>100</mti>
+           </ashraitEmvData>
+           <extendedTranCode/>
+           <sendNotification/>
+       </doDeal>
+   </response>
+</ashrait>
+EOT;
+   return $xmlResponse;
+}
 
 // for J5
 function getRecurringResponse($cardId, $cardExpiration, $terminalNumber)
@@ -319,6 +418,295 @@ function getRecurringResponse($cardId, $cardExpiration, $terminalNumber)
 
     return iconv('UTF-8', 'ISO-8859-8', $response);
 }
+
+
+function getTransactionDetailsResponseJ5($token, $total, $terminalNumber, $cardId = '1022273188555606') {
+    $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
+    $cardExpiration = date('my', strtotime('+3 years')); 
+    $currentDateTime = date('Y-m-d H:i');
+    $uid = '25011409500308831107753';
+    $authNumber = '1382028';
+ 
+    $xmlResponse = <<<EOT
+ <?xml version='1.0' encoding='ISO-8859-8'?>
+ <ashrait>
+    <response>
+        <command>inquireTransactions</command>
+        <dateTime>{$currentDateTime}</dateTime>
+        <requestId/>
+        <tranId>112448777</tranId>
+        <result>000</result>
+        <message>עסקה תקינה</message>
+        <userMessage>עסקה תקינה</userMessage>
+        <additionalInfo/>
+        <version>2000</version>
+        <language>Heb</language>
+        <inquireTransactions>
+            <row>
+                <mpiTransactionId>{$token}</mpiTransactionId>
+                <uniqueid>1736840874688</uniqueid>
+                <amount>{$total}</amount>
+                <currency>ILS</currency>
+                <authNumber>{$authNumber}</authNumber>
+                <cardId>{$cardId}</cardId>
+                <languageCode>HE</languageCode>
+                <statusCode>0</statusCode>
+                <statusText>SUCCEEDED</statusText>
+                <errorCode>00</errorCode>
+                <errorText>הצלחה</errorText>
+                <cgGatewayResponseCode>000</cgGatewayResponseCode>
+                <cgGatewayResponseText>עסקה תקינה</cgGatewayResponseText>
+                <cgGatewayResponseXML>
+                    <ashrait>
+                        <response>
+                            <command>doDeal</command>
+                            <dateTime>{$currentDateTime}</dateTime>
+                            <requestId/>
+                            <tranId>112448775</tranId>
+                            <result>000</result>
+                            <message>עסקה תקינה</message>
+                            <userMessage>עסקה תקינה</userMessage>
+                            <additionalInfo>Host Result Remote 00-SUCCESS </additionalInfo>
+                            <version>2000</version>
+                            <language>Heb</language>
+                            <doDeal>
+                                <status>000</status>
+                                <statusText>עסקה תקינה</statusText>
+                                <extendedStatus/>
+                                <extendedStatusText/>
+                                <extendedUserMessage/>
+                                <terminalNumber>{$terminalNumber}</terminalNumber>
+                                <cardId>{$cardId}</cardId>
+                                <cardBin>532610</cardBin>
+                                <cardMask>532610******5606</cardMask>
+                                <cardLength>16</cardLength>
+                                <cardNo>XXXXXXXXXXXX5606</cardNo>
+                                <cardName>יורוקרד מסטרקרד</cardName>
+                                <cardExpiration>{$cardExpiration}</cardExpiration>
+                                <cardType code="00">Local</cardType>
+                                <extendedCardType code="0">Credit</extendedCardType>
+                                <blockedCard/>
+                                <lifeStyle/>
+                                <customCardType/>
+                                <creditCompany code="1">Isracard</creditCompany>
+                                <cardBrand code="1">Mastercard</cardBrand>
+                                <cardAcquirer code="1">Isracard</cardAcquirer>
+                                <serviceCode/>
+                                <transactionType code="11">RecurringDebit</transactionType>
+                                <creditType code="1">RegularCredit</creditType>
+                                <currency code="1">ILS</currency>
+                                <baseCurrency/>
+                                <baseAmount/>
+                                <transactionCode code="50">Phone</transactionCode>
+                                <total>{$total}</total>
+                                <firstPayment/>
+                                <periodicalPayment/>
+                                <numberOfPayments>0</numberOfPayments>
+                                <clubId/>
+                                <validation code="5">Verify</validation>
+                                <idStatus code="1">Valid</idStatus>
+                                <cvvStatus code="1">Valid</cvvStatus>
+                                <authSource code="2">CreditCompany</authSource>
+                                <authNumber>{$authNumber}</authNumber>
+                                <fileNumber/>
+                                <slaveTerminalNumber/>
+                                <slaveTerminalSequence/>
+                                <eci/>
+                                <clientIp>172.16.100.7</clientIp>
+                                <email/>
+                                <cavv code=""/>
+                                <user/>
+                                <addonData/>
+                                <supplierNumber>0071506</supplierNumber>
+                                <id>890108566</id>
+                                <shiftId1/>
+                                <shiftId2/>
+                                <shiftId3/>
+                                <shiftTxnDate/>
+                                <cgUid>112448750</cgUid>
+                                <cardHash/>
+                                <customerData>
+                                    <userData1>{$userData1}</userData1>
+                                </customerData>
+                                <acquirerData>
+                                    <gateway>AshraitEmv</gateway>
+                                    <acquirerTranType>11</acquirerTranType>
+                                    <mcc>0242</mcc>
+                                    <acquirerResponseId>501409382028</acquirerResponseId>
+                                    <avsResponse code="0">Absent</avsResponse>
+                                    <acquirerTranCode>50</acquirerTranCode>
+                                </acquirerData>
+                                <ashraitEmvData>
+                                    <recurringTotalNo>999</recurringTotalNo>
+                                    <recurringFrequency>04</recurringFrequency>
+                                    <recurringNo>000</recurringNo>
+                                    <recurringUniqueRef>112448775</recurringUniqueRef>
+                                    <uid>{$uid}</uid>
+                                    <authCodeCreditCompany code="1">CreditCompanyAuthorized</authCodeCreditCompany>
+                                    <idFlag>1</idFlag>
+                                    <manufId>CGD</manufId>
+                                    <cvvFlag>1</cvvFlag>
+                                    <manufUse>001101</manufUse>
+                                    <ashVersion>x</ashVersion>
+                                    <ashTermType>0</ashTermType>
+                                    <emvResponseCode>00</emvResponseCode>
+                                    <deviceStatus>1111000000</deviceStatus>
+                                    <ashReasonText>KARTIS_HASUM, BAKASHA_LEISHUR_LELO_ISKA, ITCHUL_HORAAT_KEVA</ashReasonText>
+                                    <authCodeAcquirer code="0">NoAuthNumber</authCodeAcquirer>
+                                    <isDoReverseDeal>0</isDoReverseDeal>
+                                    <mti>100</mti>
+                                </ashraitEmvData>
+                                <extendedTranCode/>
+                                <sendNotification/>
+                            </doDeal>
+                        </response>
+                    </ashrait>
+                </cgGatewayResponseXML>
+                <cgGatewayInvoiceResponseXML/>
+                <queryErrorCode>00</queryErrorCode>
+                <queryErrorText>הצלחה</queryErrorText>
+                <xRem/>
+                <personalId>890108566</personalId>
+                <cardExpiration>{$cardExpiration}</cardExpiration>
+            </row>
+            <totals>
+                <pageNumber/>
+                <pagesAmount/>
+                <queryResultId/>
+                <total/>
+                <totalMatch/>
+            </totals>
+        </inquireTransactions>
+    </response>
+ </ashrait>
+ EOT;
+    return $xmlResponse;
+ }
+
+
+ function chargeCommandResponse($requestXml) {
+    // Load the XML string
+    $xml = new SimpleXMLElement($requestXml);
+    
+    // Extract request values
+    $command = (string)$xml->command;
+    $requestId = (string)$xml->requestId;
+    $version = (string)$xml->version;
+    $language = (string)$xml->language;
+    
+    // Extract doDeal values
+    $doDeal = $xml->doDeal;
+    $terminalNumber = (string)$doDeal->terminalNumber;
+    $cardId = (string)$doDeal->cardId;
+    $cardExpiration = (string)$doDeal->cardExpiration;
+    $creditType = (string)$doDeal->creditType;
+    $currency = (string)$doDeal->currency;
+    $transactionCode = (string)$doDeal->transactionCode;
+    $transactionType = (string)$doDeal->transactionType;
+    $total = (string)$doDeal->total;
+    $authNumber = (string)$doDeal->authNumber;
+    $user = (string)$doDeal->user;
+    $validation = (string)$doDeal->validation;
+    
+    // Get userData1 if exists
+    $userData1 = "";
+    if (isset($doDeal->customerData->userData1)) {
+        $userData1 = (string)$doDeal->customerData->userData1;
+    }
+    
+    // Get current datetime in Israel timezone
+    date_default_timezone_set('Asia/Jerusalem');
+    $currentTime = date('Y-m-d H:i');
+    
+    // Generate response XML
+    $response = <<<XML
+<?xml version='1.0' encoding='ISO-8859-8'?>
+<ashrait>
+    <response>
+        <command>{$command}</command>
+        <dateTime>{$currentTime}</dateTime>
+        <requestId>{$requestId}</requestId>
+        <tranId>112454130</tranId>
+        <result>000</result>
+        <message>עסקה תקינה</message>
+        <userMessage>עסקה תקינה</userMessage>
+        <additionalInfo>Host Result Remote 00-SUCCESS </additionalInfo>
+        <version>{$version}</version>
+        <language>{$language}</language>
+        <doDeal>
+            <status>000</status>
+            <statusText>עסקה תקינה</statusText>
+            <terminalNumber>{$terminalNumber}</terminalNumber>
+            <cardId>{$cardId}</cardId>
+            <cardBin>532610</cardBin>
+            <cardMask>532610******5606</cardMask>
+            <cardLength>16</cardLength>
+            <cardNo>xxxxxxxxxxxx5606</cardNo>
+            <cardName>יורוקרד מסטרקרד</cardName>
+            <cardExpiration>{$cardExpiration}</cardExpiration>
+            <cardType code="00">Local</cardType>
+            <extendedCardType code="0">Credit</extendedCardType>
+            <creditCompany code="1">Isracard</creditCompany>
+            <cardBrand code="1">Mastercard</cardBrand>
+            <cardAcquirer code="1">Isracard</cardAcquirer>
+            <transactionType code="11">{$transactionType}</transactionType>
+            <creditType code="1">{$creditType}</creditType>
+            <currency code="1">{$currency}</currency>
+            <transactionCode code="50">{$transactionCode}</transactionCode>
+            <total>{$total}</total>
+            <validation code="4">{$validation}</validation>
+            <cvvStatus code="0">Absent</cvvStatus>
+            <authSource code="2">CreditCompany</authSource>
+            <authNumber>{$authNumber}</authNumber>
+            <fileNumber>36</fileNumber>
+            <slaveTerminalNumber>003</slaveTerminalNumber>
+            <slaveTerminalSequence>399</slaveTerminalSequence>
+            <user>{$user}</user>
+            <supplierNumber>0071506</supplierNumber>
+            <customerData>
+                <userData1>{$userData1}</userData1>
+            </customerData>
+            <acquirerData>
+                <gateway>AshraitEmv</gateway>
+                <acquirerTranType>11</acquirerTranType>
+                <mcc>0242</mcc>
+                <acquirerResponseId>501414383687</acquirerResponseId>
+                <avsResponse code="0">Absent</avsResponse>
+                <acquirerTranCode>50</acquirerTranCode>
+            </acquirerData>
+            <ashraitEmvData>
+                <recurringNo>2</recurringNo>
+                <recurringTotalNo>999</recurringTotalNo>
+                <orgAuthCodeCreditCompany>1</orgAuthCodeCreditCompany>
+                <orgAuthCodeAcquirer>0</orgAuthCodeAcquirer>
+                <orgTranDate>0114</orgTranDate>
+                <orgTranTime>142138</orgTranTime>
+                <orgAuthNo>{$authNumber}</orgAuthNo>
+                <orgUid>25011414213808831100829</orgUid>
+                <recurringUniqueRef>112454130</recurringUniqueRef>
+                <uid>25011414241108831111307</uid>
+                <authCodeCreditCompany code="1">CreditCompanyAuthorized</authCodeCreditCompany>
+                <manufId>CGD</manufId>
+                <manufUse>001101</manufUse>
+                <ashVersion>x</ashVersion>
+                <ashTermType>0</ashTermType>
+                <emvResponseCode>00</emvResponseCode>
+                <deviceStatus>1111000000</deviceStatus>
+                <ashReasonText>KARTIS_HASUM</ashReasonText>
+                <authCodeAcquirer code="0">NoAuthNumber</authCodeAcquirer>
+                <isDoReverseDeal>0</isDoReverseDeal>
+                <mti>100</mti>
+            </ashraitEmvData>
+            <extendedTranCode/>
+            <sendNotification/>
+        </doDeal>
+    </response>
+</ashrait>
+XML;
+
+    return $response;
+}
+
 /**
  * Handle payment gateway relay requests
  */
@@ -330,48 +718,75 @@ function handlePaymentGatewayRelay($xml)
     if ($xml->request->inquireTransactions->mpiTransactionId == 1) {
         echo getEnableResponse();
     }
-            $total = $xml->request->doDeal->total;
+
+    //Handle Charge command/API
+    if(isset($xml->mayBeDuplicate)){
+       echo  chargeCommandResponse($xml);
+       return;
+    }
+
+    $total = $xml->request->doDeal->total;
+    
+
+    if (isset($xml->request->doDeal->successUrl) && isset($xml->request->doDeal->errorUrl)) {
+
         // Check if amount is valid
-        
-        if( isset($xml->request->doDeal->successUrl)){
-            manageTemporaryFiles('write', '349.txt', 349);
-        if (!isset($total) || empty($total) || !is_numeric((int)$total) || $total > 2000000000){
+        if (!isset($total) || empty($total) || !is_numeric((int) $total) || $total > 2000000000) {
             manageTemporaryFiles('write', '350.txt', 350);
 
             $errorMessage = "Invalid value: $total for field: total, should be number";
             $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
 
             echo getErrorXmlResponse($userData1, $errorMessage);
-            
+
             return;
         }
 
+       
 
-    // Handle doDeal request
-    elseif ($xml->request->doDeal->total > 100) {
-        $total = $xml->request->doDeal->total;
-        $token = $total / 100;
-        $successUrl = $xml->request->doDeal->successUrl;
+        // Handle doDeal request
+        elseif ($xml->request->doDeal->total > 100) {
+            $total = $xml->request->doDeal->total;
+            $token = $total / 100;
+            $successUrl = $xml->request->doDeal->successUrl;
 
-        // Check for tokenize request
-        if (isset($xml->request->doDeal->paymentPageData)) {
-            $paymentType = isset($xml->request->doDeal->customerData->userData2) ?
-                (string) $xml->request->doDeal->customerData->userData2 : 'SinglePayment';
-            manageTemporaryFiles('write', 'payment_type.txt', $paymentType);
+            // Check for tokenize request
+            if (isset($xml->request->doDeal->paymentPageData)) {
+                $paymentType = isset($xml->request->doDeal->customerData->userData2) ?
+                    (string) $xml->request->doDeal->customerData->userData2 : 'SinglePayment';
+                manageTemporaryFiles('write', 'payment_type.txt', $paymentType);
+            }
+
+
         }
 
-    
-    }
-
         echo getXmlResponse($token, $successUrl, $total);
-    }
+    }elseif (isset($xml->request->doDeal->successUrl) && !isset($xml->request->doDeal->errorUrl)) {
+        //Handle J5 only token without singel payment
+        file_put_contents('j5',print_r($xml,1),FILE_APPEND);
+        $token = 100;
+        $terminalNumber= $xml->request->doDeal->terminalNumber;
+        $userData1 = $xml->request->doDeal->userData1;
+        manageTemporaryFiles('write', 'temp_userData1.txt', $userData1);
+        manageTemporaryFiles('write', 'iiiiii.txt', $userData1);
+        echo getTokenTransactionDetailsResponseJ5($token, $total);
+     }
     // Handle transaction query
     elseif (
         $xml->request->command == 'inquireTransactions' &&
         $xml->request->inquireTransactions->mpiValidation == 'Token'
     ) {
+
         $token = $xml->request->inquireTransactions->mpiTransactionId;
         $total = $token * 100;
+        //Handle respone for only J5
+        if($token == 100){
+            $terminalNumber = (string) $xml->request->doDeal->terminalNumber;
+           echo  getTransactionDetailsResponseJ5(100,100,  $terminalNumber);
+           return;
+        }
+
+        //Handle respone for regular singel payment 
         echo getTransactionDetailsResponse($token, $total);
     }
     // handling for recurring transactions

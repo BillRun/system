@@ -282,20 +282,41 @@ class BillRunAPI extends \Codeception\Module
     }
 
     public function getRequest($params = []){
-
-        $body = array_merge([
-            "iframe"=>true,
-            "aid"=>1,
-            "name"=>"CreditGuard",
-            "type"=>"account",
-            "amount"=>5,
-            "action"=>"single_payment",
-          
-            "ok_page"=>"http://web/paymentgateways/okpage?name=CreditGuard",
-            "fail_page"=>"http://web/paymentgateways/okpage",
-            "_t_"=>time()
-        ], $params);
+        if($params['type']=='subscriber'){
+            //J5 only
+            $body = array_merge([
+                "aid"=>1,
+                "type"=>"subscriber",
+                "name"=>"CreditGuard",
+                "return_url"=>"http://billrun-nginx:80",
+                "_t_"=>time()
+            ], $params);
+        }else{
+            $body = array_merge([
+                "iframe"=>true,
+                "aid"=>1,
+                "name"=>"CreditGuard",
+                "type"=>"account",
+                "amount"=>5,
+                "action"=>"single_payment",
+              
+                "ok_page"=>"http://web/paymentgateways/okpage?name=CreditGuard",
+                "fail_page"=>"http://web/paymentgateways/okpage",
+                "_t_"=>time()
+            ], $params);
+        }
+        
         return  $this->sendGetRequset($body);
+    }
+
+    public function chargeAccountApi($params = []){
+
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $ret = $rest->sendPOST("/billrun/chargeAccount",   $params);
+        return json_decode($ret, true);
     }
 
   

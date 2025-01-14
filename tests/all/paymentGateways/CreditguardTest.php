@@ -172,4 +172,51 @@ class CreditguardTest extends \Codeception\Test\Unit
         ]);
     }
 
+
+
+    public function testChargeAccountAfterReTokenize()
+    {
+        $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "auth_number" => "9433084",
+                    "transaction_exhausted" => true,
+                    "card_type" => "00",
+                    "card_token" => "1022273188555888",
+                    "name" => "CreditGuard",
+                    "card_acquirer" => "1",
+                    "instance_name" => "CreditGuard",
+                    "credit_company" => "1",
+                    "card_brand" => "1",
+                    "personal_id" => "890108566",
+                    "generate_token_time" => "2023-11-29T08:55:32Z",
+                    "keepCCDetails" => null,
+                    "card_expiration" => "1225",
+                    "four_digits" => "5606"
+                ]
+            ]
+        ]);
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->tester->payApi(['aid' => $account['aid'], 'amount' => 400, 'dir' => 'tc']);
+
+        //change payment without pay 
+        $this->tester->getRequest(['aid' => (int) $account['aid'], 'type'=>'subscriber']);
+        $this->tester->iframe(['aid' => (int) $account['aid'], 'txid' => 100]);
+
+         //pay by charge API
+        $this->tester->chargeAccountApi(['aids' => (int) $account['aid']]);
+
+        //test that the charge is with the new payment methid 
+        $this->tester->seeInCollection(
+            'bills',
+            [
+                'aid' => (int) $account['aid'],
+                'amount' => 400,
+                "gateway_details.card_token" => "1022273188555606",
+                "gateway_details.amount" => 400,
+                "pending" => false
+            ]);
+   
+    }
+
 }
