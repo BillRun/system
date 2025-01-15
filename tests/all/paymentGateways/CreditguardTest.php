@@ -349,4 +349,157 @@ class CreditguardTest extends \Codeception\Test\Unit
     }
 
 
+    public function testChargeAccountAidsFilter()
+    {
+        $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "auth_number" => "9433084",
+                    "transaction_exhausted" => true,
+                    "card_type" => "00",
+                    "card_token" => "1022273188555888",
+                    "name" => "CreditGuard",
+                    "card_acquirer" => "1",
+                    "instance_name" => "CreditGuard",
+                    "credit_company" => "1",
+                    "card_brand" => "1",
+                    "personal_id" => "890108566",
+                    "generate_token_time" => "2023-11-29T08:55:32Z",
+                    "keepCCDetails" => null,
+                    "card_expiration" => "1225",
+                    "four_digits" => "5606"
+                ]
+            ]
+        ]);
+        $account1 = json_decode($this->tester->grabResponse(), true)['entity'];
+        
+        $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "auth_number" => "9433084",
+                    "transaction_exhausted" => true,
+                    "card_type" => "00",
+                    "card_token" => "1022273188555888",
+                    "name" => "CreditGuard",
+                    "card_acquirer" => "1",
+                    "instance_name" => "CreditGuard",
+                    "credit_company" => "1",
+                    "card_brand" => "1",
+                    "personal_id" => "890108566",
+                    "generate_token_time" => "2023-11-29T08:55:32Z",
+                    "keepCCDetails" => null,
+                    "card_expiration" => "1225",
+                    "four_digits" => "5606"
+                ]
+            ]
+        ]);
+        $account2 = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->tester->payApi(['aid' => $account1['aid'], 'amount' => 400, 'dir' => 'tc']);
+        $this->tester->payApi(['aid' => $account2['aid'], 'amount' => 500, 'dir' => 'tc']);
+         //pay by charge API with aids filter with only account1
+        $this->tester->chargeAccountApi(['aids' => (int) $account1['aid']]);
+
+        //test the charge bill only for account1
+        $this->tester->seeInCollection(
+            'bills',
+            [
+                'aid' => (int) $account1['aid'],
+                'amount' => 400,
+                "gateway_details.card_token" => "1022273188555888",
+                "gateway_details.amount" => 400,
+                "pending" => false
+            ]);
+
+        $this->tester->seeInCollection(
+            'bills',
+            [
+                'aid' => (int) $account2['aid'],
+                'amount' => 500,
+                "paid" => ['$in'=>[false,'false',0,'0']]
+            ]);  
+   
+    }
+
+    public function testChargeAccountRejection()
+    {
+        $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "auth_number" => "9433084",
+                    "transaction_exhausted" => true,
+                    "card_type" => "00",
+                    "card_token" => "1022273188",
+                    "name" => "CreditGuard",
+                    "card_acquirer" => "1",
+                    "instance_name" => "CreditGuard",
+                    "credit_company" => "1",
+                    "card_brand" => "1",
+                    "personal_id" => "890108566",
+                    "generate_token_time" => "2023-11-29T08:55:32Z",
+                    "keepCCDetails" => null,
+                    "card_expiration" => "1225",
+                    "four_digits" => "5606"
+                ]
+            ]
+        ]);
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->tester->payApi(['aid' => $account['aid'], 'amount' => 400, 'dir' => 'tc']);
+        $this->tester->chargeAccountApi(['aids' => (int) $account['aid']]);
+
+
+        //test the charge bill only for account1
+        $this->tester->seeInCollection(
+            'bills',
+            [
+                'aid' => (int) $account['aid'],
+                'amount' => 400,
+                'past_rejections'=>['$exists'=>1,'$ne'=>[]]
+            ]);
+
+       
+   
+    }
+
+    public function testChargeAccountGetUnknwonResponseFromCg()
+    {
+        $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "auth_number" => "9433084",
+                    "transaction_exhausted" => true,
+                    "card_type" => "00",
+                    "card_token" => "unknwon",
+                    "name" => "CreditGuard",
+                    "card_acquirer" => "1",
+                    "instance_name" => "CreditGuard",
+                    "credit_company" => "1",
+                    "card_brand" => "1",
+                    "personal_id" => "890108566",
+                    "generate_token_time" => "2023-11-29T08:55:32Z",
+                    "keepCCDetails" => null,
+                    "card_expiration" => "1225",
+                    "four_digits" => "5606"
+                ]
+            ]
+        ]);
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->tester->payApi(['aid' => $account['aid'], 'amount' => 400, 'dir' => 'tc']);
+        $this->tester->chargeAccountApi(['aids' => (int) $account['aid']]);
+
+
+        //test the charge bill only for account1
+        $this->tester->seeInCollection(
+            'bills',
+            [
+                'aid' => (int) $account['aid'],
+                'amount' => 400,
+                'paid'=>"2"
+                
+            ]);
+
+       
+   
+    }
+
+
 }

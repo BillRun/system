@@ -612,45 +612,120 @@ function getTransactionDetailsResponseJ5($token, $total, $terminalNumber, $cardI
  EOT;
     return $xmlResponse;
 }
+function validateChargeRequest($xml) {
+    try {
+        // Basic structure validation
+        if (!isset($xml->request) || !isset($xml->request->command)) {
+            return createErrorResponse("Invalid XML structure", "003");
+        }
 
+        $doDeal = $xml->request->doDeal;
+        if (!$doDeal) {
+            return createErrorResponse("Missing doDeal element", "003");
+        }
 
-function chargeCommandResponse($requestXml)
-{
-    // Load the XML string
-    $xml = new SimpleXMLElement($requestXml);
+        // Required fields validation
+        $requiredFields = ['terminalNumber', 'cardId', 'cardExpiration', 'creditType', 
+                          'currency', 'transactionCode', 'transactionType', 'total', 
+                          'validation', 'authNumber'];
+        
+        foreach ($requiredFields as $field) {
+            if (!isset($doDeal->$field) || empty((string)$doDeal->$field)) {
+                return createErrorResponse("Missing required field: $field", "003");
+            }
+        }
 
-    // Extract request values
-    $command = (string) $xml->command;
-    $requestId = (string) $xml->requestId;
-    $version = (string) $xml->version;
-    $language = (string) $xml->language;
+        // Version validation
+        if ((string)$xml->request->version !== "2000") {
+            return createErrorResponse("Invalid version", "002");
+        }
 
-    // Extract doDeal values
-    $doDeal = $xml->doDeal;
-    $terminalNumber = (string) $doDeal->terminalNumber;
-    $cardId = (string) $doDeal->cardId;
-    $cardExpiration = (string) $doDeal->cardExpiration;
-    $creditType = (string) $doDeal->creditType;
-    $currency = (string) $doDeal->currency;
-    $transactionCode = (string) $doDeal->transactionCode;
-    $transactionType = (string) $doDeal->transactionType;
-    $total = (string) $doDeal->total;
-    $authNumber = (string) $doDeal->authNumber;
-    $user = (string) $doDeal->user;
-    $validation = (string) $doDeal->validation;
+        // Basic format validations
+        if (strlen((string)$doDeal->cardId) !== 16) {
+            return createErrorResponse("Invalid card token length", "033");
+        }
 
-    // Get userData1 if exists
-    $userData1 = "";
-    if (isset($doDeal->customerData->userData1)) {
-        $userData1 = (string) $doDeal->customerData->userData1;
+        // Card expiration format and validation (MMYY)
+        $expiration = (string)$doDeal->cardExpiration;
+        if (!preg_match("/^(0[1-9]|1[0-2])\d{2}$/", $expiration)) {
+            return createErrorResponse("Invalid card expiration format", "033");
+        }
+
+        // Validate amount is numeric and positive
+        if (!is_numeric((string)$doDeal->total) || (int)$doDeal->total <= 0) {
+            return createErrorResponse("Invalid amount", "003");
+        }
+
+        return null; // No validation errors
+    } catch (Exception $e) {
+        return createErrorResponse("Validation error: " . $e->getMessage());
     }
+}
 
-    // Get current datetime in Israel timezone
-    date_default_timezone_set('Asia/Jerusalem');
+function createErrorResponse($message, $code = "003") {
     $currentTime = date('Y-m-d H:i');
-
-    // Generate response XML
     $response = <<<XML
+<?xml version="1.0" encoding="ISO-8859-8"?>
+<ashrait>
+    <response>
+        <command>doDeal</command>
+        <dateTime>{$currentTime}</dateTime>
+        <result>{$code}</result>
+        <message>{$message}</message>
+        <userMessage>{$message}</userMessage>
+        <status>{$code}</status>
+        <statusText>{$message}</statusText>
+    </response>
+</ashrait>
+XML;
+    return iconv("UTF-8", "ISO-8859-8", $response);
+}
+function chargeCommandResponse($xml) {
+    try {
+
+        //return wrong respone (for test unknwon response )
+        if($xml->request->doDeal->cardId=="unknwon"){
+            echo "חחחחחחחחח";
+            return;
+        }
+        
+        // First validate the request
+        $validationError = validateChargeRequest($xml);
+        if ($validationError !== null) {
+            return $validationError;
+        }
+
+        // Extract values
+        $command = (string)$xml->request->command;
+        $requestId = (string)$xml->request->requestId;
+        $version = (string)$xml->request->version;
+        $language = (string)$xml->request->language;
+        $doDeal = $xml->request->doDeal;
+        
+        // Extract doDeal values
+        $terminalNumber = (string)$doDeal->terminalNumber;
+        $cardId = (string)$doDeal->cardId;
+        $cardExpiration = (string)$doDeal->cardExpiration;
+        $creditType = (string)$doDeal->creditType;
+        $currency = (string)$doDeal->currency;
+        $transactionCode = (string)$doDeal->transactionCode;
+        $transactionType = (string)$doDeal->transactionType;
+        $total = (string)$doDeal->total;
+        $authNumber = (string)$doDeal->authNumber;
+        $user = (string)$doDeal->user;
+        $validation = (string)$doDeal->validation;
+
+        // Get userData1 if exists
+        $userData1 = "";
+        if (isset($doDeal->customerData) && isset($doDeal->customerData->userData1)) {
+            $userData1 = (string)$doDeal->customerData->userData1;
+        }
+
+        // Set timezone and get current time
+        date_default_timezone_set('Asia/Jerusalem');
+        $currentTime = date('Y-m-d H:i');
+
+        $response = <<<EOT
 <?xml version='1.0' encoding='ISO-8859-8'?>
 <ashrait>
     <response>
@@ -661,7 +736,7 @@ function chargeCommandResponse($requestXml)
         <result>000</result>
         <message>עסקה תקינה</message>
         <userMessage>עסקה תקינה</userMessage>
-        <additionalInfo>Host Result Remote 00-SUCCESS </additionalInfo>
+        <additionalInfo>Host Result Remote 00-SUCCESS</additionalInfo>
         <version>{$version}</version>
         <language>{$language}</language>
         <doDeal>
@@ -733,9 +808,13 @@ function chargeCommandResponse($requestXml)
         </doDeal>
     </response>
 </ashrait>
-XML;
+EOT;
 
-    return $response;
+        return $response;
+        
+    } catch (Exception $e) {
+        return createErrorResponse("Error processing request: " . $e->getMessage());
+    }
 }
 
 /**
@@ -751,7 +830,7 @@ function handlePaymentGatewayRelay($xml)
     }
 
     //Handle Charge command/API
-    if (isset($xml->mayBeDuplicate)) {
+    if (isset($xml->request->mayBeDuplicate)) {
         echo chargeCommandResponse($xml);
         return;
     }
