@@ -745,6 +745,12 @@ class Generator_Golanxml extends Billrun_Generator {
 				}
 				$currentUniqueId = $planToCharge['id'] . strtotime($planToCharge['start_date']);
 				$planUniqueIds = $this->getAllSubUniquePlanIds($plans, $subscriber['breakdown'][$planToCharge['plan']], $alreadyUsedUniqueIds);
+				//https://billrun.atlassian.net/browse/BRGT-1030 : Specific fix
+				if( empty($planUniqueIds) && $subscriber['subscriber_status'] ==  "closed"&& count($subscriber['breakdown'])  === 1 && !empty($subscriber['breakdown']['ACCOUNT']) ) {
+					$planUniqueIds = array_keys($subscriber['breakdown']['ACCOUNT']);
+					$planToCharge['plan']='ACCOUNT';
+
+				}
 				array_push($planUniqueIds, $currentUniqueId);
 				foreach ($planUniqueIds as $planUniqueId) {
 					$planUniqueId = strval($planUniqueId);
@@ -1091,7 +1097,7 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
 							$this->writer->writeElement('UNITS', 1);
 							$refund_entry_COST_WITHOUTVAT = $cost;
-							$this->writer->writeElement('COST_WITHOUTVAT', $refund_entry_COST_WITHOUTVAT);
+							$this->writer->writeElement('COST_EXEMPT_VAT', $refund_entry_COST_WITHOUTVAT);
 							$refund_entry_VAT = 0;
 							$this->writer->writeElement('VAT', $refund_entry_VAT);
 							$refund_entry_VAT_COST = $refund_entry_COST_WITHOUTVAT * $refund_entry_VAT / 100;
@@ -2145,8 +2151,8 @@ EOI;
 			Billrun_Factory::log($ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
 		}
 		return isset($results[0]['day_sum']) ? $results[0]['day_sum'] : 0;
-	}
 	
+	}
 	protected function getAllSubUniquePlanIds($plans, $breakdown, $alreadyUsedUniqueIds) {
 		$uniquePlanIds = array();
 		foreach ($plans as $plan) {
