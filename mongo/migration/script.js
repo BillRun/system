@@ -549,7 +549,7 @@ db.collection_steps.createIndex({ 'extra_params.aid': 1 }, { unique: false, spar
 
 //BRCD-3474
 db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
-db.rebalance_queue.ensureIndex({"aid": 1, "billrun_key": 1, "conditions_hash": 1}, {unique: true, "background": true});
+db.rebalance_queue.createIndex({"aid": 1, "billrun_key": 1, "conditions_hash": 1}, {unique: true, "background": true});
 
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
 lastConfig = runOnce(lastConfig, 'BRCD-1541', function() {
