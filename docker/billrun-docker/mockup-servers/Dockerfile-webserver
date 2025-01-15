@@ -1,0 +1,3 @@
+FROM php:7.3-fpm
+WORKDIR /mockups
+EXPOSE 8081

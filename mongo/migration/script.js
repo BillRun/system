@@ -1515,5 +1515,16 @@ runOnce(lastConfig, 'BRCD-4415', function () {
     lastConfig['plugins'].push(cgPluginSettings);
 });
 
+//BRCD-4455 - add user_id field to Israel invoice plugin conf
+runOnce(lastConfig, 'BRCD-4455-1', function () {
+	for (var i = 0; i < lastConfig.plugins.length; i++) {
+			if (lastConfig.plugins[i]['name'] === "israelInvoicePlugin") {
+					lastConfig.plugins[i]['configuration']['values']['user_id'] = "";
+					lastConfig.plugins[i]['configuration']['values']['invoice_approval_api'] = "https://ita-api.taxes.gov.il/shaam/production/Invoices/v2/Approval";
+			}
+	}
+});
+
+	
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
