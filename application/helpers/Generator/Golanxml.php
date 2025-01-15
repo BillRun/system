@@ -746,8 +746,11 @@ class Generator_Golanxml extends Billrun_Generator {
 				$currentUniqueId = $planToCharge['id'] . strtotime($planToCharge['start_date']);
 				$planUniqueIds = $this->getAllSubUniquePlanIds($plans, $subscriber['breakdown'][$planToCharge['plan']], $alreadyUsedUniqueIds);
 				//https://billrun.atlassian.net/browse/BRGT-1030 : Specific fix
+				$deactivatedSubCreditState = FALSE;
 				if( empty($planUniqueIds) && $subscriber['subscriber_status'] ==  "closed" && count($subscriber['breakdown'])  === 1 && !empty($subscriber['breakdown']['ACCOUNT']) ) {
+					$deactivatedSubCreditState = TRUE;
 					$planUniqueIds = (reset(array_keys($subscriber['breakdown']['ACCOUNT'])) != $currentUniqueId) ?  array_keys($subscriber['breakdown']['ACCOUNT']) : [];
+					$planToCharge['orignal_plan'] =  $planToCharge['plan'];
 					$planToCharge['plan'] = 'ACCOUNT';
 				}
 				array_push($planUniqueIds, $currentUniqueId);
@@ -770,7 +773,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					$offerId = substr($planUniqueId, 0, -10);
 					$this->writer->writeElement('OFFER_ID', $offerId);
 					$offerStartDate = substr($planUniqueId, -10);
-					if ($offerStartDate < Billrun_Util::getStartTime($billrun_key)) {
+					if ($offerStartDate < Billrun_Util::getStartTime($billrun_key) && !$deactivatedSubCreditState ) {
 						$lateUsages = 1;
 						$lateCharges = (abs($out_of_usage_entry_COST_WITHOUTVAT + $out_of_usage_entry_VAT_COST + $out_of_plan_usage_entry_COST_WITHOUTVAT) >= 0.005) ? 1 : 0;
 					} else {
@@ -785,7 +788,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					$this->writer->startElement('BREAKDOWN_TOPIC');
 					$this->writer->writeAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
 					$this->writer->startElement('BREAKDOWN_ENTRY');
-					$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $planToCharge['plan']);
+					$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . ($deactivatedSubCreditState ? $planToCharge['orignal_plan'] : $planToCharge['plan'] ));
 					$this->writer->writeElement('UNITS', 1);
 					$this->writer->writeElement('COST_EXEMPT_VAT', $flatCostWithoutVat);
 					$accountCostExemptVat += $flatCostWithoutVat;
