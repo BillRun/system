@@ -6,14 +6,14 @@ require_once 'library/Billrun/Util.php';
 class MyCest
 {
 
-    public function myTest(\ApiTester $I, AcceptanceTester $a)
+    public function myTest(AcceptanceTester $a)
     {
-        $result = $I->canSeeNumElementsInCollection('blabla', 0);
+        $result = $a->canSeeNumElementsInCollection('blabla', 0);
     }
 
-    public function myTest2(\ApiTester $I, AcceptanceTester $a)
+    public function myTest2(AcceptanceTester $a)
     {
-       $I->assertEquals(1-0, 1);
+       $a->assertEquals(1-0, 1);
     }
 
     public function myTest3(\ApiTester $I, AcceptanceTester $a)
@@ -27,7 +27,7 @@ class MyCest
         $c->runShellCommand('php public/index.php');
     }
     
-    public function myTest5(\ApiTester $I)
+    public function myTest5(\AcceptanceTester $I)
     {
         $gotField = Billrun_Util::getIn(array('a' => 'b'), 'a', '');
         $I->assertEquals('b', $gotField);

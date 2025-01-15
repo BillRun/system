@@ -10,7 +10,6 @@ use MongoDB\Model\IndexInfo;
 use MongoDB\Operation\CreateIndexes;
 use MongoDB\Operation\ListIndexes;
 use MongoDB\Tests\CommandObserver;
-
 use function call_user_func;
 use function is_callable;
 use function sprintf;
@@ -18,7 +17,7 @@ use function version_compare;
 
 class CreateIndexesFunctionalTest extends FunctionalTestCase
 {
-    public function testCreateSparseUniqueIndex(): void
+    public function testCreateSparseUniqueIndex()
     {
         $indexes = [['key' => ['x' => 1], 'sparse' => true, 'unique' => true]];
 
@@ -26,14 +25,14 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
         $createdIndexNames = $operation->execute($this->getPrimaryServer());
 
         $this->assertSame('x_1', $createdIndexNames[0]);
-        $this->assertIndexExists('x_1', function (IndexInfo $info): void {
+        $this->assertIndexExists('x_1', function (IndexInfo $info) {
             $this->assertTrue($info->isSparse());
             $this->assertTrue($info->isUnique());
             $this->assertFalse($info->isTtl());
         });
     }
 
-    public function testCreateCompoundIndex(): void
+    public function testCreateCompoundIndex()
     {
         $indexes = [['key' => ['y' => -1, 'z' => 1]]];
 
@@ -41,14 +40,14 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
         $createdIndexNames = $operation->execute($this->getPrimaryServer());
 
         $this->assertSame('y_-1_z_1', $createdIndexNames[0]);
-        $this->assertIndexExists('y_-1_z_1', function (IndexInfo $info): void {
+        $this->assertIndexExists('y_-1_z_1', function (IndexInfo $info) {
             $this->assertFalse($info->isSparse());
             $this->assertFalse($info->isUnique());
             $this->assertFalse($info->isTtl());
         });
     }
 
-    public function testCreateGeospatialIndex(): void
+    public function testCreateGeospatialIndex()
     {
         $indexes = [['key' => ['g' => '2dsphere', 'z' => 1]]];
 
@@ -56,14 +55,14 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
         $createdIndexNames = $operation->execute($this->getPrimaryServer());
 
         $this->assertSame('g_2dsphere_z_1', $createdIndexNames[0]);
-        $this->assertIndexExists('g_2dsphere_z_1', function (IndexInfo $info): void {
+        $this->assertIndexExists('g_2dsphere_z_1', function (IndexInfo $info) {
             $this->assertFalse($info->isSparse());
             $this->assertFalse($info->isUnique());
             $this->assertFalse($info->isTtl());
         });
     }
 
-    public function testCreateTTLIndex(): void
+    public function testCreateTTLIndex()
     {
         $indexes = [['key' => ['t' => 1], 'expireAfterSeconds' => 0, 'name' => 'my_ttl']];
 
@@ -71,14 +70,14 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
         $createdIndexNames = $operation->execute($this->getPrimaryServer());
 
         $this->assertSame('my_ttl', $createdIndexNames[0]);
-        $this->assertIndexExists('my_ttl', function (IndexInfo $info): void {
+        $this->assertIndexExists('my_ttl', function (IndexInfo $info) {
             $this->assertFalse($info->isSparse());
             $this->assertFalse($info->isUnique());
             $this->assertTrue($info->isTtl());
         });
     }
 
-    public function testCreateIndexes(): void
+    public function testCreateIndexes()
     {
         $expectedNames = ['x_1', 'y_-1_z_1', 'g_2dsphere_z_1', 'my_ttl'];
 
@@ -94,32 +93,32 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
 
         $this->assertSame($expectedNames, $createdIndexNames);
 
-        $this->assertIndexExists('x_1', function (IndexInfo $info): void {
+        $this->assertIndexExists('x_1', function (IndexInfo $info) {
             $this->assertTrue($info->isSparse());
             $this->assertTrue($info->isUnique());
             $this->assertFalse($info->isTtl());
         });
 
-        $this->assertIndexExists('y_-1_z_1', function (IndexInfo $info): void {
+        $this->assertIndexExists('y_-1_z_1', function (IndexInfo $info) {
             $this->assertFalse($info->isSparse());
             $this->assertFalse($info->isUnique());
             $this->assertFalse($info->isTtl());
         });
 
-        $this->assertIndexExists('g_2dsphere_z_1', function (IndexInfo $info): void {
+        $this->assertIndexExists('g_2dsphere_z_1', function (IndexInfo $info) {
             $this->assertFalse($info->isSparse());
             $this->assertFalse($info->isUnique());
             $this->assertFalse($info->isTtl());
         });
 
-        $this->assertIndexExists('my_ttl', function (IndexInfo $info): void {
+        $this->assertIndexExists('my_ttl', function (IndexInfo $info) {
             $this->assertFalse($info->isSparse());
             $this->assertFalse($info->isUnique());
             $this->assertTrue($info->isTtl());
         });
     }
 
-    public function testCreateConflictingIndexesWithCommand(): void
+    public function testCreateConflictingIndexesWithCommand()
     {
         $indexes = [
             ['key' => ['x' => 1], 'sparse' => true, 'unique' => false],
@@ -132,10 +131,10 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
         $operation->execute($this->getPrimaryServer());
     }
 
-    public function testDefaultWriteConcernIsOmitted(): void
+    public function testDefaultWriteConcernIsOmitted()
     {
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new CreateIndexes(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -145,20 +144,20 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectNotHasAttribute('writeConcern', $event['started']->getCommand());
             }
         );
     }
 
-    public function testSessionOption(): void
+    public function testSessionOption()
     {
         if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
             $this->markTestSkipped('Sessions are not supported');
         }
 
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new CreateIndexes(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -168,13 +167,13 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );
     }
 
-    public function testCommitQuorumOption(): void
+    public function testCommitQuorumOption()
     {
         if (version_compare($this->getServerVersion(), '4.3.4', '<')) {
             $this->markTestSkipped('commitQuorum is not supported');
@@ -185,7 +184,7 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
         }
 
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new CreateIndexes(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -195,13 +194,13 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('commitQuorum', $event['started']->getCommand());
             }
         );
     }
 
-    public function testCommitQuorumUnsupported(): void
+    public function testCommitQuorumUnsupported()
     {
         if (version_compare($this->getServerVersion(), '4.3.4', '>=')) {
             $this->markTestSkipped('commitQuorum is supported');
@@ -231,7 +230,7 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
      * @param string   $indexName
      * @param callable $callback
      */
-    private function assertIndexExists(string $indexName, ?callable $callback = null): void
+    private function assertIndexExists($indexName, $callback = null)
     {
         if ($callback !== null && ! is_callable($callback)) {
             throw new InvalidArgumentException('$callback is not a callable');

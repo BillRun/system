@@ -68,6 +68,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		$paymentParams['amount'] = !is_null($optional_amount) ? $optional_amount : (!is_null($billData) ? $billData['amount'] : 0);
 		$paymentParams['dir'] = 'fc';
 		$paymentParams['aid'] = $aid;
+		$paymentExtraParams = [];
 		
 		if ($this->linkToInvoice && ($this->identifierField['field'] == 'invoice_id')) {
 			$id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];	

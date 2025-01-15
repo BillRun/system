@@ -181,13 +181,14 @@ class Billrun_DiscountManager {
 		
 		// handle subscribers' level revisions
 		foreach ($subscribersRevisions as $subscriberRevisions) {
-			foreach ($subscriberRevisions as $subscriberRevision) {
-				$subDiscounts = Billrun_Util::getIn($subscriberRevision, 'discounts', []);
-				foreach ($subDiscounts as $subDiscount) {
+			//Get the latest version of the subscriber discount (in case the subscriber had multiple revisions during the month)
+			$subscriberDiscounts = Billrun_Util::mapArrayToStructuredHash(
+										call_user_func_array('array_merge', array_column($subscriberRevisions,'discounts') ),
+										['key'] );
+			foreach ($subscriberDiscounts as $subDiscount) {
 					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
 					$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
 					$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
-				}
 			}
 		  }
 
@@ -1476,7 +1477,7 @@ class Billrun_DiscountManager {
 			'description' => $discount['description'],
 			'usaget' =>  $isChargeLine ? 'conditional_charge' : 'discount',
 			'discount_type' => isset($discount['type']) ? $discount['type'] : 'percentage',
-			'urt' => new Mongodloid_Date($this->cycle->end()),
+			'urt' => new Mongodloid_Date($this->cycle->getFlatsTime()),
 			'arate' => $discount->createRef($collection),
 			'arate_key' => $discount['key'],
 			'aid' => $eligibleLine['aid'],

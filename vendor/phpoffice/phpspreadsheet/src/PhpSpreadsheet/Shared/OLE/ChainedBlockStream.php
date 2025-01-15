@@ -6,13 +6,10 @@ use PhpOffice\PhpSpreadsheet\Shared\OLE;
 
 class ChainedBlockStream
 {
-    /** @var mixed */
-    public $context;
-
     /**
      * The OLE container of the file that is being read.
      *
-     * @var null|OLE
+     * @var OLE
      */
     public $ole;
 
@@ -45,13 +42,13 @@ class ChainedBlockStream
      *                                    ole-chainedblockstream://oleInstanceId=1
      * @param string $mode only "r" is supported
      * @param int $options mask of STREAM_REPORT_ERRORS and STREAM_USE_PATH
-     * @param string $openedPath absolute path of the opened stream (out parameter)
+     * @param string &$openedPath absolute path of the opened stream (out parameter)
      *
      * @return bool true on success
      */
     public function stream_open($path, $mode, $options, &$openedPath) // @codingStandardsIgnoreLine
     {
-        if ($mode[0] !== 'r') {
+        if ($mode != 'r') {
             if ($options & STREAM_REPORT_ERRORS) {
                 trigger_error('Only reading is supported', E_USER_WARNING);
             }
@@ -115,14 +112,14 @@ class ChainedBlockStream
      *
      * @param int $count maximum number of bytes to read
      *
-     * @return false|string
+     * @return string
      */
     public function stream_read($count) // @codingStandardsIgnoreLine
     {
         if ($this->stream_eof()) {
             return false;
         }
-        $s = substr($this->data, (int) $this->pos, $count);
+        $s = substr($this->data, $this->pos, $count);
         $this->pos += $count;
 
         return $s;
@@ -163,8 +160,7 @@ class ChainedBlockStream
             $this->pos = $offset;
         } elseif ($whence == SEEK_CUR && -$offset <= $this->pos) {
             $this->pos += $offset;
-            // @phpstan-ignore-next-line
-        } elseif ($whence == SEEK_END && -$offset <= count(/** @scrutinizer ignore-type */ $this->data)) {
+        } elseif ($whence == SEEK_END && -$offset <= count($this->data)) {
             $this->pos = strlen($this->data) + $offset;
         } else {
             return false;

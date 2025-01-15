@@ -2612,7 +2612,7 @@
 					"plan_deactivation": "time*2119-03-05T22:00:00Z"
 				},
 				{
-
+				
 					"from": "time*2018-01-27T22:00:00Z",
 					"aid": 1770,
 					"firstname": "a",
@@ -2723,119 +2723,10 @@
 					"activation_date" : "time*2022-02-28T08:00:00Z",
 					"plan_deactivation" : "time*2171-04-19T05:27:44Z"
 				}
+				
+				
 				,{
 				
-					"from" : "time*2022-04-22T07:00:00Z",
-					"aid": 3798,
-					"sid" : 37981,
-					"plan" : "1GB",
-					"services" : [
-						{
-							"creation_time" : "time*2022-04-19T04:27:44Z",
-							"quantity" : 101,
-							"service_id" : 1730509499705243,
-							"name" : "Q",
-							"from" : "time*2022-04-22T07:00:00Z",
-							"to" : "time*2171-04-19T05:27:44Z"
-						}
-					],
-					"firstname" : "yossi",
-					"lastname" : "yossi",
-					"playossictivation" : "time*2022-02-28T08:00:00Z",
-					"address" : "2139",
-					"country" : "USA",
-					"type" : "subscriber",
-					"to" : "time*2022-07-12T07:00:00Z",
-					"deactivation_date" : "time*2171-04-19T05:27:44Z",
-					"creation_time" : "time*2022-02-28T08:00:00Z",
-					"activation_date" : "time*2022-02-28T08:00:00Z",
-					"plan_deactivation" : "time*2171-04-19T05:27:44Z"
-				}
-				,{
-				
-					"from" : "time*2022-07-12T07:00:00Z",
-					"aid": 3798,
-					"sid" : 37981,
-					"plan" : "1GB",
-					"services" : [
-						{
-							"creation_time" : "time*2022-04-19T04:27:44Z",
-							"quantity" : 103,
-							"service_id" : 1730509499705243,
-							"name" : "Q",
-							"from" : "time*2022-07-12T07:00:00Z",
-							"to" : "time*2171-04-19T05:27:44Z"
-						}
-					],
-					"firstname" : "yossi",
-					"lastname" : "yossi",
-					"playossictivation" : "time*2022-02-28T08:00:00Z",
-					"address" : "2139",
-					"country" : "USA",
-					"type" : "subscriber",
-					"to" : "time*2022-07-22T07:00:00Z",
-					"deactivation_date" : "time*2171-04-19T05:27:44Z",
-					"creation_time" : "time*2022-02-28T08:00:00Z",
-					"activation_date" : "time*2022-02-28T08:00:00Z",
-					"plan_deactivation" : "time*2171-04-19T05:27:44Z"
-				}
-				,{
-				
-					"from" : "time*2022-07-22T07:00:00Z",
-					"aid": 3798,
-					"sid" : 37981,
-					"plan" : "1GB",
-					"services" : [
-						{
-							"creation_time" : "time*2022-04-19T04:27:44Z",
-							"quantity" : 102,
-							"service_id" : 1730509499705243,
-							"name" : "Q",
-							"from" : "time*2022-07-22T07:00:00Z",
-							"to" : "time*2171-04-19T05:27:44Z"
-						}
-					],
-					"firstname" : "yossi",
-					"lastname" : "yossi",
-					"playossictivation" : "time*2022-02-28T08:00:00Z",
-					"address" : "2139",
-					"country" : "USA",
-					"type" : "subscriber",
-					"to" : "time*2022-07-27T07:00:00Z",
-					"deactivation_date" : "time*2171-04-19T05:27:44Z",
-					"creation_time" : "time*2022-02-28T08:00:00Z",
-					"activation_date" : "time*2022-02-28T08:00:00Z",
-					"plan_deactivation" : "time*2171-04-19T05:27:44Z"
-				}
-				,{
-				
-					"from" : "time*2022-07-27T07:00:00Z",
-					"aid": 3798,
-					"sid" : 37981,
-					"plan" : "1GB",
-					"services" : [
-						{
-							"creation_time" : "time*2022-04-19T04:27:44Z",
-							"quantity" : 103,
-							"service_id" : 1730509499705243,
-							"name" : "Q",
-							"from" : "time*2022-07-27T07:00:00Z",
-							"to" : "time*2171-04-19T05:27:44Z"
-						}
-					],
-					"firstname" : "yossi",
-					"lastname" : "yossi",
-					"playossictivation" : "time*2022-02-28T08:00:00Z",
-					"address" : "2139",
-					"country" : "USA",
-					"type" : "subscriber",
-					"to" : "time*2171-04-19T05:27:44Z",
-					"deactivation_date" : "time*2171-04-19T05:27:44Z",
-					"creation_time" : "time*2022-02-28T08:00:00Z",
-					"activation_date" : "time*2022-02-28T08:00:00Z",
-					"plan_deactivation" : "time*2171-04-19T05:27:44Z"
-				}, {
-
 					"aid": 187501,
 					"firstname": "יוסיggj",
 					"lastname": "יוסף",
@@ -2927,7 +2818,7 @@
 					]
 				},
 				{
-
+				
 					"sid": 290,
 					"aid": 2000000784,
 					"type": "subscriber",
@@ -8127,7 +8018,7 @@
 			},
 			{
 				"OBJID" : "626e528ba9c5aae8bec57f15",
-					"from": "time*2020-03-25T20:00:00Z",
+				"from" : "time*2020-03-25T20:00:00Z",
 				"aid" : 12033439,
 				"sid" : 2033439,
 				"plan" : "TTF_NEW_RECURRENCE_STRACUT",
@@ -8290,7 +8181,7 @@
 			},
 			{
 				"OBJID" : "626e528ba9c5aae8bec57f27",
-				"from" : "time*2020-03-25T20:00:00Z",
+					"from": "time*2020-03-25T20:00:00Z",
 				"aid" : 14033439,
 				"sid" : 4033439,
 				"plan" : "TFF_NEW_RECURRENCE_STRACUT",
@@ -8602,171 +8493,35 @@
 					"creation_time": "time*2019-03-04T22:00:00Z",
 					"activation_date": "time*2020-03-25T20:00:00Z",
 					"plan_deactivation": "time*2119-03-05T22:00:00Z"
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f46",
-				"from" : "time*2019-06-02T00:00:00Z",
-				"aid" : 30823439,
-				"sid" : 30833439,
-				"plan" : "CONDITIONAL_CHARGES_PLAN_NEW_RECURRENCE_STRACUT",
-				"services" : [ ],
-				"play" : "Default",
-				"firstname" : "yossi",
-				"lastname" : "test",
-				"address" : "hshalom 7",
-				"country" : "Israel",
-				"type" : "subscriber",
-				"plan_activation" : "time*2019-06-02T00:00:00Z",
-				"to" : "time*2170-06-02T15:55:59Z",
-				"deactivation_date" : "time*2170-06-02T15:55:59Z",
-				"creation_time" : "time*2019-06-02T00:00:00Z",
-				"activation_date" : "time*2019-06-02T00:00:00Z",
-				"plan_deactivation" : "time*2170-06-02T15:55:59Z"
-				},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f47",
-				"from" : "time*2019-06-02T00:00:00Z",
-				"aid" : 30823439,
-				"sid" : 30843439,
-				"plan" : "CONDITIONAL_CHARGES_PLAN_NEW_RECURRENCE_STRACUT",
-				"services" : [ ],
-				"play" : "Default",
-				"firstname" : "yossi",
-				"lastname" : "test",
-				"address" : "hshalom 7",
-				"country" : "Israel",
-				"type" : "subscriber",
-				"plan_activation" : "time*2019-06-02T00:00:00Z",
-				"to" : "time*2170-06-02T15:56:10Z",
-				"deactivation_date" : "time*2170-06-02T15:56:10Z",
-				"creation_time" : "time*2019-06-02T00:00:00Z",
-				"activation_date" : "time*2019-06-02T00:00:00Z",
-				"plan_deactivation" : "time*2170-06-02T15:56:10Z"
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f49",
-				"aid" : 132613439,
-				"sid" : 823293439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "dd",
-				"lastname" : "dd dd",
-				"address" : "dd 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-02T14:44:37Z",
-				"to" : "time*2169-12-02T14:44:37Z",
-				"deactivation_date" : "time*2169-12-02T14:44:37Z",
-				"from" : "time*2020-12-02T14:44:37Z",
-				"creation_time" : "time*2020-12-02T14:44:37Z",
-				"activation_date" : "time*2020-12-02T14:44:37Z",
-				"plan_deactivation" : "time*2169-12-02T14:44:37Z",
+				},{
+
+					"from" : "time*2022-03-31T07:00:00Z",
+					"aid": 3798,
+					"sid" : 37981,
+					"plan" : "1GB",
 					"services" : [
 						{
-						"to" : "time*2169-12-02T14:44:37Z",
-						"creation_time" : "time*2020-12-02T14:44:37Z",
-						"from" : "time*2020-12-02T14:44:37Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"service_id" : "1684978037267263"
-					},
-					{
-						"from" : "time*2020-12-02T14:44:38Z",
-						"name" : "DISCOUNT_A_SERVICE_2_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2169-12-02T14:44:37Z",
-						"service_id" : "1684978038187743",
-						"creation_time" : "time*2020-12-02T14:44:38Z"
+							"creation_time" : "time*2022-04-19T04:27:44Z",
+							"quantity" : 100,
+							"service_id" : 1730509499705243,
+							"name" : "Q",
+							"from" : "time*2022-03-31T07:00:00Z",
+							"to" : "time*2171-04-19T05:27:44Z"
 						}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f4b",
-				"aid" : 132623439,
-				"sid" : 823303439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "dd",
-				"lastname" : "dd dd",
-				"address" : "dd 3",
-					"type" : "subscriber",
-				"plan_activation" : "time*2020-12-02T14:44:37Z",
-				"to" : "time*2169-12-02T14:44:37Z",
-				"deactivation_date" : "time*2169-12-02T14:44:37Z",
-				"from" : "time*2020-12-02T14:44:37Z",
-				"creation_time" : "time*2020-12-02T14:44:37Z",
-				"activation_date" : "time*2020-12-02T14:44:37Z",
-				"plan_deactivation" : "time*2169-12-02T14:44:37Z",
-				"services" : [
-					{
-						"to" : "time*2169-12-02T14:44:37Z",
-						"creation_time" : "time*2020-12-02T14:44:37Z",
-						"from" : "time*2020-12-02T14:44:37Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"service_id" : "1684978037267263"
-					},
-					{
-						"from" : "time*2021-02-02T14:44:38Z",
-						"name" : "DISCOUNT_A_SERVICE_3_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2169-12-02T14:44:37Z",
-						"service_id" : "1684978038187743",
-						"creation_time" : "time*2020-12-02T14:44:38Z"
-				}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f4d",
-				"aid" : 132633439,
-				"sid" : 823313439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "dd",
-				"lastname" : "dd dd",
-				"address" : "dd 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-02T14:44:37Z",
-				"to" : "time*2169-12-02T14:44:37Z",
-				"deactivation_date" : "time*2169-12-02T14:44:37Z",
-				"from" : "time*2020-12-03T14:44:37Z",
-				"creation_time" : "time*2020-12-03T14:44:37Z",
-				"activation_date" : "time*2020-12-03T14:44:37Z",
-				"plan_deactivation" : "time*2169-12-02T14:44:37Z",
-					"services" : [
-						{
-						"to" : "time*2169-12-02T14:44:37Z",
-						"creation_time" : "time*2020-12-03T14:44:37Z",
-						"from" : "time*2020-12-03T14:44:37Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"service_id" : "1684978037267263"
-						}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f4f",
-				"from" : "time*2019-12-09T22:00:00Z",
-				"aid" : 179753439,
-				"sid" : 179763439,
-				"plan" : "PRICELEVELS_NEW_RECURRENCE_STRACUT",
-				"services" : [ ],
-				"play" : "Default",
+					],
 					"firstname" : "yossi",
-				"lastname" : "test",
-				"address" : "hshalom 7",
-				"country" : "Israel",
-				"imsi" : [ ],
-				"title" : "",
-				"name" : "yossi test",
-				"last_changed" : "",
-				"last_charged" : "",
-				"status" : "",
-				"card_number" : "",
-				"icc_number" : [ ],
-				"sub_number" : "",
-				"contract_number" : "",
-				"contract_dates" : [ ],
+					"lastname" : "yossi",
+					"playossictivation" : "time*2022-02-28T08:00:00Z",
+					"address" : "2139",
+					"country" : "USA",
 					"type" : "subscriber",
-				"plan_activation" : "time*2019-12-09T22:00:00Z",
-				"to" : "time*2170-01-12T13:58:54Z",
-				"deactivation_date" : "time*2170-01-12T13:58:54Z",
-				"creation_time" : "time*2019-12-09T22:00:00Z",
-				"activation_date" : "time*2019-12-09T22:00:00Z",
-				"plan_deactivation" : "time*2170-01-12T13:58:54Z"
-			},
-			{
+					"to" : "time*2022-04-22T07:00:00Z",
+					"deactivation_date" : "time*2171-04-19T05:27:44Z",
+					"creation_time" : "time*2022-02-28T08:00:00Z",
+					"activation_date" : "time*2022-02-28T08:00:00Z",
+					"plan_deactivation" : "time*2171-04-19T05:27:44Z"
+				}
+				,{
 				"OBJID" : "626e528ba9c5aae8bec57f51",
 				"from" : "time*2020-06-30T21:00:00Z",
 				"aid" : 1875013439,
@@ -8790,468 +8545,64 @@
 				"creation_time" : "time*2018-10-26T21:00:00Z",
 				"activation_date" : "time*2020-06-30T21:00:00Z",
 				"plan_deactivation" : "time*2020-07-30T21:00:00Z"
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f53",
-				"aid" : 9916453439,
-				"sid" : 9916463439,
-				"plan" : "1GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2021-03-29T15:07:00Z",
-				"to" : "time*2170-03-29T16:07:00Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2021-03-29T15:07:00Z",
-				"creation_time" : "time*2021-03-29T15:07:00Z",
-				"activation_date" : "time*2021-03-29T15:07:00Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z",
-				"services" : [
-					{
-						"from" : "time*2021-03-29T15:07:02Z",
-						"name" : "DISCOUNT_A_SERVICE_2_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2021-03-29T15:07:03Z"
-				}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f55",
-				"aid" : 9916473439,
-				"sid" : 9916483439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2170-03-29T16:07:00Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-12-01T15:06:59Z",
-				"creation_time" : "time*2020-12-01T15:06:59Z",
-				"activation_date" : "time*2020-12-01T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z",
-					"services" : [
-						{
-						"from" : "time*2020-12-01T15:07:59Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2020-12-01T15:07:59Z"
-						}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f57",
-				"aid" : 9916493439,
-				"sid" : 9916503439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-					"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2170-03-29T16:07:00Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-12-01T15:06:59Z",
-				"creation_time" : "time*2020-12-01T15:06:59Z",
-				"activation_date" : "time*2020-12-01T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z",
-				"services" : [
-					{
-						"from" : "time*2020-12-01T15:06:59Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2020-12-01T15:06:59Z"
-				}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f59",
-				"aid" : 9916513439,
-				"sid" : 9916523439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2020-12-02T15:06:59Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-10-02T15:06:59Z",
-				"creation_time" : "time*2020-12-02T15:06:59Z",
-				"activation_date" : "time*2020-12-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z"
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f5a",
-				"aid" : 9916513439,
-				"sid" : 9916523439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2170-03-29T16:07:00Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-12-02T15:06:59Z",
-				"creation_time" : "time*2020-12-02T15:06:59Z",
-				"activation_date" : "time*2020-12-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z",
-					"services" : [
-						{
-						"from" : "time*2020-12-02T15:06:59Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2020-12-02T15:06:59Z"
-					}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f5c",
-				"aid" : 9916533439,
-				"sid" : 9916543439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2020-12-30T15:06:59Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-10-02T15:06:59Z",
-				"creation_time" : "time*2020-12-02T15:06:59Z",
-				"activation_date" : "time*2020-12-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z"
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f5d",
-				"aid" : 9916533439,
-				"sid" : 9916543439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2170-03-29T16:07:00Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-12-30T15:06:59Z",
-				"creation_time" : "time*2020-12-02T15:06:59Z",
-				"activation_date" : "time*2020-12-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z",
-				"services" : [
-					{
-						"from" : "time*2020-12-30T15:06:59Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2020-12-30T15:06:59Z"
-					}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f5f",
-				"aid" : 9916553439,
-				"sid" : 9916563439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2020-12-31T15:06:59Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-10-02T15:06:59Z",
-				"creation_time" : "time*2020-12-02T15:06:59Z",
-				"activation_date" : "time*2020-12-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z"
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f60",
-				"aid" : 9916553439,
-				"sid" : 9916563439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2170-03-29T16:07:00Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-12-31T15:06:59Z",
-				"creation_time" : "time*2020-12-02T15:06:59Z",
-				"activation_date" : "time*2020-12-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z",
-				"services" : [
-					{
-						"from" : "time*2020-12-31T15:06:59Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2020-12-31T15:06:59Z"
-					}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f62",
-				"aid" : 9916573439,
-				"sid" : 9916583439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-10-01T15:06:59Z",
-				"to" : "time*2020-12-02T15:06:59Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-10-02T15:06:59Z",
-				"creation_time" : "time*2020-10-02T15:06:59Z",
-				"activation_date" : "time*2020-10-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z"
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f63",
-				"aid" : 9916573439,
-				"sid" : 9916583439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2170-03-29T16:07:00Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-12-02T15:06:59Z",
-				"creation_time" : "time*2020-10-02T15:06:59Z",
-				"activation_date" : "time*2020-10-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z",
-				"services" : [
-					{
-						"from" : "time*2020-12-02T15:06:59Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2020-12-02T15:06:59Z"
-					},
-					{
-						"from" : "time*2020-12-02T15:06:59Z",
-						"name" : "14PS_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838722",
-						"creation_time" : "time*2020-12-02T15:06:59Z"
-					}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f65",
-				"aid" : 9916593439,
-				"sid" : 9916603439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-10-01T15:06:59Z",
-				"to" : "time*2020-12-02T15:06:59Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-10-02T15:06:59Z",
-				"creation_time" : "time*2020-10-02T15:06:59Z",
-				"activation_date" : "time*2020-10-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z"
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f66",
-				"aid" : 9916593439,
-				"sid" : 9916603439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-10-01T15:06:59Z",
-				"to" : "time*2170-03-29T16:07:00Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-12-02T15:06:59Z",
-				"creation_time" : "time*2020-10-02T15:06:59Z",
-				"activation_date" : "time*2020-10-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z",
-				"services" : [
-					{
-						"from" : "time*2020-12-02T15:06:59Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2020-12-02T15:06:59Z"
-					},
-					{
-						"from" : "time*2020-12-02T15:06:59Z",
-						"name" : "14PS_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838755",
-						"creation_time" : "time*2020-12-02T15:06:59Z"
-					}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f68",
-				"aid" : 9916613439,
-				"sid" : 9916623439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2020-12-02T15:06:59Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-10-02T15:06:59Z",
-				"creation_time" : "time*2020-12-02T15:06:59Z",
-				"activation_date" : "time*2020-12-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z"
 			}
-			,
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f69",
-				"aid" : 9916613439,
-				"sid" : 9916623439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2020-12-15T15:06:59Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-12-02T15:06:59Z",
-				"creation_time" : "time*2020-12-02T15:06:59Z",
-				"activation_date" : "time*2020-12-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z",
-				"services" : [
-					{
-						"from" : "time*2020-12-02T15:06:59Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2020-12-02T15:06:59Z"
-					}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f6a",
-				"aid" : 9916613439,
-				"sid" : 9916623439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2170-03-29T16:07:00Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-12-15T15:06:59Z",
-				"creation_time" : "time*2020-12-02T15:06:59Z",
-				"activation_date" : "time*2020-12-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z",
-				"services" : [
-					{
-						"from" : "time*2020-12-02T15:06:59Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2020-12-02T15:06:59Z"
-					},
-					{
-						"from" : "time*2020-12-15T15:06:59Z",
-						"name" : "14PS_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2020-12-15T15:06:59Z"
-					}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f6c",
-				"aid" : 9916633439,
-				"sid" : 9916643439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2020-12-02T15:06:59Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-10-02T15:06:59Z",
-				"creation_time" : "time*2020-12-02T15:06:59Z",
-				"activation_date" : "time*2020-12-01T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z"
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f6d",
-				"aid" : 9916633439,
-				"sid" : 9916643439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-12-01T15:06:59Z",
-				"to" : "time*2020-12-15T15:06:59Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-12-02T15:06:59Z",
-				"creation_time" : "time*2020-12-02T15:06:59Z",
-				"activation_date" : "time*2020-12-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z",
-				"services" : [
-					{
-						"from" : "time*2020-12-02T15:06:59Z",
-						"name" : "14PS_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2020-12-02T15:06:59Z"
-					}
-				]
-			},
-			{
-				"OBJID" : "626e528ba9c5aae8bec57f6e",
-				"aid" : 9916633439,
-				"sid" : 9916643439,
-				"plan" : "8GB_NEW_RECURRENCE_STRACUT",
-				"firstname" : "ff",
-				"lastname" : "fff",
-				"address" : "gg 3",
-				"type" : "subscriber",
-				"plan_activation" : "time*2020-10-01T15:06:59Z",
-				"to" : "time*2170-03-29T16:07:00Z",
-				"deactivation_date" : "time*2170-03-29T16:07:00Z",
-				"from" : "time*2020-12-15T15:06:59Z",
-				"creation_time" : "time*2020-12-02T15:06:59Z",
-				"activation_date" : "time*2020-10-02T15:06:59Z",
-				"plan_deactivation" : "time*2170-03-29T16:07:00Z",
-				"services" : [
-					{
-						"from" : "time*2020-12-15T15:06:59Z",
-						"name" : "3_MONTHS_FREE_SERVICE_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "1695579292838721",
-						"creation_time" : "time*2020-12-15T15:06:59Z"
-					},
-					{
-						"from" : "time*2020-12-02T15:06:59Z",
-						"name" : "14PS_NEW_RECURRENCE_STRACUT",
-						"to" : "time*2170-03-29T16:07:00Z",
-						"service_id" : "16955792928384441",
-						"creation_time" : "time*2020-12-02T15:06:59Z"
-					}
-				]
-			},
-			{
+			,{
+
+					"from" : "time*2022-04-22T07:00:00Z",
+					"aid": 3798,
+					"sid" : 37981,
+					"plan" : "1GB",
+					"services" : [
+						{
+							"creation_time" : "time*2022-04-19T04:27:44Z",
+							"quantity" : 101,
+							"service_id" : 1730509499705243,
+							"name" : "Q",
+							"from" : "time*2022-04-22T07:00:00Z",
+							"to" : "time*2171-04-19T05:27:44Z"
+						}
+					],
+					"firstname" : "yossi",
+					"lastname" : "yossi",
+					"playossictivation" : "time*2022-02-28T08:00:00Z",
+					"address" : "2139",
+					"country" : "USA",
+					"type" : "subscriber",
+					"to" : "time*2022-07-12T07:00:00Z",
+					"deactivation_date" : "time*2171-04-19T05:27:44Z",
+					"creation_time" : "time*2022-02-28T08:00:00Z",
+					"activation_date" : "time*2022-02-28T08:00:00Z",
+					"plan_deactivation" : "time*2171-04-19T05:27:44Z"
+				}
+				,{
+
+					"from" : "time*2022-07-12T07:00:00Z",
+					"aid": 3798,
+					"sid" : 37981,
+					"plan" : "1GB",
+					"services" : [
+						{
+							"creation_time" : "time*2022-04-19T04:27:44Z",
+							"quantity" : 103,
+							"service_id" : 1730509499705243,
+							"name" : "Q",
+							"from" : "time*2022-07-12T07:00:00Z",
+							"to" : "time*2171-04-19T05:27:44Z"
+						}
+					],
+					"firstname" : "yossi",
+					"lastname" : "yossi",
+					"playossictivation" : "time*2022-02-28T08:00:00Z",
+					"address" : "2139",
+					"country" : "USA",
+					"type" : "subscriber",
+					"to" : "time*2022-07-22T07:00:00Z",
+					"deactivation_date" : "time*2171-04-19T05:27:44Z",
+					"creation_time" : "time*2022-02-28T08:00:00Z",
+					"activation_date" : "time*2022-02-28T08:00:00Z",
+					"plan_deactivation" : "time*2171-04-19T05:27:44Z"
+				}
+,{
 				"OBJID" : "626e528ba9c5aae8bec57f6f",
 				"sid" : 2903439,
 				"aid" : 20000007843439,
@@ -9306,7 +8657,7 @@
 				"portability_code" : "P7RZI5DZ",
 				"discounts" : null
 			},
-			{
+{
 				"OBJID" : "626e528ba9c5aae8bec57f71",
 				"sid" : 2913439,
 				"aid" : 20000007853439,
@@ -9330,74 +8681,7 @@
 				],
 				"sub_number" : "35790000495",
 				"discounts" : null
-			},
-			{
-				"OBJID": "6006cbb677e51759498a3ed3",
-				"from": "time*2018-01-27T22:00:00Z",
-				"aid": 10000,
-				"sid": 20000,
-				"plan": "PLAN_C",
-				"firstname": "t",
-				"lastname": "t",
-				"address": "t",
-				"services": [],
-				"country": "t",
-				"type": "subscriber",
-				"plan_activation": "time*2018-01-27T22:00:00Z",
-				"to": "time*2167-06-28T10:17:01Z",
-				"deactivation_date": "time*2167-06-28T10:17:01Z",
-				"creation_time": "time*2018-01-27T22:00:00Z",
-				"activation_date": "time*2018-01-27T22:00:00Z",
-				"plan_deactivation": "time*2167-06-28T10:17:01Z"
-			},
-			 {
-				"OBJID": "6006cbb677e51759498a3ed4",
-				"from": "time*2018-01-27T22:00:00Z",
-				"aid": 10000,
-				"firstname": "a",
-				"lastname": "s",
-				"email": "s",
-				"salutation": "s",
-				"type": "account",
-				"to": "time*2167-06-28T10:16:31Z",
-				"creation_time": "time*2018-06-27T21:00:00Z",
-				"invoicing_day": "1"
-			},
-			{
-				"OBJID": "6006cbb677e51759498a3ed5",
-				"from": "time*2018-01-27T22:00:00Z",
-				"aid": 10001,
-				"sid": 20001,
-				"plan": "PLAN_C",
-				"firstname": "t",
-				"lastname": "t",
-				"address": "t",
-				"services": [],
-				"country": "t",
-				"type": "subscriber",
-				"plan_activation": "time*2018-01-27T22:00:00Z",
-				"to": "time*2167-06-28T10:17:01Z",
-				"deactivation_date": "time*2167-06-28T10:17:01Z",
-				"creation_time": "time*2018-01-27T22:00:00Z",
-				"activation_date": "time*2018-01-27T22:00:00Z",
-				"plan_deactivation": "time*2167-06-28T10:17:01Z"
-			},
-			{
-				"OBJID": "6006cbb677e51759498a3ed6",
-				"from": "time*2018-01-27T22:00:00Z",
-				"aid": 10001,
-				"firstname": "a",
-				"lastname": "s",
-				"email": "s",
-				"country": "s",
-				"address": "s",
-				"zip_code": "s",
-				"salutation": "s",
-				"type": "account",
-				"to": "time*2167-06-28T10:16:31Z",
-				"creation_time": "time*2018-06-27T21:00:00Z",
-				"invoicing_day": "2"
-				}
+			}
 				,{
 				"OBJID": "6006cbb677e51759498a3ed7",
 				"from": "time*2018-01-27T22:00:00Z",
@@ -11246,7 +10530,7 @@
 				"to" :"time*2171-04-20T13:43:33Z",
 				"creation_time" :"time*2022-04-20T00:00:00Z"
 			},
-			{
+						{
 			
 				"from" :"time*2022-01-31T22:00:00Z",
 				"aid" : 13595,
@@ -11269,7 +10553,7 @@
 				"from" : "time*2023-03-09T00:00:00Z",
 				"aid" : 4081,
 				"invoice_language" : "en_GB",
-				"firstname" : "yossi",
+					"firstname" : "yossi",
 				"lastname" : "test",
 				"email" : "test@gmail.com",
 				"country" : "Israel",
@@ -11314,19 +10598,19 @@
 
 {
 
-	"from": "time*2018-01-27T22:00:00Z",
-	"aid": 80798,
-	"firstname": "a",
-	"lastname": "s",
-	"email": "s",
-	"country": "s",
-	"address": "s",
-	"zip_code": "s",
-	"salutation": "s",
-	"type": "account",
-	"to": "time*2167-06-28T10:16:31Z",
-	"creation_time": "time*2018-06-27T21:00:00Z"
-},
+					"from": "time*2018-01-27T22:00:00Z",
+					"aid": 80798,
+					"firstname": "a",
+					"lastname": "s",
+					"email": "s",
+					"country": "s",
+					"address": "s",
+					"zip_code": "s",
+					"salutation": "s",
+					"type": "account",
+					"to": "time*2167-06-28T10:16:31Z",
+					"creation_time": "time*2018-06-27T21:00:00Z"
+				},
 				{
 					"from" : "time*2022-11-21T16:00:00Z",
 					"aid" : 80798,
@@ -11380,58 +10664,58 @@
 				},
 								{
 			
-			"from" : "time*2020-09-26T21:00:00Z",
-			"aid" : 4237,
-			"invoice_language" : "gr_CY",
-			"firstname" : "yossi",
-			"lastname" : "test",
-			"email" : "test@gmail.com",
-			"country" : "Israel",
-			"address" : "hshalom 7",
-			"zip_code" : "123ab",
-			"payment_gateway" : "",
-			"salutation" : "",
-			"invoice_shipping_method" : "email",
-			"invoice_detailed" : false,
-			"invoice_message" : "",
-			"building_name" : "",
-			"province" : "",
-			"street" : "",
-			"house_number" : "",
-			"apartment" : "",
-			"city" : "",
-			"type" : "account",
-			"to" : "time*2172-09-27T20:03:20Z",
-			"creation_time" : "time*2023-09-26T21:00:00Z"
-		},
-		{
-
-			"from" : "time*2020-09-26T21:00:00Z",
-			"aid" : 4237,
-			"sid" : 42371,
-			"plan" : "AOK",
-			"services" : [
-				{
-					"name" : "CUSTOM_CYCL_NEW_STRUCT",
 					"from" : "time*2020-09-26T21:00:00Z",
-					"to" : "time*2023-09-27T19:03:37Z",
-					"service_id" : "1778218629084055",
-					"creation_time" : "time*2023-09-27T19:03:55.537Z"
-				}
-			],
-			"play" : "Default",
-			"firstname" : "yossi",
-			"lastname" : "test",
-			"address" : "hshalom 7",
-			"country" : "Israel",
-			"contract_dates" : [ ],
-			"type" : "subscriber",
-			"plan_activation" : "time*2020-09-26T21:00:00Z",
-			"to" : "time*2172-09-27T20:03:55Z",
-			"deactivation_date" : "time*2172-09-27T20:03:55Z",
-			"activation_date" : "time*2020-09-26T21:00:00Z",
-			"creation_time" : "time*2020-09-26T21:00:00Z",
-				"plan_deactivation" : "time*2172-09-27T20:03:55Z"
+					"aid" : 4237,
+					"invoice_language" : "gr_CY",
+					"firstname" : "yossi",
+					"lastname" : "test",
+					"email" : "test@gmail.com",
+					"country" : "Israel",
+					"address" : "hshalom 7",
+					"zip_code" : "123ab",
+					"payment_gateway" : "",
+					"salutation" : "",
+					"invoice_shipping_method" : "email",
+					"invoice_detailed" : false,
+					"invoice_message" : "",
+					"building_name" : "",
+					"province" : "",
+					"street" : "",
+					"house_number" : "",
+					"apartment" : "",
+					"city" : "",
+					"type" : "account",
+					"to" : "time*2172-09-27T20:03:20Z",
+					"creation_time" : "time*2023-09-26T21:00:00Z"
+				},
+				{
+		
+					"from" : "time*2020-09-26T21:00:00Z",
+					"aid" : 4237,
+					"sid" : 42371,
+					"plan" : "AOK",
+					"services" : [
+						{
+							"name" : "CUSTOM_CYCL_NEW_STRUCT",
+							"from" : "time*2020-09-26T21:00:00Z",
+							"to" : "time*2023-09-27T19:03:37Z",
+							"service_id" : "1778218629084055",
+							"creation_time" : "time*2023-09-27T19:03:55.537Z"
+						}
+					],
+					"play" : "Default",
+					"firstname" : "yossi",
+					"lastname" : "test",
+					"address" : "hshalom 7",
+					"country" : "Israel",
+					"contract_dates" : [ ],
+					"type" : "subscriber",
+					"plan_activation" : "time*2020-09-26T21:00:00Z",
+					"to" : "time*2172-09-27T20:03:55Z",
+					"deactivation_date" : "time*2172-09-27T20:03:55Z",
+					"activation_date" : "time*2020-09-26T21:00:00Z",
+					"creation_time" : "time*2020-09-26T21:00:00Z",
+						"plan_deactivation" : "time*2172-09-27T20:03:55Z"
 					},
 					{
 						"from" : "time*2023-03-09T00:00:00Z",
@@ -11464,7 +10748,7 @@
 								"quantity" : 4,
 								"service_id" : "1759904282682305",
 								"creation_time" : "time*2023-03-09T15:25:13.762Z"
-			}
+							}
 						],
 						"play" : "Default",
 						"firstname" : "yossi",
@@ -11514,7 +10798,7 @@
 								"quantity": 1,
 								"service_id": "e1065370-77f6-e0ca-b496-64496e666da0",
 								"creation_time": "time*2023-09-30T00:00:00Z"
-							}
+					}
 						],
 						"play": "default",
 						"firstname": "qq",

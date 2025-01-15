@@ -210,7 +210,7 @@ class PaymentsFiles extends Component {
         { key: uuid.v4(), field_name: "due", label: "Due Amount (Sum)", op: "", entity: entity},
       ],
       conditions: [
-        { field: "generated_pg_file_log", op: "in", value: line.get('stamp', ''), type: "string", entity: entity },
+        { field: "file", op: "in", value: line.get('file_name', ''), type: "string", entity: entity },
         { field: "rejection", op: "ne", value: true, type: "boolean", entity: "bills" },
       ],
       sorts: [
@@ -266,6 +266,19 @@ class PaymentsFiles extends Component {
     return "-";
   };
 
+  parserError = (item) => {
+    const errors = item.get('errors', List());
+    if (!errors.isEmpty()) {
+      const data = errors.join(', ');
+      const maxLen = 25;
+      
+      if (typeof data === 'string' && maxLen < data.length) {
+        return <span title={data}>{data.slice(0, maxLen)}...</span>;
+      }
+    }
+    return null; 
+  };
+
   getDetailsFields = () => [
     { field_name: 'stamp' },
     { field_name: 'creation_time', type: 'datetime' },
@@ -275,7 +288,7 @@ class PaymentsFiles extends Component {
     { field_name: 'process_time', type: 'datetime' },
     { field_name: 'file_name' },
     { field_name: 'created_by' },
-    { field_name: 'errors', multiple: true },
+    { field_name: 'errors', multiple: true, lineBreaks: true },
     { field_name: 'warnings', multiple: true },
     { field_name: 'info', multiple: true },
     { field_name: 'affects_bills' },
@@ -291,7 +304,7 @@ class PaymentsFiles extends Component {
     { id: "process_time", title: this.getLabel("process_time"), type: "mongodatetime", cssClass: "long-date" },
     { id: "file_name", title: this.getLabel("file_name") },
     { id: "created_by", title: this.getLabel("created_by") },
-    { id: "errors", title: this.getLabel("errors") },
+    { id: "errors", title: this.getLabel("errors"), parser: this.parserError },
   ];
 
   getProjectFields = () => ({

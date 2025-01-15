@@ -42,10 +42,12 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	protected function getCharges($options) {
 		$charger = new Billrun_Plans_Charge();
+		if(Billrun_Utils_Cycle::shouldBeInCycle($options,  $options['cycle'])) {
 		//Only charge  if the configuration suggest it should be in the cycle
 		return empty($options['cycle']) || Billrun_Utils_Cycle::shouldBeInCycle($options,$options['cycle'])  ?
 					$charger->charge($options, $options['cycle']) :
 					[];
+		}
 	}
 
 	protected function getLine($chargeingKey, $chargeData) {
@@ -118,6 +120,9 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 	//TODO move this to the account/subscriber lines addition logic and work in batch mode.
 	protected function addTaxationToLine($entry) {
 		$entryWithTax = FALSE;
+		if( !empty($this->constructionOptions['rounding_rules']) ) {
+			$entry['rounding_rules'] = $this->constructionOptions['rounding_rules'];
+		}
 		for ($i = 0; $i < 3 && !$entryWithTax; $i++) {//Try 3 times to tax the line.
 			$taxCalc = Billrun_Calculator::getInstance(array('autoload' => false, 'type' => 'tax'));
 			$entryWithTax = $taxCalc->updateRow($entry);

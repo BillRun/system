@@ -14,7 +14,6 @@
     }
   ],
   "minServerVersion": "3.4",
-  "serverless": "forbid",
   "tests": [
     {
       "description": "DeleteOne when many documents matches with collation",

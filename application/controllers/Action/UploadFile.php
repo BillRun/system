@@ -99,7 +99,7 @@ class UploadFileAction extends Action_Base {
 	}
 
 	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
 }

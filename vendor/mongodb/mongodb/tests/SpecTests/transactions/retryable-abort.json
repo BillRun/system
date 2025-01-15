@@ -402,7 +402,7 @@
       }
     },
     {
-      "description": "abortTransaction succeeds after NotWritablePrimary",
+      "description": "abortTransaction succeeds after NotMaster",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -506,7 +506,7 @@
       }
     },
     {
-      "description": "abortTransaction succeeds after NotPrimaryOrSecondary",
+      "description": "abortTransaction succeeds after NotMasterOrSecondary",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -610,7 +610,7 @@
       }
     },
     {
-      "description": "abortTransaction succeeds after NotPrimaryNoSecondaryOk",
+      "description": "abortTransaction succeeds after NotMasterNoSlaveOk",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {

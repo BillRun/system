@@ -14,7 +14,7 @@ try {
 } catch (Throwable $th) {
 	// Executed only in PHP 7, will not match in PHP 5
 	$ErrorHandler = new Billrun_Utils_ErrorHandler();
-	$ErrorHandler->errorAction(new Exception($th->getMessage(), 999999));
+	$ErrorHandler->errorAction($th, true);
 } catch (Exception $ex) {
 	// Executed only in PHP 5, will not be reached in PHP 7
 	$ErrorHandler = new Billrun_Utils_ErrorHandler();

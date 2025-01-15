@@ -167,7 +167,7 @@ const routes = () => (
         <Route path="/changepassword(/:itemId)" component={ChangePassword} title="Change Password" />
         <Route path="/import(/:itemType)" component={Authentication(ImporterSetup)} />
         <Route path="/export(/:itemType)" component={Authentication(ExporterSetup)} />
-        <Route path="/immediate-invoice" component={Authentication(ImmediateInvoiceSetup)} title="Immediate Invoice" />
+        <Route path="/immediate-invoice" component={Authentication(ImmediateInvoiceSetup)} title="Create immediate invoices" />
         <Route path="suggestions" >
           <IndexRoute component={Authentication(SuggestionsSetup)} title="Repricing Suggestions" />
           <Route path=":itemId" component={Authentication(SuggestionsList)} title="Customer Repricing Suggestions" />

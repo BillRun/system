@@ -13,7 +13,7 @@
  * @since    5.3
  */
 class Models_Accounts extends Models_Entity {
-	
+
 	public $invoicing_day = null;
 
 	protected function init($params) {

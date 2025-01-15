@@ -44,7 +44,7 @@ class TaxDetails extends Component {
   onChangeKey = (e) => {
     const { errorMessages: { key: { allowedCharacters } } } = this.props;
     const { errors } = this.state;
-    const value = e.target.value.toUpperCase();
+    const value = e.target.value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), "_");
     const newError = (!getConfig('keyUppercaseRegex', /./).test(value)) ? allowedCharacters : '';
     this.setState({ errors: Object.assign({}, errors, { key: newError }) });
     this.props.onFieldUpdate(['key'], value);
