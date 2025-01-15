@@ -746,10 +746,9 @@ class Generator_Golanxml extends Billrun_Generator {
 				$currentUniqueId = $planToCharge['id'] . strtotime($planToCharge['start_date']);
 				$planUniqueIds = $this->getAllSubUniquePlanIds($plans, $subscriber['breakdown'][$planToCharge['plan']], $alreadyUsedUniqueIds);
 				//https://billrun.atlassian.net/browse/BRGT-1030 : Specific fix
-				if( empty($planUniqueIds) && $subscriber['subscriber_status'] ==  "closed"&& count($subscriber['breakdown'])  === 1 && !empty($subscriber['breakdown']['ACCOUNT']) ) {
-					$planUniqueIds = array_keys($subscriber['breakdown']['ACCOUNT']);
-					$planToCharge['plan']='ACCOUNT';
-
+				if( empty($planUniqueIds) && $subscriber['subscriber_status'] ==  "closed" && count($subscriber['breakdown'])  === 1 && !empty($subscriber['breakdown']['ACCOUNT']) ) {
+					$planUniqueIds = (reset(array_keys($subscriber['breakdown']['ACCOUNT'])) != $currentUniqueId) ?  array_keys($subscriber['breakdown']['ACCOUNT']) : [];
+					$planToCharge['plan'] = 'ACCOUNT';
 				}
 				array_push($planUniqueIds, $currentUniqueId);
 				foreach ($planUniqueIds as $planUniqueId) {
