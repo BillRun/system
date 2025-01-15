@@ -1488,5 +1488,32 @@ runOnce(lastConfig, 'BRCD-4455', function () {
     lastConfig['plugins'].push(israelInvoicePluginsSettings);
 });
 
+//BRCD-4415 CG plugin
+runOnce(lastConfig, 'BRCD-4415', function () {
+	var cgPluginSettings = {
+        "name": "creditGuardPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false,
+        "configuration" : {
+            "values" : {
+                "card_expiration_field_name" : "card_expiration",
+				"oldest_card_expiration" : "20 years ago",
+                "years_to_extend_card_expiration" : 3,
+                "extend_card_expiration" : true
+            }
+        }
+	}
+	for (var j = 0; j < lastConfig.payment_gateways.length; j++) {
+        if (lastConfig.payment_gateways[j]['name'] === "CreditGuard") {
+            for (let pg_field_name in lastConfig.payment_gateways[j]) {
+                cgPluginSettings['configuration']['values'][pg_field_name] = JSON.parse(JSON.stringify(lastConfig.payment_gateways[j][pg_field_name]));
+            }
+       
+        }
+	}
+    lastConfig['plugins'].push(cgPluginSettings);
+});
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
