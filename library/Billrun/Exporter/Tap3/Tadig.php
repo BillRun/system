@@ -416,6 +416,11 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getTeleServiceCode($row) {
+		$type = $this->getLineType($row);
+		$teleServiceCodes =  $this->getConfig('tele_service_codes');
+		if(!empty( $teleServiceCodes[$type])) {
+			return $teleServiceCodes[$type];
+		}
 		switch ($this->getLineType($row)) {
 				
 			case self::$LINE_TYPE_CALL:
