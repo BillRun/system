@@ -403,8 +403,11 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		return $this->recEntities[$recEntityId];
 	}
 
-	// protected function getServingBID($row) {
-	// }
+	protected function getServingBID($row) {
+		//unimplemented -supplay by the plugin for now
+		Billrun_Factory::dispatcher()->trigger('afterGetServingBID', array(&$servingBID, $row, $this));
+		return $servingBID;
+	}
 
 	protected function getRecEntityCode($row) {
 		$entityList = $this->getRecEntityInformation($row);
@@ -431,8 +434,8 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 
 	protected function getCallTypeGroup( $row ) {
-
-		Billrun_Factory::dispatcher()->trigger('beforeGetCallTypeGroup', array($row));
+		//TODO refactoring to support sub types
+		Billrun_Factory::dispatcher()->trigger('beforeGetCallTypeGroup', array($row, $this));
 		$type = $this->getLineType($row);
 		$callTypeLevel1 = $this->getConfig('call_type_level_1')[$type] ?? 0;
 		$callTypeLevel2 = $this->getConfig('call_type_level_2')[$type] ?? 0;
@@ -442,7 +445,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			'CallTypeLevel2' => intval($callTypeLevel2),
 			'CallTypeLevel3' => intval($callTypeLevel3),
 		];
-		Billrun_Factory::dispatcher()->trigger('afterGetCallTypeGroup', array(&$callTypeLevels, $row));
+		Billrun_Factory::dispatcher()->trigger('afterGetCallTypeGroup', array(&$callTypeLevels, $row, $this));
 		return $callTypeLevels;
 	}
 	
@@ -478,7 +481,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			case self::$LINE_TYPE_CHARGE:
 				$chargedItem = $this->getConfig('charged_item.fixed_charge');
 				$chargedUnits = $chargeableUnits; // TODO: currentlty, no "rounded" volume field
-				$chargeableUnits = null;
+				$chargeableUnits = 1;
 				break;
 			default:
 				$chargedItem = $this->getConfig('charged_item.volume_total_based_charge');
