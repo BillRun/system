@@ -392,7 +392,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				'RecEntityId' => $recEntityId,
 			] ];
 		}
-		return  $recEntityArr;
+		return  $recEntityArr ?? [];
 
 	}
 	
@@ -403,11 +403,8 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		return $this->recEntities[$recEntityId];
 	}
 
-	protected function getServingBID($row) {
-		//unimplemented -supplay by the plugin for now 
-		Billrun_Factory::dispatcher()->trigger('afterGetServingBID', array(&$servingBID, $row));
-		return $servingBID;
-	}
+	// protected function getServingBID($row) {
+	// }
 
 	protected function getRecEntityCode($row) {
 		$entityList = $this->getRecEntityInformation($row);
@@ -421,22 +418,6 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		if(!empty( $teleServiceCodes[$type])) {
 			return $teleServiceCodes[$type];
 		}
-		switch ($this->getLineType($row)) {
-				
-			case self::$LINE_TYPE_CALL:
-			case self::$LINE_TYPE_INCOMING_CALL:
-				return $this->getConfig('tele_service_codes.telephony', '');
-				
-			case self::$LINE_TYPE_SMS:
-				return $this->getConfig('tele_service_codes.short_message_MO_PP', '');
-
-			case self::$LINE_TYPE_INCOMING_SMS:
-				return $this->getConfig('tele_service_codes.short_message_MT_PP', '');
-			
-			case self::$LINE_TYPE_DATA:	
-			default:
-				return '';
-		}
 	}
 	
 	protected function getUtcTimeOffsetCode($row, $fieldMapping) {
@@ -449,31 +430,19 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 
 	protected function getCallTypeGroup( $row ) {
-		$callTypeLevel2 = $this->getConfig('call_type_level_2.unknown');
-		$callTypeLevel3 = $this->getConfig('call_type_level_3.unknown');
-		switch ($this->getLineType($row)) {
-			case self::$LINE_TYPE_DATA:
-				$callTypeLevel1 = $this->getConfig('call_type_level_1.GGSN');
-				break;
-			case self::$LINE_TYPE_CALL:
-			case self::$LINE_TYPE_INCOMING_CALL:
-				$callTypeLevel1 = $this->getConfig('call_type_level_1.international');
-				break;
-			case self::$LINE_TYPE_SMS:
-			case self::$LINE_TYPE_INCOMING_SMS:
-				$callTypeLevel1 = $this->getConfig('call_type_level_1.international');
-				break;
-			case self::$LINE_TYPE_CHARGE:
-				return null;
-			default:
-				$callTypeLevel1 = $this->getConfig('call_type_level_1.unknown');
-		}
 
-		return  [
+		Billrun_Factory::dispatcher()->trigger('beforeGetCallTypeGroup', array($row));
+		$type = $this->getLineType($row);
+		$callTypeLevel1 = $this->getConfig('call_type_level_1')[$type] ?? 0;
+		$callTypeLevel2 = $this->getConfig('call_type_level_2')[$type] ?? 0;
+		$callTypeLevel3 = $this->getConfig('call_type_level_3')[$type] ?? 0;
+		$callTypeLevels =   [
 			'CallTypeLevel1' => intval($callTypeLevel1),
 			'CallTypeLevel2' => intval($callTypeLevel2),
 			'CallTypeLevel3' => intval($callTypeLevel3),
 		];
+		Billrun_Factory::dispatcher()->trigger('afterGetCallTypeGroup', array(&$callTypeLevels, $row));
+		return $callTypeLevels;
 	}
 	
 	protected function getChargeInformationList($row, $fieldMapping) {
@@ -501,8 +470,12 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				break;
 			case self::$LINE_TYPE_SMS:
 			case self::$LINE_TYPE_INCOMING_SMS:
-			case self::$LINE_TYPE_CHARGE:
 				$chargedItem = $this->getConfig('charged_item.event_based_charge');
+				$chargedUnits = $chargeableUnits; // TODO: currentlty, no "rounded" volume field
+				$chargeableUnits = null;
+				break;
+			case self::$LINE_TYPE_CHARGE:
+				$chargedItem = $this->getConfig('charged_item.fixed_charge');
 				$chargedUnits = $chargeableUnits; // TODO: currentlty, no "rounded" volume field
 				$chargeableUnits = null;
 				break;
@@ -567,6 +540,9 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			case self::$LINE_TYPE_SMS:
 			case self::$LINE_TYPE_INCOMING_SMS:
 				return 0;
+
+			case self::$LINE_TYPE_CHARGE:
+				return 1;
 			
 			case self::$LINE_TYPE_CALL:
 			case self::$LINE_TYPE_INCOMING_CALL:
@@ -603,7 +579,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	
 	protected function getOperatorSpecInfoList($row, $fieldMapping) {
 		$retInfo= [];
-		$operatorSpecInfo = Billrun_Util::getIn($this->config, 'operator_spec_info.'.$this->getCallEventDetail($row), Billrun_Util::getIn($this->config, 'operator_spec_info.common', []));
+		$operatorSpecInfo = Billrun_Util::getIn($this->config, 'operator_spec_info.'.$this->getLineType($row), Billrun_Util::getIn($this->config, 'operator_spec_info.common', []));
 		$stamp = Billrun_Util::getIn($row, 'stamp', '');
 		if(isset($stamp)){
 			$retInfo[] = [ 'OperatorSpecInformation' => 'STAMP: ' . $stamp ];
