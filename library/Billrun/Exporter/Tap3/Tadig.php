@@ -418,6 +418,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		if(!empty( $teleServiceCodes[$type])) {
 			return $teleServiceCodes[$type];
 		}
+		return '';
 	}
 	
 	protected function getUtcTimeOffsetCode($row, $fieldMapping) {
