@@ -571,10 +571,10 @@ class Models_Action_Import extends Models_Action {
 	}
 
 	protected function getDefaultColumnName($export_field) {
-		return Billrun_Util::getIn($export_field, 'title', $export_field['field_name']);
+		return Billrun_Util::getIn($export_field, 'field_name', $export_field['title']);
 	}
 
 	protected function getRowFieldName($params, $export_field) {
-		return Billrun_Util::getIn($params, 'title', $this->getDefaultColumnName($export_field));
+		return Billrun_Util::getIn($params, 'field_name', $this->getDefaultColumnName($export_field));
 	}
 }

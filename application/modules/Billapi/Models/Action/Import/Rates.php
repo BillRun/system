@@ -761,14 +761,6 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 			return parent::importPredefinedMappingEntity($row, $mapping);
 		}
 	}
-
-	protected function getDefaultColumnName($export_field) {
-		return Billrun_Util::getIn($export_field, 'field_name', $export_field['title']);
-	}
-
-	protected function getRowFieldName($params, $export_field) {
-		return Billrun_Util::getIn($params, 'field_name', $this->getDefaultColumnName($export_field));
-	}
 	
 }
 	
