@@ -105,10 +105,10 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 
 	protected function setTaxValue($data, $params) {
 		$export_config = $this->getExportMapper();
-		$type = $data[$export_config['tax.0.type']['title']];
-		$taxation = $data[$export_config['tax.0.taxation']['title']];
-		$custom_logic = $data[$export_config['tax.0.custom_logic']['title']];
-		$custom_tax = $data[$export_config['tax.0.custom_tax']['title']];
+		$type = $data[$export_config['tax.0.type']['field_name']];
+		$taxation = $data[$export_config['tax.0.taxation']['field_name']];
+		$custom_logic = $data[$export_config['tax.0.custom_logic']['field_name']];
+		$custom_tax = $data[$export_config['tax.0.custom_tax']['field_name']];
 		return [[
 			"type" => $type,
 			"taxation" => $taxation,
