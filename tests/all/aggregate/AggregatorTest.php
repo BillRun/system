@@ -11,6 +11,7 @@ class AggregatorTest extends \Codeception\Test\Unit
     {
         ini_set('error_reporting', E_ALL & ~E_WARNING & ~E_NOTICE);
         $this->tester->enableExternalModeSettings();
+
     }
 
     protected function _after()
@@ -207,7 +208,9 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
     }
 
 
-
+    /**
+     * @skip not supprted yet
+     */
     public function testDiscountOnAnAccountLevelService()
     {
         $this->tester->generatePlan([

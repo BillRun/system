@@ -14,6 +14,8 @@ class Crm extends \Helper\BillRun\Mockups\Mockup
   public function enableExternalModeSettings($data = []) {
     $model = new \ConfigModel();
     $model->updateConfig('subscribers', $this->getExternalConfiguration());
+    \Billrun_Config::getInstance()->loadDbConfig();
+
   }
 
   protected function getSampleConfiguration2() {
