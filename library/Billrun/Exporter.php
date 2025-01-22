@@ -131,11 +131,18 @@ class Billrun_Exporter extends Billrun_Generator_File {
     }
 
     public static function getInstance($params) {
+        //todo:: should be Billrun_Base::getInstance() after extends Billrun_Base (need to refactore Billrun_Base)
+        
         $className =  'Billrun_Exporter_'.ucfirst($params['type'] );
         if(@class_exists($className)) {
             return new $className($params);
         }
-
+        if(isset($params['exporter']['type'])){
+            $className =  'Billrun_Exporter_'.ucfirst($params['exporter']['type']);
+            if(@class_exists($className)) {
+                return new $className($params);
+            }
+        }
         return new Billrun_Exporter($params);
     }
 
