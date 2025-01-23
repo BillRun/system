@@ -25,6 +25,9 @@
   "timeRangeOptions": [
     "minutes", "hours", "days"
   ],
+  "frequencyOptions": [
+    "minutes", "hours", "days"
+  ],
   "senderTypes": {
     "ftp": "FTP",
     "ssh": "SFTP"

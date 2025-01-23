@@ -34,7 +34,8 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	// Helper OOP hacks
 	protected $lastTadig = '';
 
-	protected $splitFilesKey = 'tadig';
+		protected $splitFilesKey = 'tadig';
+	protected $logStamps = array();
 
 	public function __construct($options = array()) {
 		$this->periodEndTime = time();
@@ -80,7 +81,9 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 			if(empty($rows)){
 				$extraDataLog = array_merge($extraDataLog,['notification' => true]);
 			}
-			$this->createLogDB($this->getLogStamp($key), $extraDataLog);
+			$this->logStamp = $this->getLogStamp($key);
+			$this->logStamps[] = $this->logStamp;
+			$this->createLogDB($this->logStamp, $extraDataLog);
 			$options = array(
 				'tadig' => $this->tadig,
 				'data' => $rows,
@@ -91,7 +94,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 			$fileExported = $this->fileGenerator->export();
 			$this->created_successfully &= !empty($fileExported);
 			$exported[] = $fileExported;
-			$transactionCounter += $this->fileGenerator->getTransactionsCounter();		
+			$transactionCounter += $this->fileGenerator->getTransactionsCounter();
 		}
 		$this->filesExported = $exported;
 		if (!$this->created_successfully) {
@@ -99,6 +102,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 				return false;
 		}
 		Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
+						$this->exportLimitRecords =  $transactionCounter == $this->limit ? true : false;		
 		return true;
 	}
 
@@ -196,10 +200,10 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 				continue;
 			}
 			if (!isset($ret[$tadig])) {
-				$ret['rows'][$tadig] = array();
+				$ret[$tadig]['rows'] = array();
 			}
 			$ret[$tadig]['rows'][] = $row;
-			$ret[$tadig]['tadig'][] = $tadig;
+			$ret[$tadig]['tadig']= $tadig;
 		}
 		Billrun_Factory::dispatcher()->trigger('afterGetLinesToExport', array(&$ret, $this->splitFilesKey, $this->config));
 		return $ret;
@@ -381,5 +385,11 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         return parent::getFileType() . $lastTadig;
     }
 
+		protected function logDB($stamp, $data) {
+			foreach ($this->logStamps as $logStamp){
+				parent::logDB($logStamp, $data);
+			}  
+		}
 
 }
+
