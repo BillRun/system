@@ -3,6 +3,11 @@ stages:
   - build
   - test
 
+variables:
+  GIT_STRATEGY: clone
+  GIT_CHECKOUT: 'true'
+  GIT_CLEAN_FLAGS: '-ffdx -e .cache'
+
 print-info:
  stage: build
  rules:
