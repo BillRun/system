@@ -565,8 +565,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getCurrency($row) {
-		$defaultCurrency = 'EUR';
-		$currentDate = new Mongodloid_Date();
+		$defaultCurrency = $this->getConfig('header.local_currency', $this->getConfig('header.tap_currency', 'SDR'));
 		if (!isset($row['arate'])) {
 			return $defaultCurrency;
 		}
