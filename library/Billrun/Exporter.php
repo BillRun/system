@@ -260,7 +260,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $query = [
             'exported_time' => ['$exists' => true],
             'source' => 'export',
-            'type' => static::$type,
+            'type' => $this->getFileType(),
             'export_start_time' => ['$gt' => new Mongodloid_Date(strtotime($timeRange, $this->exportTime))],
             'limit_records' => false
         ];
