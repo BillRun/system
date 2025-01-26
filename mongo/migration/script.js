@@ -1949,6 +1949,11 @@ if (db.version() >= "6" && db.serverStatus().ok != 0 && db.serverStatus().proces
 	sh.shardCollection(_dbName + ".bills", { "aid" : "hashed" } );
 }
 
+//BRCD-4672: Add gad batch limit configuration
+runOnce(lastConfig, 'BRCD-4672', function () {
+	lastConfig['subscribers']['account']['gad_limit'] = 5000;
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });
