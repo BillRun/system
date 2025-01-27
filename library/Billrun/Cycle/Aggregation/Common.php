@@ -61,6 +61,7 @@ trait Billrun_Cycle_Aggregation_Common {
 				'plan_deactivation' => 1,
 				'include' => 1,
 				'tax' => 1,
+				'rounding_rules' => 1,
 			), $foreignFieldsProject)
 		);
 	}

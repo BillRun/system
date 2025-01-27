@@ -19,6 +19,8 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 
 	protected $exporterType = array();
 	protected $tadigs = array();
+	protected $tadig = 'EMPTY';
+	protected $filename = '';//filename by tadig
 	protected $periodStartTime = null;
 	protected $periodEndTime = null;
 	protected $tadigsStorageConfig = [
@@ -31,6 +33,9 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 
 	// Helper OOP hacks
 	protected $lastTadig = '';
+
+		protected $splitFilesKey = 'tadig';
+	protected $logStamps = array();
 
 	public function __construct($options = array()) {
 		$this->periodEndTime = time();
@@ -51,35 +56,81 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         Billrun_Factory::dispatcher()->trigger('beforeExport', array($this));
         $this->beforeExport();
 
-		$exported = [];
-		$transactionCounter =0;
-
         $generatorOptions = $this->buildGeneratorOptions();
         $generatorOptions = $this->buildTap3Options($generatorOptions);
-		$lines = $this->getLinesToExport();
-		foreach ($lines as $tadig => $rows) {
-			$this->createLogDB($this->getLogStamp());
+				$shouldExportByCustomer =  Billrun_Util::getIn($generatorOptions['configByType'],'export_by_customer', false);
+				if($shouldExportByCustomer){
+					$this->splitFilesKey = 'aid';
+					$exportLinesByKey = $this->getLinesByCustomerToExport();
+				}else{
+					$this->splitFilesKey = 'tadig';
+					$exportLinesByKey = $this->getLinesToExport();
+				}
+				$res = $this->exportByType($exportLinesByKey, $generatorOptions);
+        return $res;
+	}
+
+	protected function exportByType($exportLinesByKey, $generatorOptions){
+		$exported = [];
+		$transactionCounter =0;
+		
+		foreach ($exportLinesByKey as $key => $values) {
+			$rows = $values['rows'] ?? [];
+			$this->tadig = $values['tadig'] ?? null;
+			$extraDataLog = [$this->splitFilesKey => $key];
+			if(empty($rows)){
+				$extraDataLog = array_merge($extraDataLog,['notification' => true]);
+			}
+			$this->logStamp = $this->getLogStamp($key);
+			$this->logStamps[] = $this->logStamp;
+			$this->createLogDB($this->logStamp, $extraDataLog);
 			$options = array(
-				'tadig' => $tadig,
+				'tadig' => $this->tadig,
 				'data' => $rows,
 				'time' => $this->getPeriodEndTime(),
+
 			);
 			$this->fileGenerator = $this->getTadigExporter(array_merge($generatorOptions,$options));
 			$fileExported = $this->fileGenerator->export();
 			$this->created_successfully &= !empty($fileExported);
 			$exported[] = $fileExported;
-			$transactionCounter = $this->fileGenerator->getTransactionsCounter();
+			$transactionCounter += $this->fileGenerator->getTransactionsCounter();
 		}
 		$this->filesExported = $exported;
-
-        if (!$this->created_successfully) {
-            Billrun_Factory::log()->log("Export generator was faild writing to the file. File creation failed..", Zend_Log::ALERT);
-            return false;
-        }
-
-        Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
-        return true;
+		if (!$this->created_successfully) {
+				Billrun_Factory::log()->log("Export generator was faild writing to the file. File creation failed..", Zend_Log::ALERT);
+				return false;
+		}
+		Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
+						$this->exportLimitRecords =  $transactionCounter == $this->limit ? true : false;		
+		return true;
 	}
+
+	protected function buildGeneratorOptions() {
+        $this->fileNameParams = isset($this->config['filename_params']) ? $this->config['filename_params'] : self::DEFAULT_FILENAME_PARMS;
+        $this->fileNameStructure = isset($this->config['filename']) ? $this->config['filename'] : self::DEFAULT_FILENAME;
+        //$this->fileName = $this->getFilename();
+        //$options['file_name'] = $this->fileName;
+        $options['file_type'] = $this->getType();
+        $this->localDir = $this->getFilePath();
+        $options['local_dir'] = $this->localDir;
+        //$options['file_path'] = $this->localDir . DIRECTORY_SEPARATOR . $this->fileName;
+        $this->rowsToExport = $this->loadRows();
+        $options['data'] = $this->rowsToExport;
+        $this->headerToExport[0] = $this->getHeaderLine();
+        $options['headers'] = $this->headerToExport;
+        $this->footerToExport[0] = $this->getTrailerLine();
+        $options['trailers'] = $this->footerToExport;
+        $options['type'] = $this->config['generator']['type'];
+        $options['force_header'] = $this->config['generator']['force_header'] ?? false;
+        $options['force_footer'] = $this->config['generator']['force_footer'] ?? false;
+        $options['configByType'] = $this->config;
+        if ($options['type'] == 'separator') {
+            $options['delimiter'] = $this->config['generator']['separator'] ?? ",";
+        }
+        return $options;
+    }
+
 
 	public function getGeneratedFiles() {
 		return $this->filesExported;
@@ -88,29 +139,35 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 
 	public function getFilePathForTadig($tadig) {
 		$filePath = $this->getFilePath();
-		$this->setTap3FileNameSttructure($tadig);
-        return rtrim($filePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->getFileName();
+    return rtrim($filePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->filename;
 	}
 
 	public function getFileNameForTadig($tadig) {
 		$this->setTap3FileNameSttructure($tadig);
-        return  $this->getFileName();
+        return  parent::getFileName();
 	}
 
+	public function getSequenceNumber() {
+		 return $this->params['param1'];
+	}
+	protected function getExportFilePath() {
+		return  $this->getFilePathForTadig($this->tadig);
+	}
+	protected function getFileName() {
+		$this->filename = $this->getFileNameForTadig($this->tadig);
+		return $this->filename;
+	}
 
-    protected function getExportFilePath() {
-		return  $this->getFilePathForTadig('EMPTY');
-    }
 
 
 	protected function setTap3FileNameSttructure($tadig) {
 		$this->fileName='';
 		if (Billrun_Factory::config()->isProd()) {
-			$pref = Billrun_Util::getIn($this->config,'file_name.prefix.prod', '');
+			$pref = Billrun_Util::getIn($this->config,'filename_structure.prefix.prod', 'CD');
 		} else {
-			$pref =  Billrun_Util::getIn($this->config,'file_name.prefix.test', '');
+			$pref =  Billrun_Util::getIn($this->config,'filename_structure.prefix.test', 'TD');
 		}
-		$suffix =  Billrun_Util::getIn($this->config,'file_name.suffix', '');
+		$suffix =  Billrun_Util::getIn($this->config,'filename_structure.suffix', '');
 		$hpmnTadig = Billrun_Util::getIn($this->config,'hmpn_tadig', '');
 		$vpmnTadig = $tadig;
 		$sequenceNum =   Billrun_Util::getIn($this->config,'file_seq_param', '[[param1]]');
@@ -121,8 +178,9 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	protected function buildTap3Options($currentGenOptions) {
 		$this->getFileName();
 		$currentGenOptions['parent_exporter'] = $this;
-		return $currentGenOptions;
+		$currentGenOptions['filename_params'] = $this->params;
 
+		return $currentGenOptions;
 	}
 
 	/**
@@ -134,18 +192,52 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 		$ret = array();
 		$this->loadTadigs();
 
-		foreach ($this->rowsToExport as $row) {
+		foreach ($this->rowsToExport as $key => $row) {
 			$tadig = $this->getTadig($row);
 			if ($tadig === false) {
 				Billrun_Log::getInstance()->log('Tadigs ' . $this->exporterType . ' exporter: Cannot get TADIG for row. stamp: ' . $row['stamp'], Zend_log::WARN);
+				unset($this->rowsStamps[$row['stamp']]);
 				continue;
 			}
 			if (!isset($ret[$tadig])) {
-				$ret[$tadig] = array();
+				$ret[$tadig]['rows'] = array();
 			}
-			$ret[$tadig][] = $row;
+			$ret[$tadig]['rows'][] = $row;
+			$ret[$tadig]['tadig']= $tadig;
 		}
+		Billrun_Factory::dispatcher()->trigger('afterGetLinesToExport', array(&$ret, $this->splitFilesKey, $this->config));
+		return $ret;
+	}
 
+		/**
+	 * get lines to export ordered by TADIGs as key, and stamps as values
+	 *
+	 * @return array
+	 */
+	protected function getLinesByCustomerToExport() {
+		$ret = array();
+		$this->loadTadigs();
+
+		foreach ($this->rowsToExport as $key => $row) {
+			$aid = $row['aid'];
+			$tadig = $this->getTadig($row);
+			if ($tadig === false) {
+				Billrun_Log::getInstance()->log('Tadigs ' . $this->exporterType . ' exporter: Cannot get TADIG for row. stamp: ' . $row['stamp'], Zend_log::WARN);
+				unset($this->rowsStamps[$row['stamp']]);
+				continue;
+			}
+			if (!isset($ret[$aid])) {
+				$ret[$aid] = array();
+			}
+			$ret[$aid]['rows'][] = $row;
+			if(isset($ret[$aid]['tadig']) && $tadig != $ret[$aid]['tadig']){
+				Billrun_Log::getInstance()->log('Tadigs ' . $this->exporterType . ' exporter: have different tadigs to the same account for aid : $aid. Cannot export row stamp: ' . $row['stamp'], Zend_log::WARN);
+				unset($this->rowsStamps[$row['stamp']]);
+				continue;
+			}
+			$ret[$aid]['tadig'] = $tadig;
+		}
+		Billrun_Factory::dispatcher()->trigger('afterGetLinesToExport', array(&$ret, $this->splitFilesKey, $this->config));
 		return $ret;
 	}
 
@@ -293,5 +385,11 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         return parent::getFileType() . $lastTadig;
     }
 
+		protected function logDB($stamp, $data) {
+			foreach ($this->logStamps as $logStamp){
+				parent::logDB($logStamp, $data);
+			}  
+		}
 
 }
+

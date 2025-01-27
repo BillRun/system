@@ -1,5 +1,6 @@
 #!/bin/bash
 
+if test -d "/plugin/application/"; then
 if test -d "/plugin/application/plugins/"; then
      cd /plugin/application/plugins/
      for f in *.php
@@ -10,12 +11,13 @@ if test -d "/plugin/application/plugins/"; then
      for f in /plugin/application/plugins/*.json
      do
           [ -f "$f" ] || break
-          echo "configuration.include[] = $f" >> /billrun/conf/container.ini
+          echo -e "\nconfiguration.include[] = $f" >> /billrun/conf/container.ini
      done
+     fi
      for f in /plugin/conf/*.json
      do
           [ -f "$f" ] || break
-          echo "configuration.include[] = $f" >> /billrun/conf/container.ini
+          echo -e "\nconfiguration.include[] = $f" >> /billrun/conf/container.ini
      done
 fi
 
@@ -28,12 +30,22 @@ if test -d "/plugin/application/views/"; then
      done
 fi
 
+if test -d "/plugin/library/Billrun/PaymentGateway/"; then
+cd /plugin/library/Billrun/PaymentGateway/
+     for f in *.php
+     do
+          rm -f "/billrun/library/Billrun/PaymentGateway/"$f
+          ln -s /plugin/library/Billrun/PaymentGateway/$f "/billrun/library/Billrun/PaymentGateway/"$f
+     done
+fi
+
 if test -d "/plugin/conf/translations/overrides/"; then
-    rm -rf /billrun/conf/translations/overrides/
+    unlink /billrun/conf/translations/overrides
     mkdir -p /billrun/conf/translations/
     ln -s /plugin/conf/translations/overrides /billrun/conf/translations/overrides
 fi 
 
+if test -d "/plugin/tests/"; then
 cd /plugin/tests/
 for f in {acceptance,all,api,functional,unit,bc}/plugin/*
 do
@@ -44,6 +56,16 @@ do
          fi
     fi
 done
+fi
+
+if test -d "/plugin/conf/exporter/"; then
+cd /plugin/conf/exporter/
+     for f in *.ini
+     do
+          rm -f "/billrun/conf/exporter/"$f
+          ln -s /plugin/conf/exporter/$f "/billrun/conf/exporter/"$f
+     done
+fi 
 
 cd /billrun
 

@@ -138,6 +138,7 @@ export default {
       { id: 'returned_value', searchable: false },
     ],
     logFile: [
+      { id: 'fetching_time', type: 'date', title: 'Receiving start time'},
       { id: 'file_name', title: 'File name' },
       { id: 'stamp', title: 'Unique record ID' },
       { id: 'start_process_time', type: 'date' },

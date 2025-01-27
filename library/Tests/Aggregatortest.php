@@ -30,6 +30,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
      protected $BillrunObj;
      protected $returnBillrun;
      public $ids;
+     protected $shouldRunAggregate =true;
      public $message;
      public $label = 'aggregate';
      public $defaultOptions = array(
@@ -59,9 +60,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          $this->discountsCol = Billrun_Factory::db()->discountsCollection();
          $this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
          $this->balancesCol = Billrun_Factory::db()->discountsCollection();
-	 $this->billingCyclr = Billrun_Factory::db()->billing_cycleCollection();
+	     $this->billingCyclr = Billrun_Factory::db()->billing_cycleCollection();
          $this->billrunCol = Billrun_Factory::db()->billrunCollection();
-        $this->construct(basename(__FILE__, '.php'), ['bills','charges', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes']);
+         $this->construct(basename(__FILE__, '.php'), ['bills','charges', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes']);
          $this->setColletions();
          $this->loadDbConfig();
      }
@@ -77,8 +78,16 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
      public function aggregator($row) {
          $options = array_merge($this->defaultOptions, $row['test']['options']);
          $aggregator = Billrun_Aggregator::getInstance($options);
-         $aggregator->load();
-         $aggregator->aggregate();
+         Billrun_Factory::log('puchifff'.  json_encode($aggregator),Zend_Log::INFO);
+        // Check if 'aggregationLogic' exists, if not,dont run the cycle 
+        if (property_exists($aggregator,"aggregationLogic")) {
+            $aggregator->load();
+            $aggregator->aggregate();
+        } else {
+            $this->shouldRunAggregate = false;
+            $this->message .= "The cycle should not be run ";
+            return;
+        }
      }
 
      /**
@@ -115,22 +124,43 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
             }
         
            foreach ($this->tests as $key => $row) {
-               
+             $this->shouldRunAggregate = true;
              $aid = $row['test']['aid'];
-	     $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
-	    if (isset($row['test']['label'])) {
-	         $this->message .= '<br>test label :  ' . $row['test']['label'];
-	      }
+	         $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
+	         if (isset($row['test']['label'])) {
+	             $this->message .= '<br>test label :  ' . $row['test']['label'];
+	          }
 			// run fenctions before the test begin 
-             if (isset($row['preRun']) && !empty($row['preRun'])) {
-                 $preRun = $row['preRun'];
-                 if (!is_array($preRun)) {
-                     $preRun = array($row['preRun']);
-                 }
-                 foreach ($preRun as $pre) {
-                     $this->$pre($key, $row);
-                 }
-              }
+            //  if (isset($row['preRun']) && !empty($row['preRun'])) {
+            //      $preRun = $row['preRun'];
+            //      if (!is_array($preRun)) {
+            //          $preRun = array($row['preRun']);
+            //      }
+            //     //  foreach ($preRun as $pre) {
+            //     //      $this->$pre($key, $row);
+            //     //  }
+                
+            //   }
+
+            if (isset($row['preRun'])) {
+                $preRun = $row['preRun'];
+                if (!is_array($preRun)) {
+                    $preRun = array($preRun);
+                }
+                foreach ($preRun as $pre) {
+                    if (is_string($pre)) {
+                        // Invoke the function with no parameters
+                        $this->$pre($key, $row);
+                    } elseif (is_array($pre) && isset($pre['function']) && isset($pre['params'])) {
+                        // Extract function name and parameters
+                        $function = $pre['function'];
+                        $params = $pre['params'];
+                        // Invoke the function with parameters
+                        call_user_func_array(array($this, $function), array_merge(array($key, $row), $params));
+                    }
+                }
+            }
+            
              // run aggregator
              if (array_key_exists('aid', $row['test'])) {
                  $returnBillrun = $this->runT($row);
@@ -166,7 +196,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 			$this->message .= $this->fails;
          }
          print_r($this->message);
-        $this->restoreColletions();
+         $this->restoreColletions();
      }
 
      /**
@@ -214,8 +244,31 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
              $passed = false;
              $this->message .= 'aid :' . $retun_aid . $this->fail;
          }
+         if(isset($row['expected']['shouldRunAggregate'])){
+            if($this->shouldRunAggregate == $row['expected']['shouldRunAggregate'] ){
+                $this->message .= "shouldRunAggregate" . $this->pass;
+            }else{
+                $passed = false;
+                $this->message .= "shouldRunAggregate" . $this->fail;
+            }
+         }
 		return $passed;
 	}
+
+    protected function shouldRun_Aggregate($key =null, $returnBillrun=null, $row= null) {
+        $passed = TRUE;
+        $shouldRunAggregate = isset($row['expected']['shouldRunAggregate'])?$row['expected']['shouldRunAggregate']:null;
+       
+        if(isset($row['expected']['shouldRunAggregate'])){
+           if($this->shouldRunAggregate === $shouldRunAggregate ){
+               $this->message .= "</br> shouldRunAggregate" . $this->pass;
+           }else{
+               $passed = false;
+               $this->message .= "</br> shouldRunAggregate" . $this->fail;
+           }
+        }
+       return $passed;
+   }
 	public function checkInvoiceId($key, $returnBillrun, $row) {
 		$passed = TRUE;
 		$invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
@@ -871,17 +924,19 @@ public function passthrough($key, $returnBillrun, $row) {
     public function multi_day_cycle_false()
     {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/multi_day_cycle_false.ini');
+        $this->loadConfig();
 	}
     public function allowPremature($param)
     {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/allow_premature_run.ini');
-}
-    public function notallowPremature($param)
-    {
+        $this->loadConfig();
+    }
+    public function notallowPremature($param){
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
+        $this->loadConfig();
 	}
 
-	public function testMultiDay($row) {
+	public function MultiDay($key, $returnBillrun, $row) {
 		$passed = true;
 		
 		$aids = [];
@@ -947,11 +1002,16 @@ public function passthrough($key, $returnBillrun, $row) {
 		$this->billrunCol->remove(['billrun_key' => ['$ne' => 'abc']]);
 	}
 
-	public function testMultiDayNotallowPremature( $row) {
+	public function MultiDayNotallowPremature($key, $returnBillrun, $row) {
 		$now = date('d');
+        $pass = true;
 		$billruns = $this->getBillruns();
 		$billruns_ = [];
 		$aid_and_days = $row['expected']['accounts'];
+        
+        if($row['test']['test_number']==763439){
+            $a=1;
+        };
 		foreach ($billruns as $bill) {
 			$billruns_[] = $bill->getRawData();
 		}
@@ -963,18 +1023,18 @@ public function passthrough($key, $returnBillrun, $row) {
 					} else {
 						$this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  :  {$aid_and_days[$bill['aid']]} , actual result is{$bill['invoicing_day'] } " . $this->fail;
 						 $this->assertTrue(0);
+                         $pass = false;
 					}
 					if ($bill['invoicing_day'] <= $now) {
 						$this->message .= "notallowPrematurun  is corrcet now its  $now  and  invoicing day  is{$aid_and_days[$bill['aid']]} aid $aid " . $this->pass;
 					} else {
 						$this->message .= "notallowPrematurun  is not  corrcet now its  $now  and  invoicing day  is {$aid_and_days[$bill['aid']]}  aid $aid " . $this->fail;
 						$this->assertTrue(0);
+                        $pass = false;
 					}
 					$this->message .= '<br>****************************************************************<br>';
-
-			
-			
 		}
+        return $pass;
 	}
 
 	public function cleanAfterAggregate($key, $row) {

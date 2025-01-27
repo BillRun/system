@@ -149,7 +149,7 @@ db.collection_steps.createIndex({'trigger_date': 1 }, { unique: false , sparse: 
 db.collection_steps.createIndex({'extra_params.aid': 1 }, { unique: false , sparse: true, background: true });
 
 db.createCollection('bills');
-db.bills.createIndex({'aid': 1 }, { unique: false , background: true});
+db.bills.createIndex({'aid': "hashed" }, { unique: false , background: true});
 db.bills.createIndex({'txid': 1 }, { unique: false , sparse: true, background: true});
 db.bills.createIndex({'invoice_id': 1 }, { unique: false, background: true});
 db.bills.createIndex({'billrun_key': 1 }, { unique: false, background: true});
@@ -178,6 +178,7 @@ db.autorenew.createIndex({ 'sid': 1, 'aid': 1}, { unique: false, sparse: true, b
 
 //operations
 db.operations.createIndex({action:1,filtration:1,start_time:1,end_time:1},{ background: true });
+db.operations.createIndex({action:1,end_time:1},{ background: true });
 
 // Taxes Collection
 db.createCollection('taxes');

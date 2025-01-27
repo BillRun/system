@@ -44,28 +44,28 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 					$retResults[$revStamp] = [];
 				}
 				if(empty($this->generalOptions['is_onetime_invoice'])) {
-				if(!empty($revision['plan'])) {
-					$planDate = [
-						'from' => $revision['from'],
-						'to' => $revision['to'],
-					];
+					if(!empty($revision['plan'])) {
+						$planDate = [
+							'from' => $revision['from'],
+							'to' => $revision['to'],
+						];
 
-						$planDate['plan'] = $revision['plan'];
-						$planDate['plan_activation'] = @$revision['plan_activation'];
-						$planDate['plan_deactivation'] = @$revision['plan_deactivation'];
-						foreach($customIDFields as $CIDF) {
-							 if(!empty($revision[$CIDF]) ) {
-								 $planDate[$CIDF] = $revision[$CIDF];
-							 }
-						}
+							$planDate['plan'] = $revision['plan'];
+							$planDate['plan_activation'] = @$revision['plan_activation'];
+							$planDate['plan_deactivation'] = @$revision['plan_deactivation'];
+							foreach($customIDFields as $CIDF) {
+								if(!empty($revision[$CIDF]) ) {
+									$planDate[$CIDF] = $revision[$CIDF];
+								}
+							}
 
-					$retResults[$revStamp]['plan_dates'][] = $planDate;
-				} else {
-					$retResults[$revStamp]['plan_dates'][] = [
-						'from' => $revision['from'],
-						'to' => $revision['to']
-					];
-				}
+						$retResults[$revStamp]['plan_dates'][] = $planDate;
+					} else {
+						$retResults[$revStamp]['plan_dates'][] = [
+							'from' => $revision['from'],
+							'to' => $revision['to']
+						];
+					}
 				}
 				$retResults[$revStamp]['id'] = array_filter($revision, function ($key) use ($idFields) { return in_array($key, $idFields); }, ARRAY_FILTER_USE_KEY);
 				$passthroughFields = ($revision['type'] == 'account') ? $this->passthroughFields : $this->subsPassthroughFields;

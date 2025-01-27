@@ -39,11 +39,16 @@ const selectAccountsOptions = (options) => {
   }
   return options.map(option => {
     let name = '';
-    name += option.get('firstname', '').trim() !== '' ? option.get('firstname', '').trim() : '';
-    name += option.get('lastname', '').trim() !== '' ? ` ${option.get('lastname', '').trim()}` : '';
+
+    if (typeof option.get('firstname','') === 'string' ) 
+      name += option.get('firstname', '').trim() !== '' ? option.get('firstname', '').trim() : '';
+    if (typeof option.get('lastname','') === 'string' )
+      name += option.get('lastname', '').trim() !== '' ? ` ${option.get('lastname', '').trim()}` : '';
+
     return Immutable.Map({
-      label: name.trim(),
+      label: `${name.trim()} [${option.get('aid', '')}]`,
       value: option.get('aid', ''),
+      id: option.getIn(['_id', '$id'], ''),
     })
   }).toJS();
 }

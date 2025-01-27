@@ -132,7 +132,7 @@
     "route": "run_cycle",
     "show": true,
     "roles": [],
-    "order":0,
+    "order": 1,
     "parent":"cycle"
   },
   "suggestions": {
@@ -141,8 +141,17 @@
     "route": "suggestions",
     "show": true,
     "roles": [],
-    "order":0,
+    "order": 2,
     "parent":"cycle"
+  },
+  "immediate-invoice": {
+    "title": "Immediate Invoice",
+    "icon": "",
+    "route": "immediate-invoice",
+    "show": true,
+    "roles": [],
+    "order": 3,
+    "parent": "cycle"
   },
   "account_receivables": {
     "title": "Account Receivables",

@@ -77,12 +77,10 @@ class Billrun_Account_External extends Billrun_Account {
 			$results = json_decode($results, true);
 			//Check for errors
 			if(empty($results)) {
-				Billrun_Factory::log('Failed to retrive valid results for billable, remote returned no data.',Zend_Log::WARN);
-				return [];
+				throw new Exception('Failed to retrive valid results for billable, remote returned no data.');;
 			}
 			if( empty($results['status']) || !isset($results['data']) ) {
-				Billrun_Factory::log("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams), Zend_Log::ALERT);
-				return [];
+				throw new Exception("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams));
 			}
 			//cache results forfuture GSD/GAD calls
 			if($this->cacheGBAtoGSD ) {
@@ -202,6 +200,8 @@ class Billrun_Account_External extends Billrun_Account {
 		$request = new Billrun_Http_Request($this->remote, $params);
 		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
 		$request->setRawData(json_encode($externalQuery));
+		$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.account.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
+		$request->setConfig(array('timeout' => $requestTimeout));
 		$results = $request->request(Billrun_Http_Request::POST)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
 
@@ -245,6 +245,9 @@ class Billrun_Account_External extends Billrun_Account {
 
 		if (isset($query['EXTRAS'])) {
 			unset($query['EXTRAS']);
+		}
+		if (isset($query['read_preference'])) {
+			unset($query['read_preference']);
 		}
 		$params = [];
 		foreach ($query as $key => $value) {

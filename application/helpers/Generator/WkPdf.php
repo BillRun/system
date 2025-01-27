@@ -692,4 +692,23 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
         }
 
+	public function regenerateInvoice() {
+		Billrun_Factory::log()->log("Loading data to Generate...", Zend_Log::DEBUG);
+		try{
+			$this->load();
+			Billrun_Factory::log()->log("Starting to Generate. This action can take a while...", Zend_Log::DEBUG);
+			$this->generate();
+		} catch(Exception $ex){
+			Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+			return false;
+		}
+		Billrun_Factory::log()->log("Finished generating", Zend_Log::DEBUG);
+		if ($this->shouldFileBeMoved()) {
+			Billrun_Factory::log()->log("Exporting the file", Zend_Log::DEBUG);
+			$this->move();
+			Billrun_Factory::log()->log("Finished exporting", Zend_Log::DEBUG);
+		}
+		return true;
+	}
+			
 }

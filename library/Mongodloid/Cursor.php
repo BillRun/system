@@ -14,6 +14,8 @@
 class Mongodloid_Cursor implements Iterator, Countable {
 
 	protected $_cursor;
+	protected $_collection;
+	protected $_command;
 	protected $getRaw = FALSE;
 	protected $_options;
 	protected $_query;
@@ -68,7 +70,11 @@ class Mongodloid_Cursor implements Iterator, Countable {
 			unset($options['skip']);
 			unset($options['limit']);
 		}
-		return $this->_collection->count($this->_query, $options);
+		return $this->_collection->countDocuments($this->_query, $options);
+	}
+	
+	public function countDocuments($foundOnly = true) {
+		return $this->count($foundOnly);
 	}
 
 	/**

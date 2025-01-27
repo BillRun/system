@@ -981,7 +981,17 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		$linesCol = Billrun_Factory::db()->linesCollection();
 		try {
-			$linesCol->batchInsert($results);
+			$resSize = count($results);
+			$sizeLimit = Billrun_Factory::config()->getConfigValue('billrun.max_batch_insert_limit',500000);
+			if($resSize < $sizeLimit || $sizeLimit <= 0 ) {
+				$linesCol->batchInsert($results);
+			} else {
+				Billrun_Factory::log("The amount of documents to store is to high : {$resSize} , Storing documents in batches of {$sizeLimit} ");
+				for($i=0; $i < $resSize / $sizeLimit; $i++) {
+					$resToStore = array_slice($results,$i*$sizeLimit,$sizeLimit);
+					$linesCol->batchInsert($resToStore);
+				}
+			}
 		} catch (Exception $e) {
 			Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
 			foreach ($results as $line) {
@@ -1138,6 +1148,16 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 					Billrun_Factory::subscriber()->cleanExternalCache();
 					Billrun_Factory::account()->cleanExternalCache();
 			}
+			$this->setupCycleCache();
+		} else {
+			Billrun_Factory::log('Account or Subscriber classes are not cacheable. not altering cache behavior.',Zend_Log::INFO);
+		}
+	}
+
+	public static function setupCycleCache() {
+		if(in_array('Billrun_Subscriber_External_Cacheable',class_uses(Billrun_Factory::subscriber())) &&
+			in_array ('Billrun_Subscriber_External_Cacheable',class_uses(Billrun_Factory::account())) ) {
+
 			if(!empty(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.prefix',''))) {
 				Billrun_Factory::account()->setCachePrefix(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.prefix',''));
 			}

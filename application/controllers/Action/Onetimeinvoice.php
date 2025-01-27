@@ -17,7 +17,6 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class OnetimeinvoiceAction extends ApiAction {
 
 	use Billrun_Traits_Api_UserPermissions;
-	use Billrun_Traits_Api_OperationsLock;
 	use Billrun_Traits_ForeignFields;
 
 	const STEP_PDF_ONLY = 0;
@@ -113,14 +112,9 @@ class OnetimeinvoiceAction extends ApiAction {
 		return $this->sendBackInvoice($results['pdfPath']);
 	}
 
-	protected function getInsertData() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty($this->aid) ? 'all' : $this->aid),
-		);
-	}
-
 	protected function invoiceChargeFlow($chargingOptions) {
+
+		$this->setupCache($chargingOptions['oneTimeStamp']);
 
 		$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp']);
 		if ($this->processsedCdrs === false) {
@@ -135,6 +129,7 @@ class OnetimeinvoiceAction extends ApiAction {
 					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'uf' => $chargingOptions['uf']]);
+
 		$aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
@@ -155,11 +150,6 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 
 		if ($chargingOptions['step'] >= self::STEP_FULL) {
-			if (!$this->lock()) {
-				Billrun_Factory::log("makePayment is already running", Zend_Log::NOTICE);
-				return [];
-			}
-
 			Billrun_Factory::log('One time invoice action paying invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
 			$chargeOptions = [
 				'aids' => [$this->aid],
@@ -169,10 +159,6 @@ class OnetimeinvoiceAction extends ApiAction {
 				],
 			];
 			$paymentResponse = Billrun_Bill_Payment::makePayment($chargeOptions); // todo: handle payment response
-			if (!$this->release()) {
-				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-				return [];
-			}
 		}
 		$results['invoiceData'] = $this->invoice->getRawData();
 		$results['paymentData'] = $paymentResponse;
@@ -181,6 +167,9 @@ class OnetimeinvoiceAction extends ApiAction {
 	}
 	
 	protected function expectedInvoice($chargingOptions, $expected = false) {
+
+		$this->setupCache($chargingOptions['oneTimeStamp']);
+
 		//Process and price onetime  CDRs in memory
 		if (empty($this->processsedCdrs)) {
 			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
@@ -211,9 +200,12 @@ class OnetimeinvoiceAction extends ApiAction {
 
 	protected function chargeBeforeInvoiceFlow($chargingOptions) {
 
+		$this->setupCache($chargingOptions['oneTimeStamp']);
+
 		if (empty($this->processsedCdrs)) {
 			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
 		}
+
 		$fakeInvoice = $this->expectedInvoice($chargingOptions);
 		if ($fakeInvoice) {
 			$expectedTotals = $fakeInvoice->getInvoice()->getRawData()['totals'];
@@ -235,11 +227,6 @@ class OnetimeinvoiceAction extends ApiAction {
 
 		if (!Billrun_Util::isEqual($expectedTotals['after_vat_rounded'], 0, Billrun_Bill::precision)) {
 			try {
-				if (!$this->lock()) {
-					Billrun_Factory::log("makePayment is already running", Zend_Log::NOTICE);
-					return [];
-				}
-
 				$paymentOptions = [
 					'bills' => array(
 						array(
@@ -258,11 +245,6 @@ class OnetimeinvoiceAction extends ApiAction {
 					$paymentOptions['bills'][0]['left'] = (-1) * $expectedTotals['after_vat_rounded'];
 				}
 				$paymentStatus = Billrun_Bill_Payment::makePayment($paymentOptions);
-
-				if (!$this->release()) {
-					Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-					return [];
-				}
 
 			} catch (\Exception $ex) {
 				$this->setError("Failed  when  trying to preform payment  for AID: ${inputPayment['aid']} for an amount of ${inputPayment['amount']}");
@@ -339,25 +321,6 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 
 		return $processedCdrs;
-	}
-
-	protected function getConflictingQuery() {
-		if (!empty($this->aid)) {
-			return array(
-				'$or' => array(
-					array('filtration' => 'all'),
-					array('filtration' => array('$in' => array($this->aid))),
-				),
-			);
-		}
-	}
-
-	protected function getReleaseQuery() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty($this->aid) ? 'all' : $this->aid),
-			'end_time' => array('$exists' => false)
-		);
 	}
 
 	/**
@@ -579,6 +542,14 @@ class OnetimeinvoiceAction extends ApiAction {
 			sleep(1);
 			Billrun_Factory::log('BillrunToBill is already running, try to generate again. Try number: ' . $tries, Zend_Log::DEBUG);
 			$result = $billrunToBill->generate();
+		}
+	}
+
+	protected function setupCache($stamp) {
+		// if  we cache the gba  results to gsd do that before the cdr processing
+		if(Billrun_Factory::config()->getConfigValue('customeronetime.aggregator.cache.gba_to_gsd.enabled',false)) {
+			Billrun_Aggregator_Customer::setupCycleCache();
+			Billrun_Factory::account()->getBillable(new Billrun_DataTypes_MongoCycleTime(new Billrun_DataTypes_CycleTime($stamp)),0,1,[$this->aid]);
 		}
 	}
 

@@ -11,7 +11,7 @@ class Test_Case_74 {
         'test_number' => 74,
         'aid' => 'abcd',
         'function' => [
-            'testMultiDay',
+            'MultiDay',
         ],
         'options' => [
             'stamp' => '202311',
@@ -26,6 +26,8 @@ class Test_Case_74 {
         'accounts' => [
             10025 => '26',
             10026 => '27',
+            100263439 =>'27',
+            100253439 => '26'
         ],
     ],
     'postRun' => '',
