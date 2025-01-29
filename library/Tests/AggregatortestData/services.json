@@ -1780,7 +1780,91 @@
 			"taxation" : "global"
 		}
 	]
+},
+{
+	"from" : "time*2023-11-05T00:00:00Z",
+	"name" : "TWO_LEVEL_PRICE_SERVICE_INFINITY",
+	"price" : [
+		{
+			"from" : 0,
+			"to" : 10,
+			"price" : 100
+		},
+		{
+			"price" : 200,
+			"from" : 10,
+			"to" : "UNLIMITED"
+		}
+	],
+	"description" : "TWO LEVEL PRICE SERVICE INFINITY",
+	"prorated" : true,
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	],
+	"recurrence" : {
+		"periodicity" : "month"
+	},
+	"limit_cycles" : false,
+	"to" : "time*2173-11-04T09:46:42Z",
+	"creation_time" : "time*2024-11-05T00:00:00Z",
+	"include" : {
+		"groups" : {
+			"G1" : {
+				"account_shared" : false,
+				"account_pool" : false,
+				"quantity_affected" : false,
+				"rates" : [
+					"CALL"
+				],
+				"value" : 100,
+				"usage_types" : {
+					"call" : {
+						"unit" : "seconds"
+					}
+				}
+			}
+		}
+	}
+},
+{
+	"from" : "time*2023-11-05T00:00:00Z",
+	"name" : "THERE_LEVEL_PRICE_SERVICE",
+	"price" : [
+		{
+			"from" : 0,
+			"to" : 2,
+			"price" : 100
+		},
+		{
+			"price" : 200,
+			"from" : 2,
+			"to" : 5
+		},
+		{
+			"price" : 300,
+			"from" : 5,
+			"to" : 7
+		}
+	],
+	"description" : "THERE LEVEL PRICE SERVICE",
+	"prorated" : true,
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	],
+	"recurrence" : {
+		"periodicity" : "month"
+	},
+	"limit_cycles" : 7,
+	"to" : "time*2173-11-04T10:04:59Z",
+	"creation_time" : "time*2024-11-05T00:00:00Z"
 }
+
 
 
 
