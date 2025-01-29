@@ -45,6 +45,7 @@ codecept:
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php73-tests.yml down --remove-orphans
   artifacts:
+    when: on_failure
     paths:
       - $CI_PROJECT_DIR/logs/container/debug.log
       - $CI_PROJECT_DIR/tests/_output/*
