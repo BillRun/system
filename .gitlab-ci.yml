@@ -47,6 +47,7 @@ codecept:
   artifacts:
     paths:
       - $CI_PROJECT_DIR/logs/container/debug.log
+      - $CI_PROJECT_DIR/tests/_output/*
     expire_in: 1 week
 include:
   - template: Jobs/Secret-Detection.gitlab-ci.yml
