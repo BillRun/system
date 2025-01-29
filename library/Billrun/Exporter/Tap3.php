@@ -37,6 +37,21 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 		protected $splitFilesKey = 'tadig';
 	protected $logStamps = array();
 
+	const DEFAULT_FILENAME_PARMS = [
+		[
+				"param" => "param1",
+				"type" => "autoinc",
+				"min_value" => 1,
+				"date_group" => "e",
+				"padding" => [
+						"character" => "0",
+						"length" => 5,
+						"direction" => "left"
+				],
+				"value" => "now"
+		],
+];
+
 	public function __construct($options = array()) {
 		$this->periodEndTime = time();
 		parent::__construct($options);
