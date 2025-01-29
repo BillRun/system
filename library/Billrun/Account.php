@@ -47,7 +47,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 */
 	protected $customerExtraData = array();
 	
-	protected static $allowedQueryKeys = ['id', 'time'];
+	protected static $allowedQueryKeys = ['id', 'time', 'read_preference'];
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -262,7 +262,8 @@ abstract class Billrun_Account extends Billrun_Base {
 		
 		$query = [];
 		if (!isset($params['time'])) {
-			$query['time'] = date(Billrun_Base::base_datetimeformat);
+			$now = new MongoDate();
+			$query['time'] = date('Y-m-d H:i:s', $now->sec) . '.' . sprintf('%06d', $now->usec);
 		}
 		
 		foreach ($params as $key => $value) {
@@ -281,6 +282,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		$results = array();
 		$subject_to = $this->getIncludedInCollection($aids);
 		$params['in_collection'] = true;
+		$params['read_preference'] = 'RP_PRIMARY'; 
 		// white list exists but aids not included
 		if (!is_null($subject_to) && empty($subject_to)) {
 			return $results;
@@ -303,15 +305,22 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * method to update account collection status
 	 */
 	public function updateCrmInCollection($updateCollectionStateChanged) {
+		Billrun_Factory::log()->log("Updating crm with collection information", Zend_Log::DEBUG);
 		$collectionSteps = Billrun_Factory::collectionSteps();
 		$result = array('in_collection' => array(), 'out_of_collection' => array());
 
 		if (!empty($updateCollectionStateChanged['in_collection'])) {
+			Billrun_Factory::log()->log("Updating crm with accounts that are in collection", Zend_Log::DEBUG);
 			foreach ($updateCollectionStateChanged['in_collection'] as $aid => $item) {
+				Billrun_Factory::log()->log("Creating query for account " . $aid, Zend_Log::DEBUG);
 				$params = array('aid' => $aid, 'time' => date(Billrun_Base::base_datetimeformat));
+				Billrun_Factory::log()->log("Loading account " . $aid, Zend_Log::DEBUG);
 				if ($this->loadAccountForQuery($params)) {
+					Billrun_Factory::log()->log("Creating account " . $aid . " new collection values", Zend_Log::DEBUG);
 					$new_values = array('in_collection' => true, 'in_collection_from' => new Mongodloid_Date());
+					Billrun_Factory::log()->log("Creating collection steps for account " . $aid, Zend_Log::DEBUG);
 					$collectionSteps->createCollectionSteps($aid);
+					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew($new_values)) {
 						$result['in_collection'][] = $aid;
 					} else {
@@ -322,11 +331,16 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 
 		if (!empty($updateCollectionStateChanged['out_of_collection'])) {
+			Billrun_Factory::log()->log("Updating crm with accounts that are out of collection", Zend_Log::DEBUG);
 			foreach ($updateCollectionStateChanged['out_of_collection'] as $aid => $item) {
+				Billrun_Factory::log()->log("Creating query for account " . $aid, Zend_Log::DEBUG);
 				$params = array('aid' => $aid, 'time' => date(Billrun_Base::base_datetimeformat));
+				Billrun_Factory::log()->log("Loading account " . $aid, Zend_Log::DEBUG);
 				if ($this->loadAccountForQuery($params)) {
 					$remove_values = array('in_collection', 'in_collection_from');
+					Billrun_Factory::log()->log("Removing collection steps for account " . $aid, Zend_Log::DEBUG);
 					$collectionSteps->removeCollectionSteps($aid);
+					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew(array(), $remove_values)) {
 						$result['out_of_collection'][] = $aid;
 					} else {
@@ -335,6 +349,7 @@ abstract class Billrun_Account extends Billrun_Base {
 				}
 			}
 		}
+		Billrun_Factory::log()->log("Running 'collection state changed', for both in_collection and out_of_collection states", Zend_Log::DEBUG);
 		$collectionSteps->runCollectionStateChange($result['in_collection'], true);
 		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false);
 		return $result;

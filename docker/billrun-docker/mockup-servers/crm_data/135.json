@@ -1,0 +1,118 @@
+{
+    "status":1,
+    "data":[
+        {
+            "from" : "2020-12-01 00:00:00",
+            "aid" : "135",
+            "invoice_language" : "en_GB",
+            "firstname" : "yossi",
+            "lastname" : "test",
+            "email" : "test@gmail.com",
+            "country" : "Israel",
+            "address" : "hshalom 7",
+            "zip_code" : "123ab",
+            "payment_gateway" : "",
+            "salutation" : "",
+            "invoice_shipping_method" : "email",
+            "invoice_detailed" : false,
+            "type" : "account",
+            "to" : "2173-12-01 09:08:46",
+            "creation_time" : "2024-12-01 00:00:00"
+        },
+        {
+            "from" : "2022-10-15 00:00:00",
+            "aid" : "135",
+            "sid" : "1351",
+            "plan" : "PLAN_A",
+            "services" : [ ],
+            "play" : "Default",
+            "discounts" : [
+                {
+                    "priority" : "",
+                    "params" : {
+                        "conditions" : [
+                            {
+                                "subscriber" : [
+                                    {
+                                        "fields" : [
+                                            {
+                                                "field" : "plan",
+                                                "op" : "in",
+                                                "value" : [
+                                                    "PLAN_A"
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ],
+                        "cycles" : 24
+                    },
+                    "from" : "2021-12-01 04:00:00",
+                    "subject" : {
+                        "plan" : {
+                            "PLAN_A" : {
+                                "value" : 10
+                            }
+                        }
+                    },
+                    "proration" : "inherited",
+                    "type" : "monetary",
+                    "to" : "2124-10-15 04:00:00",
+                    "description" : "for 24 month",
+                    "key" : "SUBSCRIBER_DISCOUNT_273294b0189d4120ad62b153610d8664"
+                },
+                {
+                    "priority" : "",
+                    "params" : {
+                        "conditions" : [
+                            {
+                                "subscriber" : [
+                                    {
+                                        "fields" : [
+                                            {
+                                                "field" : "plan",
+                                                "op" : "in",
+                                                "value" : [
+                                                    "PLAN_A"
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                      
+                    },
+                    "from" : "2024-09-01 00:00:00",
+                    "subject" : {
+                        "plan" : {
+                            "PLAN_A" : {
+                                "value" : 1
+                            }
+                        }
+                    },
+                    "proration" : "inherited",
+                    "type" : "percentage",
+                    "to" : "2173-12-01 10:52:46",
+                    "description" : "5 cycles",
+                    "key" : "SUBSCRIBER_DISCOUNT_3ad6fe4e211544d5a49ccce2e7eb8710"
+                }
+            ],
+            "firstname" : "yossi",
+            "lastname" : "test",
+            "address" : "hshalom 7",
+            "country" : "Israel",
+            "type" : "subscriber",
+            "plan_activation" : "2022-10-15 00:00:00",
+            "to" : "2124-12-02 00:00:00",
+            "creation_time" : "2022-10-15 00:00:00",
+            "activation_date" : "2022-10-15 00:00:00",
+            "plan_deactivation" : "2173-12-01 10:52:46",
+            "deactivation_date" : "2173-12-01 10:52:46"
+        }
+       
+        
+]
+}

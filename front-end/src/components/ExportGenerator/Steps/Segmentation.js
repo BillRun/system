@@ -2,12 +2,13 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { FormGroup, Col, ControlLabel, Panel, PanelGroup, Button } from 'react-bootstrap';
+import { FormGroup, Col, ControlLabel, Panel, PanelGroup, Button, InputGroup, MenuItem, DropdownButton, } from 'react-bootstrap';
 import Field from '@/components/Field';
 import { Actions, Conditions } from '@/components/Elements';
 import { reportUsageFieldsSelector } from '@/selectors/reportSelectors';
 import { getSettings } from '@/actions/settingsActions';
 import { getConfig, getFieldName, getConditionFromConfig, parseConfigSelectOptions } from '@/common/Util'
+import { sentenceCase } from 'change-case';
 
 class Segmentation extends Component {
 
@@ -40,6 +41,7 @@ class Segmentation extends Component {
 
   state = {
     fileNamePlaceholdersOpen: false,
+    frequencySuffix: 'hours',
   };
 
   componentDidMount() {
@@ -197,6 +199,19 @@ class Segmentation extends Component {
       Placeholders
     </Button>
   );
+
+  // New handler for frequency value
+  onChangeFrequencyValue = (e) => {
+    const { value } = e.target;
+    this.props.onChange(['frequency', 'date_range', 'value'], Number(value));
+  };
+
+  // New handler for frequency unit
+  onSelectFrequencyUnit = (unit) => {
+    this.setState({ frequencySuffix: unit });
+    this.props.onChange(['frequency', 'date_range', 'type'], unit);
+  };
+
   
   render() {
     const { data, mode } = this.props;
@@ -209,6 +224,11 @@ class Segmentation extends Component {
       .filter(value => value !== '')
       .toArray();
     const isNameEditable = mode === 'create';
+
+    // Frequency data
+    const frequencyValue = data.getIn(['frequency', 'date_range', 'value'], 0);
+    const frequencyType = data.getIn(['frequency', 'date_range', 'type'], 'hours');
+    const frequencyOptions = getConfig(['exportGenerator', 'frequencyOptions'], Immutable.List());
     return (
       <>
         <FormGroup>
@@ -285,7 +305,37 @@ class Segmentation extends Component {
           />
           </Col>
         </FormGroup>
-
+        <FormGroup>
+          <Col sm={3} lg={2} componentClass={ControlLabel}>
+            {getFieldName('frequency', 'export_generator', 'Frequency')}
+          </Col>
+          <Col sm={8} lg={9}>
+            <InputGroup className="full-width">
+              <Field
+                fieldType="number"
+                min="1"
+                step="1"
+                value={frequencyValue}
+                onChange={this.onChangeFrequencyValue}
+              />
+              <DropdownButton
+                id="frequency-unit"
+                componentClass={InputGroup.Button}
+                title={sentenceCase(frequencyType)}
+              >
+                {frequencyOptions.map((option, idx) => (
+                  <MenuItem
+                    key={idx}
+                    eventKey={option}
+                    onSelect={this.onSelectFrequencyUnit}
+                  >
+                    {sentenceCase(option)}
+                  </MenuItem>
+                ))}
+              </DropdownButton>
+            </InputGroup>
+          </Col>
+        </FormGroup>
         <FormGroup>
           <Col sm={3} lg={2} componentClass={ControlLabel}>
             {getFieldName('record_type', 'export_generator', 'Record Type')}

@@ -661,7 +661,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	public function getGatewayCredentials() {
 		$gatewayDetails = $this->getGateway();
-		return $gatewayDetails['params'];
+		return $gatewayDetails['params'] ?? null;
 	}
 	
 	protected function getGateway(){

@@ -8,5 +8,19 @@ modules:
     enabled:
  #       - Asserts
  #       - \Helper\Unit
-    extends: _support/Helper/BillRun.php
+         - \Helper\BillRun\Mockups\PaymentGateway
+         - MongoDb:
+              dsn: "mongodb://mongodb:27017/billing_container"
+              user: ""
+              password: ""
+#              dump_type: "mongodump-tar-gz"
+#              dump: "tests/_data/db_test_dump.tar.gz"
+              populate: false
+              cleanup: false
+         - REST:
+              url: http://web
+              depends: PhpBrowser
+              part: Json
+
+    extends: _support/Helper/BillRun.php 
     step_decorators: ~        

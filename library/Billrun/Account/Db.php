@@ -99,7 +99,13 @@ class Billrun_Account_Db extends Billrun_Account {
 			}
 
 			if (isset($query['time'])) {
-				$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
+				$dateTime = DateTime::createFromFormat('Y-m-d H:i:s.u', $query['time']);
+				if ($dateTime !== false) {
+					$microSeconds = (int) $dateTime->format('u'); // Get milliseconds
+					$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']), false, $microSeconds);
+				} else {
+					$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
+				}
 				$query = array_merge($query, $time);
 				unset($query['time']);
 			}
@@ -108,7 +114,14 @@ class Billrun_Account_Db extends Billrun_Account {
 				$id = $query['id'];
 				unset($query['id']);
 			}
+			$readPreference = $query['read_preference'] ?? false;
+			if ($readPreference){
+				unset($query['read_preference']);
+			}
 			$result = $this->collection->query($query)->cursor();
+			if($readPreference){
+				$result->setReadPreference($readPreference);
+			}
 			if (isset($limit) && $limit === 1) {
 				$account = $result->limit(1)->current();
 				if ($account->isEmpty()) {
@@ -119,7 +132,7 @@ class Billrun_Account_Db extends Billrun_Account {
 				}
 				$accounts[] = $account;
 			} else {
-				$accountsForQuery = iterator_to_array($this->collection->query($query)->cursor());
+				$accountsForQuery = iterator_to_array($result);
 				if (empty($accountsForQuery)) {
 					continue;
 				}

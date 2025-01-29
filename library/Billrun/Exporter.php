@@ -118,10 +118,13 @@ class Billrun_Exporter extends Billrun_Generator_File {
 
     protected $baseQuery = [];
 
+    protected $exportLimitRecords = false;
+
+
     public function __construct($options = array()) {
         parent::__construct($options);
         if(!empty($options['base_query'])) {
-            $this->baseQuery =  json_decode($options['base_query'], JSON_OBJECT_AS_ARRAY);
+            $this->baseQuery =  json_decode($options['base_query'], JSON_OBJECT_AS_ARRAY) ?? [];
         }
         $this->exportTime = time();
         $this->exportStamp = $this->getExportStamp();
@@ -131,11 +134,18 @@ class Billrun_Exporter extends Billrun_Generator_File {
     }
 
     public static function getInstance($params) {
+        //todo:: should be Billrun_Base::getInstance() after extends Billrun_Base (need to refactore Billrun_Base)
+        
         $className =  'Billrun_Exporter_'.ucfirst($params['type'] );
         if(@class_exists($className)) {
             return new $className($params);
         }
-
+        if(isset($params['exporter']['type'])){
+            $className =  'Billrun_Exporter_'.ucfirst($params['exporter']['type']);
+            if(@class_exists($className)) {
+                return new $className($params);
+            }
+        }
         return new Billrun_Exporter($params);
     }
 
@@ -239,6 +249,27 @@ class Billrun_Exporter extends Billrun_Generator_File {
         }
         $transactionCounter = $this->fileGenerator->getTransactionsCounter();
         Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
+        $this->exportLimitRecords =  $transactionCounter == $this->limit ? true : false;
+        return true;
+    }
+
+    public function shouldGenerateByFrequency(){
+        $value = $this->config['frequency']['date_range']['value'] ?? 0;
+        $type = $this->config['frequency']['date_range']['type'] ?? 'hours';
+        $timeRange = "-" . $value . " " . $type;
+        $query = [
+            'exported_time' => ['$exists' => true],
+            'source' => 'export',
+            'name' => $this->getFileType(),
+            'export_start_time' => ['$gt' => new Mongodloid_Date(strtotime($timeRange, $this->exportTime))],
+            'limit_records' => false
+        ];
+        $successExportLog = Billrun_Factory::db()->logCollection()->query($query)->cursor()->sort(['export_start_time' => -1])->current();
+
+        if(!$successExportLog->isEmpty()){
+            Billrun_Factory::log()->log("Export generator should not run. frequency: $timeRange, previous generate: " . date(Billrun_Base::base_datetimeformat, $successExportLog['export_start_time']->sec), Zend_Log::DEBUG);
+            return false;
+        }
         return true;
     }
 
@@ -377,6 +408,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $basicLogData = array(
             'stamp' => $stamp,
             'source' => 'export',
+            'name' => $this->getFileType(),
             'type' => static::$type,
             'export_hostname' => Billrun_Util::getHostName(),
             'export_stamp' => $this->exportStamp,
@@ -470,6 +502,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         return array(
             'sequence_num' => $this->getSequenceNumber(),
             'exported_time' => new Mongodloid_Date(),
+            'limit_records'  => $this->exportLimitRecords
         );
     }
 
@@ -478,14 +511,13 @@ class Billrun_Exporter extends Billrun_Generator_File {
      * 
      * @return type
      */
-    protected function getLogStamp() {
-        if (empty($this->logStamp)) {
-            $stampArr = array(
-                'export_stamp' => $this->exportStamp,
-                'sequence_num' => $this->getSequenceNumber(),
-            );
-            $this->logStamp = Billrun_Util::generateArrayStamp($stampArr);
-        }
+    protected function getLogStamp($extraData = []) { 
+        $stampArr = array(
+            'export_stamp' => $this->exportStamp,
+            'sequence_num' => $this->getSequenceNumber(),
+            'extra_data' => $extraData,
+        );
+        $this->logStamp = Billrun_Util::generateArrayStamp($stampArr);
         return $this->logStamp;
     }
 
@@ -496,7 +528,6 @@ class Billrun_Exporter extends Billrun_Generator_File {
         if ($this->shouldMarkAsExported()) {
             $this->markAsExported();
         }
-        
         Billrun_Factory::dispatcher()->trigger('afterExport', array(&$this->rowsToExport, $this));
     }
 
