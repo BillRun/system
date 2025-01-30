@@ -199,6 +199,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 	}
 		     }
 			if (isset($object['invoice_id'])) {
+				if (empty($lines))  {
+					$lines = $this->loadLines($object);
+				}
 				$this->generateAccountInvoices($object, $lines);
 			}
 		}
@@ -336,6 +339,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
 	}
 
+	public function loadLines( $data ) {
+		$aid = $data['aid'];
+		$billrun_key = $data['billrun_key'];
+		$query = array('aid' => $aid, 'billrun' => $billrun_key);
+		$accountLines = Billrun_Factory::db()->linesCollection()->query($query);
+
+		return $accountLines;
+	}
+
+
 	public function setData($billrunData) {
 		$this->billrun_data = $billrunData;
 	}
@@ -355,11 +368,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 		$this->addExtraParamsToCurrentView($this->invoice_extra_params);
 
-		if (empty($lines)) {
-			$this->view->loadLines();
-		} else {
-			$this->view->setLines($lines);
-		}
+		$this->view->setLines($lines);
+
 
 		$this->tmp_paths = array(
 			'header' => $this->paths['tmp'].$account['aid'] . 'tmp_header.html',
