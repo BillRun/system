@@ -122,7 +122,7 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
                             $param_obj['hard_coded_value'] = $auth;
                         }
                     } else {
-                        unset($config[$index]);
+                        $param_obj['hard_coded_value'] = "";
                     }
                     break;
                 default:
