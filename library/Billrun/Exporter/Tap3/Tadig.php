@@ -669,18 +669,4 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		return $this->sequenceNum;
 	}
 
-	protected function geCalledNumber($row) {
-		$tapRecordType = $this->getLineType($row);
-		$calledNumberFields=  Billrun_Util::getIn($this->config,
-										  'helper_field_mappings.'.$tapRecordType.'.CalledNumber', $this->config,
-										  'helper_field_mappings.common.CalledNumber');
-		foreach($calledNumberFields as  $calledNumberField) {
-			$calledNumber = Billrun_Util::getIn($row,$calledNumberField, null);
-			if(empty($calledNumber)){
-				continue;
-			}
-			return $calledNumber;
-		}
-
-	}
 }
