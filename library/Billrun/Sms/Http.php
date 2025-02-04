@@ -191,12 +191,21 @@ class Billrun_Sms_Http extends Billrun_Sms_Abstract {
 		if (empty($this->parseResponseFunc)) {
 			return $data;
 		}
+		if (is_array($this->parseResponseFunc)) {
+			$func_arg = $data;
+			foreach ($this->parseResponseFunc as $func) {
+				if (is_callable($func)) {
+					$func_arg = call_user_func_array($func, array_merge([$func_arg], $this->parseResponseFuncArgs));
+				}
+			}
+			return $func_arg;
+		}
 		if (!is_callable($this->parseResponseFunc)) {
 			return $data;
 		}
 		return call_user_func_array($this->parseResponseFunc, array_merge([$data], $this->parseResponseFuncArgs));
 	}
-	
+
 	protected function getResponseStatus($data) {
 		if (empty($this->returnResultCodeField)) {
 			return $data;
