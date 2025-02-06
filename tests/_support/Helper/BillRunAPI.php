@@ -70,7 +70,41 @@ class BillRunAPI extends \Codeception\Module
         return json_decode($ret, true);
     }
    
+    public function sendBillapiUniqueget($query, $entity)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
 
+        $ret = $rest->sendGet("/billapi/$entity/uniqueget", [
+            'query' => json_encode($query)
+        ]);
+        return json_decode($ret, true);
+    }
+     /**
+     * send post billapi requset to create entitys.
+     * @param Array $data - entity fields 
+     * @param String $entity - entity name
+     * 
+     */
+    public function sendBillapiPermanentchange($entity,$query,$update,$options=null )
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        if($options) {
+            $params['options'] = json_encode($options);
+        }
+        $ret =  $rest->sendPOST("/billapi/$entity/permanentchange", $params);
+        
+        return json_decode($ret, true);
+    }
     /**
      * create an account.
      * @param Array $override - fields to override the default values / fields to add
@@ -110,6 +144,8 @@ class BillRunAPI extends \Codeception\Module
      */
     public function generateSubscriber(array $override = [])
     {
+        $populatedValues = $this->getCustomFields('subscriber');
+        $override = array_merge($populatedValues, $override);
         $subscriber = array_merge([
 
             "lastname" => "test",
@@ -131,6 +167,8 @@ class BillRunAPI extends \Codeception\Module
      */
     public function generatePlan(array $override = [])
     {
+        $populatedValues = $this->getCustomFields('plan');
+        $override = array_merge($populatedValues, $override);
         $plan = array_merge([
 
             "price" => [
@@ -166,6 +204,8 @@ class BillRunAPI extends \Codeception\Module
      */
     public function generateService(array $override = [])
     {
+        $customeFields = $this->getCustomFields('service');
+        $override = array_merge($customeFields, $override);
         $service = array_merge([
             "description" => "service_",
             "name" => "SERVICE_",
@@ -188,6 +228,7 @@ class BillRunAPI extends \Codeception\Module
                 "periodicity" => "month"
             ]
         ], $override);
+
         $this->sendBillapiCreate($service, 'services');
     }
 
@@ -208,14 +249,84 @@ class BillRunAPI extends \Codeception\Module
      * @param Array $override - fields to override the default values / fields to add
      */
     public function createAccountWithAllMandatoryCustomFields(array $override = []) {
-        $model = new \Models_Accounts(['collection' => 'accounts', 'no_init' => true]);
-        $mandatoryFields = $model->getMandatoryCustomFields();
-        $populatedValues = [];
-        foreach ($mandatoryFields as $field) {
-            $populatedValues[$field['field_name']] = '1';
-        }
+        $populatedValues = $this->getCustomFields('account');
         $populatedValues = array_merge($populatedValues, $override);
         return $this->createAccountWithAllMandatorySystemFields($populatedValues);
     }
 
+    public function getCustomFields($entity) {
+       
+        switch ($entity) {
+            case 'account':
+                $model = new \Models_Accounts(['collection' => 'accounts', 'no_init' => true]);
+                break;
+            case 'subscriber':
+                $model = new \Models_Subscribers(['collection' => 'subscribers', 'no_init' => true]);
+                break;
+            case 'plan':
+                $model = new \Models_Plans(['collection' => 'plans', 'no_init' => true]);
+                break;
+            case 'service':
+                $model = new \Models_Services(['collection' => 'services', 'no_init' => true]);
+                break;
+            case 'rates';
+                $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
+                break;
+            
+        }
+
+        $mandatoryFields = $model->getMandatoryCustomFields();
+        $populatedValues = [];
+        foreach ($mandatoryFields as $field) {
+            $field['type'] = $field['type'] ?? 'text';
+            $value = $this->generateDemoValue($field['type']);
+            $populatedValues[$field['field_name']] = $value;
+        }
+        return $populatedValues;
+    }
+
+
+    function generateDemoValue($type = 'text') {
+        switch ($type) {
+            case 'boolean':
+                return (bool) rand(0, 1);
+                
+            case 'date':
+                // Generate a random date within the next year
+                $days = rand(-365, 365);
+                $date = new \DateTime();
+                $date->modify("$days days");
+                return $date->format('Y-m-d\TH:i:s+0000');
+                
+            case 'text':
+                $length =  rand(5, 10);
+                $characters = 'abcdefghijklmnopqrstuvwxyz';
+                $result = '';
+                for ($i = 0; $i < $length; $i++) {
+                    $result .= $characters[rand(0, strlen($characters) - 1)];
+                }
+                return $result;
+                
+            case 'daterange':
+                $start = new \DateTime();
+                $start->modify(rand(-30, 0) . ' days'); // Start within last 30 days
+                
+                $end = clone $start;
+                $end->modify('+' . rand(1, 30) . ' days'); // End within 1-30 days after start
+                
+                return [[
+                    'from' => $start->format('Y-m-d\TH:i:s+0000'),
+                    'to' => $end->format('Y-m-d\TH:i:s+0000')
+                ]];
+                
+            case 'presentage':
+                return round(rand(0, 100) / 100, 2);
+                
+            default:
+                return $this->generateDemoValue('text');
+        }
+    }
+    
+    
 }
+//billapi/accounts/permanentchange
