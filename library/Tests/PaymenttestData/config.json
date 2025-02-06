@@ -1,0 +1,1175 @@
+{
+	"collection": "configCollection",
+	"data":
+			[
+
+				{
+
+					"unit_test_config": true,
+					"shared_folder": "shared",
+					"cg_return_url": "",
+					"shared_secret": [
+						{
+							"name": "ff",
+							"from": "time*2018-10-10T00:00:00Z",
+							"to": "time*2118-10-24T00:00:00Z",
+							"key": "783753262946756c01777bcd7fbe628d",
+							"crc": "c27d553e"
+						}
+					],
+					"payments": {
+						"offline": {
+							"uf": ["credit_type", "payer_address","reason_code","payer_name"]
+						}
+					},
+					"usage_types": [
+						{
+							"usage_type": "roming_data",
+							"label": "roming_data",
+							"property_type": "data",
+							"invoice_uom": "byte",
+							"input_uom": "byte"
+						},
+						{
+							"usage_type": "call",
+							"label": "call",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						},
+						{
+							"usage_type": "sms",
+							"label": "sms",
+							"property_type": "counter",
+							"invoice_uom": "counter",
+							"input_uom": "counter"
+						},
+						{
+							"usage_type": "data",
+							"label": "data",
+							"property_type": "data",
+							"invoice_uom": "mb1000",
+							"input_uom": "mb1000"
+						},
+						{
+							"usage_type": "call_usa",
+							"label": "call_usa",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						},
+						{
+							"usage_type": "call_uk",
+							"label": "call_uk",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						},
+						{
+							"usage_type": "call_to_la",
+							"label": "call_to_la",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						},
+						{
+							"usage_type": "call_to_gaza",
+							"label": "call_to_gaza",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						},
+						{
+							"usage_type": "mms",
+							"label": "mms",
+							"property_type": "counter",
+							"invoice_uom": "counter",
+							"input_uom": "counter"
+						}
+					],
+					"plugins": [
+						"calcCpuPlugin",
+						"csiPlugin",
+						"autorenewPlugin"
+					],
+					"resetlines": {
+						"limit": {
+							"v": 10,
+							"t": "Number"
+						},
+						"offset": {
+							"v": "1 hour",
+							"t": "DateString"
+						},
+						"process_time_offset": {
+							"v": "15 minutes",
+							"t": "DateString"
+						},
+						"failed_sids_file": {
+							"v": "/files/failed_resetlines.json",
+							"t": "SharedPath"
+						}
+					},
+					"pricing": {
+						"currency": "USD"
+					},
+					"log": {
+						"debug": {
+							"writerParams": {
+								"stream": {
+									"v": "/logs/debug.log",
+									"t": "SharedPath"
+								}
+							},
+							"filterParams": {
+								"priority": {
+									"v": 7,
+									"t": "Number",
+									"range": {
+										"min": 0,
+										"max": 7
+									}
+								}
+							}
+						}
+					},
+					"billrun": {
+						"charging_day": {
+							"v": 1,
+							"t": "Number",
+							"range": {
+								"min": 1,
+								"max": 28
+							}
+						},
+						"timezone": {
+							"v": "Asia/Jerusalem",
+							"t": "Timezone"
+						},
+						"start_hours_lag": {
+							"v": 3,
+							"t": "Number",
+							"range": {
+								"min": 0,
+								"max": 23
+							}
+						},
+						"detailed_invoices": {
+							"v": false,
+							"t": "Boolean"
+						},
+						"email_after_confirmation": {
+							"v": false,
+							"t": "Boolean"
+						},
+						"generate_pdf": {
+							"v": true,
+							"t": "Boolean"
+						}
+					},
+					"subscribers": {
+						"types": [
+							"subscriber",
+							"account"
+						],
+						"fields": [
+							{
+								"field_name": "type",
+								"editable": false
+							}
+						],
+						"subscriber": {
+							"fields": [
+								{
+									"field_name": "sid",
+									"generated": true,
+									"system": true,
+									"unique": true,
+									"editable": false,
+									"display": false,
+									"mandatory": true
+								},
+								{
+									"field_name": "aid",
+									"mandatory": true,
+									"system": true,
+									"editable": false,
+									"display": false
+								},
+								{
+									"field_name": "firstname",
+									"system": true,
+									"mandatory": true,
+									"title": "First name",
+									"editable": true,
+									"display": true
+								},
+								{
+									"field_name": "lastname",
+									"system": true,
+									"mandatory": true,
+									"title": "Last name",
+									"editable": true,
+									"display": true
+								},
+								{
+									"field_name": "plan",
+									"system": true,
+									"mandatory": true
+								},
+								{
+									"field_name": "plan_activation",
+									"system": true,
+									"mandatory": false
+								},
+								{
+									"field_name": "address",
+									"system": true,
+									"mandatory": true,
+									"title": "Address",
+									"editable": true,
+									"display": true
+								},
+								{
+									"field_name": "country",
+									"system": true,
+									"title": "Country",
+									"editable": true,
+									"display": true
+								},
+								{
+									"field_name": "services",
+									"system": true,
+									"mandatory": false
+								}
+							]
+						},
+						"account": {
+							"fields": [
+								{
+									"field_name": "aid",
+									"generated": true,
+									"system": true,
+									"unique": true,
+									"editable": false
+								},
+								{
+									"field_name": "firstname",
+									"mandatory": true,
+									"system": true,
+									"title": "First name",
+									"show_in_list": true,
+									"editable": true,
+									"display": true
+								},
+								{
+									"field_name": "lastname",
+									"mandatory": true,
+									"system": true,
+									"title": "Last name",
+									"show_in_list": true,
+									"editable": true,
+									"display": true
+								},
+								{
+									"field_name": "email",
+									"mandatory": true,
+									"system": true,
+									"title": "E-mail",
+									"editable": true,
+									"display": true
+								},
+								{
+									"field_name": "country",
+									"system": true,
+									"mandatory": true,
+									"title": "Country",
+									"editable": true,
+									"display": true
+								},
+								{
+									"field_name": "address",
+									"system": true,
+									"mandatory": true,
+									"title": "Address",
+									"editable": true,
+									"display": true
+								},
+								{
+									"field_name": "zip_code",
+									"title": "Zip code",
+									"generated": false,
+									"unique": false,
+									"editable": true,
+									"mandatory": true,
+									"system": true,
+									"show_in_list": false,
+									"display": true
+								},
+								{
+									"field_name": "payment_gateway",
+									"system": true,
+									"editable": false,
+									"display": true
+								},
+								{
+									"field_name": "personal_id",
+									"system": true,
+									"editable": false,
+									"display": false
+								},
+								{
+									"field_name": "salutation",
+									"system": true,
+									"editable": true,
+									"display": true,
+									"title": "Salutation"
+								}
+							]
+						}
+					},
+					"rates": {
+						"fields": [
+							{
+								"field_name": "key",
+								"system": true,
+								"mandatory": true
+							},
+							{
+								"field_name": "from",
+								"system": true,
+								"mandatory": true,
+								"type": "date"
+							},
+							{
+								"field_name": "to",
+								"system": true,
+								"mandatory": true,
+								"type": "date"
+							},
+							{
+								"field_name": "description",
+								"system": true,
+								"mandatory": true
+							},
+							{
+								"field_name": "rates",
+								"system": true,
+								"mandatory": true
+							},
+							{
+								"field_name": "tax.service_code",
+								"title": "Taxation service code",
+								"display": false,
+								"editable": false,
+								"mandatory": false
+							},
+							{
+								"field_name": "tax.product_code",
+								"title": "Taxation product code",
+								"display": false,
+								"editable": false,
+								"mandatory": false
+							},
+							{
+								"field_name": "tax.safe_harbor_override_pct",
+								"title": "Safe Horbor override string",
+								"display": false,
+								"editable": false,
+								"mandatory": false
+							},
+							{
+								"field_name": "params.prefix",
+								"title": "prefix",
+								"multiple": true,
+								"display": true,
+								"editable": true
+							},
+							{
+								"system": false,
+								"select_list": true,
+								"display": true,
+								"editable": true,
+								"field_name": "tariff_category",
+								"default_value": "retail",
+								"show_in_list": true,
+								"title": "Tariff category",
+								"mandatory": true,
+								"select_options": "retail",
+								"changeable_props": [
+									"select_options"
+								]
+							}
+						]
+					},
+					"plans": {
+						"fields": [
+							{
+								"field_name": "from",
+								"system": true,
+								"mandatory": true,
+								"type": "date"
+							},
+							{
+								"field_name": "to",
+								"system": true,
+								"mandatory": true,
+								"type": "date"
+							},
+							{
+								"field_name": "name",
+								"system": true,
+								"mandatory": true
+							},
+							{
+								"field_name": "price",
+								"system": true,
+								"mandatory": true
+							},
+							{
+								"field_name": "description",
+								"system": true,
+								"mandatory": true
+							},
+							{
+								"field_name": "upfront",
+								"system": true,
+								"mandatory": true,
+								"type": "boolean"
+							},
+							{
+								"field_name": "tax.service_code",
+								"title": "Taxation service code",
+								"display": false,
+								"editable": false,
+								"mandatory": false
+							},
+							{
+								"field_name": "tax.product_code",
+								"title": "Taxation product code",
+								"display": false,
+								"editable": false,
+								"mandatory": false
+							},
+							{
+								"field_name": "tax.safe_harbor_override_pct",
+								"title": "Safe Horbor override string",
+								"display": false,
+								"editable": false,
+								"mandatory": false
+							}
+						]
+					},
+					"services": {
+						"fields": [
+							{
+								"field_name": "from",
+								"system": true,
+								"mandatory": true,
+								"type": "date"
+							},
+							{
+								"field_name": "to",
+								"system": true,
+								"mandatory": true,
+								"type": "date"
+							},
+							{
+								"field_name": "name",
+								"system": true,
+								"mandatory": true
+							},
+							{
+								"field_name": "price",
+								"system": true,
+								"mandatory": true
+							},
+							{
+								"field_name": "description",
+								"system": true,
+								"mandatory": true
+							},
+							{
+								"field_name": "include",
+								"system": true
+							},
+							{
+								"field_name": "tax.service_code",
+								"title": "Taxation service code",
+								"display": false,
+								"editable": false,
+								"mandatory": false
+							},
+							{
+								"field_name": "tax.product_code",
+								"title": "Taxation product code",
+								"display": false,
+								"editable": false,
+								"mandatory": false
+							},
+							{
+								"field_name": "tax.safe_harbor_override_pct",
+								"title": "Safe Horbor override string",
+								"display": false,
+								"editable": false,
+								"mandatory": false
+							}
+						]
+					},
+					"file_types": [
+						{
+							"file_type": "r",
+							"type": "realtime",
+							"parser": {
+								"type": "json",
+								"separator": "",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "rate"
+									},
+									{
+										"name": "d.m"
+									}
+								],
+								"csv_has_header": false,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"rate",
+									"d.m"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Realtime",
+								"date_field": "date",
+								"usaget_mapping": [
+									{
+										"src_field": "usage",
+										"pattern": "call",
+										"usaget": "call",
+										"unit": "seconds",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									},
+									{
+										"src_field": "usage",
+										"pattern": "sms",
+										"usaget": "sms",
+										"unit": "counter",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									}
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"sms": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"call": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "d.m"
+														}
+													],
+													"operator": "$exists",
+													"type": "condition",
+													"must_met": true,
+													"projection": {
+														"on_true": {
+															"key": "rate",
+															"regex": "",
+															"value": ""
+														},
+														"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
+														}
+													}
+												}
+											}
+										]
+									],
+									"sms": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "d.m"
+														}
+													],
+													"operator": "$existsFalse",
+													"type": "condition",
+													"must_met": true,
+													"projection": {
+														"on_true": {
+															"key": "rate",
+															"regex": "",
+															"value": ""
+														},
+														"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
+														}
+													}
+												}
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"call": [],
+								"sms": []
+							},
+							"realtime": {
+								"postpay_charge": true
+							},
+							"response": {
+								"encode": "json",
+								"fields": [
+									{
+										"response_field_name": "requestNum",
+										"row_field_name": "request_num"
+									},
+									{
+										"response_field_name": "requestType",
+										"row_field_name": "request_type"
+									},
+									{
+										"response_field_name": "sessionId",
+										"row_field_name": "session_id"
+									},
+									{
+										"response_field_name": "returnCode",
+										"row_field_name": "granted_return_code"
+									},
+									{
+										"response_field_name": "sid",
+										"row_field_name": "sid"
+									},
+									{
+										"response_field_name": "grantedVolume",
+										"row_field_name": "usagev"
+									}
+								]
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
+						}, {
+							"file_type": "non",
+							"type": "realtime",
+							"parser": {
+								"type": "json",
+								"separator": "",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "rate"
+									}
+								],
+								"csv_has_header": false,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"rate"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Realtime",
+								"date_field": "date",
+								"default_usaget": "call",
+								"default_unit": "seconds",
+								"default_volume_src": [
+									"volume"
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"call": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "rate"
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"call": []
+							},
+							"realtime": {
+								"postpay_charge": true
+							},
+							"response": {
+								"encode": "json",
+								"fields": [
+									{
+										"response_field_name": "requestNum",
+										"row_field_name": "request_num"
+									},
+									{
+										"response_field_name": "requestType",
+										"row_field_name": "request_type"
+									},
+									{
+										"response_field_name": "sessionId",
+										"row_field_name": "session_id"
+									},
+									{
+										"response_field_name": "returnCode",
+										"row_field_name": "granted_return_code"
+									},
+									{
+										"response_field_name": "sid",
+										"row_field_name": "sid"
+									},
+									{
+										"response_field_name": "grantedVolume",
+										"row_field_name": "usagev"
+									}
+								]
+							},
+							"unify": [],
+							"enabled": true
+						}
+
+
+					],
+					"receive": "1",
+					"process": "1",
+					"calculate": "1",
+					"tenant": {
+						"name": {
+							"t": "String",
+							"v": "Example Company"
+						},
+						"address": {
+							"t": "String",
+							"v": "Example address"
+						},
+						"phone": "199-522-001",
+						"email": "example@example.com",
+						"website": "example.com"
+					},
+					"invoice_export": {
+						"export": "files/invoices/",
+						"generator": {
+							"type": "WkPdf"
+						},
+						"disable_stamp_export_directory": 1,
+						"theme": "/application/views/invoices/theme/theme1.css",
+						"header": "",
+						"footer": "",
+						"sumup_template": "/application/views/invoices/sumup/sumup1.phtml",
+						"details_template": "/application/views/invoices/details/details1.phtml",
+						"decimal_mark": ".",
+						"thousands_separator": ",",
+						"date_separator": "/",
+						"move_exported": 0,
+						"html_translation": [
+							"company_name",
+							"date"
+						]
+					},
+					"export_generators": [],
+					"payment_gateways": [
+						{
+							"name": "CreditGuard",
+							"params": {
+								"custom_style" : "  ",
+								"endpoint_url" : "https://cguat2.creditguard.co.il/xpo/Relay",
+								"mid" : "13607",
+								"charging_terminal" : "0883111010",
+								"user" : "wemobile",
+								"ancestor_urls" : "  ",
+								"version" : "2000",
+								"custom_text" : " ",
+								"password" : "Z5xz2@WO",
+								"redirect_terminal" : "0883110015"
+							}
+						}
+					],
+					"taxation": {
+						"tax_type": "usage",
+						"default": {
+							"key": "DEFAULT_VAT"
+						},
+						"mapping": {
+							"vat": {
+								"priorities": [],
+								"default_fallback": true
+							}
+						}
+					},
+					"property_types": [
+						{
+							"system": true,
+							"type": "time",
+							"uom": [
+								{
+									"unit": 1,
+									"name": "seconds",
+									"label": "Seconds"
+								},
+								{
+									"unit": 60,
+									"name": "minutes",
+									"label": "Minutes"
+								},
+								{
+									"unit": 3600,
+									"name": "hours",
+									"label": "Hours"
+								},
+								{
+									"name": "hhmmss",
+									"label": "hh:mm:ss",
+									"function_name": "parseTime"
+								},
+								{
+									"name": "mmss",
+									"label": "mm:ss",
+									"function_name": "parseTime",
+									"arguments": {
+										"format": "_I:s"
+									}
+								}
+							],
+							"invoice_uom": "mmss"
+						},
+						{
+							"system": true,
+							"type": "data",
+							"uom": [
+								{
+									"unit": 1,
+									"name": "byte",
+									"label": "Byte"
+								},
+								{
+									"unit": 1000,
+									"name": "kb1000",
+									"label": "KB"
+								},
+								{
+									"unit": 1000000,
+									"name": "mb1000",
+									"label": "MB"
+								},
+								{
+									"unit": 1000000000,
+									"name": "gb1000",
+									"label": "GB"
+								},
+								{
+									"unit": "1000000000000",
+									"name": "tb1000",
+									"label": "TB"
+								},
+								{
+									"unit": 1024,
+									"name": "kb1024",
+									"label": "KiB"
+								},
+								{
+									"unit": 1048576,
+									"name": "mb1024",
+									"label": "MiB"
+								},
+								{
+									"unit": 1073741824,
+									"name": "gb1024",
+									"label": "GiB"
+								},
+								{
+									"unit": "1099511627776",
+									"name": "tb1024",
+									"label": "TiB"
+								},
+								{
+									"name": "automatic",
+									"label": "Automatic",
+									"function_name": "parseDataUsage"
+								}
+							],
+							"invoice_uom": "automatic"
+						},
+						{
+							"system": true,
+							"type": "length",
+							"uom": [
+								{
+									"unit": 1,
+									"name": "mm",
+									"label": "mm"
+								},
+								{
+									"unit": 10,
+									"name": "cm",
+									"label": "cm"
+								},
+								{
+									"unit": 1000,
+									"name": "m",
+									"label": "m"
+								},
+								{
+									"unit": 1000000,
+									"name": "km",
+									"label": "km"
+								}
+							],
+							"invoice_uom": "cm"
+						},
+						{
+							"system": true,
+							"type": "counter",
+							"uom": [
+								{
+									"unit": 1,
+									"name": "counter",
+									"label": "Counter"
+								}
+							],
+							"invoice_uom": "counter"
+						},
+						{
+							"system": true,
+							"type": "weight",
+							"uom": [
+								{
+									"unit": 1,
+									"name": "mg",
+									"label": "mg"
+								},
+								{
+									"unit": 1000,
+									"name": "g",
+									"label": "g"
+								},
+								{
+									"unit": 1000000,
+									"name": "kg",
+									"label": "kg"
+								},
+								{
+									"unit": 1000000000,
+									"name": "ton",
+									"label": "ton"
+								}
+							],
+							"invoice_uom": "kg"
+						}
+					],
+					"unify": {
+						"unification_fields": {
+							"required": {
+								"fields": [
+									"session_id",
+									"urt",
+									"request_type"
+								],
+								"match": {
+									"request_type": "/1|2|3/"
+								}
+							},
+							"date_seperation": "Ymd",
+							"stamp": {
+								"value": [
+									"session_id",
+									"usaget",
+									"imsi"
+								],
+								"field": []
+							},
+							"fields": [
+								{
+									"match": {
+										"request_type": "/.*/"
+									},
+									"update": [
+										{
+											"operation": "$setOnInsert",
+											"data": [
+												"arate",
+												"arate_key",
+												"usaget",
+												"imsi",
+												"session_id",
+												"urt",
+												"plan",
+												"connection_type",
+												"aid",
+												"sid",
+												"msisdn"
+											]
+										},
+										{
+											"operation": "$set",
+											"data": [
+												"process_time",
+												"granted_return_code"
+											]
+										},
+										{
+											"operation": "$inc",
+											"data": [
+												"usagev",
+												"duration",
+												"apr",
+												"out_balance_usage",
+												"in_balance_usage",
+												"aprice"
+											]
+										}
+									]
+								}
+							]
+						}
+					},
+					"menu": {
+						"t": "menu",
+						"v": {
+							"main": {
+								"tmp": "tmp"
+							}
+						}
+					},
+					"system": {
+						"closed_cycle_changes": false
+					},
+					"lines": {
+						"fields": [
+							{
+								"field_name": "foreign.activation_date",
+								"foreign": {
+									"entity": "service",
+									"field": "start",
+									"translate": {
+										"type": "unixTimeToString",
+										"format": "Y-m-d H:i:s"
+									}
+								}
+							},
+							{
+								"field_name": "foreign.plan.name",
+								"title": "plan_name",
+								"foreign": {
+									"entity": "plan",
+									"field": "name"
+								}
+							}, {
+								"field_name": "foreign.service.name",
+								"title": "Service name",
+								"foreign": {
+									"entity": "service",
+									"field": "name"
+								}
+							}
+						]
+					}
+				}
+
+			]
+}

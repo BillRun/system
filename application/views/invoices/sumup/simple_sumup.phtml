@@ -11,7 +11,7 @@
 		<?php foreach ($details_keys as $title => $key) { ?>
 			<?php if (empty($data->get('totals')[$key])) { continue; } ?>
 			<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
-				<td><?php echo Generator_Translations::stranslate(getDefInvi18nSlug($title)); ?></td>
+				<td><?php echo Generator_Translations::stranslate(getDefInvi18nSlug($title), [], $title); ?></td>
 				<td><?php echo $this->currencySymbol() . number_format($data->get('totals')[$key]['before_vat'], 2); ?></td>
 			</tr>
 		<?php } ?>

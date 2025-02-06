@@ -29,8 +29,10 @@ class Billrun_Plans_Charge_Singleperiod extends Billrun_Plans_Charge_Base {
 				$price = Billrun_Plan::getPriceByTariff($tariff, 0, 1,$this->activation);
 				if (!empty($price)) {
 					$charges[] = array('value' => $price['price'] * $quantity,
+						'start_date' => new Mongodloid_Date( Billrun_Plan::monthDiffToDate($price['start'], $this->activation) ),
 						'start' => Billrun_Plan::monthDiffToDate($price['start'], $this->activation),
 						'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE),
+						'end_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE,  $this->deactivation )),
 						'cycle' => $tariff['from'],
 						'full_price' => floatval($tariff['price']) );
 

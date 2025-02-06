@@ -31,7 +31,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * initialize method for yaf controller (instead of constructor)
 	 */
 	public function init() {
-		Billrun_Factory::log("Start API call", Zend_Log::DEBUG);
+		Billrun_Factory::log('Start ' . $this->getRequest()->getActionName() . ' API call', Zend_Log::DEBUG);
 		
 		$this->start_time = microtime(1);
 		// all output will be store at class output class
