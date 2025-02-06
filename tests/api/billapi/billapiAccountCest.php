@@ -91,6 +91,7 @@ class billapiAccountCest
             ]
         ]];
         $I->sendBillapiPermanentchange('accounts',$query,$update);
+        //in permanentchange cases the validation only the status is 1 until resolved BRCD-4744
         $I->seeResponseContains('{"status":1'); 
     
         
