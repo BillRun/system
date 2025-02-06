@@ -1,0 +1,18 @@
+/* react-datepicker */
+.react-datepicker-wrapper, .react-datepicker__input-container {
+  display: block;
+}
+.react-datepicker-popper {
+    z-index: 4;
+}
+.react-datepicker__close-icon {
+  display: block;
+  &::after{
+    color: #6f6f6f!important;
+    background-color: #e7e7e7!important;
+  }
+  &:hover::after {
+      background-color: #eeeeee!important;
+      color: #222222!important;
+  }
+}

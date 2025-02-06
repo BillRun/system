@@ -149,8 +149,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @var boolean
 	 */
 	public $ignoreCdrs = false;
-
-	/**
+        
+        /**
 	 * Array of invoicing days, extra customer filtration
 	 * @var array
 	 */
@@ -266,7 +266,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->aggregationLogic = Billrun_Account::getAccountAggregationLogic($aggregateOptions);
 
 		$this->isValid = true;
-                $this->merge_credit_installments = [];
+		$this->merge_credit_installments = [];
+
+		$this->initializeCache($options);
 	}
 
 	public function getCycle() {
@@ -337,7 +339,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	public static function removeBeforeAggregate($billrunKey, $aids = array(),$override = true) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		$billrunQuery = array('billrun_key' => $billrunKey, 'aid' => ['$in' => $aids]);
+		$billrunQuery = array('billrun_key' => $billrunKey);
+		if ($aids) {
+			$billrunQuery['aid']['$in'] = $aids;
+		}
 		//if in overirde mode only protect billed account if not then protect any invoiced account
 		if($override) {
 			$billrunQuery['billed'] = array('$eq' => 1) ;
@@ -353,9 +358,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 									'$or' => array(
 										array( 'type' => array('$in' => array('service', 'flat')) ),
 										array('$or' => array(
-                                                                                    array( 'type'=>'credit','usaget'=>'discount' ),
-                                                                                    array( 'type'=>'credit','usaget'=>'conditional_charge' )
-                                                                                ))
+																array( 'type'=>'credit','usaget'=>'discount' ),
+																array( 'type'=>'credit','usaget'=>'conditional_charge' ),
+																array( 'type'=>'credit','billrun_cycle_credit' => true )
+															))
 									));
 			$billrunRemoveQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));;
 		} else {
@@ -365,10 +371,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 										'source' => 'billrun',
 										'$or' => array(
 											array( 'type' => array('$in' => array('service', 'flat')) ),
-                                                                                        array( '$or' => array(
-                                                                                                array( 'type'=>'credit','usaget'=>'discount' ),
-                                                                                                array( 'type'=>'credit','usaget'=>'conditional_charge' )
-                                                                                            ))
+											array( '$or' => array(
+													array( 'type'=>'credit','usaget'=>'discount' ),
+													array( 'type'=>'credit','usaget'=>'conditional_charge' ),
+													array( 'type'=>'credit','billrun_cycle_credit' => true )
+												))
 											));
 			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		}
@@ -450,7 +457,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		$rawResults = $this->loadRawData($this->getCycle());
 		$data = $rawResults['data'];
-		Billrun_Factory::log('No data loaded by customer aggregator', Zend_Log::DEBUG);
+		if (empty($data)) {
+			Billrun_Factory::log('No data loaded by customer aggregator', Zend_Log::DEBUG);
+		}
 		$accounts = $this->parseToAccounts($data, $this);
 		
 		return $accounts;
@@ -786,7 +795,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				'$regex' => new Mongodloid_Regex('/^\d{6}$/i'), // 6 digits length billrun keys only
 			],
 			'urt' => [
-				'$gt' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrun_key)),
+				'$gte' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrun_key)),
 			],
 			'installments' => [
 				'$exists' => true,
@@ -867,30 +876,53 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
+			$externalCharges = [];
 			if(!$this->isFakeCycle()) {
 				Billrun_Factory::log('Finalizing the invoice', Zend_Log::DEBUG);
-				$aggregatedEntity->writeInvoice( $this->min_invoice_id , $aggregatedResults);
 				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
+				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
+				Billrun_Factory::log('Get external charges / credits from plugins', Zend_Log::DEBUG);
+				Billrun_Factory::dispatcher()->trigger('beforeAggregateAccountSaveLines', array(&$aggregatedEntity, &$externalCharges, $aggregatedResults, $aggregatedEntity->getAppliedDiscounts()));
 				//Save Account services / plans
 				Billrun_Factory::log('Save Account services / plans', Zend_Log::DEBUG);
 				$this->saveLines($aggregatedResults);
 				//Save Account discounts.
 				Billrun_Factory::log('Save Account discounts.', Zend_Log::DEBUG);
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
-				//Save configurable data
+				//Save external charges provided by the plugin
+				Billrun_Factory::log('Save Account external charges', Zend_Log::DEBUG);
+				foreach($externalCharges as &$externalCharge) {
+					$externalCharge['billrun'] = $this->getCycle()->key();
+					$externalCharge['source'] = 'billrun';
+					$externalCharge['billrun_cycle_credit'] = true;
+					$sub = $aggregatedEntity->getSubscriber($externalCharge['sid']);
+					if(!empty($sub)) {
+						$sub->getInvoice()->addLines([$externalCharge]);
+					} else {
+						Billrun_Factory::log("Cloud not  find subscriber for external charge with stamp {$externalCharge['stamp']}, check the plugin logic!",Zend_Log::ERR);
+					}
+				}
+				$this->saveLines($externalCharges);
+				// Close the invoice (no changes to subscribers allowed )
+				$aggregatedEntity->closeInvoice($this->min_invoice_id );
+				//Save configurable/aggretaion data
 				$aggregatedEntity->addConfigurableData();
 				//Save the billrun document
 				Billrun_Factory::log('Save the billrun document', Zend_Log::DEBUG);
 				$aggregatedEntity->save();
 			} else {
 				Billrun_Factory::log('Faking finalization of the invoice', Zend_Log::DEBUG);
-				$aggregatedEntity->writeInvoice( 0 , $aggregatedResults, $this->isFakeCycle() );
-				//Save configurable data
+				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
+				Billrun_Factory::log('Get external charges / credits from plugins', Zend_Log::DEBUG);
+				Billrun_Factory::dispatcher()->trigger('beforeAggregateAccountSaveLines', array(&$aggregatedEntity, &$externalCharges, $aggregatedResults, $aggregatedEntity->getAppliedDiscounts()));
+				// Close the invoice (no changes to subscribers allowed )
+				$aggregatedEntity->closeInvoice( 0 , $this->isFakeCycle());
+				//Save configurable/aggretaion data
 				$aggregatedEntity->addConfigurableData();
 			}
-                        if(!empty($aggregatedResults)){
-                                    array_push($this->successfulAccounts, $aggregatedEntity->getInvoice()->getAid());
-                        }
+			if(!empty($aggregatedResults)){
+						array_push($this->successfulAccounts, $aggregatedEntity->getInvoice()->getAid());
+			}
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;
 	}
@@ -955,7 +987,17 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		$linesCol = Billrun_Factory::db()->linesCollection();
 		try {
-			$linesCol->batchInsert($results);
+			$resSize = count($results);
+			$sizeLimit = Billrun_Factory::config()->getConfigValue('billrun.max_batch_insert_limit',500000);
+			if($resSize < $sizeLimit || $sizeLimit <= 0 ) {
+				$linesCol->batchInsert($results);
+			} else {
+				Billrun_Factory::log("The amount of documents to store is to high : {$resSize} , Storing documents in batches of {$sizeLimit} ");
+				for($i=0; $i < $resSize / $sizeLimit; $i++) {
+					$resToStore = array_slice($results,$i*$sizeLimit,$sizeLimit);
+					$linesCol->batchInsert($resToStore);
+				}
+			}
 		} catch (Exception $e) {
 			Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
 			foreach ($results as $line) {
@@ -1101,6 +1143,41 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			return !is_array($options['invoicing_days']) ? [$options['invoicing_days']] : $options['invoicing_days'];
 		}else {
 			return array_map('strval', $this->allowPrematureRun ? range(1, 28) : range(1, date("d", strtotime("yesterday"))));
+		}
+	}
+
+	protected function initializeCache($options = []) {
+		if(in_array('Billrun_Subscriber_External_Cacheable',class_uses(Billrun_Factory::subscriber())) &&
+			in_array ('Billrun_Subscriber_External_Cacheable',class_uses(Billrun_Factory::account())) ) {
+			if( Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.clear_on_start',false) &&
+				( !$this->isCycle || $this->page == 0 ) ) {
+					Billrun_Factory::subscriber()->cleanExternalCache();
+					Billrun_Factory::account()->cleanExternalCache();
+			}
+			$this->setupCycleCache();
+		} else {
+			Billrun_Factory::log('Account or Subscriber classes are not cacheable. not altering cache behavior.',Zend_Log::INFO);
+		}
+	}
+
+	public static function setupCycleCache() {
+		if(in_array('Billrun_Subscriber_External_Cacheable',class_uses(Billrun_Factory::subscriber())) &&
+			in_array ('Billrun_Subscriber_External_Cacheable',class_uses(Billrun_Factory::account())) ) {
+
+			if(!empty(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.prefix',''))) {
+				Billrun_Factory::account()->setCachePrefix(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.prefix',''));
+			}
+			if(!empty(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.prefix',''))) {
+				Billrun_Factory::subscriber()->setCachePrefix(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.prefix',''));
+			}
+			Billrun_Factory::subscriber()->setCacheEnabled(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.enabled',false));
+			Billrun_Factory::subscriber()->setCachingTTL(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.ttl',600));
+			Billrun_Factory::account()->setCacheEnabled(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.enabled',false));
+			Billrun_Factory::account()->setCacheEnabled(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.ttl',600));
+
+			Billrun_Factory::account()->setCacheGBAtoGSD(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gba_to_gsd.enabled',false));
+		} else {
+			Billrun_Factory::log('Account or Subscriber classes are not cacheable. not altering cache behavior.',Zend_Log::INFO);
 		}
 	}
 

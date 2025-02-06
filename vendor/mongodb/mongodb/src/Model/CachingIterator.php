@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2017-present MongoDB, Inc.
+ * Copyright 2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@ namespace MongoDB\Model;
 use Countable;
 use Iterator;
 use IteratorIterator;
-use ReturnTypeWillChange;
 use Traversable;
-
 use function count;
 use function current;
 use function key;
@@ -43,7 +41,7 @@ class CachingIterator implements Countable, Iterator
     /** @var array */
     private $items = [];
 
-    /** @var Iterator */
+    /** @var IteratorIterator */
     private $iterator;
 
     /** @var boolean */
@@ -55,14 +53,14 @@ class CachingIterator implements Countable, Iterator
     /**
      * Initialize the iterator and stores the first item in the cache. This
      * effectively rewinds the Traversable and the wrapping IteratorIterator.
-     * Additionally, this mimics behavior of the SPL iterators and allows users
-     * to omit an explicit call to rewind() before using the other methods.
+     *  Additionally, this mimics behavior of the SPL iterators and allows users
+     * to omit an explicit call * to rewind() before using the other methods.
      *
      * @param Traversable $traversable
      */
     public function __construct(Traversable $traversable)
     {
-        $this->iterator = $traversable instanceof Iterator ? $traversable : new IteratorIterator($traversable);
+        $this->iterator = new IteratorIterator($traversable);
 
         $this->iterator->rewind();
         $this->storeCurrentItem();
@@ -72,7 +70,6 @@ class CachingIterator implements Countable, Iterator
      * @see http://php.net/countable.count
      * @return integer
      */
-    #[ReturnTypeWillChange]
     public function count()
     {
         $this->exhaustIterator();
@@ -84,7 +81,6 @@ class CachingIterator implements Countable, Iterator
      * @see http://php.net/iterator.current
      * @return mixed
      */
-    #[ReturnTypeWillChange]
     public function current()
     {
         return current($this->items);
@@ -94,7 +90,6 @@ class CachingIterator implements Countable, Iterator
      * @see http://php.net/iterator.key
      * @return mixed
      */
-    #[ReturnTypeWillChange]
     public function key()
     {
         return key($this->items);
@@ -104,7 +99,6 @@ class CachingIterator implements Countable, Iterator
      * @see http://php.net/iterator.next
      * @return void
      */
-    #[ReturnTypeWillChange]
     public function next()
     {
         if (! $this->iteratorExhausted) {
@@ -123,7 +117,6 @@ class CachingIterator implements Countable, Iterator
      * @see http://php.net/iterator.rewind
      * @return void
      */
-    #[ReturnTypeWillChange]
     public function rewind()
     {
         /* If the iterator has advanced, exhaust it now so that future iteration
@@ -140,7 +133,6 @@ class CachingIterator implements Countable, Iterator
      * @see http://php.net/iterator.valid
      * @return boolean
      */
-    #[ReturnTypeWillChange]
     public function valid()
     {
         return $this->key() !== null;
@@ -161,10 +153,12 @@ class CachingIterator implements Countable, Iterator
      */
     private function storeCurrentItem()
     {
-        if (! $this->iterator->valid()) {
+        $key = $this->iterator->key();
+
+        if ($key === null) {
             return;
         }
 
-        $this->items[$this->iterator->key()] = $this->iterator->current();
+        $this->items[$key] = $this->iterator->current();
     }
 }

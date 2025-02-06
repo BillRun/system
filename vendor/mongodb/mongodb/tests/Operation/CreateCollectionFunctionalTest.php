@@ -4,15 +4,14 @@ namespace MongoDB\Tests\Operation;
 
 use MongoDB\Operation\CreateCollection;
 use MongoDB\Tests\CommandObserver;
-
 use function version_compare;
 
 class CreateCollectionFunctionalTest extends FunctionalTestCase
 {
-    public function testDefaultWriteConcernIsOmitted(): void
+    public function testDefaultWriteConcernIsOmitted()
     {
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new CreateCollection(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -21,20 +20,20 @@ class CreateCollectionFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectNotHasAttribute('writeConcern', $event['started']->getCommand());
             }
         );
     }
 
-    public function testSessionOption(): void
+    public function testSessionOption()
     {
         if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
             $this->markTestSkipped('Sessions are not supported');
         }
 
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new CreateCollection(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -43,7 +42,7 @@ class CreateCollectionFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );

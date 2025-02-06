@@ -77,8 +77,9 @@ trait QROptionsTrait{
 	 * valid modes are: Number, AlphaNum, Kanji, Byte (case insensitive)
 	 *
 	 * @see https://github.com/chillerlan/php-qrcode/issues/39
+     * @see https://github.com/chillerlan/php-qrcode/issues/97 (changed default value to '')
 	 */
-	protected ?string $dataModeOverride = null;
+	protected string $dataModeOverride = '';
 
 	/**
 	 * The output type
@@ -139,12 +140,12 @@ trait QROptionsTrait{
 	/**
 	 * string substitute for dark
 	 */
-	protected string $textDark = '🔴';
+	protected string $textDark = '██';
 
 	/**
 	 * string substitute for light
 	 */
-	protected string $textLight = '⭕';
+	protected string $textLight = '░░';
 
 	/**
 	 * markup substitute for dark (CSS value)

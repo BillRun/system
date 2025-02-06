@@ -1,0 +1,12 @@
+#EventsTab {
+  UL.nav-tabs {
+    li {
+      &:last-child {
+        float: right;
+      }
+    }
+  }
+  .filter-info {
+    background: none;
+  }
+}

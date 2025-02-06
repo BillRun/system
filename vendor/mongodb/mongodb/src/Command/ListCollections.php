@@ -24,7 +24,6 @@ use MongoDB\Driver\Session;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Model\CachingIterator;
 use MongoDB\Operation\Executable;
-
 use function is_array;
 use function is_bool;
 use function is_integer;

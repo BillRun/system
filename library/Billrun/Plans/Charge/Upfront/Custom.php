@@ -53,7 +53,7 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 			return null;
 		}
 
-		$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
+		$endProration =  $this->proratedEnd && !$this->isTerminated($cycle) || ($this->proratedTermination && $this->isTerminated($cycle));
 		// get a refund for a cancelled plan paid upfront
 		if ($this->activation >= $this->cycle->start() //No refund need as it started in the current cycle
 			 ||
@@ -72,7 +72,7 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 
 
 		$lastUpfrontCharge = $this->getPriceForCycle($this->cycle);
-		$endActivation  = strtotime('-1 second', $this->deactivation);
+		$endActivation  =  $this->deactivation;
 		$refundFraction = 1- Billrun_Utils_Time::getDaysSpanDiffUnix($this->cycle->start(), $endActivation, $cycleSpan);
 
 
@@ -89,7 +89,7 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 
 	protected function getProrationData($price, $cycle = false) {
 			$frequency = $this->recurrenceConfig['frequency'];
-			$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
+			$endProration =  $this->proratedEnd && !$this->isTerminated($cycle) || ($this->proratedTermination && $this->isTerminated($cycle));
 			$cycle = empty($cycle) ? $this->cycle : $cycle;
 			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $cycle->end() )) );
 			$nextCycle = $this->getUpfrontCycle($cycle);
@@ -110,6 +110,13 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 	protected function getUpfrontCycle($regularCycle) {
 		$nextCycleKey = Billrun_Billingcycle::getFollowingBillrunKey($regularCycle->key());
 		return  new Billrun_DataTypes_CustomCycleTime($nextCycleKey, $this->recurrenceConfig,$regularCycle->invoicingDay(),$this->activation);
+	}
+
+	protected function getPriceForCycle($cycle) {
+        $formatStart = date(Billrun_Base::base_dateformat,  $cycle->start());
+        $formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
+        $cycleCount = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart)/$this->recurrenceConfig['frequency'];
+        return $this->getPriceByOffset($cycleCount);
 	}
 
 }
