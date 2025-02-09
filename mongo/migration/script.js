@@ -1525,6 +1525,9 @@ runOnce(lastConfig, 'BRCD-4455-1', function () {
 	}
 });
 
-	
+runOnce(lastConfig, 'BRCD-4748', function () {
+	db.events.ensureIndex({'notify_time': 1 , 'start_notify_time': 1}, { unique: false , sparse: false, background: true });
+});
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
