@@ -1,12 +1,12 @@
 <?php
-
+use Helper\PaymentStatus;
 class CreditguardTest extends \Codeception\Test\Unit
 {
     /**
      * @var \UnitTester
      */
     protected $tester;
-
+    
     protected function _before()
     {
         // $this->tester->enableCreditGuardPGWithSettings();
@@ -48,7 +48,7 @@ class CreditguardTest extends \Codeception\Test\Unit
         $this->tester->iframe(['aid' => (int) $account['aid'], 'txid' => 300]);
 
         //test that the token NOT changed
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'subscribers',
             [
                 'aid' => (int) $account['aid'],
@@ -57,7 +57,7 @@ class CreditguardTest extends \Codeception\Test\Unit
             ]
         );
           //test that the recept 
-          $this->tester->seeInCollection(
+          $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account['aid'],
@@ -70,12 +70,12 @@ class CreditguardTest extends \Codeception\Test\Unit
             ]);
 
         //test that the bill paid
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account['aid'],
                 'amount' => 300,
-                'paid'=>['$in'=>['true',true,1,'1']]
+                'paid'=> PaymentStatus::PAID
           
             ]);
     }
@@ -99,7 +99,8 @@ class CreditguardTest extends \Codeception\Test\Unit
                     "card_expiration" => "1225",
                     "four_digits" => "5606"
                 ]
-            ]
+                ],
+            "tenant_return_url" => " http://web/paymentgateways/success"
         ]);
         $account = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->tester->payApi(['aid' => $account['aid'], 'amount' => 400, 'dir' => 'tc']);
@@ -107,7 +108,7 @@ class CreditguardTest extends \Codeception\Test\Unit
         $this->tester->iframe(['aid' => (int) $account['aid'], 'txid' => 400]);
 
         //test that the token changed
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'subscribers',
             [
                 'aid' => (int) $account['aid'],
@@ -117,7 +118,7 @@ class CreditguardTest extends \Codeception\Test\Unit
         );
 
         //test that the recept 
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account['aid'],
@@ -129,7 +130,7 @@ class CreditguardTest extends \Codeception\Test\Unit
                 "pending" => false
             ]);
         //test the bill
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account['aid'],
@@ -206,7 +207,7 @@ class CreditguardTest extends \Codeception\Test\Unit
         $this->tester->chargeAccountApi(['aids' => (int) $account['aid']]);
 
         //test that the charge is with the new payment methid 
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account['aid'],
@@ -247,7 +248,7 @@ class CreditguardTest extends \Codeception\Test\Unit
         $this->tester->iframe(['aid' => (int) $account['aid'], 'txid' => 500]);
 
         //test that the token changed
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'subscribers',
             [
                 'aid' => (int) $account['aid'],
@@ -257,7 +258,7 @@ class CreditguardTest extends \Codeception\Test\Unit
         );
 
         //test that the recept 
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account['aid'],
@@ -274,12 +275,12 @@ class CreditguardTest extends \Codeception\Test\Unit
             
             ]);
         //test the bill
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account['aid'],
                 'amount' => 500,
-                'paid'=>['$in'=>['true',true,1,'1']]
+                'paid'=> PaymentStatus::PAID
             ]);
     }
 
@@ -311,7 +312,7 @@ class CreditguardTest extends \Codeception\Test\Unit
         $this->tester->iframe(['aid' => (int) $account['aid'], 'txid' => 500]);
 
         //test that the token changed
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'subscribers',
             [
                 'aid' => (int) $account['aid'],
@@ -321,7 +322,7 @@ class CreditguardTest extends \Codeception\Test\Unit
         );
 
         //test that the recept 
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account['aid'],
@@ -338,12 +339,12 @@ class CreditguardTest extends \Codeception\Test\Unit
             
             ]);
         //test the bill
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account['aid'],
                 'amount' => 500,
-                'paid'=>['$in'=>['true',true,1,'1']]
+                'paid'=> PaymentStatus::PAID
             ]);
     }
 
@@ -399,7 +400,7 @@ class CreditguardTest extends \Codeception\Test\Unit
         $this->tester->chargeAccountApi(['aids' => (int) $account1['aid']]);
 
         //test the charge bill only for account1
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account1['aid'],
@@ -409,12 +410,12 @@ class CreditguardTest extends \Codeception\Test\Unit
                 "pending" => false
             ]);
 
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account2['aid'],
                 'amount' => 500,
-                "paid" => ['$in'=>[false,'false',0,'0']]
+                "paid" => PaymentStatus::UNPAID
             ]);  
    
     }
@@ -447,7 +448,7 @@ class CreditguardTest extends \Codeception\Test\Unit
 
 
         //test the charge bill only for account1
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account['aid'],
@@ -487,12 +488,12 @@ class CreditguardTest extends \Codeception\Test\Unit
 
 
         //test the charge bill only for account1
-        $this->tester->seeInCollection(
+        $this->tester->verifyCollectionRecord(
             'bills',
             [
                 'aid' => (int) $account['aid'],
                 'amount' => 400,
-                'paid'=>"2"
+                'paid'=> PaymentStatus::PENDING
                 
             ]);
 

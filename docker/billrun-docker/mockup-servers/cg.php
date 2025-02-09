@@ -1,7 +1,7 @@
 <?php
 
 
-
+define('BILLRUN_URL', 'http://web');
 /**
  * Generate XML response for setup transaction
  */
@@ -11,7 +11,7 @@ function getXmlResponse($token, $url, $total, $creditType, $numberOfPayments = n
     manageTemporaryFiles('write', 'temp_numberOfPayments.txt', $numberOfPayments);
     $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
     $paymentType = manageTemporaryFiles('read', 'payment_type.txt') ?: 'SinglePayment';
-    return '<?xml version="1.0" encoding="ISO-8859-8"?><ashrait><response><command>doDeal</command><dateTime>2025-01-08 18:19</dateTime><requestId></requestId><tranId>112348371</tranId><result>000</result><message>עסקה תקינה</message><userMessage>עסקה תקינה</userMessage><additionalInfo></additionalInfo><version>2000</version><language>Heb</language><doDeal><status>000</status><statusText>עסקה תקינה</statusText><extendedStatus></extendedStatus><extendedStatusText></extendedStatusText><extendedUserMessage></extendedUserMessage><terminalNumber>0883111010</terminalNumber><cardBin>CG</cardBin><cardMask>CGGMPI</cardMask><cardLength>5</cardLength><cardNo>xGMPI</cardNo><cardName></cardName><cardExpiration></cardExpiration><cardType code=""></cardType><extendedCardType code="0">Credit</extendedCardType><blockedCard></blockedCard><lifeStyle></lifeStyle><customCardType></customCardType><creditCompany code=""></creditCompany><cardBrand code=""></cardBrand><cardAcquirer code=""></cardAcquirer><serviceCode></serviceCode><transactionType code="01">RegularDebit</transactionType><creditType code="1">' . $creditType . '</creditType><currency code="1">ILS</currency><baseCurrency></baseCurrency><baseAmount></baseAmount><transactionCode code="50">Phone</transactionCode><total>' . $total . '</total><firstPayment></firstPayment><periodicalPayment></periodicalPayment><numberOfPayments>' . $numberOfPayments . '</numberOfPayments><paymentsInterest></paymentsInterest><mid>13607</mid><uniqueid>1736353163858</uniqueid><mpiValidation>AutoComm</mpiValidation><token>' . $token . '</token><mpiHostedPageUrl>http://ppsuat.mockup' . '?txId=' . $token . '</mpiHostedPageUrl><returnUrl></returnUrl><successUrl>http://billrun-nginx:80/paymentgateways/okpage?name=CreditGuard</successUrl><errorUrl>http://billrun-nginx:80/paymentgateways/okpage</errorUrl><cancelUrl></cancelUrl><clubId></clubId><validation code="106">TxnSetup</validation><idStatus code=""></idStatus><cvvStatus code=""></cvvStatus><authSource code="6">MPIServer</authSource><authNumber></authNumber><fileNumber></fileNumber><slaveTerminalNumber></slaveTerminalNumber><slaveTerminalSequence></slaveTerminalSequence><eci></eci><clientIp></clientIp><email></email><cavv code=""></cavv><user>0000000000044</user><addonData></addonData><supplierNumber></supplierNumber><id></id><shiftId1></shiftId1><shiftId2></shiftId2><shiftId3></shiftId3><shiftTxnDate></shiftTxnDate><cgUid>112348371</cgUid><cardHash></cardHash><customerData><userData1>' . $userData1 . '</userData1><userData2>' . $paymentType . '</userData2></customerData><ashraitEmvData><mti>100</mti></ashraitEmvData><extendedTranCode></extendedTranCode><sendNotification></sendNotification></doDeal></response></ashrait>';
+    return '<?xml version="1.0" encoding="ISO-8859-8"?><ashrait><response><command>doDeal</command><dateTime>2025-01-08 18:19</dateTime><requestId></requestId><tranId>112348371</tranId><result>000</result><message>עסקה תקינה</message><userMessage>עסקה תקינה</userMessage><additionalInfo></additionalInfo><version>2000</version><language>Heb</language><doDeal><status>000</status><statusText>עסקה תקינה</statusText><extendedStatus></extendedStatus><extendedStatusText></extendedStatusText><extendedUserMessage></extendedUserMessage><terminalNumber>0883111010</terminalNumber><cardBin>CG</cardBin><cardMask>CGGMPI</cardMask><cardLength>5</cardLength><cardNo>xGMPI</cardNo><cardName></cardName><cardExpiration></cardExpiration><cardType code=""></cardType><extendedCardType code="0">Credit</extendedCardType><blockedCard></blockedCard><lifeStyle></lifeStyle><customCardType></customCardType><creditCompany code=""></creditCompany><cardBrand code=""></cardBrand><cardAcquirer code=""></cardAcquirer><serviceCode></serviceCode><transactionType code="01">RegularDebit</transactionType><creditType code="1">' . $creditType . '</creditType><currency code="1">ILS</currency><baseCurrency></baseCurrency><baseAmount></baseAmount><transactionCode code="50">Phone</transactionCode><total>' . $total . '</total><firstPayment></firstPayment><periodicalPayment></periodicalPayment><numberOfPayments>' . $numberOfPayments . '</numberOfPayments><paymentsInterest></paymentsInterest><mid>13607</mid><uniqueid>1736353163858</uniqueid><mpiValidation>AutoComm</mpiValidation><token>' . $token . '</token><mpiHostedPageUrl>http://ppsuat.mockup' . '?txId=' . $token . '</mpiHostedPageUrl><returnUrl></returnUrl><successUrl>'.BILLRUN_URL.'/paymentgateways/okpage?name=CreditGuard</successUrl><errorUrl>'.BILLRUN_URL.'/paymentgateways/okpage</errorUrl><cancelUrl></cancelUrl><clubId></clubId><validation code="106">TxnSetup</validation><idStatus code=""></idStatus><cvvStatus code=""></cvvStatus><authSource code="6">MPIServer</authSource><authNumber></authNumber><fileNumber></fileNumber><slaveTerminalNumber></slaveTerminalNumber><slaveTerminalSequence></slaveTerminalSequence><eci></eci><clientIp></clientIp><email></email><cavv code=""></cavv><user>0000000000044</user><addonData></addonData><supplierNumber></supplierNumber><id></id><shiftId1></shiftId1><shiftId2></shiftId2><shiftId3></shiftId3><shiftTxnDate></shiftTxnDate><cgUid>112348371</cgUid><cardHash></cardHash><customerData><userData1>' . $userData1 . '</userData1><userData2>' . $paymentType . '</userData2></customerData><ashraitEmvData><mti>100</mti></ashraitEmvData><extendedTranCode></extendedTranCode><sendNotification></sendNotification></doDeal></response></ashrait>';
 }
 
 function manageTemporaryFiles($action, $filename, $data = null)
@@ -295,7 +295,7 @@ function getTokenTransactionDetailsResponseJ5($token, $terminalNumber)
            <token>{$token}</token>
            <mpiHostedPageUrl>https://ppsuat.creditguard.co.il?txId={$token}</mpiHostedPageUrl>
            <returnUrl/>
-           <successUrl>http://localhost:8074/paymentgateways/OkPage?name=CreditGuard</successUrl>
+           <successUrl>{BILLRUN_URL}/paymentgateways/OkPage?name=CreditGuard</successUrl>
            <errorUrl/>
            <cancelUrl/>
            <clubId/>
@@ -685,7 +685,7 @@ function chargeCommandResponse($xml) {
 
         //return wrong respone (for test unknwon response )
         if($xml->request->doDeal->cardId=="unknwon"){
-            echo "חחחחחחחחח";
+            echo "unknwon";
             return;
         }
         
@@ -954,7 +954,7 @@ function handleIframe()
         "userData1" => $_GET['aid']
     ];
 
-    $redirectUrl = "http://billrun-nginx:80/paymentgateways/okpage?" . http_build_query($params);
+    $redirectUrl = BILLRUN_URL."/paymentgateways/okpage?" . http_build_query($params);
 
     ob_end_clean();
     header('Location: ' . $redirectUrl);
@@ -968,5 +968,5 @@ if (preg_match('/^\/payment-gateways\/creditguard\/xpo\/Relay/', $_SERVER["REQUE
 } elseif (preg_match('/payment-gateways\/creditguard\/iframe/', $_SERVER["REQUEST_URI"])) {
     handleIframe();
 } else {
-    echo "ddddddddddddddddddddddddddddddddddddd";
+    echo "Invalid request";
 }

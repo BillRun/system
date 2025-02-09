@@ -299,7 +299,7 @@ class BillRunAPI extends \Codeception\Module
                 "type"=>"account",
                 "amount"=>5,
                 "action"=>"single_payment",
-              
+                "return_url"=>"http://billrun-nginx:80/paymentgateways/success",
                 "ok_page"=>"http://web/paymentgateways/okpage?name=CreditGuard",
                 "fail_page"=>"http://web/paymentgateways/okpage",
                 "_t_"=>time()
