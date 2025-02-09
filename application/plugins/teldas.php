@@ -170,7 +170,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               return;
           }
       }
-      $parameters = array('tspID'=>98010,'transactionDateTimeFrom' => $this->getDateFormat(strtotime("-1 year")), 'transactionDateTimeTo' => $this->getDateFormat(strtotime("-1 second")));
+      $parameters = array('transactionDateTimeFrom' => $this->getDateFormat(strtotime("-1 year")), 'transactionDateTimeTo' => $this->getDateFormat(strtotime("-1 second")));
       $success1 = $this->getCompleteListOfInaNumbers($parameters);
       if (!$success1) {
           Billrun_Factory::log("Failed to get the complete list of INA numbers", Zend_Log::ALERT);
@@ -210,7 +210,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
   protected function getCompleteListOfInaNumbers($parameters) {
       Billrun_Factory::log("Getting the complete list of INA numbers", Zend_Log::DEBUG);
-      $InaNumbersRecords = $this->getInaNumbers($parameters);/*$this->getNumberOfAllInaNumbersRecords();*/
+      $InaNumbersRecords = $this->getNumberOfAllInaNumbersRecords();
       if ($InaNumbersRecords === false) {
           return false;
       }
