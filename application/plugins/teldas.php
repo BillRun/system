@@ -36,8 +36,8 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $this->options = $options;
     $this->nonWorkingDaysCollection = Billrun_Factory::db()->plugin_teldas_non_working_daysCollection(['force' => true]);
     $this->inaNumbersCollection = Billrun_Factory::db()->plugin_teldas_ina_numbersCollection(['force' => true]);
-    $this->onlineTariffsProfilesCollection = Billrun_Factory::db()->plugin_teldas_online_tariffs_profilesCollection(['force' => true]);
-    $this->tariffSwitchingClassesCollection = Billrun_Factory::db()->plugin_teldas_tariff_switching_classesCollection(['force' => true]);	
+    $this->tariffsProfilesCollection = Billrun_Factory::db()->plugin_teldas_online_tariffs_profilesCollection(['force' => true]);
+    $this->tariffSwitchingClassesCollection = Billrun_Factory::db()->plugin_teldas_tariff_switching_classesCollection(['force' => true]);
 	}
 
   protected function authentication() {
@@ -174,16 +174,35 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       $success1 = $this->getCompleteListOfInaNumbers($parameters);
       if (!$success1) {
           Billrun_Factory::log("Failed to get the complete list of INA numbers", Zend_Log::ALERT);
+          //todo:should revert and return 
       }
-      $success2 = $this->getCompleteListOfTariffsProfiles();
-      if (!$success2) {//should remove entities and exit  in this case? 
-          Billrun_Factory::log("Failed to get the complete list of online tariffs profiles", Zend_Log::ALERT);
+      $updateOnlineTariffProfile = Billrun_Util::getIn($this->options, 'update_online');
+      if($updateOnlineTariffProfile == true){
+        $type="online";
+        $success2 = $this->getCompleteListOfTariffsProfiles($type);
+        if (!$success2) {
+            Billrun_Factory::log("Failed to get the complete list of  $type tariffs profiles", Zend_Log::ALERT);
+            //todo::should revert and return 
+        }
       }
+      
       $success3 = $this->getCompleteListOfTariffSwitchingClasses();
-      if (!$success3) {//should remove entities and exit  in this case?
+      if (!$success3) {
           Billrun_Factory::log("Failed to get the complete list of tariffs switching classes", Zend_Log::ALERT);
+        //todo::should revert and return 
       }
-      if ($success1 && $success2 && $success3) { 
+
+      $updateOfflineATariffProfile = Billrun_Util::getIn($this->options, 'update_offline-a');
+      if($updateOfflineATariffProfile == true){
+        $type="offline-a";
+        $success4 = $this->getCompleteListOfTariffsProfiles($type);
+        if (!$success4) {
+            Billrun_Factory::log("Failed to get the complete list of $type tariffs profiles", Zend_Log::ALERT);
+            //todo::should revert and return 
+        }
+      }
+      
+      if ($success1 && $success2 && $success3 && $success4) { //todo::remove this if 
           Billrun_Factory::log("Initialize system succeeded", Zend_Log::INFO);
           $this->updateConfigTeldasData('is_system_initialize', true);
           $this->updateConfigTeldasData('last_update_time', new MongoDate(strtotime($parameters['transactionDateTimeTo'])));
@@ -284,9 +303,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return true;
   }
 
-  protected function getCompleteListOfTariffsProfiles() {
-      Billrun_Factory::log("Getting the complete list of online tariffs profiles", Zend_Log::DEBUG);
-      $tariffsProfiles = $this->getOnlineTariffsProfiles();
+  protected function getCompleteListOfTariffsProfiles($type) {
+      Billrun_Factory::log("Getting the complete list of $type tariffs profiles", Zend_Log::DEBUG);
+      $tariffsProfiles = $this->getTariffsProfiles([], $type);
       if ($tariffsProfiles === false) {
           return false;
       }
@@ -294,11 +313,11 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           $tariffsProfile['transactionDateTime'] = new MongoDate(strtotime($tariffsProfile['transactionDateTime']));
           $tariffsProfile['transactionDateTimeTo'] = null;
       }
-      Billrun_Factory::log("Inserting " . count($tariffsProfiles) . " online tariffs profiles.", Zend_Log::DEBUG);
+      Billrun_Factory::log("Inserting " . count($tariffsProfiles) . " $type tariffs profiles.", Zend_Log::DEBUG);
       try {
-          $this->onlineTariffsProfilesCollection->batchInsert($tariffsProfiles);
+        $this->tariffsProfilesCollection->batchInsert($tariffsProfiles);
       } catch (Exception $e){
-          Billrun_Factory::log("Inserting online tariffs profiles failed. Error: " . $e->getMessage(), Zend_Log::ERR);
+          Billrun_Factory::log("Inserting $type tariffs profiles failed. Error: " . $e->getMessage(), Zend_Log::ERR);
           return false;
       }   
       return true;
@@ -350,13 +369,28 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       if (!$success1) {
           Billrun_Factory::log("Failed to keep system up to date of INA numbers", Zend_Log::ALERT);
+          //todo :: should revert and return 
       }
-      $success2 = $this->keepSystemUpToDateOfOnlineTariffsProfiles($parameters);
-      if (!$success2) {
-          Billrun_Factory::log("Failed to keep system up to date of online tariffs profiles", Zend_Log::ALERT);
+      $updateOnlineTariffProfile = Billrun_Util::getIn($this->options, 'update_online');
+      if($updateOnlineTariffProfile == true){
+        $type = "online";
+        $success2 = $this->keepSystemUpToDateOfTariffsProfiles($parameters, $type);
+        if (!$success2) {
+            Billrun_Factory::log("Failed to keep system up to date of $type tariffs profiles", Zend_Log::ALERT);
+        }
+        //todo :: should revert and return 
+      }
+      $updateOfflineATariffProfile = Billrun_Util::getIn($this->options, 'update_offline-a');
+      if($updateOfflineATariffProfile == true){
+        $type = "offline-a";
+        $success3 = $this->keepSystemUpToDateOfTariffsProfiles($parameters, $type);
+        if (!$success3) {
+            Billrun_Factory::log("Failed to keep system up to date of $type tariffs profiles", Zend_Log::ALERT);
+        }
+        //todo :: should revert and return 
       }
     
-      if ($success1 && $success2) {
+      if ($success1 && $success2 && $success3) {//todo:: remove this if 
           Billrun_Factory::log("Keep system up to date succeeded", Zend_Log::INFO);
           $this->updateConfigTeldasData('last_update_time', new MongoDate(strtotime($parameters['transactionDateTimeTo'])));
       }
@@ -406,9 +440,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return true;
   }
 
-  protected function keepSystemUpToDateOfOnlineTariffsProfiles($parameters) {
-      Billrun_Factory::log("Keeping system up-to-date of online tariffs profiles", Zend_Log::DEBUG);
-      $tariffsProfiles = $this->getOnlineTariffsProfiles($parameters);
+  protected function keepSystemUpToDateOfTariffsProfiles($parameters, $type) {
+      Billrun_Factory::log("Keeping system up-to-date of $type tariffs profiles", Zend_Log::DEBUG);
+      $tariffsProfiles = $this->getTariffsProfiles($parameters, $type);
       if ($tariffsProfiles === false) {
           return false;
       }
@@ -417,8 +451,8 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           $tariffsProfile['transactionDateTimeTo'] = null;
           $query = array('id' => $tariffsProfile['id'], 'transactionDatetimeTo' => null);
           $update = array('$set' => array('transactionDateTimeTo' => $tariffsProfile['transactionDateTime']));
-          Billrun_Factory::log("Updating transactionDatetimeTo field of online tariffs profiles with id: " . $tariffsProfile['id'] . "  of previous record ", Zend_Log::DEBUG);
-          $ret = $this->onlineTariffsProfilesCollection->update($query, $update);
+          Billrun_Factory::log("Updating transactionDatetimeTo field of $type tariffs profiles with id: " . $tariffsProfile['id'] . "  of previous record ", Zend_Log::DEBUG);
+          $ret = $this->tariffsProfilesCollection->update($query, $update);
           if ($ret['nModified'] > 1) {
               Billrun_Factory::log("Something wrong. Modified transactionDatetimeTo field to " . $ret['nModified'] . " revisions instead of one. query: " . print_r($query, 1), Zend_Log::ERR);
               false;
@@ -426,7 +460,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       Billrun_Factory::log("Inserting " . count($tariffsProfiles) . " online tariffs profiles.", Zend_Log::DEBUG);
       try {
-          $this->onlineTariffsProfilesCollection->batchInsert($tariffsProfiles);
+          $this->tariffsProfilesCollection->batchInsert($tariffsProfiles);
       } catch (Exception $e){
           Billrun_Factory::log("Inserting online tariffs profiles failed. Error: " . $e->getMessage(), Zend_Log::ERR);
           return false;
@@ -504,9 +538,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return $result;
   }
 
-  protected function getOnlineTariffsProfiles($parameters = array()) {
-      $url = $this->teldasUrl . '/inetina/api/tariff/online';
-      Billrun_Factory::log("Sending request to get online tariffs profiles from " . $url . " with params: " . print_r($parameters, true), Zend_Log::DEBUG);
+  protected function getTariffsProfiles($parameters, $type) {
+      $url = $this->teldasUrl . '/inetina/api/tariff/' . $type;
+      Billrun_Factory::log("Sending request to get $type tariffs profiles from " . $url . " with params: " . print_r($parameters, true), Zend_Log::DEBUG);
       $result = $this->sendRequestToTeldas($url, $parameters);
       if (isset($result['error']) && $result['error'] === self::INVALID_TOKEN_ERROR) {
           Billrun_Factory::log("Get invalid token error. Reauthenticate and get a new token before resending a request", Zend_Log::DEBUG);
@@ -519,16 +553,16 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           $messages = array_map(function ($error) {
               return $error['message'];
           }, $result['errors']);
-          Billrun_Factory::log("Failed to get online tariffs profiles with params: " . print_r($parameters, true) . ". Errors: " . print_r($messages, true), Zend_Log::ALERT);
+          Billrun_Factory::log("Failed to get $type tariffs profiles with params: " . print_r($parameters, true) . ". Errors: " . print_r($messages, true), Zend_Log::ALERT);
           return false;
       } else if (isset($result['error'])) {
-          Billrun_Factory::log("Failed to get online tariffs profiles with params: " . print_r($parameters, true) . ". Error: " . $result['error'], Zend_Log::ALERT);
+          Billrun_Factory::log("Failed to get $type tariffs profiles with params: " . print_r($parameters, true) . ". Error: " . $result['error'], Zend_Log::ALERT);
           return false;
       } else if (is_null($result)) {
-          Billrun_Factory::log("Failed to get online tariffs profiles with params: " . print_r($parameters, true), Zend_Log::ALERT);
+          Billrun_Factory::log("Failed to get $type tariffs profiles with params: " . print_r($parameters, true), Zend_Log::ALERT);
           return false;
       } else {
-          Billrun_Factory::log("Received " . count($result) . " online tariffs profiles.", Zend_Log::DEBUG);
+          Billrun_Factory::log("Received " . count($result) . " $type tariffs profiles.", Zend_Log::DEBUG);
       }
       return $result;
   }
@@ -734,9 +768,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return true;
   }
 
-  protected function getMatchingOnlineTariffProfile($tariffProfileId, $urt) {
+  protected function getMatchingTariffProfile($tariffProfileId, $urt) {
       $query = array('id' => $tariffProfileId, 'transactionDateTime' => array('$lte' => new MongoDate($urt)), '$or' => array(array('transactionDateTimeTo' => array('$gt' => new MongoDate($urt))), array('transactionDateTimeTo' => array('$eq' => null))));
-      $onlineTariffsProfilesRevisions = $this->onlineTariffsProfilesCollection->query($query)->cursor();
+      $onlineTariffsProfilesRevisions = $this->tariffsProfilesCollection->query($query)->cursor();
       if ($onlineTariffsProfilesRevisions->count() === 0) {
           Billrun_Factory::log("Failed to find matching tariff profile id. query: " . print_r($query, 1), Zend_Log::ALERT);
           return false;
@@ -924,16 +958,42 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           return false;
       }
 
+      $type = $this->getTariffProfileType($inaNumberRevison['tariffProfile']);
+      if(!$type){
+        return false;
+      }
+      Billrun_Factory::log("Teldas calculating pricing of ina number $inaNumber with $type tariff profile id: " . $inaNumberRevison['tariffProfile']. " for line " .$line['stamp'], Zend_Log::DEBUG);
       $updateOnlineTariffProfile = Billrun_Util::getIn($this->options, 'update_online');
-      ///todo:: also check if type is online 
-      if($updateOnlineTariffProfile){
+      if($updateOnlineTariffProfile && $type === "online"){
         return $this->updateOnlineTariffProfile($inaNumberRevison, $urt, $line);
+      }
+      $updateOfflineATariffProfile = Billrun_Util::getIn($this->options, 'update_offline-a');
+      if ($updateOfflineATariffProfile && $type === "offline-a"){
+        return $this->updateOfflineATariffProfile($inaNumberRevison, $urt, $line);
       }
 
   }
 
+  protected function updateOfflineATariffProfile($inaNumberRevison, $urt, $line){
+
+  }
+
+
+  protected function getTariffProfileType($id){
+    if($id >= 10000 && $id<=19999){
+        return "online";
+    }elseif ($id >= 20000 && $id <= 29999) {
+        return "offline-b";
+    }elseif ($id >= 1 && $id <= 9999){
+        return "offline-a";
+    }else{
+        Billrun_Factory::log("Tariff profile type not supported, id: $id ", Zend_Log::ALERT);
+        return false;
+    }
+  }
+
   protected function updateOnlineTariffProfile($inaNumberRevison, $urt, $line){
-    $tariffProfile = $this->getMatchingOnlineTariffProfile($inaNumberRevison['tariffProfile'], $urt);
+    $tariffProfile = $this->getMatchingTariffProfile($inaNumberRevison['tariffProfile'], $urt);
     if ($tariffProfile === false) {
         return false;
     }
@@ -1115,6 +1175,16 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           'nullable' => false,
           'default_value' => true 
         ],
+        [
+            'type' => 'boolean',
+            'field_name' => 'update_offline-a',
+            'title' => 'TelDas Update offline A tariff profiles',
+            'mandatory' => false,
+            'editable' => true,
+            'display' => true,
+            'nullable' => false,
+            'default_value' => true 
+          ],
         [
         	"type" => "string",
         	"field_name" => "ina_number_prefixes",
