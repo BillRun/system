@@ -915,7 +915,7 @@ function handlePaymentGatewayRelay($xml)
         echo getRecurringResponse($cardId, $cardExpiration, $terminalNumber);
         return;
     } else {
-        echo "ddd";
+        echo "wrong request";
     }
 }
 
