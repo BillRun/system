@@ -1954,6 +1954,22 @@ runOnce(lastConfig, 'BRCD-4672', function () {
 	lastConfig['subscribers']['account']['gad_limit'] = 5000;
 });
 
+runOnce(lastConfig, 'BRCD-4739', function () {
+	lastConfig['plugins'].push({
+		"name": "teldasPlugin",
+		"enabled": false,
+		"system": true,
+		"hide_from_ui": false
+	})
+	db.createCollection('plugin_teldas_ina_numbers');
+	db.plugin_teldas_ina_numbers.ensureIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
+	db.createCollection('plugin_teldas_online_tariffs_profiles');
+	db.plugin_teldas_online_tariffs_profiles.ensureIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariffs_profiles_unique_index" });
+	db.createCollection('plugin_teldas_tariff_switching_classes');
+	db.createCollection("plugin_teldas_non_working_days"); 
+	//todo::adding plugin_teldas_tariff_switching_classes + plugin_teldas_non_working_days unique indexes
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });
