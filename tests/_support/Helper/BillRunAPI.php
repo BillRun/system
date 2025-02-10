@@ -241,7 +241,12 @@ class BillRunAPI extends \Codeception\Module
         $populatedValues = array_merge($populatedValues, $override);
         return $this->createAccountWithAllMandatorySystemFields($populatedValues);
     }
-
+    /**
+     * Sends a payment request to the pay API.
+     *
+     * @param array $data The payment data.
+     * @return array The response from the pay API.
+     */
     protected function sendpayApi($data)
     {
         // Get the REST module to send requests
@@ -254,6 +259,12 @@ class BillRunAPI extends \Codeception\Module
         ]);
         return json_decode($ret, true);
     }
+    /**
+     * Sends a GET request to the specified PG endpoint with the provided data.
+     *
+     * @param array $data The data to be sent with the request.
+     * @return array The response from the API as an associative array.
+     */
     protected function sendGetRequset($data)
     {
         // Get the REST module to send requests
@@ -282,32 +293,42 @@ class BillRunAPI extends \Codeception\Module
     }
 
     public function getRequest($params = []){
+        $iframe=true;
+        $aid=1;
+        $name ="CreditGuard";
+        $amount=5;
+        $action="single_payment";
+        $return_url="http://web/paymentgateways/success";
+        $ok_page ="http://web/paymentgateways/okpage?name=CreditGuard";
+        $fail_page="http://web/paymentgateways/okpage";
         if($params['type']=='subscriber'){
             //J5 only
             $body = array_merge([
-                "aid"=>1,
+                "aid"=>$aid,
                 "type"=>"subscriber",
-                "name"=>"CreditGuard",
-                "return_url"=>"http://billrun-nginx:80",
+                "name"=>$name,
+                "return_url"=>$return_url,
                 "_t_"=>time()
             ], $params);
         }else{
             $body = array_merge([
-                "iframe"=>true,
-                "aid"=>1,
-                "name"=>"CreditGuard",
+                "iframe"=>$iframe,
+                "aid"=>$aid,
+                "name"=>$name,
                 "type"=>"account",
-                "amount"=>5,
-                "action"=>"single_payment",
-                "return_url"=>"http://billrun-nginx:80/paymentgateways/success",
-                "ok_page"=>"http://web/paymentgateways/okpage?name=CreditGuard",
-                "fail_page"=>"http://web/paymentgateways/okpage",
+                "amount"=>$amount,
+                "action"=>$action,
+                "return_url"=>$return_url,
+                "ok_page"=> $ok_page,
+                "fail_page"=>$fail_page,
                 "_t_"=>time()
             ], $params);
         }
         
         return  $this->sendGetRequset($body);
     }
+
+
 
     public function chargeAccountApi($params = []){
 

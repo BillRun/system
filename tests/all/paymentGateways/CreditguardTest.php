@@ -1,15 +1,20 @@
 <?php
 use Helper\PaymentStatus;
+use Helper\TestHelper;
+
 class CreditguardTest extends \Codeception\Test\Unit
 {
     /**
      * @var \UnitTester
      */
     protected $tester;
+    protected $responseWrapper;
     
     protected function _before()
     {
+     
         // $this->tester->enableCreditGuardPGWithSettings();
+       
     }
 
     protected function _after()
@@ -20,6 +25,9 @@ class CreditguardTest extends \Codeception\Test\Unit
     {
         $this->tester->enableCreditGuardPGWithSettings();
     }
+
+    //https://billrun.atlassian.net/browse/BRCD-4684
+    //https://billrun.atlassian.net/browse/BRCD-4682
     public function testSingelPaymentWithoutTokenize()
     {
         $this->tester->createAccountWithAllMandatoryCustomFields([
@@ -42,7 +50,7 @@ class CreditguardTest extends \Codeception\Test\Unit
                 ]
             ]
         ]);
-        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $account = $this->tester->getEntity();
         $this->tester->payApi(['aid' => $account['aid'], 'amount' => 300, 'dir' => 'tc']);
         $this->tester->getRequest(['aid' => (int) $account['aid'], 'amount' => 300]);
         $this->tester->iframe(['aid' => (int) $account['aid'], 'txid' => 300]);
@@ -52,9 +60,11 @@ class CreditguardTest extends \Codeception\Test\Unit
             'subscribers',
             [
                 'aid' => (int) $account['aid'],
-                'to'=> ['$gt' => new MongoDB\BSON\UTCDateTime(time() * 1000)],
+                'to'=> ['$gt' => TestHelper::CurrentTime()],
                 'payment_gateway.active.card_token' => "1022273188555888"
             ]
+
+          
         );
           //test that the recept 
           $this->tester->verifyCollectionRecord(
@@ -79,6 +89,8 @@ class CreditguardTest extends \Codeception\Test\Unit
           
             ]);
     }
+    //https://billrun.atlassian.net/browse/BRCD-4684
+    //https://billrun.atlassian.net/browse/BRCD-4682
     public function testSingelPaymentWithTokenize()
     {
         $this->tester->createAccountWithAllMandatoryCustomFields([
@@ -102,7 +114,7 @@ class CreditguardTest extends \Codeception\Test\Unit
                 ],
             "tenant_return_url" => " http://web/paymentgateways/success"
         ]);
-        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $account = $this->tester->getEntity();
         $this->tester->payApi(['aid' => $account['aid'], 'amount' => 400, 'dir' => 'tc']);
         $this->tester->getRequest(['aid' => (int) $account['aid'], 'amount' => 400, "tokenize_on_single_payment" => true]);
         $this->tester->iframe(['aid' => (int) $account['aid'], 'txid' => 400]);
@@ -112,7 +124,7 @@ class CreditguardTest extends \Codeception\Test\Unit
             'subscribers',
             [
                 'aid' => (int) $account['aid'],
-                'to'=> ['$gt' => new MongoDB\BSON\UTCDateTime(time() * 1000)],
+                'to'=> ['$gt' => TestHelper::CurrentTime()],
                 'payment_gateway.active.card_token' => "1022273188555607"
             ]
         );
@@ -135,10 +147,10 @@ class CreditguardTest extends \Codeception\Test\Unit
             [
                 'aid' => (int) $account['aid'],
                 'amount' => 400,
-                'paid'=>['$in'=>['true',true,1,'1']]
+                'paid'=> PaymentStatus::PAID
             ]);
     }
-
+    //https://billrun.atlassian.net/browse/BRCD-4682
     public function testSingelPaymentErorr()
     {
         $this->tester->createAccountWithAllMandatoryCustomFields([
@@ -161,7 +173,7 @@ class CreditguardTest extends \Codeception\Test\Unit
                 ]
             ]
         ]);
-        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $account = $this->tester->getEntity();
         $this->tester->payApi(['aid' => $account['aid'], 'amount' => 400000000000000000000000000, 'dir' => 'tc']);
         $this->tester->getRequest(['aid' => (int) $account['aid'], 'amount' => 400000000000000000000000000, "tokenize_on_single_payment" => true]);
         $this->tester->seeResponseContainsJson([
@@ -172,8 +184,8 @@ class CreditguardTest extends \Codeception\Test\Unit
         ]);
     }
 
-
-
+    //https://billrun.atlassian.net/browse/BRCD-4684
+    //https://billrun.atlassian.net/browse/BRCD-4683
     public function testChargeAccountAfterReTokenize()
     {
         $this->tester->createAccountWithAllMandatoryCustomFields([
@@ -196,7 +208,7 @@ class CreditguardTest extends \Codeception\Test\Unit
                 ]
             ]
         ]);
-        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $account = $this->tester->getEntity();
         $this->tester->payApi(['aid' => $account['aid'], 'amount' => 400, 'dir' => 'tc']);
 
         //change payment without pay 
@@ -219,7 +231,8 @@ class CreditguardTest extends \Codeception\Test\Unit
    
     }
 
-
+    //https://billrun.atlassian.net/browse/BRCD-4684
+    //https://billrun.atlassian.net/browse/BRCD-4682
     public function testSingelPaymentWithInstallmentsWithoutTokenize()
     {
         $this->tester->createAccountWithAllMandatoryCustomFields([
@@ -242,7 +255,7 @@ class CreditguardTest extends \Codeception\Test\Unit
                 ]
             ]
         ]);
-        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $account = $this->tester->getEntity();
         $this->tester->payApi(['aid' => $account['aid'], 'amount' => 500, 'dir' => 'tc']);
         $this->tester->getRequest(['aid' => (int) $account['aid'], 'amount' => 500, "installments"=>["number_of_payments"=>3]]);
         $this->tester->iframe(['aid' => (int) $account['aid'], 'txid' => 500]);
@@ -252,7 +265,7 @@ class CreditguardTest extends \Codeception\Test\Unit
             'subscribers',
             [
                 'aid' => (int) $account['aid'],
-                'to'=> ['$gt' => new MongoDB\BSON\UTCDateTime(time() * 1000)],
+                'to'=> ['$gt' => TestHelper::CurrentTime()],
                 'payment_gateway.active.card_token' => "1022273188555888"
             ]
         );
@@ -284,6 +297,8 @@ class CreditguardTest extends \Codeception\Test\Unit
             ]);
     }
 
+    //https://billrun.atlassian.net/browse/BRCD-4682
+    //https://billrun.atlassian.net/browse/BRCD-4684
     public function testSingelPaymentWithInstallmentsWithTokenize()
     {
         $this->tester->createAccountWithAllMandatoryCustomFields([
@@ -306,7 +321,7 @@ class CreditguardTest extends \Codeception\Test\Unit
                 ]
             ]
         ]);
-        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $account = $this->tester->getEntity();
         $this->tester->payApi(['aid' => $account['aid'], 'amount' => 500, 'dir' => 'tc']);
         $this->tester->getRequest(['aid' => (int) $account['aid'], 'amount' => 500, "tokenize_on_single_payment" => true,"installments"=>["number_of_payments"=>3]]);
         $this->tester->iframe(['aid' => (int) $account['aid'], 'txid' => 500]);
@@ -316,7 +331,7 @@ class CreditguardTest extends \Codeception\Test\Unit
             'subscribers',
             [
                 'aid' => (int) $account['aid'],
-                'to'=> ['$gt' => new MongoDB\BSON\UTCDateTime(time() * 1000)],
+                'to'=> ['$gt' => TestHelper::CurrentTime()],
                 'payment_gateway.active.card_token' => "1022273188555607"
             ]
         );
@@ -349,6 +364,7 @@ class CreditguardTest extends \Codeception\Test\Unit
     }
 
 
+    //https://billrun.atlassian.net/browse/BRCD-4683
     public function testChargeAccountAidsFilter()
     {
         $this->tester->createAccountWithAllMandatoryCustomFields([
@@ -371,8 +387,7 @@ class CreditguardTest extends \Codeception\Test\Unit
                 ]
             ]
         ]);
-        $account1 = json_decode($this->tester->grabResponse(), true)['entity'];
-        
+        $account1=$this->tester->getEntity();
         $this->tester->createAccountWithAllMandatoryCustomFields([
             "payment_gateway" => [
                 "active" => [
@@ -393,7 +408,7 @@ class CreditguardTest extends \Codeception\Test\Unit
                 ]
             ]
         ]);
-        $account2 = json_decode($this->tester->grabResponse(), true)['entity'];
+        $account2=$this->tester->getEntity();
         $this->tester->payApi(['aid' => $account1['aid'], 'amount' => 400, 'dir' => 'tc']);
         $this->tester->payApi(['aid' => $account2['aid'], 'amount' => 500, 'dir' => 'tc']);
          //pay by charge API with aids filter with only account1
@@ -419,7 +434,7 @@ class CreditguardTest extends \Codeception\Test\Unit
             ]);  
    
     }
-
+    //https://billrun.atlassian.net/browse/BRCD-4683
     public function testChargeAccountRejection()
     {
         $this->tester->createAccountWithAllMandatoryCustomFields([
@@ -442,7 +457,7 @@ class CreditguardTest extends \Codeception\Test\Unit
                 ]
             ]
         ]);
-        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $account=$this->tester->getEntity();
         $this->tester->payApi(['aid' => $account['aid'], 'amount' => 400, 'dir' => 'tc']);
         $this->tester->chargeAccountApi(['aids' => (int) $account['aid']]);
 
@@ -460,6 +475,7 @@ class CreditguardTest extends \Codeception\Test\Unit
    
     }
 
+    //https://billrun.atlassian.net/browse/BRCD-4683
     public function testChargeAccountGetUnknwonResponseFromCg()
     {
         $this->tester->createAccountWithAllMandatoryCustomFields([
@@ -482,7 +498,7 @@ class CreditguardTest extends \Codeception\Test\Unit
                 ]
             ]
         ]);
-        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $account=$this->tester->getEntity();
         $this->tester->payApi(['aid' => $account['aid'], 'amount' => 400, 'dir' => 'tc']);
         $this->tester->chargeAccountApi(['aids' => (int) $account['aid']]);
 

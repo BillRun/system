@@ -124,7 +124,11 @@ function getErrorXmlResponse($userData1, $message = '', $errorCode = '401')
 }
 
 /**
- * Generate error response for failed validation
+ * Enable PG response
+ *
+ * This function returns an XML response string representing an enabled PG response.
+ *
+ * @return string The XML response string.
  */
 function getEnableResponse()
 {
@@ -132,9 +136,17 @@ function getEnableResponse()
 }
 
 /**
- * Generate transaction details response
+ * Calculates the first payment amount for installment-based transactions.
+ *
+ * This function determines the amount of the first payment in a series of installments.
+ * If the number of payments is 0 or negative, it returns the total amount as a single payment.
+ * Otherwise, it calculates the regular payment amount and adjusts the first payment to account for rounding.
+ *
+ * @param float $total The total amount of the transaction.
+ * @param int $numberOfPayments The number of installments.
+ *
+ * @return float The amount of the first payment.
  */
-
 function calculateFirstPayment($total, $numberOfPayments)
 {
     if ($numberOfPayments <= 0) {
@@ -238,6 +250,18 @@ function getTransactionDetailsResponse($token, $total)
 EOT;
     return $xmlResponse;
 }
+/**
+ * Generates a token transaction details response for J5 transaction.
+ *
+ * This function creates an XML response containing transaction details
+ * for a token-based transaction in the J5 transaction. It includes information
+ * such as transaction status, card details, and payment specifics.
+ *
+ * @param string $token The unique token identifier for the transaction.
+ * @param string $terminalNumber The terminal number associated with the transaction.
+ *
+ * @return string An XML string containing the detailed transaction response.
+ */
 function getTokenTransactionDetailsResponseJ5($token, $terminalNumber)
 {
     $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
@@ -339,6 +363,19 @@ EOT;
 }
 
 // for J5
+/**
+ * Generates a recurring response XML for a credit card transaction.
+ *
+ * This function creates an XML response for a recurring credit card transaction,
+ * including details such as transaction status, card information, and payment specifics.
+ *
+ * @param string $cardId The unique identifier of the card used for the transaction.
+ * @param string $cardExpiration The expiration date of the card (not used in the function body).
+ * @param string $terminalNumber The terminal number where the transaction is processed.
+ *
+ * @return string An XML string containing the recurring transaction response,
+ *                encoded in ISO-8859-8 character set.
+ */
 function getRecurringResponse($cardId, $cardExpiration, $terminalNumber)
 {
     $cardExpiration = date('my', strtotime('+3 years'));
@@ -449,6 +486,15 @@ function getRecurringResponse($cardId, $cardExpiration, $terminalNumber)
 }
 
 
+/**
+ * Retrieves the transaction details response for J5.
+ *
+ * @param string $token The token for the transaction.
+ * @param float $total The total amount of the transaction.
+ * @param string $terminalNumber The terminal number.
+ * @param string $cardId The card ID (optional, default value is '1022273188555606').
+ * @return string The XML response containing the transaction details.
+ */
 function getTransactionDetailsResponseJ5($token, $total, $terminalNumber, $cardId = '1022273188555606')
 {
     $userData1 = manageTemporaryFiles('read', 'temp_userData1.txt') ?: '1';
@@ -612,6 +658,12 @@ function getTransactionDetailsResponseJ5($token, $total, $terminalNumber, $cardI
  EOT;
     return $xmlResponse;
 }
+/**
+ * Validates a charge request XML.
+ *
+ * @param SimpleXMLElement $xml The XML to validate.
+ * @return SimpleXMLElement|null Returns null if the XML is valid, otherwise returns an error response XML.
+ */
 function validateChargeRequest($xml) {
     try {
         // Basic structure validation
@@ -662,6 +714,13 @@ function validateChargeRequest($xml) {
     }
 }
 
+/**
+ * Creates an error response XML string.
+ *
+ * @param string $message The error message.
+ * @param string $code The error code. Default value is "003".
+ * @return string The error response XML string.
+ */
 function createErrorResponse($message, $code = "003") {
     $currentTime = date('Y-m-d H:i');
     $response = <<<XML
@@ -680,6 +739,7 @@ function createErrorResponse($message, $code = "003") {
 XML;
     return iconv("UTF-8", "ISO-8859-8", $response);
 }
+
 function chargeCommandResponse($xml) {
     try {
 
@@ -819,6 +879,12 @@ EOT;
 
 /**
  * Handle payment gateway relay requests
+ *
+ * @param SimpleXMLElement $xml The XML data containing the request
+ * @return void
+ */
+/**
+ * Handle payment gateway relay requests
  */
 function handlePaymentGatewayRelay($xml)
 {
@@ -921,6 +987,13 @@ function handlePaymentGatewayRelay($xml)
 
 /**
  * Handle iframe redirection
+ *
+ * This function handles the redirection of an iframe. It prepares the necessary parameters for the redirection
+ * and constructs the redirect URL. The function then cleans the output buffer, sets the redirect header,
+ * and exits the script.
+ */
+/**
+ * Handle iframe redirection
  */
 function handleIframe()
 {
@@ -960,8 +1033,18 @@ function handleIframe()
     header('Location: ' . $redirectUrl);
     exit();
 }
-
-// Main routing logic
+/**
+ * Main routing logic for the CreditGuard payment gateway.
+ * 
+ * If the request URI matches "/payment-gateways/creditguard/xpo/Relay", 
+ * the function handlePaymentGatewayRelay() is called with the XML data from the POST request.
+ * 
+ * If the request URI matches "/payment-gateways/creditguard/iframe", 
+ * the function handleIframe() is called.
+ * 
+ * If the request URI does not match any of the above patterns, 
+ * an "Invalid request" message is echoed.
+ */
 if (preg_match('/^\/payment-gateways\/creditguard\/xpo\/Relay/', $_SERVER["REQUEST_URI"])) {
     $xml = simplexml_load_string($_POST['int_in']);
     handlePaymentGatewayRelay($xml);

@@ -1,5 +1,8 @@
 <?php
 namespace Helper;
+
+use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Current;
+
 class TestHelper extends \Codeception\Module {
     protected $tester;
     /**
@@ -12,5 +15,10 @@ class TestHelper extends \Codeception\Module {
     public function verifyCollectionRecord($collection, array $criteria) {
         $this->getModule('MongoDb')->seeInCollection($collection, $criteria);
     }
+
+    public static function CurrentTime(){
+       return  new \MongoDb\BSON\UTCDateTime(time() * 1000);
+    }
+    
 }
 

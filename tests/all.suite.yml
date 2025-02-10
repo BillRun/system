@@ -11,6 +11,7 @@ modules:
         - \Helper\Aggregate
         - \Helper\TestHelper
         - \Helper\PaymentStatus
+        - \Helper\ResponseWrapper
         - \Helper\BillRun\Mockups\PaymentGateway
         - WebDriver:
             url: http://web
