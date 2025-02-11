@@ -31,6 +31,7 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 			if (!empty($price)) {
 				$prorationData = $this->getProrationData($price);
 				$charges[] = array_merge( [	'value' => $price['price'] * $quantity,
+
 											'cycle' => $tariff['from'],
 											'full_price' => floatval($tariff['price']) ],
 										$prorationData);
@@ -54,7 +55,6 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 																								));
 
 		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
-
 		$adjustedDeactivation = (empty($this->deactivation) || (!$this->proratedEnd && !$this->isTerminated() || !$this->proratedTermination && $this->isTerminated() ) ? $this->cycle->end() : $this->deactivation - 1);
 		$formatEnd = date(Billrun_Base::base_dateformat, min( $adjustedDeactivation, $this->cycle->end() - 1) );
 		$cycleStart = new DateTime(date(Billrun_Base::base_dateformat,$this->cycle->start()));
@@ -82,19 +82,22 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation) : $this->cycle->end(),
 					'prorated_end_date' => new Mongodloid_Date($endProration  && $this->cycle->end() > $this->deactivation ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation) : $this->cycle->end()),
 					'end_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['end'],  $this->activation , FALSE, $this->deactivation ,$this->deactivation && $this->cycle->end() > $this->deactivation)),
-					'prorated_end' =>  $endProration
+					'prorated_end' =>  $endProration,
+					'deactivation_date'=>  $this->deactivation,
+					'activation_date'=>  $this->activation,
 				];
+
 	}
 
 	/**
 	 * Is the the subscriber hold  the plan  has terminated it subscription or is it just a plan change?
 	 */
-	protected function isTerminated() {
+	protected function isTerminated($cycle = false) {
 
 		$fakeSubDeactivation = (empty($this->subscriberDeactivation) ? PHP_INT_MAX : $this->subscriberDeactivation);
 
 		return (	$fakeSubDeactivation <= $this->deactivation || empty($this->deactivation) &&
-					$fakeSubDeactivation < $this->cycle->end() 	);
+					$fakeSubDeactivation < ($cycle ? $cycle->end(): $this->cycle->end() )	);
 	}
 	
 }

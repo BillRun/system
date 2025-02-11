@@ -12,7 +12,7 @@
  * @since    5.10
  */
 abstract class Billrun_PaymentGateway_Connection {
-	
+
 	use Billrun_Traits_FileActions;
 
 	protected $host;
@@ -30,10 +30,6 @@ abstract class Billrun_PaymentGateway_Connection {
 	protected $delete_received;
 
 	public function __construct($options) {
-		if (!isset($options['connection_type']) || !isset($options['host'])  || !isset($options['user']) ||
-			!isset($options['password'])) {
-			throw new Exception('Missing connection details');
-		}
 		$this->host = $options['host'];
 		$this->username = $options['user'];
 		$this->password = $options['password'];
@@ -52,6 +48,7 @@ abstract class Billrun_PaymentGateway_Connection {
 			$this->limit = $options['limit'];
 		}
 		$this->fileType = isset($options['file_type']) ? $options['file_type'] : null;
+		$this->cpgName = isset($options['cpg_name']) ? $options['cpg_name'] : null;
 	}
 
 	/**
@@ -66,8 +63,7 @@ abstract class Billrun_PaymentGateway_Connection {
 		}
 		return isset($connection) ? $connection : NULL;
 	}
-	
-	
+
 	/**
 	 * Get the type name of the current object.
 	 * @return string conatining the current.
@@ -96,18 +92,19 @@ abstract class Billrun_PaymentGateway_Connection {
 		if ($paymentGatewaySettings) {
 			$paymentGatewaySettings = current($paymentGatewaySettings);
 		}
-		
+
 		$transactionsResponses = !empty($paymentGatewaySettings[$type]) ? $paymentGatewaySettings[$type] : array();
 		foreach ($transactionsResponses as $key => $gatewaySettings) {
 			if (!empty($gatewaySettings['receiver'])) {
 				$pgReceivers[$gatewaySettings['file_type']] = $gatewaySettings['receiver'];
 			}
 		}
-		
+
 		return $pgReceivers;
 	}
 
 	abstract public function export($fileName);
+
 	abstract public function receive();
 	
 	public function getWorkspace() {

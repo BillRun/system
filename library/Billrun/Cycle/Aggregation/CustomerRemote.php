@@ -30,6 +30,7 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 		if (empty($size)) {
 			$size = 100;
 		}
+
 		$result = Billrun_Factory::account()->getBillable($cycle, $page, $size, $aids, $invoicing_days);
 		$billableResults = $this->filterConfirmedAccounts($result['data'], $cycle);
 		usort($billableResults, function($a, $b){ return strcmp($a['from'],$b['from']);});

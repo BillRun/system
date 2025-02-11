@@ -27,13 +27,9 @@ class Billrun_Helpers_QueueCalculators {
 	 * @var Billrun_Calculator_Unify
 	 */
 	protected $unifyCalc;
-	
 	protected $options = array();
-	
 	protected $realtime = false;
-	
-	protected $calculatorFailed = false;
-	
+	protected $calculatorFailed = [];
 	protected $stuckInQueue = array();
 
 	public function __construct($options) {
@@ -42,6 +38,7 @@ class Billrun_Helpers_QueueCalculators {
 	}
 
 	public function run(Billrun_Processor $processor, &$data) {
+		$success = true;
         $this->unifyCalc = null;
         $this->queue_calculators = $this->getQueueCalculators();
         $index = 0;
@@ -51,8 +48,8 @@ class Billrun_Helpers_QueueCalculators {
 
             if ($this->isUnify($calc_name)) {
                 $this->unifyCalc($processor, $data);
-				foreach ($data['data'] as &$dataLine) {
-					$processor->setFullCalculationTime($dataLine);
+				foreach ($data['data'] as &$line) {
+					$processor->setFullCalculationTime($line);
 				}
                 continue;
             }
@@ -77,6 +74,7 @@ class Billrun_Helpers_QueueCalculators {
 					   $this->stuckInQueue[$qline['stamp']] = true;
 				}
 			}
+			unset($line); // see warning at https://www.php.net/manual/en/control-structures.foreach.php
             $data['data'] =  array_merge($data['data'], $allExtraLines);
             $index++;
         }
@@ -90,6 +88,11 @@ class Billrun_Helpers_QueueCalculators {
         if ($index == 0 && $this->realtime) {
             $line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok', 1);
         }
+
+		if (!isset($this->calculatorFailed[$line['stamp']])) {
+			$this->calculatorFailed[$line['stamp']] = false;
+		}
+
         if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $calc_name_in_queue[$index]) {
             $line['realtime'] = $this->realtime;
             $entity = new Mongodloid_Entity($line);
@@ -104,6 +107,7 @@ class Billrun_Helpers_QueueCalculators {
                     }
                 } else {
                     $processor->addAdvancedPropertiesToQueueRow($line);
+							Billrun_Factory::log('Line ' . $line['stamp'] . ' should go to the queue', Zend_Log::DEBUG);
                     $this->stuckInQueue[$line['stamp']] = true;
                 }
                 $this->calcPricingCase($entity, $calc_name);
@@ -117,18 +121,19 @@ class Billrun_Helpers_QueueCalculators {
             }
             $line = $entity->getRawData();
         } else {
+					Billrun_Factory::log('Line ' . $line['stamp'] . ' should go to the queue', Zend_Log::DEBUG);
             $this->stuckInQueue[$line['stamp']] = true;
         }
 
-        if ($this->realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name) {
+		if ($this->realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name && !$this->calculatorFailed[$line['stamp']]) {
             if ($line['request_type'] != Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST')) {
                 $line['usagev'] = 0;
                 $line['apr'] = 0;
             }
             $line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.' . $calc_name, -999);
-            $this->calculatorFailed = true;
+			$this->calculatorFailed[$line['stamp']] = true;
             $this->unifyCalc($processor, $data);
-            return false;
+			$success = false;
         }
     }
 
@@ -262,9 +267,8 @@ class Billrun_Helpers_QueueCalculators {
 	 * @return bool
 	 */
 	protected function shouldRemoveFromQueue($line) {
-		return !$this->calculatorFailed ||
+		return !$this->calculatorFailed[$line['stamp']] ||
 			($this->realtime && $line['request_type'] != Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST'));
-			
 	}
 	
 	/**
@@ -294,3 +298,4 @@ class Billrun_Helpers_QueueCalculators {
         }
 
 }
+

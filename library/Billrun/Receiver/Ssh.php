@@ -134,7 +134,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 
 					// Checks that file received correctly
 					if (!$this->isFileReceivedCorrectly($sourceFile, $fileData['path'])) {
-						Billrun_Factory::log()->log("SSH: file was not saved correctly " . $file, Zend_Log::ALERT);
+						Billrun_Factory::log()->log("SSH: file was not saved correctly " . $file, Zend_Log::WARN);
 						continue;
 					}
 

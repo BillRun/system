@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing sending Sms alerts
+ * Billing sending SMS through SMPP
  *
  * @package  Sms
  * @since    5.13
@@ -177,9 +177,25 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 			$this->smppClient->debug = $this->debug;
 			$this->transportSocket->debug = $this->debug;
 		} catch (Throwable $th) {
-			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
+			Billrun_Factory::log('Send SMPP SMS: got throwable. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $ex->getCode() . ', message: ' . $ex->getMessage(), Zend_Log::WARN);
+		}
+	}
+
+	/**
+	 * on class destruction close smpp connection
+	 */
+	public function __destruct() {
+		if ($this->smppClient) {
+			try {
+				// Close connection
+				$this->smppClient->close();
+			} catch (Throwable $th) {
+				Billrun_Factory::log('Send SMPP SMS: got throwable. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
+			} catch (Exception $ex) {
+				Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $ex->getCode() . ', message: ' . $ex->getMessage(), Zend_Log::WARN);
+			}
 		}
 	}
 
@@ -205,7 +221,7 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 				Billrun_Factory::log('SMS: need to set sms destination (to)', Zend_Log::NOTICE);
 				return false;
 			}
-
+			
 			// Open the connection
 			$this->transportSocket->open();
 			$this->smppClient->bindTransmitter($this->user, $this->token);
@@ -222,13 +238,8 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 			$toSmpp = new smpp\Address($this->to, $this->clientOptions['addressTON'], $this->clientOptions['addressNPI']);
 			$output = $this->smppClient->sendSMS($from, $toSmpp, $encodedMsg, null, $this->clientOptions['messageEncoding']);
 
-			// Close connection
-			$this->smppClient->close();
-			
-			// reset to to avoid double sending on the upper layer so we are resetting the to field
-			$this->to = '';
 		} catch (Throwable $th) {
-			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
+			Billrun_Factory::log('Send SMPP SMS: got throwable. code: ' . $th->getCode() . ', message: ' . $th->getMessage(), Zend_Log::WARN);
 			$output = false;
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Send SMPP SMS: got exception. code: ' . $ex->getCode() . ', message: ' . $ex->getMessage(), Zend_Log::WARN);

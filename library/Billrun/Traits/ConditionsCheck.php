@@ -131,6 +131,14 @@ trait Billrun_Traits_ConditionsCheck {
 			case '$not':
 			case '$exists':
 			case '$regex':
+			case '$lengthEq':
+			case '$lengthNe':
+			case '$lengthIn':
+			case '$lengthNin':
+			case '$lengthLt':
+			case '$lengthLte':
+			case '$lengthGt':
+			case '$lengthGte':
 				return [
 					$fieldName => [
 						$operator => $value,

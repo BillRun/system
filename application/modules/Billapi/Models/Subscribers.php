@@ -92,7 +92,8 @@ class Models_Subscribers extends Models_Entity {
 					$service['to'] = new Mongodloid_Date(strtotime($service['to']));
 				}
 				// handle custom period service or limited cycles service
-				$serviceRate = new Billrun_Service(array('name' => $service['name']));
+				$serviceTime = $service['from']->sec ?? time();
+				$serviceRate = new Billrun_Service(array('name' => $service['name'], 'time' => $serviceTime));
 				// if service not found, throw exception
 				if (empty($serviceRate) || empty($serviceRate->get('_id'))) {
 					throw new Billrun_Exceptions_Api(66601, array(), "Service was not found");
@@ -104,7 +105,7 @@ class Models_Subscribers extends Models_Entity {
 					$serviceAvailableCycles = $serviceRate->getServiceCyclesCount();
 					if ($serviceAvailableCycles !== Billrun_Service::UNLIMITED_VALUE) {
 						$vDate = date(Billrun_Base::base_datetimeformat, $service['from']->sec);
-						$to = strtotime('+' . $serviceAvailableCycles . ' months', Billrun_Billingcycle::getBillrunStartTimeByDate($vDate));
+						$to = strtotime('+' . $serviceAvailableCycles . ' months', $service['from']->sec);
 						$service['to'] = new Mongodloid_Date($to);
 					}
 				}
@@ -153,7 +154,7 @@ class Models_Subscribers extends Models_Entity {
 		if (empty($servicePlays)) {
 			return true;
 		}
-		$subscriberPlay = Billrun_Util::getIn($this->update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
+		$subscriberPlay = Billrun_Util::getIn($this->update, 'play', Billrun_Util::getIn($this->before, 'play', Billrun_Utils_Plays::getDefaultPlay()['name']));
 		if (!in_array($subscriberPlay, $servicePlays)) {
 			throw new Billrun_Exceptions_Api(0, array(), "\"{$service->get('description')}\" does not match subscriber's play");
 		}
@@ -478,6 +479,6 @@ class Models_Subscribers extends Models_Entity {
 	public function permanentChange() {
 		unset($this->update['plan_activation']);
 		unset($this->update['type']);
-		parent::permanentChange();
+		return parent::permanentChange();
 	}
 }

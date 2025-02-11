@@ -6,7 +6,6 @@
     }
   ],
   "minServerVersion": "3.4",
-  "serverless": "forbid",
   "tests": [
     {
       "description": "Aggregate with collation",

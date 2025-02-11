@@ -37,6 +37,7 @@ class Billrun_Plans_Charge_Upfront_Notprorated_Month extends Billrun_Plans_Charg
 		}
 
 		//probably not within the current cycle  return null to indicate invalid charge  without affecting other charges.
+		Billrun_Factory::log(Billrun_Utils_Dev::colorText('Non prorated plan with no charge exists in cycle','Yellow'),Zend_Log::DEBUG);
 		return null;
 	}
 

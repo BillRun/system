@@ -29,6 +29,9 @@ services:
         - "BR_MDB_DBNAME=billing_container"
         volumes:
             - ./../..:/billrun
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+
     mongodb:
         image: mongo:4.4
         container_name: billrun-mongodb
@@ -45,4 +48,4 @@ networks:
     ipam:
       driver: default
       config:
-      - subnet:  10.103.0.1/16
+      - subnet:  10.103.0.0/16
