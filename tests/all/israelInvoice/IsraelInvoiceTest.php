@@ -58,7 +58,7 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$data['account']['aid']];
         $this->defaultOptions["stamp"] = "202501";
         $this->tester->aggregator($this->defaultOptions);
-        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202501', 'aid' =>  $data['account']['aid']));
+        $billrun = $this->tester->getFromCollection('billrun', array('billrun_key' => '202501', 'aid' =>  $data['account']['aid']));
         $output = $this->tester->billrunToBill(['stamp'=>$billrun['billrun_key'],'invoices'=>$billrun['invoice_id']]);
         $messages[0] = "Invoice {$billrun['invoice_id']} didn't pass the 'threshold' check";
         $messages[1] = "Invoice:invoice {$billrun['invoice_id']} shouldn't get approval number";
