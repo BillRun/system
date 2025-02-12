@@ -367,10 +367,11 @@ class Billrun_PaymentManager {
 					Billrun_Factory::log("Setting payment as pending", Zend_Log::DEBUG);
 					$payment->setPending(true);
 					$addonData = array('aid' => $payment->getAid(), 'txid' => $payment->getId());
-					Billrun_Factory::log("Making online transaction for aid " . $payment->getAid() . " and payment id " . $payment->getId(), Zend_Log::DEBUG);
+					Billrun_Factory::log("Making online transaction for aid " . $payment->getAid() . " and payment id " . $payment->getId() . " and gateway details " . print_R($gatewayDetails, 1), Zend_Log::DEBUG);
 					$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails, $addonData);
-					Billrun_Factory::log("Checking returned payment status, and processing gateway response", Zend_Log::DEBUG);
+					Billrun_Factory::log("Returned payment status " . print_R($paymentStatus, 1) . ". Checking returned payment status, and processing gateway response", Zend_Log::DEBUG);
 					$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
+					Billrun_Factory::log("Processed pg response " . print_R($responseFromGateway, 1), Zend_Log::DEBUG);
 				} catch (Exception $e) {
 					$payment->setGatewayChargeFailure($e->getMessage());
 					$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
@@ -385,8 +386,9 @@ class Billrun_PaymentManager {
 				if (empty($paymentStatus['status'])) {
 					return $this->handleError("Missing status from gateway for single payment");
 				}
-				Billrun_Factory::log("Checking returned payment status, and processing gateway response", Zend_Log::DEBUG);
+				Billrun_Factory::log("Returned payment status " . print_R($paymentStatus, 1) . ". Checking returned payment status, and processing gateway response", Zend_Log::DEBUG);
 				$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
+				Billrun_Factory::log("Processed pg response " . print_R($responseFromGateway, 1), Zend_Log::DEBUG);
 			}
 			Billrun_Factory::log("Updating details from gateway, setting transaction id and pg response", Zend_Log::DEBUG);
 			$txId = $gateway->getTransactionId();
