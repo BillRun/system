@@ -15,6 +15,8 @@
 
 class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billrun_Generator_PaymentGateway_Custom {
 	
+	use Billrun_Traits_Api_OperationsLock;
+	
 	const INITIAL_FILE_STATE = "waiting_for_confirmation";
 	const ASSUME_APPROVED_FILE_STATE = "assume_approved";
 	use Billrun_Traits_ConditionsCheck;
@@ -30,6 +32,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected $extraParamsNames = array();
 	protected $fileNameStructure;
 	protected $fileNameParams;
+	protected $locked_aid_bills_to_recharge = [];
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -118,7 +121,14 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers));
 		Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::INFO);
 		$this->setFileMandatoryFields();
-		foreach ($this->customers as $customer) {
+		$current_loop_bills = $this->customers;
+		$loop_counter = 0;
+		do {
+			$loop_counter++;
+			$this->locked_aid_bills_to_recharge = [];
+			$locked_aids = [];
+			Billrun_Factory::log()->log("Starting transactions request file charging loop number " . $loop_counter . " with " . count($current_loop_bills) . " bills", Zend_Log::DEBUG);
+			foreach ($current_loop_bills as $customer) {
 			if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
 				break;
 			}
@@ -189,13 +199,27 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				if ($this->isAssumeApproved()) {
 					$options['waiting_for_confirmation'] = false;
 				}
+					$locked_aids[] = $customer['aid'];
+					Billrun_Factory::log("Trying to lock charge_account operation in order to generate cpf request payment for account " . $customer['aid'], Zend_Log::DEBUG);
+					if (!$this->lock()) {
+						Billrun_Factory::log("Charging is already running for account " . $customer['aid'] . ". Moving on to the next account", Zend_Log::NOTICE);
+						$this->locked_aid_bills_to_recharge[] = $customer;
+						continue;
+					}
 				$paymentReseponse = Billrun_PaymentManager::getInstance()->pay($customer['payment_method'], array($paymentParams), $options);
+					if (!$this->release()) {
+						Billrun_Factory::log("Problem in releasing operation charge_account for account " . $customer['aid'] . " in cpf request file generation", Zend_Log::ALERT);
+						continue;
+					}
 				$payment = $paymentReseponse['payment'];
 				Billrun_Factory::log()->log('Updated debt payment details - aid: ' . $paymentParams['aid'] . ' ,amount: ' . $paymentParams['amount'] . '. This payment is wating for approval.', Zend_Log::INFO);
 			} catch (Exception $e) {
 				$message = 'Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage();
 				Billrun_Factory::log()->log($message, Zend_Log::ALERT);
 				$this->logFile->updateLogFileField('errors', $message);
+					if (!$this->release()) {
+						Billrun_Factory::log("Problem in releasing operation charge_account for account " . $customer['aid'] . " in cpf request file generation", Zend_Log::ALERT);
+					}
 				continue;
 			}
 			$currentPayment = $payment[0];
@@ -222,6 +246,21 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$currentPayment->setExtraFields(array_merge_recursive($extraFields, ['pg_request' => $this->billSavedFields]), $mergeToExistingArrayFields);
 			$currentPayment->save();
 			$this->data[] = $line;
+			}
+			Billrun_Factory::log()->log("Finishing transactions request file charging loop number " . $loop_counter . " with " . (count($current_loop_bills) - count($this->locked_aid_bills_to_recharge)) . " charged bills. Checking if need to start a new one", Zend_Log::DEBUG);
+			$current_loop_bills = $this->locked_aid_bills_to_recharge;
+			if (count($current_loop_bills) > 0) {
+				Billrun_Factory::log()->log("There are " . count($current_loop_bills) . " skipped bills in charging loop number " . $loop_counter . ". Starting a new one", Zend_Log::DEBUG);
+			}
+		} while ((!empty($current_loop_bills)) &&  ($loop_counter < 3));
+		if ($loop_counter == 3) {
+			Billrun_Factory::log()->log("Stopped waiting for the skipped accounts to be released after " . $loop_counter . " charging attempts. Failed to load data to the request file, of aids " . implode(",", $locked_aids), Zend_Log::ALERT);
+			if (count($current_loop_bills) > 0) {
+				Billrun_Factory::log()->log("There are " . count($current_loop_bills) . " skipped bills in charging loop number " . $loop_counter . ". Starting a new one", Zend_Log::DEBUG);
+			}
+		} while ((!empty($current_loop_bills)) &&  ($loop_counter < 3));
+		if ($loop_counter == 3) {
+			Billrun_Factory::log()->log("Stopped waiting for the skipped accounts to be released after " . $loop_counter . " charging attempts. Failed to load data to the request file, of aids " . implode(",", $locked_aids), Zend_Log::ALERT);
 		}
 		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;

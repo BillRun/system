@@ -16,7 +16,7 @@ services:
     php:
         build: 
             context: ./billrun-php7
-            dockerfile: Dockerfile-php73
+            dockerfile: Dockerfile-php73-tests
         image: billrun-php73
         container_name: billrun-app
         restart: always
