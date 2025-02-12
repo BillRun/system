@@ -57,9 +57,9 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
         ]]);
         $this->defaultOptions['force_accounts'] = [$data['account']['aid']];
         $this->defaultOptions["stamp"] = "202501";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->getFromCollection('billrun', array('billrun_key' => '202501', 'aid' =>  $data['account']['aid']));
-        $output = $this->tester->billrunToBill(['stamp'=>$billrun['billrun_key'],'invoices'=>$billrun['invoice_id']]);
+        $output = $this->tester->confirmInvoices(['stamp'=>$billrun['billrun_key'],'invoices'=>$billrun['invoice_id']]);
         $messages[0] = "Invoice {$billrun['invoice_id']} didn't pass the 'threshold' check";
         $messages[1] = "Invoice:invoice {$billrun['invoice_id']} shouldn't get approval number";
         $output->seeInShellOutput($messages[0] );
@@ -80,9 +80,9 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
         ]]);
         $this->defaultOptions['force_accounts'] = [$data['account']['aid']];
         $this->defaultOptions["stamp"] = "202501";
-        $this->tester->aggregator($this->defaultOptions);
-        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202501', 'aid' =>  $data['account']['aid']));
-        $output = $this->tester->billrunToBill(['stamp'=>$billrun['billrun_key'],'invoices'=>$billrun['invoice_id']]);
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->getFromCollection('billrun', array('billrun_key' => '202501', 'aid' =>  $data['account']['aid']));
+        $output = $this->tester->confirmInvoices(['stamp'=>$billrun['billrun_key'],'invoices'=>$billrun['invoice_id']]);
         $messages = [
             "Israel Invoice:build invoice {$billrun['invoice_id']} approval API request body",
             "Israel Invoice:build invoice {$billrun['invoice_id']} approval API curl object",  
@@ -111,9 +111,9 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
         ]]);
         $this->defaultOptions['force_accounts'] = [$data['account']['aid']];
         $this->defaultOptions["stamp"] = "202501";
-        $this->tester->aggregator($this->defaultOptions);
-        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202501', 'aid' =>  $data['account']['aid']));
-        $this->tester->billrunToBill(['stamp'=>$billrun['billrun_key'],'invoices'=>$billrun['invoice_id']]);
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->getFromCollection('billrun', array('billrun_key' => '202501', 'aid' =>  $data['account']['aid']));
+        $this->tester->confirmInvoices(['stamp'=>$billrun['billrun_key'],'invoices'=>$billrun['invoice_id']]);
         $this->tester->seeInCollection('bills', ['billrun_key' => '202501', 'aid' =>  $data['account']['aid'],'invoice_confirmation_number'=>['$exists'=>true,'$ne'=>null]]);
        
     }
