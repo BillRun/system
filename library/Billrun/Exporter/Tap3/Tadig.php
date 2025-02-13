@@ -208,7 +208,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 
 	protected function getInfo(){
-		$retval =  [
+		$retVal =  [
 			'Sender' => $this->getHpmnTadig(),
 			'Recipient' => $this->getVpmnTadig(),
 			'FileSequenceNumber' => $this->getSequenceNumber(),
