@@ -52,12 +52,12 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$message = "Didn't find bill with " . $identifier_val . " value in " . $this->identifierField['file_field'] . " field in " . $this->identifierField['source'] . " segment.";
 			if ($this->identifierField['field'] == 'invoice_id') {
 				$this->handleLogMessages($message, Zend_Log::ALERT, 'errors');
-				return;
+			return;
 			} elseif ($this->identifierField['field'] == 'aid') {
 				$aid = $identifier_val;
-			}
+		}
 		} else {
-			$billData = $bill->current()->getRawData();
+		$billData = $bill->current()->getRawData();
 			$aid = $billData['aid'];
 		}
 		if (!empty($this->amountField)) {
@@ -68,6 +68,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		$paymentParams['amount'] = !is_null($optional_amount) ? $optional_amount : (!is_null($billData) ? $billData['amount'] : 0);
 		$paymentParams['dir'] = 'fc';
 		$paymentParams['aid'] = $aid;
+		$paymentExtraParams = [];
 		
 		if ($this->linkToInvoice && ($this->identifierField['field'] == 'invoice_id')) {
 			$id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];	
@@ -79,7 +80,17 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$paymentParams['urt'] = $this->getPaymentUrt($row);
 		}
 		try {
-			$ret = Billrun_PaymentManager::getInstance()->pay('cash', array($paymentParams));
+			$accountQuery = ["aid" => intval($paymentParams['aid'])];
+			if (isset($paymentParams['urt'])) {
+				$accountQuery['time'] = $paymentParams['urt'];
+			}
+			$accountData = Billrun_Factory::account()->loadAccountForQuery($accountQuery)->getRawData();
+			$paymentExtraParams["account"] = $accountData;
+		} catch (Throwable $e) {
+			Billrun_Factory::log()->log("Could not get data for account : " . $paymentParams['aid'] . ". Error: " . $e->getMessage(), Zend_Log::ERR);
+		}
+		try {
+			$ret = Billrun_PaymentManager::getInstance()->pay('cash', array($paymentParams), $paymentExtraParams);
 		} catch (Exception $e) {
 			$this->handleLogMessages("Payment process was failed for account : " . $paymentParams['aid'] . ". Error: " . $e->getMessage(), Zend_Log::ALERT, 'errors');
 			return;

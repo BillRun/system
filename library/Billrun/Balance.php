@@ -39,7 +39,13 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @todo take from customer pricing
 	 */
 	public $pricingField = self::DEF_CALC_DB_FIELD;
-	
+
+	/**
+	 * Is the balance only on sid level
+	 * @var boolean
+	 */
+	protected $isSidLevel = false;
+
 	/**
 	 * constructor of balance entity
 	 * 
@@ -54,9 +60,16 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 
 		$this->row = $values;
 
+		$config = Billrun_Factory::config();
+		$this->isSidLevel = $config->getConfigValue("balances.sid_level", false);
+
 		if (!isset($this->row['sid']) || !isset($this->row['aid'])) {
 			Billrun_Factory::log('Error creating balance, no aid or sid', Zend_Log::ALERT);
 			return;
+		}
+
+		if ($this->isSidLevel && $this->row['sid'] != 0) {
+			$this->row['aid'] = 0;
 		}
 
 		$this->init($values); // this for override behaviour by the inheritance classes
@@ -184,7 +197,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		);
 		Billrun_Factory::dispatcher()->trigger('beforeTriggerEvents', array(&$skipEvents, $this->row));
 		if (!$skipEvents) {
-			Billrun_Factory::eventsManager()->trigger(Billrun_EventsManager::EVENT_TYPE_BALANCE, $this->getRawData(), $after, $additionalEntities, array('aid' => $after['aid'], 'sid' => $after['sid'], 'row' => array('usagev' => $this->row['usagev'], 'urt' => $this->row['urt']->sec)));
+			Billrun_Factory::eventsManager()->trigger(Billrun_EventsManager::EVENT_TYPE_BALANCE, $this->getRawData(), $after, $additionalEntities, array('aid' => $after['aid'], 'sid' => $after['sid'], 'row' => array('usagev' => $this->row['usagev'], 'urt' => $this->row['urt']->sec, 'usaget'=> $this->row['usaget'], 'stamp'=> $this->row['stamp'], 'unit' => @$this->row['usagev_unit'])));
 		}
 		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdate', array($this->row, $after));
 		$this->setRawData($after);

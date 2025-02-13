@@ -26,9 +26,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $template;
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
-	protected $loadFromFile = FALSE;
 	protected $exporterFlags = null;
-	protected $invoice_extra_params = [];
+        protected $invoice_extra_params = [];
 	protected $header_path = "";
 	protected $footer_path = "";
 	protected $header_content = "";
@@ -339,7 +338,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 			Billrun_Factory::dispatcher()->trigger("beforeLoadWkpdf", array(&$query, $this->accountsToInvoice));
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
-		}
+	}
 	}
 
 	public function setData($billrunData) {
@@ -627,12 +626,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 
 	public function addExtraParamsToCurrentView($extraParams) {
-		if (!empty($extraParams)) {
-			foreach ($extraParams as $paramKey => $paramVal) {
-				$this->view->assign('extra_' . $paramKey, $paramVal);
+		if(!empty($extraParams)) {
+			foreach($extraParams as $paramKey => $paramVal) {
+				$this->view->assign('extra_'.$paramKey, $paramVal);
 			}
 		}
 	}
+
         public function setBillrunExportPath($object, $paths) {
             $object->set('export_path', $paths);
 	}
@@ -695,6 +695,25 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		} catch (Exception $e) {
 			Billrun_Factory::log("Failed to sign pdf: " . $e->getMessage(), Zend_Log::ERR);
 		}
+        }
+
+	public function regenerateInvoice() {
+		Billrun_Factory::log()->log("Loading data to Generate...", Zend_Log::DEBUG);
+		try{
+			$this->load();
+			Billrun_Factory::log()->log("Starting to Generate. This action can take a while...", Zend_Log::DEBUG);
+			$this->generate();
+		} catch(Exception $ex){
+			Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+			return false;
+		}
+		Billrun_Factory::log()->log("Finished generating", Zend_Log::DEBUG);
+		if ($this->shouldFileBeMoved()) {
+			Billrun_Factory::log()->log("Exporting the file", Zend_Log::DEBUG);
+			$this->move();
+			Billrun_Factory::log()->log("Finished exporting", Zend_Log::DEBUG);
+		}
+		return true;
         }
 
 }

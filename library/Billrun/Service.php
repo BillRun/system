@@ -158,11 +158,21 @@ class Billrun_Service {
 		return $this->data;
 	}
 	
+	/**
+	 * 
+	 * @param string $name the property name;
+	 * @param Mongodloid_Date $time the property time
+	 * 
+	 * @return mixed the property value
+	 */
 	public static function getByNameAndTime($name, $time) {
 		$items = self::getCacheItems();
 		if (isset($items['by_name'][$name])) {
 			foreach ($items['by_name'][$name] as $itemTimes) {
-				if ($itemTimes['from'] <= $time && (!isset($itemTimes['to']) || is_null($itemTimes['to']) || $itemTimes['to'] >= $time)) {
+				$time = $time->sec ?? $time;
+				$from = $itemTimes['from']->sec ?? $itemTimes['from'];
+				$to = isset($itemTimes['to']) ? ($itemTimes['to']->sec ?? $itemTimes['to']) : null;
+				if ($from <= $time && (is_null($to) || $to >= $time)) {
 					return $itemTimes['plan'];
 				}
 			}
@@ -343,7 +353,7 @@ class Billrun_Service {
 				// on some cases we have limits to check through plugin
 				$limits = $this->data['include']['groups'][$staticGroup]['limits'];
 				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$staticGroup, $limits, $this, $usageType, $rate, $subscriberBalance));
-				if ($groupSelected === FALSE) {
+				if ($staticGroup === FALSE) {
 					return array('usagev' => 0);
 				}
 			}
@@ -423,7 +433,7 @@ class Billrun_Service {
 			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
 				// on some cases we have limits to check through plugin
 				$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$groupSelected, $limits, $this, $usageType, $rate));
+				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$groupSelected, $limits, $this, $usageType, $rate, false));
 				if ($groupSelected === FALSE) {
 					$this->unsetGroup($this->getEntityGroup());
 				}

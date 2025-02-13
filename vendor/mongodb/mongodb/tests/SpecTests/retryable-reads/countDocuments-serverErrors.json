@@ -10,8 +10,7 @@
     {
       "minServerVersion": "4.1.7",
       "topology": [
-        "sharded",
-        "load-balanced"
+        "sharded"
       ]
     }
   ],
@@ -167,7 +166,7 @@
       ]
     },
     {
-      "description": "CountDocuments succeeds after NotWritablePrimary",
+      "description": "CountDocuments succeeds after NotMaster",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -236,7 +235,7 @@
       ]
     },
     {
-      "description": "CountDocuments succeeds after NotPrimaryNoSecondaryOk",
+      "description": "CountDocuments succeeds after NotMasterNoSlaveOk",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -305,7 +304,7 @@
       ]
     },
     {
-      "description": "CountDocuments succeeds after NotPrimaryOrSecondary",
+      "description": "CountDocuments succeeds after NotMasterOrSecondary",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -788,7 +787,7 @@
       ]
     },
     {
-      "description": "CountDocuments fails after two NotWritablePrimary errors",
+      "description": "CountDocuments fails after two NotMaster errors",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -857,7 +856,7 @@
       ]
     },
     {
-      "description": "CountDocuments fails after NotWritablePrimary when retryReads is false",
+      "description": "CountDocuments fails after NotMaster when retryReads is false",
       "clientOptions": {
         "retryReads": false
       },

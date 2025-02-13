@@ -91,7 +91,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	}
 
 	protected function getProrationData($price,$cycle = false) {
-			$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
+			$endProration =  $this->proratedEnd && !$this->isTerminated($cycle) || ($this->proratedTermination && $this->isTerminated($cycle));
 			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->end() )) );
 			$cycle = empty($cycle) ? $this->cycle : $cycle;
 			$nextCycle = $this->getUpfrontCycle($cycle);
@@ -112,6 +112,17 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	protected function getUpfrontCycle($regularCycle) {
 		$nextCycleKey = Billrun_Billingcycle::getFollowingBillrunKey($regularCycle->key());
 		return new Billrun_DataTypes_CycleTime($nextCycleKey);
+	}
+
+	/**
+	 * Is the the subscriber hold  the plan  has terminated it subscription or is it just a plan change?
+	 */
+	protected function isTerminated($cycle = false) {
+
+		$fakeSubDeactivation = (empty($this->subscriberDeactivation) ? PHP_INT_MAX : $this->subscriberDeactivation);
+
+		return (	$fakeSubDeactivation <= $this->deactivation || empty($this->deactivation) &&
+					$fakeSubDeactivation <( $cycle ? $cycle->end() : $this->cycle->end() )	);
 	}
 	
 }

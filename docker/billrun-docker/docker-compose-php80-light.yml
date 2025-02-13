@@ -32,6 +32,9 @@ services:
 #        - "BR_MDB_AUTHDB="
         volumes:
             - ./../..:/billrun
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+
 
 networks:
   default:
@@ -39,4 +42,4 @@ networks:
     ipam:
       driver: default
       config:
-      - subnet:  10.103.0.1/16
+      - subnet:  10.103.0.0/16

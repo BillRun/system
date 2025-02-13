@@ -1,0 +1,31 @@
+{
+  "conditions": [
+    { "id": "$eq", "title": "Equal" },
+    { "id": "$ne", "title": "Does Not Equal" },
+    { "id": "$exists", "title": "Exists" },
+    { "id": "$existsFalse", "title": "Does Not Exist" },
+    { "id": "$lt", "title": "Is Less Than" },
+    { "id": "$lte", "title": "Is Less Than Or Equal" },
+    { "id": "$gt", "title": "Is Greater Than" },
+    { "id": "$gte", "title": "Is Greater Than Or Equal" },
+    { "id": "$in", "title": "Is Included In" },
+    { "id": "$isTrue", "title": "Is True (Boolean)" },
+    { "id": "$isFalse", "title": "Is False (Boolean)" },
+    { "id": "$regex", "title": "Matches regular expression" }
+  ],
+  "paramsConditions": [
+    { "id": "match", "title": "Equals" },
+    { "id": "equalFalse", "title": "Does Not Equal" },
+    { "id": "longestPrefix", "title": "Longest Prefix" },
+    { "id": "range", "title": "In Range" }
+  ],
+  "preFunctions": [
+    { "id": "minute_of_hour", "title": "Minute of hour (MM)", "values": ["urt"] },
+    { "id": "hour_of_day", "title": "Hour of day (HH)", "values": ["urt"] },
+    { "id": "time_of_day", "title": "Time of day (HHMM)", "values": ["urt"] },
+    { "id": "day_of_week", "title": "Day of week (Monday [1] to Sunday [7])", "values": ["urt"] },
+    { "id": "day_of_month", "title": "Day of month (DD)", "values": ["urt"] },
+    { "id": "month_of_year", "title": "Month of year (MM)", "values": ["urt"] },
+    { "id": "month_and_day", "title": "Month and day (MMDD)", "values": ["urt"] }
+  ]
+}

@@ -152,10 +152,12 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 				'in_balance_usage' => $rebalanceUsagev,
 			);
 			
+			$rebalanceCost = $this->getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev);
 			if (!is_null($balance['balance.totals.' . $balance_totals_key . '.usagev'])) {
-				$balance['balance.totals.' . $balance_totals_key . '.usagev'] += $rebalanceUsagev;
+				if (abs($rebalanceCost) > 0) { // in case of a free line - no reservation was made
+					$balance['balance.totals.' . $balance_totals_key . '.usagev'] += $rebalanceUsagev;
+				}
 			} else {
-				$rebalanceCost = $this->getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev);
 				if (!is_null($balance['balance.totals.' . $balance_totals_key . '.cost'])) {
 					$balance['balance.totals.' . $balance_totals_key . '.cost'] += $rebalanceCost;
 				} else {
@@ -178,8 +180,8 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 		$lines_archive_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateArchiveQuery);
 
 		// Update line in Lines collection will be done by Unify calculator
-		$sessionQuery = $this->getSessionIdQuery($lineToRebalance->getRawData());
-		$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
+		$unifiedQuery = ['stamp' => $lineToRebalance['u_s']];
+		$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $unifiedQuery);
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$options = array('multiple' => true); // this option is added in case we have sharding key=stamp and the update cannot be done
 		$lines_coll->update($findQuery, $updateLinesQuery, $options);

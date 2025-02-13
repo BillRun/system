@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing sending Sms alerts
+ * Billing sending SMS Abstract
  *
  * @package  Sms
  * @since    5.13
@@ -34,7 +34,7 @@ abstract class Billrun_Sms_Abstract {
 	}
 	
 	public function getBody() {
-		return $this->Body;
+		return $this->body;
 	}
 	
 	public function setBody($body) {

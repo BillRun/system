@@ -147,6 +147,7 @@ class Tests_Ratetest extends UnitTestCase {
 	}
 
 	public function TestPerform() {
+		$this->rows  = $this->skip_tests($this->rows ,'row.stamp');
 		foreach ($this->rows as $key => $row) {
 			$fixrow = $this->fixRow($row['row'], $key);
 			$this->linesCol->insert($fixrow);

@@ -42,6 +42,14 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
 			$this->invoicing_days = !empty($options['invoicing_days']) ? [$options['invoicing_days']] : null;
 		}
+		if (isset($options['page'])) {
+			$this->page = (int) $options['page'];
+		}
+		if (isset($options['size'])) {
+			$this->setLimit($options['size']);
+		} else {
+			$this->setLimit(-1);
+		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
 		$this->confirmDate = time();
@@ -52,15 +60,24 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$invoiceQuery = !empty($this->invoices) ? array('$in' => $this->invoices) : array('$exists' => 1);
 		$query = array(
 			'billrun_key' => (string) $this->stamp,
-			'billed' => array('$ne' => 1),
 			'invoice_id' => $invoiceQuery,
 			'allow_bill' => ['$ne' => 0],
 		);
 		if (!empty($this->invoicing_days)) {
 			$query['invoicing_day'] = array('$in' => $this->invoicing_days);
 		}
-		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 
+		$invoicesLimit = (int) $this->getLimit();
+		if ($invoicesLimit != -1) {
+			$page = (int) $this->page;
+			$invoicesCursor = $this->billrunColl->query($query)->cursor()
+				->sort(array('aid' => 1))
+				->limit($invoicesLimit)->skip($invoicesLimit * $page);
+		} else {
+			$query['billed'] = array('$ne' => 1);
+			$invoicesCursor = $this->billrunColl->query($query)->cursor()->sort(array('aid' => 1));
+		}
+		$invoices = $invoicesCursor->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
@@ -73,13 +90,24 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$result = array('alreadyRunning' => false, 'releasingProblem'=> false);//help in case it's a onetimeinvoice generate
 		$invoices = array();
 		foreach ($this->data as $invoice) {
+			if (!empty($invoice['billed'])) {
+				Billrun_Factory::log("Generator for aid " . $invoice['aid'] . " billrun " . $invoice['billrun_key'] .
+					" invoice_id " . $invoice['invoice_id'] . " was already confirmed", Zend_Log::INFO);
+				continue;
+			}
 			$this->filtration = $invoice['aid'];
 			if (!$this->lock()) {
 				Billrun_Factory::log("Generator for aid " . $invoice['aid'] . " is already running", Zend_Log::NOTICE);
 				$result['alreadyRunning'] = true;
 				continue;
 			}
-			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
+			Billrun_Factory::log("Creating bill from invoice " . $invoice['invoice_id'], Zend_Log::DEBUG);
+			$res = $this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
+			if (!$res) {
+				Billrun_Factory::log("Failed to create bill from invoice " . $invoice['invoice_id'] . ". Continue to the next invoice", Zend_Log::ALERT);
+				continue;
+			}
+			Billrun_Factory::log("Successfully created bill from invoice " . $invoice['invoice_id'], Zend_Log::DEBUG);
 			$invoicesIds[] = $invoice['invoice_id'];
 			$invoices[] = $invoice->getRawData();
 			if (!$this->release()) {
@@ -134,6 +162,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		if (!empty($invoice['invoicing_day'])) {
 			$bill['invoicing_day'] = $invoice['invoicing_day'];
 		}
+		if (!empty($invoice['uf'])) {
+			$bill['uf'] = $invoice['uf'];
+		}
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];
 		}
@@ -150,11 +181,21 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$account = Billrun_Factory::account();
 		$foreignData = $this->getForeignFields(array('account' => $account->loadAccountForQuery(['aid' => $invoice['aid']])));
 		$bill = array_merge_recursive($bill, $foreignData);
-		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
-		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice));
+		Billrun_Factory::log('Creating bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
+		$invoice['confirmation_time'] = new MongoDate($this->confirmDate);
+		$should_be_confirmed = true;
+		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice, &$should_be_confirmed));
+		if (!$should_be_confirmed) {
+			return false;
+		}
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
-		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
-		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill));
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks();
+		if ($switch_links) {
+			Billrun_Bill_Payment::detachPendingPayments($invoice['aid']);
+		}
+		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid'], true, $switch_links);
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill, $invoice));
+		return true;
  	}
 	
 	/**
@@ -162,7 +203,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $data
 	 */
 	protected function updateBillrunONBilled($data) {
-		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1, 'confirmation_time' => new Mongodloid_Date())));
+		$confirmation_time = Billrun_Util::getIn($data, 'confirmation_time', new Mongodloid_Date());
+		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1, 'confirmation_time' => $confirmation_time)));
+		$data['billed'] = 1;
+		$data['confirmation_time'] = $confirmation_time;
+		return $data;
 	}
 	
 	/**
@@ -194,7 +239,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $data
 	 * @param type $afterSaveCallback
 	 */
-	protected function safeInsert($collection, $uniqueKeys, $data, $afterSaveCallback = FALSE) {
+	protected function safeInsert($collection, $uniqueKeys, &$data, $afterSaveCallback = FALSE) {
 		$uniqueQuery = array_intersect_key( $data, array_flip($uniqueKeys) );
 		$transactionStamp = Billrun_Util::generateArrayStamp($uniqueQuery);
 		$uniqueQuery['tx'] = array('$exists'=>FALSE);
@@ -204,7 +249,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		
 		if($afterSaveCallback) { 
-			call_user_func($afterSaveCallback, $data);
+			$data = call_user_func($afterSaveCallback, $data);
 		}
 		
 		$uniqueQuery['tx'] = $transactionStamp;

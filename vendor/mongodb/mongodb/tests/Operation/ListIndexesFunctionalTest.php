@@ -8,12 +8,11 @@ use MongoDB\Operation\DropCollection;
 use MongoDB\Operation\InsertOne;
 use MongoDB\Operation\ListIndexes;
 use MongoDB\Tests\CommandObserver;
-
 use function version_compare;
 
 class ListIndexesFunctionalTest extends FunctionalTestCase
 {
-    public function testListIndexesForNewlyCreatedCollection(): void
+    public function testListIndexesForNewlyCreatedCollection()
     {
         $operation = new DropCollection($this->getDatabaseName(), $this->getCollectionName());
         $operation->execute($this->getPrimaryServer());
@@ -36,7 +35,7 @@ class ListIndexesFunctionalTest extends FunctionalTestCase
         }
     }
 
-    public function testListIndexesForNonexistentCollection(): void
+    public function testListIndexesForNonexistentCollection()
     {
         $operation = new DropCollection($this->getDatabaseName(), $this->getCollectionName());
         $operation->execute($this->getPrimaryServer());
@@ -47,14 +46,14 @@ class ListIndexesFunctionalTest extends FunctionalTestCase
         $this->assertCount(0, $indexes);
     }
 
-    public function testSessionOption(): void
+    public function testSessionOption()
     {
         if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
             $this->markTestSkipped('Sessions are not supported');
         }
 
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new ListIndexes(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -63,7 +62,7 @@ class ListIndexesFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );

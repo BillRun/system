@@ -137,6 +137,7 @@ class CreditAction extends ApiAction {
 		}
 		
 		if ($numOfInstallments == 1) {
+			$firstInstallment['first_installment'] = $firstInstallment['stamp'];
 			return;
 		}
 		
