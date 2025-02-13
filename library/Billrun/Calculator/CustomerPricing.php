@@ -170,7 +170,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function prepareData($lines) {
-		
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorPrepareData', [ &$lines, $this ]);
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorPrepareData', [ &$lines, $this ]);
 	}
 
 	/**

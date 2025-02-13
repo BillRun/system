@@ -45,6 +45,7 @@ class Billrun_Helpers_QueueCalculators {
         foreach ($this->queue_calculators as $calc_name) {
             Billrun_Factory::log('Plugin calc cpu ' . $calc_name, Zend_Log::INFO);
             $calc_options = $this->getCalcOptions($calc_name);
+
             if ($this->isUnify($calc_name)) {
                 $this->unifyCalc($processor, $data);
 				foreach ($data['data'] as &$line) {
@@ -52,10 +53,11 @@ class Billrun_Helpers_QueueCalculators {
 				}
                 continue;
             }
-            $queue_data = $processor->getQueueData();
+            $queue_data = &$processor->getQueueData();
             $calc = Billrun_Calculator::getInstance(array_merge($this->options, $calc_options));
             $calc->prepareData(array_diff_key($data['data'], $this->stuckInQueue));
             $allExtraLines = [];
+			Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $data['data'], $calc));
             foreach ($data['data'] as $key => &$line) {
                 $extraLines = $this->addExtraLines($line, $queue_data, $calc, $processor);
                 $this->calculateDataRow($data, $index, $line, $calc_name, $queue_data, $calc, $processor);
@@ -65,6 +67,13 @@ class Billrun_Helpers_QueueCalculators {
 
                 $allExtraLines =  array_merge($allExtraLines, $extraLines);
             }
+            Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $data['data'], $calc));
+			foreach($queue_data as $qline) {
+				if ( $qline['calc_name'] !== $calc_name &&
+					!isset($this->stuckInQueue[$qline['stamp']]) ) {
+					   $this->stuckInQueue[$qline['stamp']] = true;
+				}
+			}
 			unset($line); // see warning at https://www.php.net/manual/en/control-structures.foreach.php
             $data['data'] =  array_merge($data['data'], $allExtraLines);
             $index++;
@@ -199,7 +208,9 @@ class Billrun_Helpers_QueueCalculators {
 				}
 				continue;
 			}
-			if (isset($queue_data[$line['stamp']]) && in_array($queue_data[$line['stamp']]['calc_name'] , array('pricing', 'tax'))) {
+			if ( isset($queue_data[$line['stamp']]) &&
+				 in_array($queue_data[$line['stamp']]['calc_name'] , array('pricing', 'tax')) &&
+				 empty($this->stuckInQueue[$line['stamp']])) {
 				$entity = new Mongodloid_Entity($line);
 				if ($this->unifyCalc->isLineLegitimate($entity)) {
 					$this->unifyCalc->updateRow($entity);

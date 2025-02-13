@@ -347,7 +347,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$lines = Billrun_Factory::db()->linesCollection();
 		Billrun_Factory::log("Store data of file " . basename($this->filePath) . " with " . count($this->data['data']) . " lines", Zend_Log::INFO);
-		$queue_data = $this->getQueueData();
+		$queue_data = &$this->getQueueData();
 		$queue_stamps = array_keys($queue_data);
 		$line_stamps = array_keys($this->data['data']);
 		$lines_in_queue = array_intersect($line_stamps, $queue_stamps);
@@ -516,7 +516,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'socketTimeoutMS' => 300000,
 					'wTimeoutMS' => 300000,
-					'w' => 0,
+					'w' => intval(Billrun_Factory::config()->getConfigValue('processor.default_insert_write_concern',0)),
 				);
 			} else {
 				// we are on 2.4 and lower
@@ -524,7 +524,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'wtimeout' => 300000,
 					'timeout' => 300000,
-					'w' => 0,
+					'w' => intval(Billrun_Factory::config()->getConfigValue('processor.default_insert_write_concern',0)),
 				);
 			}
 			$offset = 0;
@@ -562,7 +562,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'socketTimeoutMS' => 300000,
 					'wTimeoutMS' => 300000,
-					'w' => 0,
+					'w' => intval(Billrun_Factory::config()->getConfigValue('processor.default_insert_write_concern',0)),
 				);
 			} else {
 				// we are on 2.4 and lower
@@ -570,7 +570,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'wtimeout' => 300000,
 					'timeout' => 300000,
-					'w' => 0,
+					'w' => intval(Billrun_Factory::config()->getConfigValue('processor.default_insert_write_concern',0)),
 				);
 			}
 			$offset = 0;
@@ -664,7 +664,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * 
 	 * @return array
 	 */
-	public function getQueueData() {
+	public function &getQueueData() {
 		return $this->queue_data;
 	}
 

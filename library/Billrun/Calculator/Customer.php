@@ -120,7 +120,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$subData = $sub->getData();
 				$key = !empty($subData['id']) ? $subData['id'] :
 					(!empty($subData['stamp']) ? $subData['stamp'] : $key );
-				$subs_by_stamp[$key] = $sub;
+				if(!empty($subData['sid'])) {
+					$subs_by_stamp[$key] = $sub;
+				}
 			}
 			$this->subscribers = $subs_by_stamp;
 			$this->subscribers_by_stamp = true;
@@ -134,7 +136,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$accountData = $account->getData();
 				$key = !empty($accountData['id']) ? $accountData['id'] :
 					(!empty($accountData['stamp']) ? $accountData['stamp'] : $key );
-				$accounts_by_stamp[$key] = $account;
+				if(!empty($accountData['aid'])) {
+					$accounts_by_stamp[$key] = $account;
+				}
 			}
 			$this->accounts = $accounts_by_stamp;
 			$this->accounts_by_stamp = true;
@@ -142,6 +146,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	public function prepareData($lines) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorPrepareData', ['data' => &$lines, $this]);
 		if ($this->isBulk() ) {
 			$this->subscribers = $this->loadSubscribers($lines);
 		}
@@ -149,6 +154,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$this->account = Billrun_Factory:: account();
 			$this->accounts = $this->loadAccounts($lines);
 		}
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorPrepareData', ['data' => &$lines, $this]);
 	}
 
 	/**
@@ -527,7 +533,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function isOutgoingCall($line) {
 		$outgoing = true;
 		if ($line['type'] == 'nsn') {
-			$outgoing = in_array($line['record_type'], array('01', '11'));
+			$outgoing = $line['usaget'] !== 'incoming_call';
 		}
 		if (in_array($line['usaget'], Billrun_Factory::config()->getConfigValue('realtimeevent.incomingCallUsageTypes', array()))) {
 			return false;

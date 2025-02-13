@@ -125,6 +125,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * @return boolean true this can't fail (other then some php errors)
 	 */
 	public function updateRow($rawRow) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$rawRow, $this));
 		$newRow = $rawRow instanceof Mongodloid_Entity ? $rawRow->getRawData() : $rawRow;
 		// we aligned the urt to one main timestamp to avoid DST issues; effect only unified data
 		$updatedRowStamp = $this->getLineUnifiedLineStamp($newRow);
@@ -135,6 +136,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if (($this->protectedConcurrentFiles && $this->isLinesLocked($updatedRowStamp, array($newRow['stamp']))) ||
 			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {
 			Billrun_Factory::log("Line {$newRow['stamp']} was already applied to unified line $updatedRowStamp", Zend_Log::NOTICE);
+			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$rawRow, $this));
 			return true;
 		}
 		$typeFields = $this->getLineSpecificUpdateFields($newRow);
@@ -153,7 +155,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$updatedRow['lcount'] += 1;
 		$this->unifiedLines[$updatedRowStamp] = $updatedRow;
 		$this->unifiedToRawLines[$updatedRowStamp]['update'][] = $newRow['stamp'];
-
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$updatedRow, $this));
 		return true;
 	}
 
@@ -494,7 +496,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	}
 	
 	public function prepareData($lines) {
-		
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorPrepareData', ['data' => &$lines, $this]);
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorPrepareData', ['data' => &$lines, $this]);
 	}
 	
 	protected function setMinUrt($newRow, &$existingRow) {

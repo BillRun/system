@@ -41,7 +41,7 @@ class ReceiveAction extends Action_Base {
 		}
 
 		// If not type all process normaly.
-		if(!$this->handleTypeAll($options, , Billrun_Factory::config()->getConfigValue('receiver.type_all.run_in_series',false))) {
+		if(!$this->handleTypeAll($options,Billrun_Factory::config()->getConfigValue('receiver.type_all.run_in_series',false))) {
 			$connectionsPerReceiverType = array();
 			if (isset($options['payment_gateway'])) {
 				$paymentGatewayReceiver = Billrun_Receiver_NonCDRs_PaymentGateway::getReceiverSettings($options);

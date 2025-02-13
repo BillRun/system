@@ -21,7 +21,6 @@ services:
             dockerfile: Dockerfile
         image: billrun-php74
         container_name: billrun-app
-        privileged: true
         restart: always
         environment:
         - "APPLICATION_ENV=container"
@@ -30,6 +29,9 @@ services:
         - "BR_MDB_DBNAME=billing_container"
         volumes:
             - ./../..:/billrun
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongodb

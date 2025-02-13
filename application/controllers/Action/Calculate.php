@@ -32,7 +32,7 @@ class CalculateAction extends Action_Base {
 			return;
 		}
 
-		$this->getController()->addOutput("Loading Calculator");
+		$this->getController()->addOutput("Loading Calculator : {$options['type']}");
 		$calculator = Billrun_Calculator::getInstance($options);
 		$this->getController()->addOutput("Calculator loaded");
 

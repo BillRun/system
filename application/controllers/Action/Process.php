@@ -48,7 +48,7 @@ class ProcessAction extends Action_Base {
 	}
 	
 	protected function loadProcessor($options) {
-		$this->getController()->addOutput("Loading processor");
+		$this->getController()->addOutput("Loading processor : {$options['type']}");
 		$processor = Billrun_Processor::getInstance($options);
 
 		if (!$processor) {

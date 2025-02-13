@@ -80,7 +80,10 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @param type $lines
 	 * @return nothing
 	 */
-	public function prepareData($lines) { }
+	public function prepareData($lines) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorPrepareData', ['data' => &$lines, $this]);
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorPrepareData', ['data' => &$lines, $this]);
+	}
 
 	
 	//================================= Static =================================

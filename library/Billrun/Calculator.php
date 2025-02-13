@@ -17,7 +17,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	use Billrun_Traits_ForeignFields {
 		getForeignFieldsFromConfig as baseGetForeignFieldsFromConfig;
 	}
-	
+
 	/**
 	 * the type of the object
 	 *
@@ -162,7 +162,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * execute the calculation process
 	 */
 	public function calc() {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data, $this));
 		$lines = $this->pullLines($this->lines);
 		$this->prepareData($lines);
 		foreach ($lines as $line) {
@@ -173,25 +173,25 @@ abstract class Billrun_Calculator extends Billrun_Base {
                         $this->calculateDataRow($extraLine);
                     }
 		}
-		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
+		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data, $this));
 	}
 	
         protected function calculateDataRow($line) {
             $lines_coll = Billrun_Factory::db()->linesCollection();
-			if ($line) {
-				Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
-				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
-				$line->collection($lines_coll);
-				if ($this->isLineLegitimate($line)) {
-					if ($this->updateRow($line) === FALSE) {
-						unset($this->lines[$line['stamp']]);
+            if ($line) {
+                Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
+                Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line, 'calculator'=> $this));
+                $line->collection($lines_coll);
+                if ($this->isLineLegitimate($line)) {
+                        if ($this->updateRow($line) === FALSE) {
+                                unset($this->lines[$line['stamp']]);
                                 return;
-					}
-					$this->data[$line['stamp']] = $line;
-				}
-				Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
-			}
-		}
+                        }
+                        $this->data[$line['stamp']] = $line;
+                }
+                Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line, 'calculator'=> $this));
+            }
+        }
         /**
          * Adding extra lines to calculated lines. 
          * @param Mongodloid_Entity $line- that we want to check if generate extra lines (inside the trigger)
@@ -356,7 +356,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$line->collection(Billrun_Factory::db()->linesCollection());
 		return $line;
 	}
-
+	
 	protected function pullQueueLineByStamp($stamp) {
 		$queue_line = Billrun_Factory::db()->queueCollection()->query('stamp', $stamp)
 				->cursor()->current();
@@ -636,6 +636,12 @@ if (($response = $this->applyQueueHash($query, $update, $queue)) === FALSE) {
 			return $this->lines[$stamp];
 		} else {
 			return null;
+		}
+	}
+
+	public function unsetQueueLine($stamp) {
+		if (isset($this->lines[$stamp])) {
+			unset( $this->lines[$stamp] );
 		}
 	}
 
