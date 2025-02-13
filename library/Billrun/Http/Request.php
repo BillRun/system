@@ -23,7 +23,7 @@ class Billrun_Http_Request extends Zend_Http_Client {
     }
 
     protected function evaluateResponseValidity($response, $method)  {
-        if( $response->getStatus() == 202 ) {
+        if( $response &&  $response->getStatus() == 202 ) {
             sleep(Billrun_Factory::config()->getConfigValue('network.http_retry_wait',10));
             return false;
         }
