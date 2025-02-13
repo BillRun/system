@@ -208,7 +208,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 
 	protected function getInfo(){
-		return array(
+		$retval =  [
 			'Sender' => $this->getHpmnTadig(),
 			'Recipient' => $this->getVpmnTadig(),
 			'FileSequenceNumber' => $this->getSequenceNumber(),
@@ -226,8 +226,11 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			),
 			'SpecificationVersionNumber' => intval($this->getConfig('header.version_number')),
 			'ReleaseVersionNumber' => intval($this->getConfig('header.release_version_number')),
-			'FileTypeIndicator' => $this->getConfig('header.file_type_indicator'),
-		);
+
+		];
+		if (!empty($this->options['is_test_file'])) {
+			$retVal['FileTypeIndicator'] = $this->getConfig('header.file_type_indicator');
+		}
 	}
 	
 	protected function getCurrencyConversionList() {
@@ -363,8 +366,12 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$ret = array();
 		foreach ($this->rowsToExport as $row) {
 			$recEntityInfos = $this->getRecEntityInformation($row);
-			$missingEnitities = array_diff($recEntityInfos,$ret);
+			$serializedRecEntityInfos = array_map('serialize', $recEntityInfos);
+      $serializedRet = array_map('serialize', $ret);
+			$missingEnitities = array_diff($serializedRecEntityInfos, $serializedRet);
+
 			if ( !empty($missingEnitities) ) {
+				$missingEnitities = array_map('unserialize', $missingEnitities);
 				$ret = array_merge( $missingEnitities, $ret );
 			}
 		}
@@ -372,7 +379,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getRecEntityInformation($row) {
-		$tapRecordType = $this->getCallEventDetail($row);
+		$tapRecordType = $this->getLineType($row);
 		$recIdFields=  Billrun_Util::getIn($this->config,
 										  'helper_field_mappings.'.$tapRecordType.'.RecEntityId', $this->config,
 										  'helper_field_mappings.common.RecEntityId');
@@ -412,7 +419,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	protected function getRecEntityCode($row) {
 		$entityList = $this->getRecEntityInformation($row);
 		$surfacedEntityValues = array_column($entityList,'RecEntityInformation');
-		return  array_column($surfacedEntityValues,'RecEntityCode');
+		return  array_column($surfacedEntityValues,'RecEntityCode')[0];
 	}
 	
 	protected function getTeleServiceCode($row) {
@@ -532,13 +539,13 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	
 	protected function getTotalCallEventDuration($row) {
 		$durationField=  Billrun_Util::getIn($this->config,
-										  'helper_field_mappings.'.$this->getCallEventDetail($row).'.TotalCallEventDuration',
+										  'helper_field_mappings.'.$this->getLineType($row).'.TotalCallEventDuration',
 										  Billrun_Util::getIn($this->config,'helper_field_mappings.common.TotalCallEventDuration',''));
 		$startField=  Billrun_Util::getIn($this->config,
-										  'helper_field_mappings.'.$this->getCallEventDetail($row).'.StartTime',
+										  'helper_field_mappings.'.$this->getLineType($row).'.StartTime',
 										  Billrun_Util::getIn($this->config,'helper_field_mappings.common.StartTime',''));
 		$endField=  Billrun_Util::getIn($this->config,
-										  'helper_field_mappings.'.$this->getCallEventDetail($row).'.EndTime',
+										  'helper_field_mappings.'.$this->getLineType($row).'.EndTime',
 										  Billrun_Util::getIn($this->config,'helper_field_mappings.common.EndTime',''));
 		switch ($this->getLineType($row)) {
 			case self::$LINE_TYPE_SMS:

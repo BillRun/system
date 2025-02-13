@@ -46,7 +46,11 @@ class ExportAction extends Action_Base {
 		
 		foreach ($export_generators_options as $export_generator_options) {
 			$this->getController()->addOutput("Loading exporter");
-			$exportGeneratorSettings = Billrun_Factory::config()->getExportGeneratorSettings($export_generator_options['type']);
+			$exportGeneratorSettings = Billrun_Factory::config()->getExportGeneratorSettings($export_generator_options['type'], false);
+			if(isset($exportGeneratorSettings['enabled']) && !$exportGeneratorSettings['enabled']){
+				Billrun_Factory::log($export_generator_options['type'] . ' export generator is not enabled', Zend_Log::INFO);
+				continue;
+			}
 			if (!$exportGeneratorSettings) {
 				Billrun_Factory::log("Can't get configurarion: " . print_R($export_generator_options, 1), Zend_Log::EMERG);
 				return false;
@@ -62,7 +66,7 @@ class ExportAction extends Action_Base {
 				$this->getController()->addOutput("Starting to export. This action can take a while...");
 				try {
 					if(!$exporter->shouldGenerateByFrequency()){
-            return false;
+            continue;
         	}
 					if ($exporter->generate() == false) {
 						return false;
