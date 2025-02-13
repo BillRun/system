@@ -208,7 +208,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 
 	protected function getInfo(){
-		return array(
+		$retval =  [
 			'Sender' => $this->getHpmnTadig(),
 			'Recipient' => $this->getVpmnTadig(),
 			'FileSequenceNumber' => $this->getSequenceNumber(),
@@ -226,8 +226,11 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			),
 			'SpecificationVersionNumber' => intval($this->getConfig('header.version_number')),
 			'ReleaseVersionNumber' => intval($this->getConfig('header.release_version_number')),
-			'FileTypeIndicator' => $this->getConfig('header.file_type_indicator'),
-		);
+
+		];
+		if (!empty($this->options['is_test_file'])) {
+			$retVal['FileTypeIndicator'] = $this->getConfig('header.file_type_indicator');
+		}
 	}
 	
 	protected function getCurrencyConversionList() {
