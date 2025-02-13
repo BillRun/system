@@ -231,6 +231,8 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		if (!empty($this->options['is_test_file'])) {
 			$retVal['FileTypeIndicator'] = $this->getConfig('header.file_type_indicator');
 		}
+
+		return $retVal;
 	}
 	
 	protected function getCurrencyConversionList() {
