@@ -96,27 +96,11 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
          foreach($messages as $message) {
             $output->seeInShellOutput($message);
          }
+         $this->tester->seeInCollection('bills', ['billrun_key' => '202501', 'aid' =>  $data['account']['aid'],'invoice_confirmation_number'=>['$exists'=>true,'$ne'=>null]]);
+
     }
 
- //invoice price is equel to the  israel invoice threshold - should get approval number - check the confirmation number is saved to the bill
-    public function test_checkConfirmationNumberSaveToBill()
-    {
-       $data =  $this->createTestData([],[],['name' => 'PLAN_B'.time().time(), "price" => [
-            [
-                "price" => 25000,
-                "from" => 0,
-                "to" => "UNLIMITED"
-            ]
-        ]]);
-        $this->defaultOptions['force_accounts'] = [$data['account']['aid']];
-        $this->defaultOptions["stamp"] = "202501";
-        $this->tester->runCycle($this->defaultOptions);
-        $billrun = $this->tester->getFromCollection('billrun', array('billrun_key' => '202501', 'aid' =>  $data['account']['aid']));
-        $this->tester->confirmInvoices(['stamp'=>$billrun['billrun_key'],'invoices'=>$billrun['invoice_id']]);
-        $this->tester->seeInCollection('bills', ['billrun_key' => '202501', 'aid' =>  $data['account']['aid'],'invoice_confirmation_number'=>['$exists'=>true,'$ne'=>null]]);
-       
-    }
-
+ 
 
 
     
