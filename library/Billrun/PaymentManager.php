@@ -367,7 +367,7 @@ class Billrun_PaymentManager {
 					Billrun_Factory::log("Setting payment as pending", Zend_Log::DEBUG);
 					$payment->setPending(true);
 					$addonData = array('aid' => $payment->getAid(), 'txid' => $payment->getId());
-					Billrun_Factory::log("Making online transaction for aid " . $payment->getAid() . " and payment id " . $payment->getId() . " and gateway details " . print_R($gatewayDetails, 1), Zend_Log::DEBUG);
+					Billrun_Factory::log("Making online transaction for aid " . $payment->getAid() . " and payment id " . $payment->getId(), Zend_Log::DEBUG);
 					$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails, $addonData);
 					Billrun_Factory::log("Returned payment status " . print_R($paymentStatus, 1) . ". Checking returned payment status, and processing gateway response", Zend_Log::DEBUG);
 					$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
