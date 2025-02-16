@@ -128,6 +128,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->tanent_css = $this->buildTanentCss(Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_tanent_css', ''));
 		$this->is_fake_generation = Billrun_Util::getFieldVal($options['is_fake'],FALSE);
 		$this->render_detailed_quantitative_services = Billrun_Util::getFieldVal($options['detailed_quantitative_services'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_detailed_quantitative_services', FALSE));
+		$this->loadFromFile = Billrun_Util::getFieldVal($options['load_from_file'], $this->loadFromFile);
 	}
 
 	/**
@@ -323,6 +324,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 
 	public function load() {
+		if($this->loadFromFile) {
+			$this->billrun_data = [ new Mongodloid_Entity(Billrun_Utils_Mongo::recursiveConvertJSONToMongo(json_decode(file_get_contents($this->loadFromFile),JSON_OBJECT_AS_ARRAY))) ];
+		} else {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		$query = array('billrun_key' => $this->stamp, '$or' => array(
 				array('totals.after_vat' => array('$not' => array('$gt' => -$this->invoice_threshold, '$lt' => $this->invoice_threshold))),
@@ -332,8 +336,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		if (!empty($this->accountsToInvoice)) {
 			$query['aid'] = array('$in' => $this->accountsToInvoice);
 		}
-		Billrun_Factory::dispatcher()->trigger("beforeLoadWkpdf", array(&$query, $this->accountsToInvoice));
+			Billrun_Factory::dispatcher()->trigger("beforeLoadWkpdf", array(&$query, $this->accountsToInvoice));
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
+	}
 	}
 
 	public function setData($billrunData) {
@@ -621,9 +626,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 
 	public function addExtraParamsToCurrentView($extraParams) {
-		if (!empty($extraParams)) {
-			foreach ($extraParams as $paramKey => $paramVal) {
-				$this->view->assign('extra_' . $paramKey, $paramVal);
+		if(!empty($extraParams)) {
+			foreach($extraParams as $paramKey => $paramVal) {
+				$this->view->assign('extra_'.$paramKey, $paramVal);
 			}
 		}
 	}
@@ -709,6 +714,6 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			Billrun_Factory::log()->log("Finished exporting", Zend_Log::DEBUG);
 		}
 		return true;
-	}
-			
+        }
+
 }

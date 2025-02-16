@@ -288,10 +288,9 @@ class Billrun_Cycle_Account_Invoice {
 			$invoiceRawData['invoice_id'] = $invoiceId;
 			$newRawData = $invoiceRawData;
 		}
-		$this->data->setRawData($newRawData);		
+		$this->data->setRawData($newRawData);
 
 	}
-
 	/**
 	 * Set the subss to the raw data array
 	 * @param array $invoiceRawData - Input array
@@ -429,7 +428,34 @@ class Billrun_Cycle_Account_Invoice {
 			Billrun_Factory::log("Deactivated account: {$this->aid} no need to create invoice.", Zend_Log::DEBUG);
 			return;
 		}
-		$ret = $this->billrun_coll->save($this->data);
+		try {
+			$ret = $this->billrun_coll->save($this->data);
+		} catch( Exception  $ex ) {
+			Billrun_Factory::log("Crashed when saving invoice for account {$this->aid} ", Zend_Log::NOTICE);
+			//Try and remove the uneeded data from  he  invioce  document
+			if( $ex->getCode() == 0 && count($this->data['subs']) > Billrun_Factory::config()->getConfigValue('billrun.save_subs_limit.limit',10000)) {
+				$rawData = $this->data->getRawData();
+				$failedPath = Billrun_Factory::config()->getConfigValue('billrun.failed_invoices_path','/tmp').DIRECTORY_SEPARATOR."{$rawData['aid']}_{$rawData['billrun_key']}_{$rawData['invoice_id']}.json";
+				Billrun_Factory::log("Crashed when saving invoice for account {$this->aid} as it might be too large, saving instead to {$failedPath} ", Zend_Log::NOTICE);
+				if( file_put_contents($failedPath,json_encode($rawData)) ) {
+					if( !empty($fieldsToClear = Billrun_Factory::config()->getConfigValue('billrun.save_subs_limit.fields_to_rm',[])) ) {
+						array_walk($rawData['subs'], function(&$s) use ($fieldsToClear) {
+							foreach($fieldsToClear as $field) { Billrun_Util::setIn($s, $field, []); }
+						});
+					} else {
+						$rawData['subs'] = [];
+					}
+					$rawData['full_invoice_saved_to'] = $failedPath;
+					$this->data->setRawData($rawData);
+					$ret = $this->billrun_coll->save($this->data);
+				} else {
+					Billrun_Factory::log("Failed when trying saving invoice for account {$this->aid} ,to file  at : {$failedPath} ", Zend_Log::ALERT);
+					throw($ex);
+				}
+			} else {
+				throw($ex);
+			}
+		}
 		if (!$ret) {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
