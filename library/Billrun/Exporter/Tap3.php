@@ -127,6 +127,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
         //$this->fileName = $this->getFilename();
         //$options['file_name'] = $this->fileName;
         $options['file_type'] = $this->getType();
+        $options['is_test_file'] = $this->isTestFile();
         $this->localDir = $this->getFilePath();
         $options['local_dir'] = $this->localDir;
         //$options['file_path'] = $this->localDir . DIRECTORY_SEPARATOR . $this->fileName;
@@ -173,11 +174,15 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 		return $this->filename;
 	}
 
+	protected function isTestFile() {
+		//TODO add  spcific test morde  configuration per tadig / file
+		return !Billrun_Factory::config()->isProd() && Billrun_Util::getIn($this->config,'in_test_mode', false);
+	}
 
 
 	protected function setTap3FileNameSttructure($tadig) {
 		$this->fileName='';
-		if (Billrun_Factory::config()->isProd()) {
+		if( !$this->isTestFile() ) {
 			$pref = Billrun_Util::getIn($this->config,'filename_structure.prefix.prod', 'CD');
 		} else {
 			$pref =  Billrun_Util::getIn($this->config,'filename_structure.prefix.test', 'TD');
