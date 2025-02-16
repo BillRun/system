@@ -36,7 +36,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $this->options = $options;
     $this->nonWorkingDaysCollection = Billrun_Factory::db()->plugin_teldas_non_working_daysCollection(['force' => true]);
     $this->inaNumbersCollection = Billrun_Factory::db()->plugin_teldas_ina_numbersCollection(['force' => true]);
-    $this->tariffsProfilesCollection = Billrun_Factory::db()->plugin_teldas_online_tariffs_profilesCollection(['force' => true]);
+    $this->tariffsProfilesCollection = Billrun_Factory::db()->plugin_teldas_tariffs_profilesCollection(['force' => true]);
     $this->tariffSwitchingClassesCollection = Billrun_Factory::db()->plugin_teldas_tariff_switching_classesCollection(['force' => true]);
 	}
 
@@ -770,16 +770,16 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
   protected function getMatchingTariffProfile($tariffProfileId, $urt) {
       $query = array('id' => $tariffProfileId, 'transactionDateTime' => array('$lte' => new MongoDate($urt)), '$or' => array(array('transactionDateTimeTo' => array('$gt' => new MongoDate($urt))), array('transactionDateTimeTo' => array('$eq' => null))));
-      $onlineTariffsProfilesRevisions = $this->tariffsProfilesCollection->query($query)->cursor();
-      if ($onlineTariffsProfilesRevisions->count() === 0) {
+      $tariffsProfilesRevisions = $this->tariffsProfilesCollection->query($query)->cursor();
+      if ($tariffsProfilesRevisions->count() === 0) {
           Billrun_Factory::log("Failed to find matching tariff profile id. query: " . print_r($query, 1), Zend_Log::ALERT);
           return false;
       }
-      if (($matchingRecords = $onlineTariffsProfilesRevisions->count()) > 1) {
+      if (($matchingRecords = $tariffsProfilesRevisions->count()) > 1) {
           Billrun_Factory::log("Something wrong. need to find only one matching online tariff profiles. found " . $matchingRecords . " matching INA number records." . print_r(iterator_to_array($onlineTariffsProfilesRevisions)), Zend_Log::ERR);
           return false;
       }
-      return $onlineTariffsProfilesRevisions->current();
+      return $tariffsProfilesRevisions->current();
   }
 
   protected function getMatchingTariffSwitchingClass($tariffSwitchingClassId, $urt) {
@@ -797,15 +797,19 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           Billrun_Factory::log("Missing matching revision for tariff profile with with id " . $id . " that match to urt: " . date("Y-m-d\TH:i:s.000\Z", $urt), Zend_Log::ALERT);
           return false;
       }
-      if (empty($tariffProfileRevision['tariffSwitchingClassId'])) {
+      if ($tariffProfileRevision['tariffProfileType'] === 'ONLINE' && empty($tariffProfileRevision['tariffSwitchingClassId'])) {
           Billrun_Factory::log("Matching tariff profile revision not have tariff Switching Class Id. " . print_r($tariffProfileRevision, 1), Zend_Log::ALERT);
           return false;
       }
 
-      if (empty($tariffProfileRevision['chargeConfigurations'])) {
+      if ($tariffProfileRevision['tariffProfileType'] === 'ONLINE' && empty($tariffProfileRevision['chargeConfigurations'])) {
           Billrun_Factory::log("Matching tariff profile revision not have charge configurations. " . print_r($tariffProfileRevision, 1), Zend_Log::ALERT);
           return false;
       }
+      if($tariffProfileRevision['tariffProfileType'] === 'OFFLINE_A' && empty($tariffProfileRevision['weekChargeConfiguration'])) {
+        Billrun_Factory::log("Matching tariff profile revision not have week charge configurations. " . print_r($tariffProfileRevision, 1), Zend_Log::ALERT);
+        return false;
+    }
 
       $validDateTimeFrom = strtotime($tariffProfileRevision['validDateTimeFrom']);
       $validDateTimeTo = $tariffProfileRevision['validDateTimeTo'] ? strtotime($tariffProfileRevision['validDateTimeTo']) : strtotime("+150 years"); // if null then infinity
@@ -843,7 +847,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return date($format, $timestamp);
   }
 
-  protected function calcPriceByTariffProfileSequence($tariffProfile, $sequence, $line) {
+  protected function calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line) {
       $chargeConfigurations = $tariffProfile['chargeConfigurations'];
       $matchingChargeConfigurations = null;
       foreach ($chargeConfigurations as $chargeConfiguration) {
@@ -975,7 +979,19 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   protected function updateOfflineATariffProfile($inaNumberRevison, $urt, $line){
-
+    $tariffProfile = $this->getMatchingTariffProfile($inaNumberRevison['tariffProfile'], $urt);
+    if ($tariffProfile === false) {
+        return false;
+    }
+    if (!$this->checkIfValidTariffProfile($tariffProfile, $urt, $inaNumberRevison['tariffProfile'])) {
+        return false;
+    }
+    
+    $sequence = $this->findMatchingSequence($$tariffProfile, $urt);
+    if (!$sequence) {
+        return false;
+    }
+    return $this->calcPriceByOfflineATariffProfileSequence($tariffProfile, $sequence, $line);
   }
 
 
@@ -1002,7 +1018,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     }
     $sequence = $this->isOnlyOneSequence($tariffProfile);
     if ($sequence !== false) {
-        return $this->calcPriceByTariffProfileSequence($tariffProfile, $sequence, $line);
+        return $this->calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line);
     }
 
     $tariffSwitchingClassRevision = $this->getMatchingTariffSwitchingClass($tariffProfile['tariffSwitchingClassId'], $urt);
@@ -1017,7 +1033,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     if (!$sequence) {
         return false;
     }
-    return $this->calcPriceByTariffProfileSequence($tariffProfile, $sequence, $line);
+    return $this->calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line);
   }
 
   protected function checkIfValidPrefixInaNumber($inaNumber){
@@ -1098,7 +1114,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         	"display" => true,
         	"nullable" => false,
         	"mandatory" => true,
-          "default_value" => "https://ws.numberportability.ch"
+          "default_value" => "https://ws.testsrv.numberportability.ch"
         ],
         [
         	"type" => "string",
