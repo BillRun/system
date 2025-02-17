@@ -176,7 +176,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       $success1 = $this->getCompleteListOfInaNumbers($parameters);
       if (!$success1) {
           Billrun_Factory::log("Failed to get the complete list of INA numbers", Zend_Log::ALERT);
-          //todo:should revert and return 
+          return;
       }
       $updateOnlineTariffProfile = Billrun_Util::getIn($this->options, 'update_online');
       if($updateOnlineTariffProfile == true){
@@ -272,8 +272,8 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               $totalHistoryInaNumbers = array_merge($totalHistoryInaNumbers, $inaNumberHistory);               
           }
           $parameters = array(
-              'transactionDateTimeFrom' => $this->getDateFormat(strtotime("-1 year", strtotime($parameters['transactionDateTimeFrom']))),
-              'transactionDateTimeTo' => $this->getDateFormat(strtotime("-1 year", strtotime($parameters['transactionDateTimeTo'])))
+            'transactionDateTimeTo' => $parameters['transactionDateTimeFrom'],
+            'transactionDateTimeFrom' => $this->getDateFormat(strtotime("-1 year", strtotime($parameters['transactionDateTimeFrom']))),
           );
           $iteration++;
           if ($iteration === $initializeLimit) {
