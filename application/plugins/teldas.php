@@ -914,27 +914,12 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     }
   }
 
-  protected function findMatchingOfflineASequence($tariffProfile, $urt) {
+  protected function findMatchingOfflineAChargeConfigurations($tariffProfile, $urt) {
     $chargeConfigurations = $this->getChargeConfigurations($tariffProfile['weekChargeConfiguration'], $urt);
     if(!$chargeConfigurations){
-        return;
+        return false;
     }
-    if (count($chargeConfigurations) === 1) {
-        return $chargeConfigurations[0];
-    }
-    // array_multisort(array_column($chargeConfigurations, 'sequence'), SORT_ASC, $chargeConfigurations);
-    // $prevChargeConfiguration = null;
-    // foreach ($chargeConfigurations as $chargeConfiguration) {
-    //     if (strtotime(date("H:i:s", $urt)) < strtotime($chargeConfiguration['time'])) {
-    //         break;
-    //     }
-    //     $prevChargeConfiguration = $chargeConfiguration;
-    // }
-    // if (is_null($prevChargeConfiguration)) {
-    //     $matchChargeConfiguration = end($chargeConfigurations);
-    //     return $matchChargeConfiguration['chargeRateSequenceNumber'];
-    // }
-    // return $prevChargeConfiguration['chargeRateSequenceNumber'];
+    return $chargeConfigurations;
 }
 
   protected function findMatchingSwitchingClassesSequence($tariffSwitchingClassRevision, $urt) {
@@ -1041,12 +1026,54 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         return false;
     }
     
-    $sequence = $this->findMatchingOfflineASequence($tariffProfile, $urt);
-    if (!$sequence) {
+    $chargeConfigurations = $this->findMatchingOfflineAChargeConfigurations($tariffProfile, $urt);
+    if (!$chargeConfigurations) {
         return false;
     }
-    return $this->calcPriceByOfflineATariffProfileSequence($tariffProfile, $sequence, $line);
+    return $this->calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line);
   }
+
+  protected function calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line) {
+    $durationPath = Billrun_Util::getIn($this->options, 'matching_paths.duration.path');
+    $duration = Billrun_Util::getIn($line, $durationPath);
+    if (is_null($duration)) {
+        Billrun_Factory::log("Failed to get " . $durationPath . "  from line." . print_r($line, 1), Zend_Log::ALERT);
+        return false;
+    }
+    $durationDivide = Billrun_Util::getIn($this->options, 'matching_paths.duration.divide_to_seconds', 1000);
+    $aprice = 0 ;
+    $left = $duration / $durationDivide;
+    foreach ($chargeConfigurations as $sequence => $chargeConfiguration){
+        if($sequence + 1 !== $chargeConfiguration){
+            Billrun_Factory::log("not support unsorted 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
+            return false;
+        }
+        $ruleType = $chargeConfigurations['ruleType'];
+        $chargeRate = $chargeConfigurations['rate'] ?? 0; //price in cents per second
+        $interval = $chargeConfigurations['time'] ?? 0; //interval in seconds
+        $sign = $chargeConfigurations['sign']; 
+        if($sign === 'DEBIT'){
+            if($ruleType === 'NOT_PRO_RATA'){
+                $aprice += $chargeRate/100;
+                $left -= $interval;
+            }elseif($ruleType === 'FIX_PRICE'){
+                $aprice += $left * $chargeRate/100;
+                break;
+            }else{
+                Billrun_Factory::log("Not support ruleType $ruleType of 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
+                return false;
+            }
+        }else{
+            Billrun_Factory::log("Not support sign $sign of 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
+            return false;
+        }
+        if($left <= 0){
+            break;
+        }
+    }
+
+    return $aprice;
+  }      
 
 
   protected function getTariffProfileType($id){
