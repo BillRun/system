@@ -319,7 +319,7 @@ class BillRunAPI extends \Codeception\Module
                     'to' => $end->format('Y-m-d\TH:i:s+0000')
                 ]];
                 
-            case 'presentage':
+            case 'percentage':
                 return round(rand(0, 100) / 100, 2);
                 
             default:
