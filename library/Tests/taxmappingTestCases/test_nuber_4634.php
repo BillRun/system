@@ -39,13 +39,13 @@ class Test_Case_4634
 				'urt' => '2022-02-05'
             ],
             'type'=>'cdr',
-            'label' => "test non prorated with ovveride (BRCD-4345)",
+            'label' => "test billrun key after tax(BRCD-4634)",
             'test_number' => 4634,
             'functions' => [
                 'checkBillrun'
             ],
             'expected' => [
-             'billrun'=>  Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
+             'billrun'=>  Billrun_Billingcycle::getBillrunKeyByTimestamp(time()),
             ],
             'postRun' => [
             ],
