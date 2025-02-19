@@ -21,6 +21,20 @@ class ResponseWrapper extends \Codeception\Module
         return $response['entity'] ?? null;
     }
 
+    public function getPayResponse()
+    {
+        $response = $this->getDecodedResponse();
+        $this->reset();
+        return $response ?? null;
+    }
+
+    public function getPayInput()
+    {
+        $response = $this->getDecodedResponse();
+        $this->reset();
+        return json_decode($response['input']['payments'],true) ?? null;
+    }
+
     /**
      * Get decoded response
      * @return array
