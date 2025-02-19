@@ -57,7 +57,6 @@ class CliController extends Yaf_Controller_Abstract {
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',
 				'path-s' => 'Process: Path of the process file',
-				'text-s' => 'Process: Text of the process file',
 				'export-path-s' => 'Respond: The path To export files',
 				'workspace-s' => 'The path to the workspace directory',
 				'parser-s' => 'Process: Parser type (default fixed)',

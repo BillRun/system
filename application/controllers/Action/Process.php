@@ -30,7 +30,6 @@ class ProcessAction extends Action_Base {
 		$possibleOptions = array(
 			'type' => false,
 			'path' => true,
-			'text' => true,
 			'backup' => true, // backup path
 		);
 
@@ -61,9 +60,6 @@ class ProcessAction extends Action_Base {
 		ob_start();
 		if (isset($options['path']) && $options['path']) {
 			$linesProcessedCount = $processor->process();
-		} else if(isset($options['text']) && $options['text']){
-			 $processor->loadCdrsText($options['text']);
-			 $linesProcessedCount = $processor->process();
 		} else {
 			$linesProcessedCount = $processor->process_files();
 		}

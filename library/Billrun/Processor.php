@@ -412,21 +412,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return TRUE;
 	}
 
-	public function loadCdrsText($cdrs_text) {
-		Billrun_Factory::dispatcher()->trigger('processorBeforeCdrsTextLoad', array(&$cdrs_text, $this));
-		if ($cdrs_text) {
-			$this->fileHandler = fopen('php://memory', 'r+');
-			fwrite($this->fileHandler, $cdrs_text);
-			rewind($this->fileHandler);
-			Billrun_Factory::log("Billrun Processor is loading cdrs text: " . $cdrs_text, Zend_Log::INFO);
-		} else {
-			Billrun_Factory::log("Billrun_Processor->loadCdrsText: cannot load the text: " . $cdrs_text, Zend_Log::ERR);
-			return FALSE;
-		}
-		Billrun_Factory::dispatcher()->trigger('processorAfterCdrsTextLoad', array(&$file_path));
-		return TRUE;
-	}
-
 	/**
 	 * method to set the parser of the processor
 	 * 
