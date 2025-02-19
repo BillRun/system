@@ -126,7 +126,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 		parent::__construct($options);
 
 		if (isset($options['path'])) {
-			$this->loadFile(Billrun_Util::getBillRunSharedFolderPath($options['path']));
+			$success = $this->loadFile(Billrun_Util::getBillRunSharedFolderPath($options['path']));
+			if(!$success){
+				$this->loadFile(Billrun_Util::getBillRunPath($options['path']));
+			}
 		}
 		
 		if (isset($options['parser']) && $options['parser'] != 'none') {
