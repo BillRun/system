@@ -139,23 +139,11 @@ class Billrun_Utils_Arrayquery_Expression {
 	//======================================= Complex expressions ===============================
 	
 	protected function _in($field, $value) {
+		$nonStrictPairs = [['integer', 'float'], ['integer', 'double']];
 		return  is_array($value) && is_array($field) && !empty(array_intersect($value,$field))
-				|| is_array($value) && $this->in_array_custom($field,$value)
-				|| is_array($field) && $this->in_array_custom($value,$field)
-				|| $this->_equal($field, $value);
-	}
-	
-	protected function in_array_custom($needle, $haystack) {
-    foreach ($haystack as $value) {
-        if ((is_int($needle) || is_float($needle)) && (is_int($value) || is_float($value))) {
-            if ($needle == $value) {
-                return true;
-            }
-        } elseif (gettype($needle) === gettype($value) && $needle === $value) {
-            return true;
-        }
-    }
-    return false;
+				|| is_array($value) && static::in_array_custom($field, $value, $nonStrictPairs)
+				|| is_array($field) && static::in_array_custom($value,$field, $nonStrictPairs)
+				|| static::equal_custom($field, $value, $nonStrictPairs);
 	}
 
 	protected function _nin($field, $value) {
@@ -338,5 +326,31 @@ class Billrun_Utils_Arrayquery_Expression {
 	 */
 	protected function _callback($field, $value) {
 		return empty($value['callback']) ? FALSE : call_user_func_array($value['callback'],array($field,$value['arguments']));
+	}
+
+	public static function in_array_custom($needle, $haystack, $nonStrictPairs=[]) {
+		foreach ($haystack as $value) {
+			if(static::equal_custom($needle, $value, $nonStrictPairs)){
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+	public static function equal_custom($field, $value, $nonStrictPairs=[]){
+		if(empty($nonStrictPairs)){
+			return ($field === $value);
+		}else{
+			foreach ($nonStrictPairs as $nonStrictPair){
+					$typeA = gettype($field);
+					$typeB = gettype($value);
+					if(($typeA == $nonStrictPair[0] && $typeB == $nonStrictPair[1])||
+					 ($typeB == $nonStrictPair[0] && $typeA==$nonStrictPair[1])){
+						 return $field == $value;
+					}
+			}
+			return ($field === $value);
+		}
 	}
 }
