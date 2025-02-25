@@ -91,6 +91,20 @@ class BillRunAPI extends \Codeception\Module
         $ret =  $rest->sendPOST("/billapi/$entity/close", $params);
         return json_decode($ret, true);
     }
+
+    public function sendBillapiCloseandnew($entity, $query, $update)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        $ret =  $rest->sendPOST("/billapi/$entity/closeandnew", $params);
+        return json_decode($ret, true);
+    }
     /**
      * Sends a request to reopen a billapi entity.
      *
