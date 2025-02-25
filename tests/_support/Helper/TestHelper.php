@@ -19,6 +19,19 @@ class TestHelper extends \Codeception\Module {
     public static function CurrentTime(){
        return  new \MongoDb\BSON\UTCDateTime(time() * 1000);
     }
+
+    public function removeCollectionRecord($collection, array $criteria){
+
+        $collection = \Billrun_Factory::db()->getCollection($collection);
+		if (!($collection instanceof \Mongodloid_Collection)) {
+			return false;
+		}
+		if (empty($criteria)) {
+			return;
+		}
+		$collection->remove($criteria);
+	
+    }
     
 }
 

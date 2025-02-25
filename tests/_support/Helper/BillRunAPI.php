@@ -215,6 +215,49 @@ class BillRunAPI extends \Codeception\Module
         $this->sendBillapiCreate($service, 'services');
     }
 
+
+     /**
+     * create an ConditaionlCharge.
+     * @param Array $override - fields to override the default values 
+     */
+    public function generateConditaionlCharge(array $override = [])
+    {
+        $charge = array_merge([
+            "description"=> "a",
+            "key"=> microtime(true)*10000,
+            "proration"=> "inherited",
+            "priority"=> "",
+            "params"=> [
+                "min_subscribers"=> "",
+                "max_subscribers"=> "",
+                "conditions"=> [
+                    [
+                        "subscriber"=> [
+                            [
+                                "fields"=> [
+                                    [
+                                        "field"=> "sid",
+                                        "op"=> "nin",
+                                        "value"=> [
+                                            25555525515811
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            "from"=> "2020-02-26",
+            "type"=> "monetary",
+            "subject"=> [
+                "general"=> [
+                    "value"=> 30
+                ]
+            ]
+        ], $override);
+        $this->sendBillapiCreate($charge, 'charges');
+    }
     /**
     * @depends apiSanityCest:oauthLogin
     */
