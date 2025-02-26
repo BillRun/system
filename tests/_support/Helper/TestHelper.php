@@ -1,7 +1,6 @@
 <?php
 namespace Helper;
 
-use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Current;
 
 class TestHelper extends \Codeception\Module {
     protected $tester;
