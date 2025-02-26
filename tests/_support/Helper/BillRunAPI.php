@@ -146,7 +146,22 @@ class BillRunAPI extends \Codeception\Module
             'query' => json_encode($query)
         ]);
         return json_decode($ret, true);
+    } 
+    
+    public function sendBillapiGet($query, $entity)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+
+        $ret = $rest->sendGet("/billapi/$entity/get", [
+            'query' => json_encode($query)
+        ]);
+        return json_decode($ret, true);
     }
+
+
     
     /**
      * send post billapi requset to create entitys.
@@ -309,6 +324,20 @@ class BillRunAPI extends \Codeception\Module
         $this->sendBillapiCreate($subscriber, 'subscribers');
     }
     
+    public function sendBillapiUpdate($entity,$query,$update )
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        $ret =  $rest->sendPOST("/billapi/$entity/update", $params);
+        
+        return json_decode($ret, true);
+    }
     /**
      * create an plan.
      * @param Array $override - fields to override the default values 
