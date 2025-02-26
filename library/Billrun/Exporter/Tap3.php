@@ -267,9 +267,13 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	protected function loadTadigs() {
 		$mccMncs = array();
 		foreach ($this->rowsToExport as $row) {
-			$mccMnc = $this->getMccMnc($row);
-			if($mccMnc) {
-				$mccMncs[$mccMnc] = 1;
+			$mccMnc2 = $this->getMccMnc($row, 2);
+			if($mccMnc2) {
+				$mccMncs[$mccMnc2] = 1;
+			}
+			$mccMnc3 = $this->getMccMnc($row, 3);
+			if($mccMnc3) {
+				$mccMncs[$mccMnc3] = 1;
 			}
 		}
 		$mccMncs = array_map(function($e){return (string) $e;},array_keys($mccMncs));
@@ -301,8 +305,9 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	 * @return string
 	 */
 	protected function getTadig($row) {
-		$mccMnc = $this->getMccMnc($row);
-		return isset($this->tadigs[$mccMnc]) ? $this->tadigs[$mccMnc] : false;
+		$mccMnc3 = $this->getMccMnc($row, 3);
+		$mccMnc2 = $this->getMccMnc($row, 2);
+		return isset($this->tadigs[$mccMnc3]) ? $this->tadigs[$mccMnc3] : (isset($this->tadigs[$mccMnc2]) ? $this->tadigs[$mccMnc2] : false);
 	}
 
 	/**
@@ -311,10 +316,10 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	 * @param array $row
 	 * @return string
 	 */
-	protected function getMccMnc($row) {
+	protected function getMccMnc($row, $mncDigits = 2) {
 
 		$imsi = $this->getImsi($row);
-		return $this->getMccMncFromImsi($imsi);
+		return $this->getMccMncFromImsi($imsi, $mncDigits);
 	}
 
 	/**
@@ -339,10 +344,10 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	* @param string $imsi The IMSI to extract MCC and MNC from.
 	* @return string containing the extracted MCC and MNC.
 	*/
-	protected function getMccMncFromImsi($imsi) {
+	protected function getMccMncFromImsi($imsi, $mncDigits = 2) {
 		// Extract the MCC and MNC from the IMSI
 		$mcc = substr($imsi, 0, 3);
-		$mnc = substr($imsi, 3, 2);
+		$mnc = substr($imsi, 3,  $mncDigits);
 
 		// Return the MCC and MNC as an associative array
 		return $mcc . $mnc;
