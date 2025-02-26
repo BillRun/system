@@ -534,7 +534,9 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$price = $row['aprice'];
 		$decimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
 		$sdrPrice = $price / $this->getExchangeRate($row);
-		return intval($sdrPrice * pow(10, $decimalPlaces));
+		$sdrPrice = intval($sdrPrice * pow(10, $decimalPlaces));
+		Billrun_Factory::dispatcher()->trigger('afterGetSdrPrice', array(&$sdrPrice, $row));
+		return $sdrPrice;
 	}
 	
 	protected function getTotalCallEventDuration($row) {
