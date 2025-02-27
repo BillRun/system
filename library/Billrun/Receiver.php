@@ -76,48 +76,6 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * @return array list of files received
 	 */
 	abstract protected function receive();
-
-	/**
-	 * method to log the processing
-	 * 
-	 * @todo refactoring this method
-	 */
-	protected function logDB($fileData) {
-		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
-		$file_types = Billrun_Factory::config()->getFileTypes();
-                
-		$query = array(
-			'stamp' => $fileData['stamp'],
-			'received_time' => array('$exists' => false)
-		);
-                
-        $addData = array(
-			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => new MongoDate()
-                    );
-		
-		if (!empty($fileData['source']) && in_array($fileData['source'], $file_types)) {
-			$addData['type'] = 'input_processor';
-		}
-
-		$update = array(
-			'$set' => array_merge($fileData, $addData)
-		);
-
-		if (empty($query['stamp'])) {
-			Billrun_Factory::log("Billrun_Receiver::logDB - got file with empty stamp :  {$fileData['stamp']}", Zend_Log::NOTICE);
-			return FALSE;
-		}
-
-		$log = Billrun_Factory::db()->logCollection();
-		$result = $log->update($query, $update);
-
-		if ($result['ok'] != 1 || $result['n'] != 1) {
-			Billrun_Factory::log("Billrun_Receiver::logDB - Failed when trying to update a file log record " . $fileData['file_name'] . " with stamp of : {$fileData['stamp']}", Zend_Log::NOTICE);
-		}
-
-		return $result['n'] == 1 && $result['ok'] == 1;
-	}
 	
 	public static function getInstance() {
 		$args = func_get_args();
