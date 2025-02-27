@@ -162,7 +162,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return true;
 	}
 
-	protected function setPgFileType($fileType) {
+	public function setPgFileType($fileType) {
 		$this->fileType = $fileType;
 	}
 	
