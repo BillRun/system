@@ -270,7 +270,9 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$msgs = !empty($subData) && !$subData->isEmpty() && !empty($subData['invoice_messages']) ? $subData['invoice_messages'] : [];
 		$retMsgs = [];
 		foreach($msgs as $msg) {
-			$entryTime = strtotime(is_array($msg['entry_time']) ? $msg['entry_time']['sec'] : $msg['entry_time']);
+			$entryTime = is_object($msg['entry_time']) ? $msg['entry_time']->sec :
+							(is_array($msg['entry_time']) ? $msg['entry_time']['sec'] :
+								strtotime( $msg['entry_time']));
 			if( $this->data['start_date']->sec <= $entryTime && $entryTime < $this->data['end_date']->sec ) {
 				$retMsgs [] = $msg;
 			}

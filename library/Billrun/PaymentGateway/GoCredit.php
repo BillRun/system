@@ -272,7 +272,7 @@ class Billrun_PaymentGateway_GoCredit extends Billrun_PaymentGateway {
 		}
 		$body = $this->convertSoap($result);
 		if ($body !== false) {
-			$codeResult = (string) $body->ExecuteTransactionResponse->Response->Message;
+			$codeResult = (string) $body->ExecuteTransactionResponse->Response->ResponseCode;
 			$this->transactionId = (string) $body->ExecuteTransactionResponse->TransactionResponse->TransactionID;
 			$additionalParams['payment_identifier'] = $this->transactionId;
 			$additionalParams['card_brand'] = (string) $body->ExecuteTransactionResponse->TransactionResponse->Brand;
