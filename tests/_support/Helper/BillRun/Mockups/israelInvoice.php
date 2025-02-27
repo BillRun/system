@@ -9,7 +9,7 @@ class israelInvoice extends \Helper\BillRun\Mockups\Mockup
 {
   public function getUrl()
   {
-    return $this->getDomain() . 'israelInvoice';
+    return $this->getDomain() . 'plugins/israelInvoice';
   }
 
   public function setIsraelInvoiceSettings(\AcceptanceTester $a, $data = [])

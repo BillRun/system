@@ -4,7 +4,7 @@ if (preg_match('/^\/payment-gateways\/creditguard\//', $_SERVER["REQUEST_URI"]))
     require 'creditguard.php';
 }elseif(preg_match('/^\/crm\//', $_SERVER["REQUEST_URI"])){
     require 'crm.php';
-}elseif(preg_match('/^\/israelInvoice\//', $_SERVER["REQUEST_URI"])){
+}elseif(preg_match('/^\/plugins\/israelInvoice\//', $_SERVER["REQUEST_URI"])) {
     require 'israelInvoice.php';
 }
  else { 
