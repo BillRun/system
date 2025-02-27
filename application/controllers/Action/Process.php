@@ -59,6 +59,13 @@ class ProcessAction extends Action_Base {
 		// buffer all action output
 		ob_start();
 		if (isset($options['path']) && $options['path']) {
+			$success = $processor->loadFile(Billrun_Util::getBillRunSharedFolderPath($options['path']));
+			if(!$success){
+				$processor->loadFile(Billrun_Util::getBillRunPath($options['path']));
+			}
+			if(isset($options['file_type'])){
+				$processor->setPgFileType($options['file_type']);
+			}
 			$linesProcessedCount = $processor->process();
 		} else {
 			$linesProcessedCount = $processor->process_files();
