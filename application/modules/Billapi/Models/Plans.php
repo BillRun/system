@@ -13,12 +13,36 @@
  * @since    5.3
  */
 class Models_Plans extends Models_Entity {
+
+	protected $errorCode = 988888;
 	
 	protected function init($params) {
 		parent::init($params);
 		if ($this->update['connection_type'] == "postpaid") {
 			$this->validateRecurrence();
 		}
+		$this->validateRoundingRules();
+	}
+
+
+	/**
+	 * Verify plan has all Rounding Rules required parameters.
+	 */
+	protected function validateRoundingRules() {
+		$rounding_rules = Billrun_Util::getIn($this->update, 'rounding_rules', null);
+		if (!empty($rounding_rules)) {
+			$rounding_type = Billrun_Util::getIn($rounding_rules, 'rounding_type', 'None');
+			if (!empty($rounding_type ) && $rounding_type !== 'None') {
+				if (!in_array($rounding_type, ['down', 'up', 'nearest'])) {
+					throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Rounding rules must have rounding type');
+				}
+				$rounding_decimals = Billrun_Util::getIn($rounding_rules, 'rounding_decimals', null);
+				if (is_null($rounding_decimals)) {
+					throw new Billrun_Exceptions_Api($this->update, array(), "Rounding rules must have rounding decimal");
+				}
+			}
+		}
+		return true;
 	}
 	
 	/**

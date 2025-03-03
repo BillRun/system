@@ -7,7 +7,7 @@ import { Form, FormGroup, ControlLabel, Col, Row, Panel, HelpBlock } from 'react
 import { PlanDescription } from '../../language/FieldDescriptions';
 import Help from '../Help';
 import Field from '@/components/Field';
-import { CreateButton, RecurrenceFrequency } from '@/components/Elements';
+import { CreateButton, RecurrenceFrequency, RoundingRules } from '@/components/Elements';
 import PlanPrice from './components/PlanPrice';
 import { EntityFields } from '../Entity';
 import PlaysSelector from '../Plays/PlaysSelector';
@@ -308,6 +308,12 @@ export default class Plan extends Component {
               <br />
               { editable && this.getAddPriceButton(false) }
             </Panel>
+
+            <RoundingRules
+                item={plan}
+                editable={editable}
+                onChangeFieldValue={this.props.onChangeFieldValue}
+            />
 
           </Form>
         </Col>
