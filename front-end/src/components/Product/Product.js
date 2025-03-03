@@ -405,9 +405,9 @@ class Product extends Component {
             )}
 
             <RoundingRules
-                item={product}
-                editable={editable}
-                onChangeFieldValue={this.props.onFieldUpdate}
+              item={product}
+              editable={editable}
+              onChangeFieldValue={this.props.onFieldUpdate}
             />
 
           </Form>

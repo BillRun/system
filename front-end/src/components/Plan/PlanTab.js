@@ -310,9 +310,9 @@ export default class Plan extends Component {
             </Panel>
 
             <RoundingRules
-                item={plan}
-                editable={editable}
-                onChangeFieldValue={this.props.onChangeFieldValue}
+              item={plan}
+              editable={editable}
+              onChangeFieldValue={this.props.onChangeFieldValue}
             />
 
           </Form>

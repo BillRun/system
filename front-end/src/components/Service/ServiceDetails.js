@@ -368,18 +368,20 @@ export default class ServiceDetails extends Component {
           onRemoveField={this.onRemoveAdditionalField}
           editable={editable}
         />
-                  </Panel>
+        </Panel>
   
-      {isByCycles && <Panel header={<h3>Recurring Charges</h3>}>
-              { this.getPrices() }
-              <br />
-              { editable && this.getAddPriceButton() }
-            </Panel>}
+        {isByCycles && (
+          <Panel header={<h3>Recurring Charges</h3>}>
+            { this.getPrices() }
+            <br />
+            { editable && this.getAddPriceButton() }
+          </Panel>
+        )}
 
         <RoundingRules
-            item={item}
-            editable={editable}
-            onChangeFieldValue={this.props.updateItem}
+          item={item}
+          editable={editable}
+          onChangeFieldValue={this.props.updateItem}
         />
       </Form>
     );
