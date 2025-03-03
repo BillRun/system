@@ -208,7 +208,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 
 	protected function getInfo(){
-		$retval =  [
+		$retVal =  [
 			'Sender' => $this->getHpmnTadig(),
 			'Recipient' => $this->getVpmnTadig(),
 			'FileSequenceNumber' => $this->getSequenceNumber(),
@@ -231,6 +231,8 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		if (!empty($this->options['is_test_file'])) {
 			$retVal['FileTypeIndicator'] = $this->getConfig('header.file_type_indicator');
 		}
+
+		return $retVal;
 	}
 	
 	protected function getCurrencyConversionList() {
@@ -534,7 +536,9 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$price = $row['aprice'];
 		$decimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
 		$sdrPrice = $price / $this->getExchangeRate($row);
-		return intval($sdrPrice * pow(10, $decimalPlaces));
+		$sdrPrice = intval($sdrPrice * pow(10, $decimalPlaces));
+		Billrun_Factory::dispatcher()->trigger('afterGetSdrPrice', array(&$sdrPrice, $row));
+		return $sdrPrice;
 	}
 	
 	protected function getTotalCallEventDuration($row) {
