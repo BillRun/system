@@ -16,30 +16,10 @@ class israelInvoice extends \Helper\BillRun\Mockups\Mockup
   {
     $data = array_merge($this->InvoicePluginConfiguration(), $data);
     $a->setPluginSettings($data);
+    $a->enableCahce();
   }
 
-  public function enableCahce()
-  {
-    $lastConfig = \Billrun_Factory::db()->configCollection();
-		$lc = $lastConfig->query()
-			->cursor()
-			->sort(array('_id' => -1))
-			->limit(1)
-			->current()
-			->getRawData();
-		unset($lc['_id']);
-    $lc['cache'] = [
-      'Core',
-      'File',
-      [
-        'cache_id_prefix' => 'Billrun',
-        "lifetime" => 14400,
-        "cache_dir" => "./cache/"
-      ]
-    ];
-    $lastConfig->insert($lc);
-    \Billrun_Config::getInstance()->loadDbConfig();
-  }
+  
  
 
 

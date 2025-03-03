@@ -11,7 +11,6 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
     protected function _before()
     {
         $this->tester->setIsraelInvoiceSettings( $this->tester);
-        $this->tester->enableCahce();
     }
 
     protected function _after()
