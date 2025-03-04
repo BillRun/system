@@ -633,7 +633,6 @@ class Billrun_DiscountManager {
 		$eligibility = $this->getFinalEligibility($eligibility, $discountFrom, $discountTo);
 
 		if($simultaneousLimitFlag){
-
 			$subsEligibility = array_slice($subsEligibility, 0, $simultaneousLimit, true);
 		}
 		foreach ($subsEligibility as &$subEligibility) {
