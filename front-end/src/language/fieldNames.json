@@ -170,6 +170,7 @@
     "type_percentage": "Percentage",
     "min_subscribers": "Min Subscribers",
     "max_subscribers": "Max Subscribers",
+    "simultaneous_limit": "Max Discount Instances",
     "proration": "Prorated",
     "proration_inherited": "Inherited",
     "proration_no": "No",
