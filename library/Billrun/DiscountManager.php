@@ -549,6 +549,12 @@ class Billrun_DiscountManager {
 	protected function getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions = []) {
 		$discountFrom = max(Billrun_Utils_Time::getTime($discount['from']), $this->cycle->start());
 		$discountTo = min(Billrun_Utils_Time::getTime($discount['to']), $this->cycle->end());
+		$simultaneousLimit = Billrun_Util::getIn($discount, 'simultaneous_limit', -1);
+		$simultaneousLimit = is_numeric($simultaneousLimit) ? $simultaneousLimit : -1;
+		$simultaneousLimitFlag = false;
+		if(!empty($simultaneousLimit) && $simultaneousLimit != -1){
+			$simultaneousLimitFlag = true;
+		}
 		$conditions = Billrun_Util::getIn($discount, 'params.conditions', []);
 		$aid = Billrun_Util::getIn($accountRevisions, [0, 'aid']);
 		if (empty($conditions)) { // no conditions means apply to all entities
@@ -626,17 +632,29 @@ class Billrun_DiscountManager {
 
 		$eligibility = $this->getFinalEligibility($eligibility, $discountFrom, $discountTo);
 
+		if($simultaneousLimitFlag){
+
+			$subsEligibility = array_slice($subsEligibility, 0, $simultaneousLimit, true);
+		}
 		foreach ($subsEligibility as &$subEligibility) {
 			$subEligibility = $this->getFinalEligibility($subEligibility, $discountFrom, $discountTo);
 		}
 
-		foreach ($servicesEligibility as &$subServicesEligibility) {
+		foreach ($servicesEligibility as  $sid => &$subServicesEligibility) {
+			if($simultaneousLimitFlag && !in_array($sid, array_keys($subsEligibility))){
+				unset($servicesEligibility[$sid]);
+				continue;
+			}
 			foreach ($subServicesEligibility as &$subServiceEligibility) {
 				$subServiceEligibility = $this->getFinalEligibility($subServiceEligibility, $discountFrom, $discountTo);
 			}
 		}
 
-		foreach ($plansEligibility as &$subPlansEligibility) {
+		foreach ($plansEligibility as $sid => &$subPlansEligibility) {
+			if($simultaneousLimitFlag && !in_array($sid, array_keys($subsEligibility))){
+				unset($servicesEligibility[$sid]);
+				continue;
+			}
 			foreach ($subPlansEligibility as &$subPlanEligibility) {
 				$subPlanEligibility = $this->getFinalEligibility($subPlanEligibility, $discountFrom, $discountTo);
 			}
