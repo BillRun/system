@@ -700,18 +700,11 @@ class Billrun_DiscountManager {
 		$minSubscribers = isset($params['min_subscribers']) ? $params['min_subscribers'] : 1;
 		$maxSubscribers = isset($params['max_subscribers']) ? $params['max_subscribers'] : null;
 		$cycles = isset($params['cycles']) ? $params['cycles'] : null;
-
-		$accountConditions = Billrun_Util::getIn($condition, 'account.fields', []);
-
-		if (empty($accountConditions)) {
-			$accountEligibility[] = $this->getAllCycleInterval();
-		} else {
-			$accountEligibility = $this->getAccountEligibility($accountConditions, $accountRevisions);
-			if (empty($accountEligibility)) {
-				return false; // account conditions must match
-			}
-			$accountEligibility = Billrun_Utils_Time::mergeTimeIntervals($accountEligibility);
+		$accountEligibility = $this->getAccountEligibility($condition, $accountRevisions, $cycles);
+		if (empty($accountEligibility)) {
+			return false; // account conditions must match
 		}
+		$accountEligibility = Billrun_Utils_Time::mergeTimeIntervals($accountEligibility);
 		$subscribersConditions = Billrun_Util::getIn($condition, 'subscriber.0.fields', []); // currently supports 1 condtion's type
 		$subscribersServicesConditions = Billrun_Util::getIn($condition, 'subscriber.0.service.any', []); // currently supports 1 condtion's type
 		$hasPlanConditions = $this->hasPlanCondition($subscribersConditions);
@@ -827,23 +820,33 @@ class Billrun_DiscountManager {
 	 * @param array $entityRevisions
 	 * @return array of intervals
 	 */
-	protected function getAccountEligibility($conditions, $accountRevisions) {
-		$eligibility = [];
-		foreach ($accountRevisions as $accountRevision) {
-			$from = Billrun_Utils_Time::getTime($accountRevision['from']);
-			$to = Billrun_Utils_Time::getTime($accountRevision['to']);
-
-			if ($this->isConditionsMeet($accountRevision, $conditions)) {
-				if ($from < $to) {
-					$eligibility[] = [
-						'from' => $from,
-						'to' => $to,
-					];
+	protected function getAccountEligibility($condition, $accountRevisions, $cycles) {
+		$accountConditions = Billrun_Util::getIn($condition, 'account.fields', []);
+		$accountServicesConditions = Billrun_Util::getIn($condition, 'account.service.any', []); 
+		$accountEligibility = [];
+		if (empty($accountConditions) && empty($accountServicesConditions)) {
+			$accountEligibility[] = $this->getAllCycleInterval();
+		} else {		
+			foreach ($accountRevisions as $accountRevision) {
+				$from = Billrun_Utils_Time::getTime($accountRevision['from']);
+				$to = Billrun_Utils_Time::getTime($accountRevision['to']);
+	
+				if ($this->isConditionsMeet($accountRevision, $accountConditions)) {
+					if ($from < $to) {
+						$accountEligibility[] = [
+							'from' => $from,
+							'to' => $to,
+						];
+					}
 				}
 			}
+			if (!empty($accountServicesConditions)) {
+				$accountServicesEligibility = $this->getServicesEligibility($accountServicesConditions, $accountRevisions, false , $cycles); ///note: still not support plan in account level 
+				$servicesAccountEligibilityIntervals = Billrun_Util::getIn($accountServicesEligibility, 'eligibility', []);
+				$accountEligibility = Billrun_Utils_Time::getIntervalsIntersections($accountEligibility, $servicesAccountEligibilityIntervals); // reduce acount eligibility to services  acount eligibility intersection
+			}
 		}
-
-		return $eligibility;
+		return $accountEligibility;
 	}
 
 	/**
@@ -930,11 +933,11 @@ class Billrun_DiscountManager {
 					$planEligibilityEnd = null;
 				}
 				foreach (Billrun_Util::getIn($subscriberRevision, 'services', []) as $subscriberService) { // OR logic
-					$serviceFrom = Billrun_Utils_Time::getTime($subscriberRevision['from']);
+					$serviceFrom  = $subscriberService['from']['sec'] ?? Billrun_Utils_Time::getTime($subscriberService['from'] ?? $subscriberRevision['from']);
 					if (isset($subscriberService['creation_time']) && empty($serviceFrom)) {
 						$serviceFrom = max($serviceFrom, Billrun_Utils_Time::getTime($subscriberService['creation_time']));
 			}
-					$serviceTo = Billrun_Utils_Time::getTime($subscriberRevision['to']);
+					$serviceTo = $subscriberService['to']['sec'] ?? Billrun_Utils_Time::getTime($subscriberService['to'] ?? $subscriberRevision['to']);
 
 					if (!is_null($cycles)) {
 						$serviceEligibilityEnd = strtotime("+{$cycles} months", Billrun_Utils_Time::getTime($subscriberService['service_activation']));
