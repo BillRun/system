@@ -570,8 +570,8 @@ class Billrun_DiscountManager {
 			];
 		}
 
-		$minSubscribers = Billrun_Util::getIn($discount, 'params.min_subscribers', 1);
-		$minSubscribers = is_numeric($minSubscribers)? $minSubscribers : 1;
+		$minSubscribers = Billrun_Util::getIn($discount, 'params.min_subscribers', 0);
+		$minSubscribers = is_numeric($minSubscribers)? $minSubscribers : 0;
 		$maxSubscribers = Billrun_Util::getIn($discount, 'params.max_subscribers', null);
 		$maxSubscribers = is_numeric($maxSubscribers)? $maxSubscribers : null;
 		$cycles = Billrun_Util::getIn($discount, 'params.cycles', null);
@@ -697,7 +697,7 @@ class Billrun_DiscountManager {
 		$subsEligibility = [];
 		$servicesEligibility = [];
 		$plansEligibility = [];
-		$minSubscribers = isset($params['min_subscribers']) ? $params['min_subscribers'] : 1;
+		$minSubscribers = isset($params['min_subscribers']) ? $params['min_subscribers'] : 0;
 		$maxSubscribers = isset($params['max_subscribers']) ? $params['max_subscribers'] : null;
 		$cycles = isset($params['cycles']) ? $params['cycles'] : null;
 		$accountEligibility = $this->getAccountEligibility($condition, $accountRevisions, $cycles);
@@ -773,7 +773,7 @@ class Billrun_DiscountManager {
 					}
 				}
 
-				if (count($eligibleSubsInDay) >= $minSubscribers) { // account is eligible for the discount in current day
+				if (!empty($eligibleSubsInDay) && count($eligibleSubsInDay) >= $minSubscribers) { // account is eligible for the discount in current day
 					$totalEligibility[] = [
 						'from' => $dayFrom,
 						'to' => $dayTo,
@@ -933,11 +933,11 @@ class Billrun_DiscountManager {
 					$planEligibilityEnd = null;
 				}
 				foreach (Billrun_Util::getIn($subscriberRevision, 'services', []) as $subscriberService) { // OR logic
-					$serviceFrom  = $subscriberService['from']['sec'] ?? Billrun_Utils_Time::getTime($subscriberService['from'] ?? $subscriberRevision['from']);
+					$serviceFrom = $this->getServiceTime($subscriberService, $subscriberRevision, 'from');
 					if (isset($subscriberService['creation_time']) && empty($serviceFrom)) {
 						$serviceFrom = max($serviceFrom, Billrun_Utils_Time::getTime($subscriberService['creation_time']));
-			}
-					$serviceTo = $subscriberService['to']['sec'] ?? Billrun_Utils_Time::getTime($subscriberService['to'] ?? $subscriberRevision['to']);
+					}
+					$serviceTo = $this->getServiceTime($subscriberService, $subscriberRevision, 'to');
 
 					if (!is_null($cycles)) {
 						$serviceEligibilityEnd = strtotime("+{$cycles} months", Billrun_Utils_Time::getTime($subscriberService['service_activation']));
@@ -958,10 +958,11 @@ class Billrun_DiscountManager {
 								'from' => $serviceFrom,
 								'to' => $serviceTo,
 							];
-							if (empty($servicesEligibility[$subscriberService['key']])) {
-								$servicesEligibility[$subscriberService['key']] = [];
+							$key = $subscriberService['key'] ?? $subscriberService['name'];
+							if (empty($servicesEligibility[$key])) {
+								$servicesEligibility[$key] = [];
 							}
-							$servicesEligibility[$subscriberService['key']][] = [
+							$servicesEligibility[$key][] = [
 								'from' => $serviceFrom,
 								'to' => $serviceTo,
 							];
@@ -995,6 +996,20 @@ class Billrun_DiscountManager {
 			'eligibility' => $eligibility,
 			'services' => $servicesEligibility,
 		];
+	}
+
+	protected function getServiceTime($subscriberService, $subscriberRevision, $field = 'from'){
+		$serviceTime = null;
+		if (isset($subscriberService[$field])){
+			if ($subscriberService[$field] instanceof Mongodloid_Date) {
+				$serviceTime  = Billrun_Utils_Time::getTime($subscriberService[$field]);
+			}else{
+				$serviceTime  = $subscriberService[$field]['sec'] ?? Billrun_Utils_Time::getTime($subscriberRevision[$field]);
+			}				
+		}else {
+			$serviceTime  = Billrun_Utils_Time::getTime($subscriberRevision[$field]);
+		}
+		return $serviceTime;
 	}
 
 	/**
@@ -1248,38 +1263,51 @@ class Billrun_DiscountManager {
 		$type = $this->getLineType($line);
 		$key = $line[$type]; // plan/service name
 		$lineEligibility = $this->getLineEligibilityForDiscount($line, $eligibility);
-		
-		// specific plan/service
-		$specificValue = Billrun_Util::getIn($discount, ['subject', $type, $key, 'value'], 0);
-		if ($specificValue > 0 && !empty($lineEligibility)) {
-			$ret[] = [
-				'value' => $specificValue,
-				'sequential' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'sequential'], false),
-				'eligibility' => $lineEligibility,
-				'operations' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'operations'], []),
-			];
+		$sid = $line['sid'];
+		if($sid != false){
+			// specific plan/service
+			$specificValue = Billrun_Util::getIn($discount, ['subject', $type, $key, 'value'], 0);
+			if ($specificValue > 0 && !empty($lineEligibility)) {
+				$ret[] = [
+					'value' => $specificValue,
+					'sequential' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'sequential'], false),
+					'eligibility' => $lineEligibility,
+					'operations' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'operations'], []),
+				];
+				}
+			// plan/service found for eligibility
+			$eligibilityType = $type == 'plan' ? 'plans' : 'services';
+			$matchedEligibility = Billrun_Util::getIn($eligibility, [$eligibilityType, $sid, $key], []);
+			$matchedValue = Billrun_Util::getIn($discount, ['subject', "matched_{$eligibilityType}", 'value'], 0);
+			if (!empty($matchedEligibility) && $matchedValue > 0) {
+				$ret[] = [
+					'value' => $matchedValue,
+					'sequential' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'sequential'], false),
+					'eligibility' => $matchedEligibility,
+					'operations' => Billrun_Util::getIn($discount, ['subject', "matched_{$eligibilityType}", 'operations'], []),
+				];
 			}
-		// plan/service found for eligibility
-		$eligibilityType = $type == 'plan' ? 'plans' : 'services';
-		$matchedEligibility = Billrun_Util::getIn($eligibility, [$eligibilityType, $line['sid'], $key], []);
-		$matchedValue = Billrun_Util::getIn($discount, ['subject', "matched_{$eligibilityType}", 'value'], 0);
-		if (!empty($matchedEligibility) && $matchedValue > 0) {
-			$ret[] = [
-				'value' => $matchedValue,
-				'sequential' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'sequential'], false),
-				'eligibility' => $matchedEligibility,
-				'operations' => Billrun_Util::getIn($discount, ['subject', "matched_{$eligibilityType}", 'operations'], []),
-			];
-		}
-		// monthly fees (fallback)
-		$monthlyFeesValue = Billrun_Util::getIn($discount, ['subject', 'monthly_fees', 'value'], 0);
-		if ($monthlyFeesValue > 0 && !empty($lineEligibility)) {
-			$ret[] = [
-				'value' => $monthlyFeesValue,
-				'sequential' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'sequential'], false),
-				'eligibility' => $lineEligibility,
-				'operations' => Billrun_Util::getIn($discount, ['subject', 'monthly_fees', 'operations'], []),
-			];
+			// monthly fees (fallback)
+			$monthlyFeesValue = Billrun_Util::getIn($discount, ['subject', 'monthly_fees', 'value'], 0);
+			if ($monthlyFeesValue > 0 && !empty($lineEligibility)) {
+				$ret[] = [
+					'value' => $monthlyFeesValue,
+					'sequential' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'sequential'], false),
+					'eligibility' => $lineEligibility,
+					'operations' => Billrun_Util::getIn($discount, ['subject', 'monthly_fees', 'operations'], []),
+				];
+			}
+		}else{
+			// specific customer service
+			$customerServiceValue = Billrun_Util::getIn($discount, ['subject', 'customer_' . $type, $key, 'value'], 0);
+			if ($customerServiceValue > 0 && !empty($lineEligibility)) {
+				$ret[] = [
+					'value' => $customerServiceValue,
+					'sequential' => Billrun_Util::getIn($discount, ['subject', 'customer_' . $type, $key, 'sequential'], false),
+					'eligibility' => $lineEligibility,
+					'operations' => Billrun_Util::getIn($discount, ['subject', 'customer_' . $type, $key, 'operations'], []),
+				];
+			}
 		}
 		
 		usort($ret, function($a, $b) {
@@ -1457,7 +1485,7 @@ class Billrun_DiscountManager {
 	 */
 	protected function getLineEligibilityForDiscount($line, $eligibility) {
 		$sid =  isset($line['sid']) ? $line['sid'] : FALSE;;
-		if ($sid === false) { // account line
+		if ($sid == false) { // account line
 			return Billrun_Util::getIn($eligibility, 'eligibility', []);
 		}
 		
