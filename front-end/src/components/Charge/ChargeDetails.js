@@ -65,6 +65,12 @@ class ChargeDetails extends Component {
         system: true,
         type: 'number'
       }),
+      simultaneousLimit: Immutable.Map({
+        title: getFieldName('simultaneous_limit', 'charge'),
+        field_name: 'simultaneous_limit',
+        system: true,
+        type: 'number',
+      }),
       proration: Immutable.Map({
         field_name: 'proration',
         title:  getFieldName('proration', 'charge'),
@@ -509,6 +515,13 @@ class ChargeDetails extends Component {
                 onChange={this.onChangeFiled}
                 editable={editable}
                 error={errors.get('params.max_subscribers', onChangeErrors.paramsMaxSubscribers)}
+              />
+              <EntityField
+                field={fields.get('simultaneousLimit')}
+                entity={charge}
+                onChange={this.onChangeFiled}
+                editable={editable}
+                error={errors.get('simultaneous_limit', onChangeErrors.simultaneousLimit)}
               />
               <FormGroup>
                 <Col componentClass={ControlLabel} sm={3} lg={2}>
