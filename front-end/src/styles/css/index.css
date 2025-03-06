@@ -519,3 +519,11 @@ ul.revision-history-list li.active .cycle {
 .form-actions-controllers {
   min-height: 50px;
 }
+
+.remove-range {
+  background-color: #eeeeee;
+}
+.field-group-remove-button {
+  vertical-align: top;
+  padding-left: 10px;
+}
