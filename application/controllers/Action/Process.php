@@ -59,8 +59,11 @@ class ProcessAction extends Action_Base {
 		// buffer all action output
 		ob_start();
 		if (isset($options['path']) && $options['path']) {
-			$linesProcessedCount = $processor->process();
-		} else {
+			if(!$processor->createLogForProcessWithPath($options)){
+				return;
+			}
+			$linesProcessedCount = $processor->process_files(Billrun_Util::getBillRunPath($options['path']));
+		}else{
 			$linesProcessedCount = $processor->process_files();
 		}
 		// write the buffer into log and output
