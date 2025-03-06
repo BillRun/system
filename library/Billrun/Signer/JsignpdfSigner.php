@@ -119,7 +119,8 @@ class Billrun_Signer_JsignpdfSigner extends Billrun_Signer_SignerAbstract
                     throw new Exception('unknown error');
             }
         } catch (Exception $e) {
-            throw new Exception('Error while signing pdf file');
+            Billrun_Factory::log('Error on signing pdf command. Output: ' . print_R($output,1));
+            throw new Exception('Error while signing pdf file ' . $e->getCode() . ': ' . $e->getMessage());
         }
     }
 }

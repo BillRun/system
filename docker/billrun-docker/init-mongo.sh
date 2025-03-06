@@ -22,6 +22,7 @@ done
 
 for f in /plugin/mongo/migration/*.js
 do
+    [ -f "$f" ] || break
     sleep 1 # remove once BRCD-4430 is done
     mongo billing_container $f
 done
