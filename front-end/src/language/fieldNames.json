@@ -277,8 +277,10 @@
     "key": "Product",
     "amount": "Correction Amount"
   },
-  "rounding_type": "Final charge rounding type",
-  "rounding_decimals": "Final charge rounding Decimals",
+  "rounding_rules": "Rounding Rules",
+  "rounding_type": "Rounding Type",
+  "rounding_decimals": "Rounding Decimals",
+  "rounding_state": "Amount to Round",
   "delete": "Delete",
   "close": "Close",
   "status": "Status",
