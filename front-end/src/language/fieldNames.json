@@ -207,7 +207,8 @@
     "monthly_fees": "Plans and included services",
     "matched_plans": "Matched Plans",
     "panel_plan_discount": "Plans Charge Values",
-    "panel_service_discount": "Services Charge Values",
+    "panel_service_discount": "Subscriber Services Charge Values",
+    "panel_customer_service_discount": "Customer Services Charge Values",
     "charge_values": "Charge Values",
     "subject_general": "General",
     "percentage_subject_not_compatible": "is not compatible with  General Charge."
