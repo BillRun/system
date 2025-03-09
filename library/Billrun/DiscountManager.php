@@ -943,11 +943,11 @@ class Billrun_DiscountManager {
 					$planEligibilityEnd = null;
 				}
 				foreach (Billrun_Util::getIn($subscriberRevision, 'services', []) as $subscriberService) { // OR logic
-					$serviceFrom = $this->getServiceTime($subscriberService, $subscriberRevision, 'from');
+					$serviceFrom =  Billrun_Utils_Time::getServiceTime($subscriberService, $subscriberRevision, 'from');
 					if (isset($subscriberService['creation_time']) && empty($serviceFrom)) {
 						$serviceFrom = max($serviceFrom, Billrun_Utils_Time::getTime($subscriberService['creation_time']));
 					}
-					$serviceTo = $this->getServiceTime($subscriberService, $subscriberRevision, 'to');
+					$serviceTo =  Billrun_Utils_Time::getServiceTime($subscriberService, $subscriberRevision, 'to');
 
 					if (!is_null($cycles)) {
 						$serviceEligibilityEnd = strtotime("+{$cycles} months", Billrun_Utils_Time::getTime($subscriberService['service_activation']));
@@ -1006,20 +1006,6 @@ class Billrun_DiscountManager {
 			'eligibility' => $eligibility,
 			'services' => $servicesEligibility,
 		];
-	}
-
-	protected function getServiceTime($subscriberService, $subscriberRevision, $field = 'from'){
-		$serviceTime = null;
-		if (isset($subscriberService[$field])){
-			if ($subscriberService[$field] instanceof Mongodloid_Date) {
-				$serviceTime  = Billrun_Utils_Time::getTime($subscriberService[$field]);
-			}else{
-				$serviceTime  = $subscriberService[$field]['sec'] ?? Billrun_Utils_Time::getTime($subscriberRevision[$field]);
-			}				
-		}else {
-			$serviceTime  = Billrun_Utils_Time::getTime($subscriberRevision[$field]);
-		}
-		return $serviceTime;
 	}
 
 	/**
