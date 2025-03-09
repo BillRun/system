@@ -614,7 +614,7 @@ class Billrun_DiscountManager {
 
 			$eligibility = array_merge($eligibility, $conditionEligibility['eligibility']);
 
-			$accountEligibility = array_merge($eligibility, $conditionEligibility['account_eligibility']);
+			$accountEligibility = array_merge($accountEligibility, $conditionEligibility['account_eligibility']);
 			
 			foreach ($conditionEligibility['subs'] as $sid => $subEligibility) {
 				if (isset($subsEligibility[$sid])) {
@@ -828,11 +828,28 @@ class Billrun_DiscountManager {
 
 		return [
 			'eligibility' => Billrun_Utils_Time::mergeTimeIntervals($totalEligibility),
-			'account_eligibility' => (empty($subscribersConditions) && empty($subscribersServicesConditions)) ? Billrun_Utils_Time::mergeTimeIntervals($totalEligibility) : [],
+			'account_eligibility' => !$this->hasSubscriberCondition($condition) ? Billrun_Utils_Time::mergeTimeIntervals($totalEligibility) : [],
 			'subs' => $eligibilityBySubs,
 			'services' => $servicesEligibility,
 			'plans' => $plansEligibility,
 		];
+	}
+
+	protected function hasSubscriberCondition($condition){
+		$subscribersConditions = Billrun_Util::getIn($condition, 'subscriber.0.fields', []); // currently supports 1 condtion's type
+		if(!empty($subscribersConditions)){
+			return true;
+		}
+		$subscribersServicesConditions = Billrun_Util::getIn($condition, 'subscriber.0.service.any', []); // currently supports 1 condtion's type
+		$hasPlanConditions = $this->hasPlanCondition($subscribersConditions);
+		if($hasPlanConditions){
+			return true;
+		}
+		$hasServiceConditions = $this->hasServicesCondition($subscribersServicesConditions);
+		if($hasServiceConditions){
+			return true;
+		}
+		return false;
 	}
 
 	/**
