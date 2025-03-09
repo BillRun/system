@@ -569,6 +569,7 @@ class Billrun_DiscountManager {
 				'aid' => $aid,
 				'eligibility' => $eligibility,
 				'subs' => $subscribersEligibility,
+				'account_eligibility' => $eligibility
 			];
 		}
 
