@@ -2497,7 +2497,118 @@ class discountTestCases {
 					['aid'=> 18, 'sid' => 0, 'key' => 'ab', 'full_price' => 25, 'billrun' => '201905', 'final_charge' => -11.7, 'discount' => ['A' => -10], 'service' => 'A', 'affected_sections' => ['service'], 'sid_cause_eligibility' => 19],
 					['aid'=> 18, 'sid' => 0, 'key' => 'ab', 'full_price' => 25, 'billrun' => '201905', 'final_charge' => -5.85, 'discount' => ['A' => -5], 'service' => 'A', 'affected_sections' => ['service'], 'sid_cause_eligibility' => 20],
 
-				])
+				]),
+				//BRCD-4777- simultaneous limit=0 /no subscribers  
+		array('test_num' => 75, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 18, 'services' => [['key' => 'A', 'name' => 'A', 'service_activation' => '2019-04-01', 'from' => '2019-04-01', 'to' => '2019-05-01']]]], 
+		'subsRevisions' => [
+			[['sid' => 19, 'plan' => 'PLAN_X', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]],
+			[['sid' => 20, 'plan' => 'PLAN_X', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]]
+		],
+		'discounts' => [
+			['name' => 'ab', 'simultaneous_limit' => 0, 'root' => ['subject' => ['customer_service' => ['A' => ['value' => 10]]]],
+				'params_override' => [
+					'condition' => [[
+						['type' => 'account', 'field' => 'aid', 'values' => 18],
+						]],
+				]],
+		],
+		'cdrs' => [
+			['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 0, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A'],
+			['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' =>117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+			['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 20, 'final_charge' =>117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X']],
+
+			'function' => array('checkEligibility')),
+		'expected' => array(
+			"ab" => ["eligibility" => [["from" => "2019-04-01", "to" => "2019-05-01"]]]
+		),
+		'subjectExpected' => [
+			['aid'=> 18, 'sid' => 0, 'key' => 'ab', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => -11.7, 'discount' => ['A' => -10], 'service' => 'A', 'affected_sections' => ['service']]
+
+		]),
+		//BRCD-4777- simultaneous limit=1  
+		array('test_num' => 76, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 18, 'services' => [['key' => 'A', 'name' => 'A', 'service_activation' => '2019-04-01', 'from' => '2019-04-01', 'to' => '2019-05-01']]]], 
+		'subsRevisions' => [
+			[['sid' => 19, 'plan' => 'PLAN_X', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]],
+			[['sid' => 20, 'plan' => 'PLAN_X', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]]
+		],
+		'discounts' => [
+			['name' => 'ab', 'simultaneous_limit' => 1, 'root' => ['subject' => ['customer_service' => ['A' => ['value' => 10]]]],
+				'params_override' => [
+					'condition' => [[
+						['type' => 'account', 'field' => 'aid', 'values' => 18],
+						]],
+				]],
+		],
+		'cdrs' => [
+			['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 0, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A'],
+			['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' =>117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+			['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 20, 'final_charge' =>117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X']],
+
+			'function' => array('checkEligibility')),
+		'expected' => array(
+			"ab" => ["eligibility" => [["from" => "2019-04-01", "to" => "2019-05-01"]]]
+		),
+		'subjectExpected' => [
+			['aid'=> 18, 'sid' => 0, 'key' => 'ab', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => -11.7, 'discount' => ['A' => -10], 'service' => 'A', 'affected_sections' => ['service']],
+			['aid'=> 18, 'sid' => 0, 'key' => 'ab', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => -11.7, 'discount' => ['A' => -10], 'service' => 'A', 'affected_sections' => ['service'], 'sid_cause_eligibility' => 19],
+		]),
+		//BRCD-4777- simultaneous limit more then existing subscriber  
+		array('test_num' => 77, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 18, 'services' => [['key' => 'A', 'name' => 'A', 'service_activation' => '2019-04-01', 'from' => '2019-04-01', 'to' => '2019-05-01']]]], 
+		'subsRevisions' => [
+			[['sid' => 19, 'plan' => 'PLAN_X', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]],
+			[['sid' => 20, 'plan' => 'PLAN_X', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]]
+		],
+		'discounts' => [
+			['name' => 'ab', 'simultaneous_limit' => 100, 'root' => ['subject' => ['customer_service' => ['A' => ['value' => 10]]]],
+				'params_override' => [
+					'condition' => [[
+						['type' => 'account', 'field' => 'aid', 'values' => 18],
+						]],
+				]],
+		],
+		'cdrs' => [
+			['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 0, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A'],
+			['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' =>117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+			['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 20, 'final_charge' =>117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X']],
+
+			'function' => array('checkEligibility')),
+		'expected' => array(
+			"ab" => ["eligibility" => [["from" => "2019-04-01", "to" => "2019-05-01"]]]
+		),
+		'subjectExpected' => [
+			['aid'=> 18, 'sid' => 0, 'key' => 'ab', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => -11.7, 'discount' => ['A' => -10], 'service' => 'A', 'affected_sections' => ['service']],
+			['aid'=> 18, 'sid' => 0, 'key' => 'ab', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => -11.7, 'discount' => ['A' => -10], 'service' => 'A', 'affected_sections' => ['service'], 'sid_cause_eligibility' => 19],
+			['aid'=> 18, 'sid' => 0, 'key' => 'ab', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => -11.7, 'discount' => ['A' => -10], 'service' => 'A', 'affected_sections' => ['service'], 'sid_cause_eligibility' => 20],
+
+		]),
+		//BRCD-4777- simultaneous limit=-1 
+		array('test_num' => 78, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 18, 'services' => [['key' => 'A', 'name' => 'A', 'service_activation' => '2019-04-01', 'from' => '2019-04-01', 'to' => '2019-05-01']]]], 
+		'subsRevisions' => [
+			[['sid' => 19, 'plan' => 'PLAN_X', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]],
+			[['sid' => 20, 'plan' => 'PLAN_X', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]]
+		],
+		'discounts' => [
+			['name' => 'ab', 'simultaneous_limit' => -1, 'root' => ['subject' => ['customer_service' => ['A' => ['value' => 10]]]],
+				'params_override' => [
+					'condition' => [[
+						['type' => 'account', 'field' => 'aid', 'values' => 18],
+						]],
+				]],
+		],
+		'cdrs' => [
+			['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 0, 'final_charge' => 117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'service' => 'A'],
+			['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 19, 'final_charge' =>117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X'],
+			['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 18, 'sid' => 20, 'final_charge' =>117,'aprice'=>100, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN_X']],
+
+			'function' => array('checkEligibility')),
+		'expected' => array(
+			"ab" => ["eligibility" => [["from" => "2019-04-01", "to" => "2019-05-01"]]]
+		),
+		'subjectExpected' => [
+			['aid'=> 18, 'sid' => 0, 'key' => 'ab', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => -11.7, 'discount' => ['A' => -10], 'service' => 'A', 'affected_sections' => ['service']],
+			['aid'=> 18, 'sid' => 0, 'key' => 'ab', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => -11.7, 'discount' => ['A' => -10], 'service' => 'A', 'affected_sections' => ['service'], 'sid_cause_eligibility' => 19],
+			['aid'=> 18, 'sid' => 0, 'key' => 'ab', 'full_price' => 100, 'billrun' => '201905', 'final_charge' => -11.7, 'discount' => ['A' => -10], 'service' => 'A', 'affected_sections' => ['service'], 'sid_cause_eligibility' => 20],
+		]),
 	];
 
 }

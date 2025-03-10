@@ -359,6 +359,10 @@ class Tests_Discounttest extends UnitTestCase {
 				$values = $discount['params_override']['cycles'];
 				$discountsToPass[$discount['name']]['params']['cycles'] = $this->getParam('cycles', $values);
 			}
+			if (array_key_exists('simultaneous_limit', $discount)) {
+				$values = $discount['simultaneous_limit'];
+				$discountsToPass[$discount['name']]['simultaneous_limit'] = $values;
+			}
 			foreach ($discount['params_override']['condition'] as $params) {
 				$conditions = $this->conditions;
 				foreach ($params as $param) {
