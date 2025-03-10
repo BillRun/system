@@ -59,7 +59,8 @@ done
 fi
 
 if test -d "/plugin/conf/exporter/"; then
-cd /plugin/conf/exporter/
+ cd /plugin/conf/exporter/
+ mkdir -p "/billrun/conf/exporter/"
      for f in *.ini
      do
           rm -f "/billrun/conf/exporter/"$f
