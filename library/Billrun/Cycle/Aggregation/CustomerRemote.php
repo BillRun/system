@@ -36,7 +36,7 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 		usort($billableResults, function($a, $b){ return strcmp($a['from'],$b['from']);});
 		$retResults = [];
 		$customIDFields =Billrun_Factory::config()->getConfigValue('customer.aggregator.revision_identification_fields',[]);
-		$idFields = array_merge($customIDFields, ['aid','sid','plan','play','first_name','last_name','type','email','address','services']);
+		$idFields = array_merge($customIDFields, ['aid','sid','plan','play','first_name','last_name','type','email','address','services', 'discounts']);
 		foreach($billableResults as $revision) {
 			if(!in_array($revision['aid'],$this->exclusionQuery)) {
 				$revStamp = @Billrun_Util::generateArrayStamp($revision, $idFields);
