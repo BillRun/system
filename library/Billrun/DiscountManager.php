@@ -552,7 +552,7 @@ class Billrun_DiscountManager {
 		$simultaneousLimit = Billrun_Util::getIn($discount, 'simultaneous_limit', -1);
 		$simultaneousLimit = is_numeric($simultaneousLimit) ? $simultaneousLimit : -1;
 		$simultaneousLimitFlag = false;
-		if(!empty($simultaneousLimit) && $simultaneousLimit != -1){
+		if(isset($simultaneousLimit) && $simultaneousLimit != -1){
 			$simultaneousLimitFlag = true;
 		}
 		$conditions = Billrun_Util::getIn($discount, 'params.conditions', []);
