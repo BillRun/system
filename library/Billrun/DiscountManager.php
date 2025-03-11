@@ -1153,7 +1153,7 @@ class Billrun_DiscountManager {
 			$chargeAmount = Billrun_Util::getIn($discount, 'subject.general.value', 0);
 			if ($chargeAmount > 0) {
 				foreach($eligibleLines as $eligibleLine) {
-					if( count($cdrs) >= $simultaneousLimit){
+					if($simultaneousLimit != -1 && count($cdrs) >= $simultaneousLimit){
 						return $cdrs;
 					}
 				$cdrs[] = $this->generateCdr($type, $discount, $chargeAmount, $eligibleLine);
@@ -1178,7 +1178,7 @@ class Billrun_DiscountManager {
 			
 			$this->seqEligibility[$line['stamp']][$discount['key']] = $lineEligibility;
 			foreach ($lineEligibility as $eligibilityInterval) {
-				if( count($cdrs) >= $simultaneousLimit){
+				if($simultaneousLimit != -1 && count($cdrs) >= $simultaneousLimit){
 					return $cdrs;
 				}
 				$from = $eligibilityInterval['from'];
