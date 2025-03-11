@@ -176,12 +176,12 @@ class Billrun_Billingcycle {
 	 * @param $billingCycleCol - billing cycle collection
 	 * @param string $billrunKey - Billrun key
 	 * @param int $size - size of page 
-	 * 
+	 * @param array $moreFields - more fields
 	 * @return bool - True if billing cycle had started.
 	 */
-	protected static function hasCycleStarted($billrunKey, $size) {
+	protected static function hasCycleStarted($billrunKey, $size, $moreFields = []) {
 		$billingCycleCol = self::getBillingCycleColl();
-		$existsKeyQuery = array('billrun_key' => $billrunKey, 'page_size' => $size);
+		$existsKeyQuery = array_merge(array('billrun_key' => $billrunKey, 'page_size' => $size), $moreFields);
 		$keyCount = $billingCycleCol->query($existsKeyQuery)->count();
 		if ($keyCount < 1) {
 			return false;
@@ -194,15 +194,15 @@ class Billrun_Billingcycle {
 	 * @param $billingCycleCol - billing cycle collection
 	 * @param string $billrunKey - Billrun key
 	 * @param int $size - size of page 
-	 * 
+	 * @param array $moreFields - more fields
 	 * @return bool - True if billing cycle is ended.
 	 */
-	public static function hasCycleEnded($billrunKey, $size) {
+	public static function hasCycleEnded($billrunKey, $size, $moreFields = []) {
 		$billingCycleCol = self::getBillingCycleColl();
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
-		$numOfPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size))->count();
-		$finishedPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size, 'end_time' => array('$exists' => 1)))->count();
-		if (static::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages) && $numOfPages != 0 && $finishedPages == $numOfPages) {
+		$numOfPages = $billingCycleCol->query(array_merge(array('billrun_key' => $billrunKey, 'page_size' => $size), $moreFields))->count();
+		$finishedPages = $billingCycleCol->query(array_merge(array('billrun_key' => $billrunKey, 'page_size' => $size, 'end_time' => array('$exists' => 1)), $moreFields))->count();
+		if (static::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages, $moreFields) && $numOfPages != 0 && $finishedPages == $numOfPages) {
 			return true;
 		}
 		return false;
@@ -213,18 +213,32 @@ class Billrun_Billingcycle {
 	 * @param $billingCycleCol - billing cycle collection
 	 * @param string $billrunKey - Billrun key
 	 * @param int $size - size of page 
-	 * 
+	 * @param array $moreFields - more fields 
 	 * @return bool - True if generated all the bills from billrun objects
 	 */
-	public static function isCycleRunning($billrunKey, $size) {
-		if (!self::hasCycleStarted($billrunKey, $size)) {
+	public static function isCycleRunning($billrunKey, $size, $moreFields = []) {
+		if (!self::hasCycleStarted($billrunKey, $size, $moreFields)) {
 			return false;
 		}
-		if (self::hasCycleEnded($billrunKey, $size)) {
+		if (self::hasCycleEnded($billrunKey, $size, $moreFields)) {
 			return false;
 		}
 		return true;
 	}
+
+	/**
+	 * True if billing cycle is running for a given billrun key. 
+	 * @param $billingCycleCol - billing cycle collection
+	 * @param string $billrunKey - Billrun key
+	 * @param int $size - size of page 
+	 * @param string $host - host 
+	 * @return bool - True if generated all the bills from billrun objects
+	 */
+	public static function isCycleRunningOnHost($billrunKey, $size, $host) {
+		$moreFields = ['host' => $host];
+		return self::isCycleRunning($billrunKey, $size, $moreFields);
+	}
+
 	
 	/**
 	 * Returns billrun keys of confirmed cycles according to the billrun keys that are transferred,
@@ -449,11 +463,11 @@ class Billrun_Billingcycle {
 	}
 
 	
-	public static function isBillingCycleOver($cycleCol, $stamp, $size, $zeroPages=1){
+	public static function isBillingCycleOver($cycleCol, $stamp, $size, $zeroPages=1, $moreFields =[]){
 		if (empty($zeroPages) || !Billrun_Util::IsIntegerValue($zeroPages)) {
 			$zeroPages = 1;
 		}
-		$cycleQuery = array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0);
+		$cycleQuery = array_merge(array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0), $moreFields);
 		$cycleCount = $cycleCol->query($cycleQuery)->count();
 		
 		if ($cycleCount >= $zeroPages) {
