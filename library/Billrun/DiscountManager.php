@@ -562,12 +562,6 @@ class Billrun_DiscountManager {
 	protected function getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions = []) {
 		$discountFrom = max(Billrun_Utils_Time::getTime($discount['from']), $this->cycle->start());
 		$discountTo = min(Billrun_Utils_Time::getTime($discount['to']), $this->cycle->end());
-		$simultaneousLimit = Billrun_Util::getIn($discount, 'simultaneous_limit', -1);
-		$simultaneousLimit = is_numeric($simultaneousLimit) ? $simultaneousLimit : -1;
-		$simultaneousLimitFlag = false;
-		if(isset($simultaneousLimit) && $simultaneousLimit != -1){
-			$simultaneousLimitFlag = true;
-		}
 		$conditions = Billrun_Util::getIn($discount, 'params.conditions', []);
 		$aid = Billrun_Util::getIn($accountRevisions, [0, 'aid']);
 		if (empty($conditions)) { // no conditions means apply to all entities
@@ -647,32 +641,20 @@ class Billrun_DiscountManager {
 			}
 		}
 
-		$eligibility = $simultaneousLimit == 0 ? [] : $this->getFinalEligibility($eligibility, $discountFrom, $discountTo);
-
-		$accountEligibility = $simultaneousLimit == 0 ? [] : $this->getFinalEligibility($accountEligibility, $discountFrom, $discountTo);
-		if($simultaneousLimitFlag){
-			$subsEligibility = array_slice($subsEligibility, 0, $simultaneousLimit -1, true);
-		}
+		$eligibility = $this->getFinalEligibility($eligibility, $discountFrom, $discountTo);
+		$accountEligibility = $this->getFinalEligibility($accountEligibility, $discountFrom, $discountTo);
 
 		foreach ($subsEligibility as &$subEligibility) {
 			$subEligibility = $this->getFinalEligibility($subEligibility, $discountFrom, $discountTo);
 		}
 
-		foreach ($servicesEligibility as  $sid => &$subServicesEligibility) {
-			if($simultaneousLimitFlag && !in_array($sid, array_keys($subsEligibility))){
-				unset($servicesEligibility[$sid]);
-				continue;
-			}
+		foreach ($servicesEligibility as &$subServicesEligibility) {
 			foreach ($subServicesEligibility as &$subServiceEligibility) {
 				$subServiceEligibility = $this->getFinalEligibility($subServiceEligibility, $discountFrom, $discountTo);
 			}
 		}
 
-		foreach ($plansEligibility as $sid => &$subPlansEligibility) {
-			if($simultaneousLimitFlag && !in_array($sid, array_keys($subsEligibility))){
-				unset($servicesEligibility[$sid]);
-				continue;
-			}
+		foreach ($plansEligibility as &$subPlansEligibility) {
 			foreach ($subPlansEligibility as &$subPlanEligibility) {
 				$subPlanEligibility = $this->getFinalEligibility($subPlanEligibility, $discountFrom, $discountTo);
 			}
@@ -1164,12 +1146,16 @@ class Billrun_DiscountManager {
 	protected function generateDiscountCdrs($type, $lines, $discount, $eligibility) {
 		$cdrs = [];
 		$discountedAmount = 0;
-		
+		$simultaneousLimit = Billrun_Util::getIn($discount, 'simultaneous_limit', -1);
+		$simultaneousLimit = is_numeric($simultaneousLimit) ? $simultaneousLimit : -1;
 		if ($type == 'charge' && $discount['type'] == 'monetary') { // monetary charge's subject can only be general
 			$eligibleLines = $this->getChargeEligibleLine($charge, $eligibility, $lines);
 			$chargeAmount = Billrun_Util::getIn($discount, 'subject.general.value', 0);
 			if ($chargeAmount > 0) {
 				foreach($eligibleLines as $eligibleLine) {
+					if( count($cdrs) >= $simultaneousLimit){
+						return $cdrs;
+					}
 				$cdrs[] = $this->generateCdr($type, $discount, $chargeAmount, $eligibleLine);
 			}
 			}
@@ -1192,6 +1178,9 @@ class Billrun_DiscountManager {
 			
 			$this->seqEligibility[$line['stamp']][$discount['key']] = $lineEligibility;
 			foreach ($lineEligibility as $eligibilityInterval) {
+				if( count($cdrs) >= $simultaneousLimit){
+					return $cdrs;
+				}
 				$from = $eligibilityInterval['from'];
 				$to = $eligibilityInterval['to'];
 				$addToCdr = [
