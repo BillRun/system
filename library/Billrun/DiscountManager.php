@@ -647,11 +647,11 @@ class Billrun_DiscountManager {
 			}
 		}
 
-		$eligibility = $this->getFinalEligibility($eligibility, $discountFrom, $discountTo);
+		$eligibility = $simultaneousLimit == 0 ? [] : $this->getFinalEligibility($eligibility, $discountFrom, $discountTo);
 
-		$accountEligibility = $this->getFinalEligibility($accountEligibility, $discountFrom, $discountTo);
+		$accountEligibility = $simultaneousLimit == 0 ? [] : $this->getFinalEligibility($accountEligibility, $discountFrom, $discountTo);
 		if($simultaneousLimitFlag){
-			$subsEligibility = array_slice($subsEligibility, 0, $simultaneousLimit, true);
+			$subsEligibility = array_slice($subsEligibility, 0, $simultaneousLimit -1, true);
 		}
 
 		foreach ($subsEligibility as &$subEligibility) {
