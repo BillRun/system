@@ -176,7 +176,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 
 	protected function isTestFile() {
 		//TODO add  spcific test morde  configuration per tadig / file
-		return !Billrun_Factory::config()->isProd() && Billrun_Util::getIn($this->config,'in_test_mode', false);
+		return !Billrun_Factory::config()->isProd() || Billrun_Util::getIn($this->config,'in_test_mode', false);
 	}
 
 
