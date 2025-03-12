@@ -1,9 +1,9 @@
 #!/bin/bash
 
-## Script to create mongo sharding with 2 nodes on specific path on ports range {PORT_PREFIX}XX
+## Script to create mongodb sharding with 2 nodes on specific path on ports range {PORT_PREFIX}XX
 ## Installation is localhost only
 echo "MongoDB Localhost Cluster Installation Script"
-while getopts p:d:f:h option
+while getopts d:p:fh option
 do
  case "${option}"
  in
@@ -16,7 +16,7 @@ done
 
 if [ -n "$HELP" ]
 then
-	echo "Command to install mongo cluster on localhost"
+	echo "Command to install mongodb cluster on localhost"
 	echo
 	echo "-d installation  directory (mandatory)"
 	echo "-f full installation including redundancy for each component (optional)"
@@ -53,14 +53,14 @@ then
 
 	echo "Installing data node 1"
 	mkdir -p $INSTALLPATH/data1
-	mongod --quiet --shardsvr --dbpath $INSTALLPATH/data1 --port ${PORT_PREFIX}18 --logpath=$INSTALLPATH/log/mongod1.log --fork
+	mongod --quiet --shardsvr --dbpath $INSTALLPATH/data1 --replSet rs1 --port ${PORT_PREFIX}18 --logpath=$INSTALLPATH/log/mongod1.log --fork
 
 	echo "Configure data node 1"
 	mongo --quiet --port ${PORT_PREFIX}18 --eval 'rs.initiate({});'
 
 	echo "Installing data node 2"
 	mkdir -p $INSTALLPATH/data2
-	mongod --quiet --shardsvr --dbpath $INSTALLPATH/data2 --port ${PORT_PREFIX}19 --logpath=$INSTALLPATH/log/mongod2.log --fork
+	mongod --quiet --shardsvr --dbpath $INSTALLPATH/data2 --replSet rs2 --port ${PORT_PREFIX}19 --logpath=$INSTALLPATH/log/mongod2.log --fork
 
 	echo "Configure data node 2"
 	mongo --quiet --port ${PORT_PREFIX}19 --eval 'rs.initiate({});'
@@ -70,8 +70,11 @@ then
 	mongos --quiet --configdb rsconfig/localhost:${PORT_PREFIX}21 --port ${PORT_PREFIX}17 --logpath=$INSTALLPATH/log/mongos.log --fork
 
 	echo "Configured data nodes as shards"
-	mongo --quiet --port ${PORT_PREFIX}17 admin --eval 'sh.addShard( "localhost:'${PORT_PREFIX}'18" );'
-	mongo --quiet --port ${PORT_PREFIX}17 admin --eval 'sh.addShard( "localhost:'${PORT_PREFIX}'19" );'
+	mongo --quiet --port ${PORT_PREFIX}17 admin --eval 'sh.addShard( "rs1/localhost:'${PORT_PREFIX}'18" );'
+	mongo --quiet --port ${PORT_PREFIX}17 admin --eval 'sh.addShard( "rs2/localhost:'${PORT_PREFIX}'19" );'
+	echo
+	echo "Installation finished. You can now login with 'mongo --port ${PORT_PREFIX}17'"
+
 else
 	echo "Full installation required"
 	echo "Installing log directory"
