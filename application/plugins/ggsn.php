@@ -297,12 +297,36 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 					if (isset($this->ggsnConfig['rating_groups'][$rateVal])) {
 						$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
 						$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
+					} else {
+						if (isset($this->ggsnConfig['rating_groups_to_archive'][$rateVal])) {
+							if(!isset($cdrLine['free_application_usage'][$this->ggsnConfig['rating_groups_to_archive'][$rateVal]])) {
+								$cdrLine['free_application_usage'][$this->ggsnConfig['rating_groups_to_archive'][$rateVal]] = [];
+							}
+							$groupsToArchive = &$cdrLine['free_application_usage'][$this->ggsnConfig['rating_groups_to_archive'][$rateVal]];
+							$groupsToArchive['fbc_uplink_volume'] += $cdrLine['fbc_uplink_volume'][$key];
+							$groupsToArchive['fbc_downlink_volume'] += $cdrLine['fbc_downlink_volume'][$key];
+							$groupsToArchive['usagev'] += $cdrLine['fbc_uplink_volume'][$key] + $cdrLine['fbc_downlink_volume'][$key];
+						} else {
+							Billrun_Factory::log("Got usage on a rating group out of scope {$key}", Zend_Log::WARN);
+						}
 					}
 				}
 				$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
 				$cdrLine['fbc_downlink_volume'] = $fbc_downlink_volume;
 				$cdrLine['rating_group'] = 0;
-			} else if (!empty($cdrLine['rating_group']) && $cdrLine['rating_group'] == 10) {
+
+			} else if (!empty($cdrLine['rating_group']) &&
+						($cdrLine['rating_group'] == 10 || !isset($this->ggsnConfig['rating_groups'][$cdrLine['rating_group']])) ) {
+					if(!empty($this->ggsnConfig['rating_groups_to_archive'][$cdrLine['rating_group']]) ) {
+						@$cdrLine['free_application_usage'][$this->ggsnConfig['rating_groups_to_archive'][$cdrLine['rating_group']]] = [
+							'fbc_uplink_volume' => $cdrLine['fbc_uplink_volume'],
+							'fbc_downlink_volume' => $cdrLine['fbc_downlink_volume'],
+							'usagev' => $cdrLine['fbc_uplink_volume'] + $cdrLine['fbc_downlink_volume']
+						];
+						Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'))->linesCollection()->insert($cdrLine, array('w' => 0));
+					}  else {
+						Billrun_Factory::log("Got usage on a rating group out of scope {$cdrLine['rating_group']}", Zend_Log::WARN);
+					}
 				return false;
 			}
 			$data_volume_5g = 0;
@@ -537,7 +561,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		if (preg_match("/\[(\w+)\]/", $struct[0], $matches) || !is_array($asnData)) {
 			$ret = false;
 			if (!isset($matches[1]) || !$matches[1] || !isset($fields[$matches[1]])) {
-				Billrun_Factory::log()->log(" couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
+				Billrun_Factory::log()->log(" couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1), Zend_Log::DEBUG);
 			} else {
 				$ret = $this->parseField($fields[$matches[1]], $asnData);
 			}
