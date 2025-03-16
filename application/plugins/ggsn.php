@@ -306,18 +306,14 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 							$groupsToArchive['fbc_uplink_volume'] += $cdrLine['fbc_uplink_volume'][$key];
 							$groupsToArchive['fbc_downlink_volume'] += $cdrLine['fbc_downlink_volume'][$key];
 							$groupsToArchive['usagev'] += $cdrLine['fbc_uplink_volume'][$key] + $cdrLine['fbc_downlink_volume'][$key];
+						} else {
+							Billrun_Factory::log("Got usage on a rating group out of scope {$key}", Zend_Log::WARN);
 						}
 					}
 				}
 				$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
 				$cdrLine['fbc_downlink_volume'] = $fbc_downlink_volume;
 				$cdrLine['rating_group'] = 0;
-				foreach ($cdrLine['rating_groups_to_archive'] as $key => $rateVal) {
-					if (isset($this->ggsnConfig['rating_groups_to_archive'][$rateVal])) {
-						$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
-						$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
-					}
-				}
 
 			} else if (!empty($cdrLine['rating_group']) &&
 						($cdrLine['rating_group'] == 10 || !isset($this->ggsnConfig['rating_groups'][$cdrLine['rating_group']])) ) {
@@ -328,6 +324,8 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 							'usagev' => $cdrLine['fbc_uplink_volume'] + $cdrLine['fbc_downlink_volume']
 						];
 						Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'))->linesCollection()->insert($cdrLine, array('w' => 0));
+					}  else {
+						Billrun_Factory::log("Got usage on a rating group out of scope {$cdrLine['rating_group']}", Zend_Log::WARN);
 					}
 				return false;
 			}
