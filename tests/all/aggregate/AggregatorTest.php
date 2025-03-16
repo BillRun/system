@@ -208,9 +208,6 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
     }
 
 
-    /**
-     * @skip not supprted yet
-     */
     public function testDiscountOnAnAccountLevelService()
     {
         $this->tester->generatePlan([
@@ -237,7 +234,7 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
         $this->defaultOptions["stamp"] = "202411";
         $this->tester->aggregator($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 133));
-        $this->assertEqualsWithDelta(222.3, $billrun['totals']['after_vat'],$this->epsilon);
+        $this->assertEqualsWithDelta(210.6, $billrun['totals']['after_vat'],$this->epsilon);
     }
 
     public function testMultipleServicesForOneSubscriberOneOfThemHasADiscountOf50Presentage(){

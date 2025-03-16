@@ -34,7 +34,7 @@
                     "params" : {},
                     "from" : "2020-11-28 02:00:00",
                     "subject" : {
-                        "service" : {
+                        "customer_service" : {
                             "SERVICE_A" : {
                                 "value" : 10
                             }
