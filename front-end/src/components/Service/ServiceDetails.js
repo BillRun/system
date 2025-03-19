@@ -8,7 +8,7 @@ import { Form, FormGroup, ControlLabel, HelpBlock, Col, InputGroup, DropdownButt
 import { ServiceDescription } from '../../language/FieldDescriptions';
 import Help from '../Help';
 import Field from '@/components/Field';
-import { RecurrenceFrequency, CreateButton } from '@/components/Elements';
+import { RecurrenceFrequency, CreateButton, RoundingRules } from '@/components/Elements';
 import { EntityFields } from '../Entity';
 import PlaysSelector from '../Plays/PlaysSelector';
 import PlanPrice from '../Plan/components/PlanPrice';//todo:: need to change component name TarifParice? and need to change location? 
@@ -368,13 +368,21 @@ export default class ServiceDetails extends Component {
           onRemoveField={this.onRemoveAdditionalField}
           editable={editable}
         />
-                  </Panel>
+        </Panel>
   
-      {isByCycles && <Panel header={<h3>Recurring Charges</h3>}>
-              { this.getPrices() }
-              <br />
-              { editable && this.getAddPriceButton() }
-            </Panel>}
+        {isByCycles && (
+          <Panel header={<h3>Recurring Charges</h3>}>
+            { this.getPrices() }
+            <br />
+            { editable && this.getAddPriceButton() }
+          </Panel>
+        )}
+
+        <RoundingRules
+          item={item}
+          editable={editable}
+          onChangeFieldValue={this.props.updateItem}
+        />
       </Form>
     );
   }

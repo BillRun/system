@@ -287,6 +287,8 @@
     "key": "Product",
     "amount": "Correction Amount"
   },
+  "rounding_type": "Final charge rounding type",
+  "rounding_decimals": "Final charge rounding Decimals",
   "delete": "Delete",
   "close": "Close",
   "status": "Status",
