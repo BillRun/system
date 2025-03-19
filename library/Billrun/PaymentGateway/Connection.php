@@ -91,7 +91,7 @@ abstract class Billrun_PaymentGateway_Connection {
 		$gateway = $options['payment_gateway'];
 		$pgReceivers = array();
 		$paymentGatewaySettings = array_filter(Billrun_Factory::config()->getConfigValue('payment_gateways'), function($paymentGateway) use ($gateway) {
-			return ($paymentGateway['name'] === $gateway) && !empty($paymentGateway['custom']);
+			return ($paymentGateway['name'] === $gateway);
 		});
 		if ($paymentGatewaySettings) {
 			$paymentGatewaySettings = current($paymentGatewaySettings);
