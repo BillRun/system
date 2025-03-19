@@ -9,6 +9,7 @@ import { CreateButton } from '@/components/Elements';
 import PlanPrice from '../Plan/components/PlanPrice';
 import {
     getConfig,
+    getFieldName,
     reCalculateCycles,
   } from '@/common/Util';
 
@@ -116,9 +117,9 @@ const SubscriptionOverridePrice = ({
 
     return (
         <Form horizontal>
-            <Panel header={<h3>Override {titleCase(type)} Prices</h3>}>
+            <Panel header={<h3>{getFieldName('subscriber_price_override_panel_title', type)}</h3>}>
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={3} lg={2}>Select {titleCase(type)}:</Col>
+                    <Col componentClass={ControlLabel} sm={3} lg={2}>{getFieldName('subscriber_price_override_panel_select', type)}:</Col>
                     <Col sm={8} lg={9}>
                         <Field
                             fieldType="select"
@@ -134,7 +135,7 @@ const SubscriptionOverridePrice = ({
                 <FormGroup>
                     {!selectedItems.isEmpty() && (
                         selectedItems.map((name) => {
-                            const s = options.find((options) => options.value == name);
+                            const s = options.find((options) => options.value === name);
                             const onItemTariffAdd = () => {
                                 onTariffAdd(name);
                             }

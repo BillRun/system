@@ -118,6 +118,8 @@
     "interval": "Interval"
   },
   "service": {
+    "subscriber_price_override_panel_title": "Override Services Prices",
+    "subscriber_price_override_panel_select": "Select Services",
     "description": "Title",
     "name": "Key",
     "period_type": "Eligibility Period",
@@ -125,6 +127,8 @@
     "custom_period_type": "Custom"
   },
   "plan": {
+    "subscriber_price_override_panel_title": "Override Plans Prices",
+    "subscriber_price_override_panel_select": "Select Plans",
     "description": "Title",
     "name": "Key",
     "proration": "Proration",
