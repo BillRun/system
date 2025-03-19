@@ -6,8 +6,8 @@ import Immutable from 'immutable';
 import { Form, FormGroup, ControlLabel, Col, Panel, Table } from 'react-bootstrap';
 import uuid from 'uuid';
 import moment from 'moment';
-import SubscriptionServicesDetails from './SubscriptionServices/SubscriptionServicesDetails';
-import SubscriptionOverridePrice from './SubscriptionOverridePrice';
+import SubscriptionServicesDetails from './SubscriptionElements/SubscriptionServicesDetails';
+import SubscriptionOverridePrice from './SubscriptionElements/SubscriptionOverridePrice';
 import { ActionButtons, Actions, CreateButton } from '@/components/Elements';
 import Field from '@/components/Field';
 import { EntityRevisionDetails, EntityFields } from '../Entity';
@@ -319,7 +319,6 @@ class Subscription extends Component {
     };
     return dispatch(showConfirmModal(confirm));
   }
-
 
   filterCustomFields = (field) => {
     const hiddenFields = ['plan', 'services', 'play'];

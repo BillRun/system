@@ -2,11 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import isNumber from 'is-number';
-import { titleCase } from 'change-case';
 import { FormGroup, ControlLabel, Col, Panel, Form } from 'react-bootstrap';
 import Field from '@/components/Field';
 import { CreateButton } from '@/components/Elements';
-import PlanPrice from '../Plan/components/PlanPrice';
+import PlanPrice from '../../Plan/components/PlanPrice';
 import {
     getConfig,
     getFieldName,
