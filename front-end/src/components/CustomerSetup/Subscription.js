@@ -7,6 +7,7 @@ import { Form, FormGroup, ControlLabel, Col, Panel, Table } from 'react-bootstra
 import uuid from 'uuid';
 import moment from 'moment';
 import SubscriptionServicesDetails from './SubscriptionServices/SubscriptionServicesDetails';
+import SubscriptionServicesPriceOverride from './PriceOverride/SubscriptionServicesPriceOverride';
 import { ActionButtons, Actions, CreateButton } from '@/components/Elements';
 import Field from '@/components/Field';
 import { EntityRevisionDetails, EntityFields } from '../Entity';
@@ -149,15 +150,12 @@ class Subscription extends Component {
     this.updateSubscriptionField(['services', index, ...path], value);
   }
 
-  onChangeServiceOverride = (serviceName, e) => {
-    const value = parseFloat(e.target.value);
+  onChangeOverridePrices = (type, overrideName, prices) => {
     const { subscription } = this.state;
     const overrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
-    const serviceIndex = overrides.findIndex(override => override.get('key', '') === serviceName);
-
-    if (serviceIndex !== -1) {
-      const updatedOverrides = overrides.update(serviceIndex, service => service.setIn(['value', 'price', 0, 'price'], value));
-      const updatedSubscription = subscription.set('overrides', updatedOverrides);
+    const index = overrides.findIndex(override => override.get('key', '') === overrideName && override.get('type', '') === type);
+    if (index !== -1) {
+      const updatedSubscription = subscription.setIn(['overrides', index, 'value', 'price'], prices);
       this.setState({ subscription: updatedSubscription });
     }
   }
@@ -223,16 +221,17 @@ class Subscription extends Component {
     const { subscription } = this.state;
     const overridesNames = Immutable.Set(overrides.split(','));
     const originOverrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
-    const originOverridesNames = Immutable.Set(originOverrides
+    const originOverridesNames = originOverrides
       .filter(originOverride => originOverride.get('type', '') === type)
-      .map(originOverride => originOverride.get('key', '')));
-
+      .map(originOverride => originOverride.get('key', ''));
+    // Add added
     const addedOverrides = overridesNames.filter(item => !originOverridesNames.has(item));
-    const removedOverrides = originOverridesNames.filter(item => !overridesNames.has(item));
-    if (addedOverrides.size) {
+    if (!addedOverrides.isEmpty()) {
       addedOverrides.forEach((newOverrideName) => { this.onAddOverrides(type, newOverrideName); });
     }
-    if (removedOverrides.size) {
+    // Remove removed
+    const removedOverrides = originOverridesNames.filter(item => !overridesNames.has(item));
+    if (!removedOverrides.isEmpty()) {
       removedOverrides.forEach((removeOverride) => {
         originOverrides.forEach((originOverride, index) => {
           if (originOverride.get('key', '') === removeOverride) {
@@ -440,6 +439,7 @@ class Subscription extends Component {
   formatSelectOptions = items => items.map(item => ({
     value: item.get('name', ''),
     label: item.get('description', item.get('name', '')),
+    isByCycles: item.get('balance_period', '') === '',
   }));
 
   getAvailablePlans = () => {
@@ -522,7 +522,8 @@ class Subscription extends Component {
     const serviceIndex = overrides.findIndex(override => override.get('key', '') === planName);
 
     if (serviceIndex !== -1) {
-      const updatedOverrides = overrides.update(serviceIndex, service => service.updateIn(['value', 'price'], list => reCalculateCycles(list, index, value)));
+      const PLAN_CYCLE_UNLIMITED = getConfig('planCycleUnlimitedValue', 'UNLIMITED');
+      const updatedOverrides = overrides.update(serviceIndex, service => service.updateIn(['value', 'price'], list => reCalculateCycles(list, index, value, PLAN_CYCLE_UNLIMITED)));
       const updatedSubscription = subscription.set('overrides', updatedOverrides);
       this.setState({ subscription: updatedSubscription });
     }
@@ -793,50 +794,14 @@ class Subscription extends Component {
               />
             )}
           </Panel>
-
-          <Panel header={<h3>Override Service Prices</h3>}>
-            <FormGroup key="overrideServices">
-              <Col componentClass={ControlLabel} sm={3} lg={2}>Services</Col>
-              <Col sm={8} lg={9}>
-                <Field
-                  fieldType="select"
-                  multi={true}
-                  options={servicesOptions}
-                  value={overridesServiceList}
-                  onChange={(data) => this.onChangeOverrides('service', data)}
-                  clearable={false}
-                  editable={allowEdit}
-                  />
-              </Col>
-            </FormGroup>
-            {
-              overridesServiceList && (
-                <table style={{ width: '100%' }}>
-                <tbody>
-                  {
-                    overridesServiceList.split(',').map((serviceName) => {
-                      const currentService = overrides.find(override => override.get('key', '') === serviceName);
-                      return (
-                        <tr key={serviceName}>
-                          <td style={{ width: '30%', verticalAlign: 'middle', textAlign: 'right', paddingRight: 20, paddingTop: 20 }}>{serviceName}</td>
-                          <td style={{ width: '70%', paddingTop: 20 }}>
-                            <Field
-                              style={{ display: 'inline-block' }}
-                              fieldType="price"
-                              value={currentService ? currentService.getIn(['value', 'price', 0, 'price']) : 0}
-                              onChange={(e) => this.onChangeServiceOverride(serviceName, e)}
-                              editable={allowEdit}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })
-                  }
-                </tbody>
-              </table>
-              )
-            }
-          </Panel>
+          
+          <SubscriptionServicesPriceOverride
+            overrides={overrides}
+            options={servicesOptions}
+            onChangeSelect={this.onChangeOverrides}
+            onChangePrice={this.onChangeOverridePrices}
+            editable={allowEdit}
+          />
 
           <Panel header={<h3>Override Plan Prices</h3>}>
             <FormGroup key="overridePlans">

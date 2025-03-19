@@ -836,13 +836,12 @@ export const convertToNewRecurrence = (item) => {
   });
 }
 
-const PLAN_CYCLE_UNLIMITED = getConfig('planCycleUnlimitedValue', 'UNLIMITED');
-export const reCalculateCycles = (prices, index, value) => prices.reduce((newList, price, i) => {
+export const reCalculateCycles = (prices, index, value, cycle_unlimited) => prices.reduce((newList, price, i) => {
   if (i === index) {
     // set new To
     if (typeof value === 'undefined') { // first item was removed
       price = price.set('to', parseInt(price.get('to', 0) || 0) - parseInt(price.get('from', 0) || 0));
-    } else if (value === PLAN_CYCLE_UNLIMITED) { // last value set to unlimited
+    } else if (value === cycle_unlimited) { // last value set to unlimited
       price = price.set('to', value);
     } else { // simple case, update to new value
       price = price.set('to', parseInt(price.get('from') || 0) + parseInt(value));
@@ -861,7 +860,7 @@ export const reCalculateCycles = (prices, index, value) => prices.reduce((newLis
     // set new To
     if (to === '') { // TO not set
       price = price.set('to', price.get('from'));
-    } else if (to === PLAN_CYCLE_UNLIMITED) { // TO is unlimited
+    } else if (to === cycle_unlimited) { // TO is unlimited
       // do nothing
     } else { // normal case, update with shifting
       const diff = parseInt(to || 0) - parseInt(from || 0);
