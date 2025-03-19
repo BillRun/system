@@ -4,30 +4,34 @@ on:
   pull_request:
   push:
     branches:
-      - "master"
+    - "master"
 
 jobs:
   phpunit:
     name: "PHPUnit tests"
 
-    runs-on: ${{ matrix.operating-system }}
+    runs-on: "ubuntu-latest"
 
     strategy:
       matrix:
         dependencies:
-          - "lowest"
           - "highest"
         php-version:
           - "7.2"
           - "7.3"
           - "7.4"
           - "8.0"
-        operating-system:
-          - "ubuntu-latest"
+          - "8.1"
+          - "8.2"
+          - "8.3"
+
+        include:
+          - php-version: '7.2'
+            dependencies: "lowest"
 
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v2"
+        uses: "actions/checkout@v4"
 
       - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
@@ -39,11 +43,11 @@ jobs:
 
       - name: "Install lowest dependencies"
         if: ${{ matrix.dependencies == 'lowest' }}
-        run: "composer update --prefer-lowest --no-interaction --no-progress --no-suggest"
+        run: "composer update --prefer-lowest --no-interaction --no-progress"
 
       - name: "Install highest dependencies"
         if: ${{ matrix.dependencies == 'highest' }}
-        run: "composer update --no-interaction --no-progress --no-suggest"
+        run: "composer update --no-interaction --no-progress"
 
       - name: "Tests"
         run: "vendor/bin/phpunit"

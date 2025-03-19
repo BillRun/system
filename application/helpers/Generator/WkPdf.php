@@ -199,6 +199,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 	}
 		     }
 			if (isset($object['invoice_id'])) {
+				if (empty($lines))  {
+					$lines = $this->loadLines($object);
+				}
 				$this->generateAccountInvoices($object, $lines);
 			}
 		}
@@ -336,6 +339,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
 	}
 
+	public function loadLines( $data ) {
+		$aid = $data['aid'];
+		$billrun_key = $data['billrun_key'];
+		$query = array('aid' => $aid, 'billrun' => $billrun_key);
+		$accountLines = Billrun_Factory::db()->linesCollection()->query($query);
+
+		return $accountLines;
+	}
+
+
 	public function setData($billrunData) {
 		$this->billrun_data = $billrunData;
 	}
@@ -355,11 +368,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 		$this->addExtraParamsToCurrentView($this->invoice_extra_params);
 
-		if (empty($lines)) {
-			$this->view->loadLines();
-		} else {
-			$this->view->setLines($lines);
-		}
+		$this->view->setLines($lines);
+
 
 		$this->tmp_paths = array(
 			'header' => $this->paths['tmp'].$account['aid'] . 'tmp_header.html',
@@ -692,4 +702,23 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
         }
 
+	public function regenerateInvoice() {
+		Billrun_Factory::log()->log("Loading data to Generate...", Zend_Log::DEBUG);
+		try{
+			$this->load();
+			Billrun_Factory::log()->log("Starting to Generate. This action can take a while...", Zend_Log::DEBUG);
+			$this->generate();
+		} catch(Exception $ex){
+			Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+			return false;
+		}
+		Billrun_Factory::log()->log("Finished generating", Zend_Log::DEBUG);
+		if ($this->shouldFileBeMoved()) {
+			Billrun_Factory::log()->log("Exporting the file", Zend_Log::DEBUG);
+			$this->move();
+			Billrun_Factory::log()->log("Finished exporting", Zend_Log::DEBUG);
+		}
+		return true;
+	}
+			
 }

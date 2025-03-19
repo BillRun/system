@@ -3,7 +3,6 @@
 namespace MongoDB\Tests\SpecTests;
 
 use stdClass;
-
 use function basename;
 use function dirname;
 use function file_get_contents;
@@ -23,7 +22,7 @@ class ReadWriteConcernSpecTest extends FunctionalTestCase
      * @param stdClass $expected Expected command document
      * @param stdClass $actual   Actual command document
      */
-    public static function assertCommandMatches(stdClass $expected, stdClass $actual): void
+    public static function assertCommandMatches(stdClass $expected, stdClass $actual)
     {
         foreach ($expected as $key => $value) {
             if ($value === null) {
@@ -45,7 +44,7 @@ class ReadWriteConcernSpecTest extends FunctionalTestCase
      * @param string   $databaseName   Name of database under test
      * @param string   $collectionName Name of collection under test
      */
-    public function testReadWriteConcern(stdClass $test, ?array $runOn = null, array $data, ?string $databaseName = null, ?string $collectionName = null): void
+    public function testReadWriteConcern(stdClass $test, array $runOn = null, array $data, $databaseName = null, $collectionName = null)
     {
         if (isset(self::$incompleteTests[$this->dataDescription()])) {
             $this->markTestIncomplete(self::$incompleteTests[$this->dataDescription()]);
@@ -100,10 +99,8 @@ class ReadWriteConcernSpecTest extends FunctionalTestCase
             $group = basename(dirname($filename)) . '/' . basename($filename, '.json');
             $runOn = $json->runOn ?? null;
             $data = $json->data ?? [];
-            // phpcs:disable Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
             $databaseName = $json->database_name ?? null;
             $collectionName = $json->collection_name ?? null;
-            // phpcs:enable Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
 
             foreach ($json->tests as $test) {
                 $name = $group . ': ' . $test->description;

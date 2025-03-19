@@ -4,14 +4,13 @@ namespace MongoDB\Tests\GridFS;
 
 use MongoDB\BSON\Binary;
 use MongoDB\BSON\UTCDateTime;
-
+use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
 use function fclose;
 use function feof;
 use function fread;
 use function fseek;
 use function fstat;
 use function fwrite;
-
 use const SEEK_CUR;
 use const SEEK_END;
 use const SEEK_SET;
@@ -21,7 +20,9 @@ use const SEEK_SET;
  */
 class StreamWrapperFunctionalTest extends FunctionalTestCase
 {
-    public function setUp(): void
+    use SetUpTearDownTrait;
+
+    private function doSetUp()
     {
         parent::setUp();
 
@@ -36,14 +37,14 @@ class StreamWrapperFunctionalTest extends FunctionalTestCase
         ]);
     }
 
-    public function testReadableStreamClose(): void
+    public function testReadableStreamClose()
     {
         $stream = $this->bucket->openDownloadStream('length-10');
 
         $this->assertTrue(fclose($stream));
     }
 
-    public function testReadableStreamEof(): void
+    public function testReadableStreamEof()
     {
         $stream = $this->bucket->openDownloadStream('length-10');
 
@@ -52,7 +53,7 @@ class StreamWrapperFunctionalTest extends FunctionalTestCase
         $this->assertTrue(feof($stream));
     }
 
-    public function testReadableStreamRead(): void
+    public function testReadableStreamRead()
     {
         $stream = $this->bucket->openDownloadStream('length-10');
 
@@ -61,7 +62,7 @@ class StreamWrapperFunctionalTest extends FunctionalTestCase
         $this->assertSame('', fread($stream, 3));
     }
 
-    public function testReadableStreamSeek(): void
+    public function testReadableStreamSeek()
     {
         $stream = $this->bucket->openDownloadStream('length-10');
 
@@ -87,7 +88,7 @@ class StreamWrapperFunctionalTest extends FunctionalTestCase
         $this->assertSame(-1, fseek($stream, 1, SEEK_END));
     }
 
-    public function testReadableStreamStat(): void
+    public function testReadableStreamStat()
     {
         $stream = $this->bucket->openDownloadStream('length-10');
 
@@ -104,14 +105,14 @@ class StreamWrapperFunctionalTest extends FunctionalTestCase
         $this->assertSame(4, $stat['blksize']);
     }
 
-    public function testReadableStreamWrite(): void
+    public function testReadableStreamWrite()
     {
         $stream = $this->bucket->openDownloadStream('length-10');
 
         $this->assertSame(0, fwrite($stream, 'foobar'));
     }
 
-    public function testWritableStreamClose(): void
+    public function testWritableStreamClose()
     {
         $stream = $this->bucket->openUploadStream('filename');
 
@@ -121,7 +122,7 @@ class StreamWrapperFunctionalTest extends FunctionalTestCase
         $this->assertStreamContents('foobar', $this->bucket->openDownloadStreamByName('filename'));
     }
 
-    public function testWritableStreamEof(): void
+    public function testWritableStreamEof()
     {
         $stream = $this->bucket->openUploadStream('filename');
 
@@ -130,7 +131,7 @@ class StreamWrapperFunctionalTest extends FunctionalTestCase
         $this->assertFalse(feof($stream));
     }
 
-    public function testWritableStreamRead(): void
+    public function testWritableStreamRead()
     {
         $stream = $this->bucket->openUploadStream('filename');
 
@@ -139,7 +140,7 @@ class StreamWrapperFunctionalTest extends FunctionalTestCase
         $this->assertSame('', fread($stream, 8192));
     }
 
-    public function testWritableStreamSeek(): void
+    public function testWritableStreamSeek()
     {
         $stream = $this->bucket->openUploadStream('filename');
 
@@ -158,7 +159,7 @@ class StreamWrapperFunctionalTest extends FunctionalTestCase
         $this->assertSame(-1, fseek($stream, 1, SEEK_END));
     }
 
-    public function testWritableStreamStatBeforeSaving(): void
+    public function testWritableStreamStatBeforeSaving()
     {
         $stream = $this->bucket->openUploadStream('filename', ['chunkSizeBytes' => 1024]);
 
@@ -181,7 +182,7 @@ class StreamWrapperFunctionalTest extends FunctionalTestCase
         $this->assertSame(6, $stat['size']);
     }
 
-    public function testWritableStreamStatAfterSaving(): void
+    public function testWritableStreamStatAfterSaving()
     {
         $stream = $this->bucket->openDownloadStream('length-10');
 
@@ -198,7 +199,7 @@ class StreamWrapperFunctionalTest extends FunctionalTestCase
         $this->assertSame(4, $stat['blksize']);
     }
 
-    public function testWritableStreamWrite(): void
+    public function testWritableStreamWrite()
     {
         $stream = $this->bucket->openUploadStream('filename');
 

@@ -4,7 +4,9 @@ import { SortableContainer } from 'react-sortable-hoc';
 import Immutable from 'immutable';
 
 
-const SortableFieldsContainer = ({ items }) => (<div>{items}</div>);
+const SortableFieldsContainer = ({ items }) => {
+  return <div>{items}</div>;
+};
 
 SortableFieldsContainer.defaultProps = {
   items: [],

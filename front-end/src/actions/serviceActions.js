@@ -31,7 +31,9 @@ export const SERVICE_PRODUCTS_RATE_UPDATE = 'SERVICE_PRODUCTS_RATE_UPDATE';
 export const SERVICE_PRODUCTS_RATE_REMOVE = 'SERVICE_PRODUCTS_RATE_REMOVE';
 export const SERVICE_PRODUCTS_RATE_ADD = 'SERVICE_PRODUCTS_RATE_ADD';
 export const SERVICE_PRODUCTS_RATE_INIT = 'SERVICE_PRODUCTS_RATE_INIT';
-
+export const SERVICE_ADD_TARIFF = 'SERVICE_ADD_TARIFF';
+export const SERVICE_UPDATE_SERVICE_CYCLE = 'SERVICE_UPDATE_SERVICE_CYCLE';
+export const SERVICE_REMOVE_TARIFF = 'SERVICE_REMOVE_TARIFF';
 
 const gotItem = item => ({
   type: GOT_SERVICE,
@@ -46,6 +48,21 @@ export const updateService = (path, value) => ({
   type: UPDATE_SERVICE,
   path,
   value,
+});
+
+export const onServiceTariffAdd = () => ({
+  type: SERVICE_ADD_TARIFF,
+});
+
+export const onServiceCycleUpdate = (index, value) => ({
+  type: SERVICE_UPDATE_SERVICE_CYCLE,
+  index,
+  value,
+});
+
+export const onServiceTariffRemove = index => ({
+  type: SERVICE_REMOVE_TARIFF,
+  index,
 });
 
 export const deleteServiceField = path => ({

@@ -13,10 +13,10 @@ if [ -e $CONFIG_PATH ]; then
 else
  declare -A USAGE_COLL;
  USAGE_COLL["lines"]=24;
- USAGE_COLL["queue"]=3;
- USAGE_COLL["archive"]=6;
- declare -A CUSTOMER_COLL;
- CUSTOMER_COLL["billrun"]=84;
+#  USAGE_COLL["queue"]=3;
+#  USAGE_COLL["archive"]=6;
+#  declare -A CUSTOMER_COLL;
+#  CUSTOMER_COLL["billrun"]=84;
 fi
 
 if [ -n "$1" ]; then
@@ -92,5 +92,4 @@ for coll in "${!CUSTOMER_COLL[@]}"; do
 	echo "var trgtColl='$coll'; var daysToRmove = $DAYS_TO_REMOVE_PER_ITER; var monthsToKeep = $COLL_MONTHS_TO_KEEP;" > /tmp/data_creation_time_removal_config.js;
 
 	$MONGOEXEC $MONGO_ARGS /tmp/data_creation_time_removal_config.js ./creation_time_based_data_removal.js
-
 done

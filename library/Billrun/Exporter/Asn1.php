@@ -44,9 +44,9 @@ abstract class Billrun_Exporter_Asn1 extends Billrun_Exporter_File {
 	 */
 	function handleExport() {
 		$filePath = $this->getExportFilePath();
-		if(!file_exists($this->getFilePath())) {
+		if(!file_exists(dirname($filePath))) {
 			$dirMask = Billrun_Util::getIn($this->config,'directory_create_mask',0777);
-			mkdir($this->getFilePath(), $dirMask, true);
+			mkdir(dirname($filePath), $dirMask, true);
 		}
 		$fp = fopen($filePath, 'w');
 		if (!$fp) {

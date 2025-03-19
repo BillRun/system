@@ -138,7 +138,7 @@ class Models_Action_Export extends Models_Action {
 	protected function getCsvHeaders($mapper) {
 		$headers = [];
 		foreach ($mapper as $key => $map) {
-			$headers[] = !empty($map['title']) ? $map['title'] : $key;
+			$headers[] = !empty($map['field_name']) ? $map['field_name'] : (!empty($map['title']) ? $map['title'] : $key);
 		}
 		return $headers;
 	}

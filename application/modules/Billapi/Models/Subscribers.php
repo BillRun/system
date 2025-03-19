@@ -105,7 +105,7 @@ class Models_Subscribers extends Models_Entity {
 					$serviceAvailableCycles = $serviceRate->getServiceCyclesCount();
 					if ($serviceAvailableCycles !== Billrun_Service::UNLIMITED_VALUE) {
 						$vDate = date(Billrun_Base::base_datetimeformat, $service['from']->sec);
-						$to = strtotime('+' . $serviceAvailableCycles . ' months', Billrun_Billingcycle::getBillrunStartTimeByDate($vDate));
+						$to = strtotime('+' . $serviceAvailableCycles . ' months', $service['from']->sec);
 						$service['to'] = new Mongodloid_Date($to);
 					}
 				}
@@ -154,7 +154,7 @@ class Models_Subscribers extends Models_Entity {
 		if (empty($servicePlays)) {
 			return true;
 		}
-		$subscriberPlay = Billrun_Util::getIn($this->update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
+		$subscriberPlay = Billrun_Util::getIn($this->update, 'play', Billrun_Util::getIn($this->before, 'play', Billrun_Utils_Plays::getDefaultPlay()['name']));
 		if (!in_array($subscriberPlay, $servicePlays)) {
 			throw new Billrun_Exceptions_Api(0, array(), "\"{$service->get('description')}\" does not match subscriber's play");
 		}

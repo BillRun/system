@@ -12,11 +12,20 @@
         "alcaeus/mongo-php-adapter": "1.2.0",
         "bshaffer/oauth2-server-php": "1.11.1",
         "league/omnipay": "3.0.2",
-        "payrexx/omnipay-payrexx": "1.1",
-        "payrexx/payrexx": "1.7.6",
+        "payrexx/omnipay-payrexx": "^1.1",
+        "payrexx/payrexx": "^1.7.6",
         "alexandr-mironov/php-smpp": "1.3.0.7",
         "chillerlan/php-qrcode": "^4.3",
         "stripe/stripe-php": "v10.5.0"
+    },
+    "config": {
+        "platform": {
+            "php": "7.4",
+            "ext-mongo": "1.6.16"
+        },
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
     },
     "require-dev": {
         "simpletest/simpletest": "^1.1",
@@ -24,10 +33,10 @@
         "codeception/module-webdriver": "^1.4",
         "codeception/module-asserts": "^1.3",
         "codeception/module-cli": "^1.1",
-        "codeception/module-rest": "^2.0",
+        "codeception/module-rest": "1.4.2",
         "codeception/module-phpbrowser": "1.0.1",
-        "codeception/module-mongodb": "^2.0",
-        "codeception/module-db": "^2.1",
+        "codeception/module-mongodb": "1.1.1",
+        "codeception/module-db": "1.2.0",
         "mongodb/mongodb": "1.7.2",
         "vlucas/phpdotenv": "^2.0 | ^3.0 | ^4.0 | ^5.0"
     },

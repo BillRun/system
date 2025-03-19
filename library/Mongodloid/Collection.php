@@ -7,6 +7,11 @@
  */
 class Mongodloid_Collection {
 
+	/**
+	 * the mongodb library collection object
+	 * 
+	 * @var MongoDB\Collection
+	 */
 	private $_collection;
 	private $_db;
 
@@ -242,19 +247,21 @@ class Mongodloid_Collection {
 	 * @return mongodloid save result.
 	 */
 	public function save(Mongodloid_Entity $entity, $w = null) {
-		$options['upsert'] = true;
-		$options['w'] = $w;
+		$options = array(
+			'w' => $w
+		);
 		$this->convertWriteConcernOptions($options);
 		$data = $entity->getRawData();
-		if($entity->getId()){
-			$id = $entity->getId();
+		$id = $entity->getId();
+		if($id){
+			$options['upsert'] = true;
+			$result = Mongodloid_Result::getResult($this->update(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id)), $data, $options));
+			$entity->setRawData($data);
 		}else{
-			$id = (new Mongodloid_Id());
-			$data['_id'] =  $id;
+			$result = Mongodloid_Result::getResult($this->insert($data, $options));
+			$entity->setRawData($data);
 		}
 		
-		$result = Mongodloid_Result::getResult($this->update(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id)), $data, $options));
-		$entity->setRawData($data);
 		return $result;
 	}
 
@@ -288,6 +295,22 @@ class Mongodloid_Collection {
 	 */
 	public function count() {
 		return Mongodloid_Result::getResult($this->_collection->count());
+	}
+
+	/**
+	 * Count the number of documents in this collection
+	 * @return mongodloid count result.
+	 */
+	public function countDocuments() {
+		return $this->count();
+	}
+
+	/**
+	 * Estimated count the number of documents in this collection
+	 * @return mongodloid count result.
+	 */
+	public function estimatedDocumentCount() {
+		return Mongodloid_Result::getResult($this->_collection->estimatedDocumentCount());
 	}
 
 	public function clear() {//TODO:: check this - I dont think this works also before changes
@@ -639,7 +662,6 @@ class Mongodloid_Collection {
 	 */
 	public function insert(&$ins, array $options = array()) {
 		$this->convertWriteConcernOptions($options);
-		$this->ensureDocumentHasMongoId($ins);
 		if ($ins instanceof Mongodloid_Entity) {
 			$a = $ins->getRawData();
 			$ret = $this->_collection->insertOne(Mongodloid_TypeConverter::fromMongodloid($a), $options);
@@ -654,19 +676,6 @@ class Mongodloid_Collection {
 		return Mongodloid_Result::getResult($ret);
 	}
 	
-	/**
-	 * verify _id field is exists; if not exists create it
-	 * @param Mongodloid_Id $document
-	 */
-	protected function ensureDocumentHasMongoId(&$document) {
-		if ((is_array($document) || $document instanceof ArrayObject) && !isset($document['_id'])) {
-			$document['_id'] = new \MongoId();
-		} else if ($document instanceof Mongodloid_Entity && !$document->getId()) {
-			$document['_id'] = new Mongodloid_Id();
-		}
-		return $document['_id'];
-	}
-
 	/**
 	 * Method to create auto increment of document based on an entity.
 	 * To use this method require counters collection (see create.ini)

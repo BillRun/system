@@ -359,6 +359,10 @@ class Tests_Discounttest extends UnitTestCase {
 				$values = $discount['params_override']['cycles'];
 				$discountsToPass[$discount['name']]['params']['cycles'] = $this->getParam('cycles', $values);
 			}
+			if (array_key_exists('simultaneous_limit', $discount)) {
+				$values = $discount['simultaneous_limit'];
+				$discountsToPass[$discount['name']]['simultaneous_limit'] = $values;
+			}
 			foreach ($discount['params_override']['condition'] as $params) {
 				$conditions = $this->conditions;
 				foreach ($params as $param) {
@@ -366,8 +370,14 @@ class Tests_Discounttest extends UnitTestCase {
 					$values = $param['values'] ? $param['values'] : null;
 					$field = $param['field'] ? $param['field'] : null;
 					$op = isset($param['op']) ? $param['op'] : 'eq';
+					$type2 = $param['type2'] ?? null;
 					if ($type == 'service') {
-						$conditions['subscriber'][0]['service']['any'][]['fields'][] = $this->getParam($type, $values, $field, $op);
+						if($type2 == 'account'){
+							$conditions['account']['service']['any'][]['fields'][] = $this->getParam($type, $values, $field, $op);
+						}else{
+							$conditions['subscriber'][0]['service']['any'][]['fields'][] = $this->getParam($type, $values, $field, $op);
+
+						}
 						continue;
 					}
 					if ($type == 'subscriber') {

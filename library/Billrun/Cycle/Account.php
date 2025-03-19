@@ -125,12 +125,17 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$revision['to'] = min($maxTo,$revision['to']);
 		$subRevisionsFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields',['services','plans']);
 		$mongoServices = $this->cycleAggregator->getServices();
+		$allFroms = call_user_func_array('array_merge', array_map(function($v) use ($revision) {
+									return isset ($revision[$v]) 	? array_map(function ($iv) { return $iv->sec;}, array_column($revision[$v], 'from'))
+																	: [];
+							}, $subRevisionsFields));
+		sort($allFroms);
 
 		//Retrive all the relevent change dates
 		foreach($subRevisionsFields as $fieldName) {
 			if(empty($revision[$fieldName])) { continue; }
 			foreach($revision[$fieldName] as $subRev) {
-					 if($subRev['from']->sec > $revision['to'] || $subRev['to']->sec < $revision['from'] ||
+					 if($subRev['from']->sec >= $revision['to'] || $subRev['to']->sec < $revision['from'] ||
 						$fieldName == 'services' && $this->isServiceTerminatedDueToConfig($subRev, $revision['from'],$revision['to']) ) { // TODO fix hard coding
 						continue;
 					 }
@@ -173,7 +178,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				foreach($fromCuts as $to => $toCuts) {
 					foreach($toCuts as $fieldName => $fieldCuts) {
 						foreach($fieldCuts as  $fieldCut) {
-							//should we break the revision?
+							//should we break the revision? (as the  cut  start after the  revisoin started)
 							if($activeRev['from'] < $fieldCut['from'] ) {
 								$revClosed = unserialize(serialize($activeRev));
 								$revClosed['to'] = min($fieldCut['from'],$activeRev['to']);
@@ -187,6 +192,12 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 								}
 							}
 							if($activeRev['to'] > $fieldCut['to']) {
+								//current revision is  ending  after the current cut save the cut and advance the  revision to the end of the cut
+								$activeRev['from'] = min( array_merge( [ $fieldCut['to']],
+																		 array_filter($allFroms,
+																			function ($v) use($activeRev) {
+																				return $v > $activeRev['from'];
+																			}) ));
 								$fieldsEnded[] = [
 								'from' => $fieldCut['from'],
 								'to' => $fieldCut['to'],
@@ -248,7 +259,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$servicesArr = is_array($mongoServices[$subRev['name']]) ? $mongoServices[$subRev['name']]  :  [$mongoServices[$subRev['name']]];
 			foreach($servicesArr as $service) {
 				$creationTime = min((!empty($subRev['creation_time']) ? $subRev['creation_time'] : new Mongodloid_Date()), $subRev['from']);
-				if( $maxTo >= $service['from']->sec && $maxTo < $service['to']->sec ) {
+				if( $maxTo > $service['from']->sec && $maxTo <= $service['to']->sec ) {
 					if(Billrun_Plans_Util::hasPriceWithinDates($service,$creationTime->sec,$minFrom,$maxTo) &&
 					   Billrun_Plans_Util::balancePeriodWithInDates($service,$creationTime->sec,$minFrom,$maxTo) ) {
 						return FALSE;
@@ -332,10 +343,13 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$invoiceData['key'] = $cycle->key();
 
 		$aggregatableRecords = array();
+		$accountRevisions = $subscribers[0] ?? [];
+		usort($accountRevisions,function($a,$b){ return  $b['from'] - $a['from'];});
 		foreach ($subscribers as $sid => $subscriberList) {
 			usort($subscriberList,function($a,$b){ return  $a['from'] - $b['from'];});
 			Billrun_Factory::log("Constructing records for sid " . $sid);
-			$aggregatableRecords[] = $this->constructSubscriber($subscriberList, $invoiceData, $subsCount);
+			Billrun_Factory::dispatcher()->trigger('beforeConstructSubscriber',[&$data, &$subscriberList, &$invoiceData, $subsCount, $this]);
+			$aggregatableRecords[] = $this->constructSubscriber($subscriberList, $invoiceData, $subsCount, reset($accountRevisions));
 		}
 		Billrun_Factory::log("Constructed: " . count($aggregatableRecords));
 		$this->records = $aggregatableRecords;
@@ -351,17 +365,18 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @param array $invoiceData Invoice
 	 * @return Billrun_Cycle_Subscriber Aggregateable subscriber
 	 */
-	protected function constructSubscriber($sorted, $invoiceData, $subsCount = 0 ) {
+	protected function constructSubscriber($sorted, $invoiceData, $subsCount = 0, $accountLastRevision = null ) {
 
 		$data = [
-			'rates' => $this->cycleAggregator->getRates(null,end($sorted)),
-			'discounts' => $this->cycleAggregator->getDiscounts(null,end($sorted)),
-                        'charges' => $this->cycleAggregator->getCharges(),
+			'rates' => $this->cycleAggregator->getRates($accountLastRevision, end($sorted)),
+			'discounts' => $this->cycleAggregator->getDiscounts($accountLastRevision, end($sorted)),
+			'charges' => $this->cycleAggregator->getCharges(),
 		];
 		$invoice = new Billrun_Cycle_Subscriber_Invoice($data, $invoiceData);
 
 		$invoice->setShouldKeepLinesinMemory($this->invoice->shouldKeepLinesinMemory($subsCount));
 		$invoice->setShouldAggregateUsage( $subsCount < Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_to_aggregate',500) );
+		$subConstratorData['account_info'] = $accountLastRevision;
 		$subConstratorData['history'] = $sorted;
 		$subConstratorData['subscriber_info'] = end($sorted);
 		$subConstratorData['subscriber_info']['invoice'] = &$invoice;
@@ -379,7 +394,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			'billrun' => $cycle->key(),
 			'type' => 'flat',
 			'usaget' => 'flat',
-			'urt' => new Mongodloid_Date($cycle->end()),
+			'urt' => new Mongodloid_Date($cycle->getFlatsTime()),
 		);
 		
 		return $flatEntry;

@@ -69,10 +69,11 @@ const gotFile = (fileData, path) => {
   return updateSetting('files', path, value);
 };
 
-export const setFieldPosition = (oldIndex, newIndex, path) => ({
+export const setFieldPosition = (oldIndex, newIndex, category, path) => ({
   type: actions.SET_FIELD_POSITION,
   oldIndex,
   newIndex,
+  category,
   path,
 });
 
@@ -142,6 +143,10 @@ export const getSettings = (categories = [], data = {}) => (dispatch) => {
       return true;
     })
     .catch((error) => {
+      // in case of error in one of categories, save the data that was successfully received
+      if (error.data && typeof error.data == 'object' && error.data.length > 0) {
+        dispatch(gotSettings(error.data));
+      }
       dispatch(apiBillRunErrorHandler(error));
       return false;
     });

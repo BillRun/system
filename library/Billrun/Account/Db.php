@@ -61,8 +61,29 @@ class Billrun_Account_Db extends Billrun_Account {
 
 
 	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = [], $invoicing_days = null) {
-		//TODO implement the  pipline aggregation here , when doing thre  refatoring of aggregation logic
-		throw new Exception("Dont use this function until refatoring of the aggregation is done");
+		$subsActiveQuery =Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $cycle->start()->sec, $cycle->end()->sec);
+		//
+		$accountsQuery = array_merge(['type' => 'account'],$subsActiveQuery);;
+		if(!empty($aids)) {
+			$accountsQuery['aid'] = ['$in' => $aids ];
+		}
+
+		if (!empty($invoicing_days)) {
+			$config = Billrun_Factory::config();
+			/*if one of the searched "invoicing_day" is the default one, then we'll search for all the accounts with "invoicing_day"
+			field that is different from all the undeclared invoicing_days. */
+			$negativeSearch = in_array(strval($config->getConfigChargingDay()), $invoicing_days);
+			$inDayOp = $negativeSearch ? '$nin' : '$in';
+			$daysToInovice = $negativeSearch ?  array_values(array_diff(array_map('strval', range(1, 28)), $invoicing_days)) : $invoicing_days;
+			$accountsQuery['invoicing_day'] = [ $inDayOp =>  $daysToInovice ];
+		}
+
+		$activeAidsRevs = $this->collection->query($accountsQuery)->cursor()->setRawReturn(true)->fields(['aid'])->sort(['aid'=>1])->skip($page * $size)->limit($size);
+		$activeAids = array_values(array_map(function($ar) { return $ar['aid'];},iterator_to_array($activeAidsRevs)));
+		$finalQuery = array_merge(['aid'=> ['$in' =>$activeAids ] ], $subsActiveQuery);
+		$results = $this->collection->query($finalQuery)->cursor()->setRawReturn(true)->sort([	'from' => -1]);
+		return iterator_to_array($results);
+
 	}
 
 	/**
@@ -78,7 +99,13 @@ class Billrun_Account_Db extends Billrun_Account {
 			}
 
 			if (isset($query['time'])) {
-				$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
+				$dateTime = DateTime::createFromFormat('Y-m-d H:i:s.u', $query['time']);
+				if ($dateTime !== false) {
+					$microSeconds = (int) $dateTime->format('u'); // Get milliseconds
+					$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']), false, $microSeconds);
+				} else {
+					$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
+				}
 				$query = array_merge($query, $time);
 				unset($query['time']);
 			}
@@ -87,7 +114,14 @@ class Billrun_Account_Db extends Billrun_Account {
 				$id = $query['id'];
 				unset($query['id']);
 			}
+			$readPreference = $query['read_preference'] ?? false;
+			if ($readPreference){
+				unset($query['read_preference']);
+			}
 			$result = $this->collection->query($query)->cursor();
+			if($readPreference){
+				$result->setReadPreference($readPreference);
+			}
 			if (isset($limit) && $limit === 1) {
 				$account = $result->limit(1)->current();
 				if ($account->isEmpty()) {
@@ -98,7 +132,7 @@ class Billrun_Account_Db extends Billrun_Account {
 				}
 				$accounts[] = $account;
 			} else {
-				$accountsForQuery = iterator_to_array($this->collection->query($query)->cursor());
+				$accountsForQuery = iterator_to_array($result);
 				if (empty($accountsForQuery)) {
 					continue;
 				}

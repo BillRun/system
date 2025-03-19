@@ -61,7 +61,7 @@ class Subscription extends Component {
     this.state = {
       subscription: props.subscription,
       progress: false,
-      discountsHiddenFields: ['key', 'params.min_subscribers', 'params.max_subscribers'],
+      discountsHiddenFields: ['key', 'params.min_subscribers', 'params.max_subscribers', 'simultaneous_limit'],
       planCycleUnlimitedValue: getConfig('planCycleUnlimitedValue', 'UNLIMITED'),
       defaultTariff: Immutable.Map({
         price: 0,

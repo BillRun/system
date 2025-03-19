@@ -4,13 +4,11 @@ namespace PhpOffice\PhpSpreadsheet\Reader\Xls;
 
 class RC4
 {
-    /** @var int[] */
-    protected $s = []; // Context
+    // Context
+    protected $s = [];
 
-    /** @var int */
     protected $i = 0;
 
-    /** @var int */
     protected $j = 0;
 
     /**

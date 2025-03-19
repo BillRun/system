@@ -135,7 +135,11 @@ class Portal_Actions_Account extends Portal_Actions {
 		$query['aid'] = $this->loggedInEntity['aid'];
 		$query['type'] = 'inv';
 
-		$billapiParams = $this->getBillApiParams('bills', 'get', $query);
+		if (empty($params['sort'])) {
+			$params['sort'] = ['urt' => -1];
+		}
+		
+		$billapiParams = $this->getBillApiParams('bills', 'get', $query, [], $params['sort']);
 		$invoices = $this->runBillApi($billapiParams);
 
 		foreach ($invoices as &$invoice) {

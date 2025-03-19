@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2017-present MongoDB, Inc.
+ * Copyright 2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,8 @@
 namespace MongoDB;
 
 use IteratorAggregate;
-use ReturnTypeWillChange;
 use stdClass;
 use Traversable;
-
 use function call_user_func;
 
 /**
@@ -88,7 +86,6 @@ class MapReduceResult implements IteratorAggregate
      * @see http://php.net/iteratoraggregate.getiterator
      * @return Traversable
      */
-    #[ReturnTypeWillChange]
     public function getIterator()
     {
         return call_user_func($this->getIterator);
