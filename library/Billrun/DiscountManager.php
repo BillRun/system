@@ -1644,7 +1644,7 @@ class Billrun_DiscountManager {
 		return (1 / $cycleDays) * $seqValue;
 	}
 
-	protected function addRoundingRules($discountLine, &$eligibleLine, $discount){
+	protected function addRoundingRules($discountLine, $eligibleLine, $discount){
 		if (!empty($discount['rounding_rules'])) {
 			$discountLine['rounding_rules'] = $discount['rounding_rules'];
 		}
@@ -1661,8 +1661,6 @@ class Billrun_DiscountManager {
 				],
 				'rounding_rules' => $eligibleLine['rounding_rules']
 			];
-			unset($eligibleLine['rounding_rules']);
-			unset($eligibleLine['before_rounding']);
 		}
 		return $discountLine;
 	}
