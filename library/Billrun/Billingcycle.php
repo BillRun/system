@@ -200,9 +200,9 @@ class Billrun_Billingcycle {
 	public static function hasCycleEnded($billrunKey, $size, $moreFields = []) {
 		$billingCycleCol = self::getBillingCycleColl();
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
-		$numOfPages = $billingCycleCol->query(array_merge(array('billrun_key' => $billrunKey, 'page_size' => $size), $moreFields))->count();
-		$finishedPages = $billingCycleCol->query(array_merge(array('billrun_key' => $billrunKey, 'page_size' => $size, 'end_time' => array('$exists' => 1)), $moreFields))->count();
-		if (static::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages, $moreFields) && $numOfPages != 0 && $finishedPages == $numOfPages) {
+		$numOfPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size))->count();
+		$finishedPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size, 'end_time' => array('$exists' => 1)))->count();
+		if (static::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages) && $numOfPages != 0 && $finishedPages == $numOfPages) {
 			return true;
 		}
 		return false;
@@ -220,7 +220,7 @@ class Billrun_Billingcycle {
 		if (!self::hasCycleStarted($billrunKey, $size, $moreFields)) {
 			return false;
 		}
-		if (self::hasCycleEnded($billrunKey, $size, $moreFields)) {
+		if (self::hasCycleEnded($billrunKey, $size)) {
 			return false;
 		}
 		return true;
@@ -463,11 +463,11 @@ class Billrun_Billingcycle {
 	}
 
 	
-	public static function isBillingCycleOver($cycleCol, $stamp, $size, $zeroPages=1, $moreFields =[]){
+	public static function isBillingCycleOver($cycleCol, $stamp, $size, $zeroPages=1){
 		if (empty($zeroPages) || !Billrun_Util::IsIntegerValue($zeroPages)) {
 			$zeroPages = 1;
 		}
-		$cycleQuery = array_merge(array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0), $moreFields);
+		$cycleQuery = array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0);
 		$cycleCount = $cycleCol->query($cycleQuery)->count();
 		
 		if ($cycleCount >= $zeroPages) {
