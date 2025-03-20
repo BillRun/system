@@ -234,7 +234,7 @@ class Billrun_Billingcycle {
 	 * @param string $host - host 
 	 * @return bool - True if generated all the bills from billrun objects
 	 */
-	public static function isCycleRunningOnHost($billrunKey, $size, $host) {
+	public static function isCycleRunningOnHost($billrunKey, $host, $size) {
 		$moreFields = ['host' => $host];
 		return self::isCycleRunning($billrunKey, $size, $moreFields);
 	}
