@@ -347,16 +347,15 @@ export default class ServiceDetails extends Component {
           </FormGroup>
         }
 
-        {(['clone', 'create'].includes(mode) || (!['clone', 'create'].includes(mode) && isByCycles)) &&
+        {(['clone', 'create'].includes(mode) || (!['clone', 'create'].includes(mode))) &&
           <FormGroup>
             <Col componentClass={ControlLabel} sm={3} lg={2}>Quantitative?</Col>
             <Col sm={4} style={['clone', 'create'].includes(mode) ? { padding: '10px 15px' } : { paddingTop: 5 }}>
               <Field
                 fieldType="checkbox"
-                value={!isByCycles ? false : item.get('quantitative', '')}
+                value={item.get('quantitative', '')}
                 onChange={this.onChangeQuantitative}
                 editable={['clone', 'create'].includes(mode)}
-                disabled={!isByCycles}
               />
             </Col>
           </FormGroup>

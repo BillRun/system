@@ -105,7 +105,6 @@ const convertService = (getState, service, convertToBaseUnit, toSend) => {
     if (toSend) { // convert item before send to server
       if (itemWithMutations.getIn(['balance_period', 'type'], '') === 'custom_period') {
         itemWithMutations.setIn(['price', 0, 'to'], 1);
-        itemWithMutations.set('quantitative', false);
         itemWithMutations.set('prorated', false);
       }
       const balancePeriod = convertServiceBalancePeriodToString(itemWithMutations);
