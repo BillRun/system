@@ -1569,7 +1569,8 @@ class Billrun_DiscountManager {
 		if (!empty($eligibleLine)) {
 			$discountLine['eligible_line'] = $eligibleLine['stamp'];
 		}
-		
+
+		$discountLine = $this->addRoundingRules($discountLine, $eligibleLine, $discount);
 		if (isset($eligibleLine['tax_data'])) {
 			$discountLine['taxes'] = Billrun_Calculator_Tax_Usage::taxDataToTaxes($eligibleLine['tax_data']);
 		}
@@ -1641,5 +1642,28 @@ class Billrun_DiscountManager {
 			}
 		}
 		return (1 / $cycleDays) * $seqValue;
+	}
+
+	protected function addRoundingRules($discountLine, &$eligibleLine, $discount){
+		if (!empty($discount['rounding_rules'])) {
+			$discountLine['rounding_rules'] = $discount['rounding_rules'];
+		}
+		if(!empty($eligibleLine['rounding_rules'])){
+			$inheritRounding = Billrun_Factory::config()->getConfigValue('discounts.rounding_rules.inherit_rounding', true);
+			if($inheritRounding){
+				$discountLine['rounding_rules'] = $eligibleLine['rounding_rules']; //if exist rounding rules by itself will override it by his subject
+			}
+			$discountLine['discount_subject'] = [
+				'before_rounding' => $eligibleLine['before_rounding'],
+				'after_rounding' => [
+					'final_charge' => $eligibleLine['final_charge'],
+					'aprice' => $eligibleLine['aprice']
+				],
+				'rounding_rules' => $eligibleLine['rounding_rules']
+			];
+			unset($eligibleLine['rounding_rules']);
+			unset($eligibleLine['before_rounding']);
+		}
+		return $discountLine;
 	}
 }
