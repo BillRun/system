@@ -197,7 +197,7 @@ class Billrun_Billingcycle {
 	 * @param array $moreFields - more fields
 	 * @return bool - True if billing cycle is ended.
 	 */
-	public static function hasCycleEnded($billrunKey, $size, $moreFields = []) {
+	public static function hasCycleEnded($billrunKey, $size) {
 		$billingCycleCol = self::getBillingCycleColl();
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 		$numOfPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size))->count();
