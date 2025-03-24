@@ -22,6 +22,7 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		'$first' => '_first',
 		'$last' => '_last',
 		'$cond' => '_cond',
+		'$ifNull' => '_ifNull',
 		'$substr' => '_substr',
 		'$min' => '_min',
 		'$max' => '_max',
@@ -186,11 +187,17 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		$condition = array_shift($expression);
 		$truthValue = array_shift($expression);
 		$falseValue = array_shift($expression);
-		$expressionCheck = new Billrun_Utils_Arrayquery_Expression();
+
 		return $this->evaluate($data, Billrun_Utils_Arrayquery_Query::exists(array($data), $condition) ?  $truthValue : $falseValue, array());
 
 	}
-	
+
+	protected function _ifNull($data, $expression) {
+		$firstField =  array_shift($expression);
+		$secondField =  array_shift($expression) ;
+		$evaluateQuery = (Billrun_Utils_Arrayquery_Aggregate::getFieldValue($data ,$firstField) !== null ? $firstField : $secondField);
+		return $this->evaluate($data, $evaluateQuery );
+	}
 	//==================================== Programatic extenstions logic (Unsupported by mongo) =======================
 	
 	protected function _callback($data, $expression, $pastValue = FALSE) {
