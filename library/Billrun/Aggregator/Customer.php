@@ -1050,7 +1050,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected function getPlanNextTeirDate($planDates) {
 		$currentTime = new Mongodloid_Date($this->getCycle()->end());
 		foreach($planDates as  $planData) {
-			if($planData['to'] < $currentTime) {
+			if($planData['to'] < $currentTime || empty($planData['plan'])) {
 				continue;
 			}
 
@@ -1086,7 +1086,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @param string $var configuration variable
 	 * @param mixed  $defaultValue default value if variable not set (in both layers
 	 */
-	protected function getAggregatorConfig($var, $defaultValue) {
+	public function getAggregatorConfig($var, $defaultValue) {
 		// there is no parent -> return variable without checking parent
 		if (get_class($this) == 'Billrun_Aggregator_Customer') {
 			return $this->enrichConfig($var,Billrun_Factory::config()->getConfigValue(self::$type . '.aggregator.' . $var, $defaultValue));
