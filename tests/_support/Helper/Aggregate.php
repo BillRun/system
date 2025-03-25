@@ -25,26 +25,25 @@ public function __construct() {
       "force_accounts" => array()
   );
 
-  public function runCycle($options = []) {
-   $options = array_merge($this->defaultOptions, $options);
-   $aggregator = \Billrun_Aggregator::getInstance($options);
-   $aggregator->load();
-   $aggregator->aggregate();
-}
+   public function runCycle($options = []) {
+      $options = array_merge($this->defaultOptions, $options);
+      $aggregator = \Billrun_Aggregator::getInstance($options);
+      $aggregator->load();
+      $aggregator->aggregate();
+  }
 
-public function confirmInvoices($options = []) {
-$command = 'php public/index.php --env container --generate --type billrunToBill';
-
-foreach($options as $key => $value) {
-   if ($key === 'stamp') {
-       $command .= " --{$key} {$value}";
-   } else {
-       $command .= " {$key}={$value}";
-   }
-}
-
-$this->cli->runShellCommand($command);
-return $this->cli;
-}
-}
+  public function confirmInvoices($options = []) {
+   $command = 'php public/index.php --env container --generate --type billrunToBill';
    
+   foreach($options as $key => $value) {
+      if ($key === 'stamp') {
+          $command .= " --{$key} {$value}";
+      } else {
+          $command .= " {$key}={$value}";
+      }
+   }
+   
+   $this->cli->runShellCommand($command);
+   return $this->cli;
+   }
+   }

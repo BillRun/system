@@ -19,9 +19,6 @@ class israelInvoice extends \Helper\BillRun\Mockups\Mockup
     $a->enableCahce();
   }
 
-  
- 
-
 
   public function InvoicePluginConfiguration()
   {
