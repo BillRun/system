@@ -29,8 +29,6 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 								'mcc_mnc_field' => 'mcc_mnc'
 							  ];
 
-	protected $filesExported =[];
-
 	// Helper OOP hacks
 	protected $lastTadig = '';
 
@@ -90,8 +88,10 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 		$transactionCounter =0;
 		
 		foreach ($exportLinesByKey as $key => $values) {
+			$this->fileName = '';
 			$rows = $values['rows'] ?? [];
 			$this->tadig = $values['tadig'] ?? null;
+			$this->getFileNameForTadig($this->tadig);
 			$extraDataLog = [$this->splitFilesKey => $key];
 			if(empty($rows)){
 				$extraDataLog = array_merge($extraDataLog,['notification' => true]);
@@ -108,7 +108,9 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 			$this->fileGenerator = $this->getTadigExporter(array_merge($generatorOptions,$options));
 			$fileExported = $this->fileGenerator->export();
 			$this->created_successfully &= !empty($fileExported);
-			$exported[] = $fileExported;
+			if(file_exists($fileExported)){
+				$exported[] = $fileExported;
+			}
 			$transactionCounter += $this->fileGenerator->getTransactionsCounter();
 		}
 		$this->filesExported = $exported;
@@ -124,14 +126,15 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	protected function buildGeneratorOptions() {
         $this->fileNameParams = isset($this->config['filename_params']) ? $this->config['filename_params'] : self::DEFAULT_FILENAME_PARMS;
         $this->fileNameStructure = isset($this->config['filename']) ? $this->config['filename'] : self::DEFAULT_FILENAME;
-        //$this->fileName = $this->getFilename();
+        $this->fileName = self::DEFAULT_FILENAME;
         //$options['file_name'] = $this->fileName;
         $options['file_type'] = $this->getType();
         $options['is_test_file'] = $this->isTestFile();
         $this->localDir = $this->getFilePath();
         $options['local_dir'] = $this->localDir;
         //$options['file_path'] = $this->localDir . DIRECTORY_SEPARATOR . $this->fileName;
-        $this->rowsToExport = $this->loadRows();
+        $rows = $this->loadRows();
+				$this->rowsToExport = $this->loadExportRows($rows);
         $options['data'] = $this->rowsToExport;
         $this->headerToExport[0] = $this->getHeaderLine();
         $options['headers'] = $this->headerToExport;
@@ -164,7 +167,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	}
 
 	public function getSequenceNumber() {
-		 return $this->params['param1'];
+		 return $this->params['param1'] ?? null;
 	}
 	protected function getExportFilePath() {
 		return  $this->getFilePathForTadig($this->tadig);
@@ -181,7 +184,6 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 
 
 	protected function setTap3FileNameSttructure($tadig) {
-		$this->fileName='';
 		if( !$this->isTestFile() ) {
 			$pref = Billrun_Util::getIn($this->config,'filename_structure.prefix.prod', 'CD');
 		} else {
@@ -196,7 +198,6 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	}
 
 	protected function buildTap3Options($currentGenOptions) {
-		$this->getFileName();
 		$currentGenOptions['parent_exporter'] = $this;
 		$currentGenOptions['filename_params'] = $this->params;
 
