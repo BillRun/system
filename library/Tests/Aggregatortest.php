@@ -1056,14 +1056,23 @@ public function passthrough($key, $returnBillrun, $row) {
                 $this->message .= "no create line for this query : " . json_encode($line['query']) . $this->fail;
                 $this->assertTrue(0);
             }
-            if (!is_null($lines) && !empty($lines) && $lines[0]['aprice'] != $line['aprice']) {
-                $this->message .= "expected aprice is : " . $line['aprice'] . "actually aprice is: " . $lines[0]['aprice'] . $this->fail;
-                $this->assertTrue(0);
+            $supportTypes = ['aprice', 'final_charge'];
+            foreach($supportTypes as $type){
+                $expectedValue = Billrun_Util::getIn( $line,$type,null);
+                if (!isset($expectedValue)){
+                    continue;
+                }
+                $actualValue =  Billrun_Util::getIn($lines[0],$type,null);
+                if (!is_null($lines) && !empty($lines) && $actualValue != $expectedValue) {
+                    $this->message .= "expected $type is : " . $expectedValue . " actually $type is: " . $actualValue . $this->fail;
+                    $this->assertTrue(0);
+                }
+                if (!is_null($lines) && !empty($lines) && $actualValue == $expectedValue) {
+                    $this->message .= "expected $type is : " . $expectedValue . $this->pass;
+                    $this->assertTrue(1);
+                }
             }
-            if (!is_null($lines) && !empty($lines) && $lines[0]['aprice'] == $line['aprice']) {
-                $this->message .= "expected aprice is : " . $line['aprice'] . $this->pass;
-                $this->assertTrue(1);
-            }
+            
         }
     }
 }

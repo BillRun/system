@@ -1191,18 +1191,23 @@ class Billrun_DiscountManager {
 				if(isset($eligibilityInterval['sid'])){
 					$addToCdr['sid_cause_eligibility'] = $eligibilityInterval['sid'];
 				}
+				if ($discountAmount > 0) {
+					$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+				} else if($line['is_upfront'] && $discountAmount < 0 ) {
+					$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+				}
+				$discountAmount = $cdr['aprice'];//the new aprice after rounding 
 				if ($discountAmount >= 0  && (($discountedAmount + $discountAmount > $amountLimit) ||
-						($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) ) { // current discount reached limit
+				($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) ) { // current discount reached limit
 					$addToCdr['orig_discount_amount'] = -$discountAmount;
 					$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $this->discountedLinesAmounts[$line['stamp']]);
+					if ($discountAmount > 0) {
+						$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+					} else if($line['is_upfront'] && $discountAmount < 0 ) {
+						$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+					}
 				}
-				
-				if ($discountAmount > 0) {
-					$cdrs[] = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
-				} else if($line['is_upfront'] && $discountAmount < 0 ) {
-					$cdrs[] = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
-				}
-				
+				$cdrs[] = $cdr;
 				$discountedAmount += $discountAmount;
 				if ($discountedAmount >= $amountLimit) { // discount reached amount limit
 					return $cdrs;
@@ -1652,6 +1657,12 @@ class Billrun_DiscountManager {
 			$inheritRounding = Billrun_Factory::config()->getConfigValue('discounts.rounding_rules.inherit_rounding', true);
 			if($inheritRounding){
 				$discountLine['rounding_rules'] = $eligibleLine['rounding_rules']; //if exist rounding rules by itself will override it by his subject
+				$rounding_type = $eligibleLine['rounding_rules']['rounding_type'];
+				if ($rounding_type == 'up') {
+					$discountLine['rounding_rules']['rounding_type'] = 'down';
+				} else if ($rounding_type == 'down'){
+					$discountLine['rounding_rules']['rounding_type'] = 'up';
+				}
 			}
 			$discountLine['discount_subject'] = [
 				'before_rounding' => $eligibleLine['before_rounding'],
