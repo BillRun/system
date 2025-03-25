@@ -677,4 +677,18 @@ class BillRunAPI extends \Codeception\Module
         $ret = $rest->sendPOST("/billrun/chargeAccount", $params);
         return json_decode($ret, true);
     }
+
+    public function sendRealTimeRequest($fileType, $request)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'request' => json_encode($request),
+            'file_type' => $fileType
+        ];
+        $ret =  $rest->sendPOST("/realtime", $params);
+        return json_decode($ret, true);
+    }
 }
