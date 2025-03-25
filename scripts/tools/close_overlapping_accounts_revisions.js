@@ -1,3 +1,5 @@
+// Example: mongo <DB Name> scripts/tools/close_overlapping_accounts_revisions.js
+
 function findDifferentFields(docs) {
     if (!docs.length) return [];
 
