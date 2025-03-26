@@ -1045,6 +1045,7 @@ public function passthrough($key, $returnBillrun, $row) {
 
     public function checkPerLine($key, $returnBillrun, $row){
         $this->message .="<b>checkPerLine</b></br>";
+        $passed = true;
         foreach ($row['expected']['lines'] as $line) {
             $lines = [];
             $cursor = Billrun_Factory::db()->linesCollection()->query($line['query'])->cursor()->limit(100000);
@@ -1055,6 +1056,7 @@ public function passthrough($key, $returnBillrun, $row) {
             if (is_null($lines) || empty($lines)) {
                 $this->message .= "no create line for this query : " . json_encode($line['query']) . $this->fail;
                 $this->assertTrue(0);
+                $passed = false;
             }
             $supportTypes = ['aprice', 'final_charge'];
             foreach($supportTypes as $type){
@@ -1063,17 +1065,20 @@ public function passthrough($key, $returnBillrun, $row) {
                     continue;
                 }
                 $actualValue =  Billrun_Util::getIn($lines[0],$type,null);
-                if (!is_null($lines) && !empty($lines) && $actualValue != $expectedValue) {
-                    $this->message .= "expected $type is : " . $expectedValue . " actually $type is: " . $actualValue . $this->fail;
-                    $this->assertTrue(0);
+                if(!is_null($lines) && !empty($lines)){
+                    if($actualValue == $expectedValue){
+                        $this->message .= "expected $type is : " . $expectedValue . $this->pass;
+                        $this->assertTrue(1);
+                        $passed = true;
+                    }else{
+                        $this->message .= "expected $type is : " . $expectedValue . " actually $type is: " . $actualValue . $this->fail;
+                        $this->assertTrue(0);
+                        $passed = false;
+                    }
                 }
-                if (!is_null($lines) && !empty($lines) && $actualValue == $expectedValue) {
-                    $this->message .= "expected $type is : " . $expectedValue . $this->pass;
-                    $this->assertTrue(1);
-                }
-            }
-            
+            }   
         }
+        return $passed;
     }
 }
 
