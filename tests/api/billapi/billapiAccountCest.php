@@ -97,7 +97,6 @@ class billapiAccountCest
             'subscribers',
             [
                 'aid' => $this->accountDetails['aid'],
-                'email' => "gresw@gmail.com",
                 'payment_gateway.active.bank_code' => "12",
                 'to' => $effective_date
             ]
@@ -107,7 +106,6 @@ class billapiAccountCest
             'subscribers',
             [
                 'aid' => $this->accountDetails['aid'],
-                'email' => "gresw@gmail.com",
                 'payment_gateway.active.bank_code' => "123",
                 'from' => $effective_date
             ]
