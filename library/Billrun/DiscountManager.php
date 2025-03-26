@@ -1170,7 +1170,7 @@ class Billrun_DiscountManager {
 				$this->discountedLinesAmounts[$line['stamp']] = 0;
 			}
 			$lineQuantity = Billrun_Util::getIn($line, 'usagev', 1);
-			$lineAmountLimit = $line['aprice'];
+			$lineAmountLimit = $line['before_rounding']['aprice'] ?? $line['aprice'];
 			$lineEligibility = $this->getLineEligibility($line, $discount, $eligibility);
 			if (empty($lineEligibility)) {
 				continue;
@@ -1191,22 +1191,32 @@ class Billrun_DiscountManager {
 				if(isset($eligibilityInterval['sid'])){
 					$addToCdr['sid_cause_eligibility'] = $eligibilityInterval['sid'];
 				}
+				if ($discountAmount >= 0  && (($discountedAmount + $discountAmount > $amountLimit) ||
+						($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) ) { // current discount reached limit
+					$addToCdr['orig_discount_amount'] = -$discountAmount;
+					$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $this->discountedLinesAmounts[$line['stamp']]);
+				}
+				
 				if ($discountAmount > 0) {
 					$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
 				} else if($line['is_upfront'] && $discountAmount < 0 ) {
 					$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
 				}
-				$discountAmount = $cdr['aprice'];//the new aprice after rounding 
-				if ($discountAmount >= 0  && (($discountedAmount + $discountAmount > $amountLimit) ||
-				($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) ) { // current discount reached limit
-					$addToCdr['orig_discount_amount'] = -$discountAmount;
-					$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $this->discountedLinesAmounts[$line['stamp']]);
-					if ($discountAmount > 0) {
-						$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
-					} else if($line['is_upfront'] && $discountAmount < 0 ) {
-						$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+				
+				if(isset($line['before_rounding']['aprice'])){
+					$discountAmount = $cdr['aprice'];//the new aprice after rounding 
+					if ($discountAmount >= 0  && (($discountedAmount + $discountAmount > $amountLimit) ||
+						($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) ) { // current discount reached limit
+						$addToCdr['orig_discount_amount'] = -$discountAmount;
+						$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $this->discountedLinesAmounts[$line['stamp']]);
+						if ($discountAmount > 0) {
+							$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+						} else if($line['is_upfront'] && $discountAmount < 0 ) {
+							$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+						}
 					}
 				}
+
 				$cdrs[] = $cdr;
 				$discountedAmount += $discountAmount;
 				if ($discountedAmount >= $amountLimit) { // discount reached amount limit
