@@ -1166,6 +1166,7 @@ class Billrun_DiscountManager {
 		$amountLimit = Billrun_Util::getIn($discount, 'limit', PHP_INT_MAX);
 		
 		foreach ($lines as $line) {
+			$cdr = [];
 			if (!isset($this->discountedLinesAmounts[$line['stamp']])) {
 				$this->discountedLinesAmounts[$line['stamp']] = 0;
 			}
@@ -1216,8 +1217,9 @@ class Billrun_DiscountManager {
 						}
 					}
 				}
-
-				$cdrs[] = $cdr;
+				if(!empty($cdr)){
+					$cdrs[] = $cdr;
+				}
 				$discountedAmount += $discountAmount;
 				if ($discountedAmount >= $amountLimit) { // discount reached amount limit
 					return $cdrs;
