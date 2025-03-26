@@ -1066,7 +1066,7 @@ public function passthrough($key, $returnBillrun, $row) {
                 }
                 $actualValue =  Billrun_Util::getIn($lines[0],$type,null);
                 if(!is_null($lines) && !empty($lines)){
-                    if($actualValue == $expectedValue){
+                    if(Billrun_Util::isEqual($actualValue, $expectedValue, 0.00001)){
                         $this->message .= "expected $type is : " . $expectedValue . $this->pass;
                         $this->assertTrue(1);
                         $passed = true;
