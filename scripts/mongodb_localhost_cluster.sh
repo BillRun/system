@@ -67,7 +67,7 @@ then
 
 
 	echo "Installing mongos node"
-	mongos --quiet --configdb rsconfig/localhost:${PORT_PREFIX}21 --port ${PORT_PREFIX}17 --logpath=$INSTALLPATH/log/mongos.log --fork
+	mongos --quiet --bind_ip 10.103.0.1,127.0.0.1 --configdb rsconfig/localhost:${PORT_PREFIX}21 --port ${PORT_PREFIX}17 --logpath=$INSTALLPATH/log/mongos.log --fork
 
 	echo "Configured data nodes as shards"
 	mongo --quiet --port ${PORT_PREFIX}17 admin --eval 'sh.addShard( "rs1/localhost:'${PORT_PREFIX}'18" );'
@@ -137,7 +137,7 @@ else
 	mongo --quiet --port ${PORT_PREFIX}41 --eval 'rs.addArb("localhost:'${PORT_PREFIX}'01");'
 	echo 
 	echo "Installing mongos node"
-	mongos --quiet --configdb rsconfig/localhost:${PORT_PREFIX}21,localhost:${PORT_PREFIX}22,localhost:${PORT_PREFIX}23 --port ${PORT_PREFIX}17 --logpath=$INSTALLPATH/log/mongos.log --fork
+	mongos --quiet --bind_ip 10.103.0.1,127.0.0.1 --configdb rsconfig/localhost:${PORT_PREFIX}21,localhost:${PORT_PREFIX}22,localhost:${PORT_PREFIX}23 --port ${PORT_PREFIX}17 --logpath=$INSTALLPATH/log/mongos.log --fork
 	echo 
 	echo "Configure data nodes as shards"
 	echo "add shard 1 to cluster"
