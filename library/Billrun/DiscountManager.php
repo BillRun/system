@@ -1205,7 +1205,8 @@ class Billrun_DiscountManager {
 				}
 				
 				if(isset($line['before_rounding']['aprice'])){
-					$discountAmount = $cdr['aprice'];//the new aprice after rounding 
+					$discountAmount = abs($cdr['aprice']);//the new discount amount after rounding 
+					$lineAmountLimit = $line['aprice'];
 					if ($discountAmount >= 0  && (($discountedAmount + $discountAmount > $amountLimit) ||
 						($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) ) { // current discount reached limit
 						$addToCdr['orig_discount_amount'] = -$discountAmount;
