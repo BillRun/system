@@ -13,7 +13,91 @@ class billapiSubscriberCest
     {
     }
     
-
+    public $inputProcessor = [
+        "file_type"=> "realTime",
+        "type"=> "realtime",
+        "parser"=>
+          [
+            "type"=> "json",
+            "line_types"=> [ "H"=> "/^none$/", "D"=> "//", "T"=> "/^none$/" ],
+            "separator"=> "",
+            "structure"=>
+              [
+                [ "name"=> "sid", "checked"=> true ],
+                [ "name"=> "date", "checked"=> true ],
+                [ "name"=> "usage", "checked"=> true ],
+                [ "name"=> "rate", "checked"=> true ],
+                [ "name"=> "volume", "checked"=> true ],
+              ],
+            "csv_has_header"=> false,
+            "csv_has_footer"=> false,
+          ],
+        "processor"=>
+          [
+            "type"=> "Realtime",
+            "date_field"=> "date",
+            "default_usaget"=> "call",
+            "default_unit"=> "seconds",
+            "default_volume_src"=> ["volume"],
+          ],
+        "customer_identification_fields"=>
+          [
+            "call"=>
+              [
+                [
+                  "target_key"=> "sid",
+                  "src_key"=> "sid",
+                  "conditions"=> [[ "field"=> "usaget", "regex"=> "/.*/" ]],
+                  "clear_regex"=> "//",
+                ],
+              ],
+          ],
+        "rate_calculators"=>
+          [
+            "retail"=>
+              [
+                "call"=>
+                  [[[ "type"=> "match", "rate_key"=> "key", "line_key"=> "rate" ]]],
+              ],
+          ],
+        "pricing"=> [ "call"=> [] ],
+        "unify"=> [],
+        "enabled"=> true,
+        "filters"=> [],
+        "realtime"=> [ "postpay_charge"=> true ],
+        "response"=>
+          [
+            "encode"=> "json",
+            "fields"=>
+              [
+                [
+                  "response_field_name"=> "requestNum",
+                  "row_field_name"=> "request_num",
+                ],
+                [
+                  "response_field_name"=> "requestType",
+                  "row_field_name"=> "request_type",
+                ],
+                [
+                  "response_field_name"=> "sessionId",
+                  "row_field_name"=> "session_id",
+                ],
+                [
+                  "response_field_name"=> "returnCode",
+                  "row_field_name"=> "granted_return_code",
+                ],
+                [ "response_field_name"=> "sid", "row_field_name"=> "sid" ],
+                [
+                  "response_field_name"=> "grantedVolume",
+                  "row_field_name"=> "usagev",
+                ],
+              ],
+          ],
+        ];
+    protected function setInputProcessor(ApiTester $I, $inputProcessor)
+    {
+        $I->setSettings('file_types',$this->inputProcessor);
+    }
 
     protected function createData(ApiTester $I , $accountDetails = [], $planDetails = [], $serviceDetails = [])
     {
