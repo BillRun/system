@@ -1336,7 +1336,7 @@ abstract class Billrun_Bill {
 			array(
         '$and' => array(
             array('paid' => array('$in' => array('2', 2))),
-            array('type' => array('$ne' => 'rec'))
+            array('due' => array('$gt' => 0))
         )
     	)
 		);
@@ -1418,12 +1418,12 @@ abstract class Billrun_Bill {
                 
 		$group['$group']['total_pending_debt_valid'] = array(
 								'$sum' => array(
-												'$cond' => array(array('$eq' => array('$total_pending_debt_valid_cond', true)), '$pending_covering_amount', 0)
+												'$cond' => array(array('$eq' => array('$total_pending_debt_valid_cond', true)), array('$add' => array('$pending_covering_amount', '$left_to_pay')), 0)
 								),
 				);
 		$group['$group']['total_pending_debt_invalid'] = array(
 								'$sum' => array(
-												'$cond' => array(array('$eq' => array('$total_pending_debt_invalid_cond', true)), '$pending_covering_amount', 0)
+												'$cond' => array(array('$eq' => array('$total_pending_debt_invalid_cond', true)), array('$add' => array('$pending_covering_amount', '$left_to_pay')), 0)
 								),
 				);
                 
