@@ -717,7 +717,7 @@ abstract class Billrun_Bill {
 		}
 
 		Billrun_Factory::log()->log("Calculating balance for the accounts that were found relevant for collection", Zend_Log::DEBUG);
-		return static::getBalanceByAids($aidsQuery, true, true, true);
+		return static::getBalanceByAids($aidsQuery, true, true);
 	}
 
 	public function getDueBeforeVat() {
@@ -1309,11 +1309,10 @@ abstract class Billrun_Bill {
 	 * @param boolean $is_aids_query - true if "$aids" variable is query, true if it's a list of specific aids.
 	 * @param boolean $only_debts - true if we want to get all the accounts that are in collection, with their debts
 	 * (if they have credit balance they will not show) otherwise show also get all the accounts that are in collection that they have credit/debt
-	 * @param boolean $include_pending - true if we want to get all the accounts that are in collection include debts that are in pending. false by default to not include pending debts. 
 	 * @param $min_debt - minimum debt amount can be sent - and it will override the collection configured minimum debt
          * @return 
 	 */
-	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false, $include_pending = false, $min_debt = null) {
+	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false, $min_debt = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
 		Billrun_Factory::log()->log("Building 'rejection required' query according to the configuration", Zend_Log::DEBUG);
