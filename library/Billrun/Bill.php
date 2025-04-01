@@ -1435,7 +1435,7 @@ abstract class Billrun_Bill {
 		if ($only_debts) {			              
       $project3['$project']['total'] = array('$add'=> array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')),'$total_pending_debt_invalid'));
 			$minBalance = is_null($min_debt) ? Billrun_Factory::config()->getConfigValue('collection.settings.min_debt',  '10'): $min_debt;
-			$minBalance = floatval((empty($minBalance) ? '10' : $minBalance));
+			$minBalance = floatval((empty($minBalance) && $minBalance !== '0' ? '10' : $minBalance));
 			$match2 = array(
 				'$match' => array(
 					'total' => array(
