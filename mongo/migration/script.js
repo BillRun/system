@@ -1955,6 +1955,44 @@ runOnce(lastConfig, 'BRCD-4672', function () {
 	lastConfig['subscribers']['account']['gad_limit'] = 5000;
 });
 
+//BRCD-4827: Migration script for old to new structure of the “collection” field.
+runOnce(lastConfig, 'BRCD-4827', function () {
+	if (typeof lastConfig['collection'] !== 'undefined') {
+		var oldCollection = lastConfig['collection'];
+		var newCollection = {
+			"settings" : {
+				"run_on_holidays" : oldCollection["settings"]["run_on_holidays"],
+				"run_on_days" : oldCollection["settings"]["run_on_days"],
+				"run_on_hours" : oldCollection["settings"]["run_on_hours"],
+				"rejection_required" : oldCollection["settings"]["rejection_required"],
+			},
+			"processes": [{
+				name: "default_process",
+				label: "Default process",
+				conditions: [	
+				],
+				"settings" : {
+				},
+				"steps" : [
+				]
+			}],
+		}
+		if (typeof oldCollection["settings"]["min_debt"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["min_debt"] = oldCollection["settings"]["min_debt"];
+		}
+		if (typeof oldCollection["settings"]["change_state_url"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["change_state_url"] = oldCollection["settings"]["change_state_url"];
+		}
+		if (typeof oldCollection["settings"]["change_state_method"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["change_state_method"] = oldCollection["settings"]["change_state_method"];
+		}
+		if (typeof oldCollection["steps"] !== 'undefined') {
+			newCollection['processes'][0]["steps"]= oldCollection["steps"];
+		}
+		lastConfig['collection'] = newCollection;
+	}
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });
