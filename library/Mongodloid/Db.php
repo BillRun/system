@@ -171,4 +171,13 @@ class Mongodloid_Db {
     {
         return new Mongodloid_GridFS($this, $prefix);
     }
+
+	/**
+	 * Get the current MongoDB\Database
+	 * @return MongoDB\Database
+	 */
+	public function getDb() {
+		return $this->_db;
+	}
+
 }

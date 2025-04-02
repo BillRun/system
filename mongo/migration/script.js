@@ -1955,6 +1955,24 @@ runOnce(lastConfig, 'BRCD-4672', function () {
 	lastConfig['subscribers']['account']['gad_limit'] = 5000;
 });
 
+
+//BRCD-4422: Add job queue
+runOnce(lastConfig, 'BRCD-4422', function () {
+	_createCollection('jobs_messages');
+	_createCollection('jobs_queues');
+	db.jobs_messages.createIndex({'created': 1}, { 'unique': false, 'background': true, 'expireAfterSeconds': 16070400 });
+	db.jobs_messages.createIndex({'start_time': 1}, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'complete_time': 1}, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'handle': 1}, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'md5': 1}, { 'unique': true, 'background': true });
+	db.jobs_messages.createIndex({'queue_name': 1, 'timeout': 1, 'done': 1 }, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'body.parent': 1, }, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'body.type': 1, 'created': -1}, { 'unique': false, 'background': true });
+	if (db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos') {
+		sh.shardCollection(_dbName + ".jobs_messages", { "md5" : 1 } );
+	}
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });

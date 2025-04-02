@@ -41,6 +41,11 @@ class Mongodloid_Connection {
 				}
 			}
 		}
+		if (!empty($options['refresh'])) {
+			$this->_connected = false;
+			$this->_dbs[$db] = null;
+		}
+		
 		if (empty($this->_dbs[$db]) || !$this->_dbs[$db]) {
 			if ($user) {
 				$this->username = $user;

@@ -14,6 +14,7 @@ sh.shardCollection(_dbName + ".queue", { "stamp" : 1 } );
 if (db.version() >= "6") {
 	sh.shardCollection(_dbName + ".bills", { "aid" : "hashed" } );
 }
+sh.shardCollection(_dbName + ".jobs_messages", { "md5" : 1 } );
 //sh.shardCollection(_dbName + ".events", { "stamp" : 1 } );
 //sh.shardCollection(_dbName + ".subscribers", { "aid" : 1 } );
 //sh.shardCollection(_dbName + ".cards", { "batch_number":1, "serial_number":1 } );
