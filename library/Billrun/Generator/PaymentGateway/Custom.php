@@ -28,6 +28,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected $fileGenerator;
 	protected $billSavedFields = array();
 	protected $mandatory_fields_per_entity = [];
+    public $locked_aid = null;
     
     public function __construct($options) {
         if (!isset($options['file_type'])) {
@@ -117,6 +118,9 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             }
             if (isset($dataField['number_format'])) {
                 $dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
+            }
+            if (isset($dataField['value_mult'])) {
+                $dataLine[$dataField['path']] = floatval($dataField['value_mult']) * floatval($dataLine[$dataField['path']]);
             }
             $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
@@ -437,4 +441,40 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             }
         }
     }
+
+    public function getPgConfig() {
+        return $this->configByType;
+    }
+
+    public function setPgConfig($pg_config) {
+        return $this->configByType = $pg_config;
+    }
+
+    protected function getConflictingQuery() {
+		if (!empty($this->locked_aid)) {
+			return array(
+				'$or' => array(
+					array('filtration' => 'all'),
+					array('filtration' => array('$in' => [$this->locked_aid])),
+				),
+			);
+		}
+
+		return array();
+	}
+
+	protected function getInsertData() {
+		return array(
+			'action' => 'charge_account',
+			'filtration' => $this->locked_aid,
+		);
+	}
+
+	protected function getReleaseQuery() {
+		return array(
+			'action' => 'charge_account',
+			'filtration' => $this->locked_aid,
+			'end_time' => array('$exists' => false)
+		);
+	}
 }

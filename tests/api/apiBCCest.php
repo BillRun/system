@@ -2,7 +2,11 @@
 
 class bcCest
 {
-
+    public function _before(ApiTester $I)
+    {
+        //temp solution for the issue of the test failing (BRCD-4730)
+        sleep(1);
+    }
     public function updateRowT(ApiTester $I)
     {
         $I->sendAuthenticatedGET('/test/updaterowt?rebalance=1');

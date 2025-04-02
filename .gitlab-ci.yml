@@ -44,6 +44,12 @@ codecept:
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run all 
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php73-tests.yml down --remove-orphans
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_PROJECT_DIR/logs/container/debug.log
+      - $CI_PROJECT_DIR/tests/_output/*
+    expire_in: 1 week
 include:
   - template: Jobs/Secret-Detection.gitlab-ci.yml
 
