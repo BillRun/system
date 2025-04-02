@@ -133,141 +133,81 @@ class billapiBalanceCest
           ],$subscriberDetails)
       );
         $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];   
-        $I->generateRate(array_merge(['key' => microtime(true)*10000],$rateDetails));
+        $I->generateRate(array_merge(['tariff_category'=>'retail','key' => microtime(true)*10000],$rateDetails));
         $this->rateDetails = json_decode($I->grabResponse(), true)['entity'];
     }
-
-    public function testA(ApiTester $I): void
+    public function testGetBalance(ApiTester $I): void
     {
         $this->createData($I);
-        $I->generateSubscriber(
-            [
-                'firstname' => 'yossi_test',
-                'aid' => $this->accountDetails['aid'],
-                'plan' => $this->planDetails['name']
+        
+        // First real-time request
+        $request = [
+            'sid' => $this->subscriberDetails['sid'],
+            'date' => date('Y-m-d H:i:s'),
+            'usage' => 1,
+            'rate' => (string)$this->rateDetails['key'],
+            'volume' => 1
+        ];
+        $I->sendRealTimeRequest('realTime', $request);
+        
+        // Second real-time request (35 days later)
+        $request = [
+            'sid' => $this->subscriberDetails['sid'],
+            'date' => date('Y-m-d H:i:s', strtotime('+35 days')),
+            'usage' => 1,
+            'rate' => (string)$this->rateDetails['key'],
+            'volume' => 1
+        ];
+        $I->sendRealTimeRequest('realTime', $request);
+        
+        // Get specific balance by billapi get
+        $currentTimestamp = date('Y-m-d H:i:s');
+        $I->sendBillapiGet([
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'from' => ['$lte' => $currentTimestamp],
+            'to' => ['$gt' => $currentTimestamp]
+        ], 'balances');
+   
+        // Check response staus
+        $I->seeResponseIsJson();
+        $I->seeResponseContainsJson([
+            'status' => 1
+        ]);
+        
+        $expectedFromDate = date('Y-m-01\T00:00:00+0000'); // First day of current month
+        $expectedToDate = date('Y-m-01\T00:00:00+0000', strtotime('+1 month')); // First day of next month
+        
+        // Check that get the correct balance
+        $I->seeResponseContainsJson([
+            'details' => [
+                [
+                    'aid' => $this->accountDetails['aid'],
+                    'sid' => $this->subscriberDetails['sid'],
+                    'balance' => [
+                        'cost' => 11,
+                        'totals' => [
+                            'call' => [
+                                'cost' => 11,
+                                'count' => 1,
+                                'usagev' => 1,
+                                'out_group' => [
+                                    'usagev' => 1
+                                ]
+                            ]
+                        ]
+                    ],
+                    'connection_type' => 'postpaid',
+                    'plan_description' => 'plan',
+                    'from' => $expectedFromDate,
+                    'to' => $expectedToDate
+                ]
             ]
-        );
+        ]);
+        // Check the details array length is 1 ,  validate the response contains only one balance object
+        $details = json_decode($I->grabResponse(), true)['details'];
+        $I->assertCount(1, $details);
      
     }
-
-
-    // public function testSubscriberPermanentchangePush(ApiTester $I)
-    // {
-    //     $this->createData($I);
-    //     $I->generateSubscriber(
-    //         [
-    //             'firstname' => 'yossi_test',
-    //             'aid' => $this->accountDetails['aid'],
-    //             'plan' => $this->planDetails['name']
-    //         ]
-    //     );
-    //     $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-    //     $effective_date = $from = date('Y-m-d H:i:s', strtotime('+1 day'));
-    //     $options = [
-    //         "push_fields" => [
-    //             [
-    //                 "field_name" => "services",
-    //                 "field_values" => [
-    //                     [
-    //                         "name" => $this->serviceDetails['name'],
-    //                         "from" => $from
-    //                     ]
-    //                 ]
-    //             ]
-    //         ]
-    //     ];
-    //     $query =["type"=>"subscriber","sid"=>$this->subscriberDetails['sid'],"effective_date"=> $effective_date];
-    //     $update = ['from'=> $from];
-    //     $I->sendBillapiPermanentchange('subscribers',$query,$update,$options);
-    //     $a = $I->grabResponse();
-    //     //in permanentchange cases the validation only the status is 1 until resolved BRCD-4744
-    //     $I->seeResponseContains('{"status":1'); 
-    
-        
-    // }
-    // public function testCloseSubscriber(ApiTester $I)
-    // {
-    //     $this->createData($I);
-    //     $I->generateSubscriber(
-    //         [
-    //             'firstname' => 'yossi_test',
-    //             'aid' => $this->accountDetails['aid'],
-    //             'plan' => $this->planDetails['name']
-    //         ]
-    //     );
-    //     $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-    //     $I->sendBillapiClose('subscribers',['_id'=>$this->subscriberDetails['_id']['$id']],['to'=>date('Y-m-d', strtotime('+1 day'))]);
-    //     $I->seeResponseIsJson();
-    //     $I->seeResponseContains('{"status":1');
-    //     //check the close date
-    //     $a = $I->grabDataFromResponseByJsonPath('$.entity.to.sec');
-    //     $I->assertEquals($a[0],strtotime(date('Y-m-d', strtotime('+1 day'))));
-    // }
-  
-    // public function testReopenSubscriber(ApiTester $I)
-    // {
-    //     $this->createData($I);
-    //     $I->generateSubscriber(
-    //         [
-    //             'from'=>'2024-01-01',
-    //             'to'=>'2025-01-01',
-    //             'firstname' => 'yossi_test',
-    //             'aid' => $this->accountDetails['aid'],
-    //             'plan' => $this->planDetails['name']
-    //         ]
-    //     );
-    //     $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-    //     $I->sendBillapiReopen('subscribers',['_id'=>$this->subscriberDetails['_id']['$id']],['from'=>date('Y-m-d', strtotime('+1 year'))]);
-    //     $I->seeResponseIsJson();
-    //     $I->seeResponseContains('{"status":1');
-    //     //check the reopen date
-    //     $a = $I->grabDataFromResponseByJsonPath('$.entity.from.sec');
-    //     $I->assertEquals($a[0],strtotime(date('Y-m-d', strtotime('+1 year'))));
-    // }
-
-
-    // public function testUniquegetSubscriber(ApiTester $I)
-    // {
-    //     $this->createData($I);
-    //     $I->generateSubscriber(
-    //         [
-    //             'from'=>'2024-01-01',
-    //             'firstname' => 'yossi_test',
-    //             'aid' => $this->accountDetails['aid'],
-    //             'plan' => $this->planDetails['name']
-    //         ]
-    //     );
-    //     $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-    //     $I->sendBillapiUniqueget(['sid'=>$this->subscriberDetails['sid'],'aid'=>$this->accountDetails['aid']],'subscribers');
-    //     $I->seeResponseIsJson();
-    //     $I->seeResponseContains('{"status":1');
-    //         $I->seeResponseContainsJson([
-    //             'firstname' => 'yossi_test',
-    //             'aid' => $this->accountDetails['aid'],
-    //             'sid' => $this->subscriberDetails['sid'],
-    //             'plan' => $this->planDetails['name'],
-    //             'services' => []
-    //         ]);
-        
-    // }
-
-    // public function tesUpdateSubscriber(ApiTester $I)
-    // {
-    //     $this->createData($I);
-    //     $I->generateSubscriber(
-    //         [
-    //             'from'=>'2024-01-01',
-    //             'firstname' => 'barkuni',
-    //             'aid' => $this->accountDetails['aid'],
-    //             'plan' => $this->planDetails['name']
-    //         ]
-    //     );
-    //     $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-    //     $I->sendBillapiUpdate('subscribers',['_id'=>$this->subscriberDetails['_id']['$id']],['firstname'=>'eviatar']);
-    //     $I->seeResponseIsJson();
-    //     $I->seeResponseContains('{"status":1');
-    //     $I->seeResponseContainsJson(['firstname' => 'eviatar']);       
-    // }
-
-
+   
 }
