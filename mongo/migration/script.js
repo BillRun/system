@@ -1973,19 +1973,19 @@ runOnce(lastConfig, 'BRCD-4827', function () {
 		}
 		if (typeof oldCollection["settings"]["min_debt"] !== 'undefined') {
 			newCollection['processes'][0]["settings"]["min_debt"] = oldCollection["settings"]["min_debt"];
+			delete( oldCollection["settings"]["min_debt"]);
 		}
 		if (typeof oldCollection["settings"]["change_state_url"] !== 'undefined') {
 			newCollection['processes'][0]["settings"]["change_state_url"] = oldCollection["settings"]["change_state_url"];
+			delete( oldCollection["settings"]["change_state_url"]);
 		}
 		if (typeof oldCollection["settings"]["change_state_method"] !== 'undefined') {
 			newCollection['processes'][0]["settings"]["change_state_method"] = oldCollection["settings"]["change_state_method"];
+			delete( oldCollection["settings"]["change_state_method"]);
 		}
 		if (typeof oldCollection["steps"] !== 'undefined') {
 			newCollection['processes'][0]["steps"]= oldCollection["steps"];
 		}
-		delete( oldCollection["settings"]["min_debt"]);
-		delete( oldCollection["settings"]["change_state_url"]);
-		delete( oldCollection["settings"]["change_state_method"]);
 		newCollection["settings"] = oldCollection["settings"];
 
 		lastConfig['collection'] = newCollection;
