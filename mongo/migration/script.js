@@ -1960,12 +1960,6 @@ runOnce(lastConfig, 'BRCD-4827', function () {
 	if (typeof lastConfig['collection'] !== 'undefined') {
 		var oldCollection = lastConfig['collection'];
 		var newCollection = {
-			"settings" : {
-				"run_on_holidays" : oldCollection["settings"]["run_on_holidays"],
-				"run_on_days" : oldCollection["settings"]["run_on_days"],
-				"run_on_hours" : oldCollection["settings"]["run_on_hours"],
-				"rejection_required" : oldCollection["settings"]["rejection_required"],
-			},
 			"processes": [{
 				name: "default_process",
 				label: "Default process",
@@ -1989,6 +1983,11 @@ runOnce(lastConfig, 'BRCD-4827', function () {
 		if (typeof oldCollection["steps"] !== 'undefined') {
 			newCollection['processes'][0]["steps"]= oldCollection["steps"];
 		}
+		delete( oldCollection["settings"]["min_debt"]);
+		delete( oldCollection["settings"]["change_state_url"]);
+		delete( oldCollection["settings"]["change_state_method"]);
+		newCollection["settings"] = oldCollection["settings"];
+
 		lastConfig['collection'] = newCollection;
 	}
 });
