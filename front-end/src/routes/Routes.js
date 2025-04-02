@@ -155,7 +155,7 @@ const routes = () => (
         <Route path="/settings" component={Authentication(Settings)} title="General Settings" />
         <Route path="/payment_gateways" component={Authentication(PaymentGateways)} title="Payment Gateways" />
         <Route path="/select_input_processor_template" component={Authentication(SelectTemplate)} title="Create New Input Processor" />
-        <Route path="/collections" component={Authentication(Collections)} title="Collection" />
+        <Route path="/collections" component={Authentication(Collections)} title="Dunning" />
         <Route path="/invoice-template" component={Authentication(InvoiceTemplate)} title="Invoice Template" />
         <Route path="/audit-trail" component={Authentication(AuditTrail)} title="Audit Trail" />
         <Route path="/custom_fields" component={Authentication(CustomFields)} title="Custom Fields" />
