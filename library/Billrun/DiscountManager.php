@@ -1166,11 +1166,12 @@ class Billrun_DiscountManager {
 		$amountLimit = Billrun_Util::getIn($discount, 'limit', PHP_INT_MAX);
 		
 		foreach ($lines as $line) {
+			$cdr = [];
 			if (!isset($this->discountedLinesAmounts[$line['stamp']])) {
 				$this->discountedLinesAmounts[$line['stamp']] = 0;
 			}
 			$lineQuantity = Billrun_Util::getIn($line, 'usagev', 1);
-			$lineAmountLimit = $line['aprice'];
+			$lineAmountLimit = $line['before_rounding']['aprice'] ?? $line['aprice'];
 			$lineEligibility = $this->getLineEligibility($line, $discount, $eligibility);
 			if (empty($lineEligibility)) {
 				continue;
@@ -1198,11 +1199,28 @@ class Billrun_DiscountManager {
 				}
 				
 				if ($discountAmount > 0) {
-					$cdrs[] = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+					$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
 				} else if($line['is_upfront'] && $discountAmount < 0 ) {
-					$cdrs[] = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+					$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
 				}
 				
+				if(isset($line['before_rounding']['aprice'])){
+					$discountAmount = abs($cdr['aprice']);//the new discount amount after rounding 
+					$lineAmountLimit = $line['aprice'];
+					if ($discountAmount >= 0  && (($discountedAmount + $discountAmount > $amountLimit) ||
+						($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) ) { // current discount reached limit
+						$addToCdr['orig_discount_amount'] = -$discountAmount;
+						$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $this->discountedLinesAmounts[$line['stamp']]);
+						if ($discountAmount > 0) {
+							$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+						} else if($line['is_upfront'] && $discountAmount < 0 ) {
+							$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+						}
+					}
+				}
+				if(!empty($cdr)){
+					$cdrs[] = $cdr;
+				}
 				$discountedAmount += $discountAmount;
 				if ($discountedAmount >= $amountLimit) { // discount reached amount limit
 					return $cdrs;
@@ -1569,7 +1587,8 @@ class Billrun_DiscountManager {
 		if (!empty($eligibleLine)) {
 			$discountLine['eligible_line'] = $eligibleLine['stamp'];
 		}
-		
+
+		$discountLine = $this->addRoundingRules($discountLine, $eligibleLine, $discount);
 		if (isset($eligibleLine['tax_data'])) {
 			$discountLine['taxes'] = Billrun_Calculator_Tax_Usage::taxDataToTaxes($eligibleLine['tax_data']);
 		}
@@ -1641,5 +1660,32 @@ class Billrun_DiscountManager {
 			}
 		}
 		return (1 / $cycleDays) * $seqValue;
+	}
+
+	protected function addRoundingRules($discountLine, $eligibleLine, $discount){
+		if (!empty($discount['rounding_rules'])) {
+			$discountLine['rounding_rules'] = $discount['rounding_rules'];
+		}
+		if(!empty($eligibleLine['rounding_rules'])){
+			$inheritRounding = Billrun_Factory::config()->getConfigValue('discounts.rounding_rules.inherit_rounding', true);
+			if($inheritRounding){
+				$discountLine['rounding_rules'] = $eligibleLine['rounding_rules']; //if exist rounding rules by itself will override it by his subject
+				$rounding_type = $eligibleLine['rounding_rules']['rounding_type'];
+				if ($rounding_type == 'up') {
+					$discountLine['rounding_rules']['rounding_type'] = 'down';
+				} else if ($rounding_type == 'down'){
+					$discountLine['rounding_rules']['rounding_type'] = 'up';
+				}
+			}
+			$discountLine['discount_subject'] = [
+				'before_rounding' => $eligibleLine['before_rounding'],
+				'after_rounding' => [
+					'final_charge' => $eligibleLine['final_charge'],
+					'aprice' => $eligibleLine['aprice']
+				],
+				'rounding_rules' => $eligibleLine['rounding_rules']
+			];
+		}
+		return $discountLine;
 	}
 }
