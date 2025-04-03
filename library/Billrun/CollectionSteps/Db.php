@@ -127,8 +127,10 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		}
 	}
 
-	public function removeCollectionSteps($aid) {
+	public function removeCollectionSteps($aid, $process) {
+		$processName = $process ['name'] ?? null;
 		$query = array(
+			'process_name' => $processName,
 			'extra_params.aid' => $aid,
 			'notify_time' => array('$exists' => false)
 		);
@@ -204,12 +206,12 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 
 	}
 	
-	public function runCollectionStateChange($aids, $in = true, $processIndex) {
+	public function runCollectionStateChange($aids, $in = true, $process) {
 		if (empty($aids)) {
 			return true;
 		}
-		$url = Billrun_Factory::config()->getConfigValue('collection.processes.'. $processIndex .'.settings.change_state_url', '');
-		$method = Billrun_Factory::config()->getConfigValue('collection.processes.'. $processIndex .'.settings.change_state_method', 'POST');
+		$url = $process['settings']['change_state_url'] ?? '';
+		$method = $process['settings']['change_state_method'] ?? 'POST';
 		$step = array(
 			'step_code' => "collection state change",
 			'step_type' => "httpnoack",
@@ -220,6 +222,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 			'extra_params'=> array(
 				'state' => $in ? 'in_collection' : 'out_of_collection',
 				'aids' => $aids,
+				'process_name' => $process['name'] ?? ''
 			),
 			'creation_time' => date('c')
 		);

@@ -24,9 +24,10 @@ class Billrun_Collection extends Billrun_Base {
 		$markedAsInCollection = [];
 		$reallyInCollection = [];
 		foreach ($processes as $process){
-			$conditions = $process['conditions']['account']['fields'] ?? [];
+			$conditions = $process['conditions'][0]['account']['fields'] ?? [];
 			$processMinDebt = floatval($process['settings']['min_debt'] ?? '10');
-			$accountsInConditions = $account->loadAccountsForQuery($conditions);
+			$query = Billrun_Account::convertConditionsToAccountQuery($conditions);
+			$accountsInConditions = $account->loadAccountsForQuery($query);
 			foreach ($accountsInConditions as $accountInConditions){
 				$aid = $accountInConditions->get('aid');
 				if($accountInConditions['in_collection'] == true ){
@@ -46,12 +47,12 @@ class Billrun_Collection extends Billrun_Base {
 				$updateCollectionStateChanged['out_of_collection'] = array_diff_key($markedAsInCollection, $reallyInCollection);
 			}
 			Billrun_Factory::log()->log("Updating crm if needed", Zend_Log::DEBUG);
-			$result[$process['name']] = $account->updateCrmInCollection($updateCollectionStateChanged, $process);
+			$result[$process['label']] = $account->updateCrmInCollection($updateCollectionStateChanged, $process);
 		}
 		return $result;
 	}
 	protected function getMinDebtOfAllProcesses($processes){
-		$minDebt = floatval($process[0]['settings']['min_debt'] ?? '10');
+		$minDebt = floatval($processes[0]['settings']['min_debt'] ?? '10');
 		if(!isset($minDebt)){
 			return $minDebt;
 		}

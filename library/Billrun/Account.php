@@ -305,7 +305,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * method to update account collection status
 	 */
 	public function updateCrmInCollection($updateCollectionStateChanged, $process) {
-		Billrun_Factory::log()->log("Updating crm with collection information of process " . $process['name'], Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Updating crm with collection information of process: " . $process['label'], Zend_Log::DEBUG);
 		$collectionSteps = Billrun_Factory::collectionSteps();
 		$result = array('in_collection' => array(), 'out_of_collection' => array());
 
@@ -339,7 +339,7 @@ abstract class Billrun_Account extends Billrun_Base {
 				if ($this->loadAccountForQuery($params)) {
 					$remove_values = array('in_collection', 'in_collection_from');
 					Billrun_Factory::log()->log("Removing collection steps for account " . $aid, Zend_Log::DEBUG);
-					$collectionSteps->removeCollectionSteps($aid);
+					$collectionSteps->removeCollectionSteps($aid, $process);
 					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew(array(), $remove_values)) {
 						$result['out_of_collection'][] = $aid;
@@ -414,5 +414,12 @@ abstract class Billrun_Account extends Billrun_Base {
 			return $rejection_query; // clients hack in order to avoid wrong `aid` merge in the next line in case of an aid specific call. Actually a workaround for https://billrun.atlassian.net/browse/BRCD-4180
 		}
 		return array_merge_recursive($rejection_query, $account_query);
+	}
+	public static function convertConditionsToAccountQuery($conditions){
+		$query = [];
+		foreach ($conditions as $condition) {
+			$query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];
+		}
+		return $query;
 	}
 }
