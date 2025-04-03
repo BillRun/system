@@ -77,14 +77,27 @@ class BillrunController extends ApiController {
 			Billrun_Factory::log("Rerunning cycle " . $billrunKey, Zend_Log::DEBUG);
 			Billrun_Billingcycle::removeBeforeRerun($billrunKey, $invoicingDay);
 		}
-
-		$success = self::processCycle($billrunKey, $generatedPdf, $invoicingDay);
-		Billrun_Factory::log("Finished running cycle " . $billrunKey, Zend_Log::DEBUG);
-		$output = array (
-			'status' => $success ? 1 : 0,
-			'desc' => $success ? 'success' : 'error',
-			'details' => array(),
-		);
+		if (Billrun_Jobsmanager::getInstance()->isWorkerEnabled()) {
+			$jobSettings = [
+				'billrun_key' => $billrunKey,
+				'generate_pdf' => filter_var($generatedPdf, FILTER_VALIDATE_BOOLEAN)
+			];
+			$schedule = $request->get('schedule');
+			$message = Billrun_Jobsmanager::getInstance()->push('Cycle', $jobSettings, null, $schedule);
+			$output = array (
+				'status' => 1,
+				'desc' => 'success',
+				'details' => $message,
+			);
+		} else {
+			$success = self::processCycle($billrunKey, $generatedPdf, $invoicingDay);
+			Billrun_Factory::log("Finished running cycle " . $billrunKey, Zend_Log::DEBUG);
+			$output = array (
+				'status' => $success ? 1 : 0,
+				'desc' => $success ? 'success' : 'error',
+				'details' => array(),
+			);
+		}
 		$this->setOutput(array($output));
 	}
 	
@@ -157,10 +170,22 @@ class BillrunController extends ApiController {
 			return $this->setError("Can't confirm invoices while the billing cycle run is ongoing", $request);
 		}
 		if (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices)) {
-			if (is_null($invoices)) {
-				$success = self::processConfirmCycle($billrunKey, [], [$invoicingDay]);
+			if (Billrun_Jobsmanager::getInstance()->isWorkerEnabled()) {
+				$jobSettings = [
+					'billrun_key' => $billrunKey,
+				];
+				if (!is_null($invoices)) {
+					$jobSettings['include_invoices'] = array_diff(Billrun_util::verify_array($invoicesId, 'int'), array(0));
+				}
+				$schedule = $request->get('schedule');
+				$message = Billrun_Jobsmanager::getInstance()->push('Confirm', $jobSettings, null, $schedule);
+				$success = $message ? 1 : 0;
 			} else {
-				$success = self::processConfirmCycle($billrunKey, $invoicesId, $invoicingDay);
+				if (is_null($invoices)) {
+					$success = self::processConfirmCycle($billrunKey, [], [$invoicingDay]);
+				} else {
+					$success = self::processConfirmCycle($billrunKey, $invoicesId, $invoicingDay);
+				}
 			}
 		} else {
 			return $this->setError("Cycle was confirmed already, or no invoices were found to confirm", $request);
@@ -354,6 +379,16 @@ class BillrunController extends ApiController {
 		$setting['generate_pdf'] = Billrun_Factory::config()->getConfigValue('billrun.generate_pdf');
 		if (!empty($invoicingDay)) {
 			$setting['invoicing_day'] = $invoicingDay;
+		}
+		$entry = Billrun_Billingcycle::getCycleDetails($billrunKey, $invoicingDay);
+		if (!empty($entry['job_md5'])) {
+			$setting['job_md5'] = $entry['job_md5'];
+			$setting['entry'] = $entry->getRawData();
+			if ($entry['count'] > 0) {
+				$setting['completion_percentage'] = round(min($entry['completed'] / $entry['count'], 1) * 100, 2); // min in case complete is more than count
+			} else {
+				$setting['completion_percentage'] = 100;
+			}
 		}
 		$output = array(
 			'status' => !empty($setting) ? 1 : 0,

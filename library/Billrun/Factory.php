@@ -147,6 +147,13 @@ class Billrun_Factory {
 	protected static $collection;
 
 	/**
+	 * Collection instance
+	 * 
+	 * @var Billrun_Billrun Collection
+	 */
+	protected static $queues;
+
+	/**
 	 * method to retrieve the log instance
 	 * 
 	 * @param string [Optional] $message message to log
@@ -191,11 +198,17 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Db
 	 */
-	static public function db(array $options = array()) {
+	static public function db(array $options = array(), $refresh = false) {
 		$stamp = md5(serialize($options)); // unique stamp per db connection
+		if ($refresh) {
+			self::$db[$stamp] = null;
+		}
 		if (!isset(self::$db[$stamp])) {
 			if (empty($options)) { // get the db settings from config
 				$options = Billrun_Factory::config()->getConfigValue('db');
+			}
+			if ($refresh) {
+				$options['options']['refresh'] = true;
 			}
 			self::$db[$stamp] = Billrun_Db::getInstance($options);
 		}
@@ -604,6 +617,32 @@ class Billrun_Factory {
 //			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\UserCredentials($storage));
 		}
 		return self::$oauth2[$stamp];
+	}
+	
+	/**
+	 * method to receive jobs queue
+	 * 
+	 * @param string $name name of the queue; default name is jobs
+	 * 
+	 * @return Zend_Queue
+	 */
+	public static function queue($name = null, $timeout = null) {
+		if (empty($name)) {
+			$name = 'jobs';
+		}
+		if (!isset(self::$queues[$name])) {
+			$options = array(
+				'db' => Billrun_Factory::db()->getDb(),
+				'queueCollection' => Billrun_Factory::db()->getCollection($name . '_queues')->getMongoCollection(),
+				'messageCollection' => Billrun_Factory::db()->getCollection($name . '_messages')->getMongoCollection(),
+				'name' => $name,
+				'timeout' => $timeout,
+			);
+			self::$queues[$name] = new Zend_Queue('mongodb', $options);
+		} elseif (!empty($timeout)) {
+			self::$queues[$name]->setOption('timeout', $timeout);
+		}
+		return self::$queues[$name];
 	}
 
 
