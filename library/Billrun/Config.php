@@ -285,11 +285,24 @@ class Billrun_Config {
 		return $currConf;
 	}
 
-	public function setConfigValue($keys, $val) {
-		$config = $this->config->toArray();
-		Billrun_Util::setIn($config, $keys, $val);
-		$this->config = new Yaf_Config_Simple($config);
-	}
+ /**
+  * Sets a value in the configuration at the specified path
+  * 
+  * This method updates the configuration by setting a value at the specified key path.
+  * It converts the current configuration to an array, creates a new array with the 
+  * specified value, and then merges them together.
+  * 
+  * @param mixed $keys String with dot notation or array representing the path to the config value
+  * @param mixed $val The value to set at the specified path
+  * 
+  * @return void
+  */
+  public function setConfigValue($keys, $val) {
+    $config = $this->config->toArray();
+    $importantConf = [];
+    Billrun_Util::setIn($importantConf, $keys, $val);
+    $this->config = new Yaf_Config_Simple(self::mergeConfigs($config, $importantConf));
+}
 
 	/**
 	 * Return a wrapper for input data.

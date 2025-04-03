@@ -16,7 +16,7 @@ class limitBillrunTest extends \Codeception\Test\Unit
     protected function _after()
     {
     }
-     
+    
 
     protected function createTestData($account =[],$subscriber =[],$plan =[],$numOfSubscriber=1){
         $this->tester->generatePlan($plan);
@@ -68,7 +68,7 @@ class limitBillrunTest extends \Codeception\Test\Unit
     {
         $stamp = Billrun_Billrun::getActiveBillrun();
        \Billrun_Factory::config()->setConfigValue('billrun.save_to_file_subs_limit', 1);
-       $data =  $this->createTestData([],[],['name' => 'PLAN_B'.time(), "price" => [
+       $data =  $this->createTestData([],[],[ "price" => [
             [
                 "price" => 100,
                 "from" => 0,
@@ -85,7 +85,7 @@ class limitBillrunTest extends \Codeception\Test\Unit
     {
         $stamp = Billrun_Billrun::getActiveBillrun();
        \Billrun_Factory::config()->setConfigValue('billrun.save_to_file_subs_limit', 2);
-       $data =  $this->createTestData([],[],['name' => 'PLAN_B'.time(), "price" => [
+       $data =  $this->createTestData([],[],["price" => [
             [
                 "price" => 100,
                 "from" => 0,

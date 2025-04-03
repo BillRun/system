@@ -393,7 +393,7 @@ class BillRunAPI extends \Codeception\Module
                 ]
             ],
             "from" => "2024-02-02",
-            "name" => "PLAN",
+            "name" => "PLAN".time().rand()*2000000,
             "tax" => [
                 [
                     "type" => "vat",
