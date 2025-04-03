@@ -304,8 +304,8 @@ abstract class Billrun_Account extends Billrun_Base {
 	/**
 	 * method to update account collection status
 	 */
-	public function updateCrmInCollection($updateCollectionStateChanged) {
-		Billrun_Factory::log()->log("Updating crm with collection information", Zend_Log::DEBUG);
+	public function updateCrmInCollection($updateCollectionStateChanged, $process) {
+		Billrun_Factory::log()->log("Updating crm with collection information of process " . $process['name'], Zend_Log::DEBUG);
 		$collectionSteps = Billrun_Factory::collectionSteps();
 		$result = array('in_collection' => array(), 'out_of_collection' => array());
 
@@ -319,7 +319,7 @@ abstract class Billrun_Account extends Billrun_Base {
 					Billrun_Factory::log()->log("Creating account " . $aid . " new collection values", Zend_Log::DEBUG);
 					$new_values = array('in_collection' => true, 'in_collection_from' => new Mongodloid_Date());
 					Billrun_Factory::log()->log("Creating collection steps for account " . $aid, Zend_Log::DEBUG);
-					$collectionSteps->createCollectionSteps($aid);
+					$collectionSteps->createCollectionSteps($aid, $process);
 					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew($new_values)) {
 						$result['in_collection'][] = $aid;
@@ -350,8 +350,8 @@ abstract class Billrun_Account extends Billrun_Base {
 			}
 		}
 		Billrun_Factory::log()->log("Running 'collection state changed', for both in_collection and out_of_collection states", Zend_Log::DEBUG);
-		$collectionSteps->runCollectionStateChange($result['in_collection'], true);
-		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false);
+		$collectionSteps->runCollectionStateChange($result['in_collection'], true, $process);
+		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false, $process);
 		return $result;
 	}
 	
