@@ -1962,6 +1962,7 @@ runOnce(lastConfig, 'BRCD-4422', function () {
 	_createCollection('jobs_queues');
 	db.jobs_messages.createIndex({'created': 1}, { 'unique': false, 'background': true, 'expireAfterSeconds': 16070400 });
 	db.jobs_messages.createIndex({'start_time': 1}, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'timeout': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'complete_time': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'handle': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'md5': 1}, { 'unique': true, 'background': true });

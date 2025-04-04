@@ -14,7 +14,7 @@
  */
 abstract class Billrun_Job_Abstract {
 
-	protected $name = 'job';
+	protected $name = 'Job';
 	
 	/**
 	 * the message queue
@@ -35,11 +35,20 @@ abstract class Billrun_Job_Abstract {
 	 * @var mixed
 	 */
 	protected $data;
+	
+	/**
+	 * parent md5 if this is a child job
+	 * @var string
+	 */
+	protected $parent;
 
 	public function __construct(Zend_Queue_Message $queueMsg) {
 		$this->queueMsg = $queueMsg;
 		if (isset($queueMsg->body['config'])) {
 			$this->config = Mongodloid_Result::getResult($queueMsg->body['config']);
+		}
+		if (isset($queueMsg->body['parent'])) {
+			$this->parent = $queueMsg->body['parent'];
 		}
 	}
 	

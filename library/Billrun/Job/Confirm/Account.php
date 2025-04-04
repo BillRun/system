@@ -14,7 +14,7 @@
  */
 class Billrun_Job_Confirm_Account extends Billrun_Job_Abstract {
 
-	protected $method = 'confirm_account';
+	protected $method = 'Confirm_Account';
 
 	public function run() {
 		Billrun_Factory::log("confirm cycle start for " . ($this->config['aid'] ?? ''));

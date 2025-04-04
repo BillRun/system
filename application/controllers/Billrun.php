@@ -386,8 +386,10 @@ class BillrunController extends ApiController {
 			$setting['entry'] = $entry->getRawData();
 			if ($entry['count'] > 0) {
 				$setting['completion_percentage'] = round(min($entry['completed'] / $entry['count'], 1) * 100, 2); // min in case complete is more than count
-			} else {
+			} else if (isset($entry['zero_pages']) && $entry['zero_pages'] > 0) {
 				$setting['completion_percentage'] = 100;
+			} else {
+				$setting['completion_percentage'] = 0;
 			}
 		}
 		$output = array(

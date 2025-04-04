@@ -14,21 +14,35 @@
  */
 class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
 
-	protected $method = 'cycle_account';
+	protected $method = 'Cycle_Account';
 
+	protected $billrun_key;
+	
+	protected $invoicing_day = false;
+	
+	public function init($params) {
+		parent::init($params);
+		if (isset($params['billrun_key'])) {
+			$this->billrun_key = $params['billrun_key'];
+		} else if ($this->config['billrun_key']) {
+			$this->billrun_key = $this->config['billrun_key'];
+		}
+		if (!empty($this->config['invoicing_day'])) {
+			$this->invoicing_day = $this->config['invoicing_day'];
+		}
+		return true;
+	}
+	
 	public function run() {
 		Billrun_Factory::log("cycle account start for " . ($this->config['aid'] ?? ''));
 		$options = [
 			'type' => 'customer',
-			'stamp' => $this->config['billrun_key'],
+			'stamp' => $this->billrun_key,
 			'page' => 0,
 			'size' => 1,
 			'force_accounts' => $this->config['aid'],
 		];
 		
-		if (!empty($this->config['invoicing_day'])) {
-			$options['invoicing_day'] = $this->config['invoicing_day'];
-		}
 
 		if (!empty($this->config['generate_pdf'])) {
 			$options['generate_pdf'] = $this->config['generate_pdf'];
@@ -44,7 +58,13 @@ class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
 	public function markCompleted() {
 		$ret = parent::markCompleted();
 		$coll = Billrun_Factory::db()->billing_cycleCollection();
-		$query = ['billrun_key' => $this->config['billrun_key']];
+		$query = [
+			'billrun_key' => $this->billrun_key,
+			'page_number' => 0,
+		];
+		if ($this->invoicing_day) {
+			$query['invoicing_day'] = $this->invoicing_day;
+		}
 		$set = [
 			'$inc' => [
 				'completed' => 1
