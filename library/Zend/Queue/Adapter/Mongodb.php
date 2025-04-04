@@ -208,7 +208,14 @@ class Zend_Queue_Adapter_Mongodb extends Zend_Queue_Adapter_AdapterAbstract {
 					'timeout' => new MongoDB\BSON\UTCDateTime(($microtime+$timeout) * 1000),
 				]
 			];
-			$options = ['returnDocument' => \MongoDB\Operation\FindOneAndUpdate::RETURN_DOCUMENT_AFTER, 'upsert' => false];
+			$sort = [
+				'created' => 1,
+			];
+			$options = [
+				'returnDocument' => \MongoDB\Operation\FindOneAndUpdate::RETURN_DOCUMENT_AFTER, 
+				'upsert' => false,
+				'sort' => $sort,
+			];
 			$result = $this->messageCollection->findOneAndUpdate($query, $update, $options);
 			if (empty($result)) {
 				// no more msgs in the queue

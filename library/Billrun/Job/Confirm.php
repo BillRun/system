@@ -14,7 +14,7 @@
  */
 class Billrun_Job_Confirm extends Billrun_Job_Abstract {
 
-	protected $method = 'confirm';
+	protected $method = 'Confirm';
 	
 	public function fetch() {
 		

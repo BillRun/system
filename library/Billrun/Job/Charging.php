@@ -14,7 +14,7 @@
  */
 class Billrun_Job_Charging extends Billrun_Job_Abstract {
 
-	protected $method = 'charging';
+	protected $method = 'Charging';
 	
 	public function fetch() {
 		$pipeline = array();
