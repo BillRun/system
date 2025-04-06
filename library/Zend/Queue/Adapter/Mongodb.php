@@ -4,8 +4,22 @@ require_once 'Zend/Queue/Adapter/AdapterAbstract.php';
 
 class Zend_Queue_Adapter_Mongodb extends Zend_Queue_Adapter_AdapterAbstract {
 
+	/**
+	 * the db
+	 * @var MongoDB\Db
+	 */
 	protected $db;
+	
+	/**
+	 * the queue collection
+	 * @var MongoDB\Collection
+	 */
 	protected $queueCollection;
+	
+	/**
+	 * the message collection
+	 * @var MongoDB\Collection
+	 */
 	protected $messageCollection;
 
 	/**

@@ -116,7 +116,7 @@ class Billrun_Job_Charging extends Billrun_Job_Abstract {
 		foreach ($this->data as $entry) {
 			$jobSettings['aid'] = $entry['aid'];
 			Billrun_Factory::log("Going to create job charging account " . $entry['aid']);
-			Billrun_Jobsmanager::getInstance($this->queueMsg->getQueue())->push('Charging_Account', $jobSettings, $parent);
+			Billrun_Jobsmanager::getInstance()->push('Charging_Account', $jobSettings, $parent);
 			$count++;
 		}
 		Billrun_Factory::log("Created " . $count . " charging account jobs into queue", Zend_Log::INFO);

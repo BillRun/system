@@ -126,6 +126,19 @@ class Billrun_Jobsmanager {
 		return self::$instances[$queueName];
 	}
 	
+	public static function cleanInstance($queue = null) {
+		if (is_null($queue)) {
+			$queueName = 'jobs';
+		} else {
+			$queueName = $queue->getName();
+		}
+		Billrun_Factory::cleanQueue($queueName);
+		if (empty($queue)) {
+			$queue = Billrun_Factory::queue($queueName);
+		}
+		self::$instances[$queueName] = null;
+	}
+	
 	/**
 	 * check if the worker is enabled
 	 * 
