@@ -644,6 +644,13 @@ class Billrun_Factory {
 		}
 		return self::$queues[$name];
 	}
+	
+	public static function cleanQueue($name = null) {
+		if (empty($name)) {
+			$name = 'jobs';
+		}
+		self::$queues[$name] = null;
+	}
 
 
 }

@@ -92,7 +92,7 @@ class Billrun_Job_Cycle_Page extends Billrun_Job_Cycle {
 			$jobSettings = $this->config;
 			$jobSettings['page_number'] += $this->zero_pages_limit;
 			Billrun_Factory::log("Page " . $this->page_number . " will generated page " . $jobSettings['page_number']);
-			Billrun_Jobsmanager::getInstance($this->queueMsg->getQueue())->push('Cycle_Page', $jobSettings, $this->parent);
+			Billrun_Jobsmanager::getInstance()->push('Cycle_Page', $jobSettings, $this->parent);
 
 			// update billing cycle count of accounts
 			$set = [

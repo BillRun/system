@@ -131,12 +131,12 @@ trait Billrun_Traits_Async {
 		} elseif ($pid) {
 			// Parent process
 			// Do nothing, let the child process execute the task
-			Billrun_Factory::db([], true)->command(['ping' => 1]);
 			Billrun_Factory::log("forked child process: " . $pid);
 			$this->asyncActiveProcesses++;
 		} else {
 			// Child process
 			Billrun_Factory::db([], true)->command(['ping' => 1]);
+			Billrun_Jobsmanager::cleanInstance();
 			Billrun_Factory::log()->updateStamp();
 			Billrun_Factory::log("child process");
 			pcntl_alarm($this->asyncTimeout);

@@ -97,7 +97,7 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 			for ($i = 0; $i <= $this->zero_pages_limit; $i++) {
 				Billrun_Factory::log("Going to create job cycle page " . $i);
 				$jobSettings["page_number"] = $i;
-				Billrun_Jobsmanager::getInstance($this->queueMsg->getQueue())->push('Cycle_Page', $jobSettings, $this->queueMsg->md5);
+				Billrun_Jobsmanager::getInstance()->push('Cycle_Page', $jobSettings, $this->queueMsg->md5);
 			}
 		} else if ($this->mode == 'account') {
 			$jobSettings = [
@@ -136,7 +136,7 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 			$jobSettings['invoicing_day'] = $this->invoicing_day;
 		}
 		Billrun_Factory::log("Going to create job cycle account " . $aid);
-		Billrun_Jobsmanager::getInstance($this->queueMsg->getQueue())->push('Cycle_Account', $jobSettings, $parent);
+		Billrun_Jobsmanager::getInstance()->push('Cycle_Account', $jobSettings, $parent);
 	}
 
 	/**

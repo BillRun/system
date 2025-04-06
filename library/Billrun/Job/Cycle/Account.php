@@ -82,6 +82,10 @@ class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
 			$coll->update($query, $update);
 			$record['fake'] = 1;
 			$record['count'] = 0;
+			$record['completed'] = 0;
+			unset($record['zero_pages']);
+			unset($record['job_md5']);
+			$record['start_time'] = new Mongodloid_Date();
 			$record['end_time'] = new Mongodloid_Date();
 			// add fake zero pages for FE backward compatibility
 			$zero_pages_limit = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit', 3);
