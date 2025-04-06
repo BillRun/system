@@ -23,19 +23,21 @@ class Billrun_Collection extends Billrun_Base {
 		$debtByAids = Billrun_Bill::getContractorsInCollection($aids, $minDebt);
 		$aidsAlreadyProcess = [];
 		foreach ($processes as $process){
+			$updateCollectionStateChanged = [];
 			$markedAsInCollection = [];
 			$reallyInCollection = [];
 			$conditions = $process['conditions'][0]['account']['fields'] ?? [];
+			$conditions[] = [
+				"field" => "aid",
+				"op" => "nin",
+				"value" => $aidsAlreadyProcess
+			];
 			$processMinDebt = floatval($process['settings']['min_debt'] ?? '10');
 			$query = Billrun_Account::convertConditionsToAccountQuery($conditions);
 			$query['read_preference'] = 'RP_PRIMARY'; 
 			$accountsInConditions = $account->loadAccountsForQuery($query);
 			foreach ($accountsInConditions as $accountInConditions){
 				$aid = $accountInConditions['aid'];
-				if(isset($aidsAlreadyProcess[$aid])){
-					Billrun_Factory::log()->log("Skiping matching account $aid for process: " . $process['label'] . ", Already found suitable for the process with higher priority: " . $aidsAlreadyProcess[$aid], Zend_Log::DEBUG);
-					continue;
-				}
 				if($accountInConditions['in_collection'] == true ){
 					$includeAids = $account->getIncludedInCollection([$aid ]);
 					if(in_array($aid, $includeAids)){
@@ -45,7 +47,7 @@ class Billrun_Collection extends Billrun_Base {
 				if(isset($debtByAids[$aid]) && $debtByAids[$aid]['total'] >= $processMinDebt){
 					$reallyInCollection[$aid] = $debtByAids[$aid];
 				}
-				$aidsAlreadyProcess[$aid] = $process['label'];
+				$aidsAlreadyProcess[] = $aid;
 			}
 			if ($collectDir == 'enter_collection' || empty($collectDir)) {
 				$updateCollectionStateChanged['in_collection'] = array_diff_key($reallyInCollection, $markedAsInCollection);

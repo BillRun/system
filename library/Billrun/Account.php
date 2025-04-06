@@ -418,7 +418,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	public static function convertConditionsToAccountQuery($conditions){
 		$query = [];
 		foreach ($conditions as $condition) {
-			$query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];
+			$query[$condition['field']]['$' . $condition['op']] = $condition['value'];
 		}
 		return $query;
 	}
