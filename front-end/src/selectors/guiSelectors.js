@@ -62,6 +62,12 @@ export const formModalErrosSelector = createSelector(
   errors => errors,
 );
 
+export const getPageErrors = createSelector(
+  formModalErrosSelector,
+  (state, props, page = '') => page,
+  (allErrors, page) => allErrors ? allErrors.get(page) : undefined,
+);
+
 const getFormModalShowState = state => state.guiState.page.getIn(['formModalData', 'show']);
 export const formModalShowStateSelector = createSelector(
   getFormModalShowState,
