@@ -199,11 +199,7 @@ class Collections extends Component {
   }
 
   onSave = () => {
-    this.props.dispatch(saveCollections()).then(this.afterSave);
-  }
-
-  afterSave = () => {
-    this.props.dispatch(getCollections());
+    this.props.dispatch(saveCollections());
   }
 
   validateProcesses = (processes) => {
@@ -287,9 +283,8 @@ class Collections extends Component {
   }
 
   render() {
-    const { isDirty, pageErrors } = this.props;
+    const { isDirty } = this.props;
     const { reordering } = this.state;
-    console.log("pageErrors: ", pageErrors);
     
     return (
       <Panel>

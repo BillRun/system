@@ -56,7 +56,7 @@ const Collection = ({
   const getPanelHeader = () => (
     <div>
       <div className="inline">
-        <h4 className="mt0 mb0">#{index + 1} | {label} <small>{name}</small></h4>
+        <h4 className="mt0 mb0">Set #{index + 1} | {label} <small>{name}</small></h4>
       </div>
       <div className="pull-right">
         <Actions actions={actions} />

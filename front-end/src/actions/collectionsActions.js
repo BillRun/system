@@ -56,8 +56,13 @@ export const updateCollections = (path, value) => (dispatch) => {
 
 
 export const saveCollections = () => (dispatch) => {
-  dispatch(setPageFlag('collection', 'isFormDirty', false));
-  return dispatch(saveSettings(['collection']));
+  return dispatch(saveSettings(['collection']))
+    .then((res) => {
+      if (res && res.status && res.status === 1) {
+        return dispatch(getCollections());
+      }
+      return res;
+    });
 }
 
 export const getCollections = () => (dispatch) => {
