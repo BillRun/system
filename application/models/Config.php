@@ -1272,6 +1272,10 @@ class ConfigModel {
 			if (empty($settings['change_state_method']) && !empty($settings['change_state_url'])) {
 				throw new Exception("Set #{$p_i} Settings: HTTP Method is missing");
 			}
+			$min_debt = Billrun_Util::getIn($settings, 'min_debt', '');
+			if (!is_numeric($min_debt) || floatval($min_debt) < 0) {
+				throw new Exception("Set #{$p_i} Settings: Minimum debt must be numeric equal or greater then 0");
+			}
 			// Validate conditions
 			$conditions = Billrun_Util::getIn($process, ['conditions', 0, 'account', 'fields'], []);
 			if (empty($conditions) && $process_idx < $processes_count - 1) {
