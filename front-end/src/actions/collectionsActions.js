@@ -1,79 +1,66 @@
 import uuid from 'uuid';
-import { collectionStepsSelector } from '@/selectors/settingsSelector';
+import { collectionSelector } from '@/selectors/settingsSelector';
 import {
   saveSettings,
   getSettings,
   actions as settingsActions,
 } from './settingsActions';
+import {
+  setPageFlag,
+} from './guiStateActions/pageActions.js';
+import Immutable from 'immutable';
 
-import { toImmutableList } from '@/common/Util';
 
-/* Collection Step */
-const updateCollectionStepByIndex = (index, path, value) => ({
+const updateCollectionAction = (path, value) => ({
   type: settingsActions.UPDATE_SETTING,
   category: 'collection',
-  name: ['steps', index, ...toImmutableList(path)],
+  name: ['processes', ...path],
   value,
 });
 
-const removeCollectionStepByIndex = index => ({
-  type: settingsActions.REMOVE_SETTING_FIELD,
-  category: 'collection',
-  name: ['steps', index],
-});
+export const saveCollectionStep = (index, step) => (dispatch, getState) => {
+  dispatch(setPageFlag('collection', 'isFormDirty', true));
+  const processes = collectionSelector(getState());
+  const steps = processes.getIn([index, 'steps'], Immutable.List());
 
-const addCollectionStep = value => ({
-  type: settingsActions.PUSH_TO_SETTING,
-  category: 'collection',
-  path: 'steps',
-  value,
-});
-
-export const removeCollectionStep = editedItem => (dispatch, getState) => {
-  const steps = collectionStepsSelector(getState());
-  const index = steps.findIndex(step => step.get('id', '') === editedItem.get('id', ''));
-  if (index !== -1) {
-    return dispatch(removeCollectionStepByIndex(index));
-  }
-  return false;
-};
-
-export const updateCollectionStep = (item, path, value) => (dispatch, getState) => {
-  const steps = collectionStepsSelector(getState());
-  const index = steps.findIndex(step => step.get('id', '') === item.get('id', ''));
-  if (index !== -1) {
-    return dispatch(updateCollectionStepByIndex(index, path, value));
-  }
-  return false;
-};
-
-export const saveCollectionStep = step => (dispatch, getState) => {
   // If step is new, add it
   if (!step.has('id')) {
-    return dispatch(addCollectionStep(step.set('id', uuid.v4())));
+      const newSteps = steps.push(step.set('id', uuid.v4()));
+      return dispatch(updateCollectionAction([index, 'steps'], newSteps));
   }
   // If step is existing, replace step with new step data
-  const existingSteps = collectionStepsSelector(getState());
-  const index = existingSteps.findIndex(existingStep => existingStep.get('id', '') === step.get('id', ''));
-  if (index !== -1) {
-    return dispatch(updateCollectionStep(step, [], step));
+  const existingStepIndex = steps.findIndex(existingStep => existingStep.get('id', '') === step.get('id', ''));
+  if (existingStepIndex !== -1) {
+    return dispatch(updateCollectionAction([index, 'steps', existingStepIndex], step));
   }
   return false;
 };
 
-/* Collection Steps array */
-export const saveCollectionSteps = () => saveSettings(['collection.steps']);
+export const removeCollectionStep = (index, step) => (dispatch, getState) => {
+  dispatch(setPageFlag('collection', 'isFormDirty', true));
+  const processes = collectionSelector(getState());
+  const steps = processes.getIn([index, 'steps'], Immutable.List());
+  if (step.has('id')) {
+    const existingStepIndex = steps.findIndex(existingStep => existingStep.get('id', '') === step.get('id', ''));
+    if (existingStepIndex !== -1) {
+      return dispatch(updateCollectionAction([index, 'steps'], steps.delete(existingStepIndex)));
+    }
+  }
+  return false;
+};
 
-export const getCollectionSteps = () => getSettings(['collection.steps']);
+export const updateCollections = (path, value) => (dispatch) => {
+  dispatch(setPageFlag('collection', 'isFormDirty', true));
+  return dispatch(updateCollectionAction(path, value));
+};
 
-/* Collection Settings */
-export const saveCollectionSettings = () => saveSettings(['collection.settings']);
 
-export const getCollectionSettings = () => getSettings(['collection.settings']);
+export const saveCollections = () => (dispatch) => {
+  dispatch(setPageFlag('collection', 'isFormDirty', false));
+  return dispatch(saveSettings(['collection']));
+}
 
-export const updateCollectionSettings = (path, value) => ({
-  type: settingsActions.UPDATE_SETTING,
-  category: 'collection',
-  name: ['settings', ...toImmutableList(path)],
-  value,
-});
+export const getCollections = () => (dispatch) => {
+  dispatch(setPageFlag('collection', 'isFormDirty', false));
+  return dispatch(getSettings(['collection']));
+}
