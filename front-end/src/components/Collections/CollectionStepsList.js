@@ -30,14 +30,14 @@ class CollectionStepsList extends Component {
     this.props.onRemove(step);
   }
 
-  onToggleOk = (step, action) => {
-    const enable = (action === 'enable');
-    this.props.onChange(step.set('active', enable));
-  }
+  // onToggleOk = (step, action) => {
+  //   const enable = (action === 'enable');
+  //   this.props.onChange(step.set('active', enable));
+  // }
 
   onClickRemove = (item) => {
     const confirm = {
-      message: `Are you sure you want to delete "${item.get('name')}" step?`,
+      message: `Are you sure you want to remove "${item.get('name')}" step?`,
       onOk: () => this.onRemoveOk(item),
       type: 'delete',
       labelOk: 'Delete',
@@ -46,14 +46,17 @@ class CollectionStepsList extends Component {
   }
 
   onClickToggle = (item, type) => {
-    const actionName = (type === 'disable') ? 'disable' : 'enable';
-    const confirm = {
-      message: `Are you sure you want to ${actionName} "${item.get('name')}" step?`,
-      onOk: () => this.onToggleOk(item, type),
-      type: (type === 'enable') ? 'confirm' : 'delete',
-      labelOk: titleCase(actionName),
-    };
-    this.props.dispatch(showConfirmModal(confirm));
+    // because it type not save the state, no need confirmation
+    const enable = (type === 'enable');
+    this.props.onChange(item.set('active', enable));
+    // const actionName = (type === 'disable') ? 'disable' : 'enable';
+    // const confirm = {
+    //   message: `Are you sure you want to ${actionName} "${item.get('name')}" step?`,
+    //   onOk: () => this.onToggleOk(item, type),
+    //   type: (type === 'enable') ? 'confirm' : 'delete',
+    //   labelOk: titleCase(actionName),
+    // };
+    // this.props.dispatch(showConfirmModal(confirm));
   }
 
   parserStatus = item => (<StateIcon status={item.get('active', false) ? 'active' : 'expired'} />);

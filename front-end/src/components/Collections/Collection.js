@@ -16,6 +16,7 @@ const Collection = ({
   reordering,
   location,
   errors,
+  isDirty,
   onChange,
   onChangeStep,
   onRemoveStep,
@@ -78,7 +79,13 @@ const Collection = ({
         </Col>
       )}
       <Col sm={reordering ? 11 : 12} className='pr0 pl0'>
-        <Panel header={getPanelHeader()} collapsible={true} className='collapsible mt10 mb10' defaultExpanded={defaultExpanded}>
+        <Panel
+          header={getPanelHeader()}
+          collapsible={true}
+          className='collapsible mt10 mb10'
+          defaultExpanded={defaultExpanded}
+          bsStyle={isDirty ? "warning" : "default"}
+        >
           <TabsWrapper id='CollectionsTab' location={location}>
             <Tab title='Settings' eventKey={1}>
               <Panel style={{ borderTop: "none" }}>
@@ -124,12 +131,14 @@ Collection.defaultProps = {
   errors: Immutable.Map(),
   index: 0,
   reordering: false,
+  isDirty: false,
 };
 
 Collection.propTypes = {
   process: PropTypes.instanceOf(Immutable.Map),
   index: PropTypes.number,
   reordering: PropTypes.bool,
+  isDirty: PropTypes.bool,
   location: PropTypes.object.isRequired,
   errors: PropTypes.instanceOf(Immutable.Map),
   onChange: PropTypes.func.isRequired,

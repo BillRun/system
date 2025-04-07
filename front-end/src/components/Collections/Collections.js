@@ -11,7 +11,7 @@ import {
   getCollections,
   saveCollections,
   updateCollections,
-  saveCollectionStep,
+  updateCollectionStep,
   removeCollectionStep,
 } from '@/actions/collectionsActions';
 import {
@@ -30,12 +30,14 @@ class Collections extends Component {
     processes: PropTypes.instanceOf(Immutable.List),
     pageErrors: PropTypes.instanceOf(Immutable.Map),
     isDirty: PropTypes.bool,
+    dirtySets:PropTypes.instanceOf(Immutable.List),
     location: PropTypes.object.isRequired,
     dispatch: PropTypes.func.isRequired,
   };
 
   static defaultProps = {
     processes: Immutable.List(),
+    dirtySets: Immutable.List(),
     pageErrors: Immutable.Map(),
     isDirty: false,
   };
@@ -72,13 +74,10 @@ class Collections extends Component {
       'subscribers.account.fields'
     ]));
     this.props.dispatch(getCollections());
-    // Reset
-    this.props.dispatch(setPageError('collection'));
-    this.props.dispatch(setPageFlag('collection', null));
   }
 
   componentWillUnmount() {
-    this.props.dispatch(setPageFlag('collection', null));
+    this.props.dispatch(setPageFlag('collection'));
     this.props.dispatch(setPageError('collection'));
   }
 
@@ -109,7 +108,7 @@ class Collections extends Component {
   }
 
   onChangeStep = (index, step) => {
-    this.props.dispatch(saveCollectionStep(index, step));
+    this.props.dispatch(updateCollectionStep(index, step));
   }
 
   onRemoveStep = (index, step) => {
@@ -143,7 +142,7 @@ class Collections extends Component {
   onSaveEditStep = () => {
     const { editedItem, editedIndex } = this.state;
     if (!this.validateStep(editedItem)) {
-      this.props.dispatch(saveCollectionStep(editedIndex, editedItem));
+      this.props.dispatch(updateCollectionStep(editedIndex, editedItem));
       this.onCloseEditStep();
     }
   }
@@ -262,7 +261,7 @@ class Collections extends Component {
 
   getCollectionsRows = () => {
     const { reordering } = this.state;
-    const { location, processes, pageErrors } = this.props;
+    const { location, processes, pageErrors, dirtySets } = this.props;
     return processes.map((process, idx) => (
       <Collection
         index={idx}
@@ -271,6 +270,7 @@ class Collections extends Component {
         location={location}
         errors={pageErrors}
         reordering={reordering}
+        isDirty={dirtySets.includes(idx)}
         onChange={this.onChange}
         onChangeStep={this.onChangeStep}
         onRemoveStep={this.onRemoveStep}
@@ -283,11 +283,11 @@ class Collections extends Component {
   }
 
   render() {
-    const { isDirty } = this.props;
+    const { isDirty, dirtySets } = this.props;
     const { reordering } = this.state;
     
     return (
-      <Panel>
+      <Panel bsStyle={dirtySets.includes(-1) ? "warning" : "default"}>
         {isDirty && (<Col sm={12} className="pr0 pl0"><p className="alert-warning mb0 pl10 pr10 pt5 pb5">You have unsaved changes!</p></Col>)}
         <Form horizontal>
           <Col sm={12}>
@@ -346,6 +346,7 @@ class Collections extends Component {
 const mapStateToProps = (state, props) => ({
   processes: collectionSelector(state, props),
   isDirty: pageFlagSelector(state, props, 'collection', 'isFormDirty'),
+  dirtySets: pageFlagSelector(state, props, 'collection', 'dirtySets'),
   pageErrors: getPageErrors(state, props, 'collection'),
 });
 

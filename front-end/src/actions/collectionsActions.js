@@ -5,8 +5,10 @@ import {
   getSettings,
   actions as settingsActions,
 } from './settingsActions';
+import { pageFlagSelector } from '@/selectors/guiSelectors';
 import {
   setPageFlag,
+  setPageError,
 } from './guiStateActions/pageActions.js';
 import Immutable from 'immutable';
 
@@ -18,7 +20,34 @@ const updateCollectionAction = (path, value) => ({
   value,
 });
 
-export const saveCollectionStep = (index, step) => (dispatch, getState) => {
+export const getCollections = () => (dispatch) => {
+  dispatch(setPageError('collection')); // reser errors
+  dispatch(setPageFlag('collection')); // reset flags
+  return dispatch(getSettings(['collection']));
+}
+
+export const updateCollections = (path, value) => (dispatch, getState) => {
+  const [ index, ...rest ] = path;
+  const dirtySets = pageFlagSelector(getState(), {}, 'collection', 'dirtySets') || [];
+  const setIndex = (typeof index === 'undefined') ? -1 : index;
+  dispatch(setPageFlag('collection', 'dirtySets', Immutable.Set([...dirtySets, setIndex]).toList()));  
+  dispatch(setPageFlag('collection', 'isFormDirty', true));
+  return dispatch(updateCollectionAction(path, value));
+};
+
+export const saveCollections = () => (dispatch) => {
+  return dispatch(saveSettings(['collection']))
+    .then((res) => {
+      if (res && res.status && res.status === 1) {
+        return dispatch(getCollections());
+      }
+      return res;
+    });
+}
+
+export const updateCollectionStep = (index, step) => (dispatch, getState) => {
+  const dirtySets = pageFlagSelector(getState(), {}, 'collection', 'dirtySets') || [];
+  dispatch(setPageFlag('collection', 'dirtySets', Immutable.Set([...dirtySets, index]).toList()));
   dispatch(setPageFlag('collection', 'isFormDirty', true));
   const processes = collectionSelector(getState());
   const steps = processes.getIn([index, 'steps'], Immutable.List());
@@ -37,6 +66,8 @@ export const saveCollectionStep = (index, step) => (dispatch, getState) => {
 };
 
 export const removeCollectionStep = (index, step) => (dispatch, getState) => {
+  const dirtySets = pageFlagSelector(getState(), {}, 'collection', 'dirtySets') || [];
+  dispatch(setPageFlag('collection', 'dirtySets', Immutable.Set([...dirtySets, index]).toList()));
   dispatch(setPageFlag('collection', 'isFormDirty', true));
   const processes = collectionSelector(getState());
   const steps = processes.getIn([index, 'steps'], Immutable.List());
@@ -48,24 +79,3 @@ export const removeCollectionStep = (index, step) => (dispatch, getState) => {
   }
   return false;
 };
-
-export const updateCollections = (path, value) => (dispatch) => {
-  dispatch(setPageFlag('collection', 'isFormDirty', true));
-  return dispatch(updateCollectionAction(path, value));
-};
-
-
-export const saveCollections = () => (dispatch) => {
-  return dispatch(saveSettings(['collection']))
-    .then((res) => {
-      if (res && res.status && res.status === 1) {
-        return dispatch(getCollections());
-      }
-      return res;
-    });
-}
-
-export const getCollections = () => (dispatch) => {
-  dispatch(setPageFlag('collection', 'isFormDirty', false));
-  return dispatch(getSettings(['collection']));
-}

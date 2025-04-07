@@ -116,7 +116,7 @@ const pageReducer = (state = defaultState, action) => {
     }
 
     case SET_PAGE_FLAG: {
-      const { page, flag, value } = action;
+      const { page, flag = null, value = null } = action;
       if (flag === null) {
         return state.deleteIn(['flag', page]);
       }
