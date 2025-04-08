@@ -1,5 +1,7 @@
 <?php
 
+use function PHPUnit\Framework\assertCount;
+
 class unifyCest
 {
 
@@ -15,6 +17,7 @@ class unifyCest
         if (!self::$isIPSet) {
             $this->setUP($I);
             self::$isIPSet = true;
+            Billrun_Config::getInstance()->loadDbConfig();
         }
     }
     protected function setUP(ApiTester $I, $inputProcessor = null)
@@ -49,15 +52,15 @@ class unifyCest
                 ['name' => 'TEST_SERVICE' . microtime(true) * 10000],
                 $serviceDetails
             ));
-            $this->serviceDetails= json_decode($I->grabResponse(), true)['entity'];
+            $this->serviceDetails = json_decode($I->grabResponse(), true)['entity'];
         }
         if ($rateDetails != []) {
             $I->generateRate(array_merge(['tariff_category' => 'retail', 'key' => microtime(true) * 10000], $rateDetails));
-            $this->rateDetails= json_decode($I->grabResponse(), true)['entity'];
+            $this->rateDetails = json_decode($I->grabResponse(), true)['entity'];
         }
     }
     public $inputProcessor = [
-        "file_type"=>"abc",
+        "file_type" => "abc",
         "parser" =>
             [
                 "type" =>
@@ -163,28 +166,20 @@ class unifyCest
         "filters" => [],
         "receiver" => ["type" => "ftp", "connections" => [["receiver_type" => "ftp", "passive" => false, "delete_received" => false, "user" => "admin", "password" => "12345678", "host" => "127.0.0.1", "name" => "a", "remote_directory" => "/home"]]]
     ];
-    protected function process($options){
-        //  //['type' => 'simple', 'path'=> 'or_data/receiver/simple/cdr2.csv'];
-        // $processor = Billrun_Processor::getInstance($options);
-        // $processor->process_files(Billrun_Util::getBillRunPath($options['path']));
-        // $linesProcessedCount = $processor->process();
-
-
-
-      
-         $processor = Billrun_Processor::getInstance($options);
-    
-    if(!$processor->createLogForProcessWithPath($options)){
-      return;
-    }
-    $linesProcessedCount = $processor->process_files(Billrun_Util::getBillRunPath($options['path']));
+    protected function process($options)
+    {
+        $processor = Billrun_Processor::getInstance($options);
+        if (!$processor->createLogForProcessWithPath($options)) {
+            return;
+        }
+        $linesProcessedCount = $processor->process_files(Billrun_Util::getBillRunPath($options['path']));
     }
     //$processor = Billrun_Processor::getInstance($options);
 
 
     public function testUnifyShouldUnifyAllCdrs(ApiTester $I): void
     {
-        $this->createData($I, ['firstname'=>'aaa'], ['from'=>'2025-01-01'], [
+        $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
             'from' => '2025-01-01',
             "include" => [
                 "groups" => [
@@ -203,31 +198,34 @@ class unifyCest
                     ]
                 ]
             ]
-        ],['key'=>'CALL',"rates"=> [
-                    "call"=> [
-                        "BASE"=> [
-                            "rate"=> [
-                                [
-                                    "from"=> 0,
-                                    "to"=> "UNLIMITED",
-                                    "interval"=> 11,
-                                    "price"=> 11,
-                                    "uom_display"=> [
-                                        "range"=> "seconds",
-                                        "interval"=> "seconds"
-                                    ]
+        ], [
+            'key' => 'CALL',
+            "rates" => [
+                "call" => [
+                    "BASE" => [
+                        "rate" => [
+                            [
+                                "from" => 0,
+                                "to" => "UNLIMITED",
+                                "interval" => 1,
+                                "price" => 1,
+                                "uom_display" => [
+                                    "range" => "seconds",
+                                    "interval" => "seconds"
                                 ]
                             ]
                         ]
                     ]
-                ],]);
+                ]
+            ],
+        ]);
         $I->generateSubscriber(
             [
                 'from' => '2025-01-01',
-                'firstname'=>'0531234567',
+                'firstname' => '0531234567',
                 'aid' => $this->accountDetails['aid'],
                 'plan' => $this->planDetails['name'],
-                'services' => [['from' => '2025-02-01','name'=> $this->serviceDetails['name']]]
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
             ]
         );
         $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
@@ -238,56 +236,136 @@ class unifyCest
                 'path' => 'tests/all/calculators/test_files/test1.csv'
             ]
         );
-       
 
-        // Get specific balance by billapi get
-        // $currentTimestamp = date('Y-m-d H:i:s');
-        // $I->sendBillapiGet([
-        //     'aid' => $this->accountDetails['aid'],
-        //     'sid' => $this->subscriberDetails['sid'],
-        //     'from' => ['$lte' => $currentTimestamp],
-        //     'to' => ['$gt' => $currentTimestamp]
-        // ], 'balances');
+        $I->assertEquals(1, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
 
-        // // Check response staus
-        // $I->seeResponseIsJson();
-        // $I->seeResponseContainsJson([
-        //     'status' => 1
-        // ]);
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'usaget' => 'call',
+            'usagev' => 112,
+            'aprice' => 0,
+            'arategroups.0.left' => 299888
+        ]);
 
-        // $expectedFromDate = date('Y-m-01\T00:00:00+0000'); // First day of current month
-        // $expectedToDate = date('Y-m-01\T00:00:00+0000', strtotime('+1 month')); // First day of next month
-
-        // // Check that get the correct balance
-        // $I->seeResponseContainsJson([
-        //     'details' => [
-        //         [
-        //             'aid' => $this->accountDetails['aid'],
-        //             'sid' => $this->subscriberDetails['sid'],
-        //             'balance' => [
-        //                 'cost' => 11,
-        //                 'totals' => [
-        //                     'call' => [
-        //                         'cost' => 11,
-        //                         'count' => 1,
-        //                         'usagev' => 1,
-        //                         'out_group' => [
-        //                             'usagev' => 1
-        //                         ]
-        //                     ]
-        //                 ]
-        //             ],
-        //             'connection_type' => 'postpaid',
-        //             'plan_description' => 'plan',
-        //             'from' => $expectedFromDate,
-        //             'to' => $expectedToDate
-        //         ]
-        //     ]
-        // ]);
-        // // Check the details array length is 1 ,  validate the response contains only one balance object
-        // $details = json_decode($I->grabResponse(), true)['details'];
-        // $I->assertCount(1, $details);
-
+        $I->assertEquals(3, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
     }
+    public function testUnifyShouldUnifyPerSubscriber(ApiTester $I): void
+    {
+        $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
+            'from' => '2025-01-01',
+            "include" => [
+                "groups" => [
+                    "LOCAL_CALLS_5000" => [
+                        "account_shared" => false,
+                        "account_pool" => false,
+                        "rates" => [
+                            "CALL"
+                        ],
+                        "value" => 300000,
+                        "usage_types" => [
+                            "call" => [
+                                "unit" => "minutes"
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ], [
+            'key' => 'CALL',
+            "rates" => [
+                "call" => [
+                    "BASE" => [
+                        "rate" => [
+                            [
+                                "from" => 0,
+                                "to" => "UNLIMITED",
+                                "interval" => 1,
+                                "price" => 1,
+                                "uom_display" => [
+                                    "range" => "seconds",
+                                    "interval" => "seconds"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+        ]);
+        $I->generateSubscriber(
+            [
+                'from' => '2025-01-01',
+                'firstname' => '0531234561',
+                'aid' => $this->accountDetails['aid'],
+                'plan' => $this->planDetails['name'],
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+            ]
+        );
+        $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
+        $I->generateSubscriber(
+            [
+                'from' => '2025-01-01',
+                'firstname' => '0531234562',
+                'aid' => $this->accountDetails['aid'],
+                'plan' => $this->planDetails['name'],
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+            ]
+        );
+        $subscriber2 = json_decode($I->grabResponse(), true)['entity'];
+        $this->process(
+            [
+                'type' => 'abc',
+                'path' => 'tests/all/calculators/test_files/test2.csv'
+            ]
+        );
+
+        $I->assertEquals(1, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+
+        $I->assertEquals(1, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriber2['sid']
+        ]));
+
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'usaget' => 'call',
+            'usagev' => 3,
+            'aprice' => 0,
+            'arategroups.0.left' => 299997
+        ]);
+
+
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriber2['sid'],
+            'usaget' => 'call',
+            'usagev' => 7,
+            'aprice' => 0,
+            'arategroups.0.left' => 299993
+        ]);
+
+        $I->assertEquals(2, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+
+
+        $I->assertEquals(2, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriber2['sid']
+        ]));
+    }
+
+
 
 }
