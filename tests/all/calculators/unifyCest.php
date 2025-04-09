@@ -229,7 +229,7 @@ class unifyCest
             ]
         );
         $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-
+        Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer","rate","pricing","tax","unify"]);
         $this->process(
             [
                 'type' => 'abc',
@@ -262,11 +262,11 @@ class unifyCest
             'from' => '2025-01-01',
             "include" => [
                 "groups" => [
-                    "LOCAL_CALLS_5000" => [
+                    "2LOCAL_CALLS_5000" => [
                         "account_shared" => false,
                         "account_pool" => false,
                         "rates" => [
-                            "CALL"
+                            "CALL2"
                         ],
                         "value" => 300000,
                         "usage_types" => [
@@ -278,7 +278,7 @@ class unifyCest
                 ]
             ]
         ], [
-            'key' => 'CALL',
+            'key' => 'CALL2',
             "rates" => [
                 "call" => [
                     "BASE" => [
@@ -318,6 +318,7 @@ class unifyCest
             ]
         );
         $subscriber2 = json_decode($I->grabResponse(), true)['entity'];
+        Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer","rate","pricing","tax","unify"]);
         $this->process(
             [
                 'type' => 'abc',
