@@ -3,7 +3,6 @@
 class Test_Case_9 {
     public function test_case() {
         return array (
-  'rebalance' => true,
   'row' => 
   array (
     'stamp' => 'ow9',
