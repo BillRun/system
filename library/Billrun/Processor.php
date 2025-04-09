@@ -121,6 +121,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 *
 	 * @param array $options for the file processor
 	 */
+	 protected $shouldremovefromWorkspace = true;
 	public function __construct($options) {
 
 		parent::__construct($options);
@@ -258,8 +259,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 				return FALSE;
 			}
 			Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
-
-			$this->removefromWorkspace($this->getFileStamp());
+			if($this->shouldremovefromWorkspace){
+				$this->removefromWorkspace($this->getFileStamp());
+			}
 			Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this));
 			return count($this->data['data']);
 		}
@@ -882,4 +884,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return $result['n'] == 1 && $result['ok'] == 1;
 
 	}
+
+	public function setShouldremovefromWorkspace($flag){
+		$this->shouldremovefromWorkspace = $flag;
+	}
+
 }

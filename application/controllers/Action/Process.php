@@ -62,6 +62,7 @@ class ProcessAction extends Action_Base {
 			if(!$processor->createLogForProcessWithPath($options)){
 				return;
 			}
+			$processor->setShouldremovefromWorkspace(false);
 			$linesProcessedCount = $processor->process_files(Billrun_Util::getBillRunPath($options['path']));
 		}else{
 			$linesProcessedCount = $processor->process_files();
