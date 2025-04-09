@@ -889,4 +889,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$this->shouldremovefromWorkspace = $flag;
 	}
 
+	public function processorByPath($options){
+		if(!$this->createLogForProcessWithPath($options)){
+			return;
+		}
+		$this->setShouldremovefromWorkspace(false);
+		return $this->process_files(Billrun_Util::getBillRunPath($options['path']));
+	}
+
 }
