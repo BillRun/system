@@ -46,11 +46,14 @@ class WorkerAction extends Action_Base {
 				if (!empty($job)) {
 					Billrun_Factory::log("Going to execute job " . $job->method . " handle " . $job->queueMsg->handle, Zend_Log::INFO);
 					$this->executeAsync(array($job, 'execute'), [['config' => (array) $job->config]]);
+				} else {
+					usleep(Billrun_Factory::config()->getConfigValue('worker.iteration', 1000000)); // sleep 1 second
 				}
 			} catch (Throwable $th) {
 				Billrun_Factory::log("Worker error: " . $th->getCode() . ": " . $th->getMessage(), Zend_Log::ALERT);
 			}
-			usleep(Billrun_Factory::config()->getConfigValue('worker.iteration', 200000)); // sleep 0.2 second
+			$this->checkSignal();
+			usleep(10000);
 		}
 	}
 	
