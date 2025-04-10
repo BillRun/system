@@ -1317,7 +1317,7 @@ abstract class Billrun_Bill {
 		$account = Billrun_Factory::account();
 		Billrun_Factory::log()->log("Building 'rejection required' query according to the configuration", Zend_Log::DEBUG);
 		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
-		$accountQuery = Billrun_Account::getBalanceAccountQuery($aids, $is_aids_query, $rejection_required_conditions);
+		$accountQuery = $account->convertConditionsToAccountQuery($rejection_required_conditions);
 		Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
 		Billrun_Factory::log()->log("Pulled " . count($currentAccounts) . " accounts. Filtering aids", Zend_Log::DEBUG);
