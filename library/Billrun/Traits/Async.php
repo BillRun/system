@@ -5,7 +5,6 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-declare(ticks=1);
 
 /**
  * This Trait is used to add async capabilities
@@ -65,18 +64,19 @@ trait Billrun_Traits_Async {
 	public function asyncSignalHandler($signo) {
 		switch ($signo) {
 			case SIGCHLD:
-				// Decrement activeProcesses for each terminated child process
+				Billrun_Factory::log("asyncSignalHandler SIGCHLD received");
+				// Reap all exited children (non-blocking)
 				while (($pid = pcntl_waitpid(-1, $status, WNOHANG)) > 0) {
 					$this->asyncActiveProcesses--;
+					Billrun_Factory::log("asyncSignalHandler SIGCHLD pid " . $pid . ", decremented asyncActiveProcesses to " . $this->asyncActiveProcesses);
 				}
 				break;
 			case SIGALRM:
 				Billrun_Factory::log("asyncSignalHandler signo: " . $signo . " Process timed out");
 				exit(1); // Exit with error status
 				break;
-            default:
+			default:
 				Billrun_Factory::log("asyncSignalHandler signo: " . $signo);
-
 		}
 	}
 
@@ -90,10 +90,27 @@ trait Billrun_Traits_Async {
 
 	protected function checkAsyncConcurrentLimit() {
 		while ($this->asyncActiveProcesses >= $this->asyncMaxConcurrent) {
-			Billrun_Factory::log("checkAsyncConcurrentLimit going to wait for pid to finish");
-			pcntl_waitpid(-1, $status); // Wait for any child process to exit
-			Billrun_Factory::log("checkAsyncConcurrentLimit pcntl_waitpid status " . $status);
-			$this->asyncActiveProcesses--;
+			Billrun_Factory::log("checkAsyncConcurrentLimit: waiting for child to finish, active: " . $this->asyncActiveProcesses);
+
+			// Dispatch any pending signals
+			pcntl_signal_dispatch();
+
+			// Wait for any child to finish
+			$pid = pcntl_waitpid(-1, $status);
+			Billrun_Factory::log("checkAsyncConcurrentLimit: pcntl_waitpid returned pid: " . $pid . ", status: " . $status);
+
+			if ($pid > 0) {
+				$this->asyncActiveProcesses--;
+				Billrun_Factory::log("checkAsyncConcurrentLimit: asyncActiveProcesses decremented to: " . $this->asyncActiveProcesses);
+				if ($this->asyncActiveProcesses < $this->asyncMaxConcurrent) {
+					Billrun_Factory::log("checkAsyncConcurrentLimit: active process count is now below the max concurrent limit, forking next task");
+				}
+			} else {
+				// No child processes finished yet
+				Billrun_Factory::log("checkAsyncConcurrentLimit: no child process finished, checking again.");
+			}
+
+			usleep(50000); // 50ms
 		}
 	}
 
@@ -107,7 +124,15 @@ trait Billrun_Traits_Async {
 		while ($this->asyncActiveProcesses > 0) {
 			pcntl_waitpid(-1, $status); // Wait for any child process to exit
 			$this->asyncActiveProcesses--;
+			Billrun_Factory::log("wait asyncActiveProcesses decremented to: " . $this->asyncActiveProcesses);
 		}
+	}
+	
+	/**
+	 * this will do a check with child processes statuses
+	 */
+	public function checkSignal() {
+		pcntl_signal_dispatch();
 	}
 
 	public function executeAsync(callable $task, $args = array()) {
@@ -133,6 +158,7 @@ trait Billrun_Traits_Async {
 			// Do nothing, let the child process execute the task
 			Billrun_Factory::log("forked child process: " . $pid);
 			$this->asyncActiveProcesses++;
+			Billrun_Factory::log("executeAsync parent asyncActiveProcesses incremented to: " . $this->asyncActiveProcesses);
 		} else {
 			// Child process
 			Billrun_Factory::db([], true)->command(['ping' => 1]);
