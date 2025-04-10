@@ -161,6 +161,12 @@ trait Billrun_Traits_Async {
 			Billrun_Factory::log("executeAsync parent asyncActiveProcesses incremented to: " . $this->asyncActiveProcesses);
 		} else {
 			// Child process
+			$this->executeChild($task, $args);
+		}
+	}
+	
+	protected function executeChild(callable $task, array $args) {
+		try {
 			Billrun_Factory::db([], true)->command(['ping' => 1]);
 			Billrun_Jobsmanager::cleanInstance();
 			Billrun_Factory::log()->updateStamp();
@@ -169,7 +175,10 @@ trait Billrun_Traits_Async {
 			call_user_func_array($task, $args);
 			Billrun_Factory::log("child process finished");
 			pcntl_alarm(0);
-			exit(0);
+			exit(0); // Ensure exit after task
+		} catch (Throwable $e) {
+			Billrun_Factory::log("child process error " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::ERR);
+			exit(1); // Exit on failure
 		}
 	}
 }
