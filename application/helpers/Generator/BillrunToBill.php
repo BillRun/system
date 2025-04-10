@@ -15,7 +15,7 @@
 class Generator_BillrunToBill extends Billrun_Generator {
 	
 	use Billrun_Traits_Api_OperationsLock;
-	use Billrun_Traits_Condition	sCheck;
+	use Billrun_Traits_ConditionsCheck;
 	use Billrun_Traits_ForeignFields;
 
 	protected $minimum_absolute_amount_for_bill= 0.005;
