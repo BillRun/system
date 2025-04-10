@@ -13,6 +13,7 @@
  * @since    5.0
  */
 abstract class Billrun_Account extends Billrun_Base {
+	use Billrun_Traits_ConditionsCheck;
 
 	/**
 	 * Type of object
