@@ -164,6 +164,19 @@ class CycleAction extends Action_Base {
 	}
 
 	public function runCycle($stamp, $size, $zeroPages, $processInterval, $options, $invoicing_day = null) {
+		if (Billrun_Jobsmanager::getInstance()->isWorkerEnabled()) {
+			$jobSettings = [
+				'billrun_key' => $stamp,
+			];
+			if (!empty($options['generate_pdf'])) {
+				$jobSettings['generate_pdf'] = $options['generate_pdf'];
+			}
+			if (!empty($invoicing_day)) {
+				$jobSettings['invoicing_day'] = $invoicing_day;
+			}
+			Billrun_Jobsmanager::getInstance()->push('Cycle', $jobSettings, null);
+			return;
+		}
 		while (!Billrun_Billingcycle::isBillingCycleOver($this->billingCycleCol, $stamp, $size, $zeroPages, $invoicing_day)) {
 			if (Billrun_Factory::config()->getConfigValue('customer.aggregator.should_fork', TRUE)) {
 				$pid = Billrun_Util::fork();
