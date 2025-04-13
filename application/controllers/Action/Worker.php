@@ -27,13 +27,14 @@ class WorkerAction extends Action_Base {
     public function execute() {
 		Billrun_Factory::log("Start worker");
 		$this->startTime = time();
-		$this->queue = Billrun_Factory::queue('jobs', Billrun_Factory::config()->getConfigValue('worker.job_timeout', 3600));
+		$timeout = Billrun_Factory::config()->getConfigValue('worker.job_timeout', 3600);
+		$this->setAsyncTimeout($timeout);
+		$this->queue = Billrun_Factory::queue('jobs', $timeout + 60);
 		$this->setAsyncMaxConcurrent(Billrun_Factory::config()->getConfigValue('worker.concurrent_limit', 10));
 		Billrun_Factory::log("Queue " . $this->queue->getName() . " loaded with count of " . $this->queue->count());
-//		Billrun_Jobsmanager::getInstance($this->queue)->push('Charging_Account', ['aids' => [1]]);die;
 		$this->run();
 	}
-
+	
 	/**
 	 * method to run and enable the worker to receive and process jobs
 	 */
