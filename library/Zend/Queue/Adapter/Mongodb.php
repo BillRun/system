@@ -210,7 +210,7 @@ class Zend_Queue_Adapter_Mongodb extends Zend_Queue_Adapter_AdapterAbstract {
 					[
 						'$or' => [
 							['schedule' => ['$exists' => 0]],
-							['schedule' => ['$gte' => new MongoDB\BSON\UTCDateTime($microtime * 1000)]],
+							['schedule' => ['$lte' => new MongoDB\BSON\UTCDateTime($microtime * 1000)]],
 						],
 					]
 				],
