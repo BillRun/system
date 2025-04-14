@@ -165,6 +165,10 @@ class CycleAction extends Action_Base {
 
 	public function runCycle($stamp, $size, $zeroPages, $processInterval, $options, $invoicing_day = null) {
 		if (Billrun_Jobsmanager::getInstance()->isWorkerEnabled()) {
+			if (Billrun_Billingcycle::isCycleRunning($stamp, $size, $invoicing_day)) {
+				Billrun_Factory::log("Cycle " . $stamp . " is already running", Zend_Log::DEBUG);
+				return;
+			}
 			$jobSettings = [
 				'billrun_key' => $stamp,
 			];

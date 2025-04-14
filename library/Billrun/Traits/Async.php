@@ -168,7 +168,7 @@ trait Billrun_Traits_Async {
 	protected function executeChild(callable $task, array $args) {
 		try {
 			Billrun_Factory::db([], true)->command(['ping' => 1]);
-			Billrun_Jobsmanager::cleanInstance(null, $this->asyncTimeout + 60);
+			Billrun_Jobsmanager::cleanInstance();
 			Billrun_Factory::log()->updateStamp();
 			Billrun_Factory::log("child process");
 			pcntl_alarm($this->asyncTimeout);

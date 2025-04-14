@@ -49,7 +49,7 @@ class Billrun_Job_Confirm extends Billrun_Job_Abstract {
 		}
 		
 		if (empty($this->config['force'])) {
-			$pipeline[0]['$match']['billed'] = ['$exists' => 0];
+			$pipeline[0]['$match']['billed'] = ['$nin' => ["1", 1, true]];
 		}
 
 		$pipeline[] = array(
