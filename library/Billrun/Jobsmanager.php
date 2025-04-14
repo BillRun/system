@@ -126,16 +126,13 @@ class Billrun_Jobsmanager {
 		return self::$instances[$queueName];
 	}
 	
-	public static function cleanInstance($queue = null, $timeout = null) {
+	public static function cleanInstance($queue = null) {
 		if (is_null($queue)) {
 			$queueName = 'jobs';
 		} else {
 			$queueName = $queue->getName();
 		}
 		Billrun_Factory::cleanQueue($queueName);
-		if (empty($queue)) {
-			$queue = Billrun_Factory::queue($queueName, $timeout);
-		}
 		self::$instances[$queueName] = null;
 	}
 	
