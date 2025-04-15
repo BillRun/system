@@ -16,6 +16,10 @@ class Billrun_Job_Charging_Account extends Billrun_Job_Abstract {
 
 	protected $method = 'Charging_Account';
 
+	protected function init($params) {
+		$this->limitRuns = 1;
+	}
+
 	public function run() {
 		Billrun_Factory::log("charging account start for " . ($this->config['aid'] ?? ''));
 		try {
