@@ -55,8 +55,7 @@ class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
 		Billrun_Factory::log("cycle account end for " . ($this->config['aid'] ?? ''));
 	}
 	
-	public function markCompleted() {
-		$ret = parent::markCompleted();
+	protected function finished() {
 		$coll = Billrun_Factory::db()->billing_cycleCollection();
 		$query = [
 			'billrun_key' => $this->billrun_key,
@@ -95,6 +94,6 @@ class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
 				$coll->insert($record);
 			}
 		}
-		return $ret;
+		return true;
 	}
 }

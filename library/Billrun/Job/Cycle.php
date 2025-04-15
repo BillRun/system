@@ -116,14 +116,12 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 		}
 	}
 	
-	public function markCompleted() {
-		$ret = parent::markCompleted();
+	protected function finished() {
 		if (get_parent_class($this) == 'Billrun_Job_Abstract') {
 			// this will not run in the inherited classes
 			$this->addBillingCycle();
 		}
-		
-		return $ret;
+		return true;
 	}
 	
 	protected function addCycleAccountJob($aid, $parent) {

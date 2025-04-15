@@ -220,7 +220,10 @@ class Zend_Queue_Adapter_Mongodb extends Zend_Queue_Adapter_AdapterAbstract {
 					'handle' => md5(uniqid(rand(), true)),
 					'start_time' => new MongoDB\BSON\UTCDateTime(),
 					'timeout' => new MongoDB\BSON\UTCDateTime(($microtime+$timeout) * 1000),
-				]
+				],
+				'$inc' => [
+					'try' => 1
+				],
 			];
 //			$sort = [
 //				'created' => 1,
