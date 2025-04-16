@@ -353,10 +353,9 @@ export default class ServiceDetails extends Component {
             <Col sm={4} style={['clone', 'create'].includes(mode) ? { padding: '10px 15px' } : { paddingTop: 5 }}>
               <Field
                 fieldType="checkbox"
-                value={!isByCycles ? false : item.get('quantitative', '')}
+                value={item.get('quantitative', '')}
                 onChange={this.onChangeQuantitative}
                 editable={['clone', 'create'].includes(mode)}
-                disabled={!isByCycles}
               />
             </Col>
           </FormGroup>

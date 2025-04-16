@@ -119,11 +119,14 @@ const selectProductImportFields = (fields) => {
         fieldsWithMutations.push(setFieldTitle(fieldServicePricePercentage, 'import'));
       }
       if (productField.get('field_name', '') === 'rounding_rules') {
-        const fieldRoundingType = Immutable.Map({ field_name: 'rounding_type', title: 'Final charge rounding type' });
+        const fieldRoundingType = Immutable.Map({ field_name: 'rounding_type', title: getFieldName('rounding_type') });
         fieldsWithMutations.push(setFieldTitle(fieldRoundingType, 'product'));
   
-        const fieldRoundingDecimals = Immutable.Map({ field_name: 'rounding_decimals', title: 'Final charge rounding decimals' });
+        const fieldRoundingDecimals = Immutable.Map({ field_name: 'rounding_decimals', title: getFieldName('rounding_decimals') });
         fieldsWithMutations.push(setFieldTitle(fieldRoundingDecimals, 'product'));
+
+        const fieldRoundingStage = Immutable.Map({ field_name: 'rounding_stage', title: getFieldName('rounding_state') });
+        fieldsWithMutations.push(setFieldTitle(fieldRoundingStage, 'product'));
       }
     });
     const fieldPricePlan = Immutable.Map({

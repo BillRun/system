@@ -603,15 +603,15 @@ class Tests_Updaterowt extends UnitTestCase {
 						]
 					],),
 				'expected' => array('in_group' => 200, 'over_group' => 20, 'aprice' => 20, 'charge' => array('retail' => 23.4,))),
-	];}
-	
+				];
+	}
 
 
 	protected $stampsToRun = []; // empty means "run all"
 
 	public function __construct($label = false) {
 		parent::__construct("test UpdateRow");
-		// $this->autoload_tests('updaterowtTestCases');
+		$this->autoload_tests('updaterowtTestCases');
 		$request = new Yaf_Request_Http;
 		$this->runRebalnce = $request->get('rebalance');
 		date_default_timezone_set('Asia/Jerusalem');
@@ -635,7 +635,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		$this->rows =  $this->getTestCases($this->tests());
 		$this->rows  = $this->skip_tests($this->rows ,'row.stamp');
 		//running test
-		$this->rows = $this->tests();
+		// $this->rows = $this->tests();
 		foreach ($this->rows as $key => $row) {
 			if (!empty($this->stampsToRun) && !in_array($row['row']['stamp'], $this->stampsToRun)) {
 				continue;
