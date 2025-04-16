@@ -905,8 +905,148 @@
 					],
 					"to" : "time*2171-02-21T11:56:27Z",
 					"creation_time" : "time*2020-02-22T00:00:00Z"
+				},
+				{
+					"name": "SERVICE-QUANTITY-O1",
+					"description": "SERVICE-QUANTITY-O1",
+					"price": 15,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"balance_period": "tomorrow +2 weeks",
+					"include": {
+						"groups": {
+							"O10": {
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									},
+									"incoming_call": {
+										"unit": "seconds"
+									},
+									"outgoing_call": {
+										"unit": "seconds"
+									}
+								},
+								"value": 60,
+								"account_shared": false,
+								"account_pool": false,
+								"quantity_affected" : true,
+								"rates": [
+									"RATE-O1",
+									"RATE-O2",
+									"INCOMING_1"
+								]
+							}
+						}
+					}
+				}, 
+				{
+					"name": "SERVICE-QUANTITY-O4",
+					"description": "SERVICE-QUANTITY-O4",
+					"price": 15,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"balance_period": "tomorrow +2 weeks",
+					"include": {
+						"groups": {
+							"XYZ": {
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									},
+									"incoming_call": {
+										"unit": "seconds"
+									},
+									"outgoing_call": {
+										"unit": "seconds"
+									}
+								},
+								"value": 100,
+								"account_shared": false,
+								"account_pool": false,
+								"quantity_affected" : true,
+								"rates": [
+									"RATE-O4",
+									"RATE-O5",
+									"RATE-O6"
+								]
+							}
+						}
+					}
+				},
+				{
+
+					"from": "time*2016-01-29T00:00:00Z",
+					"name": "MUL_CUSTOM",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 100
+						}
+					],
+					"description": "mul_custom",
+					"include": {
+						"groups": {
+							"MUL_CUSTOM": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								},
+								"quantity_affected": true
+							}
+						}
+					},
+					"balance_period" : "tomorrow +2 weeks",
+					"quantitative": true,
+					"vatable": true,
+					"to": "time*2167-11-28T15:18:56Z",
+					"creation_time": "time*2018-01-29T00:00:00Z"
+				},
+				{
+
+					"from": "time*2016-12-04T00:00:00Z",
+					"name": "POOLD_CUSTOM",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 100
+						}
+					],
+					"description": "poold_custom",
+					"include": {
+						"groups": {
+							"POOLD_CUSTOM": {
+								"account_shared": true,
+								"account_pool": true,
+								"quantity_affected": true,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"balance_period" : "tomorrow +2 weeks",
+					"quantitative": true,
+					"vatable": true,
+					"to": "time*2167-12-03T12:56:09Z",
+					"creation_time": "time*2017-12-04T00:00:00Z"
 				}
 
-
+			
 			]
 }
