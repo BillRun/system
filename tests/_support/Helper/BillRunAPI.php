@@ -70,7 +70,31 @@ class BillRunAPI extends \Codeception\Module
         return json_decode($ret, true);
     }
    
-
+ /**
+     * Sets plugin settings using the BillRun API.
+     *
+     * This function sends a POST request to the BillRun API endpoint "/api/settings"
+     * with the provided data to set plugin settings. The request is authenticated
+     * using the access token obtained from the getAccessToken method.
+     *
+     * @param array $data An associative array containing the plugin settings to be set.
+     *                    The array keys represent the setting names, and the values represent the setting values.
+     *                    Default value is an empty array.
+     *
+     * @return array|null The response from the BillRun API, decoded as an associative array.
+     *                    If the response is not valid JSON, the function returns null.
+     */
+    public function setPluginSettings($data = [])
+    {
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $ret = $rest->sendPOST("/api/settings", [
+            'category'=> 'plugin',
+            'action'=> 'set',
+            'data' => json_encode($data)
+        ]);
+        return json_decode($ret, true);
+    }
     /**
      * create an account.
      * @param Array $override - fields to override the default values / fields to add
