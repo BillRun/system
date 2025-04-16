@@ -870,3 +870,9 @@ export const reCalculateCycles = (prices, index, value, cycle_unlimited) => pric
   }
   return newList.push(price);
 }, Immutable.List());
+
+export const plansOrServicesToSelectOptions = items => items.map(item => ({
+  value: item.get('name', ''),
+  label: item.get('description', item.get('name', '')),
+  isByCycles: item.get('balance_period', '') === '',
+}));

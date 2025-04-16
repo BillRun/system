@@ -35,6 +35,7 @@ class Models_Subscribers extends Models_Entity {
 		
 		$this->verifyServices();
 		$this->validatePlan();
+		$this->verifyOverrides();
 	}
 
 	public function get() {
@@ -59,6 +60,29 @@ class Models_Subscribers extends Models_Entity {
 	
 	public function getCustomFieldsPath() {
 		return $this->collectionName . ".subscriber.fields";
+	}
+
+		/**
+	 * Verify overrides plan \ services are correct before update is applied to the subscription
+	 */
+	protected function verifyOverrides() {
+		if (!empty($this->update['overrides'])) {
+			$overrides = Billrun_Util::getIn($this->update, 'overrides', []);
+			foreach ($overrides as $override) {
+				$priceIntervals = Billrun_Util::getIn($override, ['value','price'], []);
+				$type = Billrun_Util::getIn($override, 'type', 'item');
+				$key = Billrun_Util::getIn($override, 'key', '');
+				foreach ($priceIntervals as $price) {
+					if (!isset($price['from']) || $price['from'] === '' || 
+						!isset($price['to']) || $price['to'] === '') {
+						throw new Billrun_Exceptions_Api(0, array(), "Override {$type} {$key} missing cycles parameters");
+					}
+					if (!isset($price['price']) || $price['price'] === '') {
+						throw new Billrun_Exceptions_Api(0, array(), "Override {$type} {$key} missing price parameter");
+					}
+				}
+			}
+		}
 	}
 
 	/**
