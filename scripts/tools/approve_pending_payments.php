@@ -13,6 +13,25 @@ $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
 $app->bootstrap();
 Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 
+foreach ($txids as $txid) {
+    $bill = Billrun_Bill_Payment::getInstanceByid($txid);
+    if (!$bill) {
+        $missing[] = "$txid (not found)";
+        continue;
+    }
+    $bill_data = $bill->getRawData();
+
+    if (!$bill_data["pending"] || $bill_data["rejected"]) {
+        $missing[] = $txid;
+    }
+}
+
+if (!empty($missing)) {
+    echo "Aborting. The following txids are missing or invalid (not pending or rejected):\n";
+    echo implode(", ", $missing) . PHP_EOL;
+    exit(1);
+}
+
 $txids = explode(",", $options['txids']);
 foreach ($txids as $txid) {
     $bill2 = Billrun_Bill_Payment::getInstanceByid($txid);
