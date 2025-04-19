@@ -40,7 +40,7 @@ abstract class Billrun_Job_Abstract {
 	 * how many time the job will be retried
 	 * @var int
 	 */
-	protected $limitRuns = 3;
+	protected $limitRuns = 10;
 
 	/**
 	 * parent md5 if this is a child job
