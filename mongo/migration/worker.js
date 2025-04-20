@@ -34,7 +34,7 @@ delete lastConfig['_id'];
 runOnce(lastConfig, 'BRCD-4422-1', function () {
 	lastConfig.worker = {
 		"enabled": true, // this will move front-end features to work with queue instead of the default
-		"iteration": 1000000, // time the iterate between jobs fetching in ms
+		"iteration": 1000000, // time the iterate when job queue is empty
 		"job_timeout":3600, // job timeout
 		"concurrent_limit": 5, // how many jobs run in parallel in single instance
 //		cron: {
