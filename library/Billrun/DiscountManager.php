@@ -1124,7 +1124,7 @@ class Billrun_DiscountManager {
 		$this->discountedLinesAmounts = [];
 		foreach (['discounts' => $this->eligibleDiscounts, 'charge' => $this->eligibleCharges] as $type => $eligibilities) {
 			foreach ($eligibilities as $key => $eligibility) { // discounts/charges are ordered by priority
-				$entity = $type == 'charge' ? $this->getCharge($key, $this->cycle->key()) : ($eligibility['discount'] ?? $this->getDiscount($key, $this->cycle->key()));
+				$entity = $type == 'charge' ? $this->getCharge($key, $this->cycle->key()) : $this->getDiscount($key, $this->cycle->key());
 				if (!$entity) {
 					Billrun_Factory::log("Cannot get '{$key}', CDR was not generated", Billrun_Log::ERR);
 					continue;
