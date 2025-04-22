@@ -174,9 +174,14 @@ class Billrun_DiscountManager {
 	protected function loadEligibleDiscounts($accountRevisions, $subscribersRevisions = []) {
 		$this->eligibleDiscounts = [];
 
-		foreach (self::getDiscounts($this->cycle->key()) as $discount) {
-			$eligibility = $this->getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions);
-			$this->setEligibility($this->eligibleDiscounts, $discount, $eligibility);
+		foreach ($subscribersRevisions as $subscriberRevisions){
+			foreach ($subscriberRevisions as $subscriberRevision){
+				$discounts = Billrun_Aggregator_Customer::overrideEntityValues(self::getDiscounts($this->cycle->key()), @$subscriberRevision['overrides'],'discount');
+				foreach($discounts as $discount){
+					$eligibility = $this->getDiscountEligibility($discount, $accountRevisions, [$subscriberRevision]);
+					$this->setEligibility($this->eligibleDiscounts, $discount, $eligibility);
+				}
+			}
 		}
 		
 		// handle subscribers' level revisions
