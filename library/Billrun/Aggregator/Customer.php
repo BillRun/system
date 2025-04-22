@@ -401,7 +401,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return An overriden entites hashed list.
 	 */
 
-	public static function &overrideEntityValues($entites, $overrideConditions, $entityType) {
+	public static function &overrideEntityValues($entites, $overrideConditions, $entityType, $params = []) {
 		$overridenEntites = $entites;
 		if(!empty($overrideConditions)) {
 			foreach($overrideConditions as $overideRule) {
@@ -410,7 +410,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 					if(	(empty($overideRule['condition']) || Billrun_Util::isConditionMet($entites[$ruleKey],$overideRule['condition'])) ) {
 							$overridenEntites[$ruleKey] = new Mongodloid_Entity( array_merge(
 															$entites[$ruleKey]->getRawData(),
-															$overideRule['value']
+															array_merge($overideRule['value'], $params)
 														) );
 					}
 				}

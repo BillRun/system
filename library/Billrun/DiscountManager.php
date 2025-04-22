@@ -174,12 +174,12 @@ class Billrun_DiscountManager {
 	protected function loadEligibleDiscounts($accountRevisions, $subscribersRevisions = []) {
 		$this->eligibleDiscounts = [];
 
-		foreach ($subscribersRevisions as $subscriberRevisions){
+		foreach ($subscribersRevisions as $sid => $subscriberRevisions){
 			foreach ($subscriberRevisions as $subscriberRevision){
-				$discounts = Billrun_Aggregator_Customer::overrideEntityValues(self::getDiscounts($this->cycle->key()), @$subscriberRevision['overrides'],'discount');
-				foreach($discounts as $discount){
-					$eligibility = $this->getDiscountEligibility($discount, $accountRevisions, [$subscriberRevision]);
-					$this->setEligibility($this->eligibleDiscounts, $discount, $eligibility);
+				$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues(self::getDiscounts($this->cycle->key()), @$subscriberRevision['overrides'],'discount', array('from' => $subscriberRevision['from'], 'to' => $subscriberRevision['to']));
+				foreach($subscriberDiscounts as $subDiscount){
+					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$sid => [$subscriberRevision]]);
+					$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
 				}
 			}
 		}
@@ -275,6 +275,7 @@ class Billrun_DiscountManager {
 				'subs' => $subsEligibility,
 				'services' => $servicesEligibility,
 				'plans' => $plansEligibility,
+				'discount' => $discount
 			];
 		}
 
@@ -1123,7 +1124,7 @@ class Billrun_DiscountManager {
 		$this->discountedLinesAmounts = [];
 		foreach (['discounts' => $this->eligibleDiscounts, 'charge' => $this->eligibleCharges] as $type => $eligibilities) {
 			foreach ($eligibilities as $key => $eligibility) { // discounts/charges are ordered by priority
-				$entity = $type == 'charge' ? $this->getCharge($key, $this->cycle->key()) : $this->getDiscount($key, $this->cycle->key());
+				$entity = $type == 'charge' ? $this->getCharge($key, $this->cycle->key()) : ($eligibility['discount'] ?? $this->getDiscount($key, $this->cycle->key()));
 				if (!$entity) {
 					Billrun_Factory::log("Cannot get '{$key}', CDR was not generated", Billrun_Log::ERR);
 					continue;
