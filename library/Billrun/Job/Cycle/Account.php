@@ -71,8 +71,10 @@ class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
 		];
 		$options = array('upsert' => false, 'new' => true);
 		$record = $coll->findAndModify($query, $set, null, $options);
+		$zero_pages_limit = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit', 3);
 
-		if ($record['count'] <= $record['completed']) {
+		// if account count completed and we run on all pages
+		if ($record['count'] <= $record['completed'] && $record['zero_pages'] >= $zero_pages_limit) {
 			$update = [
 				'$set' => [
 					'end_time' => new Mongodloid_Date(),
@@ -87,8 +89,7 @@ class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
 			$record['start_time'] = new Mongodloid_Date();
 			$record['end_time'] = new Mongodloid_Date();
 			// add fake zero pages for FE backward compatibility
-			$zero_pages_limit = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit', 3);
-			for ($i = 0; $i < $zero_pages_limit; $i++) { // todo: take the 10 from config
+			for ($i = 0; $i < $zero_pages_limit; $i++) {
 				$record['page_number'] = $record['page_number']+1;
 				unset($record['_id']);
 				$coll->insert($record);
