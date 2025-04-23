@@ -216,10 +216,12 @@ class Billrun_DiscountManager {
 					$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues(self::getDiscounts($this->cycle->key()), @$subscriberRevision['overrides'],'discount', array('from' => $subscriberRevision['from'], 'to' => $subscriberRevision['to']));
 					foreach($subscriberDiscounts as $subDiscount){
 						if(in_array($subDiscount['key'], $overrideSubscriberDiscounts)){
-							//todo:: need here to remove eligibilty for this key in subscriber 'from' 'to' and add new eligigbilty for new key (so not ovveride if the rivision is not fulll month) 
+							//removing eligibilty for this general discount in subscriber 'from' 'to' and add new eligigbilty for new key (so not override if the revision is not full month)
+							$subDiscount['excludes'] = array_merge($subDiscount['excludes'] ?? [], $subDiscount['key']);
 							$subDiscount['key'] = $subDiscount['key'] . "_" . $subscriberRevision['_id'];
 							$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
 							$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
+							$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
 						}
 					}
 				}
