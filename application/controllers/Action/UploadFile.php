@@ -69,7 +69,7 @@ class UploadFileAction extends Action_Base {
 	}
 
 	protected function getFilesUploadPath($options = []) {
-		return implode(DIRECTORY_SEPARATOR, array_values(array_filter(array_map('trim', [
+		return implode(DIRECTORY_SEPARATOR, array_filter(array_map('trim', [
 			"uploaded_files",
 			date("Y"),
 			date("m"),
@@ -77,7 +77,7 @@ class UploadFileAction extends Action_Base {
 			Billrun_Util::getIn($options, 'payment_gateway', ''),
 			Billrun_Util::getIn($options, 'payments_file_type', ''),
 			Billrun_Util::getIn($options, 'file_type', ''),
-		]), function ($part) { return $part !== '';})));
+		]), 'strlen'));
 	}
 	
 	protected function loadReceiver($options) {
