@@ -92,7 +92,12 @@ class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
 			for ($i = 0; $i < $zero_pages_limit; $i++) {
 				$record['page_number'] = $record['page_number']+1;
 				unset($record['_id']);
-				$coll->insert($record);
+				// the try-catch for case that we are adding to closing cycle
+				try {
+					$coll->insert($record);
+				} catch (Exception $ex) {
+
+				}
 			}
 		}
 		return true;
