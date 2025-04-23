@@ -68,10 +68,12 @@ class Billrun_Job_Cycle_Page extends Billrun_Job_Cycle {
 		}
 	}
 		
-	public function markCompleted() {
-		parent::markCompleted();
+	protected function finished() {
 		$coll = Billrun_Factory::db()->billing_cycleCollection();
-		$query = ['billrun_key' => $this->config['billrun_key']];
+		$query = [
+			'billrun_key' => $this->config['billrun_key'],
+			'page_number' => 0,
+		];
 		if ($this->invoicing_day) {
 			$query['invoicing_day'] = $this->invoicing_day;
 		}
@@ -102,8 +104,8 @@ class Billrun_Job_Cycle_Page extends Billrun_Job_Cycle {
 			];
 			$options = array('upsert' => false, 'new' => true);
 			$record = $coll->findAndModify($query, $set, null, $options);
-			
 		}
+		return true;
 	}
 
 }
