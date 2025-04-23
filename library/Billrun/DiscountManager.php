@@ -217,8 +217,10 @@ class Billrun_DiscountManager {
 					foreach($subscriberDiscounts as $subDiscount){
 						if(in_array($subDiscount['key'], $overrideSubscriberDiscounts)){
 							//removing eligibilty for this general discount in subscriber 'from' 'to' and add new eligigbilty for new key (so not override if the revision is not full month)
-							$subDiscount['excludes'] = array_merge($subDiscount['excludes'] ?? [], $subDiscount['key']);
-							$subDiscount['key'] = $subDiscount['key'] . "_" . $subscriberRevision['_id'];
+							$subDiscount['excludes'] = array_merge($subDiscount['excludes'] ?? [] , [$subDiscount['key']]);
+							$subDiscount['key'] = "OVERRIDE_" . $subDiscount['key'] . "_SID" . $subscriberRevision['sid'] ."_" . $subscriberRevision['from'] ."_" . $subscriberRevision['to'];
+							$subDiscount['from'] = $subscriberRevision['from'];
+							$subDiscount['to'] = $subscriberRevision['to'];
 							$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
 							$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
 							$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
@@ -307,15 +309,6 @@ class Billrun_DiscountManager {
 			$discount = $this->getDiscount($eligibleDiscount, $this->cycle->key());
 			foreach (Billrun_Util::getIn($discount, 'excludes', []) as $discountToExclude) {
 				if (isset($this->eligibleDiscounts[$discountToExclude])) {
-                                        $subs = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'subs'], []);
-					foreach ($subs as $sid => $subEligibility) {
-                                            if(!empty($eligibilityData['subs'][$sid])){
-                                                $this->eligibleDiscounts[$discountToExclude]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($this->eligibleDiscounts[$discountToExclude]['eligibility'], $eligibilityData['eligibility']);
-						if (empty($this->eligibleDiscounts[$discountToExclude]['subs'][$sid])) {
-                                                        unset($this->eligibleDiscounts[$discountToExclude]['subs'][$sid]);
-                                                }
-                                            }                                               
-					}
                                         
                                         $subsToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'subs'], []);
 					foreach ($subsToExclude as $sid => $subEligibility) {
