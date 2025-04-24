@@ -180,18 +180,24 @@ class Billrun_DiscountManager {
 		}
 		// handle subscribers' level revisions
 		foreach ($subscribersRevisions as $sid => $subscriberRevisions) {
-			$this->handleOverrideDiscounts($accountRevisions, $subscriberRevisions);
+			$this->handleDiscountsForSubsRevs($accountRevisions, $subscriberRevisions);
+			$this->handleOverridesDiscountsForSubsRevs( $accountRevisions, $subscriberRevisions);
 			//Get the latest version of the subscriber discount (in case the subscriber had multiple revisions during the month)
-			$subscriberDiscounts = Billrun_Util::mapArrayToStructuredHash(
-										call_user_func_array('array_merge', array_column($subscriberRevisions,'discounts') ),
-										['key'] );
-			foreach ($subscriberDiscounts as $subDiscount) {
-					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
-					$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
-					$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
+			// $subscriberDiscounts = Billrun_Util::mapArrayToStructuredHash(
+			// 							call_user_func_array('array_merge', array_column($subscriberRevisions,'discounts') ),
+			// 							['key'] );
+			// foreach ($subscriberDiscounts as $key => $subDiscount) {
+			// 	$generalDiscount = self::$discounts[$this->cycle->key()][$key] ?? null;
+			// 	if(isset($generalDiscount)){
+			// 		$this->forceSubscriberDiscount($generalDiscount, $subDiscount, $accountRevisions, $subscriberRevisions);
+			// 	}else{
+			// 		$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
+			// 		$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
+			// 		$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
+			// 	}
+			// }
 			}
-		  }
-		
+
 
 			//Get the latest version of the account discount (in case the account had multiple revisions during the month)
 			$accountDiscounts = Billrun_Util::mapArrayToStructuredHash(
@@ -206,21 +212,14 @@ class Billrun_DiscountManager {
 		$this->handleConflictingDiscounts();
 		}
 
-		protected function handleOverrideDiscounts($accountRevisions, $subscriberRevisions){
+		protected function handleDiscountsForSubsRevs($accountRevisions, $subscriberRevisions){
 			foreach ($subscriberRevisions as $subscriberRevision){
-				if (isset($subscriberRevision['overrides'])){
-					$overrideSubscriberDiscounts =  array_column(array_filter($subscriberRevision['overrides'], function($override) {
-						return isset($override['type']) && $override['type'] === 'discount';
-					}), 'key');
-					
-					$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues(self::getDiscounts($this->cycle->key()), @$subscriberRevision['overrides'],'discount', array('from' => $subscriberRevision['from'], 'to' => $subscriberRevision['to']));
-					foreach($subscriberDiscounts as $subDiscount){
-						if(in_array($subDiscount['key'], $overrideSubscriberDiscounts)){
-							//removing eligibilty for this general discount in subscriber 'from' 'to' and add new eligigbilty for new key (so not override if the revision is not full month)
-							$subDiscount['excludes'] = array_merge($subDiscount['excludes'] ?? [] , [$subDiscount['key']]);
-							$subDiscount['key'] = "OVERRIDE_" . $subDiscount['key'] . "_SID" . $subscriberRevision['sid'] ."_" . $subscriberRevision['from'] ."_" . $subscriberRevision['to'];
-							$subDiscount['from'] = $subscriberRevision['from'];
-							$subDiscount['to'] = $subscriberRevision['to'];
+				if (isset($subscriberRevision['discounts'])){
+					foreach ($subscriberRevision['discounts'] as $subDiscount) {
+						$generalDiscount = self::$discounts[$this->cycle->key()][$subDiscount['key']] ?? null;
+						if(isset($generalDiscount)){
+							$this->forceSubscriberDiscount($generalDiscount, $subDiscount, $accountRevisions, $subscriberRevision);
+						}else{
 							$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
 							$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
 							$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
@@ -228,6 +227,49 @@ class Billrun_DiscountManager {
 					}
 				}
 			}
+		}
+
+		protected function forceSubscriberDiscount($generalDiscount, $subDiscount, $accountRevisions, $subscriberRevision){
+				if(!isset($subDiscount['params']['conditions'])){
+					$subDiscount['params'] = array_merge_recursive($generalDiscount['params'] ?? [], $subDiscount['params'] ?? []);
+					$subDiscount['params']['conditions'] = [];//force this discount
+				}
+				$overrideSubDis = [
+					'key' => $subDiscount['key'],
+					'type' => 'discount',
+					'value' => $subDiscount
+				];
+				$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues([$subDiscount['key'] => $generalDiscount], [$overrideSubDis],'discount', array('from' => $subscriberRevision['from'], 'to' => $subscriberRevision['to']));
+				$overrideSubscriberDiscount = $subscriberDiscounts[$subDiscount['key']] ?? [];
+				$this->handleOverrideDiscountForSubRev($overrideSubscriberDiscount, $subscriberRevision, $accountRevisions);
+			
+		}
+		protected function handleOverridesDiscountsForSubsRevs($accountRevisions, $subscriberRevisions){
+			foreach ($subscriberRevisions as $subscriberRevision){
+				if (isset($subscriberRevision['overrides'])){
+					$overrideSubscriberDiscounts =  array_column(array_filter($subscriberRevision['overrides'], function($override) {
+						return isset($override['type']) && $override['type'] === 'discount';
+					}), 'key');	
+					$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues(self::getDiscounts($this->cycle->key()), @$subscriberRevision['overrides'],'discount', array('from' => $subscriberRevision['from'], 'to' => $subscriberRevision['to']));
+					foreach($subscriberDiscounts as $subDiscount){
+						if(in_array($subDiscount['key'], $overrideSubscriberDiscounts)){
+							$this->handleOverrideDiscountForSubRev($subDiscount, $subscriberRevision, $accountRevisions);
+						}
+					}
+				}
+			}
+		}
+
+		protected function handleOverrideDiscountForSubRev($overrideDiscount, $subscriberRevision, $accountRevisions){
+			$sid = $subscriberRevision['sid'];
+			$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid], [['from' => $subscriberRevision['from']->sec, 'to' =>  $subscriberRevision['to']->sec]]);
+			if (empty($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid])) {
+				unset($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid]);
+			}
+			$overrideDiscount['key'] = "SUBSCRIBER_DISCOUNT_" . $overrideDiscount['key'] . "_SID" . $sid ."_" . $subscriberRevision['from'] ."_" . $subscriberRevision['to'];
+			$eligibility = $this->getDiscountEligibility($overrideDiscount, $accountRevisions, [$sid =>[$subscriberRevision]]);
+			$this->setEligibility($this->eligibleDiscounts, $overrideDiscount, $eligibility);
+			$this->setSubscriberDiscount($overrideDiscount, $this->cycle->key());
 		}
 
 	/**
@@ -596,7 +638,8 @@ class Billrun_DiscountManager {
 				'aid' => $aid,
 				'eligibility' => $eligibility,
 				'subs' => $subscribersEligibility,
-				'account_eligibility' => $eligibility
+				'account_eligibility' => $eligibility,
+				'discount' => $discount
 			];
 		}
 
@@ -683,6 +726,7 @@ class Billrun_DiscountManager {
 			'subs' => $subsEligibility,
 			'services' => $servicesEligibility,
 			'plans' => $plansEligibility,
+			'discount' => $discount
 		];
 	}
 
