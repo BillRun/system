@@ -181,22 +181,7 @@ class Billrun_DiscountManager {
 		// handle subscribers' level revisions
 		foreach ($subscribersRevisions as $sid => $subscriberRevisions) {
 			$this->handleDiscountsForSubsRevs($accountRevisions, $subscriberRevisions);
-			// $this->handleOverridesDiscountsForSubsRevs( $accountRevisions, $subscriberRevisions);
-			//Get the latest version of the subscriber discount (in case the subscriber had multiple revisions during the month)
-			// $subscriberDiscounts = Billrun_Util::mapArrayToStructuredHash(
-			// 							call_user_func_array('array_merge', array_column($subscriberRevisions,'discounts') ),
-			// 							['key'] );
-			// foreach ($subscriberDiscounts as $key => $subDiscount) {
-			// 	$generalDiscount = self::$discounts[$this->cycle->key()][$key] ?? null;
-			// 	if(isset($generalDiscount)){
-			// 		$this->forceSubscriberDiscount($generalDiscount, $subDiscount, $accountRevisions, $subscriberRevisions);
-			// 	}else{
-			// 		$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
-			// 		$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
-			// 		$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
-			// 	}
-			// }
-			}
+		}
 
 
 			//Get the latest version of the account discount (in case the account had multiple revisions during the month)
