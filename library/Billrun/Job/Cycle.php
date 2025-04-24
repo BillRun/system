@@ -88,13 +88,14 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 		if ($this->mode == 'page') {
 			$jobSettings = [
 				"billrun_key" => $this->billrun_key,
+				'generate_pdf' => $this->config['generate_pdf'] ?? Billrun_Factory::config()->getConfigValue('billrun.generate_pdf'),
 			];
 
 			if ($this->config['invoicing_day']) {
 				$jobSettings['invoicing_day'] = $this->invoicing_day;
 			}
 
-			for ($i = 0; $i <= $this->zero_pages_limit; $i++) {
+			for ($i = 0; $i < $this->zero_pages_limit; $i++) {
 				Billrun_Factory::log("Going to create job cycle page " . $i);
 				$jobSettings["page_number"] = $i;
 				Billrun_Jobsmanager::getInstance()->push('Cycle_Page', $jobSettings, $this->queueMsg->md5);
@@ -110,7 +111,7 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 			}
 			$parent = $this->queueMsg->md5;
 			foreach ($this->data as $entry) {
-				$this->addCycleAccountJob($aid, $parent);
+				$this->addCycleAccountJob($entry, $parent);
 			}
 			
 		}
