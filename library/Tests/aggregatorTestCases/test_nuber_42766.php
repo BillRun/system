@@ -2,14 +2,15 @@
 
 //this is example test 
 require_once(APPLICATION_PATH . '/library/Tests/Util/Generators/generators.php');
-class Test_Case_42757
+class Test_Case_42766
 {
 
 
     public function test_case()
     {
+        $account = generat_subscribers::generateAccount();
 
-        generat_test_data::setTestNumber(42757);
+        generat_test_data::setTestNumber(42766);
         $plan = generat_plans::generatePlan(
 
             [
@@ -37,66 +38,84 @@ class Test_Case_42757
                 "prorated_termination" => true
             ]
         );
-        $discount_name = time()+random_int(1,111111111);
+        $discount_name1 = "DIS1_" . time()+random_int(1,111111111);
 
-        $discount = generat_discounts::generateDiscount([
+        $discount1 = generat_discounts::generateDiscount([
           "from" => "2019-05-31T22:00:00Z",
           "to" => "2166-10-16T13:23:53Z",
           "params" => [
-            "conditions" => [
-                    [
-                        "subscriber" => [
-                            [
+                        "conditions" => [
+                            ["account" => [
                                 "fields" => [
                                     [
-                                        "field" => "plan",
+                                        "field" => "aid",
                                         "op" => "in",
-                                        "value" => [$plan['name']]
+                                        "value" => [
+                                            $account['aid'] //always true 
+                                        ]
                                     ]
-                                ]
-                            ]
-                        ]
-                    ]
-            ]],
+						        ]
+
+                            ]]
+                        ]],
             "subject" => [
                 "plan" => [
                     $plan['name'] => ["value" => 100]
                 ]
             ],
-            'key'=> $discount_name
+            'key'=> $discount_name1
+        ]);
+        $discount_name2 = "DIS2_" . time()+random_int(1,111111111);
+
+        $discount2 = generat_discounts::generateDiscount([
+          "from" => "2019-05-31T22:00:00Z",
+          "to" => "2166-10-16T13:23:53Z",
+          "params" => [
+                        "conditions" => [
+                            ["account" => [
+                                "fields" => [
+                                    [
+                                        "field" => "aid",
+                                        "op" => "in",
+                                        "value" => [
+                                            $account['aid'] //always true 
+                                        ]
+                                    ]
+						        ]
+
+                            ]]
+                        ]],
+            "subject" => [
+                "plan" => [
+                    $plan['name'] => ["value" => 80]
+                ]
+            ],
+            'key'=> $discount_name2
         ]);
 
-        $account = generat_subscribers::generateAccount();
         $subscriber = generat_subscribers::generateSubscriber([
             'aid' => $account['aid'],
             "from" => "2018-07-04T21:00:00Z",
             "plan" => $plan['name'],
-            "overrides" => [
-
-                  [
-                    "key" => $discount_name,
-                    "type" => "discount",
-                    "value" => [
-                      "subject" => [
-                        "plan" => [
-                            $plan['name'] => [
-                                "value" => 10
-                            ],
-
-                        ]
-                    ],
-                  ] 
-
-                ]
-            ]
-
-        ]);
-        $subscriber['from'] = "2022-05-14T21:00:00Z";
-        
-        $subscriber['overrides'] = [
+       'overrides' => [
 
           [
-            "key" => $discount_name,
+            "key" => $discount_name1,
+            "type" => "discount",
+            "value" => [
+            
+              "subject" => [
+                "plan" => [
+                    $plan['name'] => [
+                        "value" => 10
+                    ],
+
+                ]
+            ],
+          ] 
+
+        ], [
+            "key" => $discount_name2,
             "type" => "discount",
             "value" => [
               "subject" => [
@@ -109,19 +128,16 @@ class Test_Case_42757
             ],
           ] 
 
-        ]
-          ];
-        $update1 = update_test_data::bulidAPI(
-            'subscribers',
-            ['update' => $subscriber, 'query' => ['_id' => $subscriber['_id']['$id']]]
-        );
+        ]]
+          ]);
+        
 
 
 
         return [
             'test' => [
-                'label' => ' 2 revisions (in month) for subscriber with different override discount price- should give prorated discount each by the overide price',
-                'test_number' => 42757,
+                'label' => 'one subscriber that override two discounts ',
+                'test_number' => 42766,
                 "aid" => $account['aid'],
                 'sid' => $subscriber['sid'],
                 'function' => ['basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'],
@@ -131,9 +147,9 @@ class Test_Case_42757
                 'billrun' => [
                     'billrun_key' => '202206',
                     'aid' => $account['aid'],
-                    'after_vat' => [$subscriber['sid'] => 98.88387096774194],
-                    'total' => 98.88387096774194,
-                    'vatable' => 84.516129032,//flat 100 /discount1 (14/31*10)/discount2 (17/31*20)
+                    'after_vat' => [$subscriber['sid'] => 81.9],
+                    'total' => 81.9,
+                    'vatable' => 70,//flat 100 /override discount1 (10) /overide discount2 (20)
                     'vat' => 17
                 ],
                 'line' => ['types' => ['flat', 'credit']]

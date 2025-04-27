@@ -2,14 +2,14 @@
 
 //this is example test 
 require_once(APPLICATION_PATH . '/library/Tests/Util/Generators/generators.php');
-class Test_Case_42758
+class Test_Case_42763
 {
 
 
     public function test_case()
     {
 
-        generat_test_data::setTestNumber(42758);
+        generat_test_data::setTestNumber(42763);
         $plan = generat_plans::generatePlan(
 
             [
@@ -67,59 +67,44 @@ class Test_Case_42758
         ]);
 
         $account = generat_subscribers::generateAccount();
-        $subscriber1 = generat_subscribers::generateSubscriber([
+        $subscriber = generat_subscribers::generateSubscriber([
             'aid' => $account['aid'],
             "from" => "2018-07-04T21:00:00Z",
             "plan" => $plan['name'],
-            "overrides" => [
+        ]);
+        $subscriber['from'] = "2022-05-14T21:00:00Z";
+        
+        $subscriber['overrides'] = [
 
-                  [
-                    "key" => $discount_name,
-                    "type" => "discount",
-                    "value" => [
-                      "subject" => [
-                        "plan" => [
-                            $plan['name'] => [
-                                "value" => 10
-                            ],
-
-                        ]
+          [
+            "key" => $discount_name,
+            "type" => "discount",
+            "value" => [
+              "subject" => [
+                "plan" => [
+                    $plan['name'] => [
+                        "value" => 10
                     ],
-                  ] 
 
                 ]
-            ]
+            ],
+          ] 
 
-        ]);
-        $subscriber2 = generat_subscribers::generateSubscriber([
-            'aid' => $account['aid'],
-            "from" => "2018-07-04T21:00:00Z",
-            "plan" => $plan['name'],
-            "overrides" => [
+        ]
+          ];
+        $update1 = update_test_data::bulidAPI(
+            'subscribers',
+            ['update' => $subscriber, 'query' => ['_id' => $subscriber['_id']['$id']]]
+        );
 
-                  [
-                    "key" => $discount_name,
-                    "type" => "discount",
-                    "value" => [
-                      "subject" => [
-                        "plan" => [
-                            $plan['name'] => [
-                                "value" => 20
-                            ],
 
-                        ]
-                    ],
-                  ] 
 
-                ]
-            ]
-
-        ]);
         return [
             'test' => [
-                'label' => ' 2 subscribers with different override discount price (full month)- should give different discount for each subscriber by the overide price',
-                'test_number' => 42758,
+                'label' => ' 2 revisions (in month) for subscriber that only the second have override discount (override and general discount meet condtions) - should get override discount partial and general for the rest',
+                'test_number' => 42763,
                 "aid" => $account['aid'],
+                'sid' => $subscriber['sid'],
                 'function' => ['basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'],
                 'options' => ["stamp" => "202206", "force_accounts" => [$account['aid']]]
             ],
@@ -127,16 +112,16 @@ class Test_Case_42758
                 'billrun' => [
                     'billrun_key' => '202206',
                     'aid' => $account['aid'],
-                    'after_vat' => [$subscriber1['sid'] => 90, $subscriber2['sid'] => 80],
-                    'total' =>198.9,
-                    'vatable' => 170,//subscriber1 -> flat 100 /discount 10 + subscriber2-> flat 100 /discount 20
+                    'after_vat' => [$subscriber['sid'] => 57.745161291],
+                    'total' => 57.745161291,
+                    'vatable' => 49.35483871,//flat 100 /override discount (17/31*10)  / general discount (14/31*100)
                     'vat' => 17
                 ],
                 'line' => ['types' => ['flat', 'credit']]
             ],
 
             'postRun' => [
-            ]
+            ],
         ];
     }
 }
