@@ -87,8 +87,9 @@ class Billrun_Job_Cycle_Page extends Billrun_Job_Cycle {
 					'zero_pages' => 1,
 				],
 			];
-			$options = array('upsert' => false, 'new' => true);
+			$options = array('upsert' => true, 'new' => true);
 			$record = $coll->findAndModify($query, $set, null, $options);
+			$this->checkCycleFinished($record);
 		} else {
 			// create the next page
 			$jobSettings = $this->config;

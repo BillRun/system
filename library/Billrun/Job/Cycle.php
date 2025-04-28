@@ -164,27 +164,43 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 			'zero_pages' => 0,
 		];
 
-//		if ($this->invoicing_day) {
-//			$record['invoicing_day'] = $invoicing_day;
-//		}
-
-//		if ($count === 0) { // if there is no inherited jobs - done
-//			$record['end_time'] = new Mongodloid_Date();
-//		}
-
 		$coll->insert($record);
-
-//		if ($count === 0) { // if there is no inherited jobs - mark fake pages to be counted as cycle done
-//			$record['fake'] = 1;
-//			$record['count'] = 0;
-//			$record['end_time'] = new Mongodloid_Date();
-//			// add fake zero pages for FE backward compatibility
-//			$zero_pages_limit = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit', 3);
-//			for ($i = 0; $i < $zero_pages_limit; $i++) { // todo: take the 10 from config
-//				$record['page_number'] = $record['page_number'] + 1;
-//				unset($record['_id']);
-//				$coll->insert($record);
-//			}
-//		}
+	}
+	
+	protected function checkCycleFinished($billing_cycle) {
+		if ($billing_cycle['count'] <= $billing_cycle['completed'] && $billing_cycle['zero_pages'] >= $this->zero_pages_limit) {
+			$query = [
+				'billrun_key' => $this->billrun_key,
+				'page_number' => 0,
+			];
+			if ($this->invoicing_day) {
+				$query['invoicing_day'] = $this->invoicing_day;
+			}
+			$update = [
+				'$set' => [
+					'end_time' => new Mongodloid_Date(),
+				],
+			];
+			$coll = Billrun_Factory::db()->billing_cycleCollection();
+			Billrun_Factory::db()->billing_cycleCollection()->update($query, $update);
+			$billing_cycle['fake'] = 1;
+			$billing_cycle['count'] = 0;
+			$billing_cycle['completed'] = 0;
+			unset($billing_cycle['zero_pages']);
+			unset($billing_cycle['job_md5']);
+			$billing_cycle['start_time'] = new Mongodloid_Date();
+			$billing_cycle['end_time'] = new Mongodloid_Date();
+			// add fake zero pages for FE backward compatibility
+			for ($i = 0; $i < $this->zero_pages_limit; $i++) {
+				$billing_cycle['page_number'] = $billing_cycle['page_number'] + 1;
+				unset($billing_cycle['_id']);
+				// the try-catch for case that we are adding to closing cycle
+				try {
+					$coll->insert($billing_cycle);
+				} catch (Exception $ex) {
+					
+				}
+			}
+		}
 	}
 }
