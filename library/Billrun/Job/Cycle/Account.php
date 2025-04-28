@@ -12,14 +12,12 @@
  * @package  Job Manager
  * @since    5.16
  */
-class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
+class Billrun_Job_Cycle_Account extends Billrun_Job_Cycle {
 
 	protected $method = 'Cycle_Account';
-
 	protected $billrun_key;
-	
 	protected $invoicing_day = false;
-	
+
 	public function init($params) {
 		parent::init($params);
 		if (isset($params['billrun_key'])) {
@@ -32,7 +30,14 @@ class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
 		}
 		return true;
 	}
-	
+
+	/**
+	 * this is only to override the parent method and do nothing
+	 */
+	public function fetch() {
+		return;
+	}
+
 	public function run() {
 		Billrun_Factory::log("cycle account start for " . ($this->config['aid'] ?? ''));
 		$options = [
@@ -42,11 +47,8 @@ class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
 			'size' => 1,
 			'force_accounts' => $this->config['aid'],
 		];
-		
 
-		if (!empty($this->config['generate_pdf'])) {
-			$options['generate_pdf'] = $this->config['generate_pdf'];
-		}
+		$options['generate_pdf'] = $this->config['generate_pdf'] ?? Billrun_Factory::config()->getConfigValue('billrun.generate_pdf');
 
 		$aggregator = Billrun_Aggregator::getInstance($options);
 		$aggregator->load();
@@ -54,7 +56,7 @@ class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
 
 		Billrun_Factory::log("cycle account end for " . ($this->config['aid'] ?? ''));
 	}
-	
+
 	protected function finished() {
 		$coll = Billrun_Factory::db()->billing_cycleCollection();
 		$query = [
@@ -69,37 +71,10 @@ class Billrun_Job_Cycle_Account extends Billrun_Job_Abstract {
 				'completed' => 1
 			]
 		];
-		$options = array('upsert' => false, 'new' => true);
+		$options = array('upsert' => true, 'new' => true);
 		$record = $coll->findAndModify($query, $set, null, $options);
-		$zero_pages_limit = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit', 3);
+		$this->checkCycleFinished($record);
 
-		// if account count completed and we run on all pages
-		if ($record['count'] <= $record['completed'] && $record['zero_pages'] >= $zero_pages_limit) {
-			$update = [
-				'$set' => [
-					'end_time' => new Mongodloid_Date(),
-				],
-			];
-			$coll->update($query, $update);
-			$record['fake'] = 1;
-			$record['count'] = 0;
-			$record['completed'] = 0;
-			unset($record['zero_pages']);
-			unset($record['job_md5']);
-			$record['start_time'] = new Mongodloid_Date();
-			$record['end_time'] = new Mongodloid_Date();
-			// add fake zero pages for FE backward compatibility
-			for ($i = 0; $i < $zero_pages_limit; $i++) {
-				$record['page_number'] = $record['page_number']+1;
-				unset($record['_id']);
-				// the try-catch for case that we are adding to closing cycle
-				try {
-					$coll->insert($record);
-				} catch (Exception $ex) {
-
-				}
-			}
-		}
 		return true;
 	}
 }
