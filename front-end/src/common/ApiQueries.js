@@ -863,3 +863,8 @@ export const getDashboardQuery = action => ({
   ],
 });
 // Dashboard reports queries - end
+
+export const getWorkersQuery = () => ({
+  api: 'billrun',
+  action: 'workerstatus',
+});

@@ -5,12 +5,19 @@ import { Col, Row, Panel, Form, FormGroup, ControlLabel, Label, Button, HelpBloc
 import { Map, List } from 'immutable';
 import { getCycleQuery, getChargeStatusQuery, getOperationsQuery } from '../../common/ApiQueries';
 import { getList, clearList } from '@/actions/listActions';
-import { runBillingCycle, runResetCycle, chargeAllCycle } from '@/actions/cycleActions';
+import {
+  runBillingCycle,
+  runResetCycle,
+  chargeAllCycle,
+  getWorkersStatus,
+} from '@/actions/cycleActions';
+import { showFormModal, showConfirmModal } from "@/actions/guiStateActions/pageActions";
 import { clearItems } from '@/actions/entityListActions';
-import { ConfirmModal } from '@/components/Elements';
+import { ConfirmModal, Actions } from '@/components/Elements';
 import CycleData from './CycleData';
 import CyclesSelector from './CyclesSelector';
 import { getCycleName } from './CycleUtil';
+import PartialForm from './PartialForm';
 import Field from '@/components/Field';
 
 class RunCycle extends Component {
@@ -42,6 +49,7 @@ class RunCycle extends Component {
   }
 
   state = {
+    isWorkers: false,
     selectedCycle: Map(),
     selectedCycleName: '',
     showRerunConfirm: false,
@@ -53,11 +61,14 @@ class RunCycle extends Component {
     showRefreshButton: false,
     ChargedAllClicked: false,
     generatePdf: null,
-    hideChargeButtton: true
+    hideChargeButton: true
   }
 
   componentDidMount() {
     this.props.dispatch(getList('charge_status', getChargeStatusQuery()));
+    this.props.dispatch(getWorkersStatus()).then((isWorkers) => {
+      this.setState(() => ({ isWorkers }));
+    });
   }
 
   componentWillReceiveProps() {
@@ -185,7 +196,27 @@ class RunCycle extends Component {
   }
 
   onClickRun = () => {
-    this.runCycle();
+    const confirm = {
+      message: `Are you sure you want run cycle ${getCycleName(this.props.cycleAdditionalData)}`,
+      onOk: this.runCycle,
+      type: 'confirm',
+      labelOk: 'Run',
+    };
+    this.props.dispatch(showConfirmModal(confirm));
+  }
+
+  onClickPartialRun = () => {
+    const config = {
+      title: `Select AIDs for ${getCycleName(this.props.cycleAdditionalData)}`,
+      skipConfirmOnClose: false,
+      onOk: this.onPartialRunOK,
+    };
+    return this.props.dispatch(showFormModal(Map(), PartialForm, config));
+  }
+
+  onPartialRunOK = (item) => {
+    console.log('onClickPartialRunOK item', item);
+    
   }
 
   onClickRerun = () => {
@@ -283,6 +314,40 @@ class RunCycle extends Component {
     }
   }
 
+  getRunCycleActions = () => {
+    const { isWorkers } = this.state;
+    const selectedCycleStatus = this.getSelectedCycleStatus();
+    return ([{
+      label: 'Run!',
+      onClick: this.onClickRun,
+      show: ['to_run'].includes(selectedCycleStatus),
+      type: 'start',
+      actionStyle: 'primary',
+      actionSize: 'small',
+    }, {
+      label: 'Partial Run!',
+      onClick: this.onClickPartialRun,
+      show: ['to_run'].includes(selectedCycleStatus) && isWorkers,
+      type: 'start',
+      actionStyle: 'primary',
+      actionSize: 'small',
+    }, {
+      label: 'Re-run',
+      onClick: this.onClickRerun,
+      show: ['finished', 'to_rerun'].includes(selectedCycleStatus),
+      type: 're-start',
+      actionStyle: 'primary',
+      actionSize: 'small',
+    }, {
+      label: 'Reset',
+      onClick: this.onClickReset,
+      show: ['finished'].includes(selectedCycleStatus),
+      type: 'reset',
+      actionStyle: 'primary',
+      actionSize: 'small',
+    }]);
+  }
+
   renderCycleStatus = () => {
     const cycleStatus = this.getSelectedCycleStatus();
     return (
@@ -350,16 +415,6 @@ class RunCycle extends Component {
     </FormGroup>),
   );
 
-  renderRunButton = () => (
-    this.getSelectedCycleStatus() === 'to_run' &&
-      (<Button onClick={this.onClickRun}>Run!</Button>)
-  )
-
-  renderRerunButton = () => (
-    (this.getSelectedCycleStatus() === 'finished' || this.getSelectedCycleStatus() === 'to_rerun') &&
-      (<Button onClick={this.onClickRerun}>Re-run</Button>)
-  )
-
   onTogglePdf = (e) => {
     const { value } = e.target;
     this.setState({ generatePdf: value });
@@ -377,11 +432,6 @@ class RunCycle extends Component {
     }
     return null;
   }
-
-  renderResetButton = () => (
-    this.getSelectedCycleStatus() === 'finished' &&
-      (<Button onClick={this.onClickReset}>Reset</Button>)
-  )
 
   isChargingStatusProcessing = () => {
     const { chargeStatusRefreshed } = this.props;
@@ -477,7 +527,7 @@ class RunCycle extends Component {
   }
 
   render() {
-    const { selectedCycle, hideChargeButtton } = this.state;
+    const { selectedCycle, hideChargeButton, isWorkers } = this.state;
     const { cycleAdditionalData } = this.props;
     const billrunKey = selectedCycle.get('billrun_key', '');
     const shouldDisplayBillrunData = List(['running', 'finished', 'confirmed', 'to_rerun']).contains(this.getSelectedCycleStatus());
@@ -490,9 +540,14 @@ class RunCycle extends Component {
     return (
       <div>
         <Row>
+        <Col lg={12}>
+        <p>{isWorkers ? "Workers is On" : "Workers is Off"}</p>
+        </Col>
+      </Row>
+        <Row>
           <Col lg={12}>
             <div className="pull-right" style={{ paddingBottom: 10 }}>
-              {!hideChargeButtton ? this.renderChargeAllButton(): false}
+              {!hideChargeButton ? this.renderChargeAllButton(): false}
             </div>
           </Col>
         </Row>
@@ -505,10 +560,10 @@ class RunCycle extends Component {
                 <FormGroup>
                   <Col sm={3} lg={2} componentClass={ControlLabel} />
                   <Col sm={6} lg={6}>
-                    {this.renderRunButton()}
-                    {this.renderRerunButton()}
-                    {this.renderResetButton()}
-                    <div className="pull-right" style={{ paddingBottom: 10 }}>
+                    <div className="pull-left">
+                      <Actions actions={this.getRunCycleActions()} />
+                    </div>
+                    <div className="pull-right" style={{ paddingTop: 8 }}>
                       {this.renderGeneratePdfCheckbox()}
                     </div>
                   </Col>
