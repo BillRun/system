@@ -864,7 +864,33 @@ export const getDashboardQuery = action => ({
 });
 // Dashboard reports queries - end
 
+
+/** Workers */
+
 export const getWorkersQuery = () => ({
   api: 'billrun',
   action: 'workerstatus',
 });
+
+export const pushToCycleQueueQuery = (billrun_key, include_aids = [], exclude_aids = []) => {
+  let config = { billrun_key };
+  if (include_aids.length > 0) {
+    config['aid'] = include_aids;
+  }
+  if (exclude_aids.length > 0) {
+    config['exclude'] = exclude_aids;
+  }
+
+  const formData = new FormData();
+  formData.append('job_type', 'Cycle');
+  formData.append('config', JSON.stringify(config));
+
+  return ({
+    api: 'queue',
+    action: 'push',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+}

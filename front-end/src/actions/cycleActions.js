@@ -1,6 +1,7 @@
 import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '../common/Api';
 import {
   getWorkersQuery,
+  pushToCycleQueueQuery,
   getRunCycleQuery,
   getResetCycleQuery,
   getConfirmCycleInvoiceQuery,
@@ -14,6 +15,14 @@ import { startProgressIndicator, finishProgressIndicator } from './progressIndic
 export const runBillingCycle = (billrunKey, rerun = false, generatePdf = true) => (dispatch) => { // eslint-disable-line import/prefer-default-export
   dispatch(startProgressIndicator());
   const query = getRunCycleQuery(billrunKey, rerun, generatePdf);
+  return apiBillRun(query)
+    .then(success => dispatch(apiBillRunSuccessHandler(success, 'Cycle started successfully!')))
+    .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error running cycle')));
+};
+
+export const runBillingCycleWithWorkers = (billrunKey, include_aids = [], exclude_aids = []) => (dispatch) => { // eslint-disable-line import/prefer-default-export
+  dispatch(startProgressIndicator());
+  const query = pushToCycleQueueQuery(billrunKey, include_aids, exclude_aids);
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success, 'Cycle started successfully!')))
     .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error running cycle')));
