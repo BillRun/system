@@ -2,6 +2,7 @@ import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '..
 import {
   getWorkersQuery,
   pushToCycleQueueQuery,
+  pushToConfirmQueueQuery,
   getRunCycleQuery,
   getResetCycleQuery,
   getConfirmCycleInvoiceQuery,
@@ -20,9 +21,9 @@ export const runBillingCycle = (billrunKey, rerun = false, generatePdf = true) =
     .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error running cycle')));
 };
 
-export const runBillingCycleWithWorkers = (billrunKey, include_aids = [], exclude_aids = []) => (dispatch) => { // eslint-disable-line import/prefer-default-export
+export const runBillingCycleWithWorkers = (billrunKey, isGeneratePdf = true, include_aids = [], exclude_aids = []) => (dispatch) => { // eslint-disable-line import/prefer-default-export
   dispatch(startProgressIndicator());
-  const query = pushToCycleQueueQuery(billrunKey, include_aids, exclude_aids);
+  const query = pushToCycleQueueQuery(billrunKey, isGeneratePdf, include_aids, exclude_aids);
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success, 'Cycle started successfully!')))
     .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error running cycle')));
@@ -47,6 +48,14 @@ export const confirmCycleInvoice = (billrunKey, invoiceId) => (dispatch) => {
 export const confirmCycle = billrunKey => (dispatch) => {
   dispatch(startProgressIndicator());
   const query = getConfirmCycleAllQuery(billrunKey);
+  return apiBillRun(query)
+    .then(success => dispatch(apiBillRunSuccessHandler(success, 'Confirming cycle...')))
+    .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error confirming cycle')));
+};
+
+export const confirmCycleWithWorkers = (billrunKey, include_aids, exclude_aids) => (dispatch) => {
+  dispatch(startProgressIndicator());
+  const query = pushToConfirmQueueQuery(billrunKey, include_aids, exclude_aids);
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success, 'Confirming cycle...')))
     .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error confirming cycle')));

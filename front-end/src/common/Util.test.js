@@ -2,6 +2,7 @@ import Immutable from 'immutable';
 import {
   getFieldEntityKey,
   toImmutableList,
+  isValueOn,
 } from './Util';
 
 it('getFieldEntityKey', () => {
@@ -28,4 +29,34 @@ it('toImmutableList', () => {
   expect(toImmutableList('x')).toEqual(Immutable.List(['x']));
   expect(toImmutableList({x:'x'})).toEqual(Immutable.List([{x:'x'}]));
   expect(toImmutableList(Immutable.Map({x:'x'}))).toEqual(Immutable.List(['x']));
+});
+
+
+it('isValueOn', () => {
+  expect(isValueOn('')).toEqual(false);
+  expect(isValueOn(undefined)).toEqual(false);
+  expect(isValueOn(null)).toEqual(false);
+  expect(isValueOn([])).toEqual(false);
+  expect(isValueOn({})).toEqual(false);
+  expect(isValueOn(true)).toEqual(true);
+  expect(isValueOn('true')).toEqual(true);
+  expect(isValueOn('TRUE')).toEqual(true);
+  expect(isValueOn(false)).toEqual(false);
+  expect(isValueOn('false')).toEqual(false);
+  expect(isValueOn('FALSE')).toEqual(false);
+  expect(isValueOn()).toEqual(false);
+  expect(isValueOn(0)).toEqual(false);
+  expect(isValueOn(1)).toEqual(true);
+  expect(isValueOn('0')).toEqual(false);
+  expect(isValueOn('1')).toEqual(true);
+  expect(isValueOn('on')).toEqual(true);
+  expect(isValueOn('off')).toEqual(false);
+  expect(isValueOn('ON')).toEqual(true);
+  expect(isValueOn('OFF')).toEqual(false);
+  expect(isValueOn('yes')).toEqual(true);
+  expect(isValueOn('no')).toEqual(false);
+  expect(isValueOn('YES')).toEqual(true);
+  expect(isValueOn('NO')).toEqual(false);
+  expect(isValueOn('Y')).toEqual(true);
+  expect(isValueOn('N')).toEqual(false);
 });

@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { Col, Row, Panel, Form, FormGroup, ControlLabel, Label } from 'react-bootstrap';
 import { Map, List } from 'immutable';
+import moment from 'moment';
+import isNumber from 'is-number';
 import { Actions } from '@/components/Elements';
 import Field from '@/components/Field';
 import CycleData from './CycleData';
@@ -250,6 +252,11 @@ class RunCycle extends Component {
     return cycleAdditionalData.get('cycle_status', selectedCycle.get('cycle_status', ''));
   }
 
+  isSelectedCycleWithWorkers = () => {
+    const { cycleAdditionalData } = this.props;
+    return cycleAdditionalData.get('job_md5', '').length > 0;
+  }
+
   getHeaderActions = () => {
     const { chargeStatus } = this.props;
     const { showRefreshButton, showChargeAllButton } = this.state;
@@ -293,7 +300,7 @@ class RunCycle extends Component {
       actionStyle: 'primary',
       actionSize: 'small',
     }, {
-      label: 'Run! (with Partial option)',
+      label: 'Run!',
       onClick: this.onClickPartialRun,
       show: ['to_run'].includes(selectedCycleStatus) && isWorkers,
       type: 'start',
@@ -302,7 +309,14 @@ class RunCycle extends Component {
     }, {
       label: 'Re-run',
       onClick: this.onClickRerun,
-      show: ['finished', 'to_rerun'].includes(selectedCycleStatus),
+      show: ['finished', 'to_rerun'].includes(selectedCycleStatus) && !isWorkers,
+      type: 're-start',
+      actionStyle: 'primary',
+      actionSize: 'small',
+    }, {
+      label: 'Re-run',
+      onClick: this.onClickPartialRerun,
+      show: ['finished', 'to_rerun'].includes(selectedCycleStatus) && isWorkers,
       type: 're-start',
       actionStyle: 'primary',
       actionSize: 'small',
@@ -341,6 +355,10 @@ class RunCycle extends Component {
     this.props.dispatch(showConfirmModal(confirm));
   }
 
+  onClickPartialRerun = () => {
+    this.onClickPartialRun(true);
+  }
+
   onClickChargeAll = () => {
     const confirm = {
       type: 'confirm',
@@ -362,7 +380,7 @@ class RunCycle extends Component {
     this.props.dispatch(showConfirmModal(confirm));
   }
 
-  onClickPartialRun = () => {
+  onClickPartialRun = (isRerun = false) => {
     const config = {
       title: `Are you sure you want run cycle ${getCycleName(this.props.cycleAdditionalData)}`,
       skipConfirmOnClose: false,
@@ -372,23 +390,26 @@ class RunCycle extends Component {
     return this.props.dispatch(showFormModal(Map({
       include: [],
       exclude: [],
+      isRerun: isRerun
     }), PartialForm, config));
   }
 
   onChangeSelectedCycle = (selectedCycleName) => {
     this.props.dispatch(clearItems('billruns')); // refetch items list because item was (changed in / added to) list
+    this.unsetAutoRefresh();
     this.setState(() => ({
       selectedCycle: this.getCycleData(selectedCycleName),
       selectedCycleName,
     }));
   }
 
-  onPartialRun = (item) => {
+  onPartialRun = (settings) => {
     const { selectedCycle } = this.state;
+    const isGeneratePdf = this.getIsGeneratePdf();
     this.props.dispatch(clearItems('billruns'));
-    const include = item.get('include', []);
-    const exclude = item.get('exclude', []);
-    this.props.dispatch(runBillingCycleWithWorkers(selectedCycle.get('billrun_key', ''), include, exclude))
+    const include = settings.get('include', []);
+    const exclude = settings.get('exclude', []);
+    this.props.dispatch(runBillingCycleWithWorkers(selectedCycle.get('billrun_key', ''), isGeneratePdf, include, exclude))
       .then((response) => {
         if (response.status) {
           this.timerRefreshAfterRun = setTimeout(this.reloadCycleData, 1000);
@@ -431,9 +452,10 @@ class RunCycle extends Component {
   }
 
   render() {
-    const { selectedCycle, selectedCycleName } = this.state;
+    const { selectedCycle, selectedCycleName, isWorkers } = this.state;
     const { cycleAdditionalData } = this.props;
 
+    const isCycleWithWorkers = this.isSelectedCycleWithWorkers();
     const completionPercentage = cycleAdditionalData.get('completion_percentage', false);
     const confirmationPercentage = cycleAdditionalData.get('confirmation_percentage', false);
     const cycleStatus = this.getSelectedCycleStatus();
@@ -443,6 +465,12 @@ class RunCycle extends Component {
     const showGeneratePdf = ['finished', 'to_run'].includes(cycleStatus);
     const isCycleConfirmed = cycleStatus === 'confirmed';
     const isGeneratePdf = this.getIsGeneratePdf();
+    const startDate = isCycleWithWorkers
+      ? moment(cycleAdditionalData.getIn(['entry', 'start_time'], ''))
+      : moment(cycleAdditionalData.get('start_date', selectedCycle.get('start_date', '')));
+    const endDate = isCycleWithWorkers
+      ? moment(cycleAdditionalData.getIn(['entry', 'end_time'], ''))
+      : moment(cycleAdditionalData.get('end_date', selectedCycle.get('end_date', '')));
     const baseFilter = {
       billrun_key: billrunKey,
     };
@@ -467,43 +495,59 @@ class RunCycle extends Component {
                 <FormGroup>
                   <Col sm={3} lg={2} componentClass={ControlLabel}>Status</Col>
                   <Col sm={6} lg={6}>
-                    <Label bsStyle={this.getStatusStyle(cycleStatus)} className="non-editable-field">
-                      {cycleStatus.toUpperCase()}
-                    </Label>
+                    {cycleStatus === '' 
+                      ? <Field value="-" editable={false} />
+                      : <Label bsStyle={this.getStatusStyle(cycleStatus)} className="non-editable-field">
+                          {cycleStatus.toUpperCase()}
+                          {isCycleWithWorkers && " (with workers)"}
+                        </Label>
+                    }
                   </Col>
                 </FormGroup>
                 <FormGroup>
                   <Col sm={3} lg={2} componentClass={ControlLabel}>Start date</Col>
                   <Col sm={6} lg={6}>
-                    <div className="non-editable-field">
-                      {cycleAdditionalData.get('start_date', selectedCycle.get('start_date', '-'))}
-                    </div>
+                    {startDate.isValid() 
+                      ? <Field fieldType="datetime" value={startDate} editable={false} />
+                      : <Field value="-" editable={false} />
+                    }
                   </Col>
                 </FormGroup>
                 <FormGroup>
                   <Col sm={3} lg={2} componentClass={ControlLabel}>End date</Col>
                   <Col sm={6} lg={6}>
-                    <div className="non-editable-field">
-                      {cycleAdditionalData.get('end_date', selectedCycle.get('end_date', '-'))}
-                    </div>
+                  {endDate.isValid() 
+                    ? <Field fieldType="datetime" value={endDate} editable={false} />
+                    : <Field value="-" editable={false} />
+                  }
                   </Col>
                 </FormGroup>
                 <FormGroup>
-                  <Col sm={3} lg={2} componentClass={ControlLabel}>Completion percentage</Col>
+                  <Col sm={3} lg={2} componentClass={ControlLabel}>Last Run Completion percentage</Col>
                   <Col sm={6} lg={6}>
-                    <div className="non-editable-field">
-                      {completionPercentage ? `${completionPercentage}%` : '-'}
-                    </div>
+                    { isNumber(completionPercentage)
+                      ? <Field fieldType="percentage" value={completionPercentage / 100} editable={false} />
+                      : <Field value="-" editable={false} />
+                    }
                   </Col>
                 </FormGroup>
                 <FormGroup>
                   <Col sm={3} lg={2} componentClass={ControlLabel}>Confirmation percentage</Col>
                   <Col sm={6} lg={6}>
-                    <div className="non-editable-field">
-                      {confirmationPercentage ? `${confirmationPercentage}%` : '-'}
-                    </div>
+                    { isNumber(confirmationPercentage)
+                      ? <Field fieldType="percentage" value={confirmationPercentage / 100} editable={false} />
+                      : <Field value="-" editable={false} />
+                    }
                   </Col>
                 </FormGroup>
+                { isWorkers && (
+                  <FormGroup>
+                    <Col sm={3} lg={2} componentClass={ControlLabel}>Total Generated Invoices</Col>
+                    <Col sm={6} lg={6}>
+                      <Field value={cycleAdditionalData.get('generated_invoices', '-')} editable={false} />
+                    </Col>
+                  </FormGroup>
+                )}
                 <FormGroup>
                   <Col sm={3} lg={2} componentClass={ControlLabel} />
                   <Col sm={6} lg={6}>
@@ -526,6 +570,7 @@ class RunCycle extends Component {
                   reloadCycleData={this.reloadCycleData}
                   showConfirmAllButton={showConfirmAllButton}
                   isCycleConfirmed={isCycleConfirmed}
+                  isWorkers={isWorkers}
                 />
               )}
             </Panel>
