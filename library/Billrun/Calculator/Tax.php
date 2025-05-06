@@ -134,7 +134,13 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 */
 	 public static function isLinePreTaxed($line) {
 		$usageType = $line['usaget'];
-		$prepricedMapping = @Billrun_Factory::config()->getFileTypeSettings($line['type'], true)['pricing'];
+		if(isset($line['linet'])){
+			$fileSettings = Billrun_Factory::config()->getFileTypeSettings($line['type'], true);
+			$prepricedMapping = @Billrun_Config::getLineTypesField($fileSettings, 'pricing')[$line['linet']];
+		}else{
+			$prepricedMapping = @Billrun_Factory::config()->getFileTypeSettings($line['type'], true)['pricing'];
+
+		}
 
 		return !empty($prepricedMapping[$usageType]['tax_included']);
 	 }
@@ -151,7 +157,12 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		if($this->isLinePreTaxed($line)) {
 			$userFields = $line['uf'];
 			$usageType = $line['usaget'];
-			$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($line['type'], true)['pricing'];
+			if(isset($line['linet'])){
+				$fileSettings = Billrun_Factory::config()->getFileTypeSettings($line['type'], true);
+				$prepricedMapping = Billrun_Config::getLineTypesField($fileSettings, 'pricing')[$line['linet']];
+			}else{
+				$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($line['type'], true)['pricing'];
+			}
 			$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
 			$aprice = Billrun_util::getIn($userFields, $apriceField);
                         Billrun_Factory::dispatcher()->trigger('beforeGetLinePriceToTax', array($line, &$aprice, $this));

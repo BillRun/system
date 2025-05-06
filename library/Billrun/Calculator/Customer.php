@@ -416,9 +416,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function getCustomerIdentificationTranslationByRow($row){
 		if(isset($row['linet'])){
 			return Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['linet'] , $row['usaget']), array());
-		}else{// b/c
-			return Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['usaget']), array());
-		}
+		}// b/c
+		return Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['usaget']), array());
+		
 	}
 
 	protected function getIdentityParams($row) {
@@ -538,7 +538,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$customerIdentificationTranslation = array();
 		foreach (Billrun_Factory::config()->getConfigValue('file_types', array()) as $fileSettings) {
 			if(Billrun_Config::isFileTypeConfigEnabled($fileSettings) && Billrun_Config::haveDifferentLineTypes($fileSettings['line_types'])){
-				$customerIdentificationTranslation[$fileSettings['file_type']] =  Billrun_Config::getLineTypeField($fileSettings['line_types'], 'customer_identification_fields');
+				$customerIdentificationTranslation[$fileSettings['file_type']] =  Billrun_Config::getLineTypesField($fileSettings, 'customer_identification_fields');
 			} else if (Billrun_Config::isFileTypeConfigEnabled($fileSettings) && !empty($fileSettings['customer_identification_fields'])) {// b/c + default if not exists
 				$customerIdentificationTranslation[$fileSettings['file_type']] = $fileSettings['customer_identification_fields'];
 			}

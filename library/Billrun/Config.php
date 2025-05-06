@@ -589,16 +589,17 @@ class Billrun_Config {
 		return false;
 	}
 
-	public static function getLineTypeField($lineTypes,  $field, $recordType = 'D') {
-		$fieldValues = [];
+	public static function getLineTypesField($fileSettings,  $field, $recordType = 'D') {
+		$fieldValuesByLineType = [];
+		$lineTypes = $$fileSettings['line_types'];
 		if(Billrun_Config::haveDifferentLineTypes($lineTypes)){
 			foreach ($lineTypes as $lineType){
 				if($lineType['record_type'] == $recordType && isset($lineType['line_type']) && !empty(Billrun_Utill::getIn($lineType, $field, null))){
-					$fieldValues[$lineType['line_type']] = Billrun_Utill::getIn($lineType,$field, null);
+					$fieldValuesByLineType[$lineType['line_type']] = Billrun_Utill::getIn($lineType,$field, Billrun_Utill::getIn($fileSettings,$field, null));
 				}
 			}
 		}
-		return $fieldValues;
+		return $fieldValuesByLineType;
 	}
 
 }

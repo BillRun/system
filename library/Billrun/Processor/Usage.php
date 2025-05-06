@@ -136,9 +136,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$processedData['trailer'] = array('trailer' => TRUE); //TODO
 		$parsedData = $parser->getDataRows();
 		$rowCount = 0;
-		foreach ($parsedData as $parsedRow) {
+		foreach ($parsedData as $lineNumber => $parsedRow) {
 			Billrun_Factory::dispatcher()->trigger('beforeLineMediation', array($this, static::$type, &$parsedRow));
-			$lineTypeConfig = $this->getLineTypeConfigByRow($parsedRow);
+			$lineTypeConfig = $this->getLineTypeConfigByRow($parsedRow, $lineNumber);
 			if(!empty($lineTypeConfig)){
 				$row['linet'] = $lineTypeConfig['line_type'];
 				$this->setConstructProcessorFields($lineTypeConfig);

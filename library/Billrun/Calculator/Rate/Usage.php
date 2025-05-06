@@ -204,8 +204,12 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 
 	protected function getFilters($row = [], $params = []) {
 		$type = $params['type'] ?: '';
-		return Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
+		if(isset($row['linet'])){
+			$fileSettings = Billrun_Factory::config()->getFileTypeSettings($type, true);
+			return Billrun_Config::getLineTypesField($fileSettings, 'rate_calculators')[$row['linet']];
 		}
+		return Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
+	}
 
 	protected function getBasicMatchQuery($row, $category = '', $params = []) {
 		$usaget = $params['usaget'];
