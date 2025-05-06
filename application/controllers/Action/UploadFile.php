@@ -84,7 +84,7 @@ class UploadFileAction extends Action_Base {
 		$connection = null;
 		$inputProcessor = false;
 		$connectionDetails["connection_type"] = "relocate";
-		$connectionDetails["path"] = $this->getFilesUploadPath();
+		$connectionDetails["path"] = $this->getFilesUploadPath($options);
 		$connectionDetails["delete_received"] = true;
 		$connectionDetails["filename_regex"] = "/^" . preg_quote($options["file_name"]) . '$/';
 		$a = mkdir(
