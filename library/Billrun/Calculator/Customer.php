@@ -413,12 +413,20 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $priorities;
 	}
 
+	protected function getCustomerIdentificationTranslationByRow($row){
+		if(isset($row['linet'])){
+			return Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['linet'] , $row['usaget']), array());
+		}else{// b/c
+			return Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['usaget']), array());
+		}
+	}
+
 	protected function getIdentityParams($row) {
 		if (!$row instanceof Mongodloid_Entity) {
 			$row = new Mongodloid_Entity($row);
 		}
 		$params = array();
-		$customer_identification_translation = Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['usaget']), array());
+		$customer_identification_translation = $this->getCustomerIdentificationTranslationByRow($row);
 		foreach ($customer_identification_translation as $translationRules) {
 			if (!empty($translationRules['conditions'])) {
 				foreach ($translationRules['conditions'] as $condition) {
