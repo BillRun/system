@@ -18,8 +18,8 @@ const PartialForm = ({
   const includeError = null;
   const excludeError = null;
 
-  const include = item.get('include', '');
-  const exclude = item.get('exclude', '');
+  const include = item.get('include', []);
+  const exclude = item.get('exclude', []);
   const isRerun = item.get('isRerun', false);
 
   const onTogglePartial = () => {
@@ -94,7 +94,9 @@ const PartialForm = ({
           <Col sm={8}>
             <Field fieldType="textarea" onChange={onChangeInclude} value={includeDisplay} editable={isPartial} />
             {includeError !== null && <HelpBlock>{includeError}.</HelpBlock>}
-            <code style={{wordWrap: 'break-word'}}>{JSON.stringify(include)}</code>
+            {include.length > 0 && (
+              <Field fieldType="json" className="included-excluded-items" value={include} editable={false} />
+            )}
           </Col>
         </FormGroup>
       )}
@@ -104,7 +106,9 @@ const PartialForm = ({
           <Col sm={8}>
             <Field fieldType="textarea" onChange={onChangeExclude} value={excludeDisplay}/>
             {excludeError !== null && <HelpBlock>{excludeError}.</HelpBlock>}
-            <code style={{wordWrap: 'break-word'}}>{JSON.stringify(exclude)}</code>
+            {exclude.length > 0 && (
+              <Field fieldType="json" className="included-excluded-items" value={exclude} editable={false} />
+            )}
           </Col>
         </FormGroup>
       )}
