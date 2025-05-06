@@ -17,98 +17,43 @@ class Billrun_Job_Charging extends Billrun_Job_Abstract {
 	protected $method = 'Charging';
 	
 	public function fetch() {
-		$pipeline = array();
-		
 		if (isset($this->config['include'])) {
-			$pipeline[] = array(
-				'$match' => array(
-					'aid' => array(
-						'$in' => (array) $this->config['include'], // @todo: input validation
-					),
+			$filtersQuery = array(
+				'aid' => array(
+					'$in' => (array) $this->config['include'],
+				),
+			);
+		} elseif (isset($this->config['exclude'])) {
+			$filtersQuery = array(
+				'aid' => array(
+					'$nin' => (array) $this->config['exclude'],
 				),
 			);
 		}
 		
-		if (isset($this->config['exclude'])) {
-			$exclude = (array) $this->config['exclude'];
-		} else {
-			$exclude = [];
+		if (!empty($this->config['pay_mode'])) {
+			return Billrun_Bill::getBillsAggregateValues($filtersQuery, $this->config['pay_mode']);
 		}
-		
-		if (isset($this->config['billrun_key'])) {
-			$pipeline = array_merge($pipeline, $this->cyclePipeline($this->config['billrun_key'], $exclude));
-		} else {
-			$pipeline = array_merge($pipeline, $this->outstandingBalancePipeline(0.005, $exclude)); // todo: take 0.005 from config
-		}
-		
-		$coll = Billrun_Factory::db()->billsCollection();
-		return $coll->aggregate($pipeline); // todo: allow advanced options for heavy queries
-	}
-	
-	protected function outstandingBalancePipeline($min_outstanding = 0.005, $exclude = []) {
-		$ret = [];
-		$ret[] = array(
-			'$group' => array(
-				'_id' => '$aid',
-				'due' => array(
-					'$sum' => '$due'
-				),
-			),
-		);
-		$ret[] = array(
-			'$match' => array(
-				'$or' => array(
-					array('due' => array('$lte' => (-1 * $min_outstanding))), // todo: take from config
-					array('due' => array('$gte' => $min_outstanding)), // todo: take from config
-				)
-			)
-		);
-		
-		if (!empty($exclude)) {
-			$ret[count($ret)-1]['$match']['aid'] = ['$nin' => $exclude];
-		}
-		
-		$ret[] = array(
-			'$project' => array(
-				'_id' => 0,
-				'aid' => '$_id',
-				'due' => '$due',
-			),
-		);
-		return $ret;
-	}
-	
-	protected function cyclePipeline($billrun_key, $exclude = []) {
-		$ret = array();
-		$ret[] = array(
-			'$match' => array(
-				'type' => 'inv',
-				'billrun_key' => $billrun_key,
-			)
-		);
-		
-		if (!empty($this->config['invoicing_day'])) {
-			$ret[count($ret)-1]['$match']['invoicing_day'] = $this->config['invoicing_day'];
-		}
-		
-		if (!empty($exclude)) {
-			$ret[count($ret)-1]['$match']['aid'] = ['$nin' => $exclude];
-		}
-
-		$ret[] = array(
-			'$project' => array(
-				'_id' => 0,
-				'aid' => '$aid',
-			),
-		);
-		return $ret;
+		return Billrun_Bill::getBillsAggregateValues($filtersQuery);
 	}
 
 	public function run() {
 		$jobSettings = array();
 		
-		if (isset ($this->config['mode'])) {
+		if (isset($this->config['mode'])) {
 			$jobSettings['mode'] = $this->config['mode'];
+		}
+		
+		if (isset($this->config['pay_mode'])) {
+			$jobSettings['pay_mode'] = $this->config['pay_mode'];
+		}
+		
+		if (isset($this->config['min_invoice_date'])) {
+			$jobSettings['min_invoice_date'] = $this->config['min_invoice_date'];
+		}
+		
+		if (isset($this->config['billrun_key'])) {
+			$jobSettings['billrun_key'] = $this->config['billrun_key'];
 		}
 		
 		$count = 0;
