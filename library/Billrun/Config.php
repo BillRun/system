@@ -582,4 +582,23 @@ class Billrun_Config {
 		return !is_null($this->getConfigValue('billrun.invoicing_day', null)) ? $this->getConfigValue('billrun.invoicing_day', 1) : $this->getConfigValue('billrun.charging_day', 1);
 	}
 
+	public static function haveDifferentLineTypes($lineTypes) {		
+		if(isset($lineTypes) && is_array($lineTypes[0])){
+			return true;
+		}
+		return false;
+	}
+
+	public static function getLineTypeField($lineTypes,  $field, $recordType = 'D') {
+		$fieldValues = [];
+		if(Billrun_Config::haveDifferentLineTypes($lineTypes)){
+			foreach ($lineTypes as $lineType){
+				if($lineType['record_type'] == $recordType && isset($lineType['line_type']) && !empty(Billrun_Utill::getIn($lineType, $field, null))){
+					$fieldValues[$lineType['line_type']] = Billrun_Utill::getIn($lineType,$field, null);
+				}
+			}
+		}
+		return $fieldValues;
+	}
+
 }

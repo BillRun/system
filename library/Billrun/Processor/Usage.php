@@ -87,6 +87,10 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	public function __construct($options) {
 		parent::__construct($options);
+		$this->setConstructProcessorFields($options);
+	}
+
+	protected function setConstructProcessorFields($options){
 		if (!empty($options['processor']['default_usaget'])) {
 			$this->defaultUsaget = $options['processor']['default_usaget'];
 		}
@@ -119,7 +123,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 
 		$this->dateField = $options['processor']['date_field'];
-		$this->prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($options['file_type'], true)['pricing'];
+		$this->prepricedMapping = $options['pricing'];
 		
 	}
 
@@ -134,6 +138,11 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$rowCount = 0;
 		foreach ($parsedData as $parsedRow) {
 			Billrun_Factory::dispatcher()->trigger('beforeLineMediation', array($this, static::$type, &$parsedRow));
+			$lineTypeConfig = $this->getLineTypeConfigByRow($parsedRow);
+			if(!empty($lineTypeConfig)){
+				$row['linet'] = $lineTypeConfig['line_type'];
+				$this->setConstructProcessorFields($lineTypeConfig);
+			}
 			$row = $this->getBillRunLine($parsedRow);
 			Billrun_Factory::dispatcher()->trigger('afterLineMediation', array($this, static::$type, &$row));
 			if (!$row){
@@ -357,4 +366,18 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return !empty($this->prepricedMapping[$usaget]);
 	}
 	
+	protected function getLineTypeConfigByRow($parsedRow, $lineNumber){
+		$fileSettings = Billrun_Factory::config()->getFileTypeSettings($options['file_type'], true);
+		if(Billrun_Config::haveDifferentLineTypes($fileSettings['line_types'])){
+			foreach($fileSettings['line_types'] as $lineType){
+				$regex = $lineType['regex'];
+				if (preg_match($regex, $parsedRow)) {
+					return $lineType;
+				}			
+			}
+			throw new Exception('Input Processor have Differents line types and Line '. $lineNumber . ' does not match any of the regex patterns.');
+		}
+		return false;
+				 
+	}
 }

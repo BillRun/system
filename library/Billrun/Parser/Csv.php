@@ -35,6 +35,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	protected $lineTypes;
 	protected $hasHeader;
 	protected $hasFooter;
+	protected $recordType;
 
 	
 	public function __construct($options) {
@@ -87,7 +88,8 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 		}
 		while ($line = $this->getLine($fp)) {
 			$totalLines++;
-			$record_type = $this->getLineType($line);
+			$this->setProcessorDataByLine($line);
+			$record_type = $this->getRecordType($line);
 			switch ($record_type) {
 				case static::DATA_LINE:
 					$this->setStructure($this->dataStructure);
@@ -126,7 +128,10 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 
 	abstract protected function parseLine($line);
 
-	protected function getLineType($line) {
+	protected function getRecordType($line) {
+		if (isset($this->recordType)){
+			return $this->recordType;
+		}
 		if (preg_match($this->lineTypes['D'], $line)) {
 			return static::DATA_LINE;
 		} else if (preg_match($this->lineTypes['H'], $line)) {
@@ -234,4 +239,20 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	public function getStructure() {
 		return $this->structure;
 	}
+
+	protected function setProcessorDataByLine($line){
+		if(Billrun_Config::haveDifferentLineTypes($this->lineTypes)){
+			foreach ($this->lineTypes as $lineType){
+				$regex = $lineType['regex'];
+				if (preg_match($regex, $line)) {
+					$this->recordType = $lineType['record_type'];
+					$this->dataStructure = isset($lineType['data_structure']) ? $lineType['data_structure'] : $lineType['structure'];
+					$this->headerStructure = $lineType['header_structure'];
+					$this->trailerStructure= $lineType['trailer_structure'];
+					return;
+				}
+			}
+		}
+	}
+
 }
