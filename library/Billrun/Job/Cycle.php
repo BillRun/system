@@ -95,6 +95,10 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 				$jobSettings['invoicing_day'] = $this->invoicing_day;
 			}
 
+			if (!empty($this->config['exclude'])) {
+				$jobSettings['exclude'] = (array) $this->config['exclude'];
+			}
+
 			for ($i = 0; $i < $this->zero_pages_limit; $i++) {
 				Billrun_Factory::log("Going to create job cycle page " . $i);
 				$jobSettings["page_number"] = $i;
