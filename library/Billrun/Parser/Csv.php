@@ -26,6 +26,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	protected $headerStructure;
 	protected $trailerStructure;
 	protected $dataStructure;
+	protected $legalLineTypeFields = ['parser', 'record_type', 'line_type', 'regex'];
 
 	/**
 	 *
@@ -40,6 +41,15 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	
 	public function __construct($options) {
 		parent::__construct($options);
+		$this->setConstructParserCsvFields($options);
+		if (isset($options['line_types'])) {
+			$this->setLineTypes($options['line_types']);
+		}
+		$this->hasHeader =  (isset($options['csv_has_header']) ? $options['csv_has_header'] : false);
+		$this->hasFooter =  (isset($options['csv_has_footer']) ? $options['csv_has_footer'] : false);
+	}
+
+	protected function setConstructParserCsvFields($options){
 		if (isset($options['data_structure']) || isset($options['structure'])) {
 			$this->dataStructure = isset($options['data_structure']) ? $options['data_structure'] : $options['structure'];
 		}
@@ -49,11 +59,6 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 		if (isset($options['trailer_structure'])){
 			$this->trailerStructure= $options['trailer_structure'];
 		}
-		if (isset($options['line_types'])) {
-			$this->setLineTypes($options['line_types']);
-		}
-		$this->hasHeader =  (isset($options['csv_has_header']) ? $options['csv_has_header'] : false);
-		$this->hasFooter =  (isset($options['csv_has_footer']) ? $options['csv_has_footer'] : false);
 	}
 
 	/**
@@ -69,7 +74,11 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 
 
 	public function setLineTypes($lineTypes) {
-		$this->lineTypes = $lineTypes;
+		if(Billrun_Config::haveDifferentLineTypes($lineTypes)){
+    		$this->lineTypes = array_intersect_key($lineType, array_flip($this->legalLineTypeFields));
+		} else {
+			$this->lineTypes = $lineTypes;
+		}
 	}
 
 	/**
@@ -88,7 +97,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 		}
 		while ($line = $this->getLine($fp)) {
 			$totalLines++;
-			$this->setProcessorDataByLine($line);
+			$this->setParserDataByLine($line);
 			$record_type = $this->getRecordType($line);
 			switch ($record_type) {
 				case static::DATA_LINE:
@@ -117,6 +126,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 					$skippedLines++;
 					break;
 			}
+			$this->saveParserExtraData($parsedLine);
 		}
 		if ($this->hasFooter) {
 			$this->removeLastLine($record_type);
@@ -240,19 +250,33 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 		return $this->structure;
 	}
 
-	protected function setProcessorDataByLine($line){
+	protected function setParserDataByLine($line){
 		if(Billrun_Config::haveDifferentLineTypes($this->lineTypes)){
 			foreach ($this->lineTypes as $lineType){
 				$regex = $lineType['regex'];
 				if (preg_match($regex, $line)) {
 					$this->recordType = $lineType['record_type'];
-					$this->dataStructure = isset($lineType['data_structure']) ? $lineType['data_structure'] : $lineType['structure'];
-					$this->headerStructure = $lineType['header_structure'];
-					$this->trailerStructure= $lineType['trailer_structure'];
+					$this->lineType =  $lineType['line_type'];
+					$this->setConstructParserCsvFields($lineType['parser']);
 					return;
 				}
 			}
+			throw new Exception('Input Processor have Differents line types and Line '. $lineNumber . ' does not match any of the regex patterns.');
 		}
+	}
+
+	protected function saveParserExtraData($line){
+		if(isset($this->lineType)){
+			$stamp = Billrun_Util::generateArrayStamp($line);
+			$this->linesTypesMapping[$stamp] = $this->lineType; 
+		}
+	}
+
+	public function getExtraData(){
+		if(!empty($this->linesTypesMapping)){
+			return ['linesTypesMapping' => $this->linesTypesMapping];
+		}
+		return [];
 	}
 
 }

@@ -130,7 +130,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		
 		if (isset($options['parser']) && $options['parser'] != 'none') {
-			$this->setParser($options['parser']);
+			$lineTypes = $options['line_types'] ?? [];
+			$this->setParser(array_merge($options['parser'], (!empty($lineTypes) ? ['line_types' => $lineTypes] : [])));
 		}
 
 		if (isset($options['processor']['line_numbers'])) {

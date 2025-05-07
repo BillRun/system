@@ -68,8 +68,8 @@ class Billrun_Processor_Util {
 		return null;
 	}
 	
-	public static function getCalculatedFields($type) {
-		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
+	public static function getCalculatedFields($type, $linet = null) {
+		$fileTypeConfig = Billrun_Factory::config()->getLineTypeConfigByName($type, true, $linet);
 		$calculated_fields = $fileTypeConfig['processor']['calculated_fields'] ?? [];
 		$cf = array_map(function($field){
 			return $field['target_field'];
@@ -77,8 +77,8 @@ class Billrun_Processor_Util {
 		return $cf;
 	}
 	
-	public static function getUserFields($type) {
-		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
+	public static function getUserFields($type, $linet = null) {
+		$fileTypeConfig = Billrun_Factory::config()->getLineTypeConfigByName($type, true, $linet);
 		$uf = $fileTypeConfig['parser']['custom_keys'] ?? [];
 		return $uf;
 	}

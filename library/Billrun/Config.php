@@ -526,8 +526,8 @@ class Billrun_Config {
 		return (!isset($settings['enabled']) || $settings['enabled']);
 	}
 
-	public static function getParserStructure($fileTypeName) {
-		$fileType = Billrun_Factory::config()->getFileTypeSettings($fileTypeName);
+	public static function getParserStructure($fileTypeName, $lineType = null) {
+		$fileType = Billrun_Factory::config()->getLineTypeConfigByName($fileTypeName, false, $lineType);
 		if (!empty($fileType)) {
 			return $fileType['parser']['structure'];
 		}
@@ -583,7 +583,7 @@ class Billrun_Config {
 	}
 
 	public static function haveDifferentLineTypes($lineTypes) {		
-		if(isset($lineTypes) && is_array($lineTypes[0])){
+		if(isset($lineTypes) && isset($lineTypes[0]) && is_array($lineTypes[0])){
 			return true;
 		}
 		return false;
@@ -600,6 +600,18 @@ class Billrun_Config {
 			}
 		}
 		return $fieldValuesByLineType;
+	}
+
+	public Static function getLineTypeConfigByName($fileTypeName, $enabledOnly = false, $lint = null){
+		$fileType = Billrun_Factory::config()->getFileTypeSettings($fileTypeName, $enabledOnly);
+		if(isset($fileType) && isset($fileType['line_types']) && isset($lint)){
+			foreach ($fileType['line_types']  as $lineType){
+				if(isset($lineType['line_type']) && $lineType['line_type'] == $lint){
+					return $lineType;
+				}
+			}
+		}
+		return $fileType;
 	}
 
 }

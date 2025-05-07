@@ -159,7 +159,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	public function getBillRunLine($rawLine) {
 		$row['uf'] = $this->filterFields($rawLine);
-                $row['cf'] = $this->getCalculatedFields($row['uf'], static::$type);
+        $row['cf'] = $this->getCalculatedFields($row['uf'], static::$type, $rawLine['linet'] ?? null );
                 
 		$datetime = $this->getRowDateTime($row);
 		if (!$datetime) {
@@ -202,7 +202,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * 					or if no filter is defined in the configuration the full data record.
 	 */
 	protected function filterFields($rawRow) {
-		$parserFields = Billrun_Factory::config()->getParserStructure(static::$type);
+		$parserFields = Billrun_Factory::config()->getParserStructure(static::$type, $rawLine['linet'] ?? null);
 		foreach ($parserFields as $field) {
 			if (isset($field['checked']) && $field['checked'] === false) {
 				unset($rawRow[$field['name']]); 
@@ -229,9 +229,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
          * @param string    $type - Input processor name
          * @return Array    computed fields (cf)
          */
-        protected function getCalculatedFields($uf, $type) {
+        protected function getCalculatedFields($uf, $type, $linet = null) {
                 $row = array();
-		$configurations = Billrun_Util::getIn(Billrun_Factory::config()-> getFileTypeSettings($type,true),'processor.calculated_fields');
+		$configurations = Billrun_Util::getIn(Billrun_Factory::config()-> getLineTypeConfigByName($type,true, $linet),'processor.calculated_fields', []);
                 foreach ($configurations as $calculatedConf){ 
                     $filter = new Billrun_EntityGetter_Filters_Base(array('computed' => $calculatedConf));
                     $targetFieldName = $calculatedConf['target_field'];
@@ -367,17 +367,16 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	}
 	
 	protected function getLineTypeConfigByRow($parsedRow, $lineNumber){
-		$fileSettings = Billrun_Factory::config()->getFileTypeSettings($options['file_type'], true);
-		if(Billrun_Config::haveDifferentLineTypes($fileSettings['line_types'])){
-			foreach($fileSettings['line_types'] as $lineType){
-				$regex = $lineType['regex'];
-				if (preg_match($regex, $parsedRow)) {
-					return $lineType;
-				}			
+		$parser = $this->getParser();
+		$extraData = $parser->getExtraData();
+		if(isset($extraData['linesTypesMapping'])){
+			$stamp = Billrun_Util::generateArrayStamp($line);
+			$linet = $extraData['linesTypesMapping'][$stamp];
+			if(!$linet){
+				throw new Exception('Input Processor have Differents line types and Line '. $lineNumber . ' does not match any of the regex patterns.');
 			}
-			throw new Exception('Input Processor have Differents line types and Line '. $lineNumber . ' does not match any of the regex patterns.');
+			return $linet;
 		}
 		return false;
-				 
 	}
 }
