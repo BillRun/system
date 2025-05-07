@@ -75,7 +75,9 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 
 	public function setLineTypes($lineTypes) {
 		if(Billrun_Config::haveDifferentLineTypes($lineTypes)){
-    		$this->lineTypes = array_intersect_key($lineType, array_flip($this->legalLineTypeFields));
+    		foreach ($lineTypes as $lineType) {
+				$this->lineTypes[] = array_intersect_key($lineType, array_flip($this->legalLineTypeFields));
+			}
 		} else {
 			$this->lineTypes = $lineTypes;
 		}
@@ -104,6 +106,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 					$this->setStructure($this->dataStructure);
 					if ($parsedLine = $this->parseLine($line)) {
 						$this->dataRows[] = $parsedLine;
+						$this->saveParserExtraData($parsedLine);
 					}
 					break;
 				case static::HEADER_LINE:
@@ -126,7 +129,6 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 					$skippedLines++;
 					break;
 			}
-			$this->saveParserExtraData($parsedLine);
 		}
 		if ($this->hasFooter) {
 			$this->removeLastLine($record_type);
@@ -142,11 +144,11 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 		if (isset($this->recordType)){
 			return $this->recordType;
 		}
-		if (preg_match($this->lineTypes['D'], $line)) {
+		if (isset($this->lineTypes['D']) && preg_match($this->lineTypes['D'], $line)) {
 			return static::DATA_LINE;
-		} else if (preg_match($this->lineTypes['H'], $line)) {
+		} else if (isset($this->lineTypes['H']) && preg_match($this->lineTypes['H'], $line)) {
 			return static::HEADER_LINE;
-		} else if (preg_match($this->lineTypes['T'], $line)) {
+		} else if (isset($this->lineTypes['T']) && preg_match($this->lineTypes['T'], $line)) {
 			return static::TRAILER_LINE;
 		}
 			
@@ -255,7 +257,13 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 			foreach ($this->lineTypes as $lineType){
 				$regex = $lineType['regex'];
 				if (preg_match($regex, $line)) {
-					$this->recordType = $lineType['record_type'];
+					if ($lineType['record_type'] == 'H') {
+						$this->recordType = static::HEADER_LINE;
+					} else if (isset($this->lineTypes['T']) && preg_match($this->lineTypes['T'], $line)) {
+						$this->recordType = static::TRAILER_LINE;
+					} else {
+						$this->recordType = static::DATA_LINE;//DEFAULT
+					}
 					$this->lineType =  $lineType['line_type'];
 					$this->setConstructParserCsvFields($lineType['parser']);
 					return;

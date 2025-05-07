@@ -591,22 +591,22 @@ class Billrun_Config {
 
 	public static function getLineTypesField($fileSettings,  $field, $recordType = 'D') {
 		$fieldValuesByLineType = [];
-		$lineTypes = $$fileSettings['line_types'];
-		if(Billrun_Config::haveDifferentLineTypes($lineTypes)){
+		$lineTypes = $fileSettings['line_types'] ?? [];
+		if(!empty($lineTypes) && Billrun_Config::haveDifferentLineTypes($lineTypes)){
 			foreach ($lineTypes as $lineType){
-				if($lineType['record_type'] == $recordType && isset($lineType['line_type']) && !empty(Billrun_Utill::getIn($lineType, $field, null))){
-					$fieldValuesByLineType[$lineType['line_type']] = Billrun_Utill::getIn($lineType,$field, Billrun_Utill::getIn($fileSettings,$field, null));
+				if($lineType['record_type'] == $recordType && isset($lineType['line_type']) && !empty(Billrun_Util::getIn($lineType, $field, null))){
+					$fieldValuesByLineType[$lineType['line_type']] = Billrun_Util::getIn($lineType,$field, Billrun_Util::getIn($fileSettings,$field, null));
 				}
 			}
 		}
 		return $fieldValuesByLineType;
 	}
 
-	public Static function getLineTypeConfigByName($fileTypeName, $enabledOnly = false, $lint = null){
+	public Static function getLineTypeConfigByName($fileTypeName, $enabledOnly = false, $linet = null){
 		$fileType = Billrun_Factory::config()->getFileTypeSettings($fileTypeName, $enabledOnly);
-		if(isset($fileType) && isset($fileType['line_types']) && isset($lint)){
+		if(isset($fileType['line_types']) && isset($linet)){
 			foreach ($fileType['line_types']  as $lineType){
-				if(isset($lineType['line_type']) && $lineType['line_type'] == $lint){
+				if(isset($lineType['line_type']) && $lineType['line_type'] == $linet){
 					return $lineType;
 				}
 			}

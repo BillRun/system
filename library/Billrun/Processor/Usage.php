@@ -139,11 +139,11 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		foreach ($parsedData as $lineNumber => $parsedRow) {
 			Billrun_Factory::dispatcher()->trigger('beforeLineMediation', array($this, static::$type, &$parsedRow));
 			$lineTypeConfig = $this->getLineTypeConfigByRow($parsedRow, $lineNumber);
-			if(!empty($lineTypeConfig)){
-				$row['linet'] = $lineTypeConfig['line_type'];
+			$linet = $lineTypeConfig['line_type'] ?? null;
+			if(isset($linet)){
 				$this->setConstructProcessorFields($lineTypeConfig);
 			}
-			$row = $this->getBillRunLine($parsedRow);
+			$row = $this->getBillRunLine($parsedRow, $linet);
 			Billrun_Factory::dispatcher()->trigger('afterLineMediation', array($this, static::$type, &$row));
 			if (!$row){
 				return false;
@@ -157,9 +157,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return true;
 	}
 
-	public function getBillRunLine($rawLine) {
-		$row['uf'] = $this->filterFields($rawLine);
-        $row['cf'] = $this->getCalculatedFields($row['uf'], static::$type, $rawLine['linet'] ?? null );
+	public function getBillRunLine($rawLine, $linet) {
+		$row['uf'] = $this->filterFields($rawLine, $linet);
+        $row['cf'] = $this->getCalculatedFields($row['uf'], static::$type, $linet ?? null );
                 
 		$datetime = $this->getRowDateTime($row);
 		if (!$datetime) {
@@ -187,6 +187,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$row['file'] = basename($this->filePath);
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['process_time'] = new Mongodloid_Date();
+		if(isset($linet)){
+			$row['linet'] = $linet;
+		}
 		return $row;
 	}
 	
@@ -201,8 +204,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @return Array	the record row with filtered only the requierd fields in it  
 	 * 					or if no filter is defined in the configuration the full data record.
 	 */
-	protected function filterFields($rawRow) {
-		$parserFields = Billrun_Factory::config()->getParserStructure(static::$type, $rawLine['linet'] ?? null);
+	protected function filterFields($rawRow, $linet) {
+		$parserFields = Billrun_Factory::config()->getParserStructure(static::$type, $linet ?? null);
 		foreach ($parserFields as $field) {
 			if (isset($field['checked']) && $field['checked'] === false) {
 				unset($rawRow[$field['name']]); 
@@ -370,12 +373,12 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$parser = $this->getParser();
 		$extraData = $parser->getExtraData();
 		if(isset($extraData['linesTypesMapping'])){
-			$stamp = Billrun_Util::generateArrayStamp($line);
+			$stamp = Billrun_Util::generateArrayStamp($parsedRow);
 			$linet = $extraData['linesTypesMapping'][$stamp];
 			if(!$linet){
 				throw new Exception('Input Processor have Differents line types and Line '. $lineNumber . ' does not match any of the regex patterns.');
 			}
-			return $linet;
+			return  Billrun_Factory::config()->getLineTypeConfigByName(static::$type, true, $linet);
 		}
 		return false;
 	}
