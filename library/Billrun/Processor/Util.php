@@ -88,10 +88,10 @@ class Billrun_Processor_Util {
 	 * @param string $type - input processor name
 	 * @return array - user field names
 	 */
-	public static function getCustomerAndRateUfByUsaget($type) {
+	public static function getCustomerAndRateUfByUsaget($type, $lineType = null) {
 		$customerAndRateUf = [];
-		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type);
-		$uf = self::getUserFields($type);
+		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type, $lineType);
+		$uf = self::getUserFields($type, $lineType);
 		foreach ($fieldsByUsaget as $usaget => $fields){
 			foreach ($fields as $field){
 				if(in_array($field, $uf)){
@@ -108,10 +108,10 @@ class Billrun_Processor_Util {
 	 * @param string $type - input processor name
 	 * @return array - calculated field names
 	 */
-	public static function getCustomerAndRateCfByUsaget($type) {
+	public static function getCustomerAndRateCfByUsaget($type, $lineType = null) {
 		$customerAndRateCf = [];
-		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type);
-		$cf = self::getCalculatedFields($type);
+		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type, $lineType);
+		$cf = self::getCalculatedFields($type, $lineType);
 		foreach ($fieldsByUsaget as $usaget => $fields){
 			foreach ($fields as $field){
 				if(in_array($field, $cf)){
@@ -128,8 +128,8 @@ class Billrun_Processor_Util {
 	 * @param string $type - input processor name
 	 * @return array - user and calculated field names
 	 */
-	public static function getCustomerAndRateUfAndCfByUsaget($type) {
-		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
+	public static function getCustomerAndRateUfAndCfByUsaget($type, $lineType = null) {
+		$fileTypeConfig = Billrun_Factory::config()->getLineTypeConfigByName($type, true, $lineType);
 		$customerIdentificationFields = $fileTypeConfig['customer_identification_fields'];
 		foreach ($customerIdentificationFields as $customerUsaget => $fields) {
 			$customerFieldNames[$customerUsaget] = array_column($fields, 'src_key');
