@@ -178,7 +178,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$ret = array();
 
 		foreach ($updateConfig as $conf) {
-			$confData = $conf['data'];
+			$confData = $conf[$usaget];
 			if(isset($conf['custom_value'][$usaget]['data'])){
 				$uf = $conf['custom_value'][$usaget]['data'];
 				$confData = array_merge($confData, $uf);
@@ -257,7 +257,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			$update = array_merge($base_update, $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
 			foreach ($this->mergedUpdateFields[$row['type']] as $operations) {
 				$fkey = $operations['operation'];
-				$fields = $operations['data'];
+				$fields = $operations[$row['usaget']];
 				if(isset($operations['custom_value'][$row['usaget']]['data'])){
 					$fields = array_merge($fields, $operations['custom_value'][$row['usaget']]['data']);
 				}
@@ -355,20 +355,23 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				Billrun_Util::setIn($serialize_array, $field, $newVal);
 			}
 		}
-
-		foreach ($typeData['stamp']['value']['custom_value'][$usaget] as $field) {
-			$newVal = Billrun_Util::getIn($newRow, $field, null);
-			if (!is_null($newVal)) {
-				Billrun_Util::setIn($serialize_array, $field, $newVal);
+		if(isset($typeData['stamp']['value']['custom_value'][$usaget])){
+			foreach ($typeData['stamp']['value']['custom_value'][$usaget] as $field) {
+				$newVal = Billrun_Util::getIn($newRow, $field, null);
+				if (!is_null($newVal)) {
+					Billrun_Util::setIn($serialize_array, $field, $newVal);
+				}
 			}
 		}
-		foreach ($typeData['stamp']['value']['calculated_fields'][$usaget] as $field) {
-			$newVal = Billrun_Util::getIn($newRow, $field, null);
-			if (!is_null($newVal)) {
-				Billrun_Util::setIn($serialize_array, $field, $newVal);
+		if(isset($typeData['stamp']['value']['calculated_fields'][$usaget])){
+			foreach ($typeData['stamp']['value']['calculated_fields'][$usaget] as $field) {
+				$newVal = Billrun_Util::getIn($newRow, $field, null);
+				if (!is_null($newVal)) {
+					Billrun_Util::setIn($serialize_array, $field, $newVal);
+				}
 			}
+	
 		}
-
 		foreach ($typeData['stamp']['field'] as $field) {
 			$serialize_array['exists'][$field] = isset($newRow[$field]) ? '1' : '0';
 		}
