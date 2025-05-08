@@ -787,7 +787,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return array
 	 */
 	protected function getFilters($row) {
-		if (!isset($this->filters[$row['type']])) {
+		if(isset($row['linet'])){
+			if(!isset($this->filters[$row['type']][$row['linet']])){
+				$config = Billrun_Factory::config()->getLineTypeConfigByName($row['type'], true, $row['linet']);
+				$this->filters[$row['type']] = isset($config['filters']) ? $config['filters'] : array();
+			}
+			return $this->filters[$row['type']][$row['linet']];
+		} else if (!isset($this->filters[$row['type']])) {
 			$config = Billrun_Factory::config()->getFileTypeSettings($row['type'], true);
 			$this->filters[$row['type']] = isset($config['filters']) ? $config['filters'] : array();
 		}
