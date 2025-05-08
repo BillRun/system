@@ -185,7 +185,6 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->informationArray = array_merge($this->informationArray, $this->getCustomPaymentGatewayFields());
 		Billrun_Factory::log("Updating records by rows...", Zend_Log::DEBUG);
 		$this->updatePaymentsByRows($data, $currentProcessor);
-		$this->informationArray['process_time'] = new Mongodloid_Date($this->now);
         $this->updateLogFile();
 	}
 
