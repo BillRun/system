@@ -54,6 +54,12 @@ class Billrun_Job_Cycle_Page extends Billrun_Job_Cycle {
 			$aid = $entry->getInvoice()->getAid();
 			$ret[] = (int) $aid;
 		}
+		
+		if (!empty($this->config['exclude'])) {
+			$exclude = Billrun_Util::verify_array($this->config['exclude'], 'int');
+			$ret = array_diff($ret, $exclude);
+		}
+
 		$this->count = count($ret);
 		return $ret;
 	}
@@ -63,14 +69,7 @@ class Billrun_Job_Cycle_Page extends Billrun_Job_Cycle {
 			return;
 		}
 		
-		if (!empty($this->config['exclude'])) {
-			$exclude = Billrun_Util::verify_array($this->config['exclude'], 'int');
-			$data = array_diff($this->data, $exclude);
-		} else {
-			$data = $this->data;
-		}
-		
-		foreach ($data as $aid) {
+		foreach ($this->data as $aid) {
 			$this->addCycleAccountJob($aid, $this->parent);
 		}
 	}
