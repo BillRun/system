@@ -40,7 +40,7 @@ class UploadFileAction extends Action_Base {
 		if (!empty($_FILES['file']['name'])) {
 			$file = $_FILES['file'];
 			if (is_uploaded_file($_FILES['file']['tmp_name'])) {
-				$directoryPath = $this->getFilesUploadPath();
+				$directoryPath = $this->getFilesUploadPath($options);
 				$sharedDirectoryPath = Billrun_Util::getBillRunSharedFolderPath($directoryPath);
 				if (!file_exists($sharedDirectoryPath)) {
 					 mkdir($sharedDirectoryPath, 0777, true);
@@ -68,15 +68,23 @@ class UploadFileAction extends Action_Base {
 		return true;
 	}
 
-	protected function getFilesUploadPath() {
-		return "uploaded_files" . DIRECTORY_SEPARATOR . date("Y") . DIRECTORY_SEPARATOR . date("m") . DIRECTORY_SEPARATOR . date("d");
+	protected function getFilesUploadPath($options = []) {
+		return implode(DIRECTORY_SEPARATOR, array_filter(array_map('trim', [
+			"uploaded_files",
+			date("Y"),
+			date("m"),
+			date("d"),
+			Billrun_Util::getIn($options, 'payment_gateway', ''),
+			Billrun_Util::getIn($options, 'payments_file_type', ''),
+			Billrun_Util::getIn($options, 'file_type', ''),
+		]), 'strlen'));
 	}
 	
 	protected function loadReceiver($options) {
 		$connection = null;
 		$inputProcessor = false;
 		$connectionDetails["connection_type"] = "relocate";
-		$connectionDetails["path"] = $this->getFilesUploadPath();
+		$connectionDetails["path"] = $this->getFilesUploadPath($options);
 		$connectionDetails["delete_received"] = true;
 		$connectionDetails["filename_regex"] = "/^" . preg_quote($options["file_name"]) . '$/';
 		$a = mkdir(

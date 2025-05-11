@@ -91,8 +91,12 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 				'generate_pdf' => $this->config['generate_pdf'] ?? Billrun_Factory::config()->getConfigValue('billrun.generate_pdf'),
 			];
 
-			if ($this->config['invoicing_day']) {
+			if ($this->invoicing_day) {
 				$jobSettings['invoicing_day'] = $this->invoicing_day;
+			}
+
+			if (!empty($this->config['exclude'])) {
+				$jobSettings['exclude'] = (array) $this->config['exclude'];
 			}
 
 			for ($i = 0; $i < $this->zero_pages_limit; $i++) {
@@ -112,6 +116,7 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 			$parent = $this->queueMsg->md5;
 			foreach ($this->data as $entry) {
 				$this->addCycleAccountJob($entry, $parent);
+				$this->count++;
 			}
 			
 		}
@@ -130,6 +135,7 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 			'aid' => $aid,
 			'billrun_key' => $this->billrun_key,
 			'generate_pdf' => $this->config['generate_pdf'] ?? Billrun_Factory::config()->getConfigValue('billrun.generate_pdf'),
+			'parent_ref' => strtolower($this->method),
 		];
 		if ($this->invoicing_day) {
 			$jobSettings['invoicing_day'] = $this->invoicing_day;
@@ -158,7 +164,7 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 			'page_size' => $this->fetch_page_size,
 			'host' => Billrun_Util::getHostName(),
 			'start_time' => new Mongodloid_Date($this->start_time),
-			'count' => 0,
+			'count' => $this->count,
 			'job_md5' => $this->queueMsg->md5,
 			'completed' => 0,
 			'zero_pages' => 0,
@@ -168,7 +174,8 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 	}
 	
 	protected function checkCycleFinished($billing_cycle) {
-		if ($billing_cycle['count'] <= $billing_cycle['completed'] && $billing_cycle['zero_pages'] >= $this->zero_pages_limit) {
+		if ($billing_cycle['count'] <= $billing_cycle['completed'] && 
+			($this->config['parent_ref'] == 'cycle' || $billing_cycle['zero_pages'] >= $this->zero_pages_limit)) {
 			$query = [
 				'billrun_key' => $this->billrun_key,
 				'page_number' => 0,

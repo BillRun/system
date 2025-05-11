@@ -1969,7 +1969,7 @@ runOnce(lastConfig, 'BRCD-4422', function () {
 	db.jobs_messages.createIndex({'queue_name': 1, 'timeout': 1, 'done': 1 }, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'body.parent': 1, }, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'body.type': 1, 'created': -1}, { 'unique': false, 'background': true });
-	if (db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos') {
+	if (db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos' && db.version() >= "8") {
 		sh.shardCollection(_dbName + ".jobs_messages", { "md5" : 1 } );
 	}
 });
