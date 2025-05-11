@@ -250,15 +250,16 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$updateFailedLines = array();
 		foreach ($this->unifiedLines as $key => $row) {
 			$query = array('stamp' => $key, 'type' => $row['type'], 'tx' => array('$nin' => $this->unifiedToRawLines[$key]['update']));
+			$lineType = $row['linet'] ?? 'default';
 			$base_update = array(
 				'$setOnInsert' => array(
 					'stamp' => $key,
 					'source' => 'unify',
 					'type' => $row['type'],
+					'linet' => $lineType
 //					'billrun' => $this->activeBillrun,
 			));
 			$update = array_merge($base_update, $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
-			$lineType = $row['linet'] ?? 'default';
 			foreach ($this->mergedUpdateFields[$row['type']][$lineType] as $operations) {
 				$fkey = $operations['operation'];
 				$fields = $operations[$row['usaget']];
@@ -310,6 +311,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	protected function getUnifiedRowForSingleRow($updatedRowStamp, $newRow, $typeFields) {
 		$type = $newRow['type'];
+		$lineType = $newRow['linet'] ?? 'default';
 		if (isset($this->unifiedLines[$updatedRowStamp])) {
 			$existingRow = $this->unifiedLines[$updatedRowStamp];
 			$this->setMinUrt($newRow, $existingRow);
@@ -322,7 +324,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			}
 		} else {
 			//Billrun_Factory::log(print_r($newRow,1),Zend_Log::ERR);
-			$existingRow = array('lcount' => 0, 'type' => $type);
+			$existingRow = array('lcount' => 0, 'type' => $type, 'linet' => $lineType);
 			foreach ($typeFields as $key => $fields) {
 				foreach ($fields as $field) {
 					$newVal = Billrun_Util::getIn($newRow, $field, null);
