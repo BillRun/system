@@ -324,7 +324,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			}
 		} else {
 			//Billrun_Factory::log(print_r($newRow,1),Zend_Log::ERR);
-			$existingRow = array('lcount' => 0, 'type' => $type, 'linet' => $lineType);
+			$existingRow = array('lcount' => 0, 'type' => $type, 'usaget' => $newRow['usaget'], 'linet' => $lineType);
 			foreach ($typeFields as $key => $fields) {
 				foreach ($fields as $field) {
 					$newVal = Billrun_Util::getIn($newRow, $field, null);
