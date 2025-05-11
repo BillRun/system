@@ -259,7 +259,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 				if (preg_match($regex, $line)) {
 					if ($lineType['record_type'] == 'H') {
 						$this->recordType = static::HEADER_LINE;
-					} else if (isset($this->lineTypes['T']) && preg_match($this->lineTypes['T'], $line)) {
+					} else if ($lineType['record_type'] == 'T') {
 						$this->recordType = static::TRAILER_LINE;
 					} else {
 						$this->recordType = static::DATA_LINE;//DEFAULT
