@@ -440,7 +440,6 @@ class RunCycle extends Component {
           <div className="pull-left">
             <h4>
               Run a billing cycle
-              {isWorkers && (<Label bsStyle="success" className="ml10">Workers is ON</Label>)}
             </h4>
           </div>
           <div className="pull-right mt10">
@@ -499,13 +498,14 @@ class RunCycle extends Component {
                       ? <Field value="-" editable={false} />
                       : <Label bsStyle={this.getStatusStyle(cycleStatus)} className="non-editable-field">
                           {cycleStatus.toUpperCase()}
-                          {isCycleWithWorkers && " (with workers)"}
                         </Label>
                     }
                   </Col>
                 </FormGroup>
                 <FormGroup>
-                  <Col sm={3} lg={2} componentClass={ControlLabel}>Start date</Col>
+                  <Col sm={3} lg={2} componentClass={ControlLabel}>
+                    {isWorkers ? 'Process start time' : 'Start date'}
+                  </Col>
                   <Col sm={6} lg={6}>
                     {startDate.isValid() 
                       ? <Field fieldType="datetime" value={startDate} editable={false} />
@@ -514,7 +514,9 @@ class RunCycle extends Component {
                   </Col>
                 </FormGroup>
                 <FormGroup>
-                  <Col sm={3} lg={2} componentClass={ControlLabel}>End date</Col>
+                  <Col sm={3} lg={2} componentClass={ControlLabel}>
+                    {isWorkers ? 'Process end time' : 'End date'}
+                  </Col>
                   <Col sm={6} lg={6}>
                   {endDate.isValid() 
                     ? <Field fieldType="datetime" value={endDate} editable={false} />

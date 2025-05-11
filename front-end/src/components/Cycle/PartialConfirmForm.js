@@ -72,7 +72,7 @@ const PartialConfirmForm = ({
         <Col sm={5} componentClass={ControlLabel}></Col>
         <Col sm={6} className='mt10'>
           <Field fieldType="checkbox" value={isPartial} onChange={onTogglePartial} label={
-            <span>Partial <small>Cycle will confirm only on selected AIDs</small></span>
+            <span>Partial Confirmation</span>
           } />
         </Col>
       </FormGroup>
@@ -99,7 +99,10 @@ const PartialConfirmForm = ({
       )}
       {isPartial && isInclude && (
         <FormGroup validationState={includeError === null ? null : 'error'}>
-          <Col sm={5} componentClass={ControlLabel}>Include AIDs</Col>
+          <Col sm={5} componentClass={ControlLabel}>
+            Include Customer IDs
+            <HelpBlock><small>Comma \ new line<br />separated numbers</small></HelpBlock>
+          </Col>
           <Col sm={6}>
             <Field fieldType="textarea" onChange={onChangeInclude} value={includeDisplay} editable={isPartial} />
             {includeError !== null && <HelpBlock>{includeError}.</HelpBlock>}
@@ -111,7 +114,10 @@ const PartialConfirmForm = ({
       )}
       {isPartial && !isInclude && (
         <FormGroup validationState={excludeError === null ? null : 'error'}>
-          <Col sm={5} componentClass={ControlLabel}>Exclude AIDs</Col>
+          <Col sm={5} componentClass={ControlLabel}>
+            Exclude Customer IDs
+            <HelpBlock><small>Comma \ new line<br />separated numbers</small></HelpBlock>
+          </Col>
           <Col sm={6}>
             <Field fieldType="textarea" onChange={onChangeExclude} value={excludeDisplay}/>
             {excludeError !== null && <HelpBlock>{excludeError}.</HelpBlock>}
