@@ -876,3 +876,19 @@ export const plansOrServicesToSelectOptions = items => items.map(item => ({
   label: item.get('description', item.get('name', '')),
   isByCycles: item.get('balance_period', '') === '',
 }));
+
+export const isValueOn = val => {
+  if (val === undefined || val === null) {
+    return false;
+  }
+  if (isNumber(val)) {
+    return parseFloat(val) > 0;
+  }
+  if (typeof val === 'boolean') {
+    return val;
+  }
+  if (typeof val === 'string') {
+    return ['yes', 'true', 'on', 'y'].includes(val.toLocaleLowerCase());
+  }
+  return false;
+}
