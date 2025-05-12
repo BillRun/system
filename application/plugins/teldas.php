@@ -969,6 +969,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         Billrun_Factory::log("Empty week charge configurations for urt : " . date("Y-m-d H:i:s", $urt) . ", type: " . $type . ". Tariff switching class revision: " . print_r($tariffSwitchingClassRevision, 1), Zend_Log::ALERT);
         return false;
     }
+    return $chargeConfigurations;
   }
 
   protected function findMatchingOfflineAChargeConfigurations($tariffProfile, $urt) {
@@ -1099,21 +1100,24 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     }
     $durationDivide = Billrun_Util::getIn($this->options, 'matching_paths.duration.divide_to_seconds', 1000);
     $aprice = 0 ;
-    $left = $duration / $durationDivide;
+    $left = (float) $duration / $durationDivide;
     foreach ($chargeConfigurations as $sequence => $chargeConfiguration){
-        if($sequence + 1 !== $chargeConfiguration){
+        if($sequence + 1 !== $chargeConfiguration['sequence']){
             Billrun_Factory::log("not support unsorted 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
             return false;
         }
-        $ruleType = $chargeConfigurations['ruleType'];
-        $chargeRate = $chargeConfigurations['rate'] ?? 0; //price in cents per second
-        $interval = $chargeConfigurations['time'] ?? 0; //interval in seconds
-        $sign = $chargeConfigurations['sign']; 
+        $ruleType = $chargeConfiguration['ruleType'];
+        $chargeRate = $chargeConfiguration['rate'] ?? 0; //price in cents per second
+        $interval = $chargeConfiguration['time'] ?? 0; //interval in seconds
+        $sign = $chargeConfiguration['sign']; 
         if($sign === 'DEBIT'){
             if($ruleType === 'NOT_PRO_RATA'){
                 $aprice += $chargeRate/100;
                 $left -= $interval;
             }elseif($ruleType === 'FIX_PRICE'){
+                $aprice += $left * $chargeRate/100;
+                break;
+            }elseif($ruleType === 'PRO_RATA'){
                 $aprice += $left * $chargeRate/100;
                 break;
             }else{
