@@ -18,6 +18,7 @@ class unifyCest
             $this->setUP($I);
             self::$isIPSet = true;
             Billrun_Config::getInstance()->loadDbConfig();
+            $this->createServices($I);
         }
     }
     protected function setUP(ApiTester $I, $inputProcessor = null)
@@ -37,6 +38,60 @@ class unifyCest
         $I->setSettings('usage_types', $type);
     }
 
+    //workaround for the issue with service instence (not update the service list in the 2nd process on the same run)
+    protected function createServices(ApiTester $I)
+    {
+        //create all the services for all tests once , before the tests
+        $services = [
+            [
+                'from' => '2025-01-01',
+                "include" => [
+                    "groups" => [
+                        "LOCAL_CALLS_5000" => [
+                            "account_shared" => false,
+                            "account_pool" => false,
+                            "rates" => [
+                                "CALL"
+                            ],
+                            "value" => 300000,
+                            "usage_types" => [
+                                "call" => [
+                                    "unit" => "minutes"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            [
+                'from' => '2025-01-01',
+                "include" => [
+                    "groups" => [
+                        "2LOCAL_CALLS_5000" => [
+                            "account_shared" => false,
+                            "account_pool" => false,
+                            "rates" => [
+                                "CALL2"
+                            ],
+                            "value" => 300000,
+                            "usage_types" => [
+                                "call" => [
+                                    "unit" => "minutes"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+        foreach ($services as $service) {
+            $I->generateService(array_merge(
+                ['name' => 'TEST_SERVICE' . microtime(true) * 10000],
+                $service
+            ));
+            $this->serviceDetails[] = json_decode($I->grabResponse(), true)['entity'];
+        }
+    }
     protected function createData(ApiTester $I, $accountDetails = [], $planDetails = [], $serviceDetails = [], $rateDetails = [])
     {
         if ($accountDetails != []) {
@@ -47,13 +102,13 @@ class unifyCest
             $I->generatePlan(array_merge(['name' => 'TEST_PLAN_2' . microtime(true) * 10000], $planDetails));
             $this->planDetails = json_decode($I->grabResponse(), true)['entity'];
         }
-        if ($serviceDetails != []) {
-            $I->generateService(array_merge(
-                ['name' => 'TEST_SERVICE' . microtime(true) * 10000],
-                $serviceDetails
-            ));
-            $this->serviceDetails = json_decode($I->grabResponse(), true)['entity'];
-        }
+        // if ($serviceDetails != []) {
+        //     $I->generateService(array_merge(
+        //         ['name' => 'TEST_SERVICE' . microtime(true) * 10000],
+        //         $serviceDetails
+        //     ));
+        //     $this->serviceDetails = json_decode($I->grabResponse(), true)['entity'];
+        // }
         if ($rateDetails != []) {
             $I->generateRate(array_merge(['tariff_category' => 'retail', 'key' => microtime(true) * 10000], $rateDetails));
             $this->rateDetails = json_decode($I->grabResponse(), true)['entity'];
@@ -169,10 +224,14 @@ class unifyCest
     protected function process($options)
     {
         $processor = Billrun_Processor::getInstance($options);
-        if (!$processor->createLogForProcessWithPath($options)) {
-            return;
-        }
-        $linesProcessedCount = $processor->process_files(Billrun_Util::getBillRunPath($options['path']));
+        // if (!$processor->createLogForProcessWithPath($options)) {
+        //     return;
+        // }
+        // $linesProcessedCount = $processor->process_files(Billrun_Util::getBillRunPath($options['path']));
+
+
+        $processor = Billrun_Processor::getInstance($options);
+        $linesProcessedCount = $processor->processorByPath($options);
     }
     //$processor = Billrun_Processor::getInstance($options);
 
@@ -225,11 +284,11 @@ class unifyCest
                 'firstname' => '0531234567',
                 'aid' => $this->accountDetails['aid'],
                 'plan' => $this->planDetails['name'],
-                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails[0]['name']]]
             ]
         );
         $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-        Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer","rate","pricing","tax","unify"]);
+        Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
         $this->process(
             [
                 'type' => 'abc',
@@ -258,6 +317,7 @@ class unifyCest
     }
     public function testUnifyShouldUnifyPerSubscriber(ApiTester $I): void
     {
+
         $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
             'from' => '2025-01-01',
             "include" => [
@@ -304,7 +364,7 @@ class unifyCest
                 'firstname' => '0531234561',
                 'aid' => $this->accountDetails['aid'],
                 'plan' => $this->planDetails['name'],
-                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails[1]['name']]]
             ]
         );
         $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
@@ -314,11 +374,12 @@ class unifyCest
                 'firstname' => '0531234562',
                 'aid' => $this->accountDetails['aid'],
                 'plan' => $this->planDetails['name'],
-                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails[1]['name']]]
             ]
         );
         $subscriber2 = json_decode($I->grabResponse(), true)['entity'];
-        Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer","rate","pricing","tax","unify"]);
+        Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
+        //die();
         $this->process(
             [
                 'type' => 'abc',
