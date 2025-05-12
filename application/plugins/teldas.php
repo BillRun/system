@@ -21,6 +21,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   protected $teldasAccessToken;
   protected $cache;
   protected $lineType;
+  protected $moreSelctiveQuery = array();
 
   const RESPONSE_STATUS_OK = 200;
   const INVALID_TOKEN_ERROR = "invalid_token";
@@ -545,6 +546,18 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               return $error['message'];
           }, $result['errors']);
           Billrun_Factory::log("Failed to get INA numbers with params: " . print_r($parameters, true) . ". Errors: " . print_r($messages, true), Zend_Log::ALERT);
+          if($result['errors'][0]['messageId'] == 202){
+            Billrun_Factory::log("Doing more selective query api. number Of Records: " . $result["errors"][0]["numberOfRecords"], Zend_Log::DEBUG);
+            $selectiveResult =  $this->doMoreSelectiveQuery($parameters);
+            if($selectiveResult === false){
+                return false;
+            }
+            if($result["errors"][0]["numberOfRecords"] !== count($selectiveResult)){
+                Billrun_Factory::log("Missing records. Need to have: " . $result["errors"][0]["numberOfRecords"] . " found only  " .  count($selectiveResult)  , Zend_Log::ALERT);
+                return false;
+            }
+            return $selectiveResult;
+          }
           return false;
       } else if (isset($result['error'])) {
           Billrun_Factory::log("Failed to get INA numbers with params: " . print_r($parameters, true) . ". Error: " . $result['error'], Zend_Log::ALERT);
@@ -557,6 +570,50 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       return $result;
   }
+
+  protected function doMoreSelectiveQuery($parameters){
+    $stamp =  Billrun_Util::generateArrayStamp($parameters);
+    if(isset($this->moreSelctiveQuery[$stamp])){
+        Billrun_Factory::log("Failed to do more selective query api with params: " . print_r($parameters, true), Zend_Log::ALERT);
+        return false;
+    }
+    $this->moreSelctiveQuery[$stamp] = true;
+    $endDateStr = $parameters["transactionDateTimeTo"];
+    $startDateStr = $parameters["transactionDateTimeFrom"];
+    $parameters["transactionDateTimeTo"] =  $this->getMiddleDatetimeWithMilliseconds($startDateStr, $endDateStr);
+    $result1 = $this->getInaNumbers($parameters);
+    if($result1 === false){
+        return false;
+    }
+    $parameters["transactionDateTimeFrom"] = $parameters["transactionDateTimeTo"];
+    $parameters["transactionDateTimeTo"] = $endDateStr;
+    $result2 = $this->getInaNumbers($parameters);
+    if($result2 === false){
+        return false;
+    }
+    return array_merge($result2, $result1);
+  }
+
+
+  protected function getMiddleDatetimeWithMilliseconds($startDateStr, $endDateStr) {
+    $start = new DateTime($startDateStr);
+    $end = new DateTime($endDateStr);
+
+    // Convert to float seconds including microtime
+    $startTs = (float) $start->format('U.u');
+    $endTs = (float) $end->format('U.u');
+
+    // Midpoint as float
+    $middleTs = ($startTs + $endTs) / 2;
+
+    // Create DateTime from float seconds
+    $middle = DateTime::createFromFormat('U.u', number_format($middleTs, 6, '.', ''));
+
+    // Format with milliseconds (3 digits of microseconds)
+    $formatted = $middle->format("Y-m-d\TH:i:s.") . substr($middle->format('u'), 0, 3);
+
+    return $formatted;
+}
 
   protected function getTariffsProfiles($parameters, $type) {
       $url = $this->teldasUrl . '/inetina/api/tariff/' . $type;
