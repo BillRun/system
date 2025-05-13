@@ -328,10 +328,10 @@ class Collections extends Component {
             <div className="pull-left"></div>
             <div className="pull-right">
               <ActionButtons
-                saveLabel="Save"
+                saveLabel="Save New Order"
                 onClickSave={this.onReorderSave}
                 disableSave={!isDirty}
-                cancelLabel="Cancel order"
+                cancelLabel="Cancel New Order"
                 onClickCancel={this.onReorderCancel}
               />
             </div>

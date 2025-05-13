@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 import Immutable from "immutable";
 import { SortableElement } from "react-sortable-hoc";
-import { Col, Row, Panel, Tab } from "react-bootstrap";
+import { Col, Panel, Tab, FormGroup } from "react-bootstrap";
 import classNames from "classnames";
 import { TabsWrapper, DragHandle, Actions } from "@/components/Elements";
 import CollectionStepsList from "./CollectionStepsList";
@@ -25,6 +25,9 @@ const Collection = ({
   onClickEdit,
   onClickClone,
  }) => {
+
+  const [isOpen, toggleOpen] = useState(process.getIn(["name"], "") === '');
+
   const onChangeSettings = (path, value) => {
     return onChange([index, ...path], value);
   };
@@ -55,9 +58,9 @@ const Collection = ({
   ];
 
   const getPanelHeader = () => (
-    <div>
+    <div onClick={() => toggleOpen(!isOpen)}>
       <div className="inline">
-        <h4 className="mt0 mb0">Process #{index + 1} | {label} <small>{name}</small></h4>
+        <h4 className="mt0 mb0">Process #{index + 1} | {process.get('label', '')} <small>{process.get('name', '')}</small></h4>
       </div>
       <div className="pull-right">
         <Actions actions={actions} />
@@ -65,25 +68,24 @@ const Collection = ({
     </div>
   );
 
-  const name = process.getIn(["name"], "");
-  const label = process.getIn(["label"], "");
-  const listClass = classNames("table-row", {
+  const listClass = classNames("form-inner-edit-row", {
     withHover: reordering,
   });
-  const defaultExpanded = name === "";
+
   return (
-    <Row className={listClass}>
+    <FormGroup className={listClass}>
       {reordering && (
         <Col sm={1} className='text-center mt10 mb0'>
           <DragHandle />
         </Col>
       )}
-      <Col sm={reordering ? 11 : 12} className='pr0 pl0'>
+      <Col sm={reordering ? 10 : 12} className='pr0 pl0'>
         <Panel
+          expanded={isOpen && !reordering}
           header={getPanelHeader()}
           collapsible={true}
           className='collapsible mt10 mb10'
-          defaultExpanded={defaultExpanded}
+          // defaultExpanded={defaultExpanded}
           bsStyle={isDirty ? "warning" : "default"}
         >
           <TabsWrapper id='CollectionsTab' location={location}>
@@ -121,7 +123,11 @@ const Collection = ({
           </TabsWrapper>
         </Panel>
       </Col>
-    </Row>
+
+      {reordering && (
+        <Col sm={1} className='text-center mt10 mb0'></Col>
+      )}
+    </FormGroup>
   );
 };
 
