@@ -1296,7 +1296,7 @@ class ConfigModel {
 				$s_i = $step_idx + 1;
 				$do_after_days = Billrun_Util::getIn($step, 'do_after_days', '');
 				if (!is_numeric($do_after_days) || floatval($do_after_days) < 0) {
-					throw new Exception("Set #{$p_i} Step #{$s_i}: Trigger after days value must be numeric equal or greater then 0");
+					throw new Exception("Set #{$p_i} Step #{$s_i}: Trigger after days value must be numeric equal or greater than 0");
 				}
 			}
 

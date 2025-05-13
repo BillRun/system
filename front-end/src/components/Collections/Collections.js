@@ -313,9 +313,9 @@ class Collections extends Component {
             </div>
             <div className="pull-right">
               <ActionButtons
-                saveLabel="Add Dunning"
+                saveLabel="Add process"
                 onClickSave={this.onAddProcess}
-                cancelLabel="Change fields order"
+                cancelLabel="Reorder"
                 onClickCancel={this.onReorderStart}
                 disableCancel={isDirty}
                 cancelTitle={isDirty ? 'Save changes to reorder': ''}
