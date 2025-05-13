@@ -8,7 +8,13 @@
 class Mongodloid_Connection {
 
 	protected $_connected = false;
+	
+	/**
+	 * the db connection class
+	 * @var MongoDB\Client
+	 */
 	protected $_connection = null;
+	
 	protected $_persistent = false;
 	protected $_server = '';
 	protected $_dbs = array();
@@ -41,6 +47,11 @@ class Mongodloid_Connection {
 				}
 			}
 		}
+		if (!empty($options['refresh'])) {
+			$this->_connected = false;
+			$this->_dbs[$db] = null;
+		}
+		
 		if (empty($this->_dbs[$db]) || !$this->_dbs[$db]) {
 			if ($user) {
 				$this->username = $user;

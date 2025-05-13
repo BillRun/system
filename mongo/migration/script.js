@@ -1955,6 +1955,33 @@ runOnce(lastConfig, 'BRCD-4672', function () {
 	lastConfig['subscribers']['account']['gad_limit'] = 5000;
 });
 
+
+//BRCD-4422: Add job queue
+runOnce(lastConfig, 'BRCD-4422', function () {
+	_createCollection('jobs_messages');
+	_createCollection('jobs_queues');
+	db.jobs_messages.createIndex({'created': 1}, { 'unique': false, 'background': true, 'expireAfterSeconds': 16070400 });
+	db.jobs_messages.createIndex({'start_time': 1}, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'timeout': 1}, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'complete_time': 1}, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'handle': 1}, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'md5': 1}, { 'unique': true, 'background': true });
+	db.jobs_messages.createIndex({'queue_name': 1, 'timeout': 1, 'done': 1 }, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'body.parent': 1, }, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'body.type': 1, 'created': -1}, { 'unique': false, 'background': true });
+	if (db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos' && db.version() >= "8") {
+		sh.shardCollection(_dbName + ".jobs_messages", { "md5" : 1 } );
+	}
+});
+
+// BRCD-4725: Set default to after tax as the before tax is new feature
+runOnce(lastConfig, 'BRCD-4725', function () {
+	db.rates.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
+	db.plans.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
+	db.services.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
+});
+
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });

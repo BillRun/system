@@ -178,20 +178,11 @@ class Billrun_DiscountManager {
 			$eligibility = $this->getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions);
 			$this->setEligibility($this->eligibleDiscounts, $discount, $eligibility);
 		}
-		
 		// handle subscribers' level revisions
-		foreach ($subscribersRevisions as $subscriberRevisions) {
-			//Get the latest version of the subscriber discount (in case the subscriber had multiple revisions during the month)
-			$subscriberDiscounts = Billrun_Util::mapArrayToStructuredHash(
-										call_user_func_array('array_merge', array_column($subscriberRevisions,'discounts') ),
-										['key'] );
-			foreach ($subscriberDiscounts as $subDiscount) {
-					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
-					$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
-					$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
-			}
-		  }
-		
+		foreach ($subscribersRevisions as $sid => $subscriberRevisions) {
+			$this->handleDiscountsForSubsRevs($accountRevisions, $subscriberRevisions);
+		}
+
 
 			//Get the latest version of the account discount (in case the account had multiple revisions during the month)
 			$accountDiscounts = Billrun_Util::mapArrayToStructuredHash(
@@ -204,6 +195,71 @@ class Billrun_DiscountManager {
 			}
 
 		$this->handleConflictingDiscounts();
+		}
+
+		protected function handleDiscountsForSubsRevs($accountRevisions, $subscriberRevisions){
+			$forcing = false;
+			foreach ($subscriberRevisions as $subscriberRevision){
+				if (isset($subscriberRevision['discounts'])){
+					foreach ($subscriberRevision['discounts'] as $subDiscount) {
+						$generalDiscount = self::$discounts[$this->cycle->key()][$subDiscount['key']] ?? null;
+						if(isset($generalDiscount)){
+							$this->forceSubscriberDiscount($generalDiscount, $subDiscount, $accountRevisions, $subscriberRevision);
+							$forcing = true;
+						}
+					}
+				}
+				if (isset($subscriberRevision['overrides'])){
+					$overrideSubscriberDiscounts =  array_column(array_filter($subscriberRevision['overrides'], function($override) {
+						return isset($override['type']) && $override['type'] === 'discount';
+					}), 'key');	
+					$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues(self::getDiscounts($this->cycle->key()), @$subscriberRevision['overrides'],'discount', array('from' => $subscriberRevision['from'], 'to' => $subscriberRevision['to']));
+					foreach($subscriberDiscounts as $subDiscount){
+						if(in_array($subDiscount['key'], $overrideSubscriberDiscounts)){
+							$this->handleOverrideDiscountForSubRev($subDiscount, $subscriberRevision, $accountRevisions);
+						}
+					}
+				}
+			}
+			$subscriberDiscounts = Billrun_Util::mapArrayToStructuredHash(
+				call_user_func_array('array_merge', array_column($subscriberRevisions,'discounts') ),
+				['key'] );
+			foreach ($subscriberDiscounts as $key => $subDiscount) {
+				if(!$forcing){
+					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
+					$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
+					$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
+				}
+			}
+			
+		}
+
+		protected function forceSubscriberDiscount($generalDiscount, $subDiscount, $accountRevisions, $subscriberRevision){
+				if(!isset($subDiscount['params']['conditions'])){
+					$subDiscount['params'] = array_merge_recursive($generalDiscount['params'] ?? [], $subDiscount['params'] ?? []);
+					$subDiscount['params']['conditions'] = [];//force this discount
+				}
+				$overrideSubDis = [
+					'key' => $subDiscount['key'],
+					'type' => 'discount',
+					'value' => $subDiscount
+				];
+				$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues([$subDiscount['key'] => $generalDiscount], [$overrideSubDis],'discount', array('from' => $subscriberRevision['from'], 'to' => $subscriberRevision['to']));
+				$overrideSubscriberDiscount = $subscriberDiscounts[$subDiscount['key']] ?? [];
+				$this->handleOverrideDiscountForSubRev($overrideSubscriberDiscount, $subscriberRevision, $accountRevisions);
+			
+		}
+
+		protected function handleOverrideDiscountForSubRev($overrideDiscount, $subscriberRevision, $accountRevisions){
+			$sid = $subscriberRevision['sid'];
+			$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid], [['from' => $subscriberRevision['from']->sec, 'to' =>  $subscriberRevision['to']->sec]]);
+			if (empty($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid])) {
+				unset($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid]);
+			}
+			$overrideDiscount['key'] = "SUBSCRIBER_DISCOUNT_" . $overrideDiscount['key'] . "_SID" . $sid ."_" . $subscriberRevision['from'] ."_" . $subscriberRevision['to'];
+			$eligibility = $this->getDiscountEligibility($overrideDiscount, $accountRevisions, [$sid =>[$subscriberRevision]]);
+			$this->setEligibility($this->eligibleDiscounts, $overrideDiscount, $eligibility);
+			$this->setSubscriberDiscount($overrideDiscount, $this->cycle->key());
 		}
 
 	/**
@@ -270,6 +326,7 @@ class Billrun_DiscountManager {
 				'subs' => $subsEligibility,
 				'services' => $servicesEligibility,
 				'plans' => $plansEligibility,
+				'discount' => $discount
 			];
 		}
 
@@ -284,15 +341,6 @@ class Billrun_DiscountManager {
 			$discount = $this->getDiscount($eligibleDiscount, $this->cycle->key());
 			foreach (Billrun_Util::getIn($discount, 'excludes', []) as $discountToExclude) {
 				if (isset($this->eligibleDiscounts[$discountToExclude])) {
-                                        $subs = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'subs'], []);
-					foreach ($subs as $sid => $subEligibility) {
-                                            if(!empty($eligibilityData['subs'][$sid])){
-                                                $this->eligibleDiscounts[$discountToExclude]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($this->eligibleDiscounts[$discountToExclude]['eligibility'], $eligibilityData['eligibility']);
-						if (empty($this->eligibleDiscounts[$discountToExclude]['subs'][$sid])) {
-                                                        unset($this->eligibleDiscounts[$discountToExclude]['subs'][$sid]);
-                                                }
-                                            }                                               
-					}
                                         
                                         $subsToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'subs'], []);
 					foreach ($subsToExclude as $sid => $subEligibility) {
@@ -580,7 +628,8 @@ class Billrun_DiscountManager {
 				'aid' => $aid,
 				'eligibility' => $eligibility,
 				'subs' => $subscribersEligibility,
-				'account_eligibility' => $eligibility
+				'account_eligibility' => $eligibility,
+				'discount' => $discount
 			];
 		}
 
@@ -667,6 +716,7 @@ class Billrun_DiscountManager {
 			'subs' => $subsEligibility,
 			'services' => $servicesEligibility,
 			'plans' => $plansEligibility,
+			'discount' => $discount
 		];
 	}
 
@@ -1118,7 +1168,7 @@ class Billrun_DiscountManager {
 		$this->discountedLinesAmounts = [];
 		foreach (['discounts' => $this->eligibleDiscounts, 'charge' => $this->eligibleCharges] as $type => $eligibilities) {
 			foreach ($eligibilities as $key => $eligibility) { // discounts/charges are ordered by priority
-				$entity = $type == 'charge' ? $this->getCharge($key, $this->cycle->key()) : $this->getDiscount($key, $this->cycle->key());
+				$entity = $type == 'charge' ? $this->getCharge($key, $this->cycle->key()) : ($eligibility['discount'] ?? $this->getDiscount($key, $this->cycle->key()));
 				if (!$entity) {
 					Billrun_Factory::log("Cannot get '{$key}', CDR was not generated", Billrun_Log::ERR);
 					continue;
@@ -1166,11 +1216,12 @@ class Billrun_DiscountManager {
 		$amountLimit = Billrun_Util::getIn($discount, 'limit', PHP_INT_MAX);
 		
 		foreach ($lines as $line) {
+			$cdr = [];
 			if (!isset($this->discountedLinesAmounts[$line['stamp']])) {
 				$this->discountedLinesAmounts[$line['stamp']] = 0;
 			}
 			$lineQuantity = Billrun_Util::getIn($line, 'usagev', 1);
-			$lineAmountLimit = $line['aprice'];
+			$lineAmountLimit = $line['before_rounding']['aprice'] ?? $line['aprice'];
 			$lineEligibility = $this->getLineEligibility($line, $discount, $eligibility);
 			if (empty($lineEligibility)) {
 				continue;
@@ -1198,11 +1249,28 @@ class Billrun_DiscountManager {
 				}
 				
 				if ($discountAmount > 0) {
-					$cdrs[] = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+					$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
 				} else if($line['is_upfront'] && $discountAmount < 0 ) {
-					$cdrs[] = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+					$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
 				}
 				
+				if(isset($line['before_rounding']['aprice'])){
+					$discountAmount = abs($cdr['aprice']);//the new discount amount after rounding 
+					$lineAmountLimit = $line['aprice'];
+					if ($discountAmount >= 0  && (($discountedAmount + $discountAmount > $amountLimit) ||
+						($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) ) { // current discount reached limit
+						$addToCdr['orig_discount_amount'] = -$discountAmount;
+						$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $this->discountedLinesAmounts[$line['stamp']]);
+						if ($discountAmount > 0) {
+							$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+						} else if($line['is_upfront'] && $discountAmount < 0 ) {
+							$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
+						}
+					}
+				}
+				if(!empty($cdr)){
+					$cdrs[] = $cdr;
+				}
 				$discountedAmount += $discountAmount;
 				if ($discountedAmount >= $amountLimit) { // discount reached amount limit
 					return $cdrs;
@@ -1569,7 +1637,8 @@ class Billrun_DiscountManager {
 		if (!empty($eligibleLine)) {
 			$discountLine['eligible_line'] = $eligibleLine['stamp'];
 		}
-		
+
+		$discountLine = $this->addRoundingRules($discountLine, $eligibleLine, $discount);
 		if (isset($eligibleLine['tax_data'])) {
 			$discountLine['taxes'] = Billrun_Calculator_Tax_Usage::taxDataToTaxes($eligibleLine['tax_data']);
 		}
@@ -1641,5 +1710,32 @@ class Billrun_DiscountManager {
 			}
 		}
 		return (1 / $cycleDays) * $seqValue;
+	}
+
+	protected function addRoundingRules($discountLine, $eligibleLine, $discount){
+		if (!empty($discount['rounding_rules'])) {
+			$discountLine['rounding_rules'] = $discount['rounding_rules'];
+		}
+		if(!empty($eligibleLine['rounding_rules'])){
+			$inheritRounding = Billrun_Factory::config()->getConfigValue('discounts.rounding_rules.inherit_rounding', true);
+			if($inheritRounding){
+				$discountLine['rounding_rules'] = $eligibleLine['rounding_rules']; //if exist rounding rules by itself will override it by his subject
+				$rounding_type = $eligibleLine['rounding_rules']['rounding_type'];
+				if ($rounding_type == 'up') {
+					$discountLine['rounding_rules']['rounding_type'] = 'down';
+				} else if ($rounding_type == 'down'){
+					$discountLine['rounding_rules']['rounding_type'] = 'up';
+				}
+			}
+			$discountLine['discount_subject'] = [
+				'before_rounding' => $eligibleLine['before_rounding'],
+				'after_rounding' => [
+					'final_charge' => $eligibleLine['final_charge'],
+					'aprice' => $eligibleLine['aprice']
+				],
+				'rounding_rules' => $eligibleLine['rounding_rules']
+			];
+		}
+		return $discountLine;
 	}
 }

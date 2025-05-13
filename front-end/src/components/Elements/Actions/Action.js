@@ -65,6 +65,10 @@ const Action = (props) => {
     'fa-cog': type === 'settings',
     'fa-th-list': type === 'list',
     'fa-exclamation': type === 'tooltip',
+    'fa-play': type === 'start',
+    'fa-stop': type === 'stop',
+    'fa-forward': type === 're-start',
+    'fa-retweet': type === 'reset',
   }), [type]);
 
   if (!showAction) {
