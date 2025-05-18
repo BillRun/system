@@ -83,10 +83,6 @@ class Billrun_Service {
 		$this->strongestGroup = null;
 	}
 	
-	public function setGroups($groups) {
-		Billrun_Util::setIn($this->data, 'include.groups', $groups);
-	}
-
 	/**
 	 * load the service from DB
 	 * 
