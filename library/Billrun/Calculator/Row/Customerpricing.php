@@ -539,6 +539,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	}
 	
 	protected function handleCounterServices($charge, $volume, $rate, $usageType, &$row, &$ret) {
+		// counter services works only with out or over group/plan
+		if (empty($ret['over_group']) && empty($ret['over_plan']) && 
+			empty($ret['out_group']) && empty($ret['out_plan'])) {
+			return;
+		}
 		$services = $this->getServices();
 		foreach ($services as $key => $service) {
 			$groups = $service->getRateGroups($rate, $usageType, 'only');
@@ -551,7 +556,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				$balance = $relatedBalance['balance'];
 				$ret['arategroups'][(string) $balance->getId()][] = [
 					"name" => $group,
-					"usagev" => $volume,
+					"usagev" => $ret['over_group'] ?? $ret['out_group'],
 					"balance_ref" => '',
 					"cost" => $charge,
 					"counter_only" => true,
