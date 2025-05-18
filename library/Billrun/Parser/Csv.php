@@ -74,7 +74,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 
 
 	public function setLineTypes($lineTypes) {
-		if(Billrun_Config::haveDifferentLineTypes($lineTypes)){
+		if(Billrun_Config::haveMultipleLineTypes($lineTypes)){
     		foreach ($lineTypes as $lineType) {
 				$this->lineTypes[] = array_intersect_key($lineType, array_flip($this->legalLineTypeFields));
 			}
@@ -89,6 +89,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	 */
 	public function parse($fp) {
 		$totalLines = 0;
+		$indexDataRows = 0;
 		$skippedLines = 0;
 		$this->dataRows = array();
 		$this->headerRows = array();
@@ -106,7 +107,8 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 					$this->setStructure($this->dataStructure);
 					if ($parsedLine = $this->parseLine($line)) {
 						$this->dataRows[] = $parsedLine;
-						$this->saveParserExtraData($parsedLine);
+						$this->saveParserExtraData($indexDataRows);
+						$indexDataRows++;
 					}
 					break;
 				case static::HEADER_LINE:
@@ -253,7 +255,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	}
 
 	protected function setParserDataByLine($line){
-		if(Billrun_Config::haveDifferentLineTypes($this->lineTypes)){
+		if(Billrun_Config::haveMultipleLineTypes($this->lineTypes)){
 			foreach ($this->lineTypes as $lineType){
 				$regex = $lineType['regex'];
 				if (preg_match($regex, $line)) {
@@ -269,14 +271,13 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 					return;
 				}
 			}
-			throw new Exception('Input Processor have Differents line types and Line '. $lineNumber . ' does not match any of the regex patterns.');
+			throw new Exception('Input Processor have multiple line types and Line '. $lineNumber . ' does not match any of the regex patterns.');
 		}
 	}
 
-	protected function saveParserExtraData($line){
+	protected function saveParserExtraData($indexDataRows){
 		if(isset($this->lineType)){
-			$stamp = Billrun_Util::generateArrayStamp($line);
-			$this->linesTypesMapping[$stamp] = $this->lineType; 
+			$this->linesTypesMapping[$indexDataRows] = $this->lineType; 
 		}
 	}
 

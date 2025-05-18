@@ -138,7 +138,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$rowCount = 0;
 		foreach ($parsedData as $lineNumber => $parsedRow) {
 			Billrun_Factory::dispatcher()->trigger('beforeLineMediation', array($this, static::$type, &$parsedRow));
-			$lineTypeConfig = $this->getLineTypeConfigByRow($parsedRow, $lineNumber);
+			$lineTypeConfig = $this->getLineTypeConfigByRow($lineNumber);
 			$linet = $lineTypeConfig['line_type'] ?? null;
 			if(isset($linet)){
 				$this->setConstructProcessorFields($lineTypeConfig);
@@ -369,14 +369,13 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return !empty($this->prepricedMapping[$usaget]);
 	}
 	
-	protected function getLineTypeConfigByRow($parsedRow, $lineNumber){
+	protected function getLineTypeConfigByRow($lineNumber){
 		$parser = $this->getParser();
 		$extraData = $parser->getExtraData();
 		if(isset($extraData['linesTypesMapping'])){
-			$stamp = Billrun_Util::generateArrayStamp($parsedRow);
-			$linet = $extraData['linesTypesMapping'][$stamp];
+			$linet = $extraData['linesTypesMapping'][$lineNumber];
 			if(!$linet){
-				throw new Exception('Input Processor have Differents line types and Line '. $lineNumber . ' does not match any of the regex patterns.');
+				throw new Exception('Input Processor have multiple line types and Line '. $lineNumber . ' does not match any of the regex patterns.');
 			}
 			return  Billrun_Factory::config()->getLineTypeConfigByName(static::$type, true, $linet);
 		}

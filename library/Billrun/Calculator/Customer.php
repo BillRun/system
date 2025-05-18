@@ -537,7 +537,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function getCustomerIdentificationTranslation() {
 		$customerIdentificationTranslation = array();
 		foreach (Billrun_Factory::config()->getConfigValue('file_types', array()) as $fileSettings) {
-			if(Billrun_Config::isFileTypeConfigEnabled($fileSettings) && isset($fileSettings['line_types']) && Billrun_Config::haveDifferentLineTypes($fileSettings['line_types'])){
+			if(Billrun_Config::isFileTypeConfigEnabled($fileSettings) && isset($fileSettings['line_types']) && Billrun_Config::haveMultipleLineTypes($fileSettings['line_types'])){
 				$customerIdentificationTranslation[$fileSettings['file_type']] =  Billrun_Config::getLineTypesField($fileSettings, 'customer_identification_fields');
 			} else if (Billrun_Config::isFileTypeConfigEnabled($fileSettings) && !empty($fileSettings['customer_identification_fields'])) {// b/c + default if not exists
 				$customerIdentificationTranslation[$fileSettings['file_type']] = $fileSettings['customer_identification_fields'];

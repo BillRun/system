@@ -548,7 +548,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$configByType = array();
 		$fileTypes = Billrun_Factory::config()->getFileTypesSettings(true);
 		foreach ($fileTypes as $fileType) {
-			if(isset($fileType['line_types']) && Billrun_Config::haveDifferentLineTypes($fileType['line_types'])){
+			if(isset($fileType['line_types']) && Billrun_Config::haveMultipleLineTypes($fileType['line_types'])){
 				$configByType['file_types'][$fileType['file_type']] =  Billrun_Config::getLineTypesField($fileType, 'unify');
 			} else if (!empty($fileType['unify'])) {
 				$configByType['file_types'][$fileType['file_type']]['default'] = $fileType['unify'];
