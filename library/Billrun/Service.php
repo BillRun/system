@@ -281,7 +281,7 @@ class Billrun_Service {
 		} else {
 			return array();
 		}
-		if (!empty($groups) && isset($this->data['include']['groups'])) {
+		if (!empty($groups) && isset($this->data['include']['groups']) && $counters == 'without') {
 			return array_intersect($groups, array_keys($this->data['include']['groups']));
 		}
 		return array();
