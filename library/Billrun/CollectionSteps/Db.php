@@ -127,10 +127,8 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		}
 	}
 
-	public function removeCollectionSteps($aid, $process) {
-		$processName = $process ['name'] ?? null;
+	public function removeCollectionSteps($aid) {
 		$query = array(
-			'process_name' => $processName,
 			'extra_params.aid' => $aid,
 			'notify_time' => array('$exists' => false)
 		);
