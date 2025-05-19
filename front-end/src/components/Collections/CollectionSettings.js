@@ -41,7 +41,7 @@ const CollectionSettings = ({ process, index, errors, httpMethods, onChange }) =
   const methodOptions = httpMethods.map(formatSelectOptions).toArray();
   return (
     <Col sm={12}>
-      <Panel header="General settings">
+      <Panel header="General Process Settings">
         <FormGroup validationState={errors.has([index, 'label'].join('.')) ? 'error' : null}>
           <Col sm={2} componentClass={ControlLabel}>
             Title
