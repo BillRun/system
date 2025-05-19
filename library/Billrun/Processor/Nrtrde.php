@@ -63,6 +63,7 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 			'recEntityId',
 			'callReference',
 			'chargeAmount',
+			'sender'
 		);
 
 		$this->mtc_structure = array(
@@ -79,6 +80,7 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 			'recEntityId',
 			'callReference',
 			'chargeAmount',
+			'sender'
 		);
 	}
 
@@ -135,7 +137,7 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		
 		$row['source'] = static::$type;
 		$row['type'] = self::$type;
-		$row['sender'] = $this->data['header']['sender'];
+		$row['sender'] = !empty($row['sender']) ? $row['sender'] : $this->data['header']['sender'];
 		$row['header_stamp'] = $this->data['header']['stamp'];	
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['file'] = basename($this->filePath);
