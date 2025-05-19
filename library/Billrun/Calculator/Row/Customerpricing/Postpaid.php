@@ -29,7 +29,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 
 	public function update($pricingOnly = false) {
 		$pricingData = parent::update($pricingOnly);
-		if(in_array('tax', $this->row['skip_calc'])){
+		if(in_array('tax', $this->row['skip_calc'] ?? [])){
 			$billrunKey = Billrun_Billingcycle::getBillrunKeyByRow($this->row);
 			if($billrunKey){
 				$pricingData['billrun'] = $billrunKey;
