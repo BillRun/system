@@ -8,7 +8,13 @@
 class Mongodloid_Connection {
 
 	protected $_connected = false;
+	
+	/**
+	 * the db connection class
+	 * @var MongoDB\Client
+	 */
 	protected $_connection = null;
+	
 	protected $_persistent = false;
 	protected $_server = '';
 	protected $_dbs = array();

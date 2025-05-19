@@ -652,7 +652,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
                 $filesToExport = $this->getGeneratedFiles();
                 foreach ($filesToExport as $fileToExport) {
                     if (!$sender->send($fileToExport)) {
-                        Billrun_Factory::log()->log("Move {$fileToExport} to sender {$connection['name']} - failed!", Zend_Log::INFO);
+                        Billrun_Factory::log()->log("Move {$fileToExport} to sender {$connection['name']} - failed!", Zend_Log::ALERT);
                     $this->moved = false;
                 } else {
                         Billrun_Factory::log()->log("Move {$fileToExport} to sender {$connection['name']} - done", Zend_Log::INFO);

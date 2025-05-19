@@ -14,7 +14,7 @@
  */
 class Billrun_Job_Confirm extends Billrun_Job_Abstract {
 
-	protected $method = 'confirm';
+	protected $method = 'Confirm';
 	
 	public function fetch() {
 		
@@ -49,7 +49,7 @@ class Billrun_Job_Confirm extends Billrun_Job_Abstract {
 		}
 		
 		if (empty($this->config['force'])) {
-			$pipeline[0]['$match']['billed'] = ['$exists' => 0];
+			$pipeline[0]['$match']['billed'] = ['$nin' => ["1", 1, true]];
 		}
 
 		$pipeline[] = array(
@@ -78,7 +78,7 @@ class Billrun_Job_Confirm extends Billrun_Job_Abstract {
 			$jobSettings['stamp'] = $entry['billrun_key'];
 			
 			Billrun_Factory::log("Going to create job confirm account " . $entry['aid']);
-			Billrun_Jobsmanager::getInstance($this->queueMsg->getQueue())->push('Confirm_Account', $jobSettings, $parent);
+			Billrun_Jobsmanager::getInstance()->push('Confirm_Account', $jobSettings, $parent);
 			$count++;
 		}
 		Billrun_Factory::log("Created " . $count . " confirm account jobs into queue", Zend_Log::INFO);

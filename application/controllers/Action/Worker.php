@@ -27,13 +27,14 @@ class WorkerAction extends Action_Base {
     public function execute() {
 		Billrun_Factory::log("Start worker");
 		$this->startTime = time();
-		$this->queue = Billrun_Factory::queue('jobs', Billrun_Factory::config()->getConfigValue('worker.job_timeout', 3600));
-		$this->setAsyncMaxConcurrent(Billrun_Factory::config()->getConfigValue('worker.concurrent_limit', 10));
+		$timeout = Billrun_Factory::config()->getConfigValue('worker.job_timeout', 900);
+		$this->setAsyncTimeout($timeout);
+		$this->queue = Billrun_Factory::queue('jobs', $timeout + 60);
+		$this->setAsyncMaxConcurrent(Billrun_Factory::config()->getConfigValue('worker.concurrent_limit', 4));
 		Billrun_Factory::log("Queue " . $this->queue->getName() . " loaded with count of " . $this->queue->count());
-//		Billrun_Jobsmanager::getInstance($this->queue)->push('Charging_Account', ['aids' => [1]]);die;
 		$this->run();
 	}
-
+	
 	/**
 	 * method to run and enable the worker to receive and process jobs
 	 */
@@ -46,11 +47,14 @@ class WorkerAction extends Action_Base {
 				if (!empty($job)) {
 					Billrun_Factory::log("Going to execute job " . $job->method . " handle " . $job->queueMsg->handle, Zend_Log::INFO);
 					$this->executeAsync(array($job, 'execute'), [['config' => (array) $job->config]]);
+				} else {
+					usleep(Billrun_Factory::config()->getConfigValue('worker.iteration', 2000000)); // sleep 2 seconds
 				}
 			} catch (Throwable $th) {
 				Billrun_Factory::log("Worker error: " . $th->getCode() . ": " . $th->getMessage(), Zend_Log::ALERT);
 			}
-			usleep(Billrun_Factory::config()->getConfigValue('worker.iteration', 200000)); // sleep 0.2 second
+			$this->checkSignal();
+			usleep(10000);
 		}
 	}
 	

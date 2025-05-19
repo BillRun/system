@@ -519,3 +519,8 @@ ul.revision-history-list li.active .cycle {
 .form-actions-controllers {
   min-height: 50px;
 }
+
+.included-excluded-items {
+  max-height: 200px;
+  overflow-y: auto;
+}

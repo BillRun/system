@@ -25,6 +25,7 @@ class JobsqueueModel extends TableModel {
 		$pipeline[] = array(
 			'$match' => array(
 				'body.parent' => $job_md5,
+				'body.type' => 'Cycle_Account',
 			)
 		);
 		$pipeline[] = array(

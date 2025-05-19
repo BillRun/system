@@ -4,8 +4,22 @@ require_once 'Zend/Queue/Adapter/AdapterAbstract.php';
 
 class Zend_Queue_Adapter_Mongodb extends Zend_Queue_Adapter_AdapterAbstract {
 
+	/**
+	 * the db
+	 * @var MongoDB\Db
+	 */
 	protected $db;
+	
+	/**
+	 * the queue collection
+	 * @var MongoDB\Collection
+	 */
 	protected $queueCollection;
+	
+	/**
+	 * the message collection
+	 * @var MongoDB\Collection
+	 */
 	protected $messageCollection;
 
 	/**
@@ -196,7 +210,7 @@ class Zend_Queue_Adapter_Mongodb extends Zend_Queue_Adapter_AdapterAbstract {
 					[
 						'$or' => [
 							['schedule' => ['$exists' => 0]],
-							['schedule' => ['$gte' => new MongoDB\BSON\UTCDateTime($microtime * 1000)]],
+							['schedule' => ['$lte' => new MongoDB\BSON\UTCDateTime($microtime * 1000)]],
 						],
 					]
 				],
@@ -206,9 +220,19 @@ class Zend_Queue_Adapter_Mongodb extends Zend_Queue_Adapter_AdapterAbstract {
 					'handle' => md5(uniqid(rand(), true)),
 					'start_time' => new MongoDB\BSON\UTCDateTime(),
 					'timeout' => new MongoDB\BSON\UTCDateTime(($microtime+$timeout) * 1000),
-				]
+				],
+				'$inc' => [
+					'try' => 1
+				],
 			];
-			$options = ['returnDocument' => \MongoDB\Operation\FindOneAndUpdate::RETURN_DOCUMENT_AFTER, 'upsert' => false];
+//			$sort = [
+//				'created' => 1,
+//			];
+			$options = [
+				'returnDocument' => \MongoDB\Operation\FindOneAndUpdate::RETURN_DOCUMENT_AFTER, 
+				'upsert' => false,
+//				'sort' => $sort, // we removed this due to performance issue
+			];
 			$result = $this->messageCollection->findOneAndUpdate($query, $update, $options);
 			if (empty($result)) {
 				// no more msgs in the queue
