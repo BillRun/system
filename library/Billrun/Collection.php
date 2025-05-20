@@ -34,6 +34,16 @@ class Billrun_Collection extends Billrun_Base {
 		$query = Billrun_Account::convertConditionsToAccountQuery([$debtCondition]);
 		$query['read_preference'] = 'RP_PRIMARY'; 
 		$updateCollectionStateChangedByProcess = [];
+
+		$gad_batch_limit = Billrun_Factory::config()->getConfigValue('subscribers.account.gad_limit', false, "int");
+		if ($gad_batch_limit) {
+			Billrun_Factory::log("Found gad batch limit of size " . $gad_batch_limit, Zend_Log::DEBUG);
+		} else {
+			Billrun_Factory::log("Couldn't find gad batch limit", Zend_Log::DEBUG);
+		}
+		$aids_batches = array_chunk($customersAids, $gad_batch_limit);
+		Billrun_Factory::log("Got " . count($aids_batches) . " aids chunks" , Zend_Log::DEBUG);
+		
 		$accountsInConditions = $account->loadAccountsForQuery($query);
 		
 		$updateCollectionStateChangedByProcess = array_merge_recursive($this->getUpdateCollectionStateChangedByProcess(array_merge($accountsInConditions, $markedAsInCollection), $debtByAids), $updateCollectionStateChangedByProcess);
