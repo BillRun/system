@@ -294,6 +294,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 			'success_url_address' => $this->okPage,
 			'fail_url_address' => $this->failPage,
 			'accessibility' => $creds['accessibility'] ?? '0', // TODO: make pg settings
+			'Z_field' => $this->aid,
 			'remarks' => $this->aid,
 			'action' => $action,
 			'hidesum' => '1',
