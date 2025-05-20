@@ -18,25 +18,41 @@ class Billrun_Collection extends Billrun_Base {
 
 	public function collect($aids = array(), $collectDir = '') {
 		$account = Billrun_Factory::account();
+		Billrun_Factory::log()->log("Pulling accounts that are subject to collection", Zend_Log::DEBUG);
+		$markedAsInCollection = $account->getInCollection($aids);
+		Billrun_Factory::log()->log("Processing accounts that are actually in collection", Zend_Log::DEBUG);
 		$processes = Billrun_Factory::config()->getConfigValue('collection.processes', array());
 		$minDebt = $this->getMinDebtOfAllProcesses($processes);
 		$debtByAids = Billrun_Bill::getContractorsInCollection($aids, $minDebt);
-		$values = array_values(array_map(function($debtByAid) {
-			return $debtByAid->getRawData()['aid'];
-		}, $debtByAids));
 		$debtCondition = [
 			'field' => 'aid',
 			'op' => 'in',
-			'value' => $values
+			'value' => array_values(array_map(function($debtByAid) {
+				return $debtByAid->getRawData()['aid'];
+			}, $debtByAids))
 		];
 		$query = Billrun_Account::convertConditionsToAccountQuery([$debtCondition]);
 		$query['read_preference'] = 'RP_PRIMARY'; 
-		Billrun_Factory::log()->log("Processing accounts that are actually in collection", Zend_Log::DEBUG);
+		$updateCollectionStateChangedByProcess = [];
 		$accountsInConditions = $account->loadAccountsForQuery($query);
+		
+		$updateCollectionStateChangedByProcess = array_merge_recursive($this->getUpdateCollectionStateChangedByProcess(array_merge($accountsInConditions, $markedAsInCollection), $debtByAids), $updateCollectionStateChangedByProcess);
+
+		Billrun_Factory::log()->log("Updating crm if needed", Zend_Log::DEBUG);
+		$result = [];
+		foreach($updateCollectionStateChangedByProcess as $processIndex => $updateCollectionStateChanged){
+			$matchProcess = $processes[$processIndex];
+			$result[$matchProcess['label']] = $account->updateCrmInCollection($updateCollectionStateChanged, $matchProcess);
+		}
+		return $result;
+	}
+
+	protected function getUpdateCollectionStateChangedByProcess ($accountsInConditions, $debtByAids){
+		$processes = Billrun_Factory::config()->getConfigValue('collection.processes', array());
 		$aidsAlreadyProcess = [];
 		$updateCollectionStateChangedByProcess = [];
-		$markedAsInCollection = [];
-		$reallyInCollection = [];
+		$markedAsInCollectionByProcess = [];
+		$reallyInCollectionByProcess= [];
 		$matchProcess = null;
 		foreach ($accountsInConditions as $accountInConditions){
 			if (in_array($accountInConditions['aid'], $aidsAlreadyProcess)){
@@ -44,7 +60,10 @@ class Billrun_Collection extends Billrun_Base {
 			}
 			foreach ($processes as $processIndex => $process){
 				$conditions = $process['conditions'][0]['account']['fields'] ?? [];
-				if($this->isConditionsMeet($accountInConditions->getRawData(), $conditions)){
+				if ($accountInConditions instanceof Mongodloid_Entity) {
+					$accountInConditions = $accountInConditions->getRawData();
+				}
+				if($this->isConditionsMeet($accountInConditions, $conditions)){
 					$matchProcess = $process;
 					break;
 				}
@@ -56,29 +75,20 @@ class Billrun_Collection extends Billrun_Base {
 
 			$aid = $accountInConditions['aid'];
 			if($accountInConditions['in_collection'] == true ){
-				$includeAids = $account->getIncludedInCollection([$aid ]);
-				if(in_array($aid, $includeAids)){
-					$markedAsInCollection[$aid] = $accountInConditions;
-				}
+				$markedAsInCollectionByProcess[$processIndex][$aid] = $accountInConditions;
 			}
 			if(isset($debtByAids[$aid]) && $debtByAids[$aid]['total'] >= $processMinDebt){
-				$reallyInCollection[$aid] = $debtByAids[$aid];
+				$reallyInCollectionByProcess[$processIndex][$aid] = $debtByAids[$aid];
 			}
 			$aidsAlreadyProcess[] = $aid;
 			if ($collectDir == 'enter_collection' || empty($collectDir)) {
-				$updateCollectionStateChangedByProcess[$processIndex]['in_collection'] = array_diff_key($reallyInCollection, $markedAsInCollection);
+				$updateCollectionStateChangedByProcess[$processIndex]['in_collection'] = array_diff_key($reallyInCollectionByProcess[$processIndex] ?? [], $markedAsInCollectionByProcess[$processIndex] ?? []);
 			}	
 			if ($collectDir == 'exit_collection' || empty($collectDir)) {
-				$updateCollectionStateChangedByProcess[$processIndex]['out_of_collection'] = array_diff_key($markedAsInCollection, $reallyInCollection);
+				$updateCollectionStateChangedByProcess[$processIndex]['out_of_collection'] = array_diff_key($markedAsInCollectionByProcess[$processIndex] ?? [], $reallyInCollectionByProcess[$processIndex] ?? []);
 			}
 		}
-		
-		Billrun_Factory::log()->log("Updating crm if needed", Zend_Log::DEBUG);
-		foreach($updateCollectionStateChangedByProcess as $processIndex => $updateCollectionStateChanged){
-			$matchProcess = $processes[$processIndex];
-			$result[$matchProcess['label']] = $account->updateCrmInCollection($updateCollectionStateChanged, $matchProcess);
-		}
-		return $result;
+		return $updateCollectionStateChangedByProcess;
 	}
 
 	protected function getMinDebtOfAllProcesses($processes){
