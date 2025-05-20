@@ -24,30 +24,32 @@ class Billrun_Collection extends Billrun_Base {
 		$processes = Billrun_Factory::config()->getConfigValue('collection.processes', array());
 		$minDebt = $this->getMinDebtOfAllProcesses($processes);
 		$debtByAids = Billrun_Bill::getContractorsInCollection($aids, $minDebt);
-		$debtCondition = [
-			'field' => 'aid',
-			'op' => 'in',
-			'value' => array_values(array_map(function($debtByAid) {
-				return $debtByAid->getRawData()['aid'];
-			}, $debtByAids))
-		];
-		$query = Billrun_Account::convertConditionsToAccountQuery([$debtCondition]);
-		$query['read_preference'] = 'RP_PRIMARY'; 
+		$aidsValues = array_values(array_map(function($debtByAid) {
+			return $debtByAid->getRawData()['aid'];
+		}, $debtByAids));
+		
 		$updateCollectionStateChangedByProcess = [];
 
-		$gad_batch_limit = Billrun_Factory::config()->getConfigValue('subscribers.account.gad_limit', false, "int");
-		if ($gad_batch_limit) {
-			Billrun_Factory::log("Found gad batch limit of size " . $gad_batch_limit, Zend_Log::DEBUG);
+		$gadBatchLimit = Billrun_Factory::config()->getConfigValue('subscribers.account.gad_limit', false, "int");
+		if ($gadBatchLimit) {
+			Billrun_Factory::log("Found gad batch limit of size " . $gadBatchLimit, Zend_Log::DEBUG);
 		} else {
 			Billrun_Factory::log("Couldn't find gad batch limit", Zend_Log::DEBUG);
 		}
-		$aids_batches = array_chunk($customersAids, $gad_batch_limit);
-		Billrun_Factory::log("Got " . count($aids_batches) . " aids chunks" , Zend_Log::DEBUG);
-		
-		$accountsInConditions = $account->loadAccountsForQuery($query);
-		
+		$aidsBatches = array_chunk($aidsValues, $gadBatchLimit);
+		Billrun_Factory::log("Got " . count($aidsBatches) . " aids chunks" , Zend_Log::DEBUG);
+		$accountsInConditions = [];
+		for ($i = 0; $i < count($aidsBatches); $i++) {
+			$debtCondition = [
+				'field' => 'aid',
+				'op' => 'in',
+				'value' => $aidsBatches[$i]
+			];
+			$query = Billrun_Account::convertConditionsToAccountQuery([$debtCondition]);
+			$query['read_preference'] = 'RP_PRIMARY'; 
+			$accountsInConditions = array_merge($account->loadAccountsForQuery($query), $accountsInConditions);
+		}
 		$updateCollectionStateChangedByProcess = array_merge_recursive($this->getUpdateCollectionStateChangedByProcess(array_merge($accountsInConditions, $markedAsInCollection), $debtByAids), $updateCollectionStateChangedByProcess);
-
 		Billrun_Factory::log()->log("Updating crm if needed", Zend_Log::DEBUG);
 		$result = [];
 		foreach($updateCollectionStateChangedByProcess as $processIndex => $updateCollectionStateChanged){
