@@ -418,7 +418,19 @@ abstract class Billrun_Account extends Billrun_Base {
 	public static function convertConditionsToAccountQuery($conditions){
 		$query = [];
 		foreach ($conditions as $condition) {
-			$query[$condition['field']]['$' . $condition['op']] = $condition['value'];
+			if(!isset($query[$condition['field']]['$' . $condition['op']])){
+				$query[$condition['field']]['$' . $condition['op']] = $condition['value'];
+			}else{
+				if($condition['value'] == $query[$condition['field']]['$' . $condition['op']]){
+					continue;
+				}else{ 
+					if($condition['op'] == 'in' || $condition['op'] == 'nin'){
+						$query[$condition['field']]['$' . $condition['op']] = array_merge($query[$condition['field']]['$' . $condition['op']], $condition['value']);
+					}
+
+
+				}
+			}
 		}
 		return $query;
 	}
