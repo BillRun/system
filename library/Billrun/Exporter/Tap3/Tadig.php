@@ -421,7 +421,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	protected function getRecEntityCode($row) {
 		$entityList = $this->getRecEntityInformation($row);
 		$surfacedEntityValues = array_column($entityList,'RecEntityInformation');
-		return  array_column($surfacedEntityValues,'RecEntityCode')[0];
+		return  array_column($surfacedEntityValues,'RecEntityCode');
 	}
 	
 	protected function getTeleServiceCode($row) {
@@ -513,6 +513,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			'LocalTimeStamp' => $this->getCallEventStartTimeStamp($row),
 			'UtcTimeOffsetCode' => $this->timeZoneOffsetCode,
 		);
+		Billrun_Factory::dispatcher()->trigger('afterGetChargeDetail', array(&$chargeDetail, $row));
 
 		$chargeDetailList = array(
 			array(
@@ -536,7 +537,9 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$price = $row['aprice'];
 		$decimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
 		$sdrPrice = $price / $this->getExchangeRate($row);
-		return intval($sdrPrice * pow(10, $decimalPlaces));
+		$sdrPrice = intval($sdrPrice * pow(10, $decimalPlaces));
+		Billrun_Factory::dispatcher()->trigger('afterGetSdrPrice', array(&$sdrPrice, $row));
+		return $sdrPrice;
 	}
 	
 	protected function getTotalCallEventDuration($row) {
