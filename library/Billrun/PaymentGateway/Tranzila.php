@@ -237,6 +237,10 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 					'name' => 'remarks',
 					'value' => (string) $addonData['aid']
 				],
+				[
+					'name' => 'Z_field',
+					'value' => (string) $addonData['aid']
+				],
 			],
 		];
 		$this->EndpointUrl = $this->getEndpointApi() . self::PAY_PATH;
