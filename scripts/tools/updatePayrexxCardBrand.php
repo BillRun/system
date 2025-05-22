@@ -32,7 +32,8 @@ $signature = base64_encode(hash_hmac('sha256', '', $secret, true));
 $query = [
 	"type" => "account",
    "payment_gateway.active.name" => "Payrexx",
-   "payment_gateway.active.card_token" => ['$exists' => 1]
+   "payment_gateway.active.card_token" => ['$exists' => 1],
+   "payment_gateway.active.card_brand" => ['$exists' => 0],
 ];
 $accounts = $subscribersColl->query($query)->cursor();
 $numberOfRevisions = count($accounts);
