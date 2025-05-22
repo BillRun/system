@@ -63,7 +63,8 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 			'recEntityId',
 			'callReference',
 			'chargeAmount',
-			'sender'
+			'sender',
+			'volte'
 		);
 
 		$this->mtc_structure = array(
@@ -80,7 +81,8 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 			'recEntityId',
 			'callReference',
 			'chargeAmount',
-			'sender'
+			'sender',
+			'volte'
 		);
 	}
 

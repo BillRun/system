@@ -88,7 +88,7 @@ class Billrun_Parser_Separator extends Billrun_Parser {
 		$line = is_array($this->line) ? $this->line : explode($this->separator, rtrim($this->line, "{$this->separator}\t\n\r\0\x0B"));
 		//Billrun_Factory::log()->log(print_r($line,1),Zend_Log::DEBUG);
 		$structure = $this->structure;
-		if(count($structure) > count($line) && ($this->minimumLineLength &&  count($line) >= $this->minimumLineLength)) {
+		if(count($structure) > count($line) && ($this->minimumLineLength && count($line) >= $this->minimumLineLength)) {
 			Billrun_Factory::log('Trimming line structure to match seperated values',Zend_Log::INFO);
 			$structure = array_splice($this->structure,0,count($line));
 		}
