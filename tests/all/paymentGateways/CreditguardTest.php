@@ -85,7 +85,7 @@ class CreditguardTest extends \Codeception\Test\Unit
             [
                 'aid' => (int) $account['aid'],
                 'amount' => 300,
-                'paid'=> PaymentStatus::PAID
+                'paid'=> ['$in'=>PaymentStatus::PAID]
           
             ]);
     }
@@ -147,7 +147,7 @@ class CreditguardTest extends \Codeception\Test\Unit
             [
                 'aid' => (int) $account['aid'],
                 'amount' => 400,
-                'paid'=> PaymentStatus::PAID
+                'paid'=> ['$in'=>PaymentStatus::PAID]
             ]);
     }
     //https://billrun.atlassian.net/browse/BRCD-4682
@@ -293,7 +293,7 @@ class CreditguardTest extends \Codeception\Test\Unit
             [
                 'aid' => (int) $account['aid'],
                 'amount' => 500,
-                'paid'=> PaymentStatus::PAID
+                'paid'=> ['$in'=>PaymentStatus::PAID]
             ]);
     }
 
@@ -359,7 +359,7 @@ class CreditguardTest extends \Codeception\Test\Unit
             [
                 'aid' => (int) $account['aid'],
                 'amount' => 500,
-                'paid'=> PaymentStatus::PAID
+                'paid'=> ['$in'=>PaymentStatus::PAID]
             ]);
     }
 
@@ -430,7 +430,7 @@ class CreditguardTest extends \Codeception\Test\Unit
             [
                 'aid' => (int) $account2['aid'],
                 'amount' => 500,
-                "paid" => PaymentStatus::UNPAID
+                "paid" => ['$in'=>PaymentStatus::UNPAID]
             ]);  
    
     }
