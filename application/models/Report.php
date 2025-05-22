@@ -275,15 +275,15 @@ class ReportModel {
 			return $value ? 'TRUE' : 'FALSE';
 		}
 
-		$numFormat = Billrun_Factory::config()->getConfigValue('reports.formatting.numbers',"scientific");
-		if ($numFormat == "decimal"){
-			if (is_float($value) ) {
+		$numFormat = Billrun_Factory::config()->getConfigValue('reports.formatting.numbers', "scientific");
+		if ($numFormat == "decimal") {
+			if (is_float($value)) {
 				$value = sprintf('%.20f', $value);
-			if (strpos($value, '.') !== false) {
-				$value = rtrim(rtrim($value, '0'), '.');
-	}
+				if (strpos($value, '.') !== false) {
+					$value = rtrim(rtrim($value, '0'), '.');
+				}
 			}
-	}
+		}
 
 
 		return $value;
