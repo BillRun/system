@@ -1,5 +1,5 @@
 <?php
-//Example call - docker exec -w billrun-app php /billrun/scripts/tools/updatePayrexxCardBrand.php --env container --dir /billrun/ 
+//Example call - docker exec -w billrun-app /billrun php /billrun/scripts/tools/updatePayrexxCardBrand.php --env container --dir /billrun/ 
 $options = getopt('', array('env:', 'dir:'));
 $dir = $options['dir'];
 
