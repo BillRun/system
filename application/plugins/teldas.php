@@ -574,8 +574,11 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   protected function doMoreSelectiveQuery($parameters){
     $stamp =  Billrun_Util::generateArrayStamp($parameters);
     if(isset($this->moreSelctiveQuery[$stamp])){
-        Billrun_Factory::log("Failed to do more selective query api with params: " . print_r($parameters, true), Zend_Log::ALERT);
-        return false;
+        $res = $this->moreSelectiveQueryWithSubscriberNumber($parameters);
+        if($res === false){
+            return false;
+        }
+        return $res;
     }
     $this->moreSelctiveQuery[$stamp] = true;
     $endDateStr = $parameters["transactionDateTimeTo"];
@@ -592,6 +595,41 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         return false;
     }
     return array_merge($result2, $result1);
+  }
+
+  protected function moreSelectiveQueryWithSubscriberNumber($parameters){
+    $selectiveResult = [];
+    $subscriberNumberQueryParams = [
+        [
+            'from' => '0800000000',
+            'to' => '0800999999'
+        ],
+        [
+            'from' => '0840000000',
+            'to' => '0849999999'
+        ],
+        [
+            'from' => '0900000000',
+            'to' => '0906999999'
+        ],
+        [
+            'from' => '1800',
+            'to' => '1899'
+        ],
+
+    ];
+
+    foreach($subscriberNumberQueryParams as $param){
+        $parameters['subscriberNumberFrom'] = $param['from'];
+        $parameters['subscriberNumberTo'] = $param['to'];
+        $result = $this->getInaNumbers($parameters);
+        if($result === false){
+            Billrun_Factory::log("Failed to do more selective query api with params: " . print_r($parameters, true), Zend_Log::ALERT);
+            return false;
+        }
+        $selectiveResult = array_merge($selectiveResult, $result);
+    }
+    return $selectiveResult;
   }
 
 
