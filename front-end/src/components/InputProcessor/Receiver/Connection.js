@@ -5,6 +5,7 @@ import Immutable from 'immutable';
 import { Col, Panel, FormGroup, Button } from 'react-bootstrap';
 import { Actions } from '@/components/Elements';
 import Field from '@/components/Field';
+import Help from '@/components/Help';
 import { buildRequestUrl } from '../../../common/Api';
 import { showSuccess, showDanger } from '@/actions/alertsActions';
 import { removeReceiver } from '@/actions/inputProcessorActions';
@@ -258,7 +259,9 @@ class Connection extends Component {
           </div>
         </div>
         <div className="form-group">
-          <label htmlFor="received_extension" className="col-xs-3 control-label">File Extension</label>
+          <label htmlFor="received_extension" className="col-xs-3 control-label d-flex align-items-center"
+          >Add file extension in remote
+          <Help contents="This will be added as a suffix to the file name in the remote location." /> </label>
           <div className="col-xs-6">
             <input
               type="text"
