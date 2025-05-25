@@ -1,5 +1,5 @@
 <?php
-//Example call - docker exec -w billrun-app /billrun php /billrun/scripts/tools/updatePayrexxCardBrand.php --env container --dir /billrun/ 
+//Example call - docker exec -w /billrun billrun-app  php /billrun/scripts/tools/updatePayrexxCardBrand.php --env container --dir /billrun/ 
 $options = getopt('', array('env:', 'dir:'));
 $dir = $options['dir'];
 
@@ -12,12 +12,12 @@ Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->regi
 
 echo 'Running Update Card brand for payrexx customers...' . PHP_EOL;
 $configColl = Billrun_Factory::db()->configCollection();
-$config = Billrun_Factory::db()->configCollection()->query()->cursor()->sort(array('_id' => -1))->limit(1)->current()->getRawData();
+$paymentGateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
 $subscribersColl = Billrun_Factory::db()->subscribersCollection();
 
-foreach($config['payment_gateways'] as $paymentGateways){
-	if ($paymentGateways['name'] === 'Payrexx'){
-		$gatewayParams = $paymentGateways['params'];
+foreach($paymentGateways as $paymentGateway){
+	if ($paymentGateway['name'] === 'Payrexx'){
+		$gatewayParams = $paymentGateway['params'];
       	break;
 	}
 }
@@ -62,9 +62,7 @@ foreach($accounts as $account){
 			}else{
 				echo "Updating brand=$brand for id=$id.\n";
 				$updateQuery = [
-					"type" => "account",
-				   "payment_gateway.active.name" => "Payrexx",
-				   "payment_gateway.active.card_token" => $token
+					"_id" => $id,
 				];
 				$update = [
 					'$set' => array(
