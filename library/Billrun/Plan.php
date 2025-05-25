@@ -313,7 +313,7 @@ class Billrun_Plan {
 			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
 				// on some cases we have limits to unlimited
 				$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
+				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, &$subscriberBalance));
 				if ($rateUsageIncluded === FALSE) {
 					$this->unsetGroup($this->getPlanGroup());
 				}
@@ -405,6 +405,11 @@ class Billrun_Plan {
 			$usage_class_prefix = "out_plan_";
 		}
 		return $usage_class_prefix . $usage_type;
+	}
+
+	public function isNonBillableGroup($groupName) {
+		$planGroupConfig = $this->get('include.groups.'.$groupName);
+		return !empty($planGroupConfig) && @$planGroupConfig['limits']['no_billable_affects'];
 	}
 
 }
