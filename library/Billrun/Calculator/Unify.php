@@ -163,7 +163,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$fields = array();
 		$usaget = $line['usaget'];
 		$lineType = $line['linet'] ?? 'default';
-		foreach ($this->unificationFields[$line['type']][$lineType]['unification_fields']['fields'] as $field) {
+		$unifyConf  = $this->unificationFields[$line['type']][$lineType] ?? ($this->unificationFields[$line['type']]['default']?? null);
+		foreach ($unifyConf['unification_fields']['fields'] as $field) {
 			if ($this->verifyMatchField($field['match'], $line)) {
 				$fields = array_merge_recursive($fields, $this->getUpdateQueries($field['update'], $usaget));
 			}
@@ -256,11 +257,11 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					'stamp' => $key,
 					'source' => 'unify',
 					'type' => $row['type'],
-					'linet' => $lineType
 //					'billrun' => $this->activeBillrun,
 			));
 			$update = array_merge($base_update, $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
-			foreach ($this->mergedUpdateFields[$row['type']][$lineType] as $operations) {
+			$mergedUpdateFields = $this->mergedUpdateFields[$row['type']][$lineType] ?? ($this->mergedUpdateFields[$row['type']]['default'] ?? []);
+			foreach ($mergedUpdateFields as $operations) {
 				$fkey = $operations['operation'];
 				$fields = $operations[$row['usaget']];
 				if(isset($operations['custom_value'][$row['usaget']]['data'])){
@@ -350,7 +351,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected function getLineUnifiedLineStamp($newRow) {
 		$usaget = $newRow['usaget'];
 		$lineType = $newRow['linet'] ?? 'default';
-		$typeData = $this->unificationFields[$newRow['type']][$lineType]['unification_fields'];
+		$unifyConf  = $this->unificationFields[$newRow['type']][$lineType] ?? ($this->unificationFields[$newRow['type']]['default']?? null);
+		$typeData = $unifyConf['unification_fields'];
 		$serialize_array = array();
 		$arategroupsCount = isset($newRow['arategroups']) ? count($newRow['arategroups']) : 0;
 		foreach ($typeData['stamp']['value'] as $type => $field) {
@@ -400,12 +402,13 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 	public function isLineLegitimate($line) {
 		$lineType = $line['linet'] ?? 'default';
-		$matched = $line['source'] != 'unify' && isset($this->unificationFields[$line['type']][$lineType]) && $this->limitGroupsSize($line);
+		$unifyConf  = $this->unificationFields[$line['type']][$lineType] ?? ($this->unificationFields[$line['type']]['default']?? null);
+		$matched = $line['source'] != 'unify' &&  !empty($unifyConf) && $this->limitGroupsSize($line);
 
 		if ($matched) {
-			$requirements = $this->unificationFields[$line['type']][$lineType]['unification_fields']['required'];
+			$requirements = $unifyConf['unification_fields']['required'];
 			$matched = $this->verifyMatchField($requirements['match'], $line) && (count(array_intersect(array_keys($line->getRawData()), $requirements['fields'])) == count($requirements['fields']));
-			if (!$matched && isset($this->unificationFields[$line['type']][$lineType]['archive_fallback']) && $this->verifyMatchField($this->unificationFields[$line['type']]['archive_fallback'], $line)) {
+			if (!$matched && isset($unifyConf['archive_fallback']) && $this->verifyMatchField($unifyConf['archive_fallback'], $line)) {
 				$this->archivedLines[$line['stamp']] = $line->getRawData();
 			}
 		}

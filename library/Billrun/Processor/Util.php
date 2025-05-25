@@ -90,7 +90,7 @@ class Billrun_Processor_Util {
 	 */
 	public static function getCustomerAndRateUfByUsaget($type, $lineType = null) {
 		$customerAndRateUf = [];
-		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type, $lineType);
+		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type, $lineType) ?? [];
 		$uf = self::getUserFields($type, $lineType);
 		foreach ($fieldsByUsaget as $usaget => $fields){
 			foreach ($fields as $field){
@@ -129,12 +129,14 @@ class Billrun_Processor_Util {
 	 * @return array - user and calculated field names
 	 */
 	public static function getCustomerAndRateUfAndCfByUsaget($type, $lineType = null) {
+		$customerFieldNames = [];
+		$rateFieldNames = [];
 		$fileTypeConfig = Billrun_Factory::config()->getLineTypeConfigByName($type, true, $lineType);
-		$customerIdentificationFields = $fileTypeConfig['customer_identification_fields'];
+		$customerIdentificationFields = $fileTypeConfig['customer_identification_fields'] ?? [];
 		foreach ($customerIdentificationFields as $customerUsaget => $fields) {
 			$customerFieldNames[$customerUsaget] = array_column($fields, 'src_key');
 		}
-		$rateCalculators = $fileTypeConfig['rate_calculators'];
+		$rateCalculators = $fileTypeConfig['rate_calculators'] ?? [];
 		foreach ($rateCalculators as $rateByUsaget) {
 			foreach ($rateByUsaget as $rateUsaget => $priorityByUsaget) {
                                 $rateFieldNames[$rateUsaget] = array();
