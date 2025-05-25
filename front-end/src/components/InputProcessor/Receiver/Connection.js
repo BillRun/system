@@ -258,6 +258,19 @@ class Connection extends Component {
           </div>
         </div>
         <div className="form-group">
+          <label htmlFor="received_extension" className="col-xs-3 control-label">File Extension</label>
+          <div className="col-xs-6">
+            <input
+              type="text"
+              className="form-control"
+              id={`received_extension-${index}`}
+              onChange={this.onChangeReceiverField}
+              value={receiver.get('received_extension', '')}
+              placeholder="Enter file extension (e.g., .txt)"
+            />
+          </div>
+        </div>
+        <div className="form-group">
           <label htmlFor="passive" className="col-xs-3 control-label">Passive mode</label>
           <div className="col-xs-6">
             <input
