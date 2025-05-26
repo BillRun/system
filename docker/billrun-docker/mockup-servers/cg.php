@@ -976,8 +976,6 @@ function handlePaymentGatewayRelay($xml)
         $cardId = (string) $xml->request->doDeal->cardId;
         $cardExpiration = (string) $xml->request->doDeal->cardExpiration;
         $terminalNumber = (string) $xml->request->doDeal->terminalNumber;
-        file_put_contents('yoyo.txt', $xml);
-
         echo getRecurringResponse($cardId, $cardExpiration, $terminalNumber);
         return;
     } else {

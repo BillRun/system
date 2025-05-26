@@ -359,6 +359,17 @@ class CreditguardTest extends \Codeception\Test\Unit
             [
                 'aid' => (int) $account['aid'],
                 'amount' => 500,
+                'due' => 500,
+                'paid'=> ['$in'=>PaymentStatus::PAID]
+            ]);
+        //verify that is only one bill
+        $this->tester->verifyCollectionCount(
+            'bills',
+             1,
+            [
+               'aid' => (int) $account['aid'],
+                'amount' => 500,
+                'due' => 500,
                 'paid'=> ['$in'=>PaymentStatus::PAID]
             ]);
     }
