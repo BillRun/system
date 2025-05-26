@@ -283,9 +283,8 @@ class Collections extends Component {
   }
 
   render() {
-    const { isDirty, dirtySets } = this.props;
+    const { isDirty, dirtySets, processes } = this.props;
     const { reordering } = this.state;
-    
     return (
       <Panel bsStyle={dirtySets.includes(-1) ? "warning" : "default"}>
         {isDirty && (<Col sm={12} className="pr0 pl0"><p className="alert-warning mb0 pl10 pr10 pt5 pb5">You have unsaved changes!</p></Col>)}
@@ -317,7 +316,7 @@ class Collections extends Component {
                 onClickSave={this.onAddProcess}
                 cancelLabel="Reorder"
                 onClickCancel={this.onReorderStart}
-                disableCancel={isDirty}
+                disableCancel={isDirty || processes.size < 2}
                 cancelTitle={isDirty ? 'Save changes to reorder': ''}
                 />
             </div>
