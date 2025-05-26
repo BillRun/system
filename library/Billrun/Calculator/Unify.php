@@ -182,7 +182,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$ret = array();
 
 		foreach ($updateConfig as $conf) {
-			$confData = $conf[$usaget];
+			$confData = $conf['data'];
 			if(isset($conf['custom_value'][$usaget]['data'])){
 				$uf = $conf['custom_value'][$usaget]['data'];
 				$confData = array_merge($confData, $uf);
@@ -263,7 +263,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			$mergedUpdateFields = $this->mergedUpdateFields[$row['type']][$lineType] ?? ($this->mergedUpdateFields[$row['type']]['default'] ?? []);
 			foreach ($mergedUpdateFields as $operations) {
 				$fkey = $operations['operation'];
-				$fields = $operations[$row['usaget']];
+				$fields = $operations['data'];
 				if(isset($operations['custom_value'][$row['usaget']]['data'])){
 					$fields = array_merge($fields, $operations['custom_value'][$row['usaget']]['data']);
 				}
