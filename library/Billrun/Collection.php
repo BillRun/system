@@ -40,16 +40,12 @@ class Billrun_Collection extends Billrun_Base {
 		Billrun_Factory::log("Got " . count($aidsBatches) . " aids chunks" , Zend_Log::DEBUG);
 		$accountsInConditions = [];
 		for ($i = 0; $i < count($aidsBatches); $i++) {
-			$debtCondition = [
-				'field' => 'aid',
-				'op' => 'in',
-				'value' => $aidsBatches[$i]
-			];
-			$query = Billrun_Account::convertConditionsToAccountQuery([$debtCondition]);
+			
+			$query = ['aid' => array('$in' => $aidsBatches[$i])];
 			$query['read_preference'] = 'RP_PRIMARY'; 
 			$accountsInConditions = array_merge($account->loadAccountsForQuery($query), $accountsInConditions);
 		}
-		$updateCollectionStateChangedByProcess = array_merge_recursive($this->getUpdateCollectionStateChangedByProcess(array_merge($accountsInConditions, $markedAsInCollection), $debtByAids), $updateCollectionStateChangedByProcess);
+		$updateCollectionStateChangedByProcess = $this->getUpdateCollectionStateChangedByProcess(array_merge($accountsInConditions, $markedAsInCollection), $debtByAids, $collectDir);
 		Billrun_Factory::log()->log("Updating crm if needed", Zend_Log::DEBUG);
 		$result = [];
 		foreach($updateCollectionStateChangedByProcess as $processIndex => $updateCollectionStateChanged){
@@ -59,7 +55,22 @@ class Billrun_Collection extends Billrun_Base {
 		return $result;
 	}
 
-	protected function getUpdateCollectionStateChangedByProcess ($accountsInConditions, $debtByAids){
+	/**
+	 * Determines the accounts whose collection state needs to be updated based on matching processes
+	 * and current debt status. It checks which accounts should enter or exit collection according to
+	 * the defined collection processes.
+	 *
+	 * @param array $accountsInConditions List of accounts that are either marked as in collection or whose debts exceed
+	 *                                    the minimum debt defined in any of the processes.
+	 * @param array $debtByAids An associative array of debts indexed by account ID (aid), where each item contains aid debt.
+	 * @param string $collectDir Optional direction for collection state change. 
+	 *                           Can be 'enter_collection', 'exit_collection', or empty for both directions.
+	 *
+	 * @return array A multi-dimensional array grouped by process index with keys:
+	 *               - 'in_collection': accounts that need to be marked as in collection
+	 *               - 'out_of_collection': accounts that need to be marked as out of collection
+	 */
+	protected function getUpdateCollectionStateChangedByProcess ($accountsInConditions, $debtByAids, $collectDir){
 		$processes = Billrun_Factory::config()->getConfigValue('collection.processes', array());
 		$aidsAlreadyProcess = [];
 		$updateCollectionStateChangedByProcess = [];
@@ -67,7 +78,7 @@ class Billrun_Collection extends Billrun_Base {
 		$reallyInCollectionByProcess= [];
 		$matchProcess = null;
 		foreach ($accountsInConditions as $accountInConditions){
-			if (in_array($accountInConditions['aid'], $aidsAlreadyProcess)){
+			if (isset($aidsAlreadyProcess[$accountInConditions['aid']])){
 				continue;
 			}
 			foreach ($processes as $processIndex => $process){
@@ -86,13 +97,13 @@ class Billrun_Collection extends Billrun_Base {
 			$processMinDebt = floatval($matchProcess['settings']['min_debt'] ?? '10');
 
 			$aid = $accountInConditions['aid'];
-			if($accountInConditions['in_collection'] == true ){
+			if(isset($accountInConditions['in_collection']) && $accountInConditions['in_collection'] == true ){
 				$markedAsInCollectionByProcess[$processIndex][$aid] = $accountInConditions;
 			}
 			if(isset($debtByAids[$aid]) && $debtByAids[$aid]['total'] >= $processMinDebt){
 				$reallyInCollectionByProcess[$processIndex][$aid] = $debtByAids[$aid];
 			}
-			$aidsAlreadyProcess[] = $aid;
+			$aidsAlreadyProcess[$aid] = true;
 			if ($collectDir == 'enter_collection' || empty($collectDir)) {
 				$updateCollectionStateChangedByProcess[$processIndex]['in_collection'] = array_diff_key($reallyInCollectionByProcess[$processIndex] ?? [], $markedAsInCollectionByProcess[$processIndex] ?? []);
 			}	

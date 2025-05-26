@@ -415,23 +415,4 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 		return array_merge_recursive($rejection_query, $account_query);
 	}
-	public static function convertConditionsToAccountQuery($conditions){
-		$query = [];
-		foreach ($conditions as $condition) {
-			if(!isset($query[$condition['field']]['$' . $condition['op']])){
-				$query[$condition['field']]['$' . $condition['op']] = $condition['value'];
-			}else{
-				if($condition['value'] == $query[$condition['field']]['$' . $condition['op']]){
-					continue;
-				}else{ 
-					if($condition['op'] == 'in' || $condition['op'] == 'nin'){
-						$query[$condition['field']]['$' . $condition['op']] = array_merge($query[$condition['field']]['$' . $condition['op']], $condition['value']);
-					}
-
-
-				}
-			}
-		}
-		return $query;
-	}
 }
