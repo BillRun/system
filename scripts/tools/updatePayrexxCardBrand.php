@@ -43,41 +43,54 @@ $params = [
     'ApiSignature' => $signature
 ];
 $headers = ['Accept-encoding' => 'deflate'];
+$updateParams = [];
 foreach($accounts as $account){
 	$id = $account['_id'];
-	$aid = $account['aid'];
 	$token = $account["payment_gateway"]["active"]["card_token"];
-	echo "Fetching transaction for AID=$aid, token=$token, id=$id.\n";
+	if(isset($updateParams[$token])){
+		echo "Found Card brand for id=$id, token=$token is " . $updateParams[$token]['brand']. ".\n";
+		$updateParams[$token]['ids'][] = $id->getMongoID();
+		continue;
+	}
+	echo "Fetching transaction for token=$token\n";
 	$apiUrl = "https://api.{$apiDomain}/v1.0/Transaction/{$token}/";
 	$response = Billrun_Util::sendRequest($apiUrl, $params, Zend_Http_Client::GET, $headers);
 	if ($response !== false) {
 		$responseData = json_decode($response, true);
 		if($responseData['status'] !== 'success'){
-			echo "❌ API call failed.\n  with massage: ".$responseData['massage'].".\n";	
+			echo "❌ API call failed for id $id,  with massage: ".$responseData['massage'].".\n";	
 		}else{
 			// print_r($responseData['data']);
 			$brand = $responseData['data'][0]['payment']['brand'];
 			if(!isset($brand)){
 				echo "❌ API call response not include card brand.\n";
 			}else{
-				echo "Updating brand=$brand for id=$id.\n";
-				$updateQuery = [
-					"_id" => $id,
-				];
-				$update = [
-					'$set' => array(
-						"payment_gateway.active.card_brand" => $brand
-					)
-				];
-				$res = $subscribersColl->update($updateQuery, $update);
-				if (!isset($res['ok']) || !$res['ok']) {
-					echo "❌ failed to update brand=$brand for id=$id\n";
-				}else{
-					echo "✅ success to update brand=$brand for id=$id.\n";
-				}
+				echo "Found Card brand for id=$id, token=$token is " . $brand . ".\n";
+				$updateParams[$token]['brand'] = $brand;
+				$updateParams[$token]['ids'][] = $id->getMongoID();
 			}
 		}
 	} else {
-		echo "❌ API call failed for aid $aid.\n";
+		echo "❌ API call failed for id $id.\n";
+	}
+}
+foreach($updateParams as $token => $params){
+	$ids = $params['ids'];
+	$brand = $params['brand'];
+	echo "Updating brand=$brand for token=$token ids=" . implode(",", $ids).".\n";
+	$updateQuery = [
+		"_id" => array('$in'=> $ids),
+	];
+	$update = [
+		'$set' => array(
+			"payment_gateway.active.card_brand" => $brand
+		)
+	];
+	$options['multiple'] = true;
+	$res = $subscribersColl->update($updateQuery, $update, $options);
+	if (!isset($res['ok']) || !$res['ok'] || $res["nModified"] !== count($ids)) {
+		echo "❌ failed to update brand=$brand for ids=" . implode(",", $ids)."\n";
+	}else{
+		echo "✅ success to update brand=$brand for ids=" . implode(",", $ids).".\n";
 	}
 }
