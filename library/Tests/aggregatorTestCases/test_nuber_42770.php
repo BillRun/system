@@ -72,24 +72,6 @@ class Test_Case_42770
             "discounts" => [
 
                   [
-                    "from" => "2019-05-31T22:00:00Z",
-                    "to" => "2166-10-16T13:23:53Z",
-                    "params" => [
-                      "conditions" => [
-                              [
-                                  "subscriber" => [
-                                      [
-                                          "fields" => [
-                                              [
-                                                  "field" => "aid",
-                                                  "op" => "in",
-                                                  "value" => [$account['aid']]
-                                              ]
-                                          ]
-                                      ]
-                                  ]
-                              ]
-                      ]],
                       "subject" => [
                           "plan" => [
                               $plan['name'] => ["value" => 80]
@@ -109,24 +91,6 @@ class Test_Case_42770
             "discounts" => [
 
                   [
-                   "from" => "2019-05-31T22:00:00Z",
-                    "to" => "2166-10-16T13:23:53Z",
-                    "params" => [
-                      "conditions" => [
-                              [
-                                  "subscriber" => [
-                                      [
-                                          "fields" => [
-                                              [
-                                                  "field" => "aid",
-                                                  "op" => "in",
-                                                  "value" => [$account['aid']]
-                                              ]
-                                          ]
-                                      ]
-                                  ]
-                              ]
-                      ]],
                       "subject" => [
                           "plan" => [
                               $plan['name'] => ["value" => 90]
