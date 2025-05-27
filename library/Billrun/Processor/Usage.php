@@ -91,39 +91,22 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	}
 
 	protected function setConstructProcessorFields($options){
-		if (!empty($options['processor']['default_usaget'])) {
-			$this->defaultUsaget = $options['processor']['default_usaget'];
-		}
-		if (!empty($options['processor']['default_unit'])) {
-			$this->usagevUnit = $options['processor']['default_unit'];
-		}
-		if (!empty($options['processor']['usaget_mapping'])) {
-			$this->usagetMapping = $options['processor']['usaget_mapping'];
-		}
+		
+		$this->defaultUsaget = $options['processor']['default_usaget'] ??  'general';
+		$this->usagevUnit = $options['processor']['default_unit'] ?? 'counter';
+		$this->usagetMapping = $options['processor']['usaget_mapping'] ?? null;
+		
 		if (empty($options['processor']['date_field'])) {
 			return FALSE;
 		}
-		if (!empty($options['processor']['default_volume_type'])) {
-			$this->volumeType = $options['processor']['default_volume_type'];
-		}
-		if (!empty($options['processor']['default_volume_src'])) {
-			$this->volumeSrc = $options['processor']['default_volume_src'];
-		}
-		if (!empty($options['processor']['date_format'])){
-			$this->dateFormat = $options['processor']['date_format'];
-		}
-		if (!empty($options['processor']['time_format'])){
-			$this->timeFormat = $options['processor']['time_format'];
-		}
-		if (!empty($options['processor']['time_field'])){
-			$this->timeField = $options['processor']['time_field'];
-		}
-		if (!empty($options['processor']['timezone_field'])) {
-			$this->timeZone = $options['processor']['timezone_field'];
-		}
-
-		$this->dateField = $options['processor']['date_field'];
-		$this->prepricedMapping = $options['pricing'];
+		$this->volumeType = $options['processor']['default_volume_type'] ?? 'field';
+		$this->volumeSrc = $options['processor']['default_volume_src'] ?? array();
+		$this->dateFormat = $options['processor']['date_format'] ?? null;
+		$this->timeFormat = $options['processor']['time_format'] ?? null;
+		$this->timeField = $options['processor']['time_field'] ?? null;
+		$this->timeZone = $options['processor']['timezone_field'] ??  null;
+		$this->dateField = $options['processor']['date_field'] ?? null;
+		$this->prepricedMapping = $options['pricing'] ?? null;
 		
 	}
 

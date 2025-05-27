@@ -50,15 +50,9 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	}
 
 	protected function setConstructParserCsvFields($options){
-		if (isset($options['data_structure']) || isset($options['structure'])) {
-			$this->dataStructure = isset($options['data_structure']) ? $options['data_structure'] : $options['structure'];
-		}
-		if (isset($options['header_structure'])){
-			$this->headerStructure = $options['header_structure'];
-		}
-		if (isset($options['trailer_structure'])){
-			$this->trailerStructure= $options['trailer_structure'];
-		}
+		$this->dataStructure = isset($options['data_structure']) ? $options['data_structure'] : ($options['structure'] ?? null);
+		$this->headerStructure = $options['header_structure'] ??  null;
+		$this->trailerStructure= $options['trailer_structure'] ?? null;
 	}
 
 	/**
