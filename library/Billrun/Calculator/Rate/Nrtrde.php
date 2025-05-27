@@ -118,7 +118,9 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 		if(empty($rate)) {
 			$rate = $rates_coll->aggregate(array_merge($aggregateBaseMatch, $aggregateNoPrefixMatch,$aggregateSort));
 		}
-		
+		if(empty($rate) && empty($call_number_prefixes) && ($row['record_type'] == "MTC")) {
+			$rate = $rates_coll->aggregate(array_merge($aggregateBaseMatch, $aggregateSort));
+		}
 		if(!empty($rate)) {
 			$obj_rate = new Mongodloid_Entity(reset($rate));
 			$obj_rate->collection($rates_coll);
