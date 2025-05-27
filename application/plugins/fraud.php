@@ -104,10 +104,20 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 					if (!isset($row['roaming_balances'])) {
 						break;
 					}
-					
+
 					$roamingBalances = $row['roaming_balances'];
 					foreach ($roamingBalances as $roamingBalance) {
 						$this->roamingUsageCheck($limits, $row, $roamingBalance);
+					}
+					break;
+				case 'packages':
+					if (!isset($row['balances_affected'])) {
+						break;
+					}
+					
+					$balancesAffected = $row['balances_affected'];
+					foreach ($balancesAffected as $affectedBalance) {
+						$this->packagesUsageCheck($limits, $row, $affectedBalance);
 					}
 					break;
 				case 'condition':
@@ -222,6 +232,79 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				continue;
 			}
 			$ret[] = $this->checkRoamingUsageRule($rule, $row, $balance);
+		}
+		return $ret;
+	}
+
+	protected function packagesUsageCheck($limits, $row, $affectedBalance) {
+		$ret = array();
+		if ($row['usagev'] === 0) {
+			return false;
+		}
+
+		$groupName = $affectedBalance['service_name'];
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
+		$groupConfig = $plan->get('include.groups.' . $groupName);
+
+		//Only Check the group config match the rule tests
+		if( empty($groupConfig['new_fraud']) ) {
+			return $ret;
+		}
+
+		foreach ($limits['rules'] as $rule) {
+			if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array($row['usaget'], $rule['usaget']))) {
+				return false;
+			}
+			$usaget = $row['usaget'];
+
+			$usageMapping = Billrun_Factory::config()->getConfigValue('fraud.thresholds.packages.config.ussage_mapping', [
+				'NIS' => [
+					'before_fields' => [ 'cost'  => 1],
+					'adding_fields' => [ 'price' => 1 ],
+					'threshold_field' =>  'cost'
+				]
+			]);
+
+			if($usageMapping[$rule['unit']]) {
+				$before = array_sum(array_intersect_key($affectedBalance['usage_before'], $usageMapping[$rule['unit']]['before_fields']));
+				$after = $before + array_sum(array_intersect_key($affectedBalance['usage_added'], $usageMapping[$rule['unit']]['adding_fields']));
+			}
+
+
+			if ($rule['threshold'] == 'from_package') {
+				$percentage = isset($rule['percentage']) ? $rule['percentage'] : 1;
+				if (!isset($rule['service_names']) || in_array($affectedBalance['service_name'], $rule['service_names']) ) {
+					$threshold = (float) floor($groupConfig[ ($usageMapping[$rule['unit']]['threshold_field']) ] * $percentage);
+				} else {
+					Billrun_Log::getInstance()->log("Missing group at rule where threshold is taken from plan group", Zend_log::WARN);
+				}
+			} else {
+				$threshold = $rule['threshold'];
+				Billrun_Log::getInstance()->log("Threshold need to be taken from plan", Zend_log::WARN);
+			}
+
+			if (!isset($before) || !isset($after) || empty($threshold)) {
+				Billrun_Log::getInstance()->log('Theres seems to be a missconfiguration on rule : '.json_encode($rule), Zend_log::WARN);
+				return;
+			}
+
+			$recurring = isset($rule['recurring']) && $rule['recurring'];
+			$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
+			$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
+			if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
+				$roamingPackage['service_name'] = $affectedBalance['service_name'];
+				$roamingPackage['package_id'] = $affectedBalance['package_id'];
+				$channelAddon = isset($rule['channel']) ? $rule['channel'] : '' ;
+				$roamingPackage['channel'] = "Roaming_Package_" . $affectedBalance['package_id'] . $channelAddon;
+				Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
+				if (isset($rule['priority'])) {
+					$priority = (int) $rule['priority'];
+				} else {
+					$priority = null;
+				}
+				$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring, $roamingPackage);
+				$ret[] = $rule;
+			}
 		}
 		return $ret;
 	}

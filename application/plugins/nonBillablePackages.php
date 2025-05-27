@@ -83,11 +83,13 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->plan = null;
 	}
 
-	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
+	public function beforeCommitSubscriberBalance(&$row, &$pricingDataOrg, &$query, &$update, $arate, $calculator) {
 		if ( !is_null($this->package) && $this->isRowRoaming($row) ) {
-			Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
+
 			$balancesIncludeRow = array();
 			$nonBillableUpdate = array();
+			$updatedBalancesDataToRow = [];
+			$pricingData = $pricingDataOrg;
 
 			if (!empty($this->balancesToUpdate)) {
 
@@ -98,21 +100,41 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$previousCostLeft = 0;
 				foreach($this->balancesToUpdate as  $balanceToUpdateData) {
 					$balanceToUpdate = $balanceToUpdateData['balance'];
+					$isExhusted=false;
+					Billrun_Factory::log()->log("Updating balance " . $balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 					$nonBillableQuery = array_merge($nonBillableQueryBase, [ 'billrun_month' => $balanceToUpdate['billrun_month'], 'service_name'=>$balanceToUpdate['service_name'] ]);
 					$dataToUpdate = @$pricingData['groups'][$balanceToUpdate['service_name']];
 					if(empty($dataToUpdate)) {
 						$dataToUpdate = [ 'usagev' => 0 , 'price' =>  0 ];
 					}
 					$dataToUpdate['price'] += $previousCostLeft;
-					$costLeft = $balanceToUpdateData['package']['cost'] - ($dataToUpdate['price'] + $balanceToUpdate['cost'])
+					$costLeft = $balanceToUpdateData['package_data']['cost'] - ($dataToUpdate['price'] + $balanceToUpdate['balance']['cost']);
 					if($costLeft < 0 ) {
 						$dataToUpdate['price'] += $costLeft;
 						$previousCostLeft = -$costLeft;
+						$isExhusted = true;
+
 					}
 					if(!empty($dataToUpdate['usagev']) || !empty($dataToUpdate['price'])) {
-						$this->updateNonBillableBalance($nonBillableQuery, $balanceToUpdate['service_name'], $dataToUpdate, $row
+						$updatedBalancesDataToRow[] = [
+							'billrun_month' => $balanceToUpdate['billrun_month'] ,
+							'package_id' => $balanceToUpdate['service_id'],
+							'service_name' => $balanceToUpdate['service_name'],
+							'usage_before' => [
+								'call' => $balanceToUpdate['balance']['totals']['call']['usagev'],
+								'incoming_call' => $balanceToUpdate['balance']['totals']['incoming_call']['usagev'],
+								'sms' => $balanceToUpdate['balance']['totals']['sms']['usagev'],
+								'data' => $balanceToUpdate['balance']['totals']['data']['usagev'],
+								'cost' => @$balanceToUpdate['balance']['totals']['cost']
+							],
+							'usage_added' => $dataToUpdate
+						];
+
+						$this->updateNonBillableBalance($nonBillableQuery, $balanceToUpdate['service_name'],
+														$dataToUpdate, $row, $isExhusted,
 														$balanceToUpdate, $arate, $calculator );
 						$balanceIds[] = $balanceToUpdate->getRawData()['_id'];
+						unset($pricingData['groups'][$balanceToUpdate['service_name']]);
 					} else {
 						// Last balance that was affected
 						break;
@@ -121,7 +143,12 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 			}
 
-			if ((isset($balancesIncludeRow))) {
+			if(!empty($updatedBalancesDataToRow)) {
+				$row['balances_affected'] = array_merge( (empty($row['balances']) ? [] : $row['balances'] ),
+														 $updatedBalancesDataToRow );
+			}
+
+			if ( !empty($balanceIds) ) {
 				$this->updateRoamingBalancesTx($row, $balanceIds);
 			}
 		}
@@ -133,11 +160,17 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-	protected updateNonBillableBalance($nonBillableQuery, $serviceName, $pricingData, $row , $balanceToUpdate= null , $arate = null , $calculator =null) {
+	protected  function updateNonBillableBalance($nonBillableQuery, $serviceName, $pricingData, $row ,$isExhusted = false , $balanceToUpdate= null , $arate = null , $calculator =null) {
 		$nonBillableUpdate=[];
 		$nonBillableUpdate['$inc']['balance.totals.' . $row['usaget'] . '.usagev'] = $pricingData['usagev'];
 		$nonBillableUpdate['$inc']['balance.totals.' . $row['usaget'] . '.cost'] = $pricingData['price'];
 		$nonBillableUpdate['$inc']['balance.totals.' . $row['usaget'] . '.count'] = 1;
+		if( $isExhusted ) {
+			$nonBillableUpdate['$set']['balance.totals.exhausted'] = true;
+			$nonBillableUpdate['$set']['balance.totals.' . $row['usaget'] . '.exhausted'] = true;
+		}
+		$nonBillableUpdate['$inc']['balance.totals.cost'] = $pricingData['price'];
+		$nonBillableUpdate['$inc']['balance.cost'] = $pricingData['price'];
 		$nonBillableUpdate['$set']['tx'][$row['stamp']] = array('package' => $serviceName,
 																'usaget' => $row['usaget'],
 																'usagev' => $pricingData['usagev'],
@@ -174,7 +207,7 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate, $plan) {
 			return 	in_array($package['service_name'], $rate['rates'][$usageType]['groups']) &&
-					!empty($plan['include']['groups'][$package['service_name']]['limits']['no_billable_affects']) ;
+					!empty($plan->get('include.groups.'.$package['service_name'].'.limits.no_billable_affects')) ;
 		});
 		if (empty($matchedPackages) || !in_array($groupSelected, array_column($matchedPackages,'service_name'))) {
 			$groupSelected = FALSE;
@@ -197,7 +230,7 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$from = empty($package['balance_from_date']) ? strtotime($package['from_date']) : $package['balance_from_date'];
 			$to = empty($package['balance_to_date']) ? strtotime($package['to_date']) : $package['balance_to_date'];
 
-			$legitimate = (bool)($this->lineTime >= $from && $this->lineTime <= $to) && !EMPTY($PLAN['INCLUDE']['GROUPS'][$PACKAGE['SERVICE_NAME']]['LIMITS']['NO_BILLABLE_AFFECTS']);
+			$legitimate = (bool)($this->row['urt']->sec >= $from && $this->row['urt']->sec <= $to || true) && !empty($plan->get('include.groups.'.$package['service_name'].'.limits.no_billable_affects'));
 			Billrun_Factory::dispatcher()->trigger('checkPackageRules', [&$legitimate,$package,$this->row,$plan, $usageType, $rate, $subscriberBalance]);
 			if(!$legitimate) {
 				if($groupSelected === $package['service_name']) {
@@ -220,15 +253,16 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'sid' => $subscriberBalance['sid'],
 			'$and' => array(
 				array('to' => array('$exists' => true)),
-				array('to' => array('$gte' => new MongoDate($this->lineTime))),
+				array('to' => array('$gte' => new MongoDate($this->row['urt']->sec))),
 				array('from' => array('$exists' => true)),
-				array('from' => array('$lte' => new MongoDate($this->lineTime)))
+				array('from' => array('$lte' => new MongoDate($this->row['urt']->sec)))
 			),
 			'service_id' => array('$in' => $matchedIds),
 		);
 
 		$nonBillableQuery['$or'][] = ['balance.totals.' . $usageType => ['$exists' => true], 'balance.totals.' . $usageType . '.exhausted' => ['$exists' => false]];
 		$nonBillableQuery['$or'][] = ['balance.totals.' . $usageType => ['$exists' => true], 'balance.totals.' . $usageType . '.exhausted' => ['$ne' => true]];
+		$nonBillableQuery['$or'][] = ['balance.totals.' . $usageType => ['$exists' => true], 'balance.totals.exhausted' => ['$ne' => true]];
 
 
 		$nonBillableBalances = $this->balances->query($nonBillableQuery)->cursor();
@@ -263,8 +297,7 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$UsageIncluded += (int) $planUsage;
 			if (isset($balance['balance']['totals'][$usageType])) {
 				$this->package = $balancePackage;
-				$this->balancesToUpdate[] = [ 'balance' => $balance, 'package_data' => $plan['include']['groups'][$balancePackage] ] ;
-				} 
+				$this->balancesToUpdate[] = [ 'balance' => $balance, 'package_data' => $plan->get('include.groups.'.$balancePackage) ] ;
 			}
 		}
 
@@ -282,7 +315,7 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $serviceId, $serviceName) {
 		$planRef = $plan->createRef();
-		$packageLimits = $this->getPackageJoinedValues($serviceName, $plan);
+		$packageLimits = $plan->get('include.groups.'.$serviceName.'.limits');
 		Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName);
 	}
 
@@ -292,19 +325,24 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function removeRoamingBalanceTx($row){
 		$ids = [];
-		if (!is_null($this->balancesToUpdate)) {
-			array_push($ids, $this->balancesToUpdate->getRawData()['_id']);
-		}
 
-		$query = array(
-			'_id' => array('$in' => $ids),
-		);
-		$update = array(
-			'$unset' => array(
-				'tx.' . $row['stamp'] => 1
-			)
-		);
-		$this->balances->update($query, $update);
+		if (!empty($this->balancesToUpdate)) {
+			foreach($this->balancesToUpdate as  $balanceToUpdateData) {
+				array_push($ids, $balanceToUpdateData['balance']->getRawData()['_id']);
+			}
+		}
+		if($ids) {
+			$query = array(
+				'_id' => array('$in' => $ids),
+			);
+			$update = array(
+				'$unset' => array(
+					'tx.' . $row['stamp'] => 1
+				)
+			);
+
+			$this->balances->update($query, $update);
+		}
 	}
 
 
