@@ -226,6 +226,9 @@ class Billrun_DiscountManager {
 				['key'] );
 			foreach ($subscriberDiscounts as $key => $subDiscount) {
 				if(!$forcing){
+					if(isset($this->eligibleDiscounts[$subDiscount['key']])){
+						$subDiscount['key'] = "SUBSCRIBER_DISCOUNT_" . $subDiscount['key'] . "_SID" . $sid ."_" . $subscriberRevision['from'] ."_" . $subscriberRevision['to'];
+					}
 					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
 					$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
 					$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
