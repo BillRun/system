@@ -102,7 +102,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 
 	protected function getCustomIDFields() {
 		$customIDFields =Billrun_Factory::config()->getConfigValue('customer.aggregator.revision_identification_fields',[]);
-		$idFields = array_merge($customIDFields, ['aid','sid','plan','play','first_name','last_name','type','email','address','services', 'overrides', 'discounts']);
+		$idFields = array_merge($customIDFields, ['aid','sid','plan','play','first_name','last_name','type','email','address','services', 'overrides']);
 		return $idFields;
 	}
 	
