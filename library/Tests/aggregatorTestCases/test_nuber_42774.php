@@ -156,6 +156,7 @@ class Test_Case_42774
                 'billrun' => [
                     'billrun_key' => '202206',
                     'aid' => $account['aid'],
+                    'vat' => 17,
                     'total' => 222.3,
                     'vatable' => 190, //subscriber1 ->plan1(100) discount1(10) service(20)/ subscriber2 -> plan2 80 discount2(20) service(20)
                 ],
