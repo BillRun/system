@@ -1074,7 +1074,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function getLineAprice() {
 		$userFields = $this->row['uf'];
 		$usageType = $this->row['usaget'];
-		$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($this->row['type'], true)['pricing'];
+		$prepricedMapping = Billrun_Factory::config()->getLineTypeConfigByName($this->row['type'], true, $this->row['linet'] ?? null)['pricing'];
 		$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
 		$aprice = Billrun_util::getIn($userFields, $apriceField);
                 		Billrun_Factory::dispatcher()->trigger('beforeGetLineAprice', array($this->row, &$aprice));
