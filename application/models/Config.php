@@ -1263,31 +1263,31 @@ class ConfigModel {
 			$p_i = $process_idx + 1;
 			// Validate Settings 
 			if (empty($process['name'])) {
-				throw new Exception("Set #{$p_i} Settings: Key is missing");
+				throw new Exception("Process #{$p_i} Settings: Key is missing");
 			}
 			if (empty($process['label'])) {
-				throw new Exception("#{$p_i} Settings: Title is missing");
+				throw new Exception("Process #{$p_i} Settings: Title is missing");
 			}
 			$settings = Billrun_Util::getIn($process, ['settings'], []);
 			if (empty($settings['change_state_method']) && !empty($settings['change_state_url'])) {
-				throw new Exception("Set #{$p_i} Settings: HTTP Method is missing");
+				throw new Exception("Process #{$p_i} Settings: HTTP Method is missing");
 			}
 			$min_debt = Billrun_Util::getIn($settings, 'min_debt', '');
 			if (!is_numeric($min_debt) || floatval($min_debt) < 0) {
-				throw new Exception("Set #{$p_i} Settings: Minimum debt must be numeric equal or greater then 0");
+				throw new Exception("Process #{$p_i} Settings: Minimum debt must be numeric equal or greater then 0");
 			}
 			// Validate conditions
 			$conditions = Billrun_Util::getIn($process, ['conditions', 0, 'account', 'fields'], []);
 			if (empty($conditions) && $process_idx < $processes_count - 1) {
-				throw new Exception("Set #{$p_i} Conditions is missing");
+				throw new Exception("Process #{$p_i} Conditions is missing");
 			}
 			foreach ($conditions as $condition_idx => $condition) {
 				$c_i = $condition_idx + 1;
 				if (empty(Billrun_Util::getIn($condition, 'field', ''))) {
-					throw new Exception("Set #{$p_i} Condition #{$c_i}: field is missing");
+					throw new Exception("Process #{$p_i} Condition #{$c_i}: field is missing");
 				}
 				if (empty(Billrun_Util::getIn($condition, 'op', ''))) {
-					throw new Exception("Set #{$p_i} Condition #{$c_i}: operator is missing");
+					throw new Exception("Process #{$p_i} Condition #{$c_i}: operator is missing");
 				}
 			}
 			// Validate Stapes
@@ -1296,7 +1296,7 @@ class ConfigModel {
 				$s_i = $step_idx + 1;
 				$do_after_days = Billrun_Util::getIn($step, 'do_after_days', '');
 				if (!is_numeric($do_after_days) || floatval($do_after_days) < 0) {
-					throw new Exception("Set #{$p_i} Step #{$s_i}: Trigger after days value must be numeric equal or greater than 0");
+					throw new Exception("Process #{$p_i} Step #{$s_i}: Trigger after days value must be numeric equal or greater than 0");
 				}
 			}
 
