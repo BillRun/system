@@ -84,7 +84,7 @@ function _dropIndex(collname, indexname) {
 }
 
 // =============================================================================
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty().next();
+var lastConfig = db.config.find().sort({urt: -1, _id: -1}).limit(1).pretty().next();
 delete lastConfig['_id'];
 // =============================================================================
 
@@ -1981,7 +1981,7 @@ runOnce(lastConfig, 'BRCD-4725', function () {
 	db.services.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
 });
 
-
+lastConfig.urt = new Date();
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });

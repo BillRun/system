@@ -69,7 +69,7 @@ class ConfigModel {
 	protected function loadConfig() {
 		$ret = $this->collection->query()
 			->cursor()
-			->sort(array('_id' => -1))
+			->sort(array('urt' => -1, '_id' => -1))
 			->limit(1)
 			->current()
 			->getRawData();
@@ -90,6 +90,7 @@ class ConfigModel {
 	public function setConfig($data) {
 		$updatedData = array_merge($this->getConfig(), $data);
 		unset($updatedData['_id']);
+		$updatedData['urt'] = new MongoDB\BSON\UTCDateTime(round(microtime(true) * 1000));
 		foreach ($this->options as $option) {
 			if (!isset($data[$option])) {
 				$data[$option] = 0;
@@ -378,7 +379,7 @@ class ConfigModel {
 				return 0;
 			}
 		}
-
+		$updatedData['urt'] = new MongoDB\BSON\UTCDateTime(round(microtime(true) * 1000)); 
 		$ret = $this->collection->insert($updatedData);
 		$saveResult = !empty($ret['ok']);
 		if ($saveResult) {
@@ -941,7 +942,7 @@ class ConfigModel {
  				}
  			}
  		}
- 
+		$updatedData['urt'] = new MongoDB\BSON\UTCDateTime(round(microtime(true) * 1000)); 
 		$ret = $this->collection->insert($updatedData);
 		
 		if ($category === 'shared_secret') {
@@ -969,7 +970,7 @@ class ConfigModel {
 				}
 			}
 		}
- 
+		$updatedData['urt'] = new MongoDB\BSON\UTCDateTime(round(microtime(true) * 1000));
 		$ret = $this->collection->insert($updatedData);
 		return !empty($ret['ok']);
 	}
