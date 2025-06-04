@@ -25,7 +25,7 @@ class Mongodloid_Collection {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
-		if (!isset($options['j'])) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 		return $this->_collection->update($query, $values, $options);
@@ -97,7 +97,13 @@ class Mongodloid_Collection {
 			$w = $this->w;
 		}
 
-		$result = $this->_collection->save($data, array('w' => $w, 'j' => $this->j));
+		$options = array('w' => $w);
+		
+		if ($this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
+			$options['j'] = $this->j;
+		}
+
+		$result = $this->_collection->save($data, $options);
 		if (!$result)
 			return false;
 
@@ -185,8 +191,8 @@ class Mongodloid_Collection {
 	public function aggregatecursor() {
 		$args = func_get_args();
 		// on 2.4 and below use old aggregate
-		if (!$this->_db->compareServerVersion('2.6', '>=')) { // TODO Need to update Mongodloid_Cursor functions
-			return $this->aggregate($args);
+		if (!$this->_db->compareServerVersion('2.6', '>=') || !$this->_db->compareClientVersion('1.6', '>=')) { // TODO Need to update Mongodloid_Cursor functions
+			throw new Exception('Aggregate cursor support MongoDB 2.6+ and PHP MongoDB client 1.6+');
 		}
 		// on 2.6 and above it's much more simple
 		if (count($args)>1) { // Assume the array contains 'ops' for backward compatibility
@@ -269,14 +275,16 @@ class Mongodloid_Collection {
 	 */
 	public function findAndModify(array $query, array $update = array(), array $fields = null, array $options = array(), $asCommand = false) {
 		if (!$asCommand) {
-			$ret = $this->_collection->findAndModify($query, $update, $fields, $options);
+			$ret = $this->_collection->findAndModify($query, $update, empty($fields) ? null : $fields, $options);
 		} else {
 			$commandOptions = array(
 				'findAndModify' => $this->getName(),
 				'query' => $query,
 				'update' => $update,
-				'fields' => $fields,
 			);
+            if(!empty($fields)) {
+                $commandOptions['fields'] = $fields;
+            }
 			$ret = $this->_db->command(array_merge($commandOptions, $options));
 		}
 
@@ -297,10 +305,15 @@ class Mongodloid_Collection {
 			$options['w'] = $this->w;
 		}
 
-		if (!isset($options['j'])) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 
+		
+		if ($options['w'] == 0 && $this->_db->compareServerVersion('3.4', '>=')) {
+			$options['w'] = 1;
+		}
+		
 		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
 			$batch = new MongoInsertBatch($this->_collection);
 			foreach($a as $doc) {
@@ -327,7 +340,7 @@ class Mongodloid_Collection {
 			$options['w'] = $this->w;
 		}
 		
-		if (!isset($options['j'])) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 
