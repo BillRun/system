@@ -130,7 +130,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		
 		if (isset($options['parser']) && $options['parser'] != 'none') {
-			$this->setParser($options['parser']);
+			$lineTypes = $options['line_types'] ?? [];
+			$this->setParser(array_merge($options['parser'], (!empty($lineTypes) ? ['line_types' => $lineTypes] : [])));
 		}
 
 		if (isset($options['processor']['line_numbers'])) {
@@ -786,7 +787,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return array
 	 */
 	protected function getFilters($row) {
-		if (!isset($this->filters[$row['type']])) {
+		if(isset($row['linet'])){
+			if(!isset($this->filters[$row['type']][$row['linet']])){
+				$filters = Billrun_Factory::config()->getLineTypeConfigByName($row['type'], true, $row['linet'])['filters'] ?? 
+				(Billrun_Factory::config()->getLineTypeConfigByName($row['type'], true)['filters'] ?? [] );
+				$this->filters[$row['type']][$row['linet']] = $filters;
+			}
+			return $this->filters[$row['type']][$row['linet']];
+		} else if (!isset($this->filters[$row['type']])) {
 			$config = Billrun_Factory::config()->getFileTypeSettings($row['type'], true);
 			$this->filters[$row['type']] = isset($config['filters']) ? $config['filters'] : array();
 		}

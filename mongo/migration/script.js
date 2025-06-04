@@ -1964,9 +1964,10 @@ runOnce(lastConfig, 'BRCD-4422', function () {
 	db.jobs_messages.createIndex({'start_time': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'timeout': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'complete_time': 1}, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'schedule': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'handle': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'md5': 1}, { 'unique': true, 'background': true });
-	db.jobs_messages.createIndex({'queue_name': 1, 'timeout': 1, 'done': 1 }, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'queue_name': 1, 'done': 1, 'schedule': 1, 'timeout': 1 }, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'body.parent': 1, }, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'body.type': 1, 'created': -1}, { 'unique': false, 'background': true });
 	if (db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos' && db.version() >= "8") {
