@@ -118,6 +118,8 @@
     "interval": "Interval"
   },
   "service": {
+    "subscriber_price_override_panel_title": "Override Services Prices",
+    "subscriber_price_override_panel_select": "Select Services",
     "description": "Title",
     "name": "Key",
     "period_type": "Eligibility Period",
@@ -125,6 +127,8 @@
     "custom_period_type": "Custom"
   },
   "plan": {
+    "subscriber_price_override_panel_title": "Override Plans Prices",
+    "subscriber_price_override_panel_select": "Select Plans",
     "description": "Title",
     "name": "Key",
     "proration": "Proration",
@@ -170,6 +174,7 @@
     "type_percentage": "Percentage",
     "min_subscribers": "Min Subscribers",
     "max_subscribers": "Max Subscribers",
+    "simultaneous_limit": "Max Discount Instances",
     "proration": "Prorated",
     "proration_inherited": "Inherited",
     "proration_no": "No",
@@ -178,7 +183,14 @@
     "matched_plans": "Matched Plans",
     "panel_plan_discount": "Plans Discount Values",
     "sequential": "Sequential",
-    "panel_service_discount": "Services Discount Values"
+    "add_sub_service_cond_set_btn": "Add subscriber service condition(s) set",
+    "add_customer_service_cond_set_btn": "Add Customer service condition(s) set",
+    "sub_service_cond_set_panel_lbl": "Subscriber Services",
+    "sub_customer_service_cond_set_panel_lbl": "Customer Services",
+    "add_sub_service_cond_add_action": "Subscriber Services",
+    "add_customer_service_cond_add_action": "Customer Services",
+    "panel_customer_service_discount": "Customer Services Discount Values",
+    "panel_subscriber_service_discount": "Subscriber Services Discount Values"
   },
   "charge": {
     "description": "Title",
@@ -193,6 +205,7 @@
     "type_percentage": "Percentage",
     "min_subscribers": "Min Subscribers",
     "max_subscribers": "Max Subscribers",
+    "simultaneous_limit": "Max Charge Instances",
     "proration": "Prorated",
     "proration_inherited": "Inherited",
     "proration_no": "No",
@@ -200,7 +213,8 @@
     "monthly_fees": "Plans and included services",
     "matched_plans": "Matched Plans",
     "panel_plan_discount": "Plans Charge Values",
-    "panel_service_discount": "Services Charge Values",
+    "panel_service_discount": "Subscriber Services Charge Values",
+    "panel_customer_service_discount": "Customer Services Charge Values",
     "charge_values": "Charge Values",
     "subject_general": "General",
     "percentage_subject_not_compatible": "is not compatible with  General Charge."
@@ -277,6 +291,10 @@
     "key": "Product",
     "amount": "Correction Amount"
   },
+  "rounding_rules": "Rounding Rules",
+  "rounding_type": "Rounding Type",
+  "rounding_decimals": "Rounding Decimals",
+  "rounding_state": "Amount to Round",
   "delete": "Delete",
   "close": "Close",
   "status": "Status",

@@ -8,7 +8,6 @@ import { Panel } from 'react-bootstrap';
 import { ActionButtons, LoadingItemPlaceholder } from '@/components/Elements';
 import { EntityRevisionDetails } from '../Entity';
 import Product from './Product';
-import { EntityTaxDetails } from '@/components/Tax';
 import {
   onRateAdd,
   onRateRemove,

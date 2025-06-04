@@ -413,12 +413,20 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $priorities;
 	}
 
+	protected function getCustomerIdentificationTranslationByRow($row){
+		if(isset($row['linet'])){
+			return Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['linet'] , $row['usaget']), array());
+		}// b/c
+		return Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['usaget']), array());
+		
+	}
+
 	protected function getIdentityParams($row) {
 		if (!$row instanceof Mongodloid_Entity) {
 			$row = new Mongodloid_Entity($row);
 		}
 		$params = array();
-		$customer_identification_translation = Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['usaget']), array());
+		$customer_identification_translation = $this->getCustomerIdentificationTranslationByRow($row);
 		foreach ($customer_identification_translation as $translationRules) {
 			if (!empty($translationRules['conditions'])) {
 				foreach ($translationRules['conditions'] as $condition) {
@@ -529,7 +537,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function getCustomerIdentificationTranslation() {
 		$customerIdentificationTranslation = array();
 		foreach (Billrun_Factory::config()->getConfigValue('file_types', array()) as $fileSettings) {
-			if (Billrun_Config::isFileTypeConfigEnabled($fileSettings) && !empty($fileSettings['customer_identification_fields'])) {
+			if(Billrun_Config::isFileTypeConfigEnabled($fileSettings) && isset($fileSettings['line_types']) && Billrun_Config::haveMultipleLineTypes($fileSettings['line_types'])){
+				$customerIdentificationTranslation[$fileSettings['file_type']] =  Billrun_Config::getLineTypesField($fileSettings, 'customer_identification_fields');
+			} else if (Billrun_Config::isFileTypeConfigEnabled($fileSettings) && !empty($fileSettings['customer_identification_fields'])) {// b/c + default if not exists
 				$customerIdentificationTranslation[$fileSettings['file_type']] = $fileSettings['customer_identification_fields'];
 			}
 		}

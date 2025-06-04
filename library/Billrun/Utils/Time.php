@@ -427,4 +427,18 @@ class Billrun_Utils_Time {
 
 		return static::getMonthsDiff($formatedFrom,$formatedTo);
 	}
+
+	public static function getServiceTime($subscriberService, $subscriberRevision, $field = 'from'){
+		$serviceTime = null;
+		if (isset($subscriberService[$field])){
+			if ($subscriberService[$field] instanceof Mongodloid_Date) {
+				$serviceTime  = Billrun_Utils_Time::getTime($subscriberService[$field]);
+			}else{
+				$serviceTime  = $subscriberService[$field]['sec'] ?? Billrun_Utils_Time::getTime($subscriberRevision[$field]);
+			}				
+		}else {
+			$serviceTime  = Billrun_Utils_Time::getTime($subscriberRevision[$field]);
+		}
+		return $serviceTime;
+	}
 }

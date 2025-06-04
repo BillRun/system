@@ -87,7 +87,7 @@ class Models_Services extends Models_Entity {
             }
             return true;
 	}
-	
+
 	/**
 	 * method to add entity custom fields values from request
 	 * 

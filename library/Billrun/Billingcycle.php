@@ -433,6 +433,28 @@ class Billrun_Billingcycle {
 	}
 	
 	/**
+	 * method to receive the last parent job of cycle
+	 * 
+	 * @param type $billrunKey
+	 * @param type $invoicing_day
+	 */
+	public static function getCycleDetails($billrunKey, $invoicing_day = null) {
+		$coll = self::getBillingCycleColl();
+		$query = array(
+			'billrun_key' => $billrunKey,
+		);
+		if ($invoicing_day) {
+			$query['invoicing_day'] = $invoicing_day;
+		}
+
+		$entry = $coll->query($query)->cursor()->sort(['page_number' => 1])->limit(1)->current();
+		if ($entry->isEmpty()) {
+			return FALSE;
+		}
+		return $entry;
+	}
+	
+	/**
 	 * Returns the number of generated bills.
 	 * @param string $billrunKey - Billrun key
 	 *

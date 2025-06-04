@@ -6,8 +6,8 @@ import Immutable from 'immutable';
 import { Form, FormGroup, ControlLabel, Col, Panel, Table } from 'react-bootstrap';
 import uuid from 'uuid';
 import moment from 'moment';
-import SubscriptionServicesDetails from './SubscriptionServices/SubscriptionServicesDetails';
-import { ActionButtons, Actions, CreateButton } from '@/components/Elements';
+import SubscriptionServicesDetails from './SubscriptionElements/SubscriptionServicesDetails';
+import { ActionButtons, Actions, CreateButton, OverridePrice } from '@/components/Elements';
 import Field from '@/components/Field';
 import { EntityRevisionDetails, EntityFields } from '../Entity';
 import { DiscountPopup } from '@/components/Discount';
@@ -23,7 +23,9 @@ import {
   buildPageTitle,
   toImmutableList,
   getFieldName,
+  plansOrServicesToSelectOptions,
 } from '@/common/Util';
+
 
 class Subscription extends Component {
 
@@ -58,7 +60,13 @@ class Subscription extends Component {
     this.state = {
       subscription: props.subscription,
       progress: false,
-      discountsHiddenFields: ['key', 'params.min_subscribers', 'params.max_subscribers']
+      discountsHiddenFields: ['key', 'params.min_subscribers', 'params.max_subscribers', 'simultaneous_limit'],
+      planCycleUnlimitedValue: getConfig('planCycleUnlimitedValue', 'UNLIMITED'),
+      defaultTariff: Immutable.Map({
+        price: 0,
+        from: 0,
+        to: getConfig('planCycleUnlimitedValue', 'UNLIMITED'),
+      })
     };
   }
 
@@ -249,7 +257,6 @@ class Subscription extends Component {
     return dispatch(showConfirmModal(confirm));
   }
 
-
   filterCustomFields = (field) => {
     const hiddenFields = ['plan', 'services', 'play'];
     const isCustomField = !hiddenFields.includes(field.get('field_name'));
@@ -362,19 +369,14 @@ class Subscription extends Component {
     return 'normal';
   }
 
-  formatSelectOptions = items => items.map(item => ({
-    value: item.get('name', ''),
-    label: item.get('description', item.get('name', '')),
-  }));
-
   getAvailablePlans = () => {
     const { subscription } = this.state;
     const { allPlans } = this.props;
     const play = subscription.get('play', false);
     if ([false, ''].includes(play)) {
-      return this.formatSelectOptions(allPlans);
+      return plansOrServicesToSelectOptions(allPlans);
     }
-    return this.formatSelectOptions(allPlans
+    return plansOrServicesToSelectOptions(allPlans
       .filter(allPlan => allPlan.get('play', Immutable.List()).isEmpty() || allPlan.get('play', Immutable.List()).includes(play)),
     );
   }
@@ -394,9 +396,9 @@ class Subscription extends Component {
     const { allServices } = this.props;
     const play = subscription.get('play', false);
     if ([false, ''].includes(play)) {
-      return this.formatSelectOptions(allServices);
+      return plansOrServicesToSelectOptions(allServices);
     }
-    return this.formatSelectOptions(allServices
+    return plansOrServicesToSelectOptions(allServices
       .filter(allService => allService.get('play', Immutable.List()).isEmpty() || allService.get('play', Immutable.List()).includes(play)),
     );
   }
@@ -523,8 +525,11 @@ class Subscription extends Component {
     const { revisions, mode, allServices, subscription: originSubscription } = this.props;
     const allowEdit = ['update', 'clone', 'closeandnew', 'create'].includes(mode);
     const services = subscription.get('services', Immutable.List()) || Immutable.List();
+    const overrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
     const minStartDate = this.getServiceStartMinDate();
     const originServices = originSubscription.get('services', Immutable.List()) || Immutable.List();
+    const servicesOptions = this.getAvailableServices().toJS();
+    const plansOptions = this.getAvailablePlans().toJS();
 
     return (
       <div className="Subscription">
@@ -602,6 +607,23 @@ class Subscription extends Component {
               />
             )}
           </Panel>
+          
+          <OverridePrice
+            type='service'
+            overrides={overrides}
+            options={servicesOptions}
+            onChange={this.updateSubscriptionField}
+            editable={allowEdit}
+          />
+
+          <OverridePrice
+            type='plan'
+            overrides={overrides}
+            options={plansOptions}
+            onChange={this.updateSubscriptionField}
+            editable={allowEdit}
+          />
+
         </Panel>
 
         <ActionButtons
