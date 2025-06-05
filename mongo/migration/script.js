@@ -1974,6 +1974,42 @@ runOnce(lastConfig, 'BRCD-4422', function () {
 		sh.shardCollection(_dbName + ".jobs_messages", { "md5" : 1 } );
 	}
 });
+//BRCD-4827: Migration script for old to new structure of the “collection” field.
+runOnce(lastConfig, 'BRCD-4827', function () {
+	if (typeof lastConfig['collection'] !== 'undefined') {
+		var oldCollection = lastConfig['collection'];
+		var newCollection = {
+			"processes": [{
+				name: "default_process",
+				label: "Default process",
+				conditions: [	
+				],
+				"settings" : {
+				},
+				"steps" : [
+				]
+			}],
+		}
+		if (typeof oldCollection["settings"]["min_debt"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["min_debt"] = oldCollection["settings"]["min_debt"];
+			delete( oldCollection["settings"]["min_debt"]);
+		}
+		if (typeof oldCollection["settings"]["change_state_url"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["change_state_url"] = oldCollection["settings"]["change_state_url"];
+			delete( oldCollection["settings"]["change_state_url"]);
+		}
+		if (typeof oldCollection["settings"]["change_state_method"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["change_state_method"] = oldCollection["settings"]["change_state_method"];
+			delete( oldCollection["settings"]["change_state_method"]);
+		}
+		if (typeof oldCollection["steps"] !== 'undefined') {
+			newCollection['processes'][0]["steps"]= oldCollection["steps"];
+		}
+		newCollection["settings"] = oldCollection["settings"];
+
+		lastConfig['collection'] = newCollection;
+	}
+});
 
 // BRCD-4725: Set default to after tax as the before tax is new feature
 runOnce(lastConfig, 'BRCD-4725', function () {
