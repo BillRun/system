@@ -119,6 +119,7 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 			$rate = $rates_coll->aggregate(array_merge($aggregateBaseMatch, $aggregateNoPrefixMatch,$aggregateSort));
 		}
 		if(empty($rate) && ( empty($call_number_prefixes) || empty(reset($call_number_prefixes)) ) && ($row['record_type'] == "MTC")) {
+			array_shift($aggregateBaseMatch[0]['$match']['$or']);// since we don't  know the source  don't  include the multiple service network query
 			$rate = $rates_coll->aggregate(array_merge($aggregateBaseMatch, $aggregateSort));
 		}
 		if(!empty($rate)) {
