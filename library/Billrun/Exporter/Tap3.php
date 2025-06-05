@@ -278,24 +278,53 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 			}
 		}
 		$mccMncs = array_map(function($e){return (string) $e;},array_keys($mccMncs));
-
+		$multiStructure = $this->tadigsStorageConfig['multi_structure'] ?? true;//todo:: change to false + set in plugin true  
 		$collection = Billrun_Factory::db()->{$this->tadigsStorageConfig['collection'].'Collection'}();
-		$query = array_merge($this->tadigsStorageConfig['base_query'], [
-						$this->tadigsStorageConfig['mcc_mnc_field']=> array(
-							'$in' => array_values(array_unique($mccMncs)),
-						),
-					]);
-		$mappings = $collection->query($query)->cursor();
-		foreach ($mappings as $mapping) {
-			$mccmncArr =  is_array($mapping['mcc_mnc']) ? $mapping['mcc_mnc'] : [$mapping['mcc_mnc']];
-			foreach ($mccmncArr as $mccMnc) {
-				if (isset($this->tadigs[$mccMnc]) && $this->tadigs[$mccMnc] != $mapping['tadig']) {
-					Billrun_Log::getInstance()->log('Tadigs ' . $this->exporterType . ' exporter: duplicate definition for MCC-MNC. TADIG: ' . $mapping['tadig'] . ' and TADIG ' . $this->tadigs[$mccMnc], Zend_log::NOTICE);
+		if(!$multiStructure){
+			$query = array_merge($this->tadigsStorageConfig['base_query'], [
+							$this->tadigsStorageConfig['mcc_mnc_field']=> array(
+								'$in' => array_values(array_unique($mccMncs)),
+							),
+						]);
+			$mappings = $collection->query($query)->cursor();
+			foreach ($mappings as $mapping) {
+				$mccmncArr =  is_array($mapping['mcc_mnc']) ? $mapping['mcc_mnc'] : [$mapping['mcc_mnc']];
+				foreach ($mccmncArr as $mccMnc) {
+					if (isset($this->tadigs[$mccMnc]) && $this->tadigs[$mccMnc] != $mapping['tadig']) {
+						Billrun_Log::getInstance()->log('Tadigs ' . $this->exporterType . ' exporter: duplicate definition for MCC-MNC. TADIG: ' . $mapping['tadig'] . ' and TADIG ' . $this->tadigs[$mccMnc], Zend_log::NOTICE);
+						continue;
+					}
+					$this->tadigs[$mccMnc] = $mapping['tadig'];
+				}
+			}
+		}else{
+			//consider add pipeline query inside $this->tadigsStorageConfig['base_pipeline']
+			$pipeline = [['$match' => [
+				'type' => 'account'
+				]],
+				['$unwind' => '$tadigs_mapping'],
+				['$unwind' => '$tadigs_mapping.mcc_mnc'],
+				['$match' => [
+					'tadigs_mapping.mcc_mnc' => ['$in' => $mccMncs]
+				]],
+				
+				['$project' => [
+					'_id' => 0,
+					'mcc_mnc' => '$tadigs_mapping.mcc_mnc',
+					'tadig' => '$tadigs_mapping.tadig'
+				]]
+			];
+			$mccmncMappings = iterator_to_array($collection->aggregate($pipeline));
+			foreach ($mccmncMappings as $mccmncMapping) {
+				$mccMnc = $mccmncMapping['mcc_mnc'];
+				if (isset($this->tadigs[$mccMnc]) && $this->tadigs[$mccMnc] != $mccmncMapping['tadig']) {
+					Billrun_Log::getInstance()->log('Tadigs ' . $this->exporterType . ' exporter: duplicate definition for MCC-MNC. TADIG: ' . $mccmncMapping['tadig'] . ' and TADIG ' . $this->tadigs[$mccMnc], Zend_log::NOTICE);
 					continue;
 				}
-				$this->tadigs[$mccMnc] = $mapping['tadig'];
+				$this->tadigs[$mccMnc] = $mccmncMapping['tadig'];
 			}
 		}
+		
 	}
 
 
