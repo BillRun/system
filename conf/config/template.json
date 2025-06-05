@@ -9,6 +9,7 @@
 	},
 	"collection" : {
 		"steps": [],
+		"processes": [],
 		"settings": {
 			"run_on_holidays": true,
 			"run_on_days": [true,true,true,true,true,true,true],

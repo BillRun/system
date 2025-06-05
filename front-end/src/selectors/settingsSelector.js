@@ -648,21 +648,9 @@ export const templateTokenSettingsSelectorForEditor = createSelector(
   }
 );
 
-export const collectionSettingsSelector = createSelector(
+export const collectionSelector = createSelector(
   getCollections,
-  collection => (collection ? collection.get('settings', Immutable.Map()) : undefined),
-);
-
-export const collectionStepsSelector = createSelector(
-  getCollections,
-  collection => (collection ? collection.get('steps', Immutable.List()) : undefined),
-);
-
-export const collectionStepsSelectorForList = createSelector(
-  collectionStepsSelector,
-  steps => (steps
-    ? steps.sortBy(item => parseFloat(item.get('do_after_days', 0)))
-    : undefined),
+  collection => (collection ? collection.get('processes', Immutable.List()) : undefined),
 );
 
 export const eventsSettingsSelector = createSelector(
@@ -692,8 +680,8 @@ export const formatFieldOptions = (fields, item = Immutable.Map()) => {
   return undefined;
 };
 
-export const addDefaultFieldOptions = (formatedFields, item = Immutable.Map()) => {
-  if (formatedFields) {
+export const addDefaultFieldOptions = (formattedFields, item = Immutable.Map()) => {
+  if (formattedFields) {
     const entity = item.get('entity', '');
     const defaultFieldsByEntity = {
       subscription: [{
@@ -727,11 +715,11 @@ export const addDefaultFieldOptions = (formatedFields, item = Immutable.Map()) =
         mandatory: true,
       }],
     };
-    return formatedFields.withMutations((fieldsWithMutations) => {
+    return formattedFields.withMutations((fieldsWithMutations) => {
       const defaultFields = defaultFieldsByEntity[entity] || [];
       defaultFields
         .filter(defaultField =>
-          formatedFields.findIndex(field => field.value === defaultField.value) === -1)
+          formattedFields.findIndex(field => field.value === defaultField.value) === -1)
         .forEach((defaultField) => {
           fieldsWithMutations.push(defaultField);
         });

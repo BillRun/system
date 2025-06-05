@@ -26,13 +26,13 @@ class CollectionTypeHttp extends Component {
   static defaultProps = {
     content: Immutable.Map(),
     errors: Immutable.Map(),
-    httpMethods: getConfig(['collections', 'http', 'mthods'], Immutable.List()),
+    httpMethods: getConfig(['collections', 'http', 'methods'], Immutable.List()),
     httpDecoders: getConfig(['collections', 'http', 'decoders'], Immutable.List()),
   };
 
   shouldComponentUpdate(nextProps, nextState) { // eslint-disable-line no-unused-vars
-    const { content } = this.props;
-    return !Immutable.is(content, nextProps.content);
+    const { content, errors } = this.props;
+    return !Immutable.is(content, nextProps.content) || !Immutable.is(errors, nextProps.errors);
   }
 
   onChangeMethod = (value) => {
