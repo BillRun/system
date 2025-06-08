@@ -52,8 +52,9 @@ class BillrunController extends ApiController {
 		if ($billrunKey >= $currentBillrunKey) {
 			throw new Exception("Can't run billing cycle on active or future cycles");
 		}
-		if (Billrun_Billingcycle::isCycleRunning($billrunKey, $this->size)) {
-			throw new Exception("Already Running");
+		$host = Billrun_Util::getHostName();
+		if (Billrun_Billingcycle::isCycleRunningOnHost($billrunKey, $host, $this->size)) {
+			throw new Exception("Billing cycle $billrunKey is already running on host $host");
 		}
 		$cycleStatus = Billrun_Billingcycle::getCycleStatus($billrunKey);
 		if ($cycleStatus == 'finished' || $cycleStatus == 'to_rerun') {
