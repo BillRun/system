@@ -41,10 +41,12 @@ class PackagesAction extends ApiAction {
 			$callsUsage = $results['balance']['totals']['call']['usagev'] + $results['balance']['totals']['incoming_call']['usagev'];
 			$smsUsage = $results['balance']['totals']['sms']['usagev'];
 			$dataUsage = $results['balance']['totals']['data']['usagev'];
+			$cost = $results['balance']['totals']['cost'];
 			$packageUsage = array(
 				'Call' => $callsUsage,
 				'Sms' => $smsUsage,
-				'Data' => $dataUsage
+				'Data' => $dataUsage,
+				'Cost' => $cost
 			);
 		} else {
 			$packageUsage = "There isn't a matching package"; 
