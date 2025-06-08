@@ -34,6 +34,7 @@ class TestHelper extends \Codeception\Module {
         return new \MongoDB\BSON\UTCDateTime($timestamp * 1000);
     }
 
+    /*
      * Verifies that the specified MongoDB collection contains the expected number of documents
      * matching the given criteria.
      *
