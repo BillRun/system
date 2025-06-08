@@ -631,8 +631,13 @@ class BillRunAPI extends \Codeception\Module
         return $this->sendpayApi($payment);
     }
 
-    public function getRequest($params = [])
-    {
+    /**
+     * Sends getRequest API request with the specified parameters.
+     *
+     * @param array $params Optional. An associative array of query parameters to include in the request.
+     * @return mixed The response from the GET request.
+     */
+    public function getRequest($params = []){
         $iframe=true;
         $aid=1;
         $name ="CreditGuard";
