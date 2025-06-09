@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { Col, FormGroup } from 'react-bootstrap';
+import uuid from 'uuid';
 import { CreateButton } from '@/components/Elements';
 import Condition from './Condition';
 
@@ -75,12 +76,12 @@ class Conditions extends Component {
     this.props.onAdd(Conditions.defaultCondition);
   }
 
-  renderRow = (filter, index) => {
-    const { conditions, operators, fields, customValueOptions, disabled, editable, errors } = this.props;
+  renderRow = (condition, index) => {
+    const { conditions, operators, fields, customValueOptions, disabled, editable, errors } = this.props;    
     return (
       <Condition
-        key={index}
-        item={filter}
+        key={uuid.v4()} // to support reordering need unique Key not base on index because it change condition data even if not change
+        item={condition}
         index={index}
         fields={fields}
         operators={operators}

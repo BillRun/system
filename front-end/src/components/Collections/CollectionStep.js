@@ -25,14 +25,16 @@ class CollectionStep extends Component {
   }
 
   renderStepByType = (item) => {
+    const { errors } = this.props;
+    const contentErrors = errors.get('content');
     const content = item.get('content');
     switch (item.get('type', '')) {
       case 'mail':
-        return (<CollectionTypeMessage content={content} onChange={this.onChangeContent} editor="mails" />);
+        return (<CollectionTypeMessage content={content} onChange={this.onChangeContent} errors={contentErrors} editor="mails" />);
       case 'sms':
-        return (<CollectionTypeMessage content={content} onChange={this.onChangeContent} editor="sms" />);
+        return (<CollectionTypeMessage content={content} onChange={this.onChangeContent} errors={contentErrors} editor="sms" />);
       case 'http':
-        return (<CollectionTypeHttp content={content} onChange={this.onChangeContent} />);
+        return (<CollectionTypeHttp content={content} onChange={this.onChangeContent} errors={contentErrors} />);
       default:
         return (<p />);
     }

@@ -1964,13 +1964,50 @@ runOnce(lastConfig, 'BRCD-4422', function () {
 	db.jobs_messages.createIndex({'start_time': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'timeout': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'complete_time': 1}, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'schedule': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'handle': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'md5': 1}, { 'unique': true, 'background': true });
-	db.jobs_messages.createIndex({'queue_name': 1, 'timeout': 1, 'done': 1 }, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'queue_name': 1, 'done': 1, 'schedule': 1, 'timeout': 1 }, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'body.parent': 1, }, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'body.type': 1, 'created': -1}, { 'unique': false, 'background': true });
 	if (db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos' && db.version() >= "8") {
 		sh.shardCollection(_dbName + ".jobs_messages", { "md5" : 1 } );
+	}
+});
+//BRCD-4827: Migration script for old to new structure of the “collection” field.
+runOnce(lastConfig, 'BRCD-4827', function () {
+	if (typeof lastConfig['collection'] !== 'undefined') {
+		var oldCollection = lastConfig['collection'];
+		var newCollection = {
+			"processes": [{
+				name: "default_process",
+				label: "Default process",
+				conditions: [	
+				],
+				"settings" : {
+				},
+				"steps" : [
+				]
+			}],
+		}
+		if (typeof oldCollection["settings"]["min_debt"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["min_debt"] = oldCollection["settings"]["min_debt"];
+			delete( oldCollection["settings"]["min_debt"]);
+		}
+		if (typeof oldCollection["settings"]["change_state_url"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["change_state_url"] = oldCollection["settings"]["change_state_url"];
+			delete( oldCollection["settings"]["change_state_url"]);
+		}
+		if (typeof oldCollection["settings"]["change_state_method"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["change_state_method"] = oldCollection["settings"]["change_state_method"];
+			delete( oldCollection["settings"]["change_state_method"]);
+		}
+		if (typeof oldCollection["steps"] !== 'undefined') {
+			newCollection['processes'][0]["steps"]= oldCollection["steps"];
+		}
+		newCollection["settings"] = oldCollection["settings"];
+
+		lastConfig['collection'] = newCollection;
 	}
 });
 

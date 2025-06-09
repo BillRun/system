@@ -373,6 +373,8 @@ class ConfigModel {
 					$updatedData['plugins'][$plugin_index]['configuration']['values'] = $data['configuration']['values'];
 				}
 			}
+		} else if ($category === 'collection' && $this->validateCollection($data) !== TRUE) {
+			throw new Exception("Can not save collection configuration");
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -1252,6 +1254,54 @@ class ConfigModel {
 
 	protected function validateStringLength($str, $size) {
 		return strlen($str) <= $size;
+	}
+	
+	protected function validateCollection($collections) {
+		$processes = Billrun_Util::getIn($collections, 'processes', []);
+		$processes_count = count($processes);
+		foreach ($processes as $process_idx => $process) {
+			$p_i = $process_idx + 1;
+			// Validate Settings 
+			if (empty($process['name'])) {
+				throw new Exception("Process #{$p_i} Settings: Key is missing");
+			}
+			if (empty($process['label'])) {
+				throw new Exception("Process #{$p_i} Settings: Title is missing");
+			}
+			$settings = Billrun_Util::getIn($process, ['settings'], []);
+			if (empty($settings['change_state_method']) && !empty($settings['change_state_url'])) {
+				throw new Exception("Process #{$p_i} Settings: HTTP Method is missing");
+			}
+			$min_debt = Billrun_Util::getIn($settings, 'min_debt', '');
+			if (!is_numeric($min_debt) || floatval($min_debt) < 0) {
+				throw new Exception("Process #{$p_i} Settings: Minimum debt must be numeric equal or greater then 0");
+			}
+			// Validate conditions
+			$conditions = Billrun_Util::getIn($process, ['conditions', 0, 'account', 'fields'], []);
+			if (empty($conditions) && $process_idx < $processes_count - 1) {
+				throw new Exception("Process #{$p_i} Conditions is missing");
+			}
+			foreach ($conditions as $condition_idx => $condition) {
+				$c_i = $condition_idx + 1;
+				if (empty(Billrun_Util::getIn($condition, 'field', ''))) {
+					throw new Exception("Process #{$p_i} Condition #{$c_i}: field is missing");
+				}
+				if (empty(Billrun_Util::getIn($condition, 'op', ''))) {
+					throw new Exception("Process #{$p_i} Condition #{$c_i}: operator is missing");
+				}
+			}
+			// Validate Stapes
+			$steps = Billrun_Util::getIn($process, ['steps'], []);
+			foreach ($steps as $step_idx => $step) {
+				$s_i = $step_idx + 1;
+				$do_after_days = Billrun_Util::getIn($step, 'do_after_days', '');
+				if (!is_numeric($do_after_days) || floatval($do_after_days) < 0) {
+					throw new Exception("Process #{$p_i} Step #{$s_i}: Trigger after days value must be numeric equal or greater than 0");
+				}
+			}
+
+		}
+		return true;
 	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg, $paymentGateway) {
