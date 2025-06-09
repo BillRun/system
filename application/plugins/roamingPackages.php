@@ -222,12 +222,13 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function planGroupRule(&$rateUsageIncluded, &$groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
-		if ( !isset($this->lineType) || empty($limits['roaming']) ) {
+		if ( !isset($this->lineType) || empty($limits['roaming']) || !empty($limits['no_billable_affects'])  ) {
 			return;
 		}
 
-		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate) {
-			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']);
+		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate, $plan) {
+			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']) &&
+					@empty($plan->get('include.groups.'.$package['service_name'].'.limits.no_billable_affects'));
 		});
 		if (empty($matchedPackages) || !in_array($groupSelected, array_column($matchedPackages,'service_name'))) {
 			$groupSelected = FALSE;

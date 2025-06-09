@@ -207,7 +207,7 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate, $plan) {
 			return 	in_array($package['service_name'], $rate['rates'][$usageType]['groups']) &&
-					!empty($plan->get('include.groups.'.$package['service_name'].'.limits.no_billable_affects')) ;
+					!empty($plan->get('include.groups.'.$package['service_name'].'.limits.no_billable_affects'));
 		});
 		if (empty($matchedPackages) || !in_array($groupSelected, array_column($matchedPackages,'service_name'))) {
 			$groupSelected = FALSE;
