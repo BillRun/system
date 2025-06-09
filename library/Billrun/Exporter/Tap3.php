@@ -58,7 +58,6 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 
 		$this->exporterType = $this->getExporterType();
 		$this->loadConfig($options);
-		//(limit_tadig field )here need to add filteration only for the export generator tadig 
 	}
 
 	/**
@@ -242,7 +241,6 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 
 		foreach ($this->rowsToExport as $key => $row) {
 
-			//here should skip irrelevant tadig(limit tadig if set) - skip not matching tadigs
 			$aid = $row['aid'];
 			$tadig = $this->getTadig($row);
 			if ($tadig === false) {
