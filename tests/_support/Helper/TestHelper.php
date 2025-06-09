@@ -30,12 +30,22 @@ class TestHelper extends \Codeception\Module {
     }
     
     /**
-     * Verify records in collection with date fields
-     * Automatically converts string dates to MongoDB UTCDateTime format
+     * Verify records in collection with automatic date conversion
      * 
-     * @param string $collection Name of collection
-     * @param array $criteria Search criteria
-     * @return void
+     * automatically converts the passed date strings
+     * to MongoDB format. Useful when your test data uses readable
+     * dates like '2023-12-01 14:30:00' instead of MongoDB date objects.
+     * 
+     * Only converts top-level date strings matching YYYY-MM-DD or YYYY-MM-DD HH:MM:SS
+     * 
+     * @param string $collection MongoDB collection name
+     * @param array $criteria Search criteria (date strings will be auto-converted)
+     * 
+     * @example
+     * $I->verifyCollectionRecordWithDates('bills', [
+     *     'urt' => '2023-12-01 10:30:00',  // converted to MongoDB  UTCDateTime
+     *     'paid' => true                  // left as-is
+     * ]);
      */
     public function verifyCollectionRecordWithDates($collection, array $criteria) {
         // Process criteria to convert any date strings to MongoDB format
