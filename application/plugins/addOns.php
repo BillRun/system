@@ -226,8 +226,9 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (empty($national) || !$national) {
 			return;
 		}
-		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate) {
-			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']);
+		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate, $plan) {
+			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']) &&
+					@empty($plan->get('include.groups.'.$package['service_name'].'.limits.no_billable_affects'));
 		});
 		//Check if the  groupSelected is  part of the base plan (given  by the plan  with no need to buy it)
 		if (isset($limits['base_usage']) && $limits['base_usage'] && isset($plan->get('include.groups.' . $groupSelected)[$usageType])) {
