@@ -16,7 +16,6 @@ class bcCest
 
     public function Aggregatortest(ApiTester $I)
     {
-        //***remove the skip of 38,383439 when merge to customer_portal (5.16)***//
         $I->sendAuthenticatedGET('/test/Aggregatortest?skip=200,763439,30,61,62,63,65,71,73,74,76,76,185-1,185-2,185-3,185-5,185-5,185-4,185-6,185-7,185-7,303439,333439,563439,573439,613439,623439,633439,653439,693439,703439,713439,103439,10,753439');
         $response = $I->grabResponse();
         $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
