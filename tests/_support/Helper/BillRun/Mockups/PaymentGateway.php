@@ -44,12 +44,10 @@ class PaymentGateway extends \Helper\BillRun\Mockups\Mockup
 public function iframe($params = []){
   // Get the REST module to send requests
          /** @var REST $rest */
-         $rest = $this->getModule('REST');
-         $mockupUrl = 'http://mockup:8081';
-         $billrunUrl = 'http://web';
-         $rest->_setConfig(['url' => $mockupUrl ]);
+         $rest = $this->getModule('REST');  
+         $rest->_setConfig(['url' => MOCKUP_URL ]);
          $ret =  $rest->sendGet("/payment-gateways/creditguard/iframe", $params);
-         $rest->_setConfig(['url' => $billrunUrl]);
+         $rest->_setConfig(['url' => BILLRUN_URL ]);
 
         //  $ret = $rest->sendGet("/paymentgateways/getRequest/iframe");          
          return json_decode($ret, true);
