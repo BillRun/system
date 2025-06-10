@@ -303,4 +303,20 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		);
 	}
 
+	public static function resetBalancesGroup($query, $group){
+		Billrun_Factory::log('Resting balances of group: ' . $group, Zend_Log::DEBUG);
+		$restingTime = new Mongodloid_Date();
+		$balancesToReset = static::getCollection()->query(array_merge($query, ['balance.groups.' . $group => ['$exists' => 1], 'balance.groups.' . $group . '.usagev' => ['$ne' => 0]]), $update);
+		foreach($balancesToReset as $balanceToReset){
+			$count =  Billrun_Util::getIn($balanceToReset ,'balance.groups.' . $group . '.count', 0);
+			$left =  Billrun_Util::getIn($balanceToReset ,'balance.groups.' . $group . '.left', 0);
+			$total =  Billrun_Util::getIn($balanceToReset ,'balance.groups.' . $group . '.total', 0);
+			$usagev =  Billrun_Util::getIn($balanceToReset ,'balance.groups.' . $group . '.usagev', 0);
+			Billrun_Factory::log('Resting balance ' . $balanceToReset['_id'] . ', with count: ' . $count . ', with left: ' . $left. ' and with usagev: ' . $usagev , Zend_Log::DEBUG);
+			$update = ['$set' => ['balance.groups.' . $group . '.count' => 0, 'balance.groups.' . $group . '.usagev' => 0, 'balance.groups.' . $group . '.left' => $total], '$push' => ['reseting.groups.' .$group => $restingTime]];
+			static::getCollection()->update(['_id' => $balanceToReset['_id']], $update);
+		}
+
+	}
+
 }
