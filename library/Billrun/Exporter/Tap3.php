@@ -280,6 +280,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 				$mccMncs[$mccMnc3] = 1;
 			}
 		}
+		$aids = array_unique($aids);
 		$mccMncs = array_map(function($e){return (string) $e;},array_keys($mccMncs));
 		$multiStructure = $this->tadigsStorageConfig['multi_structure'] ?? false;
 		if(!$multiStructure){
@@ -324,13 +325,35 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 				]
 			]];
 		}
-		
-		$pipeline =  array_merge($matchStage, $this->tadigsStorageConfig['base_pipeline']);
-		array_walk_recursive($pipeline, function (&$value) use ($mccMncs) {
-			if ($value === '$$MCC_MNCS') {
-				$value = $mccMncs;
-			}
-		});
+
+		$pipeline = [
+			[
+				'$match' => [
+					'type' => 'account'
+				]
+			],
+			[
+				'$unwind' => '$tadigs_mapping'
+			],
+			[
+				'$unwind' => '$tadigs_mapping.mcc_mnc'
+			],
+			[
+				'$match' => [
+					'tadigs_mapping.mcc_mnc' => [
+						'$in' => $mccMncs
+					]
+				]
+			],
+			[
+				'$project' => [
+					'_id' => 0,
+					'mcc_mnc' => '$tadigs_mapping.mcc_mnc',
+					'tadig' => '$tadigs_mapping.tadig'
+				]
+			]
+		];
+		$pipeline = array_merge($matchStage, $pipeline);
 		$mccmncMappings = iterator_to_array($collection->aggregate($pipeline));
 		foreach ($mccmncMappings as $mccmncMapping) {
 			$mccMnc = $mccmncMapping[$this->tadigsStorageConfig['mcc_mnc_field']];
