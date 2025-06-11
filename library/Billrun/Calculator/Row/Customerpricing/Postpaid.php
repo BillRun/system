@@ -66,7 +66,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 			if (is_array($balance['tx']) && empty($balance['tx'])) { //TODO: this is a hack because tx is saved as [] instead of {}
 				$balance['tx'] = new stdClass();
 			}
-                        if (is_array($balance['tx2']) && empty($balance['tx2'])) { //TODO: this is a hack because tx is saved as [] instead of {}
+			if (is_array($balance['tx2']) && empty($balance['tx2'])) { //TODO: this is a hack because tx is saved as [] instead of {}
 				$balance['tx2'] = new stdClass();
 			}
 			$balance->collection($balances_coll);

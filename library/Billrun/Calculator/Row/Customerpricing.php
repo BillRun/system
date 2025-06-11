@@ -325,8 +325,14 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			return $pricingData;
 		}
 		$balance_id = (string) $this->balance->getId();
-		if (!isset($pricingData['arategroups'][$balance_id]) && 
-			((isset($pricingData['over_group']) && $pricingData['over_group']) || (isset($pricingData['out_group']) && $pricingData['out_group']))) {
+		if (!isset($pricingData['arategroups'][$balance_id]) && (
+				(isset($pricingData['over_group']) && $pricingData['over_group']) || 
+				(isset($pricingData['out_group']) && $pricingData['out_group']) ||
+				(isset($pricingData['counter_group']) && $pricingData['counter_group'])
+			)) {
+			if (empty($this->balance)) {
+				$balance = $this->getBalance();
+			}
 			if (($crashedPricingData = $this->getTx($this->row['stamp'], $this->balance)) !== FALSE) {
 				return $crashedPricingData;
 			}
@@ -523,10 +529,42 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		} else {
 			$charges = $valueToCharge;
 		}
+
 		Billrun_Factory::dispatcher()->trigger('afterChargesCalculation', array(&$this->row, &$charges, &$ret, $this));
+
+		$this->handleCounterServices($charges, $volume, $rate, $usageType, $this->row, $ret);
 
 		$ret[$this->pricingField] = $charges;
 		return $ret;
+	}
+	
+	protected function handleCounterServices($charge, $volume, $rate, $usageType, &$row, &$ret) {
+		// counter services works only with out or over group/plan
+		if (empty($ret['over_group']) && empty($ret['over_plan']) && 
+			empty($ret['out_group']) && empty($ret['out_plan'])) {
+			return;
+		}
+		$services = $this->getServices();
+		foreach ($services as $key => $service) {
+			$groups = $service->getRateGroups($rate, $usageType, 'only');
+			if (empty($groups)) {
+				continue;
+			}
+			// add balance
+			foreach ($groups as $group) {
+				$relatedBalance = $this->getRelatedBalance($service, $group, $key, $rate, $usageType);
+				$balance = $relatedBalance['balance'];
+				$ret['arategroups'][(string) $balance->getId()][] = [
+					"name" => $group,
+					"usagev" => $ret['over_group'] ?? $ret['out_group'],
+					"balance_ref" => '',
+					"cost" => $charge,
+					"counter_only" => true,
+					"balance" => $balance,
+				];
+				$ret['counter_group'] = ($ret['counter_group'] ?? 0) + $charge;
+			}
+		}
 	}
 	
 	/**
@@ -539,7 +577,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 		return $this->services;
 	}
-
+	
 	/**
 	 * load subscribers services objects by their name
 	 * 
@@ -641,43 +679,13 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 			$serviceName = $service->getName();
 			$serviceQuantity = 1;
-			$serviceGroups = $service->getRateGroups($rate, $usageType);
+			$serviceGroups = $service->getRateGroups($rate, $usageType, 'without');
 			$aid = $this->row->getRawData()['aid'];
 			foreach ($serviceGroups as $serviceGroup) {
-				$serviceSettings = array(
-					'service_name' => $serviceName,
-					'service_id' => $this->servicesIds[$key],
-					'balance_period' => ((!empty($balance_period = $service->get('balance_period'))) ? $balance_period : 'default'),
-					'service_start_date' => $service->get('service_start_date'),
-				);
-				$isGroupShared = $service->isGroupAccountShared($rate, $usageType, $serviceGroup);
-				$isGroupQuantityAffected = $service->isGroupQuantityAffected($serviceGroup);
-				// pre-check if need to switch to other balance with the new service
-				if ($isGroupShared && $this->balance['sid'] != 0) { // if need to switch to shared balance (from plan)
-					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
-					$instanceOptions['balance_db_refresh'] = true;
-					$instanceOptions['sid'] = 0;
-					$instanceOptions['orig_sid'] = $this->row['sid'];
-					$balance = Billrun_Balance::getInstance($instanceOptions);
-				} else if ($this->balance['sid'] == 0) { // if need to switch to non-shared balance (from plan)
-					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
-					$instanceOptions['balance_db_refresh'] = true;
-					$instanceOptions['sid'] = $this->row['sid'];
-					$balance = Billrun_Balance::getInstance($instanceOptions);
-				} else if ($serviceSettings['balance_period'] != 'default') { // cannot use plan balance as this is custom period balance (different from and/or to)
-					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
-					$instanceOptions['balance_db_refresh'] = true;
-					$instanceOptions['sid'] = $this->row['sid'];
-					$balance = Billrun_Balance::getInstance($instanceOptions);
-				} else if (!$service->get('plan_included')) {
-					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
-					$instanceOptions['balance_db_refresh'] = true;
-					$instanceOptions['sid'] = $this->row['sid'];
-					$instanceOptions['add_on'] = true;
-					$balance = Billrun_Balance::getInstance($instanceOptions);
-				} else { // use same balance as plan balance
-					$balance = $this->balance;
-				}
+				$relatedBalance = $this->getRelatedBalance($service, $serviceGroup, $key, $rate, $usageType);
+				$balance = $relatedBalance['balance'];
+				$isGroupShared = $relatedBalance['isGroupShared'];
+				$isGroupQuantityAffected = $relatedBalance['isGroupQuantityAffected'];
 				if (!$isGroupShared || ($isGroupShared && $service->isGroupAccountPool($serviceGroup))) {
 					$serviceQuantity = $this->getServiceQuantity($this->row['services_data'], $serviceName);
 				}
@@ -730,6 +738,48 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 		}
 		return array($keyRequired => $valueRequired); // volume/cost left to charge
+	}
+	
+	protected function getRelatedBalance($service, $serviceGroup, $serviceKey, $rate, $usageType) {
+		$serviceSettings = array(
+			'service_name' => $service->getName(),
+			'service_id' => $this->servicesIds[$serviceKey],
+			'balance_period' => ((!empty($balance_period = $service->get('balance_period'))) ? $balance_period : 'default'),
+			'service_start_date' => $service->get('service_start_date'),
+		);
+		$isGroupShared = $service->isGroupAccountShared($rate, $usageType, $serviceGroup);
+		$isGroupQuantityAffected = $service->isGroupQuantityAffected($serviceGroup);
+		// pre-check if need to switch to other balance with the new service
+		if ($isGroupShared && $this->balance['sid'] != 0) { // if need to switch to shared balance (from plan)
+			$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
+			$instanceOptions['balance_db_refresh'] = true;
+			$instanceOptions['sid'] = 0;
+			$instanceOptions['orig_sid'] = $this->row['sid'];
+			$balance = Billrun_Balance::getInstance($instanceOptions);
+		} else if ($this->balance['sid'] == 0) { // if need to switch to non-shared balance (from plan)
+			$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
+			$instanceOptions['balance_db_refresh'] = true;
+			$instanceOptions['sid'] = $this->row['sid'];
+			$balance = Billrun_Balance::getInstance($instanceOptions);
+		} else if ($serviceSettings['balance_period'] != 'default') { // cannot use plan balance as this is custom period balance (different from and/or to)
+			$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
+			$instanceOptions['balance_db_refresh'] = true;
+			$instanceOptions['sid'] = $this->row['sid'];
+			$balance = Billrun_Balance::getInstance($instanceOptions);
+		} else if (!$service->get('plan_included')) {
+			$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
+			$instanceOptions['balance_db_refresh'] = true;
+			$instanceOptions['sid'] = $this->row['sid'];
+			$instanceOptions['add_on'] = true;
+			$balance = Billrun_Balance::getInstance($instanceOptions);
+		} else { // use same balance as plan balance
+			$balance = $this->balance;
+		}
+		return [
+			'balance' => $balance,
+			'isGroupShared' => $isGroupShared,
+			'isGroupQuantityAffected' => $isGroupQuantityAffected,
+		];
 	}
 
 	/**
