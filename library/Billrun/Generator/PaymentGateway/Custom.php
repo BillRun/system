@@ -422,7 +422,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			return false;
             }
 		return $seq;
-        }
     }
 
     public function getPgConfig() {
@@ -460,4 +459,5 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			'end_time' => array('$exists' => false)
 		);
 
+    }
 }
