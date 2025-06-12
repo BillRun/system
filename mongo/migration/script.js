@@ -1981,6 +1981,11 @@ runOnce(lastConfig, 'BRCD-4725', function () {
 	db.services.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
 });
 
+// BRCD-4430: Create index for config collection on urt field
+runOnce(lastConfig, 'BRCD-4430', function () {
+	db.config.createIndex({ urt: -1 }, { unique: false, background: true });
+});
+
 lastConfig.urt = new Date();
 db.config.insertOne(lastConfig);
 

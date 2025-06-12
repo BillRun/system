@@ -139,7 +139,10 @@ db.services.createIndex({'name':1, 'from': 1, 'to': 1}, { unique: true, backgrou
 db.services.createIndex({name : 1}, {unique: false});
 db.services.createIndex({ 'description': 1}, { unique: false, background: true });
 
+//Config Collection
 db.createCollection('config', {capped: true, size:104857600});
+db.config.createIndex({ 'urt': -1 }, { unique: false, background: true });
+
 db.createCollection('events');
 db.createCollection('carriers');
 
