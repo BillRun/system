@@ -395,7 +395,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				$paymentReseponse = Billrun_PaymentManager::getInstance()->pay($customer['payment_method'], array($paymentParams), $options);
 					if (!$this->release()) {
 						Billrun_Factory::log("Problem in releasing operation charge_account for account " . $customer['aid'] . " in cpf request file generation", Zend_Log::ALERT);
-						continue;
+						return false;
 					}
 				$payment = $paymentReseponse['payment'];
 				Billrun_Factory::log()->log('Updated debt payment details - aid: ' . $paymentParams['aid'] . ' ,amount: ' . $paymentParams['amount'] . '. This payment is wating for approval.', Zend_Log::INFO);
