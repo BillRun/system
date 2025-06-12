@@ -289,21 +289,25 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 		} else if ($plan->isRateInPlanGroup($rate, $usageType)) {
 			$volumeToCharge = $volume;
+			$lastBillableGroup = FALSE;
+			$groupVolumeLeft=0;
 			do {
-				$groupVolumeLeft = $plan->usageLeftInPlanGroup($sub_balance, $rate, $usageType);
-				$volumeToCharge = $volumeToCharge - $groupVolumeLeft;
+				$localGroupVolumeLeft = $plan->usageLeftInPlanGroup($sub_balance, $rate, $usageType);
+				$volumeToCharge = $volumeToCharge - $localGroupVolumeLeft;
 				$groupFound = $plan->getPlanGroup();
-				if(($groupVolumeLeft || $plan->isNonBillableGroup($groupFound)) && $groupFound !== FALSE ) {
+				if(($localGroupVolumeLeft || $plan->isNonBillableGroup($groupFound)) && $groupFound !== FALSE ) {
+					$lastBillableGroup = $plan->isNonBillableGroup($groupFound) ? $lastBillableGroup : $groupFound;
 					$ret['groups'][$plan->getPlanGroup()] =  [
 																'usagev' => ($plan->isNonBillableGroup($groupFound) ?
-																					$volume	:
-																					min($groupVolumeLeft, $volume)),
+																					$volumeToCharge	:
+																					min($localGroupVolumeLeft, $volume)),
 																'price' =>  ( $plan->isNonBillableGroup($groupFound)  ?
 																					self::getPriceByRate($rate, $usageType, $volumeToCharge) :
 																					0 )
 															];
+					$groupVolumeLeft += $localGroupVolumeLeft;
 				}
-			} while($volumeToCharge > 0 &&  $groupFound !== FALSE );
+			} while($volumeToCharge > 0 && $groupFound !== FALSE );
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
 				$ret['in_group'] = $ret['in_plan'] = $volume;
@@ -312,14 +316,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				if ($groupVolumeLeft > 0) {
 					$ret['in_group'] = $ret['in_plan'] = $volume - $volumeToCharge;
 				}
-				if ($plan->getPlanGroup() !== FALSE) { // verify that after all calculations we are in group
+				if ($lastBillableGroup) { // verify that after all calculations we are in group
 					$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
 				} else {
 					$ret['out_group'] = $ret['out_plan'] = $volumeToCharge;
 				}
 			}
-			if (($plan->getPlanGroup() !== FALSE) && (!empty($ret['in_plan']))) {
-				$ret['arategroup'] = $plan->getPlanGroup();
+			if ($lastBillableGroup && (!empty($ret['in_plan']))) {
+				$ret['arategroup'] = $lastBillableGroup;
 			}
 		} else { // else if (dispatcher->chain_of_responsibilty)->isRateInPlugin {dispatcher->trigger->calc}
 			$ret['out_plan'] = $volumeToCharge = $volume;
@@ -436,16 +440,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			// update balance group (if exists)
 			if( !empty($pricingData['groups']) ) {
 				foreach($pricingData['groups'] as $group => $groupValue ) {
-
 					if ($group !== FALSE && !is_null($group)) {
 					// @TODO: check if $usage_type should be $key
 						$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $groupValue['usagev'];
-					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $groupValue['price'];
-					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
-					if (isset($subRaw['balance']['groups'][$group][$usage_type]['usagev'])) {
-						$pricingData['usagesb'] = floatval($subRaw['balance']['groups'][$group][$usage_type]['usagev']);
-					} else {
-						$pricingData['usagesb'] = 0;
+						$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $groupValue['price'];
+						$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
+						if( !$plan->isNonBillableGroup($group) ) {
+							if (isset($subRaw['balance']['groups'][$group][$usage_type]['usagev']) ) {
+								$pricingData['usagesb'] = floatval($subRaw['balance']['groups'][$group][$usage_type]['usagev']);
+							} else {
+								$pricingData['usagesb'] = 0;
+							}
 						}
 					}
 				}

@@ -118,11 +118,12 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
 		if (!is_null($this->package) && ((($row['type'] == 'nrtrde' && in_array($row['usaget'], array('call', 'incoming_call'))) || $row['type'] == 'ggsn') || isset($row['roaming']))) {
-			Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
+
 			$row['roaming_package'] = $this->package;
 			$balancesIncludeRow = array();
 			$roamingUpdate = array();
 			if (!is_null($this->balanceToUpdate)) {
+				Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 				$packageLimits = $this->getPackageJoinedValues($this->balanceToUpdate['service_name'], $this->plan);
 				if (!empty($packageLimits['joined_field'])) {
 					$joinedField = $packageLimits['joined_field'];
@@ -162,6 +163,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$exhaustedUpdate = array();
 				foreach ($this->exhaustedBalances as $exhausted) {
 					$exhaustedBalance = $exhausted['balance']->getRawData();
+					Billrun_Factory::log()->log("Updating balance " . $exhaustedBalance['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 					$packageLimits = $this->getPackageJoinedValues($exhaustedBalance['service_name'], $this->plan);
 					$usageLeft = floor($exhausted['usage_left'] / $this->coefficient);
 					$exhaustedBalancesKeys[] = array(

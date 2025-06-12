@@ -84,67 +84,62 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function beforeCommitSubscriberBalance(&$row, &$pricingDataOrg, &$query, &$update, $arate, $calculator) {
-		if ( !is_null($this->package) && $this->isRowRoaming($row) ) {
-
+		if ( !is_null($this->package) && $this->isRowRoaming($row) && !empty($this->balancesToUpdate)) {
 			$balancesIncludeRow = array();
 			$nonBillableUpdate = array();
 			$updatedBalancesDataToRow = [];
 			$pricingData = $pricingDataOrg;
 
-			if (!empty($this->balancesToUpdate)) {
+			$nonBillableQueryBase = array(
+				'sid' => $row['sid'],
+				'tx.' . $row['stamp'] => array('$exists' => false)
+			);
+			$previousCostLeft = 0;
+			foreach($this->balancesToUpdate as  $balanceToUpdateData) {
+				$balanceToUpdate = $balanceToUpdateData['balance'];
+				$isExhusted=false;
+				Billrun_Factory::log()->log("Updating balance " . $balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
+				$nonBillableQuery = array_merge($nonBillableQueryBase, [ 'billrun_month' => $balanceToUpdate['billrun_month'], 'service_name'=>$balanceToUpdate['service_name'] ]);
+				$dataToUpdate = @$pricingData['groups'][$balanceToUpdate['service_name']];
+				if(empty($dataToUpdate)) {
+					$dataToUpdate = [ 'usagev' => 0 , 'price' =>  0 ];
+				}
+				$dataToUpdate['price'] += $previousCostLeft;
+				$costLeft = $balanceToUpdateData['package_data']['cost'] - ($dataToUpdate['price'] + $balanceToUpdate['balance']['cost']);
+				if($costLeft < 0 ) {
+					$dataToUpdate['price'] += $costLeft;
+					$previousCostLeft = -$costLeft;
+					$isExhusted = true;
 
-				$nonBillableQueryBase = array(
-					'sid' => $row['sid'],
-					'tx' . $row['stamp'] => array('$exists' => false)
-				);
-				$previousCostLeft = 0;
-				foreach($this->balancesToUpdate as  $balanceToUpdateData) {
-					$balanceToUpdate = $balanceToUpdateData['balance'];
-					$isExhusted=false;
-					Billrun_Factory::log()->log("Updating balance " . $balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
-					$nonBillableQuery = array_merge($nonBillableQueryBase, [ 'billrun_month' => $balanceToUpdate['billrun_month'], 'service_name'=>$balanceToUpdate['service_name'] ]);
-					$dataToUpdate = @$pricingData['groups'][$balanceToUpdate['service_name']];
-					if(empty($dataToUpdate)) {
-						$dataToUpdate = [ 'usagev' => 0 , 'price' =>  0 ];
-					}
-					$dataToUpdate['price'] += $previousCostLeft;
-					$costLeft = $balanceToUpdateData['package_data']['cost'] - ($dataToUpdate['price'] + $balanceToUpdate['balance']['cost']);
-					if($costLeft < 0 ) {
-						$dataToUpdate['price'] += $costLeft;
-						$previousCostLeft = -$costLeft;
-						$isExhusted = true;
+				}
+				if(!empty($dataToUpdate['usagev']) || !empty($dataToUpdate['price'])) {
+					$updatedBalancesDataToRow[] = [
+						'billrun_month' => $balanceToUpdate['billrun_month'] ,
+						'package_id' => $balanceToUpdate['service_id'],
+						'service_name' => $balanceToUpdate['service_name'],
+						'usage_before' => [
+							'call' => $balanceToUpdate['balance']['totals']['call']['usagev'],
+							'incoming_call' => $balanceToUpdate['balance']['totals']['incoming_call']['usagev'],
+							'sms' => $balanceToUpdate['balance']['totals']['sms']['usagev'],
+							'data' => $balanceToUpdate['balance']['totals']['data']['usagev'],
+							'cost' => @$balanceToUpdate['balance']['totals']['cost']
+						],
+						'usage_added' => $dataToUpdate
+					];
 
-					}
-					if(!empty($dataToUpdate['usagev']) || !empty($dataToUpdate['price'])) {
-						$updatedBalancesDataToRow[] = [
-							'billrun_month' => $balanceToUpdate['billrun_month'] ,
-							'package_id' => $balanceToUpdate['service_id'],
-							'service_name' => $balanceToUpdate['service_name'],
-							'usage_before' => [
-								'call' => $balanceToUpdate['balance']['totals']['call']['usagev'],
-								'incoming_call' => $balanceToUpdate['balance']['totals']['incoming_call']['usagev'],
-								'sms' => $balanceToUpdate['balance']['totals']['sms']['usagev'],
-								'data' => $balanceToUpdate['balance']['totals']['data']['usagev'],
-								'cost' => @$balanceToUpdate['balance']['totals']['cost']
-							],
-							'usage_added' => $dataToUpdate
-						];
-
-						$this->updateNonBillableBalance($nonBillableQuery, $balanceToUpdate['service_name'],
-														$dataToUpdate, $row, $isExhusted,
-														$balanceToUpdate, $arate, $calculator );
-						$balanceIds[] = $balanceToUpdate->getRawData()['_id'];
-						unset($pricingData['groups'][$balanceToUpdate['service_name']]);
-					} else {
-						// Last balance that was affected
-						break;
-					}
-
+					$this->updateNonBillableBalance($nonBillableQuery, $balanceToUpdate['service_name'],
+													$dataToUpdate, $row, $isExhusted,
+													$balanceToUpdate, $arate, $calculator );
+					$balanceIds[] = $balanceToUpdate->getRawData()['_id'];
+					unset($pricingData['groups'][$balanceToUpdate['service_name']]);
+				} else {
+					// Last balance that was affected
+					break;
 				}
 			}
 
 			if(!empty($updatedBalancesDataToRow)) {
-				$row['balances_affected'] = array_merge( (empty($row['balances']) ? [] : $row['balances'] ),
+				$row['balances_affected'] = array_merge( (empty($row['balances_affected']) ? [] : $row['balances_affected'] ),
 														 $updatedBalancesDataToRow );
 			}
 
@@ -176,7 +171,7 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 																'usagev' => $pricingData['usagev'],
 																'price'=>$pricingData['price']);
 
-		Billrun_Factory::dispatcher()->trigger('addDataToUpdate', [$balanceToUpdate,&$row, &$pricingData, &$nonBillableQuery, &$nonBillableUpdate, $arate, $calculator]);
+		//Billrun_Factory::dispatcher()->trigger('addDataToUpdate', [$balanceToUpdate,&$row, &$pricingData, &$nonBillableQuery, &$nonBillableUpdate, $arate, $calculator]);
 		return $this->balances->update($nonBillableQuery, $nonBillableUpdate, array('w' => 1));
 	}
 
@@ -231,7 +226,7 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$to = empty($package['balance_to_date']) ? strtotime($package['to_date']) : $package['balance_to_date'];
 
 			$legitimate = (bool)($this->row['urt']->sec >= $from && $this->row['urt']->sec <= $to || true) && !empty($plan->get('include.groups.'.$package['service_name'].'.limits.no_billable_affects'));
-			Billrun_Factory::dispatcher()->trigger('checkPackageRules', [&$legitimate,$package,$this->row,$plan, $usageType, $rate, $subscriberBalance]);
+			//Billrun_Factory::dispatcher()->trigger('checkPackageRules', [&$legitimate,$package,$this->row,$plan, $usageType, $rate, $subscriberBalance]);
 			if(!$legitimate) {
 				if($groupSelected === $package['service_name']) {
 					$groupSelected = FALSE;
@@ -268,7 +263,7 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$nonBillableBalances = $this->balances->query($nonBillableQuery)->cursor();
 		if ($nonBillableBalances->current()->isEmpty()) {
 			if(!empty($matchedIds)) {
-			Billrun_Factory::log()->log("Didn't found roaming balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::NOTICE);
+			Billrun_Factory::log()->log("Didn't found CAP balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::NOTICE);
 			}
 			$groupSelected = FALSE;
 			return;
