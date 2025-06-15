@@ -154,7 +154,10 @@ abstract class Billrun_Bill {
 	}
 
 	public function save() {
-		$this->data->save(NULL, 1);
+		$res = $this->data->save(NULL, 1);
+		if(!$res){
+			throw new Exception('failed to save bill to the data base.');
+		}
 		return true;
 	}
 
