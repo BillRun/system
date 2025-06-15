@@ -282,7 +282,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 		}
 		$aids = array_unique($aids);
 		$mccMncs = array_map(function($e){return (string) $e;},array_keys($mccMncs));
-		Billrun_Factory::dispatcher()->trigger('Tap3loadTadigs', array(&$this->tadigs, $mccMncs, $aids));
+		Billrun_Factory::dispatcher()->trigger('afterTap3loadTadigs', array(&$this->tadigs, $mccMncs, $aids));
 		
 	}
 
