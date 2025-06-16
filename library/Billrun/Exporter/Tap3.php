@@ -240,6 +240,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 		$this->loadTadigs();
 
 		foreach ($this->rowsToExport as $key => $row) {
+
 			$aid = $row['aid'];
 			$tadig = $this->getTadig($row);
 			if ($tadig === false) {
@@ -267,7 +268,9 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 	 */
 	protected function loadTadigs() {
 		$mccMncs = array();
+		$aids = [];
 		foreach ($this->rowsToExport as $row) {
+			$aids[] = $row['aid'];
 			$mccMnc2 = $this->getMccMnc($row, 2);
 			if($mccMnc2) {
 				$mccMncs[$mccMnc2] = 1;
@@ -277,25 +280,10 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 				$mccMncs[$mccMnc3] = 1;
 			}
 		}
+		$aids = array_unique($aids);
 		$mccMncs = array_map(function($e){return (string) $e;},array_keys($mccMncs));
-
-		$collection = Billrun_Factory::db()->{$this->tadigsStorageConfig['collection'].'Collection'}();
-		$query = array_merge($this->tadigsStorageConfig['base_query'], [
-						$this->tadigsStorageConfig['mcc_mnc_field']=> array(
-							'$in' => array_values(array_unique($mccMncs)),
-						),
-					]);
-		$mappings = $collection->query($query)->cursor();
-		foreach ($mappings as $mapping) {
-			$mccmncArr =  is_array($mapping['mcc_mnc']) ? $mapping['mcc_mnc'] : [$mapping['mcc_mnc']];
-			foreach ($mccmncArr as $mccMnc) {
-				if (isset($this->tadigs[$mccMnc]) && $this->tadigs[$mccMnc] != $mapping['tadig']) {
-					Billrun_Log::getInstance()->log('Tadigs ' . $this->exporterType . ' exporter: duplicate definition for MCC-MNC. TADIG: ' . $mapping['tadig'] . ' and TADIG ' . $this->tadigs[$mccMnc], Zend_log::NOTICE);
-					continue;
-				}
-				$this->tadigs[$mccMnc] = $mapping['tadig'];
-			}
-		}
+		Billrun_Factory::dispatcher()->trigger('afterTap3loadTadigs', array(&$this->tadigs, $mccMncs, $aids));
+		
 	}
 
 
