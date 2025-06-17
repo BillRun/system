@@ -254,7 +254,7 @@ class Billrun_Plan {
 	 * 
 	 * @return false when no group found, else string name of the group selected
 	 */
-	protected function setNextStrongestGroup($rate, $usageType, $reset = FALSE) {
+	public function setNextStrongestGroup($rate, $usageType, $reset = FALSE) {
 		if (is_null($this->groups)) {
 			$this->groups = $this->getRateGroups($rate, $usageType);
 		}
