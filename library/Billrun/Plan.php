@@ -409,4 +409,9 @@ class Billrun_Plan {
 		return $usage_class_prefix . $usage_type;
 	}
 
+	public function isNonBillableGroup($groupName) {
+		$planGroupConfig = $this->get('includes.groups.'.$groupName);
+		return !empty($planGroupConfig) && @$planGroupConfig['non_billable'];
+	}
+
 }

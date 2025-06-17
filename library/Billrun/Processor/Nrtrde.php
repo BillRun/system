@@ -19,6 +19,11 @@
  */
 class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 
+	protected $standatizeFieldsMapping = array(
+		'callingNumber' => 'calling_number',
+		'connectedNumber' => 'called_number',
+	);
+	
 	/**
 	 * the type of the object
 	 *
@@ -58,6 +63,8 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 			'recEntityId',
 			'callReference',
 			'chargeAmount',
+			'sender',
+			'volte'
 		);
 
 		$this->mtc_structure = array(
@@ -74,6 +81,8 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 			'recEntityId',
 			'callReference',
 			'chargeAmount',
+			'sender',
+			'volte'
 		);
 	}
 
@@ -113,15 +122,64 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		$this->parser->setLine($line);
 		Billrun_Factory::dispatcher()->trigger('beforeDataParsing', array(&$line, $this));
 		$row = $this->parser->parse();
+		
+		foreach ($this->standatizeFieldsMapping as $key => $value) {
+			if(isset($row[$key])) {
+				$row[$value] = $row[$key];
+			}
+		}
+		//Remove leading zeros from the called/calling numbers
+		if(!empty($row['calling_number'])) {
+			$row['calling_number'] = preg_replace('/^0+/','',$row['calling_number']);
+		}
+		if(!empty($row['called_number'])) {
+			$row['called_number'] = preg_replace('/^0+/','',$row['called_number']);
+		}
+
+		
 		$row['source'] = static::$type;
 		$row['type'] = self::$type;
+		$row['sender'] = !empty($row['sender']) ? $row['sender'] : $this->data['header']['sender'];
+		$row['header_stamp'] = $this->data['header']['stamp'];	
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['file'] = basename($this->filePath);
 		$row['process_time'] = date(self::base_dateformat);
+		$row['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($row['callEventStartTimeStamp'], $row['utcTimeOffset']));
+		$row['usaget'] = $this->getLineUsageType($row);
 		settype($row['callEventDuration'], 'integer');
+		$row['usagev'] = $this->getLineVolume($row,$row['usaget']);
+		$row['roaming'] = true;  // by  design all rows from NRTRDE source are roaming
+		
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
+		if ($row['usaget'] == 'call' || $row['usaget'] == 'incoming_call') { // filter usaget sms because that sms transferred from billing.
 		$this->data['data'][] = $row;
+		}
 		return $row;
+	}
+	
+	protected function getLineUsageType($row) {
+		if($row['callEventDuration'] > 0) {
+			if($row['record_type'] == "MTC" ) {
+				return "incoming_call";
+			} else if($row['record_type'] == "MOC") {
+				return "call";
+			}
+		}
+		else if($row['callEventDuration'] == 0) {
+			if($row['record_type'] == "MTC" ) {
+				return "incoming_sms";
+			} else if($row['record_type'] == "MOC") {
+				return "sms";
+			}
+		}
+	}
+	
+	protected function getLineVolume($row, $usage_type) {
+		if($usage_type == 'sms' || $usage_type == 'incoming_sms') {
+			return 1;
+		} else if($usage_type == 'call' || $usage_type == 'incoming_call') {
+			return $row['callEventDuration'];
+		}
 	}
 
 }
