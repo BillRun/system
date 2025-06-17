@@ -986,6 +986,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           return false;
       }
       $durationDivide = Billrun_Util::getIn($this->options, 'matching_paths.duration.divide_to_seconds', 1000);
+      if($durationDivide == 0){
+        Billrun_Factory::log("Invalid divide_to_seconds value. Can't divide by zero, please change matching_paths.duration.divide_to_seconds to valid value.", Zend_Log::ALERT);
+        return false;
+      }
       $chargeRate = $matchingChargeConfigurations['chargeRate'] ?? 0; //price in cents per 60 seconds
       $baseCharge = $matchingChargeConfigurations['baseCharge'] ?? 0; //price in cents
       $startInterval = $matchingChargeConfigurations['startInterval'] ?? 0; //in seconds 

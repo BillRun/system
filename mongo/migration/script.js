@@ -1986,7 +1986,7 @@ runOnce(lastConfig, 'BRCD-4739', function () {
 		"name": "teldasPlugin",
 		"enabled": false,
 		"system": true,
-		"hide_from_ui": false
+		"hide_from_ui": true
 	})
 	db.createCollection('plugin_teldas_ina_numbers');
 	db.plugin_teldas_ina_numbers.ensureIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
