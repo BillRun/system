@@ -89,7 +89,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
-		return $this->getQueuedLines(array('type' => array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3', 'credit'))));
+		return $this->getQueuedLines(array('type' => array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3','nrtrde', 'credit'))));
 	}
 
 	protected function subscribersByStamp() {
@@ -366,7 +366,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				}
 			}
 		}
-		return false;
+		$lineIsLegitimate = false;
+		Billrun_Factory::dispatcher()->trigger('overrideIsLineLegitimate', array(&$line, &$lineIsLegitimate, $this));
+		return $lineIsLegitimate;
 	}
 
 	protected function isCustomerable($line) {

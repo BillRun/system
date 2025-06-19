@@ -176,6 +176,8 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 	}
 
 	public function isLineLegitimate($line) {
-		return parent::isLineLegitimate($line) && $line['usaget'] != 'incoming_sms';
+		$lineIsLegitimate = parent::isLineLegitimate($line) && $line['usaget'] != 'incoming_sms';
+		Billrun_Factory::dispatcher()->trigger('overrideIsLineLegitimate', array(&$line, &$lineIsLegitimate, $this));
+		return $lineIsLegitimate;
 	}
 }

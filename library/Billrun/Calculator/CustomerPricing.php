@@ -127,7 +127,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function getLines() {
 		$query = array();
-		$query['type'] = array('$in' => array('ggsn', 'smpp', 'mmsc', 'smsc', 'nsn', 'tap3', 'credit'));
+		$query['type'] = array('$in' => array('ggsn', 'smpp', 'mmsc', 'smsc', 'nsn', 'tap3','nrtrde', 'credit'));
 		return $this->getQueuedLines($query);
 	}
 
@@ -578,9 +578,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return false;
 		}
 		$arate = $this->getRateByRef($line->get('arate', true));
-		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
-			isset($line['sid']) && $line['sid'] !== false &&
-			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
+		$lineIsLegitimate = ( !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
+								isset($line['sid']) && $line['sid'] !== false &&
+								$line['urt']->sec >= $this->billrun_lower_bound_timestamp );
+		Billrun_Factory::dispatcher()->trigger('overrideIsLineLegitimate', array(&$line, &$lineIsLegitimate, $this));
+		return $lineIsLegitimate;
 	}
 
 	/**

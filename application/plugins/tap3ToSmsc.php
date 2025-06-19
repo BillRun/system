@@ -18,7 +18,6 @@ class tap3ToSmscPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	public function __construct() {
 		$this->transferDaySmsc = Billrun_Factory::config()->getConfigValue('billrun.tap3_to_smsc_transfer_day', "20170301000000");
-		$this->transferDayTap3ToNrtrde = Billrun_Factory::config()->getConfigValue('billrun.tap3_to_nrtrde_transfer_day', "20250621000000");
 	}
 
 
@@ -53,26 +52,6 @@ class tap3ToSmscPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 
-		if ($calculator->getCalculatorQueueType() == 'pricing' && in_array($row['type'],['tap3','nrtrde','nsn']) ) {
-			$lineTime = $row['urt']->sec;
-			$transferTap3NrtrdeDay = strtotime($this->transferDayTap3ToNrtrde);
-			switch($row['type'])  {
-				case 'tap3': if ($lineTime >= $transferTap3NrtrdeDay && in_array($row['usaget'],['call','incoming_call']))  {
-								unset($row['billrun']);
-							}
-					break;
-
-				case 'nrtrde' : if ($lineTime < $transferTap3NrtrdeDay) {
-								unset($row['billrun']);
-							}
-					break;
-				case 'nsn' : if ($lineTime >= $transferTap3NrtrdeDay && !empty($row['roaming']) && !empty($row['serving_network']) ) {
-								unset($row['billrun']);
-							}
-					break;
-				default: Billrun_Factory::log('How????!',Zend_Log::WARN);
-			}
-		}
 	}
 
 }
