@@ -22,7 +22,7 @@ class cdrTypeSwitchingPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 
-	public function overrideIsLineLegitimate(&$line, &$lineIsLegitimate, $calculator) {
+	public function overrideIsLineLegitimate(&$row, &$lineIsLegitimate, $calculator) {
 		if ($calculator->getCalculatorQueueType() == 'pricing' && in_array($row['type'],['tap3','nrtrde','nsn']) ) {
 			$lineTime = $row['urt']->sec;
 			$transferTap3NrtrdeDay = strtotime($this->transferDayTap3ToNrtrde);
