@@ -57,16 +57,16 @@ class tap3ToSmscPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$lineTime = $row['urt']->sec;
 			$transferTap3NrtrdeDay = strtotime($this->transferDayTap3ToNrtrde);
 			switch($row['type'])  {
-				case 'tap3': if ($lineTime >= $transferDay && in_array($row['usaget'],['call','incoming_call']))  {
+				case 'tap3': if ($lineTime >= $transferTap3NrtrdeDay && in_array($row['usaget'],['call','incoming_call']))  {
 								unset($row['billrun']);
 							}
 					break;
 
-				case 'nrtrde' : if ($lineTime < $transferDay) {
+				case 'nrtrde' : if ($lineTime < $transferTap3NrtrdeDay) {
 								unset($row['billrun']);
 							}
 					break;
-				case 'nsn' : if ($lineTime >= $transferDay && !empty($row['roaming']) && !empty($row['serving_network']) ) {
+				case 'nsn' : if ($lineTime >= $transferTap3NrtrdeDay && !empty($row['roaming']) && !empty($row['serving_network']) ) {
 								unset($row['billrun']);
 							}
 					break;
