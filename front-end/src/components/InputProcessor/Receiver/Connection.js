@@ -261,7 +261,7 @@ class Connection extends Component {
         <div className="form-group">
           <label htmlFor="received_extension" className="col-xs-3 control-label d-flex align-items-center"
           >Add file extension in remote
-          <Help contents="This will be added as a suffix to the file name in the remote location." /> </label>
+          <Help contents="This will be added as a suffix to the file name in the remote location upon receiving." /> </label>
           <div className="col-xs-6">
             <input
               type="text"
