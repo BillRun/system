@@ -30,12 +30,12 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 *
 	 */
 	public function planGroupRule(&$rateUsageIncluded, &$groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
-		if ( !isset($this->row) || empty($limits['no_billable_affects']) ) {
+		if ( empty($limits['no_billable_affects']) ) {
 			return;
 		}
 		//Billing  does allow  for  nono billable packages
 		if(!empty($limits['no_billable_affects'])) {
-			$groupSelected=false;
+			$groupSelected=FALSE;
 		}
 	}
 
