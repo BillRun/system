@@ -835,3 +835,60 @@ export const convertToNewRecurrence = (item) => {
     }
   });
 }
+
+export const reCalculateCycles = (prices, index, value, cycle_unlimited) => prices.reduce((newList, price, i) => {
+  if (i === index) {
+    // set new To
+    if (typeof value === 'undefined') { // first item was removed
+      price = price.set('to', parseInt(price.get('to', 0) || 0) - parseInt(price.get('from', 0) || 0));
+    } else if (value === cycle_unlimited) { // last value set to unlimited
+      price = price.set('to', value);
+    } else { // simple case, update to new value
+      price = price.set('to', parseInt(price.get('from') || 0) + parseInt(value));
+    }
+    // set new From
+    if (index === 0) {
+       price = price.set('from', 0);
+    }
+    return newList.push(price);
+  } else if (i > index) {
+    const from = price.get('from', 0);
+    const to = price.get('to', '');
+    // set new From
+    const prevTo = parseInt(newList.last().get('to', 0) || 0);
+    price = price.set('from', prevTo);
+    // set new To
+    if (to === '') { // TO not set
+      price = price.set('to', price.get('from'));
+    } else if (to === cycle_unlimited) { // TO is unlimited
+      // do nothing
+    } else { // normal case, update with shifting
+      const diff = parseInt(to || 0) - parseInt(from || 0);
+      price = price.set('to', prevTo + diff);
+    }
+    return newList.push(price);
+  }
+  return newList.push(price);
+}, Immutable.List());
+
+export const plansOrServicesToSelectOptions = items => items.map(item => ({
+  value: item.get('name', ''),
+  label: item.get('description', item.get('name', '')),
+  isByCycles: item.get('balance_period', '') === '',
+}));
+
+export const isValueOn = val => {
+  if (val === undefined || val === null) {
+    return false;
+  }
+  if (isNumber(val)) {
+    return parseFloat(val) > 0;
+  }
+  if (typeof val === 'boolean') {
+    return val;
+  }
+  if (typeof val === 'string') {
+    return ['yes', 'true', 'on', 'y'].includes(val.toLocaleLowerCase());
+  }
+  return false;
+}

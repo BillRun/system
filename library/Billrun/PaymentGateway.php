@@ -270,6 +270,10 @@ abstract class Billrun_PaymentGateway {
 		}
 	}
 	
+	public function adjustOkPage($okPage) {
+		return $okPage;
+	}
+	
 	 /**
 	  * True if there's a need to request token from the payment gateway. 
 	  * 
@@ -475,7 +479,7 @@ abstract class Billrun_PaymentGateway {
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			Billrun_Factory::log("Payment gateway token request: " . print_R($postArray, 1), Zend_Log::DEBUG);
-			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, $this->requestHeaders, null, 0);
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, $this->getTokenRequestType(), $this->requestHeaders, null, 0);
 			Billrun_Factory::log("Payment gateway token response: " . print_R($result, 1), Zend_Log::DEBUG);
 			if ($this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage))) {
 				$response = $this->getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $options, $maxTries - 1);
@@ -485,6 +489,10 @@ abstract class Billrun_PaymentGateway {
 		}
 		
 		return $response;
+	}
+
+	protected function getTokenRequestType() {
+		return Zend_Http_Client::POST;
 	}
 
 	/**
@@ -660,13 +668,8 @@ abstract class Billrun_PaymentGateway {
 	 * @return Array - the status and stage of the payment.
 	 */
 	public function getGatewayCredentials() {
-		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
-		$gatewayName = $this->billrunName;
-		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
-			return $paymentGateway['name'] == $gatewayName;
-		});
-		$gatewayDetails = current($gateway);
-		return $gatewayDetails['params'] ?? false;
+		$gatewayDetails = $this->getGateway();
+		return $gatewayDetails['params'] ?? null;
 	}
 	
 	protected function getGateway(){

@@ -17,6 +17,13 @@ class Mongodloid_Db {
 		$this->_connection = $connection;
 	}
 
+	/**
+	 * method to return the collection instance
+	 * 
+	 * @param string $name collection name
+	 * 
+	 * @return Mongodloid_Collection
+	 */
 	public function getCollection($name) {
 		if (!isset($this->_collections[$name]) || !$this->_collections[$name]) {
 			$this->_collections[$name] = new Mongodloid_Collection($this->_db->selectCollection($name, ['codec' => null]), $this);
@@ -172,4 +179,13 @@ class Mongodloid_Db {
     {
         return new Mongodloid_GridFS($this, $prefix);
     }
+
+	/**
+	 * Get the current MongoDB\Database
+	 * @return MongoDB\Database
+	 */
+	public function getDb() {
+		return $this->_db;
+	}
+	
 }

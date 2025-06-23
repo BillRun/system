@@ -25,6 +25,7 @@ class Models_Accounts extends Models_Entity {
 		Billrun_Utils_Mongo::convertQueryMongodloidDates($this->update);
 		$this->verifyAllowances();
 		$this->verifyServices();
+		$this->verifyOverrides();
 	}
 
 	public function get() {
@@ -97,6 +98,29 @@ class Models_Accounts extends Models_Entity {
 	
 	public function getInvoicingDay () {
 		return !empty($this->originalUpdate['invoicing_day']) ? $this->originalUpdate['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+	}
+
+	/**
+	 * Verify overrides plan \ services are correct before update is applied to the customer
+	 */
+	protected function verifyOverrides() {
+		if (!empty($this->update['overrides'])) {
+			$overrides = Billrun_Util::getIn($this->update, 'overrides', []);
+			foreach ($overrides as $override) {
+				$priceIntervals = Billrun_Util::getIn($override, ['value','price'], []);
+				$type = Billrun_Util::getIn($override, 'type', 'item');
+				$key = Billrun_Util::getIn($override, 'key', '');
+				foreach ($priceIntervals as $price) {
+					if (!isset($price['from']) || $price['from'] === '' || 
+						!isset($price['to']) || $price['to'] === '') {
+						throw new Billrun_Exceptions_Api(0, array(), "Override {$type} {$key} missing cycles parameters");
+					}
+					if (!isset($price['price']) || $price['price'] === '') {
+						throw new Billrun_Exceptions_Api(0, array(), "Override {$type} {$key} missing price parameter");
+					}
+				}
+			}
+		}
 	}
 
 	/**

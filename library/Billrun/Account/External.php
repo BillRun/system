@@ -189,6 +189,14 @@ class Billrun_Account_External extends Billrun_Account {
 			if (!isset($query['id'])) {
 				$query['id'] = Billrun_Util::generateArrayStamp($query);
 			}
+			if (isset($query['time'])) {
+				$newFormat = Billrun_Factory::config()->getConfigValue('subscribers.account.external.time_format', 'Y-m-d H:i:s.u');
+				$dateTime = DateTime::createFromFormat('Y-m-d H:i:s.u', $query['time']);
+				if($dateTime === false){
+					$dateTime = DateTime::createFromFormat('Y-m-d H:i:s', $query['time']);
+				}
+				$query['time'] = $dateTime->format($newFormat);
+			}
 			$externalQuery['query'][] = $query;
 		}
 		if($globalLimit) {

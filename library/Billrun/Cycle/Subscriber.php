@@ -242,7 +242,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->invoice->setData('sid', $data['sid']);
 		$this->invoice->setData('firstname', $data['first_name']);
 		$this->invoice->setData('lastname', $data['last_name']);
-		foreach(Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.passthrough_data',array()) as $dstField => $srcField) {
+		$passThroughData =  $this->cycleAggregator->getAggregatorConfig('subscriber.passthrough_data',[]);
+		foreach($passThroughData as $dstField => $srcField) {
 			// print_r($dstField);
 			// print_r($data[$dstField]);
 			// print_r($srcField);

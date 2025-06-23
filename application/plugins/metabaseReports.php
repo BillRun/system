@@ -106,6 +106,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'invoices' => [$invoice_data],
 			'event' => 'customer_invoice_created'
 		];
+		Billrun_Factory::dispatcher()->trigger('beforeRunMetabaseReport', array(&$params));
 		$this->runReports($params);
 	}
 
@@ -122,6 +123,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'invoices' => [$invoice_data],
 			'event' => 'customer_invoice_confirmed'
 		];
+		Billrun_Factory::dispatcher()->trigger('beforeRunMetabaseReport', array(&$params));
 		$this->runReports($params);
 	}
 	
@@ -143,6 +145,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'billrun_key' => $cycle->key(),
 			'event' => 'cycle_finished'
 		];
+		Billrun_Factory::dispatcher()->trigger('beforeRunMetabaseReport', array(&$params));
 		$this->runReports($params);
 	}
 
@@ -164,6 +167,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'billrun_key' => $billrun_key,
 			'event' => 'cycle_confirmed'
 		];
+		Billrun_Factory::dispatcher()->trigger('beforeRunMetabaseReport', array(&$params));
 		$this->runReports($params);
 	}
 

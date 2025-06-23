@@ -253,8 +253,12 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 				// $subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected]['cost'];
 				$update['$inc']['balance.groups.' . $group . '.cost'] = $arategroup['cost'];
 				$update['$inc']['balance.groups.' . $group . '.count'] = 1;
-				$update['$set']['balance.groups.' . $group . '.left'] = $arategroup['left'];
-				$update['$set']['balance.groups.' . $group . '.total'] = $arategroup['total'];
+				if (empty($arategroup['counter_only'])) {
+					$update['$set']['balance.groups.' . $group . '.left'] = $arategroup['left'];
+					$update['$set']['balance.groups.' . $group . '.total'] = $arategroup['total'];
+				} else {
+					$update['$inc']['balance.groups.' . $group . '.usagev'] = $arategroup['usagev'];
+				}
 				if (isset($this->get('balance')['groups'][$group]['cost'])) {
 					$arategroup['usagesb'] = floatval($this->get('balance')['groups'][$group]['cost']);
 				} else {

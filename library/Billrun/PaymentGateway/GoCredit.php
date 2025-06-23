@@ -168,7 +168,7 @@ class Billrun_PaymentGateway_GoCredit extends Billrun_PaymentGateway {
 	}
 
 	public function getDefaultParameters() {
-		$params = array("user", "password", "terminal", "endpoint_url", "payment_page_secret_key");
+		$params = array("user", "password", "terminal", "endpoint_url", "payment_page_secret_key", "account_reference_padding");
 		return $this->rearrangeParametres($params);
 	}
 	
@@ -207,7 +207,7 @@ class Billrun_PaymentGateway_GoCredit extends Billrun_PaymentGateway {
 		$postParams['TransactionParams']['TerminalNumber'] = $credentials['terminal'];
 		$postParams['TransactionParams']['ManualApprovalNumber'] = $gatewayDetails['shva_approval_number'];
 		$postParams['TransactionParams']['Mode'] = 'RegularJ4';
-		$postParams['TransactionParams']['RefCustomerCode'] = $addonData['aid'];
+		$postParams['TransactionParams']['RefCustomerCode'] = !empty($credentials["account_reference_padding"]) ? $credentials["account_reference_padding"] . $addonData['aid'] : $addonData['aid'];
 		return $this->buildSoapRequest('ExecuteTransaction', $postParams);
 	}
 

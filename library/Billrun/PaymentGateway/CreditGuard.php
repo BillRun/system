@@ -23,7 +23,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function __construct($instanceName =  null) {
 		parent::__construct($instanceName);
-		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'] ?? null;
+		if (isset($this->getGatewayCredentials()['endpoint_url'])) {
+			$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
+		}
 	}
 
 	public function updateSessionTransactionId($result) {
@@ -413,6 +415,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$additionalParams['credit_company'] = $xmlObj->response->doDeal->creditCompany ? current($xmlObj->response->doDeal->creditCompany->attributes()->code) : '';
 			$additionalParams['card_type'] = $xmlObj->response->doDeal->cardType ? current($xmlObj->response->doDeal->cardType->attributes()->code) : '';
 			$additionalParams['uid'] = $xmlObj->response->doDeal->ashraitEmvData->uid ? (string) $xmlObj->response->doDeal->ashraitEmvData->uid : '';
+			$additionalParams['auth_number'] = $xmlObj->response->doDeal->authNumber ? (string) $xmlObj->response->doDeal->authNumber : '';
 		}	
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
@@ -722,7 +725,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				if ($custom_text_parsed) {
 					$ppsConfig['uiCustomData']['customText'] = $custom_text_parsed;
 				} else {
-					Billrun_Factory::log('Billrun_PaymentGateway_CreditGuard::getPPSConfigJSON -  customText json cannot  be parsed  correctly',Zend_Log::WARN);
+					Billrun_Factory::log('Billrun_PaymentGateway_CreditGuard::getPPSConfigJSON - customText json cannot  be parsed  correctly',Zend_Log::WARN);
 				}
 			}
 
@@ -769,7 +772,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	public function sendJ5Request($aid, $gatewayDetails, $transactionType = 'RecurringDebit', $terminal = 'redirect_terminal'){
 		$credentials = $this->getGatewayCredentials();
 		$xmlParams['version'] = $credentials['version'] ?? '2000';
-		$postArray = $this->getJ5Xml($credentials, $xmlParams, $gatewayDetails, $transactionType, $terminal);
+		$postArray = $this->getJ5Xml($aid, $credentials, $xmlParams, $gatewayDetails, $transactionType, $terminal);
 		$postString = http_build_query($postArray);
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::INFO);
@@ -781,7 +784,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 
-	protected function getJ5Xml($credentials, $xmlParams, $gatewayDetails, $transactionType, $terminal = 'redirect_terminal') {
+	protected function getJ5Xml($aid, $credentials, $xmlParams, $gatewayDetails, $transactionType, $terminal = 'redirect_terminal') {
 		if ($transactionType == 'RecurringMigration') {
 			$auth_number = '<authNumber>' . $gatewayDetails['auth_number'] . '</authNumber>';
 		} else {
@@ -814,6 +817,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <cgUid></cgUid>
 										  <cardId>' . $gatewayDetails['card_token'] . '</cardId>
 										  ' . $auth_number . '
+										  <customerData>
+										 		 <userData1>' . $aid . '</userData1>
+										  </customerData>
 										  <ashraitEmvData>
 										 		 <recurringTotalNo>999</recurringTotalNo>
 										 		 <recurringTotalSum></recurringTotalSum>

@@ -78,7 +78,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 				$retResults[$revStamp]['id'] = array_filter($revision, function ($key) use ($customIDFields) { return in_array($key, $customIDFields); }, ARRAY_FILTER_USE_KEY);
 				$passthroughFields = ($revision['type'] == 'account') ? $this->passthroughFields : $this->subsPassthroughFields;
 				foreach ($passthroughFields as $passthroughField) {
-					if(is_scalar($passthroughField) && isset($revision[$passthroughField])) {
+					if(!is_array($passthroughField) && isset($revision[$passthroughField])) {
 						$retResults[$revStamp]['passthrough'][$passthroughField] = $revision[$passthroughField];
 					}
 				}
@@ -102,7 +102,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 
 	protected function getCustomIDFields() {
 		$customIDFields =Billrun_Factory::config()->getConfigValue('customer.aggregator.revision_identification_fields',[]);
-		$idFields = array_merge($customIDFields, ['aid','sid','plan','play','first_name','last_name','type','email','address','services']);
+		$idFields = array_merge($customIDFields, ['aid','sid','plan','play','first_name','last_name','type','email','address','services', 'overrides']);
 		return $idFields;
 	}
 	

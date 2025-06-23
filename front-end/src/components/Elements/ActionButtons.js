@@ -4,15 +4,15 @@ import { Button } from 'react-bootstrap';
 
 const ActionButtons = (props) => {
   const { hide, progress, progressLabel, reversed } = props;
-  const { saveLabel, hideSave, disableSave, onClickSave } = props;
-  const { cancelLabel, hideCancel, disableCancel, onClickCancel } = props;
+  const { saveLabel, hideSave, disableSave, onClickSave, saveTitle } = props;
+  const { cancelLabel, hideCancel, disableCancel, onClickCancel, cancelTitle } = props;
   if (hide) {
     return null;
   }
   return (
     <div style={{ marginTop: 12 }}>
       {!hideSave && (
-        <Button onClick={onClickSave} bsStyle={reversed ? 'default' : 'primary'} disabled={progress || disableSave} style={{ minWidth: 90, marginRight: 10 }}>
+        <Button onClick={onClickSave} bsStyle={reversed ? 'default' : 'primary'} disabled={progress || disableSave} style={{ minWidth: 90, marginRight: 10 }} title={saveTitle}>
           { progress && (<span><i className="fa fa-spinner fa-pulse" />&nbsp;&nbsp;</span>) }
           { progress && progressLabel !== null
             ? progressLabel
@@ -21,7 +21,7 @@ const ActionButtons = (props) => {
         </Button>
       )}
       {!hideCancel && (
-        <Button onClick={onClickCancel} bsStyle={reversed ? 'primary' : 'default'} disabled={disableCancel} style={{ minWidth: 90 }}>
+        <Button onClick={onClickCancel} bsStyle={reversed ? 'primary' : 'default'} disabled={disableCancel} style={{ minWidth: 90 }} title={cancelTitle}>
           {cancelLabel}
         </Button>
       )}
@@ -39,7 +39,9 @@ ActionButtons.defaultProps = {
   disableSave: false,
   disableCancel: false,
   cancelLabel: 'Cancel',
+  cancelTitle: '',
   saveLabel: 'Save',
+  saveTitle: '',
   progressLabel: null,
   reversed: false,
   onClickCancel: () => {},
@@ -49,6 +51,9 @@ ActionButtons.defaultProps = {
 ActionButtons.propTypes = {
   children: PropTypes.element,
   cancelLabel: PropTypes.string,
+  cancelTitle: PropTypes.string,
+  saveLabel: PropTypes.string,
+  saveTitle: PropTypes.string,
   hide: PropTypes.bool,
   hideCancel: PropTypes.bool,
   hideSave: PropTypes.bool,
@@ -58,7 +63,6 @@ ActionButtons.propTypes = {
   reversed: PropTypes.bool,
   onClickCancel: PropTypes.func,
   onClickSave: PropTypes.func,
-  saveLabel: PropTypes.string,
   progressLabel: PropTypes.string,
 };
 
