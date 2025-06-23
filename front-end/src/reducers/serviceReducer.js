@@ -1,5 +1,5 @@
 import Immutable from 'immutable';
-import { getConfig } from '@/common/Util';
+import { getConfig, reCalculateCycles } from '@/common/Util';
 import includeGroupsReducer from './includeGroupsReducer';
 import { ADD_GROUP, REMOVE_GROUP } from '@/actions/includeGroupsActions';
 import {
@@ -16,17 +16,28 @@ import {
   ADD_GROUP_SERVICE,
   REMOVE_GROUP_SERVICE,
   DELETE_SERVICE_FIELD,
+  SERVICE_ADD_TARIFF,
+  SERVICE_UPDATE_SERVICE_CYCLE, 
+  SERVICE_REMOVE_TARIFF
 } from '@/actions/serviceActions';
 import entityProductsReducer from './entityProductsReducer';
+
+const SERVICE_CYCLE_UNLIMITED = getConfig('serviceCycleUnlimitedValue', 'UNLIMITED');
 
 const DefaultState = Immutable.fromJS({
   description: '',
   name: '',
   price: [{
     from: 0,
-    to: getConfig('serviceCycleUnlimitedValue', 'UNLIMITED'),
+    to: SERVICE_CYCLE_UNLIMITED,
     price: '',
   }],
+});
+
+const defaultTariff = Immutable.Map({
+  price: '',
+  from: 0,
+  to: SERVICE_CYCLE_UNLIMITED,
 });
 
 const serviceReducer = (state = DefaultState, action) => {
@@ -72,6 +83,56 @@ const serviceReducer = (state = DefaultState, action) => {
       const arrayPath = Array.isArray(path) ? path : [path];
       return state.deleteIn(arrayPath);
     }
+
+    case SERVICE_ADD_TARIFF: {
+      if (state.get('price', Immutable.List()).isEmpty()) {
+        return state.update('price', Immutable.List(), list => list.push(defaultTariff));
+      }
+      const limit_cycles = state.get('limit_cycles', false);
+      if(limit_cycles){ 
+        return state.update('price', Immutable.List(), list =>
+        list
+          .update(list.size - 1, Immutable.Map(), item => item.set('to', ''))
+          .push(defaultTariff.set('to', '').set('from', ''))
+        );
+      }
+      return state.update('price', Immutable.List(), list =>
+        list
+          .update(list.size - 1, Immutable.Map(), item => item.set('to', ''))
+          .push(defaultTariff.set('from', ''))
+      );
+    }
+
+    case SERVICE_REMOVE_TARIFF: {
+      if (action.index === 0) { // removed first item
+        return state.update('price', Immutable.List(), (list) => {
+          if (list.size > 1) { // there is other items in list, update next item from to 0
+            return list
+              .update(action.index + 1, Immutable.Map(), item => item.set('from', 0))
+              .delete(action.index);
+          }
+          return list.delete(action.index); // only on item, delete it
+        });
+      }
+      //item removed from end and there is limit of cycles
+      const limit_cycles = state.get('limit_cycles', false);
+      if(limit_cycles){ 
+        return state.update('price', Immutable.List(), list =>
+        list
+          .update(action.index - 1, item => item.set('to', ''))
+          .delete(action.index)
+        );
+      }
+      // item removed from end and there is other items (index > 0)
+      return state.update('price', Immutable.List(), list =>
+        list
+          .update(action.index - 1, item => item.set('to', SERVICE_CYCLE_UNLIMITED))
+          .delete(action.index)
+      );
+    }
+
+    case SERVICE_UPDATE_SERVICE_CYCLE:
+      return state.updateIn(['price'], list => reCalculateCycles(list, action.index, action.value, SERVICE_CYCLE_UNLIMITED));
 
     default:
       return state;

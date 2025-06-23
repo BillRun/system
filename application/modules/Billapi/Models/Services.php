@@ -19,9 +19,33 @@ class Models_Services extends Models_Entity {
 	protected function init($params) {
 		parent::init($params);
 		$this->validatePrice();
+		$this->validateTierLimitCycles();
 		$this->validateRecurrence();
 	}
 	
+	/**
+	 * Verify in case of limit service sycles Recurring Charges cycles has the same sum of cycles.
+	 */
+	protected function validateTierLimitCycles() {
+		$limitCycles = Billrun_Util::getIn($this->update, 'limit_cycles', false);
+		if(!$limitCycles){
+			return true;
+		}
+		if(!is_numeric($limitCycles) || $limitCycles <= 0){
+			throw new Billrun_Exceptions_Api($this->errorCode, array(), '"No. of Cycles" is not valid');
+		}
+		$priceIntervals = Billrun_Util::getIn($this->update, 'price', []);
+		$totalCycles = 0;
+		foreach ($priceIntervals as $price) {
+			$totalCycles = max($price['to'], $totalCycles);
+		}
+		if($limitCycles !== $totalCycles){
+			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Service summary cycles of "Recurring Charges" not match "No. of Cycles"');
+		}
+		
+		return true;
+	}
+
 	/**
 	 * Verify services has all price parameters required.
 	 */
@@ -63,7 +87,7 @@ class Models_Services extends Models_Entity {
             }
             return true;
 	}
-	
+
 	/**
 	 * method to add entity custom fields values from request
 	 * 

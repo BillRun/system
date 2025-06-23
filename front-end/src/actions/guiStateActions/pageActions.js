@@ -6,6 +6,7 @@ export const ONBOARDING_SET_STEP = 'SET_ON_BOARDING_STEP';
 export const ONBOARDING_SET_STATE = 'SET_ON_BOARDING_STATE';
 
 export const SET_PAGE_FLAG = 'SET_PAGE_FLAG';
+export const SET_PAGE_ERROR = 'SET_PAGE_ERROR';
 
 export const CONFIRM_SHOW = 'CONFIRM_SHOW';
 export const CONFIRM_HIDE = 'CONFIRM_HIDE';
@@ -107,6 +108,13 @@ export const setFormModalItem = item => ({
 
 export const setFormModalError = (fieldId, message = null) => ({
   type: EDIT_FORM_SET_ERROR,
+  fieldId,
+  message,
+});
+
+export const setPageError = (page, fieldId = null, message = null) => ({
+  type: SET_PAGE_ERROR,
+  page,
   fieldId,
   message,
 });

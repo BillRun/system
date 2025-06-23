@@ -42,7 +42,7 @@ class GenerateAction extends Action_Base {
         try{
             $generator = Billrun_Generator::getInstance($options);
         } catch(Exception $ex){
-            Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+            Billrun_Factory::log()->log($ex->getTraceAsString(), Zend_Log::ERR);
             Billrun_Factory::log()->log('Something went wrong while building the generator. No generate was made.', Zend_Log::ALERT);
             return;
         }
@@ -57,7 +57,7 @@ class GenerateAction extends Action_Base {
         try{
             $generator->load();
         } catch(Exception $ex){
-            Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+            Billrun_Factory::log()->log($ex->getTraceAsString(), Zend_Log::ERR);
             Billrun_Factory::log()->log('Something went wrong while loading. No generate was made.', Zend_Log::ALERT);
             return;
         }

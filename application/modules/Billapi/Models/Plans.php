@@ -13,6 +13,8 @@
  * @since    5.3
  */
 class Models_Plans extends Models_Entity {
+
+	protected $errorCode = 988888;
 	
 	protected function init($params) {
 		parent::init($params);

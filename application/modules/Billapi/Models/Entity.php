@@ -216,6 +216,35 @@ class Models_Entity {
 
 		//transalte all date fields
 		Billrun_Utils_Mongo::convertQueryMongodloidDates($this->update);
+
+		if (in_array($this->collectionName, ['services', 'plans', 'rates'])) {
+			$this->validateRoundingRules();
+		}
+	}
+
+
+	/**
+	 * Verify entity has all Rounding Rules required parameters.
+	 */
+	protected function validateRoundingRules() {
+		$rounding_rules = Billrun_Util::getIn($this->update, 'rounding_rules', null);
+		if (!empty($rounding_rules)) {
+			$rounding_stage = Billrun_Util::getIn($rounding_rules, 'rounding_stage', 'None');
+			$rounding_type = Billrun_Util::getIn($rounding_rules, 'rounding_type', 'None');
+			$rounding_decimals = Billrun_Util::getIn($rounding_rules, 'rounding_decimals', null);
+			if ($rounding_stage !== 'None') {
+				if (empty($rounding_stage)) {
+					throw new Billrun_Exceptions_Api(0, array(), 'Rounding rules must have rounding amount to round');
+				}
+				if (empty($rounding_type) || $rounding_type === 'None' | !in_array($rounding_type, ['down', 'up', 'nearest'])) {
+					throw new Billrun_Exceptions_Api(0, array(), 'Rounding rules must have rounding type');
+				}
+				if (is_null($rounding_decimals) || $rounding_decimals == '') {
+					throw new Billrun_Exceptions_Api(0, array(), "Rounding rules must have rounding decimal");
+				}
+			}
+		}
+		return true;
 	}
 
 	/**
