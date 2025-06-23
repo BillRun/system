@@ -51,7 +51,6 @@ class tap3ToSmscPlugin extends Billrun_Plugin_BillrunPluginBase {
 				unset($row['billrun']); 
 			}
 		}
-
 	}
 
 }

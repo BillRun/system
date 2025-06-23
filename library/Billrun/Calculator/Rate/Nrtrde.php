@@ -52,7 +52,7 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		$alpha = $row['alpha3'];
+		$alpha = @$row['alpha3'];
 		$sender = $row['sender'];
 		$line_time = $row['urt'];
 		if(!$this->isRatingNeeded($row,$usage_type)) {

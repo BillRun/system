@@ -27,13 +27,13 @@ class cdrTypeSwitchingPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$lineTime = $row['urt']->sec;
 			$transferTap3NrtrdeDay = strtotime($this->transferDayTap3ToNrtrde);
 			switch($row['type'])  {
-				case 'tap3': $lineIsLegitimate = !($lineTime >= $transferTap3NrtrdeDay && in_array($row['usaget'],['call','incoming_call'])) ;
+				case 'tap3': $lineIsLegitimate &= !($lineTime >= $transferTap3NrtrdeDay && in_array($row['usaget'],['call','incoming_call'])) ;
 					break;
 
-				case 'nrtrde' : $lineIsLegitimate = !($lineTime < $transferTap3NrtrdeDay);
+				case 'nrtrde' : $lineIsLegitimate &= !($lineTime < $transferTap3NrtrdeDay);
 					break;
 
-				case 'nsn' : $lineIsLegitimate = !($lineTime >= $transferTap3NrtrdeDay && !empty($row['roaming']) && !empty($row['serving_network']) );
+				case 'nsn' : $lineIsLegitimate &= !($lineTime >= $transferTap3NrtrdeDay && !empty($row['roaming']) && !empty($row['serving_network']) );
 					break;
 
 				default: Billrun_Factory::log('How????!',Zend_Log::WARN);
