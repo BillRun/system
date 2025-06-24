@@ -19,7 +19,7 @@ abstract class Billrun_Job_Abstract {
 	/**
 	 * the message queue
 	 * 
-	 * @var array
+	 * @var Zend_Queue_Message
 	 */
 	protected $queueMsg;
 	
@@ -36,6 +36,12 @@ abstract class Billrun_Job_Abstract {
 	 */
 	protected $data;
 	
+	/**
+	 * how many time the job will be retried
+	 * @var int
+	 */
+	protected $limitRuns = 3;
+
 	/**
 	 * parent md5 if this is a child job
 	 * @var string
@@ -62,8 +68,20 @@ abstract class Billrun_Job_Abstract {
 		if (empty($this->queueMsg)) {
 			return;
 		}
+		if ($this->finished() !== true) {
+			return;
+		}
 		Billrun_Factory::log("Mark job " . $this->queueMsg->handle . " as done");
 		return Billrun_Factory::queue('jobs')->deleteMessage($this->queueMsg);
+	}
+	
+	/**
+	 * method that triggered after the job has been finished
+	 * 
+	 * @return bool true if finished success else return false and the job will not be completed
+	 */
+	protected function finished() {
+		return true;
 	}
 	
 	protected function init($params) {
@@ -80,10 +98,21 @@ abstract class Billrun_Job_Abstract {
 	 */
 	public function execute($params) {
 		$this->init($params);
-		$this->data = $this->fetch();
-		$this->run();
+		if (!$this->runLimitExceed()) {
+			$this->data = $this->fetch();
+			$this->run();
+		}
 		$this->markCompleted();
 	}
 	
+	/**
+	 * check if the number of run of the same job exceed the limit
+	 * @return type
+	 */
+	protected function runLimitExceed() {
+		return $this->queueMsg->try > $this->limitRuns;
+	}
+
+
 	abstract protected function run();
 }

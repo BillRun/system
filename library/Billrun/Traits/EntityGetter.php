@@ -432,7 +432,9 @@ trait Billrun_Traits_EntityGetter {
 	 * @return Entity
 	 */
 	protected function getOverrideEntity($categoryFilters, $category = '', $row = [], $params = []) {
-		return null;
+		$override = null;
+		Billrun_Factory::dispatcher()->trigger('afterOverrideRateEntity', [&$row, $params, &$override]);
+		return $override;
 	}
 	
 	/**

@@ -54,12 +54,12 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot update by parser lines " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
+		if ($this->getType() == 'transactions_response') {
+			$this->updateLeftPaymentsByFileStatus();
+		}
 		if ($this->logDB() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action" . $this->filePath, Zend_Log::WARN);
 			return FALSE;
-		}
-		if ($this->getType() == 'transactions_response') {
-			$this->updateLeftPaymentsByFileStatus();
 		}
 
 		$this->removefromWorkspace($this->getFileStamp());

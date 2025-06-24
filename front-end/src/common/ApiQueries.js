@@ -1,6 +1,9 @@
 import Immutable from 'immutable';
 import moment from 'moment';
-import { escapeRegExp } from './Util';
+import {
+  escapeRegExp,
+  isValueOn,
+} from './Util';
 
 // TODO: fix to uniqueget (for now billAoi can't search by 'rates')
 export const searchProductsByKeyAndUsagetQuery = (usages, notKeys, plays = '') => {
@@ -863,3 +866,57 @@ export const getDashboardQuery = action => ({
   ],
 });
 // Dashboard reports queries - end
+
+
+/** Workers */
+
+export const getWorkersQuery = () => ({
+  api: 'billrun',
+  action: 'workerstatus',
+});
+
+export const pushToCycleQueueQuery = (billrun_key, generate_pdf, include_aids = [], exclude_aids = []) => {
+  let config = { billrun_key };
+  if (include_aids.length > 0) {
+    config['include'] = include_aids;
+  }
+  if (exclude_aids.length > 0) {
+    config['exclude'] = exclude_aids;
+  }
+
+  const formData = new FormData();
+  formData.append('job_type', 'Cycle');
+  formData.append('generate_pdf', isValueOn(generate_pdf) ? 1 : 0);
+  formData.append('config', JSON.stringify(config));
+
+  return ({
+    api: 'queue',
+    action: 'push',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+}
+export const pushToConfirmQueueQuery = (billrun_key, include_aids = [], exclude_aids = []) => {
+  let config = { billrun_key };
+  if (include_aids.length > 0) {
+    config['include'] = include_aids;
+  }
+  if (exclude_aids.length > 0) {
+    config['exclude'] = exclude_aids;
+  }
+
+  const formData = new FormData();
+  formData.append('job_type', 'Confirm');
+  formData.append('config', JSON.stringify(config));
+
+  return ({
+    api: 'queue',
+    action: 'push',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+}

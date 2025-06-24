@@ -18,6 +18,7 @@ class WorkerAction extends Action_Base {
 
 	protected $startTime;
 	protected $queue;
+	protected $shouldRun = true;
 
     /**
      * method to execute the worker process
@@ -27,17 +28,44 @@ class WorkerAction extends Action_Base {
     public function execute() {
 		Billrun_Factory::log("Start worker");
 		$this->startTime = time();
-		$this->queue = Billrun_Factory::queue('jobs', Billrun_Factory::config()->getConfigValue('worker.job_timeout', 3600));
-		$this->setAsyncMaxConcurrent(Billrun_Factory::config()->getConfigValue('worker.concurrent_limit', 10));
+		$timeout = Billrun_Factory::config()->getConfigValue('worker.job_timeout', 900);
+		$this->setAsyncTimeout($timeout);
+		$this->queue = Billrun_Factory::queue('jobs', $timeout + 60);
+		$this->setAsyncMaxConcurrent(Billrun_Factory::config()->getConfigValue('worker.concurrent_limit', 4));
 		Billrun_Factory::log("Queue " . $this->queue->getName() . " loaded with count of " . $this->queue->count());
-//		Billrun_Jobsmanager::getInstance($this->queue)->push('Charging_Account', ['aids' => [1]]);die;
+		if ($this->resetWorkerOnConfigSave()) {
+			Billrun_Factory::log("parent worker is going to create configChangeListener job");
+			$this->executeAsync(array($this, 'configChangeListener'));
+		}
 		$this->run();
 	}
-
+	
+	/**
+	 * method to add config listner for changes to trigger safe shutdown
+	 * @return null
+	 */
+	protected function configChangeListener() {
+		$coll = Billrun_Factory::db()->getCollection('config');
+		$coll->watchChanges([$this, 'stopParentWorker'], [['$match' => ['operationType' => 'insert']]]);
+		return;
+	}
+	
+	public function stopParentWorker() {
+		$parentPid = posix_getppid();
+		Billrun_Factory::log("Config inserted. Sending SIGTERM to parent (PID $parentPid)", Zend_Log::NOTICE);
+		posix_kill($parentPid, SIGTERM); // kill the parent
+		Billrun_Factory::db()->getCollection('config')->stopWatching();
+//		exit(0); // stop the watcher child process
+	}
+	
+	protected function kill() {
+		$this->shouldRun = false;
+	}
 	/**
 	 * method to run and enable the worker to receive and process jobs
 	 */
 	protected function run() {
+		$resetConfig = $this->startTime;
 		while($this->checkIteration()) {
 			try {
 				// fetch job from the job queue
@@ -46,18 +74,39 @@ class WorkerAction extends Action_Base {
 				if (!empty($job)) {
 					Billrun_Factory::log("Going to execute job " . $job->method . " handle " . $job->queueMsg->handle, Zend_Log::INFO);
 					$this->executeAsync(array($job, 'execute'), [['config' => (array) $job->config]]);
+				} else {
+					usleep(Billrun_Factory::config()->getConfigValue('worker.iteration', 2000000)); // sleep 2 seconds
 				}
 			} catch (Throwable $th) {
 				Billrun_Factory::log("Worker error: " . $th->getCode() . ": " . $th->getMessage(), Zend_Log::ALERT);
 			}
-			usleep(Billrun_Factory::config()->getConfigValue('worker.iteration', 200000)); // sleep 0.2 second
+			$this->checkSignal();
+			usleep(10000);
+			if (!$this->resetWorkerOnConfigSave() && $resetConfig-time() >= Billrun_Factory::config()->getConfigValue('worker.resetConfigIteration', 900)) {
+				$resetConfig = time();
+				$this->reloadDbConfig();
+			}
 		}
+		$this->wait();
+	}
+	
+	/**
+	 * check if required to reset the worker on config save
+	 * if this setting is on when config is saved the parent worker will be stopped and required super-vistor to re-enable the worker
+	 * 
+	 * @return bool true is reset worker on config save is enabled, else false
+	 */
+	protected function resetWorkerOnConfigSave() {
+		return Billrun_Factory::config()->getConfigValue('worker.resetWorkerOnConfigSave', 0);
 	}
 	
 	/**
 	 * method to run and enable the worker based on cron to receive and process jobs
 	 */
 	protected function checkIteration() {
+		if (!$this->shouldRun) {
+			return false;
+		}
 		if (!Billrun_Factory::config()->getConfigValue('worker.cron.enabled')) {
 			return true;
 		}
