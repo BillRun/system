@@ -394,6 +394,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 
 			$recEntityId = Billrun_Util::getIn($row, $recIdField, '');
 			$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
+			Billrun_Factory::dispatcher()->trigger('afterRecEntityInformation', array(&$recEntityType, &$recEntityId, &$recEntityCode, $row, $this));
 
 			$recEntityArr[] = ['RecEntityInformation' => [
 				'RecEntityCode' => intval($recEntityCode),
