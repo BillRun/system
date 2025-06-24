@@ -421,7 +421,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	protected function getRecEntityCode($row) {
 		$entityList = $this->getRecEntityInformation($row);
 		$surfacedEntityValues = array_column($entityList,'RecEntityInformation');
-		return  array_column($surfacedEntityValues,'RecEntityCode');
+		return array_column($surfacedEntityValues,'RecEntityCode')[0];
 	}
 	
 	protected function getTeleServiceCode($row) {
@@ -438,7 +438,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getRecEntityCodeList($row, $fieldMapping) {
-		$recEnitiiesCodes = array_map(function($val) { return ['RecEntityCode' => $val]; }, $this->getRecEntityCode($row));
+		$recEnitiiesCodes = array_map(function($val) { return ['RecEntityCode' => $val]; }, [$this->getRecEntityCode($row)]);
 		return $recEnitiiesCodes;
 	}
 
