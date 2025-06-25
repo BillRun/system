@@ -27,8 +27,8 @@ class cdrTypeSwitchingPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$lineTime = $row['urt']->sec;
 			$transferTap3NrtrdeDay = strtotime($this->transferDayTap3ToNrtrde);
 			switch($row['type'])  {
-				case 'tap3': $lineIsLegitimate &= !($lineTime >= $transferTap3NrtrdeDay && in_array($row['usaget'],['call','incoming_call'])) ;
-					break;
+				// case 'tap3': $lineIsLegitimate &= !($lineTime >= $transferTap3NrtrdeDay && in_array($row['usaget'],['call','incoming_call'])) ;
+				// 	break;
 
 				case 'nrtrde' : $lineIsLegitimate &= !($lineTime < $transferTap3NrtrdeDay);
 					break;
