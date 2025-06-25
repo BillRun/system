@@ -155,7 +155,6 @@ class BillRunAPI extends \Codeception\Module
         return json_decode($ret, true);
     }
 
-
     public function sendBillapiUpdate($entity,$query,$update )
     {
         // Get the REST module to send requests
@@ -167,9 +166,35 @@ class BillRunAPI extends \Codeception\Module
             'update' => json_encode($update)
         ];
         $ret =  $rest->sendPOST("/billapi/$entity/update", $params);
-        
         return json_decode($ret, true);
     }
+
+    /**
+     * Sets plugin settings using the BillRun API.
+     *
+     * This function sends a POST request to the BillRun API endpoint "/api/settings"
+     * with the provided data to set plugin settings. The request is authenticated
+     * using the access token obtained from the getAccessToken method.
+     *
+     * @param array $data An associative array containing the plugin settings to be set.
+     *                    The array keys represent the setting names, and the values represent the setting values.
+     *                    Default value is an empty array.
+     *
+     * @return array|null The response from the BillRun API, decoded as an associative array.
+     *                    If the response is not valid JSON, the function returns null.
+     */
+    public function setPluginSettings($data = [])
+    {
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $ret = $rest->sendPOST("/api/settings", [
+            'category'=> 'plugin',
+            'action'=> 'set',
+            'data' => json_encode($data)
+        ]);
+        return json_decode($ret, true);
+    }
+
     /**
      * create an account.
      * @param Array $override - fields to override the default values / fields to add
@@ -318,6 +343,114 @@ class BillRunAPI extends \Codeception\Module
         $populatedValues = array_merge($populatedValues, $override);
         return $this->createAccountWithAllMandatorySystemFields($populatedValues);
     }
+    /**
+     * Sends a payment request to the pay API.
+     *
+     * @param array $data The payment data.
+     * @return array The response from the pay API.
+     */
+    protected function sendpayApi($data)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $ret = $rest->sendPOST("/api/pay", [
+             'method' => 'cash',
+            'payments' => json_encode([$data])
+        ]);
+        return json_decode($ret, true);
+    }
+    /**
+     * Sends a GET request to the specified PG endpoint with the provided data.
+     *
+     * @param array $data The data to be sent with the request.
+     * @return array The response from the API as an associative array.
+     */
+    protected function sendGetRequset($data)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $ret = $rest->sendPOST("/paymentgateways/getRequest", [
+            'data' => json_encode($data)
+        ]);
+        return json_decode($ret, true);
+    }
+
+   
+    public function payApi($params = []){
+
+        $payment = array_merge([
+        "amount"=>10,
+        "aid"=>1,
+        "payer_name"=>"yossi test",
+        "dir"=>"fc",
+        "deposit_slip"=>"",
+        "deposit_slip_bank"=>"",
+        "source"=>"web"
+        ], $params);
+        return  $this->sendpayApi($payment);
+    }
+
+    /**
+     * Sends getRequest API request with the specified parameters.
+     *
+     * @param array $params Optional. An associative array of query parameters to include in the request.
+     * @return mixed The response from the GET request.
+     */
+    public function getRequest($params = []){
+        $iframe=true;
+        $aid=1;
+        $name ="CreditGuard";
+        $amount=5;
+        $action="single_payment";
+        $return_url="http://web/paymentgateways/success";
+        $ok_page ="http://web/paymentgateways/okpage?name=CreditGuard";
+        $fail_page="http://web/paymentgateways/okpage";
+        if($params['type']=='subscriber'){
+            //J5 only
+            $body = array_merge([
+                "aid"=>$aid,
+                "type"=>"subscriber",
+                "name"=>$name,
+                "return_url"=>$return_url,
+                "_t_"=>time()
+            ], $params);
+        }else{
+            $body = array_merge([
+                "iframe"=>$iframe,
+                "aid"=>$aid,
+                "name"=>$name,
+                "type"=>"account",
+                "amount"=>$amount,
+                "action"=>$action,
+                "return_url"=>$return_url,
+                "ok_page"=> $ok_page,
+                "fail_page"=>$fail_page,
+                "_t_"=>time()
+            ], $params);
+        }
+        
+        return  $this->sendGetRequset($body);
+    }
+
+
+
+    public function chargeAccountApi($params = []){
+
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $ret = $rest->sendPOST("/billrun/chargeAccount",   $params);
+        return json_decode($ret, true);
+    }
+
+  
+
+    
 
     public function getCustomFields($entity) {
        
