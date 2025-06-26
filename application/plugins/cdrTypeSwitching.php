@@ -41,8 +41,8 @@ class cdrTypeSwitchingPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-	public function afterCalculatorUpdateRow(&$row, $calculator) {
-		if($calculator->getType() == 'nrtrde' && $row['type'] == 'nrtrde' &&  !empty($row['alpha3'])) {
+	public function afterCalculatorUpdateRow($row, $calculator) {
+		if($calculator->getType() !== 'nrtrde' || $row['type'] !== 'nrtrde' || !empty($row['alpha3'])) {
 			return;
 		}
 

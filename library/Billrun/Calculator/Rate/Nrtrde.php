@@ -182,4 +182,26 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 		Billrun_Factory::dispatcher()->trigger('overrideIsLineLegitimate', array(&$line, &$lineIsLegitimate, $this));
 		return $lineIsLegitimate;
 	}
+
+	/**
+	 * Override parent calculator to save changes with update (not save)
+	 */
+	public function writeLine($line, $dataKey) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
+		$save = array();
+		$saveProperties = array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField,'alpha3');
+		foreach ($saveProperties as $p) {
+			if (!is_null($val = $line->get($p, true))) {
+				$save['$set'][$p] = $val;
+			}
+		}
+		$where = array('stamp' => $line['stamp']);
+		Billrun_Factory::db()->linesCollection()->update($where, $save);
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
+		if (!isset($line['usagev']) || $line['usagev'] === 0) {
+			$this->removeLineFromQueue($line);
+			unset($this->lines[$line['stamp']]);
+		}
+	}
+
 }
