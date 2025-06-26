@@ -41,4 +41,17 @@ class cdrTypeSwitchingPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
+	public function afterCalculatorUpdateRow(&$row, $calculator) {
+		if($calculator->getType() == 'nrtrde' && $row['type'] == 'nrtrde' &&  !empty($row['alpha3'])) {
+			return;
+		}
+
+		$rawRowData = $row->getRawData();
+		$rate = Billrun_Util::getRateByRef($rawRowData['arate']);
+		if(!empty($rate) && !empty($rate['alpha3'])) {
+			$rawRowData['alpha3'] = $rate['alpha3'];
+			$row->setRawData($rawRowData);
+		}
+	}
+
 }

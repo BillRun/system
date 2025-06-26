@@ -1042,5 +1042,24 @@ class Billrun_Util {
 		}
 		return $data;
 	}
+
+
+	protected static $ratesCache = [];
+	/**
+     * Retrieves a rate document Using DBRef, caching it for future use.
+     *
+     * @param array $rate_ref A Mongo DBRef
+     * @return array|null The rate document, or `null` if not found.
+     */
+	public static function getRateByRef($rate_ref) {
+		if (!isset($rate_ref['$id'])) {
+			return null;
+		}
+		$id_str = strval($rate_ref['$id']);
+		if (!isset(self::$ratesCache[$id_str])) {
+			self::$ratesCache[$id_str] = Billrun_Factory::db()->ratesCollection()->findOne($rate_ref['$id']);
+		}
+		return self::$ratesCache[$id_str];
+	}
 }
 

@@ -52,7 +52,10 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		$alpha = @$row['alpha3'];
+		$useAlpha3ForRating = Billrun_Factory::config()->getConfigValue('nrtrde.calculator.use_alpha3_for_rating',false);
+		if( $useAlpha3ForRating ) {
+			$alpha = @$row['alpha3'];
+		}
 		$sender = $row['sender'];
 		$line_time = $row['urt'];
 		if(!$this->isRatingNeeded($row,$usage_type)) {
@@ -67,8 +70,7 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 						];
 		if(!empty($sender)) {
 			$matchOrArray[] = [ 'params.serving_networks' => $sender ];
-		} else if( Billrun_Factory::config()->getConfigValue('nrtrde.calculator.use_alpha3_for_rating',true) &&
-					!empty($alpha) && preg_match('/\w{3}/',$alpha)) {
+		} else if( $useAlpha3ForRating && !empty($alpha) && preg_match('/\w{3}/',$alpha)) {
 			$matchOrArray[] = [ 'params.serving_networks' => new MongoRegex("/^$alpha/")];
 		}
 		$aggregateBaseMatch = array(

@@ -148,7 +148,8 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		$row['usaget'] = $this->getLineUsageType($row);
 		settype($row['callEventDuration'], 'integer');
 		$row['usagev'] = $this->getLineVolume($row,$row['usaget']);
-		$row['roaming'] = true;  // by  design all rows from NRTRDE source are roaming
+		$row['roaming'] = true;  // by design all rows from NRTRDE source are roaming
+		$row['serving_network'] = $row['sender'];  // By design all rows from NRTRDE are sent from their serving network
 		
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
 		if ($row['usaget'] == 'call' || $row['usaget'] == 'incoming_call') { // filter usaget sms because that sms transferred from billing.
