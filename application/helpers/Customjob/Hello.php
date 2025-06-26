@@ -16,6 +16,12 @@ class Customjob_Hello extends Billrun_Job_Abstract {
 
 	protected function run() {
 		Billrun_Factory::log("Hello from pid " . Billrun_Util::getPid());
+		if (!empty($this->config['sleep'])) {
+			$sleep = (int) $this->config['sleep'];
+			Billrun_Factory::log("Hello job is going to sleep for " . $sleep . " seconds");
+			sleep($sleep);
+		}
+		Billrun_Factory::log("Bye bye from pid " . Billrun_Util::getPid());
 	}
 	
 	protected function finished() {

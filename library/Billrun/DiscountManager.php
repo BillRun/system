@@ -206,7 +206,18 @@ class Billrun_DiscountManager {
 						if(isset($generalDiscount)){
 							$this->forceSubscriberDiscount($generalDiscount, $subDiscount, $accountRevisions, $subscriberRevision);
 							$forcing = true;
-						}
+						} 
+						else{
+							$overrideDiscountName = false;
+							$sid = $subscriberRevision['sid'];
+							if(isset($this->eligibleDiscounts[$subDiscount['key']]) && !isset($this->eligibleDiscounts[$subDiscount['key']]['subs'][$sid])){
+								$forcing = true;
+								$overrideDiscountName = true;
+								$this->handleOverrideDiscountForSubRev($subDiscount, $subscriberRevision, $accountRevisions, $overrideDiscountName);
+							}   
+                                            
+						}	
+
 					}
 				}
 				if (isset($subscriberRevision['overrides'])){
@@ -231,7 +242,7 @@ class Billrun_DiscountManager {
 					$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
 				}
 			}
-			
+
 		}
 
 		protected function forceSubscriberDiscount($generalDiscount, $subDiscount, $accountRevisions, $subscriberRevision){
@@ -250,13 +261,15 @@ class Billrun_DiscountManager {
 			
 		}
 
-		protected function handleOverrideDiscountForSubRev($overrideDiscount, $subscriberRevision, $accountRevisions){
+		protected function handleOverrideDiscountForSubRev($overrideDiscount, $subscriberRevision, $accountRevisions, $overrideDiscountName = true){
 			$sid = $subscriberRevision['sid'];
-			$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid], [['from' => $subscriberRevision['from']->sec, 'to' =>  $subscriberRevision['to']->sec]]);
-			if (empty($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid])) {
-				unset($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid]);
+			if($overrideDiscountName){
+				$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid], [['from' => $subscriberRevision['from']->sec, 'to' =>  $subscriberRevision['to']->sec]]);
+				if (empty($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid])) {
+					unset($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid]);
+				}
+				$overrideDiscount['key'] = "SUBSCRIBER_DISCOUNT_" . $overrideDiscount['key'] . "_SID" . $sid ."_" . $subscriberRevision['from'] ."_" . $subscriberRevision['to'];
 			}
-			$overrideDiscount['key'] = "SUBSCRIBER_DISCOUNT_" . $overrideDiscount['key'] . "_SID" . $sid ."_" . $subscriberRevision['from'] ."_" . $subscriberRevision['to'];
 			$eligibility = $this->getDiscountEligibility($overrideDiscount, $accountRevisions, [$sid =>[$subscriberRevision]]);
 			$this->setEligibility($this->eligibleDiscounts, $overrideDiscount, $eligibility);
 			$this->setSubscriberDiscount($overrideDiscount, $this->cycle->key());

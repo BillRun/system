@@ -622,7 +622,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		if(isset($row_grouping_options['name'])) {
 			$this->data['totals']['grouping'][$index]['grouping'] = $row_grouping_options['name'];
 		}
-		$this->updateTotalsGrouping($row, $index, $row_grouping_options['fields']);
+		$this->updateTotalsGrouping($row, $index, $row_grouping_options['fields'] ?? []);
 	}
 
 	protected function updateTotalsGrouping($row, $index, $row_grouping_fields = []) {

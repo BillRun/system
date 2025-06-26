@@ -692,7 +692,7 @@ abstract class Billrun_Bill {
 		);
 	}
 
-	public static function getContractorsInCollection($aids = array()) {
+	public static function getContractorsInCollection($aids = array(), $minDebt = null) {
 		$account = Billrun_Factory::account();
 		Billrun_Factory::log()->log("Pulling excluded/included accounts from/in collection, according to the configuration", Zend_Log::DEBUG);
 		$exempted = $account->getExcludedFromCollection($aids);
@@ -717,7 +717,7 @@ abstract class Billrun_Bill {
 		}
 
 		Billrun_Factory::log()->log("Calculating balance for the accounts that were found relevant for collection", Zend_Log::DEBUG);
-		return static::getBalanceByAids($aidsQuery, true, true);
+		return static::getBalanceByAids($aidsQuery, true, true, true, $minDebt);
 	}
 
 	public function getDueBeforeVat() {
