@@ -32,7 +32,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $this->teldasUrl = Billrun_Util::getIn($options, 'url', 'https://ws.numberportability.ch');
     $this->teldasUser = Billrun_Util::getIn($options, 'user', '');
     $this->teldasPassword = Billrun_Util::getIn($options, 'password', '');
-    $this->lineType = Billrun_Util::getIn($this->options, 'matching_paths.line_type', 'Teles');
+    $this->lineType = Billrun_Util::getIn($options, 'matching_paths.line_type', 'Teles');
     $this->teldasAccessToken = !empty($this->cache) ? ($this->cache->get(self::ACCESS_TOKEN_CACHE_KEY) ?? '' ) : '';
     $this->options = $options;
     $this->nonWorkingDaysCollection = Billrun_Factory::db()->plugin_teldas_non_working_daysCollection(['force' => true]);
@@ -1225,7 +1225,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return preg_match($inaNumberPrefixes, $inaNumber);
   }
 
-  public function beforeGetLineUsageType(&$line, &$usagevUnit, &$volumeType, &$volumeSrc, &$stampFields, $type) {
+  public function afterGetLineUsageType(&$line, $type) {
       if ($type != $this->lineType) {
           return;
       }
@@ -1250,10 +1250,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       $this->addCfTeldasFieldsByInaNumber($inaNumberRevison, $line);
       $line['usaget'] = Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call');
-      $usagevUnit = Billrun_Util::getIn($this->options, 'matching_paths.usage.unit', 'seconds');
-      $volumeType = Billrun_Util::getIn($this->options, 'matching_paths.volume.type', 'field');
-      $volumeSrc = Billrun_Util::getIn($this->options, 'matching_paths.volume.src', array('Duration'));
-      $stampFields = Billrun_Util::getIn($this->options, 'matching_paths.stamps_fields', array());
+    //   $usagevUnit = Billrun_Util::getIn($this->options, 'matching_paths.usage.unit', 'seconds');
+    //   $volumeType = Billrun_Util::getIn($this->options, 'matching_paths.volume.type', 'field');
+    //   $volumeSrc = Billrun_Util::getIn($this->options, 'matching_paths.volume.src', array('Duration'));
+    //   $stampFields = Billrun_Util::getIn($this->options, 'matching_paths.stamps_fields', array());
   }
 
   public function beforeGetLineAprice($line, &$aprice) {

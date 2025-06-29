@@ -173,6 +173,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if(isset($linet)){
 			$row['linet'] = $linet;
 		}
+		Billrun_Factory::dispatcher()->trigger('afterGetLineUsageType', array(&$row, static::$type));               
 		return $row;
 	}
 	
