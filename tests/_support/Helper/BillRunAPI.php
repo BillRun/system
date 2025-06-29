@@ -69,6 +69,55 @@ class BillRunAPI extends \Codeception\Module
         ]);
         return json_decode($ret, true);
     }
+
+    /**
+     * Sends a request to close a billapi entity.
+     *
+     * @param string $entity The entity to close.
+     * @param array $query The query parameters.
+     * @param array $update The update parameters.
+     * @return array The response from the API as an associative array.
+     */
+    public function sendBillapiClose($entity, $query, $update)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        $ret =  $rest->sendPOST("/billapi/$entity/close", $params);
+        return json_decode($ret, true);
+    }
+    /**
+     * Sends a request to reopen a billapi entity.
+     *
+     * @param string $entity The entity to reopen.
+     * @param array $query The query parameters to identify the entity to reopen.
+     * @param array $update The update parameters to apply when reopening the entity.
+     * @return array The response from the API as an associative array.
+     *
+     * @throws Exception If the REST module is not available.
+     */
+    public function sendBillapiReopen($entity, $query, $update)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        // Prepare the request parameters
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        // Send the POST request to reopen the entity
+        $ret =  $rest->sendPOST("/billapi/$entity/reopen", $params);
+        // Return the response as an associative array
+        return json_decode($ret, true);
+    }
+   
    
     public function sendBillapiUniqueget($query, $entity)
     {
@@ -105,7 +154,22 @@ class BillRunAPI extends \Codeception\Module
         
         return json_decode($ret, true);
     }
- /**
+
+    public function sendBillapiUpdate($entity,$query,$update )
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        $ret =  $rest->sendPOST("/billapi/$entity/update", $params);
+        return json_decode($ret, true);
+    }
+
+    /**
      * Sets plugin settings using the BillRun API.
      *
      * This function sends a POST request to the BillRun API endpoint "/api/settings"
@@ -130,6 +194,7 @@ class BillRunAPI extends \Codeception\Module
         ]);
         return json_decode($ret, true);
     }
+
     /**
      * create an account.
      * @param Array $override - fields to override the default values / fields to add
