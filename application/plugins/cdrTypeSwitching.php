@@ -22,17 +22,17 @@ class cdrTypeSwitchingPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 
 	public function overrideIsLineLegitimate(&$row, &$lineIsLegitimate, $calculator) {
-		if ($calculator->getCalculatorQueueType() == 'pricing' && in_array($row['type'],['nrtrde','nsn']) ) {
+		if ($calculator->getCalculatorQueueType() == 'pricing' && in_array($row['type'],['tap3','nrtrde','nsn']) ) {
 			$lineTime = $row['urt']->sec;
 			$transferTap3NrtrdeDay = strtotime($this->transferDayTap3ToNrtrde);
 			switch($row['type'])  {
-				// case 'tap3': $lineIsLegitimate &= !($lineTime >= $transferTap3NrtrdeDay && in_array($row['usaget'],['call','incoming_call'])) ;
-				// 	break;
+				 case 'tap3': $lineIsLegitimate &= !( $lineTime >= $transferTap3NrtrdeDay && in_array($row['usaget'],['incoming_call']) ) ;
+				 	break;
 
-				case 'nrtrde' : $lineIsLegitimate &= !($lineTime < $transferTap3NrtrdeDay);
+				case 'nrtrde' : $lineIsLegitimate &= !( $lineTime < $transferTap3NrtrdeDay );
 					break;
 
-				case 'nsn' : $lineIsLegitimate &= !($lineTime >= $transferTap3NrtrdeDay && !empty($row['roaming']) && !empty($row['serving_network']) );
+				case 'nsn' : $lineIsLegitimate &= !( $lineTime >= $transferTap3NrtrdeDay && !empty($row['roaming']) && !empty($row['serving_network']) );
 					break;
 
 				default: Billrun_Factory::log('How????!',Zend_Log::WARN);

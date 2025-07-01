@@ -145,7 +145,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					if ($subscriber->{$key}) {
 						if( preg_match('/^\d+$/',$subscriber->{$key}) ) {
 							$rate = $this->ratesModel->getRateByVLR($subscriber->{$key});
-							if ($rate) {
+							if ($rate && !empty($rate['alpha3'])) {
 								$row['alpha3'] = $rate['alpha3'];
 							}
 						} else if( preg_match('/^\w{3}$/',$subscriber->{$key}) ) {
