@@ -1135,7 +1135,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
   protected function calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line) {
     $durationPath = Billrun_Util::getIn($this->options, 'matching_paths.duration.path');
-    $duration = Billrun_Util::getIn($line, $durationPath);
+    $duration = Billrun_Util::getIn($line, $durationPath) ?? 0;
     if (is_null($duration)) {
         Billrun_Factory::log("Failed to get " . $durationPath . "  from line." . print_r($line, 1), Zend_Log::ALERT);
         return false;
@@ -1229,6 +1229,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       if ($type != $this->lineType) {
           return;
       }
+      Billrun_Factory::log("Checking if line "  . $line['stamp'] .  " is Teldas INA number", Zend_Log::DEBUG);
       $urt = $line['urt']->sec;
       if (!isset($line['urt'])) {
           Billrun_Factory::log("Failed to get urt from line." . print_r($line, 1), Zend_Log::ALERT);
@@ -1237,7 +1238,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       $inaNumberPath = Billrun_Util::getIn($this->options, 'matching_paths.subscriber_number.path');
       $inaNumber = Billrun_Util::getIn($line, $inaNumberPath);
       if (!$inaNumber) {
-          Billrun_Factory::log("Failed to get Dest_Number from line." . print_r($line, 1), Zend_Log::ALERT);
+          Billrun_Factory::log("Failed to get Dest_Number from line." . print_r($line, 1), Zend_Log::DEBUG);
           return;
       }
       $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber);
@@ -1250,6 +1251,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       $this->addCfTeldasFieldsByInaNumber($inaNumberRevison, $line);
       $line['usaget'] = Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call');
+      $line['prepriced'] = true;
     //   $usagevUnit = Billrun_Util::getIn($this->options, 'matching_paths.usage.unit', 'seconds');
     //   $volumeType = Billrun_Util::getIn($this->options, 'matching_paths.volume.type', 'field');
     //   $volumeSrc = Billrun_Util::getIn($this->options, 'matching_paths.volume.src', array('Duration'));
@@ -1260,6 +1262,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       if ($line['type'] != $this->lineType) {
           return;
       }
+      if ($line['usaget'] != Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call')) {
+        return;
+      }
       $this->priceByStamp[$line['stamp']] = $this->pricingCdr($line);
       $aprice = $this->priceByStamp[$line['stamp']] !== false ? $this->priceByStamp[$line['stamp']] : null;
   }
@@ -1267,6 +1272,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   public function beforeGetLinePriceToTax($line, &$aprice, $instance) {
       if ($line['type'] != $this->lineType) {
           return;
+      }
+      if ($line['usaget'] != Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call')) {
+        return;
       }
       $taxData = $instance->getPreTaxedRowTaxData($line);
       if (isset($taxData['total_amount']) && isset($line['aprice'])) {
@@ -1357,12 +1365,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             "usage": {
                 "type": "ina_vas_call", 
                 "unit": "seconds"
-            },
-            "volume": {
-                "type": "field", 
-                "src": ["Duration"]
-            },
-            "stamps_fields": []
+            }
           }'*/
         ],
         [
