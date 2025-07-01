@@ -1238,7 +1238,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       $inaNumberPath = Billrun_Util::getIn($this->options, 'matching_paths.subscriber_number.path');
       $inaNumber = Billrun_Util::getIn($line, $inaNumberPath);
       if (!$inaNumber) {
-          Billrun_Factory::log("Failed to get Dest_Number from line." . print_r($line, 1), Zend_Log::DEBUG);
+          Billrun_Factory::log("Failed to get " . $inaNumberPath . " from line " . $line['stamp'], Zend_Log::DEBUG);
           return;
       }
       $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber);
