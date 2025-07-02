@@ -694,7 +694,7 @@ public function afterPricingDoneWithBalance($row, $balance, $pricingData, $calcu
 			$this->insertToFraudLines($intlLines);
 		}
 
-		if (!empty($roamingLines)) {
+		if (!empty($roamingLines) && Billrun_Factory::config()->getConfigValue('fraud.insert_to_fraud.volte_nsn',FALSE)) {
 			$this->insertToFraudLines($roamingLines);
 			$this->insertToFraudQueue($roamingLines, TRUE,[	'in_circuit_group_name', 'in_circuit_group',
 															'out_circuit_group_name','out_circuit_group',
