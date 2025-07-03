@@ -9,7 +9,7 @@ class Test_Case_42774
     public function test_case()
     {
         $account = generat_subscribers::generateAccount();
-        generat_test_data::setTestNumber(42773);
+        generat_test_data::setTestNumber(42774);
         $plan1 = generat_plans::generatePlan(
 
             [

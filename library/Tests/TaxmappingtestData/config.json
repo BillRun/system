@@ -7,7 +7,13 @@
 					"shared_folder": "shared",
 					"cg_return_url": "",
 					"shared_secret": [
-					
+						{
+							"name" : "yossi",
+							"from" :"time*2025-01-26T00:00:00Z",
+							"to" : "time*2125-01-26T00:00:00Z",
+							"key" : "6d10ee51cf5cd1f1a1d069ccce2d6523",
+							"crc" : "1d93a6a3"
+						}
 					],
 					"usage_types": [
 						{
