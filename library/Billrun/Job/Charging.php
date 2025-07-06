@@ -29,6 +29,8 @@ class Billrun_Job_Charging extends Billrun_Job_Abstract {
 					'$nin' => (array) $this->config['exclude'],
 				),
 			);
+		} else {
+			$filtersQuery = [];
 		}
 		
 		if (!empty($this->config['pay_mode'])) {

@@ -160,7 +160,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 		if ($this->isAccountLevelLine($row)) {
 			$row = $this->enrichWithSubscriberInformation($row);
-			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+			try {
+				Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+			} catch (Exception $e) {
+				Billrun_Factory::log()->log("Failed calculate customer row with the following error: " . $e->getMessage(), Zend_Log::ALERT);
+				Billrun_Factory::log()->log($e->getTrace(), Zend_Log::DEBUG);
+				return false;
+			}
 			return $row;
 		}
 
@@ -215,8 +221,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$row['plan_ref'] = $plan_ref;
-
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+		try{
+			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log("Failed calculate customer row with the following error: " . $e->getMessage(), Zend_Log::ALERT);
+			Billrun_Factory::log()->log($e->getTrace(), Zend_Log::DEBUG);
+			return false;
+		}
 		return $row;
 	}
 

@@ -109,8 +109,19 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 				if ($this->logDB($fileData)) {
 					$ret[] = $fileData['path'];
 					$count++;
+					if ($this->received_extension) {
+						$renamedFile = $file . $this->received_extension;
+						Billrun_Factory::log()->log("SSH: Renaming file {$file} to \"{$renamedFile}\" on remote host.", Zend_Log::INFO);
+						if (!$this->renameRemoteFile($path . '/' . $file, $path . '/' . $renamedFile)) {
+							Billrun_Factory::log()->log("SSH: Failed to rename file {$file} to \"{$renamedFile}\" on remote host.", Zend_Log::WARN);
+						}
+						if ($this->delete_received) {
+							Billrun_Factory::log()->log(
+								"SSH: `received_extension` is set. Skipping file deletion (`delete_received` is ignored).",Zend_Log::INFO);
+						}
+					}
 					// Delete from remote
-					if ($this->delete_received) {
+					else if ($this->delete_received) {
 						Billrun_Factory::log()->log("SSH: Deleting file {$file} from remote host ", Zend_Log::INFO);
 						if (!$this->deleteRemote($path . '/' . $file)) {
 							Billrun_Factory::log()->log("SSH: Failed to delete file: " . $file, Zend_Log::WARN);
@@ -209,6 +220,19 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 	protected function getSourceTimestamp($file_path) {
 		return $this->connection->getTimestamp($file_path);
 	}
+
+	/**
+	 * Rename a file on the remote server.
+	 *
+	 * @param string $oldName The current name of the file on the remote server.
+	 * @param string $newName The new name for the file on the remote server.
+	 * @return boolean True if renaming was successful, false otherwise.
+	 */
+	protected function renameRemoteFile($oldName, $newName)
+	{
+		return $this->connection->renameFile($oldName, $newName);
+	}
+
 
 	protected function logDB($fileData) {
 		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
