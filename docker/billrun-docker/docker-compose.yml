@@ -27,6 +27,7 @@ services:
         - "XDEBUG_CONFIG=remote_host=10.103.0.1 remote_port=9090 remote_enable=1 xdebug.idekey=${XDEBUG_CONFIG:-netbeans-xdebug}"
         volumes:
             - ${PWD}/../..:/billrun
+            - ${PWD}/../../cache:/billrun/cache
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongo
