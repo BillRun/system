@@ -70,7 +70,56 @@ class BillRunAPI extends \Codeception\Module
         return json_decode($ret, true);
     }
    
-   public function sendBillapiUniqueget($query, $entity)
+    /**
+     * Sends a request to close a billapi entity.
+     *
+     * @param string $entity The entity to close.
+     * @param array $query The query parameters.
+     * @param array $update The update parameters.
+     * @return array The response from the API as an associative array.
+     */
+    public function sendBillapiClose($entity, $query, $update)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        $ret =  $rest->sendPOST("/billapi/$entity/close", $params);
+        return json_decode($ret, true);
+    }
+    /**
+     * Sends a request to reopen a billapi entity.
+     *
+     * @param string $entity The entity to reopen.
+     * @param array $query The query parameters to identify the entity to reopen.
+     * @param array $update The update parameters to apply when reopening the entity.
+     * @return array The response from the API as an associative array.
+     *
+     * @throws Exception If the REST module is not available.
+     */
+    public function sendBillapiReopen($entity, $query, $update)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        // Prepare the request parameters
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        // Send the POST request to reopen the entity
+        $ret =  $rest->sendPOST("/billapi/$entity/reopen", $params);
+        // Return the response as an associative array
+        return json_decode($ret, true);
+    }
+   
+   
+    public function sendBillapiUniqueget($query, $entity)
     {
         // Get the REST module to send requests
         /** @var REST $rest */
@@ -80,6 +129,43 @@ class BillRunAPI extends \Codeception\Module
         $ret = $rest->sendGet("/billapi/$entity/uniqueget", [
             'query' => json_encode($query)
         ]);
+        return json_decode($ret, true);
+    }
+     /**
+     * send post billapi requset to create entitys.
+     * @param Array $data - entity fields 
+     * @param String $entity - entity name
+     * 
+     */
+    public function sendBillapiPermanentchange($entity,$query,$update,$options=null )
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        if($options) {
+            $params['options'] = json_encode($options);
+        }
+        $ret =  $rest->sendPOST("/billapi/$entity/permanentchange", $params);
+        
+        return json_decode($ret, true);
+    }
+
+    public function sendBillapiUpdate($entity,$query,$update )
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        $ret =  $rest->sendPOST("/billapi/$entity/update", $params);
         return json_decode($ret, true);
     }
 
@@ -390,7 +476,7 @@ class BillRunAPI extends \Codeception\Module
        
         switch ($entity) {
             case 'account':
-        $model = new \Models_Accounts(['collection' => 'accounts', 'no_init' => true]);
+                $model = new \Models_Accounts(['collection' => 'accounts', 'no_init' => true]);
                 break;
             case 'subscriber':
                 $model = new \Models_Subscribers(['collection' => 'subscribers', 'no_init' => true]);
@@ -435,7 +521,7 @@ class BillRunAPI extends \Codeception\Module
                 $result = '';
                 for ($i = 0; $i < $length; $i++) {
                     $result .= $characters[rand(0, strlen($characters) - 1)];
-}
+                }
                 return $result;
                 
             case 'daterange':
