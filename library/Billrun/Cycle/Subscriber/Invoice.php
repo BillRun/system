@@ -385,6 +385,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @return type
 	 */
 	public function updateTotals($newTotals) {
+		Billrun_Factory::dispatcher()->trigger('beforeUpdateTotals', array($this, $this->data['aid'], $this->data['sid'], $this->data['key'], &$newTotals));
 		$totalsKeys = array('flat','service','refund','charge','usage','discount');
 		foreach($totalsKeys as $totalsKey) {
 			$newTotals[$totalsKey]['before_vat'] += Billrun_Util::getFieldVal($this->data['totals'][$totalsKey]['before_vat'], 0);
