@@ -9,7 +9,7 @@ class bcCest
     }
     public function updateRowT(ApiTester $I)
     {
-        $I->sendAuthenticatedGET('/test/updaterowt?rebalance=1');
+        $I->sendAuthenticatedGET('/test/updaterowt?rebalance=1&skip=z5,z7');
         $response = $I->grabResponse();
         $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
     }

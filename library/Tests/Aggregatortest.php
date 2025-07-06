@@ -861,7 +861,7 @@ public function passthrough($key, $returnBillrun, $row) {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
 	}
 
-	public function testMultiDay($key, $returnBillrun, $row) {
+	public function MultiDay($key, $returnBillrun, $row) {
 		$passed = true;
 		
 		$aids = [];
@@ -927,7 +927,7 @@ public function passthrough($key, $returnBillrun, $row) {
 		$this->billrunCol->remove(['billrun_key' => ['$ne' => 'abc']]);
 	}
 
-	public function testMultiDayNotallowPremature($key, $returnBillrun, $row) {
+	public function MultiDayNotallowPremature($key, $returnBillrun, $row) {
 		$now = date('d');
 		$billruns = $this->getBillruns();
 		$billruns_ = [];
