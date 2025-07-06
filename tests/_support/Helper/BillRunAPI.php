@@ -131,7 +131,8 @@ class BillRunAPI extends \Codeception\Module
         ]);
         return json_decode($ret, true);
     }
-     /**
+
+    /**
      * send post billapi requset to create entitys.
      * @param Array $data - entity fields 
      * @param String $entity - entity name
@@ -192,30 +193,6 @@ class BillRunAPI extends \Codeception\Module
             'action'=> 'set',
             'data' => json_encode($data)
         ]);
-        return json_decode($ret, true);
-    }
-
-     /**
-     * send post billapi requset to create entitys.
-     * @param Array $data - entity fields 
-     * @param String $entity - entity name
-     * 
-     */
-    public function sendBillapiPermanentchange($entity,$query,$update,$options=null )
-    {
-        // Get the REST module to send requests
-        /** @var REST $rest */
-        $rest = $this->getModule('REST');
-        $rest->amBearerAuthenticated($this->getAccessToken());
-        $params = [
-            'query' => json_encode($query),
-            'update' => json_encode($update)
-        ];
-        if($options) {
-            $params['options'] = json_encode($options);
-        }
-        $ret =  $rest->sendPOST("/billapi/$entity/permanentchange", $params);
-        
         return json_decode($ret, true);
     }
  
