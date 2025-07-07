@@ -1,0 +1,69 @@
+name: "Coding Standards"
+
+on:
+  pull_request:
+    branches:
+      - "v*.*"
+      - "master"
+      - "feature/*"
+  push:
+    branches:
+      - "v*.*"
+      - "master"
+      - "feature/*"
+
+jobs:
+  phpcs:
+    name: "phpcs"
+    runs-on: "ubuntu-20.04"
+
+    strategy:
+      matrix:
+        php-version:
+          - "7.4"
+        driver-version:
+          - "mongodb/mongo-php-driver@master"
+
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v2"
+
+      - name: Setup cache environment
+        id: extcache
+        uses: shivammathur/cache-extensions@v1
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: "mongodb-${{ matrix.driver-version }}"
+          key: "extcache-v1"
+
+      - name: Cache extensions
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.extcache.outputs.dir }}
+          key: ${{ steps.extcache.outputs.key }}
+          restore-keys: ${{ steps.extcache.outputs.key }}
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "none"
+          extensions: "mongodb-${{ matrix.driver-version }}"
+          php-version: "${{ matrix.php-version }}"
+          tools: "cs2pr"
+
+      - name: "Show driver information"
+        run: "php --ri mongodb"
+
+      - name: "Cache dependencies installed with Composer"
+        uses: "actions/cache@v2"
+        with:
+          path: "~/.composer/cache"
+          key: "php-${{ matrix.php-version }}-composer-locked-${{ hashFiles('composer.lock') }}"
+          restore-keys: "php-${{ matrix.php-version }}-composer-locked-"
+
+      - name: "Install dependencies with Composer"
+        run: "composer install --no-interaction --no-progress --no-suggest"
+
+      # The -q option is required until phpcs v4 is released
+      - name: "Run PHP_CodeSniffer"
+        run: "vendor/bin/phpcs -q --no-colors --report=checkstyle | cs2pr"

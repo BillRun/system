@@ -7,14 +7,14 @@ use MongoDB\Operation\BulkWrite;
 
 class BulkWriteTest extends TestCase
 {
-    public function testOperationsMustNotBeEmpty()
+    public function testOperationsMustNotBeEmpty(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('$operations is empty');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), []);
     }
 
-    public function testOperationsMustBeAList()
+    public function testOperationsMustBeAList(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('$operations is not a list (unexpected index: "1")');
@@ -23,7 +23,7 @@ class BulkWriteTest extends TestCase
         ]);
     }
 
-    public function testMultipleOperationsInOneElement()
+    public function testMultipleOperationsInOneElement(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Expected one element in $operation[0], actually: 2');
@@ -35,7 +35,7 @@ class BulkWriteTest extends TestCase
         ]);
     }
 
-    public function testUnknownOperation()
+    public function testUnknownOperation(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown operation type "foo" in $operations[0]');
@@ -44,7 +44,7 @@ class BulkWriteTest extends TestCase
         ]);
     }
 
-    public function testInsertOneDocumentArgumentMissing()
+    public function testInsertOneDocumentArgumentMissing(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Missing first argument for $operations[0]["insertOne"]');
@@ -56,16 +56,16 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testInsertOneDocumentArgumentTypeCheck($document)
+    public function testInsertOneDocumentArgumentTypeCheck($document): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["insertOne"\]\[0\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["insertOne"\]\[0\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::INSERT_ONE => [$document]],
         ]);
     }
 
-    public function testDeleteManyFilterArgumentMissing()
+    public function testDeleteManyFilterArgumentMissing(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Missing first argument for $operations[0]["deleteMany"]');
@@ -77,10 +77,10 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testDeleteManyFilterArgumentTypeCheck($document)
+    public function testDeleteManyFilterArgumentTypeCheck($document): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["deleteMany"\]\[0\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["deleteMany"\]\[0\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::DELETE_MANY => [$document]],
         ]);
@@ -89,10 +89,10 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testDeleteManyCollationOptionTypeCheck($collation)
+    public function testDeleteManyCollationOptionTypeCheck($collation): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["deleteMany"\]\[1\]\["collation"\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["deleteMany"\]\[1\]\["collation"\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::DELETE_MANY => [['x' => 1], ['collation' => $collation]]],
         ]);
@@ -103,7 +103,7 @@ class BulkWriteTest extends TestCase
         return $this->wrapValuesForDataProvider($this->getInvalidDocumentValues());
     }
 
-    public function testDeleteOneFilterArgumentMissing()
+    public function testDeleteOneFilterArgumentMissing(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Missing first argument for $operations[0]["deleteOne"]');
@@ -115,10 +115,10 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testDeleteOneFilterArgumentTypeCheck($document)
+    public function testDeleteOneFilterArgumentTypeCheck($document): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["deleteOne"\]\[0\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["deleteOne"\]\[0\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::DELETE_ONE => [$document]],
         ]);
@@ -127,16 +127,16 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testDeleteOneCollationOptionTypeCheck($collation)
+    public function testDeleteOneCollationOptionTypeCheck($collation): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["deleteOne"\]\[1\]\["collation"\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["deleteOne"\]\[1\]\["collation"\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::DELETE_ONE => [['x' => 1], ['collation' => $collation]]],
         ]);
     }
 
-    public function testReplaceOneFilterArgumentMissing()
+    public function testReplaceOneFilterArgumentMissing(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Missing first argument for $operations[0]["replaceOne"]');
@@ -148,16 +148,16 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testReplaceOneFilterArgumentTypeCheck($filter)
+    public function testReplaceOneFilterArgumentTypeCheck($filter): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["replaceOne"\]\[0\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["replaceOne"\]\[0\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::REPLACE_ONE => [$filter, ['y' => 1]]],
         ]);
     }
 
-    public function testReplaceOneReplacementArgumentMissing()
+    public function testReplaceOneReplacementArgumentMissing(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Missing second argument for $operations[0]["replaceOne"]');
@@ -169,16 +169,16 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testReplaceOneReplacementArgumentTypeCheck($replacement)
+    public function testReplaceOneReplacementArgumentTypeCheck($replacement): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["replaceOne"\]\[1\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["replaceOne"\]\[1\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::REPLACE_ONE => [['x' => 1], $replacement]],
         ]);
     }
 
-    public function testReplaceOneReplacementArgumentRequiresNoOperators()
+    public function testReplaceOneReplacementArgumentRequiresNoOperators(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('First key in $operations[0]["replaceOne"][1] is an update operator');
@@ -190,10 +190,10 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testReplaceOneCollationOptionTypeCheck($collation)
+    public function testReplaceOneCollationOptionTypeCheck($collation): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["replaceOne"\]\[2\]\["collation"\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["replaceOne"\]\[2\]\["collation"\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::REPLACE_ONE => [['x' => 1], ['y' => 1], ['collation' => $collation]]],
         ]);
@@ -202,10 +202,10 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidBooleanValues
      */
-    public function testReplaceOneUpsertOptionTypeCheck($upsert)
+    public function testReplaceOneUpsertOptionTypeCheck($upsert): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["replaceOne"\]\[2\]\["upsert"\] to have type "boolean" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["replaceOne"\]\[2\]\["upsert"\] to have type "boolean" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::REPLACE_ONE => [['x' => 1], ['y' => 1], ['upsert' => $upsert]]],
         ]);
@@ -216,7 +216,7 @@ class BulkWriteTest extends TestCase
         return $this->wrapValuesForDataProvider($this->getInvalidBooleanValues());
     }
 
-    public function testUpdateManyFilterArgumentMissing()
+    public function testUpdateManyFilterArgumentMissing(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Missing first argument for $operations[0]["updateMany"]');
@@ -228,16 +228,16 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testUpdateManyFilterArgumentTypeCheck($filter)
+    public function testUpdateManyFilterArgumentTypeCheck($filter): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["updateMany"\]\[0\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["updateMany"\]\[0\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::UPDATE_MANY => [$filter, ['$set' => ['x' => 1]]]],
         ]);
     }
 
-    public function testUpdateManyUpdateArgumentMissing()
+    public function testUpdateManyUpdateArgumentMissing(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Missing second argument for $operations[0]["updateMany"]');
@@ -249,16 +249,16 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testUpdateManyUpdateArgumentTypeCheck($update)
+    public function testUpdateManyUpdateArgumentTypeCheck($update): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["updateMany"\]\[1\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["updateMany"\]\[1\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::UPDATE_MANY => [['x' => 1], $update]],
         ]);
     }
 
-    public function testUpdateManyUpdateArgumentRequiresOperatorsOrPipeline()
+    public function testUpdateManyUpdateArgumentRequiresOperatorsOrPipeline(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('First key in $operations[0]["updateMany"][1] is neither an update operator nor a pipeline');
@@ -270,10 +270,10 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidArrayValues
      */
-    public function testUpdateManyArrayFiltersOptionTypeCheck($arrayFilters)
+    public function testUpdateManyArrayFiltersOptionTypeCheck($arrayFilters): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["updateMany"\]\[2\]\["arrayFilters"\] to have type "array" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["updateMany"\]\[2\]\["arrayFilters"\] to have type "array" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::UPDATE_MANY => [['x' => 1], ['$set' => ['x' => 1]], ['arrayFilters' => $arrayFilters]]],
         ]);
@@ -282,10 +282,10 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testUpdateManyCollationOptionTypeCheck($collation)
+    public function testUpdateManyCollationOptionTypeCheck($collation): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["updateMany"\]\[2\]\["collation"\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["updateMany"\]\[2\]\["collation"\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::UPDATE_MANY => [['x' => 1], ['$set' => ['x' => 1]], ['collation' => $collation]]],
         ]);
@@ -294,16 +294,16 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidBooleanValues
      */
-    public function testUpdateManyUpsertOptionTypeCheck($upsert)
+    public function testUpdateManyUpsertOptionTypeCheck($upsert): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["updateMany"\]\[2\]\["upsert"\] to have type "boolean" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["updateMany"\]\[2\]\["upsert"\] to have type "boolean" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::UPDATE_MANY => [['x' => 1], ['$set' => ['x' => 1]], ['upsert' => $upsert]]],
         ]);
     }
 
-    public function testUpdateOneFilterArgumentMissing()
+    public function testUpdateOneFilterArgumentMissing(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Missing first argument for $operations[0]["updateOne"]');
@@ -315,16 +315,16 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testUpdateOneFilterArgumentTypeCheck($filter)
+    public function testUpdateOneFilterArgumentTypeCheck($filter): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["updateOne"\]\[0\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["updateOne"\]\[0\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::UPDATE_ONE => [$filter, ['$set' => ['x' => 1]]]],
         ]);
     }
 
-    public function testUpdateOneUpdateArgumentMissing()
+    public function testUpdateOneUpdateArgumentMissing(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Missing second argument for $operations[0]["updateOne"]');
@@ -336,16 +336,16 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testUpdateOneUpdateArgumentTypeCheck($update)
+    public function testUpdateOneUpdateArgumentTypeCheck($update): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["updateOne"\]\[1\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["updateOne"\]\[1\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::UPDATE_ONE => [['x' => 1], $update]],
         ]);
     }
 
-    public function testUpdateOneUpdateArgumentRequiresOperatorsOrPipeline()
+    public function testUpdateOneUpdateArgumentRequiresOperatorsOrPipeline(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('First key in $operations[0]["updateOne"][1] is neither an update operator nor a pipeline');
@@ -357,10 +357,10 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidArrayValues
      */
-    public function testUpdateOneArrayFiltersOptionTypeCheck($arrayFilters)
+    public function testUpdateOneArrayFiltersOptionTypeCheck($arrayFilters): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["updateOne"\]\[2\]\["arrayFilters"\] to have type "array" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["updateOne"\]\[2\]\["arrayFilters"\] to have type "array" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::UPDATE_ONE => [['x' => 1], ['$set' => ['x' => 1]], ['arrayFilters' => $arrayFilters]]],
         ]);
@@ -369,10 +369,10 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testUpdateOneCollationOptionTypeCheck($collation)
+    public function testUpdateOneCollationOptionTypeCheck($collation): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["updateOne"\]\[2\]\["collation"\] to have type "array or object" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["updateOne"\]\[2\]\["collation"\] to have type "array or object" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::UPDATE_ONE => [['x' => 1], ['$set' => ['x' => 1]], ['collation' => $collation]]],
         ]);
@@ -381,10 +381,10 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidBooleanValues
      */
-    public function testUpdateOneUpsertOptionTypeCheck($upsert)
+    public function testUpdateOneUpsertOptionTypeCheck($upsert): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageRegExp('/Expected \$operations\[0\]\["updateOne"\]\[2\]\["upsert"\] to have type "boolean" but found "[\w ]+"/');
+        $this->expectExceptionMessageMatches('/Expected \$operations\[0\]\["updateOne"\]\[2\]\["upsert"\] to have type "boolean" but found "[\w ]+"/');
         new BulkWrite($this->getDatabaseName(), $this->getCollectionName(), [
             [BulkWrite::UPDATE_ONE => [['x' => 1], ['$set' => ['x' => 1]], ['upsert' => $upsert]]],
         ]);
@@ -393,7 +393,7 @@ class BulkWriteTest extends TestCase
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options)
+    public function testConstructorOptionTypeChecks(array $options): void
     {
         $this->expectException(InvalidArgumentException::class);
         new BulkWrite(
