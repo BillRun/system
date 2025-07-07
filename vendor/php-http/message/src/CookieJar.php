@@ -192,12 +192,18 @@ final class CookieJar implements \Countable, \IteratorAggregate
         $this->cookies = new \SplObjectStorage();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     #[\ReturnTypeWillChange]
     public function count()
     {
         return $this->cookies->count();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     #[\ReturnTypeWillChange]
     public function getIterator()
     {
