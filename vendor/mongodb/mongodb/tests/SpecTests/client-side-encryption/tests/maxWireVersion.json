@@ -1,7 +1,7 @@
 {
   "runOn": [
     {
-      "maxServerVersion": "4.0"
+      "maxServerVersion": "4.0.99"
     }
   ],
   "database_name": "default",
@@ -50,6 +50,9 @@
         "autoEncryptOpts": {
           "kmsProviders": {
             "aws": {}
+          },
+          "extraOptions": {
+            "mongocryptdBypassSpawn": true
           }
         }
       },

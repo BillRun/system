@@ -1,15 +1,16 @@
 # MongoDB PHP Library
 
-[![Build Status](https://api.travis-ci.org/mongodb/mongo-php-library.png?branch=master)](https://travis-ci.org/mongodb/mongo-php-library)
+![Tests](https://github.com/mongodb/mongo-php-library/workflows/Tests/badge.svg)
+![Coding Standards](https://github.com/mongodb/mongo-php-library/workflows/Coding%20Standards/badge.svg)
 
 This library provides a high-level abstraction around the lower-level
 [PHP driver](https://github.com/mongodb/mongo-php-driver) (`mongodb` extension).
 
 While the extension provides a limited API for executing commands, queries, and
-write operations, this library implements an API similar to that of the
-[legacy PHP driver](https://php.net/manual/en/book.mongo.php). It contains
-abstractions for client, database, and collection objects, and provides methods
-for CRUD operations and common commands (e.g. index and collection management).
+write operations, this library implements a full-featured API similar to that of
+other MongoDB drivers. It contains abstractions for client, database, and
+collection objects, and provides methods for CRUD operations and common commands
+(e.g. index and collection management).
 
 If you are developing an application with MongoDB, you should consider using
 this library, or another high-level abstraction, instead of the extension alone.
@@ -20,8 +21,8 @@ extension may be found in
 
 ## Documentation
 
- - https://docs.mongodb.com/php-library/
- - https://docs.mongodb.com/ecosystem/drivers/php/
+ - https://mongodb.com/docs/php-library/current
+ - https://mongodb.com/docs/ecosystem/drivers/php/
 
 ## Installation
 
@@ -32,7 +33,7 @@ root:
     $ composer require mongodb/mongodb
 
 Additional installation instructions may be found in the
-[library documentation](https://docs.mongodb.com/php-library/current/tutorial/install-php-library/).
+[library documentation](https://mongodb.com/docs/php-library/current/tutorial/install-php-library/).
 
 Since this library is a high-level abstraction for the driver, it also requires
 that the `mongodb` extension be installed:
@@ -52,13 +53,13 @@ project in MongoDB's JIRA. Extension-related issues should be reported in the
 project.
 
 For general questions and support requests, please use one of MongoDB's
-[Technical Support](https://docs.mongodb.com/manual/support/) channels.
+[Technical Support](https://mongodb.com/docs/manual/support/) channels.
 
 ### Security Vulnerabilities
 
 If you've identified a security vulnerability in a driver or any other MongoDB
 project, please report it according to the instructions in
-[Create a Vulnerability Report](https://docs.mongodb.org/manual/tutorial/create-a-vulnerability-report).
+[Create a Vulnerability Report](https://mongodb.com/docs/manual/tutorial/create-a-vulnerability-report).
 
 ## Development
 

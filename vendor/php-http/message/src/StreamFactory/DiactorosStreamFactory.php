@@ -20,6 +20,9 @@ if (!interface_exists(StreamFactory::class)) {
  */
 final class DiactorosStreamFactory implements StreamFactory
 {
+    /**
+     * {@inheritdoc}
+     */
     public function createStream($body = null)
     {
         if ($body instanceof StreamInterface) {
