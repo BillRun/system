@@ -1,12 +1,12 @@
 <?php
 /*
- * Copyright 2017-present MongoDB, Inc.
+ * Copyright 2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,10 +18,8 @@
 namespace MongoDB;
 
 use IteratorAggregate;
-use ReturnTypeWillChange;
 use stdClass;
 use Traversable;
-
 use function call_user_func;
 
 /**
@@ -33,7 +31,7 @@ use function call_user_func;
  *
  * @api
  * @see \MongoDB\Collection::mapReduce()
- * @see https://mongodb.com/docs/manual/reference/command/mapReduce/
+ * @see https://docs.mongodb.com/manual/reference/command/mapReduce/
  */
 class MapReduceResult implements IteratorAggregate
 {
@@ -79,16 +77,15 @@ class MapReduceResult implements IteratorAggregate
      */
     public function getExecutionTimeMS()
     {
-        return $this->executionTimeMS;
+        return (integer) $this->executionTimeMS;
     }
 
     /**
      * Return the mapReduce results as a Traversable.
      *
-     * @see https://php.net/iteratoraggregate.getiterator
+     * @see http://php.net/iteratoraggregate.getiterator
      * @return Traversable
      */
-    #[ReturnTypeWillChange]
     public function getIterator()
     {
         return call_user_func($this->getIterator);

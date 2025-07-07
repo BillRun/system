@@ -3,14 +3,11 @@
 namespace MongoDB\Tests\Operation;
 
 use MongoDB\Driver\BulkWrite;
-use MongoDB\Driver\Exception\CommandException;
+use MongoDB\Driver\Manager;
 use MongoDB\Driver\ReadPreference;
-use MongoDB\Driver\WriteConcern;
-use MongoDB\Exception\UnsupportedException;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Operation\FindAndModify;
 use MongoDB\Tests\CommandObserver;
-
 use function version_compare;
 
 class FindAndModifyFunctionalTest extends FunctionalTestCase
@@ -18,13 +15,13 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
     /**
      * @see https://jira.mongodb.org/browse/PHPLIB-344
      */
-    public function testManagerReadConcernIsOmitted(): void
+    public function testManagerReadConcernIsOmitted()
     {
-        $manager = static::createTestManager(null, ['readConcernLevel' => 'majority']);
+        $manager = new Manager(static::getUri(), ['readConcernLevel' => 'majority']);
         $server = $manager->selectServer(new ReadPreference(ReadPreference::RP_PRIMARY));
 
         (new CommandObserver())->observe(
-            function () use ($server): void {
+            function () use ($server) {
                 $operation = new FindAndModify(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -33,16 +30,16 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($server);
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectNotHasAttribute('readConcern', $event['started']->getCommand());
             }
         );
     }
 
-    public function testDefaultWriteConcernIsOmitted(): void
+    public function testDefaultWriteConcernIsOmitted()
     {
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new FindAndModify(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -51,71 +48,20 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectNotHasAttribute('writeConcern', $event['started']->getCommand());
             }
         );
     }
 
-    public function testHintOptionUnsupportedClientSideError(): void
+    public function testSessionOption()
     {
-        if (version_compare($this->getServerVersion(), '4.2.0', '>=')) {
-            $this->markTestSkipped('server reports error for unsupported findAndModify options');
+        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
+            $this->markTestSkipped('Sessions are not supported');
         }
 
-        $operation = new FindAndModify(
-            $this->getDatabaseName(),
-            $this->getCollectionName(),
-            ['remove' => true, 'hint' => '_id_']
-        );
-
-        $this->expectException(UnsupportedException::class);
-        $this->expectExceptionMessage('Hint is not supported by the server executing this operation');
-
-        $operation->execute($this->getPrimaryServer());
-    }
-
-    public function testHintOptionAndUnacknowledgedWriteConcernUnsupportedClientSideError(): void
-    {
-        if (version_compare($this->getServerVersion(), '4.4.0', '>=')) {
-            $this->markTestSkipped('hint is supported');
-        }
-
-        $operation = new FindAndModify(
-            $this->getDatabaseName(),
-            $this->getCollectionName(),
-            ['remove' => true, 'hint' => '_id_', 'writeConcern' => new WriteConcern(0)]
-        );
-
-        $this->expectException(UnsupportedException::class);
-        $this->expectExceptionMessage('Hint is not supported by the server executing this operation');
-
-        $operation->execute($this->getPrimaryServer());
-    }
-
-    public function testFindAndModifyReportedWriteConcernError(): void
-    {
-        if (($this->isShardedCluster() && ! $this->isShardedClusterUsingReplicasets()) || ! $this->isReplicaSet()) {
-            $this->markTestSkipped('Test only applies to replica sets');
-        }
-
-        $this->expectException(CommandException::class);
-        $this->expectExceptionCode(100 /* UnsatisfiableWriteConcern */);
-        $this->expectExceptionMessageMatches('/Write Concern error:/');
-
-        $operation = new FindAndModify(
-            $this->getDatabaseName(),
-            $this->getCollectionName(),
-            ['remove' => true, 'writeConcern' => new WriteConcern(50)]
-        );
-
-        $operation->execute($this->getPrimaryServer());
-    }
-
-    public function testSessionOption(): void
-    {
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new FindAndModify(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -124,16 +70,20 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );
     }
 
-    public function testBypassDocumentValidationSetWhenTrue(): void
+    public function testBypassDocumentValidationSetWhenTrue()
     {
+        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
+            $this->markTestSkipped('bypassDocumentValidation is not supported');
+        }
+
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new FindAndModify(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -142,17 +92,21 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('bypassDocumentValidation', $event['started']->getCommand());
                 $this->assertEquals(true, $event['started']->getCommand()->bypassDocumentValidation);
             }
         );
     }
 
-    public function testBypassDocumentValidationUnsetWhenFalse(): void
+    public function testBypassDocumentValidationUnsetWhenFalse()
     {
+        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
+            $this->markTestSkipped('bypassDocumentValidation is not supported');
+        }
+
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new FindAndModify(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -161,7 +115,7 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectNotHasAttribute('bypassDocumentValidation', $event['started']->getCommand());
             }
         );
@@ -170,7 +124,7 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider provideTypeMapOptionsAndExpectedDocument
      */
-    public function testTypeMapOption(?array $typeMap, $expectedDocument): void
+    public function testTypeMapOption(array $typeMap = null, $expectedDocument)
     {
         $this->createFixtures(1);
 
@@ -219,8 +173,10 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
 
     /**
      * Create data fixtures.
+     *
+     * @param integer $n
      */
-    private function createFixtures(int $n): void
+    private function createFixtures($n)
     {
         $bulkWrite = new BulkWrite(['ordered' => true]);
 

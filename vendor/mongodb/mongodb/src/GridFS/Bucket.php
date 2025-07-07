@@ -1,12 +1,12 @@
 <?php
 /*
- * Copyright 2016-present MongoDB, Inc.
+ * Copyright 2016-2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,13 +28,11 @@ use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnsupportedException;
 use MongoDB\GridFS\Exception\CorruptFileException;
 use MongoDB\GridFS\Exception\FileNotFoundException;
-use MongoDB\GridFS\Exception\StreamException;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Operation\Find;
-
+use stdClass;
 use function array_intersect_key;
-use function assert;
 use function fopen;
 use function get_resource_type;
 use function in_array;
@@ -137,7 +135,7 @@ class Bucket
      * @param array   $options      Bucket options
      * @throws InvalidArgumentException for parameter/option parsing errors
      */
-    public function __construct(Manager $manager, string $databaseName, array $options = [])
+    public function __construct(Manager $manager, $databaseName, array $options = [])
     {
         $options += [
             'bucketName' => self::$defaultBucketName,
@@ -178,7 +176,7 @@ class Bucket
         }
 
         $this->manager = $manager;
-        $this->databaseName = $databaseName;
+        $this->databaseName = (string) $databaseName;
         $this->bucketName = $options['bucketName'];
         $this->chunkSizeBytes = $options['chunkSizeBytes'];
         $this->disableMD5 = $options['disableMD5'];
@@ -196,7 +194,7 @@ class Bucket
     /**
      * Return internal properties for debugging purposes.
      *
-     * @see https://php.net/manual/en/language.oop5.magic.php#language.oop5.magic.debuginfo
+     * @see http://php.net/manual/en/language.oop5.magic.php#language.oop5.magic.debuginfo
      * @return array
      */
     public function __debugInfo()
@@ -240,7 +238,6 @@ class Bucket
      * @param resource $destination Writable Stream
      * @throws FileNotFoundException if no file could be selected
      * @throws InvalidArgumentException if $destination is not a stream
-     * @throws StreamException if the file could not be uploaded
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
     public function downloadToStream($id, $destination)
@@ -249,10 +246,7 @@ class Bucket
             throw InvalidArgumentException::invalidType('$destination', $destination, 'resource');
         }
 
-        $source = $this->openDownloadStream($id);
-        if (@stream_copy_to_stream($source, $destination) === false) {
-            throw StreamException::downloadFromIdFailed($id, $source, $destination);
-        }
+        stream_copy_to_stream($this->openDownloadStream($id), $destination);
     }
 
     /**
@@ -279,19 +273,15 @@ class Bucket
      * @param array    $options     Download options
      * @throws FileNotFoundException if no file could be selected
      * @throws InvalidArgumentException if $destination is not a stream
-     * @throws StreamException if the file could not be uploaded
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
-    public function downloadToStreamByName(string $filename, $destination, array $options = [])
+    public function downloadToStreamByName($filename, $destination, array $options = [])
     {
         if (! is_resource($destination) || get_resource_type($destination) != "stream") {
             throw InvalidArgumentException::invalidType('$destination', $destination, 'resource');
         }
 
-        $source = $this->openDownloadStreamByName($filename, $options);
-        if (@stream_copy_to_stream($source, $destination) === false) {
-            throw StreamException::downloadFromFilenameFailed($filename, $source, $destination);
-        }
+        stream_copy_to_stream($this->openDownloadStreamByName($filename, $options), $destination);
     }
 
     /**
@@ -413,7 +403,6 @@ class Bucket
          */
         $typeMap = ['root' => 'stdClass'] + $this->typeMap;
         $file = apply_type_map_to_document($file, $typeMap);
-        assert(is_object($file));
 
         if (! isset($file->_id) && ! property_exists($file, '_id')) {
             throw new CorruptFileException('file._id does not exist');
@@ -435,7 +424,7 @@ class Bucket
     /**
      * Return the read concern for this GridFS bucket.
      *
-     * @see https://php.net/manual/en/mongodb-driver-readconcern.isdefault.php
+     * @see http://php.net/manual/en/mongodb-driver-readconcern.isdefault.php
      * @return ReadConcern
      */
     public function getReadConcern()
@@ -466,7 +455,7 @@ class Bucket
     /**
      * Return the write concern for this GridFS bucket.
      *
-     * @see https://php.net/manual/en/mongodb-driver-writeconcern.isdefault.php
+     * @see http://php.net/manual/en/mongodb-driver-writeconcern.isdefault.php
      * @return WriteConcern
      */
     public function getWriteConcern()
@@ -518,7 +507,7 @@ class Bucket
      * @throws FileNotFoundException if no file could be selected
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
-    public function openDownloadStreamByName(string $filename, array $options = [])
+    public function openDownloadStreamByName($filename, array $options = [])
     {
         $options += ['revision' => -1];
 
@@ -551,7 +540,7 @@ class Bucket
      * @param array  $options  Upload options
      * @return resource
      */
-    public function openUploadStream(string $filename, array $options = [])
+    public function openUploadStream($filename, array $options = [])
     {
         $options += ['chunkSizeBytes' => $this->chunkSizeBytes];
 
@@ -575,7 +564,7 @@ class Bucket
      * @throws FileNotFoundException if no file could be selected
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
-    public function rename($id, string $newFilename)
+    public function rename($id, $newFilename)
     {
         $updateResult = $this->collectionWrapper->updateFilenameForId($id, $newFilename);
 
@@ -618,22 +607,16 @@ class Bucket
      * @param array    $options  Stream options
      * @return mixed ID of the newly created GridFS file
      * @throws InvalidArgumentException if $source is not a GridFS stream
-     * @throws StreamException if the file could not be uploaded
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
-    public function uploadFromStream(string $filename, $source, array $options = [])
+    public function uploadFromStream($filename, $source, array $options = [])
     {
         if (! is_resource($source) || get_resource_type($source) != "stream") {
             throw InvalidArgumentException::invalidType('$source', $source, 'resource');
         }
 
         $destination = $this->openUploadStream($filename, $options);
-
-        if (@stream_copy_to_stream($source, $destination) === false) {
-            $destinationUri = $this->createPathForFile($this->getRawFileDocumentForStream($destination));
-
-            throw StreamException::uploadFailed($filename, $source, $destinationUri);
-        }
+        stream_copy_to_stream($source, $destination);
 
         return $this->getFileIdForStream($destination);
     }
@@ -641,14 +624,15 @@ class Bucket
     /**
      * Creates a path for an existing GridFS file.
      *
-     * @param object $file GridFS file document
+     * @param stdClass $file GridFS file document
+     * @return string
      */
-    private function createPathForFile(object $file): string
+    private function createPathForFile(stdClass $file)
     {
-        if (is_array($file->_id) || (is_object($file->_id) && ! method_exists($file->_id, '__toString'))) {
-            $id = toJSON(fromPHP(['_id' => $file->_id]));
-        } else {
+        if (! is_object($file->_id) || method_exists($file->_id, '__toString')) {
             $id = (string) $file->_id;
+        } else {
+            $id = toJSON(fromPHP(['_id' => $file->_id]));
         }
 
         return sprintf(
@@ -662,8 +646,10 @@ class Bucket
 
     /**
      * Creates a path for a new GridFS file, which does not yet have an ID.
+     *
+     * @return string
      */
-    private function createPathForUpload(): string
+    private function createPathForUpload()
     {
         return sprintf(
             '%s://%s/%s.files',
@@ -675,8 +661,10 @@ class Bucket
 
     /**
      * Returns the names of the files collection.
+     *
+     * @return string
      */
-    private function getFilesNamespace(): string
+    private function getFilesNamespace()
     {
         return sprintf('%s.%s.files', $this->databaseName, $this->bucketName);
     }
@@ -688,9 +676,10 @@ class Bucket
      * respect the Bucket's type map.
      *
      * @param resource $stream GridFS stream
+     * @return stdClass
      * @throws InvalidArgumentException
      */
-    private function getRawFileDocumentForStream($stream): object
+    private function getRawFileDocumentForStream($stream)
     {
         if (! is_resource($stream) || get_resource_type($stream) != "stream") {
             throw InvalidArgumentException::invalidType('$stream', $stream, 'resource');
@@ -708,10 +697,10 @@ class Bucket
     /**
      * Opens a readable stream for the GridFS file.
      *
-     * @param object $file GridFS file document
+     * @param stdClass $file GridFS file document
      * @return resource
      */
-    private function openDownloadStreamByFile(object $file)
+    private function openDownloadStreamByFile(stdClass $file)
     {
         $path = $this->createPathForFile($file);
         $context = stream_context_create([
@@ -727,7 +716,7 @@ class Bucket
     /**
      * Registers the GridFS stream wrapper if it is not already registered.
      */
-    private function registerStreamWrapper(): void
+    private function registerStreamWrapper()
     {
         if (in_array(self::$streamWrapperProtocol, stream_get_wrappers())) {
             return;

@@ -108,7 +108,7 @@
       ]
     },
     {
-      "description": "EstimatedDocumentCount succeeds after NotWritablePrimary",
+      "description": "EstimatedDocumentCount succeeds after NotMaster",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -148,7 +148,7 @@
       ]
     },
     {
-      "description": "EstimatedDocumentCount succeeds after NotPrimaryNoSecondaryOk",
+      "description": "EstimatedDocumentCount succeeds after NotMasterNoSlaveOk",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -188,7 +188,7 @@
       ]
     },
     {
-      "description": "EstimatedDocumentCount succeeds after NotPrimaryOrSecondary",
+      "description": "EstimatedDocumentCount succeeds after NotMasterOrSecondary",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -468,7 +468,7 @@
       ]
     },
     {
-      "description": "EstimatedDocumentCount fails after two NotWritablePrimary errors",
+      "description": "EstimatedDocumentCount fails after two NotMaster errors",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -508,7 +508,7 @@
       ]
     },
     {
-      "description": "EstimatedDocumentCount fails after NotWritablePrimary when retryReads is false",
+      "description": "EstimatedDocumentCount fails after NotMaster when retryReads is false",
       "clientOptions": {
         "retryReads": false
       },

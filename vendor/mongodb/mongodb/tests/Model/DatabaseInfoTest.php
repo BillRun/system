@@ -8,19 +8,19 @@ use MongoDB\Tests\TestCase;
 
 class DatabaseInfoTest extends TestCase
 {
-    public function testGetName(): void
+    public function testGetName()
     {
         $info = new DatabaseInfo(['name' => 'foo']);
         $this->assertSame('foo', $info->getName());
     }
 
-    public function testGetSizeOnDisk(): void
+    public function testGetSizeOnDisk()
     {
         $info = new DatabaseInfo(['sizeOnDisk' => 1048576]);
         $this->assertSame(1048576, $info->getSizeOnDisk());
     }
 
-    public function testIsEmpty(): void
+    public function testIsEmpty()
     {
         $info = new DatabaseInfo(['empty' => false]);
         $this->assertFalse($info->isEmpty());
@@ -29,7 +29,7 @@ class DatabaseInfoTest extends TestCase
         $this->assertTrue($info->isEmpty());
     }
 
-    public function testDebugInfo(): void
+    public function testDebugInfo()
     {
         $expectedInfo = [
             'name' => 'foo',
@@ -41,7 +41,7 @@ class DatabaseInfoTest extends TestCase
         $this->assertSame($expectedInfo, $info->__debugInfo());
     }
 
-    public function testImplementsArrayAccess(): void
+    public function testImplementsArrayAccess()
     {
         $info = new DatabaseInfo(['name' => 'foo']);
         $this->assertInstanceOf('ArrayAccess', $info);
@@ -49,7 +49,7 @@ class DatabaseInfoTest extends TestCase
         $this->assertSame('foo', $info['name']);
     }
 
-    public function testOffsetSetCannotBeCalled(): void
+    public function testOffsetSetCannotBeCalled()
     {
         $info = new DatabaseInfo(['name' => 'foo', 'sizeOnDisk' => 1048576, 'empty' => false]);
         $this->expectException(BadMethodCallException::class);
@@ -57,7 +57,7 @@ class DatabaseInfoTest extends TestCase
         $info['empty'] = true;
     }
 
-    public function testOffsetUnsetCannotBeCalled(): void
+    public function testOffsetUnsetCannotBeCalled()
     {
         $info = new DatabaseInfo(['name' => 'foo', 'sizeOnDisk' => 1048576, 'empty' => false]);
         $this->expectException(BadMethodCallException::class);

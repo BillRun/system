@@ -9,8 +9,7 @@
     {
       "minServerVersion": "4.1.7",
       "topology": [
-        "sharded",
-        "load-balanced"
+        "sharded"
       ]
     }
   ],
@@ -118,7 +117,7 @@
       }
     },
     {
-      "description": "InsertOne succeeds after NotWritablePrimary",
+      "description": "InsertOne succeeds after NotMaster",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -167,7 +166,7 @@
       }
     },
     {
-      "description": "InsertOne succeeds after NotPrimaryOrSecondary",
+      "description": "InsertOne succeeds after NotMasterOrSecondary",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -216,7 +215,7 @@
       }
     },
     {
-      "description": "InsertOne succeeds after NotPrimaryNoSecondaryOk",
+      "description": "InsertOne succeeds after NotMasterNoSlaveOk",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -761,12 +760,12 @@
           "failCommands": [
             "insert"
           ],
-          "errorLabels": [
-            "RetryableWriteError"
-          ],
           "writeConcernError": {
             "code": 11600,
-            "errmsg": "Replication is being shut down"
+            "errmsg": "Replication is being shut down",
+            "errorLabels": [
+              "RetryableWriteError"
+            ]
           }
         }
       },
@@ -812,12 +811,12 @@
           "failCommands": [
             "insert"
           ],
-          "errorLabels": [
-            "RetryableWriteError"
-          ],
           "writeConcernError": {
             "code": 11602,
-            "errmsg": "Replication is being shut down"
+            "errmsg": "Replication is being shut down",
+            "errorLabels": [
+              "RetryableWriteError"
+            ]
           }
         }
       },
@@ -863,12 +862,12 @@
           "failCommands": [
             "insert"
           ],
-          "errorLabels": [
-            "RetryableWriteError"
-          ],
           "writeConcernError": {
             "code": 189,
-            "errmsg": "Replication is being shut down"
+            "errmsg": "Replication is being shut down",
+            "errorLabels": [
+              "RetryableWriteError"
+            ]
           }
         }
       },
@@ -914,12 +913,12 @@
           "failCommands": [
             "insert"
           ],
-          "errorLabels": [
-            "RetryableWriteError"
-          ],
           "writeConcernError": {
             "code": 91,
-            "errmsg": "Replication is being shut down"
+            "errmsg": "Replication is being shut down",
+            "errorLabels": [
+              "RetryableWriteError"
+            ]
           }
         }
       },
@@ -964,9 +963,6 @@
         "data": {
           "failCommands": [
             "insert"
-          ],
-          "errorLabels": [
-            "RetryableWriteError"
           ],
           "writeConcernError": {
             "code": 91,

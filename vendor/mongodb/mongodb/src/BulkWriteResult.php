@@ -1,12 +1,12 @@
 <?php
 /*
- * Copyright 2015-present MongoDB, Inc.
+ * Copyright 2015-2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,12 +28,16 @@ class BulkWriteResult
     /** @var WriteResult */
     private $writeResult;
 
-    /** @var array */
+    /** @var mixed[] */
     private $insertedIds;
 
     /** @var boolean */
     private $isAcknowledged;
 
+    /**
+     * @param WriteResult $writeResult
+     * @param mixed[]     $insertedIds
+     */
     public function __construct(WriteResult $writeResult, array $insertedIds)
     {
         $this->writeResult = $writeResult;
@@ -47,7 +51,7 @@ class BulkWriteResult
      * This method should only be called if the write was acknowledged.
      *
      * @see BulkWriteResult::isAcknowledged()
-     * @return integer|null
+     * @return integer
      * @throws BadMethodCallException is the write result is unacknowledged
      */
     public function getDeletedCount()
@@ -65,7 +69,7 @@ class BulkWriteResult
      * This method should only be called if the write was acknowledged.
      *
      * @see BulkWriteResult::isAcknowledged()
-     * @return integer|null
+     * @return integer
      * @throws BadMethodCallException is the write result is unacknowledged
      */
     public function getInsertedCount()
@@ -86,7 +90,7 @@ class BulkWriteResult
      * field value. Any driver-generated ID will be a MongoDB\BSON\ObjectId
      * instance.
      *
-     * @return array
+     * @return mixed[]
      */
     public function getInsertedIds()
     {
@@ -99,7 +103,7 @@ class BulkWriteResult
      * This method should only be called if the write was acknowledged.
      *
      * @see BulkWriteResult::isAcknowledged()
-     * @return integer|null
+     * @return integer
      * @throws BadMethodCallException is the write result is unacknowledged
      */
     public function getMatchedCount()
@@ -138,7 +142,7 @@ class BulkWriteResult
      * This method should only be called if the write was acknowledged.
      *
      * @see BulkWriteResult::isAcknowledged()
-     * @return integer|null
+     * @return integer
      * @throws BadMethodCallException is the write result is unacknowledged
      */
     public function getUpsertedCount()
@@ -161,7 +165,7 @@ class BulkWriteResult
      * This method should only be called if the write was acknowledged.
      *
      * @see BulkWriteResult::isAcknowledged()
-     * @return array
+     * @return mixed[]
      * @throws BadMethodCallException is the write result is unacknowledged
      */
     public function getUpsertedIds()

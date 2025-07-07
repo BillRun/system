@@ -14,7 +14,6 @@
     }
   ],
   "minServerVersion": "2.6",
-  "serverless": "forbid",
   "tests": [
     {
       "description": "Aggregate with $out",
@@ -42,6 +41,16 @@
         }
       },
       "outcome": {
+        "result": [
+          {
+            "_id": 2,
+            "x": 22
+          },
+          {
+            "_id": 3,
+            "x": 33
+          }
+        ],
         "collection": {
           "name": "other_test_collection",
           "data": [
@@ -83,6 +92,16 @@
         }
       },
       "outcome": {
+        "result": [
+          {
+            "_id": 2,
+            "x": 22
+          },
+          {
+            "_id": 3,
+            "x": 33
+          }
+        ],
         "collection": {
           "name": "other_test_collection",
           "data": [

@@ -11,7 +11,7 @@ class ReplaceOneTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testConstructorFilterArgumentTypeCheck($filter): void
+    public function testConstructorFilterArgumentTypeCheck($filter)
     {
         $this->expectException(InvalidArgumentException::class);
         new ReplaceOne($this->getDatabaseName(), $this->getCollectionName(), $filter, ['y' => 1]);
@@ -20,7 +20,7 @@ class ReplaceOneTest extends TestCase
     /**
      * @dataProvider provideInvalidDocumentValues
      */
-    public function testConstructorReplacementArgumentTypeCheck($replacement): void
+    public function testConstructorReplacementArgumentTypeCheck($replacement)
     {
         $this->expectException(InvalidArgumentException::class);
         new ReplaceOne($this->getDatabaseName(), $this->getCollectionName(), ['x' => 1], $replacement);
@@ -30,7 +30,7 @@ class ReplaceOneTest extends TestCase
      * @dataProvider provideReplacementDocuments
      * @doesNotPerformAssertions
      */
-    public function testConstructorReplacementArgument($replacement): void
+    public function testConstructorReplacementArgument($replacement)
     {
         new ReplaceOne($this->getDatabaseName(), $this->getCollectionName(), ['x' => 1], $replacement);
     }
@@ -38,7 +38,7 @@ class ReplaceOneTest extends TestCase
     /**
      * @dataProvider provideUpdateDocuments
      */
-    public function testConstructorReplacementArgumentRequiresNoOperators($replacement): void
+    public function testConstructorReplacementArgumentRequiresNoOperators($replacement)
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('First key in $replacement argument is an update operator');

@@ -1,12 +1,12 @@
 <?php
 /*
- * Copyright 2015-present MongoDB, Inc.
+ * Copyright 2015-2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,12 +18,13 @@
 namespace MongoDB\Exception;
 
 use MongoDB\Driver\Exception\InvalidArgumentException as DriverInvalidArgumentException;
-
 use function array_pop;
 use function count;
-use function get_debug_type;
+use function get_class;
+use function gettype;
 use function implode;
 use function is_array;
+use function is_object;
 use function sprintf;
 
 class InvalidArgumentException extends DriverInvalidArgumentException implements Exception
@@ -36,7 +37,7 @@ class InvalidArgumentException extends DriverInvalidArgumentException implements
      * @param string|string[] $expectedType Expected type
      * @return self
      */
-    public static function invalidType(string $name, $value, $expectedType)
+    public static function invalidType($name, $value, $expectedType)
     {
         if (is_array($expectedType)) {
             switch (count($expectedType)) {
@@ -57,6 +58,6 @@ class InvalidArgumentException extends DriverInvalidArgumentException implements
             $expectedType = $typeString;
         }
 
-        return new static(sprintf('Expected %s to have type "%s" but found "%s"', $name, $expectedType, get_debug_type($value)));
+        return new static(sprintf('Expected %s to have type "%s" but found "%s"', $name, $expectedType, is_object($value) ? get_class($value) : gettype($value)));
     }
 }

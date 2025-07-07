@@ -6,8 +6,7 @@
          beStrictAboutOutputDuringTests="true"
          beStrictAboutChangesToGlobalState="true"
          colors="true"
-         bootstrap="vendor/autoload.php"
-         defaultTestSuite="Default Test Suite"
+         bootstrap="tests/bootstrap.php"
 >
 
     <php>
@@ -17,12 +16,8 @@
     </php>
 
     <testsuites>
-        <testsuite name="Default Test Suite">
+        <testsuite name="MongoDB CRUD Test Suite">
             <directory>./tests/</directory>
-        </testsuite>
-
-        <testsuite name="Atlas Data Lake Test Suite">
-            <file>tests/SpecTests/AtlasDataLakeSpecTest.php</file>
         </testsuite>
     </testsuites>
 </phpunit>

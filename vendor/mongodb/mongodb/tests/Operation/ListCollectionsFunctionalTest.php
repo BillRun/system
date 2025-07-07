@@ -8,10 +8,11 @@ use MongoDB\Operation\DropDatabase;
 use MongoDB\Operation\InsertOne;
 use MongoDB\Operation\ListCollections;
 use MongoDB\Tests\CommandObserver;
+use function version_compare;
 
 class ListCollectionsFunctionalTest extends FunctionalTestCase
 {
-    public function testListCollectionsForNewlyCreatedDatabase(): void
+    public function testListCollectionsForNewlyCreatedDatabase()
     {
         $server = $this->getPrimaryServer();
 
@@ -35,14 +36,12 @@ class ListCollectionsFunctionalTest extends FunctionalTestCase
         }
     }
 
-    /**
-     * @group matrix-testing-exclude-server-4.4-driver-4.0
-     * @group matrix-testing-exclude-server-4.4-driver-4.2
-     * @group matrix-testing-exclude-server-5.0-driver-4.0
-     * @group matrix-testing-exclude-server-5.0-driver-4.2
-     */
-    public function testIdIndexAndInfo(): void
+    public function testIdIndexAndInfo()
     {
+        if (version_compare($this->getServerVersion(), '3.4.0', '<')) {
+            $this->markTestSkipped('idIndex and info are not supported');
+        }
+
         $server = $this->getPrimaryServer();
 
         $insertOne = new InsertOne($this->getDatabaseName(), $this->getCollectionName(), ['x' => 1]);
@@ -61,7 +60,7 @@ class ListCollectionsFunctionalTest extends FunctionalTestCase
         }
     }
 
-    public function testListCollectionsForNonexistentDatabase(): void
+    public function testListCollectionsForNonexistentDatabase()
     {
         $server = $this->getPrimaryServer();
 
@@ -74,28 +73,14 @@ class ListCollectionsFunctionalTest extends FunctionalTestCase
         $this->assertCount(0, $collections);
     }
 
-    public function testAuthorizedCollectionsOption(): void
+    public function testSessionOption()
     {
-        (new CommandObserver())->observe(
-            function (): void {
-                $operation = new ListCollections(
-                    $this->getDatabaseName(),
-                    ['authorizedCollections' => true]
-                );
+        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
+            $this->markTestSkipped('Sessions are not supported');
+        }
 
-                $operation->execute($this->getPrimaryServer());
-            },
-            function (array $event): void {
-                $this->assertObjectHasAttribute('authorizedCollections', $event['started']->getCommand());
-                $this->assertSame(true, $event['started']->getCommand()->authorizedCollections);
-            }
-        );
-    }
-
-    public function testSessionOption(): void
-    {
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new ListCollections(
                     $this->getDatabaseName(),
                     ['session' => $this->createSession()]
@@ -103,7 +88,7 @@ class ListCollectionsFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );

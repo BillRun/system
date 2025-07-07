@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,6 @@ use MongoDB\Driver\Session;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnexpectedValueException;
 use MongoDB\Operation\Executable;
-
 use function current;
 use function is_array;
 use function is_bool;
@@ -35,7 +34,7 @@ use function is_object;
  * Wrapper for the ListDatabases command.
  *
  * @internal
- * @see https://mongodb.com/docs/manual/reference/command/listDatabases/
+ * @see http://docs.mongodb.org/manual/reference/command/listDatabases/
  */
 class ListDatabases implements Executable
 {
@@ -52,11 +51,9 @@ class ListDatabases implements Executable
      *
      *    For servers < 4.0.5, this option is ignored.
      *
-     *  * comment (mixed): BSON value to attach as a comment to this command.
-     *
-     *    This is not supported for servers versions < 4.4.
-     *
      *  * filter (document): Query by which to filter databases.
+     *
+     *    For servers < 3.6, this option is ignored.
      *
      *  * maxTimeMS (integer): The maximum amount of time to allow the query to
      *    run.
@@ -66,6 +63,8 @@ class ListDatabases implements Executable
      *    information.
      *
      *  * session (MongoDB\Driver\Session): Client session.
+     *
+     *    Sessions are not supported for server versions < 3.6.
      *
      * @param array $options Command options
      * @throws InvalidArgumentException for parameter/option parsing errors
@@ -99,13 +98,32 @@ class ListDatabases implements Executable
      * Execute the operation.
      *
      * @see Executable::execute()
+     * @param Server $server
      * @return array An array of database info structures
      * @throws UnexpectedValueException if the command response was malformed
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
-    public function execute(Server $server): array
+    public function execute(Server $server)
     {
-        $cursor = $server->executeReadCommand('admin', $this->createCommand(), $this->createOptions());
+        $cmd = ['listDatabases' => 1];
+
+        if (isset($this->options['authorizedDatabases'])) {
+            $cmd['authorizedDatabases'] = $this->options['authorizedDatabases'];
+        }
+
+        if (! empty($this->options['filter'])) {
+            $cmd['filter'] = (object) $this->options['filter'];
+        }
+
+        if (isset($this->options['maxTimeMS'])) {
+            $cmd['maxTimeMS'] = $this->options['maxTimeMS'];
+        }
+
+        if (isset($this->options['nameOnly'])) {
+            $cmd['nameOnly'] = $this->options['nameOnly'];
+        }
+
+        $cursor = $server->executeReadCommand('admin', new Command($cmd), $this->createOptions());
         $cursor->setTypeMap(['root' => 'array', 'document' => 'array']);
         $result = current($cursor->toArray());
 
@@ -117,34 +135,15 @@ class ListDatabases implements Executable
     }
 
     /**
-     * Create the listDatabases command.
-     */
-    private function createCommand(): Command
-    {
-        $cmd = ['listDatabases' => 1];
-
-        if (! empty($this->options['filter'])) {
-            $cmd['filter'] = (object) $this->options['filter'];
-        }
-
-        foreach (['authorizedDatabases', 'comment', 'maxTimeMS', 'nameOnly'] as $option) {
-            if (isset($this->options[$option])) {
-                $cmd[$option] = $this->options[$option];
-            }
-        }
-
-        return new Command($cmd);
-    }
-
-    /**
      * Create options for executing the command.
      *
      * Note: read preference is intentionally omitted, as the spec requires that
      * the command be executed on the primary.
      *
-     * @see https://php.net/manual/en/mongodb-driver-server.executecommand.php
+     * @see http://php.net/manual/en/mongodb-driver-server.executecommand.php
+     * @return array
      */
-    private function createOptions(): array
+    private function createOptions()
     {
         $options = [];
 

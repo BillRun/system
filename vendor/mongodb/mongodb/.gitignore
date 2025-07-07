@@ -12,7 +12,4 @@ phpunit.xml
 .phpcs-cache
 phpcs.xml
 
-# psalm
-psalm.xml
-
 mongocryptd.pid

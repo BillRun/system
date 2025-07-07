@@ -1,12 +1,12 @@
 <?php
 /*
- * Copyright 2017-present MongoDB, Inc.
+ * Copyright 2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,6 @@ namespace MongoDB\Model;
 use Closure;
 use Iterator;
 use IteratorIterator;
-use ReturnTypeWillChange;
 use Traversable;
 
 /**
@@ -33,55 +32,56 @@ class CallbackIterator implements Iterator
     /** @var Closure */
     private $callback;
 
-    /** @var Iterator */
+    /** @var IteratorIterator */
     private $iterator;
 
     public function __construct(Traversable $traversable, Closure $callback)
     {
-        $this->iterator = $traversable instanceof Iterator ? $traversable : new IteratorIterator($traversable);
+        $this->iterator = new IteratorIterator($traversable);
         $this->callback = $callback;
     }
 
     /**
-     * @see https://php.net/iterator.current
+     * @see http://php.net/iterator.current
      * @return mixed
      */
-    #[ReturnTypeWillChange]
     public function current()
     {
         return ($this->callback)($this->iterator->current());
     }
 
     /**
-     * @see https://php.net/iterator.key
+     * @see http://php.net/iterator.key
      * @return mixed
      */
-    #[ReturnTypeWillChange]
     public function key()
     {
         return $this->iterator->key();
     }
 
     /**
-     * @see https://php.net/iterator.next
+     * @see http://php.net/iterator.next
+     * @return void
      */
-    public function next(): void
+    public function next()
     {
         $this->iterator->next();
     }
 
     /**
-     * @see https://php.net/iterator.rewind
+     * @see http://php.net/iterator.rewind
+     * @return void
      */
-    public function rewind(): void
+    public function rewind()
     {
         $this->iterator->rewind();
     }
 
     /**
-     * @see https://php.net/iterator.valid
+     * @see http://php.net/iterator.valid
+     * @return boolean
      */
-    public function valid(): bool
+    public function valid()
     {
         return $this->iterator->valid();
     }
