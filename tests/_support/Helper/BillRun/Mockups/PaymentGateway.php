@@ -14,6 +14,8 @@ class PaymentGateway extends \Helper\BillRun\Mockups\Mockup
   public function enableCreditGuardPGWithSettings($data = []) {
     $model = new \ConfigModel();
     $model->updateConfig('payment_gateways', $this->getSampleConfiguration());
+    //sleep one second as workaround for refetch of config after enable until merge the BRCD-4430
+    sleep(1);
   }
 
   protected function getSampleConfiguration2() {
