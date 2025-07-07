@@ -47,7 +47,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span><br>';
 	public function test_cases() {
 	}
-
+ 
 
      public function __construct($label = false) {
          parent::__construct("test Aggregatore");
@@ -100,7 +100,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
         $this->tests =  $this->getTestCases($this->test_cases());
         if (empty($this->test_cases_to_run)) {
             $this->tests = $this->skip_tests($this->tests, 'test.test_number');
-          }
+        }
         // execute test cases pass by tests or all if it empty
         $request = new Yaf_Request_Http;
         $this->test_cases_to_run = $request->get('tests');
@@ -884,7 +884,7 @@ public function passthrough($key, $returnBillrun, $row) {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
 	}
 
-	// public function testMultiDay($key, $returnBillrun, $row) {
+	// public function MultiDay($key, $returnBillrun, $row) {
 	// 	$passed = true;
 		
 	// 	$aids = [];
@@ -950,7 +950,7 @@ public function passthrough($key, $returnBillrun, $row) {
 		$this->billrunCol->remove(['billrun_key' => ['$ne' => 'abc']]);
 	}
 
-	// public function testMultiDayNotallowPremature($key, $returnBillrun, $row) {
+	// public function MultiDayNotallowPremature($key, $returnBillrun, $row) {
 	// 	$now = date('d');
 	// 	$billruns = $this->getBillruns();
 	// 	$billruns_ = [];
