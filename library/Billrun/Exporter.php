@@ -20,8 +20,9 @@
 class Billrun_Exporter extends Billrun_Generator_File {
 
     use Billrun_Traits_ConditionsCheck;
+	use Billrun_Traits_Api_OperationsLock;
 
-    /**
+	/**
      * Type of exporter
      *
      * @var string
@@ -122,6 +123,12 @@ class Billrun_Exporter extends Billrun_Generator_File {
 
     protected $filesExported =[];
 
+    /**
+     * The name of the export generator
+     * @var string
+     */
+    protected $exporter_name;
+
 
     public function __construct($options = array()) {
         parent::__construct($options);
@@ -133,6 +140,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $this->query = $this->getFiltrationQuery();
         $this->limit = $this->getLimit($options['limit'] ?? self::EXPORT_MAX_LIMIT );
         $this->logCollection = Billrun_Factory::db()->logCollection();
+		$this->exporter_name = $options['type'];
     }
 
     public static function getInstance($params) {
@@ -425,6 +433,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
             'export_start_time' => new Mongodloid_Date(),
             'file_name' => $this->getFilename(),
             'path' => $this->getExportFilePath(),
+			'name' => $this->exporter_name
         );
         $logData = array_merge($basicLogData, $data);
 
@@ -649,6 +658,12 @@ class Billrun_Exporter extends Billrun_Generator_File {
                     $this->moved = false;
                     continue;
                 }
+                if (!$this->lock()) {
+                    Billrun_Factory::log("Sending file is already running for exporter: " . $this->exporter_name, Zend_Log::NOTICE);
+                    $this->moved = false;
+                    return; 
+                }
+                try {
                 $filesToExport = $this->getGeneratedFiles();
                 foreach ($filesToExport as $fileToExport) {
                     if (!$sender->send($fileToExport)) {
@@ -656,6 +671,12 @@ class Billrun_Exporter extends Billrun_Generator_File {
                     $this->moved = false;
                 } else {
                         Billrun_Factory::log()->log("Move {$fileToExport} to sender {$connection['name']} - done", Zend_Log::INFO);
+                    }
+                }
+                } finally {
+                    if (!$this->release()) {
+                        Billrun_Factory::log("Problem in releasing operation lock for exporter: " . $this->exporter_name, Zend_Log::ALERT);
+                        return;
                     }
                 }
             }
@@ -734,5 +755,25 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $model = new ConfigModel();
         $model->updateConfig("export_generators", $updated_config);
     }
+	
+	protected function getReleaseQuery() {
+		return array(
+			'action' => 'send_file',
+			'filtration' => 'send_' . $this->exporter_name,
+			'end_time' => array('$exists' => false)
+		);
+	}
+	
+	protected function getInsertData() {
+		return array(
+			'action' => 'send_file',
+			'filtration' => 'send_' . $this->exporter_name
+		);
+	}
+	
+	protected function getConflictingQuery() {	
+        return array('filtration' => 'send_' . $this->exporter_name);
+	}
+    
 
 }
