@@ -10,7 +10,7 @@ class FindOneFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider provideTypeMapOptionsAndExpectedDocument
      */
-    public function testTypeMapOption(array $typeMap, $expectedDocument): void
+    public function testTypeMapOption(array $typeMap, $expectedDocument)
     {
         $this->createFixtures(1);
 
@@ -40,8 +40,10 @@ class FindOneFunctionalTest extends FunctionalTestCase
 
     /**
      * Create data fixtures.
+     *
+     * @param integer $n
      */
-    private function createFixtures(int $n): void
+    private function createFixtures($n)
     {
         $bulkWrite = new BulkWrite(['ordered' => true]);
 

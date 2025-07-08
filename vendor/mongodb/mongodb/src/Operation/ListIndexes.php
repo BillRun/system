@@ -1,12 +1,12 @@
 <?php
 /*
- * Copyright 2015-present MongoDB, Inc.
+ * Copyright 2015-2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +19,6 @@ namespace MongoDB\Operation;
 
 use EmptyIterator;
 use MongoDB\Driver\Command;
-use MongoDB\Driver\Exception\CommandException;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\Server;
 use MongoDB\Driver\Session;
@@ -27,7 +26,6 @@ use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Model\CachingIterator;
 use MongoDB\Model\IndexInfoIterator;
 use MongoDB\Model\IndexInfoIteratorIterator;
-
 use function is_integer;
 
 /**
@@ -35,7 +33,7 @@ use function is_integer;
  *
  * @api
  * @see \MongoDB\Collection::listIndexes()
- * @see https://mongodb.com/docs/manual/reference/command/listIndexes/
+ * @see http://docs.mongodb.org/manual/reference/command/listIndexes/
  */
 class ListIndexes implements Executable
 {
@@ -59,21 +57,19 @@ class ListIndexes implements Executable
      *
      * Supported options:
      *
-     *  * comment (mixed): BSON value to attach as a comment to this command.
-     *
-     *    This is not supported for servers versions < 4.4.
-     *
      *  * maxTimeMS (integer): The maximum amount of time to allow the query to
      *    run.
      *
      *  * session (MongoDB\Driver\Session): Client session.
+     *
+     *    Sessions are not supported for server versions < 3.6.
      *
      * @param string $databaseName   Database name
      * @param string $collectionName Collection name
      * @param array  $options        Command options
      * @throws InvalidArgumentException for parameter/option parsing errors
      */
-    public function __construct(string $databaseName, string $collectionName, array $options = [])
+    public function __construct($databaseName, $collectionName, array $options = [])
     {
         if (isset($options['maxTimeMS']) && ! is_integer($options['maxTimeMS'])) {
             throw InvalidArgumentException::invalidType('"maxTimeMS" option', $options['maxTimeMS'], 'integer');
@@ -83,8 +79,8 @@ class ListIndexes implements Executable
             throw InvalidArgumentException::invalidType('"session" option', $options['session'], Session::class);
         }
 
-        $this->databaseName = $databaseName;
-        $this->collectionName = $collectionName;
+        $this->databaseName = (string) $databaseName;
+        $this->collectionName = (string) $collectionName;
         $this->options = $options;
     }
 
@@ -92,6 +88,7 @@ class ListIndexes implements Executable
      * Execute the operation.
      *
      * @see Executable::execute()
+     * @param Server $server
      * @return IndexInfoIterator
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
@@ -106,9 +103,10 @@ class ListIndexes implements Executable
      * Note: read preference is intentionally omitted, as the spec requires that
      * the command be executed on the primary.
      *
-     * @see https://php.net/manual/en/mongodb-driver-server.executecommand.php
+     * @see http://php.net/manual/en/mongodb-driver-server.executecommand.php
+     * @return array
      */
-    private function createOptions(): array
+    private function createOptions()
     {
         $options = [];
 
@@ -123,21 +121,21 @@ class ListIndexes implements Executable
      * Returns information for all indexes for this collection using the
      * listIndexes command.
      *
+     * @param Server $server
+     * @return IndexInfoIteratorIterator
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
-    private function executeCommand(Server $server): IndexInfoIteratorIterator
+    private function executeCommand(Server $server)
     {
         $cmd = ['listIndexes' => $this->collectionName];
 
-        foreach (['comment', 'maxTimeMS'] as $option) {
-            if (isset($this->options[$option])) {
-                $cmd[$option] = $this->options[$option];
-            }
+        if (isset($this->options['maxTimeMS'])) {
+            $cmd['maxTimeMS'] = $this->options['maxTimeMS'];
         }
 
         try {
             $cursor = $server->executeReadCommand($this->databaseName, new Command($cmd), $this->createOptions());
-        } catch (CommandException $e) {
+        } catch (DriverRuntimeException $e) {
             /* The server may return an error if the collection does not exist.
              * Check for possible error codes (see: SERVER-20463) and return an
              * empty iterator instead of throwing.

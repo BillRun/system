@@ -5,8 +5,6 @@ Tutorials
 
 .. toctree::
 
-   /tutorial/connecting
-   /tutorial/server-selection
    /tutorial/crud
    /tutorial/collation
    /tutorial/commands
@@ -17,5 +15,3 @@ Tutorials
    /tutorial/indexes
    /tutorial/tailable-cursor
    /tutorial/example-data
-   /tutorial/modeling-bson-data
-   /tutorial/stable-api

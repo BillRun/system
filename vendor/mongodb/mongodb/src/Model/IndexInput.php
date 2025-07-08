@@ -1,12 +1,12 @@
 <?php
 /*
- * Copyright 2015-present MongoDB, Inc.
+ * Copyright 2015-2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +19,6 @@ namespace MongoDB\Model;
 
 use MongoDB\BSON\Serializable;
 use MongoDB\Exception\InvalidArgumentException;
-
 use function is_array;
 use function is_float;
 use function is_int;
@@ -36,7 +35,7 @@ use function sprintf;
  * @internal
  * @see \MongoDB\Collection::createIndexes()
  * @see https://github.com/mongodb/specifications/blob/master/source/enumerate-indexes.rst
- * @see https://mongodb.com/docs/manual/reference/method/db.collection.createIndex/
+ * @see http://docs.mongodb.org/manual/reference/method/db.collection.createIndex/
  */
 class IndexInput implements Serializable
 {
@@ -76,8 +75,10 @@ class IndexInput implements Serializable
 
     /**
      * Return the index name.
+     *
+     * @return string
      */
-    public function __toString(): string
+    public function __toString()
     {
         return $this->index['name'];
     }
@@ -86,9 +87,10 @@ class IndexInput implements Serializable
      * Serialize the index information to BSON for index creation.
      *
      * @see \MongoDB\Collection::createIndexes()
-     * @see https://php.net/mongodb-bson-serializable.bsonserialize
+     * @see http://php.net/mongodb-bson-serializable.bsonserialize
+     * @return array
      */
-    public function bsonSerialize(): array
+    public function bsonSerialize()
     {
         return $this->index;
     }

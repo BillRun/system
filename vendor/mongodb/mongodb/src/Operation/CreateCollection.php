@@ -1,12 +1,12 @@
 <?php
 /*
- * Copyright 2015-present MongoDB, Inc.
+ * Copyright 2015-2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,16 +23,15 @@ use MongoDB\Driver\Server;
 use MongoDB\Driver\Session;
 use MongoDB\Driver\WriteConcern;
 use MongoDB\Exception\InvalidArgumentException;
-
+use MongoDB\Exception\UnsupportedException;
 use function current;
 use function is_array;
 use function is_bool;
 use function is_integer;
 use function is_object;
 use function is_string;
-use function sprintf;
+use function MongoDB\server_supports_feature;
 use function trigger_error;
-
 use const E_USER_DEPRECATED;
 
 /**
@@ -40,12 +39,18 @@ use const E_USER_DEPRECATED;
  *
  * @api
  * @see \MongoDB\Database::createCollection()
- * @see https://mongodb.com/docs/manual/reference/command/create/
+ * @see http://docs.mongodb.org/manual/reference/command/create/
  */
 class CreateCollection implements Executable
 {
-    public const USE_POWER_OF_2_SIZES = 1;
-    public const NO_PADDING = 2;
+    const USE_POWER_OF_2_SIZES = 1;
+    const NO_PADDING = 2;
+
+    /** @var integer */
+    private static $wireVersionForCollation = 5;
+
+    /** @var integer */
+    private static $wireVersionForWriteConcern = 5;
 
     /** @var string */
     private $databaseName;
@@ -72,26 +77,10 @@ class CreateCollection implements Executable
      *  * capped (boolean): Specify true to create a capped collection. If set,
      *    the size option must also be specified. The default is false.
      *
-     *  * comment (mixed): BSON value to attach as a comment to this command.
-     *
-     *    This is not supported for servers versions < 4.4.
-     *
-     *  * changeStreamPreAndPostImages (document): Used to configure support for
-     *    pre- and post-images in change streams.
-     *
-     *    This is not supported for server versions < 6.0.
-     *
-     *  * clusteredIndex (document): A clustered index specification.
-     *
-     *    This is not supported for server versions < 5.3.
-     *
      *  * collation (document): Collation specification.
      *
-     *  * encryptedFields (document): CSFLE specification.
-     *
-     *  * expireAfterSeconds: The TTL for documents in time series collections.
-     *
-     *    This is not supported for servers versions < 5.0.
+     *    This is not supported for server versions < 3.4 and will result in an
+     *    exception at execution time if used.
      *
      *  * flags (integer): Options for the MMAPv1 storage engine only. Must be a
      *    bitwise combination CreateCollection::USE_POWER_OF_2_SIZES and
@@ -107,19 +96,13 @@ class CreateCollection implements Executable
      *  * maxTimeMS (integer): The maximum amount of time to allow the query to
      *    run.
      *
-     *  * pipeline (array): An array that consists of the aggregation pipeline
-     *    stage(s), which will be applied to the collection or view specified by
-     *    viewOn.
-     *
      *  * session (MongoDB\Driver\Session): Client session.
+     *
+     *    Sessions are not supported for server versions < 3.6.
      *
      *  * size (integer): The maximum number of bytes for a capped collection.
      *
      *  * storageEngine (document): Storage engine options.
-     *
-     *  * timeseries (document): Options for time series collections.
-     *
-     *    This is not supported for servers versions < 5.0.
      *
      *  * typeMap (array): Type map for BSON deserialization. This will only be
      *    used for the returned command result document.
@@ -130,19 +113,19 @@ class CreateCollection implements Executable
      *
      *  * validator (document): Validation rules or expressions.
      *
-     *  * viewOn (string): The name of the source collection or view from which
-     *    to create the view.
-     *
      *  * writeConcern (MongoDB\Driver\WriteConcern): Write concern.
      *
-     * @see https://source.wiredtiger.com/2.4.1/struct_w_t___s_e_s_s_i_o_n.html#a358ca4141d59c345f401c58501276bbb
-     * @see https://mongodb.com/docs/manual/core/schema-validation/
+     *    This is not supported for server versions < 3.4 and will result in an
+     *    exception at execution time if used.
+     *
+     * @see http://source.wiredtiger.com/2.4.1/struct_w_t___s_e_s_s_i_o_n.html#a358ca4141d59c345f401c58501276bbb
+     * @see https://docs.mongodb.org/manual/core/document-validation/
      * @param string $databaseName   Database name
      * @param string $collectionName Collection name
      * @param array  $options        Command options
      * @throws InvalidArgumentException for parameter/option parsing errors
      */
-    public function __construct(string $databaseName, string $collectionName, array $options = [])
+    public function __construct($databaseName, $collectionName, array $options = [])
     {
         if (isset($options['autoIndexId']) && ! is_bool($options['autoIndexId'])) {
             throw InvalidArgumentException::invalidType('"autoIndexId" option', $options['autoIndexId'], 'boolean');
@@ -152,24 +135,8 @@ class CreateCollection implements Executable
             throw InvalidArgumentException::invalidType('"capped" option', $options['capped'], 'boolean');
         }
 
-        if (isset($options['changeStreamPreAndPostImages']) && ! is_array($options['changeStreamPreAndPostImages']) && ! is_object($options['changeStreamPreAndPostImages'])) {
-            throw InvalidArgumentException::invalidType('"changeStreamPreAndPostImages" option', $options['changeStreamPreAndPostImages'], 'array or object');
-        }
-
-        if (isset($options['clusteredIndex']) && ! is_array($options['clusteredIndex']) && ! is_object($options['clusteredIndex'])) {
-            throw InvalidArgumentException::invalidType('"clusteredIndex" option', $options['clusteredIndex'], 'array or object');
-        }
-
         if (isset($options['collation']) && ! is_array($options['collation']) && ! is_object($options['collation'])) {
             throw InvalidArgumentException::invalidType('"collation" option', $options['collation'], 'array or object');
-        }
-
-        if (isset($options['encryptedFields']) && ! is_array($options['encryptedFields']) && ! is_object($options['encryptedFields'])) {
-            throw InvalidArgumentException::invalidType('"encryptedFields" option', $options['encryptedFields'], 'array or object');
-        }
-
-        if (isset($options['expireAfterSeconds']) && ! is_integer($options['expireAfterSeconds'])) {
-            throw InvalidArgumentException::invalidType('"expireAfterSeconds" option', $options['expireAfterSeconds'], 'integer');
         }
 
         if (isset($options['flags']) && ! is_integer($options['flags'])) {
@@ -188,10 +155,6 @@ class CreateCollection implements Executable
             throw InvalidArgumentException::invalidType('"maxTimeMS" option', $options['maxTimeMS'], 'integer');
         }
 
-        if (isset($options['pipeline']) && ! is_array($options['pipeline'])) {
-            throw InvalidArgumentException::invalidType('"pipeline" option', $options['pipeline'], 'array');
-        }
-
         if (isset($options['session']) && ! $options['session'] instanceof Session) {
             throw InvalidArgumentException::invalidType('"session" option', $options['session'], Session::class);
         }
@@ -202,10 +165,6 @@ class CreateCollection implements Executable
 
         if (isset($options['storageEngine']) && ! is_array($options['storageEngine']) && ! is_object($options['storageEngine'])) {
             throw InvalidArgumentException::invalidType('"storageEngine" option', $options['storageEngine'], 'array or object');
-        }
-
-        if (isset($options['timeseries']) && ! is_array($options['timeseries']) && ! is_object($options['timeseries'])) {
-            throw InvalidArgumentException::invalidType('"timeseries" option', $options['timeseries'], ['array', 'object']);
         }
 
         if (isset($options['typeMap']) && ! is_array($options['typeMap'])) {
@@ -224,10 +183,6 @@ class CreateCollection implements Executable
             throw InvalidArgumentException::invalidType('"validator" option', $options['validator'], 'array or object');
         }
 
-        if (isset($options['viewOn']) && ! is_string($options['viewOn'])) {
-            throw InvalidArgumentException::invalidType('"viewOn" option', $options['viewOn'], 'string');
-        }
-
         if (isset($options['writeConcern']) && ! $options['writeConcern'] instanceof WriteConcern) {
             throw InvalidArgumentException::invalidType('"writeConcern" option', $options['writeConcern'], WriteConcern::class);
         }
@@ -240,24 +195,8 @@ class CreateCollection implements Executable
             trigger_error('The "autoIndexId" option is deprecated and will be removed in a future release', E_USER_DEPRECATED);
         }
 
-        if (isset($options['pipeline'])) {
-            $expectedIndex = 0;
-
-            foreach ($options['pipeline'] as $i => $operation) {
-                if ($i !== $expectedIndex) {
-                    throw new InvalidArgumentException(sprintf('The "pipeline" option is not a list (unexpected index: "%s")', $i));
-                }
-
-                if (! is_array($operation) && ! is_object($operation)) {
-                    throw InvalidArgumentException::invalidType(sprintf('$options["pipeline"][%d]', $i), $operation, 'array or object');
-                }
-
-                $expectedIndex += 1;
-            }
-        }
-
-        $this->databaseName = $databaseName;
-        $this->collectionName = $collectionName;
+        $this->databaseName = (string) $databaseName;
+        $this->collectionName = (string) $collectionName;
         $this->options = $options;
     }
 
@@ -265,11 +204,21 @@ class CreateCollection implements Executable
      * Execute the operation.
      *
      * @see Executable::execute()
+     * @param Server $server
      * @return array|object Command result document
+     * @throws UnsupportedException if collation or write concern is used and unsupported
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
     public function execute(Server $server)
     {
+        if (isset($this->options['collation']) && ! server_supports_feature($server, self::$wireVersionForCollation)) {
+            throw UnsupportedException::collationNotSupported();
+        }
+
+        if (isset($this->options['writeConcern']) && ! server_supports_feature($server, self::$wireVersionForWriteConcern)) {
+            throw UnsupportedException::writeConcernNotSupported();
+        }
+
         $cursor = $server->executeWriteCommand($this->databaseName, $this->createCommand(), $this->createOptions());
 
         if (isset($this->options['typeMap'])) {
@@ -281,18 +230,20 @@ class CreateCollection implements Executable
 
     /**
      * Create the create command.
+     *
+     * @return Command
      */
-    private function createCommand(): Command
+    private function createCommand()
     {
         $cmd = ['create' => $this->collectionName];
 
-        foreach (['autoIndexId', 'capped', 'comment', 'expireAfterSeconds', 'flags', 'max', 'maxTimeMS', 'pipeline', 'size', 'validationAction', 'validationLevel', 'viewOn'] as $option) {
+        foreach (['autoIndexId', 'capped', 'flags', 'max', 'maxTimeMS', 'size', 'validationAction', 'validationLevel'] as $option) {
             if (isset($this->options[$option])) {
                 $cmd[$option] = $this->options[$option];
             }
         }
 
-        foreach (['changeStreamPreAndPostImages', 'clusteredIndex', 'collation', 'encryptedFields', 'indexOptionDefaults', 'storageEngine', 'timeseries', 'validator'] as $option) {
+        foreach (['collation', 'indexOptionDefaults', 'storageEngine', 'validator'] as $option) {
             if (isset($this->options[$option])) {
                 $cmd[$option] = (object) $this->options[$option];
             }
@@ -304,9 +255,10 @@ class CreateCollection implements Executable
     /**
      * Create options for executing the command.
      *
-     * @see https://php.net/manual/en/mongodb-driver-server.executewritecommand.php
+     * @see http://php.net/manual/en/mongodb-driver-server.executewritecommand.php
+     * @return array
      */
-    private function createOptions(): array
+    private function createOptions()
     {
         $options = [];
 

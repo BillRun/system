@@ -51,7 +51,8 @@ name: allowDiskUse
 type: boolean
 description: |
   Enables writing to temporary files. When set to ``true``, queries can write
-  data to the ``_tmp`` sub-directory in the ``dbPath`` directory.
+  data to the ``_tmp`` sub-directory in the ``dbPath`` directory. The default is
+  ``false``.
 interface: phpmethod
 operation: ~
 optional: true
@@ -74,12 +75,15 @@ source:
   file: apiargs-MongoDBCollection-common-option.yaml
   ref: collation
 ---
-source:
-  file: apiargs-common-option.yaml
-  ref: comment
-post: |
-  The comment can be any valid BSON type for server versions 4.4 and above.
-  Earlier server versions only support string values.
+arg_name: option
+name: comment
+type: string
+description: |
+  A comment to attach to the query to help interpret and trace query
+  :dbcommand:`profile` data.
+interface: phpmethod
+operation: ~
+optional: true
 ---
 arg_name: option
 name: cursorType
@@ -254,10 +258,4 @@ description: |
 interface: phpmethod
 operation: ~
 optional: true
----
-source:
-  file: apiargs-common-option.yaml
-  ref: let
-post: |
-  .. versionadded:: 1.13
 ...

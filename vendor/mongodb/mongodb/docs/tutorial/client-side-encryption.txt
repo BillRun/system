@@ -14,50 +14,6 @@ Client-Side Field Level Encryption allows administrators and developers to
 encrypt specific data fields in addition to other MongoDB encryption features.
 
 
-Creating an Encryption Key
---------------------------
-
-.. note::
-
-   The following examples use a local master key; however, other key providers
-   such as AWS KMS are also an option. This master key is used to encrypt data
-   keys that are stored locally. It is important that you keep this key secure.
-
-To create an encryption key, create a :php:`MongoDB\\Driver\\ClientEncryption <class.mongodb-driver-clientencryption>`
-instance with encryption options and create a new data key. The method will
-return the key ID which can be used to reference the key later. You can also
-pass multiple alternate names for this key and reference the key by these names
-instead of the key ID. Creating a new data encryption key would typically be
-done on initial deployment, but depending on your use case you may want to use
-more than one encryption key or create them dynamically.
-
-.. code-block:: php
-
-   <?php
-
-   use MongoDB\BSON\Binary;
-   use MongoDB\Client;
-   use MongoDB\Driver\ClientEncryption;
-
-   $localKey = new Binary('<binary key data (96 bytes)>', Binary::TYPE_GENERIC);
-
-   $clientEncryptionOpts = [
-       'keyVaultNamespace' => 'encryption.__keyVault',
-       'kmsProviders' => [
-           'local' => ['key' => $localKey],
-       ],
-   ];
-
-   $client = new Client();
-   $clientEncryption = $client->createClientEncryption($clientEncryptionOpts);
-
-   // Create an encryption key with an alternate name
-   // To store the key ID for later use, you can use serialize or var_export
-   $keyId = $clientEncryption->createDataKey('local', ['keyAltNames' => ['my-encryption-key']]);
-
-.. seealso:: :manual:`Encryption Key Management </csfle/fundamentals/manage-keys/>` in the MongoDB manual
-
-
 Automatic Encryption and Decryption
 -----------------------------------
 
@@ -65,10 +21,9 @@ Automatic Encryption and Decryption
 
    Auto encryption is an enterprise only feature.
 
-The following example sets up a collection with automatic encryption based on a
-``$jsonSchema`` validator. The data in the ``encryptedField`` field is
-automatically encrypted on insertion and decrypted when reading on the client
-side.
+The following example uses a local key, however using AWS Key Management Service
+is also an option. The data in the ``encryptedField`` field is automatically
+encrypted on insertion and decrypted when querying on the client side.
 
 .. code-block:: php
 
@@ -76,24 +31,24 @@ side.
 
    use MongoDB\BSON\Binary;
    use MongoDB\Client;
-   use MongoDB\Driver\ClientEncryption;
 
    $localKey = new Binary('<binary key data (96 bytes)>', Binary::TYPE_GENERIC);
+
    $encryptionOpts = [
-       'keyVaultNamespace' => 'encryption.__keyVault',
+       'keyVaultNamespace' => 'admin.datakeys',
        'kmsProviders' => [
            'local' => ['key' => $localKey],
        ],
    ];
 
-   $client = new Client();
+   $client = new Client('mongodb://127.0.0.1');
+   $clientEncryption = $client->createClientEncryption($encryptionOpts);
 
    $database = $client->selectDatabase('test');
    $database->dropCollection('coll'); // remove old data
 
-   // This uses the key ID from the first example. The key ID could be read from
-   // a configuration file.
-   $keyId = readDataKey();
+   // Create new key in the key vault and store its ID for later use
+   $keyId = $clientEncryption->createDataKey('local');
 
    $database->createCollection('coll', [
        'validator' => [
@@ -124,8 +79,9 @@ side.
 Specifying an Explicit Schema for Encryption
 --------------------------------------------
 
-The following example uses the ``schemaMap`` encryption option to define
-encrypted fields.
+The following example shows how to create a new key and store it in the key
+vault collection. The encrypted client configures an explicit schema for
+encryption using the newly created key.
 
 .. note::
 
@@ -144,14 +100,21 @@ encrypted fields.
 
    $localKey = new Binary('<binary key data (96 bytes)>', Binary::TYPE_GENERIC);
 
-   $client = new Client();
+   $clientEncryptionOpts = [
+       'keyVaultNamespace' => 'admin.datakeys',
+       'kmsProviders' => [
+           'local' => ['key' => $localKey],
+       ],
+   ];
 
-   // This uses the key ID from the first example. The key ID could be read from
-   // a configuration file.
-   $keyId = readDataKey();
+   $client = new Client();
+   $clientEncryption = $client->createClientEncryption($clientEncryptionOpts);
+
+   // Create new key in the key vault and store its ID for later use
+   $keyId = $clientEncryption->createDataKey('local');
 
    $autoEncryptionOpts = [
-       'keyVaultNamespace' => 'encryption.__keyVault',
+       'keyVaultNamespace' => 'admin.datakeys',
        'kmsProviders' => [
            'local' => ['key' => $localKey],
        ],
@@ -171,7 +134,7 @@ encrypted fields.
        ],
    ];
 
-   $encryptedClient = new Client(null, [], ['autoEncryption' => $autoEncryptionOpts]);
+   $encryptedClient = new Client('mongodb://127.0.0.1', [], ['autoEncryption' => $autoEncryptionOpts]);
 
    $collection = $encryptedClient->selectCollection('test', 'coll');
    $collection->drop(); // clear old data
@@ -184,10 +147,10 @@ encrypted fields.
 Manually Encrypting and Decrypting Values
 -----------------------------------------
 
-In the MongoDB Community Edition, you will have to manually encrypt values
-before storing them in the database. The following example assumes that you have
-already created an encryption key in the key vault collection and explicitly
-encrypts and decrypts values in the document.
+In the MongoDB Community Edition, you will have to manually encrypt and decrypt
+values before storing them in the database. The following example assumes that
+you have already created an encryption key in the key vault collection and
+explicitly encrypts and decrypts values in the document.
 
 .. code-block:: php
 
@@ -200,7 +163,7 @@ encrypts and decrypts values in the document.
    $localKey = new Binary('<binary key data (96 bytes)>', Binary::TYPE_GENERIC);
 
    $clientEncryptionOpts = [
-       'keyVaultNamespace' => 'encryption.__keyVault',
+       'keyVaultNamespace' => 'admin.datakeys',
        'kmsProviders' => [
            'local' => ['key' => $localKey],
        ],
@@ -209,9 +172,8 @@ encrypts and decrypts values in the document.
    $client = new Client();
    $clientEncryption = $client->createClientEncryption($clientEncryptionOpts);
 
-   // This uses the key ID from the first example. The key ID could be read from
-   // a configuration file.
-   $keyId = readDataKey();
+   // Create new key in the key vault and store its ID for later use
+   $keyId = $clientEncryption->createDataKey('local');
 
    $collection = $client->selectCollection('test', 'coll');
    $collection->drop(); // clear old data
@@ -233,14 +195,11 @@ Referencing Encryption Keys by an Alternative Name
 
 While it is possible to create an encryption key every time data is encrypted,
 this is not the recommended approach. Instead, you should create your encryption
-keys depending on your use case, e.g. by creating a user-specific encryption
+keys depending on your use-case, e.g. by creating a user-specific encryption
 key. To reference keys in your software, you can use the keyAltName attribute
 specified when creating the key. The following example creates an encryption key
 with an alternative name, which could be done when deploying the application.
 The software then encrypts data by referencing the key by its alternative name.
-
-To use an alternate name when referencing an encryption key, use the
-``keyAltName`` option instead of ``keyId``.
 
 .. code-block:: php
 
@@ -253,7 +212,7 @@ To use an alternate name when referencing an encryption key, use the
    $localKey = new Binary('<binary key data (96 bytes)>', Binary::TYPE_GENERIC);
 
    $clientEncryptionOpts = [
-       'keyVaultNamespace' => 'encryption.__keyVault',
+       'keyVaultNamespace' => 'admin.datakeys',
        'kmsProviders' => [
            'local' => ['key' => $localKey],
        ],
@@ -262,13 +221,16 @@ To use an alternate name when referencing an encryption key, use the
    $client = new Client();
    $clientEncryption = $client->createClientEncryption($clientEncryptionOpts);
 
+   // Create an encryption key with an alternative name. This could be done when
+   // deploying the application
+   $keyId = $clientEncryption->createDataKey('local', ['keyAltNames' => ['altname']]);
+
    $collection = $client->selectCollection('test', 'coll');
    $collection->drop(); // clear old data
 
-   // Reference the encryption key created in the first example by its
-   // alternative name
+   // Reference the encryption key we created earlier by its alternative name
    $encryptionOpts = [
-       'keyAltName' => 'my-encryption-key',
+       'keyAltName' => 'altname',
        'algorithm' => ClientEncryption::AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC,
    ];
    $encryptedValue = $clientEncryption->encrypt('123456789', $encryptionOpts);
@@ -277,92 +239,3 @@ To use an alternate name when referencing an encryption key, use the
 
    $document = $collection->findOne();
    var_dump($clientEncryption->decrypt($document->encryptedField));
-
-
-Automatic Queryable Encryption
-------------------------------
-
-.. note::
-
-   Automatic queryable encryption is an enterprise only feature and requires
-   MongoDB 6.0+.
-
-The following example uses a local key; however, other key providers such as AWS
-are also an option. The data in the ``encryptedIndexed`` and
-``encryptedUnindexed`` fields will be automatically encrypted on insertion and
-decrypted when querying on the client side. Additionally, it is possible to
-query on the ``encryptedIndexed`` field.
-
-.. code-block:: php
-
-   <?php
-
-   use MongoDB\BSON\Binary;
-   use MongoDB\Client;
-
-   $localKey = new Binary('<binary key data (96 bytes)>', Binary::TYPE_GENERIC);
-
-   $encryptionOpts = [
-       'keyVaultNamespace' => 'encryption.__keyVault',
-       'kmsProviders' => ['local' => ['key' => $localKey]],
-   ];
-
-   $client = new Client();
-   $clientEncryption = $client->createClientEncryption($encryptionOpts);
-
-   // Create two data keys, one for each encrypted field
-   $dataKeyId1 = $clientEncryption->createDataKey('local');
-   $dataKeyId2 = $clientEncryption->createDataKey('local');
-
-   $autoEncryptionOpts = [
-       'keyVaultNamespace' => 'encryption.__keyVault',
-       'kmsProviders' => ['local' => ['key' => $localKey]],
-       'encryptedFieldsMap' => [
-           'test.coll' => [
-               'fields' => [
-                   [
-                       'path' => 'encryptedIndexed',
-                       'bsonType' => 'string',
-                       'keyId' => $dataKeyId1,
-                       'queries' => ['queryType' => 'equality'],
-                   ],
-                   [
-                       'path' => 'encryptedUnindexed',
-                       'bsonType' => 'string',
-                       'keyId' => $dataKeyId2,
-                   ],
-               ],
-           ],
-       ],
-   ];
-
-   $encryptedClient = new Client(null, [], ['autoEncryption' => $autoEncryptionOpts]);
-
-   /* Drop and create the collection under test. The createCollection() helper
-    * will reference the client's encryptedFieldsMap and create additional,
-    * internal collections automatically. */
-   $encryptedClient->selectDatabase('test')->dropCollection('coll');
-   $encryptedClient->selectDatabase('test')->createCollection('coll');
-   $encryptedCollection = $encryptedClient->selectCollection('test', 'coll');
-
-   /* Using a client with auto encryption, insert a document with encrypted
-    * fields and assert that those fields are automatically decrypted when
-    * querying. The encryptedIndexed and encryptedUnindexed fields should both
-    * be strings. */
-   $indexedValue = 'indexedValue';
-   $unindexedValue = 'unindexedValue';
-
-   $encryptedCollection->insertOne([
-       '_id' => 1,
-       'encryptedIndexed' => $indexedValue,
-       'encryptedUnindexed' => $unindexedValue,
-   ]);
-
-   var_dump($encryptedCollection->findOne(['encryptedIndexed' => $indexedValue]));
-
-   /* Using a client without auto encryption, query for the same document and
-    * assert that encrypted data is returned. The encryptedIndexed and
-    * encryptedUnindexed fields should both be Binary objects. */
-   $unencryptedCollection = $client->selectCollection('test', 'coll');
-
-   var_dump($unencryptedCollection->findOne(['_id' => 1]));

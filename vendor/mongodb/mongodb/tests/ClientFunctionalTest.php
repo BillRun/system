@@ -8,33 +8,36 @@ use MongoDB\Driver\Manager;
 use MongoDB\Driver\Session;
 use MongoDB\Model\DatabaseInfo;
 use MongoDB\Model\DatabaseInfoIterator;
-
+use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
 use function call_user_func;
 use function is_callable;
 use function sprintf;
+use function version_compare;
 
 /**
  * Functional tests for the Client class.
  */
 class ClientFunctionalTest extends FunctionalTestCase
 {
+    use SetUpTearDownTrait;
+
     /** @var Client */
     private $client;
 
-    public function setUp(): void
+    private function doSetUp()
     {
         parent::setUp();
 
-        $this->client = static::createTestClient();
+        $this->client = new Client(static::getUri());
         $this->client->dropDatabase($this->getDatabaseName());
     }
 
-    public function testGetManager(): void
+    public function testGetManager()
     {
         $this->assertInstanceOf(Manager::class, $this->client->getManager());
     }
 
-    public function testDropDatabase(): void
+    public function testDropDatabase()
     {
         $bulkWrite = new BulkWrite();
         $bulkWrite->insert(['x' => 1]);
@@ -47,7 +50,7 @@ class ClientFunctionalTest extends FunctionalTestCase
         $this->assertCollectionCount($this->getNamespace(), 0);
     }
 
-    public function testListDatabases(): void
+    public function testListDatabases()
     {
         $bulkWrite = new BulkWrite();
         $bulkWrite->insert(['x' => 1]);
@@ -63,13 +66,13 @@ class ClientFunctionalTest extends FunctionalTestCase
             $this->assertInstanceOf(DatabaseInfo::class, $database);
         }
 
-        $this->assertDatabaseExists($this->getDatabaseName(), function (DatabaseInfo $info): void {
+        $this->assertDatabaseExists($this->getDatabaseName(), function (DatabaseInfo $info) {
             $this->assertFalse($info->isEmpty());
             $this->assertGreaterThan(0, $info->getSizeOnDisk());
         });
     }
 
-    public function testListDatabaseNames(): void
+    public function testListDatabaseNames()
     {
         $bulkWrite = new BulkWrite();
         $bulkWrite->insert(['x' => 1]);
@@ -91,8 +94,11 @@ class ClientFunctionalTest extends FunctionalTestCase
      * argument as its first and only parameter. If a DatabaseInfo matching
      * the given name is found, it will be passed to the callback, which may
      * perform additional assertions.
+     *
+     * @param string   $databaseName
+     * @param callable $callback
      */
-    private function assertDatabaseExists(string $databaseName, ?callable $callback = null): void
+    private function assertDatabaseExists($databaseName, $callback = null)
     {
         if ($callback !== null && ! is_callable($callback)) {
             throw new InvalidArgumentException('$callback is not a callable');
@@ -116,8 +122,11 @@ class ClientFunctionalTest extends FunctionalTestCase
         }
     }
 
-    public function testStartSession(): void
+    public function testStartSession()
     {
+        if (version_compare($this->getFeatureCompatibilityVersion(), '3.6', '<')) {
+            $this->markTestSkipped('startSession() is only supported on FCV 3.6 or higher');
+        }
         $this->assertInstanceOf(Session::class, $this->client->startSession());
     }
 }

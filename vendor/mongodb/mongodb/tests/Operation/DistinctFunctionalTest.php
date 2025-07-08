@@ -5,17 +5,17 @@ namespace MongoDB\Tests\Operation;
 use MongoDB\Driver\BulkWrite;
 use MongoDB\Operation\Distinct;
 use MongoDB\Tests\CommandObserver;
-
 use function is_scalar;
 use function json_encode;
 use function usort;
+use function version_compare;
 
 class DistinctFunctionalTest extends FunctionalTestCase
 {
-    public function testDefaultReadConcernIsOmitted(): void
+    public function testDefaultReadConcernIsOmitted()
     {
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new Distinct(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -26,16 +26,20 @@ class DistinctFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectNotHasAttribute('readConcern', $event['started']->getCommand());
             }
         );
     }
 
-    public function testSessionOption(): void
+    public function testSessionOption()
     {
+        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
+            $this->markTestSkipped('Sessions are not supported');
+        }
+
         (new CommandObserver())->observe(
-            function (): void {
+            function () {
                 $operation = new Distinct(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -46,7 +50,7 @@ class DistinctFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event): void {
+            function (array $event) {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );
@@ -55,7 +59,7 @@ class DistinctFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider provideTypeMapOptionsAndExpectedDocuments
      */
-    public function testTypeMapOption(array $typeMap, array $expectedDocuments): void
+    public function testTypeMapOption(array $typeMap, array $expectedDocuments)
     {
         $bulkWrite = new BulkWrite(['ordered' => true]);
         $bulkWrite->insert([

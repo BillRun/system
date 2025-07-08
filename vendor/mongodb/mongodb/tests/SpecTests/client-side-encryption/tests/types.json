@@ -106,6 +106,18 @@
         {
           "command_started_event": {
             "command": {
+              "listCollections": 1,
+              "filter": {
+                "name": "datakeys"
+              },
+              "$db": "keyvault"
+            },
+            "command_name": "listCollections"
+          }
+        },
+        {
+          "command_started_event": {
+            "command": {
               "find": "datakeys",
               "filter": {
                 "$or": [
@@ -242,6 +254,18 @@
         }
       ],
       "expectations": [
+        {
+          "command_started_event": {
+            "command": {
+              "listCollections": 1,
+              "filter": {
+                "name": "datakeys"
+              },
+              "$db": "keyvault"
+            },
+            "command_name": "listCollections"
+          }
+        },
         {
           "command_started_event": {
             "command": {
@@ -384,6 +408,18 @@
         {
           "command_started_event": {
             "command": {
+              "listCollections": 1,
+              "filter": {
+                "name": "datakeys"
+              },
+              "$db": "keyvault"
+            },
+            "command_name": "listCollections"
+          }
+        },
+        {
+          "command_started_event": {
+            "command": {
               "find": "datakeys",
               "filter": {
                 "$or": [
@@ -504,7 +540,7 @@
             }
           },
           "result": {
-            "errorContains": "element of type: double"
+            "errorContains": "Cannot use deterministic encryption for element of type: double"
           }
         }
       ]
@@ -551,7 +587,7 @@
             }
           },
           "result": {
-            "errorContains": "element of type: decimal"
+            "errorContains": "Cannot use deterministic encryption for element of type: decimal"
           }
         }
       ]
@@ -620,6 +656,18 @@
         }
       ],
       "expectations": [
+        {
+          "command_started_event": {
+            "command": {
+              "listCollections": 1,
+              "filter": {
+                "name": "datakeys"
+              },
+              "$db": "keyvault"
+            },
+            "command_name": "listCollections"
+          }
+        },
         {
           "command_started_event": {
             "command": {
@@ -762,6 +810,18 @@
         {
           "command_started_event": {
             "command": {
+              "listCollections": 1,
+              "filter": {
+                "name": "datakeys"
+              },
+              "$db": "keyvault"
+            },
+            "command_name": "listCollections"
+          }
+        },
+        {
+          "command_started_event": {
+            "command": {
               "find": "datakeys",
               "filter": {
                 "$or": [
@@ -883,7 +943,7 @@
             }
           },
           "result": {
-            "errorContains": "element of type: javascriptWithScope"
+            "errorContains": "Cannot use deterministic encryption for element of type: javascriptWithScope"
           }
         }
       ]
@@ -928,7 +988,7 @@
             }
           },
           "result": {
-            "errorContains": "element of type: object"
+            "errorContains": "Cannot use deterministic encryption for element of type: object"
           }
         }
       ]
@@ -997,6 +1057,18 @@
         }
       ],
       "expectations": [
+        {
+          "command_started_event": {
+            "command": {
+              "listCollections": 1,
+              "filter": {
+                "name": "datakeys"
+              },
+              "$db": "keyvault"
+            },
+            "command_name": "listCollections"
+          }
+        },
         {
           "command_started_event": {
             "command": {
@@ -1145,6 +1217,18 @@
         {
           "command_started_event": {
             "command": {
+              "listCollections": 1,
+              "filter": {
+                "name": "datakeys"
+              },
+              "$db": "keyvault"
+            },
+            "command_name": "listCollections"
+          }
+        },
+        {
+          "command_started_event": {
+            "command": {
               "find": "datakeys",
               "filter": {
                 "$or": [
@@ -1285,6 +1369,18 @@
         }
       ],
       "expectations": [
+        {
+          "command_started_event": {
+            "command": {
+              "listCollections": 1,
+              "filter": {
+                "name": "datakeys"
+              },
+              "$db": "keyvault"
+            },
+            "command_name": "listCollections"
+          }
+        },
         {
           "command_started_event": {
             "command": {
@@ -1547,7 +1643,7 @@
             }
           },
           "result": {
-            "errorContains": "element of type: array"
+            "errorContains": "Cannot use deterministic encryption for element of type: array"
           }
         }
       ]
@@ -1592,7 +1688,7 @@
             }
           },
           "result": {
-            "errorContains": "element of type: bool"
+            "errorContains": "Cannot use deterministic encryption for element of type: bool"
           }
         }
       ]

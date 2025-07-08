@@ -17,15 +17,6 @@ interface: phpmethod
 operation: ~
 optional: true
 ---
-source:
-  file: apiargs-common-option.yaml
-  ref: comment
-post: |
-  This is not supported for server versions prior to 4.4 and will result in an
-  exception at execution time if used.
-
-  .. versionadded:: 1.13
----
 arg_name: option
 name: unique
 type: boolean
@@ -114,4 +105,7 @@ post: |
 source:
   file: apiargs-MongoDBCollection-common-option.yaml
   ref: writeConcern
+post: |
+  This is not supported for server versions prior to 3.4 and will result in an
+  exception at execution time if used.
 ...
