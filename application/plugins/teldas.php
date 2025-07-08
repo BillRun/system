@@ -1144,6 +1144,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $aprice = 0 ;
     $left = (float) $duration / $durationDivide;
     foreach ($chargeConfigurations as $sequence => $chargeConfiguration){
+        if($left <= 0){
+            break;
+        }
         if($sequence + 1 !== $chargeConfiguration['sequence']){
             Billrun_Factory::log("not support unsorted 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
             return false;
@@ -1152,16 +1155,24 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         $chargeRate = $chargeConfiguration['rate'] ?? 0; //price in cents per second
         $interval = $chargeConfiguration['time'] ?? 0; //interval in seconds
         $sign = $chargeConfiguration['sign']; 
+        $ruleDuration = $chargeConfiguration['ruleDuration']; 
         if($sign === 'DEBIT'){
             if($ruleType === 'NOT_PRO_RATA'){
                 $aprice += $chargeRate/100;
                 $left -= $interval;
             }elseif($ruleType === 'FIX_PRICE'){
-                $aprice += $left * $chargeRate/100;
-                break;
+                $aprice += $chargeRate/100;
+                $left -= $interval;
             }elseif($ruleType === 'PRO_RATA'){
-                $aprice += $left * $chargeRate/100;
-                break;
+                if($ruleDuration == 1) {
+                    if( $left <= $interval){//should be also equal
+                        $aprice += ($left/$interval * $chargeRate)/100;
+                        break;
+                    }
+                    continue;
+                }
+                $aprice += ($left/$interval * $chargeRate)/100;
+                $left -= $interval;
             }else{
                 Billrun_Factory::log("Not support ruleType $ruleType of 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
                 return false;
@@ -1169,10 +1180,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         }else{
             Billrun_Factory::log("Not support sign $sign of 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
             return false;
-        }
-        if($left <= 0){
-            break;
-        }
+        }  
     }
 
     return $aprice;
