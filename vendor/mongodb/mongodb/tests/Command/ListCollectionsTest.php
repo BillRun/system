@@ -11,7 +11,7 @@ class ListCollectionsTest extends TestCase
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options)
+    public function testConstructorOptionTypeChecks(array $options): void
     {
         $this->expectException(InvalidArgumentException::class);
         new ListCollections($this->getDatabaseName(), $options);
@@ -20,6 +20,10 @@ class ListCollectionsTest extends TestCase
     public function provideInvalidConstructorOptions()
     {
         $options = [];
+
+        foreach ($this->getInvalidBooleanValues() as $value) {
+            $options[][] = ['authorizedCollections' => $value];
+        }
 
         foreach ($this->getInvalidDocumentValues() as $value) {
             $options[][] = ['filter' => $value];

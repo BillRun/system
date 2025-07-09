@@ -31,6 +31,9 @@ final class RegexRequestMatcher implements RequestMatcher
         $this->regex = $regex;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function matches(RequestInterface $request)
     {
         return (bool) preg_match($this->regex, (string) $request->getUri());

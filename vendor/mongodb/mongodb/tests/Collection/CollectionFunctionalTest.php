@@ -5,6 +5,7 @@ namespace MongoDB\Tests\Collection;
 use Closure;
 use MongoDB\BSON\Javascript;
 use MongoDB\Collection;
+use MongoDB\Database;
 use MongoDB\Driver\BulkWrite;
 use MongoDB\Driver\ReadConcern;
 use MongoDB\Driver\ReadPreference;
@@ -14,6 +15,8 @@ use MongoDB\Exception\UnsupportedException;
 use MongoDB\MapReduceResult;
 use MongoDB\Operation\Count;
 use MongoDB\Tests\CommandObserver;
+use TypeError;
+
 use function array_filter;
 use function call_user_func;
 use function is_scalar;
@@ -30,9 +33,9 @@ class CollectionFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider provideInvalidDatabaseAndCollectionNames
      */
-    public function testConstructorDatabaseNameArgument($databaseName)
+    public function testConstructorDatabaseNameArgument($databaseName, string $expectedExceptionClass): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException($expectedExceptionClass);
         // TODO: Move to unit test once ManagerInterface can be mocked (PHPC-378)
         new Collection($this->manager, $databaseName, $this->getCollectionName());
     }
@@ -40,9 +43,9 @@ class CollectionFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider provideInvalidDatabaseAndCollectionNames
      */
-    public function testConstructorCollectionNameArgument($collectionName)
+    public function testConstructorCollectionNameArgument($collectionName, string $expectedExceptionClass): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException($expectedExceptionClass);
         // TODO: Move to unit test once ManagerInterface can be mocked (PHPC-378)
         new Collection($this->manager, $this->getDatabaseName(), $collectionName);
     }
@@ -50,15 +53,15 @@ class CollectionFunctionalTest extends FunctionalTestCase
     public function provideInvalidDatabaseAndCollectionNames()
     {
         return [
-            [null],
-            [''],
+            [null, TypeError::class],
+            ['', InvalidArgumentException::class],
         ];
     }
 
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options)
+    public function testConstructorOptionTypeChecks(array $options): void
     {
         $this->expectException(InvalidArgumentException::class);
         new Collection($this->manager, $this->getDatabaseName(), $this->getCollectionName(), $options);
@@ -87,32 +90,32 @@ class CollectionFunctionalTest extends FunctionalTestCase
         return $options;
     }
 
-    public function testGetManager()
+    public function testGetManager(): void
     {
         $this->assertSame($this->manager, $this->collection->getManager());
     }
 
-    public function testToString()
+    public function testToString(): void
     {
         $this->assertEquals($this->getNamespace(), (string) $this->collection);
     }
 
-    public function getGetCollectionName()
+    public function getGetCollectionName(): void
     {
         $this->assertEquals($this->getCollectionName(), $this->collection->getCollectionName());
     }
 
-    public function getGetDatabaseName()
+    public function getGetDatabaseName(): void
     {
         $this->assertEquals($this->getDatabaseName(), $this->collection->getDatabaseName());
     }
 
-    public function testGetNamespace()
+    public function testGetNamespace(): void
     {
         $this->assertEquals($this->getNamespace(), $this->collection->getNamespace());
     }
 
-    public function testAggregateWithinTransaction()
+    public function testAggregateWithinTransaction(): void
     {
         $this->skipIfTransactionsAreNotSupported();
 
@@ -143,14 +146,10 @@ class CollectionFunctionalTest extends FunctionalTestCase
         }
     }
 
-    public function testCreateIndexSplitsCommandOptions()
+    public function testCreateIndexSplitsCommandOptions(): void
     {
-        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
-            $this->markTestSkipped('Sessions are not supported');
-        }
-
         (new CommandObserver())->observe(
-            function () {
+            function (): void {
                 $this->collection->createIndex(
                     ['x' => 1],
                     [
@@ -162,7 +161,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
                     ]
                 );
             },
-            function (array $event) {
+            function (array $event): void {
                 $command = $event['started']->getCommand();
                 $this->assertObjectHasAttribute('lsid', $command);
                 $this->assertObjectHasAttribute('maxTimeMS', $command);
@@ -176,7 +175,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider provideTypeMapOptionsAndExpectedDocuments
      */
-    public function testDistinctWithTypeMap(array $typeMap, array $expectedDocuments)
+    public function testDistinctWithTypeMap(array $typeMap, array $expectedDocuments): void
     {
         $bulkWrite = new BulkWrite(['ordered' => true]);
         $bulkWrite->insert([
@@ -255,26 +254,26 @@ class CollectionFunctionalTest extends FunctionalTestCase
         ];
     }
 
-    public function testDrop()
+    public function testDrop(): void
     {
         $writeResult = $this->collection->insertOne(['x' => 1]);
         $this->assertEquals(1, $writeResult->getInsertedCount());
 
         $commandResult = $this->collection->drop();
         $this->assertCommandSucceeded($commandResult);
-        $this->assertCollectionCount($this->getNamespace(), 0);
+        $this->assertCollectionDoesNotExist($this->getCollectionName());
     }
 
     /**
      * @todo Move this to a unit test once Manager can be mocked
      */
-    public function testDropIndexShouldNotAllowWildcardCharacter()
+    public function testDropIndexShouldNotAllowWildcardCharacter(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->collection->dropIndex('*');
     }
 
-    public function testExplain()
+    public function testExplain(): void
     {
         $this->createFixtures(3);
 
@@ -285,7 +284,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
         $this->assertArrayHasKey('queryPlanner', $result);
     }
 
-    public function testFindOne()
+    public function testFindOne(): void
     {
         $this->createFixtures(5);
 
@@ -300,7 +299,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
         $this->assertSameDocument($expected, $this->collection->findOne($filter, $options));
     }
 
-    public function testFindWithinTransaction()
+    public function testFindWithinTransaction(): void
     {
         $this->skipIfTransactionsAreNotSupported();
 
@@ -331,7 +330,54 @@ class CollectionFunctionalTest extends FunctionalTestCase
         }
     }
 
-    public function testWithOptionsInheritsOptions()
+    public function testRenameToSameDatabase(): void
+    {
+        $toCollectionName = $this->getCollectionName() . '.renamed';
+        $toCollection = new Collection($this->manager, $this->getDatabaseName(), $toCollectionName);
+
+        $writeResult = $this->collection->insertOne(['_id' => 1]);
+        $this->assertEquals(1, $writeResult->getInsertedCount());
+
+        $commandResult = $this->collection->rename($toCollectionName, null, ['dropTarget' => true]);
+        $this->assertCommandSucceeded($commandResult);
+        $this->assertCollectionDoesNotExist($this->getCollectionName());
+        $this->assertCollectionExists($toCollectionName);
+
+        $this->assertSameDocument(['_id' => 1], $toCollection->findOne());
+        $toCollection->drop();
+    }
+
+    public function testRenameToDifferentDatabase(): void
+    {
+        $toDatabaseName = $this->getDatabaseName() . '_renamed';
+        $toDatabase = new Database($this->manager, $toDatabaseName);
+
+        /* When renaming an unsharded collection, mongos requires the source
+        * and target database to both exist on the primary shard. In practice,
+        * this means we need to create the target database explicitly.
+        * See: https://mongodb.com/docs/manual/reference/command/renameCollection/#unsharded-collections
+        */
+        if ($this->isShardedCluster()) {
+            $toDatabase->foo->insertOne(['_id' => 1]);
+        }
+
+        $toCollectionName = $this->getCollectionName() . '.renamed';
+        $toCollection = new Collection($this->manager, $toDatabaseName, $toCollectionName);
+
+        $writeResult = $this->collection->insertOne(['_id' => 1]);
+        $this->assertEquals(1, $writeResult->getInsertedCount());
+
+        $commandResult = $this->collection->rename($toCollectionName, $toDatabaseName);
+        $this->assertCommandSucceeded($commandResult);
+        $this->assertCollectionDoesNotExist($this->getCollectionName());
+        $this->assertCollectionExists($toCollectionName, $toDatabaseName);
+
+        $this->assertSameDocument(['_id' => 1], $toCollection->findOne());
+
+        $toDatabase->drop();
+    }
+
+    public function testWithOptionsInheritsOptions(): void
     {
         $collectionOptions = [
             'readConcern' => new ReadConcern(ReadConcern::LOCAL),
@@ -357,7 +403,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
         $this->assertSame(WriteConcern::MAJORITY, $debug['writeConcern']->getW());
     }
 
-    public function testWithOptionsPassesOptions()
+    public function testWithOptionsPassesOptions(): void
     {
         $collectionOptions = [
             'readConcern' => new ReadConcern(ReadConcern::LOCAL),
@@ -379,7 +425,13 @@ class CollectionFunctionalTest extends FunctionalTestCase
         $this->assertSame(WriteConcern::MAJORITY, $debug['writeConcern']->getW());
     }
 
-    public function testMapReduce()
+    /**
+     * @group matrix-testing-exclude-server-4.4-driver-4.0
+     * @group matrix-testing-exclude-server-4.4-driver-4.2
+     * @group matrix-testing-exclude-server-5.0-driver-4.0
+     * @group matrix-testing-exclude-server-5.0-driver-4.2
+     */
+    public function testMapReduce(): void
     {
         $this->createFixtures(3);
 
@@ -406,7 +458,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
     {
         return [
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->aggregate(
                         [['$match' => ['_id' => ['$lt' => 3]]]],
                         ['session' => $session] + $options
@@ -415,7 +467,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             ],
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->bulkWrite(
                         [['insertOne' => [['test' => 'foo']]]],
                         ['session' => $session] + $options
@@ -435,7 +487,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             */
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->countDocuments(
                         [],
                         ['session' => $session] + $options
@@ -455,7 +507,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             */
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->deleteMany(
                         ['test' => 'foo'],
                         ['session' => $session] + $options
@@ -464,7 +516,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             ],
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->deleteOne(
                         ['test' => 'foo'],
                         ['session' => $session] + $options
@@ -473,7 +525,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             ],
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->distinct(
                         '_id',
                         [],
@@ -523,7 +575,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             */
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->find(
                         ['test' => 'foo'],
                         ['session' => $session] + $options
@@ -532,7 +584,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             ],
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->findOne(
                         ['test' => 'foo'],
                         ['session' => $session] + $options
@@ -541,7 +593,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             ],
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->findOneAndDelete(
                         ['test' => 'foo'],
                         ['session' => $session] + $options
@@ -550,7 +602,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             ],
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->findOneAndReplace(
                         ['test' => 'foo'],
                         [],
@@ -560,7 +612,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             ],
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->findOneAndUpdate(
                         ['test' => 'foo'],
                         ['$set' => ['updated' => 1]],
@@ -570,7 +622,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             ],
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->insertMany(
                         [
                             ['test' => 'foo'],
@@ -582,7 +634,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             ],
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->insertOne(
                         ['test' => 'foo'],
                         ['session' => $session] + $options
@@ -614,7 +666,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             */
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->replaceOne(
                         ['test' => 'foo'],
                         [],
@@ -624,7 +676,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             ],
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->updateMany(
                         ['test' => 'foo'],
                         ['$set' => ['updated' => 1]],
@@ -634,7 +686,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
             ],
 
             [
-                function ($collection, $session, $options = []) {
+                function ($collection, $session, $options = []): void {
                     $collection->updateOne(
                         ['test' => 'foo'],
                         ['$set' => ['updated' => 1]],
@@ -683,7 +735,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider collectionMethodClosures
      */
-    public function testMethodDoesNotInheritReadWriteConcernInTranasaction(Closure $method)
+    public function testMethodDoesNotInheritReadWriteConcernInTranasaction(Closure $method): void
     {
         $this->skipIfTransactionsAreNotSupported();
 
@@ -698,10 +750,10 @@ class CollectionFunctionalTest extends FunctionalTestCase
         ]);
 
         (new CommandObserver())->observe(
-            function () use ($method, $collection, $session) {
+            function () use ($method, $collection, $session): void {
                 call_user_func($method, $collection, $session);
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertObjectNotHasAttribute('writeConcern', $event['started']->getCommand());
                 $this->assertObjectNotHasAttribute('readConcern', $event['started']->getCommand());
             }
@@ -711,7 +763,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider collectionWriteMethodClosures
      */
-    public function testMethodInTransactionWithWriteConcernOption($method)
+    public function testMethodInTransactionWithWriteConcernOption($method): void
     {
         $this->skipIfTransactionsAreNotSupported();
 
@@ -733,7 +785,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider collectionReadMethodClosures
      */
-    public function testMethodInTransactionWithReadConcernOption($method)
+    public function testMethodInTransactionWithReadConcernOption($method): void
     {
         $this->skipIfTransactionsAreNotSupported();
 
@@ -754,11 +806,8 @@ class CollectionFunctionalTest extends FunctionalTestCase
 
     /**
      * Create data fixtures.
-     *
-     * @param integer $n
-     * @param array   $executeBulkWriteOptions
      */
-    private function createFixtures($n, array $executeBulkWriteOptions = [])
+    private function createFixtures(int $n, array $executeBulkWriteOptions = []): void
     {
         $bulkWrite = new BulkWrite(['ordered' => true]);
 
