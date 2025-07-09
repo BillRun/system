@@ -1143,6 +1143,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $durationDivide = Billrun_Util::getIn($this->options, 'matching_paths.duration.divide_to_seconds', 1000);
     $aprice = 0 ;
     $left = (float) $duration / $durationDivide;
+    $left = $this->converFieldByRoundingRules($left, 'duration', 2);
     foreach ($chargeConfigurations as $sequence => $chargeConfiguration){
         if($left <= 0){
             break;
@@ -1156,23 +1157,31 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         $interval = $chargeConfiguration['time'] ?? 0; //interval in seconds
         $sign = $chargeConfiguration['sign']; 
         $ruleDuration = $chargeConfiguration['ruleDuration']; 
+        if ($ruleDuration == 0){
+            $ruleDuration = INF;
+        }
         if($sign === 'DEBIT'){
             if($ruleType === 'NOT_PRO_RATA'){
-                $aprice += $chargeRate/100;
-                $left -= $interval;
+                $useRuleDuration = ceil($left/$interval);
+
+                if($useRuleDuration >= $ruleDuration){
+                    $aprice += ($ruleDuration*$chargeRate)/100;
+                    $left -= $interval*$ruleDuration;
+                }else{
+                    $aprice += ($useRuleDuration * $chargeRate)/100;
+                    $left -= $interval*ceil($useRuleDuration);
+                }
             }elseif($ruleType === 'FIX_PRICE'){
                 $aprice += $chargeRate/100;
-                $left -= $interval;
             }elseif($ruleType === 'PRO_RATA'){
-                if($ruleDuration == 1) {
-                    if( $left <= $interval){//should be also equal
-                        $aprice += ($left/$interval * $chargeRate)/100;
-                        break;
-                    }
-                    continue;
+                $useRuleDuration = $left/$interval;
+                if($useRuleDuration >= $ruleDuration){
+                    $aprice += ($ruleDuration * $chargeRate)/100;
+                    $left -= $interval*$ruleDuration;
+                }else{
+                    $aprice += ($useRuleDuration * $chargeRate)/100;
+                    $left -= $interval*ceil($useRuleDuration);
                 }
-                $aprice += ($left/$interval * $chargeRate)/100;
-                $left -= $interval;
             }else{
                 Billrun_Factory::log("Not support ruleType $ruleType of 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
                 return false;
@@ -1182,10 +1191,15 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             return false;
         }  
     }
-
+    $aprice = $this->converFieldByRoundingRules($aprice, 'final_charge', 3);
     return $aprice;
   }      
 
+  protected function converFieldByRoundingRules($left, $field , $defualt){
+    $durationRoundingType = Billrun_Util::getIn($this->options, 'rounding_rules.' . $field .'.rounding_type', 'up');
+    $durationRoundingDecimals = Billrun_Util::getIn($this->options, 'rounding_rules.' . $field . '.rounding_decimals', $defualt);
+    return Billrun_Util::roundingNumber($left, $durationRoundingType, $durationRoundingDecimals);
+  }
 
   protected function getTariffProfileType($id){
     if($id >= 10000 && $id<=19999){
@@ -1414,7 +1428,24 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           "display" => true,
           "nullable" => false,
         ],
-
+        [
+            "type" => "json",
+            "field_name" => "rounding_rules",
+            "title" => "TelDas rounding rules",
+            "editable" => true,
+            "display" => true,
+            "nullable" => false,
+            /*"{
+              duration: {
+                 rounding_type : up,
+		         rounding_decimals: 2
+              }, 
+              final_charge: {
+                 rounding_type : up,
+		         rounding_decimals : 3
+              },
+            }"*/
+          ],
 		];
 	}
 
