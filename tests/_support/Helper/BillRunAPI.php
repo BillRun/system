@@ -155,6 +155,61 @@ class BillRunAPI extends \Codeception\Module
         
         return json_decode($ret, true);
     }
+/**
+     * Sets settings for a specified category.
+     *
+     * This function sends a POST request to update settings for a given category.
+     * It authenticates the request using a bearer token and sends the data as JSON.
+     *
+     * @param string $category The category of settings to be updated.
+     * @param array $data An associative array containing the settings to be updated.
+     * @return array The API response decoded as an associative array.
+     */
+    public function setSettings($category, $data)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+
+        $params = [
+            'category' => $category,
+            'action' => 'set',
+            'data' => json_encode($data)
+        ];
+
+        $ret = $rest->sendPOST("/api/settings", $params);
+
+        return json_decode($ret, true);
+    }
+
+    /**
+     * Retrieves settings for a specified category.
+     *
+     * This function sends a GET request to fetch settings for a given category.
+     * It authenticates the request using a bearer token and sends any additional data as query parameters.
+     *
+     * @param string $category The category of settings to retrieve.
+     * @param array $data Optional. Additional data to send with the request. Default is an empty array.
+     * @return array The API response decoded as an associative array.
+     */
+    public function getSettings($category, $data = [])
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+
+        $params = [
+            'category' => $category,
+            'data' => json_encode($data)
+        ];
+
+        // For GET request, we need to add parameters to the URL
+        $ret = $rest->sendGET("/api/settings", $params);
+
+        return json_decode($ret, true);
+    }
 
     public function sendBillapiUpdate($entity,$query,$update )
     {
@@ -326,6 +381,49 @@ class BillRunAPI extends \Codeception\Module
         ], $override);
 
         $this->sendBillapiCreate($service, 'services');
+    }
+
+        /**
+     * create an rate.
+     * @param Array $override - fields to override the default values 
+     */
+    public function generateRate(array $override = [])
+    {
+        $populatedValues = $this->getCustomFields('rates');
+        $override = array_merge($populatedValues, $override);
+        $rate = array_merge([
+                "key"=> "CALL",
+                "description"=> "call",
+                "pricing_method"=> "tiered",
+                "add_to_retail"=> true,
+                "tariff_category"=> "retail",
+                "rates"=> [
+                    "call"=> [
+                        "BASE"=> [
+                            "rate"=> [
+                                [
+                                    "from"=> 0,
+                                    "to"=> "UNLIMITED",
+                                    "interval"=> 11,
+                                    "price"=> 11,
+                                    "uom_display"=> [
+                                        "range"=> "seconds",
+                                        "interval"=> "seconds"
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                "from"=> "2025-02-24",
+                "tax"=> [
+                    [
+                        "type"=> "vat",
+                        "taxation"=> "global"
+                    ]
+                ]
+        ], $override);
+        $this->sendBillapiCreate($rate, 'rates');
     }
 
     /**
