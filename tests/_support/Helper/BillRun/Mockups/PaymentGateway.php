@@ -14,6 +14,7 @@ class PaymentGateway extends \Helper\BillRun\Mockups\Mockup
   public function enableCreditGuardPGWithSettings($data = []) {
     $model = new \ConfigModel();
     $model->updateConfig('payment_gateways', $this->getSampleConfiguration());
+    \Billrun_Config::getInstance()->loadDbConfig(); // TODO remove this hack (ref: https://billrun.atlassian.net/browse/BRCD-4925)
   }
 
   protected function getSampleConfiguration2() {
