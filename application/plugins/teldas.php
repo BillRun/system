@@ -1143,7 +1143,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $durationDivide = Billrun_Util::getIn($this->options, 'matching_paths.duration.divide_to_seconds', 1000);
     $aprice = 0 ;
     $left = (float) $duration / $durationDivide;
-    $left = $this->converFieldByRoundingRules($left, 'duration', 2);
+    $left = $this->converFieldByRoundingRules($left, 'duration');
     foreach ($chargeConfigurations as $sequence => $chargeConfiguration){
         if($left <= 0){
             break;
@@ -1191,13 +1191,16 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             return false;
         }  
     }
-    $aprice = $this->converFieldByRoundingRules($aprice, 'final_charge', 3);
+    $aprice = $this->converFieldByRoundingRules($aprice, 'final_charge');
     return $aprice;
   }      
 
-  protected function converFieldByRoundingRules($left, $field , $defualt){
-    $durationRoundingType = Billrun_Util::getIn($this->options, 'rounding_rules.' . $field .'.rounding_type', 'up');
-    $durationRoundingDecimals = Billrun_Util::getIn($this->options, 'rounding_rules.' . $field . '.rounding_decimals', $defualt);
+  protected function converFieldByRoundingRules($left, $field){
+    $durationRoundingType = Billrun_Util::getIn($this->options, 'rounding_rules.' . $field .'.rounding_type', 'none');
+    if($durationRoundingType == 'none'){
+        return $left;
+    }
+    $durationRoundingDecimals = Billrun_Util::getIn($this->options, 'rounding_rules.' . $field . '.rounding_decimals', 2);
     return Billrun_Util::roundingNumber($left, $durationRoundingType, $durationRoundingDecimals);
   }
 
