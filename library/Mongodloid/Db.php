@@ -17,6 +17,13 @@ class Mongodloid_Db {
 		$this->_connection = $connection;
 	}
 
+	/**
+	 * method to return the collection instance
+	 * 
+	 * @param string $name collection name
+	 * 
+	 * @return Mongodloid_Collection
+	 */
 	public function getCollection($name) {
 		if (!isset($this->_collections[$name]) || !$this->_collections[$name])
 			$this->_collections[$name] = new Mongodloid_Collection($this->_db->selectCollection($name), $this);
@@ -179,5 +186,5 @@ class Mongodloid_Db {
 	public function getDb() {
 		return $this->_db;
 	}
-
+	
 }

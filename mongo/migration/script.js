@@ -126,16 +126,36 @@ var invoice_language_field = {
 lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
 // BRCD-1078: add rate categories
 for (var i in lastConfig['file_types']) {
-	var firstKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'])[0];
-	var secKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'][firstKey])[0];
+	var rc = lastConfig['file_types'][i]['rate_calculators'];
+	if (!rc || typeof rc !== 'object') {
+		continue;
+	}
+
+	var firstKeys = Object.keys(rc);
+	if (firstKeys.length === 0) {
+		continue;
+	}
+
+	var firstKey = firstKeys[0];
+	var second = rc[firstKey];
+	if (!second || typeof second !== 'object') {
+		continue;
+	}
+
+	var secKeys = Object.keys(second);
+	if (secKeys.length === 0) {
+		continue;
+	}
+
+	var secKey = secKeys[0];
+
 	if (secKey == 0) {
-		lastConfig['file_types'][i]['rate_calculators']['retail'] = {};
-	for (var usaget in lastConfig['file_types'][i]['rate_calculators']) {
-			if (usaget === 'retail') {
+		rc['retail'] = {};
+		for (var usaget in rc) {
+			if (usaget === 'retail')
 				continue;
-			}
-			lastConfig['file_types'][i]['rate_calculators']['retail'][usaget] = lastConfig['file_types'][i]['rate_calculators'][usaget];
-			delete lastConfig['file_types'][i]['rate_calculators'][usaget];
+			rc['retail'][usaget] = rc[usaget];
+			delete rc[usaget];
 		}
 	}
 }

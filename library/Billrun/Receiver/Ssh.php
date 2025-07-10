@@ -158,8 +158,23 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						$ret[] = $fileData['path'];
 						$count++;
 
+						// Add extension
+						if (isset($config['received_extension']) && $config['received_extension']) {
+							$renamedFile = $file . $config['received_extension'];
+							Billrun_Factory::log()->log("SSH: Renaming file {$file} to \"{$renamedFile}\" on remote host.", Zend_Log::INFO);
+							if (!$this->renameRemoteFile($ssh_path . '/' . $file, $ssh_path . '/' . $renamedFile)) {
+								Billrun_Factory::log()->log("SSH: Failed to rename file {$file} to \"{$renamedFile}\" on remote host.", Zend_Log::WARN);
+							}
+							if (isset($config['delete_received']) && $config['delete_received']) {
+								Billrun_Factory::log()->log(
+									"SSH: `received_extension` is set. Skipping file deletion (`delete_received` is ignored).",
+									Zend_Log::INFO
+								);
+							}
+						}
+
 						// Delete from remote
-						if (isset($config['delete_received']) && $config['delete_received']) {
+						else if (isset($config['delete_received']) && $config['delete_received']) {
 							Billrun_Factory::log()->log("SSH: Deleting file {$file} from remote host ", Zend_Log::INFO);
 							if(!$this->deleteRemote($ssh_path . '/' . $file)) {
 								Billrun_Factory::log()->log("SSH: Failed to delete file: " . $file, Zend_Log::WARN);
@@ -217,6 +232,18 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	 */
 	protected function deleteRemote($file_path) {
 		return $this->ssh->deleteFile($file_path);
+	}
+
+	/**
+	 * Rename a file on the remote server.
+	 *
+	 * @param string $oldName The current name of the file on the remote server.
+	 * @param string $newName The new name for the file on the remote server.
+	 * @return boolean True if renaming was successful, false otherwise.
+	 */
+	protected function renameRemoteFile($oldName, $newName)
+	{
+		return $this->ssh->renameFile($oldName, $newName);
 	}
 
 	/**

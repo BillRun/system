@@ -75,9 +75,16 @@ trait Billrun_Traits_Async {
 				Billrun_Factory::log("asyncSignalHandler signo: " . $signo . " Process timed out");
 				exit(1); // Exit with error status
 				break;
+			case SIGTERM:
+				$this->kill();
+				break;
 			default:
 				Billrun_Factory::log("asyncSignalHandler signo: " . $signo);
 		}
+	}
+	
+	protected function kill() {
+		return;
 	}
 
 	public function setAsyncMaxConcurrent($max = null) {
@@ -165,10 +172,15 @@ trait Billrun_Traits_Async {
 		}
 	}
 	
+	protected function reloadDbConfig() {
+		Billrun_Factory::config()->loadDbConfig();
+	}
+	
 	protected function executeChild(callable $task, array $args) {
 		try {
 			Billrun_Factory::db([], true)->command(['ping' => 1]);
 			Billrun_Jobsmanager::cleanInstance();
+			$this->reloadDbConfig();
 			Billrun_Factory::log()->updateStamp();
 			Billrun_Factory::log("child process");
 			pcntl_alarm($this->asyncTimeout);

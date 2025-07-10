@@ -17,6 +17,7 @@ class Mongodloid_Collection {
 
 	protected $w = 1;
 	protected $j = false;
+	protected $watching = true;
 
 	/**
 	 * Create a new instance of the collection object.
@@ -838,4 +839,68 @@ class Mongodloid_Collection {
 		unset($options['wTimeoutMS']);
 	}
 
+	/**
+	 * Gracefully stop an active change stream loop.
+	 */
+	public function stopWatching() {
+		$this->watching = false;
+	}
+
+	/**
+	 * Watch the collection for changes using MongoDB Change Streams.
+	 *
+	 * @param callable $handler            Callback to run for each change.
+	 * @param array    $pipeline           Change stream filter pipeline.
+	 * @param array    $options            ['fullDocument', 'maxDurationSeconds', 'loopDelayUs']
+	 *
+	 * @throws Exception if change streams are not supported or connection fails.
+	 */
+	public function watchChanges(callable $handler, array $pipeline = [], array $options = []) {
+		if (!method_exists($this->_collection, 'watch')) {
+			throw new Exception("MongoDB driver does not support change streams.");
+		}
+		if (!is_callable($handler)) {
+			throw new Exception("watch change: handle is not callable");
+		}
+
+		$defaultOptions = [
+			'fullDocument' => \MongoDB\Operation\Watch::FULL_DOCUMENT_UPDATE_LOOKUP,
+			'loopDelayUs' => 500000, // 0.5s between invalid reads
+		];
+		$watchOptions = array_intersect_key($options, array_flip(['fullDocument']));
+		$loopDelayUs = $options['loopDelayUs'] ?? $defaultOptions['loopDelayUs'];
+		$maxDuration = $options['maxDurationSeconds'] ?? null;
+		$startTime = time();
+
+		$this->watching = true;
+
+		try {
+			$changeStream = $this->_collection->watch($pipeline, $watchOptions);
+			$changeStream->rewind();
+
+			while ($this->watching) {
+				if ($maxDuration && (time() - $startTime) >= $maxDuration) {
+					Billrun_Factory::log('[ChangeStream] Max duration exceeded. Exiting.', Zend_Log::INFO);
+					break;
+				}
+
+				$changeStream->next();
+
+				if (!$changeStream->valid()) {
+					usleep($loopDelayUs);
+					continue;
+				}
+
+				$change = $changeStream->current();
+				$handler(Mongodloid_Result::getResult($change['fullDocument']));
+
+				if (($change['operationType'] ?? '') === 'invalidate') {
+					Billrun_Factory::log('[ChangeStream] Received invalidate. Exiting.', Zend_Log::INFO);
+					break;
+				}
+			}
+		} catch (\Throwable $e) {
+			Billrun_Factory::log('[ChangeStream] Error: ' . $e->getMessage(), Zend_Log::ERR);
+		}
+	}
 }

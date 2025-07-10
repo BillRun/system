@@ -8,8 +8,23 @@ source:
   ref: collation
 ---
 source:
+  file: apiargs-common-option.yaml
+  ref: comment
+post: |
+  The comment can be any valid BSON type for server versions 4.4 and above.
+  Earlier server versions only support string values.
+
+  .. versionadded:: 1.13
+---
+source:
   file: apiargs-method-watch-option.yaml
   ref: fullDocument
+---
+source:
+  file: apiargs-method-watch-option.yaml
+  ref: fullDocumentBeforeChange
+post: |
+  .. versionadded: 1.13
 ---
 source:
   file: apiargs-method-watch-option.yaml
@@ -33,6 +48,12 @@ source:
 source:
   file: apiargs-common-option.yaml
   ref: session
+---
+source:
+  file: apiargs-method-watch-option.yaml
+  ref: showExpandedEvents
+post: |
+  .. versionadded:: 1.13
 ---
 source:
   file: apiargs-method-watch-option.yaml

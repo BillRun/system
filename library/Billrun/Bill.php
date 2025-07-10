@@ -720,7 +720,7 @@ abstract class Billrun_Bill {
 		}
 
 		Billrun_Factory::log()->log("Calculating balance for the accounts that were found relevant for collection", Zend_Log::DEBUG);
-		return static::getBalanceByAids($aidsQuery, true, true, true, $minDebt);
+		return static::getBalanceByAids($aidsQuery, true, true, $minDebt);
 	}
 
 	public function getDueBeforeVat() {
