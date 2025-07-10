@@ -64,6 +64,13 @@ class QueueController extends ApiController {
 	}
 	
 	public function latestjobAction() {
+		$this->latestjobsAction();
+	}
+
+	/**
+	 * method to receive the latest jobs of specific type
+	 */
+	public function latestjobsAction() {
 		$request = $this->getRequest();
 		$job_type = (string) $request->get('job_type');
 		if (empty($job_type)) {
@@ -76,7 +83,7 @@ class QueueController extends ApiController {
 			return;
 		}
 		$model = new JobsqueueModel();
-		$data = $model->getLatestJob($job_type, $limit);
+		$data = $model->getLatestJobs($job_type, $limit);
 		$ret = [
 			'status' => 1,
 			'details' => $data,
@@ -100,6 +107,10 @@ class QueueController extends ApiController {
 		$this->setOutput([$ret]);
 	}
 	
+	/**
+	 * method to cancel non-completed jobs
+	 * option: include_childs to cancel child jobs 
+	 */
 	public function canceljobAction() {
 		$request = $this->getRequest();
 		$job_md5 = (string) $request->get('job_md5');
@@ -110,17 +121,21 @@ class QueueController extends ApiController {
 			];
 			$this->setOutput([$ret]);
 		}
+		$includeChildJobs = (int) $request->get('include_childs', 1);
 		$model = new JobsqueueModel();
-		$status = $model->cancelJob($job_md5);
-		if ($status['ok'] == 1 && $status['nModified'] === 1) {
+		$cancelJobStatus = $model->cancelJob($job_md5, $includeChildJobs);
+		if ($cancelJobStatus['ok'] == 1 && $cancelJobStatus['nModified'] >= 1) {
 			$status = 1;
-			$desc = 'job cancelled';
+			$jobsCancelledCount = $cancelJobStatus['nModified'];
+			$desc = $cancelJobStatus['nModified'] . ' job' . ($jobsCancelledCount > 1 ? 's' :'') . ' cancelled';
 		} else {
 			$status = 0;
+			$jobsCancelledCount = 0;
 			$desc = 'job did not found or already done/cancelled';
 		}
 		$ret = [
 			'status' => $status,
+			'count_jobs_cancelled' => $jobsCancelledCount,
 			'desc' => $desc,
 		];
 		$this->setOutput([$ret]);
@@ -132,7 +147,7 @@ class QueueController extends ApiController {
 	}
 	
 	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 
 }

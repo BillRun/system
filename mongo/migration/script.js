@@ -126,16 +126,36 @@ var invoice_language_field = {
 lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
 // BRCD-1078: add rate categories
 for (var i in lastConfig['file_types']) {
-	var firstKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'])[0];
-	var secKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'][firstKey])[0];
+	var rc = lastConfig['file_types'][i]['rate_calculators'];
+	if (!rc || typeof rc !== 'object') {
+		continue;
+	}
+
+	var firstKeys = Object.keys(rc);
+	if (firstKeys.length === 0) {
+		continue;
+	}
+
+	var firstKey = firstKeys[0];
+	var second = rc[firstKey];
+	if (!second || typeof second !== 'object') {
+		continue;
+	}
+
+	var secKeys = Object.keys(second);
+	if (secKeys.length === 0) {
+		continue;
+	}
+
+	var secKey = secKeys[0];
+
 	if (secKey == 0) {
-		lastConfig['file_types'][i]['rate_calculators']['retail'] = {};
-	for (var usaget in lastConfig['file_types'][i]['rate_calculators']) {
-			if (usaget === 'retail') {
+		rc['retail'] = {};
+		for (var usaget in rc) {
+			if (usaget === 'retail')
 				continue;
-			}
-			lastConfig['file_types'][i]['rate_calculators']['retail'][usaget] = lastConfig['file_types'][i]['rate_calculators'][usaget];
-			delete lastConfig['file_types'][i]['rate_calculators'][usaget];
+			rc['retail'][usaget] = rc[usaget];
+			delete rc[usaget];
 		}
 	}
 }
@@ -1964,13 +1984,50 @@ runOnce(lastConfig, 'BRCD-4422', function () {
 	db.jobs_messages.createIndex({'start_time': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'timeout': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'complete_time': 1}, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'schedule': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'handle': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'md5': 1}, { 'unique': true, 'background': true });
-	db.jobs_messages.createIndex({'queue_name': 1, 'timeout': 1, 'done': 1 }, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'queue_name': 1, 'done': 1, 'schedule': 1, 'timeout': 1 }, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'body.parent': 1, }, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'body.type': 1, 'created': -1}, { 'unique': false, 'background': true });
 	if (db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos' && db.version() >= "8") {
 		sh.shardCollection(_dbName + ".jobs_messages", { "md5" : 1 } );
+	}
+});
+//BRCD-4827: Migration script for old to new structure of the “collection” field.
+runOnce(lastConfig, 'BRCD-4827', function () {
+	if (typeof lastConfig['collection'] !== 'undefined') {
+		var oldCollection = lastConfig['collection'];
+		var newCollection = {
+			"processes": [{
+				name: "default_process",
+				label: "Default process",
+				conditions: [	
+				],
+				"settings" : {
+				},
+				"steps" : [
+				]
+			}],
+		}
+		if (typeof oldCollection["settings"]["min_debt"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["min_debt"] = oldCollection["settings"]["min_debt"];
+			delete( oldCollection["settings"]["min_debt"]);
+		}
+		if (typeof oldCollection["settings"]["change_state_url"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["change_state_url"] = oldCollection["settings"]["change_state_url"];
+			delete( oldCollection["settings"]["change_state_url"]);
+		}
+		if (typeof oldCollection["settings"]["change_state_method"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["change_state_method"] = oldCollection["settings"]["change_state_method"];
+			delete( oldCollection["settings"]["change_state_method"]);
+		}
+		if (typeof oldCollection["steps"] !== 'undefined') {
+			newCollection['processes'][0]["steps"]= oldCollection["steps"];
+		}
+		newCollection["settings"] = oldCollection["settings"];
+
+		lastConfig['collection'] = newCollection;
 	}
 });
 

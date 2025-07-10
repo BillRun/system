@@ -29,7 +29,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 
 	public function update($pricingOnly = false) {
 		$pricingData = parent::update($pricingOnly);
-		if(in_array('tax', $this->row['skip_calc'])){
+		if(isset($this->row['skip_calc']) && in_array('tax', $this->row['skip_calc'])){
 			$billrunKey = Billrun_Billingcycle::getBillrunKeyByRow($this->row);
 			if($billrunKey){
 				$pricingData['billrun'] = $billrunKey;
@@ -66,7 +66,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 			if (is_array($balance['tx']) && empty($balance['tx'])) { //TODO: this is a hack because tx is saved as [] instead of {}
 				$balance['tx'] = new stdClass();
 			}
-                        if (is_array($balance['tx2']) && empty($balance['tx2'])) { //TODO: this is a hack because tx is saved as [] instead of {}
+			if (is_array($balance['tx2']) && empty($balance['tx2'])) { //TODO: this is a hack because tx is saved as [] instead of {}
 				$balance['tx2'] = new stdClass();
 			}
 			$balance->collection($balances_coll);

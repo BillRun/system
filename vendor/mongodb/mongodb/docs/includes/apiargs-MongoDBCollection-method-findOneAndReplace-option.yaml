@@ -12,6 +12,15 @@ source:
 ---
 source:
   file: apiargs-common-option.yaml
+  ref: comment
+post: |
+  This is not supported for server versions prior to 4.4 and will result in an
+  exception at execution time if used.
+
+  .. versionadded:: 1.13
+---
+source:
+  file: apiargs-common-option.yaml
   ref: hint
 post: |
   This option is available in MongoDB 4.4+ and will result in an exception at
@@ -26,6 +35,12 @@ source:
 source:
   file: apiargs-MongoDBCollection-common-option.yaml
   ref: bypassDocumentValidation
+---
+source:
+  file: apiargs-common-option.yaml
+  ref: let
+post: |
+  .. versionadded:: 1.13
 ---
 arg_name: option
 name: returnDocument
@@ -59,7 +74,4 @@ source:
 source:
   file: apiargs-MongoDBCollection-common-option.yaml
   ref: writeConcern
-post: |
-  This is not supported for server versions prior to 3.2 and will result in an
-  exception at execution time if used.
 ...

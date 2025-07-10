@@ -25,7 +25,6 @@ class JobsqueueModel extends TableModel {
 		$pipeline[] = array(
 			'$match' => array(
 				'body.parent' => $job_md5,
-				'body.type' => 'Cycle_Account',
 			)
 		);
 		$pipeline[] = array(
@@ -55,16 +54,17 @@ class JobsqueueModel extends TableModel {
 		return $result->getRawData();
 	}
 	
-	public function getLatestJob($job_type, $limit) {
+	public function getLatestJobs($job_type, $limit) {
 		$query = array(
 			'body.type' => ucfirst($job_type),
 		);
 
-		$entry = $this->collection->query($query)->cursor()->sort(['created' => -1])->limit($limit)->current();
-		if ($entry->isEmpty()) {
-			return FALSE;
+		$entries = $this->collection->query($query)->cursor()->sort(['created' => -1])->limit($limit);
+		$ret = [];
+		foreach ($entries as $entry) {
+			$ret[] = $entry->getRawData();
 		}
-		return $entry->getRawData();
+		return $ret;
 	}
 	
 	public function getCycleAccountsLeft($billrun_key) {
@@ -84,11 +84,21 @@ class JobsqueueModel extends TableModel {
 		return $ret;
 	}
 	
-	public function cancelJob($md5) {
+	public function cancelJob($md5, $includeChildJobs = false) {
 		$query = [
-			'md5' => $md5,
+			'start_time' => ['$exists' => 0],
 			'done' => ['$ne' => 1],
 		];
+		if ($includeChildJobs) {
+			$multiple = 1;
+			$query['$or'] = [
+				[ 'md5' => $md5 ],
+				[ 'body.parent' => $md5 ],
+			];
+		} else {
+			$multiple = 0;
+			$query['md5'] = $md5;
+		}
 		$update = [
 			'$set' => [
 				'done' => 1,
@@ -96,7 +106,7 @@ class JobsqueueModel extends TableModel {
 				'cancel_time' => new Mongodloid_Date(),		
 			]
 		];
-		$options = ['upsert' => false];
+		$options = ['upsert' => false, 'multiple' => $multiple];
 		$ret = $this->collection->update($query, $update, $options);
 		return $ret;
 	}
