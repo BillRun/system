@@ -9,7 +9,8 @@
     {
       "minServerVersion": "4.1.7",
       "topology": [
-        "sharded"
+        "sharded",
+        "load-balanced"
       ]
     }
   ],
@@ -118,12 +119,12 @@
           "failCommands": [
             "insert"
           ],
+          "errorLabels": [
+            "RetryableWriteError"
+          ],
           "writeConcernError": {
             "code": 91,
-            "errmsg": "Replication is being shut down",
-            "errorLabels": [
-              "RetryableWriteError"
-            ]
+            "errmsg": "Replication is being shut down"
           }
         }
       },

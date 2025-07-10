@@ -6,11 +6,10 @@ use MongoDB\Operation\DropDatabase;
 use MongoDB\Operation\InsertOne;
 use MongoDB\Operation\ListCollectionNames;
 use MongoDB\Tests\CommandObserver;
-use function version_compare;
 
 class ListCollectionNamesFunctionalTest extends FunctionalTestCase
 {
-    public function testListCollectionNamesForNewlyCreatedDatabase()
+    public function testListCollectionNamesForNewlyCreatedDatabase(): void
     {
         $server = $this->getPrimaryServer();
 
@@ -30,14 +29,28 @@ class ListCollectionNamesFunctionalTest extends FunctionalTestCase
         }
     }
 
-    public function testSessionOption()
+    public function testAuthorizedCollectionsOption(): void
     {
-        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
-            $this->markTestSkipped('Sessions are not supported');
-        }
-
         (new CommandObserver())->observe(
-            function () {
+            function (): void {
+                $operation = new ListCollectionNames(
+                    $this->getDatabaseName(),
+                    ['authorizedCollections' => true]
+                );
+
+                $operation->execute($this->getPrimaryServer());
+            },
+            function (array $event): void {
+                $this->assertObjectHasAttribute('authorizedCollections', $event['started']->getCommand());
+                $this->assertSame(true, $event['started']->getCommand()->authorizedCollections);
+            }
+        );
+    }
+
+    public function testSessionOption(): void
+    {
+        (new CommandObserver())->observe(
+            function (): void {
                 $operation = new ListCollectionNames(
                     $this->getDatabaseName(),
                     ['session' => $this->createSession()]
@@ -45,7 +58,7 @@ class ListCollectionNamesFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );

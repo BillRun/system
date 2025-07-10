@@ -22,6 +22,9 @@ final class CallbackRequestMatcher implements RequestMatcher
         $this->callback = $callback;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function matches(RequestInterface $request)
     {
         return (bool) call_user_func($this->callback, $request);

@@ -20,6 +20,9 @@ if (!interface_exists(UriFactory::class)) {
  */
 final class GuzzleUriFactory implements UriFactory
 {
+    /**
+     * {@inheritdoc}
+     */
     public function createUri($uri)
     {
         if (class_exists(Utils::class)) {

@@ -2,7 +2,6 @@
 
 namespace MongoDB\Tests\Operation;
 
-use ArrayIterator;
 use MongoDB\Collection;
 use MongoDB\Driver\BulkWrite;
 use MongoDB\Driver\Exception\RuntimeException;
@@ -11,16 +10,34 @@ use MongoDB\Driver\WriteConcern;
 use MongoDB\Operation\Aggregate;
 use MongoDB\Tests\CommandObserver;
 use stdClass;
+
 use function current;
 use function iterator_to_array;
-use function version_compare;
 
 class AggregateFunctionalTest extends FunctionalTestCase
 {
-    public function testBatchSizeIsIgnoredIfPipelineIncludesOutStage()
+    public function testAllowDiskUseIsOmittedByDefault(): void
     {
         (new CommandObserver())->observe(
-            function () {
+            function (): void {
+                $operation = new Aggregate(
+                    $this->getDatabaseName(),
+                    $this->getCollectionName(),
+                    [['$match' => ['x' => 1]]]
+                );
+
+                $operation->execute($this->getPrimaryServer());
+            },
+            function (array $event): void {
+                $this->assertObjectNotHasAttribute('allowDiskUse', $event['started']->getCommand());
+            }
+        );
+    }
+
+    public function testBatchSizeIsIgnoredIfPipelineIncludesOutStage(): void
+    {
+        (new CommandObserver())->observe(
+            function (): void {
                 $operation = new Aggregate(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -30,7 +47,7 @@ class AggregateFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertEquals(new stdClass(), $event['started']->getCommand()->cursor);
             }
         );
@@ -39,14 +56,10 @@ class AggregateFunctionalTest extends FunctionalTestCase
         $outCollection->drop();
     }
 
-    public function testCurrentOpCommand()
+    public function testCurrentOpCommand(): void
     {
-        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
-            $this->markTestSkipped('$currentOp is not supported');
-        }
-
         (new CommandObserver())->observe(
-            function () {
+            function (): void {
                 $operation = new Aggregate(
                     'admin',
                     null,
@@ -55,16 +68,16 @@ class AggregateFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertSame(1, $event['started']->getCommand()->aggregate);
             }
         );
     }
 
-    public function testDefaultReadConcernIsOmitted()
+    public function testDefaultReadConcernIsOmitted(): void
     {
         (new CommandObserver())->observe(
-            function () {
+            function (): void {
                 $operation = new Aggregate(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -74,16 +87,16 @@ class AggregateFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertObjectNotHasAttribute('readConcern', $event['started']->getCommand());
             }
         );
     }
 
-    public function testDefaultWriteConcernIsOmitted()
+    public function testDefaultWriteConcernIsOmitted(): void
     {
         (new CommandObserver())->observe(
-            function () {
+            function (): void {
                 $operation = new Aggregate(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -93,7 +106,7 @@ class AggregateFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertObjectNotHasAttribute('writeConcern', $event['started']->getCommand());
             }
         );
@@ -102,7 +115,7 @@ class AggregateFunctionalTest extends FunctionalTestCase
         $outCollection->drop();
     }
 
-    public function testEmptyPipelineReturnsAllDocuments()
+    public function testEmptyPipelineReturnsAllDocuments(): void
     {
         $this->createFixtures(3);
 
@@ -118,21 +131,17 @@ class AggregateFunctionalTest extends FunctionalTestCase
         $this->assertEquals($expectedDocuments, $results);
     }
 
-    public function testUnrecognizedPipelineState()
+    public function testUnrecognizedPipelineState(): void
     {
         $operation = new Aggregate($this->getDatabaseName(), $this->getCollectionName(), [['$foo' => 1]]);
         $this->expectException(RuntimeException::class);
         $operation->execute($this->getPrimaryServer());
     }
 
-    public function testSessionOption()
+    public function testSessionOption(): void
     {
-        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
-            $this->markTestSkipped('Sessions are not supported');
-        }
-
         (new CommandObserver())->observe(
-            function () {
+            function (): void {
                 $operation = new Aggregate(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -142,7 +151,7 @@ class AggregateFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );
@@ -151,7 +160,7 @@ class AggregateFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider provideTypeMapOptionsAndExpectedDocuments
      */
-    public function testTypeMapOption(array $typeMap = null, array $expectedDocuments)
+    public function testTypeMapOption(?array $typeMap, array $expectedDocuments): void
     {
         $this->createFixtures(3);
 
@@ -163,27 +172,7 @@ class AggregateFunctionalTest extends FunctionalTestCase
         $this->assertEquals($expectedDocuments, $results);
     }
 
-    /**
-     * @dataProvider provideTypeMapOptionsAndExpectedDocuments
-     */
-    public function testTypeMapOptionWithoutCursor(array $typeMap = null, array $expectedDocuments)
-    {
-        if (version_compare($this->getServerVersion(), '3.6.0', '>=')) {
-            $this->markTestSkipped('Aggregations with useCursor == false are not supported');
-        }
-
-        $this->createFixtures(3);
-
-        $pipeline = [['$match' => ['_id' => ['$ne' => 2]]]];
-
-        $operation = new Aggregate($this->getDatabaseName(), $this->getCollectionName(), $pipeline, ['typeMap' => $typeMap, 'useCursor' => false]);
-        $results = $operation->execute($this->getPrimaryServer());
-
-        $this->assertInstanceOf(ArrayIterator::class, $results);
-        $this->assertEquals($expectedDocuments, iterator_to_array($results));
-    }
-
-    public function testExplainOption()
+    public function testExplainOption(): void
     {
         $this->createFixtures(3);
 
@@ -201,19 +190,15 @@ class AggregateFunctionalTest extends FunctionalTestCase
         ));
     }
 
-    public function testExplainOptionWithWriteConcern()
+    public function testExplainOptionWithWriteConcern(): void
     {
-        if (version_compare($this->getServerVersion(), '3.4.0', '<')) {
-            $this->markTestSkipped('The writeConcern option is not supported');
-        }
-
         $this->createFixtures(3);
 
         $pipeline = [['$match' => ['_id' => ['$ne' => 2]]], ['$out' => $this->getCollectionName() . '.output']];
         $options = ['explain' => true, 'writeConcern' => new WriteConcern(1)];
 
         (new CommandObserver())->observe(
-            function () use ($pipeline, $options) {
+            function () use ($pipeline, $options): void {
                 $operation = new Aggregate($this->getDatabaseName(), $this->getCollectionName(), $pipeline, $options);
 
                 $results = iterator_to_array($operation->execute($this->getPrimaryServer()));
@@ -221,9 +206,7 @@ class AggregateFunctionalTest extends FunctionalTestCase
                 $this->assertCount(1, $results);
                 $result = current($results);
 
-                if ($this->isShardedCluster()) {
-                    $this->assertObjectHasAttribute('shards', $result);
-
+                if (isset($result->shards)) {
                     foreach ($result->shards as $shard) {
                         $this->assertObjectHasAttribute('stages', $shard);
                     }
@@ -231,7 +214,7 @@ class AggregateFunctionalTest extends FunctionalTestCase
                     $this->assertObjectHasAttribute('stages', $result);
                 }
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertObjectNotHasAttribute('writeConcern', $event['started']->getCommand());
             }
         );
@@ -239,14 +222,10 @@ class AggregateFunctionalTest extends FunctionalTestCase
         $this->assertCollectionCount($this->getCollectionName() . '.output', 0);
     }
 
-    public function testBypassDocumentValidationSetWhenTrue()
+    public function testBypassDocumentValidationSetWhenTrue(): void
     {
-        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
-            $this->markTestSkipped('bypassDocumentValidation is not supported');
-        }
-
         (new CommandObserver())->observe(
-            function () {
+            function (): void {
                 $operation = new Aggregate(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -256,21 +235,17 @@ class AggregateFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertObjectHasAttribute('bypassDocumentValidation', $event['started']->getCommand());
                 $this->assertEquals(true, $event['started']->getCommand()->bypassDocumentValidation);
             }
         );
     }
 
-    public function testBypassDocumentValidationUnsetWhenFalse()
+    public function testBypassDocumentValidationUnsetWhenFalse(): void
     {
-        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
-            $this->markTestSkipped('bypassDocumentValidation is not supported');
-        }
-
         (new CommandObserver())->observe(
-            function () {
+            function (): void {
                 $operation = new Aggregate(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -280,7 +255,7 @@ class AggregateFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertObjectNotHasAttribute('bypassDocumentValidation', $event['started']->getCommand());
             }
         );
@@ -327,7 +302,7 @@ class AggregateFunctionalTest extends FunctionalTestCase
         ];
     }
 
-    public function testReadPreferenceWithinTransaction()
+    public function testReadPreferenceWithinTransaction(): void
     {
         $this->skipIfTransactionsAreNotSupported();
 
@@ -364,11 +339,8 @@ class AggregateFunctionalTest extends FunctionalTestCase
 
     /**
      * Create data fixtures.
-     *
-     * @param integer $n
-     * @param array   $executeBulkWriteOptions
      */
-    private function createFixtures($n, array $executeBulkWriteOptions = [])
+    private function createFixtures(int $n, array $executeBulkWriteOptions = []): void
     {
         $bulkWrite = new BulkWrite(['ordered' => true]);
 

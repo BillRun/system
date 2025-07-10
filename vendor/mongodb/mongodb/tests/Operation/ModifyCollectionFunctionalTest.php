@@ -4,12 +4,20 @@ namespace MongoDB\Tests\Operation;
 
 use MongoDB\Operation\CreateIndexes;
 use MongoDB\Operation\ModifyCollection;
-use function array_key_exists;
 
 class ModifyCollectionFunctionalTest extends FunctionalTestCase
 {
-    public function testCollMod()
+    /**
+     * @group matrix-testing-exclude-server-4.2-driver-4.0-topology-sharded_cluster
+     * @group matrix-testing-exclude-server-4.4-driver-4.0-topology-sharded_cluster
+     * @group matrix-testing-exclude-server-5.0-driver-4.0-topology-sharded_cluster
+     */
+    public function testCollMod(): void
     {
+        if ($this->isShardedCluster()) {
+            $this->markTestSkipped('Sharded clusters may report result inconsistently');
+        }
+
         $this->createCollection();
 
         $indexes = [['key' => ['lastAccess' => 1], 'expireAfterSeconds' => 3]];
@@ -24,19 +32,7 @@ class ModifyCollectionFunctionalTest extends FunctionalTestCase
         );
         $result = $modifyCollection->execute($this->getPrimaryServer());
 
-        if (array_key_exists('raw', $result)) {
-            /* Sharded environment, where we only assert if a shard had a successful update. For
-             * non-primary shards that don't have chunks for the collection, the result contains a
-             * "ns does not exist" error. */
-            foreach ($result['raw'] as $shard) {
-                if (array_key_exists('ok', $shard) && $shard['ok'] == 1) {
-                    $this->assertSame(3, $shard['expireAfterSeconds_old']);
-                    $this->assertSame(1000, $shard['expireAfterSeconds_new']);
-                }
-            }
-        } else {
-            $this->assertSame(3, $result['expireAfterSeconds_old']);
-            $this->assertSame(1000, $result['expireAfterSeconds_new']);
-        }
+        $this->assertSame(3, $result['expireAfterSeconds_old']);
+        $this->assertSame(1000, $result['expireAfterSeconds_new']);
     }
 }
