@@ -154,10 +154,20 @@ abstract class Billrun_Bill {
 	}
 
 	public function save() {
-		$res = $this->data->save(NULL, 1);
-		if(!$res){
-			throw new Exception('failed to save bill to the data base.');
-		}
+		try{
+			$res = $this->data->save(NULL, 1);
+			if(!$res){
+				throw new Exception('failed to save bill to the data base.');
+			}
+		} catch(Exception $ex){
+			Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+            Billrun_Factory::log()->log('Trying to save the bill again', Zend_Log::DEBUG);
+			$res = $this->data->save(NULL, 1);
+			if(!$res){
+				throw new Exception('failed to save bill to the data base.');
+			}
+        }
+		
 		return true;
 	}
 
