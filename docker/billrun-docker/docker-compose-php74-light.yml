@@ -26,6 +26,7 @@ services:
         - "APPLICATION_ENV=container"
         volumes:
             - ./../..:/billrun
+            - ./../../cache:/billrun/cache
 
 networks:
   default:
