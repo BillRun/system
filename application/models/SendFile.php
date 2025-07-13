@@ -75,24 +75,46 @@ class SendFileModel {
 		Billrun_Factory::log("Loading file type connections..", Zend_Log::DEBUG);
 		$this->connections = $this->getConfiguredConnections($file_type);
 		Billrun_Factory::log("Loading relevant log documents..", Zend_Log::DEBUG);
-		$this->log_documents = $this->getRelevantFilesLog($file_type);
+		$this->log_documents = $this->getRelevantFilesLog();
 		return (!empty($this->connections) && !empty($this->log_documents));
 	}
 
 	public function getConfiguredConnections($file_type) {
-		return !empty($file_type['senders']['connections']) ? $file_type['senders']['connections'] : [];
+		if (!empty($file_type['senders']['connections'])) {
+			return $file_type['senders']['connections'];
+		} elseif (!empty($file_type['transactions_request'])) {
+			return array_column($file_type['transactions_request'], 'export');
+		}
+		return [];
 	}
 
+
+
 	public function getRelevantFilesLog() {
-		$orphan_time = Billrun_Util::getIn($file_type['generator'], 'orphan_files_time', '6 hours');
-		$query = [
-			'source' => ($this->type == 'export_generators') ? 'export' : $this->type,
-			'name' => $this->name,
-			'$and' => array(
-				array('export_start_time' => array('$lt' => new MongoDate(strtotime('-' . $orphan_time)))),
-				array('exported_time' => array('$exists' => false)),
-			)
+		$orphan_time = '6 hours';
+		$query = [];
+		
+		switch ($this->type) {
+			case 'payment_gateways':
+				$query['source'] = 'custom_payment_files';
+				$query['payments_file_type'] = 'transactions_request';
+				break;
+			case 'export_generators':
+				$query['source'] = 'export';
+				$query['name'] = $this->name;
+				break;
+			default:
+				$query['source'] = $this->type;
+				$query['name'] = $this->name;
+				break;
+		}
+
+
+		$query['$and'] = [
+			['start_upload_time' => ['$lt' => new MongoDate(strtotime('-' . $orphan_time))]],
+			['end_upload_time' => ['$exists' => false]],
 		];
+
 		if (!empty($this->file_name)) {
 			$query['file_name'] = $this->file_name;
 		}
@@ -106,7 +128,7 @@ class SendFileModel {
 	}
 
 	public function updateDbLogRecord($file_log) {
-		$update = ['exported_time' => new MongoDate()];
+		$update = ['end_upload_time' => new MongoDate()];
 		$ret = Billrun_Factory::db()->logCollection()->update(array('stamp' => $file_log['stamp']), array('$set' => $update), array('w' => 1));
 		$success = !empty($ret['ok']) && $ret['updatedExisting'];
 		if (!$success) {

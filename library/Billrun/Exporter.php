@@ -20,7 +20,7 @@
 class Billrun_Exporter extends Billrun_Generator_File {
 
     use Billrun_Traits_ConditionsCheck;
-	use Billrun_Traits_Api_OperationsLock;
+	use Billrun_Traits_Api_FlexibleOperationsLock;
 
 	/**
      * Type of exporter
@@ -259,7 +259,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         }
         $fileExported = $this->getExportFilePath();
         if(file_exists($fileExported)){
-            $this->filesExported[] = $fileExported;
+            $this->filesExported[$this->getLogStamp()] = $fileExported;
         }
         $transactionCounter = $this->fileGenerator->getTransactionsCounter();
         Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
@@ -648,7 +648,19 @@ class Billrun_Exporter extends Billrun_Generator_File {
     public function move() {
         Billrun_Factory::log()->log("Billrun_Exporter::move - start", Zend_Log::INFO);
         $this->moved = true;
-        
+        $exportLockId = [
+            'action'     => 'send_file',
+            'filtration' => 'send_' . $this->exporter_name,
+        ];
+        $lockAcquiredByThisProcess = false;
+        if ($this->lock($exportLockId, 6)) {
+            $lockAcquiredByThisProcess = true;
+        } else {
+            Billrun_Factory::log("Sending file is already running for exporter: " . $this->exporter_name, Zend_Log::NOTICE);
+            $this->moved = false;
+            return;
+        }
+        try {
         foreach (Billrun_Util::getIn($this->config, 'senders', array()) as $connections) {
             foreach ($connections as $connection) {
                 Billrun_Factory::log()->log("Move to sender {$connection['name']} - start", Zend_Log::INFO);
@@ -658,27 +670,22 @@ class Billrun_Exporter extends Billrun_Generator_File {
                     $this->moved = false;
                     continue;
                 }
-                if (!$this->lock()) {
-                    Billrun_Factory::log("Sending file is already running for exporter: " . $this->exporter_name, Zend_Log::NOTICE);
-                    $this->moved = false;
-                    return; 
-                }
-                try {
                 $filesToExport = $this->getGeneratedFiles();
-                foreach ($filesToExport as $fileToExport) {
+                foreach ($filesToExport as $stampLog => $fileToExport) {
+                    Billrun_Exporter::logDB($stampLog, ['start_upload_time' => new Mongodloid_Date()]);
                     if (!$sender->send($fileToExport)) {
                         Billrun_Factory::log()->log("Move {$fileToExport} to sender {$connection['name']} - failed!", Zend_Log::ALERT);
                     $this->moved = false;
                 } else {
+                        Billrun_Exporter::logDB($stampLog, ['end_upload_time' => new Mongodloid_Date()]);
                         Billrun_Factory::log()->log("Move {$fileToExport} to sender {$connection['name']} - done", Zend_Log::INFO);
                     }
                 }
-                } finally {
-                    if (!$this->release()) {
-                        Billrun_Factory::log("Problem in releasing operation lock for exporter: " . $this->exporter_name, Zend_Log::ALERT);
-                        return;
-                    }
-                }
+            }
+        }
+        } finally {
+            if ($lockAcquiredByThisProcess && !$this->release($exportLockId)) {
+                Billrun_Factory::log("Problem in releasing operation lock for exporter: " . $this->exporter_name, Zend_Log::ALERT);
             }
         }
         Billrun_Factory::log()->log("Billrun_Exporter::move - done", Zend_Log::INFO);
@@ -756,24 +763,4 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $model->updateConfig("export_generators", $updated_config);
     }
 	
-	protected function getReleaseQuery() {
-		return array(
-			'action' => 'send_file',
-			'filtration' => 'send_' . $this->exporter_name,
-			'end_time' => array('$exists' => false)
-		);
-	}
-	
-	protected function getInsertData() {
-		return array(
-			'action' => 'send_file',
-			'filtration' => 'send_' . $this->exporter_name
-		);
-	}
-	
-	protected function getConflictingQuery() {	
-        return array('filtration' => 'send_' . $this->exporter_name);
-	}
-    
-
 }
