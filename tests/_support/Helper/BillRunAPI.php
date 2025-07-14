@@ -174,6 +174,44 @@ class BillRunAPI extends \Codeception\Module
         return json_decode($ret, true);
     } 
     
+    public function sendApibill(array $params)
+    {
+        $aid = $params['aid'] ?? null;
+        $query = $params['query'] ?? null;
+        $action = $params['action'] ?? null;
+        $aids = $params['aids'] ?? null;
+      
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        
+        $requestParams = [];
+        
+        if ($aid !== null) {
+            $requestParams['aid'] = $aid;
+        }     
+        if ($aids !== null) {
+            $requestParams['aids'] = $aids;
+        } 
+        if ($query !== null) {
+            $requestParams['query'] = json_encode($query);
+        }
+            
+        if ($action !== null) {
+            $requestParams['action'] = $action;
+        }
+        
+        
+        // Only send request if we have parameters to send
+        if (empty($requestParams)) {
+            return null; // Or an appropriate error response
+        }
+        
+        $ret = $rest->sendGet("/api/bill", $requestParams);
+        return json_decode($ret, true);
+    }
+    
     public function sendBillapiGet($query, $entity)
     {
         // Get the REST module to send requests
