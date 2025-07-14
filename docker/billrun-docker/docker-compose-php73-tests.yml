@@ -16,8 +16,8 @@ services:
     php:
         build: 
             context: ./billrun-php7
-            dockerfile: Dockerfile-php73-tests
-        image: billrun-php73-tests
+            dockerfile: Dockerfile-php73
+        image: billrun-php73
         container_name: billrun-app
         restart: always
         environment:
@@ -25,6 +25,7 @@ services:
         - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
         volumes:
             - ${PWD}/../..:/billrun
+            - ${PWD}/../../cache:/billrun/cache
         healthcheck:
             test: ["CMD-SHELL", "test -f /billrun/vendor/bin/codecept || exit 1"] 
             interval: 20s

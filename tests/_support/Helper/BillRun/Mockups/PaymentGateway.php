@@ -14,6 +14,7 @@ class PaymentGateway extends \Helper\BillRun\Mockups\Mockup
   public function enableCreditGuardPGWithSettings($data = []) {
     $model = new \ConfigModel();
     $model->updateConfig('payment_gateways', $this->getSampleConfiguration());
+    \Billrun_Config::getInstance()->loadDbConfig(); // TODO remove this hack (ref: https://billrun.atlassian.net/browse/BRCD-4925)
   }
 
   protected function getSampleConfiguration2() {
@@ -44,12 +45,10 @@ class PaymentGateway extends \Helper\BillRun\Mockups\Mockup
 public function iframe($params = []){
   // Get the REST module to send requests
          /** @var REST $rest */
-         $rest = $this->getModule('REST');
-         $mockupUrl = 'http://mockup:8081';
-         $billrunUrl = 'http://web';
-         $rest->_setConfig(['url' => $mockupUrl ]);
+         $rest = $this->getModule('REST');  
+         $rest->_setConfig(['url' => MOCKUP_URL ]);
          $ret =  $rest->sendGet("/payment-gateways/creditguard/iframe", $params);
-         $rest->_setConfig(['url' => $billrunUrl]);
+         $rest->_setConfig(['url' => BILLRUN_URL ]);
 
         //  $ret = $rest->sendGet("/paymentgateways/getRequest/iframe");          
          return json_decode($ret, true);

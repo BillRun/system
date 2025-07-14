@@ -9,13 +9,14 @@ class israelInvoice extends \Helper\BillRun\Mockups\Mockup
 {
   public function getUrl()
   {
-    return $this->getDomain() . 'plugins/israelInvoice';
+    return $this->getDomain() . 'plugins/israel-tax';
   }
 
   public function setIsraelInvoiceSettings(\AcceptanceTester $a, $data = [])
   {
     $data = array_merge($this->InvoicePluginConfiguration(), $data);
     $a->setPluginSettings($data);
+    $a->enableCahce();
   }
 
 
