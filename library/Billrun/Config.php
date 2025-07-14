@@ -285,12 +285,6 @@ class Billrun_Config {
 		return $currConf;
 	}
 
-	public function setConfigValue($keys, $val) {
-		$config = $this->config->toArray();
-		Billrun_Util::setIn($config, $keys, $val);
-		$this->config = new Yaf_Config_Simple($config);
-	}
-
 	/**
 	 * Return a wrapper for input data.
 	 * @param mixed $complex - Data to wrap with complex wrapper.
