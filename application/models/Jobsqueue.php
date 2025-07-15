@@ -54,10 +54,16 @@ class JobsqueueModel extends TableModel {
 		return $result->getRawData();
 	}
 	
-	public function getLatestJobs($job_type, $limit) {
+	public function getLatestJobs($job_type, $limit, $future_only = false) {
 		$query = array(
 			'body.type' => ucfirst($job_type),
 		);
+		
+		if ($future_only) {
+			$query['schedule'] = [
+				'$gt' => new Mongodloid_Date()
+			];
+		}
 
 		$entries = $this->collection->query($query)->cursor()->sort(['created' => -1])->limit($limit);
 		$ret = [];
