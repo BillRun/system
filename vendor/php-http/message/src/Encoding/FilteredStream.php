@@ -120,6 +120,9 @@ abstract class FilteredStream implements StreamInterface
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getContents(): string
     {
         $buffer = '';

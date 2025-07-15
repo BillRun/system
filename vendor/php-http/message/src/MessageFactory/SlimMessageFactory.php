@@ -38,6 +38,9 @@ final class SlimMessageFactory implements MessageFactory
         $this->uriFactory = new SlimUriFactory();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function createRequest(
         $method,
         $uri,
@@ -56,6 +59,9 @@ final class SlimMessageFactory implements MessageFactory
         ))->withProtocolVersion($protocolVersion);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function createResponse(
         $statusCode = 200,
         $reasonPhrase = null,
