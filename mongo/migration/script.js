@@ -2038,10 +2038,6 @@ runOnce(lastConfig, 'BRCD-4725', function () {
 	db.services.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
 });
 
-if (typeof lastConfig['export'] === 'undefined') {
-	lastConfig.export = 1;
-}
-
 runOnce(lastConfig, 'BRCD-4739', function () {
 	lastConfig['plugins'].push({
 		"name": "teldasPlugin",
@@ -2056,6 +2052,10 @@ runOnce(lastConfig, 'BRCD-4739', function () {
 	db.createCollection('plugin_teldas_tariff_switching_classes');
 	db.createCollection("plugin_teldas_non_working_days"); 
 });
+
+if (typeof lastConfig['export'] === 'undefined') {
+	lastConfig.export = 1;
+}
 
 db.config.insertOne(lastConfig);
 
