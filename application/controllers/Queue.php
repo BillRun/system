@@ -82,8 +82,9 @@ class QueueController extends ApiController {
 			$this->setOutput([['status' => 0, 'desc' => 'limit should be in range of 1 to 1000']]);
 			return;
 		}
+		$future_only = $request->get('future_only', false);
 		$model = new JobsqueueModel();
-		$data = $model->getLatestJobs($job_type, $limit);
+		$data = $model->getLatestJobs($job_type, $limit, $future_only);
 		$ret = [
 			'status' => 1,
 			'details' => $data,
