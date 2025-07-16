@@ -2038,6 +2038,9 @@ runOnce(lastConfig, 'BRCD-4725', function () {
 	db.services.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
 });
 
+if (typeof lastConfig['export'] === 'undefined') {
+	lastConfig.export = 1;
+}
 
 db.config.insertOne(lastConfig);
 
