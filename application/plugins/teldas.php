@@ -180,6 +180,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           return;
       }
       $updateOnlineTariffProfile = Billrun_Util::getIn($this->options, 'update_online');
+      $success2 = true;
       if($updateOnlineTariffProfile == true){
         $type="online";
         $success2 = $this->getCompleteListOfTariffsProfiles($type);
@@ -196,6 +197,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
 
       $updateOfflineATariffProfile = Billrun_Util::getIn($this->options, 'update_offline-a');
+      $success4 = true;
       if($updateOfflineATariffProfile == true){
         $type="offline-a";
         $success4 = $this->getCompleteListOfTariffsProfiles($type);
