@@ -568,7 +568,7 @@ db.collection_steps.createIndex({ 'trigger_date': 1 }, { unique: false, sparse: 
 db.collection_steps.createIndex({ 'extra_params.aid': 1 }, { unique: false, sparse: true, background: true });
 
 //BRCD-3474
-db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
+_dropIndex("rebalance_queue", "aid_1_billrun_key_1");
 db.rebalance_queue.createIndex({"aid": 1, "billrun_key": 1, "conditions_hash": 1}, {unique: true, "background": true});
 
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
@@ -2052,6 +2052,10 @@ runOnce(lastConfig, 'BRCD-4739', function () {
 	db.createCollection('plugin_teldas_tariff_switching_classes');
 	db.createCollection("plugin_teldas_non_working_days"); 
 });
+
+if (typeof lastConfig['export'] === 'undefined') {
+	lastConfig.export = 1;
+}
 
 db.config.insertOne(lastConfig);
 

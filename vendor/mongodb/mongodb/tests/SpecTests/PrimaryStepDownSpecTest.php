@@ -2,7 +2,6 @@
 
 namespace MongoDB\Tests\SpecTests;
 
-use IteratorIterator;
 use MongoDB\Client;
 use MongoDB\Collection;
 use MongoDB\Driver\Command;
@@ -13,8 +12,8 @@ use MongoDB\Driver\Server;
 use MongoDB\Driver\WriteConcern;
 use MongoDB\Operation\BulkWrite;
 use MongoDB\Tests\CommandObserver;
-use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
 use UnexpectedValueException;
+
 use function current;
 use function sprintf;
 
@@ -23,11 +22,9 @@ use function sprintf;
  */
 class PrimaryStepDownSpecTest extends FunctionalTestCase
 {
-    use SetUpTearDownTrait;
-
-    const INTERRUPTED_AT_SHUTDOWN = 11600;
-    const NOT_MASTER = 10107;
-    const SHUTDOWN_IN_PROGRESS = 91;
+    public const INTERRUPTED_AT_SHUTDOWN = 11600;
+    public const NOT_PRIMARY = 10107;
+    public const SHUTDOWN_IN_PROGRESS = 91;
 
     /** @var Client */
     private $client;
@@ -35,20 +32,20 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
     /** @var Collection */
     private $collection;
 
-    private function doSetUp()
+    public function setUp(): void
     {
         parent::setUp();
 
-        $this->client = new Client(static::getUri(), ['retryWrites' => false, 'heartbeatFrequencyMS' => 500, 'serverSelectionTimeoutMS' => 20000, 'serverSelectionTryOnce' => false]);
+        $this->client = self::createTestClient(null, ['retryWrites' => false, 'heartbeatFrequencyMS' => 500, 'serverSelectionTimeoutMS' => 20000, 'serverSelectionTryOnce' => false]);
 
         $this->dropAndRecreateCollection();
         $this->collection = $this->client->selectCollection($this->getDatabaseName(), $this->getCollectionName());
     }
 
     /**
-     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#id10
+     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#not-primary-keep-connection-pool
      */
-    public function testNotMasterKeepsConnectionPool()
+    public function testNotPrimaryKeepsConnectionPool(): void
     {
         $runOn = [(object) ['minServerVersion' => '4.1.11', 'topology' => [self::TOPOLOGY_REPLICASET]]];
         $this->checkServerRequirements($runOn);
@@ -59,7 +56,7 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
             'mode' => ['times' => 1],
             'data' => [
                 'failCommands' => ['insert'],
-                'errorCode' => self::NOT_MASTER,
+                'errorCode' => self::NOT_PRIMARY,
             ],
         ]);
 
@@ -70,7 +67,7 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
             $this->insertDocuments(1);
         } catch (BulkWriteException $e) {
             // Verify that the insert failed with an operation failure with 10107 code.
-            $this->assertSame(self::NOT_MASTER, $e->getCode());
+            $this->assertSame(self::NOT_PRIMARY, $e->getCode());
         }
 
         // Execute an insert into the test collection of a {test: 1} document and verify that it succeeds.
@@ -82,9 +79,9 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
     }
 
     /**
-     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#id11
+     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#not-primary-reset-connection-pool
      */
-    public function testNotMasterResetConnectionPool()
+    public function testNotPrimaryResetConnectionPool(): void
     {
         $runOn = [(object) ['minServerVersion' => '4.0.0', 'maxServerVersion' => '4.0.999', 'topology' => [self::TOPOLOGY_REPLICASET]]];
         $this->checkServerRequirements($runOn);
@@ -95,7 +92,7 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
             'mode' => ['times' => 1],
             'data' => [
                 'failCommands' => ['insert'],
-                'errorCode' => self::NOT_MASTER,
+                'errorCode' => self::NOT_PRIMARY,
             ],
         ]);
 
@@ -106,11 +103,14 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
             $this->insertDocuments(1);
         } catch (BulkWriteException $e) {
             // Verify that the insert failed with an operation failure with 10107 code.
-            $this->assertSame(self::NOT_MASTER, $e->getCode());
+            $this->assertSame(self::NOT_PRIMARY, $e->getCode());
         }
 
-        // Verify that the connection pool has been cleared
-        $this->assertSame($totalConnectionsCreated + 1, $this->getTotalConnectionsCreated());
+        /* Verify that the connection pool has been cleared and that a new
+         * connection has been created. Use ">=" to allow for the possibility
+         * that the server created additional connections unrelated to this
+         * test. */
+        $this->assertGreaterThanOrEqual($totalConnectionsCreated + 1, $this->getTotalConnectionsCreated());
 
         // Execute an insert into the test collection of a {test: 1} document and verify that it succeeds.
         $result = $this->insertDocuments(1);
@@ -118,9 +118,9 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
     }
 
     /**
-     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#id12
+     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#shutdown-in-progress-reset-connection-pool
      */
-    public function testShutdownResetConnectionPool()
+    public function testShutdownResetConnectionPool(): void
     {
         $runOn = [(object) ['minServerVersion' => '4.0.0']];
         $this->checkServerRequirements($runOn);
@@ -145,8 +145,11 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
             $this->assertSame(self::SHUTDOWN_IN_PROGRESS, $e->getCode());
         }
 
-        // Verify that the connection pool has been cleared
-        $this->assertSame($totalConnectionsCreated + 1, $this->getTotalConnectionsCreated());
+        /* Verify that the connection pool has been cleared and that a new
+         * connection has been created. Use ">=" to allow for the possibility
+         * that the server created additional connections unrelated to this
+         * test. */
+        $this->assertGreaterThanOrEqual($totalConnectionsCreated + 1, $this->getTotalConnectionsCreated());
 
         // Execute an insert into the test collection of a {test: 1} document and verify that it succeeds.
         $result = $this->insertDocuments(1);
@@ -154,9 +157,9 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
     }
 
     /**
-     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#id13
+     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#interrupted-at-shutdown-reset-connection-pool
      */
-    public function testInterruptedAtShutdownResetConnectionPool()
+    public function testInterruptedAtShutdownResetConnectionPool(): void
     {
         $runOn = [(object) ['minServerVersion' => '4.0.0']];
         $this->checkServerRequirements($runOn);
@@ -181,8 +184,11 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
             $this->assertSame(self::INTERRUPTED_AT_SHUTDOWN, $e->getCode());
         }
 
-        // Verify that the connection pool has been cleared
-        $this->assertSame($totalConnectionsCreated + 1, $this->getTotalConnectionsCreated());
+        /* Verify that the connection pool has been cleared and that a new
+         * connection has been created. Use ">=" to allow for the possibility
+         * that the server created additional connections unrelated to this
+         * test. */
+        $this->assertGreaterThanOrEqual($totalConnectionsCreated + 1, $this->getTotalConnectionsCreated());
 
         // Execute an insert into the test collection of a {test: 1} document and verify that it succeeds.
         $result = $this->insertDocuments(1);
@@ -190,9 +196,9 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
     }
 
     /**
-     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#id9
+     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#getmore-iteration
      */
-    public function testGetMoreIteration()
+    public function testGetMoreIteration(): void
     {
         $this->markTestSkipped('Test causes subsequent failures in other tests (see PHPLIB-471)');
 
@@ -205,12 +211,11 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
         // Start a find operation on the collection with a batch size of 2, and retrieve the first batch of results.
         $cursor = $this->collection->find([], ['batchSize' => 2]);
 
-        $iterator = new IteratorIterator($cursor);
-        $iterator->rewind();
-        $this->assertTrue($iterator->valid());
+        $cursor->rewind();
+        $this->assertTrue($cursor->valid());
 
-        $iterator->next();
-        $this->assertTrue($iterator->valid());
+        $cursor->next();
+        $this->assertTrue($cursor->valid());
 
         $totalConnectionsCreated = $this->getTotalConnectionsCreated();
 
@@ -235,14 +240,14 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
         $events = [];
         $observer = new CommandObserver();
         $observer->observe(
-            function () use ($iterator) {
-                $iterator->next();
+            function () use ($cursor): void {
+                $cursor->next();
             },
-            function ($event) use (&$events) {
+            function ($event) use (&$events): void {
                 $events[] = $event;
             }
         );
-        $this->assertTrue($iterator->valid());
+        $this->assertTrue($cursor->valid());
         $this->assertCount(1, $events);
         $this->assertSame('getMore', $events[0]['started']->getCommandName());
 
@@ -250,7 +255,7 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
         $this->assertSame($totalConnectionsCreated, $this->getTotalConnectionsCreated($cursor->getServer()));
 
         // Wait to allow primary election to complete and prevent subsequent test failures
-        $this->waitForMasterReelection();
+        $this->waitForPrimaryReelection();
     }
 
     private function insertDocuments($count)
@@ -266,13 +271,13 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
         return $this->collection->bulkWrite($operations, ['writeConcern' => new WriteConcern('majority')]);
     }
 
-    private function dropAndRecreateCollection()
+    private function dropAndRecreateCollection(): void
     {
         $this->client->selectCollection($this->getDatabaseName(), $this->getCollectionName())->drop();
         $this->client->selectDatabase($this->getDatabaseName())->command(['create' => $this->getCollectionName()]);
     }
 
-    private function getTotalConnectionsCreated(Server $server = null)
+    private function getTotalConnectionsCreated(?Server $server = null)
     {
         $server = $server ?: $this->client->getManager()->selectServer(new ReadPreference('primary'));
 
@@ -292,7 +297,7 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
         throw new UnexpectedValueException('Could not determine number of total connections');
     }
 
-    private function waitForMasterReelection()
+    private function waitForPrimaryReelection(): void
     {
         try {
             $this->insertDocuments(1);
