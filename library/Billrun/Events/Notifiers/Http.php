@@ -40,10 +40,11 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 		$data = $this->getRequestBody();
 		$method = $this->getMethod();
 		Billrun_Factory::log('HTTP request - sending request to prov '. '. Details: ' . print_r($data, 1), Zend_Log::DEBUG);
-		$response = $this->parseResponse(Billrun_Util::sendRequest($requestUrl, $data, $method));
+		$response = Billrun_Util::sendRequest($requestUrl, $data, $method, array(), null, null, true);
 		if ($this->isResponseValid($response)) {
-			Billrun_Factory::log('Got HTTP response. Details: ' . $response, Zend_Log::DEBUG);
-			return $this->getSuccessResponse($response);
+			$parsedBody = $this->parseResponse($response->getBody());
+			Billrun_Factory::log('Got HTTP response. Details: ' . $parsedBody, Zend_Log::DEBUG);
+			return $this->getSuccessResponse($parsedBody);
 		}
 		Billrun_Factory::log('HTTP request - no response. Request details: ' . print_r($data, 1), Zend_Log::ALERT);
 		return $this->getFailureResponse();
@@ -121,7 +122,11 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 	 * @return boolean
 	 */
 	protected function isResponseValid($response) {
-		return $response && isset($response['success']) && $response['success'];
+		if ($response->getStatus() < 200 || $response->getStatus() >= 300) {
+			return false;
+		}
+		$body = $this->parseResponse($response->getBody());
+		return isset($body['success']) && $body['success'] == true;
 	}
 
 	/**
