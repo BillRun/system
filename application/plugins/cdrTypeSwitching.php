@@ -17,7 +17,7 @@ class cdrTypeSwitchingPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $transferDayTap3ToNrtrde ;
 
 	public function __construct() {
-		$this->transferDayTap3ToNrtrde = Billrun_Factory::config()->getConfigValue('billrun.tap3_to_nrtrde_transfer_day', "20250701000000");
+		$this->transferDayTap3ToNrtrde = Billrun_Factory::config()->getConfigValue('billrun.tap3_to_nrtrde_transfer_day', "20250721230000");
 	}
 
 
