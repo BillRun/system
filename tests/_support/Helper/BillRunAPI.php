@@ -302,22 +302,7 @@ class BillRunAPI extends \Codeception\Module
 
         return json_decode($ret, true);
     }
-
-    public function sendBillapiUpdate($entity,$query,$update )
-    {
-        // Get the REST module to send requests
-        /** @var REST $rest */
-        $rest = $this->getModule('REST');
-        $rest->amBearerAuthenticated($this->getAccessToken());
-        $params = [
-            'query' => json_encode($query),
-            'update' => json_encode($update)
-        ];
-        $ret =  $rest->sendPOST("/billapi/$entity/update", $params);
-        return json_decode($ret, true);
-    }
-
-  
+   
     /**
      * create an account.
      * @param Array $override - fields to override the default values / fields to add
@@ -373,6 +358,21 @@ class BillRunAPI extends \Codeception\Module
 
         ], $override);
         $this->sendBillapiCreate($subscriber, 'subscribers');
+    }
+    
+    public function sendBillapiUpdate($entity,$query,$update )
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        $ret =  $rest->sendPOST("/billapi/$entity/update", $params);
+        
+        return json_decode($ret, true);
     }
     /**
      * create an plan.
@@ -445,50 +445,6 @@ class BillRunAPI extends \Codeception\Module
         $this->sendBillapiCreate($service, 'services');
     }
 
-
-     /**
-     * create an ConditaionlCharge.
-     * @param Array $override - fields to override the default values 
-     */
-    public function generateConditaionlCharge(array $override = [])
-    {
-        $charge = array_merge([
-            "description"=> "a",
-            "key"=> microtime(true)*10000,
-            "proration"=> "inherited",
-            "priority"=> "",
-            "params"=> [
-                "min_subscribers"=> "",
-                "max_subscribers"=> "",
-                "conditions"=> [
-                    [
-                        "subscriber"=> [
-                            [
-                                "fields"=> [
-                                    [
-                                        "field"=> "sid",
-                                        "op"=> "nin",
-                                        "value"=> [
-                                            25555525515811
-                                        ]
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ],
-            "from"=> "2020-02-26",
-            "type"=> "monetary",
-            "subject"=> [
-                "general"=> [
-                    "value"=> 30
-                ]
-            ]
-        ], $override);
-        $this->sendBillapiCreate($charge, 'charges');
-    }
-
         /**
      * create an rate.
      * @param Array $override - fields to override the default values 
@@ -531,6 +487,7 @@ class BillRunAPI extends \Codeception\Module
         ], $override);
         $this->sendBillapiCreate($rate, 'rates');
     }
+
     /**
     * @depends apiSanityCest:oauthLogin
     */
@@ -657,39 +614,18 @@ class BillRunAPI extends \Codeception\Module
         return json_decode($ret, true);
     }
 
-  
-
-    
-
-    public function getCustomFields($entity) {
-       
-        switch ($entity) {
-            case 'account':
-                $model = new \Models_Accounts(['collection' => 'accounts', 'no_init' => true]);
-                break;
-            case 'subscriber':
-                $model = new \Models_Subscribers(['collection' => 'subscribers', 'no_init' => true]);
-                break;
-            case 'plan':
-                $model = new \Models_Plans(['collection' => 'plans', 'no_init' => true]);
-                break;
-            case 'service':
-                $model = new \Models_Services(['collection' => 'services', 'no_init' => true]);
-                break;
-            case 'rates';
-                $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
-                break;
-            
-        }
-
-        $mandatoryFields = $model->getMandatoryCustomFields();
-        $populatedValues = [];
-        foreach ($mandatoryFields as $field) {
-            $field['type'] = $field['type'] ?? 'text';
-            $value = $this->generateDemoValue($field['type']);
-            $populatedValues[$field['field_name']] = $value;
-        }
-        return $populatedValues;
+    public function sendRealTimeRequest($fileType, $request)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'request' => json_encode($request),
+            'file_type' => $fileType
+        ];
+        $ret =  $rest->sendPOST("/realtime", $params);
+        return json_decode($ret, true);
     }
 
 
@@ -736,3 +672,4 @@ class BillRunAPI extends \Codeception\Module
     
     
 }
+//billapi/accounts/permanentchange
