@@ -555,6 +555,7 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	protected function sumUpGroupingTotalForAccount($currentTotalGroups, $subTotalGroups) {
 		foreach ($subTotalGroups as $group) {
+			$type = $group['grouping'];
 			if (isset($group['sid'])) {
 				continue;
 			}
@@ -570,14 +571,19 @@ class Billrun_Cycle_Account_Invoice {
 			unset($group['after_taxes']);
 			$extraSumGroupData = [];
 			// Unset extra sum grouping fields
-			foreach ($this->groupingSumExtraFields as $field) {
+			if(!empty($this->groupingSumExtraFields)){
+				$groupingSumExtraFields = $this->groupingSumExtraFields;
+			}else{
+				$groupingSumExtraFields = static::getGroupingSumExtraFields($type);
+			}
+			foreach ($groupingSumExtraFields as $field) {
 				Billrun_Util::setIn($extraSumGroupData, $field, Billrun_Util::getIn($group, $field, 0));
 				Billrun_Util::unsetInPath($group, $field);
 			}
-			$stamp = Billrun_Util::generateArrayStamp($group);
+			$stamp = Billrun_Util::generateArrayStamp($group, [], true);
 			$index = Billrun_Util::getIn($this->totalGroupHashMap, $stamp, null);
 			if (!isset($index)) {
-				$index = count($this->totalGroupHashMap);
+				$index = count($currentTotalGroups);
 				$currentTotalGroups[$index] = $group;
 				$this->totalGroupHashMap[$stamp] = $index;
 			}
@@ -587,12 +593,33 @@ class Billrun_Cycle_Account_Invoice {
 			$currentTotalGroups[$index]['taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['taxes'], 0) + $taxes;
 			$currentTotalGroups[$index]['after_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['after_taxes'], 0) + $afterTax;
 			// Sum extra grouping fields
-			foreach ($this->groupingSumExtraFields as $field) {
+			foreach ($groupingSumExtraFields as $field) {
 				Billrun_Util::setIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($currentTotalGroups[$index], $field, 0) + Billrun_Util::getIn($extraSumGroupData, $field, 0));
 			}	
 		}
 		return $currentTotalGroups;
 	}
+
+	public static function getGroupingSumExtraFields($type){
+		$groupingSumExtraFields = [];
+		$grouping = Billrun_Factory::config()->getConfigValue('billrun.grouping', []);
+		foreach($grouping as $groupingStructure){
+			if($groupingStructure['name'] == $type){
+				foreach ($groupingStructure['fields'] as $field) {
+					if (!isset($field['field_name']) || !isset($field['op'])) {
+						continue;
+					}
+					if ($field['op'] === 'sum') {
+						$groupingSumExtraFields[] = $field['field_name'];
+					}
+				}
+			}
+			
+		}
+		return $groupingSumExtraFields;
+	}
+	
+
 	
 	public function setInvoicingDay(&$rawData, $attributes) {
 		$config = Billrun_Factory::config();
