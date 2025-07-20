@@ -110,6 +110,20 @@ const Charging = ({
         </div>
     </>);
 
+    const idleItems = items.filter((item) => {
+        if (parseInt(item.get('cancelled', '')) === 1) {
+            return false;
+        }
+        if (item.get('schedule', '') !== '') {
+            return false;
+        }
+        if (item.get('start_time', '') === '') {
+            return true;
+        }
+        return false;
+    });
+    const allowCreate = activeItem.get('md5', '') === '' && idleItems.isEmpty();
+
     return (
         <div>
             {!activeItem.isEmpty() && (
@@ -132,7 +146,7 @@ const Charging = ({
                 items={items}
                 scheduleItems={scheduleItems}
                 size={listSize}
-                hasActive={activeItem.get('md5', '') !== ''}
+                allowCreate={allowCreate}
                 onFetch={onReloadItems}
                 onUpdateSize={onChangeListSize}
                 onShowDetails={onViewCharge}
@@ -262,7 +276,7 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
 
     const onCreateChargeInPopup = () => dispatchProps.showItemCreatePopup(Immutable.Map({
         run_on: 'all',
-        pay_mode: 'total_debt',
+        pay_mode: 'one_payment',
         mode: 'charge',
     }), {
         title: 'Start new charge batch',

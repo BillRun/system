@@ -72,9 +72,22 @@ export const cancelCharge = item => dispatch =>
 export const startCharge = item => dispatch => {
     const datetimeFormat = getConfig('datetimeFormat', '');
     const apiDateTimeFormat = getConfig('apiDateTimeFormat', '')
-    const schedulerDate = moment(item.get('schedule'), datetimeFormat);
-    const minInvoiceDate = moment(item.get('min_invoice_date'), datetimeFormat);
-    let charge = item.delete('schedule');
+    const schedulerDate = moment(item.get('schedule', ''), datetimeFormat);
+    const minInvoiceDate = moment(item.get('min_invoice_date', ''), datetimeFormat);
+    const runOn = item.get('run_on', '');
+    // Update charge details
+    let charge = item
+        .delete('schedule')
+        .delete('run_on');
+    if (runOn === 'all') {
+        charge = charge.delete('include').delete('exclude');
+    }
+    if (runOn === 'include') {
+        charge = charge.delete('exclude');
+    }
+    if (runOn === 'exclude') {
+        charge = charge.delete('exclude');
+    }
     if (minInvoiceDate.isValid()) {
         charge = charge.set('min_invoice_date', minInvoiceDate.utc().format(apiDateTimeFormat));
     }

@@ -57,8 +57,8 @@ export const chargeTypeParser = (item) => {
 export const chargePayModeParser = (item) => {
     const payMode = item.getIn(['body', 'config', 'pay_mode'], '');
     switch (payMode) {
-      case 'total_debt': return getFieldName('total_debt', 'charging_process', 'Total Debt');
-      case 'per_bill': return getFieldName('per_bill', 'charging_process', 'Per Bill');
+      case 'one_payment': return getFieldName('total_debt', 'charging_process', 'Total Debt');
+      case 'multiple_payments': return getFieldName('per_bill', 'charging_process', 'Per Bill');
       default: return '';
     }
 }
@@ -88,10 +88,10 @@ export const scheduleChargeParser = (item) => {
   return '-';
 }
 
-export const cancelledChargeParser = (item) => item.get('cancelled', '') === 1 ? 'Yes' : 'No';
+export const cancelledChargeParser = (item) => parseInt(item.get('cancelled', '')) === 1 ? 'Yes' : 'No';
 
 export const statusChargeParser = (item) => {
-  if (item.get('cancelled', '') === 1) {
+  if (parseInt(item.get('cancelled', '')) === 1) {
     return (<WithTooltip helpText="Canceled"><StateIcon status="removed" /></WithTooltip>);
   }
   if (item.get('active', false)) {

@@ -70,7 +70,7 @@ const ChargingList = ({
 
 ChargingList.defaultProps = {
     items: Immutable.List(),
-    hasActive: false,
+    allowCreate: false,
     size: 20,
     listType: 'all',
 };
@@ -78,7 +78,7 @@ ChargingList.defaultProps = {
 ChargingList.propTypes = {
     items: PropTypes.instanceOf(Immutable.List),
     listType: PropTypes.string,
-    hasActive: PropTypes.bool,
+    allowCreate: PropTypes.bool,
     size: PropTypes.number,
     onFetch: PropTypes.func,
     onUpdateSize: PropTypes.func,
@@ -97,7 +97,7 @@ const mapDispatchToProps = (dispatch, props) => ({
     onChangeSize: (e) => props.onUpdateSize(parseInt(e.target.value)),
     onChangeType: (e )=> dispatch(setPageFlag('charging', 'listType', e.target.value)),
     isItemCancelable: (item) => {
-        if (item.get('cancelled', '') === 1) {
+        if (parseInt(item.get('cancelled', '')) === 1) {
             return false;
         }
         const scheduleTime = moment(item.get('schedule', ''));
@@ -117,18 +117,18 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
     ];
 
     const listActions = [{
+        type: 'add',
+        actionStyle: 'primary',
+        actionSize: 'xsmall',
+        label: 'Start New Charging',
+        show: ownProps.allowCreate,
+        onClick: ownProps.onCreate,
+    },{
         type: 'refresh',
         actionStyle: 'primary',
         actionSize: 'xsmall',
         label: 'Refresh',
         onClick: ownProps.onFetch,
-    },{
-        type: 'add',
-        actionStyle: 'primary',
-        actionSize: 'xsmall',
-        label: 'Start New Charging',
-        show: !ownProps.hasActive,
-        onClick: ownProps.onCreate,
     }];
 
     const rowActions = [{

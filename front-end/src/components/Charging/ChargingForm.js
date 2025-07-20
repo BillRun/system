@@ -55,10 +55,10 @@ const ChargingForm = ({
     }
     const onChangeRunOn = (value) => {
         updateField('run_on', value);
-        setDisplayExclude('');
-        setDisplayInclude('');
-        removeField('include');
-        removeField('exclude');
+        // setDisplayExclude('');
+        // setDisplayInclude('');
+        // removeField('include');
+        // removeField('exclude');
     };
     const onChangeInclude = (e) => {
         const value = e.target.value;
@@ -155,18 +155,18 @@ const ChargingForm = ({
                         fieldType="radio"
                         onChange={onChangeMode}
                         name="pay_mode"
-                        value="total_debt"
+                        value="one_payment"
                         label={getFieldName('total_debt', 'charging_process', 'Total Debt')}
-                        checked={item.get('pay_mode', '') === 'total_debt'}
+                        checked={item.get('pay_mode', '') === 'one_payment'}
                         className="inline"
                     />
                     <Field
                         fieldType="radio"
                         onChange={onChangeMode}
                         name="pay_mode"
-                        value="per_bill"
+                        value="multiple_payments"
                         label={getFieldName('per_bill', 'charging_process', 'Per Bill')}
-                        checked={item.get('pay_mode', '') === 'per_bill'}
+                        checked={item.get('pay_mode', '') === 'multiple_payments'}
                         className="inline ml10"
                     />
                 </Col>

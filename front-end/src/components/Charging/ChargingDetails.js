@@ -84,7 +84,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
                     {getFieldName('is_done', 'charging_process', 'Is Done')}:
                 </Col>
                 <Col sm={6}>
-                    <Field editable={false} value={item.get('done', '') === 1 ? 'Yes' : 'No'} />
+                    <Field editable={false} value={parseInt(item.get('done', '')) === 1 ? 'Yes' : 'No'} />
                 </Col>
             </FormGroup>
 
@@ -93,7 +93,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
                     {getFieldName('cancelled', 'charging_process', 'Is Cancelled')}:
                 </Col>
                 <Col sm={6}>
-                    <Field editable={false} value={item.get('cancelled', '') === 1 ? 'Yes' : 'No'} />
+                    <Field editable={false} value={parseInt(item.get('cancelled', '')) === 1 ? 'Yes' : 'No'} />
                 </Col>
             </FormGroup>
 
