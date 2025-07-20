@@ -52,7 +52,7 @@ class ExportAction extends Action_Base {
 				continue;
 			}
 			if (!$exportGeneratorSettings) {
-				Billrun_Factory::log("Can't get configurarion: " . print_R($export_generator_options, 1), Zend_Log::EMERG);
+				Billrun_Factory::log("Can't get configuration: " . print_R($export_generator_options, 1), Zend_Log::EMERG);
 				return false;
 			}
 

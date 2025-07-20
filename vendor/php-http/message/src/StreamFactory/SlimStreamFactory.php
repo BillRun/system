@@ -19,6 +19,9 @@ if (!interface_exists(StreamFactory::class)) {
  */
 final class SlimStreamFactory implements StreamFactory
 {
+    /**
+     * {@inheritdoc}
+     */
     public function createStream($body = null)
     {
         if ($body instanceof StreamInterface) {

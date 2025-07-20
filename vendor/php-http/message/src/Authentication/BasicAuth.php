@@ -32,6 +32,9 @@ final class BasicAuth implements Authentication
         $this->password = $password;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function authenticate(RequestInterface $request)
     {
         $header = sprintf('Basic %s', base64_encode(sprintf('%s:%s', $this->username, $this->password)));

@@ -10,6 +10,7 @@ import CustomerAllowances from './CustomerAllowances';
 import {
   ActionButtons,
   LoadingItemPlaceholder,
+  OverridePrice,
 } from '@/components/Elements';
 import PostpaidBalances from '../PostpaidBalances';
 import PrepaidBalances from '../PrepaidBalances';
@@ -49,7 +50,7 @@ import {
   messageSelector,
 } from '@/selectors/entitySelector';
 import { currencySelector } from '@/selectors/settingsSelector';
-import { buildPageTitle, getConfig, getItemId } from '@/common/Util';
+import { buildPageTitle, getConfig, getItemId, getFieldName, plansOrServicesToSelectOptions } from '@/common/Util';
 
 
 class CustomerSetup extends Component {
@@ -182,6 +183,8 @@ class CustomerSetup extends Component {
         if (customerId) {
           this.props.router.push(`/customers/customer/${customerId}`);
         }
+      } else {
+        this.fetchItem();
       }
       const pageTitle = buildPageTitle(mode, 'customer', customer);
       this.props.dispatch(setPageTitle(pageTitle));
@@ -272,14 +275,18 @@ class CustomerSetup extends Component {
       activeTab,
       allowancesEnabled,
     } = this.props;
-    const showActionButtons = [1, 5].includes(activeTab);
-
+    
     if (mode === 'loading') {
       return (<LoadingItemPlaceholder onClick={this.handleBack} />);
     }
-
+    
+    const showActionButtons = [1, 3, 4, 7].includes(activeTab);
     const accountFields = settings.getIn(['account', 'fields'], Immutable.List());
     const subscriberFields = settings.getIn(['subscriber', 'fields'], Immutable.List());
+    const allowEdit = mode !== 'view';
+    const overrides = customer.get('overrides', Immutable.List());
+    const servicesOptions = plansOrServicesToSelectOptions(services).toJS();
+    const plansOptions = plansOrServicesToSelectOptions(plans).toJS();
 
     return (
       <div className="CustomerSetup">
@@ -318,21 +325,47 @@ class CustomerSetup extends Component {
                 </Tab>
               }
               { (mode !== 'create') &&
-                <Tab title="Postpaid Counters" eventKey={3}>
+                <Tab title={getFieldName('subscriber_price_override_panel_title', 'service')} eventKey={3}>
+                  <Panel style={{ borderTop: 'none' }}>
+                    <OverridePrice
+                      type='service'
+                      overrides={overrides}
+                      options={servicesOptions}
+                      onChange={this.onChangeCustomerField}
+                      editable={allowEdit}
+                    />
+                  </Panel>
+                </Tab>
+              }
+              { (mode !== 'create') &&
+                <Tab title={getFieldName('subscriber_price_override_panel_title', 'plan')} eventKey={4}>
+                  <Panel style={{ borderTop: 'none' }}>
+                    <OverridePrice
+                      type='plan'
+                      overrides={overrides}
+                      options={plansOptions}
+                      onChange={this.onChangeCustomerField}
+                      editable={allowEdit}
+                    />
+                  </Panel>
+                </Tab>
+              }
+              { (mode !== 'create') &&
+                <Tab title="Postpaid Counters" eventKey={5}>
                   <Panel style={{ borderTop: 'none' }}>
                     <PostpaidBalances aid={aid} />
                   </Panel>
                 </Tab>
               }
               { (mode !== 'create') &&
-                <Tab title="Prepaid Counters" eventKey={4}>
+                <Tab title="Prepaid Counters" eventKey={6}>
                   <Panel style={{ borderTop: 'none' }}>
                     <PrepaidBalances aid={aid} />
                   </Panel>
                 </Tab>
               }
               {allowancesEnabled && (
-                <Tab title="Allowances" eventKey={5}>
+                <Tab title="Allowances" eventKey={7}>
                   <Panel style={{ borderTop: 'none' }}>
                     <CustomerAllowances
                       customer={customer}

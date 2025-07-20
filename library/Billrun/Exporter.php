@@ -120,6 +120,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
 
     protected $exportLimitRecords = false;
 
+    protected $filesExported =[];
+
 
     public function __construct($options = array()) {
         parent::__construct($options);
@@ -150,7 +152,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
     }
 
     public function getGeneratedFiles() {
-		return [$this->getExportFilePath()];
+		return $this->filesExported;
 	}
 
     protected function getLinkedEntityData($entity, $params, $field) {
@@ -246,6 +248,10 @@ class Billrun_Exporter extends Billrun_Generator_File {
         if (!$this->created_successfully) {
             Billrun_Factory::log()->log("Export generator was faild writing to the file. File creation failed..", Zend_Log::ALERT);
             return false;
+        }
+        $fileExported = $this->getExportFilePath();
+        if(file_exists($fileExported)){
+            $this->filesExported[] = $fileExported;
         }
         $transactionCounter = $this->fileGenerator->getTransactionsCounter();
         Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
@@ -346,6 +352,10 @@ class Billrun_Exporter extends Billrun_Generator_File {
             ->cursor()
             ->hint(['stamp' => 1])
             ->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 10800000));
+        return $rows;
+    }
+
+    protected function loadExportRows($rows){
         $data = array();
         $count = 0;
         foreach ($rows as $row) {
@@ -642,7 +652,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
                 $filesToExport = $this->getGeneratedFiles();
                 foreach ($filesToExport as $fileToExport) {
                     if (!$sender->send($fileToExport)) {
-                        Billrun_Factory::log()->log("Move {$fileToExport} to sender {$connection['name']} - failed!", Zend_Log::INFO);
+                        Billrun_Factory::log()->log("Move {$fileToExport} to sender {$connection['name']} - failed!", Zend_Log::ALERT);
                     $this->moved = false;
                 } else {
                         Billrun_Factory::log()->log("Move {$fileToExport} to sender {$connection['name']} - done", Zend_Log::INFO);
@@ -661,22 +671,27 @@ class Billrun_Exporter extends Billrun_Generator_File {
     protected function buildGeneratorOptions() {
         $this->fileNameParams = isset($this->config['filename_params']) ? $this->config['filename_params'] : self::DEFAULT_FILENAME_PARMS;
         $this->fileNameStructure = isset($this->config['filename']) ? $this->config['filename'] : self::DEFAULT_FILENAME;
-        $this->fileName = $this->getFilename();
+        $options['force_header'] = $this->config['generator']['force_header'] ?? false;
+        $options['force_footer'] = $this->config['generator']['force_footer'] ?? false;
+        $options['configByType'] = $this->config;
+        $rows = $this->loadRows();
+        if(!$options['force_header'] && !$options['force_footer'] && count($rows) == 0){
+            $this->fileName = self::DEFAULT_FILENAME;
+        }else{
+            $this->fileName = $this->getFilename();
+        }
         $options['file_name'] = $this->fileName;
         $options['file_type'] = $this->getType();
         $this->localDir = $this->getFilePath();
         $options['local_dir'] = $this->localDir;
         $options['file_path'] = $this->localDir . DIRECTORY_SEPARATOR . $this->fileName;
-        $this->rowsToExport = $this->loadRows();
+        $this->rowsToExport = $this->loadExportRows($rows);
         $options['data'] = $this->rowsToExport;
-        $this->headerToExport[0] = $this->getHeaderLine();
+        $this->headerToExport[0] = (!empty($this->rowsToExport)|| $options['force_header']) ? $this->getHeaderLine() : [];
         $options['headers'] = $this->headerToExport;
-        $this->footerToExport[0] = $this->getTrailerLine();
+        $this->footerToExport[0] = (!empty($this->rowsToExport)|| $options['force_footer']) ? $this->getTrailerLine() : [];
         $options['trailers'] = $this->footerToExport;
         $options['type'] = $this->config['generator']['type'];
-        $options['force_header'] = $this->config['generator']['force_header'] ?? false;
-        $options['force_footer'] = $this->config['generator']['force_footer'] ?? false;
-        $options['configByType'] = $this->config;
         if ($options['type'] == 'separator') {
             $options['delimiter'] = $this->config['generator']['separator'] ?? ",";
         }
