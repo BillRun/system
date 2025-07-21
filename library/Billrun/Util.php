@@ -1856,13 +1856,20 @@ class Billrun_Util {
 	 * @param type $hashKeys the  keys to search for.
 	 * @return type
 	 */
-	public static function mapArrayToStructuredHash($arrayData,$hashKeys) {
+	public static function mapArrayToStructuredHash($arrayData,$hashKeys,$accumulate = false) {
 		$retHash =array();
 		$currentKey = array_shift($hashKeys);
 		if(isset($arrayData[0]) && is_array($arrayData) && $currentKey) {
 			foreach($arrayData as $data) {
 				if(isset($data[$currentKey])) {
-					$retHash[$data[$currentKey]] = static::mapArrayToStructuredHash( $data, $hashKeys );
+					if( $accumulate && !empty($retHash[$data[$currentKey]]) ) {
+							if( Billrun_Util::isAssoc($retHash[$data[$currentKey]]) ) {
+								$retHash[$data[$currentKey]] = [$retHash[$data[$currentKey]]];
+							}
+							$retHash[$data[$currentKey]][] = static::mapArrayToStructuredHash( $data, $hashKeys );
+					} else {
+						$retHash[$data[$currentKey]] = static::mapArrayToStructuredHash( $data, $hashKeys );
+					}
 				} else {
 					Billrun_Factory::log("Could not map the $currentKey in array to hashed value, received array :".print_r($data,1), Zend_Log::WARN);
 				}

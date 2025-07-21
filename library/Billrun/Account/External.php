@@ -83,7 +83,7 @@ class Billrun_Account_External extends Billrun_Account {
 				throw new Exception("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams));
 			}
 			//cache results forfuture GSD/GAD calls
-			if($this->cacheGBAtoGSD ) {
+			if( $this->cacheGBAtoGSD ) {
 				$this->saveRevisionsToCache($results['data'],$cycle);
 			}
 			// Preform translation if needed and return results
@@ -97,7 +97,7 @@ class Billrun_Account_External extends Billrun_Account {
 				}
 
 			}
-
+			Billrun_Factory::dispatcher()->trigger('afterGetBillable',[&$results]);
 			return $results;
 	}
 
