@@ -475,8 +475,12 @@ class Billrun_Cycle_Account_Invoice {
 									return !empty($sub['sid']) && (!$ignoreSubsWithNoPlans || !is_null($sub['totals']['flat']['after_vat']) );
 								}));
 
-		if(	$hasActiveSubscribers || !empty($this->data['totals']['after_vat_rounded'])  || !empty($this->constructOptions['force_active']) ) {
-			 return true;
+		$overrideAccountValidation = false;
+		Billrun_Factory::dispatcher()->trigger('isAccountActiveForInvoicing',[  &$overrideAccountValidation  , $this->data ]);
+
+		if( $hasActiveSubscribers || $overrideAccountValidation ||
+			!empty($this->data['totals']['after_vat_rounded'])  || !empty($this->constructOptions['force_active']) ) {
+				return true;
 		}
 		$accountActivenessLinesHistory = Billrun_Factory::config()->getConfigValue("pricing.months_limit", 3);
 		if (is_numeric($accountActivenessLinesHistory)) {
@@ -491,6 +495,7 @@ class Billrun_Cycle_Account_Invoice {
 			'usaget'=>['$nin'=>['flat']],
 		];
 		$hasUsageLines = !$this->lines->query($query)->cursor()->limit(1)->current()->isEmpty();
+
 		return $hasUsageLines;
 	}
 
