@@ -56,4 +56,11 @@ class bcCest
         $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
     }
 
+    public function mongodloidtest(ApiTester $I)
+    {
+        $I->sendAuthenticatedGET('/test/Mongodloidtest');
+        $response = $I->grabResponse();
+        $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
+    }
+
 }
