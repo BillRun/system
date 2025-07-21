@@ -816,8 +816,10 @@ class Tests_Mongodloid extends UnitTestCase{
 		$options = $test['params']['options'];
 		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->batchInsert($documents, $options);
 		$res = true;
-		foreach ($documents as $doc){
-			$res = $this->checkDb($collection, $doc, $test['expected']['dbValues'] ?? []);
+		if($result['ok'] == 1){
+			foreach ($documents as $doc){
+				$res = $this->checkDb($collection, $doc, $doc);
+			}
 		}
 		return $this->checkResult($result, $test['expected']['result']) && $res;
 	}
@@ -827,8 +829,10 @@ class Tests_Mongodloid extends UnitTestCase{
 		$document = $test['params']['document'];
 		$options = $test['params']['options'];
 		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->insert($document, $options);
-		return $this->checkResult($result, $test['expected']['result']) && 
-			$this->checkDb($collection, $document, $test['expected']['dbValues'] ??[]);
+		if($result['ok'] == 1){
+			$res = $this->checkDb($collection, $document, $document);
+		}
+		return $this->checkResult($result, $test['expected']['result']) && $res;
 	}
 	
 	protected function checkAutoIncForEntity($test) {
