@@ -829,6 +829,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		$document = $test['params']['document'];
 		$options = $test['params']['options'];
 		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->insert($document, $options);
+		$res = true;
 		if($result['ok'] == 1){
 			$res = $this->checkDb($collection, $document, $document);
 		}
