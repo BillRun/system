@@ -480,7 +480,36 @@ class Tests_Mongodloid extends UnitTestCase{
 				'database' => 'database',
 			)
 		),
-		
+		//48 check MongodloidResult insert - Success
+		array('function' => 'checkInsertResult', 'collection' => 'subscribers', 'description' => 'check checkInsert result - success',
+			'params'=> array(
+				'document' => array(
+					'_id' => '5aeee57b05e68c02d035e1f6'
+				),
+				'options' => array(),
+			),
+			'expected' => array('result' => array('ok' => 1.0, 'n'=>1, 'err'=>null, 'errmsg'=>null))
+		),
+		//49 check MongodloidResult insert - failed Duplicate key
+		array('function' => 'checkInsertResult', 'collection' => 'subscribers', 'description' => 'check checkInsert result - failed Duplicate key',
+			'params'=> array(
+				'document' => array(
+					'_id' => '5aeee57b05e68c02d035e1f6'
+				),
+				'options' => array(),
+			),
+			'expected' => array('result' => array('ok' => 0, 'n'=>0, 'err'=>null, 'errmsg'=>null))
+		),
+		//49 check MongodloidResult insert - Unacknowledged
+		array('function' => 'checkInsertResult', 'collection' => 'subscribers', 'description' => 'check checkInsert result - Unacknowledged',
+			'params'=> array(
+				'document' => array(
+					'_id' => '5aeee57b05e68c02d035e1f7'
+				),
+				'options' => array(),
+			),
+			'expected' => array('result' => true)
+		)
 	);
 
 
@@ -941,6 +970,18 @@ class Tests_Mongodloid extends UnitTestCase{
 			return $this->checkResult($ref, ['$ref' => $refParam, '$id' => $id, '$db' => $database]);
 		}
     }
+
+	//////////////////////////Mongodloid_Result tests//////////////////////////////////////////
+
+	public function checkInsertResult($test){
+		try {
+			return $this->checkInsert($test);
+		} catch (Exception $e) {
+			$res = Mongodloid_Result::getResult($e->getWriteResult());
+			return $this->checkResult($res, $test['expected']['result']);
+		}
+		
+	}
 
 
 	///////////////////////////////////////////////////////////////////////////////////
