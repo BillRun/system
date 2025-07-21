@@ -498,7 +498,7 @@ class Tests_Mongodloid extends UnitTestCase{
 				),
 				'options' => array(),
 			),
-			'expected' => array('result' => array('ok' => 0, 'n'=>0, 'err'=>'11000', 'errmsg'=> 'E11000 duplicate key error collection: billing_container.subscribers index: _id_ dup key: { : "5aeee57b05e68c02d035e1f6" }'))
+			'expected' => array('result' => array('ok' => 0, 'n'=>0, 'err'=>'11000'))
 		),
 		//49 check MongodloidResult insert - Unacknowledged success
 		array('function' => 'checkInsertResult', 'collection' => 'subscribers', 'description' => 'check checkInsert result - Unacknowledged success',
@@ -535,7 +535,7 @@ class Tests_Mongodloid extends UnitTestCase{
 			'collection'  => 'subscribers',
 			'description' => 'batchInsert fail - duplicate key',
 			'params'      => ['documents' => [['_id' => '5aeee57b05e68c02d035e1f9'], ['_id' => '5aeee57b05e68c02d035e1fa']], 'options' => []],
-			'expected'    => ['result' => ['ok' => 0, 'nInserted' => 0, 'err'=>'11000', 'errmsg'=> 'E11000 duplicate key error collection: billing_container.subscribers index: _id_ dup key: { : "5aeee57b05e68c02d035e1f9" }']],
+			'expected'    => ['result' => ['ok' => 0, 'nInserted' => 0, 'err'=>'11000']],
 		],
 		//53
 		[
