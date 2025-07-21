@@ -6,8 +6,8 @@ class Mongodloid_Result {
 	 * @param mixed $result - mongodb result
 	 * @return mixed -The mongodloid result
 	 */
-	public static function getResult($result) {
-		$callingMethod = debug_backtrace()[1]['function'];
+	public static function getResult($result, $resultType= FALSE) {
+		$callingMethod =  (empty($resultType) ? debug_backtrace()[1]['function'] : $resultType);
 		switch ($callingMethod) {
 			case 'update':
 			case 'updateEntity':
@@ -20,7 +20,8 @@ class Mongodloid_Result {
 				return self::buildBatchInsertResult($result);
 			case 'insert':
 				return self::buildInsertResult($result);
-			default:
+			case 'current':
+					default:
 				return Mongodloid_TypeConverter::toMongodloid($result);
 		}
 	}
