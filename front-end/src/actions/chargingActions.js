@@ -36,7 +36,6 @@ export const getChargeDetails = item => dispatch => {
     const md5 = item.get('md5', '');
     return apiBillRun(getChargeQuery(md5), { timeOutMessage: apiTimeOutMessage })
         .then((success) => {
-            debugger;
             dispatch(dismissProgressIndicator());
             const mergedItem = Immutable.fromJS({...item.toJS(), details: {...success.data[0].data.details}});
             if (item.get('active', false)) {
@@ -72,10 +71,9 @@ export const cancelCharge = item => dispatch =>
         .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error cancel charge')));
 
 export const startCharge = item => dispatch => {
-    const datetimeFormat = getConfig('datetimeFormat', '');
     const apiDateTimeFormat = getConfig('apiDateTimeFormat', '')
-    const schedulerDate = moment(item.get('schedule', ''), datetimeFormat);
-    const minInvoiceDate = moment(item.get('min_invoice_date', ''), datetimeFormat);
+    const schedulerDate = moment(item.get('schedule', ''));
+    const minInvoiceDate = moment(item.get('min_invoice_date', ''));
     const runOn = item.get('run_on', '');
     // Update charge details
     let charge = item
@@ -92,6 +90,12 @@ export const startCharge = item => dispatch => {
     }
     if (minInvoiceDate.isValid()) {
         charge = charge.set('min_invoice_date', minInvoiceDate.utc().format(apiDateTimeFormat));
+    }
+    if (charge.get('pay_mode', '') === 'one_payment') {
+        charge = charge.delete('pay_mode');
+    }
+    if (charge.get('mode', '') === 'all') {
+        charge = charge.delete('mode');
     }
     const scheduler = schedulerDate.isValid() ? schedulerDate.utc().format(apiDateTimeFormat) : false;
     return apiBillRun(getChargeCreateQuery(charge, scheduler), { timeOutMessage: apiTimeOutMessage })

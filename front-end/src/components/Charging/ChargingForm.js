@@ -72,14 +72,14 @@ const ChargingForm = ({
     };
     const onChangeMinInvoiceDate = (newDate) => {
         if (moment.isMoment(newDate) && newDate.isValid()) {
-            updateField('min_invoice_date', newDate.format(datetimeFormat));
+            updateField('min_invoice_date', newDate.format());
         } else {
             removeField('min_invoice_date');
         }
     };
     const onChangeScheduler = (newDate) => {
         if (moment.isMoment(newDate) && newDate.isValid()) {
-            updateField('schedule', newDate.tz(timezone).format(datetimeFormat));
+            updateField('schedule', newDate.format());
         } else {
             removeField('schedule');
         }
@@ -87,8 +87,8 @@ const ChargingForm = ({
 
     const include = item.get('include', []);
     const exclude = item.get('exclude', []);
-    const schedulerDate = moment(item.get('schedule'), datetimeFormat);
-    const minInvoiceDate = moment(item.get('min_invoice_date'), datetimeFormat);
+    const schedulerDate = moment(item.get('schedule', ''));
+    const minInvoiceDate = moment(item.get('min_invoice_date', ''));
 
     const inputProps = {
         fieldType: 'datetime',
@@ -103,8 +103,8 @@ const ChargingForm = ({
         <Form horizontal id='charging-wrapper'>
             {allowStartScheduleRun && (
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={5}></Col>
-                    <Col sm={5}>
+                    <Col componentClass={ControlLabel} sm={3}></Col>
+                    <Col sm={6}>
                         <Field
                             fieldType="toggeledInput"
                             value={schedulerDate.isValid() ? schedulerDate : null}
@@ -112,13 +112,13 @@ const ChargingForm = ({
                             label={getFieldName('is_schedule', 'charging_process', 'Schedule')}
                             inputProps={inputProps}
                             disabledDisplayValue={null}
+                            suffix={moment.tz.guess()}
                         />
                     </Col>
                 </FormGroup>
             )}
-
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col componentClass={ControlLabel} sm={4}>
                     {getFieldName('mode', 'charging_process', 'Charge Type')}:
                 </Col>
                 <Col sm={5}>
@@ -133,7 +133,7 @@ const ChargingForm = ({
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5} >
+                <Col componentClass={ControlLabel} sm={4} >
                     {getFieldName('billrun_key', 'charging_process', 'Select cycle')}:
                 </Col>
                 <Col sm={5}>
@@ -147,7 +147,7 @@ const ChargingForm = ({
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5} >
+                <Col componentClass={ControlLabel} sm={4} >
                     {getFieldName('pay_mode', 'charging_process', 'Charge Bill Mode')}:
                 </Col>
                 <Col sm={5}>
@@ -173,7 +173,7 @@ const ChargingForm = ({
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col componentClass={ControlLabel} sm={4}>
                     {getFieldName('min_invoice_date', 'charging_process', 'Minimum Invoice Date')}:
                 </Col>
                 <Col sm={5}>
@@ -186,7 +186,7 @@ const ChargingForm = ({
             </FormGroup>
 
             <FormGroup>
-                <Col sm={5} componentClass={ControlLabel}>
+                <Col componentClass={ControlLabel} sm={4}>
                     {getFieldName('run_on', 'charging_process', 'Specific Accounts')}:
                 </Col>
                 <Col sm={5}>
@@ -202,7 +202,7 @@ const ChargingForm = ({
 
             {item.get('run_on', '') === 'include' && (
                 <FormGroup>
-                    <Col sm={5} componentClass={ControlLabel}>
+                    <Col componentClass={ControlLabel} sm={4}>
                         {getFieldName('include_aids', 'charging_process', 'Include Customer IDs')}:
                         <HelpBlock><small>Comma \ new line separated numbers</small></HelpBlock>
                     </Col>
@@ -217,7 +217,7 @@ const ChargingForm = ({
 
             {item.get('run_on', '') === 'exclude' && (
                 <FormGroup>
-                    <Col sm={5} componentClass={ControlLabel}>
+                    <Col componentClass={ControlLabel} sm={4}>
                         {getFieldName('exclude_aids', 'charging_process', 'Exclude Customer IDs')}:
                         <HelpBlock><small>Comma \ new line separated numbers</small></HelpBlock>
                     </Col>

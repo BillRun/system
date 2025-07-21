@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
 import { Col, Row, Panel } from 'react-bootstrap';
-import moment from 'moment';
 import { Actions } from '@/components/Elements';
 import List from '@/components/List';
 import { pageFlagSelector } from '@/selectors/guiSelectors';

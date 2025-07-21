@@ -95,7 +95,7 @@ const Charging = ({
     }, [items, loadActiveCharge]);
 
     if (!isWorkers) {
-        return <p>Only for premium accounts</p>
+        return <p>This feature is available for <strong>BillRun Premium</strong> customers</p>
     }
 
     const activeChargeHeader = (<>
@@ -214,7 +214,7 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
             }),
         };
         
-        const scheduleDate = moment(item.get('schedule', null), stateProps.dateTimeFormat);
+        const scheduleDate = moment(item.get('schedule', null));
         const isSchedule = moment.isMoment(scheduleDate) && scheduleDate.isValid();
         confirm.message = isSchedule
             ? 'Are you sure you what to create a charging schedule?'
