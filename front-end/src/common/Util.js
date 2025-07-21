@@ -918,8 +918,6 @@ export const getChargeStatus = (item) => {
   if (item.get('start_time', '') === '') {
     return 'idle';
   }
-  console.log("item: ", item);
-  
   if (item.get('active', false)
     || (parseInt(item.get('done', 0)) === 0 && item.get('start_time', '') !== '')
     || (parseInt(item.get('done', 0)) === 1 && item.getIn(['details', 'done'], 0) !== item.getIn(['details', 'total'], 0))

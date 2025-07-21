@@ -72,7 +72,8 @@ const Charging = ({
     
     useEffect(() => {
         const suspicionActiveItem = items
-            .filter(item => item.has('start_time'))
+            .filter(item => item.get('start_time', '') !== '')
+            .filter(item => !['cancelled', 'future'].includes(getChargeStatus(item)))
             .reduce((maxItem, currentItem) => {
                 if (maxItem.isEmpty()) {
                     return currentItem;
@@ -98,6 +99,13 @@ const Charging = ({
         return <p>This feature is available for <strong>BillRun Premium</strong> customers</p>
     }
 
+    const idleItems = items.filter(item => getChargeStatus(item) === 'idle');
+    const allowCreate = activeItem.get('md5', '') === '' && idleItems.isEmpty();
+    const futureItems = scheduleItems.map((scheduleCharge) => moment(scheduleCharge.get('schedule', null)))
+        .filter(value => moment.isMoment(value) && value.isValid() && value.isAfter(moment()))
+        .sort((dateA, dateB) => dateA.isBefore(dateB) ? -1 : 1)
+        .map((date) => date.format(dateTimeFormat));
+
     const activeChargeHeader = (<>
         Active Job Progress <strong>{progress.toFixed(2)}%</strong>
         <div className="pull-right">
@@ -106,30 +114,21 @@ const Charging = ({
     </>);
 
     const scheduleChargesHeader = (<>
-        Schedulers: <strong>{scheduleItems.size} jobs</strong>
+        Schedulers: <strong>{futureItems.size} jobs</strong>
         <div className="pull-right">
         </div>
     </>);
-
-    const idleItems = items.filter(item => getChargeStatus(item) === 'idle');
-    const allowCreate = activeItem.get('md5', '') === '' && idleItems.isEmpty();
 
     return (
         <div>
             {!activeItem.isEmpty() && (
                 <Panel header={activeChargeHeader}>
-                    <p>Done {done} of {total}</p>
+                    Done <i>{done}</i> of <i>{total}</i>
                 </Panel>
             )}
-            {!scheduleItems.isEmpty() && (
+            {!futureItems.isEmpty() && (
                 <Panel header={scheduleChargesHeader}>
-                    { scheduleItems
-                        .map((scheduleCharge) => moment(scheduleCharge.get('schedule', null)))
-                        .filter(value => moment.isMoment(value) && value.isValid())
-                        .sort((dateA, dateB) => dateA.isBefore(dateB) ? -1 : 1)
-                        .map((date) => date.format(dateTimeFormat))
-                        .join(", ")
-                    }
+                    { futureItems.join(", ") }
                 </Panel>
             )}
             <ChargingList
@@ -201,7 +200,12 @@ const mapDispatchToProps = (dispatch, props) => ({
 
 const mergeProps = (stateProps, dispatchProps, ownProps) => {
 
-    const onReloadItems = () => dispatchProps.loadCharges(stateProps.listSize);
+    const onReloadItems = () => {
+        dispatchProps.loadCharges(stateProps.listSize);
+        if (Immutable.Map.isMap(stateProps.activeItem) && stateProps.activeItem.get('md5', '') !== '') {
+            dispatchProps.loadActiveCharge(stateProps.activeItem);
+        }
+    };
 
     const onConfirmStartCharge = (item) => {
         let confirm = {
