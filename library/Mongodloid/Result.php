@@ -14,8 +14,9 @@ class Mongodloid_Result {
 				return self::buildUpdateResult($result);
 			case 'remove':
 				return self::buildRemoveResult($result);
-			case 'save': 
-				return (!$result)? false : true;
+			case 'save':
+				$error = self::extractError($result);
+				return $error ? false : true;
 			case 'batchInsert':
 				return self::buildBatchInsertResult($result);
 			case 'insert':
@@ -82,6 +83,8 @@ class Mongodloid_Result {
 		return [
 			'ok' => $error ? 0 : 1.0,
 			'nInserted' => $result->getInsertedCount(),
+			'err' => $error['code'] ?? null,
+			'errmsg' =>  $error['message'] ?? null,
 		];
 	}
 	

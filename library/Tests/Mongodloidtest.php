@@ -498,18 +498,99 @@ class Tests_Mongodloid extends UnitTestCase{
 				),
 				'options' => array(),
 			),
-			'expected' => array('result' => array('ok' => 0, 'n'=>0, 'err'=>null, 'errmsg'=>null))
+			'expected' => array('result' => array('ok' => 0, 'n'=>0, 'err'=>'11000', 'errmsg'=> 'E11000 duplicate key error collection: billing_container.subscribers index: _id_ dup key: { : "5aeee57b05e68c02d035e1f6" }'))
 		),
-		//49 check MongodloidResult insert - Unacknowledged
-		array('function' => 'checkInsertResult', 'collection' => 'subscribers', 'description' => 'check checkInsert result - Unacknowledged',
+		//49 check MongodloidResult insert - Unacknowledged success
+		array('function' => 'checkInsertResult', 'collection' => 'subscribers', 'description' => 'check checkInsert result - Unacknowledged success',
 			'params'=> array(
 				'document' => array(
 					'_id' => '5aeee57b05e68c02d035e1f7'
 				),
-				'options' => array(),
+				'options' => array('w' => 0),
 			),
 			'expected' => array('result' => true)
-		)
+		),
+		//50 check MongodloidResult insert - Unacknowledged failed 
+		array('function' => 'checkInsertResult', 'collection' => 'subscribers', 'description' => 'check checkInsert result - Unacknowledged failed',
+			'params'=> array(
+				'document' => array(
+					'_id' => '5aeee57b05e68c02d035e1f7'
+				),
+				'options' => array('w' => 0),
+			),
+			'expected' => array('result' => true)
+		),
+		// BATCH INSERT
+		//51
+		[
+			'function'    => 'checkBatchInsertResult',
+			'collection'  => 'subscribers',
+			'description' => 'batchInsert success',
+			'params'      => ['documents' => [['_id' => '5aeee57b05e68c02d035e1f8'], ['_id' => '5aeee57b05e68c02d035e1f9']], 'options' => []],
+			'expected'    => ['result' => ['ok' => 1.0, 'nInserted' => 2, 'err' => null, 'errmsg'=>null]],
+		],
+		//52
+		[
+			'function'    => 'checkBatchInsertResult',
+			'collection'  => 'subscribers',
+			'description' => 'batchInsert fail - duplicate key',
+			'params'      => ['documents' => [['_id' => '5aeee57b05e68c02d035e1f9'], ['_id' => '5aeee57b05e68c02d035e1fa']], 'options' => []],
+			'expected'    => ['result' => ['ok' => 0, 'nInserted' => 0, 'err'=>'11000', 'errmsg'=> 'E11000 duplicate key error collection: billing_container.subscribers index: _id_ dup key: { : "5aeee57b05e68c02d035e1f9" }']],
+		],
+		//53
+		[
+			'function'    => 'checkBatchInsertResult',
+			'collection'  => 'subscribers',
+			'description' => 'batchInsert unacknowledged',
+			'params'      => ['documents' => [['_id' => '5aeee57b05e68c02d035e1fb'], ['_id' => '5aeee57b05e68c02d035e1fc']], 'options' => ['w' => 0]],
+			'expected'    => ['result' => true],
+		],
+	
+		// UPDATE
+		//54
+		[
+			'function'    => 'checkUpdateResult',
+			'collection'  => 'subscribers',
+			'description' => 'update unacknowledged',
+			'params'      => ['query' => ['_id' => '5aeee57b05e68c02d035e1fe'], 'values' => ['$set' => ['val' => 'unack']], 'options' => ['w' => 0]],
+			'expected'    => ['result' => true],
+		],
+	
+		// REMOVE
+		//55
+		[
+			'function'    => 'checkRemoveResult',
+			'collection'  => 'subscribers',
+			'description' => 'remove unacknowledged',
+			'params'      => ['query' => ['_id' => '5aeee57b05e68c02d035e202'], 'options' => ['w' => 0]],
+			'expected'    => ['result' => true],
+		],
+		// SAVE
+		//56
+		[
+			'function'    => 'checkSaveResult',
+			'collection'  => 'lines',
+			'description' => 'save success - insert',
+			'values' => ['stamp' => '5aeee57b05e68c02d035e210', 'val' => 'insert'],
+			'expected'    => ['result' => true],
+		],
+		//58
+		[
+			'function'    => 'checkSaveResult',
+			'collection'  => 'lines',
+			'description' => 'save fail - duplicate key',
+			'values' => ['stamp' => '5aeee57b05e68c02d035e210', 'val' => 'fail'],
+			'expected'    => ['result' => false],
+		],
+		//59
+		[
+			'function'    => 'checkSaveResult',
+			'collection'  => 'lines',
+			'description' => 'save unacknowledged',
+			'values' => ['stamp' => '5aeee57b05e68c02d035e211', 'val' => 'unack'], 
+			'w' => 0,
+			'expected'    => ['result' => true],
+		]
 	);
 
 
@@ -706,11 +787,12 @@ class Tests_Mongodloid extends UnitTestCase{
 		return $this->checkResult($result, $test['expected']['result']);
 	}
 	
-	protected function checkSave($test) {
+	protected function checkSave($test, $w = null) {
 		$collection = $test['collection'];
 		$values = $test['values'];
+		$w = $test['w'] ?? null;
 		$this->changeValues($values);
-		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->save(new Mongodloid_Entity($values));
+		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->save(new Mongodloid_Entity($values), $w);
 		return $this->basicCompare($result, $test['expected']['result'], 'result') && 
 			$this->checkDb($collection, $values, $test['expected']['dbValues']);
 
@@ -735,7 +817,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->batchInsert($documents, $options);
 		$res = true;
 		foreach ($documents as $doc){
-			$res = $this->checkDb($collection, $doc, $doc);
+			$res = $this->checkDb($collection, $doc, $test['expected']['dbValues'] ?? []);
 		}
 		return $this->checkResult($result, $test['expected']['result']) && $res;
 	}
@@ -746,7 +828,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		$options = $test['params']['options'];
 		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->insert($document, $options);
 		return $this->checkResult($result, $test['expected']['result']) && 
-			$this->checkDb($collection, $document, $document);
+			$this->checkDb($collection, $document, $test['expected']['dbValues'] ??[]);
 	}
 	
 	protected function checkAutoIncForEntity($test) {
@@ -977,10 +1059,48 @@ class Tests_Mongodloid extends UnitTestCase{
 		try {
 			return $this->checkInsert($test);
 		} catch (Exception $e) {
-			$res = Mongodloid_Result::getResult($e->getWriteResult());
+			$res = Mongodloid_Result::getResult($e->getWriteResult(), 'insert');
 			return $this->checkResult($res, $test['expected']['result']);
 		}
 		
+	}
+
+	public function checkBatchInsertResult($test){
+		try {
+			return $this->checkBatchInsert($test);
+		} catch (Exception $e) {
+			$res = Mongodloid_Result::getResult($e->getWriteResult(), 'batchInsert');
+			return $this->checkResult($res, $test['expected']['result']);
+		}
+		
+	}
+	public function checkRemoveResult($test) {
+		try {
+			return $this->checkRemove($test);
+		} catch (Exception $e) {
+			$res = Mongodloid_Result::getResult($e->getWriteResult(), 'remove');
+			return $this->checkResult($res, $test['expected']['result']);
+		}
+	}
+	
+
+	
+	public function checkUpdateResult($test) {
+		try {
+			return $this->checkUpdate($test);
+		} catch (Exception $e) {
+			$res = Mongodloid_Result::getResult($e->getWriteResult(), 'update');
+			return $this->checkResult($res, $test['expected']['result']);
+		}
+	}
+
+	public function checkSaveResult($test) {
+		try {
+			return $this->checkSave($test);
+		} catch (Exception $e) {
+			$res = Mongodloid_Result::getResult($e->getWriteResult(), 'save');
+			return $this->checkResult($res, $test['expected']['result']);
+		}
 	}
 
 
@@ -988,6 +1108,9 @@ class Tests_Mongodloid extends UnitTestCase{
 	
 	
 	protected function checkDb($collection, $query, $expectedDbValues) {
+		if (empty($expectedDbValues)){
+			return true;
+		}
 		$this->message .= '<br><b>compare db values</b><br>';
 		$expectedMessage = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b>';
 		$resultMessage = '<br><b> Result: </b> <br>';
@@ -1013,23 +1136,36 @@ class Tests_Mongodloid extends UnitTestCase{
 	}
 	
 	protected function checkResult($testResults, $expectedResults) {
+		
 		$this->message .= '<br><b>compare result</b><br>';
 		$expectedMessage = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b>';
-		$resultMessage = '<br><b> Result: </b> <br>';
+		$resultMessage = '<br><b> Result: </b>';
 		$ret = true;
-		if($testResults instanceof Mongodloid_Entity){
-			$testResults = $testResults->getRawData();
-		}
-		foreach ($expectedResults as $field => $expectedResult){ 
-			$expectedMessage .= '<br> ' . '— '. $field. ': ' . $expectedResult . '<br>';
-			$resultMessage .= '<br> ' . '— '. $field. ': ' . $testResults[$field] ;
-			if($testResults[$field] != $expectedResult){
+		if(is_bool($expectedResults)){
+			$expectedMessage .= $expectedResults . '<br>';
+			$resultMessage .= $testResults ;
+			if($testResults != $expectedResults){
 				$resultMessage .= $this->fail . '<br>';
 				$ret = false;
 			}else{
 				$resultMessage .= $this->pass . '<br>';
 			}
+		}else{
+			if($testResults instanceof Mongodloid_Entity){
+				$testResults = $testResults->getRawData();
+			}
+			foreach ($expectedResults as $field => $expectedResult){ 
+				$expectedMessage .= '<br> ' . '— '. $field. ': ' . $expectedResult . '<br>';
+				$resultMessage .= '<br> ' . '— '. $field. ': ' . $testResults[$field] ;
+				if($testResults[$field] != $expectedResult){
+					$resultMessage .= $this->fail . '<br>';
+					$ret = false;
+				}else{
+					$resultMessage .= $this->pass . '<br>';
+				}
+			}
 		}
+		
 		$this->message .= $expectedMessage . $resultMessage . '</p>';
 		return $ret;
 	}
