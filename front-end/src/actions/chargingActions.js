@@ -3,9 +3,9 @@ import moment from 'moment';
 import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '../common/Api';
 import { startProgressIndicator, dismissProgressIndicator } from './progressIndicatorActions';
 import {
-apiTimeOutMessage,
-  gotEntity,
-  clearEntity,
+    apiTimeOutMessage,
+    gotEntity,
+    clearEntity,
 } from '@/actions/entityActions';
 import {
     getList,
@@ -20,7 +20,8 @@ import {
     getChargeCreateQuery,
 } from '@/common/ApiQueries';
 import {
-  getConfig,
+    getChargeStatus,
+    getConfig,
 } from '@/common/Util';
 
 
@@ -35,6 +36,7 @@ export const getChargeDetails = item => dispatch => {
     const md5 = item.get('md5', '');
     return apiBillRun(getChargeQuery(md5), { timeOutMessage: apiTimeOutMessage })
         .then((success) => {
+            debugger;
             dispatch(dismissProgressIndicator());
             const mergedItem = Immutable.fromJS({...item.toJS(), details: {...success.data[0].data.details}});
             if (item.get('active', false)) {
@@ -49,7 +51,7 @@ export const getChargeDetails = item => dispatch => {
 }
 
 const setRemoveActive = charge => dispatch => {
-    if (charge && charge.getIn(['details', 'done'], 0) !== charge.getIn(['details', 'total'], 0)) {
+    if (getChargeStatus(charge) === 'active') {
         return dispatch(gotEntity('charging_process', charge));
     } else {
         return dispatch(clearCharge());

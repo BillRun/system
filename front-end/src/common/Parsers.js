@@ -7,6 +7,7 @@ import { StateIcon, WithTooltip } from '@/components/Elements';
 import {
   getConfig,
   getFieldName,
+  getChargeStatus,
 } from '@/common/Util';
 
 
@@ -88,21 +89,21 @@ export const scheduleChargeParser = (item) => {
   return '-';
 }
 
-export const cancelledChargeParser = (item) => parseInt(item.get('cancelled', '')) === 1 ? 'Yes' : 'No';
+export const cancelledChargeParser = (item) => getChargeStatus(item) === 'cancelled' ? 'Yes' : 'No';
 
-export const statusChargeParser = (item) => {
-  if (parseInt(item.get('cancelled', '')) === 1) {
-    return (<WithTooltip helpText="Canceled"><StateIcon status="removed" /></WithTooltip>);
+export const statusIconChargeParser = (item) => {
+  const status = getChargeStatus(item);
+  switch (status) {
+    case 'cancelled':
+      return (<WithTooltip helpText="Canceled"><StateIcon status="removed" /></WithTooltip>);
+    case 'future':
+      return (<WithTooltip helpText="Schedule"><StateIcon status="future" /></WithTooltip>);
+    case 'idle':
+      return (<WithTooltip helpText="Idle"><StateIcon status="idle" /></WithTooltip>);
+    case 'active':
+      return (<WithTooltip helpText="In Progress"><StateIcon status="active" /></WithTooltip>);
+    case 'done':
+    default:
+      return (<WithTooltip helpText="Completed"><StateIcon status="expired" /></WithTooltip>);
   }
-  if (item.get('active', false)) {
-    return (<WithTooltip helpText="In Progress"><StateIcon status="active" /></WithTooltip>);
-  }
-  const scheduleTime = moment(item.get('schedule', ''));
-  if (moment.isMoment(scheduleTime) && scheduleTime.isValid() && scheduleTime.isAfter(moment())) {
-    return (<WithTooltip helpText="Schedule"><StateIcon status="future" /></WithTooltip>);
-  }
-  if (item.get('start_time', '') === '') {
-    return (<WithTooltip helpText="Idle"><StateIcon status="idle" /></WithTooltip>);
-  }
-  return (<WithTooltip helpText="Completed"><StateIcon status="expired" /></WithTooltip>);
 };

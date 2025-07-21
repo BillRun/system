@@ -901,3 +901,30 @@ export const parseIncludeExcludeIdsListValue = (value) => value
   .map(v => v.trim())
   .filter(v => v.length)
   .map(v => isNumber(v) ? parseFloat(v) : v);
+
+export const getChargeStatus = (item) => {
+  if (!Immutable.Map.isMap(item)) {
+    return '';
+  }
+  if (parseInt(item.get('cancelled', '')) === 1) {
+    return 'cancelled';
+  }
+  if (item.get('schedule', '') !== '') {
+    const scheduleTime = moment(item.get('schedule', ''));
+    if (moment.isMoment(scheduleTime) && scheduleTime.isValid() && scheduleTime.isAfter(moment())) {
+      return 'future';
+    }
+  }
+  if (item.get('start_time', '') === '') {
+    return 'idle';
+  }
+  console.log("item: ", item);
+  
+  if (item.get('active', false)
+    || (parseInt(item.get('done', 0)) === 0 && item.get('start_time', '') !== '')
+    || (parseInt(item.get('done', 0)) === 1 && item.getIn(['details', 'done'], 0) !== item.getIn(['details', 'total'], 0))
+  ) {
+    return 'active';
+  }
+  return 'done';
+}

@@ -30,6 +30,7 @@ import { isWorkersSelector } from '@/selectors/appSelectors';
 import {
     getConfig,
     getFieldName,
+    getChargeStatus,
 } from '@/common/Util';
 
 
@@ -110,18 +111,7 @@ const Charging = ({
         </div>
     </>);
 
-    const idleItems = items.filter((item) => {
-        if (parseInt(item.get('cancelled', '')) === 1) {
-            return false;
-        }
-        if (item.get('schedule', '') !== '') {
-            return false;
-        }
-        if (item.get('start_time', '') === '') {
-            return true;
-        }
-        return false;
-    });
+    const idleItems = items.filter(item => getChargeStatus(item) === 'idle');
     const allowCreate = activeItem.get('md5', '') === '' && idleItems.isEmpty();
 
     return (

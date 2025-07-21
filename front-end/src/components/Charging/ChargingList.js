@@ -11,10 +11,11 @@ import { setPageFlag } from "@/actions/guiStateActions/pageActions";
 import {
     scheduleChargeParser,
     cancelledChargeParser,
-    statusChargeParser,
+    statusIconChargeParser,
 } from '@/common/Parsers';
 import {
     getFieldName,
+    getChargeStatus,
 } from '@/common/Util';
 
 
@@ -96,20 +97,13 @@ const mapStateToProps = (state, props) => ({
 const mapDispatchToProps = (dispatch, props) => ({
     onChangeSize: (e) => props.onUpdateSize(parseInt(e.target.value)),
     onChangeType: (e )=> dispatch(setPageFlag('charging', 'listType', e.target.value)),
-    isItemCancelable: (item) => {
-        if (parseInt(item.get('cancelled', '')) === 1) {
-            return false;
-        }
-        const scheduleTime = moment(item.get('schedule', ''));
-        const validScheduleTime = moment.isMoment(scheduleTime) && scheduleTime.isValid();
-        return validScheduleTime && scheduleTime.isAfter(moment());
-    },
+    isItemCancelable: (item) => getChargeStatus(item) === 'future',
 });
 
 const mergeProps = (stateProps, dispatchProps, ownProps) => {
 
     const listFields = [
-        { id: 'state', parser: statusChargeParser, cssClass: 'state'},
+        { id: 'state', parser: statusIconChargeParser, cssClass: 'state'},
         { id: 'created', title: getFieldName('created', 'charging_process'), type: 'datetime', cssClass: 'text-center'},
         { id: 'schedule', title: getFieldName('schedule', 'charging_process'), type: 'datetime', parser: scheduleChargeParser, cssClass: 'text-center'},
         { id: 'start_time', title: getFieldName('start_time', 'charging_process'), type: 'datetime', cssClass: 'text-center'},
