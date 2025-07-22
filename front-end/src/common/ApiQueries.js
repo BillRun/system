@@ -898,6 +898,84 @@ export const pushToCycleQueueQuery = (billrun_key, generate_pdf, include_aids = 
     },
   });
 }
+
+export const getChargesQuery = (limit = 1000) => {
+    const formData = new FormData();
+    formData.append('job_type', 'Charging');
+    formData.append('limit', limit);
+    formData.append('include_cancelled', true);
+
+    return ({
+      api: 'queue',
+      action: 'latestjob',
+      options: {
+        method: 'POST',
+        body: formData,
+      },
+    });
+}
+
+export const getChargesScheduleQuery = () => {
+    const formData = new FormData();
+    formData.append('job_type', 'Charging');
+    formData.append('future_only', true);
+
+    return ({
+      api: 'queue',
+      action: 'latestjob',
+      options: {
+        method: 'POST',
+        body: formData,
+      },
+    });
+}
+
+export const getChargeQuery = (md5) => {
+    const formData = new FormData();
+    formData.append('job_md5', md5);
+
+    return ({
+      api: 'queue',
+      action: 'parentjobstats',
+      options: {
+        method: 'POST',
+        body: formData,
+      },
+    });
+}
+
+export const getChargeCancelQuery = (md5) => {
+    const formData = new FormData();
+    formData.append('job_md5', md5);
+
+    return ({
+      api: 'queue',
+      action: 'canceljob',
+      options: {
+        method: 'POST',
+        body: formData,
+      },
+    });
+}
+
+export const getChargeCreateQuery = (data, scheduler) => {
+    const formData = new FormData();
+    formData.append('job_type', 'Charging');
+    formData.append('config', JSON.stringify(data));
+    if (scheduler !== false) {
+        formData.append('schedule', scheduler);
+    }
+
+    return ({
+      api: 'queue',
+      action: 'push',
+      options: {
+        method: 'POST',
+        body: formData,
+      },
+    });
+}
+
 export const pushToConfirmQueueQuery = (billrun_key, include_aids = [], exclude_aids = []) => {
   let config = { billrun_key };
   if (include_aids.length > 0) {

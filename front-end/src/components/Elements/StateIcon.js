@@ -11,6 +11,8 @@ const StateIcon = ({ from, to, status }) => {
       expired: status === 'expired',
       future: status === 'future',
       active: status === 'active',
+      removed: status === 'removed',
+      idle: status === 'idle',
     });
   } else {
     const fromTime = moment(from);
