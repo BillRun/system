@@ -401,23 +401,23 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$result = iconv("utf-8", "iso-8859-8", $result);
 		}
 		$xmlObj = simplexml_load_string($result);
-		if ($xmlObj !== false) {
-			if(!empty($xmlObj->response)){
-				$codeResult = (string) $xmlObj->response->result;
-				$this->transactionId = (string) $xmlObj->response->tranId;
-				$slaveNumber = (string) $xmlObj->response->doDeal->slaveTerminalNumber;
-				$slaveSequence = (string) $xmlObj->response->doDeal->slaveTerminalSequence;
-				$voucherNumber = $slaveNumber . $slaveSequence;
-				if (!empty($voucherNumber)) {
-					$additionalParams['payment_identifier'] = $voucherNumber;
-				}
-				$additionalParams['card_acquirer'] = $xmlObj->response->doDeal->cardAcquirer ? current($xmlObj->response->doDeal->cardAcquirer->attributes()->code) : '';
-				$additionalParams['card_brand'] = $xmlObj->response->doDeal->cardBrand ? current($xmlObj->response->doDeal->cardBrand->attributes()->code) : '';
-				$additionalParams['credit_company'] = $xmlObj->response->doDeal->creditCompany ? current($xmlObj->response->doDeal->creditCompany->attributes()->code) : '';
-				$additionalParams['card_type'] = $xmlObj->response->doDeal->cardType ? current($xmlObj->response->doDeal->cardType->attributes()->code) : '';
-				$additionalParams['uid'] = $xmlObj->response->doDeal->ashraitEmvData->uid ? (string) $xmlObj->response->doDeal->ashraitEmvData->uid : '';
-				$additionalParams['auth_number'] = $xmlObj->response->doDeal->authNumber ? (string) $xmlObj->response->doDeal->authNumber : '';
+		if ($xmlObj !== false && !empty($xmlObj->response)) {
+
+			$codeResult = (string) $xmlObj->response->result;
+			$this->transactionId = (string) $xmlObj->response->tranId;
+			$slaveNumber = (string) $xmlObj->response->doDeal->slaveTerminalNumber;
+			$slaveSequence = (string) $xmlObj->response->doDeal->slaveTerminalSequence;
+			$voucherNumber = $slaveNumber . $slaveSequence;
+			if (!empty($voucherNumber)) {
+				$additionalParams['payment_identifier'] = $voucherNumber;
 			}
+			$additionalParams['card_acquirer'] = $xmlObj->response->doDeal->cardAcquirer ? current($xmlObj->response->doDeal->cardAcquirer->attributes()->code) : '';
+			$additionalParams['card_brand'] = $xmlObj->response->doDeal->cardBrand ? current($xmlObj->response->doDeal->cardBrand->attributes()->code) : '';
+			$additionalParams['credit_company'] = $xmlObj->response->doDeal->creditCompany ? current($xmlObj->response->doDeal->creditCompany->attributes()->code) : '';
+			$additionalParams['card_type'] = $xmlObj->response->doDeal->cardType ? current($xmlObj->response->doDeal->cardType->attributes()->code) : '';
+			$additionalParams['uid'] = $xmlObj->response->doDeal->ashraitEmvData->uid ? (string) $xmlObj->response->doDeal->ashraitEmvData->uid : '';
+			$additionalParams['auth_number'] = $xmlObj->response->doDeal->authNumber ? (string) $xmlObj->response->doDeal->authNumber : '';
+			
 		}	
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}

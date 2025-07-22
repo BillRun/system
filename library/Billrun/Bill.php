@@ -161,6 +161,7 @@ abstract class Billrun_Bill {
 			}
 		} catch(Exception $ex){
 			Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+			Billrun_Factory::log()->log($ex->getTraceAsString(), Zend_Log::ERR);
             Billrun_Factory::log()->log('Trying to save the bill again', Zend_Log::DEBUG);
 			$res = $this->data->save(NULL, 1);
 			if(!$res){
