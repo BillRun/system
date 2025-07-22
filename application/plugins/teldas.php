@@ -32,7 +32,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $this->teldasUrl = Billrun_Util::getIn($options, 'url', 'https://ws.numberportability.ch');
     $this->teldasUser = Billrun_Util::getIn($options, 'user', '');
     $this->teldasPassword = Billrun_Util::getIn($options, 'password', '');
-    $this->lineType = Billrun_Util::getIn($options, 'matching_paths.line_type', 'Teles');
+    $this->lineType = Billrun_Util::getIn($options, 'matching_paths.line_type', '');
     $this->teldasAccessToken = !empty($this->cache) ? ($this->cache->get(self::ACCESS_TOKEN_CACHE_KEY) ?? '' ) : '';
     $this->options = $options;
     $this->nonWorkingDaysCollection = Billrun_Factory::db()->plugin_teldas_non_working_daysCollection(['force' => true]);
