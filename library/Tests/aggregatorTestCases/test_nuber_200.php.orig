@@ -3,7 +3,7 @@
 //this is example test 
 class Test_Case_200
 {
-    
+
     public $plan ;
     public $service;
     public $discount ;
@@ -16,9 +16,15 @@ class Test_Case_200
         // Subtract one day
         $now->sub(new DateInterval('P1D'));
       
+<<<<<<< HEAD
             $plan = generat_plans::generatePlan(['name' => "TEST_GENRATE",
             "price" => [ json_encode(["price" => 10, "from" => 0, "to" => "UNLIMITED"])]]);
-            $service = generat_services::generateService(['name' => "TEST_GENRATE_SERVICE", 
+            $service = generat_services::generateService(['name' => "TEST_GENRATE_SERVICE1", 
+=======
+            $this->plan = generat_plans::generatePlan(['name' => "TEST_GENRATE",
+            "price" => [ ["price" => 10, "from" => 0, "to" => "UNLIMITED"]]]);
+            $this->service = generat_services::generateService(['name' => "TEST_GENRATE_SERVICE", 
+>>>>>>> php8_fixAggregator_tests_with5296
             'from' => $now->format('Y-m-d'),"price" => [ ["price" => 10, "from" => 0, "to" => "UNLIMITED"]]]);
             $this->discount = generat_discounts::generateDiscount();
             $this->account = generat_subscribers::generateAccount();
@@ -41,7 +47,7 @@ class Test_Case_200
     {
        $this->generateData();
         generat_test_data::setTestNumber(200);
-      
+        
 
         return [
             'test' => [

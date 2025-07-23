@@ -6,13 +6,16 @@ class Test_Case_3439_75 {
         return [
     'preRun' => [
          'notallowPremature',
-        'removeBillruns',
+         'removeBillruns',
     ],
     'test' => [
         'test_number' => 753439,
         'aid' => 'NaN',
         'function' => [
+<<<<<<< HEAD
+=======
             'shouldRun_Aggregate',
+>>>>>>> customer_portal_php8
             'MultiDayNotallowPremature',
         ],
         'options' => [
@@ -81,7 +84,7 @@ class Test_Case_3439_75 {
     ],
     'expected' => [
         'shouldRunAggregate'=>false
-        ],
+    ],
     
     'postRun' => [
      //   'multi_day_cycle_false',
