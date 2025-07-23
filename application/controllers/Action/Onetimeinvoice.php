@@ -126,7 +126,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
 					'stamp' => $chargingOptions['oneTimeStamp'],
 					'force_accounts' => [$this->aid],
-					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
+					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'uf' => $chargingOptions['uf']]);
 
@@ -178,13 +178,14 @@ class OnetimeinvoiceAction extends ApiAction {
 			//Error message will be provided  for the  spesific CDR for within processCDRs  function
 			return false;
 		}
+		
 
 		// run aggregate on cdrs and fake invoice generate invoice
 		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
 					'stamp' => $chargingOptions['oneTimeStamp'],
 					'force_accounts' => [$this->aid],
 					'fake_cycle' => true,
-					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
+					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'generate_pdf' => $expected,
 					'uf' => $chargingOptions['uf']]);
@@ -271,7 +272,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
 					'stamp' => $chargingOptions['oneTimeStamp'],
 					'force_accounts' => [$this->aid],
-					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
+					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'uf' => $chargingOptions['uf']]);
 		$aggregator->aggregate();
@@ -300,6 +301,21 @@ class OnetimeinvoiceAction extends ApiAction {
 		];
 
 		return $results;
+	}
+	
+	protected function calcInvoiceSubType() {
+		if ($this->sumCdrsAprice() < 0) {
+			return 'refund';
+		}
+		return 'regular';
+	}
+	
+	protected function sumCdrsAprice() {
+		$sum = 0;
+		foreach ($this->processsedCdrs as $cdr) {
+			$sum += (double) $cdr['aprice'];
+		}
+		return $sum;
 	}
 
 	protected function processCDRs($inputCdrs, $oneTimeStamp, $inMemory = false) {

@@ -490,6 +490,10 @@ abstract class Billrun_PaymentGateway {
 		
 		return $response;
 	}
+	
+	protected function getTokenRequestType() {
+		return Zend_Http_Client::POST;
+	}
 
 	protected function getTokenRequestType() {
 		return Zend_Http_Client::POST;

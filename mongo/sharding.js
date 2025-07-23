@@ -16,6 +16,9 @@ if (Number(db.version().charAt(0)) >= 6) {
 if (db.version() >= "8") {
 	sh.shardCollection(_dbName + ".jobs_messages", { "md5" : 1 } );
 }
+if (db.version() >= "8") {
+	sh.shardCollection(_dbName + ".jobs_messages", { "md5" : 1 } );
+}
 //sh.shardCollection(_dbName + ".events", { "stamp" : 1 } );
 sh.shardCollection(_dbName + ".subscribers", { "aid" : "hashed", "sid": 1});
 //sh.shardCollection(_dbName + ".cards", { "batch_number":1, "serial_number":1 } );

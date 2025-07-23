@@ -159,6 +159,19 @@
 						"generate_pdf": {
 							"v": true,
 							"t": "Boolean"
+						},
+						"invoice": {
+							"aggregate": {
+								"subscriber": {
+									"final_data": {
+										"charges_by_vat" : {
+											"pipelines": [
+												[{"$match": {"tax_data.total_tax": {"$gt": 0}}},{"$unwind":"$tax_data.taxes"}, {"$group": {"_id": "$tax_data.taxes.key", "price": {"$sum": "$aprice"}, "count": {"$sum": 1}, "usagev": {"$sum": "$usagev"}, "vat": {"$sum": "$tax_data.total_amount"}, "tax_key": { "$first": "$tax_data.taxes.key" }, "tax_precentage" : { "$first": "$tax_data.taxes.tax" }}}]
+											]
+										}
+									}
+								}
+							}
 						}
 					},
 					"subscribers": {

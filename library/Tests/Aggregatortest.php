@@ -339,6 +339,16 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
              }
              $this->message .= "Percentage of tax :$vat %<br>";
          }
+         $subsFieldsPaths = (isset($row['expected']['billrun']['subs']) ) ? $row['expected']['billrun']['subs'] : null;
+        foreach($subsFieldsPaths as $path => $expectedValue){
+            $result = Billrun_Util::getIn($returnBillrun['subs'], $path, '');
+            if (Billrun_Util::isEqual($result, $expectedValue, 0.00001)) {
+                $this->message .= "subs $path is : " . $result . $this->pass;
+            } else {
+                $this->message .= "expected subs $path is : {$expectedValue} <b>result is </b>:  {$result}" . $this->fail;
+                $passed = FALSE; /* Percentage of tax */
+            }
+        }
          return $passed;
      }
 

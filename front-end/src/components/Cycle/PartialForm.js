@@ -2,14 +2,11 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { Form, FormGroup, Col, ControlLabel, HelpBlock, Label } from 'react-bootstrap';
-import isNumber from 'is-number';
 import Field from '@/components/Field';
+import { parseIncludeExcludeIdsListValue } from '@/common/Util';
 
 
-const PartialForm = ({
-  item = Immutable.Map(),
-  updateField,
-}) => {
+const PartialForm = ({ item, updateField }) => {
   const [isPartial, togglePartial] = useState(false);
   const [isInclude, toggleInclude] = useState(true);
   const [includeDisplay, setInclude] = useState('');
@@ -35,30 +32,23 @@ const PartialForm = ({
   const onChangeInclude = (e) => {
     const value = e.target.value;
     setInclude(value);
-    updateField('include', parseInputValue(value));
+    updateField('include', parseIncludeExcludeIdsListValue(value));
   };
   const onChangeExclude = (e) => {
     const value = e.target.value;
     setExclude(value);
-    updateField('exclude', parseInputValue(value));
+    updateField('exclude', parseIncludeExcludeIdsListValue(value));
   };
   const onSetInclude = () => {
     toggleInclude(true);
     setExclude('');
-    updateField('exclude', parseInputValue(''));
+    updateField('exclude', []);
   }
   const onSetExclude = () => {
     toggleInclude(false);
     setInclude('');
-    updateField('include', parseInputValue(''));
+    updateField('include', []);
   }
-
-  const parseInputValue = (value) => value
-    .trim()
-    .split(/\r\n|\r|\n|,/)
-    .map(v => v.trim())
-    .filter(v => v.length)
-    .map(v => isNumber(v) ? parseFloat(v) : v);
 
   return (
     <Form horizontal>
@@ -123,9 +113,12 @@ const PartialForm = ({
 }
 
 PartialForm.propTypes = {
+  item: PropTypes.instanceOf(Immutable.Map),
+  updateField: PropTypes.func,
 };
 
 PartialForm.defaultProps = {
+  item: Immutable.Map(),
 };
 
 

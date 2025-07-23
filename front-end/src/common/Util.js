@@ -231,15 +231,16 @@ export const buildPageTitle = (mode, entityName, item = Immutable.Map()) => {
 };
 
 export const getItemDateValue = (item, fieldName, defaultValue = moment()) => {
+  const fieldPath = toImmutableList(fieldName).toArray();
   if (Immutable.Map.isMap(item)) {
-    const dateString = item.get(fieldName, false);
+    const dateString = item.getIn(fieldPath, false);
     if (typeof dateString === 'string') {
       const dateFromString = moment(dateString);
       if (dateFromString.isValid()) {
         return dateFromString;
       }
     }
-    const dateUnix = item.getIn([fieldName, 'sec'], false);
+    const dateUnix = item.getIn([...fieldPath, 'sec'], false);
     if (typeof dateUnix === 'number') {
       const dateFromTimestemp = moment.unix(dateUnix);
       if (dateFromTimestemp.isValid()) {
@@ -891,4 +892,37 @@ export const isValueOn = val => {
     return ['yes', 'true', 'on', 'y'].includes(val.toLocaleLowerCase());
   }
   return false;
+}
+
+
+export const parseIncludeExcludeIdsListValue = (value) => value
+  .trim()
+  .split(/\r\n|\r|\n|,/)
+  .map(v => v.trim())
+  .filter(v => v.length)
+  .map(v => isNumber(v) ? parseFloat(v) : v);
+
+export const getChargeStatus = (item) => {
+  if (!Immutable.Map.isMap(item)) {
+    return '';
+  }
+  if (parseInt(item.get('cancelled', '')) === 1) {
+    return 'cancelled';
+  }
+  if (item.get('schedule', '') !== '') {
+    const scheduleTime = moment(item.get('schedule', ''));
+    if (moment.isMoment(scheduleTime) && scheduleTime.isValid() && scheduleTime.isAfter(moment())) {
+      return 'future';
+    }
+  }
+  if (item.get('start_time', '') === '') {
+    return 'idle';
+  }
+  if (item.get('active', false)
+    || (parseInt(item.get('done', 0)) === 0 && item.get('start_time', '') !== '')
+    || (parseInt(item.get('done', 0)) === 1 && item.getIn(['details', 'done'], 0) !== item.getIn(['details', 'total'], 0))
+  ) {
+    return 'active';
+  }
+  return 'done';
 }
