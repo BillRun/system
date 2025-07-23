@@ -6,6 +6,7 @@ modules:
         - \Helper\Api
         - \Helper\BillRunAPI
         - \Helper\TestHelper
+
         - REST:
             depends: PhpBrowser
             part: Json
