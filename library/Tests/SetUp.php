@@ -166,7 +166,7 @@ trait Tests_SetUp
 				default:
 					throw new Exception("Unknown label: $label");
 			}
-	
+
 
 	
 		$test_cases_to_skip = !empty($this->getRequset()->get('skip'))?$this->getRequset()->get('skip') :[] ;
@@ -188,13 +188,13 @@ trait Tests_SetUp
                  if(($test_cases_to_skip==[]&&$test_cases_to_run==[])
 				 ||($test_cases_to_skip==[] && ( $test_cases_to_run !==[] && in_array($test_number,$test_cases_to_run)) 
 				 ||$test_cases_to_skip!==[] &&!in_array($test_number,$test_cases_to_skip))){
-						// Create an instance of the class
-						$instance = new $class();
+				// Create an instance of the class
+				$instance = new $class();
 
-						// Call the test_case method and store the result
-						if (method_exists($instance, 'test_case')) {
-							$test_case = $instance->test_case();
-							$all_test_cases[] = $test_case;
+				// Call the test_case method and store the result
+				if (method_exists($instance, 'test_case')) {
+					$test_case = $instance->test_case();
+					$all_test_cases[] = $test_case;
 }				 }
 				
 			}
@@ -440,6 +440,6 @@ trait Tests_SetUp
 		Billrun_Util::setIn($data, $newConfig['key'],$newConfig['value']);
 		$config->insert($data);
 		Billrun_Config::getInstance()->loadDbConfig();
-  }
+	}
 
 }
