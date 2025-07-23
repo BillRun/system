@@ -495,10 +495,6 @@ abstract class Billrun_PaymentGateway {
 		return Zend_Http_Client::POST;
 	}
 
-	protected function getTokenRequestType() {
-		return Zend_Http_Client::POST;
-	}
-
 	/**
 	 * Saving Details to Subscribers collection and redirect to our success page or the merchant page if suppiled.
 	 * 
