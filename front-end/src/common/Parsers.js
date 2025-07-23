@@ -1,6 +1,14 @@
 import React from 'react';
 import classNames from 'classnames';
 import { titleCase } from 'change-case';
+import moment from 'moment';
+import Field from '@/components/Field';
+import { StateIcon, WithTooltip } from '@/components/Elements';
+import {
+  getConfig,
+  getFieldName,
+  getChargeStatus,
+} from '@/common/Util';
 
 
 export const rateTitleParser = (item) => {
@@ -28,3 +36,74 @@ export const statusParser = (item) => {
     <span className={labelClass}>{titleCase(statusLabel)}</span>
   );
 }
+
+export const runOnTitleParser = (item) => {
+  const runOn = item.getIn(['body', 'config', 'run_on'], '');
+  switch (runOn) {
+    case 'include': return `${getFieldName('include_aids', 'charging_process', 'Exclude Customer IDs')}`;
+    case 'exclude': return `${getFieldName('exclude_aids', 'charging_process', 'Exclude Customer IDs')}`;
+    default: return getFieldName('run_on', 'charging_process')
+  }
+}
+
+export const chargeTypeParser = (item) => {
+    const mode = item.getIn(['body', 'config', 'mode'], '');
+    switch (mode) {
+      case 'charge': return getFieldName('charging_type.charge', 'charging_process', 'Charge');
+      case 'refund': return getFieldName('charging_type.refund', 'charging_process', 'Refund');
+      default: return getFieldName('charging_type.all', 'charging_process', 'All');
+    }
+}
+
+export const chargePayModeParser = (item) => {
+    const payMode = item.getIn(['body', 'config', 'pay_mode'], '');
+    switch (payMode) {
+      case 'one_payment': return getFieldName('total_debt', 'charging_process', 'Total Debt');
+      case 'multiple_payments': return getFieldName('per_bill', 'charging_process', 'Per Bill');
+      default: return '';
+    }
+}
+
+export const chargeRunOnParser = (item) => {
+  const runOn = item.getIn(['body', 'config', 'run_on'], '');
+  switch (runOn) {
+    case 'include':
+      return <Field fieldType="json" className="included-excluded-items" value={item.getIn(['body', 'config', 'include'], [])} editable={false} />
+    case 'exclude':
+      return <Field fieldType="json" className="included-excluded-items" value={item.getIn(['body', 'config', 'exclude'], [])} editable={false} />
+    default:
+      return <Field value={getFieldName('charging_type.all', 'charging_process', 'All')} editable={false} />
+  }
+}
+
+export const scheduleChargeParser = (item) => {
+  let schedule = item.get('schedule', '');
+  if (schedule === '') {
+    return 'Not a scheduled';
+  }
+  schedule = moment(schedule);
+  if (moment.isMoment(schedule) && schedule.isValid()) {
+    const datetimeFormat = getConfig('datetimeFormat', 'DD/MM/YYYY HH:mm');
+    return schedule.format(datetimeFormat);
+  }
+  return '-';
+}
+
+export const cancelledChargeParser = (item) => getChargeStatus(item) === 'cancelled' ? 'Yes' : 'No';
+
+export const statusIconChargeParser = (item) => {
+  const status = getChargeStatus(item);
+  switch (status) {
+    case 'cancelled':
+      return (<WithTooltip helpText="Canceled"><StateIcon status="removed" /></WithTooltip>);
+    case 'future':
+      return (<WithTooltip helpText="Schedule"><StateIcon status="future" /></WithTooltip>);
+    case 'idle':
+      return (<WithTooltip helpText="Idle"><StateIcon status="idle" /></WithTooltip>);
+    case 'active':
+      return (<WithTooltip helpText="In Progress"><StateIcon status="active" /></WithTooltip>);
+    case 'done':
+    default:
+      return (<WithTooltip helpText="Completed"><StateIcon status="expired" /></WithTooltip>);
+  }
+};

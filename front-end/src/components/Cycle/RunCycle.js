@@ -13,11 +13,11 @@ import { getCycleName } from './CycleUtil';
 import PartialForm from './PartialForm';
 import { getCycleQuery, getChargeStatusQuery, getOperationsQuery } from '@/common/ApiQueries';
 import { getList, clearList } from '@/actions/listActions';
+import { isWorkersSelector } from '@/selectors/appSelectors';
 import {
   runBillingCycle,
   runResetCycle,
   chargeAllCycle,
-  getWorkersStatus,
   runBillingCycleWithWorkers
 } from '@/actions/cycleActions';
 import {
@@ -61,7 +61,6 @@ class RunCycle extends Component {
   }
 
   state = {
-    isWorkers: false,
     selectedCycle: Map(),
     selectedCycleName: '',
     autoRefreshRunning: false,
@@ -75,9 +74,6 @@ class RunCycle extends Component {
 
   componentDidMount() {
     this.props.dispatch(getList('charge_status', getChargeStatusQuery()));
-    this.props.dispatch(getWorkersStatus()).then((isWorkers) => {
-      this.setState(() => ({ isWorkers }));
-    });
   }
 
   componentWillReceiveProps() {
@@ -290,7 +286,7 @@ class RunCycle extends Component {
   }
 
   getRunCycleActions = () => {
-    const { isWorkers } = this.state;
+    const { isWorkers } = this.props;
     const selectedCycleStatus = this.getSelectedCycleStatus();
     return ([{
       label: 'Run!',
@@ -432,27 +428,24 @@ class RunCycle extends Component {
   }
 
   /** Render Functions */
-  renderPanelHeader = () => {
-    const { isWorkers } = this.state;
-    return (
-      <Row>
-        <Col sm={12} >
-          <div className="pull-left">
-            <h4>
-              Run a billing cycle
-            </h4>
-          </div>
-          <div className="pull-right mt10">
-            <Actions actions={this.getHeaderActions()} />
-          </div>
-        </Col>
-      </Row>
-    );
-  }
+  renderPanelHeader = () => (
+    <Row>
+      <Col sm={12} >
+        <div className="pull-left">
+          <h4>
+            Run a billing cycle
+          </h4>
+        </div>
+        <div className="pull-right mt10">
+          <Actions actions={this.getHeaderActions()} />
+        </div>
+      </Col>
+    </Row>
+  );
 
   render() {
-    const { selectedCycle, selectedCycleName, isWorkers } = this.state;
-    const { cycleAdditionalData } = this.props;
+    const { selectedCycle, selectedCycleName } = this.state;
+    const { cycleAdditionalData, isWorkers } = this.props;
 
     const isCycleWithWorkers = this.isSelectedCycleWithWorkers();
     const completionPercentage = cycleAdditionalData.get('completion_percentage', false);
@@ -583,10 +576,11 @@ class RunCycle extends Component {
   }
 }
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state, props) => ({
   cycleAdditionalData: state.list.get('cycle_data', List()).get(0) || Map(),
   chargeStatus: state.list.get('charge_status', List()).get(0) || Map(),
   chargeStatusRefreshed: state.list.get('charge_status_refresh', List()).get(0) || Map(),
+  isWorkers: isWorkersSelector(state, props),
 });
 
 export default connect(mapStateToProps)(RunCycle);

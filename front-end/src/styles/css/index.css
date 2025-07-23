@@ -386,6 +386,12 @@ fieldset[disabled] .btn {
 .cycle.active {
   background-color: #7AC943;
 }
+.cycle.removed {
+  background-color: #e80000;
+}
+.cycle.idle {
+  background:#fff;
+}
 .cycle.all {
   background: radial-gradient(closest-side, #7AC943, #FF931E, #BDCCD4);
 }

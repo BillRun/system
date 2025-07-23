@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
                 unzip openjdk-11-jre-headless \
                 unzip openjdk-11-jre-headless \
     && pecl install yaf-3.1.4 \
-    && pecl install mongodb-1.11.1 \
+    && pecl install mongodb-1.15.3 \
     && pecl install xdebug-3.1.6 \
     && docker-php-ext-enable yaf mongodb xdebug \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp calendar

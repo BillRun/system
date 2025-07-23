@@ -5,6 +5,7 @@ import Immutable from 'immutable';
 import { Col, Panel, FormGroup, Button } from 'react-bootstrap';
 import { Actions } from '@/components/Elements';
 import Field from '@/components/Field';
+import Help from '@/components/Help';
 import { buildRequestUrl } from '../../../common/Api';
 import { showSuccess, showDanger } from '@/actions/alertsActions';
 import { removeReceiver } from '@/actions/inputProcessorActions';
@@ -254,6 +255,21 @@ class Connection extends Component {
               onChange={this.onSetReceiverCheckboxField}
               checked={receiver.get('delete_received', false)}
               value="1"
+            />
+          </div>
+        </div>
+        <div className="form-group">
+          <label htmlFor="received_extension" className="col-xs-3 control-label d-flex align-items-center"
+          >Add file extension in remote
+          <Help contents="This will be added as a suffix to the file name in the remote location upon receiving." /> </label>
+          <div className="col-xs-6">
+            <input
+              type="text"
+              className="form-control"
+              id={`received_extension-${index}`}
+              onChange={this.onChangeReceiverField}
+              value={receiver.get('received_extension', '')}
+              placeholder="Enter file extension (e.g., .txt)"
             />
           </div>
         </div>
