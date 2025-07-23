@@ -639,6 +639,9 @@ export function saveInputProcessorSettings(state, parts = []) {
     if (processor.get('timezone_field', false)) {
       settings.processor['timezone_field'] = processor.get('timezone_field');
     }
+    if (processor.get('timezone', false)) {
+      settings.processor['timezone'] = processor.get('timezone');
+    }
     if (processor.get('calculated_fields', false)) {
       settings.processor['calculated_fields'] = processor.get('calculated_fields');
     }
