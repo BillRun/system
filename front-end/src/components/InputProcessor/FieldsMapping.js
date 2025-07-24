@@ -43,10 +43,10 @@ export default class FieldsMapping extends Component {
 
     const { settings } = props;
     let timeZoneOption = 'global';
-    if (settings.getIn(['processor', 'timezone_field'])) {
-      timeZoneOption = 'field';
-    } else if (settings.getIn(['processor', 'timezone'])) {
+    if (settings.getIn(['processor', 'timezone'])) {
       timeZoneOption = 'timezone';
+    } else if (settings.getIn(['processor', 'timezone_field'])) {
+      timeZoneOption = 'field';
     }
 
     this.state = {
