@@ -620,12 +620,19 @@ class Billrun_Billingcycle {
 	 * @param string $billrunKey
 	 * @return array
 	 */
-	public static function getConfirmedAccountIds($billrunKey) {
+	public static function getConfirmedAccountIds($billrunKey, $filter_aids = array()) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$query = array(
 			'billrun_key' => $billrunKey,
 			'billed' => 1,
 		);
+		
+		if (!empty($filter_aids)) {
+			$query['aid'] = array(
+				'$in' => $filter_aids,
+			);
+		}
+		
 		$fields = array(
 			'aid' => 1,
 		);

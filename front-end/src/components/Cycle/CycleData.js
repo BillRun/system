@@ -45,8 +45,8 @@ class CycleData extends Component {
     reloadCycleData: () => {},
     baseFilter: {},
     showConfirmAllButton: true,
-    isCycleConfirmed:false,
-    isWorkers:false,
+    isCycleConfirmed: false,
+    isWorkers: false,
     currency: '',
     invoicesNum: 0,
   };
