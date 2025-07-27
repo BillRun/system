@@ -210,6 +210,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 	}
 
 	protected function tranzilaTransaction($gatewayDetails, $addonData, $chargeAction) {
+		$txid = $addonData['txid'];
 		$creds = $this->getGatewayCredentials();
 		$params = [
 			'terminal_name' => $creds['terminal_name'],
@@ -227,7 +228,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 					'unit_price' => (double) abs($gatewayDetails['amount']),
 				]
 			],
-			'remarks' => (string) $addonData['aid'],
+			'remarks' => (string) $txid,
 			'user_defined_fields' => [
 				[
 					'name' => 'action',
@@ -235,7 +236,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 				],
 				[
 					'name' => 'remarks',
-					'value' => (string) $addonData['aid']
+					'value' => (string) $txid
 				],
 				[
 					'name' => 'Z_field',
