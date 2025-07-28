@@ -118,11 +118,12 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
 		if (!is_null($this->package) && ((($row['type'] == 'nrtrde' && in_array($row['usaget'], array('call', 'incoming_call'))) || $row['type'] == 'ggsn') || isset($row['roaming']))) {
-			Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
+
 			$row['roaming_package'] = $this->package;
 			$balancesIncludeRow = array();
 			$roamingUpdate = array();
 			if (!is_null($this->balanceToUpdate)) {
+				Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 				$packageLimits = $this->getPackageJoinedValues($this->balanceToUpdate['service_name'], $this->plan);
 				if (!empty($packageLimits['joined_field'])) {
 					$joinedField = $packageLimits['joined_field'];
@@ -162,6 +163,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$exhaustedUpdate = array();
 				foreach ($this->exhaustedBalances as $exhausted) {
 					$exhaustedBalance = $exhausted['balance']->getRawData();
+					Billrun_Factory::log()->log("Updating balance " . $exhaustedBalance['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 					$packageLimits = $this->getPackageJoinedValues($exhaustedBalance['service_name'], $this->plan);
 					$usageLeft = floor($exhausted['usage_left'] / $this->coefficient);
 					$exhaustedBalancesKeys[] = array(
@@ -222,12 +224,13 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function planGroupRule(&$rateUsageIncluded, &$groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
-		if ( !isset($this->lineType) || empty($limits['roaming']) ) {
+		if ( !isset($this->lineType) || empty($limits['roaming']) || !empty($limits['no_billable_affects'])  ) {
 			return;
 		}
 
-		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate) {
-			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']);
+		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate, $plan) {
+			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']) &&
+					@empty($plan->get('include.groups.'.$package['service_name'].'.limits.no_billable_affects'));
 		});
 		if (empty($matchedPackages) || !in_array($groupSelected, array_column($matchedPackages,'service_name'))) {
 			$groupSelected = FALSE;

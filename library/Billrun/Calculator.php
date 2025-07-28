@@ -316,6 +316,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * Remove lines from the queue if the current calculator is the last one or if final_calc is set for a queue line and equals the current calculator
 	 */
 	public function removeFromQueue() {
+		$lines = Billrun_Factory::db()->linesCollection();
 		$queue = Billrun_Factory::db()->queueCollection();
 		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
 		$calculator_type = $this->getCalculatorQueueType();
@@ -332,6 +333,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		// remove end of queue stack calculator
 		if (!empty($stamps)) { // last calculator
 			Billrun_Factory::log()->log("Removing lines from queue", Zend_Log::INFO);
+			$lines->update(array('stamp' => array('$in' => $stamps)), array('$unset' => array('in_queue' => 1)), array("multiple" => true));
 			$query = array('stamp' => array('$in' => $stamps));
 			$queue->remove($query);
 		}

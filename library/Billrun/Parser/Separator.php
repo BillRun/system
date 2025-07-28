@@ -22,6 +22,8 @@ class Billrun_Parser_Separator extends Billrun_Parser {
 	 */
 	protected $structure;
 
+	protected $minimumLineLength = false;
+
 	/**
 	 * the separator character
 	 * 
@@ -33,6 +35,10 @@ class Billrun_Parser_Separator extends Billrun_Parser {
 		parent::__construct($options);
 		if (isset($options['separator'])) {
 			$this->setSeparator((string) $options['separator']);
+		}
+
+		if (isset($options['parser']['minimum_line_length'])) {
+			$this->minimumLineLength = ((int) $options['parser']['minimum_line_length']);
 		}
 	}
 
@@ -81,7 +87,12 @@ class Billrun_Parser_Separator extends Billrun_Parser {
 
 		$line = is_array($this->line) ? $this->line : explode($this->separator, rtrim($this->line, "{$this->separator}\t\n\r\0\x0B"));
 		//Billrun_Factory::log()->log(print_r($line,1),Zend_Log::DEBUG);
-		$row = array_combine($this->structure, $line);
+		$structure = $this->structure;
+		if(count($structure) > count($line) && ($this->minimumLineLength && count($line) >= $this->minimumLineLength)) {
+			Billrun_Factory::log('Trimming line structure to match seperated values',Zend_Log::INFO);
+			$structure = array_splice($this->structure,0,count($line));
+		}
+		$row = array_combine($structure, $line);
 		$row['stamp'] = md5(serialize($line));
 
 		if ($this->return == 'array') {
