@@ -364,7 +364,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       } else {
           $success1 = $this->keepSystemUpToDateOfInaNumbers($parameters);
       }
-      if ($success1) {
+      if (!$success1) {
           Billrun_Factory::log("Failed to keep system up to date of INA numbers", Zend_Log::ALERT);
           $this->revertTeldasCollections($lastUpdateTime);
           return;
@@ -401,7 +401,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   protected function revertTeldasCollections($lastUpdateTime){
     Billrun_Factory::log("Reverting all changes of teldas collection until last update time " .  $lastUpdateTime, Zend_Log::DEBUG);
     $query = array(
-        'transactionDateTime' => array (
+        'transactionDatetime' => array (
             '$gt' => $lastUpdateTime
         )
     );
@@ -421,16 +421,17 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         // Step 1: Find the latest document _id per sortField
         $pipeline = [
             ['$sort' => [$map['sortField'] => 1, 'transactionDatetime' => -1]],
-            ['$match' => [
-                    'transactionDatetimeTo' => ['$ne' => null]
+            [
+                '$group' => [
+                    '_id' => '$' . $map['sortField'],
+                    'latestId' => ['$first' => '$_id'],
+                    'transactionDatetimeTo' => ['$first' => '$transactionDatetimeTo'],
                 ]
             ],
             [
-                '$group' => [
-                    '_id' => $map['sortField'],
-                    'latestId' => ['$first' => '$_id']
-                ]
+                '$match' => ['transactionDatetimeTo' => ['$ne' => null]]
             ]
+
         ];
         
         $cursor = $collection->aggregate($pipeline);
@@ -441,15 +442,15 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             $latestIdsCount++;
             $latestIds[] = $doc['latestId'];
         }
-
         Billrun_Factory::log("Updating " . $latestIdsCount . " teldas collection: " . $collection->getName() .",  transactionDatetimeTo to null." , Zend_Log::DEBUG);
 
         // Step 2: Update only those latest documents
         if (!empty($latestIds)) {
             $res = $collection->update(
-                ['_id' => ['$in' => $latestIds], ],
+                ['_id' => ['$in' => $latestIds]],
                 ['$set' => ['transactionDatetimeTo' => null]]
             , ['multiple' => true]);
+
         }
     }
   }
@@ -459,6 +460,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       Billrun_Factory::log("Keeping system up-to-date of INA numbers", Zend_Log::DEBUG);
       $inaNumbers = $this->getInaNumbers($parameters);
       $modifyPendingRevisions = [];
+      $updatingInaNumbers = 0;
       if ($inaNumbers === false) {
           return false;
       }
@@ -481,7 +483,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               Billrun_Factory::log("Something wrong. Modified transactionDatetimeTo field to " . $ret['nModified'] . " revisions instead of one. query: " . print_r($query, 1), Zend_Log::ERR);
               false;
           }
+          $updatingInaNumbers += $$ret['nModified'];
       }
+      Billrun_Factory::log("Update " . $updatingInaNumbers . "  INA number previous record ", Zend_Log::DEBUG);
+
       $result = $this->batchInsert($this->inaNumbersCollection, $inaNumbers, "INA numbers");
       if(!$result){
           return false;
@@ -857,6 +862,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       $missingInaNumbersRevisions = [];
       $modifyPendingRevisions = [] ; 
+      $updatingInaNumbers = 0;
       foreach ($inaNumbers as $inaNumber) {
           $modifyPendingFound = false;
           $missingInaNumberRevisions = $this->getMissingInaNumberRevisions($inaNumber['subscriberNumber'], strtotime($parameters['transactionDateTimeFrom']), $modifyPendingFound);
@@ -880,7 +886,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               Billrun_Factory::log("Something wrong. Modified transactionDatetimeTo field to " . $ret['nModified'] . " revisions instead of one. query: " . print_r($query, 1), Zend_Log::ERR);
               false;
             }
+            $updatingInaNumbers += $$ret['nModified'];
       }
+      Billrun_Factory::log("Update " . $updatingInaNumbers . "  INA number previous record ", Zend_Log::DEBUG);
       $result = $this->batchInsert($this->inaNumbersCollection, $missingInaNumbersRevisions, "missing INA numbers");
       if(!$result){
         return false;
