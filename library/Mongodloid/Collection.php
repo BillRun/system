@@ -265,8 +265,10 @@ class Mongodloid_Collection {
 				'findAndModify' => $this->getName(),
 				'query' => $query,
 				'update' => $update,
-				'fields' => $fields,
 			);
+			if(!empty($fields)) {
+				$commandOptions['fields'] = $fields;
+			}
 			$ret = $this->_db->command(array_merge($commandOptions, $options));
 		}
 

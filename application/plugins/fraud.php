@@ -88,7 +88,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		// Check if row is too "old" to be considered as a fraud. Currently done by decrease X hours (default: 1.5 hours) from min_time variable
-		if ($row['urt']->sec <= $this->min_time) {
+		if ($row['urt']->sec <= $this->min_time &&
+			(Billrun_Factory::config()->isProd()) || !Billrun_Factory::config()->getConfigValue('fraud.config.old_cdrs_generate_events', false) ) {
 			return true;
 		}
 
@@ -679,21 +680,25 @@ public function afterPricingDoneWithBalance($row, $balance, $pricingData, $calcu
 		$circuit_groups = Billrun_Util::getIntlCircuitGroups();
 		$record_types = array('01', '11', '30');
 		$rates_ref_list = Billrun_Util::getIntlRateRefs();
+		$transferDayTap3ToNrtrde = strtotime(Billrun_Factory::config()->getConfigValue('billrun.tap3_to_nrtrde_transfer_day', "20251015230000"));
 		foreach ($lines as $line) {
 			if (isset($line['out_circuit_group']) && in_array($line['out_circuit_group'], $circuit_groups) && in_array($line['record_type'], $record_types)) {
 				$intlLines[] = $line;
 			} else if (!empty($line['arate']) && in_array($line['arate']['$id']->{'$id'}, $rates_ref_list)) {
 				$intlLines[] = $line;
 			}
-			if(isset($line['roaming']) && $line['roaming'] === TRUE) {
-				$roamingLines[] = $line;
+			if( isset($line['roaming']) && $line['roaming'] === TRUE &&
+				( Billrun_Factory::config()->getConfigValue('fraud.insert_to_fraud.volte_nsn',FALSE) ||
+				 (!empty($transferDayTap3ToNrtrde) && $line['urt']->sec < $transferDayTap3ToNrtrde) )
+				) {
+					$roamingLines[] = $line;
 			}
 		}
 		if (!empty($intlLines)) {
 			$this->insertToFraudLines($intlLines);
 		}
 
-		if (!empty($roamingLines)) {
+		if ( !empty($roamingLines) ) {
 			$this->insertToFraudLines($roamingLines);
 			$this->insertToFraudQueue($roamingLines, TRUE,[	'in_circuit_group_name', 'in_circuit_group',
 															'out_circuit_group_name','out_circuit_group',

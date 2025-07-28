@@ -417,7 +417,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * @return type
 	 */
 	protected function getLines() {
-		$types = array('ggsn', 'smpp', 'mmsc', 'smsc', 'nsn', 'tap3', 'credit');
+		$types = array('ggsn', 'smpp', 'mmsc', 'smsc', 'nsn', 'tap3','nrtrde' ,'credit');
 		return $this->getQueuedLines(array('type' => array('$in' => $types)));
 	}
 
