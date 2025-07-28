@@ -2046,9 +2046,9 @@ runOnce(lastConfig, 'BRCD-4739', function () {
 		"hide_from_ui": true
 	})
 	db.createCollection('plugin_teldas_ina_numbers');
-	db.plugin_teldas_ina_numbers.ensureIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
+	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
 	db.createCollection('plugin_teldas_tariffs_profiles');
-	db.plugin_teldas_tariffs_profiles.ensureIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariffs_profiles_unique_index" });
+	db.plugin_teldas_tariffs_profiles.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariffs_profiles_unique_index" });
 	db.createCollection('plugin_teldas_tariff_switching_classes');
 	db.createCollection("plugin_teldas_non_working_days"); 
 });

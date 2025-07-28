@@ -740,10 +740,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					$gatewayName = $gatewayDetails['name'];
 					$gatewayInstanceName = $gatewayDetails['instance_name'];
 					$paymentParams['gateway_details'] = $gatewayDetails;
-					if ((self::isChargeMode($chargeOptions) && $gatewayDetails['amount'] < 0) || (self::isRefundMode($chargeOptions) && $gatewayDetails['amount'] > 0)) {
-						Billrun_Factory::log('Skipping account ' . $paymentParams['aid'] . ' with amount ' . $gatewayDetails['amount'] . ' due to requested charge mode', Zend_Log::DEBUG);
-						continue;
-					}
 					if ($gatewayDetails['amount'] > 0) {
 						Billrun_Factory::log("Charging account " . $billDetails['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
 					} else {
@@ -1007,6 +1003,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if ($errorMessage) {
 			throw new Exception($errorMessage);
 		}
+
+		if (self::isChargeMode($chargeFilters)) {
+			$filtersQuery['due'] = ['$gt' => 0]; 
+		} elseif (self::isRefundMode($chargeFilters)) {
+			$filtersQuery['due'] = ['$lt' => 0]; 
+		}
+			
+			
 		if (!empty($chargeFilters['aids'])) {
 			$aids = Billrun_Util::verify_array($chargeFilters['aids'], 'int');
 			$aidsQuery = array('aid' => array('$in' => $aids));
