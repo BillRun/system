@@ -220,7 +220,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			return $settingsByType['file_type'] === $this->fileType;
 		}));
 		if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
-		$currentFileCount = $this->getCurrentFileCount();
+		$currentFileCount = $this->getCurrentFileCount() + 1;
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$fileConfCount = isset($currentProcessor['response_files_count']) ? $currentProcessor['response_files_count'] : null;
 		$fileCorrelationObj = isset($currentProcessor['correlation']) ? $currentProcessor['correlation'] : null;
