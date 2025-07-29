@@ -439,19 +439,19 @@ class Models_Entity {
 			if($this->before === null){
 				throw new Exception('No entity before the change was found. Query: ' . json_encode($this->query));
 			}
-                        $newRevision = $this->before->getRawData();
-                        $newRevision['to'] = $this->update['from'];
-                        $key = $this->before[$field];
-                        Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $this->before->getRawData(), $newRevision);
+			$newRevision = $this->before->getRawData();
+			$newRevision['to'] = $this->update['from'];
+			$key = $this->before[$field];
+			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $this->before->getRawData(), $newRevision);
 			$prevEntity = $this->before->getRawData();
 			unset($prevEntity['_id']);
 			$prevEntity['from'] = $this->update['from'];
 			$this->insert($prevEntity);
 		}
-		$beforeChangeRevisions = $this->collection->query($permanentQuery)->cursor();
+		$beforeChangeRevisions = $this->collection->query($permanentQuery)->cursor()->setReadPreference('RP_PRIMARY');
 		$oldRevisions = array_map(function ($e) {return $e->getRawData();}, iterator_to_array($beforeChangeRevisions));
 		$this->collection->update($permanentQuery, $permanentUpdate, array('multiple' => true));
-		$afterChangeRevisions = $this->collection->query($permanentQuery)->cursor();
+		$afterChangeRevisions = $this->collection->query($permanentQuery)->cursor()->setReadPreference('RP_PRIMARY');
 		$this->fixEntityFields($this->before);
 		$newRevisions = [];
 		// Map and validate new revisions
@@ -460,11 +460,11 @@ class Models_Entity {
 			$oldRevision = $oldRevisions[$currentId];
 			
 			$key = $oldRevision[$field];
-			if($oldRevision === null){
-				throw new Exception('No old revision was found. Query: ' . json_encode($permanentQuery));
+			if ($oldRevision === null){
+				Billrun_Factory::log('No old revision was found. Query: ' . json_encode($permanentQuery), Zend_Log::ALERT);
 			}
 			if ($newRevision === null){
-				throw new Exception('No new revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate));
+				Billrun_Factory::log('No new revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate), Zend_Log::ALERT);
 			}
 			$newRevisions[$currentId] = $newRevision->getRawData();
 		}
