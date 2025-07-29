@@ -22,8 +22,6 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   protected $cache;
   protected $lineType;
   protected $moreSelctiveQuery = array();
-  private $originalTimezone;
-
 
   const RESPONSE_STATUS_OK = 200;
   const INVALID_TOKEN_ERROR = "invalid_token";
@@ -41,24 +39,8 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $this->inaNumbersCollection = Billrun_Factory::db()->plugin_teldas_ina_numbersCollection(['force' => true]);
     $this->tariffsProfilesCollection = Billrun_Factory::db()->plugin_teldas_tariffs_profilesCollection(['force' => true]);
     $this->tariffSwitchingClassesCollection = Billrun_Factory::db()->plugin_teldas_tariff_switching_classesCollection(['force' => true]);
-    $this->originalTimezone = date_default_timezone_get();
 	}
-
-    protected function forceSwissTimezone(){
-        $this->originalTimezone = date_default_timezone_get();
-        if($this->originalTimezone == 'Europe/Zurich'){
-            return;
-        }
-        date_default_timezone_set('Europe/Zurich');
-    }
-  
-    protected function revertToOriginalTimezone(){
-        if($this->originalTimezone == 'Europe/Zurich'){
-            return;
-        }
-        date_default_timezone_set($this->originalTimezone);
-    }
-
+    
   protected function authentication() {
     Billrun_Factory::log("Sending authentication request to teldas.", Zend_Log::DEBUG);
     $authenticationUrl = $this->teldasUrl . '/auth/login';
@@ -78,7 +60,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   public function cronHour() {
-    $this->forceSwissTimezone();
+    if(date_default_timezone_get() != 'Europe/Zurich'){
+        Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
+        return;
+    }
     $houresToRun = Billrun_Util::getIn($this->options, 'cron_hours', []);  //if empty run every hour 
     if(empty($houresToRun)){
       $this->syncSystem();
@@ -90,7 +75,6 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         }
       }
     }
-    $this->revertToOriginalTimezone();
   }
 
   protected function syncSystem(){
@@ -102,13 +86,15 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   public function cronDay() {
-      $this->forceSwissTimezone();
+      if(date_default_timezone_get() != 'Europe/Zurich'){
+        Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
+        return;
+      }
       $this->importHolidays();
       $success = $this->keepSystemUpToDateOfTariffSwitchingClasses();
       if (!$success) {
           Billrun_Factory::log("Failed to keep system up to date of tariffs switching classes", Zend_Log::ALERT);
       }
-      $this->revertToOriginalTimezone();
   }
 
   protected function importHolidays() {
@@ -1277,7 +1263,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   public function afterGetLineUsageType(&$line, $type) {
-      $this->forceSwissTimezone();
+      if(date_default_timezone_get() != 'Europe/Zurich'){
+        Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
+        return;
+      }
       if ($type != $this->lineType) {
           return;
       }
@@ -1308,11 +1297,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     //   $volumeType = Billrun_Util::getIn($this->options, 'matching_paths.volume.type', 'field');
     //   $volumeSrc = Billrun_Util::getIn($this->options, 'matching_paths.volume.src', array('Duration'));
     //   $stampFields = Billrun_Util::getIn($this->options, 'matching_paths.stamps_fields', array());
-    $this->revertToOriginalTimezone();
   }
 
   public function beforeGetLineAprice($line, &$aprice) {
-      $this->forceSwissTimezone();
+      if(date_default_timezone_get() != 'Europe/Zurich'){
+        Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
+        return;
+      }
       if ($line['type'] != $this->lineType) {
           return;
       }
@@ -1321,11 +1312,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       $this->priceByStamp[$line['stamp']] = $this->pricingCdr($line);
       $aprice = $this->priceByStamp[$line['stamp']] !== false ? $this->priceByStamp[$line['stamp']] : null;
-      $this->revertToOriginalTimezone();
   }
 
   public function beforeGetLinePriceToTax($line, &$aprice, $instance) {
-      $this->forceSwissTimezone();
+      if(date_default_timezone_get() != 'Europe/Zurich'){
+        Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
+        return;
+      }
       if ($line['type'] != $this->lineType) {
           return;
       }
@@ -1343,7 +1336,6 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               $aprice = $this->priceByStamp[$line['stamp']] !== false ? $this->priceByStamp[$line['stamp']] : null;
           }
       }
-      $this->revertToOriginalTimezone();
   }
 
   protected function addCfTeldasFieldsByInaNumber($inaNumberRevison, &$row){
