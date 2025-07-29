@@ -483,9 +483,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               Billrun_Factory::log("Something wrong. Modified transactionDatetimeTo field to " . $ret['nModified'] . " revisions instead of one. query: " . print_r($query, 1), Zend_Log::ERR);
               false;
           }
-          $updatingInaNumbers += $$ret['nModified'];
+          $updatingInaNumbers += $ret['nModified'];
       }
-      Billrun_Factory::log("Update " . $updatingInaNumbers . "  INA number previous record ", Zend_Log::DEBUG);
+      Billrun_Factory::log("Update " . $updatingInaNumbers . " INA number previous record ", Zend_Log::DEBUG);
 
       $result = $this->batchInsert($this->inaNumbersCollection, $inaNumbers, "INA numbers");
       if(!$result){
@@ -504,6 +504,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       if ($tariffsProfiles === false) {
           return false;
       }
+      $updatingTariffsProfiles = 0;
       foreach ($tariffsProfiles as &$tariffsProfile) {
           $tariffsProfile['transactionDateTime'] = new MongoDate(strtotime($tariffsProfile['transactionDateTime']));
           $tariffsProfile['transactionDateTimeTo'] = null;
@@ -515,7 +516,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               Billrun_Factory::log("Something wrong. Modified transactionDatetimeTo field to " . $ret['nModified'] . " revisions instead of one. query: " . print_r($query, 1), Zend_Log::ERR);
               false;
           }
+          $updatingTariffsProfiles += $ret['nModified'];
       }
+      Billrun_Factory::log("Update " . $updatingTariffsProfiles . " $type tariffs profiles previous record ", Zend_Log::DEBUG);
       $result = $this->batchInsert($this->tariffsProfilesCollection, $tariffsProfiles, "$type tariffs profiles");
         if(!$result){
             return false;
@@ -886,9 +889,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               Billrun_Factory::log("Something wrong. Modified transactionDatetimeTo field to " . $ret['nModified'] . " revisions instead of one. query: " . print_r($query, 1), Zend_Log::ERR);
               false;
             }
-            $updatingInaNumbers += $$ret['nModified'];
+            $updatingInaNumbers += $ret['nModified'] ?? 0;
       }
-      Billrun_Factory::log("Update " . $updatingInaNumbers . "  INA number previous record ", Zend_Log::DEBUG);
+      Billrun_Factory::log("Update " . $updatingInaNumbers . " INA number previous record ", Zend_Log::DEBUG);
       $result = $this->batchInsert($this->inaNumbersCollection, $missingInaNumbersRevisions, "missing INA numbers");
       if(!$result){
         return false;
