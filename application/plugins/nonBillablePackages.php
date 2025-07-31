@@ -201,8 +201,9 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate, $plan) {
+			$isNonBillablle = @$plan->get('include.groups.'.$package['service_name'].'.limits.no_billable_affects');
 			return 	in_array($package['service_name'], $rate['rates'][$usageType]['groups']) &&
-					!empty($plan->get('include.groups.'.$package['service_name'].'.limits.no_billable_affects'));
+					!empty($isNonBillablle);
 		});
 		if (empty($matchedPackages) || !in_array($groupSelected, array_column($matchedPackages,'service_name'))) {
 			$groupSelected = FALSE;
@@ -224,8 +225,8 @@ class nonBillablePackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 			$from = empty($package['balance_from_date']) ? strtotime($package['from_date']) : $package['balance_from_date'];
 			$to = empty($package['balance_to_date']) ? strtotime($package['to_date']) : $package['balance_to_date'];
-
-			$legitimate = (bool)($this->row['urt']->sec >= $from && $this->row['urt']->sec <= $to || true) && !empty($plan->get('include.groups.'.$package['service_name'].'.limits.no_billable_affects'));
+			$isNonBillablle = $plan->get('include.groups.'.$package['service_name'].'.limits.no_billable_affects');
+			$legitimate = (bool)($this->row['urt']->sec >= $from && $this->row['urt']->sec <= $to || true) && !empty($isNonBillablle);
 			//Billrun_Factory::dispatcher()->trigger('checkPackageRules', [&$legitimate,$package,$this->row,$plan, $usageType, $rate, $subscriberBalance]);
 			if(!$legitimate) {
 				if($groupSelected === $package['service_name']) {
