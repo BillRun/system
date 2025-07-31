@@ -218,4 +218,25 @@ class BillRunAPI extends \Codeception\Module
         return $this->createAccountWithAllMandatorySystemFields($populatedValues);
     }
 
+    public function sendBillapiUpdate($entity, $params){
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        foreach ($params['update'] as $key => $val) {
+            if (!is_array($val)) {
+              $request['update'][$key] = $val;
+            }else{
+              $request['update'][$key] = $val;
+      
+            }
+           
+            $request['update']['generate_by_test']=true;
+        }
+        $ret = $rest->sendPOST("/billapi/$entity/closeandnew", [
+            'update' => json_encode($request['update']),
+            'query' => json_encode($params['query'])
+        ]);
+        return json_decode($ret, true);
+      }
 }
