@@ -87,7 +87,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		// check if row is too "old" to be considered as a fraud. TODO: consider lowering min_time in 1-2 days.
 		if ($row['urt']->sec <= $this->min_time &&
-			(Billrun_Factory::config()->isProd()) || !Billrun_Factory::config()->getConfigValue('fraud.config.old_cdrs_generate_events', false)) {
+			(Billrun_Factory::config()->isProd() || !Billrun_Factory::config()->getConfigValue('fraud.config.old_cdrs_generate_events', false)) ) {
 			return true;
 		}
 
