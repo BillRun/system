@@ -102,6 +102,9 @@
 	"user" : {
 		"fields": []
 	},
+	"export_generator" : {
+		"fields": []
+	},
 	"taxation" :{
 		"tax_type": "usage",
 		 "CSI": {

@@ -2053,6 +2053,20 @@ runOnce(lastConfig, 'BRCD-4739', function () {
 	db.createCollection("plugin_teldas_non_working_days"); 
 });
 
+runOnce(lastConfig, 'BRCD-4944', function() {
+
+    if (lastConfig.export_generators && Array.isArray(lastConfig.export_generators)) {
+
+        lastConfig.export_generators.forEach(function(generator) {
+            generator.from = new Date(); 
+            generator.to = new Date(new Date().setFullYear(new Date().getFullYear() + 100)); 
+            db.export_generators.insertOne(generator);
+        });
+
+        lastConfig.export_generators = [];
+    }
+});
+
 if (typeof lastConfig['export'] === 'undefined') {
 	lastConfig.export = 1;
 }

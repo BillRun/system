@@ -174,7 +174,7 @@ export const getExportGeneratorActionQuery = (name, action) => ({
   ],
 });
 
-export const saveExportGeneratorQuery = generator => saveSettingsQuery(generator, 'export_generators');
+export const saveExportGeneratorQuery = generator => getCreateEntityQuery('export_generators', generator);
 
 export const getCreditChargeQuery = params => ({
   api: 'credit',
@@ -998,3 +998,48 @@ export const pushToConfirmQueueQuery = (billrun_key, include_aids = [], exclude_
     },
   });
 }
+
+export const getDeleteEntityByIdQuery = (collection, id) => ({
+  entity: collection,
+  action: 'delete',
+  params: [
+    { query: JSON.stringify({ _id: id }) },
+  ],
+});
+
+
+export const getCreateEntityQuery = (collection, data) => {
+  const formData = new FormData();
+  formData.append('update', JSON.stringify(data.toJS()));
+  return {
+    entity: collection,
+    action: 'create',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  };
+};
+
+export const getEntityByFieldQuery = (collection, field, value) => ({
+  entity: collection,
+  action: 'get',
+  params: [
+    { query: JSON.stringify({ [field]: value }) },
+    { size: 1 },
+  ],
+});
+
+export const getUpdateEntityByIdQuery = (collection, id, data) => {
+  const formData = new FormData();
+  formData.append('query', JSON.stringify({ _id: id }));
+  formData.append('update', JSON.stringify(data.toJS()));
+  return {
+    entity: collection,
+    action: 'update',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  };
+};
