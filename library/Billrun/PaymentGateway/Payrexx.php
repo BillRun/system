@@ -210,6 +210,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		$this->saveDetails['card_token'] = $cardDetails['card_token'];
 		$this->saveDetails['four_digits'] = $cardDetails['four_digits'];
 		$this->saveDetails['card_expiration'] = $cardDetails['expiration_date'];
+		$this->saveDetails['card_brand'] = $cardDetails['card_brand'];
 		$this->savePaymentGateway();
 
 		if ($paymentRow['charge']) {
@@ -253,7 +254,8 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 		return [
 			'card_token' => (string) $transaction['id'],
 			'four_digits' => (string) $lastDigits,
-			'expiration_date' => (string) $transaction['payment']['expiry']
+			'expiration_date' => (string) $transaction['payment']['expiry'],
+			'card_brand' => (string) $transaction['payment']['brand']
 		];
 	}
 
@@ -289,6 +291,7 @@ class Billrun_PaymentGateway_Payrexx extends Billrun_PaymentGateway {
 				'transaction_exhausted' => true,
 				'generate_token_time' => new MongoDate(time()),
 				'four_digits' => (string) $this->saveDetails['four_digits'],
+				'card_brand' => (string) $this->saveDetails['card_brand'],
 			)
 		);
 	}
