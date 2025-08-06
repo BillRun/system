@@ -11,6 +11,12 @@ import {
 } from '@/common/Util';
 
 
+export const md5ShorterParser = (item) => {
+  const md5 = item.get('md5', '');
+  const shortMd5 = (md5 !== '') ? md5.substring(0, 8) : '-';
+  return <WithTooltip helpText={md5}><span className="clickable">{shortMd5}</span></WithTooltip>;
+}
+
 export const rateTitleParser = (item) => {
   const description = item.get('description', '');
   if (description !== '') {
@@ -37,13 +43,28 @@ export const statusParser = (item) => {
   );
 }
 
-export const runOnTitleParser = (item) => {
-  const runOn = item.getIn(['body', 'config', 'run_on'], '');
-  switch (runOn) {
-    case 'include': return `${getFieldName('include_aids', 'charging_process', 'Exclude Customer IDs')}`;
-    case 'exclude': return `${getFieldName('exclude_aids', 'charging_process', 'Exclude Customer IDs')}`;
-    default: return getFieldName('run_on', 'charging_process')
+export const chargeRunOnTitleParser = (item) => {
+  const include = item.getIn(['body', 'config', 'include'], null);
+  if (include && include.size > 0) {
+    return `${getFieldName('include_aids', 'charging_process', 'Exclude Customer IDs')}`;
   }
+  const exclude = item.getIn(['body', 'config', 'exclude'], null);
+  if (exclude && exclude.size > 0) {
+    return `${getFieldName('exclude_aids', 'charging_process', 'Exclude Customer IDs')}`;
+  }
+  return `${getFieldName('charging_type.all', 'charging_process', 'All')}`;
+}
+
+export const chargeRunOnParser = (item) => {
+  const include = item.getIn(['body', 'config', 'include'], null);
+  if (include && include.size > 0) {
+    return <Field fieldType="json" className="included-excluded-items" value={include} editable={false} />
+  }
+  const exclude = item.getIn(['body', 'config', 'exclude'], null);
+  if (exclude && exclude.size > 0) {
+    return <Field fieldType="json" className="included-excluded-items" value={exclude} editable={false} />
+  }
+  return <Field value={getFieldName('charging_type.all', 'charging_process', 'All')} editable={false} />
 }
 
 export const chargeTypeParser = (item) => {
@@ -62,18 +83,6 @@ export const chargePayModeParser = (item) => {
       case 'multiple_payments': return getFieldName('per_bill', 'charging_process', 'Per Bill');
       default: return '';
     }
-}
-
-export const chargeRunOnParser = (item) => {
-  const runOn = item.getIn(['body', 'config', 'run_on'], '');
-  switch (runOn) {
-    case 'include':
-      return <Field fieldType="json" className="included-excluded-items" value={item.getIn(['body', 'config', 'include'], [])} editable={false} />
-    case 'exclude':
-      return <Field fieldType="json" className="included-excluded-items" value={item.getIn(['body', 'config', 'exclude'], [])} editable={false} />
-    default:
-      return <Field value={getFieldName('charging_type.all', 'charging_process', 'All')} editable={false} />
-  }
 }
 
 export const scheduleChargeParser = (item) => {

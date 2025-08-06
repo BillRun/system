@@ -6,7 +6,7 @@ import moment from 'moment';
 import { Col, Form, FormGroup, ControlLabel, Panel } from 'react-bootstrap';
 import Field from '@/components/Field';
 import {
-    runOnTitleParser,
+    chargeRunOnTitleParser,
     chargeRunOnParser,
     chargeTypeParser,
     chargePayModeParser,
@@ -201,7 +201,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
 
                 <FormGroup>
                     <Col componentClass={ControlLabel} sm={5}>
-                        {runOnTitleParser(item)}:
+                        {chargeRunOnTitleParser(item)}:
                     </Col>
                     <Col sm={6}>
                         {chargeRunOnParser(item)}
