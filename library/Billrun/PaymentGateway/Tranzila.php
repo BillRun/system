@@ -210,6 +210,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 	}
 
 	protected function tranzilaTransaction($gatewayDetails, $addonData, $chargeAction) {
+		$txid = $addonData['txid'];
 		$creds = $this->getGatewayCredentials();
 		$params = [
 			'terminal_name' => $creds['terminal_name'],
@@ -227,7 +228,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 					'unit_price' => (double) abs($gatewayDetails['amount']),
 				]
 			],
-			'remarks' => (string) $addonData['aid'],
+			'remarks' => (string) $txid,
 			'user_defined_fields' => [
 				[
 					'name' => 'action',
@@ -235,7 +236,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 				],
 				[
 					'name' => 'remarks',
-					'value' => (string) $addonData['aid']
+					'value' => (string) $txid
 				],
 				[
 					'name' => 'Z_field',
@@ -294,7 +295,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 			'sum' => (string) $this->amount,
 			'cred_type' => '1',
 			'tranmode' => $this->operation,
-			'currency' => 'NIS',
+			'currency' => '1',
 			'success_url_address' => $this->okPage,
 			'fail_url_address' => $this->failPage,
 			'accessibility' => $creds['accessibility'] ?? '0', // TODO: make pg settings
@@ -310,6 +311,9 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 			$params['npay'] = $this->installments['number_of_payments'];
 			$params['fpay'] = $this->installments['first_payment'];
 			$params['spay'] = $this->installments['periodical_payments'];
+		}
+		if (!empty($creds['template']) && trim($creds['template']) != 'default') {
+			$params['template'] = $creds['template'];
 		}
 		if (!empty($creds['iframe_endpoint'])) {
 			$this->redirectUrl = $creds['iframe_endpoint'] . '?' . http_build_query($params);
@@ -496,7 +500,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 	}
 
 	public function getDefaultParameters() {
-		$params = array("appkey", "secret", "handshake_password", "terminal_name", "j5_amount", "api_endpoint", "iframe_endpoint");
+		$params = array("appkey", "secret", "handshake_password", "terminal_name", "j5_amount", "api_endpoint", "iframe_endpoint", "template");
 		return $this->rearrangeParametres($params);
 	}
 	

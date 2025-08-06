@@ -1951,6 +1951,33 @@ runOnce(lastConfig, 'BRCD-4306', function() {
 	}
 });
 
+//BRCD-4415 CG plugin
+runOnce(lastConfig, 'BRCD-4415', function () {
+	var cgPluginSettings = {
+        "name": "creditGuardPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false,
+        "configuration" : {
+            "values" : {
+                "card_expiration_field_name" : "card_expiration",
+				"oldest_card_expiration" : "20 years ago",
+                "years_to_extend_card_expiration" : 3,
+                "extend_card_expiration" : true
+            }
+        }
+	}
+	for (var j = 0; j < lastConfig.payment_gateways.length; j++) {
+        if (lastConfig.payment_gateways[j]['name'] === "CreditGuard") {
+            for (let pg_field_name in lastConfig.payment_gateways[j]) {
+                cgPluginSettings['configuration']['values'][pg_field_name] = JSON.parse(JSON.stringify(lastConfig.payment_gateways[j][pg_field_name]));
+            }
+       
+        }
+	}
+    lastConfig['plugins'].push(cgPluginSettings);
+});
+
 //BRCD-4455 - add user_id field to Israel invoice plugin conf
 runOnce(lastConfig, 'BRCD-4455-1', function () {
 	for (var i = 0; i < lastConfig.plugins.length; i++) {
@@ -2036,6 +2063,21 @@ runOnce(lastConfig, 'BRCD-4725', function () {
 	db.rates.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
 	db.plans.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
 	db.services.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
+});
+
+runOnce(lastConfig, 'BRCD-4739', function () {
+	lastConfig['plugins'].push({
+		"name": "teldasPlugin",
+		"enabled": false,
+		"system": true,
+		"hide_from_ui": true
+	})
+	db.createCollection('plugin_teldas_ina_numbers');
+	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
+	db.createCollection('plugin_teldas_tariffs_profiles');
+	db.plugin_teldas_tariffs_profiles.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariffs_profiles_unique_index" });
+	db.createCollection('plugin_teldas_tariff_switching_classes');
+	db.createCollection("plugin_teldas_non_working_days"); 
 });
 
 if (typeof lastConfig['export'] === 'undefined') {

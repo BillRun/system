@@ -84,6 +84,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @var array
 	 */
 	protected $stampFields = array();
+	static protected $type = 'usage';
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -173,6 +174,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if(isset($linet)){
 			$row['linet'] = $linet;
 		}
+		Billrun_Factory::dispatcher()->trigger('afterGetLineUsageType', array(&$row, static::$type));               
 		return $row;
 	}
 	
