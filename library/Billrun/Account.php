@@ -338,8 +338,16 @@ abstract class Billrun_Account extends Billrun_Base {
 				Billrun_Factory::log()->log("Loading account " . $aid, Zend_Log::DEBUG);
 				if ($this->loadAccountForQuery($params)) {
 					$remove_values = array('in_collection', 'in_collection_from');
-					Billrun_Factory::log()->log("Removing collection steps for account " . $aid, Zend_Log::DEBUG);
-					$collectionSteps->removeCollectionSteps($aid);
+					try {
+						Billrun_Factory::log()->log("Removing collection steps for account " . $aid, Zend_Log::DEBUG);
+						$collectionSteps->removeCollectionSteps($aid);
+					} catch (Exception $e) {
+						Billrun_Factory::log()->log(
+							"Could not remove collection steps for account " . $aid . ". Error: " . $e->getMessage() .
+								". Proceeding with the update of the 'in_collection' status regardless.",
+							Zend_Log::WARN
+						);
+					}
 					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew(array(), $remove_values)) {
 						$result['out_of_collection'][] = $aid;
