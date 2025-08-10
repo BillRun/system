@@ -163,6 +163,10 @@ trait Tests_SetUp
 					$first='row';
 					$secound='stamp';
 					break;
+				case 'event':
+					$first='row';
+					$secound='stamp';
+					break;
 				default:
 					throw new Exception("Unknown label: $label");
 			}

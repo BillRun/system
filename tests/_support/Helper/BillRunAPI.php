@@ -52,6 +52,7 @@ class BillRunAPI extends \Codeception\Module
         }
         return $this->accessToken;
     }
+    
     /**
      * send post billapi requset to create entitys.
      * @param Array $data - entity fields 
@@ -69,7 +70,34 @@ class BillRunAPI extends \Codeception\Module
         ]);
         return json_decode($ret, true);
     }
+
    
+ /**
+     * Sets plugin settings using the BillRun API.
+     *
+     * This function sends a POST request to the BillRun API endpoint "/api/settings"
+     * with the provided data to set plugin settings. The request is authenticated
+     * using the access token obtained from the getAccessToken method.
+     *
+     * @param array $data An associative array containing the plugin settings to be set.
+     *                    The array keys represent the setting names, and the values represent the setting values.
+     *                    Default value is an empty array.
+     *
+     * @return array|null The response from the BillRun API, decoded as an associative array.
+     *                    If the response is not valid JSON, the function returns null.
+     */
+    public function setPluginSettings($data = [])
+    {
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $ret = $rest->sendPOST("/api/settings", [
+            'category'=> 'plugin',
+            'action'=> 'set',
+            'data' => json_encode($data)
+        ]);
+        return json_decode($ret, true);
+    }
+
     /**
      * Sends a request to close a billapi entity.
      *
@@ -89,6 +117,20 @@ class BillRunAPI extends \Codeception\Module
             'update' => json_encode($update)
         ];
         $ret =  $rest->sendPOST("/billapi/$entity/close", $params);
+        return json_decode($ret, true);
+    }
+
+    public function sendBillapiCloseandnew($entity, $query, $update)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        $ret =  $rest->sendPOST("/billapi/$entity/closeandnew", $params);
         return json_decode($ret, true);
     }
     /**
@@ -131,8 +173,59 @@ class BillRunAPI extends \Codeception\Module
         ]);
         return json_decode($ret, true);
     }
+    
+    public function sendApibill(array $params)
+    {
+        $aid = $params['aid'] ?? null;
+        $query = $params['query'] ?? null;
+        $action = $params['action'] ?? null;
+        $aids = $params['aids'] ?? null;
+      
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        
+        $requestParams = [];
+        
+        if ($aid !== null) {
+            $requestParams['aid'] = $aid;
+        }     
+        if ($aids !== null) {
+            $requestParams['aids'] = $aids;
+        } 
+        if ($query !== null) {
+            $requestParams['query'] = json_encode($query);
+        }
+            
+        if ($action !== null) {
+            $requestParams['action'] = $action;
+        }
+        
+        
+        // Only send request if we have parameters to send
+        if (empty($requestParams)) {
+            return null; // Or an appropriate error response
+        }
+        
+        $ret = $rest->sendGet("/api/bill", $requestParams);
+        return json_decode($ret, true);
+    }
+    
+    public function sendBillapiGet($query, $entity)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
 
-    /**
+        $ret = $rest->sendGet("/billapi/$entity/get", [
+            'query' => json_encode($query)
+        ]);
+        return json_decode($ret, true);
+    }
+
+     /**
      * send post billapi requset to create entitys.
      * @param Array $data - entity fields 
      * @param String $entity - entity name
@@ -211,46 +304,6 @@ class BillRunAPI extends \Codeception\Module
         return json_decode($ret, true);
     }
 
-    public function sendBillapiUpdate($entity,$query,$update )
-    {
-        // Get the REST module to send requests
-        /** @var REST $rest */
-        $rest = $this->getModule('REST');
-        $rest->amBearerAuthenticated($this->getAccessToken());
-        $params = [
-            'query' => json_encode($query),
-            'update' => json_encode($update)
-        ];
-        $ret =  $rest->sendPOST("/billapi/$entity/update", $params);
-        return json_decode($ret, true);
-    }
-
- /**
-     * Sets plugin settings using the BillRun API.
-     *
-     * This function sends a POST request to the BillRun API endpoint "/api/settings"
-     * with the provided data to set plugin settings. The request is authenticated
-     * using the access token obtained from the getAccessToken method.
-     *
-     * @param array $data An associative array containing the plugin settings to be set.
-     *                    The array keys represent the setting names, and the values represent the setting values.
-     *                    Default value is an empty array.
-     *
-     * @return array|null The response from the BillRun API, decoded as an associative array.
-     *                    If the response is not valid JSON, the function returns null.
-     */
-    public function setPluginSettings($data = [])
-    {
-        $rest = $this->getModule('REST');
-        $rest->amBearerAuthenticated($this->getAccessToken());
-        $ret = $rest->sendPOST("/api/settings", [
-            'category'=> 'plugin',
-            'action'=> 'set',
-            'data' => json_encode($data)
-        ]);
-        return json_decode($ret, true);
-    }
- 
     /**
      * create an account.
      * @param Array $override - fields to override the default values / fields to add
@@ -274,6 +327,35 @@ class BillRunAPI extends \Codeception\Module
 
         return $this->generateAccount($account);
     }
+    public function getCustomFields($entity) {
+        switch ($entity) {
+            case 'account':
+                $model = new \Models_Accounts(['collection' => 'accounts', 'no_init' => true]);
+                break;
+            case 'subscriber':
+                $model = new \Models_Subscribers(['collection' => 'subscribers', 'no_init' => true]);
+                break;
+            case 'plan':
+                $model = new \Models_Plans(['collection' => 'plans', 'no_init' => true]);
+                break;
+            case 'service':
+                $model = new \Models_Services(['collection' => 'services', 'no_init' => true]);
+                break;
+            case 'rates';
+                $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
+                break;
+        }
+
+        $mandatoryFields = $model->getMandatoryCustomFields();
+        $populatedValues = [];
+        foreach ($mandatoryFields as $field) {
+            $field['type'] = $field['type'] ?? 'text';
+            $value = $this->generateDemoValue($field['type']);
+            $populatedValues[$field['field_name']] = $value;
+        }
+        return $populatedValues;
+    }
+
 
       /**
      * create an account.
@@ -307,6 +389,21 @@ class BillRunAPI extends \Codeception\Module
         ], $override);
         $this->sendBillapiCreate($subscriber, 'subscribers');
     }
+    
+    public function sendBillapiUpdate($entity,$query,$update )
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'query' => json_encode($query),
+            'update' => json_encode($update)
+        ];
+        $ret =  $rest->sendPOST("/billapi/$entity/update", $params);
+        
+        return json_decode($ret, true);
+    }
     /**
      * create an plan.
      * @param Array $override - fields to override the default values 
@@ -325,7 +422,7 @@ class BillRunAPI extends \Codeception\Module
                 ]
             ],
             "from" => "2024-02-02",
-            "name" => "PLAN",
+            "name" => "PLAN".time().rand()*2000000,
             "tax" => [
                 [
                     "type" => "vat",
@@ -546,38 +643,21 @@ class BillRunAPI extends \Codeception\Module
         $ret = $rest->sendPOST("/billrun/chargeAccount",   $params);
         return json_decode($ret, true);
     }
-
-    public function getCustomFields($entity) {
-       
-        switch ($entity) {
-            case 'account':
-                $model = new \Models_Accounts(['collection' => 'accounts', 'no_init' => true]);
-                break;
-            case 'subscriber':
-                $model = new \Models_Subscribers(['collection' => 'subscribers', 'no_init' => true]);
-                break;
-            case 'plan':
-                $model = new \Models_Plans(['collection' => 'plans', 'no_init' => true]);
-                break;
-            case 'service':
-                $model = new \Models_Services(['collection' => 'services', 'no_init' => true]);
-                break;
-            case 'rates';
-                $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
-                break;
-            
-        }
-
-        $mandatoryFields = $model->getMandatoryCustomFields();
-        $populatedValues = [];
-        foreach ($mandatoryFields as $field) {
-            $field['type'] = $field['type'] ?? 'text';
-            $value = $this->generateDemoValue($field['type']);
-            $populatedValues[$field['field_name']] = $value;
-        }
-        return $populatedValues;
+  
+    public function sendRealTimeRequest($fileType, $request)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $params = [
+            'request' => json_encode($request),
+            'file_type' => $fileType
+        ];
+        $ret =  $rest->sendPOST("/realtime", $params);
+        return json_decode($ret, true);
     }
-
+    
     function generateDemoValue($type = 'text') {
         switch ($type) {
             case 'boolean':
