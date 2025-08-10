@@ -27,11 +27,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
 	protected $exporterFlags = null;
-        protected $invoice_extra_params = [];
+	protected $invoice_extra_params = [];
 	protected $header_path = "";
 	protected $footer_path = "";
 	protected $header_content = "";
 	protected $footer_content = "";
+	
+	protected $loadFromFile = FALSE;
 	
 
 
@@ -128,6 +130,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->tanent_css = $this->buildTanentCss(Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_tanent_css', ''));
 		$this->is_fake_generation = Billrun_Util::getFieldVal($options['is_fake'],FALSE);
 		$this->render_detailed_quantitative_services = Billrun_Util::getFieldVal($options['detailed_quantitative_services'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_detailed_quantitative_services', FALSE));
+		$this->loadFromFile = Billrun_Util::getFieldVal($options['load_from_file'], $this->loadFromFile);
 	}
 
 	/**
@@ -323,17 +326,21 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 
 	public function load() {
+		if($this->loadFromFile) {
+			$this->billrun_data = [ new Mongodloid_Entity(Billrun_Utils_Mongo::recursiveConvertJSONToMongo(json_decode(file_get_contents($this->loadFromFile),JSON_OBJECT_AS_ARRAY))) ];
+		} else {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		$query = array('billrun_key' => $this->stamp, '$or' => array(
 				array('totals.after_vat' => array('$not' => array('$gt' => -$this->invoice_threshold, '$lt' => $this->invoice_threshold))),
 				array('totals.credit.after_vat' => array('$not' => array('$gt' => -$this->invoice_threshold, '$lt' => $this->invoice_threshold)))
-//																		array('totals.before_discounts'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold))) 
+//					array('totals.before_discounts'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold)))
 		));
 		if (!empty($this->accountsToInvoice)) {
 			$query['aid'] = array('$in' => $this->accountsToInvoice);
 		}
 		Billrun_Factory::dispatcher()->trigger("beforeLoadWkpdf", array(&$query, $this->accountsToInvoice));
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
+ 		}
 	}
 
 	public function setData($billrunData) {
