@@ -88,7 +88,7 @@ export const chargePayModeParser = (item) => {
 export const scheduleChargeParser = (item) => {
   let schedule = item.get('schedule', '');
   if (schedule === '') {
-    return 'Not a scheduled';
+    return getFieldName('not_schedule', 'charging_process', 'Not Scheduled');
   }
   schedule = moment(schedule);
   if (moment.isMoment(schedule) && schedule.isValid()) {

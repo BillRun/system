@@ -90,7 +90,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
 
             <FormGroup>
                 <Col componentClass={ControlLabel} sm={5}>
-                    {getFieldName('cancelled', 'charging_process', 'Is Cancelled')}:
+                    {getFieldName('cancelled', 'charging_process', 'Cancelled')}:
                 </Col>
                 <Col sm={6}>
                     <Field editable={false} value={parseInt(item.get('cancelled', '')) === 1 ? 'Yes' : 'No'} />
