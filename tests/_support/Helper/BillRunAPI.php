@@ -658,38 +658,6 @@ class BillRunAPI extends \Codeception\Module
         return json_decode($ret, true);
     }
     
-
-    public function getCustomFields($entity) {
-       
-        switch ($entity) {
-            case 'account':
-                $model = new \Models_Accounts(['collection' => 'accounts', 'no_init' => true]);
-                break;
-            case 'subscriber':
-                $model = new \Models_Subscribers(['collection' => 'subscribers', 'no_init' => true]);
-                break;
-            case 'plan':
-                $model = new \Models_Plans(['collection' => 'plans', 'no_init' => true]);
-                break;
-            case 'service':
-                $model = new \Models_Services(['collection' => 'services', 'no_init' => true]);
-                break;
-            case 'rates';
-                $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
-                break;
-            
-        }
-
-        $mandatoryFields = $model->getMandatoryCustomFields();
-        $populatedValues = [];
-        foreach ($mandatoryFields as $field) {
-            $field['type'] = $field['type'] ?? 'text';
-            $value = $this->generateDemoValue($field['type']);
-            $populatedValues[$field['field_name']] = $value;
-        }
-        return $populatedValues;
-    }
-
     function generateDemoValue($type = 'text') {
         switch ($type) {
             case 'boolean':
