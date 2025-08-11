@@ -312,8 +312,14 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 			$params['fpay'] = $this->installments['first_payment'];
 			$params['spay'] = $this->installments['periodical_payments'];
 		}
-		if (!empty($creds['template']) && trim($creds['template']) != 'default') {
+		if (!empty($creds['template']) && trim($creds['template']) != '' && trim($creds['template']) != 'default') {
 			$params['template'] = $creds['template'];
+		}
+		if (!empty($creds['iframe_settings']) && trim($creds['iframe_settings']) != '') {
+			$iframe_settings = (array) json_decode($creds['iframe_settings'], true);
+			foreach ($iframe_settings as $key => $val) {
+				$params[$key] = $val;
+			}
 		}
 		if (!empty($creds['iframe_endpoint'])) {
 			$this->redirectUrl = $creds['iframe_endpoint'] . '?' . http_build_query($params);
@@ -500,7 +506,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 	}
 
 	public function getDefaultParameters() {
-		$params = array("appkey", "secret", "handshake_password", "terminal_name", "j5_amount", "api_endpoint", "iframe_endpoint", "template");
+		$params = array("appkey", "secret", "handshake_password", "terminal_name", "j5_amount", "api_endpoint", "iframe_endpoint", "template", "iframe_settings");
 		return $this->rearrangeParametres($params);
 	}
 	
