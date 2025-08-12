@@ -57,4 +57,11 @@ class bcCest
         $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
     }
 
+    public function eventtest(ApiTester $I)
+    {
+        $I->sendAuthenticatedGET('/test/eventtest');
+        $response = $I->grabResponse();
+        $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
+    }
+
 }
