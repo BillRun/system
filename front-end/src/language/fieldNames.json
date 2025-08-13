@@ -295,8 +295,8 @@
     "md5": "ID",
     "total": "Total Childs",
     "done": "Completed Childs",
-    "schedule": "Schedule Date",
-    "cancelled": "Is Cancelled",
+    "schedule": "Schedule Time",
+    "cancelled": "Cancelled",
     "cancel_time": "Cancel Time",
     "is_done": "Is Parent Done",
     "created": "Created Time",
@@ -310,6 +310,7 @@
     "min_invoice_date": "Minimum Invoice Date",
     "run_on": "Specific Accounts",
     "run_on.all":"All",
+    "not_schedule": "Not Scheduled",
     "charging_type.charge": "Charge Only",
     "charging_type.refund": "Refund Only"
   },

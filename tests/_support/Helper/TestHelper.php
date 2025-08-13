@@ -1,6 +1,7 @@
 <?php
 namespace Helper;
 
+use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Current;
 
 class TestHelper extends \Codeception\Module {
     protected $tester;
@@ -34,7 +35,20 @@ class TestHelper extends \Codeception\Module {
         return new \MongoDB\BSON\UTCDateTime($timestamp * 1000);
     }
 
-    /*
+    public function removeCollectionRecord($collection, array $criteria){
+
+        $collection = \Billrun_Factory::db()->getCollection($collection);
+		if (!($collection instanceof \Mongodloid_Collection)) {
+			return false;
+		}
+		if (empty($criteria)) {
+			return;
+		}
+		$collection->remove($criteria);
+	
+    }
+
+   /*
      * Verifies that the specified MongoDB collection contains the expected number of documents
      * matching the given criteria.
      *
@@ -48,8 +62,7 @@ class TestHelper extends \Codeception\Module {
         $this->getModule('MongoDb')->seeNumElementsInCollection($collection,$count, $criteria);
     }
 
-   
-    /**
+/**
      * Verify records in collection with automatic date conversion
      * 
      * automatically converts the passed date strings
@@ -82,5 +95,6 @@ class TestHelper extends \Codeception\Module {
         
         $this->getModule('MongoDb')->seeInCollection($collection, $processedCriteria);
     }
+    
 }
 
