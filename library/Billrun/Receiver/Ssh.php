@@ -160,8 +160,8 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						if (!empty($stamp_fields)) {
 							$stampFieldsHash = md5(serialize($stamp_fields));
 							$paths = is_array($this->backupPaths) ? $this->backupPaths : [$this->backupPaths];
-							$backupDestinationPaths = array_map(function ($path) use ($stampFieldsHash, $type) {
-								return rtrim($path, '/') . '/' . $type . '/' . $stampFieldsHash;
+							$backupDestinationPaths = array_map(function ($path) use ($stampFieldsHash) {
+								return rtrim($path, '/') . '/' . $stampFieldsHash;
 							}, $paths);
 						}
 						$backedTo = $this->backup($fileData['path'], $file, $backupDestinationPaths);
