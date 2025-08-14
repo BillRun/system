@@ -266,7 +266,7 @@ class Billrun_Config {
 //			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
 //			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Zend_Log::CRIT);
 			throw $e;
-			}
+		}
 
 		return true;
 		}
@@ -332,6 +332,25 @@ class Billrun_Config {
 
 		return $currConf;
 	}
+
+ /**
+  * Sets a value in the configuration at the specified path
+  * 
+  * This method updates the configuration by setting a value at the specified key path.
+  * It converts the current configuration to an array, creates a new array with the 
+  * specified value, and then merges them together.
+  * 
+  * @param mixed $keys String with dot notation or array representing the path to the config value
+  * @param mixed $val The value to set at the specified path
+  * 
+  * @return void
+  */
+  public function setConfigValue($keys, $val) {
+    $config = $this->config->toArray();
+    $importantConf = [];
+    Billrun_Util::setIn($importantConf, $keys, $val);
+    $this->config = new Yaf_Config_Simple(self::mergeConfigs($config, $importantConf));
+}
 
 	/**
 	 * Return a wrapper for input data.
@@ -526,8 +545,8 @@ class Billrun_Config {
 		return (!isset($settings['enabled']) || $settings['enabled']);
 	}
 
-	public static function getParserStructure($fileTypeName) {
-		$fileType = Billrun_Factory::config()->getFileTypeSettings($fileTypeName);
+	public static function getParserStructure($fileTypeName, $lineType = null) {
+		$fileType = Billrun_Factory::config()->getLineTypeConfigByName($fileTypeName, false, $lineType);
 		if (!empty($fileType)) {
 			return $fileType['parser']['structure'];
 		}
@@ -580,6 +599,38 @@ class Billrun_Config {
 	 */
 	public function getConfigChargingDay() {
 		return !is_null($this->getConfigValue('billrun.invoicing_day', null)) ? $this->getConfigValue('billrun.invoicing_day', 1) : $this->getConfigValue('billrun.charging_day', 1);
+	}
+
+	public static function haveMultipleLineTypes($lineTypes) {		
+		if(isset($lineTypes) && isset($lineTypes[0]) && is_array($lineTypes[0])){
+			return true;
+		}
+		return false;
+	}
+
+	public static function getLineTypesField($fileSettings,  $field, $recordType = 'D') {
+		$fieldValuesByLineType = [];
+		$lineTypes = $fileSettings['line_types'] ?? [];
+		if(!empty($lineTypes) && Billrun_Config::haveMultipleLineTypes($lineTypes)){
+			foreach ($lineTypes as $lineType){
+				if($lineType['record_type'] == $recordType && isset($lineType['line_type']) && !empty(Billrun_Util::getIn($lineType, $field, null))){
+					$fieldValuesByLineType[$lineType['line_type']] = Billrun_Util::getIn($lineType,$field, Billrun_Util::getIn($fileSettings,$field, null));
+				}
+			}
+		}
+		return $fieldValuesByLineType;
+	}
+
+	public Static function getLineTypeConfigByName($fileTypeName, $enabledOnly = false, $linet = null){
+		$fileType = Billrun_Factory::config()->getFileTypeSettings($fileTypeName, $enabledOnly);
+		if(isset($fileType['line_types']) && isset($linet)){
+			foreach ($fileType['line_types']  as $lineType){
+				if(isset($lineType['line_type']) && $lineType['line_type'] == $linet){
+					return $lineType;
+				}
+			}
+		}
+		return $fileType;
 	}
 
 }

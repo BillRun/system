@@ -11,7 +11,7 @@ export default function (state = defaultState, action) {
   switch (type) {
 
     case actions.GOT_ENTITY: {
-      if (!['reports', 'sourceReports'].includes(collection)) {
+      if (!['reports', 'sourceReports', 'charging_process'].includes(collection)) {
         entity.originalValue = entity.from;
       }
       return state.set(collection, Immutable.fromJS(entity));

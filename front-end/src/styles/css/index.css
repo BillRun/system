@@ -276,6 +276,10 @@ fieldset[disabled] .btn {
     content: "\f105";
     padding: 0 3px 0 2px
 }
+.panel.panel-warning > .panel-heading {
+  color: #8a6d3b;
+  background-color: #fcf8e3;
+}
 #page-wrapper{
   padding-top: 50px;
   margin-bottom: -30px;
@@ -381,6 +385,12 @@ fieldset[disabled] .btn {
 }
 .cycle.active {
   background-color: #7AC943;
+}
+.cycle.removed {
+  background-color: #e80000;
+}
+.cycle.idle {
+  background:#fff;
 }
 .cycle.all {
   background: radial-gradient(closest-side, #7AC943, #FF931E, #BDCCD4);

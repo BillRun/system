@@ -385,6 +385,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @return type
 	 */
 	public function updateTotals($newTotals) {
+		Billrun_Factory::dispatcher()->trigger('beforeUpdateTotals', array($this, $this->data['aid'], $this->data['sid'], $this->data['key'], &$newTotals));
 		$totalsKeys = array('flat','service','refund','charge','usage','discount');
 		foreach($totalsKeys as $totalsKey) {
 			$newTotals[$totalsKey]['before_vat'] += Billrun_Util::getFieldVal($this->data['totals'][$totalsKey]['before_vat'], 0);
@@ -588,14 +589,15 @@ class Billrun_Cycle_Subscriber_Invoice {
 					Billrun_Factory::log("Updating unknown type: " . $row['type'], Zend_Log::NOTICE);
 				}
 		}
-		$taxes = Billrun_Util::getIn($row, 'tax_data.taxes', array());
-		foreach ($taxes as $tax) {
-			$tax_key = isset($tax['key']) ? $tax['key'] : "";
-			$tax_type = isset($tax['type']) ? $tax['type'] : "";
-			$groupingKeys['tax_key'][$tax_key][] = $tax_type;
+		$groupByTax = Billrun_Factory::config()->getConfigValue('billrun.group.id.taxes.enable', true); 
+		if($groupByTax){
+			$taxes = Billrun_Util::getIn($row, 'tax_data.taxes', array());
+			foreach ($taxes as $tax) {
+				$tax_key = isset($tax['key']) ? $tax['key'] : "";
+				$tax_type = isset($tax['type']) ? $tax['type'] : "";
+				$groupingKeys['tax_key'][$tax_key][] = $tax_type;
+			}
 		}
-
-
 		foreach ($custom_grouping_fields as $field) {
 			if ($field['op'] == 'group') {
 				$value = Billrun_Util::getIn($row, $field['field_name'], null);
@@ -622,7 +624,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		if(isset($row_grouping_options['name'])) {
 			$this->data['totals']['grouping'][$index]['grouping'] = $row_grouping_options['name'];
 		}
-		$this->updateTotalsGrouping($row, $index, $row_grouping_options['fields']);
+		$this->updateTotalsGrouping($row, $index, $row_grouping_options['fields'] ?? []);
 	}
 
 	protected function updateTotalsGrouping($row, $index, $row_grouping_fields = []) {

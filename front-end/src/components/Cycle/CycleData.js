@@ -45,8 +45,8 @@ class CycleData extends Component {
     reloadCycleData: () => {},
     baseFilter: {},
     showConfirmAllButton: true,
-    isCycleConfirmed:false,
-    isWorkers:false,
+    isCycleConfirmed: false,
+    isWorkers: false,
     currency: '',
     invoicesNum: 0,
   };
@@ -312,9 +312,9 @@ class CycleData extends Component {
   };
 
   getListActions = () => {
-    const { showConfirmAllButton, isCycleConfirmed } = this.props;
+    const { showConfirmAllButton, isCycleConfirmed, isWorkers } = this.props;
     return [{
-        label: 'Confirm All',
+        label: isWorkers ? 'Confirm' : 'Confirm All',
         actionStyle: 'primary',
         show :showConfirmAllButton,
         showIcon: false,

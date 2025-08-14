@@ -32,7 +32,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		}
 
 		$result = Billrun_Factory::account()->getBillable($cycle, $page, $size, $aids, $invoicing_days);
-		$billableResults = $this->filterConfirmedAccounts($result, $cycle);
+		$billableResults = $this->filterConfirmedAccounts($result, $cycle, (array) $aids);
 		usort($billableResults, function($a, $b){ return strcmp($a['from'],$b['from']);});
 		$retResults = [];
 		$customIDFields = $this->getCustomIDFields();
@@ -78,7 +78,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 				$retResults[$revStamp]['id'] = array_filter($revision, function ($key) use ($customIDFields) { return in_array($key, $customIDFields); }, ARRAY_FILTER_USE_KEY);
 				$passthroughFields = ($revision['type'] == 'account') ? $this->passthroughFields : $this->subsPassthroughFields;
 				foreach ($passthroughFields as $passthroughField) {
-					if(isset($revision[$passthroughField])) {
+					if(!is_array($passthroughField) && isset($revision[$passthroughField])) {
 						$retResults[$revStamp]['passthrough'][$passthroughField] = $revision[$passthroughField];
 					}
 				}
@@ -92,8 +92,8 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 
 	//--------------------------------------------------------------------------------------------
 
-	public function filterConfirmedAccounts($billableResults, $mongoCycle) {
-		$confirmedAids = $this->getConfirmedAids($mongoCycle);
+	public function filterConfirmedAccounts($billableResults, $mongoCycle, $aids = array()) {
+		$confirmedAids = $this->getConfirmedAids($mongoCycle, $aids);
 		return array_filter($billableResults, function($billableAccount) use($confirmedAids) {
 			return !in_array($billableAccount['aid'], $confirmedAids);
 		});

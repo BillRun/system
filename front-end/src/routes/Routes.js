@@ -48,6 +48,7 @@ import Events from '@/components/Events';
 import RequestPaymentFiles from '@/components/PaymentFiles/RequestPaymentFiles';
 import ResponsePaymentFiles from '@/components/PaymentFiles/ResponsePaymentFiles';
 import PaymentsFiles from '@/components/PaymentFiles/PaymentsFiles';
+import ChargeList from '@/components/Charging';
 import { ImporterSetup } from '../components/Importer';
 import { ExporterSetup } from '../components/Exporter';
 import { ImmediateInvoiceSetup } from '../components/ImmediateInvoice';
@@ -150,12 +151,13 @@ const routes = () => (
         <Route path="/queue" component={Authentication(QueueList)} title="Queue" />
         <Route path="/invoices" component={Authentication(InvoicesList)} title="Invoices" />
         <Route path="/payments" component={Authentication(PaymentsFiles)} title="Payments" />
+        <Route path="/charging" component={Authentication(ChargeList)} title="Charging" />
         <Route path="/custom-payment-files" component={Authentication(RequestPaymentFiles)} title="Custom Transactions Request File" />
         <Route path="/response-custom-payment-files" component={Authentication(ResponsePaymentFiles)} title="Custom Transactions Response File"/>
         <Route path="/settings" component={Authentication(Settings)} title="General Settings" />
         <Route path="/payment_gateways" component={Authentication(PaymentGateways)} title="Payment Gateways" />
         <Route path="/select_input_processor_template" component={Authentication(SelectTemplate)} title="Create New Input Processor" />
-        <Route path="/collections" component={Authentication(Collections)} title="Collection" />
+        <Route path="/collections" component={Authentication(Collections)} title="Dunning" />
         <Route path="/invoice-template" component={Authentication(InvoiceTemplate)} title="Invoice Template" />
         <Route path="/audit-trail" component={Authentication(AuditTrail)} title="Audit Trail" />
         <Route path="/custom_fields" component={Authentication(CustomFields)} title="Custom Fields" />
