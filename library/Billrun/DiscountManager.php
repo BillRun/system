@@ -264,7 +264,7 @@ class Billrun_DiscountManager {
 		protected function handleOverrideDiscountForSubRev($overrideDiscount, $subscriberRevision, $accountRevisions, $overrideDiscountName = true){
 			$sid = $subscriberRevision['sid'];
 			if($overrideDiscountName){
-				$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid], [['from' => $subscriberRevision['from']->sec, 'to' =>  $subscriberRevision['to']->sec]]);
+				$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference(@$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid], [['from' => $subscriberRevision['from']->sec, 'to' =>  $subscriberRevision['to']->sec]]);
 				if (empty($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid])) {
 					unset($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid]);
 				}
@@ -312,7 +312,7 @@ class Billrun_DiscountManager {
 				$subNewEligibility = Billrun_Utils_Time::mergeTimeIntervals(array_merge(Billrun_Util::getIn($eligibilityEntity, [$discountKey, 'subs', $sid], []), $subEligibility));
 				Billrun_Util::setIn($subsEligibility, $sid, $subNewEligibility);
 			}
-			$servicesEligibility = $eligibilityEntity[$discountKey]['services'];
+			$servicesEligibility = @$eligibilityEntity[$discountKey]['services'];
 			foreach (Billrun_Util::getIn($eligibility, 'services', []) as $serviceEligibility) {
 				foreach ($serviceEligibility as $sid => $subServiceEligibility) {
 					foreach ($subServiceEligibility as $serviceKey => $currServiceEligibility) {
@@ -322,7 +322,7 @@ class Billrun_DiscountManager {
 				}
 			}
 
-			$plansEligibility = $eligibilityEntity[$discountKey]['plans'];
+			$plansEligibility = @$eligibilityEntity[$discountKey]['plans'];
 			foreach (Billrun_Util::getIn($eligibility, 'plans', []) as $plansEligibility) {
 				foreach ($plansEligibility as $sid => $subPlanEligibility) {
 					foreach ($subPlanEligibility as $planKey => $currPlanEligibility) {
@@ -1481,7 +1481,7 @@ class Billrun_DiscountManager {
 			if ($discountDays < $cycleDays) {
 				$amount *= ($discountDays / $cycleDays);
 			}
-			if($line['is_upfront'] ) {
+			if(@$line['is_upfront'] ) {
 				if(!$proratedEnd) {
 					$amount += $flatAmount;
 				} else if($from == $this->cycle->start()) {
@@ -1741,7 +1741,7 @@ class Billrun_DiscountManager {
 				}
 			}
 			$discountLine['discount_subject'] = [
-				'before_rounding' => $eligibleLine['before_rounding'],
+				'before_rounding' => @$eligibleLine['before_rounding'],
 				'after_rounding' => [
 					'final_charge' => $eligibleLine['final_charge'],
 					'aprice' => $eligibleLine['aprice']
