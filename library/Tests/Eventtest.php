@@ -52,11 +52,19 @@ class Tests_Eventtest extends UnitTestCase {
 
 	public function testUpdateRow() {
 		//running test
-		$this->tests =  $this->getTestCases($this->tests);
+		$this->tests =  $this->getTestCases();
         if (empty($this->test_cases_to_run)) {
             $this->tests = $this->skip_tests($this->tests, 'test_number');
           }
 		$this->rows = $this->tests;
+
+		//fix wrong test sort
+		usort($this->rows, function($a, $b) {
+       		 $sa = isset($a['row']['stamp']) ? (int)$a['row']['stamp'] : PHP_INT_MIN;
+       		 $sb = isset($b['row']['stamp']) ? (int)$b['row']['stamp'] : PHP_INT_MIN;
+       		 return $sa <=> $sb;
+   		 });
+
 		foreach ($this->rows as $key => $row) {
 			$this->message .= "Test stamp : {$row['row']['stamp']}<br>";
 			$fixrow = $this->fixRow($row['row'], $key);
