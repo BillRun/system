@@ -52,11 +52,19 @@ class Tests_Eventtest extends UnitTestCase {
 
 	public function testUpdateRow() {
 		//running test
-		$this->tests =  $this->getTestCases($this->tests);
+		$this->tests =  $this->getTestCases();
         if (empty($this->test_cases_to_run)) {
             $this->tests = $this->skip_tests($this->tests, 'test_number');
           }
 		$this->rows = $this->tests;
+
+		//fix wrong test sort
+		usort($this->rows, function($a, $b) {
+       		 $sa = isset($a['row']['stamp']) ? (int)$a['row']['stamp'] : PHP_INT_MIN;
+       		 $sb = isset($b['row']['stamp']) ? (int)$b['row']['stamp'] : PHP_INT_MIN;
+       		 return $sa <=> $sb;
+   		 });
+
 		foreach ($this->rows as $key => $row) {
 			$this->message .= "Test stamp : {$row['row']['stamp']}<br>";
 			$fixrow = $this->fixRow($row['row'], $key);
@@ -194,13 +202,13 @@ class Tests_Eventtest extends UnitTestCase {
 		foreach ($row['rates'] as $rate_key => $tariff_category) {
 			$rate = $this->ratesCol->query(array('key' => $rate_key))->cursor()->current();
 			$keys[] = array(
-				'rate' => MongoDBRef::create('rates', (new MongoId((string) $rate['_id']))),
+				'rate' => Mongodloid_Ref::create('rates', new MongoId((string) $rate['_id'])),
 				'tariff_category' => $tariff_category,
 			);
 		}
 		$row['rates'] = $keys;
 		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();
-		$row['plan_ref'] = MongoDBRef::create('plans', (new MongoId((string) $plan['_id'])));
+		$row['plan_ref'] = Mongodloid_Ref::create('plans', new MongoId((string) $plan['_id']));
 		return $row;
 	}
 
