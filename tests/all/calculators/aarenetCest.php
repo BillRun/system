@@ -15,7 +15,7 @@ class aarenetCest
     public function _before(ApiTester $I)
     {
         if (!self::$isIPSet) {
-        $this->setUP($I);
+            $this->setUP($I);
             self::$isIPSet = true;
             Billrun_Config::getInstance()->loadDbConfig();
             // $this->createServices($I);
@@ -24,70 +24,75 @@ class aarenetCest
     protected function setUP(ApiTester $I, $inputProcessor = null)
     {
 
+        //add  foreign account_subscribers 
         $feilds = $I->getSettings('lines', [])['details']['fields'];
-        $feilds[]=[
-	"field_name"=> "foreign.account_subscribers",
-    "title"=> "NDCSN of all customer's subscribers",
-	"foreign"=> [
-		"entity"=> "account_subscribers",
-		"field"=> "sid"
-	],
-	"available_from"=> "rate",
-	"conditions"=> [
-		[
-			"field_name"=> "type",
-			"op"=> '$eq',
-			"value"=> "account_subscribers"
-		],
-		[
-			"field_name"=> "uf.Dest_Number",
-			"op"=> '$regex',
-			"value"=> "^0*((41)?7[56789])"
-		]
-	]
-];
-
-
-
- $I->setSettings('lines.fields', $feilds);
-
-
-
-        $feilds = $I->getSettings('rates', [])['details']['fields'];
-        $feilds[]=[
-        
-            "select_list"=> false,
-            "display"=> true,
-            "searchable"=> false,
-            "editable"=> true,
-            "multiple"=> false,
-            "field_name"=> "params.call_to_same_account",
-            "unique"=> false,
-            "default_value"=> false,
-            "title"=> "Call to same account",
-            "mandatory"=> false,
-            "type"=> "boolean",
-            "select_options"=> ""
+        $feilds[] = [
+            "field_name" => "foreign.account_subscribers",
+            "title" => "NDCSN of all customer's subscribers",
+            "foreign" => [
+                "entity" => "account_subscribers",
+                "field" => "imsi"
+            ],
+            "available_from" => "rate",
+            "conditions" => [
+                [
+                    "field_name" => "type",
+                    "op" => '$eq',
+                    "value" => "account_subscribers"
+                ]
+                
+            ]
         ];
-         $I->setSettings('rates.fields', $feilds);
+        $I->setSettings('lines.fields', $feilds);
 
-        
-        // $inputProcessor = $inputProcessor ?: $this->inputProcessor;
-        // $I->setSettings('file_types', $inputProcessor);
-        // $type = [
+        //add params.call_to_same_account 
+        $feilds = $I->getSettings('rates', [])['details']['fields'];
+        $feilds[] = [
+            "select_list" => false,
+            "display" => true,
+            "searchable" => false,
+            "editable" => true,
+            "multiple" => false,
+            "field_name" => "params.call_to_same_account",
+            "unique" => false,
+            "default_value" => false,
+            "title" => "Call to same account",
+            "mandatory" => false,
+            "type" => "boolean",
+            "select_options" => ""
+        ];
+        $I->setSettings('rates.fields', $feilds);
 
-        //     [
-        //         "usage_type" => "call",
-        //         "label" => "call",
-        //         "property_type" => "time",
-        //         "invoice_uom" => "seconds",
-        //         "input_uom" => "seconds"
-        //     ]
-        // ];
-        // $I->setSettings('usage_types', $type);
+        $inputProcessor = $inputProcessor ?: $this->inputProcessor;
+        $I->setSettings('file_types', $inputProcessor);
+
+        $feilds = $I->getSettings('subscribers.subscriber', [])['details']['fields'];
+         $feilds[] = [
+            "select_list" => false,
+            "display" => true,
+            "searchable" => false,
+            "editable" => true,
+            "multiple" => false,
+            "field_name" => "imsi",
+            "unique" => true,
+            "title" => "imsi",
+            "mandatory" => false
+        ];
+        $I->setSettings('subscribers.subscriber.fields', $feilds);
+        $type = [
+            [
+                "usage_type" => "call",
+                "label" => "call",
+                "property_type" => "time",
+                "invoice_uom" => "seconds",
+                "input_uom" => "seconds"
+            ]
+        ];
+        $I->setSettings('usage_types', $type);
     }
-    public function test(ApiTester $a){
-        $a->assertEquels(1,1);
+    public function test(ApiTester $a)
+    {
+        $a->assertEquals(1, 1);
     }
 
     // //workaround for the issue with service instence (not update the service list in the 2nd process on the same run)
@@ -166,148 +171,155 @@ class aarenetCest
     //         $this->rateDetails = json_decode($I->grabResponse(), true)['entity'];
     //     }
     // }
-    public $inputProcessor =   [
-            "file_type"=> "a",
-            "type"=> "realtime",
-            "parser"=> [
-                "type"=> "json",
-                "separator"=> "",
-                "structure"=> [
-                    [
-                        "name"=> "sid",
-                        "checked"=> true
-                    ],
-                    [
-                        "name"=> "date",
-                        "checked"=> true
-                    ],
-                    [
-                        "name"=> "volume",
-                        "checked"=> true
-                    ],
-                    [
-                        "name"=> "rate",
-                        "checked"=> true
-                    ]
+    public $inputProcessor = [
+        "file_type" => "account_subscribers",
+        "type" => "realtime",
+        "parser" => [
+            "type" => "json",
+            "separator" => "",
+            "structure" => [
+                [
+                    "name" => "sid",
+                    "checked" => true
                 ],
-                "csv_has_header"=> false,
-                "csv_has_footer"=> false,
-                "custom_keys"=> [
-                    "sid",
-                    "date",
-                    "volume",
-                    "rate"
+                [
+                    "name" => "date",
+                    "checked" => true
                 ],
-                "line_types"=> [
-                    "H"=> "\/^none$\/",
-                    "D"=> "\/\/",
-                    "T"=> "\/^none$\/"
+                [
+                    "name" => "volume",
+                    "checked" => true
+                ],
+                [
+                    "name" => "rate",
+                    "checked" => true
+                ],
+                [
+                    "name" => "imsi",
+                    "checked" => true
                 ]
             ],
-            "processor"=> [
-                "type"=> "Realtime",
-                "date_field"=> "date",
-                "default_usaget"=> "call",
-                "default_unit"=> "seconds",
-                "default_volume_src"=> [
-                    "volume"
-                ],
-                "orphan_files_time"=> "6 hours"
+            "csv_has_header" => false,
+            "csv_has_footer" => false,
+            "custom_keys" => [
+                "sid",
+                "date",
+                "volume",
+                "rate"
             ],
-            "customer_identification_fields"=> [
-                "call"=> [
-                    [
-                        "target_key"=> "sid",
-                        "src_key"=> "sid",
-                        "conditions"=> [
-                            [
-                                "field"=> "usaget",
-                                "regex"=> "\/.*\/"
-                            ]
-                        ],
-                        "clear_regex"=> "\/\/"
-                    ]
-                ]
+            "line_types" => [
+                  "H" => "/^none$/",
+                "D" => "//",
+                  "T" => "/^none$/"
+                 
+            ]
+        ],
+        "processor" => [
+            "type" => "Realtime",
+            "date_field" => "date",
+            "default_usaget" => "call",
+            "default_unit" => "seconds",
+            "default_volume_src" => [
+                "volume"
             ],
-            "rate_calculators"=> [
-                "retail"=> [
-                    "call"=> [
+            "orphan_files_time" => "6 hours"
+        ],
+        "customer_identification_fields" => [
+            "call" => [
+                [
+                    "target_key" => "sid",
+                    "src_key" => "sid",
+                    "conditions" => [
                         [
-                            [
-                                "type"=> "match",
-                                "rate_key"=> "params.call_to_same_account",
-                                "line_key"=> "computed",
-                                "computed"=> [
-                                    "line_keys"=> [
-                                        [
-                                            "key"=> "sid"
-                                        ],
-                                        [
-                                            "key"=> "foreign.account_subscribers"
-                                        ]
+                            "field" => "usaget",
+                            "regex" => "/.*/" 
+                            ]
+                        ] , "clear_regex" => "//"
+                    ]
+                   
+                ]
+            
+        ],
+        
+        "rate_calculators" => [
+            "retail" => [
+                "call" => [
+                    [
+                        [
+                            "type" => "match",
+                            "rate_key" => "params.call_to_same_account",
+                            "line_key" => "computed",
+                            "computed" => [
+                                "line_keys" => [
+                                    [
+                                        "key" => "imsi"
                                     ],
-                                    "operator"=> "$in",
-                                    "type"=> "condition",
-                                    "must_met"=> true,
-                                    "projection"=> [
-                                        "on_true"=> [
-                                            "key"=> "condition_result",
-                                            "regex"=> "",
-                                            "value"=> ""
-                                        ],
-                                        "on_false"=> []
+                                    [
+                                        "key" => "foreign.account_subscribers"
                                     ]
+                                ],
+                                "operator" => '$in',
+                                "type" => "condition",
+                                "must_met" => true,
+                                "projection" => [
+                                    "on_true" => [
+                                        "key" => "condition_result",
+                                        "regex" => "",
+                                        "value" => ""
+                                    ],
+                                    "on_false" => []
                                 ]
                             ]
-                        ],
+                        ]
+                    ],
+                    [
                         [
-                            [
-                                "type"=> "match",
-                                "rate_key"=> "key",
-                                "line_key"=> "rate"
-                            ]
+                            "type" => "match",
+                            "rate_key" => "key",
+                            "line_key" => "rate"
                         ]
                     ]
                 ]
-            ],
-            "pricing"=> [
-                "call"=> []
-            ],
-            "realtime"=> [
-                "postpay_charge"=> true
-            ],
-            "response"=> [
-                "encode"=> "json",
-                "fields"=> [
-                    [
-                        "response_field_name"=> "requestNum",
-                        "row_field_name"=> "request_num"
-                    ],
-                    [
-                        "response_field_name"=> "requestType",
-                        "row_field_name"=> "request_type"
-                    ],
-                    [
-                        "response_field_name"=> "sessionId",
-                        "row_field_name"=> "session_id"
-                    ],
-                    [
-                        "response_field_name"=> "returnCode",
-                        "row_field_name"=> "granted_return_code"
-                    ],
-                    [
-                        "response_field_name"=> "sid",
-                        "row_field_name"=> "sid"
-                    ],
-                    [
-                        "response_field_name"=> "grantedVolume",
-                        "row_field_name"=> "usagev"
-                    ]
+            ]
+        ],
+        "pricing" => [
+            "call" => []
+        ],
+        "realtime" => [
+            "postpay_charge" => true
+        ],
+        "response" => [
+            "encode" => "json",
+            "fields" => [
+                [
+                    "response_field_name" => "requestNum",
+                    "row_field_name" => "request_num"
+                ],
+                [
+                    "response_field_name" => "requestType",
+                    "row_field_name" => "request_type"
+                ],
+                [
+                    "response_field_name" => "sessionId",
+                    "row_field_name" => "session_id"
+                ],
+                [
+                    "response_field_name" => "returnCode",
+                    "row_field_name" => "granted_return_code"
+                ],
+                [
+                    "response_field_name" => "sid",
+                    "row_field_name" => "sid"
+                ],
+                [
+                    "response_field_name" => "grantedVolume",
+                    "row_field_name" => "usagev"
                 ]
-            ],
-            "unify"=> [],
-            "enabled"=> true
-        ];
+            ]
+        ],
+        "unify" => [],
+        "enabled" => true
+    ];
     // protected function process($options)
     // {
     //     $processor = Billrun_Processor::getInstance($options);
