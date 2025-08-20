@@ -681,6 +681,7 @@ public function afterPricingDoneWithBalance($row, $balance, $pricingData, $calcu
 		$record_types = array('01', '11', '30');
 		$rates_ref_list = Billrun_Util::getIntlRateRefs();
 		$transferDayTap3ToNrtrde = strtotime(Billrun_Factory::config()->getConfigValue('billrun.tap3_to_nrtrde_transfer_day', "20250812230000"));
+		$disableTransferDayTap3ToNrtrde = strtotime(Billrun_Factory::config()->getConfigValue('billrun.disable_tap3_to_nrtrde_transfer_day', "20250820230000"));
 		foreach ($lines as $line) {
 			if (isset($line['out_circuit_group']) && in_array($line['out_circuit_group'], $circuit_groups) && in_array($line['record_type'], $record_types)) {
 				$intlLines[] = $line;
@@ -689,7 +690,8 @@ public function afterPricingDoneWithBalance($row, $balance, $pricingData, $calcu
 			}
 			if( isset($line['roaming']) && $line['roaming'] === TRUE &&
 				( Billrun_Factory::config()->getConfigValue('fraud.insert_to_fraud.volte_nsn',FALSE) ||
-				 (!empty($transferDayTap3ToNrtrde) && $line['urt']->sec < $transferDayTap3ToNrtrde) )
+				 ((	(empty($transferDayTap3ToNrtrde) || $line['urt']->sec < $transferDayTap3ToNrtrde) ||
+														$disableTransferDayTap3ToNrtrde < $line['urt']->sec  )) )
 				) {
 					$roamingLines[] = $line;
 			}
