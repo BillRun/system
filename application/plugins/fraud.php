@@ -690,8 +690,8 @@ public function afterPricingDoneWithBalance($row, $balance, $pricingData, $calcu
 			}
 			if( isset($line['roaming']) && $line['roaming'] === TRUE &&
 				( Billrun_Factory::config()->getConfigValue('fraud.insert_to_fraud.volte_nsn',FALSE) ||
-				 (!empty($transferDayTap3ToNrtrde) && (	$line['urt']->sec < $transferDayTap3ToNrtrde ||
-														$disableTransferDayTap3ToNrtrde > $line['urt']->sec  )) )
+				 ((	(empty($transferDayTap3ToNrtrde) || $line['urt']->sec < $transferDayTap3ToNrtrde) ||
+														$disableTransferDayTap3ToNrtrde < $line['urt']->sec  )) )
 				) {
 					$roamingLines[] = $line;
 			}
