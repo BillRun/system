@@ -152,6 +152,9 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 								}
 							}
 						}
+					if ($fieldName == 'services') {
+						$subRev['service_activation'] = $subRev['from'];
+					}
 					 $subRev['from'] = max($subRev['from']->sec,$revision['from']);
 					 $subRev['to'] = min($subRev['to']->sec,$revision['to'],$customFieldCut);
 

@@ -73,7 +73,10 @@ DateTime.defaultProps = {
 };
 
 DateTime.propTypes = {
-  value: PropTypes.instanceOf(moment),
+  value: PropTypes.oneOfType([
+    PropTypes.instanceOf(moment),
+    PropTypes.oneOf([null]),
+  ]),
   disabled: PropTypes.bool,
   editable: PropTypes.bool,
   placeholder: PropTypes.string,

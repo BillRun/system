@@ -697,8 +697,6 @@ class Mongodloid_Collection {
 		// check if id exists (cannot create auto increment without id)
 		$id = $entity->getId();
 		if (!$id) {
-			Billrun_Factory::log("createAutoIncForEntity no id.");
-			// TODO: Report error?
 			return;
 		}
 
@@ -859,33 +857,36 @@ class Mongodloid_Collection {
 		if (!method_exists($this->_collection, 'watch')) {
 			throw new Exception("MongoDB driver does not support change streams.");
 		}
-		if (!is_callable($handler)) {
-			throw new Exception("watch change: handle is not callable");
-		}
 
-		$defaultOptions = [
-			'fullDocument' => \MongoDB\Operation\Watch::FULL_DOCUMENT_UPDATE_LOOKUP,
-			'loopDelayUs' => 500000, // 0.5s between invalid reads
-		];
-		$watchOptions = array_intersect_key($options, array_flip(['fullDocument']));
-		$loopDelayUs = $options['loopDelayUs'] ?? $defaultOptions['loopDelayUs'];
+		// App-level options (not sent to driver)
+		$loopDelayUs = $options['loopDelayUs'] ?? 500000;
 		$maxDuration = $options['maxDurationSeconds'] ?? null;
-		$startTime = time();
+		unset($options['loopDelayUs'], $options['maxDurationSeconds']);
 
+		// Allowlist of driver options for watch()
+		$allowed = [
+			'fullDocument', 'maxAwaitTimeMS', 'resumeAfter', 'startAfter',
+			'startAtOperationTime', 'batchSize', 'collation', 'readConcern',
+			'readPreference', 'session', 'typeMap'
+		];
+		
+		$watchDefaultOptions = [
+			'fullDocument' => \MongoDB\Operation\Watch::FULL_DOCUMENT_UPDATE_LOOKUP,
+		];
+
+		$watchOptions = array_intersect_key(array_merge($options, $watchDefaultOptions), array_flip($allowed));
 		$this->watching = true;
+		$startTime = time();
 
 		try {
 			$changeStream = $this->_collection->watch($pipeline, $watchOptions);
 			$changeStream->rewind();
 
 			while ($this->watching) {
-				if ($maxDuration && (time() - $startTime) >= $maxDuration) {
-					Billrun_Factory::log('[ChangeStream] Max duration exceeded. Exiting.', Zend_Log::INFO);
+				if ($maxDuration && (time() - $startTime) >= $maxDuration)
 					break;
-				}
 
 				$changeStream->next();
-
 				if (!$changeStream->valid()) {
 					usleep($loopDelayUs);
 					continue;
@@ -894,13 +895,12 @@ class Mongodloid_Collection {
 				$change = $changeStream->current();
 				$handler(Mongodloid_Result::getResult($change['fullDocument']));
 
-				if (($change['operationType'] ?? '') === 'invalidate') {
-					Billrun_Factory::log('[ChangeStream] Received invalidate. Exiting.', Zend_Log::INFO);
+				if (($change['operationType'] ?? '') === 'invalidate')
 					break;
-				}
 			}
 		} catch (\Throwable $e) {
-			Billrun_Factory::log('[ChangeStream] Error: ' . $e->getMessage(), Zend_Log::ERR);
+			throw new Exception('[ChangeStream] Error: ' . $e->getMessage());
 		}
 	}
+
 }
