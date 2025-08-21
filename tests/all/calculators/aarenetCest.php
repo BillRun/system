@@ -12,15 +12,28 @@ class aarenetCest
     public $rateDetails;
 
     public static $isIPSet = false;
+
+   
     public function _before(ApiTester $I)
     {
+        // Ensure the IP is set only once
+        // This prevents multiple calls to setUP which can lead to duplicate settings
         if (!self::$isIPSet) {
             $this->setUP($I);
             self::$isIPSet = true;
             Billrun_Config::getInstance()->loadDbConfig();
-            // $this->createServices($I);
         }
     }
+    /**
+     * Set up the environment for the tests 
+     * This method configures the necessary settings and fields
+     * required for the tests to run correctly.
+     * It adds foreign account subscribers, call to same account parameters,
+     * and sets up the input processor.
+     * It also creates the necessary rates for the tests.
+     * @param ApiTester $I
+     * @param array|null $inputProcessor
+     */
     protected function setUP(ApiTester $I, $inputProcessor = null)
     {
 
@@ -89,88 +102,82 @@ class aarenetCest
             ]
         ];
         $I->setSettings('usage_types', $type);
+         //create all the rates for all tests once , before the tests
+          $BaseRateDetails =   [
+            'key' => 'CALL',
+            "rates" => [
+                "call" => [
+                    "BASE" => [
+                        "rate" => [
+                            [
+                                "from" => 0,
+                                "to" => "UNLIMITED",
+                                "interval" => 1,
+                                "price" => 1,
+                                "uom_display" => [
+                                    "range" => "seconds",
+                                    "interval" => "seconds"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+             ];
+            $I->generateRate(array_merge(['tariff_category' => 'retail', 'key' => microtime(true) * 10000], $BaseRateDetails));
+            $this->rateDetails['CALL'] = json_decode($I->grabResponse(), true)['entity'];
+             //create rate for call to same account
+             $call_to_same_accountRate = $BaseRateDetails;
+             $call_to_same_accountRate['params'] = [
+                'call_to_same_account' => true
+            ];
+            $call_to_same_accountRate['key'] = 'CALL_TO_SAME_ACCOUNT';
+            $call_to_same_accountRate['rates']['call']['BASE']['rate'][0]['price,'] = 0;
+            $I->generateRate(array_merge(['tariff_category' => 'retail', 'key' => microtime(true) * 10000], $call_to_same_accountRate));
+            $this->rateDetails['CALL_TO_SAME_ACCOUNT'] = json_decode($I->grabResponse(), true)['entity'];
     }
-    public function test(ApiTester $a)
-    {
-        $a->assertEquals(1, 1);
-    }
+ 
 
-    // //workaround for the issue with service instence (not update the service list in the 2nd process on the same run)
-    // protected function createServices(ApiTester $I)
-    // {
-    //     //create all the services for all tests once , before the tests
-    //     $services = [
-    //         [
-    //             'from' => '2025-01-01',
-    //             "include" => [
-    //                 "groups" => [
-    //                     "LOCAL_CALLS_5000" => [
-    //                         "account_shared" => false,
-    //                         "account_pool" => false,
-    //                         "rates" => [
-    //                             "CALL"
-    //                         ],
-    //                         "value" => 300000,
-    //                         "usage_types" => [
-    //                             "call" => [
-    //                                 "unit" => "minutes"
-    //                             ]
-    //                         ]
-    //                     ]
-    //                 ]
-    //             ]
-    //         ],
-    //         [
-    //             'from' => '2025-01-01',
-    //             "include" => [
-    //                 "groups" => [
-    //                     "2LOCAL_CALLS_5000" => [
-    //                         "account_shared" => false,
-    //                         "account_pool" => false,
-    //                         "rates" => [
-    //                             "CALL2"
-    //                         ],
-    //                         "value" => 300000,
-    //                         "usage_types" => [
-    //                             "call" => [
-    //                                 "unit" => "minutes"
-    //                             ]
-    //                         ]
-    //                     ]
-    //                 ]
-    //             ]
-    //         ]
-    //     ];
-    //     foreach ($services as $service) {
-    //         $I->generateService(array_merge(
-    //             ['name' => 'TEST_SERVICE' . microtime(true) * 10000],
-    //             $service
-    //         ));
-    //         $this->serviceDetails[] = json_decode($I->grabResponse(), true)['entity'];
-    //     }
-    // }
-    // protected function createData(ApiTester $I, $accountDetails = [], $planDetails = [], $serviceDetails = [], $rateDetails = [])
-    // {
-    //     if ($accountDetails != []) {
-    //         $I->createAccountWithAllMandatoryCustomFields(array_merge(['firstname' => 'yossi_test'], $accountDetails));
-    //         $this->accountDetails = json_decode($I->grabResponse(), true)['entity'];
-    //     }
-    //     if ($planDetails != []) {
-    //         $I->generatePlan(array_merge(['name' => 'TEST_PLAN_2' . microtime(true) * 10000], $planDetails));
-    //         $this->planDetails = json_decode($I->grabResponse(), true)['entity'];
-    //     }
-    //     // if ($serviceDetails != []) {
-    //     //     $I->generateService(array_merge(
-    //     //         ['name' => 'TEST_SERVICE' . microtime(true) * 10000],
-    //     //         $serviceDetails
-    //     //     ));
-    //     //     $this->serviceDetails = json_decode($I->grabResponse(), true)['entity'];
-    //     // }
-    //     if ($rateDetails != []) {
-    //         $I->generateRate(array_merge(['tariff_category' => 'retail', 'key' => microtime(true) * 10000], $rateDetails));
-    //         $this->rateDetails = json_decode($I->grabResponse(), true)['entity'];
-    //     }
-    // }
+    /**
+     * Create data for the tests
+     * @param ApiTester $I
+     * @param array $accountDetails
+     * @param array $planDetails
+     * @param array $serviceDetails
+     * @param array $rateDetails
+     * @param array $subscriberDetails
+     */
+    protected function createData(ApiTester $I, $accountDetails = [], $planDetails = [], $serviceDetails = [], $rateDetails = [],$subscriberDetails = [])
+    {
+        if ($accountDetails != []) {
+            $I->createAccountWithAllMandatoryCustomFields(array_merge(['firstname' => 'yossi_test'], $accountDetails));
+            $this->accountDetails = json_decode($I->grabResponse(), true)['entity'];
+        }
+        if ($planDetails != []) {
+            $I->generatePlan(array_merge(['name' => 'TEST_PLAN_2' . microtime(true) * 10000], $planDetails));
+            $this->planDetails = json_decode($I->grabResponse(), true)['entity'];
+        }
+      
+        if ($rateDetails != []) {
+            $I->generateRate(array_merge(['tariff_category' => 'retail', 'key' => microtime(true) * 10000], $rateDetails));
+            $this->rateDetails = json_decode($I->grabResponse(), true)['entity'];
+        }
+        if ($subscriberDetails != []) {
+            foreach ($subscriberDetails as $sub) {
+                $I->generateSubscriber(array_merge(
+                    [
+                        'firstname' => 'yossi_test',
+                        'aid' => $this->accountDetails['aid'],
+                        'plan' => $this->planDetails['name'],
+                        'services' => [['name' => $this->serviceDetails[0]['name']]]
+                    ],
+                    $sub
+                ));
+            }
+            $this->subscriberDetails[] = json_decode($I->grabResponse(), true)['entity'];
+           
+        }
+    }
     public $inputProcessor = [
         "file_type" => "account_subscribers",
         "type" => "realtime",
@@ -320,213 +327,80 @@ class aarenetCest
         "unify" => [],
         "enabled" => true
     ];
-    // protected function process($options)
-    // {
-    //     $processor = Billrun_Processor::getInstance($options);
-    //     // if (!$processor->createLogForProcessWithPath($options)) {
-    //     //     return;
-    //     // }
-    //     // $linesProcessedCount = $processor->process_files(Billrun_Util::getBillRunPath($options['path']));
+   
+    public function testCallToSameAccount(ApiTester $I): void
+    {
+          $subscribers = [
+            [
+                'from' => '2025-01-01',
+                'imsi' => '0531234567',
+               
+            ],
+            [
+                'from' => '2025-01-01',
+                'imsi' => '0531234568',
+               
+            ]
+            ];
+       $this->createData($I,['email'=>'yossi@gmail'],['name' => 'TEST_PLAN_2' . microtime(true) * 100000],[],[],$subscribers);
+         
+       $I->sendRealTimeRequest(  'account_subscribers',[
+                 "sid"=> $this->subscriberDetails[0]['sid'],
+                    "date"=> '2025-05-01T00:00:00+02:00',
+                    "volume"=> 112,
+                    "rate"=> 'CALL',
+                     "imsi"=> $this->subscriberDetails[1]['imsi']
+       ]);
+
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails[0]['sid'],
+            'usaget' => 'call',
+            'usagev' => 112,
+            'aprice' => 0,
+            'arate_key' => 'CALL_TO_SAME_ACCOUNT',
+        ]);
+
+     
+    }
 
 
-    //     $processor = Billrun_Processor::getInstance($options);
-    //     $linesProcessedCount = $processor->processorByPath($options);
-    // }
-    // //$processor = Billrun_Processor::getInstance($options);
+    public function testCallToAnotherAccount(ApiTester $I): void
+    {
+          $subscribers = [
+            [
+                'from' => '2025-01-01',
+                'imsi' => '053121111',
+               
+            ],
+            [
+                'from' => '2025-01-01',
+                'imsi' => '053121112',
+               
+            ]
+            ];
+        $this->subscriberDetails= [];
+       $this->createData($I,['email'=>'yossi@gmail'],['name' => 'TEST_PLAN_2' . microtime(true) * 100000],[],[],$subscribers);
+        
+       $I->sendRealTimeRequest(  'account_subscribers',[
+                 "sid"=> $this->subscriberDetails[0]['sid'],
+                    "date"=> '2025-05-01T00:00:00+02:00',
+                    "volume"=> 112,
+                    "rate"=> 'CALL',
+                     "imsi"=> '14526654' // a different imsi than the subscriber's imsi
+       ]);
 
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails[0]['sid'],
+            'usaget' => 'call',
+            'usagev' => 112,
+            'arate_key' => 'CALL',// 'CALL_TO_SAME_ACCOUNT' is not applied here
+        ]);
 
-    // public function testUnifyShouldUnifyAllCdrs(ApiTester $I): void
-    // {
-    //     $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
-    //         'from' => '2025-01-01',
-    //         "include" => [
-    //             "groups" => [
-    //                 "LOCAL_CALLS_5000" => [
-    //                     "account_shared" => false,
-    //                     "account_pool" => false,
-    //                     "rates" => [
-    //                         "CALL"
-    //                     ],
-    //                     "value" => 300000,
-    //                     "usage_types" => [
-    //                         "call" => [
-    //                             "unit" => "minutes"
-    //                         ]
-    //                     ]
-    //                 ]
-    //             ]
-    //         ]
-    //     ], [
-    //         'key' => 'CALL',
-    //         "rates" => [
-    //             "call" => [
-    //                 "BASE" => [
-    //                     "rate" => [
-    //                         [
-    //                             "from" => 0,
-    //                             "to" => "UNLIMITED",
-    //                             "interval" => 1,
-    //                             "price" => 1,
-    //                             "uom_display" => [
-    //                                 "range" => "seconds",
-    //                                 "interval" => "seconds"
-    //                             ]
-    //                         ]
-    //                     ]
-    //                 ]
-    //             ]
-    //         ],
-    //     ]);
-    //     $I->generateSubscriber(
-    //         [
-    //             'from' => '2025-01-01',
-    //             'firstname' => '0531234567',
-    //             'aid' => $this->accountDetails['aid'],
-    //             'plan' => $this->planDetails['name'],
-    //             'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails[0]['name']]]
-    //         ]
-    //     );
-    //     $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-    //     Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
-    //     $this->process(
-    //         [
-    //             'type' => 'abc',
-    //             'path' => 'tests/all/calculators/test_files/test1.csv'
-    //         ]
-    //     );
-
-    //     $I->assertEquals(1, $I->grabCollectionCount('lines', [
-    //         'aid' => $this->accountDetails['aid'],
-    //         'sid' => $this->subscriberDetails['sid']
-    //     ]));
-
-    //     $I->verifyCollectionRecord('lines', [
-    //         'aid' => $this->accountDetails['aid'],
-    //         'sid' => $this->subscriberDetails['sid'],
-    //         'usaget' => 'call',
-    //         'usagev' => 112,
-    //         'aprice' => 0,
-    //         'arategroups.0.left' => 299888
-    //     ]);
-
-    //     $I->assertEquals(3, $I->grabCollectionCount('archive', [
-    //         'aid' => $this->accountDetails['aid'],
-    //         'sid' => $this->subscriberDetails['sid']
-    //     ]));
-    // }
-    // public function testUnifyShouldUnifyPerSubscriber(ApiTester $I): void
-    // {
-
-    //     $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
-    //         'from' => '2025-01-01',
-    //         "include" => [
-    //             "groups" => [
-    //                 "2LOCAL_CALLS_5000" => [
-    //                     "account_shared" => false,
-    //                     "account_pool" => false,
-    //                     "rates" => [
-    //                         "CALL2"
-    //                     ],
-    //                     "value" => 300000,
-    //                     "usage_types" => [
-    //                         "call" => [
-    //                             "unit" => "minutes"
-    //                         ]
-    //                     ]
-    //                 ]
-    //             ]
-    //         ]
-    //     ], [
-    //         'key' => 'CALL2',
-    //         "rates" => [
-    //             "call" => [
-    //                 "BASE" => [
-    //                     "rate" => [
-    //                         [
-    //                             "from" => 0,
-    //                             "to" => "UNLIMITED",
-    //                             "interval" => 1,
-    //                             "price" => 1,
-    //                             "uom_display" => [
-    //                                 "range" => "seconds",
-    //                                 "interval" => "seconds"
-    //                             ]
-    //                         ]
-    //                     ]
-    //                 ]
-    //             ]
-    //         ],
-    //     ]);
-    //     $I->generateSubscriber(
-    //         [
-    //             'from' => '2025-01-01',
-    //             'firstname' => '0531234561',
-    //             'aid' => $this->accountDetails['aid'],
-    //             'plan' => $this->planDetails['name'],
-    //             'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails[1]['name']]]
-    //         ]
-    //     );
-    //     $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-    //     $I->generateSubscriber(
-    //         [
-    //             'from' => '2025-01-01',
-    //             'firstname' => '0531234562',
-    //             'aid' => $this->accountDetails['aid'],
-    //             'plan' => $this->planDetails['name'],
-    //             'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails[1]['name']]]
-    //         ]
-    //     );
-    //     $subscriber2 = json_decode($I->grabResponse(), true)['entity'];
-    //     Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
-    //     //die();
-    //     $this->process(
-    //         [
-    //             'type' => 'abc',
-    //             'path' => 'tests/all/calculators/test_files/test2.csv'
-    //         ]
-    //     );
-
-    //     $I->assertEquals(1, $I->grabCollectionCount('lines', [
-    //         'aid' => $this->accountDetails['aid'],
-    //         'sid' => $this->subscriberDetails['sid']
-    //     ]));
-
-    //     $I->assertEquals(1, $I->grabCollectionCount('lines', [
-    //         'aid' => $this->accountDetails['aid'],
-    //         'sid' => $subscriber2['sid']
-    //     ]));
-
-    //     $I->verifyCollectionRecord('lines', [
-    //         'aid' => $this->accountDetails['aid'],
-    //         'sid' => $this->subscriberDetails['sid'],
-    //         'usaget' => 'call',
-    //         'usagev' => 3,
-    //         'aprice' => 0,
-    //         'arategroups.0.left' => 299997
-    //     ]);
-
-
-    //     $I->verifyCollectionRecord('lines', [
-    //         'aid' => $this->accountDetails['aid'],
-    //         'sid' => $subscriber2['sid'],
-    //         'usaget' => 'call',
-    //         'usagev' => 7,
-    //         'aprice' => 0,
-    //         'arategroups.0.left' => 299993
-    //     ]);
-
-    //     $I->assertEquals(2, $I->grabCollectionCount('archive', [
-    //         'aid' => $this->accountDetails['aid'],
-    //         'sid' => $this->subscriberDetails['sid']
-    //     ]));
-
-
-    //     $I->assertEquals(2, $I->grabCollectionCount('archive', [
-    //         'aid' => $this->accountDetails['aid'],
-    //         'sid' => $subscriber2['sid']
-    //     ]));
-    // }
-
+     
+    }
+    
 
 
 }
