@@ -86,7 +86,7 @@ export const startCharge = item => dispatch => {
         charge = charge.delete('exclude');
     }
     if (runOn === 'exclude') {
-        charge = charge.delete('exclude');
+        charge = charge.delete('include');
     }
     if (minInvoiceDate.isValid()) {
         charge = charge.set('min_invoice_date', minInvoiceDate.utc().format(apiDateTimeFormat));
