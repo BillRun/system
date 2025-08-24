@@ -2,7 +2,7 @@
 
 use function PHPUnit\Framework\assertCount;
 
-class aarenetCest
+class accountSubscribersIPCest
 {
 
     public $accountDetails;
@@ -13,7 +13,7 @@ class aarenetCest
 
     public static $isIPSet = false;
 
-   
+
     public function _before(ApiTester $I)
     {
         // Ensure the IP is set only once
@@ -53,7 +53,7 @@ class aarenetCest
                     "op" => '$eq',
                     "value" => "account_subscribers"
                 ]
-                
+
             ]
         ];
         $I->setSettings('lines.fields', $feilds);
@@ -80,7 +80,7 @@ class aarenetCest
         $I->setSettings('file_types', $inputProcessor);
 
         $feilds = $I->getSettings('subscribers.subscriber', [])['details']['fields'];
-         $feilds[] = [
+        $feilds[] = [
             "select_list" => false,
             "display" => true,
             "searchable" => false,
@@ -102,8 +102,8 @@ class aarenetCest
             ]
         ];
         $I->setSettings('usage_types', $type);
-         //create all the rates for all tests once , before the tests
-          $BaseRateDetails =   [
+        //create all the rates for all tests once , before the tests
+        $BaseRateDetails = [
             'key' => 'CALL',
             "rates" => [
                 "call" => [
@@ -123,20 +123,20 @@ class aarenetCest
                     ]
                 ]
             ]
-             ];
-            $I->generateRate(array_merge(['tariff_category' => 'retail', 'key' => microtime(true) * 10000], $BaseRateDetails));
-            $this->rateDetails['CALL'] = json_decode($I->grabResponse(), true)['entity'];
-             //create rate for call to same account
-             $call_to_same_accountRate = $BaseRateDetails;
-             $call_to_same_accountRate['params'] = [
-                'call_to_same_account' => true
-            ];
-            $call_to_same_accountRate['key'] = 'CALL_TO_SAME_ACCOUNT';
-            $call_to_same_accountRate['rates']['call']['BASE']['rate'][0]['price,'] = 0;
-            $I->generateRate(array_merge(['tariff_category' => 'retail', 'key' => microtime(true) * 10000], $call_to_same_accountRate));
-            $this->rateDetails['CALL_TO_SAME_ACCOUNT'] = json_decode($I->grabResponse(), true)['entity'];
+        ];
+        $I->generateRate(array_merge(['tariff_category' => 'retail', 'key' => microtime(true) * 10000], $BaseRateDetails));
+        $this->rateDetails['CALL'] = $I->getLastEntity();
+        //create rate for call to same account
+        $call_to_same_accountRate = $BaseRateDetails;
+        $call_to_same_accountRate['params'] = [
+            'call_to_same_account' => true
+        ];
+        $call_to_same_accountRate['key'] = 'CALL_TO_SAME_ACCOUNT';
+        $call_to_same_accountRate['rates']['call']['BASE']['rate'][0]['price'] = 0;
+        $I->generateRate(array_merge(['tariff_category' => 'retail', 'key' => microtime(true) * 10000], $call_to_same_accountRate));
+        $this->rateDetails['CALL_TO_SAME_ACCOUNT'] = $I->getLastEntity();
     }
- 
+
 
     /**
      * Create data for the tests
@@ -147,20 +147,20 @@ class aarenetCest
      * @param array $rateDetails
      * @param array $subscriberDetails
      */
-    protected function createData(ApiTester $I, $accountDetails = [], $planDetails = [], $serviceDetails = [], $rateDetails = [],$subscriberDetails = [])
+    protected function createData(ApiTester $I, $accountDetails = [], $planDetails = [], $serviceDetails = [], $rateDetails = [], $subscriberDetails = [])
     {
         if ($accountDetails != []) {
             $I->createAccountWithAllMandatoryCustomFields(array_merge(['firstname' => 'yossi_test'], $accountDetails));
-            $this->accountDetails = json_decode($I->grabResponse(), true)['entity'];
+            $this->accountDetails = $I->getLastEntity();
         }
         if ($planDetails != []) {
-            $I->generatePlan(array_merge(['name' => 'TEST_PLAN_2' . microtime(true) * 10000], $planDetails));
-            $this->planDetails = json_decode($I->grabResponse(), true)['entity'];
+            $I->generatePlan($planDetails);
+            $this->planDetails = $I->getLastEntity();
         }
-      
+
         if ($rateDetails != []) {
             $I->generateRate(array_merge(['tariff_category' => 'retail', 'key' => microtime(true) * 10000], $rateDetails));
-            $this->rateDetails = json_decode($I->grabResponse(), true)['entity'];
+            $this->rateDetails = $I->getLastEntity();
         }
         if ($subscriberDetails != []) {
             foreach ($subscriberDetails as $sub) {
@@ -168,14 +168,14 @@ class aarenetCest
                     [
                         'firstname' => 'yossi_test',
                         'aid' => $this->accountDetails['aid'],
-                        'plan' => $this->planDetails['name'],
-                        'services' => [['name' => $this->serviceDetails[0]['name']]]
+                        'plan' => $this->planDetails['name']
                     ],
                     $sub
                 ));
+                $this->subscriberDetails[] = $I->getLastEntity();
             }
-            $this->subscriberDetails[] = json_decode($I->grabResponse(), true)['entity'];
-           
+
+
         }
     }
     public $inputProcessor = [
@@ -215,10 +215,10 @@ class aarenetCest
                 "rate"
             ],
             "line_types" => [
-                  "H" => "/^none$/",
+                "H" => "/^none$/",
                 "D" => "//",
-                  "T" => "/^none$/"
-                 
+                "T" => "/^none$/"
+
             ]
         ],
         "processor" => [
@@ -239,15 +239,16 @@ class aarenetCest
                     "conditions" => [
                         [
                             "field" => "usaget",
-                            "regex" => "/.*/" 
-                            ]
-                        ] , "clear_regex" => "//"
-                    ]
-                   
+                            "regex" => "/.*/"
+                        ]
+                    ],
+                    "clear_regex" => "//"
                 ]
-            
+
+            ]
+
         ],
-        
+
         "rate_calculators" => [
             "retail" => [
                 "call" => [
@@ -327,30 +328,30 @@ class aarenetCest
         "unify" => [],
         "enabled" => true
     ];
-   
+
     public function testCallToSameAccount(ApiTester $I): void
     {
-          $subscribers = [
+        $subscribers = [
             [
                 'from' => '2025-01-01',
                 'imsi' => '0531234567',
-               
+
             ],
             [
                 'from' => '2025-01-01',
                 'imsi' => '0531234568',
-               
+
             ]
-            ];
-       $this->createData($I,['email'=>'yossi@gmail'],['name' => 'TEST_PLAN_2' . microtime(true) * 100000],[],[],$subscribers);
-         
-       $I->sendRealTimeRequest(  'account_subscribers',[
-                 "sid"=> $this->subscriberDetails[0]['sid'],
-                    "date"=> '2025-05-01T00:00:00+02:00',
-                    "volume"=> 112,
-                    "rate"=> 'CALL',
-                     "imsi"=> $this->subscriberDetails[1]['imsi']
-       ]);
+        ];
+        $this->createData($I, ['email' => 'yossi@gmail'], ['name' => 'TEST_PLAN_2' . microtime(true) * 10000], [], [], $subscribers);
+
+        $I->sendRealTimeRequest('account_subscribers', [
+            "sid" => $this->subscriberDetails[0]['sid'],
+            "date" => '2025-05-01T00:00:00+02:00',
+            "volume" => 112,
+            "rate" => 'CALL',
+            "imsi" => $this->subscriberDetails[1]['imsi']
+        ]);
 
         $I->verifyCollectionRecord('lines', [
             'aid' => $this->accountDetails['aid'],
@@ -360,35 +361,34 @@ class aarenetCest
             'aprice' => 0,
             'arate_key' => 'CALL_TO_SAME_ACCOUNT',
         ]);
-
-     
     }
 
 
     public function testCallToAnotherAccount(ApiTester $I): void
     {
-          $subscribers = [
+        $subscribers = [
             [
                 'from' => '2025-01-01',
                 'imsi' => '053121111',
-               
+
             ],
             [
                 'from' => '2025-01-01',
                 'imsi' => '053121112',
-               
+
             ]
-            ];
-        $this->subscriberDetails= [];
-       $this->createData($I,['email'=>'yossi@gmail'],['name' => 'TEST_PLAN_2' . microtime(true) * 100000],[],[],$subscribers);
-        
-       $I->sendRealTimeRequest(  'account_subscribers',[
-                 "sid"=> $this->subscriberDetails[0]['sid'],
-                    "date"=> '2025-05-01T00:00:00+02:00',
-                    "volume"=> 112,
-                    "rate"=> 'CALL',
-                     "imsi"=> '14526654' // a different imsi than the subscriber's imsi
-       ]);
+        ];
+        $this->subscriberDetails = [];
+        $this->createData($I, ['email' => 'yossi@gmail'], ['name' => 'TEST_PLAN_2' . microtime(true) * 10000], [], [], $subscribers);
+
+
+        $I->sendRealTimeRequest('account_subscribers', [
+            "sid" => $this->subscriberDetails[0]['sid'],
+            "date" => '2025-05-01T00:00:00+02:00',
+            "volume" => 112,
+            "rate" => 'CALL',
+            "imsi" => '14526654' // a different imsi than the subscriber's imsi
+        ]);
 
         $I->verifyCollectionRecord('lines', [
             'aid' => $this->accountDetails['aid'],
@@ -397,10 +397,7 @@ class aarenetCest
             'usagev' => 112,
             'arate_key' => 'CALL',// 'CALL_TO_SAME_ACCOUNT' is not applied here
         ]);
-
-     
     }
-    
 
 
 }
