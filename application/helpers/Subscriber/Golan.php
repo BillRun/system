@@ -434,12 +434,14 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							if (isset($subscriber['services']) && is_array($subscriber['services'])) {
 								$services = array();
 								foreach ($subscriber['services'] as $serviceDetails) {
-									$service = array();
+									$service = array_merge([], (!empty($serviceDetails['added_data']) ? $serviceDetails['added_data'] : []) );
+
 									$service['id'] = $serviceDetails['id'];
 									$service['service_name'] = $serviceDetails['service_name'];
 									$service['usaget'] = $serviceDetails['type'];
 									$service['from_date'] = $serviceDetails['from_date'];
 									$service['to_date'] = $serviceDetails['to_date'];
+
 									if ((!is_null($concat['data']['activation_end'])) && ($concat['data']['activation_end'] < $service['to_date'])){
 										$service['to_date'] = $concat['data']['activation_end'];
 									}
