@@ -343,7 +343,7 @@ class Models_Entity {
 			$query['$and'][] = $nonRevisionsQuery;
 		}
 
-		return $this->collection->query($query)->count() > 0;
+		return !$this->collection->query($query)->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**
@@ -1226,7 +1226,7 @@ class Models_Entity {
 				'$nin' => $ignoreIds,
 			);
 		}
-		return $query ? !$this->collection->query($query)->count() : TRUE;
+		return $query ? $this->collection->query($query)->cursor()->limit(1)->current()->isEmpty() : TRUE;
 	}
 
 	/**
@@ -1319,7 +1319,7 @@ class Models_Entity {
 			$query[$fieldName] = $record[$fieldName];
 		}
 		$recordCollection = Billrun_Factory::db()->{$collection . 'Collection'}();
-		return $recordCollection->query($query)->count() === 0;
+		return $recordCollection->query($query)->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**

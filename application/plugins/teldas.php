@@ -717,12 +717,12 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
   protected function getMatchingInaNumberRevision($inaNumber, $urt) {
       $query = array('subscriberNumber' => $inaNumber, 'transactionDatetime' => array('$lte' => new MongoDate($urt)), '$or' => array(array('transactionDatetimeTo' => array('$gt' => new MongoDate($urt))), array('transactionDatetimeTo' => array('$eq' => null))));
-      $inaNumberRevisions = $this->inaNumbersCollection->query($query)->cursor();
-      if ($inaNumberRevisions->count() === 0) {
+      $inaNumberRevisions = $this->inaNumbersCollection->query($query)->cursor()->limit(1)->current();
+      if ($inaNumberRevisions->isEmpty()) {
           Billrun_Factory::log("Not found matching subscriberNumber for Dest_Number in INA numbers collection. query: " . print_r($query), Zend_Log::NOTICE);
           return false;
       }
-      return $inaNumberRevisions->current();//can be more then 1 but with the same info (future modify)
+            return $inaNumberRevisions;//can be more then 1 but with the same info (future modify)
   }
 
   protected function getInaNumberHistory($subscriberNumber, $historyBackLimit, &$modifyPendingFound, $addFirst = true, $addPreviousBeforeLimit = false) {
@@ -907,12 +907,12 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
   protected function getMatchingTariffSwitchingClass($tariffSwitchingClassId, $urt) {
       $query = array('id' => $tariffSwitchingClassId, 'transactionDateTime' => array('$lte' => new MongoDate($urt)), '$or' => array(array('transactionDateTimeTo' => array('$gt' => new MongoDate($urt))), array('transactionDateTimeTo' => array('$eq' => null))));
-      $tariffSwitchingClassesRevisions = $this->tariffSwitchingClassesCollection->query($query)->cursor();
-      if ($tariffSwitchingClassesRevisions->count() === 0) {
+      $tariffSwitchingClassesRevisions = $this->tariffSwitchingClassesCollection->query($query)->cursor()->limit(1)->current();
+      if ($tariffSwitchingClassesRevisions->isEmpty()) {
           Billrun_Factory::log("Failed to find matching tariff switching class id. query: " . print_r($query, 1), Zend_Log::ALERT);
           return false;
       }
-      return $tariffSwitchingClassesRevisions->current();
+      return $tariffSwitchingClassesRevisions;
   }
 
   protected function checkIfValidTariffProfile($tariffProfileRevision, $urt, $id) {

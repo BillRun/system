@@ -281,11 +281,7 @@ class Billrun_Billingcycle {
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
 			$existsKeyQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
-		$keyCount = $billingCycleCol->query($existsKeyQuery)->count();
-		if ($keyCount < 1) {
-			return false;
-		}
-		return true;
+        return !$billingCycleCol->query($existsKeyQuery)->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**
@@ -671,15 +667,15 @@ class Billrun_Billingcycle {
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
 			$query['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
-		
-		$billrunDoc = $billrunColl->query($query)->count();
-		$cycleDoc = $billingCycleCol->query($query)->count();
-		
-		
-		if ($billrunDoc > 0 && $cycleDoc <= 0) {
-			return true;
-		}
-		return false;
+
+        $billrunDoc = $billrunColl->query($query)->cursor()->limit(1)->current();
+        $cycleDoc = $billingCycleCol->query($query)->cursor()->limit(1)->current();
+        
+        
+        if (!$billrunDoc->isEmpty() && $cycleDoc->isEmpty()) {
+            return true;
+        }
+        return false;
 	}
 	
 	/**
