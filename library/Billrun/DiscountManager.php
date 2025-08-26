@@ -1306,8 +1306,8 @@ class Billrun_DiscountManager {
 		$ret = [];
 
 		//is the  change on a specific  subscriber? because of a plan or a service or something else?
-		if (!empty($eligibility['subscribers'])) {
-			$sids = array_keys($eligibility['subscribers']);
+		if (!empty($eligibility['subs'])) {
+			$sids = array_keys($eligibility['subs']);
 		} else if (!empty($eligibility['plans'])) {
 			$sids = array_keys($eligibility['plans']);
 		} else if (!empty($eligibility['services'])) {
