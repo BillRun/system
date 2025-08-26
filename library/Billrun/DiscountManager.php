@@ -1302,7 +1302,7 @@ class Billrun_DiscountManager {
 	protected function getChargeEligibleLine($charge, $eligibility, $lines) {
 		$aid = $eligibility['aid'];
 		$billrun = $this->cycle->key();
-		$sids = [ 0 ];
+		$sids = [];
 		$ret = [];
 
 		//is the  change on a specific  subscriber? because of a plan or a service or something else?
@@ -1312,6 +1312,8 @@ class Billrun_DiscountManager {
 			$sids = array_keys($eligibility['plans']);
 		} else if (!empty($eligibility['services'])) {
 			$sids = array_keys($eligibility['services']);
+		} else if (!empty($eligibility["account_eligibility"])){
+			$sids = [ 0 ];
 		}
 		
 		// these are the subscribers/account that should get charged and it`s assoociated billrun?
