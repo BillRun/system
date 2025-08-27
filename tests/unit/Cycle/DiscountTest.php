@@ -5,8 +5,17 @@ class DiscountTest extends \Codeception\Test\Unit {
 	 * @var \UnitTester
 	 */
 	protected $tester;
+	protected $isRun =false;
+
+	private $defaultTimezone;
 
 	protected function _before() {
+		//Set  the  default timezone to UTC  for  the tests
+		if(!$this->isRun) {
+			$this->isRun = true;
+			$this->defaultTimezone = date_default_timezone_get();
+			date_default_timezone_set('UTC');
+		}
 	}
 
 	protected function _after()	{
@@ -50,5 +59,10 @@ class DiscountTest extends \Codeception\Test\Unit {
 
 			$this->assertEquals($tstVal['result'], $res, $tstKey);
 		}
+	
+		//Reset the timezone to the default one,put it on the last test
+		date_default_timezone_set($this->defaultTimezone );
+
+
 	}
 }
