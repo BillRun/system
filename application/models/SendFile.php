@@ -91,7 +91,7 @@ class SendFileModel {
 
 
 	public function getRelevantFilesLog() {
-		$orphan_time = '6 hours';
+		$orphan_time = Billrun_Factory::config()->getConfigValue('send_file.orphan_time','6 hours');
 		$query = [];
 		
 		switch ($this->type) {

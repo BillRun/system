@@ -2045,6 +2045,13 @@ runOnce(lastConfig, 'BRCD-4725', function () {
 	db.services.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-3218', function() {
+	db.operations.createIndex(
+		{ "lock_end_time": 1, "lock_expiry_time": 1 },
+		{ "unique": false, "background": true }
+	)
+});
+
 
 db.config.insertOne(lastConfig);
 
