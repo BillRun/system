@@ -204,14 +204,18 @@ trait Models_Verification {
 	}
 	
 	protected function transformQueryById($query) {
-		$entity = $this->collection->query($query)->cursor();
-		if ($entity->count() != 1) {
+		$resultsArray = iterator_to_array($this->collection->query($query)->cursor()->limit(2));
+		$docCount = count($resultsArray);
+
+		if ($docCount > 1) {
 			throw new Exception('No unique record was found');
 		}
-		if(is_null($entity->current())){
+		if($docCount == 0){
 			throw new Exception('No record was found. stack:' . print_r(debug_backtrace(), 1));
 		}
-		$data = $entity->current()->getRawData();
+		
+		$entity = reset($resultsArray);
+		$data = $entity->getRawData();
 		if (!isset($data['_id'])) {
 			throw new Exception('Missing Id for entity');
 		}
