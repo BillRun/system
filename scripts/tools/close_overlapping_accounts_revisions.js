@@ -30,7 +30,7 @@ function findDifferentFields(docs) {
 function adjustOverlapping(doc) {
     var now = ISODate();
     db.subscribers.updateMany({aid: doc.aid, type: "account", to: {$gt: ISODate()}, _id: {$ne: doc.latest_doc_id}}, {$set: {to: now, manual_update: "BRCD-4813"}})
-    print("updated overlapping revissions of aid " + doc.aid + " with a new to: " + now);
+    print("updated overlapping revisions of aid " + doc.aid + " with a new to: " + now);
 }
 
 var relevantAids = db.subscribers.aggregate(
