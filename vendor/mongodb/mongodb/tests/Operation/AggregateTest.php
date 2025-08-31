@@ -7,7 +7,7 @@ use MongoDB\Operation\Aggregate;
 
 class AggregateTest extends TestCase
 {
-    public function testConstructorPipelineArgumentMustBeAList()
+    public function testConstructorPipelineArgumentMustBeAList(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('$pipeline is not a list (unexpected index: "1")');
@@ -17,7 +17,7 @@ class AggregateTest extends TestCase
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options)
+    public function testConstructorOptionTypeChecks(array $options): void
     {
         $this->expectException(InvalidArgumentException::class);
         new Aggregate($this->getDatabaseName(), $this->getCollectionName(), [['$match' => ['x' => 1]]], $options);
@@ -27,7 +27,7 @@ class AggregateTest extends TestCase
     {
         $options = [];
 
-        foreach ($this->getInvalidBooleanValues(true) as $value) {
+        foreach ($this->getInvalidBooleanValues() as $value) {
             $options[][] = ['allowDiskUse' => $value];
         }
 
@@ -43,12 +43,12 @@ class AggregateTest extends TestCase
             $options[][] = ['collation' => $value];
         }
 
-        foreach ($this->getInvalidStringValues() as $value) {
-            $options[][] = ['comment' => $value];
-        }
-
         foreach ($this->getInvalidHintValues() as $value) {
             $options[][] = ['hint' => $value];
+        }
+
+        foreach ($this->getInvalidDocumentValues() as $value) {
+            $options[][] = ['let' => $value];
         }
 
         foreach ($this->getInvalidBooleanValues() as $value) {
@@ -90,7 +90,7 @@ class AggregateTest extends TestCase
         return $options;
     }
 
-    public function testConstructorBatchSizeOptionRequiresUseCursor()
+    public function testConstructorBatchSizeOptionRequiresUseCursor(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('"batchSize" option should not be used if "useCursor" is false');

@@ -1,0 +1,477 @@
+{
+ "Only single discount is given to multiple revisioned subscriber" : {
+	"account_revs" : [
+			{
+				"aid": 51032,
+				"sid": 0,
+				"email": "none@nowwhere.ch",
+				"type": "account",
+				"services": [],
+				"discounts": [],
+				"first_name": "AL Discounts &amp; Statuses Test With Long name",
+				"last_name": "",
+				"invoice_shipping_method": "email",
+				"account_type": "root",
+				"account_reference": 51032,
+				"vat_rate": "8.1",
+				"co": "C\/O  Test",
+				"from": "2025-08-01T00:00:00+0200",
+				"to": "2125-08-04T00:00:00+0100"
+			}
+		],
+	"subscribers_revs":{
+		"51050": [
+			{
+				"aid": 51032,
+				"sid": 51050,
+				"email": "none@nowwhere.ch",
+				"type": "subscriber",
+				"services": [],
+				"discounts": [
+					{
+						"key": "PLAN_DISCOUNT",
+						"description": "PLAN_DISCOUNT (201000003)",
+						"type": "monetary",
+						"from": "2025-08-11T03:00:00+0200",
+						"to": "2125-08-11T03:00:00+0100",
+						"proration": "inherited",
+						"subject": {
+							"plan": {
+								"201000003": {
+									"value": 70
+								}
+							}
+						},
+						"params": {
+							"min_subscribers": "",
+							"max_subscribers": ""
+						}
+					}
+				],
+				"first_name": "AL Discounts &amp; Statuses Test SubAccount1",
+				"last_name": "",
+				"firstname": "AL Discounts &amp; Statuses Test SubAccount1",
+				"parent": "e8ab3ab4-bf7d-dbdf-4d20-68906838410e",
+				"crm_id": "399a92fd-da53-96b7-25a9-68906b819fd2",
+				"account_reference": 51050,
+				"name": "AL Discounts & Statuses Test SubAccount1",
+				"activation_date": "2025-08-04T11:30:00+0200",
+				"active_plan": null,
+				"next_plan_price_tier": null,
+				"from": "2025-08-04T00:00:00+0200",
+				"to": "2025-09-01T00:00:00+0200",
+				"plans": [
+					[]
+				]
+			}
+		],
+		"61620": [
+			{
+				"sid": 61620,
+				"aid": 51032,
+				"plan": "201000003",
+				"discounts": [
+					{
+						"key": "PLAN_DISCOUNT",
+						"description": "PLAN_DISCOUNT (201000003)",
+						"type": "monetary",
+						"from": "2025-08-11T03:00:00+0200",
+						"to": "2125-08-11T03:00:00+0100",
+						"proration": "inherited",
+						"subject": {
+							"plan": {
+								"201000003": {
+									"value": 70
+								}
+							}
+						},
+						"params": {
+							"min_subscribers": "",
+							"max_subscribers": ""
+						}
+					}
+				],
+				"play": "default",
+				"type": "subscriber",
+				"first_name": "",
+				"last_name": "",
+				"plan_activation": "2025-08-04T00:00:00+0200",
+				"activation_date": "2025-08-04T11:19:00+0200",
+				"active_plan": "201000003",
+				"next_plan_price_tier": null,
+				"from": "2025-08-04T00:00:00+0200",
+				"to": "2025-08-04T10:22:00+0200",
+				"plans": [
+					{
+						"plan": "201000003",
+						"plan_activation": "2025-08-04T00:00:00+0200",
+						"plan_deactivation": ""
+					}
+				],
+				"services": []
+			},
+			{
+				"sid": 61620,
+				"aid": 51032,
+				"plan": "201000003",
+				"discounts": [
+					{
+						"key": "PLAN_DISCOUNT",
+						"description": "PLAN_DISCOUNT (201000003)",
+						"type": "monetary",
+						"from": "2025-08-11T03:00:00+0200",
+						"to": "2125-08-11T03:00:00+0100",
+						"proration": "inherited",
+						"subject": {
+							"plan": {
+								"201000003": {
+									"value": 70
+								}
+							}
+						},
+						"params": {
+							"min_subscribers": "",
+							"max_subscribers": ""
+						}
+					}
+				],
+				"play": "default",
+				"type": "subscriber",
+				"first_name": "",
+				"last_name": "",
+				"plan_activation": "2025-08-04T00:00:00+0200",
+				"activation_date": "2025-08-04T11:19:00+0200",
+				"active_plan": "201000003",
+				"next_plan_price_tier": null,
+				"from": "2025-08-04T10:22:00+0200",
+				"to": "2025-08-04T11:20:00+0200",
+				"plans": [
+					{
+						"plan": "201000003",
+						"plan_activation": "2025-08-04T00:00:00+0200",
+						"plan_deactivation": ""
+					}
+				],
+				"services": [
+					{
+						"name": "201000054",
+						"description": "Activation fee BackUp Connection",
+						"addition_information": "",
+						"quantity": 1,
+						"service_id": "f20e5a75-286d-581d-e229-689071378909",
+						"creation_time": "2025-08-04T11:38:00+0200",
+						"service_activation": "2025-08-04T10:22:00+0200"
+					}
+				]
+			},
+			{
+				"sid": 61620,
+				"aid": 51032,
+				"plan": "201000003",
+				"discounts": [
+					{
+						"key": "PLAN_DISCOUNT",
+						"description": "PLAN_DISCOUNT (201000003)",
+						"type": "monetary",
+						"from": "2025-08-11T03:00:00+0200",
+						"to": "2125-08-11T03:00:00+0100",
+						"proration": "inherited",
+						"subject": {
+							"plan": {
+								"201000003": {
+									"value": 70
+								}
+							}
+						},
+						"params": {
+							"min_subscribers": "",
+							"max_subscribers": ""
+						}
+					}
+				],
+				"play": "default",
+				"type": "subscriber",
+				"first_name": "",
+				"last_name": "",
+				"plan_activation": "2025-08-04T00:00:00+0200",
+				"activation_date": "2025-08-04T11:19:00+0200",
+				"active_plan": "201000003",
+				"next_plan_price_tier": null,
+				"from": "2025-08-04T11:20:00+0200",
+				"to": "2025-08-04T11:21:00+0200",
+				"plans": [
+					{
+						"plan": "201000003",
+						"plan_activation": "2025-08-04T00:00:00+0200",
+						"plan_deactivation": ""
+					}
+				],
+				"services": [
+					{
+						"name": "201000054",
+						"description": "Activation fee BackUp Connection",
+						"addition_information": "",
+						"quantity": 1,
+						"service_id": "f20e5a75-286d-581d-e229-689071378909",
+						"creation_time": "2025-08-04T11:38:00+0200",
+						"service_activation": "2025-08-04T10:22:00+0200"
+					},
+					{
+						"name": "201000064",
+						"description": "IPv4 1 fixed adress for GW (included by default)",
+						"addition_information": "",
+						"quantity": 1,
+						"service_id": "17f9d9fd-cc12-8f8c-66ef-68906d3173e5",
+						"creation_time": "2025-08-04T11:19:00+0200",
+						"service_activation": "2025-08-04T11:20:00+0200"
+					}
+				]
+			},
+			{
+				"sid": 61620,
+				"aid": 51032,
+				"plan": "201000003",
+				"discounts": [
+					{
+						"key": "PLAN_DISCOUNT",
+						"description": "PLAN_DISCOUNT (201000003)",
+						"type": "monetary",
+						"from": "2025-08-11T03:00:00+0200",
+						"to": "2125-08-11T03:00:00+0100",
+						"proration": "inherited",
+						"subject": {
+							"plan": {
+								"201000003": {
+									"value": 70
+								}
+							}
+						},
+						"params": {
+							"min_subscribers": "",
+							"max_subscribers": ""
+						}
+					}
+				],
+				"play": "default",
+				"type": "subscriber",
+				"first_name": "",
+				"last_name": "",
+				"plan_activation": "2025-08-04T00:00:00+0200",
+				"activation_date": "2025-08-04T11:19:00+0200",
+				"active_plan": "201000003",
+				"next_plan_price_tier": null,
+				"from": "2025-08-04T11:21:00+0200",
+				"to": "2025-09-01T00:00:00+0200",
+				"plans": [
+					{
+						"plan": "201000003",
+						"plan_activation": "2025-08-04T00:00:00+0200",
+						"plan_deactivation": ""
+					}
+				],
+				"services": [
+					{
+						"name": "201000054",
+						"description": "Activation fee BackUp Connection",
+						"addition_information": "",
+						"quantity": 1,
+						"service_id": "f20e5a75-286d-581d-e229-689071378909",
+						"creation_time": "2025-08-04T11:38:00+0200",
+						"service_activation": "2025-08-04T10:22:00+0200"
+					},
+					{
+						"name": "201000064",
+						"description": "IPv4 1 fixed adress for GW (included by default)",
+						"addition_information": "",
+						"quantity": 1,
+						"service_id": "17f9d9fd-cc12-8f8c-66ef-68906d3173e5",
+						"creation_time": "2025-08-04T11:19:00+0200",
+						"service_activation": "2025-08-04T11:20:00+0200"
+					}
+				]
+			}
+		]
+	},
+	"cycle" :"202509",
+	"flat_lines":[
+		{
+				"_id" : "689d7e495f87e2af7e06ef92",
+				"aid" : 51032,
+				"sid" : 61620,
+				"source" : "billrun",
+				"billrun" : "202509",
+				"type" : "flat",
+				"usaget" : "flat",
+				"urt" : "2025-08-31T21:59:59Z",
+				"plan" : "201000003",
+				"name" : "201000003",
+				"process_time" : "2025-08-14T06:12:24.367Z",
+				"usagev" : 1,
+				"vatable" : true,
+				"aprice" : 224.90322580645162,
+				"full_price" : 249,
+				"charge_op" : "charge",
+				"cycle" : 0,
+				"start_date" : "2025-08-03T22:00:00Z",
+				"end_date" : "2025-08-31T21:59:59Z",
+				"prorated_start" : true,
+				"prorated_end" : true,
+				"prorated_start_date" : "2025-08-03T22:00:00Z",
+				"start" : "2025-08-03T22:00:00Z",
+				"stamp" : "669354217c4b99df82427deda6ab7626",
+				"rounding_rules" : {
+						"rounding_type" : "None",
+						"rounding_stage" : "None"
+				},
+				"tax_data" : {
+						"total_amount" : 18.217161290322583,
+						"total_tax" : 0.081,
+						"taxes" : [
+								{
+										"tax" : 0.081,
+										"amount" : 18.217161290322583,
+										"description" : "VAT Normal Rate",
+										"key" : "DEFAULT_VAT",
+										"type" : "vat",
+										"pass_to_customer" : 1
+								}
+						]
+				},
+				"final_charge" : 243.1203870967742
+		},
+		{
+				"_id" : "689d7e495f87e2af7e06ef93",
+				"aid" : 51032,
+				"sid" : 61620,
+				"source" : "billrun",
+				"billrun" : "202509",
+				"type" : "service",
+				"usaget" : "flat",
+				"urt" : "2025-08-31T21:59:59Z",
+				"plan" : "201000003",
+				"name" : "201000054",
+				"process_time" : "2025-08-14T06:12:24.375Z",
+				"usagev" : 1,
+				"vatable" : true,
+				"service" : "201000054",
+				"service_id" : "f20e5a75-286d-581d-e229-689071378909",
+				"aprice" : 500,
+				"full_price" : 500,
+				"charge_op" : "charge",
+				"cycle" : 0,
+				"start_date" : "2025-08-04T09:19:00Z",
+				"end_date" : "2125-08-04T10:38:00Z",
+				"start" : "2025-08-04T09:19:00Z",
+				"stamp" : "8506cdd8fbdc12b6f8b6c5d05245a220",
+				"rounding_rules" : {
+						"rounding_stage" : "None"
+				},
+				"tax_data" : {
+						"total_amount" : 40.5,
+						"total_tax" : 0.081,
+						"taxes" : [
+								{
+										"tax" : 0.081,
+										"amount" : 40.5,
+										"description" : "VAT Normal Rate",
+										"key" : "DEFAULT_VAT",
+										"type" : "vat",
+										"pass_to_customer" : 1
+								}
+						]
+				},
+				"final_charge" : 540.5
+		}
+	],
+	"result" : [
+		{
+			"key": "SUBSCRIBER_DISCOUNT_PLAN_DISCOUNT_SID_61620",
+			"name": "PLAN_DISCOUNT (201000003)",
+			"type": "credit",
+			"description": "PLAN_DISCOUNT (201000003)",
+			"usaget": "discount",
+			"discount_type": "monetary",
+			"urt": "2025-08-31T23:59:59+0200",
+			"arate": null,
+			"arate_key": "SUBSCRIBER_DISCOUNT_PLAN_DISCOUNT_SID_61620 ",
+			"aid": 51032,
+			"sid": 61620,
+			"source": "billrun",
+			"billrun": "202509",
+			"usagev": 1,
+			"aprice": -47.419354838709673,
+			"eligible_line": "669354217c4b99df82427deda6ab7626",
+			"rounding_rules": {
+				"rounding_type": "None",
+				"rounding_stage": "None"
+			},
+			"discount_subject": {
+				"before_rounding": null,
+				"after_rounding": {
+					"final_charge": 243.12038709677421,
+					"aprice": 224.90322580645162
+				},
+				"rounding_rules": {
+					"rounding_type": "None",
+					"rounding_stage": "None"
+				}
+			},
+			"taxes": {
+				"vat": {
+					"key": "DEFAULT_VAT",
+					"rate": 0.081000000000000003,
+					"description": "VAT Normal Rate"
+				}
+			},
+			"stamp": "dfbe08ba278e555e2fc1f104d2644f22",
+			"process_time": "2025-08-15T18:35:59+0200",
+			"tax_data": {
+				"total_amount": -3.8409677419354837,
+				"total_tax": 0.081000000000000003,
+				"taxes": [
+					{
+						"tax": 0.081000000000000003,
+						"amount": -3.8409677419354837,
+						"description": "VAT Normal Rate",
+						"key": "DEFAULT_VAT",
+						"type": "vat",
+						"pass_to_customer": 1
+					}
+				]
+			},
+			"final_charge": -51.260322580645159,
+			"foreign": {
+				"plan": {
+					"invoice_section": "RECURRING_FEES"
+				},
+				"subscriber": {
+					"parent": "399a92fd-da53-96b7-25a9-68906b819fd2",
+					"crm_id": "3b4df790-7677-4de2-e9d6-68906d94cdbc",
+					"activation_date": "2025-08-04T11:19:00+0200",
+					"deactivation_date": "",
+					"identifier": "No OTO \/ NSN ID"
+				},
+				"account": {
+					"parent": "",
+					"account_reference": 51032,
+					"account_vat_rate": "8.1"
+				}
+			},
+			"plan": "201000003",
+			"vatable": true,
+			"full_price": 249,
+			"charge_op": "charge",
+			"cycle": 0,
+			"start_date": "2025-08-04T00:00:00+0200",
+			"end_date": "2025-08-31T23:59:59+0200",
+			"prorated_start": true,
+			"prorated_end": true,
+			"prorated_start_date": "2025-08-04T00:00:00+0200",
+			"start": "2025-08-04T00:00:00+0200",
+			"discount_from": "2025-08-11T03:00:00+0200",
+			"discount_to": "2025-09-01T00:00:00+0000"
+		}
+	]
+
+ }
+}

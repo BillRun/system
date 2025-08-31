@@ -561,7 +561,7 @@ class BillrunController extends ApiController {
 					break;
 				case 'pay_mode':
 				case 'mode':
-					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge‎'];	
+					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge'];	
 					if (!is_null($value) && !in_array(trim($value, '"'), $array)) {
 						return false;
 					}

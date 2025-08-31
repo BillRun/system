@@ -16,11 +16,7 @@ class israelInvoice extends \Helper\BillRun\Mockups\Mockup
   {
     $data = array_merge($this->InvoicePluginConfiguration(), $data);
     $a->setPluginSettings($data);
-    $a->enableCahce();
   }
-
-  
- 
 
 
   public function InvoicePluginConfiguration()

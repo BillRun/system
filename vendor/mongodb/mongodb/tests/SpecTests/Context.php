@@ -8,14 +8,13 @@ use MongoDB\Driver\ReadConcern;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\Session;
 use MongoDB\Driver\WriteConcern;
-use PHPUnit\Framework\SkippedTestError;
+use PHPUnit\Framework\Assert;
 use stdClass;
+
 use function array_diff_key;
 use function array_keys;
 use function getenv;
 use function implode;
-use function mt_rand;
-use function uniqid;
 
 /**
  * Execution context for spec tests.
@@ -31,7 +30,7 @@ final class Context
     /** @var Client|null */
     private $client;
 
-    /** @var string */
+    /** @var string|null */
     public $collectionName;
 
     /** @var string */
@@ -43,7 +42,7 @@ final class Context
     /** @var array */
     public $outcomeReadOptions = [];
 
-    /** @var string */
+    /** @var string|null */
     public $outcomeCollectionName;
 
     /** @var Session|null */
@@ -58,44 +57,21 @@ final class Context
     /** @var object */
     public $session1Lsid;
 
+    /** @var bool */
+    public $useEncryptedClientIfConfigured = false;
+
+    /** @var Client */
+    private $internalClient;
+
     /** @var Client|null */
     private $encryptedClient;
 
-    /** @var bool */
-    private $useEncryptedClient = false;
-
-    /**
-     * @param string $databaseName
-     * @param string $collectionName
-     */
-    private function __construct($databaseName, $collectionName)
+    private function __construct(string $databaseName, ?string $collectionName)
     {
         $this->databaseName = $databaseName;
         $this->collectionName = $collectionName;
         $this->outcomeCollectionName = $collectionName;
-    }
-
-    public function disableEncryption()
-    {
-        $this->useEncryptedClient = false;
-    }
-
-    public function enableEncryption()
-    {
-        if (! $this->encryptedClient instanceof Client) {
-            throw new LogicException('Cannot enable encryption without autoEncryption options');
-        }
-
-        $this->useEncryptedClient = true;
-    }
-
-    public static function fromChangeStreams(stdClass $test, $databaseName, $collectionName)
-    {
-        $o = new self($databaseName, $collectionName);
-
-        $o->client = new Client(FunctionalTestCase::getUri());
-
-        return $o;
+        $this->internalClient = FunctionalTestCase::createTestClient();
     }
 
     public static function fromClientSideEncryption(stdClass $test, $databaseName, $collectionName)
@@ -103,11 +79,6 @@ final class Context
         $o = new self($databaseName, $collectionName);
 
         $clientOptions = isset($test->clientOptions) ? (array) $test->clientOptions : [];
-
-        /* mongocryptd caches collection information, which causes test failures
-         * if we reuse the client. Thus, we add a random value to ensure we're
-         * creating a new client for each test. */
-        $driverOptions = ['random' => uniqid()];
 
         $autoEncryptionOptions = [];
 
@@ -118,26 +89,42 @@ final class Context
             if (isset($autoEncryptionOptions['kmsProviders']->aws)) {
                 $autoEncryptionOptions['kmsProviders']->aws = self::getAWSCredentials();
             }
+
+            if (isset($autoEncryptionOptions['kmsProviders']->azure)) {
+                $autoEncryptionOptions['kmsProviders']->azure = self::getAzureCredentials();
+            }
+
+            if (isset($autoEncryptionOptions['kmsProviders']->gcp)) {
+                $autoEncryptionOptions['kmsProviders']->gcp = self::getGCPCredentials();
+            }
+
+            if (isset($autoEncryptionOptions['kmsProviders']->kmip)) {
+                $autoEncryptionOptions['kmsProviders']->kmip = ['endpoint' => self::getKmipEndpoint()];
+
+                if (empty($autoEncryptionOptions['tlsOptions'])) {
+                    $autoEncryptionOptions['tlsOptions'] = new stdClass();
+                }
+
+                $autoEncryptionOptions['tlsOptions']->kmip = self::getKmsTlsOptions();
+            }
+
+            // Intentionally ignore empty values for CRYPT_SHARED_LIB_PATH
+            if (getenv('CRYPT_SHARED_LIB_PATH')) {
+                $autoEncryptionOptions['extraOptions']['cryptSharedLibPath'] = getenv('CRYPT_SHARED_LIB_PATH');
+            }
         }
 
         if (isset($test->outcome->collection->name)) {
             $o->outcomeCollectionName = $test->outcome->collection->name;
         }
 
-        $o->client = new Client(FunctionalTestCase::getUri(), $clientOptions, $driverOptions);
+        $o->defaultWriteOptions = ['writeConcern' => new WriteConcern(WriteConcern::MAJORITY)];
+
+        $o->client = self::createTestClient(null, $clientOptions);
 
         if ($autoEncryptionOptions !== []) {
-            $o->encryptedClient = new Client(FunctionalTestCase::getUri(), $clientOptions, $driverOptions + ['autoEncryption' => $autoEncryptionOptions]);
+            $o->encryptedClient = self::createTestClient(null, $clientOptions, ['autoEncryption' => $autoEncryptionOptions]);
         }
-
-        return $o;
-    }
-
-    public static function fromCommandMonitoring(stdClass $test, $databaseName, $collectionName)
-    {
-        $o = new self($databaseName, $collectionName);
-
-        $o->client = new Client(FunctionalTestCase::getUri());
 
         return $o;
     }
@@ -161,7 +148,7 @@ final class Context
             'readPreference' => new ReadPreference('primary'),
         ];
 
-        $o->client = new Client(FunctionalTestCase::getUri(), $clientOptions);
+        $o->client = self::createTestClient(null, $clientOptions);
 
         return $o;
     }
@@ -176,7 +163,7 @@ final class Context
 
         $clientOptions = isset($test->clientOptions) ? (array) $test->clientOptions : [];
 
-        $o->client = new Client(FunctionalTestCase::getUri(), $clientOptions);
+        $o->client = self::createTestClient(null, $clientOptions);
 
         return $o;
     }
@@ -189,7 +176,7 @@ final class Context
 
         $clientOptions = isset($test->clientOptions) ? (array) $test->clientOptions : [];
 
-        $o->client = new Client(FunctionalTestCase::getUri(), $clientOptions);
+        $o->client = self::createTestClient(null, $clientOptions);
 
         return $o;
     }
@@ -204,7 +191,7 @@ final class Context
             $o->outcomeCollectionName = $test->outcome->collection->name;
         }
 
-        $o->client = new Client(FunctionalTestCase::getUri($useMultipleMongoses), $clientOptions);
+        $o->client = self::createTestClient(FunctionalTestCase::getUri($useMultipleMongoses), $clientOptions);
 
         return $o;
     }
@@ -224,12 +211,7 @@ final class Context
 
         $clientOptions = isset($test->clientOptions) ? (array) $test->clientOptions : [];
 
-        /* Transaction spec tests expect a new client for each test so that
-         * txnNumber values are deterministic. Append a random option to avoid
-         * re-using a previously persisted libmongoc client object. */
-        $clientOptions += ['p' => mt_rand()];
-
-        $o->client = new Client(FunctionalTestCase::getUri($useMultipleMongoses), $clientOptions);
+        $o->client = self::createTestClient(FunctionalTestCase::getUri($useMultipleMongoses), $clientOptions);
 
         $session0Options = isset($test->sessionOptions->session0) ? (array) $test->sessionOptions->session0 : [];
         $session1Options = isset($test->sessionOptions->session1) ? (array) $test->sessionOptions->session1 : [];
@@ -243,15 +225,10 @@ final class Context
         return $o;
     }
 
-    /**
-     * @return array
-     *
-     * @throws SkippedTestError
-     */
-    public static function getAWSCredentials()
+    public static function getAWSCredentials(): array
     {
         if (! getenv('AWS_ACCESS_KEY_ID') || ! getenv('AWS_SECRET_ACCESS_KEY')) {
-            throw new SkippedTestError('Please configure AWS credentials to use AWS KMS provider.');
+            Assert::markTestSkipped('Please configure AWS credentials to use AWS KMS provider.');
         }
 
         return [
@@ -260,12 +237,55 @@ final class Context
         ];
     }
 
-    /**
-     * @return Client
-     */
-    public function getClient()
+    public static function getAzureCredentials(): array
     {
-        return $this->useEncryptedClient && $this->encryptedClient ? $this->encryptedClient : $this->client;
+        if (! getenv('AZURE_TENANT_ID') || ! getenv('AZURE_CLIENT_ID') || ! getenv('AZURE_CLIENT_SECRET')) {
+            Assert::markTestSkipped('Please configure Azure credentials to use Azure KMS provider.');
+        }
+
+        return [
+            'tenantId' => getenv('AZURE_TENANT_ID'),
+            'clientId' => getenv('AZURE_CLIENT_ID'),
+            'clientSecret' => getenv('AZURE_CLIENT_SECRET'),
+        ];
+    }
+
+    public static function getKmipEndpoint(): string
+    {
+        if (! getenv('KMIP_ENDPOINT')) {
+            Assert::markTestSkipped('Please configure KMIP endpoint to use KMIP KMS provider.');
+        }
+
+        return getenv('KMIP_ENDPOINT');
+    }
+
+    public static function getKmsTlsOptions(): array
+    {
+        if (! getenv('KMS_TLS_CA_FILE') || ! getenv('KMS_TLS_CERTIFICATE_KEY_FILE')) {
+            Assert::markTestSkipped('Please configure KMS TLS options.');
+        }
+
+        return [
+            'tlsCAFile' => getenv('KMS_TLS_CA_FILE'),
+            'tlsCertificateKeyFile' => getenv('KMS_TLS_CERTIFICATE_KEY_FILE'),
+        ];
+    }
+
+    public static function getGCPCredentials(): array
+    {
+        if (! getenv('GCP_EMAIL') || ! getenv('GCP_PRIVATE_KEY')) {
+            Assert::markTestSkipped('Please configure GCP credentials to use GCP KMS provider.');
+        }
+
+        return [
+            'email' => getenv('GCP_EMAIL'),
+            'privateKey' => getenv('GCP_PRIVATE_KEY'),
+        ];
+    }
+
+    public function getClient(): Client
+    {
+        return $this->useEncryptedClientIfConfigured && $this->encryptedClient ? $this->encryptedClient : $this->client;
     }
 
     public function getCollection(array $collectionOptions = [], array $databaseOptions = [])
@@ -288,15 +308,18 @@ final class Context
         return $this->selectGridFSBucket($this->databaseName, $this->bucketName, $bucketOptions);
     }
 
+    public function getInternalClient(): Client
+    {
+        return $this->internalClient;
+    }
+
     /**
      * Prepare options readConcern, readPreference, and writeConcern options by
      * creating value objects.
      *
-     * @param array $options
-     * @return array
      * @throws LogicException if any option keys are unsupported
      */
-    public function prepareOptions(array $options)
+    public function prepareOptions(array $options): array
     {
         if (isset($options['readConcern']) && ! ($options['readConcern'] instanceof ReadConcern)) {
             $readConcern = (array) $options['readConcern'];
@@ -352,7 +375,7 @@ final class Context
      * @param array $args Operation arguments
      * @throws LogicException if the session placeholder is unsupported
      */
-    public function replaceArgumentSessionPlaceholder(array &$args)
+    public function replaceArgumentSessionPlaceholder(array &$args): void
     {
         if (! isset($args['session'])) {
             return;
@@ -380,7 +403,7 @@ final class Context
      * @param stdClass $command Command document
      * @throws LogicException if the session placeholder is unsupported
      */
-    public function replaceCommandSessionPlaceholder(stdClass $command)
+    public function replaceCommandSessionPlaceholder(stdClass $command): void
     {
         if (! isset($command->lsid)) {
             return;
@@ -418,6 +441,16 @@ final class Context
     public function selectGridFSBucket($databaseName, $bucketName, array $bucketOptions = [])
     {
         return $this->selectDatabase($databaseName)->selectGridFSBucket($this->prepareGridFSBucketOptions($bucketOptions, $bucketName));
+    }
+
+    private static function createTestClient(?string $uri = null, array $options = [], array $driverOptions = []): Client
+    {
+        /* Default to using a dedicated client. This was already necessary for
+         * CSFLE and Transaction spec tests, but is generally useful for any
+         * test that observes command monitoring events. */
+        $driverOptions += ['disableClientPersistence' => true];
+
+        return FunctionalTestCase::createTestClient($uri, $options, $driverOptions);
     }
 
     private function prepareGridFSBucketOptions(array $options, $bucketPrefix)

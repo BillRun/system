@@ -126,16 +126,36 @@ var invoice_language_field = {
 lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
 // BRCD-1078: add rate categories
 for (var i in lastConfig['file_types']) {
-	var firstKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'])[0];
-	var secKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'][firstKey])[0];
+	var rc = lastConfig['file_types'][i]['rate_calculators'];
+	if (!rc || typeof rc !== 'object') {
+		continue;
+	}
+
+	var firstKeys = Object.keys(rc);
+	if (firstKeys.length === 0) {
+		continue;
+	}
+
+	var firstKey = firstKeys[0];
+	var second = rc[firstKey];
+	if (!second || typeof second !== 'object') {
+		continue;
+	}
+
+	var secKeys = Object.keys(second);
+	if (secKeys.length === 0) {
+		continue;
+	}
+
+	var secKey = secKeys[0];
+
 	if (secKey == 0) {
-		lastConfig['file_types'][i]['rate_calculators']['retail'] = {};
-	for (var usaget in lastConfig['file_types'][i]['rate_calculators']) {
-			if (usaget === 'retail') {
+		rc['retail'] = {};
+		for (var usaget in rc) {
+			if (usaget === 'retail')
 				continue;
-			}
-			lastConfig['file_types'][i]['rate_calculators']['retail'][usaget] = lastConfig['file_types'][i]['rate_calculators'][usaget];
-			delete lastConfig['file_types'][i]['rate_calculators'][usaget];
+			rc['retail'][usaget] = rc[usaget];
+			delete rc[usaget];
 		}
 	}
 }
@@ -548,7 +568,7 @@ db.collection_steps.createIndex({ 'trigger_date': 1 }, { unique: false, sparse: 
 db.collection_steps.createIndex({ 'extra_params.aid': 1 }, { unique: false, sparse: true, background: true });
 
 //BRCD-3474
-db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
+_dropIndex("rebalance_queue", "aid_1_billrun_key_1");
 db.rebalance_queue.createIndex({"aid": 1, "billrun_key": 1, "conditions_hash": 1}, {unique: true, "background": true});
 
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
@@ -2051,6 +2071,24 @@ lastConfig = runOnce(lastConfig, 'BRCD-3218', function () {
 	db.operations.createIndex({ 'start_time': 1 }, { expireAfterSeconds: 5256000 });
 });
 
+runOnce(lastConfig, 'BRCD-4739', function () {
+	lastConfig['plugins'].push({
+		"name": "teldasPlugin",
+		"enabled": false,
+		"system": true,
+		"hide_from_ui": true
+	})
+	db.createCollection('plugin_teldas_ina_numbers');
+	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
+	db.createCollection('plugin_teldas_tariffs_profiles');
+	db.plugin_teldas_tariffs_profiles.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariffs_profiles_unique_index" });
+	db.createCollection('plugin_teldas_tariff_switching_classes');
+	db.createCollection("plugin_teldas_non_working_days"); 
+});
+
+if (typeof lastConfig['export'] === 'undefined') {
+	lastConfig.export = 1;
+}
 
 db.config.insertOne(lastConfig);
 

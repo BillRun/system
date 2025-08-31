@@ -86,6 +86,9 @@ db.counters.createIndex({coll: 1, key: 1}, { sparse: false, background: true});
 // Add indecies to insure that theres no duplicate lines.
 db.createCollection('billing_cycle');
 db.billing_cycle.createIndex({'billrun_key': 1, 'page_number': 1, 'page_size': 1}, { unique: true , background: true });
+db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'end_time':1},{ unique: false , sparse: false, background: true });
+db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'count':1,'invoicing_day':1},{ unique: false , sparse: false, background: true });
+
 
 db.createCollection('balances');
 db.balances.createIndex( { aid: 1, sid: 1, from: 1, to: 1, priority: 1 },{ unique: true, background: true });

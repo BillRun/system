@@ -17,6 +17,7 @@ class Mongodloid_Collection {
 
 	protected $w = 1;
 	protected $j = false;
+	protected $watching = true;
 
 	/**
 	 * Create a new instance of the collection object.
@@ -696,8 +697,6 @@ class Mongodloid_Collection {
 		// check if id exists (cannot create auto increment without id)
 		$id = $entity->getId();
 		if (!$id) {
-			Billrun_Factory::log("createAutoIncForEntity no id.");
-			// TODO: Report error?
 			return;
 		}
 
@@ -836,6 +835,72 @@ class Mongodloid_Collection {
 		unset($options['w']);
 		unset($options['wTimeout']);
 		unset($options['wTimeoutMS']);
+	}
+
+	/**
+	 * Gracefully stop an active change stream loop.
+	 */
+	public function stopWatching() {
+		$this->watching = false;
+	}
+
+	/**
+	 * Watch the collection for changes using MongoDB Change Streams.
+	 *
+	 * @param callable $handler            Callback to run for each change.
+	 * @param array    $pipeline           Change stream filter pipeline.
+	 * @param array    $options            ['fullDocument', 'maxDurationSeconds', 'loopDelayUs']
+	 *
+	 * @throws Exception if change streams are not supported or connection fails.
+	 */
+	public function watchChanges(callable $handler, array $pipeline = [], array $options = []) {
+		if (!method_exists($this->_collection, 'watch')) {
+			throw new Exception("MongoDB driver does not support change streams.");
+		}
+
+		// App-level options (not sent to driver)
+		$loopDelayUs = $options['loopDelayUs'] ?? 500000;
+		$maxDuration = $options['maxDurationSeconds'] ?? null;
+		unset($options['loopDelayUs'], $options['maxDurationSeconds']);
+
+		// Allowlist of driver options for watch()
+		$allowed = [
+			'fullDocument', 'maxAwaitTimeMS', 'resumeAfter', 'startAfter',
+			'startAtOperationTime', 'batchSize', 'collation', 'readConcern',
+			'readPreference', 'session', 'typeMap'
+		];
+		
+		$watchDefaultOptions = [
+			'fullDocument' => \MongoDB\Operation\Watch::FULL_DOCUMENT_UPDATE_LOOKUP,
+		];
+
+		$watchOptions = array_intersect_key(array_merge($options, $watchDefaultOptions), array_flip($allowed));
+		$this->watching = true;
+		$startTime = time();
+
+		try {
+			$changeStream = $this->_collection->watch($pipeline, $watchOptions);
+			$changeStream->rewind();
+
+			while ($this->watching) {
+				if ($maxDuration && (time() - $startTime) >= $maxDuration)
+					break;
+
+				$changeStream->next();
+				if (!$changeStream->valid()) {
+					usleep($loopDelayUs);
+					continue;
+				}
+
+				$change = $changeStream->current();
+				$handler(Mongodloid_Result::getResult($change['fullDocument']));
+
+				if (($change['operationType'] ?? '') === 'invalidate')
+					break;
+			}
+		} catch (\Throwable $e) {
+			throw new Exception('[ChangeStream] Error: ' . $e->getMessage());
+		}
 	}
 
 }
