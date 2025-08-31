@@ -160,7 +160,9 @@ class Billrun_Calculator_ExternalPricing extends Billrun_Calculator {
 				@$item['external_pricing_state'] !== static::STATE_FAILED
 			) {
 				$stampsToAdvance[] = $item['stamp'];
-				$balancesToClear[] = [ 'stamp' => "{$item['stamp']}_external_pricing", 'sid' => $item['sid'] ];
+				if(@$item['external_pricing_state'] == static::STATE_PRICED) {
+					$balancesToClear[] = [ 'stamp' => "{$item['stamp']}_external_pricing", 'sid' => $item['sid'] ];
+				}
 			}
 			if(!empty($item['external_pricing_state']) && isset($stampsState[$item['external_pricing_state']]) ) {
 				$stampsState[$item['external_pricing_state']][] = $item['stamp'];
