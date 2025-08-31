@@ -179,6 +179,9 @@ db.autorenew.createIndex({ 'sid': 1, 'aid': 1}, { unique: false, sparse: true, b
 //operations
 db.operations.createIndex({action:1,filtration:1,start_time:1,end_time:1},{ background: true });
 db.operations.createIndex({action:1,end_time:1},{ background: true });
+db.operations.createIndex({ 'action': 1, 'filtration': 1, 'lock_end_time': 1, 'lock_expiry_time': 1 }, { background: true });
+db.operations.createIndex({ 'lock_start_time': 1 }, { expireAfterSeconds: 5256000 });
+db.operations.createIndex({ 'start_time': 1 }, { expireAfterSeconds: 5256000 });
 
 // Taxes Collection
 db.createCollection('taxes');

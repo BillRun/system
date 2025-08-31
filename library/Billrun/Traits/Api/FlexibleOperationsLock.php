@@ -11,6 +11,22 @@
  */
 trait Billrun_Traits_Api_FlexibleOperationsLock
 {
+
+    /**
+     * Validates that the lock identifier contains the required keys.
+     *
+     * @param array $lockIdentifier The identifier to validate.
+     * @throws InvalidArgumentException If required keys are missing.
+     */
+    private function _validateLockIdentifier(array $lockIdentifier)
+    {
+        if (!isset($lockIdentifier['action']) || !isset($lockIdentifier['filtration'])) {
+            throw new InvalidArgumentException(
+                "Invalid lock identifier. It must contain the keys 'action' and 'filtration'."
+            );
+        }
+    }
+
     /**
      * Locks an operation to prevent concurrent execution.
      *
@@ -21,6 +37,7 @@ trait Billrun_Traits_Api_FlexibleOperationsLock
      */
     public function lock(array $lockIdentifier, int $lockLifetime = 24, array $conflictQuery = [])
     {
+        $this->_validateLockIdentifier($lockIdentifier);
         $operationsColl = Billrun_Factory::db()->operationsCollection();
         $now = new Mongodloid_Date();
         $expiryTimestamp = strtotime('+' . $lockLifetime . ' hours', $now->sec);
@@ -70,7 +87,8 @@ trait Billrun_Traits_Api_FlexibleOperationsLock
      * @return bool                 Returns true if the lock was released, false if no active lock was found.
      */
     public function release(array $lockIdentifier)
-    {
+    {   
+        $this->_validateLockIdentifier($lockIdentifier);
         $operationsColl = Billrun_Factory::db()->operationsCollection();
         $now = new Mongodloid_Date();
         $query = array_merge($lockIdentifier, [
