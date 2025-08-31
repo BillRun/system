@@ -178,7 +178,7 @@ use Billrun_Traits_FileSequenceChecking;
 			$tele_service_code = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']);
 			$record_type = $cdrLine['record_type'];
 			if ($record_type == '9') {
-				if ($tele_service_code == '11') {
+				if ($tele_service_code == '11' || $tele_service_code == '12' ) {
 					$camel_destination_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['camel_destination_number']);
 					if ($camel_destination_number) {
 						$cdrLine['called_number'] = $camel_destination_number;
