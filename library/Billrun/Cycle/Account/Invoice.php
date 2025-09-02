@@ -429,23 +429,13 @@ class Billrun_Cycle_Account_Invoice {
 			Billrun_Factory::log("Deactivated account: {$this->aid} no need to create invoice.", Zend_Log::DEBUG);
 			return;
 		}
-
-		if(count($this->data['subs']) > Billrun_Factory::config()->getConfigValue('billrun.save_to_file_subs_limit',10000)) {
-			$rawData = $this->data->getRawData();
-			$failedPath = Billrun_Factory::config()->getConfigValue('billrun.failed_invoices_path','/tmp').DIRECTORY_SEPARATOR."{$rawData['aid']}_{$rawData['billrun_key']}_{$rawData['invoice_id']}.json";
-			Billrun_Factory::log("Crashed when saving invoice for account {$this->aid} , saved to {$failedPath} ", Zend_Log::NOTICE);
-			file_put_contents($failedPath,json_encode($rawData));
-			$rawData['subs'] = [];
-			$this->data->setRawData($rawData);
-		}
-
-		$ret = $this->billrun_coll->save($this->data);
-
-		if (!$ret) {
-			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
+		
+		$rawData = $this->data->getRawData();
+    	$serverVersion = Billrun_Factory::db()->getServerVersion();
+		if (version_compare($serverVersion, '4.0.0', '>=') && !Billrun_Factory::db()->isStandalone()) {
+			$this->_saveWithTransaction($rawData);
 		} else {
-			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
-			Billrun_Factory::dispatcher()->trigger('afterAccountInvoiceSaved', array($this->data, &$this));
+			$this->_saveWithoutTransaction($rawData);
 		}
 	}
 	
@@ -640,4 +630,106 @@ class Billrun_Cycle_Account_Invoice {
 	public function addAggragtionTranslations($translations) {
 		$this->aggregationTranslations = array_merge($this->aggregationTranslations,$translations);
 	}
+
+	protected function _saveWithTransaction(array $rawData)
+	{
+		$billrun_subs_coll = Billrun_Factory::db()->billrun_subsCollection();
+		$billrun_grouping_coll = Billrun_Factory::db()->billrun_groupingCollection();
+
+		$allSubscribersToSave = [];
+		$allGroupItemsToSave = [];
+
+		if (!empty($rawData['subs'])) {
+			foreach ($rawData['subs'] as &$subscriber) {
+				if (isset($subscriber['totals']['grouping']) && is_array($subscriber['totals']['grouping'])) {
+					foreach ($subscriber['totals']['grouping'] as $groupItem) {
+						$groupItem['sid'] = $subscriber['sid'];
+						$groupItem['key'] = $this->key;
+						$groupItem['aid'] = $this->aid;
+						$allGroupItemsToSave[] = new Mongodloid_Entity($groupItem);
+					}
+					unset($subscriber['totals']['grouping']);
+				}
+				$allSubscribersToSave[] = new Mongodloid_Entity($subscriber);
+			}
+		}
+
+		$mainInvoiceData = $this->data;
+		unset($mainInvoiceData['subs']);
+
+		$session = Billrun_Factory::db()->startSession();
+		$session->startTransaction();
+
+		$ret = false;
+		try {
+			if (!empty($allSubscribersToSave)) {
+				$billrun_subs_coll->batchInsert($allSubscribersToSave, ['session' => $session]);
+			}
+			if (!empty($allGroupItemsToSave)) {
+				$billrun_grouping_coll->batchInsert($allGroupItemsToSave, ['session' => $session]);
+			}
+
+			$this->billrun_coll->save($mainInvoiceData, null, ['session' => $session]);
+
+			$session->commitTransaction();
+			$ret = true;
+		} catch (Exception $e) {
+			$session->abortTransaction();
+			Billrun_Factory::log("Transaction failed for account {$this->aid}: " . $e->getMessage(), Zend_Log::ERR);
+			$ret = false;
+		} finally {
+			$session->endSession();
+		}
+
+		if (!$ret) {
+			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
+		} else {
+			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
+			Billrun_Factory::dispatcher()->trigger('afterAccountInvoiceSaved', array($this->data, &$this));
+		}
+	}
+
+	protected function _saveWithoutTransaction(array $rawData)
+	{
+		if (!empty($rawData['subs'])) {
+			$billrun_subs_coll = Billrun_Factory::db()->billrun_subsCollection();
+			$billrun_grouping_coll = Billrun_Factory::db()->billrun_groupingCollection();
+
+			$allSubscribersToSave = [];
+			$allGroupItemsToSave = [];
+
+			foreach ($rawData['subs'] as &$subscriber) {
+				if (isset($subscriber['totals']['grouping']) && is_array($subscriber['totals']['grouping'])) {
+					foreach ($subscriber['totals']['grouping'] as $groupItem) {
+						$groupItem['sid'] = $subscriber['sid'];
+						$groupItem['key'] = $this->key;
+						$groupItem['aid'] = $this->aid;
+						$allGroupItemsToSave[] = new Mongodloid_Entity($groupItem);
+					}
+					unset($subscriber['totals']['grouping']);
+				}
+
+				$allSubscribersToSave[] = new Mongodloid_Entity($subscriber);
+			}
+
+			if (!empty($allSubscribersToSave)) {
+				$billrun_subs_coll->batchInsert($allSubscribersToSave);
+			}
+			if (!empty($allGroupItemsToSave)) {
+				$billrun_grouping_coll->batchInsert($allGroupItemsToSave);
+			}
+		}
+
+		$mainInvoiceData = $this->data;
+		unset($mainInvoiceData['subs']);
+		$ret = $this->billrun_coll->save($mainInvoiceData);
+
+		if (!$ret) {
+			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
+		} else {
+			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
+			Billrun_Factory::dispatcher()->trigger('afterAccountInvoiceSaved', array($this->data, &$this));
+		}
+	}
+
 }

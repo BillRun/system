@@ -335,6 +335,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$billrunQuery = array('billrun_key' => $billrunKey);
+		$billrunSubsColl = Billrun_Factory::db()->billrun_subsCollection();
+		$billrunGroupingColl = Billrun_Factory::db()->billrun_groupingCollection();
 		if ($aids) {
 			$billrunQuery['aid']['$in'] = $aids;
 		}
@@ -359,6 +361,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 															))
 									));
 			$billrunRemoveQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));;
+			$billrunCascadeRemoveQuery = ['aid' => ['$nin' => $protectedAids], 'key' => $billrunKey];
 		} else {
 			$aids = array_values(array_diff($aids, $protectedAids));
 			$linesRemoveQuery = array(	'aid' => array('$in' => $aids),
@@ -373,15 +376,44 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 												))
 											));
 			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
+			$billrunCascadeRemoveQuery = ['aid' => ['$in' => $aids], 'key' => $billrunKey];
 		}
                 $addToLogMesaage =  !empty($aids) ? " for aids " . implode(',', $aids) : null;
                 Billrun_Factory::log("Removing flat and service lines" . $addToLogMesaage, Zend_Log::DEBUG);
 		$linesColl->remove($linesRemoveQuery);
                 Billrun_Factory::log("Removed flat and service lines" . $addToLogMesaage, Zend_Log::DEBUG);
                 
-                Billrun_Factory::log("Removing billrun of " . $billrunKey . $addToLogMesaage, Zend_Log::DEBUG);
+    	Billrun_Factory::log("Removing billrun of " . $billrunKey . $addToLogMesaage, Zend_Log::DEBUG);
+		 if (version_compare(Billrun_Factory::db()->getServerVersion(), '4.0.0', '>=') && !Billrun_Factory::db()->isStandalone()) {
+            self::_removeWithTransaction($billrunCascadeRemoveQuery, $billrunColl, $billrunSubsColl, $billrunGroupingColl,$billrunRemoveQuery);
+        } else {
+            self::_removeWithoutTransaction($billrunCascadeRemoveQuery, $billrunColl, $billrunSubsColl, $billrunGroupingColl,$billrunRemoveQuery);
+        }
+		Billrun_Factory::log("Removed billrun of " . $billrunKey . $addToLogMesaage, Zend_Log::DEBUG);
+	}
+
+	private static function _removeWithTransaction($cascadeRemoveQuery, $billrunColl, $billrunSubsColl, $billrunGroupingColl, $billrunRemoveQuery)
+	{
+		$session = Billrun_Factory::db()->startSession();
+		$session->startTransaction();
+		try {
+			$billrunColl->remove($billrunRemoveQuery, ['session' => $session]);
+			$billrunSubsColl->remove($cascadeRemoveQuery, ['session' => $session]);
+			$billrunGroupingColl->remove($cascadeRemoveQuery, ['session' => $session]);
+			$session->commitTransaction();
+		} catch (Exception $e) {
+			$session->abortTransaction();
+			Billrun_Factory::log("Transaction for removeBeforeAggregate failed: " . $e->getMessage(), Zend_Log::ERR);
+		} finally {
+			$session->endSession();
+		}
+	}
+
+	private static function _removeWithoutTransaction($cascadeRemoveQuery, $billrunColl, $billrunSubsColl, $billrunGroupingColl, $billrunRemoveQuery)
+	{
 		$billrunColl->remove($billrunRemoveQuery);
-                Billrun_Factory::log("Removed billrun of " . $billrunKey . $addToLogMesaage, Zend_Log::DEBUG);
+		$billrunSubsColl->remove($cascadeRemoveQuery);
+		$billrunGroupingColl->remove($cascadeRemoveQuery);
 	}
 
 	public function isFakeCycle() {

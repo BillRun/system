@@ -247,10 +247,12 @@ class Mongodloid_Collection {
 	 * @param type $w
 	 * @return mongodloid save result.
 	 */
-	public function save(Mongodloid_Entity $entity, $w = null) {
-		$options = array(
-			'w' => $w
-		);
+	public function save(Mongodloid_Entity $entity, $w = null, array $options = []) {
+		if (empty($options)) {
+			$options = array(
+				'w' => $w
+			);
+		}
 		$this->convertWriteConcernOptions($options);
 		$data = $entity->getRawData();
 		$id = $entity->getId();

@@ -365,6 +365,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * @param type $account the account to generate an invoice for.
 	 */
 	public function generateAccountInvoices($account, $lines = FALSE) {
+		$account = $this->reconstructBillrunObject($account);
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratorEntity',array($this, &$account,&$lines));
 		$this->addFolder($this->paths['html']);
 		$this->addFolder($this->paths['pdf']);
@@ -420,6 +421,62 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->signPdf($pdf);
         
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorEntity',array($this, &$account,&$lines));
+	}
+
+	/**
+	 * Reconstructs the billrun object by fetching subscribers and grouping data from
+	 * separate collections and re-attaching them.
+	 *
+	 * @param Mongodloid_Entity $accountObject The main billrun object.
+	 * @return Mongodloid_Entity The reconstructed object with all its related data.
+	 */
+	protected function reconstructBillrunObject(Mongodloid_Entity $accountObject)
+	{
+		$accountData = $accountObject->getRawData();
+		$billrun_subs_coll = Billrun_Factory::db()->billrun_subsCollection();
+		$billrun_grouping_coll = Billrun_Factory::db()->billrun_groupingCollection();
+
+		$query = ['aid' => $accountData['aid'], 'key' => $accountData['billrun_key']];
+
+		$subscribers = [];
+		foreach ($billrun_subs_coll->query($query)->cursor() as $subObject) {
+			$subscribers[] = $subObject->getRawData();
+		}
+
+		$subscribersMap = [];
+		foreach ($subscribers as &$subscriber) {
+			unset($subscriber['_id']);
+			$subscribersMap[$subscriber['sid']] = &$subscriber;
+		}
+
+		$groupingData = [];
+		foreach ($billrun_grouping_coll->query($query)->cursor() as $groupObject) {
+			$groupingData[] = $groupObject->getRawData();
+		}
+
+		foreach ($groupingData as $groupItem) {
+			if (isset($subscribersMap[$groupItem['sid']])) {
+				$subscriberRef = &$subscribersMap[$groupItem['sid']];
+
+				if (!isset($subscriberRef['totals'])) {
+					$subscriberRef['totals'] = [];
+				}
+				if (!isset($subscriberRef['totals']['grouping'])) {
+					$subscriberRef['totals']['grouping'] = [];
+				}
+
+				unset($groupItem['_id']);
+				unset($groupItem['sid']);
+				unset($groupItem['key']);
+				unset($groupItem['aid']);
+
+				$subscriberRef['totals']['grouping'][] = $groupItem;
+			}
+		}
+
+		$accountData['subs'] = $subscribers;
+		$accountObject->setRawData($accountData);
+		return $accountObject;
 	}
 
 	protected function accountSpecificViewParams($billrunData) {
