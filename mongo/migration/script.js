@@ -2080,6 +2080,18 @@ runOnce(lastConfig, 'BRCD-4739', function () {
 	db.createCollection("plugin_teldas_non_working_days"); 
 });
 
+runOnce(lastConfig, 'BRCD-4969', function () {
+	db.billrun_subs.createIndex({
+		"aid": 1,
+		"key": 1
+	});
+
+	db.billrun_grouping.createIndex({
+		"aid": 1,
+		"key": 1
+	});
+});
+
 if (typeof lastConfig['export'] === 'undefined') {
 	lastConfig.export = 1;
 }
