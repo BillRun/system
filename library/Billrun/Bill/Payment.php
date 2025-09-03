@@ -739,6 +739,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					$gatewayDetails['currency'] = !empty($billDetails['currency']) ? $billDetails['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 					$gatewayName = $gatewayDetails['name'];
 					$gatewayInstanceName = $gatewayDetails['instance_name'];
+					if (!empty($chargeOptions['uf'])) {
+						$paymentParams['uf'] = $chargeOptions['uf'];
+					}
 					$paymentParams['gateway_details'] = $gatewayDetails;
 					if ($gatewayDetails['amount'] > 0) {
 						Billrun_Factory::log("Charging account " . $billDetails['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
@@ -1296,7 +1299,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function setUserFields($data, $unsetOriginalUfFromData = false) {
 		$paymentUf = [];
 		$config = Billrun_Factory::config();
-		$confUserFields = $config->getConfigValue('payments.offline.uf', []);
+		$paymentUfConfig = $config->getConfigValue('payments.offline.uf', []);
+		$billUfConfig = $config->getConfigValue('bills.uf', []);
+		$confUserFields = array_unique(array_merge($paymentUfConfig, $billUfConfig));
 		$paymentData = ($this instanceof Billrun_Bill) ? $this->getRawData() : $this->getData();
 		if (!empty($confUserFields)) {
 			foreach ($confUserFields as $key => $field_name) {
