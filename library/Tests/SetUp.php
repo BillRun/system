@@ -141,30 +141,30 @@ trait Tests_SetUp
 
 
 	public function getTestCases($legacy_tests = [])
-{
-    $all_test_cases = [];
+	{
+		$all_test_cases = [];
     $label = explode(" ", $this->getLabel())[1];
     $first = '';
     $second = '';
     $path = '';
     
-    switch ($label) {
-        case 'Aggregatore':
+		switch ($label) {
+				case 'Aggregatore':
             $first = 'test';
             $second = 'test_number';
             $path = APPLICATION_PATH . '/library/Tests/aggregatorTestCases/';
-            break;
-        case 'Customercalculatortest':
+					break;
+				case 'Customercalculatortest':
             $first = 'row';
             $second = 'stamp';
             $path = APPLICATION_PATH . '/library/Tests/CustomerCalculator/';
-            break;
-        case 'Ratetest':
+					break;
+				case 'Ratetest':
             $first = 'row';
             $second = 'stamp';
             $path = APPLICATION_PATH . '/library/Tests/Rate/';
-            break;
-        case 'UpdateRow':
+					break;
+				case 'UpdateRow':
             $first = 'row';
             $second = 'stamp';
             $path = APPLICATION_PATH . '/library/Tests/UpdateRow/';
@@ -173,11 +173,15 @@ trait Tests_SetUp
             $first = 'test';
             $second = 'test_number';
             $path = APPLICATION_PATH . '/library/Tests/taxmappingTestCases/';
-            break;
-        default:
-            throw new Exception("Unknown label: $label");
-    }
-
+					break;
+				case 'event':
+					$first='row';
+					$secound='stamp';
+					break;
+				default:
+					throw new Exception("Unknown label: $label");
+			}
+	
     // Load all PHP files from the specified path
     if (!empty($path)) {
         foreach (glob($path . "*.php") as $filename) {
@@ -187,15 +191,15 @@ trait Tests_SetUp
 
     $test_cases_to_skip = !empty($this->getRequest()->get('skip')) ? explode(',', $this->getRequest()->get('skip')) : [];
     $test_cases_to_run = !empty($this->getRequest()->get('tests')) ? explode(',', $this->getRequest()->get('tests')) : [];
+	
+		// Get all declared classes
+		$classes = get_declared_classes();
 
-    // Get all declared classes
-    $classes = get_declared_classes();
-
-    // Iterate over the classes
-    foreach ($classes as $class) {
-        // Check if the class name starts with 'Test_Case_'
-        if (strpos($class, 'Test_Case_') === 0) {
-            $test_number = filter_var($class, FILTER_SANITIZE_NUMBER_INT);
+		// Iterate over the classes
+		foreach ($classes as $class) {
+			// Check if the class name starts with 'Test_Case_'
+			if (strpos($class, 'Test_Case_') === 0) {
+				$test_number = filter_var($class, FILTER_SANITIZE_NUMBER_INT);
             
             // Check if the test should be run based on skip and run filters
             if (
@@ -203,30 +207,30 @@ trait Tests_SetUp
                 (empty($test_cases_to_skip) && in_array($test_number, $test_cases_to_run)) ||
                 (!empty($test_cases_to_skip) && !in_array($test_number, $test_cases_to_skip))
             ) {
-                // Create an instance of the class
-                $instance = new $class();
+						// Create an instance of the class
+						$instance = new $class();
 
-                // Call the test_case method and store the result
-                if (method_exists($instance, 'test_case')) {
-                    $test_case = $instance->test_case();
-                    $all_test_cases[] = $test_case;
+						// Call the test_case method and store the result
+						if (method_exists($instance, 'test_case')) {
+							$test_case = $instance->test_case();
+							$all_test_cases[] = $test_case;
                 }
             }
-        }
-    }
+			}
+		}
 
-    // Sort the test cases by test_number
+		// Sort the test cases by test_number
     usort($legacy_tests, function ($a, $b) use ($first, $second) {
         return $a[$first][$second] <=> $b[$first][$second];
-    });
+		});
     
     usort($all_test_cases, function ($a, $b) use ($first, $second) {
         return $a[$first][$second] <=> $b[$first][$second];
-    });
+		});
 
     // Merge legacy tests with all test cases
     return $this->mergeArraysByKey($all_test_cases, $legacy_tests, "$first.$second");
-}
+	}
 	function mergeArraysByKey($array1, $array2, $path) {
 		$mergedArray = [];
 	
@@ -455,6 +459,6 @@ trait Tests_SetUp
 		Billrun_Util::setIn($data, $newConfig['key'],$newConfig['value']);
 		$config->insert($data);
 		Billrun_Config::getInstance()->loadDbConfig();
-  }
+	}
 
 }

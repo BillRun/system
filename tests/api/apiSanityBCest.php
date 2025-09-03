@@ -12,7 +12,7 @@ class apiSanityBCest
 
 
 
-    public function testCreateAccount(ApiTester $I)
+    public function testCreateAccountSanity(ApiTester $I)
     {
         $I->createAccountWithAllMandatoryCustomFields(['firstname' => 'yossi_test']);
         $I->seeResponseIsJson();

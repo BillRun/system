@@ -70,13 +70,18 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @var type float
 	 */
 	protected $prepricedMapping = null;
-	
+
 	/**
-	 * 
-	 * the time zone field defined by the user
-	 * @var type string
+	 * A literal timezone value (e.g., 'UTC')
+	 * @var string
 	 */
-	protected $timeZone = null;
+	protected $timeZoneLiteral = null;
+
+	/**
+	 * The name of the field containing the timezone
+	 * @var string
+	 */
+	protected $timeZoneField = null;
 	
 	/**
 	 * 
@@ -105,7 +110,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$this->dateFormat = $options['processor']['date_format'] ?? null;
 		$this->timeFormat = $options['processor']['time_format'] ?? null;
 		$this->timeField = $options['processor']['time_field'] ?? null;
-		$this->timeZone = $options['processor']['timezone_field'] ??  null;
+		$this->timeZoneLiteral = $options['processor']['timezone'] ?? null;
+		$this->timeZoneField = $options['processor']['timezone_field'] ?? null;
 		$this->dateField = $options['processor']['date_field'] ?? null;
 		$this->prepricedMapping = $options['pricing'] ?? null;
 		
@@ -179,7 +185,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	}
 	
 	protected function getRowDateTime($row) {
-		return Billrun_Processor_Util::getRowDateTime($row['uf'], $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat, $this->timeZone);
+		return Billrun_Processor_Util::getRowDateTime($row['uf'], $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat, $this->timeZoneField, $this->timeZoneLiteral);
 	}
 
 	/**
