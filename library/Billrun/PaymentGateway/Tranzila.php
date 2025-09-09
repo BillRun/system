@@ -107,7 +107,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 		}
 
 		$ret = [
-			'supplier' => $creds['terminal_name'],
+			'supplier' => $creds['onetime_terminal_name'] ?? $creds['terminal_name'],
 			'sum' => $this->amount,
 			'TranzilaPW' => $creds['handshake_password'],
 		];
@@ -213,7 +213,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 		$txid = $addonData['txid'];
 		$creds = $this->getGatewayCredentials();
 		$params = [
-			'terminal_name' => $creds['terminal_name'],
+			'terminal_name' => $creds['charge_terminal_name'] ?? $creds['terminal_name'],
 			'txn_type' => $chargeAction,
 			'reference_txn_id' => (int) $gatewayDetails['reference_txn_id'],
 			'authorization_number' => (string) $gatewayDetails['auth_number'],
@@ -288,8 +288,10 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 		$this->transactionId = $parts[$field];
 		if ($this->operation == self::OPERATION_PAY) {
 			$action = $this->tokenize ? 'SinglePaymentToken' : 'SinglePayment';
+			$terminal_name = $creds['onetime_terminal_name'] ?? $creds['terminal_name'];
 		} else {
 			$action = 'Token';
+			$terminal_name = $creds['terminal_name'];
 		}
 		$params = [
 			'sum' => (string) $this->amount,
@@ -324,7 +326,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 		if (!empty($creds['iframe_endpoint'])) {
 			$this->redirectUrl = $creds['iframe_endpoint'] . '?' . http_build_query($params);
 		} else {
-			$this->redirectUrl = self::ENDPOINT_REDIRECT . $creds['terminal_name'] . '/iframenew.php?' . http_build_query($params);
+			$this->redirectUrl = self::ENDPOINT_REDIRECT . $terminal_name . '/iframenew.php?' . http_build_query($params);
 		}
 	}
 
@@ -405,7 +407,8 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 	protected function sendPayRequest($params) {
 		$this->setAuthHeaders();
 		
-		Billrun_Factory::log("Tranzila payment pay request: " . print_R($params, 1), Zend_Log::DEBUG);
+		Billrun_Factory::log("Tranzila payment pay request url: " . print_R($this->EndpointUrl, 1), Zend_Log::DEBUG);
+		Billrun_Factory::log("Tranzila payment pay request params: " . print_R($params, 1), Zend_Log::DEBUG);
 		$result = Billrun_Util::sendRequest($this->EndpointUrl, $this->encodeParams($params), Zend_Http_Client::POST, $this->requestHeaders, null, 0);
 		Billrun_Factory::log("Tranzila payment pay response: " . print_R($result, 1), Zend_Log::DEBUG);
 		$resultObj = json_decode($result, true);
@@ -419,11 +422,6 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 		
 		if ($codeResult == '000') {
 			$this->transactionId = $transactionResult['transaction_id'];
-//			$txpost = ['terminal_name' => $params['terminal_name'], 'transaction_index' => $this->transactionId];
-//			$req = $this->buildTransactionPost($this->transactionId, $txpost);
-//			Billrun_Factory::log("Tranzila payment query request: " . print_R($req, 1), Zend_Log::DEBUG);
-//			$queryResult = Billrun_Util::sendRequest($this->EndpointUrl, $req, Zend_Http_Client::POST, $this->requestHeaders, null, 0);
-//			Billrun_Factory::log("Tranzila payment query response: " . print_R($queryResult, 1), Zend_Log::DEBUG);
 			$result = $this->queryTransaction($transactionResult, $params);
 			$additionalParams = $this->getResponseDetails($result);
 		} else {
@@ -445,7 +443,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 		$this->amount = !empty($creds['j5_amount']) ? $creds['j5_amount'] : '1';
 		$aid = $transaction['user_defined_8'] ?? ($transaction['remarks'] ?? $transaction['aid']);
 		$params = [
-			'terminal_name' => $creds['terminal_name'],
+			'terminal_name' => $creds['token_terminal_name'] ?? $creds['terminal_name'],
 			'txn_type' => 'verify',
 			'verify_mode' => 5,
 			'expire_month' => (int) ($transaction['expire_month'] ?? $transaction['expiration_month']),
@@ -506,7 +504,20 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 	}
 
 	public function getDefaultParameters() {
-		$params = array("appkey", "secret", "handshake_password", "terminal_name", "j5_amount", "api_endpoint", "iframe_endpoint", "template", "iframe_settings");
+		$params = array(
+			"appkey", // application key used for access token
+			"secret", // secret used for access token
+			"handshake_password", // handshare password for TranzilaPW
+			"terminal_name", // default terminal used for j5 iframe
+			"charge_terminal_name", // charge terminal with the token
+			"onetime_terminal_name", // one-time terminal for charge iframe (without token)
+			"token_terminal_name", // tokenize terminal (if tokenize required after one-time charge or after c"c replacement)
+			"j5_amount", // amount for j5
+			"api_endpoint", // tranzila api entry-point
+			"iframe_endpoint", // iframe end-point
+			"template", // template selector for iframe design
+			"iframe_settings", // additional settings for iframe (json array encoded)
+		);
 		return $this->rearrangeParametres($params);
 	}
 	
