@@ -436,10 +436,10 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$billrun_subs_coll = Billrun_Factory::db()->billrun_subsCollection();
 		$billrun_grouping_coll = Billrun_Factory::db()->billrun_groupingCollection();
 
-		$query = ['aid' => $accountData['aid'], 'key' => $accountData['billrun_key']];
+		$subsQuery = ['aid' => $accountData['aid'], 'key' => $accountData['billrun_key']];
 
 		$subscribers = [];
-		foreach ($billrun_subs_coll->query($query)->cursor() as $subObject) {
+		foreach ($billrun_subs_coll->query($subsQuery)->cursor() as $subObject) {
 			$subscribers[] = $subObject->getRawData();
 		}
 
@@ -449,8 +449,10 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			$subscribersMap[$subscriber['sid']] = &$subscriber;
 		}
 
+		$groupingQuery = ['aid' => $accountData['aid'], 'billrun_key' => $accountData['billrun_key']];
+
 		$groupingData = [];
-		foreach ($billrun_grouping_coll->query($query)->cursor() as $groupObject) {
+		foreach ($billrun_grouping_coll->query($groupingQuery)->cursor() as $groupObject) {
 			$groupingData[] = $groupObject->getRawData();
 		}
 
@@ -467,7 +469,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 				unset($groupItem['_id']);
 				unset($groupItem['sid']);
-				unset($groupItem['key']);
+				unset($groupItem['billrun_key']);
 				unset($groupItem['aid']);
 
 				$subscriberRef['totals']['grouping'][] = $groupItem;
