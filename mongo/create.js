@@ -77,7 +77,7 @@ db.billrun.createIndex({'invoice_date': 1 }, { unique: false , sparse: true, bac
 db.billrun.createIndex( { aid: 1,billrun_key: 1 },{ unique: true , background: true });
 db.billrun.createIndex( { billrun_key: -1, 'attributes.invoicing_day': -1 },{unique: false, background: true });
 db.billrun_subs.createIndex({ "aid": 1, "key": 1 });
-db.billrun_grouping.createIndex({ "aid": 1, "key": 1 });
+db.billrun_grouping.createIndex({ "aid": 1, "billrun_key": 1 });
 
 //Counters collection
 db.createCollection('counters');
