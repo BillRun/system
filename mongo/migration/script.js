@@ -2083,6 +2083,11 @@ runOnce(lastConfig, 'BRCD-4739', function () {
 if (typeof lastConfig['export'] === 'undefined') {
 	lastConfig.export = 1;
 }
+runOnce(lastConfig, 'BRCD-4966', function () {
+	db.billing_cycle.createIndex({'billrun_key': 1, 'page_number': 1, 'page_size': 1}, { unique: true , background: true });
+	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'end_time':1},{ unique: false , sparse: false, background: true });
+	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'count':1,'invoicing_day':1},{ unique: false , sparse: false, background: true });
+});
 
 db.config.insertOne(lastConfig);
 
