@@ -386,6 +386,13 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 										  'helper_field_mappings.'.$tapRecordType.'.RecEntityId', $this->config,
 										  'helper_field_mappings.common.RecEntityId');
 		foreach($recIdFields as  $recIdField) {
+			if( !empty($recFieldConfig = @json_decode($recIdField,JSON_OBJECT_AS_ARRAY)) ) {
+				$recIdField = $recFieldConfig['value'];
+				if(empty( array_filter($recFieldConfig['conditions'],function($c) use($row) { return Billrun_Util::isConditionMet($row,$c);}) ) ) {
+					// entity field id does *not* apply  for this record
+					continue;
+				}
+			}
 			if(false === Billrun_Util::getIn($row,$recIdField, false)){
 				continue;
 			}
