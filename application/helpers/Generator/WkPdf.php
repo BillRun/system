@@ -433,6 +433,10 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected function reconstructBillrunObject(Mongodloid_Entity $accountObject)
 	{
 		$accountData = $accountObject->getRawData();
+		//Backward Compatability (subs used to be inside the BillrunObject)
+		if (isset($accountData['subs'])) {
+			return $accountObject;
+		}
 		$billrun_subs_coll = Billrun_Factory::db()->billrun_subsCollection();
 		$billrun_grouping_coll = Billrun_Factory::db()->billrun_groupingCollection();
 
