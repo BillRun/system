@@ -420,17 +420,21 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 		$transactionResult = $resultObj['transaction_result'];
 		$codeResult = $transactionResult['processor_response_code'] ?? ($resultObj['error_code'] ?? '9999');
 		
+		$this->transactionId = $transactionResult['transaction_id'];
 		if ($codeResult == '000') {
-			$this->transactionId = $transactionResult['transaction_id'];
-			$result = $this->queryTransaction($transactionResult, $params);
-			$additionalParams = $this->getResponseDetails($result);
+			$transactionQueryResult= $this->queryTransaction($transactionResult, $params);
+			$additionalParams = $this->getResponseDetails($transactionQueryResult);
 		} else {
 			$additionalParams = [];
 		}
 
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
-	
+
+	protected function isRejected($status) {
+		return (!$this->isCompleted($status) && !$this->isPending($status));
+	}
+
 	/**
 	 * 
 	 * @param array $transaction expire_month, expire_year, card_token, user_defined_8 or aid,
