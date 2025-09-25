@@ -340,10 +340,11 @@ abstract class Billrun_Account extends Billrun_Base {
 					$remove_values = array('in_collection', 'in_collection_from');
 					try {
 						Billrun_Factory::log("Removing collection steps for account " . $aid, Zend_Log::DEBUG);
+						throw new \MongoDB\Driver\Exception\ConnectionTimeoutException("Simulated connection timeout for testing.");
 						$collectionSteps->removeCollectionSteps($aid);
 					} catch (\MongoDB\Driver\Exception\ConnectionTimeoutException $ex) {
 						Billrun_Factory::log(
-							"Connection timeout for account " . $aid . ". Retrying once...",
+							"Connection timeout for account " . $aid . ". Retrying once... Error: " . $ex->getMessage(),
 							Zend_Log::WARN
 						);
 						try {
