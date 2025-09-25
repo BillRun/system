@@ -2088,7 +2088,7 @@ runOnce(lastConfig, 'BRCD-4969', function () {
 
 	db.billrun_grouping.createIndex({
 		"aid": 1,
-		"key": 1
+		"billrun_key": 1
 	});
 });
 

@@ -386,11 +386,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
                 Billrun_Factory::log("Removed flat and service lines" . $addToLogMesaage, Zend_Log::DEBUG);
                 
     	Billrun_Factory::log("Removing billrun of " . $billrunKey . $addToLogMesaage, Zend_Log::DEBUG);
-		 if (version_compare(Billrun_Factory::db()->getServerVersion(), '4.2.0', '>=') && !Billrun_Factory::db()->isStandalone()) {
-            self::_removeWithTransaction($subsCascadeRemoveQuery, $groupingCascadeRemoveQuery, $billrunColl, $billrunSubsColl, $billrunGroupingColl,$billrunRemoveQuery);
-        } else {
-            self::_removeWithoutTransaction($subsCascadeRemoveQuery, $groupingCascadeRemoveQuery, $billrunColl, $billrunSubsColl, $billrunGroupingColl,$billrunRemoveQuery);
-        }
+		if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=') && !Billrun_Factory::db()->isStandalone()) {
+			self::_removeWithTransaction($subsCascadeRemoveQuery, $groupingCascadeRemoveQuery, $billrunColl, $billrunSubsColl, $billrunGroupingColl, $billrunRemoveQuery);
+		} else {
+			self::_removeWithoutTransaction($subsCascadeRemoveQuery, $groupingCascadeRemoveQuery, $billrunColl, $billrunSubsColl, $billrunGroupingColl, $billrunRemoveQuery);
+		}
 		Billrun_Factory::log("Removed billrun of " . $billrunKey . $addToLogMesaage, Zend_Log::DEBUG);
 	}
 

@@ -431,8 +431,7 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		
 		$rawData = $this->data->getRawData();
-    	$serverVersion = Billrun_Factory::db()->getServerVersion();
-		if (version_compare($serverVersion, '4.2.0', '>=') && !Billrun_Factory::db()->isStandalone()) {
+		if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=') && !Billrun_Factory::db()->isStandalone()) {
 			$this->_saveWithTransaction($rawData);
 		} else {
 			$this->_saveWithoutTransaction($rawData);
