@@ -339,11 +339,26 @@ abstract class Billrun_Account extends Billrun_Base {
 				if ($this->loadAccountForQuery($params)) {
 					$remove_values = array('in_collection', 'in_collection_from');
 					try {
-						Billrun_Factory::log()->log("Removing collection steps for account " . $aid, Zend_Log::DEBUG);
+						Billrun_Factory::log("Removing collection steps for account " . $aid, Zend_Log::DEBUG);
 						$collectionSteps->removeCollectionSteps($aid);
-					} catch (Exception $e) {
-						Billrun_Factory::log()->log(
-							"Could not remove collection steps for account " . $aid . ". Error: " . $e->getMessage() .
+					} catch (\MongoDB\Driver\Exception\ConnectionTimeoutException $ex) {
+						Billrun_Factory::log(
+							"Connection timeout for account " . $aid . ". Retrying once...",
+							Zend_Log::WARN
+						);
+						try {
+							$collectionSteps->removeCollectionSteps($aid);
+							Billrun_Factory::log("Successfully removed from collection steps on retry for account " . $aid, Zend_Log::INFO);
+						} catch (Exception $ex2) {
+							Billrun_Factory::log(
+								"Retry failed for account " . $aid . ". Error: " . $ex2->getMessage() .
+									". Proceeding with the update of the 'in_collection' status regardless.",
+								Zend_Log::WARN 
+							);
+						}
+					} catch (Exception $ex) {
+						Billrun_Factory::log(
+							"Could not remove collection steps for account " . $aid . ". Error: " . $ex->getMessage() .
 								". Proceeding with the update of the 'in_collection' status regardless.",
 							Zend_Log::WARN
 						);
