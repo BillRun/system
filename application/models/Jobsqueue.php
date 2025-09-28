@@ -54,7 +54,7 @@ class JobsqueueModel extends TableModel {
 		return $result->getRawData();
 	}
 	
-	public function getLatestJobs($job_type, $limit, $future_only = false) {
+	public function getLatestJobs($job_type, $limit, $future_only = false, $include_cancelled = false) {
 		$query = array(
 			'body.type' => ucfirst($job_type),
 		);
@@ -62,6 +62,12 @@ class JobsqueueModel extends TableModel {
 		if ($future_only) {
 			$query['schedule'] = [
 				'$gt' => new Mongodloid_Date()
+			];
+		}
+		
+		if (!$include_cancelled) {
+			$query['cancelled'] = [
+				'$ne' => 1
 			];
 		}
 

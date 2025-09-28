@@ -83,8 +83,8 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 
 	}
 	
-	public function filterConfirmedAccounts($billableResults, $mongoCycle) {
-		$confirmedAids = $this->getConfirmedAids($mongoCycle);
+	public function filterConfirmedAccounts($billableResults, $mongoCycle, $aids = array()) {
+		$confirmedAids = $this->getConfirmedAids($mongoCycle, $aids);
 		return array_filter($billableResults, function($billableAccount) use($confirmedAids) {
 			return !in_array($billableAccount['aid'], $confirmedAids);
 		});

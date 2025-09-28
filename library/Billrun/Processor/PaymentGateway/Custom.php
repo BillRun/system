@@ -70,13 +70,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$parser->resetData();
 		$parser->setHeaderStructure($headerStructure);
 		$parser->setDataStructure($dataStructure);
-		try{
-			$parser->parse($this->fileHandler);
+                try{
+		$parser->parse($this->fileHandler);
 		} catch(Exception $ex) {
-			Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+                    Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
 			Billrun_Factory::log()->log('Something went wrong while processing the file', Zend_Log::ALERT);
-			return false;
-		}
+                    return false;
+                } 
 		Billrun_Factory::log("Finished parsing", Zend_Log::DEBUG);
 		$this->headerRows = $parser->getHeaderRows();
 		$this->trailerRows = $parser->getTrailerRows();
@@ -114,30 +114,33 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 
 	protected function formatLine($row, $dataStructure) {
 		foreach ($dataStructure as $index => $paramObj) {
-				if (isset($paramObj['value_mult'])) {
-					$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
-				}
+		if (isset($paramObj['value_mult'])) {
+			$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
+		}
+			if (isset($paramObj['value_mult'])) {
+				$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
+			}
 		if(isset($paramObj['decimals'])){
-				$value = intval($row[$paramObj['name']]);
+			$value = intval($row[$paramObj['name']]);
 			$row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
+		}
+		if (isset($paramObj['type']) && $paramObj['type'] == "date") {
+			if (!isset($paramObj['format'])) {
+				$message = $paramObj['name'] . ' field was defined as date field, but without date format. Default BillRun format was taken';
+				Billrun_Factory::log($message, Zend_Log::WARN);
+				$this->informationArray['warnings'][] = $message;
+				$paramObj['format'] = Billrun_Base::base_datetimeformat;
 			}
-			if (isset($paramObj['type']) && $paramObj['type'] == "date") {
-				if (!isset($paramObj['format'])) {
-					$message = $paramObj['name'] . ' field was defined as date field, but without date format. Default BillRun format was taken';
-					Billrun_Factory::log($message, Zend_Log::WARN);
-					$this->informationArray['warnings'][] = $message;
-					$paramObj['format'] = Billrun_Base::base_datetimeformat;
-				}
-				$row[$paramObj['name']] = Billrun_Processor_Util::getRowDateTime($row, $paramObj['name'], $paramObj['format'])->format(Billrun_Base::base_datetimeformat);
+			$row[$paramObj['name']] = Billrun_Processor_Util::getRowDateTime($row, $paramObj['name'], $paramObj['format'])->format(Billrun_Base::base_datetimeformat);
+		}
+		if (isset($paramObj['substring'])) {
+			if (!isset($paramObj['substring']['offset']) || !isset($paramObj['substring']['length'])) {
+				$message = "Field name " . $paramObj['name'] . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
+				$this->logFile->updateLogFileField('errors', $message);
+				throw new Exception($message);
 			}
-			if (isset($paramObj['substring'])) {
-				if (!isset($paramObj['substring']['offset']) || !isset($paramObj['substring']['length'])) {
-					$message = "Field name " . $paramObj['name'] . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
-					$this->logFile->updateLogFileField('errors', $message);
-					throw new Exception($message);
-				}
-				$row[$paramObj['name']] = substr($row[$paramObj['name']], $paramObj['substring']['offset'], $paramObj['substring']['length']);
-                }
+			$row[$paramObj['name']] = substr($row[$paramObj['name']], $paramObj['substring']['offset'], $paramObj['substring']['length']);
+			}
 		}
 		return $row;
 	}
@@ -164,28 +167,28 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			}
 			$this->updateLogCollection($fileCorrelationObj);
 		}
-        if(isset($currentProcessor['file_status']) && !empty($currentProcessor['file_status'])){
+                if(isset($currentProcessor['file_status']) && !empty($currentProcessor['file_status'])){
 			Billrun_Factory::log("File status is " . $currentProcessor['file_status'], Zend_Log::DEBUG);
-			if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
-				$currentFileCount = $this->getCurrentFileCount() + 1;
+                if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
+                        $currentFileCount = $this->getCurrentFileCount() + 1;
 				Billrun_Factory::log("Current file count is " . $currentFileCount . ", out of " . $fileConfCount, Zend_Log::DEBUG);
-				$this->informationArray['file_count'] = $currentFileCount;
+                    $this->informationArray['file_count'] = $currentFileCount;
 				if (($currentFileCount) > $fileConfCount) {
 					$message = 'Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base';
-					Billrun_Factory::log($message , Zend_Log::ALERT);
-					$this->informationArray['errors'] = $message;
-					return False;
+                        Billrun_Factory::log($message , Zend_Log::ALERT);
+                        $this->informationArray['errors'] = $message;
+                        return False;
 				} else {
 					if($currentFileCount == $fileConfCount) {
-						$this->informationArray['last_file'] = true;
-					}
-				}
-			}
-		}
-		$this->informationArray = array_merge($this->informationArray, $this->getCustomPaymentGatewayFields());
+                            $this->informationArray['last_file'] = true;
+                            }
+                        }
+                    }
+                }
+				$this->informationArray = array_merge($this->informationArray, $this->getCustomPaymentGatewayFields());
 		Billrun_Factory::log("Updating records by rows...", Zend_Log::DEBUG);
 		$this->updatePaymentsByRows($data, $currentProcessor);
-        $this->updateLogFile();
+                $this->updateLogFile();
 	}
 
 	protected function getRowDateTime($dateStr) {
@@ -220,7 +223,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			return $settingsByType['file_type'] === $this->fileType;
 		}));
 		if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
-		$currentFileCount = $this->getCurrentFileCount();
+		$currentFileCount = $this->getCurrentFileCount() + 1;
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$fileConfCount = isset($currentProcessor['response_files_count']) ? $currentProcessor['response_files_count'] : null;
 		$fileCorrelationObj = isset($currentProcessor['correlation']) ? $currentProcessor['correlation'] : null;
@@ -244,7 +247,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$bills_counter++;
 			if (!($bill instanceof Billrun_Bill)) {
 				$bill = Billrun_Bill::getInstanceByData($bill);
-			}
+			} 
 			$txid = $bill->getId();
 			Billrun_Factory::log("Updating bill number " . $bills_counter . ", with txid " . $txid, Zend_Log::DEBUG);
 			if ($fileStatus == 'only_rejections') {
@@ -295,7 +298,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 	}
 	
-    protected function getOriginalFileStamp($correlatedField) {
+        protected function getOriginalFileStamp($correlatedField) {
 		$query = array(
 			$correlatedField => $this->correlatedValue,
 		);
@@ -329,7 +332,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 						$bill = $this->take_first ? Billrun_Bill_Payment::getInstanceByData(current(Billrun_Bill_Payment::queryPayments($query))) : null;
 					} else {
 						$bill = Billrun_Bill_Payment::getInstanceByData(current(Billrun_Bill_Payment::queryPayments($query)));
-					}
+			}
 				}
 			}
 			if (is_null($bill) && static::$type != 'payments') {
@@ -389,22 +392,22 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 
 	protected function updateLogFile() {
 		Billrun_Factory::log("Updating log collection in 'updateLogFile' function", Zend_Log::DEBUG);
-		$current_stamp = $this->getStamp();
+            $current_stamp = $this->getStamp();
 		$log = Billrun_Factory::db()->logCollection()->setReadPreference('RP_PRIMARY');
-		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
+            if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
 			Billrun_Factory::log("Updating log - id : " . $current_stamp, Zend_Log::DEBUG);
-			$resource = $log->findOne($current_stamp);
+                $resource = $log->findOne($current_stamp);
 			if (!empty($resource)) {
 				Billrun_Factory::log("Found relevant log object, pulling log' data", Zend_Log::DEBUG);
 			}
-			$entityData = $resource->getRawData();
-			$data = array_merge($entityData, $this->informationArray);
+                $entityData = $resource->getRawData();
+                $data = array_merge($entityData, $this->informationArray);
 			Billrun_Factory::log("Setting new information", Zend_Log::DEBUG);
-			$resource->setRawData($data);
+                $resource->setRawData($data);
 			Billrun_Factory::log("Saving updated log object", Zend_Log::DEBUG);
-			$log->save($resource);
-		}
-	}
+                $log->save($resource);
+            }
+        }
 		
 	protected function getBillSavedFieldsNames($parserDef) {
 		$savedFieldsNames = array();

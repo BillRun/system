@@ -135,13 +135,22 @@
     "order": 1,
     "parent":"cycle"
   },
+  "charge": {
+    "title": "Charging",
+    "icon": "",
+    "route": "charging",
+    "show": true,
+    "roles": [],
+    "order": 2,
+    "parent": "cycle"
+  },
   "suggestions": {
     "title": "Repricing Suggestions",
     "icon": "",
     "route": "suggestions",
     "show": true,
     "roles": [],
-    "order": 2,
+    "order": 3,
     "parent":"cycle"
   },
   "immediate-invoice": {
@@ -150,7 +159,7 @@
     "route": "immediate-invoice",
     "show": true,
     "roles": [],
-    "order": 3,
+    "order": 4,
     "parent": "cycle"
   },
   "account_receivables": {

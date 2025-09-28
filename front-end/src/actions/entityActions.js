@@ -7,7 +7,7 @@ import { getEntityByIdQuery, apiEntityQuery, getEntityCSVQuery, getEntitesQuery 
 import { getItemDateValue, getConfig, getItemId } from '@/common/Util';
 import { startProgressIndicator } from './progressIndicatorActions';
 
-const apiTimeOutMessage = 'Oops! Something went wrong. Please try again in a few moments.';
+export const apiTimeOutMessage = 'Oops! Something went wrong. Please try again in a few moments.';
 
 export const actions = {
   GOT_ENTITY: 'GOT_ENTITY',

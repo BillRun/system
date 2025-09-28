@@ -9,7 +9,7 @@ export default class DateTime extends Component {
 
   static defaultProps = {
     data: Immutable.Map(),
-    timeZoneOptions:  moment.tz.names().map(label => ({ label, value: label }))
+    timeZoneOptions:  moment.tz.names().map(label => ({ label: `${label} ${moment().tz(label).format('Z')}`, value: label }))
   };
 
   static propTypes = {
