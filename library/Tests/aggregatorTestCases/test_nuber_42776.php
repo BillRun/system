@@ -15,7 +15,7 @@ class Test_Case_42776
             [
 
                 "from" => "2025-09-03T22:00:00Z",
-                "name" => "B2C" . time()+random_int(1,111111111),
+                "name" => "B2C" . time(),
                 "price" => [
                     [
                         "price" => 16.79,
@@ -38,7 +38,7 @@ class Test_Case_42776
             ]
         );
         
-        $discount_name = time()+random_int(1,111111111);
+        $discount_name = "DIS_B2C_" . time();
 
         $discount = generat_discounts::generateDiscount([
             "from" => "2025-08-01T21:00:00Z",
