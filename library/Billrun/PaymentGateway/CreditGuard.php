@@ -405,7 +405,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$result = iconv("utf-8", "iso-8859-8", $result);
 		}
 		$xmlObj = simplexml_load_string($result);
-		if ($xmlObj !== false) {
+		if ($xmlObj !== false && !empty($xmlObj->response)) {
+
 			$codeResult = (string) $xmlObj->response->result;
 			$this->transactionId = (string) $xmlObj->response->tranId;
 			$slaveNumber = (string) $xmlObj->response->doDeal->slaveTerminalNumber;
@@ -420,6 +421,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$additionalParams['card_type'] = $xmlObj->response->doDeal->cardType ? current($xmlObj->response->doDeal->cardType->attributes()->code) : '';
 			$additionalParams['uid'] = $xmlObj->response->doDeal->ashraitEmvData->uid ? (string) $xmlObj->response->doDeal->ashraitEmvData->uid : '';
 			$additionalParams['auth_number'] = $xmlObj->response->doDeal->authNumber ? (string) $xmlObj->response->doDeal->authNumber : '';
+			
 		}	
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
