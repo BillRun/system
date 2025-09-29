@@ -62,6 +62,7 @@ class Billrun_Cycle_Account_Invoice {
 
 	protected $aggregationTranslations = [];
 	protected $constructOptions = [];
+	protected $useMongoTransactions = false;
 
 
         /**
@@ -75,6 +76,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->initInvoiceDates();
 		$this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true);
 		$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array());
+		$this->useMongoTransactions = Billrun_Factory::config()->getConfigValue('customer.aggregator.mongo_transactions', false);
 		$this->constructOptions = $options;
 	}
 
@@ -431,8 +433,13 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		
 		$rawData = $this->data->getRawData();
-		if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=') && !Billrun_Factory::db()->isStandalone()) {
-			$this->_saveWithTransaction($rawData);
+		if ($this->useMongoTransactions) {
+			if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=') && !Billrun_Factory::db()->isStandalone()) {
+				$this->_saveWithTransaction($rawData);
+			} else {
+				Billrun_Factory::log("Mongo transactions enabled for cycle but not supported on this version. Proceeding without transaction.", Zend_Log::WARN);
+				$this->_saveWithoutTransaction($rawData);
+			}
 		} else {
 			$this->_saveWithoutTransaction($rawData);
 		}
