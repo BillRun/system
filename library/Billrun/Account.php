@@ -340,6 +340,7 @@ abstract class Billrun_Account extends Billrun_Base {
 					$remove_values = array('in_collection', 'in_collection_from');
 					Billrun_Factory::log("Removing collection steps for account " . $aid, Zend_Log::DEBUG);
 					if (!$collectionSteps->removeCollectionSteps($aid)) {
+						Billrun_Factory::log('Retrying to remove aid ' . $aid . ' from collection steps.', Zend_Log::NOTICE);
 						if ($collectionSteps->removeCollectionSteps($aid)) {
 							Billrun_Factory::log("Successfully removed from collection steps on retry for account " . $aid, Zend_Log::INFO);
 						} else {
