@@ -6,7 +6,7 @@ $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
 try {
 	$app->bootstrap();
 } catch(\Throwable $th) {
-	// Ignore application issues as we only need the configuration to  be loaded
+	// Ignore application issues as we only need the configuration to be loaded
 }
 $jsonConf = '{
 
