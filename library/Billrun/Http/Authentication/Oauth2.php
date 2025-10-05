@@ -27,7 +27,7 @@ class Billrun_Http_Authentication_Oauth2 extends Billrun_Http_Authentication_Bas
         $useCache = $this->params['cache'] ?? true;
         
         if ($useCache && !empty($cache = Billrun_Factory::cache())) {
-            $cacheKey = self::class . "_access_token_" . md5(serialize($url)) . "_" . md5(serialize($data));
+            $cacheKey = $this->getCacheKey();
             $accessToken  = $cache->get($cacheKey);
             if (!empty($accessToken)) {
                 return $accessToken;
@@ -47,10 +47,48 @@ class Billrun_Http_Authentication_Oauth2 extends Billrun_Http_Authentication_Bas
         }
         
         if ($useCache && !empty($cache)) {
+            $cacheKey = $this->getCacheKey();
             $cacheTtl = $response['expires_in'] ?? false;
             $cache->set($cacheKey, $accessToken, null, $cacheTtl);
         }
         
         return $accessToken;
+    }
+
+    /**
+     * Generates a consistent cache key based on the access token URL.
+     * @return string
+     */
+    private function getCacheKey() {
+        $url = $this->params['access_token_url'] ?? '';
+        return self::class . "_access_token_" . md5(serialize($url));
+    }
+
+    /**
+     * Handles a failed authentication response to determine if a retry is possible.
+     *
+     * @param Zend_Http_Response $response The failed response object.
+     * @return bool True if the failure was handled and a retry should be attempted, false otherwise.
+     */
+    public function handleAuthFailure(Zend_Http_Response $response)
+    {
+        if ($response->getStatus() === 401) {
+            $this->clearAccessTokenCache();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Clears the cached access token.
+     * This is called by handleAuthFailure to force a token refresh.
+     */
+    public function clearAccessTokenCache()
+    {
+        $useCache = $this->params['cache'] ?? true;
+        if ($useCache && !empty($cache = Billrun_Factory::cache())) {
+            $cacheKey = $this->getCacheKey();
+            $cache->remove($cacheKey);
+        }
     }
 }
