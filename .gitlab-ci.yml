@@ -10,6 +10,7 @@ variables:
   GIT_CLEAN_FLAGS: "-ffdx -e .cache"
   DS_ENFORCE_NEW_ANALYZER: "true"
   DS_INCLUDE_DEV_DEPENDENCIES: "false"
+  DS_MAX_DEPTH: -1
 
 print-info:
   stage: build
