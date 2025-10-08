@@ -11,6 +11,7 @@ variables:
   DS_ENFORCE_NEW_ANALYZER: "true"
   DS_INCLUDE_DEV_DEPENDENCIES: "false"
   DS_MAX_DEPTH: -1
+  CS_IMAGE: billrun/billrun:$CI_COMMIT_TAG
 
 print-info:
   stage: build
@@ -86,6 +87,14 @@ push:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^5\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
 
+container_scanning:
+  stage: security
+  needs:
+    - build
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^5\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
+
 include:
   - template: Jobs/Secret-Detection.gitlab-ci.yml
   - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
+  - template: Jobs/Container-Scanning.latest.gitlab-ci.yml
