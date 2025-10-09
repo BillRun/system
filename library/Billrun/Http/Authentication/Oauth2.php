@@ -61,7 +61,9 @@ class Billrun_Http_Authentication_Oauth2 extends Billrun_Http_Authentication_Bas
      */
     private function getCacheKey() {
         $url = $this->params['access_token_url'] ?? '';
-        return self::class . "_access_token_" . md5(serialize($url));
+        $data = $this->params['data'] ?? [];
+        $serializeDataForCacheKey = $this->params['serialize_data_for_cache_key'] ?? false;
+        return self::class . "_access_token_" . md5(serialize($url)) . (!empty($serializeDataForCacheKey) ? "_" . md5(serialize($data)) : "");
     }
 
     /**
