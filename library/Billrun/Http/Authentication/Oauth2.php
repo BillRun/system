@@ -49,7 +49,7 @@ class Billrun_Http_Authentication_Oauth2 extends Billrun_Http_Authentication_Bas
         if ($useCache && !empty($cache)) {
             $cacheKey = $this->getCacheKey();
             $cacheTtl = $response['expires_in'] ?? false;
-            $cache->set($cacheKey, $accessToken, null, $cacheTtl);
+            $cache->set($cacheKey, $accessToken, null, max($cacheTtl-10, 10));
         }
         
         return $accessToken;
