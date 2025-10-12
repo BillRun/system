@@ -674,6 +674,12 @@ class Billrun_Service {
 		return self::$entities;
 	}
 
+	public static function afterBillApiRunAction($action, $entity){
+		if( !empty(self::$entities)){
+			$temp =0;
+		}
+	}
+
 	/**
 	 * get the entity by its id
 	 *

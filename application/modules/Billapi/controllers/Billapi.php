@@ -97,6 +97,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		Billrun_Factory::dispatcher()->trigger('beforeBillApiRunAction', array($this->collection, $this->action, $entityModel));
 		$this->output->details = $entityModel->{$this->action}();
 		$entity = $entityModel->getAfter();
+		$this->afterBillApiRunAction($this->collection, $this->action, $entity);
 		$line = $entityModel->getAffectedLine();
 		if ($entity instanceof Mongodloid_Entity) {
 			$this->output->entity = $entity->getRawData();
@@ -107,6 +108,12 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 			$this->output->line = $line->getRawData();
 		} else if ($line) {
 			$this->output->line = $line;
+		}
+	}
+
+	protected function afterBillApiRunAction($collection, $action, $entity){
+		if ($collection == 'services') {
+			Billrun_Service::afterBillApiRunAction($action, $entity);
 		}
 	}
 	
