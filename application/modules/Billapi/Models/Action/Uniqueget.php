@@ -54,14 +54,14 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 	}
 
 	/**
-	 * method to aggregate and get uniqueness 
-	 * @return array of mongo ids
+	 * Builds the core aggregation pipeline for finding a unique entity.
+	 * This is the reusable "building block" for all unique-get operations.
+	 * @return array The array of pipeline stages.
 	 */
-	protected function getUniqueIds() {
-		if (!empty($this->query)) {
-			$pipelines[] = array('$match' => $this->query);
-		}
-		
+	protected function buildUniqueGetPipeline()
+	{
+		$pipelines = array();
+
 		$pipelines[] = array(
 			'$project' => array(
 				'_id' => 1,
@@ -137,12 +137,29 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 			);
 		}
 		$pipelines[] = $match;
-		error_log(json_encode($pipelines));
-		$res = call_user_func_array(array($this->collectionHandler, 'aggregateWithOptions'), array($pipelines, array('allowDiskUse' => TRUE)));
 
-		$res->setRawReturn(true);
-		$aggregatedResults = array_values(iterator_to_array($res));
-		return array_column($aggregatedResults, 'id');
+		return $pipelines;
 	}
+
+	/**
+     * method to aggregate and get uniqueness 
+     * @return array of mongo ids
+     */
+    protected function getUniqueIds() {
+        $pipelines = array();
+        if (!empty($this->query)) {
+            $pipelines[] = array('$match' => $this->query);
+        }
+        
+        $core_pipeline = $this->buildUniqueGetPipeline();
+        $pipelines = array_merge($pipelines, $core_pipeline);
+
+        error_log(json_encode($pipelines));
+        $res = call_user_func_array(array($this->collectionHandler, 'aggregateWithOptions'), array($pipelines, array('allowDiskUse' => TRUE)));
+
+        $res->setRawReturn(true);
+        $aggregatedResults = array_values(iterator_to_array($res));
+        return array_column($aggregatedResults, 'id');
+    }
 
 }
