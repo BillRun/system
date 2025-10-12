@@ -674,9 +674,20 @@ class Billrun_Service {
 		return self::$entities;
 	}
 
-	public static function afterBillApiRunAction($action, $entity){
+	public static function addEntitieToCache($entity){
 		if( !empty(self::$entities)){
-			$temp =0;
+			self::$entities['by_id'][strval($entity->getId())] = $entity;
+			// Initialize array if needed
+			if (!isset(self::$entities['by_name'][$entity['name']])) {
+				self::$entities['by_name'][$entity['name']] = [];
+			}
+
+			self::$entities['by_name'][$entity['name']][] = [
+				'entity' => $entity,
+				'from'   => $from,
+				'to'     => $to,
+			];
+			
 		}
 	}
 
