@@ -47,31 +47,6 @@ class Models_Action_Uniqueget_Subscribers extends Models_Action_Uniqueget {
 	 */
 	protected function getUniqueIds()
 	{
-		 $base_query = ['type' => 'subscriber'];
-        if (!empty($this->query)) {
-            $pipelines[] = array('$match' => array_merge($base_query, $this->query));
-        } else {
-            $pipelines[] = array('$match' => $base_query);
-        }
-
-        $core_pipeline = parent::buildUniqueGetPipeline();
-        $pipelines = array_merge($pipelines, $core_pipeline);
-
-        if (!empty($this->sort)) {
-            $pipelines[] = array('$sort' => $this->sort);
-        }
-        if ($this->page != 0) {
-            $pipelines[] = array('$skip' => $this->page * $this->size);
-        }
-        if ($this->size != 0) {
-            $pipelines[] = array('$limit' => $this->size + 1);
-        }
-
-        error_log(json_encode($pipelines));
-        $res = call_user_func_array(array($this->collectionHandler, 'aggregateWithOptions'), array($pipelines, array('allowDiskUse' => TRUE)));
-
-        $res->setRawReturn(true);
-        $aggregatedResults = array_values(iterator_to_array($res));
-        return array_column($aggregatedResults, 'id');
+		return $this->getPaginatedUniqueIds(['type' => 'subscriber']);
 	}
 }

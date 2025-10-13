@@ -162,4 +162,40 @@ class Models_Action_Uniqueget extends Models_Action_Get {
         return array_column($aggregatedResults, 'id');
     }
 
+	/**
+	 * Gets the unique IDs using a high-performance, paginated pipeline
+	 * This is a reusable helper for child classes.
+	 *
+	 * @param array $base_query The initial filter (e.g., ['type' => 'subscriber']).
+	 * @return array The final array of unique mongo ids for the requested page.
+	 */
+	protected function getPaginatedUniqueIds(array $base_query)
+	{
+		if (!empty($this->query)) {
+			$pipelines[] = array('$match' => array_merge($base_query, $this->query));
+		} else {
+			$pipelines[] = array('$match' => $base_query);
+		}
+
+		$core_pipeline = $this->buildUniqueGetPipeline();
+		$pipelines = array_merge($pipelines, $core_pipeline);
+
+		if (!empty($this->sort)) {
+			$pipelines[] = array('$sort' => $this->sort);
+		}
+		if ($this->page != 0) {
+			$pipelines[] = array('$skip' => $this->page * $this->size);
+		}
+		if ($this->size != 0) {
+			$pipelines[] = array('$limit' => $this->size + 1);
+		}
+
+		error_log(json_encode($pipelines));
+		$res = call_user_func_array(array($this->collectionHandler, 'aggregateWithOptions'), array($pipelines, array('allowDiskUse' => TRUE)));
+
+		$res->setRawReturn(true);
+		$aggregatedResults = array_values(iterator_to_array($res));
+		return array_column($aggregatedResults, 'id');
+	}
+
 }
