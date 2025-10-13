@@ -76,7 +76,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->initInvoiceDates();
 		$this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true);
 		$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array());
-		$this->useMongoTransactions = Billrun_Factory::config()->getConfigValue('customer.aggregator.mongo_transactions', false);
+		$this->useMongoTransactions = Billrun_Factory::config()->getConfigValue('customer.aggregator.db_transactions', false);
 		$this->constructOptions = $options;
 	}
 
