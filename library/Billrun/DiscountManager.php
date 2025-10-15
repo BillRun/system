@@ -1465,15 +1465,19 @@ class Billrun_DiscountManager {
 			$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
 			$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
 			if (!$proratedStart) {
-				$from = $this->cycle->start();
-			} else if (isset($line['start'])) {
+				$from = max($discount['from']->sec, $this->cycle->start());
+			}else if (isset($line['start'])) {
 				$from = max($from, Billrun_Utils_Time::getTime($line['start']));
+			} else if (isset($line['start_date'])) {
+				$from = max($from, Billrun_Utils_Time::getTime($line['start_date']));
 			}
 			if (!$proratedEnd) {
-				$to = $this->cycle->end();
+				$to = min($discount['to']->sec ,$this->cycle->end());
 			} else if (isset($line['end'])) {
 				$to = min($to, Billrun_Utils_Time::getTime($line['end']));
-			}
+			} else if (isset($line['end_date'])) {
+				$to = min($to, Billrun_Utils_Time::getTime($line['end_date']));
+			} 
 		}
 		if(!$isSequential){
 			$flatAmount = $amount = $this->getDiscountAmount($discount, $line, $value, $operations);
@@ -1578,8 +1582,10 @@ class Billrun_DiscountManager {
 		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
 		
 		return ($proratedStart && $proratedEnd) ||
-			($proratedStart && isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) ||
-			($proratedEnd && isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end()));
+			($proratedStart && (isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) || 
+				(isset($line['start_date']) && (Billrun_Utils_Time::getTime($line['start_date']) != $this->cycle->start()))) ||
+			($proratedEnd && (isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end())) || 
+				(isset($line['end_date']) && (Billrun_Utils_Time::getTime($line['end_date']) != $this->cycle->end())));
 	}
 	
 	/**
@@ -1601,8 +1607,8 @@ class Billrun_DiscountManager {
 	protected function getLineFullEligibility($line) {
 		return [
 			[
-				'from' => isset($line['start']) ? Billrun_Utils_Time::getTime($line['start']) : $this->cycle->start(),
-				'to' => isset($line['end']) ? Billrun_Utils_Time::getTime($line['end']) : $this->cycle->end(),
+				'from' => isset($line['start']) ? Billrun_Utils_Time::getTime($line['start']) : (isset($line['start_date']) ? Billrun_Utils_Time::getTime($line['start_date']) : $this->cycle->start()),
+				'to' => isset($line['end']) ? Billrun_Utils_Time::getTime($line['end']) : (isset($line['end_date']) ? Billrun_Utils_Time::getTime($line['end_date']) : $this->cycle->end()),
 			],
 		];
 	}
