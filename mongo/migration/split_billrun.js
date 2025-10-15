@@ -32,7 +32,7 @@ delete lastConfig['_id'];
 
 //BRCD-4969: Split billrun docment into billrun_subs and billrun_grouping collections
 runOnce(lastConfig, 'BRCD-4969-1', function () {
-    db.billrun.find({ "subs": { "$exists": true, "$ne": null } }).forEach(function (doc) {
+    db.billrun.find({ "subs": { "$exists": true, "$nin":[null, []] } }).forEach(function (doc) {
         var allSubscribersToSave = [];
         var allGroupItemsToSave = [];
 
