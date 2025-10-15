@@ -288,7 +288,7 @@ class Billrun_Cycle_Account_Invoice {
 			$invoiceRawData['invoice_id'] = $invoiceId;
 			$newRawData = $invoiceRawData;
 		}
-		$this->data->setRawData($newRawData);		
+		$this->data->setRawData($newRawData);
 
 	}
 
@@ -429,7 +429,18 @@ class Billrun_Cycle_Account_Invoice {
 			Billrun_Factory::log("Deactivated account: {$this->aid} no need to create invoice.", Zend_Log::DEBUG);
 			return;
 		}
+
+		if(count($this->data['subs']) > Billrun_Factory::config()->getConfigValue('billrun.save_to_file_subs_limit',10000)) {
+			$rawData = $this->data->getRawData();
+			$failedPath = Billrun_Factory::config()->getConfigValue('billrun.failed_invoices_path','/tmp').DIRECTORY_SEPARATOR."{$rawData['aid']}_{$rawData['billrun_key']}_{$rawData['invoice_id']}.json";
+			Billrun_Factory::log("Crashed when saving invoice for account {$this->aid} , saved to {$failedPath} ", Zend_Log::NOTICE);
+			file_put_contents($failedPath,json_encode($rawData));
+			$rawData['subs'] = [];
+			$this->data->setRawData($rawData);
+		}
+
 		$ret = $this->billrun_coll->save($this->data);
+
 		if (!$ret) {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {

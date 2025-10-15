@@ -2,7 +2,7 @@
  
 //tests for Mongodloid_Collection
 
-require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
 
 define('UNIT_TESTING', 'true');
 

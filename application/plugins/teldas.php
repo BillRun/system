@@ -280,6 +280,12 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           );
           $iteration++;
           if ($iteration === $initializeLimit) {
+            $countTotalInaNumbers = count($totalInaNumbers);
+            Billrun_Factory::log("Should found $InaNumbersRecords records but found only " .$countTotalInaNumbers . " in " . $initializeLimit ." years", Zend_Log::NOTICE);
+            $allowMistakeError = Billrun_Factory::config()->getConfigValue('teldas.initialize.allow_mistake_error', 0.0001);
+            if(Billrun_Util::isEqual($countTotalInaNumbers/$InaNumbersRecords, 1, $allowMistakeError)){
+                break;
+            }
               return false;
           }
       }
