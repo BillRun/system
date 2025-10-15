@@ -252,7 +252,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 					'CurrencyConversion' => array(
 						'ExchangeRateCode' => $currencyCode,
 						'NumberOfDecimalPlaces' => $numberOfDecimalPlaces,
-						'ExchangeRate' => floor($this->getExchangeRate($row) * pow(10, $numberOfDecimalPlaces)),
+						'ExchangeRate' => $this->roundValue($this->getExchangeRate($row) * pow(10, $numberOfDecimalPlaces)),
 					),
 				);
 			}
@@ -314,8 +314,8 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 					'LocalTimeStamp' => gmdate($dateFormat, $latestUrt),
 					'UtcTimeOffset' => $this->timeZoneOffset,
 				),
-				'TotalCharge' => $totalCharge,
-				'TotalTaxValue' => $totalTax,
+				'TotalCharge' => $this->roundValue($totalCharge),
+				'TotalTaxValue' => $this->roundValue($totalTax),
 				'TotalDiscountValue' => $totalDiscount,
 				'CallEventDetailsCount' => count($this->rowsToExport),
 			),
@@ -549,7 +549,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$price = $row['aprice'];
 		$decimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
 		$sdrPrice = $price / $this->getExchangeRate($row);
-		$sdrPrice = intval($sdrPrice * pow(10, $decimalPlaces));
+		$sdrPrice = $this->roundValue($sdrPrice * pow(10, $decimalPlaces));
 		Billrun_Factory::dispatcher()->trigger('afterGetSdrPrice', array(&$sdrPrice, $row));
 		return $sdrPrice;
 	}
@@ -687,6 +687,24 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 
 		}
 		return $this->sequenceNum;
+	}
+
+	protected function roundValue($value, $precision = 0) {
+		$roundingLogic = $this->getConfig('rounding_logic');
+		switch(@$roundingLogic['method']) {
+			case 'floor':
+					$value = floor($value);
+				break;
+
+			case 'ceil':
+					$value =  ceil($value);
+				break;
+
+			case 'round':
+			default:
+					$value =  round($value, $precision);
+		}
+		return $value;
 	}
 
 }
