@@ -81,8 +81,8 @@ trait Billrun_Traits_Api_OperationsLock {
 		$query = static::getReleaseQuery();
 		Billrun_Factory::log("Releasing operation " . $query['action'], Zend_Log::DEBUG);
 		$releaseOperation = $operationsColl->findAndModify($query, array('$set' => array('end_time' => new Mongodloid_Date())));
-		Billrun_Factory::log("Operation " . $query['action'] . ' was released', Zend_Log::DEBUG);
 		if (!$releaseOperation->isEmpty()){
+			Billrun_Factory::log("Operation " . $query['action'] . ' was released', Zend_Log::DEBUG);
 			return true;
 		}
 		return false;
