@@ -3,13 +3,14 @@ import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { Form, FormGroup, ControlLabel, Col, Panel } from 'react-bootstrap';
 import Field from '@/components/Field';
-import { getFieldName } from '@/common/Util';
+import { getFieldName, isValueOn } from '@/common/Util';
 
 
 const Subscribers = ({ data, typesOptions, onChange }) => {
 
   const type = data.getIn(['subscriber', 'type'], 'db');
   const auth_url = data.getIn(['external_authentication', 'access_token_url'], '');
+  const auth_cache = isValueOn(data.getIn(['external_authentication', 'cache'], false));
   const auth_secret = data.getIn(['external_authentication', 'data', 'client_secret'], '');
   const auth_id = data.getIn(['external_authentication', 'data', 'client_id'], '');
   const url_gsd = data.getIn(['subscriber', 'external_url'], '');
@@ -21,24 +22,24 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
   const authData = Immutable.Map({
     type: 'oauth2',
     access_token_url: auth_url,
+    cache: auth_cache,
     data: Immutable.Map({
         grant_type: 'client_credentials',
         client_id: auth_id,
         client_secret: auth_secret,
         scope: ''
     }),
-    cache: true
   });
 
   const onChangeType = (value) => {
     onChange('subscribers',['account', 'type'], value);
     onChange('subscribers', ['subscriber', 'type'], value);
   }
+
   const onChangeAuthUrl = (e) => {
     const { value } = e.target;
     onChange('subscribers', 'external_authentication', authData.setIn(['access_token_url'], value));
   };
-  
   const onChangeAuthSecret = (e) => {
     const { value } = e.target;
     onChange('subscribers', 'external_authentication', authData.setIn(['data', 'client_secret'], value));
@@ -47,25 +48,26 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
     const { value } = e.target;
     onChange('subscribers', 'external_authentication', authData.setIn(['data', 'client_id'], value));
   };
-  
-  
+  const onChangeAuthCache = (e) => {
+    const { value } = e.target;
+    onChange('subscribers', 'external_authentication', authData.setIn(['cache'], value));
+  };
+
   const onChangeUrlGba = (e) => {
     const { value } = e.target;
     onChange('subscribers', ['billable', 'url'], value);
   };
-  
   const onChangeUrlGsd = (e) => {
     const { value } = e.target;
     onChange('subscribers', ['subscriber', 'external_url'], value);
   };
-  
   const onChangeUrlGad = (e) => {
     const { value } = e.target;
     onChange('subscribers', ['account', 'external_url'], value);
   };
 
   return (
-    <div className="Subscribers">
+    <div className="subscribers">
       <Form horizontal>
         <FormGroup>
           <Col componentClass={ControlLabel} sm={3} lg={2}>
@@ -81,7 +83,7 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
             />
           </Col>
         </FormGroup>
-        <Panel header={<h3>{getFieldName('auth', 'settings')}<small> | {getFieldName('auth.type', 'settings')}</small></h3>}>
+        <Panel header={<h3>{getFieldName('auth', 'settings')}<small> | {authData.get('type', '')}</small></h3>}>
           <FormGroup>
             <Col componentClass={ControlLabel} sm={3} lg={2}>
                 { getFieldName('auth.url', 'settings')}
@@ -90,16 +92,20 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
                 <Field onChange={onChangeAuthUrl} value={auth_url} disabled={disabled} />
             </Col>
           </FormGroup>
-
           <FormGroup>
             <Col componentClass={ControlLabel} sm={3} lg={2}>
                 { getFieldName('auth.secret', 'settings')}
             </Col>
             <Col sm={6}>
-                <Field fieldType="password" onChange={onChangeAuthSecret} value={auth_secret} disabled={disabled} />
+                <Field
+                  fieldType="password"
+                  value={auth_secret}
+                  onChange={onChangeAuthSecret}
+                  autoComplete="new-password"
+                  disabled={disabled}
+                />
             </Col>
           </FormGroup>
-
           <FormGroup>
             <Col componentClass={ControlLabel} sm={3} lg={2}>
                 { getFieldName('auth.id', 'settings')}
@@ -108,7 +114,18 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
                 <Field onChange={onChangeAuthId} value={auth_id} disabled={disabled} />
             </Col>
           </FormGroup>
-
+          <FormGroup>
+            <Col componentClass={ControlLabel} sm={3} lg={2}/>
+            <Col sm={6}>
+              <Field
+                fieldType="checkbox"
+                value={auth_cache}
+                onChange={onChangeAuthCache}
+                label={getFieldName('auth.cache', 'settings')}
+                disabled={disabled}
+              />
+            </Col>
+          </FormGroup>
         </Panel>
         <Panel header={<h3>{getFieldName('url', 'settings')}</h3>}>
           <FormGroup>
@@ -149,8 +166,8 @@ Subscribers.propTypes = {
 Subscribers.defaultProps = {
   data: Immutable.Map(),
   typesOptions: [
-      { value: 'db', label: getFieldName('type.db', 'settings', 'DB1') },
-      { value: 'external', label: getFieldName('type.external', 'settings', 'Externa1') },
+      { value: 'db', label: getFieldName('type.db', 'settings', 'DB') },
+      { value: 'external', label: getFieldName('type.external', 'settings', 'External') },
   ],
 };
 
