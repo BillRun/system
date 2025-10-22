@@ -1,4 +1,19 @@
 {
+  "settings": {
+    "subs": "Subscribers",
+    "type": "Type",
+    "type.db": "Internal",
+    "type.external": "External",
+    "auth": "Authorization",
+    "auth.type": "oAuth2",
+    "auth.url": "Token Access",
+    "auth.secret": "Secret",
+    "auth.id": "ID",
+    "url": "API URLs",
+    "url.gba": "GBA",
+    "url.gsd": "GSD",
+    "url.gad": "GAD"
+  },
   "customerIdentification": {
     "sid": "Subscriber id (BillRun system field)"
   },

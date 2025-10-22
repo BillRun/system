@@ -25,7 +25,7 @@ class System extends Component {
     const { data } = this.props;
     const checkboxStyle = { marginTop: 10 };
     return (
-      <div className="DateTime">
+      <div className="system">
         <Form horizontal>
           <FormGroup>
             <Col componentClass={ControlLabel} md={2} />
