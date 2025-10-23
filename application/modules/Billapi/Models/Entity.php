@@ -326,7 +326,7 @@ class Models_Entity {
 	}
 
 	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val, $fieldType = 'string') {
-		Billrun_Factory::log('Running hasEntitiesWithSameUniqueFieldValue for field ' . $field, Zend_Log::DEBUG);
+		Billrun_Factory::log('Running hasEntitiesWithSameUniqueFieldValue for field ' . $field . ' and value ' . $val, Zend_Log::DEBUG);
 		$nonRevisionsQuery = $this->getNotRevisionsOfEntity($data);
 		if ($fieldType == 'ranges') {
 			$uniqueQuery = Api_Translator_RangesModel::getOverlapQuery($field, $val);
