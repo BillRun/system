@@ -178,21 +178,21 @@ class Billrun_DiscountManager {
 			$eligibility = $this->getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions);
 			$this->setEligibility($this->eligibleDiscounts, $discount, $eligibility);
 		}
+
+		//Get the latest version of the account discount (in case the account had multiple revisions during the month)
+		$accountDiscounts = Billrun_Util::mapArrayToStructuredHash(
+									call_user_func_array('array_merge', array_column($accountRevisions,'discounts') ),
+									['key'] );
+		foreach ($accountDiscounts as $accountDiscount) {
+				$eligibility = $this->getDiscountEligibility($accountDiscount, $accountRevisions, $subscribersRevisions);
+				$this->setEligibility($this->eligibleDiscounts, $accountDiscount, $eligibility);
+				$this->setSubscriberDiscount($accountDiscount, $this->cycle->key());
+		}
+
 		// handle subscribers' level revisions
 		foreach ($subscribersRevisions as $sid => $subscriberRevisions) {
 			$this->handleDiscountsForSubsRevs($accountRevisions, $subscriberRevisions);
 		}
-
-
-			//Get the latest version of the account discount (in case the account had multiple revisions during the month)
-			$accountDiscounts = Billrun_Util::mapArrayToStructuredHash(
-										call_user_func_array('array_merge', array_column($accountRevisions,'discounts') ),
-										['key'] );
-			foreach ($accountDiscounts as $accountDiscount) {
-					$eligibility = $this->getDiscountEligibility($accountDiscount, $accountRevisions, $subscribersRevisions);
-					$this->setEligibility($this->eligibleDiscounts, $accountDiscount, $eligibility);
-					$this->setSubscriberDiscount($accountDiscount, $this->cycle->key());
-			}
 
 		$this->handleConflictingDiscounts();
 		}
@@ -210,12 +210,16 @@ class Billrun_DiscountManager {
 						else{
 							$overrideDiscountName = false;
 							$sid = $subscriberRevision['sid'];
-							if(isset($this->eligibleDiscounts[$subDiscount['key']]) && !isset($this->eligibleDiscounts[$subDiscount['key']]['subs'][$sid])){
+							if(isset($this->eligibleDiscounts[$subDiscount['key']]) && (
+									!isset($this->eligibleDiscounts[$subDiscount['key']]['subs'][$sid])
+										||
+									Billrun_Util::isArrayDiffer($this->eligibleDiscounts[$subDiscount['key']]['discount'], $subDiscount,['subject','params'])
+								)){
 								$forcing = true;
 								$overrideDiscountName = true;
 								$this->handleOverrideDiscountForSubRev($subDiscount, $subscriberRevision, $accountRevisions, $overrideDiscountName);
 							}   
-                                            
+
 						}	
 
 					}
