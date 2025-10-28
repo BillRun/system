@@ -2209,7 +2209,12 @@ class Billrun_Util {
 			}
 		}
 		return $mainArr;
+	}
 
+	protected function isArrayDiffer($arr1 ,$arr2 ,$filterFields = []) {
+		return 	Billrun_Util::generateArrayStamp( $arr1, $filterFields, true)
+					!=
+				Billrun_Util::generateArrayStamp( $arr2, $filterFields, true);
 	}
 
 }
