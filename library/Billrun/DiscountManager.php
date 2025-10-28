@@ -199,29 +199,27 @@ class Billrun_DiscountManager {
 
 		protected function handleDiscountsForSubsRevs($accountRevisions, $subscriberRevisions){
 			$forcing = false;
-			foreach ($subscriberRevisions as $subscriberRevision){
+			foreach ($subscriberRevisions as &$subscriberRevision){
 				if (isset($subscriberRevision['discounts'])){
-					foreach ($subscriberRevision['discounts'] as $subDiscount) {
+					foreach ($subscriberRevision['discounts'] as &$subDiscount) {
 						$generalDiscount = self::$discounts[$this->cycle->key()][$subDiscount['key']] ?? null;
 						if(isset($generalDiscount)){
 							$this->forceSubscriberDiscount($generalDiscount, $subDiscount, $accountRevisions, $subscriberRevision);
 							$forcing = true;
 						} 
-						else{
+						else {
 							$overrideDiscountName = false;
 							$sid = $subscriberRevision['sid'];
-							if(isset($this->eligibleDiscounts[$subDiscount['key']]) && (
+							if($forcing || isset($this->eligibleDiscounts[$subDiscount['key']]) && (
 									!isset($this->eligibleDiscounts[$subDiscount['key']]['subs'][$sid])
 										||
 									Billrun_Util::isArrayDiffer($this->eligibleDiscounts[$subDiscount['key']]['discount'], $subDiscount,['subject','params'])
 								)){
-								$forcing = true;
 								$overrideDiscountName = true;
+								$subDiscount['key_forced'] = true;
 								$this->handleOverrideDiscountForSubRev($subDiscount, $subscriberRevision, $accountRevisions, $overrideDiscountName);
-							}   
-
+							}
 						}	
-
 					}
 				}
 				if (isset($subscriberRevision['overrides'])){
@@ -240,7 +238,7 @@ class Billrun_DiscountManager {
 				call_user_func_array('array_merge', array_column($subscriberRevisions,'discounts') ),
 				['key'] );
 			foreach ($subscriberDiscounts as $key => $subDiscount) {
-				if(!$forcing){
+				if( !$forcing && empty($subDiscount['key_forced']) ){
 					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
 					$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
 					$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
