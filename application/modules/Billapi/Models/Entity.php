@@ -493,7 +493,7 @@ class Models_Entity {
 		$first = true;
 
 
-		foreach ($afterChangeRevisions as $index => $newRevision) {
+		foreach ($afterChangeRevisions as $newRevision) {
 			if($first){
 				$this->after = $newRevision;
 				$first = false;
