@@ -161,6 +161,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'paid' => '0',
 				'total_paid' => 0
 			);
+		if (!empty($invoice['note'])) {
+			$bill['note'] = $invoice['note'];
+		}
 		if (!empty($invoice['invoicing_day'])) {
 			$bill['invoicing_day'] = $invoice['invoicing_day'];
 		}
