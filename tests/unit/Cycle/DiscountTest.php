@@ -35,6 +35,7 @@ class DiscountTest extends \Codeception\Test\Unit {
 			'discount_from' => 1,
 			'discount_to' => 1
 		];
+		date_default_timezone_set('UTC');
 
 		foreach( $tests as $tstKey => $tstVal) {
 			//Setup  the  eligiblity based on the account and subscribers revisions
