@@ -151,6 +151,9 @@ class Models_Entity {
 	 * @var Boolean
 	 */
 	protected $is_import = false;
+
+
+	protected $output = [];
 	public static function getInstance($params) {
 		$modelPrefix = 'Models_';
 		$className = $modelPrefix . ucfirst($params['collection']);
@@ -448,6 +451,8 @@ class Models_Entity {
 	public function permanentChange() {
 		$this->setReadPrefForAction(__FUNCTION__);
 		Billrun_Factory::log("Performs the permanentchange action", Zend_Log::DEBUG);
+		$updatedRevisionsCount = 0;
+		$createdRevisionsCount = 0;
 		$this->action = 'permanentchange';
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
@@ -476,6 +481,7 @@ class Models_Entity {
 			unset($prevEntity['_id']);
 			$prevEntity['from'] = $this->update['from'];
 			$this->insert($prevEntity);
+			$createdRevisionsCount++;
 		}
 		$beforeChangeRevisions = $this->collection->query($permanentQuery)->cursor()->setReadPreference('RP_PRIMARY');
 		$oldRevisions = array_map(function ($e) {return $e->getRawData();}, iterator_to_array($beforeChangeRevisions));
@@ -484,21 +490,37 @@ class Models_Entity {
 		$this->fixEntityFields($this->before);
 		$newRevisions = [];
 		// Map and validate new revisions
+		$first = true;
+
+
 		foreach ($afterChangeRevisions as $newRevision) {
+			if($first){
+				$this->after = $newRevision;
+				$first = false;
+			}
+
 			$currentId = $newRevision['_id']->getMongoId()->{'$id'};
 			$oldRevision = $oldRevisions[$currentId];
 			
 			$key = $oldRevision[$field];
 			if ($oldRevision === null){
 				Billrun_Factory::log('No old revision was found. Query: ' . json_encode($permanentQuery), Zend_Log::ALERT);
+			}else{
+				$updatedRevisionsCount++;
 			}
 			if ($newRevision === null){
 				Billrun_Factory::log('No new revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate), Zend_Log::ALERT);
 			}
 			$newRevisions[$currentId] = $newRevision->getRawData();
 		}
+		$this->output['totalUpdated'] = $updatedRevisionsCount;
+		$this->output['totalCreated'] = $createdRevisionsCount;
 		Billrun_AuditTrail_Util::trackMultipleChanges($this->action, $field, $this->entityName, $oldRevisions, $newRevisions);
 		return true;
+	}
+
+	public function getMoreOutputFileds(){
+		return $this->output;
 	}
 
 	protected function getPermanentChangeQuery() {
