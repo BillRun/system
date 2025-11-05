@@ -220,7 +220,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				//Create revision for all the terminated services/plans under the current "from" date
 			foreach($revCuts as $endedField) {
 					//close the current revision if its "to" has changed and open a new one.
-					if($endedField['to'] < $activeRev['to'] ) {
+					if($endedField['to'] <= $activeRev['to'] ) {
 						$activeRev['to'] =  $endedField['to']; // change the saved (closed) revision from & to  fields to match the ended revision from &  to values
 						$activeRev['from'] =  $endedField['from'];
 						$saveRevision  = $this->cleanRevisionStructure($activeRev, $subRevisionsFields, $endedField);
@@ -245,7 +245,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				}
 			}
 			//Save the last revision
-			$retRevisions[] = $this->cleanRevisionStructure($activeRev, $subRevisionsFields);
+			// $retRevisions[] = $this->cleanRevisionStructure($activeRev, $subRevisionsFields);
 		}
 		usort($retRevisions,function($a,$b){ return $a['from']->sec - $b['from']->sec; });
 		return $retRevisions;
