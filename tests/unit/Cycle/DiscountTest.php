@@ -13,6 +13,8 @@ class DiscountTest extends \Codeception\Test\Unit {
 		//Set  the  default timezone to UTC  for  the tests
 		if(!$this->isRun) {
 			$this->isRun = true;
+			//load the  config so  we  can  ovverride the  timezone AFTER  it  waas  set by configuration
+			Billrun_Factory::config();
 			$this->defaultTimezone = date_default_timezone_get();
 			date_default_timezone_set('UTC');
 		}
@@ -35,6 +37,8 @@ class DiscountTest extends \Codeception\Test\Unit {
 			'discount_from' => 1,
 			'discount_to' => 1
 		];
+		//load the  config so  we  can  ovverride the  timezone AFTER  it  waas  set by configuration
+		Billrun_Factory::config();
 		date_default_timezone_set('UTC');
 
 		foreach( $tests as $tstKey => $tstVal) {
