@@ -15,7 +15,7 @@ class Test_Case_42776
             [
 
                 "from" => "2025-09-03T22:00:00Z",
-                "name" => "B2C" . time()+random_int(1,111111111),
+                "name" => "B2C_42776" . time(),
                 "price" => [
                     [
                         "price" => 16.79,
