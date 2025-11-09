@@ -666,7 +666,6 @@ class Billrun_Cycle_Account_Invoice {
 		$session = Billrun_Factory::db()->startSession();
 		$session->startTransaction();
 
-		$outcome = false;
 		try {
 			if (!empty($allSubscribersToSave)) {
 				$billrun_subs_coll->batchInsert($allSubscribersToSave, ['session' => $session]);
@@ -678,19 +677,15 @@ class Billrun_Cycle_Account_Invoice {
 			$this->billrun_coll->save($mainInvoiceData, null, ['session' => $session]);
 
 			$session->commitTransaction();
-			$outcome = true;
-		} catch (Exception $e) {
-			$session->abortTransaction();
-			$outcome = $e->getMessage();
-		} finally {
-			$session->endSession();
-		}
-
-		if ($outcome !== true) {
-			Billrun_Factory::log("Transaction failed for account {$this->aid}. Reason: " . $outcome, Zend_Log::INFO);
-		} else {
 			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
 			Billrun_Factory::dispatcher()->trigger('afterAccountInvoiceSaved', array($this->data, &$this));
+		} catch (Exception $e) {
+			$session->abortTransaction();
+			$errorMessage = $e->getMessage();
+			Billrun_Factory::log("Failed to create invoice for account {$this->aid}. Reason: " . $errorMessage, Zend_Log::ERR);
+			throw $e;
+		} finally {
+			$session->endSession();
 		}
 	}
 
@@ -718,7 +713,6 @@ class Billrun_Cycle_Account_Invoice {
 		$billrun_subs_coll = Billrun_Factory::db()->billrun_subsCollection();
 		$billrun_grouping_coll = Billrun_Factory::db()->billrun_groupingCollection();
 
-		$outcome = false;
 		try {
 			if (!empty($allSubscribersToSave)) {
 				$billrun_subs_coll->batchInsert($allSubscribersToSave);
@@ -729,16 +723,47 @@ class Billrun_Cycle_Account_Invoice {
 
 			$this->billrun_coll->save($mainInvoiceData);
 
-			$outcome = true;
-		} catch (Exception $e) {
-			$outcome = $e->getMessage();
-		}
-
-		if ($outcome !== true) {
-            Billrun_Factory::log("Failed to create invoice for account {$this->aid}. Reason: " . $outcome, Zend_Log::INFO);
-		} else {
 			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
 			Billrun_Factory::dispatcher()->trigger('afterAccountInvoiceSaved', array($this->data, &$this));
+		} catch (Exception $e) {
+			$errorMessage = $e->getMessage();
+			Billrun_Factory::log("Failed to create invoice for account {$this->aid}. Reason: " . $errorMessage, Zend_Log::ERR);
+			$this->cleanupFailedCycleData($billrun_subs_coll, $billrun_grouping_coll, $this->billrun_coll);
+			throw $e;
+		}
+	}
+
+	protected function cleanupFailedCycleData($subsColl, $groupingColl, $billrunColl)
+	{
+
+		$billrunKey = $this->key;
+		$accountId = $this->aid;
+
+		try {
+			$subsColl->remove([
+				'key' => $billrunKey,
+				'aid' => $accountId
+			]);
+		} catch (Exception $e) {
+			Billrun_Factory::log("Cleanup failed for subscribers in account {$accountId}: " . $e->getMessage(), Zend_Log::ERR);
+		}
+
+		try {
+			$groupingColl->remove([
+				'billrun_key' => $billrunKey,
+				'aid' => $accountId
+			]);
+		} catch (Exception $e) {
+			Billrun_Factory::log("Cleanup failed for grouping items in account {$accountId}: " . $e->getMessage(), Zend_Log::ERR);
+		}
+
+		try {
+			$billrunColl->remove([
+				'billrun_key' => $billrunKey,
+				'aid' => $accountId
+			]);
+		} catch (Exception $e) {
+			Billrun_Factory::log("Cleanup failed for main invoice in account {$accountId}: " . $e->getMessage(), Zend_Log::ERR);
 		}
 	}
 
