@@ -62,12 +62,14 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected function getMergedUpdateFields($unificationPerType) {
 		$updateFields = array();
 		foreach ($unificationPerType as $type => $lineTypeConf) {
-			foreach ($lineTypeConf as $lineType => $unificationFields){
-				foreach ($unificationFields as $settings) {
-					$updateFields[$type][$lineType] = array();
-					$fields = !empty($settings['fields']) && is_array($settings['fields']) ? $settings['fields'] : array();
-					foreach ($fields as $fieldSpecific) {
-						$updateFields[$type][$lineType] = array_merge_recursive($updateFields[$type][$lineType], $fieldSpecific['update']);
+			if(is_array($lineTypeConf)){
+				foreach ($lineTypeConf as $lineType => $unificationFields){
+					foreach ($unificationFields as $settings) {
+						$updateFields[$type][$lineType] = array();
+						$fields = !empty($settings['fields']) && is_array($settings['fields']) ? $settings['fields'] : array();
+						foreach ($fields as $fieldSpecific) {
+							$updateFields[$type][$lineType] = array_merge_recursive($updateFields[$type][$lineType], $fieldSpecific['update']);
+						}
 					}
 				}
 			}
@@ -563,23 +565,24 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				$configByType['file_types'][$fileType['file_type']]['default'] = $fileType['unify'];
 			}
 		}
-
-		foreach ($configByType['file_types'] as $type => &$lineTypeConf) {
-			foreach ($lineTypeConf as $lineType => &$unifyDef){
-				$ufByUsaget = Billrun_Processor_Util::getCustomerAndRateUfByUsaget($type, $lineType);
-				$cfByUsaget = Billrun_Processor_Util::getCustomerAndRateCfByUsaget($type, $lineType);
-				Billrun_Util::setIn($unifyDef, 'unification_fields.stamp.value.custom_value', $ufByUsaget);
-				Billrun_Util::setIn($unifyDef, 'unification_fields.stamp.value.calculated_fields', $cfByUsaget);
-				foreach ($unifyDef['unification_fields']['fields'] as &$fields) {
-					foreach ($fields['update'] as &$setOnInsertDef) {
-						if ($setOnInsertDef['operation'] != '$setOnInsert') {
-							continue;
-						}
-						foreach ($ufByUsaget as $usaget => $ufFields) {
-							$setOnInsertDef['custom_value'][$usaget]['data'] = $ufFields;
-						}
-						foreach ($cfByUsaget as $usaget => $cfFields) {
-							$setOnInsertDef['calculated_fields'][$usaget]['data'] = $cfFields;
+		if(isset($configByType['file_types'])){
+			foreach ($configByType['file_types'] as $type => &$lineTypeConf) {
+				foreach ($lineTypeConf as $lineType => &$unifyDef){
+					$ufByUsaget = Billrun_Processor_Util::getCustomerAndRateUfByUsaget($type, $lineType);
+					$cfByUsaget = Billrun_Processor_Util::getCustomerAndRateCfByUsaget($type, $lineType);
+					Billrun_Util::setIn($unifyDef, 'unification_fields.stamp.value.custom_value', $ufByUsaget);
+					Billrun_Util::setIn($unifyDef, 'unification_fields.stamp.value.calculated_fields', $cfByUsaget);
+					foreach ($unifyDef['unification_fields']['fields'] as &$fields) {
+						foreach ($fields['update'] as &$setOnInsertDef) {
+							if ($setOnInsertDef['operation'] != '$setOnInsert') {
+								continue;
+							}
+							foreach ($ufByUsaget as $usaget => $ufFields) {
+								$setOnInsertDef['custom_value'][$usaget]['data'] = $ufFields;
+							}
+							foreach ($cfByUsaget as $usaget => $cfFields) {
+								$setOnInsertDef['calculated_fields'][$usaget]['data'] = $cfFields;
+							}
 						}
 					}
 				}

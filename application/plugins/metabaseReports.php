@@ -473,6 +473,11 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				} else {
 					Billrun_Factory::log()->log("Found remote directory configuration. Uploading " . $fileName . " report file to " . $export_conf['remote_directory'], Zend_Log::DEBUG);
 					$remote = $export_conf['remote_directory'] . DIRECTORY_SEPARATOR . $fileName;
+					$remoteDir = dirname($remote);
+					if (!$connection->getConnection()->is_dir($remoteDir)) {
+						Billrun_Factory::log("Remote directory does not exist. Creating: " . $remoteDir, Zend_Log::DEBUG);
+						$connection->getConnection()->mkdir($remoteDir, 0770, true);
+					}
 				}
 				Billrun_Factory::log()->log("Trying to upload file to " . $remote, Zend_Log::DEBUG);
 				$response = $connection->put($local, $remote);
@@ -661,8 +666,17 @@ class Report {
 			case 'cycle_end_time':
 				return is_null($invoice) ? Billrun_Billingcycle::getEndTime($manager_params['billrun_key']) :  $invoice['end_date']->sec;
 			break;
-			default : 
-				throw new Exception("Unsupported placeholder " . $place_holder_key . ", in parameter " . isset($param['template_tag'])) ? $param['template_tag'] : $param['param'];
+			default:
+				$plugin_prefix = "plugin_";
+				if (strpos($place_holder_key, $plugin_prefix) === 0) { // Checks if placeholder starts with "plugin_"
+					$actual_attribute_key = substr($place_holder_key, strlen($plugin_prefix));
+					if (!is_null($invoice) && isset($invoice['attributes'][$actual_attribute_key])) {
+						return $invoice['attributes'][$actual_attribute_key];
+					} else {
+						throw new Exception("Plugin-specific placeholder '" . $place_holder_key . "' requires 'attributes." . $actual_attribute_key . "' in invoice, but it's missing for " . ($invoice['aid'] ?? 'N/A') . " in " . $manager_params['event'] . " timing.");
+					}
+				}
+				throw new Exception("Unsupported placeholder " . $place_holder_key . ", in parameter " . (isset($param['template_tag']) ? $param['template_tag'] : $param['param']));
 			endswitch;
 	}
 

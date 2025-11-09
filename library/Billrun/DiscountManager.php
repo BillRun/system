@@ -1605,10 +1605,11 @@ class Billrun_DiscountManager {
 	 * @return array
 	 */
 	protected function getLineFullEligibility($line) {
+		$isUpfront = $line['is_upfront'] ?? false;
 		return [
 			[
-				'from' => isset($line['start']) ? Billrun_Utils_Time::getTime($line['start']) : (isset($line['start_date']) ? Billrun_Utils_Time::getTime($line['start_date']) : $this->cycle->start()),
-				'to' => isset($line['end']) ? Billrun_Utils_Time::getTime($line['end']) : (isset($line['end_date']) ? Billrun_Utils_Time::getTime($line['end_date']) : $this->cycle->end()),
+				'from' => ($isUpfront == true ? $this->cycle->start() : (isset($line['start']) ? Billrun_Utils_Time::getTime($line['start']) : (isset($line['start_date']) ? Billrun_Utils_Time::getTime($line['start_date']) : $this->cycle->start()))),
+				'to' => ($isUpfront == true ? $this->cycle->end() : (isset($line['end']) ? Billrun_Utils_Time::getTime($line['end']) : (isset($line['end_date']) ? Billrun_Utils_Time::getTime($line['end_date']) : $this->cycle->end()))),
 			],
 		];
 	}

@@ -82,7 +82,7 @@ class WorkerAction extends Action_Base {
 			}
 			$this->checkSignal();
 			usleep(10000);
-			if (!$this->resetWorkerOnConfigSave() && $resetConfig-time() >= Billrun_Factory::config()->getConfigValue('worker.resetConfigIteration', 900)) {
+			if (!$this->resetWorkerOnConfigSave() && time()-$resetConfig >= Billrun_Factory::config()->getConfigValue('worker.resetConfigIteration', 900)) {
 				$resetConfig = time();
 				$this->reloadDbConfig();
 			}

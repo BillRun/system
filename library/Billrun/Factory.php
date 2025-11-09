@@ -193,6 +193,15 @@ class Billrun_Factory {
 		return self::$config;
 	}
 
+		/**
+	 * method to update the config instance
+	 * 
+	 * @return Billrun_Config
+	 */
+	static public function updateConfig() {
+		self::$config->loadDbConfig();
+	}
+
 	/**
 	 * method to retrieve the db instance
 	 * 

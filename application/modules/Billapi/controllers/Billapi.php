@@ -108,6 +108,10 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		} else if ($line) {
 			$this->output->line = $line;
 		}
+		$moreOutputFields = $entityModel->getMoreOutputFileds();
+		foreach ($moreOutputFields as $key => $value) {
+			$this->output->$key = $value;
+		}
 	}
 	
 	/**

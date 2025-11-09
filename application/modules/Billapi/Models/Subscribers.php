@@ -405,8 +405,8 @@ class Models_Subscribers extends Models_Entity {
 		$indicator = 0; 
 		$plansDeactivation = array();
 		$previousPlan = '';
-		$revisionsFrom = $this->collection->query($revisionsQuery)->cursor()->sort(array('from' => 1));
-		$subscriberDeactivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('to' => -1))->current()['to'];
+		$revisionsFrom = $this->collection->query($revisionsQuery)->cursor()->sort(array('from' => 1))->setReadPreference('RP_PRIMARY');
+		$subscriberDeactivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('to' => -1))->setReadPreference('RP_PRIMARY')->current()['to'];
 		$subscriberActivation = $revisionsFrom->current()['from'];
 		foreach ($revisionsFrom as $revision) {
 			$revisionsArray[] = $revision->getRawData();
