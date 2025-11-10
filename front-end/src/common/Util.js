@@ -894,6 +894,16 @@ export const isValueOn = val => {
   return false;
 }
 
+export const isEmptyString = value => (typeof value === 'string' || value instanceof String) && value.trim().length === 0;
+
+export const isValidUrl = (value) => {
+  try {
+    new URL(value);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
 
 export const parseIncludeExcludeIdsListValue = (value) => value
   .trim()

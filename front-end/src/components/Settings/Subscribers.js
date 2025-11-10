@@ -1,12 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, ControlLabel, Col, Panel } from 'react-bootstrap';
+import { Form, FormGroup, ControlLabel, Col, Panel, HelpBlock, Alert } from 'react-bootstrap';
 import Field from '@/components/Field';
-import { getFieldName, isValueOn } from '@/common/Util';
+import {
+  getFieldName,
+  isEmptyString,
+  isValueOn,
+  isValidUrl,
+} from '@/common/Util';
 
 
 const Subscribers = ({ data, typesOptions, onChange }) => {
+
+  const [localData, setLocalData] = useState(Immutable.Map());
+
+  useEffect(() => {
+    setLocalData(data);
+  }, []);
 
   const type = data.getIn(['subscriber', 'type'], 'db');
   const auth_url = data.getIn(['external_authentication', 'access_token_url'], '');
@@ -17,7 +28,20 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
   const url_gad = data.getIn(['account', 'external_url'], '');
   const url_gba = data.getIn(['billable', 'url'], '');
 
-  const disabled = type === 'db';
+  const isSourceDb = type === 'db';
+  const validAuthUrl = !isEmptyString(auth_url) && isValidUrl(auth_url) ;
+  const validUrlGba = !isEmptyString(url_gba) && isValidUrl(url_gba);
+  const validUrlGad = !isEmptyString(url_gad) && isValidUrl(url_gad);
+  const validUrlGsd = !isEmptyString(url_gsd) && isValidUrl(url_gsd);
+
+  const isDirtyType = localData.getIn(['subscriber', 'type'], 'db') !== type;
+  const isDirtyUrl = localData.getIn(['subscriber', 'external_url'], '') !== url_gsd
+    || localData.getIn(['account', 'external_url'], '') !== url_gad
+    || localData.getIn(['billable', 'url'], '') !== url_gba;
+  const isDirtyAuth = localData.getIn(['external_authentication', 'access_token_url'], '') !== auth_url
+    || localData.getIn(['external_authentication', 'data', 'client_secret'], '') !== auth_secret
+    || localData.getIn(['external_authentication', 'data', 'client_id'], '') !== auth_id
+    || isValueOn(localData.getIn(['external_authentication', 'cache'], false)) !== auth_cache;
 
   const authData = Immutable.Map({
     type: 'oauth2',
@@ -52,7 +76,6 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
     const { value } = e.target;
     onChange('subscribers', 'external_authentication', authData.setIn(['cache'], value));
   };
-
   const onChangeUrlGba = (e) => {
     const { value } = e.target;
     onChange('subscribers', ['billable', 'url'], value);
@@ -68,10 +91,13 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
 
   return (
     <div className="subscribers">
+
+      {(isDirtyType || isDirtyAuth || isDirtyUrl) && (<Alert bsStyle="warning"> { getFieldName('unsaved_changes')}</Alert>)}
+
       <Form horizontal>
         <FormGroup>
           <Col componentClass={ControlLabel} sm={3} lg={2}>
-              { getFieldName('type', 'settings')}
+              { getFieldName('ext_subs_type', 'settings')}
           </Col>
           <Col sm={6}>
             <Field
@@ -83,76 +109,121 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
             />
           </Col>
         </FormGroup>
-        <Panel header={<h3>{getFieldName('auth', 'settings')}<small> | {authData.get('type', '')}</small></h3>}>
-          <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
-                { getFieldName('auth.url', 'settings')}
-            </Col>
-            <Col sm={6}>
-                <Field onChange={onChangeAuthUrl} value={auth_url} disabled={disabled} />
-            </Col>
-          </FormGroup>
-          <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
-                { getFieldName('auth.secret', 'settings')}
-            </Col>
-            <Col sm={6}>
+
+        {!isSourceDb && (
+          <Panel
+            header={<h3>{getFieldName('ext_subs_auth', 'settings')}<small> | {authData.get('type', '')}</small></h3>}
+            bsStyle={isDirtyAuth ? "warning" : "default"}
+          >
+            <FormGroup validationState={!validAuthUrl ? 'error' : null}>
+              <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  { getFieldName('ext_subs_auth.url', 'settings')}
+                  <span className="danger-red"> *</span>
+              </Col>
+              <Col sm={6}>
+                  <Field onChange={onChangeAuthUrl} value={auth_url} disabled={isSourceDb} />
+                  { isEmptyString(auth_url) && (
+                    <HelpBlock className="mb0"><small>{getFieldName('field_required', 'settings', null, {field: getFieldName('ext_subs_auth.url', 'settings')}, '')}</small></HelpBlock>
+                  )}
+                  { !isEmptyString(auth_url) && !isValidUrl(auth_url) === true && (
+                    <HelpBlock className="mb0"><small>URL is not valid</small></HelpBlock>
+                  )}
+              </Col>
+            </FormGroup>
+            <FormGroup validationState={isEmptyString(auth_secret) ? 'error' : null}>
+              <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  { getFieldName('ext_subs_auth.secret', 'settings')}
+                  <span className="danger-red"> *</span>
+              </Col>
+              <Col sm={6}>
+                  <Field
+                    fieldType="password"
+                    value={auth_secret}
+                    onChange={onChangeAuthSecret}
+                    autoComplete="new-password"
+                    disabled={isSourceDb}
+                  />
+                  { isEmptyString(auth_secret) && (
+                    <HelpBlock className="mb0"><small>{getFieldName('field_required', 'settings', null, {field: getFieldName('ext_subs_auth.secret', 'settings')}, '')}</small></HelpBlock>
+                  )}
+              </Col>
+            </FormGroup>
+            <FormGroup validationState={isEmptyString(auth_id) ? 'error' : null}>
+              <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  { getFieldName('ext_subs_auth.id', 'settings')}
+                  <span className="danger-red"> *</span>
+              </Col>
+              <Col sm={6}>
+                  <Field onChange={onChangeAuthId} value={auth_id} disabled={isSourceDb} />
+                  { isEmptyString(auth_id) && (
+                    <HelpBlock className="mb0"><small>{getFieldName('field_required', 'settings', null, {field: getFieldName('ext_subs_auth.id', 'settings')}, '')}</small></HelpBlock>
+                  )}
+              </Col>
+            </FormGroup>
+            <FormGroup>
+              <Col componentClass={ControlLabel} sm={3} lg={2}/>
+              <Col sm={6}>
                 <Field
-                  fieldType="password"
-                  value={auth_secret}
-                  onChange={onChangeAuthSecret}
-                  autoComplete="new-password"
-                  disabled={disabled}
+                  fieldType="checkbox"
+                  value={auth_cache}
+                  onChange={onChangeAuthCache}
+                  label={getFieldName('ext_subs_auth_cache', 'settings')}
+                  disabled={isSourceDb}
                 />
-            </Col>
-          </FormGroup>
-          <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
-                { getFieldName('auth.id', 'settings')}
-            </Col>
-            <Col sm={6}>
-                <Field onChange={onChangeAuthId} value={auth_id} disabled={disabled} />
-            </Col>
-          </FormGroup>
-          <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}/>
-            <Col sm={6}>
-              <Field
-                fieldType="checkbox"
-                value={auth_cache}
-                onChange={onChangeAuthCache}
-                label={getFieldName('auth.cache', 'settings')}
-                disabled={disabled}
-              />
-            </Col>
-          </FormGroup>
-        </Panel>
-        <Panel header={<h3>{getFieldName('url', 'settings')}</h3>}>
-          <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
-                { getFieldName('url.gba', 'settings')}
-            </Col>
-            <Col sm={6}>
-                <Field onChange={onChangeUrlGba} value={url_gba} disabled={disabled} />
-            </Col>
-          </FormGroup>
-          <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
-                { getFieldName('url.gad', 'settings')}
-            </Col>
-            <Col sm={6}>
-                <Field onChange={onChangeUrlGad} value={url_gad} disabled={disabled} />
-            </Col>
-          </FormGroup>
-          <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
-                { getFieldName('url.gsd', 'settings')}
-            </Col>
-            <Col sm={6}>
-                <Field onChange={onChangeUrlGsd} value={url_gsd} disabled={disabled} />
-            </Col>
-          </FormGroup>
-        </Panel>
+              </Col>
+            </FormGroup>
+          </Panel>
+        )}
+
+        {!isSourceDb && (
+          <Panel header={<h3>{getFieldName('ext_subs_url', 'settings')}</h3>} bsStyle={isDirtyUrl ? "warning" : "default"}>
+            <FormGroup validationState={!validUrlGba ? 'error' : null}>
+              <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  { getFieldName('ext_subs_url.gba', 'settings')}
+                  <span className="danger-red"> *</span>
+              </Col>
+              <Col sm={6}>
+                  <Field onChange={onChangeUrlGba} value={url_gba} disabled={isSourceDb} />
+                  { isEmptyString(url_gba) && (
+                    <HelpBlock className="mb0"><small>{getFieldName('field_required', 'settings', null, {field: getFieldName('ext_subs_url.gba', 'settings')}, '')}</small></HelpBlock>
+                  )}
+                  { !isEmptyString(url_gba) && !isValidUrl(url_gba) === true && (
+                    <HelpBlock className="mb0"><small>URL is not valid</small></HelpBlock>
+                  )}
+              </Col>
+            </FormGroup>
+            <FormGroup validationState={!validUrlGad ? 'error' : null}>
+              <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  { getFieldName('ext_subs_url.gad', 'settings')}
+                  <span className="danger-red"> *</span>
+              </Col>
+              <Col sm={6}>
+                  <Field onChange={onChangeUrlGad} value={url_gad} disabled={isSourceDb} />
+                  { isEmptyString(url_gad) && (
+                    <HelpBlock className="mb0"><small>{getFieldName('field_required', 'settings', null, {field: getFieldName('ext_subs_url.gad', 'settings')}, '')}</small></HelpBlock>
+                  )}
+                  { !isEmptyString(url_gad) && !isValidUrl(url_gad) === true && (
+                    <HelpBlock className="mb0"><small>URL is not valid</small></HelpBlock>
+                  )}
+              </Col>
+            </FormGroup>
+            <FormGroup validationState={!validUrlGsd ? 'error' : null}>
+              <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  { getFieldName('ext_subs_url.gsd', 'settings')}
+                  <span className="danger-red"> *</span>
+              </Col>
+              <Col sm={6}>
+                  <Field onChange={onChangeUrlGsd} value={url_gsd} disabled={isSourceDb} />
+                  { isEmptyString(url_gsd) && (
+                    <HelpBlock className="mb0"><small>{getFieldName('field_required', 'settings', null, {field: getFieldName('ext_subs_url.gsd', 'settings')}, '')}</small></HelpBlock>
+                  )}
+                  { !isEmptyString(url_gsd) && !isValidUrl(url_gsd) === true && (
+                    <HelpBlock className="mb0"><small>URL is not valid</small></HelpBlock>
+                  )}
+              </Col>
+            </FormGroup>
+          </Panel>
+        )}
       </Form>
     </div>
   );
@@ -160,14 +231,15 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
 
 Subscribers.propTypes = {
   data: PropTypes.instanceOf(Immutable.Map),
+  onChange: PropTypes.func.isRequired,
   typesOptions: PropTypes.array,
 };
 
 Subscribers.defaultProps = {
   data: Immutable.Map(),
   typesOptions: [
-      { value: 'db', label: getFieldName('type.db', 'settings', 'DB') },
-      { value: 'external', label: getFieldName('type.external', 'settings', 'External') },
+    { value: 'db', label: getFieldName('ext_subs_type.db', 'settings', 'DB') },
+    { value: 'external', label: getFieldName('ext_subs_type.external', 'settings', 'External') },
   ],
 };
 

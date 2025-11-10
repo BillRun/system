@@ -35,7 +35,7 @@ import { getFieldName } from '@/common/Util';
 class Settings extends Component {
 
   static defaultProps = {
-    activeTab: 1,
+    activeTab: 10,
     settings: Immutable.Map(),
     csiOptions: Immutable.List(),
     taxation: Immutable.Map(),

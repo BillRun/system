@@ -1,18 +1,18 @@
 {
   "settings": {
     "subs": "Subscribers",
-    "type": "Type",
-    "type.db": "Internal",
-    "type.external": "External",
-    "auth": "Authorization",
-    "auth.url": "Token Access",
-    "auth.secret": "Secret",
-    "auth.id": "ID",
-    "auth.cache": "Cache",
-    "url": "API URLs",
-    "url.gba": "GBA",
-    "url.gsd": "GSD",
-    "url.gad": "GAD"
+    "ext_subs_type": "Source",
+    "ext_subs_type.db": "Internal",
+    "ext_subs_type.external": "External",
+    "ext_subs_auth_cache": "Cache",
+    "ext_subs_auth": "Authorization",
+    "ext_subs_auth.url": "Access Token URL",
+    "ext_subs_auth.secret": "Client Secret",
+    "ext_subs_auth.id": "Client ID",
+    "ext_subs_url": "API URLs",
+    "ext_subs_url.gba": "GBA",
+    "ext_subs_url.gsd": "GSD",
+    "ext_subs_url.gad": "GAD"
   },
   "customerIdentification": {
     "sid": "Subscriber id (BillRun system field)"
@@ -345,6 +345,8 @@
     "charging_type.charge": "Charge Only",
     "charging_type.refund": "Refund Only"
   },
+  "unsaved_changes": "You have unsaved changes!",
+  "field_required": "{{field}} is required",
   "is_schedule": "Schedule",
   "exclude_aids": "Excluded Customer IDs",
   "include_aids": "Include Customer IDs",
