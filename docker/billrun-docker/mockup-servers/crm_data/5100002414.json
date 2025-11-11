@@ -1,0 +1,92 @@
+{
+    "status": 1,
+    "data": [
+      {
+        "aid": 5100002414,
+        "crm_account_id": null,
+        "type": "account",
+        "from": "2025-10-23 13:02:37",
+        "to": "2200-01-01 02:00:00",
+        "firstname": "xx",
+        "lastname": "zz",
+        "title": null,
+        "email": null,
+        "invoice_shipping_method": "post",
+        "category": "RES",
+        "sub_category": "RESIDENTIAL",
+        "invoice_message": null,
+        "invoice_language": "gr_CY",
+        "invoice_detailed": false,
+        "street": "DIMITRIOU PAPANIKOLI",
+        "house_number": "2",
+        "apartment": "",
+        "province": "Lefkosia",
+        "city": "Nicosia",
+        "country": "CY",
+        "zip_code": "1077",
+        "po_box": "",
+        "creation_time": "2025-10-23 13:02:37",
+        "activation_date": "2025-10-23 13:04:25",
+        "deactivation_date": "2200-01-01 02:00:00"
+      },
+      {
+        "sid": 39140,
+        "aid": 5100002414,
+        "type": "subscriber",
+        "from": "2025-10-23 13:04:25",
+        "to": "2025-12-20 02:00:00",
+        "plan": "B2C_5GUNLIMITEDMAX_PP_INADV_1",
+        "play": "MOBILE",
+        "firstname": "xx",
+        "lastname": "zz",
+        "activation_date": "2025-10-23 13:04:25",
+        "deactivation_date": "2025-12-20 02:00:00",
+        "plan_activation": "2025-10-23 13:04:25",
+        "plan_deactivation": "2025-12-20 02:00:00",
+        "creation_time": null,
+        "former_plan": null,
+        "services": [],
+        "imsi": [],
+        "sub_number": "35796670808",
+        "portability_code": "PTTEXXPQ",
+        "discounts": [
+          {
+            "priority": "",
+            "params": {},
+            "from": "2025-10-23 10:04:25",
+            "subject": {
+              "plan": {
+                "B2C_5GUNLIMITEDMAX_PP_INADV_1": {
+                  "value": 16.806
+                }
+              }
+            },
+            "proration": "inherited",
+            "cycles": 24,
+            "type": "monetary",
+            "to": "2025-12-23 10:04:25",
+            "description": "5G Unlimited Max 24 month Com Sim Only Youth Discount",
+            "key": "SUBSCRIBER_DISCOUNT_937"
+          }
+        ],
+        "overrides": [
+          {
+            "type": "plan",
+            "id": null,
+            "key": "B2C_5GUNLIMITEDMAX_PP_INADV_1",
+            "value": {
+              "price": [
+                {
+                  "price": 33.605,
+                  "from": 0,
+                  "to": "UNLIMITED"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "options": null,
+    "billableAccounts": {}
+  }

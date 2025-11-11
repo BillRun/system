@@ -65,4 +65,6 @@ class DiscountTest extends \Codeception\Test\Unit {
 
 
 	}
+
+	
 }
