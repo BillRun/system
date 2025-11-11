@@ -4,7 +4,7 @@
 	     {
 		 "account_reference": 1000,
 		 "account_type": "root",
-		 "activation_date": "2025-10-06T13:40:00+02:00",
+		 "activation_date": "2025-10-06T13:40:00Z",
 		 "address_details": {
 		     "apartment_number": "",
 		     "city": "Anytown",
@@ -29,13 +29,13 @@
 		 "collection_state": "",
 		 "contact_number": "555-0100",
 		 "cost_center": "",
-		 "creation_time": "2025-10-06T13:37:00+02:00",
+		 "creation_time": "2025-10-06T13:37:00Z",
 		 "crm_id": "crm-id-1",
 		 "customer_care_agent": "",
 		 "discounts": [
 		     {
 			 "description": "Discount For Backup Connection Premium Plus (BBCS-C 200/200) (201000017)",
-			 "from": "2025-10-06T00:00:00+02:00",
+			 "from": "2025-10-06T00:00:00Z",
 			 "gl_account": "31000302",
 			 "key": "DISCOUNT_201000017",
 			 "params": {
@@ -51,12 +51,12 @@
 				 }
 			     }
 			 },
-			 "to": "2125-10-06T00:00:00+02:00",
+			 "to": "2125-10-06T00:00:00Z",
 			 "type": "monetary"
 		     },
 		     {
 			 "description": "Discount For Backup Connection Premium Plus (BBCS-C 200/200) (201000017)",
-			 "from": "2025-10-06T00:00:00+02:00",
+			 "from": "2025-10-06T00:00:00Z",
 			 "gl_account": "31000302",
 			 "key": "DISCOUNT_201000017_ACCOUNT",
 			 "params": {
@@ -73,12 +73,12 @@
 				 }
 			     }
 			 },
-			 "to": "2125-10-06T00:00:00+02:00",
+			 "to": "2125-10-06T00:00:00Z",
 			 "type": "monetary"
 		     },
 		     {
 			 "description": "Discount For Activation fee Fortigate 40F (201000066)",
-			 "from": "2025-10-06T00:00:00+02:00",
+			 "from": "2025-10-06T00:00:00Z",
 			 "gl_account": "",
 			 "key": "DISCOUNT_201000066",
 			 "params": {
@@ -94,12 +94,12 @@
 				 }
 			     }
 			 },
-			 "to": "2125-10-06T00:00:00+02:00",
+			 "to": "2125-10-06T00:00:00Z",
 			 "type": "monetary"
 		     },
 		     {
 			 "description": "Discount For Activation fee Fortigate 40F (201000066)",
-			 "from": "2025-10-06T00:00:00+02:00",
+			 "from": "2025-10-06T00:00:00Z",
 			 "gl_account": "",
 			 "key": "DISCOUNT_201000066_ACCOUNT",
 			 "params": {
@@ -116,12 +116,12 @@
 				 }
 			     }
 			 },
-			 "to": "2125-10-06T00:00:00+02:00",
+			 "to": "2125-10-06T00:00:00Z",
 			 "type": "monetary"
 		     },
 		     {
 			 "description": "Discount For Business Internet 10/10 Gbit/s FTTH (201000002)",
-			 "from": "2025-10-06T00:00:00+02:00",
+			 "from": "2025-10-06T00:00:00Z",
 			 "gl_account": "31000300",
 			 "key": "DISCOUNT_201000002",
 			 "params": {
@@ -137,12 +137,12 @@
 				 }
 			     }
 			 },
-			 "to": "2125-10-06T00:00:00+02:00",
+			 "to": "2125-10-06T00:00:00Z",
 			 "type": "percentage"
 		     },
 		     {
 			 "description": "Discount For SLA Level 3 Premium (201000051)",
-			 "from": "2025-10-06T00:00:00+02:00",
+			 "from": "2025-10-06T00:00:00Z",
 			 "gl_account": "31000302",
 			 "key": "DISCOUNT_201000051",
 			 "params": {
@@ -158,12 +158,12 @@
 				 }
 			     }
 			 },
-			 "to": "2125-10-06T00:00:00+02:00",
+			 "to": "2125-10-06T00:00:00Z",
 			 "type": "monetary"
 		     },
 		     {
 			 "description": "Discount For SLA Level 3 Premium (201000051)",
-			 "from": "2025-10-06T00:00:00+02:00",
+			 "from": "2025-10-06T00:00:00Z",
 			 "gl_account": "31000302",
 			 "key": "DISCOUNT_201000051_ACCOUNT",
 			 "params": {
@@ -180,13 +180,13 @@
 				 }
 			     }
 			 },
-			 "to": "2125-10-06T00:00:00+02:00",
+			 "to": "2125-10-06T00:00:00Z",
 			 "type": "monetary"
 		     }
 		 ],
 		 "email": "user1@example.com",
 		 "firstname": "User 2",
-		 "from": "2025-10-06T00:00:00+02:00",
+		 "from": "2025-10-06T00:00:00Z",
 		 "in_collection": false,
 		 "invoice_detailed": false,
 		 "invoice_shipping_method": "email",
@@ -213,7 +213,7 @@
 		 "sub_accounts": [
 		     1002
 		 ],
-		 "to": "2125-10-06T00:00:00+02:00",
+		 "to": "2125-10-06T00:00:00Z",
 		 "type": "account",
 		 "vat_rate": "8.1"
 	     }
@@ -221,7 +221,7 @@
 	"subscribers_revs":{
 	    "1002" : [
 		      {
-			  "activation_date": "2025-10-06T13:48:00+02:00",
+			  "activation_date": "2025-10-06T13:48:00Z",
 			  "address_details": {
 			      "apartment_number": "",
 			      "city": "Anytown",
@@ -246,14 +246,14 @@
 			  "collection_state": "",
 			  "contact_number": "555-0100",
 			  "cost_center": "",
-			  "creation_time": "2025-10-06T13:47:00+02:00",
+			  "creation_time": "2025-10-06T13:47:00Z",
 			  "crm_id": "crm-id-3",
 			  "customer_care_agent": "",
 			  "plan" : "201000001",
 			  "discounts": [
 			      {
 				  "description": "Discount For Business Continuity \u2013 FortiExtender 5G (201000068)",
-				  "from": "2025-10-06T00:00:00+02:00",
+				  "from": "2025-10-06T00:00:00Z",
 				  "gl_account": "31000302",
 				  "key": "DISCOUNT_201000068",
 				  "params": {
@@ -269,12 +269,12 @@
 					  }
 				      }
 				  },
-				  "to": "2125-10-06T00:00:00+02:00",
+				  "to": "2125-10-06T00:00:00Z",
 				  "type": "monetary"
 			      },
 			      {
 				  "description": "Discount For Activation fee Fortigate 40F (201000066)",
-				  "from": "2025-10-06T00:00:00+02:00",
+				  "from": "2025-10-06T00:00:00Z",
 				  "gl_account": "",
 				  "key": "DISCOUNT_201000066",
 				  "params": {
@@ -290,13 +290,13 @@
 					  }
 				      }
 				  },
-				  "to": "2125-10-06T00:00:00+02:00",
+				  "to": "2125-10-06T00:00:00Z",
 				  "type": "monetary"
 			      }
 			  ],
 			  "email": "user1@example.com",
 			  "firstname": "User 2",
-			  "from": "2025-10-06T00:00:00+02:00",
+			  "from": "2025-10-06T00:00:00Z",
 			  "in_collection": false,
 			  "invoice_detailed": false,
 			  "invoice_shipping_method": "email",
@@ -320,19 +320,19 @@
 			  "services": [
 			      {
 				  "addition_information" : "",
-				  "creation_time" : "2025-10-06T15:33:00+02:00",
+				  "creation_time" : "2025-10-06T15:33:00Z",
 				  "description" : "Activation fee Fortigate 40F",
-				  "from" : "2025-10-06T15:33:00+02:00",
+				  "from" : "2025-10-06T15:33:00Z",
 				  "name" : "201000066",
 				  "quantity" : 1,
 				  "service_id" : "431000a0-6a7f-02db-1ef7-68e3c5bc1b39",
-				  "to" : "2125-10-06T08:00:00+02:00"
+				  "to" : "2125-10-06T08:00:00Z"
 			      }
 			  ],
 			  "sid": 1002,
 			  "status": "active",
 			  "sub_accounts": [],
-			  "to": "2125-10-06T00:00:00+02:00",
+			  "to": "2125-10-06T00:00:00Z",
 			  "type": "subscriber",
 			  "vat_rate": "8.1"
 		      }
@@ -340,8 +340,8 @@
 	},
 	"cycle" :"202511",
 	"flat_lines":[
-	    { "_id" : "69037a183ced2dd1b40f4a22", "aid" : 1000, "sid" : 1002, "source" : "billrun", "billrun" : "202511", "type" : "flat", "usaget" : "flat", "urt" : "2025-10-31T22:59:59Z", "foreign" : { "plan" : { "invoice_section" : "RECURRING_FEES", "description" : "Business Internet 1/1 Gbit/s  FTTH", "category" : "Internet", "product_group_name" : "Access FTTH subscription", "product_group_id" : "201001" }, "subscriber" : { "parent" : "crm-id-1", "crm_id" : "crm-id-3", "account_reference" : 1002, "activation_date" : "2025-10-06T11:48:00Z", "name" : "User 6", "sid" : 1002, "reference" : "ID-1", "po_number" : "", "cost_center" : "" }, "account" : { "parent" : "", "crm_id" : "crm-id-1", "account_reference" : 1000, "account_vat_rate" : "8.1", "marylin_id" : "crm-id-2", "root_account_aid" : 1000, "root_account_first_name" : "User 2", "root_account_last_name" : "User 3", "root_account_po_number" : "", "root_account_reference_name" : "User 1", "root_account_cost_center" : "", "billable_account_reference_name" : "User 1", "billable_account_po_number" : "", "billable_account_cost_center" : "", "reference" : "ID-1", "po_number" : "", "cost_center" : "" } }, "plan" : "201000001", "name" : "201000001", "process_time" : "2025-10-30T14:45:42.896Z", "usagev" : 1, "vatable" : true, "aprice" : 99, "full_price" : 99, "charge_op" : "charge", "cycle" : 0, "start_date" : "1970-01-01T00:00:00Z", "end_date" : "2125-10-05T23:00:00Z", "prorated_start" : true, "prorated_end" : true, "prorated_start_date" : "2025-09-30T22:00:00Z", "stamp" : "37906049d98e14ffbece36072b161b77", "rounding_rules" : { "rounding_type" : "None", "rounding_stage" : "None" }, "tax_data" : { "total_amount" : 8.019, "total_tax" : 0.081, "taxes" : [ { "tax" : 0.081, "amount" : 8.019, "description" : "VAT Normal Rate", "key" : "DEFAULT_VAT", "type" : "vat", "pass_to_customer" : 1 } ] }, "final_charge" : 107.019 },
-	    { "_id" : "69037a183ced2d0f4a23", "aid" : 1000, "sid" : 1002, "source" : "billrun", "billrun" : "202511", "type" : "service", "usaget" : "flat", "urt" : "2025-10-31T22:59:59Z", "foreign" : { "activation_date" : "2025-10-06T15:33:00+02:00", "service" : { "invoice_section" : "", "first_tier_to" : 1, "balance_period" : "tomorrow +0 days", "not_shown_on_invoice" : false, "category" : "Internet", "product_group_name" : "Bundle Activation fee", "product_group_id" : "201900" }, "plan" : { "invoice_section" : "RECURRING_FEES", "description" : "Business Internet 1/1 Gbit/s  FTTH", "category" : "Internet", "product_group_name" : "Access FTTH subscription", "product_group_id" : "201001" }, "subscriber" : { "parent" : "crm-id-1", "crm_id" : "crm-id-3", "account_reference" : 1002, "activation_date" : "2025-10-06T11:48:00Z", "name" : "User 6", "sid" : 1002, "reference" : "ID-1", "po_number" : "", "cost_center" : "" }, "account" : { "parent" : "", "crm_id" : "crm-id-1", "account_reference" : 1000, "account_vat_rate" : "8.1", "marylin_id" : "crm-id-2", "root_account_aid" : 1000, "root_account_first_name" : "User 2", "root_account_last_name" : "User 3", "root_account_po_number" : "", "root_account_reference_name" : "User 1", "root_account_cost_center" : "", "billable_account_reference_name" : "User 1", "billable_account_po_number" : "", "billable_account_cost_center" : "", "reference" : "ID-1", "po_number" : "", "cost_center" : "" } }, "plan" : "201000001", "name" : "201000066", "process_time" : "2025-10-30T14:45:42.908Z", "usagev" : 1, "vatable" : true, "service" : "201000066", "service_id" : "431000a0-6a7f-02db-1ef7-68e3c5bc1b39", "aprice" : 500, "full_price" : 500, "charge_op" : "charge", "cycle" : 0, "start_date" : "2025-10-06T13:33:00Z", "end_date" : "2125-10-06T07:00:00Z", "start" : "2025-10-06T13:33:00Z", "stamp" : "6336dc0f7ebed15ae6351b87d0cbe43b", "tax_data" : { "total_amount" : 40.5, "total_tax" : 0.081, "taxes" : [ { "tax" : 0.081, "amount" : 40.5, "description" : "VAT Normal Rate", "key" : "DEFAULT_VAT", "type" : "vat", "pass_to_customer" : 1 } ] }, "final_charge" : 540.5 }
+	    { "_id" : "69037a183ced2dd1b40f4a22", "aid" : 1000, "sid" : 1002, "source" : "billrun", "billrun" : "202511", "type" : "flat", "usaget" : "flat", "urt" : "2025-10-01T22:59:59Z", "foreign" : { "plan" : { "invoice_section" : "RECURRING_FEES", "description" : "Business Internet 1/1 Gbit/s  FTTH", "category" : "Internet", "product_group_name" : "Access FTTH subscription", "product_group_id" : "201001" }, "subscriber" : { "parent" : "crm-id-1", "crm_id" : "crm-id-3", "account_reference" : 1002, "activation_date" : "2025-10-06T11:48:00Z", "name" : "User 6", "sid" : 1002, "reference" : "ID-1", "po_number" : "", "cost_center" : "" }, "account" : { "parent" : "", "crm_id" : "crm-id-1", "account_reference" : 1000, "account_vat_rate" : "8.1", "marylin_id" : "crm-id-2", "root_account_aid" : 1000, "root_account_first_name" : "User 2", "root_account_last_name" : "User 3", "root_account_po_number" : "", "root_account_reference_name" : "User 1", "root_account_cost_center" : "", "billable_account_reference_name" : "User 1", "billable_account_po_number" : "", "billable_account_cost_center" : "", "reference" : "ID-1", "po_number" : "", "cost_center" : "" } }, "plan" : "201000001", "name" : "201000001", "process_time" : "2025-10-30T14:45:42.896Z", "usagev" : 1, "vatable" : true, "aprice" : 99, "full_price" : 99, "charge_op" : "charge", "cycle" : 0, "start_date" : "1970-01-01T00:00:00Z", "end_date" : "2125-10-05T23:00:00Z", "prorated_start" : true, "prorated_end" : true, "prorated_start_date" : "2025-09-30T22:00:00Z", "stamp" : "37906049d98e14ffbece36072b161b77", "rounding_rules" : { "rounding_type" : "None", "rounding_stage" : "None" }, "tax_data" : { "total_amount" : 8.019, "total_tax" : 0.081, "taxes" : [ { "tax" : 0.081, "amount" : 8.019, "description" : "VAT Normal Rate", "key" : "DEFAULT_VAT", "type" : "vat", "pass_to_customer" : 1 } ] }, "final_charge" : 107.019 },
+	    { "_id" : "69037a183ced2d0f4a23", "aid" : 1000, "sid" : 1002, "source" : "billrun", "billrun" : "202511", "type" : "service", "usaget" : "flat", "urt" : "2025-10-31T22:59:59Z", "foreign" : { "activation_date" : "2025-10-06T15:33:00Z", "service" : { "invoice_section" : "", "first_tier_to" : 1, "balance_period" : "tomorrow +0 days", "not_shown_on_invoice" : false, "category" : "Internet", "product_group_name" : "Bundle Activation fee", "product_group_id" : "201900" }, "plan" : { "invoice_section" : "RECURRING_FEES", "description" : "Business Internet 1/1 Gbit/s  FTTH", "category" : "Internet", "product_group_name" : "Access FTTH subscription", "product_group_id" : "201001" }, "subscriber" : { "parent" : "crm-id-1", "crm_id" : "crm-id-3", "account_reference" : 1002, "activation_date" : "2025-10-06T11:48:00Z", "name" : "User 6", "sid" : 1002, "reference" : "ID-1", "po_number" : "", "cost_center" : "" }, "account" : { "parent" : "", "crm_id" : "crm-id-1", "account_reference" : 1000, "account_vat_rate" : "8.1", "marylin_id" : "crm-id-2", "root_account_aid" : 1000, "root_account_first_name" : "User 2", "root_account_last_name" : "User 3", "root_account_po_number" : "", "root_account_reference_name" : "User 1", "root_account_cost_center" : "", "billable_account_reference_name" : "User 1", "billable_account_po_number" : "", "billable_account_cost_center" : "", "reference" : "ID-1", "po_number" : "", "cost_center" : "" } }, "plan" : "201000001", "name" : "201000066", "process_time" : "2025-10-30T14:45:42.908Z", "usagev" : 1, "vatable" : true, "service" : "201000066", "service_id" : "431000a0-6a7f-02db-1ef7-68e3c5bc1b39", "aprice" : 500, "full_price" : 500, "charge_op" : "charge", "cycle" : 0, "start_date" : "2025-10-06T13:33:00Z", "end_date" : "2125-10-06T07:00:00Z", "start" : "2025-10-06T13:33:00Z", "stamp" : "6336dc0f7ebed15ae6351b87d0cbe43b", "tax_data" : { "total_amount" : 40.5, "total_tax" : 0.081, "taxes" : [ { "tax" : 0.081, "amount" : 40.5, "description" : "VAT Normal Rate", "key" : "DEFAULT_VAT", "type" : "vat", "pass_to_customer" : 1 } ] }, "final_charge" : 540.5 }
 	],
 	"result" : [
 	    {
@@ -387,7 +387,7 @@
 		},
 		"final_charge" : -54.05,
 		"foreign" : {
-                    "activation_date" : "2025-10-06T15:33:00+02:00",
+                    "activation_date" : "2025-10-06T15:33:00Z",
                     "service" : {
                         "invoice_section" : "",
                         "first_tier_to" : 1,
@@ -476,7 +476,7 @@
 				"account_reference": 51032,
 				"vat_rate": "8.1",
 				"co": "C\/O  Test",
-				"from": "2025-08-01T00:00:00+0200",
+				"from": "2025-08-01T00:00:00Z",
 				"to": "2125-08-04T00:00:00+0100"
 			}
 		],
@@ -493,7 +493,7 @@
 						"key": "PLAN_DISCOUNT",
 						"description": "PLAN_DISCOUNT (201000003)",
 						"type": "monetary",
-						"from": "2025-08-11T03:00:00+0200",
+						"from": "2025-08-11T03:00:00Z",
 						"to": "2125-08-11T03:00:00+0100",
 						"proration": "inherited",
 						"subject": {
@@ -516,11 +516,11 @@
 				"crm_id": "399a92fd-da53-96b7-25a9-68906b819fd2",
 				"account_reference": 51050,
 				"name": "AL Discounts & Statuses Test SubAccount1",
-				"activation_date": "2025-08-04T11:30:00+0200",
+				"activation_date": "2025-08-04T11:30:00Z",
 				"active_plan": null,
 				"next_plan_price_tier": null,
-				"from": "2025-08-04T00:00:00+0200",
-				"to": "2025-09-01T00:00:00+0200",
+				"from": "2025-08-04T00:00:00Z",
+				"to": "2025-09-01T00:00:00Z",
 				"plans": [
 					[]
 				]
@@ -536,7 +536,7 @@
 						"key": "PLAN_DISCOUNT",
 						"description": "PLAN_DISCOUNT (201000003)",
 						"type": "monetary",
-						"from": "2025-08-11T03:00:00+0200",
+						"from": "2025-08-11T03:00:00Z",
 						"to": "2125-08-11T03:00:00+0100",
 						"proration": "inherited",
 						"subject": {
@@ -556,16 +556,16 @@
 				"type": "subscriber",
 				"first_name": "",
 				"last_name": "",
-				"plan_activation": "2025-08-04T00:00:00+0200",
-				"activation_date": "2025-08-04T11:19:00+0200",
+				"plan_activation": "2025-08-04T00:00:00Z",
+				"activation_date": "2025-08-04T11:19:00Z",
 				"active_plan": "201000003",
 				"next_plan_price_tier": null,
-				"from": "2025-08-04T00:00:00+0200",
-				"to": "2025-08-04T10:22:00+0200",
+				"from": "2025-08-04T00:00:00Z",
+				"to": "2025-08-04T10:22:00Z",
 				"plans": [
 					{
 						"plan": "201000003",
-						"plan_activation": "2025-08-04T00:00:00+0200",
+						"plan_activation": "2025-08-04T00:00:00Z",
 						"plan_deactivation": ""
 					}
 				],
@@ -580,7 +580,7 @@
 						"key": "PLAN_DISCOUNT",
 						"description": "PLAN_DISCOUNT (201000003)",
 						"type": "monetary",
-						"from": "2025-08-11T03:00:00+0200",
+						"from": "2025-08-11T03:00:00Z",
 						"to": "2125-08-11T03:00:00+0100",
 						"proration": "inherited",
 						"subject": {
@@ -600,16 +600,16 @@
 				"type": "subscriber",
 				"first_name": "",
 				"last_name": "",
-				"plan_activation": "2025-08-04T00:00:00+0200",
-				"activation_date": "2025-08-04T11:19:00+0200",
+				"plan_activation": "2025-08-04T00:00:00Z",
+				"activation_date": "2025-08-04T11:19:00Z",
 				"active_plan": "201000003",
 				"next_plan_price_tier": null,
-				"from": "2025-08-04T10:22:00+0200",
-				"to": "2025-08-04T11:20:00+0200",
+				"from": "2025-08-04T10:22:00Z",
+				"to": "2025-08-04T11:20:00Z",
 				"plans": [
 					{
 						"plan": "201000003",
-						"plan_activation": "2025-08-04T00:00:00+0200",
+						"plan_activation": "2025-08-04T00:00:00Z",
 						"plan_deactivation": ""
 					}
 				],
@@ -620,8 +620,8 @@
 						"addition_information": "",
 						"quantity": 1,
 						"service_id": "f20e5a75-286d-581d-e229-689071378909",
-						"creation_time": "2025-08-04T11:38:00+0200",
-						"service_activation": "2025-08-04T10:22:00+0200"
+						"creation_time": "2025-08-04T11:38:00Z",
+						"service_activation": "2025-08-04T10:22:00Z"
 					}
 				]
 			},
@@ -634,7 +634,7 @@
 						"key": "PLAN_DISCOUNT",
 						"description": "PLAN_DISCOUNT (201000003)",
 						"type": "monetary",
-						"from": "2025-08-11T03:00:00+0200",
+						"from": "2025-08-11T03:00:00Z",
 						"to": "2125-08-11T03:00:00+0100",
 						"proration": "inherited",
 						"subject": {
@@ -654,16 +654,16 @@
 				"type": "subscriber",
 				"first_name": "",
 				"last_name": "",
-				"plan_activation": "2025-08-04T00:00:00+0200",
-				"activation_date": "2025-08-04T11:19:00+0200",
+				"plan_activation": "2025-08-04T00:00:00Z",
+				"activation_date": "2025-08-04T11:19:00Z",
 				"active_plan": "201000003",
 				"next_plan_price_tier": null,
-				"from": "2025-08-04T11:20:00+0200",
-				"to": "2025-08-04T11:21:00+0200",
+				"from": "2025-08-04T11:20:00Z",
+				"to": "2025-08-04T11:21:00Z",
 				"plans": [
 					{
 						"plan": "201000003",
-						"plan_activation": "2025-08-04T00:00:00+0200",
+						"plan_activation": "2025-08-04T00:00:00Z",
 						"plan_deactivation": ""
 					}
 				],
@@ -674,8 +674,8 @@
 						"addition_information": "",
 						"quantity": 1,
 						"service_id": "f20e5a75-286d-581d-e229-689071378909",
-						"creation_time": "2025-08-04T11:38:00+0200",
-						"service_activation": "2025-08-04T10:22:00+0200"
+						"creation_time": "2025-08-04T11:38:00Z",
+						"service_activation": "2025-08-04T10:22:00Z"
 					},
 					{
 						"name": "201000064",
@@ -683,8 +683,8 @@
 						"addition_information": "",
 						"quantity": 1,
 						"service_id": "17f9d9fd-cc12-8f8c-66ef-68906d3173e5",
-						"creation_time": "2025-08-04T11:19:00+0200",
-						"service_activation": "2025-08-04T11:20:00+0200"
+						"creation_time": "2025-08-04T11:19:00Z",
+						"service_activation": "2025-08-04T11:20:00Z"
 					}
 				]
 			},
@@ -697,7 +697,7 @@
 						"key": "PLAN_DISCOUNT",
 						"description": "PLAN_DISCOUNT (201000003)",
 						"type": "monetary",
-						"from": "2025-08-11T03:00:00+0200",
+						"from": "2025-08-11T03:00:00Z",
 						"to": "2125-08-11T03:00:00+0100",
 						"proration": "inherited",
 						"subject": {
@@ -717,16 +717,16 @@
 				"type": "subscriber",
 				"first_name": "",
 				"last_name": "",
-				"plan_activation": "2025-08-04T00:00:00+0200",
-				"activation_date": "2025-08-04T11:19:00+0200",
+				"plan_activation": "2025-08-04T00:00:00Z",
+				"activation_date": "2025-08-04T11:19:00Z",
 				"active_plan": "201000003",
 				"next_plan_price_tier": null,
-				"from": "2025-08-04T11:21:00+0200",
-				"to": "2025-09-01T00:00:00+0200",
+				"from": "2025-08-04T11:21:00Z",
+				"to": "2025-09-01T00:00:00Z",
 				"plans": [
 					{
 						"plan": "201000003",
-						"plan_activation": "2025-08-04T00:00:00+0200",
+						"plan_activation": "2025-08-04T00:00:00Z",
 						"plan_deactivation": ""
 					}
 				],
@@ -737,8 +737,8 @@
 						"addition_information": "",
 						"quantity": 1,
 						"service_id": "f20e5a75-286d-581d-e229-689071378909",
-						"creation_time": "2025-08-04T11:38:00+0200",
-						"service_activation": "2025-08-04T10:22:00+0200"
+						"creation_time": "2025-08-04T11:38:00Z",
+						"service_activation": "2025-08-04T10:22:00Z"
 					},
 					{
 						"name": "201000064",
@@ -746,8 +746,8 @@
 						"addition_information": "",
 						"quantity": 1,
 						"service_id": "17f9d9fd-cc12-8f8c-66ef-68906d3173e5",
-						"creation_time": "2025-08-04T11:19:00+0200",
-						"service_activation": "2025-08-04T11:20:00+0200"
+						"creation_time": "2025-08-04T11:19:00Z",
+						"service_activation": "2025-08-04T11:20:00Z"
 					}
 				]
 			}
@@ -763,7 +763,7 @@
 				"billrun" : "202509",
 				"type" : "flat",
 				"usaget" : "flat",
-				"urt" : "2025-08-31T21:59:59Z",
+				"urt" : "2025-08-31T23:59:59Z",
 				"plan" : "201000003",
 				"name" : "201000003",
 				"process_time" : "2025-08-14T06:12:24.367Z",
@@ -774,7 +774,7 @@
 				"charge_op" : "charge",
 				"cycle" : 0,
 				"start_date" : "2025-08-03T22:00:00Z",
-				"end_date" : "2025-08-31T21:59:59Z",
+				"end_date" : "2025-09-01T00:00:00Z",
 				"prorated_start" : true,
 				"prorated_end" : true,
 				"prorated_start_date" : "2025-08-03T22:00:00Z",
@@ -808,7 +808,7 @@
 				"billrun" : "202509",
 				"type" : "service",
 				"usaget" : "flat",
-				"urt" : "2025-08-31T21:59:59Z",
+				"urt" : "2025-08-31T23:59:59Z",
 				"plan" : "201000003",
 				"name" : "201000054",
 				"process_time" : "2025-08-14T06:12:24.375Z",
@@ -852,7 +852,7 @@
 			"description": "PLAN_DISCOUNT (201000003)",
 			"usaget": "discount",
 			"discount_type": "monetary",
-			"urt": "2025-08-31T23:59:59+0200",
+			"urt": "2025-08-31T23:59:59Z",
 			"arate": null,
 			"arate_key": "SUBSCRIBER_DISCOUNT_PLAN_DISCOUNT_SID_61620 ",
 			"aid": 51032,
@@ -885,7 +885,7 @@
 				}
 			},
 			"stamp": "dfbe08ba278e555e2fc1f104d2644f22",
-			"process_time": "2025-08-15T18:35:59+0200",
+			"process_time": "2025-08-15T18:35:59Z",
 			"tax_data": {
 				"total_amount": -3.8409677419354837,
 				"total_tax": 0.081000000000000003,
@@ -908,7 +908,7 @@
 				"subscriber": {
 					"parent": "399a92fd-da53-96b7-25a9-68906b819fd2",
 					"crm_id": "3b4df790-7677-4de2-e9d6-68906d94cdbc",
-					"activation_date": "2025-08-04T11:19:00+0200",
+					"activation_date": "2025-08-04T11:19:00Z",
 					"deactivation_date": "",
 					"identifier": "No OTO \/ NSN ID"
 				},
@@ -923,13 +923,13 @@
 			"full_price": 249,
 			"charge_op": "charge",
 			"cycle": 0,
-			"start_date": "2025-08-04T00:00:00+0200",
-			"end_date": "2025-08-31T23:59:59+0200",
+			"start_date": "2025-08-04T00:00:00Z",
+			"end_date": "2025-08-31T23:59:59Z",
 			"prorated_start": true,
 			"prorated_end": true,
-			"prorated_start_date": "2025-08-04T00:00:00+0200",
-			"start": "2025-08-04T00:00:00+0200",
-			"discount_from": "2025-08-11T03:00:00+0200",
+			"prorated_start_date": "2025-08-04T00:00:00Z",
+			"start": "2025-08-04T00:00:00Z",
+			"discount_from": "2025-08-11T03:00:00Z",
 			"discount_to": "2025-09-01T00:00:00+0000"
 		}
 	]

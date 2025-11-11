@@ -37,9 +37,6 @@ class DiscountTest extends \Codeception\Test\Unit {
 			'discount_from' => 1,
 			'discount_to' => 1
 		];
-		//load the  config so  we  can  ovverride the  timezone AFTER  it  waas  set by configuration
-		Billrun_Factory::config();
-		date_default_timezone_set('UTC');
 
 		foreach( $tests as $tstKey => $tstVal) {
 			//Setup  the  eligiblity based on the account and subscribers revisions
