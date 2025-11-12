@@ -1481,9 +1481,6 @@ class Billrun_DiscountManager {
 			} else if (isset($line['end_date'])) {
 				$to = min($discountTo, $to, Billrun_Utils_Time::getTime($line['end_date']));
 			} 
-		}else{
-			$from = max($discountFrom, $from);
-			$to = min($discountTo ?? $to , $to);
 		}
 		if(!$isSequential){
 			$flatAmount = $amount = $this->getDiscountAmount($discount, $line, $value, $operations);
@@ -1519,6 +1516,13 @@ class Billrun_DiscountManager {
 					}
 
 					
+				}
+			}else{
+				if($isUpfront) {
+					if($discountTo < $this->cycle->end()){
+						//do not give discount on current month if the discount finish in the previous month
+						$amount = 0;
+					}
 				}
 			}
 		} else {

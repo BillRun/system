@@ -184,7 +184,7 @@ class UpfrontTest extends \Codeception\Test\Unit
     {
         /*
         upfront plan  discount with "proration": "inherited" and plan start in the middle of previous month
-        and discount start before plan + Prorate start = false -> 
+        and discount start before plan + Prorate start = true -> 
         expected discount from the max(start of the previous cycle, discount start) +  discount on the current cycle (assume still not finish)
         */
         $aid =5100002411;
@@ -202,7 +202,7 @@ class UpfrontTest extends \Codeception\Test\Unit
     {
         /*
         upfront plan  discount with "proration": "inherited" and plan start in the middle of previous month
-        and discount start before plan + Prorate start = true -> 
+        and discount start before plan + Prorate start = false -> 
         expected discount from the max(start of the previous cycle, discount start) +  discount on the current cycle (assume still not finish)
         */
         $aid =5100002416;
@@ -219,7 +219,7 @@ class UpfrontTest extends \Codeception\Test\Unit
     {
         /*
         upfront plan  discount with "proration": "inherited" and plan start before previous month (prorated= true)
-        but discount start in the middle of previous month , and also gfinish in the middle of month  
+        but discount start in the middle of previous month , and also finish in the middle of month  
         -> expected proration discount from the start+ end of the discount +  not discount on the current cycle
         */
         $aid =5100002412;
@@ -247,5 +247,62 @@ class UpfrontTest extends \Codeception\Test\Unit
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         //flat-33.605, discount(-6.7224)
         $this->assertEqualsWithDelta(26.3224, $billrun['totals']['before_vat'],$this->epsilon);
+    }
+
+    public function testDiscountFinishPreviousMonthOnUpfronNoInheritedPlan_1()
+    {
+        /*
+        upfront plan  discount with "proration": "no" and plan not finish
+        but discount finish in the previous month 
+        -> expected not proration charge from the termination of the discount + not discount on the current cycle 
+        */
+        $aid =5100002419;
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => 'B2C_5GUNLIMITEDMAX_PP_INADV', "upfront" => 1]);// charge on termination = true
+        $this->tester->runCycle($this->defaultOptions);
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        //flat-33.605, discount(0)
+        $this->assertEqualsWithDelta(33.605, $billrun['totals']['before_vat'],$this->epsilon);
+    }
+
+    public function testDiscountOnUpfronNoInheritedPlanFinishPreviousMonth_1()
+    {
+        /*
+        upfront plan  discount with "proration": "no" and plan finish in the previous month
+        but discount not finish -> 
+        expected not proration charge on from the termination of the plan + not discount on the current cycle 
+        */
+        $aid =5100002420;
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => 'B2C_5GUNLIMITEDMAX_PP_INADV', "upfront" => 1]);// charge on termination = true
+        $this->tester->runCycle($this->defaultOptions);
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        //flat-0, discount(0)
+        $this->assertEqualsWithDelta(0, $billrun['totals']['before_vat'],$this->epsilon);
+    }
+
+    public function testDiscountOnUpfronNoInherited()
+    {
+        /*
+        upfront plan  discount with "proration": "no" and plan not finish in the previous month
+        and also discount not finish
+        expected -> discount on the current cycle 
+        */
+        $aid =5100002421;
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => 'B2C_5GUNLIMITEDMAX_PP_INADV', "upfront" => 1]);// charge on termination = true
+        $this->tester->runCycle($this->defaultOptions);
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        //flat-33.605 discount(-16.806) 
+        $this->assertEqualsWithDelta(16.799, $billrun['totals']['before_vat'],$this->epsilon);
     }
 }
