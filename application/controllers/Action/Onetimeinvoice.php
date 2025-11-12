@@ -52,6 +52,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$this->aid = intval($request['aid']);
 		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''), JSON_OBJECT_AS_ARRAY);
 		$affectedSids = [];
+		$adjusts = isset($request['adjusts']) ? json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY) : null;
 		Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($this->aid, $inputCdrs, $paymentData, $allowBill, $step, $oneTimeStamp, $sendEmail));
 		Billrun_Factory::log('One time invoice action running for account ' . $this->aid, Zend_Log::INFO);
 
@@ -64,12 +65,17 @@ class OnetimeinvoiceAction extends ApiAction {
 			'allowBill' => $allowBill,
 			'uf' => $uf,
 			'request' => $request,
-			'paymentData' => $paymentData
+			'paymentData' => $paymentData,
+			'adjusts' => $adjusts
 		];
 
 		if ($expected) {
 			if ($step != self::STEP_PDF_ONLY) {
 				$this->setError('Expected must to be with step 0 only');
+				return false;
+			}
+			if (!is_null($adjusts)) {
+				$this->setError('Adjusts are not supported in expected invoice');
 				return false;
 			}
 			$expectedInvoice = $this->expectedInvoice($chargingOptions, $expected ? true : false);
@@ -78,14 +84,20 @@ class OnetimeinvoiceAction extends ApiAction {
 				'pdfPath' => Generator_WkPdf::getTempDir($chargingOptions['oneTimeStamp']) . "/pdf/{$chargingOptions['oneTimeStamp']}_{$this->aid}_{$expectedInvoiceData['invoice_id']}.pdf",
 				'invoiceData' => $expectedInvoiceData,
 			];
-		} else if ($chargeFlow === 'charge_before_invoice') {
-			if ($step != self::STEP_FULL) {
-				$this->setError('charge_before_invoice must to be with step 2 only');
+		} else {
+			if (!is_null($adjusts) && $step == self::STEP_PDF_ONLY) {
+				$this->setError('Adjusts are not supported in step 0 cases');
 				return false;
 			}
-			$results = $this->chargeBeforeInvoiceFlow($chargingOptions);
-		} else {
-			$results = $this->invoiceChargeFlow($chargingOptions);
+			if ($chargeFlow === 'charge_before_invoice') {
+				if ($step != self::STEP_FULL) {
+					$this->setError('charge_before_invoice must to be with step 2 only');
+					return false;
+				}
+				$results = $this->chargeBeforeInvoiceFlow($chargingOptions);
+			} else {
+				$results = $this->invoiceChargeFlow($chargingOptions);
+			}
 		}
 
 		if ($results === false) {
@@ -136,7 +148,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$results['pdfPath'] = $this->invoice->getInvoicePath();
 
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
-		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail']]);
+		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail'], 'adjusts' => $adjusts]);
 
 		if ($chargingOptions['step'] >= self::STEP_PDF_AND_BILL) {
 			$billrunToBill->load();
@@ -288,6 +300,9 @@ class OnetimeinvoiceAction extends ApiAction {
 			'send_email' => $chargingOptions['sendEmail'],
 				/* 'force_payment_to_invoice' => [ $this->invoice->getInvoiceID() => $deposit->getId() ] */
 		];
+		if (!empty($adjusts)) {
+			$billrunToBillParams['force_bill_links'] = $adjusts;
+		}
 		$billrunToBill = Billrun_Generator::getInstance($billrunToBillParams);
 
 		$billrunToBill->load();
