@@ -10,22 +10,7 @@ class expandSubRevisions_2Test extends \Codeception\Test\Unit
 
     protected function _before()
     {
-      $this->cleanDB();
-    }
-
-    protected function cleanDB(){
-
-        $subs = Billrun_Factory::db()->subscribersCollection();
-        $subs->remove(['_id'=>['$exists' => true]]);
-        $lines = Billrun_Factory::db()->linesCollection();
-        $lines->remove(['_id'=>['$exists' => true]]);
-        $queue = Billrun_Factory::db()->queueCollection();
-        $queue->remove(['_id'=>['$exists' => true]]);
-        $services = Billrun_Factory::db()->servicesCollection();
-        $services->remove(['_id'=>['$exists' => true]]);
-        $plans = Billrun_Factory::db()->plansCollection();
-        $plans->remove(['_id'=>['$exists' => true]]);
-
+      $this->tester->cleanDB();
     }
 
     protected function _after()
