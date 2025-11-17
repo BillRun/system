@@ -1259,6 +1259,9 @@ class Billrun_DiscountManager {
 						$addToCdr['start'] = new Mongodloid_Date(min($from, $addToCdr['start']->sec));
 					}
 				}
+				if(isset($line['end']->sec)){
+					//$addToCdr['end'] = new Mongodloid_Date(min($to, $line['end']->sec));
+				}
 				$discountAmount = $eligibilityInterval['amount'];
 				if(isset($eligibilityInterval['sid'])){
 					$addToCdr['sid_cause_eligibility'] = $eligibilityInterval['sid'];

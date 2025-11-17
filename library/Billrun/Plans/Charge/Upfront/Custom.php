@@ -78,9 +78,9 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 
 		return array( 'value' => -$lastUpfrontCharge * $refundFraction * $quantity,
 			'full_price' => floatval($lastUpfrontCharge),
-			'start' => $this->activation,
+			'start' => $this->deactivation,
 			'prorated_start_date' => new Mongodloid_Date($this->deactivation),
-			'end' => $this->deactivation,
+			'end' => $this->cycle->end(),
 			'prorated_end_date' =>  new Mongodloid_Date($this->cycle->end()),
 			'prorated_end' => $endProration,
 			'is_upfront' => true);
