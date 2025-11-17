@@ -1,4 +1,12 @@
 <?php
+/**
+ * Lightweight CRM mock used by the docker environment.
+ * - GAD endpoint returns account data for the requested aid.
+ * - GSD endpoint returns subscriber data for the requested aid/sid.
+ * - Billable endpoint serves the raw CRM fixture.
+ * The endpoints read CRM fixtures from crm_data/<aid>.json and shape the payload
+ * to mimic the original CRM behavior for tests and local development.
+ */
 $rawBody = file_get_contents('php://input');
 $payload = json_decode($rawBody, true);
 
@@ -18,6 +26,10 @@ if (preg_match('/\/gad/', $_SERVER["REQUEST_URI"])) {
 	// unsupported endpoint
 }
 
+/**
+ * Resolve the requested aid from POST/GET arrays or JSON payload.
+ * Supports the aggregator query structure where params contain aid.
+ */
 function extractAid($payload) {
 	foreach ([ $_POST, $_GET ] as $source) {
 		foreach (['aids', 'aid'] as $key) {
@@ -54,6 +66,10 @@ function extractAid($payload) {
 	return null;
 }
 
+/**
+ * Resolve the requested sid from POST/GET arrays or JSON payload.
+ * Mirrors extractAid but looks for subscriber identifiers.
+ */
 function extractSid($payload) {
 	foreach ([ $_POST, $_GET ] as $source) {
 		foreach (['sid', 'sids'] as $key) {
@@ -90,6 +106,10 @@ function extractSid($payload) {
 	return null;
 }
 
+/**
+ * Load the CRM fixture for the given aid.
+ * Returns an empty string when aid is missing or file unreadable.
+ */
 function loadAidData($aid) {
 	if ($aid === null) {
 		return '';
@@ -103,6 +123,9 @@ function loadAidData($aid) {
 	return file_get_contents($filePath, true);
 }
 
+/**
+ * Return only subscriber entries (optionally filtered by SID).
+ */
 function filterSubscribersOnly($data, $sid = null) {
 	if (!$data) {
 		return '';
@@ -128,6 +151,9 @@ function filterSubscribersOnly($data, $sid = null) {
 	return json_encode($decoded);
 }
 
+/**
+ * Return only account entries from payload.
+ */
 function filterAccountsOnly($data) {
 	if (!$data) {
 		return '';
