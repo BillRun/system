@@ -105,7 +105,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 					'end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() ? $this->deactivation : $cycle->end()),
 					'is_upfront' =>  $isUpfront,
 					'prorated_start' =>  $this->proratedStart && !($isUpfront && $this->seperatedCrossCycleCharges),
-					'prorated_end' =>  $endProration && !$isUpfront
+					'prorated_end' =>  $endProration
    				];
 	}
 
