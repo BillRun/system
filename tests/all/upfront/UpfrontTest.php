@@ -180,7 +180,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertEqualsWithDelta(21.676129033, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2025-10-23T13:04:25Z"), $planLine['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01T00:00:00Z"), $planLine['end']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2025-10-23T10:04:25Z"), $discountLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-10-23T13:04:25Z"), $discountLine['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01T00:00:00Z"), $discountLine['end']->toDateTime()->getTimestamp());
     }
     
@@ -253,9 +253,9 @@ class UpfrontTest extends \Codeception\Test\Unit
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-67.21(33.605+33.605), discount(-16.806 -16.806)
         $this->assertEqualsWithDelta(33.598, $billrun['totals']['before_vat'],$this->epsilon);
-        // $this->assertEquals(strtotime("2025-10-01T00:00:00Z"), $planLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-10-01T00:00:00Z"), $planLine['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01T00:00:00Z"), $planLine['end']->toDateTime()->getTimestamp());
-        // $this->assertEquals(strtotime("2025-10-01T00:00:00Z"), $discountLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-10-01T00:00:00Z"), $discountLine['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01T00:00:00Z"), $discountLine['end']->toDateTime()->getTimestamp());
     }
 

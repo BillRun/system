@@ -1253,13 +1253,13 @@ class Billrun_DiscountManager {
 					'discount_from' => new Mongodloid_Date($from),
 					'discount_to' => new Mongodloid_Date($to),
 				];
-				if(isset($line['start']->sec)){
+				if(isset($line['start']->sec) && $line['is_upfront']){
 					$addToCdr['start'] = new Mongodloid_Date(min($to, $line['start']->sec));
-					if($from > $this->cycle->start() && $to >= $this->cycle->end()){
+					if($from < $line['start']->sec && (isset($line['prorated_start']) && !$line['prorated_start'])){
 						$addToCdr['start'] = new Mongodloid_Date(min($from, $addToCdr['start']->sec));
 					}
 				}
-				if(isset($line['end']->sec)){
+				if(isset($line['end']->sec) && $line['is_upfront']){
 					//$addToCdr['end'] = new Mongodloid_Date(min($to, $line['end']->sec));
 				}
 				$discountAmount = $eligibilityInterval['amount'];
