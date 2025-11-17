@@ -52,7 +52,16 @@ class OnetimeinvoiceAction extends ApiAction {
 		$this->aid = intval($request['aid']);
 		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''), JSON_OBJECT_AS_ARRAY);
 		$affectedSids = [];
-		$adjusts = isset($request['adjusts']) ? json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY) : null;
+		$adjusts = null;
+		$adjust_invoice = null;
+		if (isset($request['adjusts'])) {
+			$adjusts = json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY);
+			$adjust_invoice = $this->validateAdjusts($adjusts);
+			if (!$adjust_invoice) {
+				$this->setError("Adjusts validation test didn't pass. No invoice was created");
+				return false;
+			}
+		}
 		Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($this->aid, $inputCdrs, $paymentData, $allowBill, $step, $oneTimeStamp, $sendEmail));
 		Billrun_Factory::log('One time invoice action running for account ' . $this->aid, Zend_Log::INFO);
 
@@ -66,7 +75,8 @@ class OnetimeinvoiceAction extends ApiAction {
 			'uf' => $uf,
 			'request' => $request,
 			'paymentData' => $paymentData,
-			'adjusts' => $adjusts
+			'adjusts' => $adjusts,
+			'adjusts_invoice' => $adjust_invoice
 		];
 
 		if ($expected) {
@@ -148,7 +158,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$results['pdfPath'] = $this->invoice->getInvoicePath();
 
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
-		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail'], 'adjusts' => $adjusts]);
+		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail'], 'adjusts' => $chargingOptions['adjusts'], 'adjusts_invoice' => $chargingOptions['adjusts_invoice']]);
 
 		if ($chargingOptions['step'] >= self::STEP_PDF_AND_BILL) {
 			$billrunToBill->load();
@@ -301,7 +311,7 @@ class OnetimeinvoiceAction extends ApiAction {
 				/* 'force_payment_to_invoice' => [ $this->invoice->getInvoiceID() => $deposit->getId() ] */
 		];
 		if (!empty($adjusts)) {
-			$billrunToBillParams['force_bill_links'] = $adjusts;
+			$billrunToBillParams['adjusts'] = $adjusts;
 		}
 		$billrunToBill = Billrun_Generator::getInstance($billrunToBillParams);
 
@@ -582,6 +592,22 @@ class OnetimeinvoiceAction extends ApiAction {
 			Billrun_Aggregator_Customer::setupCycleCache();
 			Billrun_Factory::account()->getBillable(new Billrun_DataTypes_MongoCycleTime(new Billrun_DataTypes_CycleTime($stamp)),0,1,[$this->aid]);
 		}
+	}
+
+	protected function validateAdjusts($adjusts) {
+		foreach ($adjusts as $adjust) {
+			$invoice_to_pay = Billrun_Factory::db()->billsCollection()->query('invoice_id', $adjust['invoice_id'])->cursor()->limit(1)->current();
+			if (!$invoice_to_pay->isEmpty()) {
+				if (Billrun_Util::isEqual($invoice_to_pay['left_to_pay'], $invoice_to_pay['left_to_pay'] - $adjust['amount'], Billrun_Bill::precision)) {
+					$this->setError("Adjust amount is " . $adjust['amount'] . " bigger than invoice left to pay - " . $invoice_to_pay['left_to_pay']);
+					return false;
+				}
+			} else {
+				$this->setError("Couldn't find bill with invoice id " . $adjust['invoice_id'] . " to adjust to the immediate invoice. No invoice was created");
+				return false;
+			}
+		}
+		return $invoice_to_pay; //TODO:Support more than 1 adjustment
 	}
 
 }
