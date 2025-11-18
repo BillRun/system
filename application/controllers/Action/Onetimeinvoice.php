@@ -56,7 +56,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$adjust_invoice = null;
 		if (isset($request['adjusts'])) {
 			$adjusts = json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY);
-			$adjust_invoice = $this->validateAdjusts($adjusts);
+			$adjust_invoice = $this->validateAdjusts($adjusts, $chargeFlow);
 			if (!$adjust_invoice) {
 				$this->setError("Adjusts validation test didn't pass. No invoice was created");
 				return false;
@@ -594,7 +594,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 	}
 
-	protected function validateAdjusts($adjusts) {
+	protected function validateAdjusts($adjusts, $flow) {
 		foreach ($adjusts as $adjust) {
 			$invoice_to_pay = Billrun_Factory::db()->billsCollection()->query('invoice_id', $adjust['invoice_id'])->cursor()->limit(1)->current();
 			if (!$invoice_to_pay->isEmpty()) {
@@ -606,6 +606,10 @@ class OnetimeinvoiceAction extends ApiAction {
 				$this->setError("Couldn't find bill with invoice id " . $adjust['invoice_id'] . " to adjust to the immediate invoice. No invoice was created");
 				return false;
 			}
+		}
+		if ($flow === "charge_before_invoice") {
+			$this->setError("Charge_before_invoice is not supported when sending adjusts");
+			return false;
 		}
 		return $invoice_to_pay; //TODO:Support more than 1 adjustment
 	}
