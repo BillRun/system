@@ -30,6 +30,12 @@ class OnetimeinvoiceAction extends ApiAction {
 	 * @var array
 	 */
 	protected $processsedCdrs = array();
+	
+	/**
+	 * Array of invoices to be paid by the new immediate invoice
+	 * @var array
+	 */
+	protected $invoices_to_pay = [];
 
 	public function execute($arg = null) {
 		$this->allowed();
@@ -52,16 +58,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$this->aid = intval($request['aid']);
 		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''), JSON_OBJECT_AS_ARRAY);
 		$affectedSids = [];
-		$adjusts = null;
-		$adjust_invoice = null;
-		if (isset($request['adjusts'])) {
-			$adjusts = json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY);
-			$adjust_invoice = $this->validateAdjusts($adjusts, $chargeFlow);
-			if (!$adjust_invoice) {
-				$this->setError("Adjusts validation test didn't pass. No invoice was created");
-				return false;
-			}
-		}
+		$adjustments = isset($request['adjusts']) ? json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY) : null;
 		Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($this->aid, $inputCdrs, $paymentData, $allowBill, $step, $oneTimeStamp, $sendEmail));
 		Billrun_Factory::log('One time invoice action running for account ' . $this->aid, Zend_Log::INFO);
 
@@ -75,8 +72,7 @@ class OnetimeinvoiceAction extends ApiAction {
 			'uf' => $uf,
 			'request' => $request,
 			'paymentData' => $paymentData,
-			'adjusts' => $adjusts,
-			'adjusts_invoice' => $adjust_invoice
+			'adjusts' => $adjustments
 		];
 
 		if ($expected) {
@@ -84,8 +80,8 @@ class OnetimeinvoiceAction extends ApiAction {
 				$this->setError('Expected must to be with step 0 only');
 				return false;
 			}
-			if (!is_null($adjusts)) {
-				$this->setError('Adjusts are not supported in expected invoice');
+			if (!is_null($adjustments)) {
+				$this->setError('Adjustments are not supported in expected invoice');
 				return false;
 			}
 			$expectedInvoice = $this->expectedInvoice($chargingOptions, $expected ? true : false);
@@ -95,8 +91,8 @@ class OnetimeinvoiceAction extends ApiAction {
 				'invoiceData' => $expectedInvoiceData,
 			];
 		} else {
-			if (!is_null($adjusts) && $step == self::STEP_PDF_ONLY) {
-				$this->setError('Adjusts are not supported in step 0 cases');
+			if (!is_null($adjustments) && $step == self::STEP_PDF_ONLY) {
+				$this->setError('Adjustments are not supported when only invoice pdf file is created');
 				return false;
 			}
 			if ($chargeFlow === 'charge_before_invoice') {
@@ -158,7 +154,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$results['pdfPath'] = $this->invoice->getInvoicePath();
 
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
-		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail'], 'adjusts' => $chargingOptions['adjusts'], 'adjusts_invoice' => $chargingOptions['adjusts_invoice']]);
+		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail'], 'adjusts' => $chargingOptions['adjusts'], 'invoices_to_pay' => $this->invoices_to_pay]);
 
 		if ($chargingOptions['step'] >= self::STEP_PDF_AND_BILL) {
 			$billrunToBill->load();
@@ -310,9 +306,6 @@ class OnetimeinvoiceAction extends ApiAction {
 			'send_email' => $chargingOptions['sendEmail'],
 				/* 'force_payment_to_invoice' => [ $this->invoice->getInvoiceID() => $deposit->getId() ] */
 		];
-		if (!empty($adjusts)) {
-			$billrunToBillParams['adjusts'] = $adjusts;
-		}
 		$billrunToBill = Billrun_Generator::getInstance($billrunToBillParams);
 
 		$billrunToBill->load();
@@ -386,6 +379,13 @@ class OnetimeinvoiceAction extends ApiAction {
 				if (!in_array($uf_key, $uf_config)) {
 					$msg .= "Field '{$uf_key}' is not configured as a valid user field\n";
 				}
+			}
+		}
+		//Validate adjustments array
+		if (isset($request['adjusts'])) {
+			$res = $this->validateAdjustments(json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY), $request);
+			if ($res !== true) {
+				$msg = $res;
 			}
 		}
 		if (!empty($msg)) {
@@ -594,24 +594,29 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 	}
 
-	protected function validateAdjusts($adjusts, $flow) {
-		foreach ($adjusts as $adjust) {
-			$invoice_to_pay = Billrun_Factory::db()->billsCollection()->query('invoice_id', $adjust['invoice_id'])->cursor()->limit(1)->current();
-			if (!$invoice_to_pay->isEmpty()) {
-				if (Billrun_Util::isEqual($invoice_to_pay['left_to_pay'], $invoice_to_pay['left_to_pay'] - $adjust['amount'], Billrun_Bill::precision)) {
-					$this->setError("Adjust amount is " . $adjust['amount'] . " bigger than invoice left to pay - " . $invoice_to_pay['left_to_pay']);
-					return false;
+	protected function validateAdjustments($adjustments, $request) {
+		$flow = isset($request['charge_flow']) ? $request['charge_flow'] : 'regular';
+		Billrun_Factory::log("Pulling invoices according to the adjustments list that was sent", Zend_Log::DEBUG);
+		foreach ($adjustments as $index => $adjust) {
+			Billrun_Factory::log("Adjustment number " . $index . " - trying to pull invoice id " . $adjust['invoice_id'], Zend_Log::DEBUG);
+			$invoice = null;
+			$invoice = Billrun_Factory::db()->billsCollection()->query('invoice_id', $adjust['invoice_id'])->cursor()->limit(1)->current();
+			if (!$invoice->isEmpty()) {
+				Billrun_Factory::log("Successfully pulled invoice " . $adjust['invoice_id'] . ". Checking the sent amount match invoice left to pay", Zend_Log::DEBUG);
+				if (abs($adjust['amount']) <= $invoice['left_to_pay']) {
+					Billrun_Factory::log("Invoice " . $invoice['invoice_id'] . " left amount " . $invoice['left_to_pay'] . " matches the adjusted amount that was sent for it - " . $adjust['amount'], Zend_Log::DEBUG);
+				} else {
+					return "Adjusted amount (" . abs($adjust['amount']) . ") is bigger than invoice " . $invoice['invoice_id'] . " left amount (" . $invoice['left_to_pay'] . "). Please send new amount, lower or equal. No invoice was created";
 				}
+				$this->invoices_to_pay[$invoice['invoice_id']] = $invoice;
 			} else {
-				$this->setError("Couldn't find bill with invoice id " . $adjust['invoice_id'] . " to adjust to the immediate invoice. No invoice was created");
-				return false;
+				return "Couldn't find bill with invoice id " . $adjust['invoice_id'] . " to adjust to the immediate invoice. No invoice was created";
 			}
 		}
 		if ($flow === "charge_before_invoice") {
-			$this->setError("Charge_before_invoice is not supported when sending adjusts");
-			return false;
+			return "Refund invoice can not be adjusted, when charging the amount before creating the immediate invoice (charge_before_invoice flow)";
 		}
-		return $invoice_to_pay; //TODO:Support more than 1 adjustment
+		return true;
 	}
 
 }

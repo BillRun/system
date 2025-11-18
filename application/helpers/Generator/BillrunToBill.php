@@ -31,16 +31,20 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * Array of [invoice_id => amount] arrays, in order to force the invoices that will be paid by the new bills created. TODO:Support more than 1 invoice
 	 * @array of arrays
 	 */
-	protected $adjusts = [];
-	protected $adjusts_invoice = [];
+	protected $adjustments = [];
+	/**
+	 * Array of [invoice_id => invoice data] arrays. Invoices that the created bill should be forced to pay
+	 * @array of arrays
+	 */
+	protected $invoices_to_pay = [];
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
 		if (!empty($options['invoices'])) {
 			$this->invoices = Billrun_Util::verify_array($options['invoices'], 'int');
 			if (isset($options['adjusts'])) {
-				$this->adjusts = $options['adjusts'];
-				$this->adjusts_invoice = $options['adjusts_invoice'];
+				$this->adjustments = $options['adjusts'];
+				$this->invoices_to_pay = $options['invoices_to_pay'];
 			}
 		}
 		if (isset($options['send_email'])) {
@@ -198,15 +202,10 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		if (!$should_be_confirmed) {
 			return false;
 		}
-		Billrun_Factory::log("Checking if BillrunToBill has ajusts", Zend_Log::DEBUG);
-		if (!empty($this->adjusts)) {//TODO:Support more than 1 adjustment
-			Billrun_Factory::log("Found ajusts. Processing bills payment and linking", Zend_Log::DEBUG);
-			if ($this->handleAdjusts($bill, $callback)) {
-				return true;
-			} else {
-				Billrun_Factory::log("Something went wrong, couldn't pay adjusted invoice " . $this->adjusts_invoice['invoice_id'] . " by invoice " . $bill['invoice_id'], Zend_Log::DEBUG);
-				return false;
-			}
+		Billrun_Factory::log("Checking if new invoice has adjustments", Zend_Log::DEBUG);
+		if (!empty($this->adjustments)) {
+			Billrun_Factory::log("Found " . count($this->adjustments) . " adjustments. Processing bill " . $invoice['invoice_id'] . " payments and linking", Zend_Log::DEBUG);
+			return $this->handleAdjustments($bill, $callback);
 		}
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
 		Billrun_Factory::log("Checking if bills links should be switched for account " . $invoice['aid'], Zend_Log::DEBUG);
@@ -427,27 +426,49 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		return 'bills';
 	}
 	
-	protected function handleAdjusts(&$bill, $callback) {
-		Billrun_Factory::log("Starting handle adjust function. Creating paying invoice object, invoice id " . $bill['invoice_id'], Zend_Log::DEBUG);
+	protected function handleAdjustments(&$bill, $callback) {
+		Billrun_Factory::log("Starting handle adjustments function. Creating paying invoice object, invoice id " . $bill['invoice_id'], Zend_Log::DEBUG);
 		$paying_bill = Billrun_Bill::getInstanceByData($bill);
-		Billrun_Factory::log("Invoice " . $bill['invoice_id'] . " object is ready. Creating adjusted invoice object as well, invoice id " . $this->adjusts_invoice['invoice_id'], Zend_Log::DEBUG);
-		$this->adjusts_invoice = Billrun_Bill::getInstanceByData($this->adjusts_invoice);
-		Billrun_Factory::log("Invoice " . $this->adjusts_invoice->getId() . " object is ready. Pulling adjusted amount", Zend_Log::DEBUG);
-		$amount = abs(current($this->adjusts)['amount']);
-		Billrun_Factory::log("Processed amount is " . $amount . ". Attaching paid invoice " . $this->adjusts_invoice->getId() . " to paying invoice " . $paying_bill->getId(), Zend_Log::DEBUG);
-		$paying_bill->attachPaidBill($this->adjusts_invoice->getType(), $this->adjusts_invoice->getId(), $amount, $this->adjusts_invoice->getRawData());
-		Billrun_Factory::log("Attached paid invoice " . $this->adjusts_invoice->getId() . " to paying invoice " . $paying_bill->getId() . ". Attaching paying invoice", Zend_Log::DEBUG);
-		$this->adjusts_invoice->attachPayingBill($paying_bill, $amount);
+		Billrun_Factory::log("Invoice " . $bill['invoice_id'] . " object is ready. Processing adjustments array, and updating new immediate invoice accordingly", Zend_Log::DEBUG);
+		foreach ($this->adjustments as $index => $adjustment) {
+			$amount = $invoice_to_pay = null;
+			Billrun_Factory::log("Processing adjustment number " . $index . ". Trying to create invoice " . $adjustment['invoice_id'] . " object", Zend_Log::DEBUG);
+			try {
+				$invoice_to_pay = Billrun_Bill::getInstanceByData($this->invoices_to_pay[$adjustment['invoice_id']]);
+				if (!$invoice_to_pay) {
+					Billrun_Factory::log('Something went wrong when trying to create invoice ' . $adjustment['invoice_id'] . ' object', Zend_Log::ALERT);
+					return false;	
+				}
+			} catch (Exception $ex) {
+				Billrun_Factory::log('Something went wrong when trying to create invoice ' . $adjustment['invoice_id'] . ' object. Code - ' . $ex->getCode() . ", message - " . $ex->getMessage(), Zend_Log::ALERT);
+				return false;
+			}
+			Billrun_Factory::log("Invoice " . $invoice_to_pay->getId() . " object is ready. Pulling adjusted amount that was sent", Zend_Log::DEBUG);	
+			$amount = abs($adjustment['amount']);
+			Billrun_Factory::log("Processed amount is " . $amount . ". Attaching paid invoice " . $adjustment['invoice_id'] . " to paying invoice " . $paying_bill->getId(), Zend_Log::DEBUG);
+			$paying_bill->attachPaidBill($invoice_to_pay->getType(), $invoice_to_pay->getId(), $amount, $invoice_to_pay->getRawData());
+			Billrun_Factory::log("Attached paid invoice " . $invoice_to_pay->getId() . " to paying invoice " . $paying_bill->getId() . ". Attaching paying invoice", Zend_Log::DEBUG);
+			$invoice_to_pay->attachPayingBill($paying_bill, $amount);
+			Billrun_Factory::log("Finished attaching paying invoice " . $paying_bill->getId() . " to paid invoice " . $invoice_to_pay->getId(), Zend_Log::DEBUG);
+			$this->invoices_to_pay[$invoice_to_pay->getId()] = $invoice_to_pay;
+			$saved_invoice_ids[$invoice_to_pay->getId()] = false;
+		}
+		$saved_invoice_ids[$paying_bill->getId()] = false;
 		try { 
-			Billrun_Factory::log("Successfully attached invoices. Trying to save new invoice " . $paying_bill->getId(), Zend_Log::DEBUG);
+			Billrun_Factory::log("Successfully attached all invoices. Trying to save new invoice " . $paying_bill->getId(), Zend_Log::DEBUG);
 			$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $paying_bill->getRawData(), $callback);
-			Billrun_Factory::log("Successfully saved new invoice " . $paying_bill->getId() . ". Trying to save paid invoice " . $this->adjusts_invoice->getId(), Zend_Log::DEBUG);
-			$this->adjusts_invoice->save();
-			Billrun_Factory::log("Successfully saved adjusted invoice " . $this->adjusts_invoice->getId(), Zend_Log::DEBUG);
+			Billrun_Factory::log("Successfully saved new invoice " . $paying_bill->getId() . ". Trying to save paid invoices " . implode(array_keys($this->invoices_to_pay)), Zend_Log::DEBUG);
+			foreach ($this->invoices_to_pay as $invoice_id => $invoice_to_save) {
+				Billrun_Factory::log("Trying to save invoice " . $invoice_id, Zend_Log::DEBUG);
+				$invoice_to_save->save();
+				Billrun_Factory::log("Successfully saved paid invoice " . $invoice_to_pay->getId(), Zend_Log::DEBUG);
+				$saved_invoice_ids[$invoice_to_save->getId()] = true;
+			}
 		} catch (Exception $ex) {
-			Billrun_Factory::log('Something went wrong when trying to save invoices. Code - ' . $ex->getCode() . ", message - " . $ex->getMessage(), Zend_Log::ALERT);
+			Billrun_Factory::log('Something went wrong when trying to save invoices. Code - ' . $ex->getCode() . ", message - " . $ex->getMessage() . ". Didn't save invoices " . implode(array_keys(array_filter($saved_invoice_ids, fn($v) => $v == false))), Zend_Log::ALERT);
 			return false;
 		}
+		Billrun_Factory::log("Successfully saved invoices " . implode(array_keys(array_filter($saved_invoice_ids, fn($v) => $v == true))), Zend_Log::DEBUG);
 		return true;
 	}
 }
