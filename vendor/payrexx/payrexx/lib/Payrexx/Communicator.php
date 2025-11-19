@@ -142,7 +142,7 @@ class Communicator
                 throw new \Payrexx\PayrexxException('Payrexx PHP: Something went wrong, response: ' . print_r($response, true), $response['info']['http_code']);
             }
             if (!isset($response['body']['message'])) {
-                throw new \Payrexx\PayrexxException('Payrexx PHP: Something went wrong, response from payrex: ' . print_r($response, true) , $response['info']['http_code']);
+                throw new \Payrexx\PayrexxException('Payrexx PHP: Something went wrong, response from payrexx: ' . print_r($response['body'], true) , $response['info']['http_code']);
             }
             $exception = new \Payrexx\PayrexxException($response['body']['message'], $response['info']['http_code']);
             if (!empty($response['body']['reason'])) {
