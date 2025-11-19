@@ -135,7 +135,7 @@ class Communicator
             $httpMethod,
             $this->httpHeaders
         );
-        $response = ['body' => ['reason' => 'dd']];
+
         $convertedResponse = array();
         if (!isset($response['body']['data']) || !is_array($response['body']['data'])) {
             if(!isset($response['body'])){
