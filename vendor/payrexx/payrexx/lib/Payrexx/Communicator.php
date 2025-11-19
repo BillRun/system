@@ -135,11 +135,14 @@ class Communicator
             $httpMethod,
             $this->httpHeaders
         );
-
+        $response = ['body' => ['reason' => 'dd']];
         $convertedResponse = array();
         if (!isset($response['body']['data']) || !is_array($response['body']['data'])) {
+            if(!isset($response['body'])){
+                throw new \Payrexx\PayrexxException('Payrexx PHP: Something went wrong, response: ' . print_r($response, true), $response['info']['http_code']);
+            }
             if (!isset($response['body']['message'])) {
-                throw new \Payrexx\PayrexxException('Payrexx PHP: Configuration is wrong! Check instance name and API secret', $response['info']['http_code']);
+                throw new \Payrexx\PayrexxException('Payrexx PHP: Something went wrong, response from payrex: ' . print_r($response, true) , $response['info']['http_code']);
             }
             $exception = new \Payrexx\PayrexxException($response['body']['message'], $response['info']['http_code']);
             if (!empty($response['body']['reason'])) {
