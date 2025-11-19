@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
     web:
         image: nginx:latest
@@ -29,6 +27,7 @@ services:
         - "BR_MDB_DBNAME=billing_container"
         volumes:
             - ${PWD}/../..:/billrun
+            - ${PWD}/../../cache:/billrun/cache
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongo

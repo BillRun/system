@@ -66,8 +66,9 @@ class BillrunController extends ApiController {
 		if ($billrunKey >= $currentBillrunKey) {
 			throw new Exception("Can't run billing cycle on active or future cycles");
 		}
-		if (Billrun_Billingcycle::isCycleRunning($billrunKey, $this->size, $invoicingDay)) {
-			throw new Exception("Already Running");
+		$host = Billrun_Util::getHostName();
+		if (Billrun_Billingcycle::isCycleRunningOnHost($billrunKey, $host, $this->size)) {
+			throw new Exception("Billing cycle $billrunKey is already running on host $host");
 		}
 		$cycleStatus = Billrun_Billingcycle::getCycleStatus($billrunKey, null, $invoicingDay);
 		if ($cycleStatus == 'finished' || $cycleStatus == 'to_rerun') {
@@ -82,6 +83,9 @@ class BillrunController extends ApiController {
 				'billrun_key' => $billrunKey,
 				'generate_pdf' => filter_var($generatedPdf, FILTER_VALIDATE_BOOLEAN)
 			];
+			if ($invoicingDay) {
+				$jobSettings['invoicing_day'] = $invoicingDay;
+			}
 			$schedule = $request->get('schedule');
 			$message = Billrun_Jobsmanager::getInstance()->push('Cycle', $jobSettings, null, $schedule);
 			$output = array (
@@ -557,7 +561,7 @@ class BillrunController extends ApiController {
 					break;
 				case 'pay_mode':
 				case 'mode':
-					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge‎'];	
+					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge'];	
 					if (!is_null($value) && !in_array(trim($value, '"'), $array)) {
 						return false;
 					}
@@ -567,6 +571,16 @@ class BillrunController extends ApiController {
 			}
 		}
 		return true;
+	}
+	
+	public function workerstatusAction() {
+		$workerStatus = Billrun_Jobsmanager::getInstance()->isWorkerEnabled();
+		$output = array (
+			'status' => $workerStatus ? 1 : 0,
+			'desc' => 'Worker status is ' . ($workerStatus ? 'enabled' : 'disabled'),
+			'details' => array(),
+		);
+		$this->setOutput(array($output));
 	}
 
 }

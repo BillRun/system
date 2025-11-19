@@ -5,11 +5,10 @@ namespace MongoDB\Tests\Operation;
 use MongoDB\Operation\InsertOne;
 use MongoDB\Operation\ListDatabaseNames;
 use MongoDB\Tests\CommandObserver;
-use function version_compare;
 
 class ListDatabaseNamesFunctionalTest extends FunctionalTestCase
 {
-    public function testListDatabaseNames()
+    public function testListDatabaseNames(): void
     {
         $server = $this->getPrimaryServer();
 
@@ -19,12 +18,12 @@ class ListDatabaseNamesFunctionalTest extends FunctionalTestCase
 
         $databases = null;
         (new CommandObserver())->observe(
-            function () use (&$databases, $server) {
+            function () use (&$databases, $server): void {
                 $operation = new ListDatabaseNames();
 
                 $databases = $operation->execute($server);
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertObjectNotHasAttribute('authorizedDatabases', $event['started']->getCommand());
                 $this->assertSame(true, $event['started']->getCommand()->nameOnly);
             }
@@ -35,29 +34,25 @@ class ListDatabaseNamesFunctionalTest extends FunctionalTestCase
         }
     }
 
-    public function testAuthorizedDatabasesOption()
+    public function testAuthorizedDatabasesOption(): void
     {
         (new CommandObserver())->observe(
-            function () {
+            function (): void {
                 $operation = new ListDatabaseNames(
                     ['authorizedDatabases' => true]
                 );
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertObjectHasAttribute('authorizedDatabases', $event['started']->getCommand());
-                $this->assertSame(true, $event['started']->getCommand()->nameOnly);
+                $this->assertSame(true, $event['started']->getCommand()->authorizedDatabases);
             }
         );
     }
 
-    public function testFilterOption()
+    public function testFilterOption(): void
     {
-        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
-            $this->markTestSkipped('listDatabase command "filter" option is not supported');
-        }
-
         $server = $this->getPrimaryServer();
 
         $insertOne = new InsertOne($this->getDatabaseName(), $this->getCollectionName(), ['x' => 1]);
@@ -73,21 +68,17 @@ class ListDatabaseNamesFunctionalTest extends FunctionalTestCase
         }
     }
 
-    public function testSessionOption()
+    public function testSessionOption(): void
     {
-        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
-            $this->markTestSkipped('Sessions are not supported');
-        }
-
         (new CommandObserver())->observe(
-            function () {
+            function (): void {
                 $operation = new ListDatabaseNames(
                     ['session' => $this->createSession()]
                 );
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );

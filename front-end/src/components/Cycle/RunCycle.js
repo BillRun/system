@@ -1,17 +1,31 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { Col, Row, Panel, Form, FormGroup, ControlLabel, Label, Button, HelpBlock } from 'react-bootstrap';
+import { Col, Row, Panel, Form, FormGroup, ControlLabel, Label } from 'react-bootstrap';
 import { Map, List } from 'immutable';
-import { getCycleQuery, getChargeStatusQuery, getOperationsQuery } from '../../common/ApiQueries';
-import { getList, clearList } from '@/actions/listActions';
-import { runBillingCycle, runResetCycle, chargeAllCycle } from '@/actions/cycleActions';
-import { clearItems } from '@/actions/entityListActions';
-import { ConfirmModal } from '@/components/Elements';
+import moment from 'moment';
+import isNumber from 'is-number';
+import { Actions } from '@/components/Elements';
+import Field from '@/components/Field';
 import CycleData from './CycleData';
 import CyclesSelector from './CyclesSelector';
 import { getCycleName } from './CycleUtil';
-import Field from '@/components/Field';
+import PartialForm from './PartialForm';
+import { getCycleQuery, getChargeStatusQuery, getOperationsQuery } from '@/common/ApiQueries';
+import { getList, clearList } from '@/actions/listActions';
+import { isWorkersSelector } from '@/selectors/appSelectors';
+import {
+  runBillingCycle,
+  runResetCycle,
+  chargeAllCycle,
+  runBillingCycleWithWorkers
+} from '@/actions/cycleActions';
+import {
+  showFormModal,
+  showConfirmModal,
+} from "@/actions/guiStateActions/pageActions";
+import { clearItems } from '@/actions/entityListActions';
+
 
 class RunCycle extends Component {
 
@@ -34,26 +48,28 @@ class RunCycle extends Component {
     chargeStatusRefreshed: Map(),
   };
 
+  static refreshSteps = [
+    { timeout: 10000, iterations: 6 },
+    { timeout: 60000, iterations: 60 },
+  ];
+
   constructor(props) {
     super(props);
-    this.autoRefresh = null;
-    this.autoRefreshChargingStatus = null;
-    this.refreshAfterRun = null;
+    this.timerAutoRefresh = null;
+    this.timerAutoRefreshChargingStatus = null;
+    this.timerRefreshAfterRun = null;
   }
 
   state = {
     selectedCycle: Map(),
     selectedCycleName: '',
-    showRerunConfirm: false,
-    showResetConfirm: false,
-    showChargeAllConfirm: false,
     autoRefreshRunning: false,
     autoRefreshStep: 0,
     autoRefreshIterations: 0,
-    showRefreshButton: false,
     ChargedAllClicked: false,
     generatePdf: null,
-    hideChargeButtton: true
+    showRefreshButton: false,
+    showChargeAllButton: false
   }
 
   componentDidMount() {
@@ -70,28 +86,30 @@ class RunCycle extends Component {
 
   componentWillUnmount() {
     this.unsetAutoRefresh();
-    clearTimeout(this.autoRefreshChargingStatus);
-    clearTimeout(this.refreshAfterRun);
+    clearTimeout(this.timerAutoRefreshChargingStatus);
+    clearTimeout(this.timerRefreshAfterRun);
     this.clearData();
   }
 
+  /** Init Functions */
   initAutoRefresh = () => {
     this.unsetAutoRefresh();
-    this.setState({
+    this.setState(() => ({
       autoRefreshRunning: true,
       autoRefreshIterations: 0,
       autoRefreshStep: 0,
-    });
-    this.autoRefresh = setTimeout(this.runAutoRefresh, this.refreshSteps[0].timeout);
+    }));
+    this.timerAutoRefresh = setTimeout(this.runAutoRefresh, RunCycle.refreshSteps[0].timeout);
   }
 
   initAutoRefreshChargingStatus = () => {
-    this.setState({ ChargedAllClicked: true });
-    clearTimeout(this.autoRefreshChargingStatus);
-    this.autoRefreshChargingStatus = setTimeout(() =>
+    this.setState(() => ({ ChargedAllClicked: true }));
+    clearTimeout(this.timerAutoRefreshChargingStatus);
+    this.timerAutoRefreshChargingStatus = setTimeout(() =>
       this.runAutoRefreshChargingStatus(true), 10000);
   }
 
+  /** Functions */
   clearData = () => {
     this.props.dispatch(clearList('cycles_list'));
     this.props.dispatch(clearList('cycle_data'));
@@ -100,24 +118,19 @@ class RunCycle extends Component {
     this.props.dispatch(clearList('billrunInvoices'));
   }
 
+  unsetAutoRefresh = () => {
+    clearTimeout(this.timerAutoRefresh);
+  }
+
   runAutoRefreshChargingStatus = (firstTime = false) => {
     const { chargeStatusRefreshed } = this.props;
-    clearTimeout(this.autoRefreshChargingStatus);
+    clearTimeout(this.timerAutoRefreshChargingStatus);
     if (!firstTime && chargeStatusRefreshed.get('start_date', null) === null) {
-      this.setState({ ChargedAllClicked: false });
+      this.setState(() => ({ ChargedAllClicked: false }));
       return;
     }
     this.props.dispatch(getList('charge_status_refresh', getOperationsQuery()));
-    this.autoRefreshChargingStatus = setTimeout(this.runAutoRefreshChargingStatus, 10000);
-  }
-
-  refreshSteps = [
-    { timeout: 10000, iterations: 6 },
-    { timeout: 60000, iterations: 60 },
-  ];
-
-  unsetAutoRefresh = () => {
-    clearTimeout(this.autoRefresh);
+    this.timerAutoRefreshChargingStatus = setTimeout(this.runAutoRefreshChargingStatus, 10000);
   }
 
   runAutoRefresh = () => {
@@ -125,7 +138,7 @@ class RunCycle extends Component {
     this.props.dispatch(clearItems('billruns'));
     if (cycleAdditionalData.get('cycle_status', '') !== 'running') {
       this.unsetAutoRefresh();
-      this.setState({ autoRefreshRunning: false });
+      this.setState(() => ({ autoRefreshRunning: false }));
       if (cycleAdditionalData.get('cycle_status', '') === 'finished') {
         const { selectedCycleName } = this.state;
         this.onChangeSelectedCycle(selectedCycleName);
@@ -134,41 +147,34 @@ class RunCycle extends Component {
     }
     this.reloadCycleData();
     const { autoRefreshIterations, autoRefreshStep } = this.state;
-    const refreshStep = this.refreshSteps[autoRefreshStep];
+    const refreshStep = RunCycle.refreshSteps[autoRefreshStep];
     this.unsetAutoRefresh();
     if (autoRefreshIterations < refreshStep.iterations - 1) {
-      this.setState({ autoRefreshIterations: autoRefreshIterations + 1 });
-      this.autoRefresh = setTimeout(this.runAutoRefresh, refreshStep.timeout);
+      this.setState(() => ({ autoRefreshIterations: autoRefreshIterations + 1 }));
+      this.timerAutoRefresh = setTimeout(this.runAutoRefresh, refreshStep.timeout);
     } else {
       const newAutoRefreshStep = autoRefreshStep + 1;
-      if (newAutoRefreshStep >= this.refreshSteps.length) {
-        this.setState({ showRefreshButton: true, autoRefreshRunning: false });
+      if (newAutoRefreshStep >= RunCycle.refreshSteps.length) {
+        this.setState(() => ({ showRefreshButton: true, autoRefreshRunning: false }));
         return;
       }
-      const newRefreshStep = this.refreshSteps[newAutoRefreshStep];
-      this.autoRefresh = setTimeout(this.runAutoRefresh, newRefreshStep.timeout);
-      this.setState({
+      const newRefreshStep = RunCycle.refreshSteps[newAutoRefreshStep];
+      this.timerAutoRefresh = setTimeout(this.runAutoRefresh, newRefreshStep.timeout);
+      this.setState(() => ({
         autoRefreshStep: newAutoRefreshStep,
         autoRefreshIterations: 0,
-      });
+      }));
     }
-  }
-
-  getSelectedCycleStatus = () => {
-    const { cycleAdditionalData } = this.props;
-    const { selectedCycle } = this.state;
-    return cycleAdditionalData.get('cycle_status', selectedCycle.get('cycle_status', ''));
   }
 
   runCycle = (rerun = false) => {
     this.props.dispatch(clearItems('billruns'));
-    const { selectedCycle, generatePdf } = this.state;
-    const { cycleAdditionalData } = this.props;
-    const isGeneratePdf = (generatePdf !== null) ? generatePdf : cycleAdditionalData.get('generate_pdf', true);
+    const { selectedCycle } = this.state;
+    const isGeneratePdf = this.getIsGeneratePdf();
     this.props.dispatch(runBillingCycle(selectedCycle.get('billrun_key', ''), rerun, isGeneratePdf))
       .then((response) => {
         if (response.status) {
-          this.refreshAfterRun = setTimeout(this.reloadCycleData, 1000);
+          this.timerRefreshAfterRun = setTimeout(this.reloadCycleData, 1000);
         }
       });
   }
@@ -179,52 +185,10 @@ class RunCycle extends Component {
     this.props.dispatch(runResetCycle(selectedCycle.get('billrun_key', '')))
       .then((response) => {
         if (response.status) {
-          this.refreshAfterRun = setTimeout(this.reloadCycleData, 1000);
+          this.timerRefreshAfterRun = setTimeout(this.reloadCycleData, 1000);
         }
       });
   }
-
-  onClickRun = () => {
-    this.runCycle();
-  }
-
-  onClickRerun = () => {
-    this.setState({ showRerunConfirm: true });
-  }
-
-  onClickReset = () => {
-    this.setState({ showResetConfirm: true });
-  }
-
-  onClickChargeAll = () => {
-    this.setState({ showChargeAllConfirm: true });
-  }
-
-  chargeAll = () => {
-    this.initAutoRefreshChargingStatus();
-    this.props.dispatch(chargeAllCycle());
-  }
-
-  onClickRefresh = () => {
-    this.reloadCycleData();
-  }
-
-  renderRefreshButton = () => (
-    this.state.showRefreshButton && this.getSelectedCycleStatus() === 'running' && (
-      <div className="pull-right">
-        <Button bsSize="xsmall" className="btn-primary" onClick={this.onClickRefresh}>
-          <i className="fa fa-refresh" />
-          &nbsp;Refresh
-        </Button>
-      </div>
-    ));
-
-  renderPanelHeader = () => (
-    <div>
-      Run a billing cycle
-      {this.renderRefreshButton()}
-    </div>
-  );
 
   clearCycleData = () => {
     this.props.dispatch(clearList('cycle_data'));
@@ -239,31 +203,26 @@ class RunCycle extends Component {
     this.props.dispatch(getList('cycle_data', getCycleQuery(selectedBillrunKey)));
   }
 
+  isChargingStatusProcessing = () => {
+    const { chargeStatusRefreshed } = this.props;
+    const { ChargedAllClicked } = this.state;
+    const processing = chargeStatusRefreshed.get('start_date', null) !== null;
+    return ChargedAllClicked || processing;
+  }
+
+  /** Getters Functions */
+
+  getIsGeneratePdf = () => {
+    const { generatePdf } = this.state;
+    const { cycleAdditionalData } = this.props;
+    return (generatePdf !== null) ? generatePdf : cycleAdditionalData.get('generate_pdf', true);
+  }
+
   getCycleData = (cycleName) => {
     const selectedCycle = Map({ billrun_key: cycleName });
     this.reloadCycleData(selectedCycle);
     return selectedCycle;
   }
-
-  onChangeSelectedCycle = (selectedCycleName) => {
-    this.props.dispatch(clearItems('billruns')); // refetch items list because item was (changed in / added to) list
-    this.setState({
-      selectedCycle: this.getCycleData(selectedCycleName),
-      selectedCycleName,
-    });
-  }
-
-  renderCyclesSelect = () => {
-    const { selectedCycleName } = this.state;
-    return (
-      <CyclesSelector
-        onChange={this.onChangeSelectedCycle}
-        statusesToDisplay={List(['past'])}
-        selectedCycles={selectedCycleName}
-        timeStatus={true}
-      />
-    );
-  };
 
   getStatusStyle = (status) => {
     switch (status) {
@@ -283,233 +242,317 @@ class RunCycle extends Component {
     }
   }
 
-  renderCycleStatus = () => {
-    const cycleStatus = this.getSelectedCycleStatus();
-    return (
-      <Label bsStyle={this.getStatusStyle(cycleStatus)} className="non-editable-field">
-        {cycleStatus.toUpperCase()}
-      </Label>
-    );
-  }
-
-  renderStartDate = () => {
+  getSelectedCycleStatus = () => {
     const { cycleAdditionalData } = this.props;
     const { selectedCycle } = this.state;
-    return (
-      <div className="non-editable-field">
-        {cycleAdditionalData.get('start_date', selectedCycle.get('start_date', '-'))}
-      </div>
-    );
+    return cycleAdditionalData.get('cycle_status', selectedCycle.get('cycle_status', ''));
   }
 
-  renderEndDate = () => {
+  isSelectedCycleWithWorkers = () => {
     const { cycleAdditionalData } = this.props;
+    return cycleAdditionalData.get('job_md5', '').length > 0;
+  }
+
+  getHeaderActions = () => {
+    const { chargeStatus } = this.props;
+    const { showRefreshButton, showChargeAllButton } = this.state;
+    const selectedCycleStatus = this.getSelectedCycleStatus();
+    let disabledChargeAllButton = true;
+    let titleChargeAllButton = 'Charge is running...';
+    if (this.isChargingStatusProcessing()) {
+      disabledChargeAllButton = true;
+      titleChargeAllButton = 'Processing...';
+    } else if (chargeStatus.get('status', false)) {
+      disabledChargeAllButton = false;
+      titleChargeAllButton = 'Charge All';
+    }
+
+    return ([{
+      label: 'Refresh',
+      onClick: this.reloadCycleData,
+      show: showRefreshButton && ['running'].includes(selectedCycleStatus),
+      type: 'refresh',
+      actionStyle: 'primary',
+      actionSize: 'xsmall'
+    }, {
+      label: titleChargeAllButton,
+      onClick: this.onClickChargeAll,
+      enable: !disabledChargeAllButton,
+      show: showChargeAllButton,
+      showIcon: false,
+      actionStyle: 'primary',
+      actionSize: 'xsmall'
+    }]);
+  }
+
+  getRunCycleActions = () => {
+    const { isWorkers } = this.props;
+    const selectedCycleStatus = this.getSelectedCycleStatus();
+    return ([{
+      label: 'Run!',
+      onClick: this.onClickRun,
+      show: ['to_run'].includes(selectedCycleStatus) && !isWorkers,
+      type: 'start',
+      actionStyle: 'primary',
+      actionSize: 'small',
+    }, {
+      label: 'Run!',
+      onClick: this.onClickPartialRun,
+      show: ['to_run'].includes(selectedCycleStatus) && isWorkers,
+      type: 'start',
+      actionStyle: 'primary',
+      actionSize: 'small',
+    }, {
+      label: 'Re-run',
+      onClick: this.onClickRerun,
+      show: ['finished', 'to_rerun'].includes(selectedCycleStatus) && !isWorkers,
+      type: 're-start',
+      actionStyle: 'primary',
+      actionSize: 'small',
+    }, {
+      label: 'Re-run',
+      onClick: this.onClickPartialRerun,
+      show: ['finished', 'to_rerun'].includes(selectedCycleStatus) && isWorkers,
+      type: 're-start',
+      actionStyle: 'primary',
+      actionSize: 'small',
+    }, {
+      label: 'Reset',
+      onClick: this.onClickReset,
+      show: ['finished'].includes(selectedCycleStatus),
+      type: 'reset',
+      actionStyle: 'primary',
+      actionSize: 'small',
+    }]);
+  }
+
+  /** Action (On..) Functions */
+  onClickReset = () => {
+    const { cycleAdditionalData } = this.props;
+    const confirm = {
+      type: 'confirm',
+      message: `Are you sure you want to reset ${getCycleName(cycleAdditionalData)}?`,
+      children: <p className="text-center"><Label bsStyle="danger">Cycle data will be reset (except for confirmed invoices)</Label></p>,
+      onOk: this.resetCycle,
+      labelOk: 'Reset',
+    };
+    this.props.dispatch(showConfirmModal(confirm));
+  }
+
+  onClickRerun = () => {
+    const { cycleAdditionalData } = this.props;
+    const confirm = {
+      type: 'confirm',
+      message: `Are you sure you want to re-run ${getCycleName(cycleAdditionalData)}?`,
+      children: <p className="text-center"><Label bsStyle="danger">Cycle data will be reset (except for confirmed invoices)</Label></p>,
+      onOk: this.onRerun,
+      labelOk: 'ReRun!',
+    };
+    this.props.dispatch(showConfirmModal(confirm));
+  }
+
+  onClickPartialRerun = () => {
+    this.onClickPartialRun(true);
+  }
+
+  onClickChargeAll = () => {
+    const confirm = {
+      type: 'confirm',
+      message: 'Are you sure you want to run a "Charge All" request?',
+      children: <p className="text-center"><Label bsStyle="danger">The action will charge all customers</Label></p>,
+      onOk: this.onChargeAll,
+      labelOk: 'Run',
+    };
+    this.props.dispatch(showConfirmModal(confirm));
+  }
+
+  onClickRun = () => {
+    const confirm = {
+      type: 'confirm',
+      message: `Are you sure you want run cycle ${getCycleName(this.props.cycleAdditionalData)}`,
+      onOk: this.runCycle,
+      labelOk: 'Run',
+    };
+    this.props.dispatch(showConfirmModal(confirm));
+  }
+
+  onClickPartialRun = (isRerun = false) => {
+    const config = {
+      title: `Are you sure you want run cycle ${getCycleName(this.props.cycleAdditionalData)}`,
+      skipConfirmOnClose: false,
+      onOk: this.onPartialRun,
+      labelOk: 'Run',
+    };
+    return this.props.dispatch(showFormModal(Map({
+      include: [],
+      exclude: [],
+      isRerun: isRerun
+    }), PartialForm, config));
+  }
+
+  onChangeSelectedCycle = (selectedCycleName) => {
+    this.props.dispatch(clearItems('billruns')); // refetch items list because item was (changed in / added to) list
+    this.unsetAutoRefresh();
+    this.setState(() => ({
+      selectedCycle: this.getCycleData(selectedCycleName),
+      selectedCycleName,
+    }));
+  }
+
+  onPartialRun = (settings) => {
     const { selectedCycle } = this.state;
-    return (
-      <div className="non-editable-field">
-        {cycleAdditionalData.get('end_date', selectedCycle.get('end_date', '-'))}
-      </div>
-    );
+    const isGeneratePdf = this.getIsGeneratePdf();
+    this.props.dispatch(clearItems('billruns'));
+    const include = settings.get('include', []);
+    const exclude = settings.get('exclude', []);
+    this.props.dispatch(runBillingCycleWithWorkers(selectedCycle.get('billrun_key', ''), isGeneratePdf, include, exclude))
+      .then((response) => {
+        if (response.status) {
+          this.timerRefreshAfterRun = setTimeout(this.reloadCycleData, 1000);
+        }
+      });
   }
 
-  renderCycleCompletionPercentage = () => {
-    const { cycleAdditionalData } = this.props;
-    const completionPercentage = cycleAdditionalData.get('completion_percentage', false);
-    return (
-      <div className="non-editable-field">
-        {completionPercentage ? `${completionPercentage}%` : '-'}
-      </div>
-    );
+  onChangePdfGenerate = (e) => {
+    const { value } = e.target;
+    this.setState(() => ({ generatePdf: value }));
   }
 
-  renderCycleConfirmationPercentage = () => {
-    const { cycleAdditionalData } = this.props;
-    const confirmationPercentage = cycleAdditionalData.get('confirmation_percentage', false);
-    return (
-      <div className="non-editable-field">
-        {confirmationPercentage ? `${confirmationPercentage}%` : '-'}
-      </div>
-    );
+  onChargeAll = () => {
+    this.initAutoRefreshChargingStatus();
+    this.props.dispatch(chargeAllCycle());
   }
 
-  fields = List([
-    { label: 'Select cycle', renderFunc: this.renderCyclesSelect },
-    { label: 'Status', renderFunc: this.renderCycleStatus },
-    { label: 'Start date', renderFunc: this.renderStartDate },
-    { label: 'End date', renderFunc: this.renderEndDate },
-    { label: 'Completion percentage', renderFunc: this.renderCycleCompletionPercentage },
-    { label: 'Confirmation percentage', renderFunc: this.renderCycleConfirmationPercentage },
-  ]);
+  onRerun = () => {
+    this.runCycle(true);
+  }
 
-  renderFields = () => this.fields.map((field, key) => (
-    <FormGroup key={key}>
-      <Col sm={3} lg={2} componentClass={ControlLabel}>{field.label}</Col>
-      <Col sm={6} lg={6}>
-        {field.renderFunc()}
+  /** Render Functions */
+  renderPanelHeader = () => (
+    <Row>
+      <Col sm={12} >
+        <div className="pull-left">
+          <h4>
+            Run a billing cycle
+          </h4>
+        </div>
+        <div className="pull-right mt10">
+          <Actions actions={this.getHeaderActions()} />
+        </div>
       </Col>
-    </FormGroup>),
+    </Row>
   );
 
-  renderRunButton = () => (
-    this.getSelectedCycleStatus() === 'to_run' &&
-      (<Button onClick={this.onClickRun}>Run!</Button>)
-  )
-
-  renderRerunButton = () => (
-    (this.getSelectedCycleStatus() === 'finished' || this.getSelectedCycleStatus() === 'to_rerun') &&
-      (<Button onClick={this.onClickRerun}>Re-run</Button>)
-  )
-
-  onTogglePdf = (e) => {
-    const { value } = e.target;
-    this.setState({ generatePdf: value });
-  }
-
-  renderGeneratePdfCheckbox = () => {
-    let { generatePdf } = this.state;
-    const { cycleAdditionalData } = this.props;
-    if (generatePdf === null) {
-      generatePdf = cycleAdditionalData.get('generate_pdf', true);
-    }
-    if ((this.getSelectedCycleStatus() === 'finished' ||
-    this.getSelectedCycleStatus() === 'to_run')) {
-      return (<Field fieldType="checkbox" value={generatePdf} onChange={this.onTogglePdf} label="Generate PDF invoices" />);
-    }
-    return null;
-  }
-
-  renderResetButton = () => (
-    this.getSelectedCycleStatus() === 'finished' &&
-      (<Button onClick={this.onClickReset}>Reset</Button>)
-  )
-
-  isChargingStatusProcessing = () => {
-    const { chargeStatusRefreshed } = this.props;
-    const { ChargedAllClicked } = this.state;
-    const processing = chargeStatusRefreshed.get('start_date', null) !== null;
-    return ChargedAllClicked || processing;
-  }
-
-  renderChargeAllButton = () => {
-    const { chargeStatus } = this.props;
-    let disabled = true;
-    let title = '';
-    if (this.isChargingStatusProcessing()) {
-      disabled = true;
-      title = 'Processing...';
-    } else if (chargeStatus.get('status', false)) {
-      disabled = false;
-      title = 'Charge All';
-    } else {
-      disabled = true;
-      title = 'Charge is running...';
-    }
-
-    return (<Button disabled={disabled} onClick={this.onClickChargeAll}>{title}</Button>);
-  }
-
-  onRerunCancel = () => {
-    this.setState({ showRerunConfirm: false });
-  }
-
-  onResetCancel = () => {
-    this.setState({ showResetConfirm: false });
-  }
-
-  onRerunOk = () => {
-    this.runCycle(true);
-    this.setState({ showRerunConfirm: false });
-  }
-
-  onResetOk = () => {
-    this.resetCycle();
-    this.setState({ showResetConfirm: false });
-  }
-
-  renderRerunConfirmationModal = () => {
-    const { showRerunConfirm } = this.state;
-    const { cycleAdditionalData } = this.props;
-    const confirmMessage = `Are you sure you want to re-run ${getCycleName(cycleAdditionalData)}?`;
-    const warningMessage = 'Cycle data will be reset (except for confirmed invoices)';
-    return (
-      <ConfirmModal onOk={this.onRerunOk} onCancel={this.onRerunCancel} show={showRerunConfirm} message={confirmMessage} labelOk="Yes">
-        <FormGroup validationState="error">
-          <HelpBlock>{warningMessage}</HelpBlock>
-        </FormGroup>
-      </ConfirmModal>
-    );
-  }
-
-  renderResetConfirmationModal = () => {
-    const { showResetConfirm } = this.state;
-    const { cycleAdditionalData } = this.props;
-    const confirmMessage = `Are you sure you want to reset ${getCycleName(cycleAdditionalData)}?`;
-    const warningMessage = 'Cycle data will be reset (except for confirmed invoices)';
-    return (
-      <ConfirmModal onOk={this.onResetOk} onCancel={this.onResetCancel} show={showResetConfirm} message={confirmMessage} labelOk="Yes">
-        <FormGroup validationState="error">
-          <HelpBlock>{warningMessage}</HelpBlock>
-        </FormGroup>
-      </ConfirmModal>
-    );
-  }
-
-  onChargeAllCancel = () => {
-    this.setState({ showChargeAllConfirm: false });
-  }
-
-  onChargeAllOk = () => {
-    this.setState({ showChargeAllConfirm: false });
-    this.chargeAll();
-  }
-
-  renderChargeAllConfirmationModal = () => {
-    const { showChargeAllConfirm } = this.state;
-    const confirmMessage = 'Are you sure you want to run a "Charge All" request?';
-    const warningMessage = 'The action will charge all customers';
-    return (
-      <ConfirmModal onOk={this.onChargeAllOk} onCancel={this.onChargeAllCancel} show={showChargeAllConfirm} message={confirmMessage} labelOk="Yes">
-        <FormGroup validationState="error">
-          <HelpBlock>{warningMessage}</HelpBlock>
-        </FormGroup>
-      </ConfirmModal>
-    );
-  }
-
   render() {
-    const { selectedCycle, hideChargeButtton } = this.state;
-    const { cycleAdditionalData } = this.props;
+    const { selectedCycle, selectedCycleName } = this.state;
+    const { cycleAdditionalData, isWorkers } = this.props;
+
+    const isCycleWithWorkers = this.isSelectedCycleWithWorkers();
+    const completionPercentage = cycleAdditionalData.get('completion_percentage', false);
+    const confirmationPercentage = cycleAdditionalData.get('confirmation_percentage', false);
+    const cycleStatus = this.getSelectedCycleStatus();
     const billrunKey = selectedCycle.get('billrun_key', '');
     const shouldDisplayBillrunData = List(['running', 'finished', 'confirmed', 'to_rerun']).contains(this.getSelectedCycleStatus());
-    const showConfirmAllButton = this.getSelectedCycleStatus() === 'finished';
-    const isCycleConfirmed = this.getSelectedCycleStatus() === 'confirmed';
+    const showConfirmAllButton = cycleStatus === 'finished';
+    const showGeneratePdf = ['finished', 'to_run'].includes(cycleStatus);
+    const isCycleConfirmed = cycleStatus === 'confirmed';
+    const isGeneratePdf = this.getIsGeneratePdf();
+    const startDate = isCycleWithWorkers
+      ? moment(cycleAdditionalData.getIn(['entry', 'start_time'], ''))
+      : moment(cycleAdditionalData.get('start_date', selectedCycle.get('start_date', '')));
+    const endDate = isCycleWithWorkers
+      ? moment(cycleAdditionalData.getIn(['entry', 'end_time'], ''))
+      : moment(cycleAdditionalData.get('end_date', selectedCycle.get('end_date', '')));
     const baseFilter = {
       billrun_key: billrunKey,
     };
 
     return (
-      <div>
-        <Row>
-          <Col lg={12}>
-            <div className="pull-right" style={{ paddingBottom: 10 }}>
-              {!hideChargeButtton ? this.renderChargeAllButton(): false}
-            </div>
-          </Col>
-        </Row>
+      <div className="run-cycle">
         <Row>
           <Col lg={12}>
             <Panel header={this.renderPanelHeader()}>
               <Form horizontal>
-                {this.renderFields()}
-
+                <FormGroup>
+                  <Col sm={3} lg={2} componentClass={ControlLabel}>Select cycle</Col>
+                  <Col sm={6} lg={6}>
+                    <CyclesSelector
+                      onChange={this.onChangeSelectedCycle}
+                      statusesToDisplay={List(['past'])}
+                      selectedCycles={selectedCycleName}
+                      timeStatus={true}
+                    />
+                  </Col>
+                </FormGroup>
+                <FormGroup>
+                  <Col sm={3} lg={2} componentClass={ControlLabel}>Status</Col>
+                  <Col sm={6} lg={6}>
+                    {cycleStatus === '' 
+                      ? <Field value="-" editable={false} />
+                      : <Label bsStyle={this.getStatusStyle(cycleStatus)} className="non-editable-field">
+                          {cycleStatus.toUpperCase()}
+                        </Label>
+                    }
+                  </Col>
+                </FormGroup>
+                <FormGroup>
+                  <Col sm={3} lg={2} componentClass={ControlLabel}>
+                    {isWorkers ? 'Process start time' : 'Start date'}
+                  </Col>
+                  <Col sm={6} lg={6}>
+                    {startDate.isValid() 
+                      ? <Field fieldType="datetime" value={startDate} editable={false} />
+                      : <Field value="-" editable={false} />
+                    }
+                  </Col>
+                </FormGroup>
+                <FormGroup>
+                  <Col sm={3} lg={2} componentClass={ControlLabel}>
+                    {isWorkers ? 'Process end time' : 'End date'}
+                  </Col>
+                  <Col sm={6} lg={6}>
+                  {endDate.isValid() 
+                    ? <Field fieldType="datetime" value={endDate} editable={false} />
+                    : <Field value="-" editable={false} />
+                  }
+                  </Col>
+                </FormGroup>
+                <FormGroup>
+                  <Col sm={3} lg={2} componentClass={ControlLabel}>Last Run Completion percentage</Col>
+                  <Col sm={6} lg={6}>
+                    { isNumber(completionPercentage)
+                      ? <Field fieldType="percentage" value={completionPercentage / 100} editable={false} />
+                      : <Field value="-" editable={false} />
+                    }
+                  </Col>
+                </FormGroup>
+                <FormGroup>
+                  <Col sm={3} lg={2} componentClass={ControlLabel}>Confirmation percentage</Col>
+                  <Col sm={6} lg={6}>
+                    { isNumber(confirmationPercentage)
+                      ? <Field fieldType="percentage" value={confirmationPercentage / 100} editable={false} />
+                      : <Field value="-" editable={false} />
+                    }
+                  </Col>
+                </FormGroup>
+                { isWorkers && (
+                  <FormGroup>
+                    <Col sm={3} lg={2} componentClass={ControlLabel}>Total Generated Invoices</Col>
+                    <Col sm={6} lg={6}>
+                      <Field value={cycleAdditionalData.get('generated_invoices', '-')} editable={false} />
+                    </Col>
+                  </FormGroup>
+                )}
                 <FormGroup>
                   <Col sm={3} lg={2} componentClass={ControlLabel} />
                   <Col sm={6} lg={6}>
-                    {this.renderRunButton()}
-                    {this.renderRerunButton()}
-                    {this.renderResetButton()}
-                    <div className="pull-right" style={{ paddingBottom: 10 }}>
-                      {this.renderGeneratePdfCheckbox()}
+                    <div className="pull-left">
+                      <Actions actions={this.getRunCycleActions()} />
+                    </div>
+                    <div className="pull-right mt10">
+                      { showGeneratePdf && (
+                        <Field fieldType="checkbox" value={isGeneratePdf} onChange={this.onChangePdfGenerate} label="Generate PDF invoices" />
+                      )}
                     </div>
                   </Col>
                 </FormGroup>
@@ -522,24 +565,22 @@ class RunCycle extends Component {
                   reloadCycleData={this.reloadCycleData}
                   showConfirmAllButton={showConfirmAllButton}
                   isCycleConfirmed={isCycleConfirmed}
+                  isWorkers={isWorkers}
                 />
               )}
-              {this.renderRerunConfirmationModal()}
-              {this.renderResetConfirmationModal()}
-              {this.renderChargeAllConfirmationModal()}
             </Panel>
           </Col>
         </Row>
       </div>
     );
   }
-
 }
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state, props) => ({
   cycleAdditionalData: state.list.get('cycle_data', List()).get(0) || Map(),
   chargeStatus: state.list.get('charge_status', List()).get(0) || Map(),
   chargeStatusRefreshed: state.list.get('charge_status_refresh', List()).get(0) || Map(),
+  isWorkers: isWorkersSelector(state, props),
 });
 
 export default connect(mapStateToProps)(RunCycle);

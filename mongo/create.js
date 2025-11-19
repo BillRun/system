@@ -86,6 +86,9 @@ db.counters.createIndex({coll: 1, key: 1}, { sparse: false, background: true});
 // Add indecies to insure that theres no duplicate lines.
 db.createCollection('billing_cycle');
 db.billing_cycle.createIndex({'billrun_key': 1, 'page_number': 1, 'page_size': 1}, { unique: true , background: true });
+db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'end_time':1},{ unique: false , sparse: false, background: true });
+db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'count':1,'invoicing_day':1},{ unique: false , sparse: false, background: true });
+
 
 db.createCollection('balances');
 db.balances.createIndex( { aid: 1, sid: 1, from: 1, to: 1, priority: 1 },{ unique: true, background: true });
@@ -224,8 +227,9 @@ db.jobs_messages.createIndex({'created': 1}, { 'unique': false, 'background': tr
 db.jobs_messages.createIndex({'start_time': 1}, { 'unique': false, 'background': true });
 db.jobs_messages.createIndex({'timeout': 1}, { 'unique': false, 'background': true });
 db.jobs_messages.createIndex({'complete_time': 1}, { 'unique': false, 'background': true });
+db.jobs_messages.createIndex({'schedule': 1}, { 'unique': false, 'background': true });
 db.jobs_messages.createIndex({'handle': 1}, { 'unique': false, 'background': true });
 db.jobs_messages.createIndex({'md5': 1}, { 'unique': true, 'background': true });
-db.jobs_messages.createIndex({'queue_name': 1, 'timeout': 1, 'done': 1 }, { 'unique': false, 'background': true });
+db.jobs_messages.createIndex({'queue_name': 1, 'done': 1, 'schedule': 1, 'timeout': 1 }, { 'unique': false, 'background': true });
 db.jobs_messages.createIndex({'body.parent': 1, }, { 'unique': false, 'background': true });
 db.jobs_messages.createIndex({'body.type': 1, 'created': -1}, { 'unique': false, 'background': true });

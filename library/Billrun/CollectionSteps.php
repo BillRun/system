@@ -21,7 +21,7 @@ abstract class Billrun_CollectionSteps extends Billrun_Base {
 	 */
 	protected static $type = 'collection_steps';
 
-	abstract public function createCollectionSteps($aid);
+	abstract public function createCollectionSteps($aid, $processe);
 
 	abstract public function removeCollectionSteps($aid);
 	

@@ -24,6 +24,7 @@ export const SAVE_SERVICE = 'SAVE_SERVICE';
 export const CLEAR_SERVICE = 'CLEAR_SERVICE';
 export const CLONE_RESET_SERVICE = 'CLONE_RESET_SERVICE';
 export const ADD_GROUP_SERVICE = 'ADD_GROUP_SERVICE';
+export const ADD_GROUP_SERVICE_COUNTER = 'ADD_GROUP_SERVICE_COUNTER';
 export const REMOVE_GROUP_SERVICE = 'REMOVE_GROUP_SERVICE';
 export const SERVICE_PRODUCTS_REMOVE = 'SERVICE_PRODUCTS_REMOVE';
 export const SERVICE_PRODUCTS_RATE_UPDATE_TO = 'SERVICE_PRODUCTS_RATE_UPDATE_TO';
@@ -82,6 +83,12 @@ export const addGroup = (groupName, usages, unit, value, shared, pooled, quantit
   products,
 });
 
+export const addGroupCounter = (groupName, groupData) => ({
+  type: ADD_GROUP_SERVICE_COUNTER,
+  groupName,
+  groupData,
+});
+
 export const removeGroup = groupName => ({
   type: REMOVE_GROUP_SERVICE,
   groupName,
@@ -105,7 +112,6 @@ const convertService = (getState, service, convertToBaseUnit, toSend) => {
     if (toSend) { // convert item before send to server
       if (itemWithMutations.getIn(['balance_period', 'type'], '') === 'custom_period') {
         itemWithMutations.setIn(['price', 0, 'to'], 1);
-        itemWithMutations.set('quantitative', false);
         itemWithMutations.set('prorated', false);
       }
       const balancePeriod = convertServiceBalancePeriodToString(itemWithMutations);

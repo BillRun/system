@@ -193,6 +193,15 @@ class Billrun_Factory {
 		return self::$config;
 	}
 
+		/**
+	 * method to update the config instance
+	 * 
+	 * @return Billrun_Config
+	 */
+	static public function updateConfig() {
+		self::$config->loadDbConfig();
+	}
+
 	/**
 	 * method to retrieve the db instance
 	 * 
@@ -239,7 +248,8 @@ class Billrun_Factory {
 
 			return self::$cache;
 		} catch (Exception $e) {
-			Billrun_Factory::log('Cache instance cannot be generated. Exception type: ' . gettype($e) . '. Error: ' . $e->getMessage() . '. Line #' . $e->getLine(), Zend_Log::ALERT);
+			Billrun_Factory::log('Cache instance cannot be generated.', Zend_Log::ALERT);
+			Billrun_Factory::log()->logCrash($e, Zend_Log::DEBUG);
 		}
 		return false;
 	}

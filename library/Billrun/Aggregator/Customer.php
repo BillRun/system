@@ -279,8 +279,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->plansCache =  $this->toKeyHashedArray($res,'plan');
 		}
 
-		$localPlans = $this->overrideEntityValues($this->plansCache,@$account['overrides'],'plan');
-		return $this->overrideEntityValues($localPlans,@$subscriber['overrides'],'plan');
+		$localPlans = self::overrideEntityValues($this->plansCache,@$account['overrides'],'plan');
+		return self::overrideEntityValues($localPlans,@$subscriber['overrides'],'plan');
 	}
 
 	public function getServices($account=null, $subscriber=null) {
@@ -291,8 +291,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->servicesCache = $this->toKeyHashedArray($res , 'name');
 		}
 
-		$localServices = $this->overrideEntityValues($this->servicesCache,@$account['overrides'],'service');
-		return $this->overrideEntityValues($localServices,@$subscriber['overrides'],'service');
+		$localServices = self::overrideEntityValues($this->servicesCache,@$account['overrides'],'service');
+		return self::overrideEntityValues($localServices,@$subscriber['overrides'],'service');
 	}
 
 	public function getRates($account=null, $subscriber=null) {
@@ -305,8 +305,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			Billrun_Factory::log("Finished preparing rates cache", Zend_Log::DEBUG);
 		}
 
-		$localRates = $this->overrideEntityValues($this->ratesCache,@$account['overrides'],'rate');
-		return $this->overrideEntityValues($localRates,@$subscriber['overrides'],'rate');
+		$localRates = self::overrideEntityValues($this->ratesCache,@$account['overrides'],'rate');
+		return self::overrideEntityValues($localRates,@$subscriber['overrides'],'rate');
 	}
 
 	public function getDiscounts($account=null, $subscriber=null) {
@@ -317,8 +317,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->discountsCache = $this->toKeyHashedArray($res, '_id');
 		}
 
-		$localDiscounts = $this->overrideEntityValues($this->discountsCache,@$account['overrides'],'discount');
-		return $this->overrideEntityValues($localDiscounts,@$subscriber['overrides'],'discount');;
+		$localDiscounts = self::overrideEntityValues($this->discountsCache,@$account['overrides'],'discount');
+		return self::overrideEntityValues($localDiscounts,@$subscriber['overrides'],'discount');;
 	}
         
         public function &getCharges() {
@@ -401,7 +401,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return An overriden entites hashed list.
 	 */
 
-	protected function &overrideEntityValues($entites, $overrideConditions, $entityType) {
+	public static function &overrideEntityValues($entites, $overrideConditions, $entityType, $params = []) {
 		$overridenEntites = $entites;
 		if(!empty($overrideConditions)) {
 			foreach($overrideConditions as $overideRule) {
@@ -410,7 +410,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 					if(	(empty($overideRule['condition']) || Billrun_Util::isConditionMet($entites[$ruleKey],$overideRule['condition'])) ) {
 							$overridenEntites[$ruleKey] = new Mongodloid_Entity( array_merge(
 															$entites[$ruleKey]->getRawData(),
-															$overideRule['value']
+															array_merge($overideRule['value'], $params)
 														) );
 					}
 				}
@@ -532,6 +532,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return \Billrun_Cycle_Account
 	 */
 	protected function parseToAccounts($outputArr) {
+		Billrun_Factory::dispatcher()->trigger('beforeParseToAccounts',[&$outputArr]);
 		$accounts = array();
 		$billrunData = array(
 			'billrun_key' => $this->getCycle()->key(),
@@ -584,7 +585,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				$accountsToRet[] = $accountToAdd;
 			}
 		}
-
+		Billrun_Factory::dispatcher()->trigger('afterParseToAccounts',[&$accountsToRet, $outputArr]);
 		return $accountsToRet;
 	}
 

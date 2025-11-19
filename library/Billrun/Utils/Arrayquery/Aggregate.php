@@ -77,7 +77,7 @@ class Billrun_Utils_Arrayquery_Aggregate {
 		$aggregateExpretion = new Billrun_Utils_Arrayquery_Aggregate_Expression();
 		foreach($data as $line) {
 			$stamp = Billrun_Util::generateArrayStamp(array('_id' => $aggregateExpretion->evaluate($line, $expression['_id']) ) );
-			$groupedData[$stamp] = $aggregateExpretion->evaluate($line, $expression, Billrun_Util::getFieldVal($prevGroupedData[$stamp],@$groupedData[$stamp]));
+			$groupedData[$stamp] = $aggregateExpretion->evaluate($line, $expression, Billrun_Util::getFieldVal($groupedData[$stamp], @$prevGroupedData[$stamp]));
 		}
 
 		return $groupedData;

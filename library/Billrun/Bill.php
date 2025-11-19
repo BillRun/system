@@ -154,7 +154,21 @@ abstract class Billrun_Bill {
 	}
 
 	public function save() {
-		$this->data->save(NULL, 1);
+		try{
+			$res = $this->data->save(1);
+			if(!$res){
+				throw new Exception('failed to save bill to the data base.');
+			}
+		} catch(Exception $ex){
+			Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+			Billrun_Factory::log()->log($ex->getTraceAsString(), Zend_Log::ERR);
+            Billrun_Factory::log()->log('Trying to save the bill again', Zend_Log::DEBUG);
+			$res = $this->data->save(1);
+			if(!$res){
+				throw new Exception('failed to save bill to the data base.');
+			}
+        }
+		
 		return true;
 	}
 
@@ -692,7 +706,7 @@ abstract class Billrun_Bill {
 		);
 	}
 
-	public static function getContractorsInCollection($aids = array()) {
+	public static function getContractorsInCollection($aids = array(), $minDebt = null) {
 		$account = Billrun_Factory::account();
 		Billrun_Factory::log()->log("Pulling excluded/included accounts from/in collection, according to the configuration", Zend_Log::DEBUG);
 		$exempted = $account->getExcludedFromCollection($aids);
@@ -717,7 +731,7 @@ abstract class Billrun_Bill {
 		}
 
 		Billrun_Factory::log()->log("Calculating balance for the accounts that were found relevant for collection", Zend_Log::DEBUG);
-		return static::getBalanceByAids($aidsQuery, true, true);
+		return static::getBalanceByAids($aidsQuery, true, true, $minDebt);
 	}
 
 	public function getDueBeforeVat() {

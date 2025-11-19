@@ -8,22 +8,50 @@ use MongoDB\Tests\TestCase;
 
 class CollectionInfoTest extends TestCase
 {
-    public function testGetName()
+    public function testGetBasicInformation(): void
     {
-        $info = new CollectionInfo(['name' => 'foo']);
+        $info = new CollectionInfo([
+            'name' => 'foo',
+            'type' => 'view',
+            'options' => ['capped' => true, 'size' => 1048576],
+            'info' => ['readOnly' => true],
+            'idIndex' => ['idIndex' => true], // Dummy option
+        ]);
+
         $this->assertSame('foo', $info->getName());
-    }
+        $this->assertSame('foo', $info['name']);
 
-    public function testGetOptions()
-    {
-        $info = new CollectionInfo(['name' => 'foo']);
-        $this->assertSame([], $info->getOptions());
+        $this->assertSame('view', $info->getType());
+        $this->assertSame('view', $info['type']);
 
-        $info = new CollectionInfo(['name' => 'foo', 'options' => ['capped' => true, 'size' => 1048576]]);
         $this->assertSame(['capped' => true, 'size' => 1048576], $info->getOptions());
+        $this->assertSame(['capped' => true, 'size' => 1048576], $info['options']);
+
+        $this->assertSame(['readOnly' => true], $info->getInfo());
+        $this->assertSame(['readOnly' => true], $info['info']);
+
+        $this->assertSame(['idIndex' => true], $info->getIdIndex());
+        $this->assertSame(['idIndex' => true], $info['idIndex']);
     }
 
-    public function testCappedCollectionMethods()
+    public function testMissingFields(): void
+    {
+        $info = new CollectionInfo([
+            'name' => 'foo',
+            'type' => 'view',
+        ]);
+
+        $this->assertSame([], $info->getOptions());
+        $this->assertArrayNotHasKey('options', $info);
+
+        $this->assertSame([], $info->getInfo());
+        $this->assertArrayNotHasKey('info', $info);
+
+        $this->assertSame([], $info->getIdIndex());
+        $this->assertArrayNotHasKey('idIndex', $info);
+    }
+
+    public function testCappedCollectionMethods(): void
     {
         $info = new CollectionInfo(['name' => 'foo']);
         $this->assertFalse($info->isCapped());
@@ -41,7 +69,7 @@ class CollectionInfoTest extends TestCase
         $this->assertSame(1048576, $info->getCappedSize());
     }
 
-    public function testDebugInfo()
+    public function testDebugInfo(): void
     {
         $expectedInfo = [
             'name' => 'foo',
@@ -52,7 +80,7 @@ class CollectionInfoTest extends TestCase
         $this->assertSame($expectedInfo, $info->__debugInfo());
     }
 
-    public function testImplementsArrayAccess()
+    public function testImplementsArrayAccess(): void
     {
         $info = new CollectionInfo(['name' => 'foo']);
         $this->assertInstanceOf('ArrayAccess', $info);
@@ -60,7 +88,7 @@ class CollectionInfoTest extends TestCase
         $this->assertSame('foo', $info['name']);
     }
 
-    public function testOffsetSetCannotBeCalled()
+    public function testOffsetSetCannotBeCalled(): void
     {
         $info = new CollectionInfo(['name' => 'foo', 'options' => ['capped' => true, 'size' => 1048576]]);
         $this->expectException(BadMethodCallException::class);
@@ -68,7 +96,7 @@ class CollectionInfoTest extends TestCase
         $info['options'] = ['capped' => false];
     }
 
-    public function testOffsetUnsetCannotBeCalled()
+    public function testOffsetUnsetCannotBeCalled(): void
     {
         $info = new CollectionInfo(['name' => 'foo', 'options' => ['capped' => true, 'size' => 1048576]]);
         $this->expectException(BadMethodCallException::class);

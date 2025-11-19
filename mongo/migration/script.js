@@ -126,16 +126,36 @@ var invoice_language_field = {
 lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
 // BRCD-1078: add rate categories
 for (var i in lastConfig['file_types']) {
-	var firstKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'])[0];
-	var secKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'][firstKey])[0];
+	var rc = lastConfig['file_types'][i]['rate_calculators'];
+	if (!rc || typeof rc !== 'object') {
+		continue;
+	}
+
+	var firstKeys = Object.keys(rc);
+	if (firstKeys.length === 0) {
+		continue;
+	}
+
+	var firstKey = firstKeys[0];
+	var second = rc[firstKey];
+	if (!second || typeof second !== 'object') {
+		continue;
+	}
+
+	var secKeys = Object.keys(second);
+	if (secKeys.length === 0) {
+		continue;
+	}
+
+	var secKey = secKeys[0];
+
 	if (secKey == 0) {
-		lastConfig['file_types'][i]['rate_calculators']['retail'] = {};
-	for (var usaget in lastConfig['file_types'][i]['rate_calculators']) {
-			if (usaget === 'retail') {
+		rc['retail'] = {};
+		for (var usaget in rc) {
+			if (usaget === 'retail')
 				continue;
-			}
-			lastConfig['file_types'][i]['rate_calculators']['retail'][usaget] = lastConfig['file_types'][i]['rate_calculators'][usaget];
-			delete lastConfig['file_types'][i]['rate_calculators'][usaget];
+			rc['retail'][usaget] = rc[usaget];
+			delete rc[usaget];
 		}
 	}
 }
@@ -548,7 +568,7 @@ db.collection_steps.createIndex({ 'trigger_date': 1 }, { unique: false, sparse: 
 db.collection_steps.createIndex({ 'extra_params.aid': 1 }, { unique: false, sparse: true, background: true });
 
 //BRCD-3474
-db.rebalance_queue.dropIndex("aid_1_billrun_key_1");
+_dropIndex("rebalance_queue", "aid_1_billrun_key_1");
 db.rebalance_queue.createIndex({"aid": 1, "billrun_key": 1, "conditions_hash": 1}, {unique: true, "background": true});
 
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
@@ -1931,6 +1951,33 @@ runOnce(lastConfig, 'BRCD-4306', function() {
 	}
 });
 
+//BRCD-4415 CG plugin
+runOnce(lastConfig, 'BRCD-4415', function () {
+	var cgPluginSettings = {
+        "name": "creditGuardPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false,
+        "configuration" : {
+            "values" : {
+                "card_expiration_field_name" : "card_expiration",
+				"oldest_card_expiration" : "20 years ago",
+                "years_to_extend_card_expiration" : 3,
+                "extend_card_expiration" : true
+            }
+        }
+	}
+	for (var j = 0; j < lastConfig.payment_gateways.length; j++) {
+        if (lastConfig.payment_gateways[j]['name'] === "CreditGuard") {
+            for (let pg_field_name in lastConfig.payment_gateways[j]) {
+                cgPluginSettings['configuration']['values'][pg_field_name] = JSON.parse(JSON.stringify(lastConfig.payment_gateways[j][pg_field_name]));
+            }
+       
+        }
+	}
+    lastConfig['plugins'].push(cgPluginSettings);
+});
+
 //BRCD-4455 - add user_id field to Israel invoice plugin conf
 runOnce(lastConfig, 'BRCD-4455-1', function () {
 	for (var i = 0; i < lastConfig.plugins.length; i++) {
@@ -1964,15 +2011,78 @@ runOnce(lastConfig, 'BRCD-4422', function () {
 	db.jobs_messages.createIndex({'start_time': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'timeout': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'complete_time': 1}, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'schedule': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'handle': 1}, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'md5': 1}, { 'unique': true, 'background': true });
-	db.jobs_messages.createIndex({'queue_name': 1, 'timeout': 1, 'done': 1 }, { 'unique': false, 'background': true });
+	db.jobs_messages.createIndex({'queue_name': 1, 'done': 1, 'schedule': 1, 'timeout': 1 }, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'body.parent': 1, }, { 'unique': false, 'background': true });
 	db.jobs_messages.createIndex({'body.type': 1, 'created': -1}, { 'unique': false, 'background': true });
-	if (db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos') {
+	if (db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos' && db.version() >= "8") {
 		sh.shardCollection(_dbName + ".jobs_messages", { "md5" : 1 } );
 	}
 });
+//BRCD-4827: Migration script for old to new structure of the “collection” field.
+runOnce(lastConfig, 'BRCD-4827', function () {
+	if (typeof lastConfig['collection'] !== 'undefined') {
+		var oldCollection = lastConfig['collection'];
+		var newCollection = {
+			"processes": [{
+				name: "default_process",
+				label: "Default process",
+				conditions: [	
+				],
+				"settings" : {
+				},
+				"steps" : [
+				]
+			}],
+		}
+		if (typeof oldCollection["settings"]["min_debt"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["min_debt"] = oldCollection["settings"]["min_debt"];
+			delete( oldCollection["settings"]["min_debt"]);
+		}
+		if (typeof oldCollection["settings"]["change_state_url"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["change_state_url"] = oldCollection["settings"]["change_state_url"];
+			delete( oldCollection["settings"]["change_state_url"]);
+		}
+		if (typeof oldCollection["settings"]["change_state_method"] !== 'undefined') {
+			newCollection['processes'][0]["settings"]["change_state_method"] = oldCollection["settings"]["change_state_method"];
+			delete( oldCollection["settings"]["change_state_method"]);
+		}
+		if (typeof oldCollection["steps"] !== 'undefined') {
+			newCollection['processes'][0]["steps"]= oldCollection["steps"];
+		}
+		newCollection["settings"] = oldCollection["settings"];
+
+		lastConfig['collection'] = newCollection;
+	}
+});
+
+// BRCD-4725: Set default to after tax as the before tax is new feature
+runOnce(lastConfig, 'BRCD-4725', function () {
+	db.rates.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
+	db.plans.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
+	db.services.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
+});
+
+runOnce(lastConfig, 'BRCD-4739', function () {
+	lastConfig['plugins'].push({
+		"name": "teldasPlugin",
+		"enabled": false,
+		"system": true,
+		"hide_from_ui": true
+	})
+	db.createCollection('plugin_teldas_ina_numbers');
+	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
+	db.createCollection('plugin_teldas_tariffs_profiles');
+	db.plugin_teldas_tariffs_profiles.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariffs_profiles_unique_index" });
+	db.createCollection('plugin_teldas_tariff_switching_classes');
+	db.createCollection("plugin_teldas_non_working_days"); 
+});
+
+if (typeof lastConfig['export'] === 'undefined') {
+	lastConfig.export = 1;
+}
 
 db.config.insertOne(lastConfig);
 
