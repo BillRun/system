@@ -14,7 +14,7 @@
  */
 abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 
-	protected $seperatedCrossCycleCharges = false;
+	protected $seperatedCrossCycleCharges = true;
 	
 	public function __construct($plan) {
 		parent::__construct($plan);
