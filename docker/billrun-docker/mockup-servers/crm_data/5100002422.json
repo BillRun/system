@@ -61,7 +61,7 @@
                 }
               }
             },
-            "proration": "no",
+            "proration": "inherited",
             "cycles": 24,
             "type": "monetary",
             "to": "2200-01-01 02:00:00",
