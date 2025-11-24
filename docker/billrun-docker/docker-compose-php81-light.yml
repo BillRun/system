@@ -32,6 +32,7 @@ services:
 #        - "BR_MDB_AUTHDB="
         volumes:
             - ./../..:/billrun
+            - ./../../cache:/billrun/cache
         command: sh -c "cp -r /var/www/html/vendor/* /billrun/vendor/&& php-fpm "
 
 networks:

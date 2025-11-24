@@ -6,7 +6,7 @@ import moment from 'moment';
 import { Col, Form, FormGroup, ControlLabel, Panel } from 'react-bootstrap';
 import Field from '@/components/Field';
 import {
-    runOnTitleParser,
+    chargeRunOnTitleParser,
     chargeRunOnParser,
     chargeTypeParser,
     chargePayModeParser,
@@ -90,7 +90,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
 
             <FormGroup>
                 <Col componentClass={ControlLabel} sm={5}>
-                    {getFieldName('cancelled', 'charging_process', 'Is Cancelled')}:
+                    {getFieldName('cancelled', 'charging_process', 'Cancelled')}:
                 </Col>
                 <Col sm={6}>
                     <Field editable={false} value={parseInt(item.get('cancelled', '')) === 1 ? 'Yes' : 'No'} />
@@ -201,7 +201,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
 
                 <FormGroup>
                     <Col componentClass={ControlLabel} sm={5}>
-                        {runOnTitleParser(item)}:
+                        {chargeRunOnTitleParser(item)}:
                     </Col>
                     <Col sm={6}>
                         {chargeRunOnParser(item)}

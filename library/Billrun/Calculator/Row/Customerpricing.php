@@ -463,7 +463,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				$balanceType = key($groupVolumeLeft); // usagev or cost
 				$value = current($groupVolumeLeft);
 				if ($balanceType == 'cost') {
-					$cost = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $volume);
+					$cost = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $volume, $plan->getName(), $this->getServices(), $this->getCallOffset());
 					$valueToCharge = $cost - $value;
 				} else {
 					$valueToCharge = $volume - $value;
@@ -525,7 +525,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			$charges = (float) $prepriced;
 		} else if (empty($balanceType) || $balanceType != 'cost') {
-			$charges = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $valueToCharge, $plan->getName(), $this->getServices(), 0, $this->row['urt']->sec); // TODO: handle call offset (set 0 for now)
+			$charges = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $valueToCharge, $plan->getName(), $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
 		} else {
 			$charges = $valueToCharge;
 		}

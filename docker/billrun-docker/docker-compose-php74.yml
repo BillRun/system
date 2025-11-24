@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
     web:
         image: nginx:latest
@@ -30,6 +28,8 @@ services:
         - "BR_MDB_DBNAME=billing_container"
         volumes:
             - ./../..:/billrun
+            - ./../../cache:/billrun/cache
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         command: sh -c "cp -r /var/www/html/vendor/* /billrun/vendor/&& php-fpm "
     mongodb:
         image: mongo:3.6
@@ -39,6 +39,7 @@ services:
             - ./data/mongodb36:/data/db/
             - ./../..:/billrun:ro
             - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27017:27017
 
