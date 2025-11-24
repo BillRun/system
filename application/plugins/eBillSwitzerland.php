@@ -41,12 +41,18 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 	protected $sftp_password;
 	protected $sftp_remote_directory;
 	protected $xmlFullPath;
+	protected $lineItemCounter;
+    protected $line_item_template;
+	protected $string_keys;
+	protected $abortGeneration = false;
 
 	public function __construct($options = [])
-	{
+	{	
+		$this->abortGeneration = false;
 		$this->xmlInvoice = [];
 		$this->xmlOutputPath = '';
 		$this->xmlFilename = '';
+		$this->line_item_template = 0;
 		$this->header_values = Billrun_Util::getIn($options, "header_values", false);
 		if (is_array($this->header_values)) {
 			Billrun_Util::setIn($this->xmlInvoice, 'Header', $this->header_values);
@@ -58,11 +64,19 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 		Billrun_Util::setIn($this->xmlInvoice, 'Body.DeliveryInfo', []);
 		$this->bill_headers = Billrun_Util::getIn($options, "bill_headers", false);
 		Billrun_Util::setIn($this->xmlInvoice, 'Body.Bill.Header', []);
+		Billrun_Util::setIn($this->xmlInvoice, 'Body.Bill.LineItems', []);
 		$this->address = Billrun_Util::getIn($options, "address", false);
 		$this->sftp_host = Billrun_Util::getIn($options, "sftp_host", "");
 		$this->sftp_user = Billrun_Util::getIn($options, "sftp_user", "");
 		$this->sftp_password = Billrun_Util::getIn($options, "sftp_password", "");
 		$this->sftp_remote_directory = Billrun_Util::getIn($options, "sftp_remote_directory", "");
+		$this->line_item_template = Billrun_Util::getIn($options, "line_item_template", false);
+		$string_keys_array = Billrun_Util::getIn($options, "string_keys", false);
+		if (is_array($string_keys_array)) {
+			// Turn it into a map for lookup
+			$this->string_keys = array_flip($string_keys_array);
+		}
+
 	}
 
 	public function getConfigurationDefinitions()
@@ -77,6 +91,24 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 				"nullable" => false,
 				"mandatory" => true
 			],
+			[
+                "type" => "json",
+                "field_name" => "string_keys",
+                "title" => "Whitelisted Static String Keys",
+                "editable" => true,
+                "display" => true,
+                "nullable" => false,
+                "mandatory" => true
+            ],
+			[
+                "type" => "json",
+                "field_name" => "line_item_template",
+                "title" => "Line Item Template",
+                "editable" => true,
+                "display" => true,
+                "nullable" => false,
+                "mandatory" => true
+            ],
 			[
 				"type" => "json",
 				"field_name" => "delivery_info",
@@ -162,7 +194,6 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 
 	protected function generateAndOutputXml($generator, $accountBillrun, $lines)
 	{
-
 		$exportDir = $generator->getExportDirectory();
 		$baseDir = dirname(rtrim($exportDir, '/\\'));
 		$billrunKey = isset($accountBillrun['billrun_key']) ? $accountBillrun['billrun_key'] : 'unknown_key';
@@ -181,6 +212,7 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 		$this->buildDeliveryInfo($accountBillrun);
 		$this->buildBillHeader($accountBillrun);
 		$this->formatInvoice();
+
 
 		// Build the full path and filename
 		$fullXmlPath = $this->xmlOutputPath . $this->xmlFilename;
@@ -201,6 +233,10 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 
 		try {
 			// XML Generation logic
+			if ($this->abortGeneration) {
+				Billrun_Factory::log("Ebill Plugin ABORTED: Cannot generate XML due to missing critical data (see previous logs).", Zend_Log::ALERT);
+				return;
+			}
 			$xml = new SimpleXMLElement("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Envelope type=\"string\"></Envelope>");
 			$this->arrayToXml($this->xmlInvoice, $xml);
 			$dom = dom_import_simplexml($xml)->ownerDocument;
@@ -243,17 +279,43 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 	private function arrayToXml($array, &$xml)
 	{
 		foreach ($array as $key => $value) {
-			if (is_array($value)) {
-				$child = $xml->addChild($key);
-				$this->arrayToXml($value, $child);
+
+			// Rule 1: Key is a non-numeric string (a tag name)
+			if (!is_numeric($key)) {
+
+				if (($key === 'LineItem' ) && is_array($value)) {
+					// The value is the array list of item objects [0 => item1, 1 => item2, ...]
+					// Loop through the list to create a clean, single tag for each.
+					foreach ($value as $itemData) {
+						// Add a new 'LineItem' tag for each element in the list.
+						$child = $xml->addChild($key);
+						// Recurse into the item's data. This level of recursion is now correct.
+						$this->arrayToXml($itemData, $child);
+					}
+					continue; // Skip the generic rules below for this key
+				}
+
+				// --- GENERIC RULES (for all other non-repeating tags) ---
+				if (is_array($value)) {
+					$child = $xml->addChild($key);
+					$this->arrayToXml($value, $child);
+				} else {
+					$xml->addChild($key, htmlspecialchars($value ?? ''));
+				}
 			} else {
-				$xml->addChild($key, htmlspecialchars($value ?? ''));
+				// Rule 2: Key is numeric (This handles the indices inside the list, 
+				// but this block should rarely be hit if the structure is defined correctly.)
+				if (is_array($value)) {
+					// Recurse to flatten the structure if needed (e.g., skips array index)
+					$this->arrayToXml($value, $xml);
+				}
 			}
 		}
 	}
 
 
-    protected function buildDeliveryInfo($accountBillrun)
+
+	protected function buildDeliveryInfo($accountBillrun)
     {
         $deliveryInfo = $this->populateFromConfig($this->delivery_info, $accountBillrun);        
         Billrun_Util::setIn($this->xmlInvoice, 'Body.DeliveryInfo', $deliveryInfo);
@@ -416,16 +478,103 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 	protected function populateFromConfig($config, $dataSource)
 	{
 		$populatedData = is_array($config) ? $config : [];
+		$plugin = $this; 
+        $isOptionalString = $this->string_keys;
 
-		array_walk_recursive($populatedData, function (&$value, $key) use ($dataSource) {
-			if (is_string($value)) {
-				$foundValue = Billrun_Util::getIn($dataSource, $value);
-				if ($foundValue !== null) {
-					$value = $foundValue;
-				}
+		array_walk_recursive($populatedData, function (&$value, $key) use ($dataSource, $plugin, $isOptionalString) {
+			if(isset($isOptionalString[$key])){
+				return;
+			}
+			$foundValue = Billrun_Util::getIn($dataSource, $value);
+
+			if ($foundValue === null) {
+				Billrun_Factory::log("Ebill Plugin: Data path missing for tag '$key'. Path: '$value'", Zend_Log::CRIT);
+				$plugin->abortGeneration = true;
+			} else {
+				$value = $foundValue;
 			}
 		});
-
 		return $populatedData;
+	}
+
+public function addLineItemToEbill($usage)
+    {
+        if (empty($this->line_item_template) || !is_array($this->line_item_template)) {
+            Billrun_Factory::log("Ebill Plugin Error: Missing or invalid 'line_item_template' configuration.", Zend_Log::ERR);
+            return;
+        }
+
+        $this->lineItemCounter++;
+        $lineItemId = (string)$this->lineItemCounter;
+        $lineItemData = $this->populateFromConfig($this->line_item_template, $usage);
+        
+        // Conditional Logic
+        $usageSid = Billrun_Util::getIn($usage, 'sid', '1');
+        
+        if ($usageSid === 0 || $usageSid === '0') {
+            $lineItemData['LineItemType'] = 'GLOBALALLOWANCEANDCHARGE';
+        } else {
+            $lineItemData['LineItemType'] = 'NORMAL';
+        }
+        $lineItemData['Tax']['TaxDetail'] = $this->getCalculatedTaxDetails($usage);
+        $lineItemData['LineItemID'] = $lineItemId;
+        $lineItemsContainer = Billrun_Util::getIn($this->xmlInvoice, 'Body.Bill.LineItems') ?: [];
+        
+        if (!isset($lineItemsContainer['LineItem'])) {
+            $lineItemsContainer['LineItem'] = [];
+        }
+        $lineItemsContainer['LineItem'][] = $lineItemData;
+        Billrun_Util::setIn($this->xmlInvoice, 'Body.Bill.LineItems', $lineItemsContainer);
+    }
+
+	protected function getCalculatedTaxDetails($usage)
+	{
+		$sid = $usage['sid'] ?? 'unknown';
+
+		$aprice = Billrun_Util::getIn($usage, 'aprice', null);
+		if ($aprice === null) {
+			Billrun_Factory::log("Ebill Plugin ABORT: Line Item '$sid' is missing mandatory field 'aprice'.", Zend_Log::CRIT);
+			$this->abortGeneration = true;
+			return [];
+		}
+
+		$rawTaxes = Billrun_Util::getIn($usage, 'tax_data.taxes', []);
+
+		if (count($rawTaxes) > 1) {
+			Billrun_Factory::log("Ebill Plugin ABORT: Line Item '$sid' has multiple taxes. Only one tax is allowed per line.", Zend_Log::CRIT);
+			$this->abortGeneration = true;
+			return [];
+		}
+
+		if (empty($rawTaxes) || !isset($rawTaxes[0])) {
+			Billrun_Factory::log("Ebill Plugin ABORT: Line Item '$sid' is missing 'tax_data.taxes' entry.", Zend_Log::CRIT);
+			$this->abortGeneration = true;
+			return [];
+		}
+
+		$taxItem = $rawTaxes[0];
+		$rate = Billrun_Util::getIn($taxItem, 'tax', null);
+		$amount = Billrun_Util::getIn($taxItem, 'amount', null);
+
+		if ($rate === null) {
+			Billrun_Factory::log("Ebill Plugin ABORT: Line Item '$sid' is missing tax rate field ('tax_data.taxes.0.tax').", Zend_Log::ALERT);
+			$this->abortGeneration = true;
+			return [];
+		}
+
+		if ($amount === null) {
+			Billrun_Factory::log("Ebill Plugin ABORT: Line Item '$sid' is missing tax amount field ('tax_data.taxes.0.amount').", Zend_Log::ALERT);
+			$this->abortGeneration = true;
+			return [];
+		}
+
+		$baseInclusive = $aprice + $amount;
+
+		return [[
+			'Rate' => $rate,
+			'Amount' => $amount,
+			'BaseAmountExclusiveTax' => $aprice,
+			'BaseAmountInclusiveTax' => $baseInclusive
+		]];
 	}
 }
