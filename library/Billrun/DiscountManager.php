@@ -1569,6 +1569,7 @@ class Billrun_DiscountManager {
 				}
 			}else{
 				$this->start = $discountTo;
+				$this->end = $this->cycle->end();
 				$amount = -$amount;
 			}
 		}else{
