@@ -17,13 +17,13 @@
         "invoice_message": null,
         "invoice_language": "gr_CY",
         "invoice_detailed": false,
-        "street": "DIMITRIOU PAPANIKOLI",
-        "house_number": "2",
+        "street": "",
+        "house_number": "",
         "apartment": "",
-        "province": "Lefkosia",
-        "city": "Nicosia",
-        "country": "CY",
-        "zip_code": "1077",
+        "province": "",
+        "city": "",
+        "country": "",
+        "zip_code": "",
         "po_box": "",
         "creation_time": "2025-10-23 13:02:37",
         "activation_date": "2025-10-23 13:04:25",
@@ -35,7 +35,7 @@
         "type": "subscriber",
         "from": "2025-10-23 13:04:25",
         "to": "2025-11-15 00:00:00",
-        "plan": "B2C_5GUNLIMITEDMAX_PP_INADV",
+        "plan": "UPFRONT_PLAN_PORATED",
         "play": "MOBILE",
         "firstname": "xx",
         "lastname": "zz",
@@ -47,8 +47,8 @@
         "former_plan": null,
         "services": [],
         "imsi": [],
-        "sub_number": "35796670808",
-        "portability_code": "PTTEXXPQ",
+        "sub_number": "",
+        "portability_code": "",
         "discounts": [
           {
             "priority": "",
@@ -56,7 +56,7 @@
             "from": "2025-10-23 10:04:25",
             "subject": {
               "plan": {
-                "B2C_5GUNLIMITEDMAX_PP_INADV": {
+                "UPFRONT_PLAN_PORATED": {
                   "value": 16.806
                 }
               }
@@ -65,15 +65,15 @@
             "cycles": 24,
             "type": "monetary",
             "to": "2200-01-01 02:00:00",
-            "description": "5G Unlimited Max 24 month Com Sim Only Youth Discount",
-            "key": "SUBSCRIBER_DISCOUNT_937"
+            "description": "",
+            "key": "SUBSCRIBER_DISCOUNT_1"
           }
         ],
         "overrides": [
           {
             "type": "plan",
             "id": null,
-            "key": "B2C_5GUNLIMITEDMAX_PP_INADV",
+            "key": "UPFRONT_PLAN_PORATED",
             "value": {
               "price": [
                 {
