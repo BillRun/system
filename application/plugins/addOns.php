@@ -104,7 +104,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
-		if ($row['type'] == 'ggsn' || $row['type'] == 'nsn' ) {
+		if ($row['type'] == 'ggsn' || $row['type'] == 'nsn' || $row['type'] == 'smsc' ) {
 			if (isset($row['urt'])) {
 				$this->lineTime = $row['urt']->sec;
 				$this->lineType = $row['type'];
@@ -113,10 +113,10 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				Billrun_Factory::log()->log('urt wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
-			if ($row['usaget'] == 'sms') {
-				$this->coefficient = $this->coefficient * 60;
-				$this->extraUsage = $row['usagev'] * $this->coefficient;
-			}
+			// if ($row['usaget'] == 'sms') {
+			// 	$this->coefficient = $this->coefficient * 60;
+			// 	$this->extraUsage = $row['usagev'] * $this->coefficient;
+			// }
 			
 		}
 		
