@@ -10,7 +10,7 @@ class conditaionlChargeTest extends \Codeception\Test\Unit
 
     protected function _before()
     {
-        
+        Billrun_Factory::config()->setInternalSubscribersMode();
     }
 
     protected function _after()
