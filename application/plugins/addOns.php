@@ -78,6 +78,8 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $concurrentMaxRetries;
 	
 	protected $row;
+
+    protected $lastLegitimateRow;
 	
 	protected $plan;
 
@@ -105,7 +107,9 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
 		if ($row['type'] == 'ggsn' || $row['type'] == 'nsn' || $row['type'] == 'smsc' ) {
+            
 			if (isset($row['urt'])) {
+				$this->lastLegitimateRow = $row;
 				$this->lineTime = $row['urt']->sec;
 				$this->lineType = $row['type'];
 				$this->extraUsage = $row['usagev'];
@@ -133,7 +137,11 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator){
 		$this->updateBasePlanUsage($row, $update);
-		if (!is_null($this->package) && ($row['type'] == 'ggsn' || $row['type'] == 'nsn')) {
+		if (!is_null($this->package) &&
+			($row['type'] == 'ggsn' ||
+			 $row['type'] == 'nsn') ||
+			($row['type'] == 'smsc' && $this->lastLegitimateRow['stamp'] == $row['stamp']) ) ) {
+		
 			Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['addon_service'] = $this->package;
 			$balancesIncludeRow = array();
@@ -204,7 +212,10 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
-		if (!is_null($this->package) && ($row['type'] == 'ggsn' || $row['type'] == 'nsn')) {
+		if (!is_null($this->package) && ($row['type'] == 'ggsn' ||
+										 $row['type'] == 'nsn'||
+										 ($row['type'] == 'smsc' && $this->lastLegitimateRow['stamp'] == $row['stamp']) )) {
+			
 			$this->removeRoamingBalanceTx($row);
 		}
 	}
