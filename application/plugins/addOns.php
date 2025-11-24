@@ -139,7 +139,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->updateBasePlanUsage($row, $update);
 		if (!is_null($this->package) &&
 			($row['type'] == 'ggsn' ||
-			 $row['type'] == 'nsn') ||
+			 $row['type'] == 'nsn'  ||
 			($row['type'] == 'smsc' && $this->lastLegitimateRow['stamp'] == $row['stamp']) ) ) {
 		
 			Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
@@ -213,7 +213,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
 		if (!is_null($this->package) && ($row['type'] == 'ggsn' ||
-										 $row['type'] == 'nsn'||
+										 $row['type'] == 'nsn'  ||
 										 ($row['type'] == 'smsc' && $this->lastLegitimateRow['stamp'] == $row['stamp']) )) {
 			
 			$this->removeRoamingBalanceTx($row);
