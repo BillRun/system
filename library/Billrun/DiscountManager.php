@@ -1572,8 +1572,8 @@ class Billrun_DiscountManager {
 				$amount = -$amount;
 			}
 		}else{
-			if ($line['charge_op'] ==  "refund"){
-				$this->start = Billrun_Utils_Time::getTime($line['start']);
+			if ($line['charge_op'] ==  "refund" || $to < $this->cycle->end()){
+				$this->start = min(Billrun_Utils_Time::getTime($line['start']), $to);
 				$this->end = $this->cycle->end();
 				$amount = -$amount;
 			}else{
