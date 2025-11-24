@@ -128,11 +128,17 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	}
 
 	public function removeCollectionSteps($aid) {
-		$query = array(
-			'extra_params.aid' => $aid,
-			'notify_time' => array('$exists' => false)
-		);
-		$this->collection->remove($query);
+		try {
+			$query = array(
+				'extra_params.aid' => $aid,
+				'notify_time' => array('$exists' => false)
+			);
+			$this->collection->remove($query);
+			return true;
+		} catch (Exception $e) {
+            Billrun_Factory::log('removeCollectionSteps failed for aid: ' . $aid . '. Error: ' . $e->getCode() . " : " . $e->getMessage(), Zend_Log::NOTICE);
+			return false;
+		}
 	}
 
 	public function runCollectStep($aids = array()) {

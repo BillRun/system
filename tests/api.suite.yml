@@ -5,6 +5,8 @@ modules:
         - Asserts
         - \Helper\Api
         - \Helper\BillRunAPI
+        - \Helper\TestHelper
+        - \Helper\LogChecker
         - REST:
             depends: PhpBrowser
             part: Json

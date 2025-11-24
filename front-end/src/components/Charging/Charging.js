@@ -191,7 +191,7 @@ const mapDispatchToProps = (dispatch, props) => ({
     loadChargeProgressDetails: (charge) => dispatch(getChargeDetails(charge)),
     onChangeListSize: (size) => dispatch(setPageFlag('charging', 'listSize', size)),
     onClearCharge: () => dispatch(clearCharge()),
-    onCancelCharge: (charge) => dispatch(cancelCharge(charge)),
+    onCancelCharge: (charge) => dispatch(cancelCharge(charge)).then(() => dispatch(getChargesSchedule())),
     onSaveCharge: (charge) => dispatch(startCharge(charge)),
     showConfirmPopup: (confirm) => dispatch(showConfirmModal(confirm)),
     showItemDetailsPopup: (data, config) => dispatch(showFormModal(data, ChargingDetails, config)),

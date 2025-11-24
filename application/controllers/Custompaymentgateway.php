@@ -35,7 +35,7 @@ class CustompaymentgatewayController extends ApiController {
 
 		$options['pay_mode'] = !empty($request->get('pay_mode')) ? $request->get('pay_mode') : null;
 
-		if (!$this->validateOptions($options)) {
+		if (!$this->validateOptions($options) || Billrun_Bill_Payment::validateChargeFilters($options)) {
 			return $this->setError("One or more of the input parameters are not valid. ");
 		}
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type ' . $options['cpg_type'] . ' payment_gateway=' . $options['gateway_name'] . ' file_type=' . $options['file_type'];

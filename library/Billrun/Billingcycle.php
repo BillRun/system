@@ -272,17 +272,17 @@ class Billrun_Billingcycle {
 	 * @param $billingCycleCol - billing cycle collection
 	 * @param string $billrunKey - Billrun key
 	 * @param int $size - size of page 
-	 * 
+	 * @param array $moreFields - more fields
 	 * @return bool - True if billing cycle had started.
 	 */
-	protected static function hasCycleStarted($billrunKey, $size, $invoicing_day = null) {
+	protected static function hasCycleStarted($billrunKey, $size, $invoicing_day = null, $moreFields = []) {
 		$billingCycleCol = self::getBillingCycleColl();
-		$existsKeyQuery = array('billrun_key' => $billrunKey, 'page_size' => $size);
+		$existsKeyQuery = array_merge(array('billrun_key' => $billrunKey, 'page_size' => $size), $moreFields);
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
 			$existsKeyQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
-		$keyCount = $billingCycleCol->query($existsKeyQuery)->count();
-		if ($keyCount < 1) {
+		$atLeastOneDoc = $billingCycleCol->query($existsKeyQuery)->cursor()->limit(1)->current();
+		if ($atLeastOneDoc->isEmpty()) {
 			return false;
 		}
 		return true;
@@ -293,7 +293,7 @@ class Billrun_Billingcycle {
 	 * @param $billingCycleCol - billing cycle collection
 	 * @param string $billrunKey - Billrun key
 	 * @param int $size - size of page 
-	 * 
+	 * @param array $moreFields - more fields
 	 * @return bool - True if billing cycle is ended.
 	 */
 	public static function hasCycleEnded($billrunKey, $size, $invoicing_day = null) {
@@ -316,11 +316,11 @@ class Billrun_Billingcycle {
 	 * @param $billingCycleCol - billing cycle collection
 	 * @param string $billrunKey - Billrun key
 	 * @param int $size - size of page 
-	 * 
+	 * @param array $moreFields - more fields 
 	 * @return bool - True if generated all the bills from billrun objects
 	 */
-	public static function isCycleRunning($billrunKey, $size, $invoicing_day = null) {
-		if (!self::hasCycleStarted($billrunKey, $size, $invoicing_day)) {
+	public static function isCycleRunning($billrunKey, $size, $invoicing_day = null, $moreFields = []) {
+		if (!self::hasCycleStarted($billrunKey, $size, $invoicing_day, $moreFields)) {
 			return false;
 		}
 		if (self::hasCycleEnded($billrunKey, $size, $invoicing_day)) {
@@ -328,6 +328,20 @@ class Billrun_Billingcycle {
 		}
 		return true;
 	}
+
+	/**
+	 * True if billing cycle is running for a given billrun key. 
+	 * @param $billingCycleCol - billing cycle collection
+	 * @param string $billrunKey - Billrun key
+	 * @param int $size - size of page 
+	 * @param string $host - host 
+	 * @return bool - True if generated all the bills from billrun objects
+	 */
+	public static function isCycleRunningOnHost($billrunKey, $host, $size, $invoicingDay = null) {
+		$moreFields = ['host' => $host];
+		return self::isCycleRunning($billrunKey, $size, $invoicingDay, $moreFields);
+	}
+
 	
 	/**
 	 * Returns billrun keys of confirmed cycles according to the billrun keys that are transferred,
@@ -658,11 +672,11 @@ class Billrun_Billingcycle {
 			$query['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
 		
-		$billrunDoc = $billrunColl->query($query)->count();
-		$cycleDoc = $billingCycleCol->query($query)->count();
+		$billrunDoc = $billrunColl->query($query)->cursor()->limit(1)->current();
+		$cycleDoc = $billingCycleCol->query($query)->cursor()->limit(1)->current();
 		
 		
-		if ($billrunDoc > 0 && $cycleDoc <= 0) {
+		if (!$billrunDoc->isEmpty() && $cycleDoc->isEmpty()) {
 			return true;
 		}
 		return false;
