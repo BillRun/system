@@ -21,25 +21,14 @@ class UpfrontTest extends \Codeception\Test\Unit
     {
         ini_set('error_reporting', E_ALL & ~E_WARNING & ~E_NOTICE);
         $this->tester->enableExternalModeSettings();
-        $this->cleanDB();
+        $this->tester->cleanDB();
     }
 
     protected function _after()
     {
+        $this->tester->enableDBModeSettings();
     }
     
-    protected function cleanDB(){
-
-        $plans = Billrun_Factory::db()->plansCollection();
-        $plans->remove(['_id'=>['$exists' => true]]);
-        $lines = Billrun_Factory::db()->linesCollection();
-        $lines->remove(['_id'=>['$exists' => true]]);
-        $billruns = Billrun_Factory::db()->billrunCollection();
-        $billruns->remove(['_id'=>['$exists' => true]]);
-        $billing_cycleCollection = Billrun_Factory::db()->billing_cycleCollection();
-        $billing_cycleCollection->remove(['_id'=>['$exists' => true]]);
-
-    }
 
     public function testDiscountFinishPreviousMonthOnUpfronInheritedPlan_1()
     {
