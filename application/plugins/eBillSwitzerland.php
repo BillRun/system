@@ -44,6 +44,7 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 	protected $lineItemCounter;
     protected $line_item_template;
 	protected $string_keys;
+	protected $bill_summary_template;
 	protected $abortGeneration = false;
 
 	public function __construct($options = [])
@@ -65,6 +66,8 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 		$this->bill_headers = Billrun_Util::getIn($options, "bill_headers", false);
 		Billrun_Util::setIn($this->xmlInvoice, 'Body.Bill.Header', []);
 		Billrun_Util::setIn($this->xmlInvoice, 'Body.Bill.LineItems', []);
+		$this->bill_summary_template = Billrun_Util::getIn($options, "bill_summary_template", false);
+        Billrun_Util::setIn($this->xmlInvoice, 'Body.Bill.Summary', []);
 		$this->address = Billrun_Util::getIn($options, "address", false);
 		$this->sftp_host = Billrun_Util::getIn($options, "sftp_host", "");
 		$this->sftp_user = Billrun_Util::getIn($options, "sftp_user", "");
@@ -136,6 +139,15 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 				"nullable" => false,
 				"mandatory" => true
 			],
+			[
+                "type" => "json",
+                "field_name" => "bill_summary_template",
+                "title" => "Bill Summary Template",
+                "editable" => true,
+                "display" => true,
+                "nullable" => false,
+                "mandatory" => true
+            ],
 			[
 				"type" => "string",
 				"field_name" => "sftp_host",
@@ -211,6 +223,7 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 
 		$this->buildDeliveryInfo($accountBillrun);
 		$this->buildBillHeader($accountBillrun);
+		$this->buildBillSummary($accountBillrun);
 		$this->formatInvoice();
 
 
@@ -557,13 +570,13 @@ public function addLineItemToEbill($usage)
 		$amount = Billrun_Util::getIn($taxItem, 'amount', null);
 
 		if ($rate === null) {
-			Billrun_Factory::log("Ebill Plugin ABORT: Line Item '$sid' is missing tax rate field ('tax_data.taxes.0.tax').", Zend_Log::ALERT);
+			Billrun_Factory::log("Ebill Plugin ABORT: Line Item '$sid' is missing tax rate field ('tax_data.taxes.0.tax').", Zend_Log::CRIT);
 			$this->abortGeneration = true;
 			return [];
 		}
 
 		if ($amount === null) {
-			Billrun_Factory::log("Ebill Plugin ABORT: Line Item '$sid' is missing tax amount field ('tax_data.taxes.0.amount').", Zend_Log::ALERT);
+			Billrun_Factory::log("Ebill Plugin ABORT: Line Item '$sid' is missing tax amount field ('tax_data.taxes.0.amount').", Zend_Log::CRIT);
 			$this->abortGeneration = true;
 			return [];
 		}
@@ -576,5 +589,23 @@ public function addLineItemToEbill($usage)
 			'BaseAmountExclusiveTax' => $aprice,
 			'BaseAmountInclusiveTax' => $baseInclusive
 		]];
+	}
+
+	protected function buildBillSummary($accountBillrun)
+	{
+		// 1. Populate from Config
+		// This keeps "TotalAmountDue" => "TODO" (because it is Whitelisted)
+		// This keeps "Tax" => "CALCULATED_BY_BILLRUN" (temporary)
+		$summaryData = $this->populateFromConfig($this->bill_summary_template, $accountBillrun);
+
+		// 2. Overwrite Tax Structure
+		// We delete the "CALCULATED_BY_BILLRUN" string and insert the array.
+		$summaryData['Tax'] = [
+			'TaxDetail' => [], // Empty list, ready for your logic later
+			'TotalTax' => Billrun_Util::getIn($accountBillrun, 'totals.vat', 0)
+		];
+
+		// 3. Save to XML
+		Billrun_Util::setIn($this->xmlInvoice, 'Body.Bill.Summary', $summaryData);
 	}
 }
