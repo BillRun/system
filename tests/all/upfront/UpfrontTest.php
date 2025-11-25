@@ -385,4 +385,55 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertEquals(strtotime("2026-01-01 00:00:00"), $discountLine['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2026-02-01 00:00:00"), $discountLine['end']->toDateTime()->getTimestamp());
     }
+
+    public function testChangeSubFromArrearsPlanToUpfrontPlan()
+    {
+        /*
+        Change Subscriber From Arrears Plan To Upfront Plan
+        transfer from arrears to upfront in "2025-10-29 17:38:59"
+        */
+        $aid =5100001279;
+        $this->defaultOptions['stamp'] = '202511';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'B2C_UPFRONT';
+        $planNameArrears= 'B2C_ARREARS';
+        $this->tester->generatePlan(['name' => $planNameArrears]);// charge on termination = true
+        $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
+        $this->tester->runCycle($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
+        $planLineArrears = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planNameArrears, 'aid' => $aid));
+        $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
+        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
+        $discountLineArrears = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'plan'=> $planNameArrears));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false, 'plan'=> $planName));
+        //flat
+        // B2C_UPFRONT(33.605+3.252096774 (3/31*33.605))
+        $this->assertEqualsWithDelta(33.605, $planLineUpfront['aprice'],$this->epsilon);
+        $this->assertEquals(strtotime("2025-11-01 00:00:00"), $planLineUpfront['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLineUpfront['end']->toDateTime()->getTimestamp());
+        
+        $this->assertEqualsWithDelta(3.252096774, $planLine['aprice'],$this->epsilon);
+        $this->assertEquals(strtotime("2025-10-29 17:38:59"), $planLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-11-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+
+        //B2C_ARREARS 31.436935484(arrears)
+        $this->assertEqualsWithDelta(31.436935484, $planLineArrears['aprice'],$this->epsilon);
+
+        //discounts
+        //B2C_UPFRONT - upfront
+        $this->assertEqualsWithDelta(-16.806, $discountLineUpfront['aprice'],$this->epsilon);
+        $this->assertEquals(strtotime("2025-11-01 00:00:00"), $discountLineUpfront['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $discountLineUpfront['end']->toDateTime()->getTimestamp());
+
+        //B2C_UPFRONT  3/31*16.806
+        $this->assertEqualsWithDelta(-1.626387097, $discountLine['aprice'],$this->epsilon);
+        $this->assertEquals(strtotime("2025-10-29 17:38:59"), $discountLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-11-01 00:00:00"), $discountLine['end']->toDateTime()->getTimestamp());
+
+        //B2C_ARREARS  29/31*16.806(arrears)
+        $this->assertEqualsWithDelta(-15.721741935, $discountLineArrears['aprice'],$this->epsilon);
+    }
+
+    
 }
