@@ -14,13 +14,13 @@
  */
 abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 
-	protected $seperatedCrossCycleCharges = false;
+	protected $seperatedCrossCycleCharges = true;
 	
 	public function __construct($plan) {
 		parent::__construct($plan);
 		$this->seperatedCrossCycleCharges = Billrun_Util::getFieldVal(  $plan['separate_cross_cycle_charges'],
                                                                         Billrun_Factory::config()->getConfigValue('billrun.separate_cross_cycle_charges',
-																		$this->seperatedCrossCycleCharges) );
+																		true) );
 	}
 
 	/**
