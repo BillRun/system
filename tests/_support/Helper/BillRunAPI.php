@@ -754,6 +754,28 @@ class BillRunAPI extends \Codeception\Module
         $this->sendBillapiCreate($charge, 'charges');
     }
     
+
+    public function generateDiscount($override = [])
+  {
+    //http://billrun/billapi/discounts/create
+    $discount = array_merge([
+      
+        "description" => "nn",
+        "key" => '20240111134913715',
+        "proration" => "inherited",
+        "priority" => "",
+        "params" => [
+          "min_subscribers" => "",
+          "max_subscribers" => "",
+          "conditions" => [[]]
+        ],
+        "from" => "2023-05-12",
+        "type" => "monetary"
+      
+    ], $override);
+
+    $this->sendBillapiCreate($discount, 'discounts');
+  }
     
 }
 //billapi/accounts/permanentchange
