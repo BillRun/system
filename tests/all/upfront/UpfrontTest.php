@@ -51,7 +51,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002408;
         $this->defaultOptions['stamp'] = '202601';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
@@ -76,7 +76,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002413;
         $this->defaultOptions['stamp'] = '202601';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV_1';
+        $planName = "UPFRONT_PLAN_PORATED_TERMINATION_FALSE";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
@@ -102,7 +102,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002414;
         $this->defaultOptions['stamp'] = '202601';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $this->tester->generatePlan(['name' => 'B2C_5GUNLIMITEDMAX_PP_INADV_1', "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
+        $this->tester->generatePlan(['name' => "UPFRONT_PLAN_PORATED_TERMINATION_FALSE", "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         //flat-(plan prorated_termination =false not need to be credit) + discount("proration": "inherited"  + prorated_termination =false not need to be credit) 
@@ -119,7 +119,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002422;
         $this->defaultOptions['stamp'] = '202512';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
@@ -144,7 +144,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002408;
         $this->defaultOptions['stamp'] = '202511';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate start = true
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
@@ -177,7 +177,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002418;
         $this->defaultOptions['stamp'] = '202511';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV_2';
+        $planName = 'UPFRONT_PLAN_PORATED_START_FALSE';
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_start" =>false]);//Prorate start = false
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->tester->runCycle($this->defaultOptions);
@@ -208,7 +208,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002411;
         $this->defaultOptions['stamp'] = '202511';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate start = true
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
@@ -239,7 +239,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002416;
         $this->defaultOptions['stamp'] = '202511';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV_2';
+        $planName = 'UPFRONT_PLAN_PORATED_START_FALSE';
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_start" =>false]);//Prorate start = false
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
@@ -271,7 +271,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002412;
         $this->defaultOptions['stamp'] = '202512';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate  = true
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
@@ -295,7 +295,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002417;
         $this->defaultOptions['stamp'] = '202512';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV_3';
+        $planName = 'UPFRONT_PLAN_PORATED_FALSE';
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_start" =>false , "prorated_termination" =>false]);//Prorate  = false 
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
@@ -319,7 +319,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002419;
         $this->defaultOptions['stamp'] = '202601';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
         $this->tester->runCycle($this->defaultOptions);
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
@@ -344,7 +344,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002420;
         $this->defaultOptions['stamp'] = '202601';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
         $this->tester->runCycle($this->defaultOptions);
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
@@ -370,7 +370,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002421;
         $this->defaultOptions['stamp'] = '202601';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
         $this->tester->runCycle($this->defaultOptions);
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
