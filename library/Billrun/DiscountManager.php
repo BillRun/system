@@ -1527,7 +1527,7 @@ class Billrun_DiscountManager {
 						
 						if($to < $this->cycle->start()){
 							$amount = 0;
-						}else if($to < $this->cycle->end() ){
+						}else if($to < $this->cycle->end()){
 						 	$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line);
 						}else if($from > $this->cycle->start() && isset($line['split']) && !$line['split']){
 							$amount += $flatAmount;
