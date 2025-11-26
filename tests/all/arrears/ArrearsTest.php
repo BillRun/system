@@ -21,25 +21,13 @@ class ArrearsTest extends \Codeception\Test\Unit
     {
         ini_set('error_reporting', E_ALL & ~E_WARNING & ~E_NOTICE);
         $this->tester->enableExternalModeSettings();
-        $this->cleanDB();
+        $this->tester->cleanDB();
     }
 
     protected function _after()
     {
     }
-    
-    protected function cleanDB(){
 
-        $plans = Billrun_Factory::db()->plansCollection();
-        $plans->remove(['_id'=>['$exists' => true]]);
-        $lines = Billrun_Factory::db()->linesCollection();
-        $lines->remove(['_id'=>['$exists' => true]]);
-        $billruns = Billrun_Factory::db()->billrunCollection();
-        $billruns->remove(['_id'=>['$exists' => true]]);
-        $billing_cycleCollection = Billrun_Factory::db()->billing_cycleCollection();
-        $billing_cycleCollection->remove(['_id'=>['$exists' => true]]);
-
-    }
 
     
 
@@ -59,8 +47,8 @@ class ArrearsTest extends \Codeception\Test\Unit
         $this->tester->runCycle($this->defaultOptions);
         // $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine1 = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'key'=>'SUBSCRIBER_DISCOUNT_1'));
-        $discountLine2 = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'key'=>'SUBSCRIBER_DISCOUNT_2'));
+        $discountLine1 = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'key'=>'SUBSCRIBER_DISCOUNT_1_PLAN_5076'));
+        $discountLine2 = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'key'=>'SUBSCRIBER_DISCOUNT_2_PLAN_5076'));
 
   
         $this->assertEqualsWithDelta(22.403333333, $planLine['aprice'],$this->epsilon);
