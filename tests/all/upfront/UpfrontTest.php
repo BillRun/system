@@ -533,4 +533,30 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertEquals(null, $discountLine);
 
     }
+
+    public function testFullDiscountAndPlan_1()
+    {
+        /*
+        upfront plan  discount with "proration": "inherited" and plan start previous month
+        and discount start in the middle of previous month,  prorate start = true- > 
+        expected proration discount from the start of the discount +  discount on the current cycle (assume still not finish- need to support also finish before case)
+        */
+        $aid =5100002408;
+        $this->defaultOptions['stamp'] = '202512';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = "UPFRONT_PLAN_PORATED";
+        $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate start = true
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        //flat-42.566333333(9.756290323+33.605), discount(-16.806 +(-4.87916129))(start in in 2025-10-23 10:04:25) 9/30*16.806
+        $this->assertEqualsWithDelta(16.799, $billrun['totals']['before_vat'],$this->epsilon);
+        $this->assertEquals(null, $planLine);
+        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLineUpfront['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2026-01-01 00:00:00"), $planLineUpfront['end']->toDateTime()->getTimestamp());
+
+        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $discountLineUpfront['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2026-01-01 00:00:00"), $discountLineUpfront['end']->toDateTime()->getTimestamp());
+    }
 }
