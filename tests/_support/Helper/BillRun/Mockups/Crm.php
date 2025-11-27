@@ -18,6 +18,13 @@ class Crm extends \Helper\BillRun\Mockups\Mockup
 
   }
 
+  public function enableDBModeSettings($data = []) {
+    $model = new \ConfigModel();
+    $model->updateConfig('subscribers', $this->getDBConfiguration());
+    \Billrun_Config::getInstance()->loadDbConfig();
+
+  }
+
   protected function getSampleConfiguration2() {
 
   }
@@ -41,4 +48,22 @@ class Crm extends \Helper\BillRun\Mockups\Mockup
     ];
 }
 
+public function getDBConfiguration() {
+  return [
+      "subscriber" => [
+          "type" => "db",
+          "external_url" => "",
+          "timeout" => 20
+      ],
+      "account" => [
+          "type" => "db",
+          "external_url" => "",
+          "timeout" => 20
+      ],
+      "billable" => [
+          "url" => ""
+      ],
+      
+  ];
+}
 }

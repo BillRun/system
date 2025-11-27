@@ -41,6 +41,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	 */
 	public function receive() {
 		$ret = array();
+		$useNameAsSubfolder = $this->areConnectionNamesUnique();
 		
 		foreach ($this->sshConfig as $config) {
 
@@ -158,10 +159,10 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 					if (!empty($this->backupPaths)) {
 						$backupDestinationPaths = $this->backupPaths;
 						if (!empty($stamp_fields)) {
-							$stampFieldsHash = md5(serialize($stamp_fields));
+							$subfolderName = $useNameAsSubfolder ? $config['name'] : md5(serialize($stamp_fields));
 							$paths = is_array($this->backupPaths) ? $this->backupPaths : [$this->backupPaths];
-							$backupDestinationPaths = array_map(function ($path) use ($stampFieldsHash, $type) {
-								return rtrim($path, '/') . '/' . $type . '/' . $stampFieldsHash;
+							$backupDestinationPaths = array_map(function ($path) use ($subfolderName) {
+								return rtrim($path, '/') . '/' . $subfolderName;
 							}, $paths);
 						}
 						$backedTo = $this->backup($fileData['path'], $file, $backupDestinationPaths);
@@ -308,5 +309,26 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			}
 		}
 		return $stamp_fields;
+	}
+
+	/**
+	 * Checks if all SSH connections have unique and valid names.
+	 *
+	 * This ensures that each connection has a 'name' key and that
+	 * no two connections share the same name.
+	 *
+	 * @return boolean True if all names are unique, false otherwise.
+	 */
+	protected function areConnectionNamesUnique()
+	{
+		if (empty($this->sshConfig) || empty($this->extra_stamp_fields)) {
+			return false;
+		}
+
+		$configNames = array_column($this->sshConfig, 'name');
+		$allNamesExist = (count($configNames) === count($this->sshConfig));
+		$areNamesUnique = (count($configNames) === count(array_unique($configNames)));
+
+		return $allNamesExist && $areNamesUnique;
 	}
 }

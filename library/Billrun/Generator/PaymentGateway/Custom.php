@@ -36,7 +36,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected $fileGenerator;
 	protected $billSavedFields = array();
 	protected $mandatory_fields_per_entity = [];
-    public $locked_aid = null;
+    public $aid_to_lock = null;
     
     public function __construct($options) {
         if (!isset($options['file_type'])) {
@@ -464,11 +464,11 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     }
 
     protected function getConflictingQuery() {
-		if (!empty($this->locked_aid)) {
+		if (!empty($this->aid_to_lock)) {
 			return array(
 				'$or' => array(
 					array('filtration' => 'all'),
-					array('filtration' => array('$in' => [$this->locked_aid])),
+					array('filtration' => array('$in' => [$this->aid_to_lock]))
 				),
 			);
 		}
@@ -479,14 +479,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	protected function getInsertData() {
 		return array(
 			'action' => 'charge_account',
-			'filtration' => $this->locked_aid,
-		);
+			'filtration' => $this->aid_to_lock
+    	);
 	}
 
 	protected function getReleaseQuery() {
 		return array(
 			'action' => 'charge_account',
-			'filtration' => $this->locked_aid,
+			'filtration' => $this->aid_to_lock,
 			'end_time' => array('$exists' => false)
 		);
 

@@ -178,46 +178,48 @@ class Billrun_DiscountManager {
 			$eligibility = $this->getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions);
 			$this->setEligibility($this->eligibleDiscounts, $discount, $eligibility);
 		}
+
+		//Get the latest version of the account discount (in case the account had multiple revisions during the month)
+		$accountDiscounts = Billrun_Util::mapArrayToStructuredHash(
+									call_user_func_array('array_merge', array_column($accountRevisions,'discounts') ),
+									['key'] );
+		foreach ($accountDiscounts as $accountDiscount) {
+				$eligibility = $this->getDiscountEligibility($accountDiscount, $accountRevisions, $subscribersRevisions);
+				$this->setEligibility($this->eligibleDiscounts, $accountDiscount, $eligibility);
+				$this->setSubscriberDiscount($accountDiscount, $this->cycle->key());
+		}
+
 		// handle subscribers' level revisions
 		foreach ($subscribersRevisions as $sid => $subscriberRevisions) {
 			$this->handleDiscountsForSubsRevs($accountRevisions, $subscriberRevisions);
 		}
-
-
-			//Get the latest version of the account discount (in case the account had multiple revisions during the month)
-			$accountDiscounts = Billrun_Util::mapArrayToStructuredHash(
-										call_user_func_array('array_merge', array_column($accountRevisions,'discounts') ),
-										['key'] );
-			foreach ($accountDiscounts as $accountDiscount) {
-					$eligibility = $this->getDiscountEligibility($accountDiscount, $accountRevisions, $subscribersRevisions);
-					$this->setEligibility($this->eligibleDiscounts, $accountDiscount, $eligibility);
-					$this->setSubscriberDiscount($accountDiscount, $this->cycle->key());
-			}
 
 		$this->handleConflictingDiscounts();
 		}
 
 		protected function handleDiscountsForSubsRevs($accountRevisions, $subscriberRevisions){
 			$forcing = false;
-			foreach ($subscriberRevisions as $subscriberRevision){
+			foreach ($subscriberRevisions as &$subscriberRevision){
 				if (isset($subscriberRevision['discounts'])){
-					foreach ($subscriberRevision['discounts'] as $subDiscount) {
+					foreach ($subscriberRevision['discounts'] as &$subDiscount) {
 						$generalDiscount = self::$discounts[$this->cycle->key()][$subDiscount['key']] ?? null;
 						if(isset($generalDiscount)){
 							$this->forceSubscriberDiscount($generalDiscount, $subDiscount, $accountRevisions, $subscriberRevision);
 							$forcing = true;
 						} 
-						else{
+						else {
 							$overrideDiscountName = false;
 							$sid = $subscriberRevision['sid'];
-							if(isset($this->eligibleDiscounts[$subDiscount['key']]) && !isset($this->eligibleDiscounts[$subDiscount['key']]['subs'][$sid])){
-								$forcing = true;
+							if($forcing || isset($this->eligibleDiscounts[$subDiscount['key']]) && (
+									!isset($this->eligibleDiscounts[$subDiscount['key']]['subs'][$sid])
+										||
+									Billrun_Util::isArrayDiffer($this->eligibleDiscounts[$subDiscount['key']]['discount'], $subDiscount,['subject','params'])
+								)){
 								$overrideDiscountName = true;
+								$subDiscount['key_forced'] = true;
 								$this->handleOverrideDiscountForSubRev($subDiscount, $subscriberRevision, $accountRevisions, $overrideDiscountName);
-							}   
-                                            
+							}
 						}	
-
 					}
 				}
 				if (isset($subscriberRevision['overrides'])){
@@ -236,7 +238,7 @@ class Billrun_DiscountManager {
 				call_user_func_array('array_merge', array_column($subscriberRevisions,'discounts') ),
 				['key'] );
 			foreach ($subscriberDiscounts as $key => $subDiscount) {
-				if(!$forcing){
+				if( !$forcing && empty($subDiscount['key_forced']) ){
 					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
 					$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
 					$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
@@ -1252,10 +1254,19 @@ class Billrun_DiscountManager {
 					'discount_to' => new Mongodloid_Date($to),
 				];
 				$discountAmount = $eligibilityInterval['amount'];
+				if(isset($eligibilityInterval['start'])){
+					$addToCdr['start'] = new Mongodloid_Date($eligibilityInterval['start']);
+				}
+				if(isset($eligibilityInterval['end'])){
+					$addToCdr['end'] = new Mongodloid_Date($eligibilityInterval['end']);
+				}
 				if(isset($eligibilityInterval['sid'])){
 					$addToCdr['sid_cause_eligibility'] = $eligibilityInterval['sid'];
 				}
-				if ($discountAmount >= 0  && (($discountedAmount + $discountAmount > $amountLimit) ||
+				if($discountAmount >= 0 && $lineAmountLimit < 0 && $line['charge_op'] == 'refund'){
+					$lineAmountLimit = abs($lineAmountLimit);
+				}
+				if($discountAmount >= 0  && (($discountedAmount + $discountAmount > $amountLimit) ||
 						($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) ) { // current discount reached limit
 					$addToCdr['orig_discount_amount'] = -$discountAmount;
 					$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $this->discountedLinesAmounts[$line['stamp']]);
@@ -1263,7 +1274,7 @@ class Billrun_DiscountManager {
 				
 				if ($discountAmount > 0) {
 					$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
-				} else if($line['is_upfront'] && $discountAmount < 0 ) {
+				} else if(isset($line['is_upfront']) && $line['is_upfront'] && $discountAmount < 0 ) {
 					$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
 				}
 				
@@ -1276,7 +1287,7 @@ class Billrun_DiscountManager {
 						$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $this->discountedLinesAmounts[$line['stamp']]);
 						if ($discountAmount > 0) {
 							$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
-						} else if($line['is_upfront'] && $discountAmount < 0 ) {
+						} else if(isset($line['is_upfront']) && $line['is_upfront'] && $discountAmount < 0 ) {
 							$cdr = $this->generateCdr($type, $discount, $discountAmount, $line, $addToCdr);
 						}
 					}
@@ -1352,12 +1363,16 @@ class Billrun_DiscountManager {
 				$from = $currValueEligibilityInterval['from'];
 				$to = $currValueEligibilityInterval['to'];
 				if ($from < $to) {
+					$amount = $this->calculateDiscountAmount($discount, $line, $value, $from, $to, $operations, $sequential);
 					$ret[] = [
 						'from' => $from,
 						'to' => $to,
-						'amount' => $this->calculateDiscountAmount($discount, $line, $value, $from, $to, $operations, $sequential),
+						'amount' => $amount,
 						'discountDays' => Billrun_Utils_Time::getDaysDiff($from, $to),
-						'sid' =>  $valueEligibility['sid'] ?? null
+						'sid' =>  $valueEligibility['sid'] ?? null,
+						'start' => $this->start ?? null,
+						'end' => $this->end ?? null
+
 					];
 		}
 			}
@@ -1461,39 +1476,110 @@ class Billrun_DiscountManager {
 	protected function calculateDiscountAmount($discount, $line, $value, &$from, &$to, $operations = [], $sequential = false) {
 		$isPercentage = Billrun_Util::getIn($discount, 'type', 'percentage') === 'percentage';
 		$isSequential = $isPercentage && $sequential;
+		$isUpfront = $line['is_upfront'] ?? false;
+		$discountFrom = $discount['from']->sec ?? $this->cycle->start();
+		$discountTo = $discount['to']->sec ?? $this->cycle->end();
 		if ($this->isDiscountProrated($discount, $line)) {
 			$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
 			$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
 			if (!$proratedStart) {
-				$from = $this->cycle->start();
-			} else if (isset($line['start'])) {
-				$from = max($from, Billrun_Utils_Time::getTime($line['start']));
+				$from = max($discountFrom, $this->cycle->start());
+			}else if (isset($line['start'])) {
+				$from = max($discountFrom, $from, Billrun_Utils_Time::getTime($line['start']));
+			} else if (isset($line['start_date'])) {
+				$from = max($discountFrom ?? $from, $from, Billrun_Utils_Time::getTime($line['start_date']));
 			}
 			if (!$proratedEnd) {
-				$to = $this->cycle->end();
+				$to = min($discountTo, $this->cycle->end());
 			} else if (isset($line['end'])) {
-				$to = min($to, Billrun_Utils_Time::getTime($line['end']));
+				if(isset($line['charge_op']) && $line['charge_op'] ==  "refund"){
+					$to = min($discountTo , $to, Billrun_Utils_Time::getTime($line['start']) + 1);
+				}else{
+					$to = min($discountTo , $to, Billrun_Utils_Time::getTime($line['end']));
+				}
+			} else if (isset($line['end_date'])) {
+				$to = min($discountTo, $to, Billrun_Utils_Time::getTime($line['end_date']));
 			}
+			$this->start = $from;
+			$this->end = $to;
 		}
 		if(!$isSequential){
 			$flatAmount = $amount = $this->getDiscountAmount($discount, $line, $value, $operations);
 			if ($this->isDiscountProrated($discount, $line)) {
-			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to, 'ceil');
-			$cycleDays = $this->cycle->days();
-			if ($discountDays < $cycleDays) {
-				$amount *= ($discountDays / $cycleDays);
-			}
-			if(@$line['is_upfront'] ) {
-				if(!$proratedEnd) {
-					$amount += $flatAmount;
-				} else if($from == $this->cycle->start()) {
-					$amount -= $flatAmount;
+				$roundingType = 'ceil';
+				if($isUpfront && $from > $to ){
+					$roundingType = 'floor';
+					$this->start = $to;
+					$this->end = $from;
+				}
+				$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to, $roundingType);
+				$cycleDays = $this->cycle->days();
+				if ($discountDays < $cycleDays) {
+					$amount *= ($discountDays / $cycleDays);
+				}
+				if($isUpfront) {
+					$seperatedCrossCycleCharges = Billrun_Util::getFieldVal($line['foriegn']['plan']['separate_cross_cycle_charges'],
+						Billrun_Factory::config()->getConfigValue('billrun.separate_cross_cycle_charges',
+						true) );
+					
+					
+					if($seperatedCrossCycleCharges){
+						
+						if($to < $this->cycle->start()){
+							$amount = 0;
+						}else if($to < $this->cycle->end()){
+						 	$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line);
+						}else{
+							$this->start = Billrun_Utils_Time::getTime($line['start']);
+							$this->end = Billrun_Utils_Time::getTime($line['end']);
+							$amount = $flatAmount;
+						}
+					}else{
+						$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line);
+					}
+				}
+			}else{
+				if($isUpfront) {
+					if($discountTo < $this->cycle->end() || 
+						(isset($line['charge_op']) && $line['charge_op'] ==  "refund" && Billrun_Utils_Time::getTime($line['start']) + 1 < $this->cycle->end())){
+						//do not give discount on current month if the discount finish in the previous month
+						$amount = 0;
+					}
 				}
 			}
-		}
-
 		} else {
 			$amount = $this->calcSeqDiscountAmount($from, $to, $line, $value);
+		}
+		return $amount;
+	}
+
+	protected function calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line){
+		if($discountTo < $this->cycle->end()){
+			if($discountFrom > $this->cycle->start()){
+				$startAmount = 0;
+				if(!($to == $discountTo &&  $from == $discountFrom)){
+					
+					$discountDays = Billrun_Utils_Time::getDaysDiff( $this->cycle->start(), $discountFrom, 'ceil');//todo::need to check i think this should be floor 
+					if ($discountDays < $cycleDays) {
+						$startAmount = $flatAmount * ($discountDays / $cycleDays);
+					}
+					$amount = $flatAmount - $startAmount - $amount;
+					$this->start = $discountFrom;
+					$this->end = $discountTo;
+				}
+			}else{
+				$this->start = $discountTo;
+				$this->end = $this->cycle->end();
+				$amount = -$amount;
+			}
+		}else{
+			if ($line['charge_op'] ==  "refund"){
+				$this->start = Billrun_Utils_Time::getTime($line['start']);
+				$this->end = $this->cycle->end();
+				$amount = -$amount;
+			}else{
+				$amount += $flatAmount;
+			}
 		}
 		return $amount;
 	}
@@ -1578,8 +1664,11 @@ class Billrun_DiscountManager {
 		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
 		
 		return ($proratedStart && $proratedEnd) ||
-			($proratedStart && isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) ||
-			($proratedEnd && isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end()));
+			($proratedStart && (isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) || 
+				(isset($line['start_date']) && (Billrun_Utils_Time::getTime($line['start_date']) != $this->cycle->start()))) ||
+			($proratedEnd && (isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end())) || 
+				(isset($line['end_date']) && (Billrun_Utils_Time::getTime($line['end_date']) != $this->cycle->end()))) || 
+				(isset($line['is_upfront']) && $line['is_upfront'] && ($proratedStart || $proratedEnd)) ;
 	}
 	
 	/**
@@ -1599,10 +1688,11 @@ class Billrun_DiscountManager {
 	 * @return array
 	 */
 	protected function getLineFullEligibility($line) {
+		$isUpfront = $line['is_upfront'] ?? false;
 		return [
 			[
-				'from' => isset($line['start']) ? Billrun_Utils_Time::getTime($line['start']) : $this->cycle->start(),
-				'to' => isset($line['end']) ? Billrun_Utils_Time::getTime($line['end']) : $this->cycle->end(),
+				'from' => ($isUpfront == true ? $this->cycle->start() : (isset($line['start']) ? Billrun_Utils_Time::getTime($line['start']) : (isset($line['start_date']) ? Billrun_Utils_Time::getTime($line['start_date']) : $this->cycle->start()))),
+				'to' => ($isUpfront == true ? $this->cycle->end() : (isset($line['end']) ? Billrun_Utils_Time::getTime($line['end']) : (isset($line['end_date']) ? Billrun_Utils_Time::getTime($line['end_date']) : $this->cycle->end()))),
 			],
 		];
 	}
