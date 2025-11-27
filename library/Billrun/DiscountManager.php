@@ -228,7 +228,7 @@ class Billrun_DiscountManager {
 					}), 'key');	
 					$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues(self::getDiscounts($this->cycle->key()), @$subscriberRevision['overrides'],'discount', array('from' => $subscriberRevision['from'], 'to' => $subscriberRevision['to']));
 					foreach($subscriberDiscounts as $subscriberDiscount){
-						if(in_array($subDiscount['key'], $overrideSubscriberDiscounts)){
+						if(in_array($subscriberDiscount['key'], $overrideSubscriberDiscounts)){
 							$this->handleOverrideDiscountForSubRev($subscriberDiscount, $subscriberRevision, $accountRevisions);
 						}
 					}
