@@ -380,17 +380,10 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 		//Validate adjustments array
 		if (isset($request['adjusts'])) {
-			$adjusts_array = json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY);
-			$flow = isset($request['charge_flow']) ? $request['charge_flow'] : 'regular';
-			if ($flow === "charge_before_invoice") {
-				$msg .= "Invoice can not be adjusted, when charging the amount before creating the immediate invoice (charge_before_invoice flow)\n";
-			}
-			foreach ($adjusts_array as $adjustment) {
-				if(!isset($adjustment['invoice_id']) || !isset($adjustment['amount'])){
-					$msg .= "One of the adjustments array does not contain invoice_id or amount\n";
-				}
-			}
-		}
+			$adjusts = json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY);
+			$msg = $this->validateAdjustsStructure($adjusts);
+		}		
+		
 		if (!empty($msg)) {
 			$this->setError($msg, $request);
 		}
@@ -595,6 +588,29 @@ class OnetimeinvoiceAction extends ApiAction {
 			Billrun_Aggregator_Customer::setupCycleCache();
 			Billrun_Factory::account()->getBillable(new Billrun_DataTypes_MongoCycleTime(new Billrun_DataTypes_CycleTime($stamp)),0,1,[$this->aid]);
 		}
+	}
+
+	protected function validateAdjustsStructure($adjusts) {
+		if (!is_array($adjusts)) {
+			return "Adjusts that was sent was not decoded as array\n";
+		}
+		$flow = isset($request['charge_flow']) ? $request['charge_flow'] : 'regular';
+		if ($flow === "charge_before_invoice") {
+			return "Invoice can not be adjusted, when charging the amount before creating the immediate invoice (charge_before_invoice flow)\n";
+		}
+		$allowedKeys = ['invoice_id', 'amount'];
+		foreach ($adjusts as $adjustment) {
+			if(!isset($adjustment['invoice_id']) || !isset($adjustment['amount'])){
+				return "One of the adjustments array does not contain invoice_id or amount\n";
+			}
+			if (!is_int($adjustment['invoice_id']) || $adjustment['invoice_id'] <= 0 || !is_numeric($adjustment['amount'])) {
+				return "Adjustments array invoice_id/amount is not valid - " . json_encode($adjustment) . "\n";
+			}
+			if ($diff_keys = array_diff(array_keys($adjustment), $allowedKeys)) {
+				return "Adjustments allowed keys are invoice_id and amount, " . implode("," , $diff_keys) . " is not allowed\n";
+			}
+		}
+		return "";
 	}
 
 	protected function validateCdrsAmountVsAdjustments($chargingOptions) {
