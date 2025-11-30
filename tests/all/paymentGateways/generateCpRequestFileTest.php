@@ -10,6 +10,7 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
      */
     protected $tester;
     private $cli;
+    protected $configModel;
     protected $general_locked_account;
     protected $tested_account;
     protected $tested_whitelist_account;
@@ -19,6 +20,7 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
     protected function _before() {
         $moduleContainer = new ModuleContainer(new \Codeception\Lib\Di(), []);
         $this->cli = new Cli($moduleContainer);
+        $this->configModel = new ConfigModel();
     }
 
     protected function _after()
@@ -140,7 +142,14 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
      * Function to insert masav data to db
      */
     public function insertMasavRequestFileSettings() {
-        $this->tester->insertToConfig(['payment_gateways' => $this->getSampleConfiguration()], 1, 'name');
+        $test_conf = $this->getSampleConfiguration();
+        $test_pg_name = $test_conf['name'];
+        Billrun_Config::getInstance()->loadDbConfig();
+        $current_conf = $this->configModel->getConfig();
+        if (!in_array($test_pg_name, array_column($current_conf['payment_gateways'], "name"))) {
+            $current_conf['payment_gateways'][] = $test_conf;
+            $this->configModel->setConfig($current_conf);
+        }
         Billrun_Config::getInstance()->loadDbConfig();
     }
 
