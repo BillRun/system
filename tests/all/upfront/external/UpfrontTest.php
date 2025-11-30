@@ -423,6 +423,19 @@ class UpfrontTest extends \Codeception\Test\Unit
         //B2C_ARREARS  29/31*16.806(arrears)
         $this->assertEqualsWithDelta(-15.721741935, $discountLineArrears['aprice'],$this->epsilon);
     }
-
+    public function testUpfrontPlanDATES()
+    {
+        /*
+        Change Subscriber From Arrears Plan To Upfront Plan
+        transfer from arrears to upfront in "2025-10-29 17:38:59"
+        */
+        $aid =5100002565;
+        $this->defaultOptions['stamp'] = '202512';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = "UPFRONT_PLAN_PORATED_TERMINATION_FALSE";
+        $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
+      
+        $this->tester->runCycle($this->defaultOptions);
+    }
     
 }
