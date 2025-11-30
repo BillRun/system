@@ -114,7 +114,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
-        //flat-(-16.8025 = 1/30*33.605)(plan prorated_termination =true  need to be credit) + discount(+8.403)(finish in 2025-11-15 00:00:00) - 15/30*16.806 
+        //flat-(-16.8025 = 15/30*33.605)(plan prorated_termination =true  need to be credit) + discount(+8.403)(finish in 2025-11-15 00:00:00) - 15/30*16.806 
         $this->assertEqualsWithDelta((-8.3995), $billrun['totals']['before_vat'], $this->epsilon);
         $this->assertEquals(strtotime("2025-11-15 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
