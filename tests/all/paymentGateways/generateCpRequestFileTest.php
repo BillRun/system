@@ -34,9 +34,9 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
         $this->setRelevantData();
         $this->insertMasavRequestFileSettings();
         $this->sendGenerateRequestFileCommand();
-        $this->checkTestResult($this->tested_bill);
+        $this->checkTestAccountsBillWasPaidByCpGenerateCommand($this->tested_bill);
         $this->sendGenerateRequestFileWithWhitelistCommand();
-        $this->checkTestResult($this->tested_whitelist_bill);
+        $this->checkTestAccountsBillWasPaidByCpGenerateCommand($this->tested_whitelist_bill);
     }
 
     /**
@@ -46,14 +46,7 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
         //create general account just to have operation lock to test the lock of the tested account
         $this->general_locked_account = $this->tester->createAccountWithAllMandatoryCustomFields()['entity'];
         //need to create general operation object
-        $this->tester->haveInCollection('operations', 
-                [
-                    "action" => "charge_account",
-                    "filtration" => $this->general_locked_account['aid'],
-                    "start_time" => new MongoDate(),
-                    "end_time" => new MongoDate(time() + 3600)
-                ]
-            );
+        $this->tester->addOperationToDb("charge_account", $this->general_locked_account['aid'], new \DateTime(), new \DateTime('+1 hour'));
         //create account with masav gateway
         $this->tested_account = $this->tester->createAccountWithAllMandatoryCustomFields([
             "payment_gateway" => [
@@ -116,7 +109,7 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
     /**
      * Function to check the result. As decided, checking the effected bills is enough.
      */
-    public function checkTestResult($bill) {
+    public function checkTestAccountsBillWasPaidByCpGenerateCommand($bill) {
         $this->tester->verifyCollectionRecord(
             'bills',
             [
