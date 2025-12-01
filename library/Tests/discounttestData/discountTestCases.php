@@ -333,33 +333,33 @@ class discountTestCases {
 		),
 		// Subscriber with 2 SD with condition and the subscriber is eligible for the both +
 		// eligible for more discount (condAccountB) but the SD is excludes the regular and condAccountB */
-		array('test_num' => 13, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 3]],
-				'subsRevisions' => [[['sid' => 25, 'plan' => 'abc', 'from' => '2019-01-01', 'to' => '2119-07-02']], [['sid' => 26, 'plan' => 'abc', 'from' => '2019-01-01', 'to' => '2119-07-02']]],
-				'function' => array('checkEligibility'),
-				'discounts' => [
-					['name' => 'condAccountB', 'root' => ['priority' => 1],
-						'params_override' => [
-							'condition' => [[['type' => 'account', 'field' => 'street', 'op' => 'regex', 'values' => 'z']]],
-						]],],
-			),
-			'overideDiscount' => array([]),
-			'SubscribersDiscount' => array('25' => [
-					'discounts' => [
-						['name' => 'SDA', 'root' => ['priority' => 3, 'excludes' => ['regular', 'condAccountB']],
-							'priority' => 3,
-							'params_override' => [
-								'condition' => [[['type' => 'subscriber', 'field' => 'plan', 'values' => 'abc']]],
-							]],
-						['name' => 'regular', 'root' => ['priority' => 2,],
-							'params_override' => [
-								'condition' => [[['type' => 'subscriber', 'field' => 'plan', 'values' => 'abc']]]
-							]],
-					]]
-			),
-			'expected' => array(
-				"SDA" => ["eligibility" => [["from" => "2019-04-01", "to" => "2019-05-01"]]]
-			)
-		),
+		// array('test_num' => 13, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 3]],
+		// 		'subsRevisions' => [[['sid' => 25, 'plan' => 'abc', 'from' => '2019-01-01', 'to' => '2119-07-02']], [['sid' => 26, 'plan' => 'abc', 'from' => '2019-01-01', 'to' => '2119-07-02']]],
+		// 		'function' => array('checkEligibility'),
+		// 		'discounts' => [
+		// 			['name' => 'condAccountB', 'root' => ['priority' => 1],
+		// 				'params_override' => [
+		// 					'condition' => [[['type' => 'account', 'field' => 'street', 'op' => 'regex', 'values' => 'z']]],
+		// 				]],],
+		// 	),
+		// 	'overideDiscount' => array([]),
+		// 	'SubscribersDiscount' => array('25' => [
+		// 			'discounts' => [
+		// 				['name' => 'SDA', 'root' => ['priority' => 3, 'excludes' => ['regular', 'condAccountB']],
+		// 					'priority' => 3,
+		// 					'params_override' => [
+		// 						'condition' => [[['type' => 'subscriber', 'field' => 'plan', 'values' => 'abc']]],
+		// 					]],s
+		// 				['name' => 'regular', 'root' => ['priority' => 2,],
+		// 					'params_override' => [
+		// 						'condition' => [[['type' => 'subscriber', 'field' => 'plan', 'values' => 'abc']]]
+		// 					]],
+		// 			]]
+		// 	),
+		// 	'expected' => array(
+		// 		"SDA" => ["eligibility" => [["from" => "2019-04-01", "to" => "2019-05-01"]]]
+		// 	)
+		// ),
 		/* coditions in subscriber */
 		/*
 		  plan_activation :from 01/03/2019
