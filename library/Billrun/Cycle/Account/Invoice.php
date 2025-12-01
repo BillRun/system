@@ -591,7 +591,7 @@ class Billrun_Cycle_Account_Invoice {
 				$groupingSumExtraFields = $this->groupingSumExtraFields;
 			}else{
 				$groupingExtraFields = static::getGroupingExtraFields($type);
-				$groupingSumExtraFields = $groupingExtraFields['sum'];
+				$groupingSumExtraFields = $groupingExtraFields['sum'] ?? [];
 			}
 			foreach ($groupingSumExtraFields as $field) {
 				Billrun_Util::setIn($extraSumGroupData, $field, Billrun_Util::getIn($group, $field, 0));
