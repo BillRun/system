@@ -589,13 +589,9 @@ class Billrun_Cycle_Account_Invoice {
 			// Unset extra sum grouping fields
 			if(!empty($this->groupingSumExtraFields)){
 				$groupingSumExtraFields = $this->groupingSumExtraFields;
-				$groupingMinExtraFields = $this->groupingMinExtraFields;
-				$groupingMaxExtraFields = $this->groupingMaxExtraFields;
 			}else{
 				$groupingExtraFields = static::getGroupingExtraFields($type);
 				$groupingSumExtraFields = $groupingExtraFields['sum'];
-				$groupingMinExtraFields = $groupingExtraFields['min'] ?? [];
-				$groupingMaxExtraFields = $groupingExtraFields['max'] ?? [];
 			}
 			foreach ($groupingSumExtraFields as $field) {
 				Billrun_Util::setIn($extraSumGroupData, $field, Billrun_Util::getIn($group, $field, 0));
@@ -603,12 +599,24 @@ class Billrun_Cycle_Account_Invoice {
 			}
 			
 			// Unset extra min grouping fields
+			if(!empty($this->groupingMinExtraFields)){
+				$groupingMinExtraFields = $this->groupingMinExtraFields;
+			}else{
+				$groupingExtraFields = static::getGroupingExtraFields($type);
+				$groupingMinExtraFields = $groupingExtraFields['min'] ?? [];
+			}
 			foreach ($groupingMinExtraFields as $field) {
 				Billrun_Util::setIn($extraMinGroupData, $field, Billrun_Util::getIn($group, $field, 0));
 				Billrun_Util::unsetInPath($group, $field);
 			}
 			
 			// Unset extra max grouping fields
+			if(!empty($this->groupingMaxExtraFields)){
+				$groupingMaxExtraFields = $this->groupingMaxExtraFields;
+			}else{
+				$groupingExtraFields = static::getGroupingExtraFields($type);
+				$groupingMaxExtraFields = $groupingExtraFields['max'] ?? [];
+			}
 			foreach ($groupingMaxExtraFields as $field) {
 				Billrun_Util::setIn($extraMaxGroupData, $field, Billrun_Util::getIn($group, $field, 0));
 				Billrun_Util::unsetInPath($group, $field);
@@ -631,11 +639,11 @@ class Billrun_Cycle_Account_Invoice {
 			}
 			// min extra grouping fields
 			foreach ($groupingMinExtraFields as $field) {
-				Billrun_Util::setIn($currentTotalGroups[$index], $field, min(Billrun_Util::getIn($currentTotalGroups[$index], $field, 0), Billrun_Util::getIn($extraMinGroupData, $field, 0)));
+				Billrun_Util::setIn($currentTotalGroups[$index], $field, min(Billrun_Util::getIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($extraMinGroupData, $field, 0)), Billrun_Util::getIn($extraMinGroupData, $field, 0)));
 			}	
 			// max extra grouping fields
 			foreach ($groupingMaxExtraFields as $field) {
-				Billrun_Util::setIn($currentTotalGroups[$index], $field, max(Billrun_Util::getIn($currentTotalGroups[$index], $field, 0), Billrun_Util::getIn($extraMaxGroupData, $field, 0)));
+				Billrun_Util::setIn($currentTotalGroups[$index], $field, max(Billrun_Util::getIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($extraMaxGroupData, $field, 0)), Billrun_Util::getIn($extraMaxGroupData, $field, 0)));
 			}	
 		}
 		return $currentTotalGroups;
