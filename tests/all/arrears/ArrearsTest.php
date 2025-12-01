@@ -46,15 +46,43 @@ class ArrearsTest extends \Codeception\Test\Unit
     public function testDiscountsArrearsPlan()
     {
         /*
-        BRCD-5076:arrears plan with two subscribers discounts not creates the second discount 
+        BRCD-5076 + 5080: arrears plan with two subscribers discounts not creates the second discount 
         */
         $aid =5100002472;
         $this->defaultOptions['stamp'] = '202512';
         $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'PLAN_5080';
+        $discount_name = 'DIS_PLAN_5080';
+        $this->tester->generatePlan(['name' => $planName]);// charge on termination = true
+        $this->tester->generateDiscount([
+            "from" => "2025-08-01T21:00:00Z",
+            "to" => "2025-11-06T05:00:00Z",
+            "params" => [
+              "conditions" => [
+                      [
+                          "subscriber" => [
+                              [
+                                  "fields" => [
+                                      [
+                                          "field" => "plan",
+                                          "op" => "in",
+                                          "value" => [$planName]
+                                      ]
+                                  ]
+                              ]
+                          ]
+                      ]
+              ]],
+              "subject" => [
+                  "plan" => [
+                    $planName => ["value" => 20]
+                  ]
+              ],
+              'key'=> $discount_name,
+
+          ]);// charge on termination = true
         $planName = 'PLAN_5076';
         $this->tester->generatePlan(['name' => $planName]);// charge on termination = true
-       
-        $this->tester->runCycle($this->defaultOptions);
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->tester->runCycle($this->defaultOptions);
         // $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
