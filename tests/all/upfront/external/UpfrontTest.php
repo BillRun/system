@@ -437,6 +437,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertEqualsWithDelta(5.600833333, $planLine['aprice'],$this->epsilon);
         $this->assertEquals(strtotime("2025-11-26 15:06:42"), $planLine['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+    }
 
     public function testChangeSubFroUpfrontPlanToUpfrontPlan()
     {
