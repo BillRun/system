@@ -233,15 +233,19 @@ class Billrun_DiscountManager {
 						}
 					}
 				}
-			}
-			$subscriberDiscounts = Billrun_Util::mapArrayToStructuredHash(
-				call_user_func_array('array_merge', array_column($subscriberRevisions,'discounts') ),
-				['key'] );
-			foreach ($subscriberDiscounts as $key => $subDiscount) {
-				if( !$forcing && empty($subDiscount['key_forced']) ){
-					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
-					$this->setEligibility($this->eligibleDiscounts, $subDiscount, $eligibility);
-					$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
+				if (isset($subscriberRevision['discounts']) && !empty($subscriberRevision['discounts'])){
+					$subscriberDiscounts = Billrun_Util::mapArrayToStructuredHash(
+				$subscriberRevision['discounts'], ['key'] );
+					foreach ($subscriberDiscounts as $key => $subscriberDiscount) {
+						if( !$forcing && empty($subscriberDiscount['key_forced']) ){
+							
+							$eligibility = $this->getDiscountEligibility($subscriberDiscount, $accountRevisions, [[$subscriberRevision]]);
+							$this->setEligibility($this->eligibleDiscounts, $subscriberDiscount, $eligibility);
+							$this->setSubscriberDiscount($subscriberDiscount, $this->cycle->key());
+							
+							
+						}
+					}
 				}
 			}
 
@@ -634,11 +638,19 @@ class Billrun_DiscountManager {
 					'to' => $discountTo,
 				],
 			];
-			$subscribersEligibility = [];
-			$sids = $this->getSids($subscribersRevisions);
-			foreach ($sids as $sid) {
-				$subscribersEligibility[$sid] = $eligibility;
+			foreach ($subscribersRevisions as $subscriberRevisions) {
+				foreach($subscriberRevisions as $subscriberRevision){
+					$sid = $subscriberRevision['sid'];
+					$subEligibility = 
+						[
+							'from' => max($discountFrom, $subscriberRevision['from']->sec),
+							'to' => min($discountTo, $subscriberRevision['to']->sec),
+						];
+						$subscribersEligibility[$sid] = Billrun_Utils_Time::getIntervalsIntersections([$subEligibility], $subscribersEligibility[$sid]?? $eligibility);
+
+				}
 			}
+			
 			return [
 				'aid' => $aid,
 				'eligibility' => $eligibility,
@@ -1493,7 +1505,7 @@ class Billrun_DiscountManager {
 				$to = min($discountTo, $this->cycle->end());
 			} else if (isset($line['end'])) {
 				if(isset($line['charge_op']) && $line['charge_op'] ==  "refund"){
-					$to = min($discountTo , $to, Billrun_Utils_Time::getTime($line['start']) + 1);
+					$to = min($discountTo , $to + 1, Billrun_Utils_Time::getTime($line['start']) + 1);
 				}else{
 					$to = min($discountTo , $to, Billrun_Utils_Time::getTime($line['end']));
 				}
