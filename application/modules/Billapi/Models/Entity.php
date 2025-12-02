@@ -425,7 +425,11 @@ class Models_Entity {
             $this->after = $this->update;
 			$this->fixEntityFields($this->before);
 			$this->trackChanges($this->update['_id']);
-			return isset($status['ok']) && $status['ok'];
+			$res = isset($status['ok']) && $status['ok'];
+			if($res == 1){
+				$this->addToCache();
+			}
+			return $res;
 		} else {
 			throw new Billrun_Exceptions_Api(0, array(), 'Entity already exists');
 		}
@@ -1229,6 +1233,9 @@ class Models_Entity {
 	protected function insert(&$data) {
 		$this->setReadPrefForAction(__FUNCTION__);
 		$ret = $this->collection->insert($data, array('w' => 1, 'j' => true));
+		if($ret == 1){
+			$this->addToCache();
+		}
 		return $ret;
 	}
 
@@ -1455,4 +1462,7 @@ class Models_Entity {
 		}
 	}
 
+	protected function addToCache(){
+
+	}
 }

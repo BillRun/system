@@ -1855,4 +1855,51 @@ class Billrun_DiscountManager {
 		}
 		return $discountLine;
 	}
+
+	public static function addDiscountToCache($entity){
+		if (empty(self::$discounts) || empty($entity['from']) || empty($entity['to']) || empty($entity['key'])) {
+			return false;
+		}
+	
+		$entityFrom   = $entity['from'];
+		$entityTo     = strtotime($entity['to']);
+		$discountKey  = $entity['key'];
+	
+		// Run over only EXISTING billrun keys already in the cache
+		foreach (self::$discounts as $billrunKey => $discountsForKey) {
+	
+			$billrunStart = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($billrunKey));
+			$billrunEnd   = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrunKey));
+	
+			// Check intersection with this billrun
+			if (!($entityFrom < $billrunEnd->sec && $entityTo > $billrunStart->sec)) {
+				continue;
+			}
+	
+			
+			self::$discounts[$billrunKey][$discountKey] = $entity;
+	
+			// Resort the discounts under this billrun
+			self::$discounts[$billrunKey] = self::sortDiscounts(self::$discounts[$billrunKey]);
+		}
+	
+		return true;
+	
+	}
+
+	private static function sortDiscounts($discounts) {
+		uasort($discounts, function($a, $b) {
+			// priority DESC
+			if ($a['priority'] != $b['priority']) {
+				return $a['priority'] > $b['priority'] ? -1 : 1;
+			}
+			// to DESC
+			return $a['to'] > $b['to'] ? -1 : 1;
+		});
+		return $discounts;
+	}
+
+	public static function resetDiscountsCache(){
+		self::$discounts= [];
+	}
 }

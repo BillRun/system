@@ -327,7 +327,8 @@ class BillRunAPI extends \Codeception\Module
 
         return $this->generateAccount($account);
     }
-    public function getCustomFields($entity) {
+
+    protected function getModel($entity){
         switch ($entity) {
             case 'account':
                 $model = new \Models_Accounts(['collection' => 'accounts', 'no_init' => true]);
@@ -344,8 +345,15 @@ class BillRunAPI extends \Codeception\Module
             case 'rates';
                 $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
                 break;
+            case 'discount';
+                $model = new \Models_Discounts(['collection' => 'discounts', 'no_init' => true]);
+                break;
         }
+        return $model;
+    }
 
+    public function getCustomFields($entity) {
+        $model = $this->getModel($entity);
         $mandatoryFields = $model->getMandatoryCustomFields();
         $populatedValues = [];
         foreach ($mandatoryFields as $field) {
@@ -755,8 +763,10 @@ class BillRunAPI extends \Codeception\Module
     }
     
 
-    public function generateDiscount($override = [])
+    public function generateDiscount($override = [], $byApi= false)
   {
+    $customeFields = $this->getCustomFields('discount');
+    $override = array_merge($customeFields, $override);
     //http://billrun/billapi/discounts/create
     $discount = array_merge([
       
@@ -773,8 +783,14 @@ class BillRunAPI extends \Codeception\Module
         "type" => "monetary"
       
     ], $override);
+    if($byApi){
+        $this->sendBillapiCreate($discount, 'discounts');
 
-    $this->sendBillapiCreate($discount, 'discounts');
+    }else{
+        $model = $this->getModel('discount');
+	    $model->setUpdate($discount);
+        $model->create();
+    }
   }
     
 }
