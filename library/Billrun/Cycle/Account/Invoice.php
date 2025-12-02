@@ -75,6 +75,9 @@ class Billrun_Cycle_Account_Invoice {
 		$this->initInvoiceDates();
 		$this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true);
 		$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array());
+		$this->groupingMinExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.min_fields', array());
+		$this->groupingMaxExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.max_fields', array());
+
 		$this->constructOptions = $options;
 	}
 
@@ -581,14 +584,41 @@ class Billrun_Cycle_Account_Invoice {
 			$afterTax = $group['after_taxes'];
 			unset($group['after_taxes']);
 			$extraSumGroupData = [];
+			$extraMinGroupData = [];
+			$extraMaxGroupData = [];
 			// Unset extra sum grouping fields
 			if(!empty($this->groupingSumExtraFields)){
 				$groupingSumExtraFields = $this->groupingSumExtraFields;
 			}else{
-				$groupingSumExtraFields = static::getGroupingSumExtraFields($type);
+				$groupingExtraFields = static::getGroupingExtraFields($type);
+				$groupingSumExtraFields = $groupingExtraFields['sum'] ?? [];
 			}
 			foreach ($groupingSumExtraFields as $field) {
 				Billrun_Util::setIn($extraSumGroupData, $field, Billrun_Util::getIn($group, $field, 0));
+				Billrun_Util::unsetInPath($group, $field);
+			}
+			
+			// Unset extra min grouping fields
+			if(!empty($this->groupingMinExtraFields)){
+				$groupingMinExtraFields = $this->groupingMinExtraFields;
+			}else{
+				$groupingExtraFields = static::getGroupingExtraFields($type);
+				$groupingMinExtraFields = $groupingExtraFields['min'] ?? [];
+			}
+			foreach ($groupingMinExtraFields as $field) {
+				Billrun_Util::setIn($extraMinGroupData, $field, Billrun_Util::getIn($group, $field, 0));
+				Billrun_Util::unsetInPath($group, $field);
+			}
+			
+			// Unset extra max grouping fields
+			if(!empty($this->groupingMaxExtraFields)){
+				$groupingMaxExtraFields = $this->groupingMaxExtraFields;
+			}else{
+				$groupingExtraFields = static::getGroupingExtraFields($type);
+				$groupingMaxExtraFields = $groupingExtraFields['max'] ?? [];
+			}
+			foreach ($groupingMaxExtraFields as $field) {
+				Billrun_Util::setIn($extraMaxGroupData, $field, Billrun_Util::getIn($group, $field, 0));
 				Billrun_Util::unsetInPath($group, $field);
 			}
 			$stamp = Billrun_Util::generateArrayStamp($group, [], true);
@@ -606,13 +636,21 @@ class Billrun_Cycle_Account_Invoice {
 			// Sum extra grouping fields
 			foreach ($groupingSumExtraFields as $field) {
 				Billrun_Util::setIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($currentTotalGroups[$index], $field, 0) + Billrun_Util::getIn($extraSumGroupData, $field, 0));
+			}
+			// min extra grouping fields
+			foreach ($groupingMinExtraFields as $field) {
+				Billrun_Util::setIn($currentTotalGroups[$index], $field, min(Billrun_Util::getIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($extraMinGroupData, $field, 0)), Billrun_Util::getIn($extraMinGroupData, $field, 0)));
+			}	
+			// max extra grouping fields
+			foreach ($groupingMaxExtraFields as $field) {
+				Billrun_Util::setIn($currentTotalGroups[$index], $field, max(Billrun_Util::getIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($extraMaxGroupData, $field, 0)), Billrun_Util::getIn($extraMaxGroupData, $field, 0)));
 			}	
 		}
 		return $currentTotalGroups;
 	}
 
-	public static function getGroupingSumExtraFields($type){
-		$groupingSumExtraFields = [];
+	public static function getGroupingExtraFields($type){
+		$groupingExtraFields = [];
 		$grouping = Billrun_Factory::config()->getConfigValue('billrun.grouping', []);
 		foreach($grouping as $groupingStructure){
 			if($groupingStructure['name'] == $type){
@@ -621,13 +659,18 @@ class Billrun_Cycle_Account_Invoice {
 						continue;
 					}
 					if ($field['op'] === 'sum') {
-						$groupingSumExtraFields[] = $field['field_name'];
+						$groupingExtraFields['sum'][] = $field['field_name'];
+					}elseif ($field['op'] === 'min') {
+						$groupingExtraFields['min'][] = $field['field_name'];
+					}elseif ($field['op'] === 'max') {
+						$groupingExtraFields['max'][] = $field['field_name'];
 					}
+
 				}
 			}
 			
 		}
-		return $groupingSumExtraFields;
+		return $groupingExtraFields;
 	}
 	
 
