@@ -52,6 +52,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$this->aid = intval($request['aid']);
 		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''), JSON_OBJECT_AS_ARRAY);
 		$affectedSids = [];
+		$adjustments = isset($request['adjusts']) ? json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY) : null;
 		Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($this->aid, $inputCdrs, $paymentData, $allowBill, $step, $oneTimeStamp, $sendEmail));
 		Billrun_Factory::log('One time invoice action running for account ' . $this->aid, Zend_Log::INFO);
 
@@ -64,12 +65,17 @@ class OnetimeinvoiceAction extends ApiAction {
 			'allowBill' => $allowBill,
 			'uf' => $uf,
 			'request' => $request,
-			'paymentData' => $paymentData
+			'paymentData' => $paymentData,
+			'adjusts' => $adjustments
 		];
 
 		if ($expected) {
 			if ($step != self::STEP_PDF_ONLY) {
 				$this->setError('Expected must to be with step 0 only');
+				return false;
+			}
+			if (!is_null($adjustments)) {
+				$this->setError('Adjustments are not supported in expected invoice');
 				return false;
 			}
 			$expectedInvoice = $this->expectedInvoice($chargingOptions, $expected ? true : false);
@@ -78,14 +84,20 @@ class OnetimeinvoiceAction extends ApiAction {
 				'pdfPath' => Generator_WkPdf::getTempDir($chargingOptions['oneTimeStamp']) . "/pdf/{$chargingOptions['oneTimeStamp']}_{$this->aid}_{$expectedInvoiceData['invoice_id']}.pdf",
 				'invoiceData' => $expectedInvoiceData,
 			];
-		} else if ($chargeFlow === 'charge_before_invoice') {
-			if ($step != self::STEP_FULL) {
-				$this->setError('charge_before_invoice must to be with step 2 only');
+		} else {
+			if (!is_null($adjustments) && $step == self::STEP_PDF_ONLY) {
+				$this->setError('Adjustments are not supported when only invoice pdf file is created');
 				return false;
 			}
-			$results = $this->chargeBeforeInvoiceFlow($chargingOptions);
-		} else {
-			$results = $this->invoiceChargeFlow($chargingOptions);
+			if ($chargeFlow === 'charge_before_invoice') {
+				if ($step != self::STEP_FULL) {
+					$this->setError('When choosing to charge account invoice before creating it - you must choose to create account bill and charge it (step 2)');
+					return false;
+				}
+				$results = $this->chargeBeforeInvoiceFlow($chargingOptions);
+			} else {
+				$results = $this->invoiceChargeFlow($chargingOptions);
+			}
 		}
 
 		if ($results === false) {
@@ -133,10 +145,13 @@ class OnetimeinvoiceAction extends ApiAction {
 		$aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
+		if (!empty($chargingOptions['adjusts']) && !$this->validateCdrsAmountVsAdjustments($chargingOptions)) {
+			return false;
+		}
 		$results['pdfPath'] = $this->invoice->getInvoicePath();
 
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
-		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail']]);
+		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail'], 'adjusts' => $chargingOptions['adjusts']]);
 
 		if ($chargingOptions['step'] >= self::STEP_PDF_AND_BILL) {
 			$billrunToBill->load();
@@ -363,6 +378,12 @@ class OnetimeinvoiceAction extends ApiAction {
 				}
 			}
 		}
+		//Validate adjustments array
+		if (isset($request['adjusts'])) {
+			$adjusts = json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY);
+			$msg = $this->validateAdjustsStructure($adjusts);
+		}		
+		
 		if (!empty($msg)) {
 			$this->setError($msg, $request);
 		}
@@ -567,6 +588,43 @@ class OnetimeinvoiceAction extends ApiAction {
 			Billrun_Aggregator_Customer::setupCycleCache();
 			Billrun_Factory::account()->getBillable(new Billrun_DataTypes_MongoCycleTime(new Billrun_DataTypes_CycleTime($stamp)),0,1,[$this->aid]);
 		}
+	}
+
+	protected function validateAdjustsStructure($adjusts) {
+		if (!is_array($adjusts)) {
+			return "Adjusts that was sent was not decoded as array\n";
+		}
+		$flow = isset($request['charge_flow']) ? $request['charge_flow'] : 'regular';
+		if ($flow === "charge_before_invoice") {
+			return "Invoice can not be adjusted, when charging the amount before creating the immediate invoice (charge_before_invoice flow)\n";
+		}
+		$allowedKeys = ['invoice_id', 'amount'];
+		foreach ($adjusts as $adjustment) {
+			if(!isset($adjustment['invoice_id']) || !isset($adjustment['amount'])){
+				return "One of the adjustments array does not contain invoice_id or amount\n";
+			}
+			if (!is_int($adjustment['invoice_id']) || $adjustment['invoice_id'] <= 0 || !is_numeric($adjustment['amount'])) {
+				return "Adjustments array invoice_id/amount is not valid - " . json_encode($adjustment) . "\n";
+			}
+			if ($diff_keys = array_diff(array_keys($adjustment), $allowedKeys)) {
+				return "Adjustments allowed keys are invoice_id and amount, " . implode("," , $diff_keys) . " is not allowed\n";
+			}
+		}
+		return "";
+	}
+
+	protected function validateCdrsAmountVsAdjustments($chargingOptions) {
+		$invoice_amount = $this->invoice->getRawData()['totals']['after_vat_rounded'];
+		$adj_total_amount = array_sum(array_column($chargingOptions['adjusts'], "amount"));
+		if (($invoice_amount * $adj_total_amount) <= 0) {
+			$this->setError("Invoice amount and adjustments amount need to be with the same sign. Immediate invoice total amount is " . $invoice_amount . ", while adjusted total amount is " . $adj_total_amount);
+			return false;
+		}
+		if (abs($adj_total_amount) > abs($invoice_amount)) {
+			$this->setError("Adjusted total amount " . $adj_total_amount . " is bigger than immediate invoice total amount " . $invoice_amount);
+			return false;
+		}
+		return true;
 	}
 
 }
