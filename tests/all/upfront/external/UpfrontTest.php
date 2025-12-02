@@ -419,6 +419,25 @@ class UpfrontTest extends \Codeception\Test\Unit
         //B2C_ARREARS  29/31*16.806(arrears)
         $this->assertEqualsWithDelta(-15.721741935, $discountLineArrears['aprice'],$this->epsilon);
     }
+    
+    public function testUpfrontPlanOfPoratedSubscriberRevision_1()
+    {
+        /*
+        Upfront Plan with prorated_termination false, subscriber deactive in 2025-11-28 10:42:32 and start in 2025-11-26 15:06:42
+        */
+        $aid =5100002565;
+        $this->defaultOptions['stamp'] = '202512';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = "UPFRONT_PLAN_PORATED_TERMINATION_FALSE";
+        $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
+      
+        $this->tester->runCycle($this->defaultOptions);
+        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
+        //5/30*33.605
+        $this->assertEqualsWithDelta(5.600833333, $planLine['aprice'],$this->epsilon);
+        $this->assertEquals(strtotime("2025-11-26 15:06:42"), $planLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+    }
 
     public function testChangeSubFroUpfrontPlanToUpfrontPlan()
     {
