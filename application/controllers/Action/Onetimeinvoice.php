@@ -145,7 +145,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
-		if (!$this->validateCdrsAmountVsAdjustments($chargingOptions)) {
+		if (!empty($chargingOptions['adjusts']) && !$this->validateCdrsAmountVsAdjustments($chargingOptions)) {
 			return false;
 		}
 		$results['pdfPath'] = $this->invoice->getInvoicePath();
