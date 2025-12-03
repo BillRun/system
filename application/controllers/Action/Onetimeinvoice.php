@@ -74,10 +74,6 @@ class OnetimeinvoiceAction extends ApiAction {
 				$this->setError('Expected must to be with step 0 only');
 				return false;
 			}
-			if (!is_null($adjustments)) {
-				$this->setError('Adjustments are not supported in expected invoice');
-				return false;
-			}
 			$expectedInvoice = $this->expectedInvoice($chargingOptions, $expected ? true : false);
 			$expectedInvoiceData = $expectedInvoice->getInvoice()->getRawData();
 			$results = [
@@ -210,7 +206,9 @@ class OnetimeinvoiceAction extends ApiAction {
 
 		//Get The fake invoice totals
 		$fakeInvoice = $aggregator->getLastBillrunObj();
-		
+		if (!empty($chargingOptions['adjusts']) && !$this->validateCdrsAmountVsAdjustments($chargingOptions, $fakeInvoice)) {
+			return false;
+		}
 		return $fakeInvoice;
 	}
 
@@ -613,8 +611,8 @@ class OnetimeinvoiceAction extends ApiAction {
 		return "";
 	}
 
-	protected function validateCdrsAmountVsAdjustments($chargingOptions) {
-		$invoice_amount = $this->invoice->getRawData()['totals']['after_vat_rounded'];
+	protected function validateCdrsAmountVsAdjustments($chargingOptions, $fakeInvoice = false) {
+		$invoice_amount = $fakeInvoice ? $fakeInvoice->getInvoice()->getRawData()['totals']['after_vat_rounded'] : $this->invoice->getRawData()['totals']['after_vat_rounded'];
 		$adj_total_amount = array_sum(array_column($chargingOptions['adjusts'], "amount"));
 		if (($invoice_amount * $adj_total_amount) <= 0) {
 			$this->setError("Invoice amount and adjustments amount need to be with the same sign. Immediate invoice total amount is " . $invoice_amount . ", while adjusted total amount is " . $adj_total_amount);
