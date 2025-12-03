@@ -310,7 +310,6 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
-        $this->tester->runCycle($this->defaultOptions);
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
@@ -335,7 +334,6 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
-        $this->tester->runCycle($this->defaultOptions);
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
@@ -361,7 +359,6 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
-        $this->tester->runCycle($this->defaultOptions);
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
@@ -388,7 +385,6 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planNameArrears= 'B2C_ARREARS';
         $this->tester->generatePlan(['name' => $planNameArrears]);// charge on termination = true
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
-        $this->tester->runCycle($this->defaultOptions);
         $this->tester->runCycle($this->defaultOptions);
         $planLineArrears = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planNameArrears, 'aid' => $aid));
         $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
@@ -423,7 +419,45 @@ class UpfrontTest extends \Codeception\Test\Unit
         //B2C_ARREARS  29/31*16.806(arrears)
         $this->assertEqualsWithDelta(-15.721741935, $discountLineArrears['aprice'],$this->epsilon);
     }
+    
+    public function testUpfrontPlanOfPoratedSubscriberRevision_1()
+    {
+        /*
+        Upfront Plan with prorated_termination false, subscriber deactive in 2025-11-28 10:42:32 and start in 2025-11-26 15:06:42
+        */
+        $aid =5100002565;
+        $this->defaultOptions['stamp'] = '202512';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = "UPFRONT_PLAN_PORATED_TERMINATION_FALSE";
+        $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
+      
+        $this->tester->runCycle($this->defaultOptions);
+        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
+        //5/30*33.605
+        $this->assertEqualsWithDelta(5.600833333, $planLine['aprice'],$this->epsilon);
+        $this->assertEquals(strtotime("2025-11-26 15:06:42"), $planLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+    }
 
+    public function testChangeSubFroUpfrontPlanToUpfrontPlan()
+    {
+        /*
+        BRCD-5088: Change Subscriber Upfront Plan To Upfront Plan
+        */
+        $aid =5100002564;
+        $this->defaultOptions['stamp'] = '202512';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName1 = 'B2C_UPFRONT_1';
+        $planName2= 'B2C_UPFRONT_2';
+        $this->tester->generatePlan(['name' => $planName1, "upfront" => 1]);// charge on termination = true
+        $this->tester->generatePlan(['name' => $planName2, "upfront" => 1]);// charge on termination = true
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        //B2C_UPFRONT_1: 
+        $this->assertEqualsWithDelta(12.091599999999996, $billrun['totals']['before_vat'],$this->epsilon);
+
+    }
+    
     public function testDiscountOfServiceFinishPreviousMonthOnUpfronInheritedPlan_1()
     {
         /*
