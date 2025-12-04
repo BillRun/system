@@ -249,7 +249,7 @@
 		},
 		"subscriber" :{"type":"","external_url":"","timeout":""},
         "account" :{"type":"","external_url":"","timeout":""},
-        "billable"  :{ "url":"" }
+        "billable"  :{ "url":""}
       
 	}
 }

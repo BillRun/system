@@ -155,7 +155,16 @@ trait Billrun_Traits_FileActions {
 		$seqData = $this->getFilenameData($filename, $this->getType());
 		$backedTo = array();
 		for ($i = 0; $i < count($backupPaths); $i++) {
-			$backupPath = $this->generateBackupPath($backupPaths[$i], $seqData, $retrievedHostname);
+			$optionsTrigger = [];
+			Billrun_Factory::dispatcher()->trigger('beforeFileActionsBackup', [&$optionsTrigger, $backupPaths[$i], $filename, $filePath, $this]);
+			if (!empty($optionsTrigger['useRawPath'])) {
+				$backupPath = $backupPaths[$i];
+			} else {
+				$backupPath = $this->generateBackupPath($backupPaths[$i], $seqData, $retrievedHostname);
+			}
+			if(!empty($optionsTrigger['skip'])){
+				continue;
+			}
 			$this->prepareBackupPath($backupPath);
 			if ($this->backupToPath($filePath, $backupPath, $this->preserve_timestamps, !($move && $i + 1 == count($backupPaths))) === TRUE) {
 				Billrun_Factory::log("Success backup file " . $filePath . " to " . $backupPath, Zend_Log::INFO);

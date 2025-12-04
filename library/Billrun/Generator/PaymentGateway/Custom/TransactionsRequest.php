@@ -403,7 +403,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				$payment = $paymentReseponse['payment'];
 				Billrun_Factory::log()->log('Updated debt payment details - aid: ' . $paymentParams['aid'] . ' ,amount: ' . $paymentParams['amount'] . '. This payment is wating for approval.', Zend_Log::INFO);
 			} catch (Exception $e) {
-				$message = 'Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage();
+				$message = 'Error paying debt for account ' . $paymentParams['aid'] . ' when generating transactions request file, ' . $e->getMessage();
 				Billrun_Factory::log()->log($message, Zend_Log::ALERT);
 				$this->logFile->updateLogFileField('errors', $message);
 				if (!$this->release()) {

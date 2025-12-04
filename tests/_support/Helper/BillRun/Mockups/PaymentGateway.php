@@ -37,7 +37,9 @@ class PaymentGateway extends \Helper\BillRun\Mockups\Mockup
             'version' => "2000",
             'custom_text' => " ",
             'password' => "123",
-            'redirect_terminal' => "0882828013"
+            'redirect_terminal' => "0882828013",
+            "custom_style_singlepayment"=>" ",
+            "custom_text_singlepayment"=>" "
     ]
 ];
 }

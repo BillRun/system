@@ -15,7 +15,7 @@ class Test_Case_42775
             [
 
                 "from" => "2019-05-31T22:00:00Z",
-                "name" => "B2C" . time(),
+                "name" => "B2C_42775",
                 "price" => [
                     [
                         "price" => 16.79,
