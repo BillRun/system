@@ -331,6 +331,9 @@ class discountTestCases {
 				"SDA" => ["eligibility" => [["from" => "2019-04-01", "to" => "2019-05-01"]]]
 			)
 		),
+		//the test disable because test fail although the result is ok, generate discount only for ‘SDA’.
+		//the test failed because 'regular' eligibility is not empty but subs eligibility is empty so discount of ‘regular’ will not created as expected.
+		
 		// Subscriber with 2 SD with condition and the subscriber is eligible for the both +
 		// eligible for more discount (condAccountB) but the SD is excludes the regular and condAccountB */
 		// array('test_num' => 13, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 3]],
