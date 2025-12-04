@@ -1,9 +1,13 @@
 {
   "settings": {
     "subs": "Subscribers",
-    "ext_subs_type": "Source",
+    "ext_subs_type": "Customers/subscribers source",
     "ext_subs_type.db": "Internal",
+    "ext_subs_type.db_desc": "Stored in the billing",
+    "ext_subs_type.db_help": "Managed inside the billing",
     "ext_subs_type.external": "External",
+    "ext_subs_type.external_desc": "Stored in a CRM",
+    "ext_subs_type.external_help": "Customers/subscribers stored in an external CRM/ERP and accessed through",
     "ext_subs_auth_cache": "Cache",
     "ext_subs_auth": "Authorization",
     "ext_subs_auth.url": "Access Token URL",

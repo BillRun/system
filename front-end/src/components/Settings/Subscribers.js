@@ -15,10 +15,6 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
 
   const [localData, setLocalData] = useState(Immutable.Map());
 
-  useEffect(() => {
-    setLocalData(data);
-  }, []);
-
   const type = data.getIn(['subscriber', 'type'], 'db');
   const auth_url = data.getIn(['external_authentication', 'access_token_url'], '');
   const auth_cache = isValueOn(data.getIn(['external_authentication', 'cache'], false));
@@ -34,14 +30,14 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
   const validUrlGad = !isEmptyString(url_gad) && isValidUrl(url_gad);
   const validUrlGsd = !isEmptyString(url_gsd) && isValidUrl(url_gsd);
 
-  const isDirtyType = localData.getIn(['subscriber', 'type'], 'db') !== type;
-  const isDirtyUrl = localData.getIn(['subscriber', 'external_url'], '') !== url_gsd
+  const isDirtyType = localData.isEmpty() ? false : localData.getIn(['subscriber', 'type'], 'db') !== type;
+  const isDirtyUrl = localData.isEmpty() ? false : (localData.getIn(['subscriber', 'external_url'], '') !== url_gsd
     || localData.getIn(['account', 'external_url'], '') !== url_gad
-    || localData.getIn(['billable', 'url'], '') !== url_gba;
-  const isDirtyAuth = localData.getIn(['external_authentication', 'access_token_url'], '') !== auth_url
+    || localData.getIn(['billable', 'url'], '') !== url_gba);
+  const isDirtyAuth = localData.isEmpty() ? false : (localData.getIn(['external_authentication', 'access_token_url'], '') !== auth_url
     || localData.getIn(['external_authentication', 'data', 'client_secret'], '') !== auth_secret
     || localData.getIn(['external_authentication', 'data', 'client_id'], '') !== auth_id
-    || isValueOn(localData.getIn(['external_authentication', 'cache'], false)) !== auth_cache;
+    || isValueOn(localData.getIn(['external_authentication', 'cache'], false)) !== auth_cache);
 
   const authData = Immutable.Map({
     type: 'oauth2',
@@ -55,44 +51,60 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
     }),
   });
 
+  const onEditForm = () => {
+    if (localData.isEmpty()) {
+      setLocalData(data);
+    }
+  }
+
   const onChangeType = (value) => {
+    onEditForm();
     onChange('subscribers',['account', 'type'], value);
     onChange('subscribers', ['subscriber', 'type'], value);
   }
 
   const onChangeAuthUrl = (e) => {
     const { value } = e.target;
+    onEditForm();
     onChange('subscribers', 'external_authentication', authData.setIn(['access_token_url'], value));
   };
   const onChangeAuthSecret = (e) => {
     const { value } = e.target;
+    onEditForm();
     onChange('subscribers', 'external_authentication', authData.setIn(['data', 'client_secret'], value));
   };
   const onChangeAuthId = (e) => {
     const { value } = e.target;
+    onEditForm();
     onChange('subscribers', 'external_authentication', authData.setIn(['data', 'client_id'], value));
   };
   const onChangeAuthCache = (e) => {
     const { value } = e.target;
+    onEditForm();
     onChange('subscribers', 'external_authentication', authData.setIn(['cache'], value));
   };
   const onChangeUrlGba = (e) => {
     const { value } = e.target;
+    onEditForm();
     onChange('subscribers', ['billable', 'url'], value);
   };
   const onChangeUrlGsd = (e) => {
     const { value } = e.target;
+    onEditForm();
     onChange('subscribers', ['subscriber', 'external_url'], value);
   };
   const onChangeUrlGad = (e) => {
     const { value } = e.target;
+    onEditForm();
     onChange('subscribers', ['account', 'external_url'], value);
   };
 
   return (
     <div className="subscribers">
 
-      {(isDirtyType || isDirtyAuth || isDirtyUrl) && (<Alert bsStyle="warning"> { getFieldName('unsaved_changes')}</Alert>)}
+      {(isDirtyType || isDirtyAuth || isDirtyUrl) && (
+        <Alert bsStyle="warning"> { getFieldName('unsaved_changes')}</Alert>
+      )}
 
       <Form horizontal>
         <FormGroup>
@@ -107,6 +119,12 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
               options={typesOptions}
               onChange={onChangeType}
             />
+            {type === 'db' && (
+              <HelpBlock className="mt5">{getFieldName('ext_subs_type.db_help', 'settings', '')}</HelpBlock>
+            )}
+            {type === 'external' && (
+              <HelpBlock className="mt5">{getFieldName('ext_subs_type.external_help', 'settings', 'External')} <a href='https://docs.bill.run/en/api/outgoing' title='BillRun Documentation' target='_blank'>BillRun API Documentation</a></HelpBlock>
+            )}
           </Col>
         </FormGroup>
 
@@ -238,8 +256,8 @@ Subscribers.propTypes = {
 Subscribers.defaultProps = {
   data: Immutable.Map(),
   typesOptions: [
-    { value: 'db', label: getFieldName('ext_subs_type.db', 'settings', 'DB') },
-    { value: 'external', label: getFieldName('ext_subs_type.external', 'settings', 'External') },
+    { value: 'db', label: `${getFieldName('ext_subs_type.db', 'settings', 'DB')} | ${getFieldName('ext_subs_type.db_desc', 'settings', 'DB')}` },
+    { value: 'external', label: `${getFieldName('ext_subs_type.external', 'settings', 'External')} | ${getFieldName('ext_subs_type.external_desc', 'settings', 'External')}` },
   ],
 };
 
