@@ -149,4 +149,13 @@ class Billrun_Bill_Invoice extends Billrun_Bill {
 		$this->setRawData($data);
 	}
 
+	public static function getAidByInvoiceId($invoice_id) {
+		$res = Billrun_Factory::db()->billsCollection()->distinct('aid', ['invoice_id' => $invoice_id]);
+		if (empty($res)) {
+			return false;
+		} else {
+			return current($res);
+		}
+	}
+
 }

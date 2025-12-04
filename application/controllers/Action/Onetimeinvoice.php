@@ -598,7 +598,10 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 		$allowedKeys = ['invoice_id', 'amount'];
 		foreach ($adjusts as $adjustment) {
-			$adjustment_aid = current(Billrun_Factory::db()->billsCollection()->distinct('aid', ['invoice_id' => $adjustment['invoice_id']]));
+			$adjustment_aid = Billrun_Bill_Invoice::getAidByInvoiceId($adjustment['invoice_id']);
+			if (empty($adjustment_aid)) {
+				return "Couldn't find account id for adjusted invoice id " . $adjustment['invoice_id'] . "\n";
+			}
 			if (intval($adjustment_aid) !== intval($request['aid'])) {
 				return "Adjustment with invoice_id " . $adjustment['invoice_id'] . " belongs to account " . $adjustment_aid. ", and can not be adjusted by account " . $request['aid'] . " invoice\n";
 			}
