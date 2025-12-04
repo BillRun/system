@@ -123,7 +123,7 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
               <HelpBlock className="mt5">{getFieldName('ext_subs_type.db_help', 'settings', '')}</HelpBlock>
             )}
             {type === 'external' && (
-              <HelpBlock className="mt5">{getFieldName('ext_subs_type.external_help', 'settings', 'External')} <a href='https://docs.bill.run/en/api/outgoing' title='BillRun Documentation' target='_blank'>BillRun API Documentation</a></HelpBlock>
+              <HelpBlock className="mt5">{getFieldName('ext_subs_type.external_help', 'settings', 'External')} <a href='https://docs.bill.run/en/api/outgoing' title='BillRun Documentation' target='_blank'>API calls</a></HelpBlock>
             )}
           </Col>
         </FormGroup>
