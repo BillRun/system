@@ -467,8 +467,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $aid =5100002593;
         $this->defaultOptions['stamp'] = '202602';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName1 = 'B2C_5GUNLIMITEDMAX_PP_INADV';
-        $planName2= 'B2C_5GVALUE_PP_INADV';
+        $planName1 = 'B2C_UPFRONT_1_BRCD_5093';
+        $planName2= 'B2C_UPFRONT_2_BRCD_5093';
         $this->tester->generatePlan(['name' => $planName1, "upfront" => 1]);// charge on termination = true
         $this->tester->generatePlan(['name' => $planName2, "upfront" => 1]);// charge on termination = true
         $this->tester->runCycle($this->defaultOptions);
