@@ -7,8 +7,8 @@
         "type": "account",
         "from": "2025-12-04 15:57:14",
         "to": "2200-01-01 02:00:00",
-        "firstname": "Thanasis",
-        "lastname": "TestSix",
+        "firstname": "",
+        "lastname": "",
         "title": null,
         "email": null,
         "invoice_shipping_method": "post",
@@ -17,42 +17,18 @@
         "invoice_message": null,
         "invoice_language": "gr_CY",
         "invoice_detailed": false,
-        "street": "ANTRONIKOU",
-        "house_number": "2",
+        "street": "",
+        "house_number": "",
         "apartment": "",
-        "province": "Pentakomo",
-        "city": "Limassol",
-        "country": "CY",
-        "zip_code": "4528",
+        "province": "",
+        "city": "",
+        "country": "",
+        "zip_code": "",
         "po_box": "",
         "creation_time": "2025-12-04 15:57:14",
         "activation_date": "2025-12-04 15:59:00",
-        "deactivation_date": "2200-01-01 02:00:00",
-        "services": [
-          {
-            "name": "BILL_POST",
-            "from": "2025-12-04 15:59:12",
-            "to": "2200-01-01 02:00:00",
-            "service_id": 48254,
-            "creation_time": "2025-12-04 15:59:11"
-          }
-        ],
-        "overrides": [
-          {
-            "type": "service",
-            "id": 48254,
-            "key": "BILL_POST",
-            "value": {
-              "price": [
-                {
-                  "price": 2.513,
-                  "from": 0,
-                  "to": "UNLIMITED"
-                }
-              ]
-            }
-          }
-        ]
+        "deactivation_date": "2200-01-01 02:00:00"
+
       },
       {
         "sid": 39280,
@@ -60,10 +36,10 @@
         "type": "subscriber",
         "from": "2025-12-04 15:59:00",
         "to": "2026-01-14 16:07:57",
-        "plan": "B2C_5GUNLIMITEDMAX_PP_INADV",
+        "plan": "B2C_UPFRONT_1_BRCD_5093",
         "play": "MOBILE",
-        "firstname": "Thanasis",
-        "lastname": "TestSix",
+        "firstname": "",
+        "lastname": "",
         "activation_date": "2025-12-04 15:59:00",
         "deactivation_date": "2200-01-01 02:00:00",
         "plan_activation": "2025-12-04 15:59:00",
@@ -72,8 +48,8 @@
         "former_plan": null,
         "services": [],
         "imsi": [],
-        "sub_number": "35796660319",
-        "portability_code": "P3J5Q2OB",
+        "sub_number": "",
+        "portability_code": "",
         "discounts": [
           {
             "priority": "",
@@ -81,7 +57,7 @@
             "from": "2026-01-14 14:07:57",
             "subject": {
               "plan": {
-                "B2C_5GUNLIMITEDMAX_PP_INADV": {
+                "B2C_UPFRONT_1_BRCD_5093": {
                   "value": 4.201
                 }
               }
@@ -90,8 +66,8 @@
             "cycles": 24,
             "type": "monetary",
             "to": "2028-01-14 14:07:57",
-            "description": "5G Value 24 month Com Sim Only Discount",
-            "key": "SUBSCRIBER_DISCOUNT_1154"
+            "description": "",
+            "key": "SUBSCRIBER_DISCOUNT_1"
           },
           {
             "priority": "",
@@ -99,7 +75,7 @@
             "from": "2025-12-04 13:59:00",
             "subject": {
               "plan": {
-                "B2C_5GUNLIMITEDMAX_PP_INADV": {
+                "B2C_UPFRONT_1_BRCD_5093": {
                   "value": 16.806
                 }
               }
@@ -108,15 +84,15 @@
             "cycles": 24,
             "type": "monetary",
             "to": "2026-01-14 14:07:57",
-            "description": "5G Unlimited Max 24 month Com Sim Only Youth Discount",
-            "key": "SUBSCRIBER_DISCOUNT_1153"
+            "description": "",
+            "key": "SUBSCRIBER_DISCOUNT_2"
           }
         ],
         "overrides": [
           {
             "type": "plan",
             "id": null,
-            "key": "B2C_5GUNLIMITEDMAX_PP_INADV",
+            "key": "B2C_UPFRONT_1_BRCD_5093",
             "value": {
               "price": [
                 {
@@ -135,7 +111,7 @@
         "type": "subscriber",
         "from": "2026-01-14 16:07:57",
         "to": "2200-01-01 02:00:00",
-        "plan": "B2C_5GVALUE_PP_INADV",
+        "plan": "B2C_UPFRONT_2_BRCD_5093",
         "play": "MOBILE",
         "firstname": "Thanasis",
         "lastname": "TestSix",
@@ -144,7 +120,7 @@
         "plan_activation": "2026-01-14 16:07:57",
         "plan_deactivation": "2200-01-01 02:00:00",
         "creation_time": null,
-        "former_plan": "B2C_5GUNLIMITEDMAX_PP_INADV",
+        "former_plan": "B2C_UPFRONT_1_BRCD_5093",
         "services": [],
         "imsi": [],
         "sub_number": "35796660319",
@@ -156,7 +132,7 @@
             "from": "2026-01-14 14:07:57",
             "subject": {
               "plan": {
-                "B2C_5GVALUE_PP_INADV": {
+                "B2C_UPFRONT_2_BRCD_5093": {
                   "value": 4.201
                 }
               }
@@ -165,8 +141,8 @@
             "cycles": 24,
             "type": "monetary",
             "to": "2028-01-14 14:07:57",
-            "description": "5G Value 24 month Com Sim Only Discount",
-            "key": "SUBSCRIBER_DISCOUNT_1154"
+            "description": "",
+            "key": "SUBSCRIBER_DISCOUNT_1"
           },
           {
             "priority": "",
@@ -174,7 +150,7 @@
             "from": "2025-12-04 13:59:00",
             "subject": {
               "plan": {
-                "B2C_5GVALUE_PP_INADV": {
+                "B2C_UPFRONT_2_BRCD_5093": {
                   "value": 16.806
                 }
               }
@@ -183,15 +159,15 @@
             "cycles": 24,
             "type": "monetary",
             "to": "2026-01-14 14:07:57",
-            "description": "5G Unlimited Max 24 month Com Sim Only Youth Discount",
-            "key": "SUBSCRIBER_DISCOUNT_1153"
+            "description": "",
+            "key": "SUBSCRIBER_DISCOUNT_2"
           }
         ],
         "overrides": [
           {
             "type": "plan",
             "id": null,
-            "key": "B2C_5GVALUE_PP_INADV",
+            "key": "B2C_UPFRONT_2_BRCD_5093",
             "value": {
               "price": [
                 {
