@@ -47,7 +47,6 @@ export const paymentRequestFilesSelector = createSelector(
   paymentGateways => paymentGateways
     .filter(paymentGateway => paymentGateway.has('transactions_request')
       && !paymentGateway.get('transactions_request', List).isEmpty()
-      && paymentGateway.get('custom', false)
     )
 );
 
@@ -66,7 +65,6 @@ export const paymentResponseFilesSelector = createSelector(
   paymentGateways => paymentGateways
   .filter(paymentGateway => paymentGateway.has('transactions_response')
     && !paymentGateway.get('transactions_response', List).isEmpty()
-    && paymentGateway.get('custom', false)
     )
   );
   
@@ -101,7 +99,6 @@ export const paymentFilesSelector = createSelector(
   paymentGateways => paymentGateways
     .filter(paymentGateway => paymentGateway.has('payments')
       && !paymentGateway.get('payments', List).isEmpty()
-      && paymentGateway.get('custom', false)
     )
 );
 
