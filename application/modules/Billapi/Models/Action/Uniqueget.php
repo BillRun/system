@@ -62,35 +62,41 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 	{
 		$pipelines = array();
 
-		$pipelines[] = array(
-			'$project' => array(
-				'_id' => 1,
-				'from' => 1,
-				'to' => 1,
-				$this->group => 1,
-				'state' => array(
+		$project1 = array(
+			'_id' => 1,
+			'from' => 1,
+			'to' => 1,
+			$this->group => 1,
+		);
+
+		if (!empty($this->sort)) {
+			foreach ($this->sort as $field => $dir) {
+				$project1[$field] = 1;
+			}
+		}
+
+		$project1['state'] = array(
+			'$cond' => array(
+				'if' => array(
+					'$and' => array(
+						array('$lte' => array('$from', new Mongodloid_Date())),
+						array('$gt' => array('$to', new Mongodloid_Date())),
+					),
+				),
+				'then' => self::STATE_ACTIVE,
+				'else' => array(
 					'$cond' => array(
 						'if' => array(
-							'$and' => array(
-								array('$lte' => array('$from', new Mongodloid_Date())),
-								array('$gt' => array('$to', new Mongodloid_Date())),
-							),
+							'$gte' => array('$from', new Mongodloid_Date()),
 						),
-						'then' => self::STATE_ACTIVE,
-						'else' => array(
-							'$cond' => array(
-								'if' => array(
-									'$gte' => array('$from', new Mongodloid_Date()),
-								),
-								'then' => self::STATE_FUTURE,
-								'else' => self::STATE_EXPIRE,
-							),
-						),
+						'then' => self::STATE_FUTURE,
+						'else' => self::STATE_EXPIRE,
 					),
 				),
 			),
 		);
 
+		$pipelines[] = array('$project' => $project1);
 		$pipelines[] = array(
 			'$sort' => array(
 				'state' => 1,
@@ -98,25 +104,37 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 			),
 		);
 
-		$pipelines[] = array(
-			'$group' => array(
-				'_id' => '$' . $this->group,
-				'state' => array(
-					'$first' => '$state'
-				),
-				'id' => array(
-					'$first' => '$_id'
-				),
-			),
+		$group = array(
+			'_id' => '$' . $this->group,
+			'state' => array('$first' => '$state'),
+			'id' => array('$first' => '$_id'),
 		);
 
-		$pipelines[] = array(
-			'$project' => array(
-				'_id' => 0,
-				'id' => 1,
-				'state' => 1,
-			),
+		if (!empty($this->sort)) {
+			foreach ($this->sort as $field => $dir) {
+				if (!in_array($field, ['id', 'state', '_id', $this->group])) {
+					$group[$field] = array('$first' => '$' . $field);
+				}
+			}
+		}
+
+		$pipelines[] = array('$group' => $group);
+
+		$project2 = array(
+			'_id' => 0,
+			'id' => 1,
+			'state' => 1,
+			$this->group => '$_id', 
 		);
+
+		if (!empty($this->sort)) {
+			foreach ($this->sort as $field => $dir) {
+				if ($field !== $this->group) {
+					$project2[$field] = 1;
+				}
+			}
+		}
+		$pipelines[] = array('$project' => $project2);
 
 		if (isset($this->request['states']) && $states = @json_decode($this->request['states'])) {
 			$filter_states = array_intersect($states, array(self::STATE_ACTIVE, self::STATE_EXPIRE, self::STATE_FUTURE));
@@ -182,6 +200,8 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 
 		if (!empty($this->sort)) {
 			$pipelines[] = array('$sort' => $this->sort);
+		} else {
+			$pipelines[] = array('$sort' => array('id' => 1));
 		}
 		if ($this->page != 0) {
 			$pipelines[] = array('$skip' => $this->page * $this->size);

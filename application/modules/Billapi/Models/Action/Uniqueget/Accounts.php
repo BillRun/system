@@ -28,6 +28,9 @@ class Models_Action_Uniqueget_Accounts extends Models_Action_Uniqueget {
 
 		Billrun_Factory::log("Billapi get runs query: " . json_encode($this->query), Zend_Log::DEBUG);
 		$cursor = $this->collectionHandler->find($this->query, $project);
+		if (!empty($this->sort)) {
+			$cursor->sort($this->sort);
+		}
 
 		return $this->processResults($cursor);
 	}
