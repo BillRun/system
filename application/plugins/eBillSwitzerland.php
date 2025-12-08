@@ -271,7 +271,8 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
                 ];
 				$billrunWrapper = Billrun_Billrun::getInstance($billrunOptions);
 				if ($billrunWrapper) {
-					if (!$billrunWrapper->setPluginField($this->plugin_name, 'invoice_swiss_ebill_xml', $this->xmlFullPath)) {
+					$billrunWrapper->setPluginField($this->plugin_name, 'invoice_swiss_ebill_xml', $this->xmlFullPath);
+					if (!$billrunWrapper->save()) {
 						Billrun_Factory::log("eBill Plugin Error: Failed to save XML file at: " . $this->xmlFullPath, Zend_Log::ALERT);
 					}
 				} else {
@@ -800,7 +801,8 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 		});
 
 		$responseList[] = $responseObj;
-		if (!$billrunWrapper->setPluginField($this->plugin_name, $fieldName, $responseList)) {
+		$billrunWrapper->setPluginField($this->plugin_name, $fieldName, $responseList);
+		if (!$billrunWrapper->save()) {
 			Billrun_Factory::log("eBill Plugin Error: Failed to update status for Invoice ID " . $transactionIdStr, Zend_Log::ERR);
 		}
 	}

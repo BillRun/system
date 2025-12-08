@@ -2080,6 +2080,28 @@ runOnce(lastConfig, 'BRCD-4739', function () {
 	db.createCollection("plugin_teldas_non_working_days"); 
 });
 
+runOnce(lastConfig, 'BRCD-5060', function () {
+	var ebill_id = {
+		"field_name": "ebill_id",
+		"title": "eBill ID",
+		"mandatory": false,
+		"system": true,
+		"editable": true,
+		"display": false,
+	};
+	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ebill_id, 'account');
+
+	var ebill_vendor_number = {
+		"field_name": "ebill_vendor_number",
+		"title": "eBill vendor number",
+		"mandatory": false,
+		"system": true,
+		"editable": true,
+		"display": false,
+	};
+	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ebill_vendor_number, 'account');
+});
+
 if (typeof lastConfig['export'] === 'undefined') {
 	lastConfig.export = 1;
 }

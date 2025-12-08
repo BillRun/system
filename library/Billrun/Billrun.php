@@ -1205,8 +1205,6 @@ class Billrun_Billrun {
 			$plugins[] = $newPlugin;
 		}
 		$this->data['plugins'] = $plugins;
-
-		return $this->save();
 	}
 
 
