@@ -221,6 +221,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @return Billrun_Bill_Payment
 	 */
 	public static function getInstanceByid($id, $read_preference = null) {
+		Billrun_Factory::log("Getting bill data by txid: " .$id, Zend_Log::DEBUG);
                 $id = self::padTxId($id);
 		$data = Billrun_Factory::db()->billsCollection()->query('txid', $id)->cursor()->setReadPreference($read_preference)->current();
 		if ($data->isEmpty()) {
