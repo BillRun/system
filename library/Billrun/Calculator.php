@@ -108,6 +108,13 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->autosort = $options['autosort'];
 		}
 
+		if (isset($options['filter_types'])) {
+			if(!is_array($options['filter_types'])){
+				$options['filter_types'] = [$options['filter_types']];
+			}
+			$this->filter_types = $options['filter_types'];
+		}
+
 		if (!isset($options['autoload']) || $options['autoload']) {
 			$this->load();
 		}
@@ -334,7 +341,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				->query()->in('stamp', $stamps)->cursor();
 
 		if ($this->autosort) {
-			$lines->sort(array('urt' => 1));
+			$lines->sort(array('calc_time'=> 1, 'urt' => 1));
 		}
 
 		//Billrun_Factory::log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);			
@@ -412,6 +419,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 					'$ne' => true, '$lt' => new Mongodloid_Date($orphand_time)
 				)),
 		);
+		if(isset($this->filter_types) ){
+			
+			$query['$and'][0]['type'] = array('$in' => $this->filter_types);
+		}
 //		$queryData['hint'] = $current_calculator_queue_tag;
 		$queryData['query'] = $query;
 		return $queryData;
@@ -501,32 +512,46 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				if (isset($querydata['hint'])) {
 					$hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->limit($this->limit);
 					if ($this->autosort) {
-						$hq->sort(array('urt' => 1));
+						$hq->sort(array('calc_time'=>1, 'urt' => 1));
 					}
 				} else {
 					$hq = $queue->query($query)->cursor()->limit($this->limit);
 					if ($this->autosort) {
-						$hq->sort(array('urt' => 1));
+						$hq->sort(array('calc_time'=>1, 'urt' => 1));
 					}
 				}
-				$horizonlineCount = $hq->count(true);
-				$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
-				Billrun_Factory::log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
-				if (!$horizonline->isEmpty()) {
-					if ($this->autosort) {
-						$query['urt'] = array('$lte' => $horizonline['urt']);
-					} else {
-						$query['_id'] = array('$lte' => $horizonline->getId()->getMongoID());
-					}
-				} else {
+				$stamps = [];
+				foreach ($hq as $entity) {
+					$stamps[] = $entity['stamp']; // or $line['stamp'] if you prefer
+				}
+				if(empty($stamps)){
 					return $retLines;
 				}
+				
+				// $horizonlineCount = $hq->count(true);
+				// $horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
+				// Billrun_Factory::log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
+				// if (!$horizonline->isEmpty()) {
+				// 	if ($this->autosort) {
+				// 		$query['urt'] = array('$lte' => $horizonline['urt']);
+				// 		if(isset($horizonline['calc_time'])){
+				// 			$query['calc_time'] = array('$lte' => $horizonline['calc_time']);
+				// 		}else{
+				// 			$query['calc_time'] = array('$exists' => false);
+
+				// 		}
+				// 	} else {
+				// 		$query['_id'] = array('$lte' => $horizonline->getId()->getMongoID());
+				// 	}
+				// } else {
+				// 	return $retLines;
+				// }
 			}
 
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			Billrun_Factory::log('Work hash: ' . $this->workHash, Zend_Log::DEBUG);
 			$update['$set']['hash'] = $this->workHash;
-if (($response = $this->applyQueueHash($query, $update, $queue)) === FALSE) {
+			if (($response = $this->applyQueueHash(array('stamp'=> array('$in' => $stamps)), $update, $queue)) === FALSE) {
 				continue;
 			}
 			Billrun_Factory::log('Queue records updated number: ' . $response['nModified'], Zend_Log::DEBUG);
@@ -538,7 +563,7 @@ if (($response = $this->applyQueueHash($query, $update, $queue)) === FALSE) {
 			}
 
 			if ($this->autosort) {
-				$foundLines->sort(array('urt' => 1));
+				$foundLines->sort(array('calc_time'=>1, 'urt' => 1));
 			}
 		} while ($horizonlineCount != 0 && $foundLines->count() == 0);
 
@@ -576,8 +601,8 @@ if (($response = $this->applyQueueHash($query, $update, $queue)) === FALSE) {
 			Billrun_Factory::log("No support for transactions or \$isolated; Please upgrade MongoDB server or client", Zend_Log::WARN);
 		}*/
 		
-		$queue->update($query, $update, array('multiple' => true));
-		return true;
+		$res = $queue->update($query, $update, array('multiple' => true));
+		return $res;
 	}
 
 	/**

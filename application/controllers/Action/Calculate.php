@@ -33,7 +33,7 @@ class CalculateAction extends Action_Base {
 		}
 		$params = $this->getController()->getParameters();
 		if(isset($params['filter_types'])){
-			$options['filter_types'] = explode(",", $params['filter_types']);
+			$options['filter_types'] = $params['filter_types'];
 		}
 		$this->getController()->addOutput("Loading Calculator");
 		$calculator = Billrun_Calculator::getInstance($options);

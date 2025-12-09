@@ -58,7 +58,9 @@ db.queue.createIndex({'calc_time': 1 }, { unique: false , sparse: true, backgrou
 db.queue.createIndex({'type': 1 }, { unique: false , sparse: true, background: true});
 db.queue.createIndex({'aid': 1 }, { unique: false , sparse: true, background: true});
 db.queue.createIndex({"hash": 1, "calc_time": 1, "type": 1}, {"background": true})
-db.queue.createIndex({'urt': 1 , 'type': 1}, { unique: false , sparse: true, background: true });
+db.queue.createIndex({'calc_name':1, 'type': 1, 'calc_time':1, 'urt': 1  }, { unique: false , background: true });
+db.queue.createIndex({'calc_name':1, 'type': 1, 'urt': 1  }, { unique: false , background: true });
+
 
 // rebalance_queue collection
 db.createCollection('rebalance_queue');
