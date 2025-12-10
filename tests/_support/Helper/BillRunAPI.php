@@ -436,17 +436,19 @@ class BillRunAPI extends \Codeception\Module
                 ]
             ],
             "upfront" => false,
+            // "recurrence" => [
+            //     "frequency" => 1,
+            //     "start" => 1
+            // ],
             "recurrence" => [
-                "frequency" => 1,
-                "start" => 1
-            ],
-        
+                "periodicity" => "month"
+             ],
             "prorated_end" => true,
             "rates" => [],
             "prorated_start" => true,
             "connection_type" => "postpaid",
             "prorated_termination" => true,
-            "description" => "plan"
+            "description" => $override['name'] ?? "plan"
 
         ], $override);
         $this->sendBillapiCreate($plan, 'plans');
@@ -754,6 +756,28 @@ class BillRunAPI extends \Codeception\Module
         $this->sendBillapiCreate($charge, 'charges');
     }
     
+
+    public function generateDiscount($override = [])
+  {
+    //http://billrun/billapi/discounts/create
+    $discount = array_merge([
+      
+        "description" => "nn",
+        "key" => '20240111134913715',
+        "proration" => "inherited",
+        "priority" => "",
+        "params" => [
+          "min_subscribers" => "",
+          "max_subscribers" => "",
+          "conditions" => [[]]
+        ],
+        "from" => "2023-05-12",
+        "type" => "monetary"
+      
+    ], $override);
+
+    $this->sendBillapiCreate($discount, 'discounts');
+  }
     
 }
 //billapi/accounts/permanentchange
