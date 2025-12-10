@@ -1615,12 +1615,14 @@ class Billrun_DiscountManager {
 		
 		$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
 		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
+		$alignToSubjectProrationFlags = Billrun_Factory::config()->getConfigValue('discounts.align_to_subject_proration_flags', true);
+        return  ($proratedStart && $proratedEnd) ||
+                ($proratedStart && (isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) ) || 
+                ($proratedEnd && (isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end())) ) ||
+                !$alignToSubjectProrationFlags && ( 
+                    (isset($line['start_date']) && (Billrun_Utils_Time::getTime($line['start_date']) != $this->cycle->start())) ||
+                    (isset($line['end_date']) && (Billrun_Utils_Time::getTime($line['end_date']) != $this->cycle->end())) );
 		
-		return ($proratedStart && $proratedEnd) ||
-			($proratedStart && (isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) || 
-				(isset($line['start_date']) && (Billrun_Utils_Time::getTime($line['start_date']) != $this->cycle->start()))) ||
-			($proratedEnd && (isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end())) || 
-				(isset($line['end_date']) && (Billrun_Utils_Time::getTime($line['end_date']) != $this->cycle->end())));
 	}
 	
 	/**
