@@ -141,6 +141,20 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		}
 	}
 
+	public function removeCollectionStepsByInCollection($inCollectionAids) {
+		try {
+			$query = array(
+				'extra_params.aid' => array('$nin' => $inCollectionAids),
+				'notify_time' => array('$exists' => false)
+			);
+			$this->collection->remove($query);
+			return true;
+		} catch (Exception $e) {
+            Billrun_Factory::log('removeCollectionSteps failed for aids: ' . $inCollectionAids . '. Error: ' . $e->getCode() . " : " . $e->getMessage(), Zend_Log::NOTICE);
+			return false;
+		}
+	}
+
 	public function runCollectStep($aids = array()) {
 		$result = array();
 		$steps = $this->getReadySteps($aids);

@@ -16,6 +16,7 @@ class Billrun_Collection extends Billrun_Base {
 	use Billrun_Traits_ConditionsCheck;
 
 
+	protected $reallyInCollectionAids = [];
 	public function collect($aids = array(), $collectDir = '') {
 		$account = Billrun_Factory::account();
 		Billrun_Factory::log()->log("Pulling accounts that are subject to collection", Zend_Log::DEBUG);
@@ -52,7 +53,16 @@ class Billrun_Collection extends Billrun_Base {
 			$matchProcess = $processes[$processIndex];
 			$result[$matchProcess['label']] = $account->updateCrmInCollection($updateCollectionStateChanged, $matchProcess);
 		}
+		if(empty($aids)){
+			$this->removeAllCollectionStepsOfCustomerNotInCollection();
+		}
 		return $result;
+	}
+
+	protected function removeAllCollectionStepsOfCustomerNotInCollection(){
+		Billrun_Factory::log()->log("Removing any future collection steps for a customer not in collection of all processes", Zend_Log::DEBUG);
+		$collectionSteps = Billrun_Factory::collectionSteps();
+		$res = $collectionSteps->removeCollectionStepsByInCollection($this->reallyInCollectionAids);
 	}
 
 	/**
@@ -102,6 +112,7 @@ class Billrun_Collection extends Billrun_Base {
 			}
 			if(isset($debtByAids[$aid]) && $debtByAids[$aid]['total'] >= $processMinDebt){
 				$reallyInCollectionByProcess[$processIndex][$aid] = $debtByAids[$aid];
+				$this->reallyInCollectionAids[]= $aid;
 			}
 			$aidsAlreadyProcess[$aid] = true;
 			if ($collectDir == 'enter_collection' || empty($collectDir)) {
