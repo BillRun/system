@@ -149,7 +149,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 			);
 			$res = $this->collection->remove($query);
 			if($res['n'] > 0){
-				Billrun_Factory::log('Removed '.$res['n'].' collection steps', Zend_Log::DEBUG);
+				Billrun_Factory::log('Removed '.$res['n'].' collection steps for query ' .  print_r($query, 1), Zend_Log::DEBUG);
 			}
 			return true;
 		} catch (Exception $e) {
