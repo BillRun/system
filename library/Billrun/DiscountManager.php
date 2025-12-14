@@ -1580,15 +1580,20 @@ class Billrun_DiscountManager {
 					$this->end = $discountTo;
 				}
 			}else{
+				$amount -= $flatAmount;
 				$this->start = $discountTo;
 				$this->end = $this->cycle->end();
-				$amount = -$amount;
 			}
 		}else{
 			if ($line['charge_op'] ==  "refund"){
+				if($discountFrom > $this->cycle->start()){
+					
+				}else{
+					$amount = -$amount;
+				}
 				$this->start = Billrun_Utils_Time::getTime($line['start']);
 				$this->end = $this->cycle->end();
-				$amount = -$amount;
+				
 			}else{
 				$amount += $flatAmount;
 			}
