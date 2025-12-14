@@ -1491,6 +1491,7 @@ class Billrun_DiscountManager {
 		$isUpfront = $line['is_upfront'] ?? false;
 		$discountFrom = $discount['from']->sec ?? $this->cycle->start();
 		$discountTo = $discount['to']->sec ?? $this->cycle->end();
+		$cycles  = $discount['cycles'] ??  null;
 		if ($this->isDiscountProrated($discount, $line)) {
 			$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
 			$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
@@ -1514,9 +1515,23 @@ class Billrun_DiscountManager {
 			}
 			$this->start = $from;
 			$this->end = $to;
+		} 
+		if(isset($cycles)){
+			$proratedStart = isset($proratedStart) ? $proratedStart : false;
+			$startTime =  $proratedStart ? Billrun_Utils_Time::getTime($line['start_date']) :  Billrun_Billingcycle::getBillrunStartTimeByTimestamp(Billrun_Utils_Time::getTime($line['start_date']), $this->cycle->invoicingDay());;
+			$toByCycles = strtotime("+{$cycles} months", $startTime);
+			if(!$proratedEnd && $toByCycles < $this->cycle->end()){
+				$toByCycles = $this->cycle->start();
+			}
+			$to = min($to, $toByCycles, $this->cycle->end());
 		}
+
 		if(!$isSequential){
-			$flatAmount = $amount = $this->getDiscountAmount($discount, $line, $value, $operations);
+			if(isset($cycles) && $to <= $this->cycle->start()){
+				$amount = 0;
+			}else{
+				$flatAmount = $amount = $this->getDiscountAmount($discount, $line, $value, $operations);
+			}
 			if ($this->isDiscountProrated($discount, $line)) {
 				$roundingType = 'ceil';
 				if($isUpfront && $from > $to ){
@@ -1676,10 +1691,10 @@ class Billrun_DiscountManager {
 		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
 		
 		return ($proratedStart && $proratedEnd) ||
-			($proratedStart && (isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) || 
-				(isset($line['start_date']) && (Billrun_Utils_Time::getTime($line['start_date']) != $this->cycle->start()))) ||
-			($proratedEnd && (isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end())) || 
-				(isset($line['end_date']) && (Billrun_Utils_Time::getTime($line['end_date']) != $this->cycle->end()))) || 
+			($proratedStart && ((isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) || 
+				(isset($line['start_date']) && (Billrun_Utils_Time::getTime($line['start_date']) != $this->cycle->start())))) ||
+			($proratedEnd && ((isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end())) || 
+				(isset($line['end_date']) && (Billrun_Utils_Time::getTime($line['end_date']) != $this->cycle->end())))) || 
 				(isset($line['is_upfront']) && $line['is_upfront'] && ($proratedStart || $proratedEnd)) ;
 	}
 	

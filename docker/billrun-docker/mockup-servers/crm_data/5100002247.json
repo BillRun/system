@@ -1,0 +1,91 @@
+{
+  "status": 1,
+  "data": [
+    {
+      "aid": 5100002247,
+      "crm_account_id": null,
+      "type": "account",
+      "from": "2025-09-17 10:11:54",
+      "to": "2200-01-01 02:00:00",
+      "firstname": "",
+      "lastname": "",
+      "title": null,
+      "email": null,
+      "invoice_shipping_method": "post",
+      "category": "",
+      "sub_category": "",
+      "invoice_message": null,
+      "invoice_language": "en_GB",
+      "invoice_detailed": false,
+      "street": "",
+      "house_number": "",
+      "apartment": "",
+      "province": "",
+      "city": "",
+      "country": "",
+      "zip_code": "",
+      "po_box": "",
+      "creation_time": "2025-09-17 10:11:54",
+      "activation_date": "2025-09-17 15:31:43",
+      "deactivation_date": "2200-01-01 02:00:00"
+    },
+    {
+      "sid": 39048,
+      "aid": 5100002247,
+      "type": "subscriber",
+      "from": "2025-09-17 15:31:43",
+      "to": "2200-01-01 02:00:00",
+      "plan": "PLAN_5102_4",
+      "play": "MOBILE",
+      "firstname": "",
+      "lastname": "",
+      "activation_date": "2025-09-17 15:31:43",
+      "deactivation_date": "2200-01-01 02:00:00",
+      "plan_activation": "2025-09-17 15:31:43",
+      "plan_deactivation": "2200-01-01 02:00:00",
+      "creation_time": null,
+      "former_plan": null,
+      "imsi": [],
+      "sub_number": "",
+      "portability_code": "",
+      "discounts": [
+        {
+          "priority": "",
+          "params": {},
+          "from": "2025-09-17 12:31:43",
+          "subject": {
+            "plan": {
+              "PLAN_5102_4": {
+                "value": 2.521
+              }
+            }
+          },
+          "proration": "inherited",
+          "cycles": 2,
+          "type": "monetary",
+          "to": "2025-11-17 13:31:43",
+          "description": "",
+          "key": "SUBSCRIBER_DISCOUNT_1"
+        }
+      ],
+      "overrides": [
+        {
+          "type": "plan",
+          "id": null,
+          "key": "PLAN_5102_4",
+          "value": {
+            "price": [
+              {
+                "price": 34.445,
+                "from": 0,
+                "to": "UNLIMITED"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "options": null,
+  "billableAccounts": {}
+}
