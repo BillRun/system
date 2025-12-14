@@ -5,6 +5,7 @@ modules:
     enabled:
         - Asserts
         - \Helper\Api
+        - \Helper\All
         - \Helper\BillRunAPI
         - \Helper\BillRun\Mockups\israelInvoice
         - \Helper\BillRun\Mockups\Crm
@@ -14,6 +15,7 @@ modules:
         - \Helper\ResponseWrapper
         - \Helper\CollectionWrapper
         - \Helper\BillRun\Mockups\PaymentGateway
+        - \Helper\LogChecker
         - WebDriver:
             url: http://web
             host: chrome

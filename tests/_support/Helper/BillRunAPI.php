@@ -351,6 +351,12 @@ class BillRunAPI extends \Codeception\Module
         foreach ($mandatoryFields as $field) {
             $field['type'] = $field['type'] ?? 'text';
             $value = $this->generateDemoValue($field['type']);
+            if (!empty($field['select_options']) && is_string($field['select_options'])) {
+                $options = array_filter(array_map('trim', explode(',', $field['select_options'])));
+                if (!empty($options)) {
+                    $value = reset($options); // prefer explicit option over generated value
+                }
+            }
             $populatedValues[$field['field_name']] = $value;
         }
         return $populatedValues;
@@ -430,17 +436,19 @@ class BillRunAPI extends \Codeception\Module
                 ]
             ],
             "upfront" => false,
+            // "recurrence" => [
+            //     "frequency" => 1,
+            //     "start" => 1
+            // ],
             "recurrence" => [
-                "frequency" => 1,
-                "start" => 1
-            ],
-        
+                "periodicity" => "month"
+             ],
             "prorated_end" => true,
             "rates" => [],
             "prorated_start" => true,
             "connection_type" => "postpaid",
             "prorated_termination" => true,
-            "description" => "plan"
+            "description" => $override['name'] ?? "plan"
 
         ], $override);
         $this->sendBillapiCreate($plan, 'plans');
@@ -748,6 +756,28 @@ class BillRunAPI extends \Codeception\Module
         $this->sendBillapiCreate($charge, 'charges');
     }
     
+
+    public function generateDiscount($override = [])
+  {
+    //http://billrun/billapi/discounts/create
+    $discount = array_merge([
+      
+        "description" => "nn",
+        "key" => '20240111134913715',
+        "proration" => "inherited",
+        "priority" => "",
+        "params" => [
+          "min_subscribers" => "",
+          "max_subscribers" => "",
+          "conditions" => [[]]
+        ],
+        "from" => "2023-05-12",
+        "type" => "monetary"
+      
+    ], $override);
+
+    $this->sendBillapiCreate($discount, 'discounts');
+  }
     
 }
 //billapi/accounts/permanentchange

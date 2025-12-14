@@ -169,6 +169,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
 		$this->view->assign('invoice_display_options', Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_display_options', []));
 		$this->view->assign('is_onetime', $this->is_onetime);
+		$this->view->assign('construction_options', $this->constructionOptions);
 		$this->prepareGraphicsResources();
 	}
 
@@ -264,11 +265,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 return $defaultFileName;
             }
         }
-        
+
         public function setFileName($billrunObject, $fileName) {
             $billrunObject->set('file_name', $fileName);
         }
-        
+
         public function getTranslationValue($paramObj, $billrunObject) {
             if(isset($paramObj['linked_entity'])){
                 if(isset($paramObj['type']) && $paramObj['type'] === "date"){
@@ -664,6 +665,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		if($htmlPath) {
 			$update['invoice_html'] = $htmlPath;
 		}
+
+		Billrun_Factory::dispatcher()->trigger('alterGenerationBillrunUpdate',[&$update, $account, $pdfPath, $htmlPath, $this->constructionOptions, $this ]);
+
 		if(!$this->is_fake_generation) {
 			$this->billrunColl->update(["_id"=>$account['_id']->getMongoID(),"invoice_id"=>$account['invoice_id'], "aid"=>$account['aid'], 'billrun_key' => $account['billrun_key']], ['$set' => $update ]);
 		}
