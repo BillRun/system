@@ -33,5 +33,5 @@ HEADER="urt,sid,imsi,sender"
 if [ -n "$OUTPUT" ]; then
     FILENAME="`date +%Y%m%d-%H%I`"_NRTRDE_last_hour.csv
     echo -e "$HEADER\n$OUTPUT" > "/tmp/$FILENAME"
-    echo "Report is attached as  $FILENAME"| mail -s "Roaming use without agreement from NRTRDE last hour" -a "/tmp/$FILENAME" skushnir@golantelecom.co.il  mwahab@golantelecom.co.il sdahan@golantelecom.co.il rgolan@golantelecom.co.il eran.uzan@billrun.com
+    echo "Report is attached as  $FILENAME"| mail -s "Roaming use without agreement from NRTRDE last hour" -a "/tmp/$FILENAME" gminkov@golantelecom.co.il ZOHAROZ@cellcom.co.il yakovep@cellcom.co.il skushnir@golantelecom.co.il  mwahab@golantelecom.co.il sdahan@golantelecom.co.il rgolan@golantelecom.co.il eran.uzan@billrun.com
 fi
