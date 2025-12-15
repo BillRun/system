@@ -436,17 +436,19 @@ class BillRunAPI extends \Codeception\Module
                 ]
             ],
             "upfront" => false,
+            // "recurrence" => [
+            //     "frequency" => 1,
+            //     "start" => 1
+            // ],
             "recurrence" => [
-                "frequency" => 1,
-                "start" => 1
-            ],
-        
+                "periodicity" => "month"
+             ],
             "prorated_end" => true,
             "rates" => [],
             "prorated_start" => true,
             "connection_type" => "postpaid",
             "prorated_termination" => true,
-            "description" => "plan"
+            "description" => $override['name'] ?? "plan"
 
         ], $override);
         $this->sendBillapiCreate($plan, 'plans');
