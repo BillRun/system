@@ -1552,7 +1552,11 @@ class Billrun_DiscountManager {
 				}
 			}else{
 				if($isUpfront) {
-					if($discountTo < $this->cycle->end() || 
+					if($from > $this->cycle->start() && $to < $this->cycle->end()){
+						$this->start = $this->cycle->start();
+						$this->end = $this->cycle->end();
+						$amount = $amount;
+					} elseif($to < $this->cycle->end() || 
 						(isset($line['charge_op']) && $line['charge_op'] ==  "refund" && Billrun_Utils_Time::getTime($line['start']) + 1 < $this->cycle->end())){
 						//do not give discount on current month if the discount finish in the previous month
 						$amount = 0;
