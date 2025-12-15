@@ -1686,10 +1686,10 @@ class Billrun_DiscountManager {
 		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
 		
 		return ($proratedStart && $proratedEnd) ||
-			($proratedStart && ((isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) || 
-				(isset($line['start_date']) && (Billrun_Utils_Time::getTime($line['start_date']) != $this->cycle->start())))) ||
-			($proratedEnd && ((isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end())) || 
-				(isset($line['end_date']) && (Billrun_Utils_Time::getTime($line['end_date']) != $this->cycle->end())))) || 
+			($proratedStart && (isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) || 
+				(isset($line['start_date']) && (Billrun_Utils_Time::getTime($line['start_date']) != $this->cycle->start()))) ||
+			($proratedEnd && (isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end())) || 
+				(isset($line['end_date']) && (Billrun_Utils_Time::getTime($line['end_date']) != $this->cycle->end()))) || 
 				(isset($line['is_upfront']) && $line['is_upfront'] && ($proratedStart || $proratedEnd)) ;
 	}
 	
