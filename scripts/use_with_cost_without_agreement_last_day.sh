@@ -24,5 +24,5 @@ HEADER="urt,sid,imsi,sending_source"
 if [ -n "$OUTPUT" ]; then
     FILENAME="`date +%Y%m%d-%H%I`"_TAP3_with_costs.csv
     echo -e "$HEADER\n$OUTPUT" > "/tmp/$FILENAME"
-    echo "Report is attached as  $FILENAME" | mail -s "roaming use without agreement with cost from TAP3" -a "/tmp/$FILENAME" skushnir@golantelecom.co.il  mwahab@golantelecom.co.il  sdahan@golantelecom.co.il  rgolan@golantelecom.co.il eran.uzan@billrun.com
+    echo "Report is attached as  $FILENAME" | mail -s "roaming use without agreement with cost from TAP3" -a "/tmp/$FILENAME"  gminkov@golantelecom.co.il ZOHAROZ@cellcom.co.il yakovep@cellcom.co.il skushnir@golantelecom.co.il  mwahab@golantelecom.co.il  sdahan@golantelecom.co.il  rgolan@golantelecom.co.il eran.uzan@billrun.com
 fi
