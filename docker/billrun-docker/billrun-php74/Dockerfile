@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && pecl install mongodb-1.15.3 \
     && pecl install xdebug-3.1.6 \
     && pecl install memcached \
-    && pecl install redis \
+    && pecl install redis-6.2.0 \
     && docker-php-ext-enable yaf mongodb xdebug memcached redis \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp calendar
 
