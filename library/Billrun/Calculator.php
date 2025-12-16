@@ -504,10 +504,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$query = array_merge($querydata['query'], $localquery);
 		$update = $this->getBaseUpdate();
 		$retLines = array();
-		$horizonlineCount = 0;
 		do {
 			//if There limit to the calculator set an updating limit.
-			if ($this->limit != 0) {
+			if ($this->limit != 0) {///todo::suppurt limit unset or zero !!
 				Billrun_Factory::log('Looking for the last available line in the queue', Zend_Log::DEBUG);
 				if (isset($querydata['hint'])) {
 					$hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->limit($this->limit);
@@ -527,6 +526,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				if(empty($stamps)){
 					return $retLines;
 				}
+				
 				
 				// $horizonlineCount = $hq->count(true);
 				// $horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
@@ -563,9 +563,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			}
 
 			if ($this->autosort) {
-				$foundLines->sort(array('calc_time'=>1, 'urt' => 1));
+				$foundLines->sort(array('urt' => 1));
 			}
-		} while ($horizonlineCount != 0 && $foundLines->count() == 0);
+			//Todo:: need to allow loop run on all the queue lines (although the limit)+ prevent infinity if receieive more cdrs!!!
+		} while ($foundLines->count() == 0);
 
 		foreach ($foundLines as $line) {
 			$retLines[$line['stamp']] = $line;

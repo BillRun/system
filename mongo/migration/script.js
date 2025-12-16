@@ -2080,6 +2080,15 @@ runOnce(lastConfig, 'BRCD-4739', function () {
 	db.createCollection("plugin_teldas_non_working_days"); 
 });
 
+runOnce(lastConfig, 'BRCD-4739', function () {
+	_dropIndex("queue", "hash_1_calc_time_1_type_1");
+	_dropIndex("queue", "urt_1_type_1");
+	db.queue.createIndex({"hash": 1, 'calc_time':1, 'urt':1}, { unique: false , "background": true})
+	db.queue.createIndex({'calc_name':1, 'type': 1, 'calc_time':1, 'urt': 1  }, { unique: false , background: true });
+	db.queue.createIndex({'calc_name':1, 'calc_time':1, 'urt': 1  }, { unique: false , background: true });
+
+});
+
 if (typeof lastConfig['export'] === 'undefined') {
 	lastConfig.export = 1;
 }
