@@ -5,9 +5,11 @@ namespace Helper;
 // all public methods declared in helper class will be available in $I
 use Codeception\Module\REST;
 
-class BillRunAPI extends \Codeception\Module
-{
+class BillRunAPI extends \Codeception\Module{
+  
+
     protected $accessToken = false;
+
 
     /**
      *get access token, it run once.
@@ -52,7 +54,20 @@ class BillRunAPI extends \Codeception\Module
         }
         return $this->accessToken;
     }
-    
+      /**
+     * Returns the last API response's 'entity' field, or null if not present.
+     * This works only if the REST module is available and has grabResponse().
+     */
+    public function getLastEntity()
+    {
+        $rest = $this->getModule('REST');
+        if (method_exists($rest, 'grabResponse')) {
+            $resp = $rest->grabResponse();
+            $data = json_decode($resp, true);
+            return $data['entity'] ?? null;
+        }
+        return null;
+    }
     /**
      * send post billapi requset to create entitys.
      * @param Array $data - entity fields 

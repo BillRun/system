@@ -541,10 +541,7 @@ abstract class Billrun_PaymentGateway {
 		);
 		$update = array();
 		$setQuery = $this->buildSetQuery();
-		$generateTokenTime = date("Y-m-d H:i:s", $setQuery['active']['generate_token_time']->sec);
-		$generateTokenTimeArray = explode(' ', $generateTokenTime);
-		$generateTokenTimeISOFormat = $generateTokenTimeArray[0] . 'T' . $generateTokenTimeArray[1] . 'Z';
-		$setQuery['active']['generate_token_time'] = $generateTokenTimeISOFormat;
+		$setQuery['active']['generate_token_time'] = $setQuery['active']['generate_token_time']->toDateTime()->format('c');
 		$update['payment_gateway'] = $setQuery;
 		$update['from'] = $time;
 		if (!$this->validateStructureForCharge($update['payment_gateway']['active'])) {
