@@ -51,7 +51,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 		$deltaUpdater = new Billrun_UpdateByDelta_Subscribersautorenew();
 
 		// Check only the to field, enabling update of future records.
-		$query = array('to' => array('$gt' => new MongoDate()));
+		$query = array('to' => array('$gt' => new Mongodloid_Date()));
 		$query['sid'] = $this->sid;
 
 		$defaultRecord = $this->getDefaultRecord();
@@ -124,7 +124,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 				return false;
 			}
 			
-			$record[$field] = new MongoDate($this->parseDateFieldMongoTime($field, $time));
+			$record[$field] = new Mongodloid_Date($this->parseDateFieldMongoTime($field, $time));
 		}
 
 		return true;

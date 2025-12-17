@@ -57,6 +57,8 @@ trait Tests_SetUp
 	 */
 	protected $dataPath = '/data/';
 
+	protected static $request = null;
+
 	public function construct($unitTestName = null, $dataToLoad = null)
 	{
 		$this->unitTestName = $unitTestName;
@@ -68,6 +70,14 @@ trait Tests_SetUp
 			$this->importData = array_merge($this->importData, $dataToLoad);
 		}
 	}
+
+	public function  getRequest(){
+		if(self::$request == null){
+			self::$request = new Yaf_Request_Http;
+		}
+		return self::$request;
+	}
+
 
 	/**
 	 * executes set up for the unit runing unit test 
@@ -102,9 +112,7 @@ trait Tests_SetUp
 
 	public function skip_tests($tests, $path)
 	{
-		$request = new Yaf_Request_Http;
-		$this->test_cases_to_skip = $request->get('skip');
-
+		$this->test_cases_to_skip = $this->getRequest()->get('skip');
 		if ($this->test_cases_to_skip !== null && !empty($this->test_cases_to_skip)) {
 			$this->test_cases_to_skip = explode(',', $this->test_cases_to_skip);
 			foreach ($tests as $case) {
@@ -131,10 +139,59 @@ trait Tests_SetUp
 		}
 	}
 
+
 	public function getTestCases($legacy_tests = [])
 	{
 		$all_test_cases = [];
+    $label = explode(" ", $this->getLabel())[1];
+    $first = '';
+    $second = '';
+    $path = '';
+    
+		switch ($label) {
+				case 'Aggregatore':
+            $first = 'test';
+            $second = 'test_number';
+            $path = APPLICATION_PATH . '/library/Tests/aggregatorTestCases/';
+					break;
+				case 'Customercalculatortest':
+            $first = 'row';
+            $second = 'stamp';
+            $path = APPLICATION_PATH . '/library/Tests/CustomerCalculator/';
+					break;
+				case 'Ratetest':
+            $first = 'row';
+            $second = 'stamp';
+            $path = APPLICATION_PATH . '/library/Tests/Rate/';
+					break;
+				case 'UpdateRow':
+            $first = 'row';
+            $second = 'stamp';
+            $path = APPLICATION_PATH . '/library/Tests/UpdateRow/';
+            break;
+        case 'Taxmapping':
+            $first = 'test';
+            $second = 'test_number';
+            $path = APPLICATION_PATH . '/library/Tests/taxmappingTestCases/';
+					break;
+				case 'event':
+					$first='row';
+					$secound='stamp';
+					break;
+				default:
+					throw new Exception("Unknown label: $label");
+			}
+	
+    // Load all PHP files from the specified path
+    if (!empty($path)) {
+        foreach (glob($path . "*.php") as $filename) {
+            require_once $filename;
+        }
+    }
 
+    $test_cases_to_skip = !empty($this->getRequest()->get('skip')) ? explode(',', $this->getRequest()->get('skip')) : [];
+    $test_cases_to_run = !empty($this->getRequest()->get('tests')) ? explode(',', $this->getRequest()->get('tests')) : [];
+	
 		// Get all declared classes
 		$classes = get_declared_classes();
 
@@ -142,27 +199,37 @@ trait Tests_SetUp
 		foreach ($classes as $class) {
 			// Check if the class name starts with 'Test_Case_'
 			if (strpos($class, 'Test_Case_') === 0) {
-				// Create an instance of the class
-				$instance = new $class();
+				$test_number = filter_var($class, FILTER_SANITIZE_NUMBER_INT);
+            
+            // Check if the test should be run based on skip and run filters
+            if (
+                (empty($test_cases_to_skip) && empty($test_cases_to_run)) ||
+                (empty($test_cases_to_skip) && in_array($test_number, $test_cases_to_run)) ||
+                (!empty($test_cases_to_skip) && !in_array($test_number, $test_cases_to_skip))
+            ) {
+						// Create an instance of the class
+						$instance = new $class();
 
-				// Call the test_case method and store the result
-				if (method_exists($instance, 'test_case')) {
-					$test_case = $instance->test_case();
-					$all_test_cases[] = $test_case;
-				}
+						// Call the test_case method and store the result
+						if (method_exists($instance, 'test_case')) {
+							$test_case = $instance->test_case();
+							$all_test_cases[] = $test_case;
+                }
+            }
 			}
 		}
 
 		// Sort the test cases by test_number
-		usort($legacy_tests, function ($a, $b) {
-			return $a['test']['test_number'] <=> $b['test']['test_number'];
+    usort($legacy_tests, function ($a, $b) use ($first, $second) {
+        return $a[$first][$second] <=> $b[$first][$second];
 		});
-		usort($all_test_cases, function ($a, $b) {
-			return $a['test']['test_number'] <=> $b['test']['test_number'];
+    
+    usort($all_test_cases, function ($a, $b) use ($first, $second) {
+        return $a[$first][$second] <=> $b[$first][$second];
 		});
-		//merge legacy test withe all the test cases 
-		return $this->mergeArraysByKey($all_test_cases,$legacy_tests, 'test.test_number');
 
+    // Merge legacy tests with all test cases
+    return $this->mergeArraysByKey($all_test_cases, $legacy_tests, "$first.$second");
 	}
 	function mergeArraysByKey($array1, $array2, $path) {
 		$mergedArray = [];
@@ -195,7 +262,7 @@ trait Tests_SetUp
 	
 
 	/**
-	 * tranform all fields starts with time* into MongoDate object
+	 * tranform all fields starts with time* into Mongodloid_Date object
 	 * @param array $jsonAr 
 	 */
 	protected function fixDates($jsonAr)
@@ -207,7 +274,7 @@ trait Tests_SetUp
 	}
 
 	/**
-	 * tranform all fields starts with time* into MongoDate object
+	 * tranform all fields starts with time* into Mongodloid_Date object
 	 * @param array $jsonAr 
 	 */
 	protected function fixArrayDates($arr)
@@ -219,7 +286,7 @@ trait Tests_SetUp
 			if (is_string($value)) {
 				$value = explode("*", $value);
 				if ((count($value) == 2) && ($value[0] == 'time')) {
-					$value = new MongoDate(strtotime($value[1]));
+					$value = new Mongodloid_Date(strtotime($value[1]));
 					$arr[$jsonField] = $value;
 				}
 			} else if (is_array($arr)) {
@@ -269,7 +336,7 @@ trait Tests_SetUp
 	{
 		if (isset($data['OBJID'])) {
 			$data['_id'] = $data['OBJID'];
-			$data['_id'] = new MongoID($data['OBJID']);
+			$data['_id'] = new Mongodloid_Id($data['OBJID']);
 			unset($data['OBJID']);
 		}
 		return $data;
@@ -370,6 +437,28 @@ trait Tests_SetUp
 			}
 		}
 		$this->setConfig($this->originalConfig);
+	}
+
+
+
+    /**
+	*function to set new config value during the test run 
+	*@param array $newConfig['key'] config key, can be singel key or path seperate by .
+	*@param array $newConfig['value']
+	 */
+	public function setConfigValue($row = [],$newConfig){
+
+		$config = Billrun_Factory::db()->configCollection();
+		$data = $this->config->query()
+			->cursor()
+			->sort(array('_id' => -1))
+			->limit(1)
+			->current()
+			->getRawData();
+		unset($data['_id']);
+		Billrun_Util::setIn($data, $newConfig['key'],$newConfig['value']);
+		$config->insert($data);
+		Billrun_Config::getInstance()->loadDbConfig();
 	}
 
 }

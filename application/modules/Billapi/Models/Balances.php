@@ -24,6 +24,10 @@ class Models_Balances extends Models_Entity {
 		$additional = isset($params['request']['additional']) ? @json_decode($params['request']['additional'], TRUE) : array();
 		list($this->query, $this->update) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999);
 		$this->additional = $this->validateAdditionalData($additional);
+		if (isset($this->query['_id'])) {
+			$this->setBefore($this->loadById($this->query['_id']));
+		}
+
 	}
 
 	public function update() {
@@ -51,6 +55,40 @@ class Models_Balances extends Models_Entity {
 		$this->after = $action->getAfter();
 		$this->line = $action->getAffectedLine();
 		return $ret;
+	}
+	
+	/*
+	 * see Models_Entity::validateQuery()
+	 */
+	protected function validateQuery() {
+		if (!$this->query || empty($this->query)) {
+			return false;
+		}
+		if ($this->action == 'delete' && (!isset($this->before) || $this->before->isEmpty())) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * method to check if the current query allocate the last entry
+	 * in balances there is no last entry check (no revision changes)
+	 * 
+	 * @return boolean true if the last entry else false
+	 */
+	protected function verifyLastEntry() {
+		return true;
+	}
+	
+	/**
+	 * Return the key field by collection
+	 * 
+	 * @return String
+	 * 
+	 * @todo handle shared balances (sid=0)
+	 */
+	protected function getKeyField() {
+		return 'sid';
 	}
 
 }

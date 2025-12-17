@@ -8,7 +8,7 @@
   },
   "allowed_entities_importype": {
     "manual_mapping": ["customer", "subscription", "product"],
-    "predefined_mapping": ["discount", "charge"]
+    "predefined_mapping": ["discount", "charge", "product"]
   },
   "default_values_allowed_actions": {
     "create": ["customer", "subscription", "product"],

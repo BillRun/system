@@ -70,8 +70,8 @@ class CustomFields extends Component {
             onNew={onNew}
             onRemove={onRemove}
             onEdit={onEdit}
-            onReorederSave={onSave}
-            onReorederCancel={onCancel}
+            onReorderSave={onSave}
+            onReorderCancel={onCancel}
             orderChanged={orderChanged.get(entity, false)}
           />
         </Panel>

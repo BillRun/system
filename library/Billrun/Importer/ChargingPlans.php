@@ -247,11 +247,11 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 	}
 
 	protected function getFrom() {
-		return new MongoDate(strtotime('2015-12-01'));
+		return new Mongodloid_Date(strtotime('2015-12-01'));
 	}
 
 	protected function getTo() {
-		return new MongoDate(strtotime('2099-12-31'));
+		return new Mongodloid_Date(strtotime('2099-12-31'));
 	}
 
 }

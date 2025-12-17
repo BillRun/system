@@ -47,6 +47,7 @@ class Range extends PureComponent {
   getValue = (e) => {
     const { inputProps: { fieldType = 'text' } } = this.props;
     switch (fieldType) {
+      case 'datetime':
       case 'date':
         const apiDateTimeFormat = getConfig('apiDateTimeFormat', 'YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
         return (moment.isMoment(e) && e.isValid()) ? e.format(apiDateTimeFormat) : '';

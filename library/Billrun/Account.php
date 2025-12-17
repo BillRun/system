@@ -47,7 +47,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 */
 	protected $customerExtraData = array();
 	
-	protected static $allowedQueryKeys = ['id', 'time'];
+	protected static $allowedQueryKeys = ['id', 'time', 'read_preference'];
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -201,7 +201,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 		$result = $this->load([$accountsQuery]);
 		if(empty($result)) {
-			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($accountsQuery, 1), Zend_Log::DEBUG);
+			Billrun_Factory::log('Failed to load account data for params: ' . print_r($accountsQuery, 1), Zend_Log::DEBUG);
 			return $result;
 		}
 		return $result;
@@ -262,7 +262,8 @@ abstract class Billrun_Account extends Billrun_Base {
 		
 		$query = [];
 		if (!isset($params['time'])) {
-			$query['time'] = date(Billrun_Base::base_datetimeformat);
+			$now = new MongoDate();
+			$query['time'] = date('Y-m-d H:i:s', $now->sec) . '.' . sprintf('%06d', $now->usec);
 		}
 		
 		foreach ($params as $key => $value) {
@@ -281,6 +282,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		$results = array();
 		$subject_to = $this->getIncludedInCollection($aids);
 		$params['in_collection'] = true;
+		$params['read_preference'] = 'RP_PRIMARY'; 
 		// white list exists but aids not included
 		if (!is_null($subject_to) && empty($subject_to)) {
 			return $results;
@@ -302,16 +304,23 @@ abstract class Billrun_Account extends Billrun_Base {
 	/**
 	 * method to update account collection status
 	 */
-	public function updateCrmInCollection($updateCollectionStateChanged) {
+	public function updateCrmInCollection($updateCollectionStateChanged, $process) {
+		Billrun_Factory::log()->log("Updating crm with collection information of process: " . $process['label'], Zend_Log::DEBUG);
 		$collectionSteps = Billrun_Factory::collectionSteps();
 		$result = array('in_collection' => array(), 'out_of_collection' => array());
 
 		if (!empty($updateCollectionStateChanged['in_collection'])) {
+			Billrun_Factory::log()->log("Updating crm with accounts that are in collection", Zend_Log::DEBUG);
 			foreach ($updateCollectionStateChanged['in_collection'] as $aid => $item) {
-				$params = array('aid' => $aid, 'time' => date('c'));
+				Billrun_Factory::log()->log("Creating query for account " . $aid, Zend_Log::DEBUG);
+				$params = array('aid' => $aid, 'time' => date(Billrun_Base::base_datetimeformat));
+				Billrun_Factory::log()->log("Loading account " . $aid, Zend_Log::DEBUG);
 				if ($this->loadAccountForQuery($params)) {
-					$new_values = array('in_collection' => true, 'in_collection_from' => new MongoDate());
-					$collectionSteps->createCollectionSteps($aid);
+					Billrun_Factory::log()->log("Creating account " . $aid . " new collection values", Zend_Log::DEBUG);
+					$new_values = array('in_collection' => true, 'in_collection_from' => new Mongodloid_Date());
+					Billrun_Factory::log()->log("Creating collection steps for account " . $aid, Zend_Log::DEBUG);
+					$collectionSteps->createCollectionSteps($aid, $process);
+					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew($new_values)) {
 						$result['in_collection'][] = $aid;
 					} else {
@@ -322,11 +331,16 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 
 		if (!empty($updateCollectionStateChanged['out_of_collection'])) {
+			Billrun_Factory::log()->log("Updating crm with accounts that are out of collection", Zend_Log::DEBUG);
 			foreach ($updateCollectionStateChanged['out_of_collection'] as $aid => $item) {
-				$params = array('aid' => $aid, 'time' => date('c'));
+				Billrun_Factory::log()->log("Creating query for account " . $aid, Zend_Log::DEBUG);
+				$params = array('aid' => $aid, 'time' => date(Billrun_Base::base_datetimeformat));
+				Billrun_Factory::log()->log("Loading account " . $aid, Zend_Log::DEBUG);
 				if ($this->loadAccountForQuery($params)) {
 					$remove_values = array('in_collection', 'in_collection_from');
+					Billrun_Factory::log()->log("Removing collection steps for account " . $aid, Zend_Log::DEBUG);
 					$collectionSteps->removeCollectionSteps($aid);
+					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew(array(), $remove_values)) {
 						$result['out_of_collection'][] = $aid;
 					} else {
@@ -335,8 +349,9 @@ abstract class Billrun_Account extends Billrun_Base {
 				}
 			}
 		}
-		$collectionSteps->runCollectionStateChange($result['in_collection'], true);
-		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false);
+		Billrun_Factory::log()->log("Running 'collection state changed', for both in_collection and out_of_collection states", Zend_Log::DEBUG);
+		$collectionSteps->runCollectionStateChange($result['in_collection'], true, $process);
+		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false, $process);
 		return $result;
 	}
 	
@@ -382,11 +397,10 @@ abstract class Billrun_Account extends Billrun_Base {
 	public function getData() {
 		return $this->data;
 	}
-	
 	/**
 	 * Function that returns the relevant aids for collection.
 	 * @param array $aids
-	 * @param bollean $is_aids_query
+	 * @param boolean $is_aids_query
 	 * @param array $rejection_conditions
 	 * @return array of aids
 	 */
@@ -396,6 +410,9 @@ abstract class Billrun_Account extends Billrun_Base {
 			$rejection_query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];
 		}
 		$account_query = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
-		return array_merge($rejection_query, $account_query);
+		if ($rejection_query == ['aid' => ['$in' => [-1]]]) {
+			return $rejection_query; // clients hack in order to avoid wrong `aid` merge in the next line in case of an aid specific call. Actually a workaround for https://billrun.atlassian.net/browse/BRCD-4180
+		}
+		return array_merge_recursive($rejection_query, $account_query);
 	}
 }

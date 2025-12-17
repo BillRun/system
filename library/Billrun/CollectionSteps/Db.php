@@ -86,18 +86,21 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$triggerDate = strtotime($do_after_days);
 		$triggerDate = $this->getClosestValidTime($triggerDate, $on_hours);
 		$triggerDate = $this->getClosestValidDate($triggerDate, $on_holidays, $on_days);
-		return new MongoDate($triggerDate);
+		return new Mongodloid_Date($triggerDate);
 	}
 
-	public function createCollectionSteps($aid) {
-		$steps = Billrun_Factory::config()->getConfigValue('collection.steps', Array());
-		$create_date = new MongoDate();
+	public function createCollectionSteps($aid, $process) {
+		$steps = $process['steps'] ?? [];
+		$processName = $process ['name'] ?? null;
+
+		$create_date = new Mongodloid_Date();
 		$newSteps = array();
 		foreach ($steps as $step) {
 			if ($step['active']) {
 				unset($step['active']);
 				$trigger_date = $this->getStepTriggerTime($step);
 				$newStep = array();
+				$newStep['process_name'] = $processName;
 				$newStep['step_code'] = $step['name'];
 				$newStep['step_type'] = $step['type'];
 				if(!empty($step['content'])){
@@ -155,8 +158,8 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$step_ttl = "-{$ttl_value} {$ttl_type}";
 		$query = array(
 			'trigger_date' => array(
-				'$lte' => new MongoDate(),
-				'$gte' => new MongoDate(strtotime($step_ttl)),
+				'$lte' => new Mongodloid_Date(),
+				'$gte' => new Mongodloid_Date(strtotime($step_ttl)),
 			),
 			'notify_time' => array('$exists' => false),
 		);
@@ -188,7 +191,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		);
 		$update = array(
 			'$set' => array(
-				'notify_time' => new MongoDate(),
+				'notify_time' => new Mongodloid_Date(),
 				'returned_value' => $response,
 			),
 		);
@@ -201,12 +204,12 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 
 	}
 	
-	public function runCollectionStateChange($aids, $in = true) {
+	public function runCollectionStateChange($aids, $in = true, $process) {
 		if (empty($aids)) {
 			return true;
 		}
-		$url = Billrun_Factory::config()->getConfigValue('collection.settings.change_state_url', '');
-		$method = Billrun_Factory::config()->getConfigValue('collection.settings.change_state_method', 'POST');
+		$url = $process['settings']['change_state_url'] ?? '';
+		$method = $process['settings']['change_state_method'] ?? 'POST';
 		$step = array(
 			'step_code' => "collection state change",
 			'step_type' => "httpnoack",
@@ -217,6 +220,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 			'extra_params'=> array(
 				'state' => $in ? 'in_collection' : 'out_of_collection',
 				'aids' => $aids,
+				'process_name' => $process['name'] ?? ''
 			),
 			'creation_time' => date('c')
 		);

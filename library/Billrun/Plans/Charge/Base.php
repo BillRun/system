@@ -33,7 +33,7 @@ abstract class Billrun_Plans_Charge_Base {
 		$this->proratedStart = !isset($plan['prorated_start']) || $plan['prorated_start'] != FALSE;
 		$this->proratedEnd = !isset($plan['prorated_end']) || $plan['prorated_end'] != FALSE;
 		$this->proratedTermination = !isset($plan['prorated_termination']) || $plan['prorated_termination'] != FALSE;
-		$this->subscriberDeactivation = !empty($plan['deactivation_date']) &&  $plan['deactivation_date'] instanceof MongoDate ?
+		$this->subscriberDeactivation = !empty($plan['deactivation_date']) &&  $plan['deactivation_date'] instanceof Mongodloid_Date ?
 											$plan['deactivation_date']->sec : FALSE ;
 		
 		$this->setSpan($plan);
@@ -44,5 +44,5 @@ abstract class Billrun_Plans_Charge_Base {
 	 * @return float the price of the plan without VAT.
 	 */
 	public abstract function getPrice($quantity = 1);
-	
+
 }

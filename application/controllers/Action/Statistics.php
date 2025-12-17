@@ -33,7 +33,7 @@ class StatisticsAction extends ApiAction {
 				'desc' => 'No statistics specified for save!'
 			);
 		} else {
-			$statistics['creation_date'] = new MongoDate();
+			$statistics['creation_date'] = new Mongodloid_Date();
 			$this->model->update($statistics);
 			return array(
 				'status' => 1,
@@ -49,12 +49,12 @@ class StatisticsAction extends ApiAction {
 		$to = $this->getRequest()->get('to');
 		$query = array("creation_date" => array());
 		if ($from) {
-			$query["creation_date"]['$gte'] = new MongoDate(strtotime($from));
+			$query["creation_date"]['$gte'] = new Mongodloid_Date(strtotime($from));
 		} else {
-			$query["creation_date"]['$gte'] = new MongoDate(strtotime('1970-01-01'));
+			$query["creation_date"]['$gte'] = new Mongodloid_Date(strtotime('1970-01-01'));
 		}
 		if ($to) {
-			$query["creation_date"]['$lte'] = new MongoDate(strtotime($to));
+			$query["creation_date"]['$lte'] = new Mongodloid_Date(strtotime($to));
 		}
 		$data = $this->model->getData($query);
 		$statistics = array();

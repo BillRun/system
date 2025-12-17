@@ -9,15 +9,19 @@ export default class Filter extends Component {
   static propTypes = {
     filter: PropTypes.instanceOf(Immutable.Map),
     fields: PropTypes.array,
+    customFilters: PropTypes.array,
     base: PropTypes.object,
     children: PropTypes.element,
+    onClear: PropTypes.func,
   };
 
   static defaultProps = {
     filter: Immutable.Map(),
     fields: [],
+    customFilters: [],
     base: {},
     children: null,
+    onClear: null
   };
 
   constructor(props) {
@@ -100,8 +104,12 @@ export default class Filter extends Component {
   }
 
   onClearFilter = () => {
+    const { onClear } = this.props;
     this.setState({filter_by: [], string: ''}, () => {
       this.onClickFilterBtn();
+      if (onClear) {
+        onClear();
+      }
     });
   };
 
@@ -116,6 +124,20 @@ export default class Filter extends Component {
       return this.setState({filter_by: filter_by.filter(f => f !== value)});
     }
     return this.setState({filter_by: filter_by.concat(value)});
+  }
+
+  renderCustomFilters = () => {
+    const { customFilters } = this.props;
+    if (customFilters.length === 0) {
+      return null;
+    }
+    return customFilters
+      .filter(customFilter => typeof customFilter.renderFunction !== undefined)
+      .map((customFilter, idx) => (
+        <div className="pull-left" key={idx}>
+          {customFilter.renderFunction()}
+        </div>
+      ));
   }
 
   render() {
@@ -147,6 +169,7 @@ export default class Filter extends Component {
                          nonSelectedText="Search in fields"
             />
           </div>
+          {this.renderCustomFilters()}
           <div className="search-button pull-left">
             <button className="btn btn-default search-btn"
                     onClick={this.onClickFilterBtn}

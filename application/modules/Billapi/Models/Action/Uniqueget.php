@@ -72,15 +72,15 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 					'$cond' => array(
 						'if' => array(
 							'$and' => array(
-								array('$lte' => array('$from', new MongoDate())),
-								array('$gt' => array('$to', new MongoDate())),
+								array('$lte' => array('$from', new Mongodloid_Date())),
+								array('$gt' => array('$to', new Mongodloid_Date())),
 							),
 						),
 						'then' => self::STATE_ACTIVE,
 						'else' => array(
 							'$cond' => array(
 								'if' => array(
-									'$gte' => array('$from', new MongoDate()),
+									'$gte' => array('$from', new Mongodloid_Date()),
 								),
 								'then' => self::STATE_FUTURE,
 								'else' => self::STATE_EXPIRE,
@@ -137,6 +137,7 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 			);
 		}
 		$pipelines[] = $match;
+		error_log(json_encode($pipelines));
 		$res = call_user_func_array(array($this->collectionHandler, 'aggregateWithOptions'), array($pipelines, array('allowDiskUse' => TRUE)));
 
 		$res->setRawReturn(true);

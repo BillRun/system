@@ -151,7 +151,7 @@ class CreditRow {
 		}
 
 		$credit_time = new Zend_Date($filtered_request['credit_time']);
-		$filtered_request['urt'] = new MongoDate($credit_time->getTimestamp());
+		$filtered_request['urt'] = new Mongodloid_Date($credit_time->getTimestamp());
 		unset($filtered_request['credit_time']);
 
 		$filtered_request['vatable'] = filter_var($filtered_request['vatable'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);

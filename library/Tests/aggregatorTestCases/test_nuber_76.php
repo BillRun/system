@@ -4,42 +4,54 @@ class Test_Case_76 {
     public function test_case() {
         return [
     'test' => [
-        'label' => 'discount for 3 cycles , from 01-12-2020 to 01-03-2021, the service from is future , 1st cycle  ',
         'test_number' => 76,
-        'aid' => 991647,
-        'sid' => 991648,
+        'aid' => 145,
+        'sid' => 245,
         'function' => [
+            'checkForeignFileds',
             'basicCompare',
-            'totalsPrice',
             'lineExists',
             'linesVSbillrun',
             'rounded',
         ],
+        'checkForeignFileds' => [
+            'plan' => [
+                'foreign.plan.name' => 'PLAN_C',
+            ],
+            'service' => [
+                'foreign.service.name' => 'NOT_TAXABLE',
+            ],
+            'discount' => [
+                'foreign.service.name' => 'NOT_TAXABLE',
+                'foreign.plan.name' => 'PLAN_C',
+            ],
+        ],
         'options' => [
-            'stamp' => '202101',
+            'stamp' => '202103',
             'force_accounts' => [
-                991647,
+                145,
             ],
         ],
     ],
     'expected' => [
         'billrun' => [
-            'billrun_key' => '202101',
-            'aid' => 991647,
+            'invoice_id' => 108,
+            'billrun_key' => '202103',
+            'aid' => 145,
             'after_vat' => [
-                991648 => 0,
+                245 => 207,
             ],
-            'total' => 0,
-            'vatable' => 0,
-            'vat' => 0,
+            'total' => 207,
+            'vatable' => 190,
+            'vat' => 17,
         ],
         'line' => [
             'types' => [
                 'flat',
+                'credit',
             ],
         ],
     ],
-    'jiraLink' => '',
 ];
     }
 }

@@ -35,7 +35,7 @@ class Billrun_Processor_Json extends Billrun_Processor {
 
 	public function processData() {
 		foreach ($this->data['data'] as &$row) {
-			$row['process_time'] = new MongoDate();
+			$row['process_time'] = new Mongodloid_Date();
 		}
 		return true;
 	}

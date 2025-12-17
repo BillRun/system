@@ -38,6 +38,13 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 */
 	protected $filenameRegex = '/.*/';
 
+	/**
+     * Additional fields from the configuration to be included in the file stamp.
+     *
+     * @var array
+     */
+    protected $extra_stamp_fields = [];
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
@@ -50,11 +57,21 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		if (isset($options['receiver']['preserve_timestamps'])) {
 			$this->preserve_timestamps = $options['receiver']['preserve_timestamps'];
 		}
-		if (isset($options['backup_path'])) {
-			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath($options['backup_path']);
-		} else {
+        if (!empty($options['backup_path'])) {
+            $paths = is_array($options['backup_path']) ? $options['backup_path'] : [$options['backup_path']];
+            $validBackupPaths = [];
+            foreach ($paths as $path) {
+                $processedPath = Billrun_Util::getBillRunSharedFolderPath($path);
+                if ($processedPath !== false) {
+                    $validBackupPaths[] = $processedPath;
+                } else{
+					Billrun_Factory::log()->log("Invalid backup path provided: '{$path}'. It will be ignored.", Zend_Log::ALERT);
+				}
+            }
+            $this->backupPaths = $validBackupPaths;
+        } else {
 			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', './backups/' . $this->getType()));
-		}
+		}	
 		if (isset($options['receiver']['backup_granularity']) && $options['receiver']['backup_granularity']) {
 			$this->setGranularity((int) $options['receiver']['backup_granularity']);
 		}
@@ -62,10 +79,14 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		if (Billrun_Util::getFieldVal($options['receiver']['backup_date_format'], false)) {
 			$this->setBackupDateDirFromat($options['receiver']['backup_date_format']);
 		}
-
+ 
 		if (isset($options['receiver']['orphan_time']) && ((int) $options['receiver']['orphan_time']) > 900) {
 			$this->file_fetch_orphan_time = $options['receiver']['orphan_time'];
 		}
+		
+		if (!empty($options['receiver']['stamp_fields']) && is_array($options['receiver']['stamp_fields'])) {
+            $this->extra_stamp_fields = $options['receiver']['stamp_fields'];
+        }
 		
 		$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getFieldVal($options['workspace'], 'workspace'));
 	}
@@ -93,7 +114,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
                 
         $addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => new MongoDate()
+			'received_time' => new Mongodloid_Date()
                     );
 		
 		if (!empty($fileData['source']) && in_array($fileData['source'], $file_types)) {

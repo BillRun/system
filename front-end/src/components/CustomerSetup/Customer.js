@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Link } from 'react-router';
+import { Link, withRouter } from 'react-router';
 import { connect } from 'react-redux';
-import Immutable from 'immutable';
+import Immutable, { List } from 'immutable';
 import moment from 'moment';
 import { Form, FormGroup, Col, Button, ControlLabel, Row } from 'react-bootstrap';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import classNames from 'classnames';
+import Help from '@/components/Help';
 import OfflinePayment from '../Payments/OfflinePayment';
 import CyclesSelector from '../Cycle/CyclesSelector';
 import { EntityFields } from '../Entity';
@@ -17,9 +18,12 @@ import { getSettings } from '@/actions/settingsActions';
 import { rebalanceAccount, getCollectionDebt } from '@/actions/customerActions';
 import { showConfirmModal } from '@/actions/guiStateActions/pageActions';
 import { buildRequestUrl } from '@/common/Api';
-import { getExpectedInvoiceQuery } from '@/common/ApiQueries';
+import { getExpectedInvoiceQuery, getCyclesQuery } from '@/common/ApiQueries';
 import { getConfig } from '@/common/Util';
-
+import { getList, clearList } from '@/actions/listActions';
+import {
+  updateEntityField,
+} from '@/actions/entityActions';
 
 class Customer extends Component {
 
@@ -33,6 +37,7 @@ class Customer extends Component {
     action: PropTypes.string,
     currency: PropTypes.string,
     payment_gateways: PropTypes.object.isRequired,
+    cycles: PropTypes.instanceOf(List),
   };
 
   static defaultProps = {
@@ -41,6 +46,7 @@ class Customer extends Component {
     customer: Immutable.Map(),
     supportedGateways: Immutable.List(),
     payment_gateways: undefined,
+    cycles: List(),
   };
 
   state = {
@@ -58,6 +64,11 @@ class Customer extends Component {
       this.initDebt();
     }
     this.props.dispatch(getSettings('payment_gateways'));
+    this.props.dispatch(getList('cycles_list', getCyclesQuery("","",true,false)));
+  }
+
+  componentWillUnmount() {
+    this.props.dispatch(clearList('cycles_list'));
   }
 
   initDebt = () => {
@@ -214,6 +225,30 @@ class Customer extends Component {
     window.open(buildRequestUrl(query));
   }
 
+  checkSelectedCyclesStatus = () => {
+    const { selectedCyclesNames } = this.state;
+    const { cycles} = this.props;
+    const selectedCycles = selectedCyclesNames.split(',');
+    const selectedCyclesDetails = cycles.filter(cycle => selectedCycles.includes(cycle.get('billrun_key', ''))).map(selectedCycleDetails => selectedCycleDetails.get('cycle_status',''));
+    if (selectedCyclesDetails.includes('finished') || selectedCyclesDetails.includes('confirmed')|| selectedCyclesDetails.includes('to_rerun')){
+      this.renderConfirmMessageRebalanceClosedCycles();
+    } else {
+      this.onRebalanceConfirmationOk();
+    }
+  }
+
+  renderConfirmMessageRebalanceClosedCycles = () => {
+    const { customer } = this.props;
+    const confirm = {
+      message:  `Are you sure you want to rebalance also lines from a closed cycle for account ${customer.get('aid')}?`,
+      children: `You have chosen to rebalance lines from a closed cycle.
+      Only unbilled lines belonging to this cycle will be rebalanced.`,
+      onOk: this.onRebalanceConfirmationOk,
+      type: 'confirm',
+      labelOk: 'Yes',
+    };
+    this.props.dispatch(showConfirmModal(confirm));
+  }
 
   renderRebalanceButton = () => {
     const { customer } = this.props;
@@ -222,7 +257,7 @@ class Customer extends Component {
     return (
       <div>
         <Button bsSize="xsmall" className="btn-primary" onClick={this.onClickRebalance}>Rebalance</Button>
-        <ConfirmModal onOk={this.onRebalanceConfirmationOk} onCancel={this.onRebalanceConfirmationClose} show={showRebalanceConfirmation} message={confirmationTitle} labelOk="Yes">
+        <ConfirmModal onOk={this.checkSelectedCyclesStatus} onCancel={this.onRebalanceConfirmationClose} show={showRebalanceConfirmation} message={confirmationTitle} labelOk="Yes">
           <FormGroup>
             <Row>
               <Col sm={12} lg={12}>
@@ -242,7 +277,7 @@ class Customer extends Component {
               <Col sm={9} lg={8}>
                 <CyclesSelector
                   onChange={this.onChangeSelectedCycle}
-                  statusesToDisplay={Immutable.List(['current', 'to_run'])}
+                  statusesToDisplay={Immutable.List(['current', 'to_run', 'finished', 'confirmed', 'to_rerun'])}
                   selectedCycles={selectedCyclesNames}
                   multi={true}
                 />
@@ -250,6 +285,9 @@ class Customer extends Component {
             </Row>
           </FormGroup>
         </ConfirmModal>
+        <br />
+        <br />
+        <Button bsSize="xsmall" className="btn-primary" onClick={this.createImmediateInvoice}>Immediate Invoice</Button>
       </div>
     );
   }
@@ -305,10 +343,18 @@ class Customer extends Component {
     const aid = customer.get('aid', null);
     return (
       <div>
-        <Button bsSize="xsmall" className="btn-primary" onClick={this.onShowCreditCharge}>Manual charge / refund</Button>
+        <Button bsSize="xsmall" className="btn-primary" onClick={this.onShowCreditCharge}>
+          Manual charge / refund <Help contents="To the next monthly invoice" />
+        </Button>
         { showCreditCharge && (<Credit aid={aid} onClose={this.onCloseCreditCharge} />) }
       </div>
     );
+  }
+
+  createImmediateInvoice = () => {
+    const { customer } = this.props;
+    this.props.dispatch(updateEntityField('immediate-invoice', 'customer', customer));
+    this.props.router.push('/immediate-invoice');
   }
 
   onShowCreditCharge = () => {
@@ -359,6 +405,7 @@ class Customer extends Component {
 const mapStateToProps = (state, props) => ({
   currency: currencySelector(state, props),
   payment_gateways: paymentGatewaysSelector(state, props),
+  cycles: state.list.get('cycles_list'),
 });
 
-export default connect(mapStateToProps)(Customer);
+export default withRouter(connect(mapStateToProps)(Customer));

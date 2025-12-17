@@ -147,6 +147,13 @@ class Billrun_Factory {
 	protected static $collection;
 
 	/**
+	 * Collection instance
+	 * 
+	 * @var Billrun_Billrun Collection
+	 */
+	protected static $queues;
+
+	/**
 	 * method to retrieve the log instance
 	 * 
 	 * @param string [Optional] $message message to log
@@ -191,11 +198,17 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Db
 	 */
-	static public function db(array $options = array()) {
+	static public function db(array $options = array(), $refresh = false) {
 		$stamp = md5(serialize($options)); // unique stamp per db connection
+		if ($refresh) {
+			self::$db[$stamp] = null;
+		}
 		if (!isset(self::$db[$stamp])) {
 			if (empty($options)) { // get the db settings from config
 				$options = Billrun_Factory::config()->getConfigValue('db');
+			}
+			if ($refresh) {
+				$options['options']['refresh'] = true;
 			}
 			self::$db[$stamp] = Billrun_Db::getInstance($options);
 		}
@@ -212,6 +225,9 @@ class Billrun_Factory {
 		try {
 			if (!self::$cache) {
 				$args = self::config()->getConfigValue('cache', array());
+				if (isset($args[2]['is_relative_path']) && $args[2]['is_relative_path']) {
+					$args[2]['cache_dir'] = APPLICATION_PATH . '/' . $args[2]['cache_dir'];
+				}
 				if (isset($args[2]['cache_id_prefix'])) {
 					$args[2]['cache_id_prefix'] .= '_' . Billrun_Factory::config()->getTenant() . '_';
 				}
@@ -223,7 +239,8 @@ class Billrun_Factory {
 
 			return self::$cache;
 		} catch (Exception $e) {
-			Billrun_Factory::log('Cache instance cannot be generated', Zend_Log::ALERT);
+			Billrun_Factory::log('Cache instance cannot be generated.', Zend_Log::ALERT);
+			Billrun_Factory::log()->logCrash($e, Zend_Log::DEBUG);
 		}
 		return false;
 	}
@@ -269,7 +286,7 @@ class Billrun_Factory {
 		}
 		$stamp = Billrun_Util::generateArrayStamp($options);
 		if (!isset(self::$smser[$stamp])) {
-			self::$smser[$stamp] = new Billrun_Sms($options);
+			self::$smser[$stamp] = Billrun_Sms_Abstract::getInstance($options);
 		}
 
 		return self::$smser[$stamp];
@@ -466,7 +483,7 @@ class Billrun_Factory {
 
 	public static function auth() {
 		if (!isset(self::$auth)) {
-			Billrun_Util::setHttpSessionTimeout();
+			Billrun_Util::setHttpSessionTimeout(null, 'Lax');
 			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf(Billrun_Factory::config()->getTenant()));
 		}
 		return self::$auth;
@@ -590,9 +607,10 @@ class Billrun_Factory {
 				}
 			}
 			OAuth2\Autoloader::register();
-			$storage = new OAuth2\Storage\MongoDB(Billrun_Factory::db()->getDb()->getDb());
+			$storage = new Billrun_OAuth2_Storage_MongoDB(Billrun_Factory::db()->getDb());
 			self::$oauth2[$stamp] = new OAuth2\Server($storage, $params);
 			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\ClientCredentials($storage));
+			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\UserCredentials($storage));
 			// Future compatibility
 //			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\AuthorizationCode($storage));
 //			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\JwtBearer($storage));
@@ -600,6 +618,39 @@ class Billrun_Factory {
 //			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\UserCredentials($storage));
 		}
 		return self::$oauth2[$stamp];
+	}
+	
+	/**
+	 * method to receive jobs queue
+	 * 
+	 * @param string $name name of the queue; default name is jobs
+	 * 
+	 * @return Zend_Queue
+	 */
+	public static function queue($name = null, $timeout = null) {
+		if (empty($name)) {
+			$name = 'jobs';
+		}
+		if (!isset(self::$queues[$name])) {
+			$options = array(
+				'db' => Billrun_Factory::db()->getDb(),
+				'queueCollection' => Billrun_Factory::db()->getCollection($name . '_queues')->getMongoCollection(),
+				'messageCollection' => Billrun_Factory::db()->getCollection($name . '_messages')->getMongoCollection(),
+				'name' => $name,
+				'timeout' => $timeout,
+			);
+			self::$queues[$name] = new Zend_Queue('mongodb', $options);
+		} elseif (!empty($timeout)) {
+			self::$queues[$name]->setOption('timeout', $timeout);
+		}
+		return self::$queues[$name];
+	}
+	
+	public static function cleanQueue($name = null) {
+		if (empty($name)) {
+			$name = 'jobs';
+		}
+		self::$queues[$name] = null;
 	}
 
 

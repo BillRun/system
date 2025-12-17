@@ -82,7 +82,7 @@ class Generator_PrepaidRecharge extends Billrun_Generator_ConfigurableCDRAggrega
 
 	protected function flattenArray($array, $parameters, &$line) {
 		foreach ($array as $idx => $val) {
-			if ($val instanceof MongoDBRef || isset($val['$ref'], $val['$id'])) {
+			if ($val instanceof Mongodloid_Ref || isset($val['$ref'], $val['$id'])) {
 				$val = $this->collection->getRef($val);
 			}
 			$dstIdx = isset($parameters['key_field']) ? $val[$parameters['key_field']] : $idx + 1;

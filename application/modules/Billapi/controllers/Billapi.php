@@ -53,11 +53,14 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	protected $settings = array();
 
 	public function init() {
+		Billrun_Factory::log("Start billapi");
+		Billrun_Util::setHttpSessionTimeout();
 		$request = $this->getRequest();
 		$this->collection = $request->getParam('collection');
 		$this->params['options'] = json_decode($request->get('options', '{}'), JSON_OBJECT_AS_ARRAY);
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/' . $this->collection . '.ini');
 		$this->action = strtolower($request->getParam('action'));
+		Billrun_Factory::log('Collection is ' . $this->collection . ' and action is ' . $this->action);
 		$this->errorBase = Billrun_Factory::config()->getConfigValue('billapi.error_base', 10400);
 		$this->setActionConfig();
 
@@ -67,7 +70,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+		br_yaf_register_autoload('Models', APPLICATION_PATH . '/application/modules/Billapi');
 		$pluginStatus = true;
 		Billrun_Factory::dispatcher()->trigger('beforeBillApi', array($this->collection, $this->action, &$request, &$pluginStatus));
 		if ($pluginStatus !== true) {
@@ -91,6 +94,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$this->params['collection'] = $this->collection;
 		$entityModel = Models_Entity::getInstance($this->params);
 		$this->output->status = 1;
+		Billrun_Factory::dispatcher()->trigger('beforeBillApiRunAction', array($this->collection, $this->action, $entityModel));
 		$this->output->details = $entityModel->{$this->action}();
 		$entity = $entityModel->getAfter();
 		$line = $entityModel->getAffectedLine();

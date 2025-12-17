@@ -55,7 +55,7 @@ const Actions = ({
           mr0: isLast,
         });
         return (
-          <span key={action.type} className={actionClass} >
+          <span key={`${action.type}_${idx}`} className={actionClass} >
             <Action {...action} data={data} />
           </span>
         );

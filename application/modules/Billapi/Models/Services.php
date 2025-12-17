@@ -19,10 +19,35 @@ class Models_Services extends Models_Entity {
 	protected function init($params) {
 		parent::init($params);
 		$this->validatePrice();
+		$this->validateTierLimitCycles();
+		$this->validateRecurrence();
 	}
 	
 	/**
-	 * Verfiy services has all price parameters required.
+	 * Verify in case of limit service sycles Recurring Charges cycles has the same sum of cycles.
+	 */
+	protected function validateTierLimitCycles() {
+		$limitCycles = Billrun_Util::getIn($this->update, 'limit_cycles', false);
+		if(!$limitCycles){
+			return true;
+		}
+		if(!is_numeric($limitCycles) || $limitCycles <= 0){
+			throw new Billrun_Exceptions_Api($this->errorCode, array(), '"No. of Cycles" is not valid');
+		}
+		$priceIntervals = Billrun_Util::getIn($this->update, 'price', []);
+		$totalCycles = 0;
+		foreach ($priceIntervals as $price) {
+			$totalCycles = max($price['to'], $totalCycles);
+		}
+		if($limitCycles !== $totalCycles){
+			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Service summary cycles of "Recurring Charges" not match "No. of Cycles"');
+		}
+		
+		return true;
+	}
+
+	/**
+	 * Verify services has all price parameters required.
 	 */
 	protected function validatePrice() {
 		$priceIntervals = Billrun_Util::getIn($this->update, 'price', []);
@@ -39,6 +64,30 @@ class Models_Services extends Models_Entity {
 		return true;
 	}
 	
+	/**
+	 * Verify services has all price parameters required.
+	 */
+	protected function validateRecurrence() {
+            $update_parameters = Billrun_Util::getIn($this->config, [$this->action, 'update_parameters'], []);
+            $recurrence_field = array_reduce($update_parameters, function ($acc, $field) {
+                return $field['name'] == 'recurrence' ? $field : $acc;
+            }, null);
+            if (!is_null($recurrence_field)) {
+							$periodicity = Billrun_Util::getIn($this->update, 'recurrence.periodicity', null);
+							if (empty($periodicity)) {
+								$frequency = Billrun_Util::getIn($this->update, 'recurrence.frequency', null);
+								if (empty($frequency) ) {
+									throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Missing Billing Frequency - Type parameter');
+								}
+								$start = Billrun_Util::getIn($this->update, 'recurrence.start', null);
+								if (empty($start)) {
+									throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Missing Billing Frequency - Start parameter');
+								}
+							}
+            }
+            return true;
+	}
+
 	/**
 	 * method to add entity custom fields values from request
 	 * 

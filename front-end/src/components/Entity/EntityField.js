@@ -309,6 +309,7 @@ class EntityField extends Component {
           disabled={disabled}
           editable={editable}
           inputProps={{fieldType: field.get('type', undefined)}}
+          lineBreaks={field.get('lineBreaks', false)}
         />
       );
     }
@@ -319,6 +320,7 @@ class EntityField extends Component {
           value={value}
           onChange={this.onChangeValue}
           disabled={disabled}
+          editable={editable}
         />
       );
     }

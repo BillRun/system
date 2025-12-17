@@ -86,7 +86,14 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @return bool
 	 */
 	public function connect($username) {
-		return $this->getConnection()->login($username, $this->getAuthForLogin());
+            Billrun_Factory::log()->log("Connecting to SSH server: " . $this->host, Zend_Log::INFO);
+            $connected  = $this->getConnection()->login($username, $this->getAuthForLogin());
+            if (!$connected) {
+                    Billrun_Factory::log()->log("Cannot connect to SSH server: " . $this->host, Zend_Log::WARN);
+                    return false;
+            }
+            Billrun_Factory::log()->log("Connected to SSH server: " . $this->host, Zend_Log::INFO);
+            return true;
 	}
 
 	/**
@@ -416,5 +423,13 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 		if ($this->connected()) {
 			$this->getConnection()->disconnect();
 		}
+	}
+
+	/**
+	 * Create directory. 
+	 * @return bool
+	 */
+	public function mkdir($path, $permissions = 0777, $recursive = 1) {
+		return $this->getConnection()->mkdir($path, $permissions = 0777, $recursive = 1);
 	}
 }

@@ -28,6 +28,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $is_onetime = FALSE;
 	protected $exporterFlags = null;
 	protected $invoice_extra_params = [];
+	protected $header_path = "";
+	protected $footer_path = "";
+	protected $header_content = "";
+	protected $footer_content = "";
+	
+	protected $loadFromFile = FALSE;
 	
 
 
@@ -114,13 +120,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		);
 		$enableCustomHeader = Billrun_Factory::config()->getConfigValue(self::$type . '.status.header', false);
 		$enableCustomFooter = Billrun_Factory::config()->getConfigValue(self::$type . '.status.footer', false);
-		$this->header_path =  $this->view_path . Billrun_Util::getFieldVal($options['header_tpl'], ($enableCustomHeader ? '/header/header_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.header', '/header/header_tpl.html') ) );
-		$this->footer_path =  $this->view_path . Billrun_Util::getFieldVal($options['footer_tpl'], ($enableCustomFooter ? '/footer/footer_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '/footer/footer_tpl.html' ) ) );
-		$this->exporterFlags =   Billrun_Util::getFieldVal($options['exporter_flags'],  Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type'));
-		$this->custom = array(
-			'header' => $enableCustomHeader === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.header', '') : false,
-			'footer' => $enableCustomFooter === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '') : false,
-		);
+		$this->setHeaderAndFooterPathAndContent($options);
 
 		//only generate bills that are 0.01 and above.
 		$this->invoice_threshold = Billrun_Util::getFieldVal($options['generator']['minimum_amount'], 0.005);
@@ -130,6 +130,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->tanent_css = $this->buildTanentCss(Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_tanent_css', ''));
 		$this->is_fake_generation = Billrun_Util::getFieldVal($options['is_fake'],FALSE);
 		$this->render_detailed_quantitative_services = Billrun_Util::getFieldVal($options['detailed_quantitative_services'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_detailed_quantitative_services', FALSE));
+		$this->loadFromFile = Billrun_Util::getFieldVal($options['load_from_file'], $this->loadFromFile);
 	}
 
 	/**
@@ -142,6 +143,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('decimal_mark', Billrun_Factory::config()->getConfigValue(self::$type . '.decimal_mark', '.'));
 		$this->view->assign('thousands_separator', Billrun_Factory::config()->getConfigValue(self::$type . '.thousands_separator', ','));
 		$this->view->assign('company_name', Billrun_Util::getCompanyName());
+		$this->view->assign('company_address', Billrun_Util::getCompanyAddress());
+		$this->view->assign('company_phone', Billrun_Util::getCompanyPhone());
+		$this->view->assign('company_email', Billrun_Util::getCompanyEmail());
 		$this->view->assign('sumup_template', APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.sumup_template', ''));
 		$this->view->assign('details_template', APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_template', ''));
 		$this->view->assign('details_table_template', APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_table_template', '/application/views/invoices/details/details_table.phtml'));
@@ -164,6 +168,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('template', $this->template);
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
 		$this->view->assign('invoice_display_options', Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_display_options', []));
+		$this->view->assign('is_onetime', $this->is_onetime);
+		$this->view->assign('construction_options', $this->constructionOptions);
 		$this->prepareGraphicsResources();
 	}
 
@@ -197,6 +203,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 	}
 		     }
 			if (isset($object['invoice_id'])) {
+				if (empty($lines))  {
+					$lines = $this->loadLines($object);
+				}
 				$this->generateAccountInvoices($object, $lines);
 			}
 		}
@@ -256,17 +265,17 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 return $defaultFileName;
             }
         }
-        
+
         public function setFileName($billrunObject, $fileName) {
             $billrunObject->set('file_name', $fileName);
         }
-        
+
         public function getTranslationValue($paramObj, $billrunObject) {
             if(isset($paramObj['linked_entity'])){
                 if(isset($paramObj['type']) && $paramObj['type'] === "date"){
                     $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
                     $date = $billrunObject[$paramObj['linked_entity']['field_name']];
-                    if($date instanceof MongoDate){
+                    if($date instanceof Mongodloid_Date){
                         $date = $date->sec;
                         if (isset($paramObj['offset'])){
                             $date = $this->getDateWithOffset($paramObj['offset'], $date);
@@ -321,18 +330,32 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 
 	public function load() {
+		if($this->loadFromFile) {
+			$this->billrun_data = [ new Mongodloid_Entity(Billrun_Utils_Mongo::recursiveConvertJSONToMongo(json_decode(file_get_contents($this->loadFromFile),JSON_OBJECT_AS_ARRAY))) ];
+		} else {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		$query = array('billrun_key' => $this->stamp, '$or' => array(
 				array('totals.after_vat' => array('$not' => array('$gt' => -$this->invoice_threshold, '$lt' => $this->invoice_threshold))),
 				array('totals.credit.after_vat' => array('$not' => array('$gt' => -$this->invoice_threshold, '$lt' => $this->invoice_threshold)))
-//																		array('totals.before_discounts'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold))) 
+//					array('totals.before_discounts'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold)))
 		));
 		if (!empty($this->accountsToInvoice)) {
 			$query['aid'] = array('$in' => $this->accountsToInvoice);
 		}
 		Billrun_Factory::dispatcher()->trigger("beforeLoadWkpdf", array(&$query, $this->accountsToInvoice));
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
+ 		}
 	}
+
+	public function loadLines( $data ) {
+		$aid = $data['aid'];
+		$billrun_key = $data['billrun_key'];
+		$query = array('aid' => $aid, 'billrun' => $billrun_key);
+		$accountLines = Billrun_Factory::db()->linesCollection()->query($query);
+
+		return $accountLines;
+	}
+
 
 	public function setData($billrunData) {
 		$this->billrun_data = $billrunData;
@@ -353,11 +376,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 		$this->addExtraParamsToCurrentView($this->invoice_extra_params);
 
-		if (empty($lines)) {
-			$this->view->loadLines();
-		} else {
-			$this->view->setLines($lines);
-		}
+		$this->view->setLines($lines);
+
 
 		$this->tmp_paths = array(
 			'header' => $this->paths['tmp'].$account['aid'] . 'tmp_header.html',
@@ -397,6 +417,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 		chmod($pdf, $this->filePermissions);
 		$this->updateInvoicePropertyToBillrun($account, $pdf, $html);
+        
+		$this->signPdf($pdf);
+        
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorEntity',array($this, &$account,&$lines));
 	}
 
@@ -555,14 +578,14 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * generate graphic that is required for generating the invoice.
 	 */
 	protected function prepareGraphicsResources() {
-		$gridFsColl = Billrun_Factory::db()->getDb()->getGridFS();
+		$gridFsColl = Billrun_Factory::db()->getGridFS();
 		// generate the tenant logo.
 		$logo = $gridFsColl->find(array('billtype' => 'logo'))->sort(array('uploadDate' => -1))->limit(1)->getNext();
 		if ($logo) {
-			if (!($logo instanceof MongoGridFSFile)) {
-				$logo = new MongoGridFSFile($gridFsColl, $logo);
+			if (!($logo instanceof Mongodloid_GridFSFile)) {
+				$logo = new Mongodloid_GridFSFile($gridFsColl, $logo);
 			}
-			$exportPath = dirname($this->logo_path) . DIRECTORY_SEPARATOR . ($logo instanceof MongoGridFSFile ? $logo->getFilename() : $logo['filename'] );
+			$exportPath = dirname($this->logo_path) . DIRECTORY_SEPARATOR . ($logo instanceof Mongodloid_GridFSFile ? $logo->getFilename() : $logo['filename'] );
 			$fileData = $logo->getBytes();
 
 			if (file_put_contents($exportPath, $fileData) === FALSE) {
@@ -579,6 +602,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		if($htmlPath) {
 			$update['invoice_html'] = $htmlPath;
 		}
+
+		Billrun_Factory::dispatcher()->trigger('alterGenerationBillrunUpdate',[&$update, $account, $pdfPath, $htmlPath, $this->constructionOptions, $this ]);
+
 		if(!$this->is_fake_generation) {
 			$this->billrunColl->update(["_id"=>$account['_id']->getMongoID(),"invoice_id"=>$account['invoice_id'], "aid"=>$account['aid'], 'billrun_key' => $account['billrun_key']], ['$set' => $update ]);
 		}
@@ -616,14 +642,75 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 
 	public function addExtraParamsToCurrentView($extraParams) {
-		if(!empty($extraParams)) {
-			foreach($extraParams as $paramKey => $paramVal) {
-				$this->view->assign('extra_'.$paramKey, $paramVal);
+		if (!empty($extraParams)) {
+			foreach ($extraParams as $paramKey => $paramVal) {
+				$this->view->assign('extra_' . $paramKey, $paramVal);
 			}
 		}
 	}
+
         public function setBillrunExportPath($object, $paths) {
             $object->set('export_path', $paths);
+	}
+
+	public function setHeaderAndFooterPathAndContent($options) {
+		foreach (['header', 'footer'] as $index => $segment) {
+			$path = $segment . "_path";
+			$content = $segment . "_content";
+			$tpl = $segment . "_tpl";
+			$this->custom[$segment] = false;			
+			$this->{$path} = $this->view_path . '/' . $segment . '/' . $tpl . '.html';
+			$enableCustomSegment = Billrun_Factory::config()->getConfigValue(self::$type . '.status.' . $segment, false);
+			if (isset($options[$path]) && isset($options[$content])) {
+				if($enableCustomSegment) {
+					$this->custom[$segment] = Billrun_Factory::config()->getConfigValue(self::$type . '.' . $content, '');
+					$this->{$path} = $this->view_path . Billrun_Util::getFieldVal($options[$tpl], '/' . $segment . '/' . $tpl . '.html');
+				} else {
+					$this->{$path} = !empty($options[$path]) ? $this->view_path . $options[$path] : $this->{$path};
+				}
+			} else {
+				Billrun_Factory::log($segment . "_path / " . $segment . "_content wasn't set in config, checking if '" . $segment . "' field is set..", Zend_Log::ERR);
+				if (isset($options[$segment])) {
+					if ($enableCustomSegment) {
+						$options[$segment] = str_replace('<p>', "", $options[$segment]);
+						$this->custom[$segment] = $options[$segment];
+					} elseif(preg_match('/^\/([A-z0-9-_+]+\/)*([A-z0-9]+\.((html)|(phtml)))$/', $options[$segment])) {
+						$this->{$path} = $this->view_path . $options[$segment];
+					} else {
+						Billrun_Factory::log($segment . " isn't custom, but it's path isn't valid. Default path was taken..", Zend_Log::ERR);
+					}
+				} else {
+					Billrun_Factory::log($segment . " field wasn't set in config, default path was taken..", Zend_Log::ERR);
+				}
+			}
+		}
+		$this->exporterFlags =   Billrun_Util::getFieldVal($options['exporter_flags'],  Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type'));
+	}
+
+    public function signPdf(string $pdf) {
+		try {
+			$signerType = Billrun_Factory::config()->getConfigValue('signer.use', 'none');
+
+			if (empty($signerType)) {
+				throw new Exception('Signer type not set');
+			}
+
+			if (empty($signerType) || $signerType === 'none') {
+				return;
+			}
+
+			$sigherClass = 'Billrun_Signer_' . ucfirst($signerType) . 'Signer';
+
+			if (!class_exists($sigherClass)) {
+				throw new Exception('Signer class not found');
+			}
+
+			/** @var Billrun_Signer_SignerAbstract $signer */
+			$signer = new $sigherClass($pdf);
+			$signer->sign();
+		} catch (Exception $e) {
+			Billrun_Factory::log("Failed to sign pdf: " . $e->getMessage(), Zend_Log::ERR);
+		}
         }
 
 	public function regenerateInvoice() {

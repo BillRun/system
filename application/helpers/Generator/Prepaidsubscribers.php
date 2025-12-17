@@ -23,7 +23,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 
 	public function __construct($options) {
 		parent::__construct($options);
-		$this->startMongoTime = new MongoDate($this->startTime);
+		$this->startMongoTime = new Mongodloid_Date($this->startTime);
 		$this->releventTransactionTimeStamp =  strtotime(Billrun_Factory::config()->getConfigValue('prepaidsubscribers.transaction_horizion','-48 hours'));
 		$this->loadPlans();
 	}
@@ -115,7 +115,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
                 unset($this->transactions);
 		$this->transactions = array();
 		$transactions = $this->db->linesCollection()->aggregateWithOptions(array(
-                            array('$match' => array('sid' => array('$in' => $sids) ,'urt'=> array('$gt'=>new MongoDate($this->releventTransactionTimeStamp)) )),
+                            array('$match' => array('sid' => array('$in' => $sids) ,'urt'=> array('$gt'=>new Mongodloid_Date($this->releventTransactionTimeStamp)) )),
                             array('$sort'=>array('sid'=>1,'urt'=>1)),
                             array('$project' => array('sid'=>1,'urt'=>1,
                                                         'type'=>array('$cond' => array('if' => array('$eq'=>array('$type','balance')), 'then'=>'recharge', 'else'=> 'transaction')),

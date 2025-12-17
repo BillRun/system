@@ -107,6 +107,13 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
      */
     protected $client_key;
     protected $client_secret;
+
+    /**
+     * Id number that was used to create the latest new refresh token
+     * @var string
+     */
+    protected $user_id;
+
     protected $plugin_configuration = null;
 
 	public function __construct($options = array()) {
@@ -123,6 +130,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $this->accounting_software_number = Billrun_Util::getIn($options, "accounting_software_number", 99999999);
         $this->apply_to_refund_invoices = Billrun_Util::getIn($options, "apply_to_refund_invoices", false);
         $this->approve_accounts_with_vat_number_field = Billrun_Util::getIn($options, "approve_accounts_with_vat_number_field", true);
+        $this->user_id = Billrun_Util::getIn($options, "user_id", null);
 	}
 
     public function getApprovalAmountThresholds($options) {
@@ -171,7 +179,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         if (!is_null($this->valid_config)) {
             return $this->valid_config;
         }
-        if($this->isEnabled() && empty($this->refresh_token) || empty($this->client_key) ||  empty($this->client_secret) || empty($this->company_vat_number) || empty($this->accounting_software_number)) {
+        if($this->isEnabled() && empty($this->refresh_token) || empty($this->client_key) ||  empty($this->client_secret) || empty($this->company_vat_number) || empty($this->accounting_software_number) || empty($this->user_id)) {
             throw new Exception("Missing Israel invoice plugin configuration");
         } else {
             $this->valid_config = true;
@@ -208,8 +216,8 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             Billrun_Factory::log("Israel Invoice:Received approval API response for invoice " . $inv_id . "- " . json_encode($response), Zend_Log::DEBUG);
             if ($this->validateApprovalResponse($response)) {
                 Billrun_Factory::log("Israel Invoice:Approval API response is valid for invoice " . $inv_id, Zend_Log::DEBUG);
-                $conf_num = $response['Confirmation_Number'];
-                $conf_num_suffix = substr($response['Confirmation_Number'], -9);
+                $conf_num = $response['confirmation_number'];
+                $conf_num_suffix = substr($response['confirmation_number'], -9);
                 $this->setInvoiceConfirmationNumber($conf_num, $conf_num_suffix, $invoice_data, $invoice_bill);
                 Billrun_Factory::log("Saving confirmation number to the billrun object, for invoice " . $inv_id, Zend_Log::DEBUG);
                 $this->updateBillrunObject($invoice_data, $conf_num, $conf_num_suffix);
@@ -346,26 +354,32 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
      */
     public function buildRequest($invoice_data) {
         $customer_vat_number = intval(Billrun_Util::getIn($invoice_data, 'attributes.' . $this->account_vat_number_field_name, null));
+        if (empty($customer_vat_number)) {
+            Billrun_Factory::log("Customer vat number that was pulled from " . $this->account_vat_number_field_name . " field is empty for account " . $invoice_data['aid'] . ". Using value 999999998 instead", Zend_Log::DEBUG);
+            $customer_vat_number = 999999998;
+        }
         $discount_absolute_amount_before_vat = abs(round($invoice_data['totals']['discount']['before_vat'], 2));
         $total_invoice_amount_before_vat = round($invoice_data['totals']['before_vat'], 2);
         $total_invoice_amount_after_vat = round($invoice_data['totals']['after_vat'], 2);
         $vat_amount = round($total_invoice_amount_after_vat - $total_invoice_amount_before_vat, 2);
         $amount_before_discount = round($total_invoice_amount_before_vat + $discount_absolute_amount_before_vat,2);
         $request = [
-            "Invoice_ID" => strval($invoice_data['invoice_id']), //BillRun invoice id
-            "Invoice_Type" => 305, //tax invoice code
-            "Vat_Number" => intval($this->company_vat_number),
-            "Invoice_Date" => date('Y-m-d', $invoice_data['invoice_date']->sec),
-            "Invoice_Issuance_Date" => date('Y-m-d', $invoice_data['confirmation_time']->sec),
-            "Accounting_Software_Number" => intval($this->accounting_software_number),
-            "Amount_Before_Discount" => round($amount_before_discount, 2),
-            "Discount" => $discount_absolute_amount_before_vat,
-            "Payment_Amount_Including_VAT" => $total_invoice_amount_after_vat,
-            "Payment_Amount" => $total_invoice_amount_before_vat,
-            "VAT_Amount" => $vat_amount,
-            "Union_Vat_Number" => intval($this->union_vat_number),
-            "Invoice_Reference_Number" => strval($invoice_data['invoice_id']),
-            "Customer_VAT_Number" => $customer_vat_number
+            "invoice_id" => strval($invoice_data['invoice_id']), //BillRun invoice id
+            "invoice_type" => 305, //tax invoice code
+            "vat_number" => intval($this->company_vat_number),
+            "invoice_date" => date('Y-m-d', $invoice_data['invoice_date']->sec),
+            "invoice_issuance_date" => date('Y-m-d', $invoice_data['confirmation_time']->sec),
+            "accounting_software_number" => intval($this->accounting_software_number),
+            "amount_before_discount" => round($amount_before_discount, 2),
+            "discount" => $discount_absolute_amount_before_vat,
+            "payment_amount_including_vat" => $total_invoice_amount_after_vat,
+            "payment_amount" => $total_invoice_amount_before_vat,
+            "vat_amount" => $vat_amount,
+            "union_vat_number" => intval($this->union_vat_number),
+            "invoice_reference_number" => strval($invoice_data['invoice_id']),
+            "customer_vat_number" => $customer_vat_number,
+            "authorized_company" => 514012756,
+            'user_id' => intval($this->user_id)
         ];
         return $request;
     }
@@ -425,7 +439,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
     }
 
     public function validateApprovalResponse($response) {
-        if (isset($response['Status']) && ($response['Status'] == 200) && ($response['Confirmation_Number'] !== 0)) {
+        if (isset($response['status']) && ($response['status'] == 200) && ($response['confirmation_number'] !== 0)) {
             return true;
         }
         return false;
@@ -601,7 +615,15 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 				"nullable" => false,
 				"mandatory" => true,
                 "default_value" => 99999999
-			]
+			], [
+				"type" => "number",
+				"field_name" => "user_id",
+				"title" => "Id number that is used to refresh token",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], 
 		];
 	}
 

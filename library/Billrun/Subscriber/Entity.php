@@ -9,7 +9,7 @@
 class Billrun_Subscriber_Entity extends Mongodloid_Entity {
 	public function __construct($values, $lastPlan = null, $services = array(), $collection = null) {
 		if((($lastPlan === null) || (isset($values['plan'])) && ($values['plan'] != $lastPlan))) {
-			$values['plan_activation'] = new MongoDate();
+			$values['plan_activation'] = new Mongodloid_Date();
 		}
 		
 		$valuesServices = empty($values['services'])? array() : $values['services'];

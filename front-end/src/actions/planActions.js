@@ -9,6 +9,8 @@ import {
   getPlanConvertedPpThresholds,
   getPlanConvertedNotificationThresholds,
   getPlanConvertedIncludes,
+  convertToOldRecurrence,
+  convertToNewRecurrence,
 } from '@/common/Util';
 import {
   usageTypesDataSelector,
@@ -117,7 +119,8 @@ const convertPlan = (getState, plan, convertToBaseUnit) => {
   const planIncludes = !isPrepaidPlan
     ? getPlanConvertedIncludes(propertyTypes, usageTypesData, plan, convertToBaseUnit)
     : null;
-  return plan.withMutations((itemWithMutations) => {
+  const planWithNewRecurrence = convertToNewRecurrence(plan);
+  return planWithNewRecurrence.withMutations((itemWithMutations) => {
     itemWithMutations.set('rates', rates);
     if (isPrepaidPlan) {
       if (!ppThresholds.isEmpty()) {
@@ -146,7 +149,10 @@ const convertPrepaidGroup = (getState, prepaidGroup, convertToBaseUnit) => {
 };
 
 export const savePlan = (plan, action) => (dispatch, getState) => {
-  const convertedPlan = convertPlan(getState, plan, true);
+  let convertedPlan = convertPlan(getState, plan, true);
+  if (action === 'create' || convertedPlan.getIn(['recurrence', 'converted'], false)) {
+    convertedPlan = convertToOldRecurrence(convertedPlan);
+  } 
   return dispatch(saveEntity('plans', convertedPlan, action));
 };
 

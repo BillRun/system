@@ -14,4 +14,35 @@
  */
 class Billrun_Plans_Charge_Upfront_Notprorated_Month extends Billrun_Plans_Charge_Upfront_Month {
     
+	protected function getFractionOfMonth() {
+
+		if (empty($this->deactivation) && $this->activation < $this->cycle->start()  ) {
+			return 1;
+		}
+
+		// subscriber activates in the middle of the cycle and should be charged for a partial month
+		if ($this->activation >= $this->cycle->start() && $this->deactivation <= $this->cycle->end()) {
+			$endActivation = strtotime('-1 second', $this->deactivation);
+			return 1;
+		}
+		//subscriber deactivated  during the  current cycle
+		if ($this->deactivation > $this->cycle->end() ) {
+			return 1;
+		}
+
+		// subscriber activates in the middle of the cycle and should be charged for a partial month and should be charged for the next month (upfront)
+		if ($this->activation >= $this->cycle->start() && $this->deactivation > $this->cycle->end()) {
+			$endActivation = strtotime('-1 second', $this->deactivation);
+			return 1 + 1;
+		}
+
+		//probably not within the current cycle  return null to indicate invalid charge  without affecting other charges.
+		Billrun_Factory::log(Billrun_Utils_Dev::colorText('Non prorated plan with no charge exists in cycle','Yellow'),Zend_Log::DEBUG);
+		return null;
+	}
+
+    //No Refunds  for non proated upfront
+    public function getRefund(Billrun_DataTypes_CycleTime $cycle, $quantity=1) {
+			return null;
+		}
 }

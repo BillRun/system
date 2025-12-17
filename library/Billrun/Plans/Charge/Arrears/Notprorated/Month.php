@@ -19,16 +19,19 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 	 */
 	public function getPrice($quantity = 1) {
 		$charges = array();
-		if ($this->endOffset > 0 ) {
+		if ($this->endOffset > 0 && ($this->deactivation >= $this->cycle->start() || empty($this->deactivation ))) {
 			foreach ($this->price as $tariff) {
-				$price = Billrun_Plan::getPriceByTariff($tariff, $this->startOffset, $this->endOffset);
+				$price = $this->getTariffForMonthCover($tariff, $this->startOffset, $this->endOffset );
 				if (!empty($price)) {
 					$charges[] = array('value' => $price['price'] * $quantity, 'cycle' => $tariff['from'], 'full_price' => floatval($tariff['price']) ,'prorated_start' =>false,'prorated_end' =>false,"start"=>$this->cycle->start(),'end'=> $this->cycle->end(),
 					'deactivation_date'=>  $this->deactivation,
 					'activation_date'=>  $this->activation,
+'start_date'=> new Mongodloid_Date($this->cycle->start()), 'end_date' => new Mongodloid_Date($this->cycle->end())
 					);
 				}
 			}
+		} else if ($this->deactivation < $this->cycle->start() && empty($this->deactivation )) {
+			Billrun_Factory::log(Billrun_Utils_Dev::colorText("Got none prorated plan/service ended before the  cycle start","Yellow"),Zend_Log::INFO);
 		}
 
 		return $charges;
@@ -41,7 +44,7 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 		$formatActivation = date('Y-m-01', $this->activation);
 		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
 		$formatEnd = date(Billrun_Base::base_dateformat,  $this->cycle->end() - 1 );
-		$this->startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
-		$this->endOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatEnd);
+		$this->startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
+		$this->endOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatEnd);
 	}
 }

@@ -9,7 +9,7 @@ class Column
      *
      * @var Worksheet
      */
-    private $worksheet;
+    private $parent;
 
     /**
      * Column index.
@@ -21,12 +21,13 @@ class Column
     /**
      * Create a new column.
      *
+     * @param Worksheet $parent
      * @param string $columnIndex
      */
-    public function __construct(Worksheet $worksheet, $columnIndex = 'A')
+    public function __construct(?Worksheet $parent = null, $columnIndex = 'A')
     {
         // Set parent and column index
-        $this->worksheet = $worksheet;
+        $this->parent = $parent;
         $this->columnIndex = $columnIndex;
     }
 
@@ -35,14 +36,15 @@ class Column
      */
     public function __destruct()
     {
-        // @phpstan-ignore-next-line
-        $this->worksheet = null;
+        $this->parent = null;
     }
 
     /**
      * Get column index as string eg: 'A'.
+     *
+     * @return string
      */
-    public function getColumnIndex(): string
+    public function getColumnIndex()
     {
         return $this->columnIndex;
     }
@@ -57,53 +59,6 @@ class Column
      */
     public function getCellIterator($startRow = 1, $endRow = null)
     {
-        return new ColumnCellIterator($this->worksheet, $this->columnIndex, $startRow, $endRow);
-    }
-
-    /**
-     * Returns a boolean true if the column contains no cells. By default, this means that no cell records exist in the
-     *         collection for this column. false will be returned otherwise.
-     *     This rule can be modified by passing a $definitionOfEmptyFlags value:
-     *          1 - CellIterator::TREAT_NULL_VALUE_AS_EMPTY_CELL If the only cells in the collection are null value
-     *                  cells, then the column will be considered empty.
-     *          2 - CellIterator::TREAT_EMPTY_STRING_AS_EMPTY_CELL If the only cells in the collection are empty
-     *                  string value cells, then the column will be considered empty.
-     *          3 - CellIterator::TREAT_NULL_VALUE_AS_EMPTY_CELL | CellIterator::TREAT_EMPTY_STRING_AS_EMPTY_CELL
-     *                  If the only cells in the collection are null value or empty string value cells, then the column
-     *                  will be considered empty.
-     *
-     * @param int $definitionOfEmptyFlags
-     *              Possible Flag Values are:
-     *                  CellIterator::TREAT_NULL_VALUE_AS_EMPTY_CELL
-     *                  CellIterator::TREAT_EMPTY_STRING_AS_EMPTY_CELL
-     */
-    public function isEmpty(int $definitionOfEmptyFlags = 0): bool
-    {
-        $nullValueCellIsEmpty = (bool) ($definitionOfEmptyFlags & CellIterator::TREAT_NULL_VALUE_AS_EMPTY_CELL);
-        $emptyStringCellIsEmpty = (bool) ($definitionOfEmptyFlags & CellIterator::TREAT_EMPTY_STRING_AS_EMPTY_CELL);
-
-        $cellIterator = $this->getCellIterator();
-        $cellIterator->setIterateOnlyExistingCells(true);
-        foreach ($cellIterator as $cell) {
-            $value = $cell->getValue();
-            if ($value === null && $nullValueCellIsEmpty === true) {
-                continue;
-            }
-            if ($value === '' && $emptyStringCellIsEmpty === true) {
-                continue;
-            }
-
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Returns bound worksheet.
-     */
-    public function getWorksheet(): Worksheet
-    {
-        return $this->worksheet;
+        return new ColumnCellIterator($this->parent, $this->columnIndex, $startRow, $endRow);
     }
 }

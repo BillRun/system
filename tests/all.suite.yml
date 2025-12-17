@@ -1,8 +1,19 @@
 actor: AcceptanceTester
-
+bootstrap: ../_support/Helper/BillRun/bootstrap.php
+error_level: E_ALL & ~E_WARNING & ~E_NOTICE
 modules:
     enabled:
         - Asserts
+        - \Helper\Api
+        - \Helper\BillRunAPI
+        - \Helper\BillRun\Mockups\israelInvoice
+        - \Helper\BillRun\Mockups\Crm
+        - \Helper\Aggregate
+        - \Helper\TestHelper
+        - \Helper\PaymentStatus
+        - \Helper\ResponseWrapper
+        - \Helper\CollectionWrapper
+        - \Helper\BillRun\Mockups\PaymentGateway
         - WebDriver:
             url: http://web
             host: chrome

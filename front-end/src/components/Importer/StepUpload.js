@@ -108,6 +108,7 @@ class StepUpload extends Component {
 
   onParseCsvComplete = (results, file) => {
     if (results.errors.length === 0) {
+      this.props.onChange('file', file);
       this.props.onChange('fileContent', results.data);
       this.props.onChange('fileName', file.name);
       this.setState({ fileError: null });
@@ -131,6 +132,7 @@ class StepUpload extends Component {
         skipEmptyLines: true,
         delimiter,
         header: false,
+        preview: 2,
         complete: this.onParseCsvComplete,
         error: this.onParseScvError,
       });

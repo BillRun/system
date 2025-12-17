@@ -24,13 +24,13 @@ class Api_Translator_DatetimeInRangeModel extends Api_Translator_TypeModel {
 	public function internalTranslateField($data) {
 		try {
 			if (isset($data['sec'])) {
-				$date = new MongoDate($data['sec']);
+				$date = new Mongodloid_Date($data['sec']);
 			} else {
 				$time = strtotime($data);
 				if ($time <= 0) {
 					return false;
 				}
-				$date = new MongoDate($time);
+				$date = new Mongodloid_Date($time);
 			}
 			return array(
 					'from' => array('$lte' => $date),

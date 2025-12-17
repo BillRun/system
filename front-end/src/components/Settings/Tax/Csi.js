@@ -114,6 +114,7 @@ class Csi extends Component {
           </Col>
           <Col sm={8} lg={9}>
             <Field
+              fieldType="password"
               value={csi.get('auth_code', '')}
               onChange={this.onChangeAuthToken}
               disabled={disabled}

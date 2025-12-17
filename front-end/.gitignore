@@ -11,7 +11,10 @@
 # production
 /build
 
+# Dev
+/**/dist
 # misc
+.vscode
 .DS_Store
 .env.local
 .env.development.local

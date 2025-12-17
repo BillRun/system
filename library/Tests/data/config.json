@@ -60,6 +60,13 @@
 							"input_uom": "seconds"
 						},
 						{
+							"usage_type": "gr",
+							"label": "gr",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						},
+						{
 							"usage_type": "call_to_gaza",
 							"label": "call_to_gaza",
 							"property_type": "time",
@@ -670,7 +677,7 @@
 										"name": "Preprice_Dynamic",
 										"host": "46.101.149.208",
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"remote_directory": "/yossi"
 									}
 								],
@@ -791,7 +798,7 @@
 										"user": "yossi",
 										"remote_directory": "/yossi",
 										"delete_received": false,
-										"password": "j8(B2c_sV",
+										"password": "",
 										"key": "Wholesale"
 									}
 								],
@@ -980,7 +987,7 @@
 										"name": "computed_regex",
 										"host": "46.101.149.208",
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"remote_directory": "/yossi"
 									}
 								],
@@ -1079,7 +1086,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "p",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -1416,7 +1423,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "longest_prefix",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -1513,7 +1520,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "old_revision",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -1700,7 +1707,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "computed",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -1846,7 +1853,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "many_prefix",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -2110,6 +2117,10 @@
 														"on_true": {
 															"key": "rate",
 															"regex": "/123/"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2180,6 +2191,10 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2207,6 +2222,10 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2234,6 +2253,10 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2295,6 +2318,11 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},
+															"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2351,7 +2379,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "conditions",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -2491,7 +2519,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "Duplicate_mapping",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi",
@@ -2623,11 +2651,6 @@
 															"key": "rate",
 															"regex": "",
 															"value": ""
-														},
-														"on_false": {
-															"key": "condition_result",
-															"regex": "",
-															"value": ""
 														}
 													}
 												}
@@ -2654,12 +2677,8 @@
 															"key": "rate",
 															"regex": "",
 															"value": ""
-														},
-														"on_false": {
-															"key": "condition_result",
-															"regex": "",
-															"value": ""
 														}
+														
 													}
 												}
 											}
@@ -2967,7 +2986,7 @@
 							"name": "CreditGuard",
 							"params": {
 								"user": "SDOC",
-								"password": "sD#4R!3r",
+								"password": "",
 								"mid": "10912",
 								"endpoint_url": "https://kupot1t.creditguard.co.il/xpo/Relay",
 								"redirect_terminal": "0962832",
@@ -2977,18 +2996,13 @@
 					],
 					"taxation": {
 						"tax_type": "usage",
-						"CSI": {
-							"taxation_mapping": [],
-							"provider": "",
-							"auth_code": "",
-							"apply_optional_charges": true
+						"default": {
+							"key": "DEFAULT_VAT"
 						},
-						"vat": {
-							"v": 0.17,
-							"t": "Float",
-							"range": {
-								"max": 1,
-								"min": 0
+						"mapping": {
+							"vat": {
+								"priorities": [],
+								"default_fallback": true
 							}
 						}
 					},

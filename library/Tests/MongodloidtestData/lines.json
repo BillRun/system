@@ -1,0 +1,1241 @@
+{
+	"collection": "linesCollection",
+	"data":
+			[
+
+				{
+					"OBJID": "5aeee57b05e68c02d035e1f6",
+					"uf": {
+						"sid": 10,
+						"date": "2018-05-18 10:10:10",
+						"usage": "call",
+						"rate": "CALL",
+						"volume": 100
+					},
+					"source": "realtime",
+					"type": "r",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "a305a9e1d842cf9d632010bf39dcb674",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 100,
+					"process_time": "time*2018-05-06T11:22:35.096Z",
+					"urt": "time*2018-05-18T07:10:10Z",
+					"eurt": "time*2018-05-18T07:10:10Z",
+					"realtime": true,
+					"subscriber": {
+						"aid": 9,
+						"sid": 10,
+						"plan": "PLAN_A",
+						"firstname": "d",
+						"lastname": "d",
+						"services": [
+							"SERVICE_A"
+						],
+						"services_data": [
+							{
+								"name": "SERVICE_A",
+								"from": "time*2018-01-05T22:00:00Z",
+								"to": "time*2118-05-06T11:16:27Z",
+								"service_id": "1599713200016926"
+							}
+						]
+					},
+					"aid": 9,
+					"sid": 10,
+					"plan": "PLAN_A",
+					"firstname": "d",
+					"lastname": "d",
+					"services": [
+						"SERVICE_A"
+					],
+					"services_data": [
+						{
+							"name": "SERVICE_A",
+							"from": "time*2018-01-05T22:00:00Z",
+							"to": "time*2118-05-06T11:16:27Z",
+							"service_id": "1599713200016926"
+						}
+					],
+					"connection_type": "postpaid",
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5aeec10905e68c1a29770a9b",
+						"isDbRef": true
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5aeee54905e68c5b1f45f9f4",
+						"isDbRef": true
+					},
+					"arate_key": "CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "CALL",
+							"add_to_retail": false,
+							"arate": {
+								"collection": "rates",
+								"ObjectId": "5aeee54905e68c5b1f45f9f4",
+								"isDbRef": true
+							},
+							"pricing": {
+								"out_group": 100,
+								"out_plan": 100,
+								"billrun": "201806",
+								"charge": 100
+							}
+						}
+					],
+					"usagev_offset": 0,
+					"balance_ref": {
+						"collection": "balances",
+						"ObjectId": "5aeee57b463d4f12759b7634",
+						"isDbRef": true
+					},
+					"out_group": 100,
+					"out_plan": 100,
+					"aprice": 100,
+					"billrun": "201806",
+					"retail_rate": true,
+					"tax_data": {
+						"total_amount": 17,
+						"total_tax": 0.17,
+						"taxes": [
+							{
+								"tax": 0.17,
+								"amount": 17,
+								"description": "Vat",
+								"pass_to_customer": 1
+							}
+						]
+					},
+					"final_charge": 117
+				},
+
+				{
+					"OBJID": "5af44ef905e68c4b3278729a",
+					"uf": {
+						"sid": 41,
+						"date": "2018-05-13 10:10:10",
+						"usage": "call",
+						"rate": "CALL",
+						"volume": 50
+					},
+					"source": "realtime",
+					"type": "rr",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "a1fd85a9a16dcbc1f21d59afc8458cdf",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 50,
+					"process_time": "time*2018-05-10T13:54:01.427Z",
+					"urt": "time*2018-05-13T07:10:10Z",
+					"eurt": "time*2018-05-13T07:10:10Z",
+					"realtime": true,
+					"subscriber": {
+						"aid": 40,
+						"sid": 41,
+						"plan": "PLAN_E",
+						"firstname": "x",
+						"lastname": "x",
+						"services": [
+							"CALL"
+						],
+						"services_data": [
+							{
+								"name": "CALL",
+								"from": "time*2018-04-30T21:00:00Z",
+								"to": "time*2167-05-10T14:48:47Z",
+								"service_id": 0
+							}
+						]
+					},
+					"aid": 40,
+					"sid": 41,
+					"plan": "PLAN_E",
+					"firstname": "x",
+					"lastname": "x",
+					"services": [
+						"CALL"
+					],
+					"services_data": [
+						{
+							"name": "CALL",
+							"from": "time*2018-04-30T21:00:00Z",
+							"to": "time*2167-05-10T14:48:47Z",
+							"service_id": 0
+						}
+					],
+					"connection_type": "postpaid",
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5af44c8e05e68c42b71a6ab5",
+						"isDbRef": true
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5aeee54905e68c5b1f45f9f4",
+						"isDbRef": true
+					},
+					"arate_key": "CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "CALL",
+							"add_to_retail": false,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5aeee54905e68c5b1f45f9f4"
+								,
+								"isDbRef": true
+							},
+
+							"pricing": {
+								"arategroups": [
+									{
+										"name": "CALL",
+										"usagev": 50,
+										"left": 50,
+										"total": 100,
+										"balance_ref": {
+											"collection": "balances",
+											"ObjectId": "5af44ef9f3140f9783a80137",
+											"isDbRef": true
+										}
+									}
+								],
+								"over_plan": 0,
+								"over_group": 0,
+								"in_group": 50,
+								"in_plan": 50,
+								"billrun": "201806",
+								"charge": 0
+							}
+						}
+					],
+					"usagev_offset": 0,
+					"balance_ref": {
+						"collection": "balances",
+						"ObjectId": "5af44ef9f3140f9783a80137",
+						"isDbRef": true
+					},
+					"arategroups": [
+						{
+							"name": "CALL",
+							"usagev": 50,
+							"left": 50,
+							"total": 100,
+							"balance_ref": {
+								"collection": "balances",
+								"ObjectId": "5af44ef9f3140f9783a80137",
+								"isDbRef": true
+							},
+							"usagesb": 0
+						}
+					],
+					"over_plan": 0,
+					"over_group": 0,
+					"in_group": 50,
+					"in_plan": 50,
+					"aprice": 0,
+					"billrun": "201806",
+					"retail_rate": true,
+					"tax_data": {
+						"total_amount": 0,
+						"total_tax": 0.17,
+						"taxes": [
+							{
+								"tax": 0.17,
+								"amount": 0,
+								"description": "Vat",
+								"pass_to_customer": 1
+							}
+						]
+					},
+					"final_charge": 0
+				},
+				{
+					"OBJID": "5af44f1205e68c0e9a3bdf39",
+					"uf": {
+						"sid": 41,
+						"date": "2018-05-20 10:10:10",
+						"usage": "call",
+						"rate": "CALL",
+						"volume": 50
+					},
+					"source": "realtime",
+					"type": "rr",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "26493109443d8117fe8d406342a772ec",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 50,
+					"process_time": "time*2018-05-10T13:54:26.365Z",
+					"urt": "time*2018-05-20T07:10:10Z",
+					"eurt": "time*2018-05-20T07:10:10Z",
+					"realtime": true,
+					"subscriber": {
+						"aid": 40,
+						"sid": 41,
+						"plan": "PLAN_E",
+						"firstname": "x",
+						"lastname": "x",
+						"services": [
+							"CUSTOM_CALL",
+							"CALL"
+						],
+						"services_data": [
+							{
+								"name": "CUSTOM_CALL",
+								"from": "time*2018-05-14T21:00:00Z",
+								"to": "time*2018-06-14T21:00:00Z",
+								"service_id": "1600085166982347"
+							},
+							{
+								"name": "CALL",
+								"from": "time*2018-04-30T21:00:00Z",
+								"to": "time*2167-05-10T14:48:47Z",
+								"service_id": 0
+							}
+						]
+					},
+					"aid": 40,
+					"sid": 41,
+					"plan": "PLAN_E",
+					"firstname": "x",
+					"lastname": "x",
+					"services": [
+						"CUSTOM_CALL",
+						"CALL"
+					],
+					"services_data": [
+						{
+							"name": "CUSTOM_CALL",
+							"from": "time*2018-05-14T21:00:00Z",
+							"to": "time*2018-06-14T21:00:00Z",
+							"service_id": "1600085166982347"
+						},
+						{
+							"name": "CALL",
+							"from": "time*2018-04-30T21:00:00Z",
+							"to": "time*2167-05-10T14:48:47Z",
+							"service_id": 0
+						}
+					],
+					"connection_type": "postpaid",
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5af44c8e05e68c42b71a6ab5",
+						"isDbRef": true
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5aeee54905e68c5b1f45f9f4",
+						"isDbRef": true
+					},
+					"arate_key": "CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "CALL",
+							"add_to_retail": false,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5aeee54905e68c5b1f45f9f4",
+								"isDbRef": true
+							},
+							"pricing": {
+								"arategroups": [
+									{
+										"name": "CALL",
+										"usagev": 50,
+										"left": 0,
+										"total": 100,
+										"balance_ref": {
+											"collection": "balances",
+											"ObjectId": "5af44ef9f3140f9783a80137",
+											"isDbRef": true
+										},
+										"usagesb": 50
+									}
+								],
+								"over_plan": 0,
+								"over_group": 0,
+								"in_group": 50,
+								"in_plan": 50,
+								"billrun": "201806",
+								"charge": 0
+							}
+						}
+					],
+					"usagev_offset": 0,
+					"balance_ref": {
+						"collection": "balances",
+						"ObjectId": "5af44ef9f3140f9783a80137",
+						"isDbRef": true
+					},
+					"arategroups": [
+						{
+							"name": "CALL",
+							"usagev": 50,
+							"left": 0,
+							"total": 100,
+							"balance_ref": {
+								"collection": "balances",
+								"ObjectId": "5af44ef9f3140f9783a80137",
+								"isDbRef": true
+							},
+							"usagesb": 50
+						}
+					],
+					"over_plan": 0,
+					"over_group": 0,
+					"in_group": 50,
+					"in_plan": 50,
+					"aprice": 0,
+					"billrun": "201806",
+					"retail_rate": true,
+					"tax_data": {
+						"total_amount": 0,
+						"total_tax": 0.17,
+						"taxes": [
+							{
+								"tax": 0.17,
+								"amount": 0,
+								"description": "Vat",
+								"pass_to_customer": 1
+							}
+						]
+					},
+					"final_charge": 0
+				},
+				{
+					"OBJID": "5af44f4105e68c42b71a6ab7",
+					"uf": {
+						"sid": 41,
+						"date": "2018-06-01 10:10:10",
+						"usage": "call",
+						"rate": "CALL",
+						"volume": 50
+					},
+					"source": "realtime",
+					"type": "rr",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "2e816c8eac52212bf9c59d0dd90ffcde",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 50,
+					"process_time": "time*2018-05-10T13:55:13.173Z",
+					"urt": "time*2018-06-01T07:10:10Z",
+					"eurt": "time*2018-06-01T07:10:10Z",
+					"realtime": true,
+					"subscriber": {
+						"aid": 40,
+						"sid": 41,
+						"plan": "PLAN_E",
+						"firstname": "x",
+						"lastname": "x",
+						"services": [
+							"CUSTOM_CALL",
+							"CALL"
+						],
+						"services_data": [
+							{
+								"name": "CUSTOM_CALL",
+								"from": "time*2018-05-14T21:00:00Z",
+								"to": "time*2018-06-14T21:00:00Z",
+								"service_id": "1600085166982347"
+							},
+							{
+								"name": "CALL",
+								"from": "time*2018-04-30T21:00:00Z",
+								"to": "time*2167-05-10T14:48:47Z",
+								"service_id": 0
+							}
+						]
+					},
+					"aid": 40,
+					"sid": 41,
+					"plan": "PLAN_E",
+					"firstname": "x",
+					"lastname": "x",
+					"services": [
+						"CUSTOM_CALL",
+						"CALL"
+					],
+					"services_data": [
+						{
+							"name": "CUSTOM_CALL",
+							"from": "time*2018-05-14T21:00:00Z",
+							"to": "time*2018-06-14T21:00:00Z",
+							"service_id": "1600085166982347"
+						},
+						{
+							"name": "CALL",
+							"from": "time*2018-04-30T21:00:00Z",
+							"to": "time*2167-05-10T14:48:47Z",
+							"service_id": 0
+						}
+					],
+					"connection_type": "postpaid",
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5af44c8e05e68c42b71a6ab5",
+						"isDbRef": true
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5aeee54905e68c5b1f45f9f4",
+						"isDbRef": true
+					},
+					"arate_key": "CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "CALL",
+							"add_to_retail": false,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5aeee54905e68c5b1f45f9f4",
+								"isDbRef": true
+							},
+							"pricing": {
+								"arategroups": [
+									{
+										"name": "C_CALL",
+										"usagev": 50,
+										"left": 50,
+										"total": 100,
+										"balance_ref": {
+											"collection": "balances",
+											"ObjectId": "5af44f41f3140f9783a80179",
+											"isDbRef": true
+										},
+										"usagesb": 0
+									}
+								],
+								"over_plan": 0,
+								"over_group": 0,
+								"in_group": 50,
+								"in_plan": 50,
+								"billrun": "201807",
+								"charge": 0
+							}
+						}
+					],
+					"usagev_offset": 0,
+					"balance_ref": {
+						"collection": "balances",
+						"ObjectId": "5af44f41f3140f9783a80179",
+						"isDbRef": true
+					},
+					"arategroups": [
+						{
+							"name": "C_CALL",
+							"usagev": 50,
+							"left": 50,
+							"total": 100,
+							"balance_ref": {
+								"collection": "balances",
+								"ObjectId": "5af44f41f3140f9783a80179",
+								"isDbRef": true
+							},
+							"usagesb": 0
+						}
+					],
+					"over_plan": 0,
+					"over_group": 0,
+					"in_group": 50,
+					"in_plan": 50,
+					"aprice": 0,
+					"billrun": "201807",
+					"retail_rate": true,
+					"tax_data": {
+						"total_amount": 0,
+						"total_tax": 0.17,
+						"taxes": [
+							{
+								"tax": 0.17,
+								"amount": 0,
+								"description": "Vat",
+								"pass_to_customer": 1
+							}
+						]
+					},
+					"final_charge": 0
+				},
+				{
+					"OBJID": "5af44f4905e68c5d7762cd35",
+					"uf": {
+						"sid": 41,
+						"date": "2018-06-20 10:10:10",
+						"usage": "call",
+						"rate": "CALL",
+						"volume": 50
+					},
+					"source": "realtime",
+					"type": "rr",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "25ec9edfb0d72ba44c85455ca7d92fc4",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 50,
+					"process_time": "time*2018-05-10T13:55:21.713Z",
+					"urt": "time*2018-06-20T07:10:10Z",
+					"eurt": "time*2018-06-20T07:10:10Z",
+					"realtime": true,
+					"subscriber": {
+						"aid": 40,
+						"sid": 41,
+						"plan": "PLAN_E",
+						"firstname": "x",
+						"lastname": "x",
+						"services": [
+							"CALL"
+						],
+						"services_data": [
+							{
+								"name": "CALL",
+								"from": "time*2018-04-30T21:00:00Z",
+								"to": "time*2167-05-10T14:48:47Z",
+								"service_id": 0
+							}
+						]
+					},
+					"aid": 40,
+					"sid": 41,
+					"plan": "PLAN_E",
+					"firstname": "x",
+					"lastname": "x",
+					"services": [
+						"CALL"
+					],
+					"services_data": [
+						{
+							"name": "CALL",
+							"from": "time*2018-04-30T21:00:00Z",
+							"to": "time*2167-05-10T14:48:47Z",
+							"service_id": 0
+						}
+					],
+					"connection_type": "postpaid",
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5af44c8e05e68c42b71a6ab5",
+						"isDbRef": true
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5aeee54905e68c5b1f45f9f4",
+						"isDbRef": true
+					},
+					"arate_key": "CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "CALL",
+							"add_to_retail": false,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5aeee54905e68c5b1f45f9f4",
+								"isDbRef": true
+							},
+							"pricing": {
+								"arategroups": [
+									{
+										"name": "CALL",
+										"usagev": 50,
+										"left": 50,
+										"total": 100,
+										"balance_ref": {
+											"collection": "balances",
+											"ObjectId": "5af44f41f3140f9783a80174",
+											"isDbRef": true
+										},
+										"usagesb": 0
+									}
+								],
+								"over_plan": 0,
+								"over_group": 0,
+								"in_group": 50,
+								"in_plan": 50,
+								"billrun": "201807",
+								"charge": 0
+							}
+						}
+					],
+					"usagev_offset": 0,
+					"balance_ref": {
+						"collection": "balances",
+						"ObjectId": "5af44f41f3140f9783a80174",
+						"isDbRef": true
+					},
+					"arategroups": [
+						{
+							"name": "CALL",
+							"usagev": 50,
+							"left": 50,
+							"total": 100,
+							"balance_ref": {
+								"collection": "balances",
+								"ObjectId": "5af44f41f3140f9783a80174",
+								"isDbRef": true
+							},
+							"usagesb": 0
+						}
+					],
+					"over_plan": 0,
+					"over_group": 0,
+					"in_group": 50,
+					"in_plan": 50,
+					"aprice": 0,
+					"billrun": "201807",
+					"retail_rate": true,
+					"tax_data": {
+						"total_amount": 0,
+						"total_tax": 0.17,
+						"taxes": [
+							{
+								"tax": 0.17,
+								"amount": 0,
+								"description": "Vat",
+								"pass_to_customer": 1
+							}
+						]
+					},
+					"final_charge": 0
+				},
+				{
+					"OBJID": "5b34a88505e68c6b68241b92",
+					"uf": {
+						"sid": 2,
+						"date": "2018-05-18 10:10:10",
+						"usage": "call",
+						"rate": "NONVAT",
+						"volume": 100
+					},
+					"source": "realtime",
+					"type": "non",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "ceab6cf0d600262e02a6cf47d03a6b50",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 100,
+					"process_time": "time*2018-06-28T09:21:09.600Z",
+					"timezone": 10800,
+					"urt": "time*2018-05-18T07:10:10Z",
+					"eurt": "time*2018-05-18T07:10:10Z",
+					"granted_return_code": 1,
+					"realtime": true,
+					"subscriber": {
+						"aid": 1,
+						"sid": 2,
+						"plan": "PLAN_C",
+						"firstname": "t",
+						"lastname": "t",
+						"services": [],
+						"services_data": []
+					},
+					"aid": 1,
+					"sid": 2,
+					"plan": "PLAN_C",
+					"firstname": "t",
+					"lastname": "t",
+					"services": [],
+					"services_data": [],
+					"connection_type": "postpaid",
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5b34a72705e68c7f46016a12",
+						"isDbRef": true
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5b34a72705e68c7f46016a12",
+						"isDbRef": true
+					},
+					"arate_key": "NONVAT",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "NONVAT",
+							"add_to_retail": false,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5b34a72705e68c7f46016a12",
+								"isDbRef": true
+							},
+							"pricing": {
+								"out_group": 100,
+								"out_plan": 100,
+								"billrun": "201807",
+								"charge": 100
+							}
+						}
+					],
+					"usagev_offset": 0,
+					"balance_ref": {
+						"collection": "balances",
+						"ObjectId": "5b34a88592cecd0d32fea483",
+						"isDbRef": true
+					},
+					"out_group": 100,
+					"out_plan": 100,
+					"aprice": 100,
+					"billrun": "201807",
+					"retail_rate": true,
+					"final_charge": 100,
+					"tax_data": {
+						"total_amount": 0,
+						"total_tax": 0,
+						"taxes": []
+					}
+				}
+				, {
+					"OBJID": "5b34bf8505e68c2245114824",
+					"key": "D",
+					"name": "d",
+					"type": "credit",
+					"description": "d",
+					"usaget": "discount",
+					"discount_type": "monetary",
+					"urt": "time*2018-06-30T21:00:00Z",
+					"process_time": "time*2018-06-28T10:59:17.304Z",
+					"modifier": 1,
+					"orignal_modifier": 1,
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5b34bee305e68c7fa55cb902",
+						"isDbRef": true
+					},
+					"aid": 1,
+					"source": "billrun",
+					"billrun": "201807",
+					"usagev": 1,
+					"is_percent": false,
+					"sid": 2,
+					"end": false,
+					"discount": {
+						"NOT_TAXABLE": {
+							"value": -10
+						}
+					},
+					"affected_sections": [
+						"flat",
+						"service"
+					],
+					"aprice": -10,
+					"stamp": "97125220bf7aaf1caa3186cb69db7307",
+					"tax_data": {
+						"total_amount": 0,
+						"total_tax": 0,
+						"taxes": []
+					},
+					"final_charge": -10
+				},
+				{
+					"OBJID": "5e4eb5a4cd4acc3497158df2",
+					"uf": {
+						"sid": 100,
+						"date": "2020-02-10 10:15:23",
+						"usage": "call",
+						"rate": "CALL",
+						"volume": 110
+					},
+					"source": "realtime",
+					"type": "non",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"stamp": "96f9801d506679cc52450a16086eca34",
+					"usagev_unit": "seconds",
+					"usagev": 110,
+					"process_time": "time*2020-02-20T16:36:52.045Z",
+					"timezone": 7200,
+					"urt": "time*2020-02-10T08:15:23Z",
+					"eurt": "time*2020-02-10T08:15:23Z",
+					"granted_return_code": 1,
+					"realtime": true,
+					"subscriber": {
+						"aid": 26,
+						"sid": 100,
+						"plan": "FREE_WITH_NOTHING",
+						"firstname": "d",
+						"lastname": "d",
+						"services": [
+							"CALL",
+							"CALL"
+						],
+						"services_data": [
+							{
+								"name": "CALL",
+								"from": "time*2018-02-19T22:00:00Z",
+								"to": "time*2120-02-20T16:32:54Z",
+								"service_id": 132456,
+								"quantity": 1,
+								"plan_included": false
+							},
+							{
+								"name": "CALL",
+								"from": "time*2018-02-19T22:00:00Z",
+								"to": "time*2120-02-20T16:32:54Z",
+								"service_id": 1234567,
+								"quantity": 1,
+								"plan_included": false
+							}
+						]
+					},
+					"aid": 26,
+					"sid": 100,
+					"plan": "FREE_WITH_NOTHING",
+					"firstname": "d",
+					"lastname": "d",
+					"services": [
+						"CALL",
+						"CALL"
+					],
+					"services_data": [
+						{
+							"name": "CALL",
+							"from": "time*2018-02-19T22:00:00Z",
+							"to": "time*2120-02-20T16:32:54Z",
+							"service_id": 132456,
+							"quantity": 1,
+							"plan_included": false
+						},
+						{
+							"name": "CALL",
+							"from": "time*2018-02-19T22:00:00Z",
+							"to": "time*2120-02-20T16:32:54Z",
+							"service_id": 1234567,
+							"quantity": 1,
+							"plan_included": false
+						}
+					],
+					"connection_type": "postpaid",
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5a55ca8b6d5b99344e5226c3",
+						"isDbRef": true
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5aeee54905e68c5b1f45f9f4",
+						"isDbRef": true
+					},
+					"arate_key": "CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "CALL",
+							"add_to_retail": false,
+
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5aeee54905e68c5b1f45f9f4",
+								"isDbRef": true
+							},
+							"pricing": {
+								"arategroups": [
+									{
+										"name": "CALL",
+										"usagev": 100,
+										"left": 0,
+										"total": 100,
+										"balance_ref": {
+											"collection": "balances",
+											"ObjectId": "5e4eb5a4a7165b95bc1a2c7a",
+											"isDbRef": true
+										},
+										"usagesb": 0
+									},
+									{
+										"name": "CALL",
+										"usagev": 10,
+										"left": 90,
+										"total": 100,
+										"balance_ref": {
+											"collection": "balances",
+											"ObjectId": "5e4eb5a4a7165b95bc1a2c7d",
+											"isDbRef": true
+										},
+
+										"usagesb": 0
+									}
+								],
+								"over_plan": 0,
+								"over_group": 0,
+								"in_group": 110,
+								"in_plan": 110,
+								"billrun": "202003",
+								"charge": 0
+							}
+						}
+					],
+					"usagev_offset": 0,
+					"balance_ref": {
+						"collection": "balances",
+						"ObjectId": "5e4eb5a4a7165b95bc1a2c76",
+						"isDbRef": true
+					},
+
+					"arategroups": [
+						{
+							"name": "CALL",
+							"usagev": 100,
+							"left": 0,
+							"total": 100,
+							"balance_ref": {
+								"collection": "balances",
+								"ObjectId": "5e4eb5a4a7165b95bc1a2c7a",
+								"isDbRef": true
+							},
+
+							"usagesb": 0
+						},
+						{
+							"name": "CALL",
+							"usagev": 10,
+							"left": 90,
+							"total": 100,
+							"balance_ref": {
+								"collection": "balances",
+								"ObjectId": "5e4eb5a4a7165b95bc1a2c7d",
+								"isDbRef": true
+							},
+
+							"usagesb": 0
+						}
+					],
+					"over_plan": 0,
+					"over_group": 0,
+					"in_group": 110,
+					"in_plan": 110,
+					"aprice": 0,
+					"billrun": "202003",
+					"retail_rate": true,
+					"tax_data": {
+						"total_amount": 0,
+						"total_tax": 0.17,
+						"taxes": [
+							{
+								"tax": 0.17,
+								"amount": 0,
+								"description": "Vat",
+								"pass_to_customer": 1
+							}
+						]
+					},
+					"final_charge": 0
+				},
+				{
+					"OBJID": "5e4eb5c9cd4acc7dee06752f",
+					"uf": {
+						"sid": 100,
+						"date": "2020-02-10 10:15:23",
+						"usage": "call",
+						"rate": "CALL",
+						"volume": 100
+					},
+					"source": "realtime",
+					"type": "non",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"stamp": "bb3db7f8638b753f662ae26ec4119d43",
+					"usagev_unit": "seconds",
+					"usagev": 100,
+					"process_time": "time*2020-02-20T16:37:29.734Z",
+					"timezone": 7200,
+					"urt": "time*2020-02-10T08:15:23Z",
+					"eurt": "time*2020-02-10T08:15:23Z",
+					"granted_return_code": 1,
+					"realtime": true,
+					"subscriber": {
+						"aid": 26,
+						"sid": 100,
+						"plan": "FREE_WITH_NOTHING",
+						"firstname": "d",
+						"lastname": "d",
+						"services": [
+							"CALL",
+							"CALL"
+						],
+						"services_data": [
+							{
+								"name": "CALL",
+								"from": "time*2018-02-19T22:00:00Z",
+								"to": "time*2120-02-20T16:32:54Z",
+								"service_id": 132456,
+								"quantity": 1,
+								"plan_included": false
+							},
+							{
+								"name": "CALL",
+								"from": "time*2018-02-19T22:00:00Z",
+								"to": "time*2120-02-20T16:32:54Z",
+								"service_id": 1234567,
+								"quantity": 1,
+								"plan_included": false
+							}
+						]
+					},
+					"aid": 26,
+					"sid": 100,
+					"plan": "FREE_WITH_NOTHING",
+					"firstname": "d",
+					"lastname": "d",
+					"services": [
+						"CALL",
+						"CALL"
+					],
+					"services_data": [
+						{
+							"name": "CALL",
+							"from": "time*2018-02-19T22:00:00Z",
+							"to": "time*2120-02-20T16:32:54Z",
+							"service_id": 132456,
+							"quantity": 1,
+							"plan_included": false
+						},
+						{
+							"name": "CALL",
+							"from": "time*2018-02-19T22:00:00Z",
+							"to": "time*2120-02-20T16:32:54Z",
+							"service_id": 1234567,
+							"quantity": 1,
+							"plan_included": false
+						}
+					],
+					"connection_type": "postpaid",
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5a55ca8b6d5b99344e5226c3",
+						"isDbRef": true
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5aeee54905e68c5b1f45f9f4",
+						"isDbRef": true
+					},
+					"arate_key": "CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "CALL",
+							"add_to_retail": false,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5aeee54905e68c5b1f45f9f4",
+								"isDbRef": true
+							},
+							"pricing": {
+								"arategroups": [
+									{
+										"name": "CALL",
+										"usagev": 90,
+										"left": 0,
+										"total": 100,
+										"balance_ref": {
+											"collection": "balances",
+											"ObjectId": "5e4eb5a4a7165b95bc1a2c7d",
+											"isDbRef": true
+										},
+
+										"usagesb": 10
+									}
+								],
+								"over_plan": 10,
+								"over_group": 10,
+								"in_group": 90,
+								"in_plan": 90,
+								"billrun": "202003",
+								"charge": 10
+							}
+						}
+					],
+					"usagev_offset": 0,
+					"balance_ref": {
+						"collection": "balances",
+						"ObjectId": "5e4eb5a4a7165b95bc1a2c76",
+						"isDbRef": true
+					},
+					"arategroups": [
+						{
+							"name": "CALL",
+							"usagev": 90,
+							"left": 0,
+							"total": 100,
+							"balance_ref": {
+								"collection": "balances",
+								"ObjectId": "5e4eb5a4a7165b95bc1a2c7d",
+								"isDbRef": true
+							},
+							"usagesb": 10
+						}
+					],
+					"over_plan": 10,
+					"over_group": 10,
+					"in_group": 90,
+					"in_plan": 90,
+					"aprice": 10,
+					"billrun": "202003",
+					"retail_rate": true,
+					"tax_data": {
+						"total_amount": 1.7000000000000002,
+						"total_tax": 0.17,
+						"taxes": [
+							{
+								"tax": 0.17,
+								"amount": 1.7000000000000002,
+								"description": "Vat",
+								"pass_to_customer": 1
+							}
+						]
+					},
+					"final_charge": 11.7
+				}
+
+
+
+			]
+}

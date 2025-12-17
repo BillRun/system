@@ -43,7 +43,7 @@ abstract class Billrun_Sender extends Billrun_Base {
 			return self::$instance[$stamp];
 		}
 
-		$type = $options['type'];
+		$type = $options['connection_type'];
 		$class = 'Billrun_Sender_' . ucfirst($type);
 		if (!@class_exists($class, true)) {
 			Billrun_Factory::log("Can't find class: " . $class, Zend_Log::EMERG);

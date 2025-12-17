@@ -9,6 +9,8 @@ import {
   convertServiceBalancePeriodToObject,
   convertServiceBalancePeriodToString,
   getConfig,
+  convertToOldRecurrence,
+  convertToNewRecurrence,
 } from '@/common/Util';
 import {
   usageTypesDataSelector,
@@ -22,6 +24,7 @@ export const SAVE_SERVICE = 'SAVE_SERVICE';
 export const CLEAR_SERVICE = 'CLEAR_SERVICE';
 export const CLONE_RESET_SERVICE = 'CLONE_RESET_SERVICE';
 export const ADD_GROUP_SERVICE = 'ADD_GROUP_SERVICE';
+export const ADD_GROUP_SERVICE_COUNTER = 'ADD_GROUP_SERVICE_COUNTER';
 export const REMOVE_GROUP_SERVICE = 'REMOVE_GROUP_SERVICE';
 export const SERVICE_PRODUCTS_REMOVE = 'SERVICE_PRODUCTS_REMOVE';
 export const SERVICE_PRODUCTS_RATE_UPDATE_TO = 'SERVICE_PRODUCTS_RATE_UPDATE_TO';
@@ -29,7 +32,9 @@ export const SERVICE_PRODUCTS_RATE_UPDATE = 'SERVICE_PRODUCTS_RATE_UPDATE';
 export const SERVICE_PRODUCTS_RATE_REMOVE = 'SERVICE_PRODUCTS_RATE_REMOVE';
 export const SERVICE_PRODUCTS_RATE_ADD = 'SERVICE_PRODUCTS_RATE_ADD';
 export const SERVICE_PRODUCTS_RATE_INIT = 'SERVICE_PRODUCTS_RATE_INIT';
-
+export const SERVICE_ADD_TARIFF = 'SERVICE_ADD_TARIFF';
+export const SERVICE_UPDATE_SERVICE_CYCLE = 'SERVICE_UPDATE_SERVICE_CYCLE';
+export const SERVICE_REMOVE_TARIFF = 'SERVICE_REMOVE_TARIFF';
 
 const gotItem = item => ({
   type: GOT_SERVICE,
@@ -44,6 +49,21 @@ export const updateService = (path, value) => ({
   type: UPDATE_SERVICE,
   path,
   value,
+});
+
+export const onServiceTariffAdd = () => ({
+  type: SERVICE_ADD_TARIFF,
+});
+
+export const onServiceCycleUpdate = (index, value) => ({
+  type: SERVICE_UPDATE_SERVICE_CYCLE,
+  index,
+  value,
+});
+
+export const onServiceTariffRemove = index => ({
+  type: SERVICE_REMOVE_TARIFF,
+  index,
 });
 
 export const deleteServiceField = path => ({
@@ -63,6 +83,12 @@ export const addGroup = (groupName, usages, unit, value, shared, pooled, quantit
   products,
 });
 
+export const addGroupCounter = (groupName, groupData) => ({
+  type: ADD_GROUP_SERVICE_COUNTER,
+  groupName,
+  groupData,
+});
+
 export const removeGroup = groupName => ({
   type: REMOVE_GROUP_SERVICE,
   groupName,
@@ -78,14 +104,14 @@ const convertService = (getState, service, convertToBaseUnit, toSend) => {
   const usageTypesData = usageTypesDataSelector(state);
   const propertyTypes = propertyTypeSelector(state);
   const serviceIncludes = getPlanConvertedIncludes(propertyTypes, usageTypesData, service, convertToBaseUnit); // eslint-disable-line max-len
-  return service.withMutations((itemWithMutations) => {
+  const serviceWithNewRecurrence = convertToNewRecurrence(service);
+  return serviceWithNewRecurrence.withMutations((itemWithMutations) => {
     if (!serviceIncludes.isEmpty()) {
       itemWithMutations.set('include', serviceIncludes);
     }
     if (toSend) { // convert item before send to server
       if (itemWithMutations.getIn(['balance_period', 'type'], '') === 'custom_period') {
         itemWithMutations.setIn(['price', 0, 'to'], 1);
-        itemWithMutations.set('quantitative', false);
         itemWithMutations.set('prorated', false);
       }
       const balancePeriod = convertServiceBalancePeriodToString(itemWithMutations);
@@ -107,7 +133,10 @@ const convertService = (getState, service, convertToBaseUnit, toSend) => {
 };
 
 export const saveService = (service, action) => (dispatch, getState) => {
-  const convertedService = convertService(getState, service, true, true);
+  let convertedService = convertService(getState, service, true, true);
+  if (action === 'create' || convertedService.getIn(['recurrence', 'converted'], false)) {
+    convertedService = convertToOldRecurrence(convertedService);
+  } 
   return dispatch(saveEntity('services', convertedService, action));
 };
 

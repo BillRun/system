@@ -348,7 +348,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			foreach ($rowData as $key => $value) {
 				if (get_class($value) == 'MongoId') {
 					$subscribers[$id][$key] = $id;
-				} else if (get_class($value) == 'MongoDate') {
+				} else if (get_class($value) == 'Mongodloid_Date') {
 					$subscribers[$id][$key] = date('d/m/Y H:i:s', $value->sec);
 				} else if (is_array($value)) {
 					$subscribers[$id][$key] = implode(", ", $value);
@@ -375,7 +375,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			foreach ($rowData as $key => $value) {
 				if (get_class($value) == 'MongoId') {
 					$subscribers[$id][$key] = $id;
-				} else if (get_class($value) == 'MongoDate') {
+				} else if (get_class($value) == 'Mongodloid_Date') {
 					$subscribers[$id][$key] = date('d/m/Y H:i:s', $value->sec);
 				} else if (is_array($value)) {
 					$output[$id][$key] = json_encode($value);
@@ -409,8 +409,8 @@ class UtestController extends Yaf_Controller_Abstract {
 			$searchQuery = array(
 				'sid' => $sid,
 				'urt' => array(
-					'$gte' => new MongoDate($this->testStartTime['sec'], $this->testStartTime['usec']),
-					'$lte' => new MongoDate($this->testEndTime['sec'], $this->testEndTime['usec'])
+					'$gte' => new Mongodloid_Date($this->testStartTime['sec'], $this->testStartTime['usec']),
+					'$lte' => new Mongodloid_Date($this->testEndTime['sec'], $this->testEndTime['usec'])
 				)
 			);
 		}
@@ -481,8 +481,8 @@ class UtestController extends Yaf_Controller_Abstract {
 
 		$searchQuery = array(
 			'from' => array(
-				'$gte' => new MongoDate($this->testStartTime['sec'], $this->testStartTime['usec']),
-				'$lte' => new MongoDate($this->testEndTime['sec'], $this->testEndTime['usec'])
+				'$gte' => new Mongodloid_Date($this->testStartTime['sec'], $this->testStartTime['usec']),
+				'$lte' => new Mongodloid_Date($this->testEndTime['sec'], $this->testEndTime['usec'])
 			)
 		);
 
@@ -493,7 +493,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			foreach ($rowData as $key => $value) {
 				if (get_class($value) == 'MongoId') {
 					$output['rows'][$id][$key] = $id;
-				} else if (get_class($value) == 'MongoDate') {
+				} else if (get_class($value) == 'Mongodloid_Date') {
 					$output['rows'][$id][$key] = date('d/m/Y H:i:s', $value->sec);
 				} else if (is_array($value)) {
 					$output['rows'][$id][$key] = implode(", ", $value);

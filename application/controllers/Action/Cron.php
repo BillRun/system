@@ -24,7 +24,7 @@ class CronAction extends Action_Base {
 			'type' => false,
 		);
 
-		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
+		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
 

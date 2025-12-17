@@ -5,8 +5,9 @@ modules:
         - Asserts
         - \Helper\Api
         - \Helper\BillRunAPI
+        - \Helper\TestHelper
+
         - REST:
-            url: http://web
             depends: PhpBrowser
             part: Json
         - MongoDb:
@@ -17,3 +18,8 @@ modules:
 #              dump: "tests/_data/db_test_dump.tar.gz"
               populate: false
               cleanup: false
+    config:
+        PhpBrowser:
+            url: http://web
+            curl:
+                CURLOPT_TIMEOUT: 180

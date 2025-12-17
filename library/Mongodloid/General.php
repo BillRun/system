@@ -11,5 +11,5 @@
  *
  */
 class Mongodloid_General {
-	const DUPLICATE_UNIQUE_INDEX_ERROR = 11000;
+	const DUPLICATE_UNIQUE_INDEX_ERROR = array(11000, 11001, 12582);
 }

@@ -65,6 +65,12 @@ class ChargeDetails extends Component {
         system: true,
         type: 'number'
       }),
+      simultaneousLimit: Immutable.Map({
+        title: getFieldName('simultaneous_limit', 'charge'),
+        field_name: 'simultaneous_limit',
+        system: true,
+        type: 'number',
+      }),
       proration: Immutable.Map({
         field_name: 'proration',
         title:  getFieldName('proration', 'charge'),
@@ -134,7 +140,7 @@ class ChargeDetails extends Component {
         }
       break;
       case 'key':
-        const valueKey = value.toUpperCase();
+        const valueKey = value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), "_");
         if (value !== '') {
           const { errorMessages: { name: { allowedCharacters } } } = this.props;
           const { errors } = this.state;
@@ -176,15 +182,15 @@ class ChargeDetails extends Component {
     }
   }
 
-  onChangeService = (services) => {
+  onChangeService = (services, path) => {
     const { charge } = this.props;
     const newValuesArray = Immutable.List((services.length) ? services.split(',') : []);
     const defaultNewValue = Immutable.Map({ value: '' });
     if (newValuesArray.isEmpty()) {
-      this.props.onFieldRemove(['subject', 'service']);
+      this.props.onFieldRemove(path);
       this.props.onFieldRemove(['subject', 'matched_services']);
     } else {
-      const existsServices = charge.getIn(['subject', 'service'], Immutable.Map());
+      const existsServices = charge.getIn(path, Immutable.Map());
       const updatedServicesList = Immutable.Map().withMutations((plansWithMutations) => {
         newValuesArray.forEach((newServiceName) => {
           if (newServiceName !== 'matched_services') {
@@ -193,9 +199,9 @@ class ChargeDetails extends Component {
         });
       });
       if (!updatedServicesList.isEmpty()) {
-        this.onChangeFiled(['subject', 'service'], updatedServicesList);
+        this.onChangeFiled(path, updatedServicesList);
       } else {
-        this.props.onFieldRemove(['subject', 'service']);
+        this.props.onFieldRemove(path);
       }
       if (newValuesArray.includes('matched_services')) {
         this.onChangeFiled(['subject', 'matched_services'], charge.getIn(['subject', 'matched_services'], defaultNewValue));
@@ -203,6 +209,14 @@ class ChargeDetails extends Component {
         this.props.onFieldRemove(['subject', 'matched_services']);
       }
     }
+  }
+
+  onChangeAccountService = (services) => {
+    this.onChangeService(services, ['subject', 'customer_service']);
+  }
+
+  onChangeSubscriberService = (services) => {
+    this.onChangeService(services, ['subject', 'service']);
   }
 
   onChangePlan = (plans) => {
@@ -240,7 +254,6 @@ class ChargeDetails extends Component {
     }
   }
 
-
   onChangePlanDiscount = (planName, newSubject) => {
     const path = ['matched_plans', 'monthly_fees'].includes(planName)
       ? ['subject', planName]
@@ -248,12 +261,20 @@ class ChargeDetails extends Component {
     this.onChangeFiled(path, newSubject);
   }
 
-  onChangeServiceDiscountValue = (serviceKey, newSubject) => {
+  onChangeServiceDiscountValue = (serviceKey, newSubject, path) => {
     if ([serviceKey].includes('matched_services')) {
       this.onChangeFiled(['subject', serviceKey], newSubject);
     } else {
-      this.onChangeFiled(['subject', 'service', serviceKey], newSubject);
+      this.onChangeFiled([...path, serviceKey], newSubject);
     }
+  }
+
+  onChangeAccountServiceDiscountValue = (serviceKey, newSubject) => {
+    this.onChangeServiceDiscountValue(serviceKey, newSubject, ['subject', 'customer_service']);
+  }
+
+  onChangeSubscriberServiceDiscountValue = (serviceKey, newSubject) => {
+    this.onChangeServiceDiscountValue(serviceKey, newSubject, ['subject', 'service']);
   }
 
   onChangeConditionField = (path, index, value) => {
@@ -326,10 +347,11 @@ class ChargeDetails extends Component {
       .get('description', key);
   }
 
-  getSelectedServices = () => {
+  getSelectedServices = (type = 'subscriber') => {
     const { charge } = this.props;
     const defaultNewValue = Immutable.Map({ value: '' });
-    let services = charge.getIn(['subject', 'service'], Immutable.Map());
+    const path = (type === 'account') ? ['subject', 'customer_service'] : ['subject', 'service'];
+    let services = charge.getIn(path, Immutable.Map());
     if (charge.hasIn(['subject', 'matched_services'])) {
       services = services.set('matched_services', charge.getIn(['subject', 'matched_services'], defaultNewValue));
     }
@@ -363,9 +385,9 @@ class ChargeDetails extends Component {
     return charge.get('type', '') === 'percentage'
   }
 
-  renderServivesDiscountValues = () => {
+  renderServicesDiscountValues = (type) => {
     const { availableEntities, mode, currency } = this.props;
-    const discountSubject = this.getSelectedServices();
+    const discountSubject = this.getSelectedServices(type);
     if (discountSubject.isEmpty()) {
       return null;
     }
@@ -373,6 +395,9 @@ class ChargeDetails extends Component {
     return discountSubject.map((service, serviceName) => {
       const label = this.getLabel(availableEntities.get('service', Immutable.List()), serviceName);
       const isQuantitative = this.isServiceQuantitative(serviceName);
+      const onChangeCallback = (type === 'account')
+        ? this.onChangeAccountServiceDiscountValue
+        : this.onChangeSubscriberServiceDiscountValue;
       return (
         <DiscountServiceValue
           key={`${paramCase(serviceName)}-charge-value`}
@@ -383,7 +408,7 @@ class ChargeDetails extends Component {
           isQuantitative={isQuantitative}
           isPercentage={isPercentage}
           currency={currency}
-          onChange={this.onChangeServiceDiscountValue}
+          onChange={onChangeCallback}
         />
       );
     })
@@ -428,7 +453,8 @@ class ChargeDetails extends Component {
     const servicesOptions = this.createServicesOptions();
     const excludeDiscounts = charge.get('excludes', Immutable.List()).join(',');
     const excludeDiscountsOptions = this.createExcludeDiscountOptions();
-    const services = this.getSelectedServices().keySeq().toList().join(',');
+    const subscriberServices = this.getSelectedServices('subscriber').keySeq().toList().join(',');
+    const accountServices = this.getSelectedServices('account').keySeq().toList().join(',');
     const plans = this.getSelectedPlans().keySeq().toList().join(',');
     const suffix = isPercentage ? undefined : getSymbolFromCurrency(currency);
     return (
@@ -510,6 +536,13 @@ class ChargeDetails extends Component {
                 editable={editable}
                 error={errors.get('params.max_subscribers', onChangeErrors.paramsMaxSubscribers)}
               />
+              <EntityField
+                field={fields.get('simultaneousLimit')}
+                entity={charge}
+                onChange={this.onChangeFiled}
+                editable={editable}
+                error={errors.get('simultaneous_limit', onChangeErrors.simultaneousLimit)}
+              />
               <FormGroup>
                 <Col componentClass={ControlLabel} sm={3} lg={2}>
                   Excludes
@@ -568,6 +601,27 @@ class ChargeDetails extends Component {
                 </Panel>
               )}
               { isPercentage && (
+                <Panel header={<h3>{getFieldName('panel_customer_service_discount', 'charge')}</h3>}>
+                  <FormGroup>
+                    <Col componentClass={ControlLabel} sm={3} lg={2}>
+                      {getFieldName('select_services', 'charge')}
+                    </Col>
+                    <Col sm={8} lg={9}>
+                      <Field
+                        fieldType="select"
+                        multi={true}
+                        value={accountServices}
+                        options={servicesOptions}
+                        onChange={this.onChangeAccountService}
+                        editable={editable}
+                      />
+                    </Col>
+                  </FormGroup>
+                  { (!this.getSelectedServices('account').isEmpty()) && <hr /> }
+                  { this.renderServicesDiscountValues('account') }
+                </Panel>
+              )}
+              { isPercentage && (
                 <Panel header={<h3>{getFieldName('panel_service_discount', 'charge')}</h3>}>
                 <FormGroup>
                   <Col componentClass={ControlLabel} sm={3} lg={2}>
@@ -577,15 +631,15 @@ class ChargeDetails extends Component {
                     <Field
                       fieldType="select"
                       multi={true}
-                      value={services}
+                      value={subscriberServices}
                       options={servicesOptions}
-                      onChange={this.onChangeService}
+                      onChange={this.onChangeSubscriberService}
                       editable={editable}
                     />
                   </Col>
                 </FormGroup>
-                { (!this.getSelectedServices().isEmpty()) && <hr /> }
-                { this.renderServivesDiscountValues() }
+                { (!this.getSelectedServices('subscriber').isEmpty()) && <hr /> }
+                { this.renderServicesDiscountValues('subscriber') }
               </Panel>
             )}
             { !isPercentage && (

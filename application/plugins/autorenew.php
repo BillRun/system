@@ -27,8 +27,8 @@ class autorenewPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function getAutoRenewsQuery() {
 		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['next_renew'] = array(
-			'$gte' => new MongoDate(strtotime(('midnight'))),
-			'$lt' => new MongoDate(strtotime(('tomorrow midnight'))),
+			'$gte' => new Mongodloid_Date(strtotime(('midnight'))),
+			'$lt' => new Mongodloid_Date(strtotime(('tomorrow midnight'))),
 		);
 		$query['cycles_remaining'] = array('$gt' => 0);
 		return $query;

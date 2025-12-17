@@ -142,7 +142,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 					// TODO: What error is reported?
 					return false;
 				}
-				$returnData[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem, $date_fields);
+				$returnData[] = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($rawItem, $date_fields);
 			}
 		} catch (\MongoException $e) {
 			$errorCode = 0;
@@ -180,16 +180,16 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	 */
 	protected function parseDateParameters() {
 		if (isset($this->query['from']) && $this->query['from'] != '*') {
-			$this->query['from'] = array('$lte' => new MongoDate(strtotime($this->query['from'])));
+			$this->query['from'] = array('$lte' => new Mongodloid_Date(strtotime($this->query['from'])));
 		} else if (!isset($this->query['from'])) {
-			$this->query['from']['$lte'] = new MongoDate();
+			$this->query['from']['$lte'] = new Mongodloid_Date();
 		} else {
 			unset($this->query['from']);
 		}
 		if (isset($this->query['to']) && $this->query['to'] != '*') {
-			$this->query['to'] = array('$gte' => new MongoDate(strtotime($this->query['to'])));
+			$this->query['to'] = array('$gte' => new Mongodloid_Date(strtotime($this->query['to'])));
 		} else if (!isset($this->query['to'])) {
-			$this->query['to']['$gte'] = new MongoDate();
+			$this->query['to']['$gte'] = new Mongodloid_Date();
 		} else {
 			unset($this->query['to']);
 		}
