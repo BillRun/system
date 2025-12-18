@@ -67,10 +67,10 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 				$entry[$field] = $chargeData[$field];
 			}
 		}
-		if (!empty($chargeData['start']) && $this->cycle->start() < $chargeData['start']) {
+		if (!empty($chargeData['start'])) {
 			$entry['start'] = new Mongodloid_Date($chargeData['start']);
 		}
-		if (!empty($chargeData['end']) && $this->cycle->end() - 1 > $chargeData['end']) {
+		if (!empty($chargeData['end'])) {
 			$entry['end'] = new Mongodloid_Date($chargeData['end']);
 		}
 
