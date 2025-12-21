@@ -35,8 +35,9 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
   const lines = item.get('lines', Immutable.List());
   const pg_4_digit = item.get('pg_4_digit', '');
   const note = item.get('note', '');
+  const invoiceUnixtime = item.get('invoice_unixtime', '');
   
-  const downloadExpectedInvoiceUrl = buildRequestUrl(generateOneTimeInvoiceDownloadExpectedQuery(aid, lines, sendMail, note));
+  const downloadExpectedInvoiceUrl = buildRequestUrl(generateOneTimeInvoiceDownloadExpectedQuery(aid, lines, sendMail, note, invoiceUnixtime));
   const downloadInvoiceUrl = `${getConfig(['env','serverApiUrl'], '')}/api/accountinvoices?action=download&aid=${aid}&iid=${invoiceId}`;
   const advancedOptionsStyle = {textAlign: 'left', maxWidth: 250, margin: '0 auto'};
   
@@ -58,7 +59,7 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
 
   const onConfirmInvoice = () => {
     setInConfirmProgress(true);
-    dispatch(generateOneTimeInvoice(aid, lines ,invoiceType, false, note))
+    dispatch(generateOneTimeInvoice(aid, lines ,invoiceType, false, note, invoiceUnixtime))
     .then((success) => {
         const invoice_id = success?.data?.invoice_id;
         if (isNumber(invoice_id)) {
