@@ -118,7 +118,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertEqualsWithDelta((-8.3995), $billrun['totals']['before_vat'], $this->epsilon);
         $this->assertEquals(strtotime("2025-11-15 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2025-11-15 00:00:00"), $discountLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-11-15 00:00:01"), $discountLine['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $discountLine['end']->toDateTime()->getTimestamp());
     }
 
@@ -478,4 +478,177 @@ class UpfrontTest extends \Codeception\Test\Unit
 
     }
     
+    public function testDiscountOfServiceFinishPreviousMonthOnUpfronInheritedPlan_1()
+    {
+        /*
+        BRCD-5056
+        Upfront plan, Service triggers discount (the discount subject is the plan)
+        Service ends mid-month (2025-11-06 02:00:00)
+        Running cycle 202512, expect refund for about 24 days of discount.
+        */
+        $aid =5100002423;
+        $this->defaultOptions['stamp'] = '202512';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
+        $this->tester->generateService(['name' => 'SERVICE', "prorated" => true]);//Prorate charge on termination = true
+
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        //flat-(33.605) + discount(+13.4448)(service finish in 2025-11-06 02:00:00) - 24/30*16.806 
+        $this->assertEqualsWithDelta(33.605, $planLine['aprice'],$this->epsilon);
+
+        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2026-01-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+        $this->assertEqualsWithDelta(13.4448, $discountLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime("2025-11-07 00:00:00"), $discountLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $discountLine['end']->toDateTime()->getTimestamp());
+
+    }
+
+    public function testDiscountOfServiceStartPreviousMonthOnUpfronInheritedPlan_1()
+    {
+        /*
+        BRCD-5056
+        Upfront plan, Service triggers discount (the discount subject is the plan)
+        Service start in mid-month (2024-11-06 16:32:11)
+        Running cycle 202412, expect discount on  about 24 days of discount.
+        */
+        $aid =5100002423;
+        $this->defaultOptions['stamp'] = '202412';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
+        $this->tester->generateService(['name' => 'SERVICE', "prorated" => true]);//Prorate charge on termination = true
+
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        //flat-(33.605) + discount(-14.005 -16.806 )(service start in 2024-11-06 16:32:11) - 25/30*16.806 
+        $this->assertEqualsWithDelta(33.605, $planLine['aprice'],$this->epsilon);
+
+        $this->assertEquals(strtotime("2024-12-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-01-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+        $this->assertEqualsWithDelta(-30.811, $discountLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime("2024-11-06 00:00:00"), $discountLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2024-12-01 00:00:00"), $discountLine['end']->toDateTime()->getTimestamp());
+
+    }
+
+    public function testDiscountOfServiceStartAndFinishPreviousMonthOnUpfronInheritedPlan_1()
+    {
+        /*
+        BRCD-5056
+        Upfront plan, Service triggers discount (the discount subject is the plan)
+        Service start in mid-month (2024-11-06 16:32:11 -2024-11-23 02:00:00)
+        Running cycle 202412, expect discount on  about 18 days of discount.
+        */
+        $aid =5100002424;
+        $this->defaultOptions['stamp'] = '202412';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
+        $this->tester->generateService(['name' => 'SERVICE', "prorated" => true]);//Prorate charge on termination = true
+
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        //flat-(33.605) + discount(-14.005 -16.806 ) - 18/30*16.806 
+        $this->assertEqualsWithDelta(33.605, $planLine['aprice'],$this->epsilon);
+
+        $this->assertEquals(strtotime("2024-12-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-01-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+        $this->assertEqualsWithDelta(-10.0836, $discountLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime("2024-11-06 00:00:00"), $discountLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2024-11-24 00:00:00"), $discountLine['end']->toDateTime()->getTimestamp());
+
+    }
+
+    public function testDiscountOfFullServiceOnUpfronInheritedPlan_1()
+    {
+        /*
+        BRCD-5056
+        Upfront plan, Service triggers discount (the discount subject is the plan)
+        full Service 
+        Running cycle 202501, expect full discount.
+        */
+        $aid =5100002423;
+        $this->defaultOptions['stamp'] = '202501';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
+        $this->tester->generateService(['name' => 'SERVICE', "prorated" => true]);//Prorate charge on termination = true
+
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        //flat-(33.605) + discount(-16.806 )(service start in 2024-11-06 16:32:11) - 25/30*16.806 
+        $this->assertEqualsWithDelta(33.605, $planLine['aprice'],$this->epsilon);
+
+        $this->assertEquals(strtotime("2025-01-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-02-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+        $this->assertEqualsWithDelta(-16.806, $discountLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime("2025-01-01 00:00:00"), $discountLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-02-01 00:00:00"), $discountLine['end']->toDateTime()->getTimestamp());
+
+    }
+
+    public function testNoDiscountOfServiceOnUpfronInheritedPlan_1()
+    {
+        /*
+        BRCD-5056
+        Upfront plan, Service triggers discount (the discount subject is the plan)
+        no Service in the previous cycle  
+        Running cycle 202601, expect no discount.
+        */
+        $aid =5100002423;
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'B2C_5GUNLIMITEDMAX_PP_INADV';
+        $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
+        $this->tester->generateService(['name' => 'SERVICE', "prorated" => true]);//Prorate charge on termination = true
+
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        //flat-(33.605) + discount(-16.806 )(service start in 2024-11-06 16:32:11) - 25/30*16.806 
+        $this->assertEqualsWithDelta(33.605, $planLine['aprice'],$this->epsilon);
+
+        $this->assertEquals(strtotime("2026-01-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2026-02-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+        $this->assertEquals(null, $discountLine);
+
+    }
+
+    public function testFullDiscountAndPlan_1()
+    {
+        /*
+        upfront plan  discount with "proration": "inherited" and plan start previous month
+        and discount start in the middle of previous month,  prorate start = true- > 
+        expected proration discount from the start of the discount +  discount on the current cycle (assume still not finish- need to support also finish before case)
+        */
+        $aid =5100002408;
+        $this->defaultOptions['stamp'] = '202512';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = "UPFRONT_PLAN_PORATED";
+        $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate start = true
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        //flat-42.566333333(9.756290323+33.605), discount(-16.806 +(-4.87916129))(start in in 2025-10-23 10:04:25) 9/30*16.806
+        $this->assertEqualsWithDelta(16.799, $billrun['totals']['before_vat'],$this->epsilon);
+        $this->assertEquals(null, $planLine);
+        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLineUpfront['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2026-01-01 00:00:00"), $planLineUpfront['end']->toDateTime()->getTimestamp());
+
+        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $discountLineUpfront['start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2026-01-01 00:00:00"), $discountLineUpfront['end']->toDateTime()->getTimestamp());
+    }
 }

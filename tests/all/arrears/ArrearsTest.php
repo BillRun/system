@@ -21,25 +21,13 @@ class ArrearsTest extends \Codeception\Test\Unit
     {
         ini_set('error_reporting', E_ALL & ~E_WARNING & ~E_NOTICE);
         $this->tester->enableExternalModeSettings();
-        $this->cleanDB();
+        $this->tester->cleanDB();
     }
 
     protected function _after()
     {
     }
-    
-    protected function cleanDB(){
 
-        $plans = Billrun_Factory::db()->plansCollection();
-        $plans->remove(['_id'=>['$exists' => true]]);
-        $lines = Billrun_Factory::db()->linesCollection();
-        $lines->remove(['_id'=>['$exists' => true]]);
-        $billruns = Billrun_Factory::db()->billrunCollection();
-        $billruns->remove(['_id'=>['$exists' => true]]);
-        $billing_cycleCollection = Billrun_Factory::db()->billing_cycleCollection();
-        $billing_cycleCollection->remove(['_id'=>['$exists' => true]]);
-
-    }
 
     
 
@@ -51,8 +39,8 @@ class ArrearsTest extends \Codeception\Test\Unit
         $aid =5100002472;
         $this->defaultOptions['stamp'] = '202512';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'PLAN_5080';
-        $discount_name = 'DIS_PLAN_5080';
+        $planName = 'PLAN_5076';
+        $discount_name = 'DIS_PLAN_5076';
         $this->tester->generatePlan(['name' => $planName]);// charge on termination = true
         $this->tester->generateDiscount([
             "from" => "2025-08-01T21:00:00Z",
