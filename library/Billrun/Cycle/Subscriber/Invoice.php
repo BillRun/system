@@ -652,11 +652,11 @@ class Billrun_Cycle_Subscriber_Invoice {
 				$row_value = Billrun_Util::getIn($row, $field['field_name'], 0);
 				Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field['field_name'], $current_grouping_value + $row_value);
 			}elseif($field['op'] == 'min') {
-				$row_value = Billrun_Util::getIn($row, $field['field_name'], 0);
+				$row_value = Billrun_Util::getIn($row, $field['field_name'], null);
 				$current_grouping_value = Billrun_Util::getIn($this->data['totals']['grouping'][$index], $field['field_name'], $row_value);
 				Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field['field_name'], min($current_grouping_value, $row_value));
 			}elseif($field['op'] == 'max') {
-				$row_value = Billrun_Util::getIn($row, $field['field_name'], 0);
+				$row_value = Billrun_Util::getIn($row, $field['field_name'], null);
 				$current_grouping_value = Billrun_Util::getIn($this->data['totals']['grouping'][$index], $field['field_name'], $row_value);
 				Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field['field_name'], max($current_grouping_value, $row_value));
 			}

@@ -105,7 +105,9 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 					'end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() && $this->endProration  ? $this->deactivation : $cycle->end()),
 					'is_upfront' =>  $isUpfront,
 					'prorated_start' =>  $this->proratedStart,
-					'prorated_end' =>  $endProration
+					'prorated_end' =>  $endProration,
+					'activation_date' => $this->activation,
+					'deactivation_date' => $this->deactivation
 					];
 	}
 

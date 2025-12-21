@@ -38,8 +38,8 @@ class ArrearsTest extends \Codeception\Test\Unit
         $aid =5100002472;
         $this->defaultOptions['stamp'] = '202512';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'PLAN_5080';
-        $discount_name = 'DIS_PLAN_5080';
+        $planName = 'PLAN_5076';
+        $discount_name = 'DIS_PLAN_5076';
         $this->tester->generatePlan(['name' => $planName]);// charge on termination = true
         $this->tester->generateDiscount([
             "from" => "2025-08-01T21:00:00Z",
@@ -74,8 +74,8 @@ class ArrearsTest extends \Codeception\Test\Unit
         $this->tester->runCycle($this->defaultOptions);
         // $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine1 = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'key'=>'SUBSCRIBER_DISCOUNT_1'));
-        $discountLine2 = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'key'=>'SUBSCRIBER_DISCOUNT_2'));
+        $discountLine1 = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'key'=>'SUBSCRIBER_DISCOUNT_1_PLAN_5076'));
+        $discountLine2 = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'key'=>'SUBSCRIBER_DISCOUNT_2_PLAN_5076'));
 
   
         $this->assertEqualsWithDelta(22.403333333, $planLine['aprice'],$this->epsilon);
