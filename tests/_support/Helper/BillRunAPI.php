@@ -327,7 +327,7 @@ class BillRunAPI extends \Codeception\Module
 
         return $this->generateAccount($account);
     }
-    public function getCustomFields($entity) {
+    public function getModel($entity) {
         switch ($entity) {
             case 'account':
                 $model = new \Models_Accounts(['collection' => 'accounts', 'no_init' => true]);
@@ -345,7 +345,11 @@ class BillRunAPI extends \Codeception\Module
                 $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
                 break;
         }
+        return $model;
+    }
 
+    public function getCustomFields($entity) {
+        $model = $this->getModel($entity);
         $mandatoryFields = $model->getMandatoryCustomFields();
         $populatedValues = [];
         foreach ($mandatoryFields as $field) {
@@ -449,7 +453,7 @@ class BillRunAPI extends \Codeception\Module
      * create an service.
      * @param Array $override - fields to override the default values 
      */
-    public function generateService(array $override = [])
+    public function generateService(array $override = [], $byApi= false)
     {
         $customeFields = $this->getCustomFields('service');
         $override = array_merge($customeFields, $override);
@@ -476,8 +480,21 @@ class BillRunAPI extends \Codeception\Module
                 "start" => 1
             ],
         ], $override);
+        if($byApi){
+            $this->sendBillapiCreate($service, 'services');
 
-        $this->sendBillapiCreate($service, 'services');
+        }else{
+            if(isset($service["from"]) && !($service["from"] instanceof \Mongodloid_Date)){
+                $service["from"] = new \Mongodloid_Date(strtotime($service['from']));
+            }
+            if(isset($service["to"]) && !($service["to"] instanceof \Mongodloid_Date)){
+                $service["to"] = new \Mongodloid_Date(strtotime($service['to']));
+            }
+            $model = $this->getModel('service');
+            $model->setUpdate($service);
+            $model->create();
+        }
+
     }
 
         /**
