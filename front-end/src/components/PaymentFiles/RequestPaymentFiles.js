@@ -432,7 +432,14 @@ class RequestPaymentFiles extends Component {
       data = data.set('pay_mode', payModeValue);
     }
     if (data.has('min_invoice_date')) {
-      data = data.set('min_invoice_date', moment(data.get('min_invoice_date')).format('YYYY-MM-DD'));
+      const minInvoiceDate = data.get('min_invoice_date');
+
+      data = data.set(
+          'min_invoice_date',
+          minInvoiceDate && moment(minInvoiceDate).isValid()
+              ? moment(minInvoiceDate).format('YYYY-MM-DD')
+              : undefined
+      );
     }
     if (data.has('collection_date')) {
       data = data.set('collection_date', moment(data.get('collection_date')).format('YYYY-MM-DD'));
@@ -440,7 +447,7 @@ class RequestPaymentFiles extends Component {
     return this.props
       .dispatch(sendGenerateNewFile(paymentGateway, fileType, data))
       .then(this.afterSuccessGenerateNewFile)
-      .catch((error) => Promise.reject());
+      .catch(() => Promise.reject());
   };
 
   afterSuccessGenerateNewFile = () => {
