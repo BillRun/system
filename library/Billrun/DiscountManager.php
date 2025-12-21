@@ -1531,7 +1531,6 @@ class Billrun_DiscountManager {
 			}
 			$to = min($to, $toByCycles, $this->cycle->end());
 		}
-
 		if(!$isSequential){
 			if(isset($cycles) && $to <= $this->cycle->start()){
 				$amount = 0;
@@ -1564,7 +1563,7 @@ class Billrun_DiscountManager {
 							$amount = $flatAmount;
 						}
 					}else{
-						$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line);//i don't think this will work for seperatedCrossCycleCharges = false
+						$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line);
 					}
 				}
 			}else{

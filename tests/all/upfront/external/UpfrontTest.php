@@ -457,6 +457,26 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertEqualsWithDelta(12.091599999999996, $billrun['totals']['before_vat'],$this->epsilon);
 
     }
+
+
+    public function testChangeSubFroUpfrontPlanToUpfrontPlan_2()
+    {
+        /*
+        BRCD-5088: Change Subscriber Upfront Plan To Upfront Plan
+        */
+        $aid =5100002593;
+        $this->defaultOptions['stamp'] = '202602';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName1 = 'B2C_UPFRONT_1_BRCD_5093';
+        $planName2= 'B2C_UPFRONT_2_BRCD_5093';
+        $this->tester->generatePlan(['name' => $planName1, "upfront" => 1]);// charge on termination = true
+        $this->tester->generatePlan(['name' => $planName2, "upfront" => 1]);// charge on termination = true
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta(5.250967741935486, $billrun['totals']['before_vat'],$this->epsilon);
+
+
+    }
     
     public function testDiscountOfServiceFinishPreviousMonthOnUpfronInheritedPlan_1()
     {
