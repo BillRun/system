@@ -22,6 +22,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	const STEP_PDF_ONLY = 0;
 	const STEP_PDF_AND_BILL = 1;
 	const STEP_FULL = 2;
+	const ERROR_CODE_MIN_BACKDATE = 17579;
 
 	protected $aid;
 	
@@ -646,7 +647,12 @@ class OnetimeinvoiceAction extends ApiAction {
 		$backdating_limit = Billrun_Util::calcRelativeTime($backdate_config['relative_time'], strtotime($backdate_config['anchor_field']));
 		foreach (array_merge($cdrs_urt, $oneTime_stamp) as $time) {
 			if ($time < $backdating_limit) {
-				$this->setError("One of the given dates, " . date("Y-m-d H:i:s", $time) . ", is older than allowed. Dates have to be after " . date("Y-m-d H:i:s", $backdating_limit));
+				$error = array(
+					'status' => 0,
+					'desc' => "One of the given dates, " . date("Y-m-d H:i:s", $time) . ", is older than allowed. Dates have to be after " . date("Y-m-d H:i:s", $backdating_limit),
+					'code' => self::ERROR_CODE_MIN_BACKDATE
+				);
+				$this->getController()->setOutput(array($error));
 				return false;
 			}
 		}
