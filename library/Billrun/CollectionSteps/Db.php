@@ -127,24 +127,10 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		}
 	}
 
-	public function removeCollectionSteps($aid) {
+	public function removeCollectionSteps($aidsQuery) {
 		try {
 			$query = array(
-				'extra_params.aid' => $aid,
-				'notify_time' => array('$exists' => false)
-			);
-			$this->collection->remove($query);
-			return true;
-		} catch (Exception $e) {
-            Billrun_Factory::log('removeCollectionSteps failed for aid: ' . $aid . '. Error: ' . $e->getCode() . " : " . $e->getMessage(), Zend_Log::NOTICE);
-			return false;
-		}
-	}
-
-	public function removeCollectionStepsByInCollection($inCollectionAids) {
-		try {
-			$query = array(
-				'extra_params.aid' => array('$nin' => $inCollectionAids),
+				'extra_params.aid' => $aidsQuery,
 				'notify_time' => array('$exists' => false)
 			);
 			$res = $this->collection->remove($query);
@@ -153,7 +139,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 			}
 			return true;
 		} catch (Exception $e) {
-            Billrun_Factory::log('removeCollectionSteps failed for aids: ' . $inCollectionAids . '. Error: ' . $e->getCode() . " : " . $e->getMessage(), Zend_Log::NOTICE);
+            Billrun_Factory::log('removeCollectionSteps failed for query: ' . print_r($query, 1) . '. Error: ' . $e->getCode() . " : " . $e->getMessage(), Zend_Log::NOTICE);
 			return false;
 		}
 	}

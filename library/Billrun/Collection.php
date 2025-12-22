@@ -62,7 +62,7 @@ class Billrun_Collection extends Billrun_Base {
 	protected function removeAllCollectionStepsOfCustomerNotInCollection(){
 		Billrun_Factory::log()->log("Removing any future collection steps for a customer not in collection of all processes", Zend_Log::DEBUG);
 		$collectionSteps = Billrun_Factory::collectionSteps();
-		$res = $collectionSteps->removeCollectionStepsByInCollection($this->reallyInCollectionAids);
+		$res = $collectionSteps->removeCollectionSteps(array('$nin' => $this->reallyInCollectionAids));
 	}
 
 	/**
