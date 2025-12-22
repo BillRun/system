@@ -70,28 +70,50 @@ export const getPaymentGatewaysQuery = () => ({
   action: 'list',
 });
 
-export const getUserLoginQuery = (username, password) => {
+export const getUserLoginQuery = (username, password, protocol = 'Internal', provider = null) => {
   const formData = new FormData();
-  formData.append('username', username);
-  formData.append('password', password);
+  if (username) {
+    formData.append('username', username);
+  }
+  if (password) {
+    formData.append('password', password);
+  }
+  
+  const params = [{ protocol }];
+  if (provider) {
+    params.push({ provider });
+  }
+
   return ({
-    api: 'auth',
+    api: 'Auth',     
+    action: 'login', 
+    params,
     options: {
       method: 'POST',
-      body: formData,
+      body: formData, 
     },
   });
 };
 
-export const getUserLogoutQuery = () => ({
-  api: 'auth',
+export const getUserLogoutQuery = (protocol = 'Internal') => ({
+  api: 'Auth',
+  action: 'logout',
   params: [
-    { action: 'logout' },
+    { protocol },
   ],
 });
 
 export const getUserCheckLoginQuery = () => ({
-  api: 'auth',
+  api: 'Auth',
+  action: 'login',
+  params: [
+    { protocol: 'Internal' },
+  ],
+});
+
+export const getAuthOptionsQuery = () => ({
+  api: 'Auth',
+  action: 'options',
 });
 
 export const saveFileQuery = (file, metadata) => {
@@ -998,3 +1020,18 @@ export const pushToConfirmQueueQuery = (billrun_key, include_aids = [], exclude_
     },
   });
 }
+
+export const getExternalLoginQuery = (protocol, returnTo, provider) => {
+  const params = [
+    { protocol },
+    { return_to: returnTo },
+  ];
+  if (provider) {
+    params.push({ provider });
+  }
+  return ({
+    api: 'Auth',
+    action: 'login',
+    params,
+  });
+};

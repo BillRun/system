@@ -2217,4 +2217,15 @@ class Billrun_Util {
 				Billrun_Util::generateArrayStamp( $arr2, $filterFields, true);
 	}
 
+	/**
+	 * Get the base URL from the request object.
+	 */
+	public static function getBaseUrl($request)
+	{
+		$server = $request->getServer();
+		$host = $server['HTTP_HOST'];
+		$protocol = (!empty($server['HTTPS']) && $server['HTTPS'] !== 'off') ? 'https' : 'http';
+		return $protocol . '://' . $host . '/';
+	}
+
 }
