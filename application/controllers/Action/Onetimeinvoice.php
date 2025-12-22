@@ -74,6 +74,8 @@ class OnetimeinvoiceAction extends ApiAction {
 			}
 			$expectedInvoice = $this->expectedInvoice($chargingOptions, $expected ? true : false);
 			$expectedInvoiceData = $expectedInvoice->getInvoice()->getRawData();
+			br_yaf_register_autoload('Generator', APPLICATION_PATH . '/application/helpers');
+
 			$results = [
 				'pdfPath' => Generator_WkPdf::getTempDir($chargingOptions['oneTimeStamp']) . "/pdf/{$chargingOptions['oneTimeStamp']}_{$this->aid}_{$expectedInvoiceData['invoice_id']}.pdf",
 				'invoiceData' => $expectedInvoiceData,
