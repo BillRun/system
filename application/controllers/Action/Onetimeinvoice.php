@@ -129,6 +129,10 @@ class OnetimeinvoiceAction extends ApiAction {
 			//Error message will be provided  for the  spesific CDR for within processCDRs  function
 			return false;
 		}
+		//Validate invoice and CDRs dates
+		if (!empty(Billrun_Factory::config()->getConfigValue("billrun.immediate_invoice.min_backdate", [])) && !$this->validateInvoiceBackdating($chargingOptions)) {
+			return false;
+		}
 
 		// run aggregate on cdrs generate invoice
 		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
@@ -189,6 +193,9 @@ class OnetimeinvoiceAction extends ApiAction {
 			//Error message will be provided  for the  spesific CDR for within processCDRs  function
 			return false;
 		}
+		if (!empty(Billrun_Factory::config()->getConfigValue("billrun.immediate_invoice.min_backdate", [])) && !$this->validateInvoiceBackdating($chargingOptions)) {
+			return false;
+		}
 		
 
 		// run aggregate on cdrs and fake invoice generate invoice
@@ -218,6 +225,9 @@ class OnetimeinvoiceAction extends ApiAction {
 
 		if (empty($this->processsedCdrs)) {
 			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
+		}
+		if (!empty(Billrun_Factory::config()->getConfigValue("billrun.immediate_invoice.min_backdate", [])) && !$this->validateInvoiceBackdating($chargingOptions)) {
+			return false;
 		}
 
 		$fakeInvoice = $this->expectedInvoice($chargingOptions);
@@ -621,6 +631,24 @@ class OnetimeinvoiceAction extends ApiAction {
 		if (abs($adj_total_amount) > abs($invoice_amount)) {
 			$this->setError("Adjusted total amount " . $adj_total_amount . " is bigger than immediate invoice total amount " . $invoice_amount);
 			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Function to check backdating block
+	 * @return bool
+	 */
+	protected function validateInvoiceBackdating($charging_options) {
+		$oneTime_stamp = isset($charging_options["request"]["invoice_unixtime"]) ?  [intval($charging_options["request"]["invoice_unixtime"])] : [];
+		$cdrs_urt = array_map(fn($cdr) => $cdr['urt']->sec, $this->processsedCdrs);
+		$backdate_config = Billrun_Factory::config()->getConfigValue("billrun.immediate_invoice.min_backdate");
+		$backdating_limit = Billrun_Util::calcRelativeTime($backdate_config['relative_time'], strtotime($backdate_config['anchor_field']));
+		foreach (array_merge($cdrs_urt, $oneTime_stamp) as $time) {
+			if ($time < $backdating_limit) {
+				$this->setError("One of the given dates, " . date("Y-m-d H:i:s", $time) . ", is older than allowed. Dates have to be after " . date("Y-m-d H:i:s", $backdating_limit));
+				return false;
+			}
 		}
 		return true;
 	}
