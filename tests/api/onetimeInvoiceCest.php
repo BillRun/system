@@ -2,7 +2,7 @@
 
 
 class onetimeInvoiceCest
-{  
+{
     protected $configModel;
     protected $accessToken;
     protected $accountDetails;
@@ -12,15 +12,11 @@ class onetimeInvoiceCest
     public function _before(ApiTester $I)
     {
         $this->configModel = new ConfigModel();
-        $this->cleanDB();
+        $I->cleanDB();
+        $this->resetBackdateConfig();
     }
 
-    protected function cleanDB() {
-        $plans = Billrun_Factory::db()->plansCollection();
-        $plans->remove(['name' => "ONETIME_INVOICE_TEST_PLAN"]);
-        $rates = Billrun_Factory::db()->ratesCollection();
-        $rates->remove(['key' => "ONETIME_INVOICE_TEST_RATE"]);
-
+    protected function resetBackdateConfig() {
         Billrun_Config::getInstance()->loadDbConfig();
         $current_conf = $this->configModel->getConfig();
         if (isset($current_conf['billrun']['immediate_invoice'])) {
@@ -32,21 +28,12 @@ class onetimeInvoiceCest
         Billrun_Config::getInstance()->loadDbConfig();
     }
 
-    protected function CreateData(ApiTester $I)
+    protected function createData(ApiTester $I)
     {
         $I->createAccountWithAllMandatorySystemFields([]);
         $this->accountDetails = json_decode($I->grabResponse(), true)['entity'];
         $I->generatePlan(['name' => 'ONETIME_INVOICE_TEST_PLAN']);
         $this->planDetails = json_decode($I->grabResponse(), true)['entity'];
-        $I->generateSubscriber(
-            [
-                'firstname' => 'onetime_invoice_test',
-                'lastname' => 'onetime_invoice_test',
-                'aid' => $this->accountDetails['aid'],
-                'plan' => $this->planDetails['name']
-            ]
-        );
-        $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
         $BaseRateDetails = [
             'key' => 'ONETIME_INVOICE_TEST_RATE',
             "rates" => [
@@ -88,10 +75,14 @@ class onetimeInvoiceCest
 
     public function testOnetime_invoice_min_backdate(ApiTester $I)
     {
-        $this->CreateData($I);
+        $this->createData($I);
+        $aid = $this->accountDetails['aid'];
+        $rate = "ONETIME_INVOICE_TEST_RATE";
+        $aprice = 10;
         //BC
         $credit_time = date('Y-m-d\TH:i:s.v\Z', strtotime("-4 days"));
-        $I->sendAuthenticatedGET('/api/onetimeinvoice?cdrs=[{"aid":' . $this->accountDetails['aid'] . ',"sid":' . $this->subscriberDetails['sid'] . ',"rate":"ONETIME_INVOICE_TEST_RATE","credit_time":"' . $credit_time . '","usagev":1,"type":"credit","aprice":10}]&aid=' . $this->accountDetails['aid'] . '&send_email=0&step=0&allow_bill=1&expected=0&invoice_unixtime=' . time());
+        $cdr = ["aid" => $aid, "rate" => $rate, "credit_time" => $credit_time, "aprice" => $aprice];
+        $I->sendOnetimeInvoiceApi($this->getCdrs([$cdr]), $aid, ['send_email' => 0, 'step' => 0]);
         $I->dontSeeResponseContainsJson([
             'status' => 0
         ]);
@@ -99,18 +90,28 @@ class onetimeInvoiceCest
         $this->setMinBackdateConfiguration();
 
         //Check api with old credit time of 1 CDR out of 2
-        $allowed_credit_time = date('Y-m-d\TH:i:s.v\Z', strtotime("now"));
-        $I->sendAuthenticatedGET('/api/onetimeinvoice?cdrs=[{"aid":' . $this->accountDetails['aid'] . ',"sid":' . $this->subscriberDetails['sid'] . ',"rate":"ONETIME_INVOICE_TEST_RATE","credit_time":"' . $credit_time . '","usagev":1,"type":"credit","aprice":10},{"aid":' . $this->accountDetails['aid'] . ',"sid":' . $this->subscriberDetails['sid'] . ',"rate":"ONETIME_INVOICE_TEST_RATE","credit_time":"' . $allowed_credit_time . '","usagev":1,"type":"credit","aprice":11}]&aid=' . $this->accountDetails['aid'] . '&send_email=0&step=0&allow_bill=1&expected=0&invoice_unixtime=' . time());
+        $cdr_allowed_credit_time = $cdr;
+        unset($cdr_allowed_credit_time['credit_time']);
+        $I->sendOnetimeInvoiceApi($this->getCdrs([$cdr, $cdr_allowed_credit_time]), $aid, ['send_email' => 0, 'step' => 0]);
         $I->seeResponseContainsJson([
             'code' => 17579
         ]);
 
         //Old invoice unixtime
-        $allowed_credit_time = date('Y-m-d\TH:i:s.v\Z', strtotime("now"));
-        $I->sendAuthenticatedGET('/api/onetimeinvoice?cdrs=[{"aid":' . $this->accountDetails['aid'] . ',"sid":' . $this->subscriberDetails['sid'] . ',"rate":"ONETIME_INVOICE_TEST_RATE","credit_time":"' . $allowed_credit_time . '","usagev":1,"type":"credit","aprice":11}]&aid=' . $this->accountDetails['aid'] . '&send_email=0&step=0&allow_bill=1&expected=0&invoice_unixtime=' . strtotime("-5 days"));
+        $I->sendOnetimeInvoiceApi($this->getCdrs([$cdr_allowed_credit_time]), $aid, ['send_email' => 0, 'step' => 0, 'invoice_unixtime' => strtotime("-5 days")]);
         $I->seeResponseContainsJson([
             'code' => 17579
         ]);
+    }
+
+    public function getCdrs($cdrs) {
+        foreach ($cdrs as &$cdr) {
+            $cdr['sid'] = isset($cdr['sid']) ? $cdr['sid'] : 0;
+            $cdr['usagev'] = isset($cdr['usagev']) ? $cdr['usagev'] : 1;
+            $cdr['type'] = isset($cdr['type']) ? $cdr['type'] : 'credit';
+            $cdr['credit_time'] = isset($cdr['credit_time']) ? $cdr['credit_time'] : date('Y-m-d\TH:i:s.v\Z', strtotime("now"));
+        }
+        return $cdrs;
     }
 
 }
