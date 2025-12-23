@@ -131,7 +131,7 @@ class OnetimeinvoiceAction extends ApiAction {
 			return false;
 		}
 		//Validate invoice and CDRs dates
-		if (!empty(Billrun_Factory::config()->getConfigValue("billrun.immediate_invoice.min_backdate", [])) && !$this->validateInvoiceBackdating($chargingOptions)) {
+		if (!$this->validateInvoiceBackdating($chargingOptions)) {
 			return false;
 		}
 
@@ -194,7 +194,8 @@ class OnetimeinvoiceAction extends ApiAction {
 			//Error message will be provided  for the  spesific CDR for within processCDRs  function
 			return false;
 		}
-		if (!empty(Billrun_Factory::config()->getConfigValue("billrun.immediate_invoice.min_backdate", [])) && !$this->validateInvoiceBackdating($chargingOptions)) {
+		//Validate invoice and CDRs dates
+		if (!$this->validateInvoiceBackdating($chargingOptions)) {
 			return false;
 		}
 		
@@ -227,7 +228,8 @@ class OnetimeinvoiceAction extends ApiAction {
 		if (empty($this->processsedCdrs)) {
 			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
 		}
-		if (!empty(Billrun_Factory::config()->getConfigValue("billrun.immediate_invoice.min_backdate", [])) && !$this->validateInvoiceBackdating($chargingOptions)) {
+		//Validate invoice and CDRs dates
+		if (!$this->validateInvoiceBackdating($chargingOptions)) {
 			return false;
 		}
 
@@ -641,6 +643,9 @@ class OnetimeinvoiceAction extends ApiAction {
 	 * @return bool
 	 */
 	protected function validateInvoiceBackdating($charging_options) {
+		if (empty(Billrun_Factory::config()->getConfigValue("billrun.immediate_invoice.min_backdate", []))) {
+			return true;
+		}
 		$oneTime_stamp = isset($charging_options["request"]["invoice_unixtime"]) ?  [intval($charging_options["request"]["invoice_unixtime"])] : [];
 		$cdrs_urt = array_map(fn($cdr) => $cdr['urt']->sec, $this->processsedCdrs);
 		$backdate_config = Billrun_Factory::config()->getConfigValue("billrun.immediate_invoice.min_backdate");
