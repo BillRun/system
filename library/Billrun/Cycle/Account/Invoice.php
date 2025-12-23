@@ -437,7 +437,7 @@ class Billrun_Cycle_Account_Invoice {
 		
 		$rawData = $this->data->getRawData();
 		if ($this->useMongoTransactions) {
-			if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=') && !Billrun_Factory::db()->isStandalone()) {
+			if (Billrun_Factory::db()->supportsTransactions()) {
 				$this->_saveWithTransaction($rawData);
 			} else {
 				Billrun_Factory::log("Mongo transactions enabled for cycle but not supported on this version. Proceeding without transaction.", Zend_Log::WARN);

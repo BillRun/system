@@ -387,7 +387,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
                 
     	Billrun_Factory::log("Removing billrun of " . $billrunKey . $addToLogMesaage, Zend_Log::DEBUG);
 		if (Billrun_Factory::config()->getConfigValue('customer.aggregator.db_transactions', false) === true) {
-			if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=') && !Billrun_Factory::db()->isStandalone()) {
+			if (Billrun_Factory::db()->supportsTransactions()) {
 				self::_removeWithTransaction($subsCascadeRemoveQuery, $groupingCascadeRemoveQuery, $billrunColl, $billrunSubsColl, $billrunGroupingColl, $billrunRemoveQuery);
 			} else {
 				Billrun_Factory::log("Mongo transactions enabled for cycle but not supported on this version. Proceeding without transaction.", Zend_Log::WARN);
