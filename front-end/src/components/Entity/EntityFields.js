@@ -25,6 +25,7 @@ class EntityFields extends Component {
     errors: PropTypes.instanceOf(Immutable.Map),
     highlightParams: PropTypes.instanceOf(Immutable.List),
     fieldsFilter: PropTypes.func,
+    defaultHiddenFields: PropTypes.instanceOf(Immutable.List),
     editable: PropTypes.bool,
     isPlaysEnabled: PropTypes.bool,
     onChangeField: PropTypes.func,
@@ -38,6 +39,7 @@ class EntityFields extends Component {
     errors: Immutable.Map(),
     highlightParams: null,
     fieldsFilter: null,
+    defaultHiddenFields: Immutable.List(['tariff_category', 'play']),
     editable: true,
     isPlaysEnabled: false,
     onChangeField: () => {},
@@ -116,12 +118,12 @@ class EntityFields extends Component {
     this.props.onChangeField(path, undefined);
   }
 
-  filterPrintableFields = field => (
-    field.get('display', false) !== false
-    // && field.get('editable', false) !== false
-    && field.get('field_name', '') !== 'tariff_category'
-    && field.get('field_name', '') !== 'play'
-  );
+  filterPrintableFields = field => {
+    const { defaultHiddenFields } = this.props;
+    return !defaultHiddenFields.includes(field.get('field_name', ''))
+      // && field.get('editable', false) !== false
+      && field.get('display', false) !== false;
+  } 
 
   filterParamsFields = (field) => {
     const { entity } = this.props;
