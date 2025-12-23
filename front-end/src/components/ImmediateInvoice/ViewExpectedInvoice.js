@@ -36,6 +36,7 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
   const lines = item.get('lines', Immutable.List());
   const pg_4_digit = item.get('pg_4_digit', '');
 
+  // eslint-disable-next-line max-len
   const downloadExpectedInvoiceUrl = buildRequestUrl(generateOneTimeInvoiceDownloadExpectedQuery(aid, lines ,invoiceType, sendMail));
   const downloadInvoiceUrl = `${getConfig(['env','serverApiUrl'], '')}/api/accountinvoices?action=download&aid=${aid}&iid=${invoiceId}`;
   
@@ -97,7 +98,7 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
                 <label className="text-danger"><strong> -</strong></label>
               )}
             </span>
-            <form  method="post" action={downloadExpectedInvoiceUrl} target="_blank" className='mt10 mb10 ml15'>
+            <form method="post" action={downloadExpectedInvoiceUrl} target="_blank" className='mt10 mb10 ml15'>
                 <Button bsStyle='primary' type="submit" disabled={isInvoiceConfirmed || inConfirmProgress}>
                   <i className="fa fa-download" /> {getFieldName('btn_download_expected_invoice', 'immediate_invoice')}
                 </Button>
