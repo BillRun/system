@@ -4,10 +4,10 @@ class AuthController extends ApiController {
 
     public function loginAction() {
         $protocolType = $this->getRequest()->get('protocol', 'internal');
-        $authAction = $this->getAuthWorker($protocolType);
+        $authProvider = $this->getAuthProvider($protocolType);
 
-        if ($authAction) {
-            $result = $authAction->login();
+        if ($authProvider) {
+            $result = $authProvider->login();
             if (is_array($result)) {
                 $this->setOutput($result);
                 
@@ -20,16 +20,16 @@ class AuthController extends ApiController {
 
     public function logoutAction() {
         $protocolType = $this->getRequest()->get('protocol', 'internal');
-        $authAction = $this->getAuthWorker($protocolType);
+        $authProvider = $this->getAuthProvider($protocolType);
         
-        if ($authAction) {
-            $result = $authAction->logout();
+        if ($authProvider) {
+            $result = $authProvider->logout();
             $this->setOutput($result);
         }
 
     }
 
-    protected function getAuthWorker($type) {
+    protected function getAuthProvider($type) {
         $cleanType = preg_replace('/[^a-zA-Z0-9]/', '', $type);
         $className = 'Billrun_Auth_' . ucfirst($cleanType);
 
