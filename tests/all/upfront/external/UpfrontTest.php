@@ -22,6 +22,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         ini_set('error_reporting', E_ALL & ~E_WARNING & ~E_NOTICE);
         $this->tester->enableExternalModeSettings();
         $this->tester->cleanDB();
+        $this->changeDiscountsProrationFlags(false);
+
     }
 
     protected function _after()
@@ -62,7 +64,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         but discount finish in the previous month  (for both Prorate charge on termination = false /true)
         -> expected proration charge from the termination of the discount + not discount on the current cycle 0
         */
-        $this->changeDiscountsProrationFlags(false);
+        $this->changeDiscountsProrationFlags(true);
         $aid =5100002413;
         $this->defaultOptions['stamp'] = '202601';
         $this->defaultOptions['force_accounts'] = [$aid];
@@ -80,7 +82,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         
         $this->assertEquals(strtotime("2025-12-23 10:04:25"), $discountLineUpfront['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2026-01-01 00:00:00"), $discountLineUpfront['end']->toDateTime()->getTimestamp());
-        $this->changeDiscountsProrationFlags(true);
+        $this->changeDiscountsProrationFlags(false);
 
     }
 
@@ -191,7 +193,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         but discount start in the middle of previous month,  prorate start = false- > 
         expected proration discount from the start of the discount +  discount on the current cycle (assume still not finish- need to support also finish before case)
         */
-        $this->changeDiscountsProrationFlags(false);
+        $this->changeDiscountsProrationFlags(true);
         $aid =5100002418;
         $this->defaultOptions['stamp'] = '202511';
         $this->defaultOptions['force_accounts'] = [$aid];
@@ -214,7 +216,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertEquals(strtotime("2025-11-01 00:00:00"), $discountLine['end']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-11-01 00:00:00"), $discountLineUpfront['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $discountLineUpfront['end']->toDateTime()->getTimestamp());
-        $this->changeDiscountsProrationFlags(true);
+        $this->changeDiscountsProrationFlags(false);
 
     }
 
@@ -344,7 +346,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         but discount start in the middle of previous month , and also finish in the middle of month  
         -> expected proration discount from the start+ end of the discount +  not discount on the current cycle
         */
-        $this->changeDiscountsProrationFlags(false);
+        $this->changeDiscountsProrationFlags(true);
         $aid =5100002417;
         $this->defaultOptions['stamp'] = '202512';
         $this->defaultOptions['force_accounts'] = [$aid];
@@ -360,7 +362,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertEquals(strtotime("2026-01-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-11-10 10:04:25"), $discountLine['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-11-23 10:04:25"), $discountLine['end']->toDateTime()->getTimestamp());
-        $this->changeDiscountsProrationFlags(true);
+        $this->changeDiscountsProrationFlags(false);
 
     }
     public function testDiscountStartMiddleMonthAndFinishMiddleMonth_3()
@@ -554,7 +556,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         /*
         BRCD-5088: Change Subscriber Upfront Plan To Upfront Plan
         */
-        $this->changeDiscountsProrationFlags(false);
+        $this->changeDiscountsProrationFlags(true);
 
         $aid =5100002593;
         $this->defaultOptions['stamp'] = '202602';
@@ -566,13 +568,13 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $this->assertEqualsWithDelta(5.250967741935486, $billrun['totals']['before_vat'],$this->epsilon);
-        $this->changeDiscountsProrationFlags(true);
+        $this->changeDiscountsProrationFlags(false);
 
 
     }
 
     private function changeDiscountsProrationFlags($value){
-        \Billrun_Factory::config()->setConfigValue('discounts.align_to_subject_proration_flags', $value);
+        \Billrun_Factory::config()->setConfigValue('discounts.allways_prorated', $value);
     }
 
     
