@@ -90,7 +90,11 @@ export default class SubscriptionServicesDetails extends Component {
     if (!service.hasIn(['ui_flags', 'serviceId'])) {
       return (<Badge>new</Badge>);
     }
-    const existingService = originSubscriptionServices.find(originService => originService.getIn(['ui_flags', 'serviceId'], '') === service.getIn(['ui_flags', 'serviceId'], ''));
+    const existingService = originSubscriptionServices.find(
+      originService => originService.getIn(['ui_flags', 'serviceId'], '') === service.getIn(['ui_flags', 'serviceId'], ''),
+      null,
+      Immutable.Map(),
+    );
     if (type === 'byPeriod' && !moment(existingService.get('from', '')).isSame(moment(service.get('from', '')), 'days')) {
       return (<Badge>updated</Badge>);
     }
@@ -275,10 +279,11 @@ export default class SubscriptionServicesDetails extends Component {
     if (servicesQuantity.length + servicesByPeriod.length + servicesNormal.length > 0) {
       return (
         <Panel header="Services Details" className="subscription-services-details">
+           <p>servicesNormal</p>
           <table style={{ width: '100%' }}><tbody>{servicesNormal}</tbody></table>
-          {servicesNormal.length > 0 && servicesQuantity.length > 0 && <hr />}
+          {servicesNormal.length > 0 && servicesQuantity.length > 0 && (<><hr /><p>servicesQuantity</p></>)}
           <table style={{ width: '100%' }}><tbody>{servicesQuantity}</tbody></table>
-          {servicesQuantity.length > 0 && servicesByPeriod.length > 0 && <hr />}
+          {servicesQuantity.length > 0 && servicesByPeriod.length > 0 && (<><hr /><p>servicesByPeriod</p></>)}
           <table style={{ width: '100%' }}><tbody>{servicesByPeriod}</tbody></table>
         </Panel>
       );

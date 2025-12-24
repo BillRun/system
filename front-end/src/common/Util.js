@@ -926,3 +926,16 @@ export const getChargeStatus = (item) => {
   }
   return 'done';
 }
+
+export const getServiceType = (service) => {
+    if (!service || !Immutable.Map.isMap(service)) {
+      return null;
+    }
+    if (service.get('quantitative', false)) {
+      return 'quantitative';
+    }
+    if (service.get('balance_period', 'default') !== 'default') {
+      return 'balance_period';
+    }
+    return 'normal';
+  }
