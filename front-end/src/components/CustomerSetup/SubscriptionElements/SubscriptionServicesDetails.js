@@ -279,11 +279,10 @@ export default class SubscriptionServicesDetails extends Component {
     if (servicesQuantity.length + servicesByPeriod.length + servicesNormal.length > 0) {
       return (
         <Panel header="Services Details" className="subscription-services-details">
-           <p>servicesNormal</p>
           <table style={{ width: '100%' }}><tbody>{servicesNormal}</tbody></table>
-          {servicesNormal.length > 0 && servicesQuantity.length > 0 && (<><hr /><p>servicesQuantity</p></>)}
+          {servicesNormal.length > 0 && servicesQuantity.length > 0 && <hr />}
           <table style={{ width: '100%' }}><tbody>{servicesQuantity}</tbody></table>
-          {servicesQuantity.length > 0 && servicesByPeriod.length > 0 && (<><hr /><p>servicesByPeriod</p></>)}
+          {servicesQuantity.length > 0 && servicesByPeriod.length > 0 && <hr />}
           <table style={{ width: '100%' }}><tbody>{servicesByPeriod}</tbody></table>
         </Panel>
       );
