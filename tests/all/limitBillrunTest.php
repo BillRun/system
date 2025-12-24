@@ -10,7 +10,7 @@ class limitBillrunTest extends \Codeception\Test\Unit
 
     protected function _before()
     {
-      
+        
     }
 
     protected function _after()
@@ -104,8 +104,4 @@ class limitBillrunTest extends \Codeception\Test\Unit
         );
     } 
  
-
-
-    
-    
 }
