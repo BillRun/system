@@ -482,6 +482,7 @@ class BillRunAPI extends \Codeception\Module
         ], $override);
         if($byApi){
             $this->sendBillapiCreate($service, 'services');
+            return $service;
 
         }else{
             if(isset($service["from"]) && !($service["from"] instanceof \Mongodloid_Date)){
@@ -493,6 +494,7 @@ class BillRunAPI extends \Codeception\Module
             $model = $this->getModel('service');
             $model->setUpdate($service);
             $model->create();
+            return $model->getUpdate();
         }
 
     }
