@@ -89,7 +89,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         /*
         upfront plan  discount with "proration": "inherited" and plan not finish
         but discount finish in the previous month  (for both Prorate charge on termination = false /true)
-        -> expected proration charge from the termination of the discount + not discount on the current cycle 0
+        -> expected not proration charge from the termination of the discount + not discount on the current cycle 0
         */
         $aid =5100002413;
         $this->defaultOptions['stamp'] = '202601';
@@ -554,6 +554,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         /*
         BRCD-5088: Change Subscriber Upfront Plan To Upfront Plan
         */
+        $this->changeDiscountsProrationFlags(false);
+
         $aid =5100002593;
         $this->defaultOptions['stamp'] = '202602';
         $this->defaultOptions['force_accounts'] = [$aid];
@@ -564,6 +566,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $this->assertEqualsWithDelta(5.250967741935486, $billrun['totals']['before_vat'],$this->epsilon);
+        $this->changeDiscountsProrationFlags(true);
 
 
     }
