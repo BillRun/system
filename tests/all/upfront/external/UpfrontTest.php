@@ -574,7 +574,7 @@ class UpfrontTest extends \Codeception\Test\Unit
     }
 
     private function changeDiscountsProrationFlags($value){
-        \Billrun_Factory::config()->setConfigValue('discounts.allways_prorated', $value);
+        \Billrun_Factory::config()->setConfigValue('discounts.always_prorated', $value);
     }
 
     

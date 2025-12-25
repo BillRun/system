@@ -1491,7 +1491,7 @@ class Billrun_DiscountManager {
 		$isUpfront = $line['is_upfront'] ?? false;
 		$discountFrom = $discount['from']->sec ?? $this->cycle->start();
 		$discountTo = $discount['to']->sec ?? $this->cycle->end();
-		$allwaysProratedFlag = Billrun_Factory::config()->getConfigValue('discounts.allways_prorated', false);
+		$allwaysProratedFlag = Billrun_Factory::config()->getConfigValue('discounts.always_prorated', false);
 
 		if ($this->isDiscountProrated($discount, $line)) {
 			$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
@@ -1674,7 +1674,7 @@ class Billrun_DiscountManager {
 		
 		$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
 		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
-		$allwaysProratedFlag = Billrun_Factory::config()->getConfigValue('discounts.allways_prorated', false);
+		$allwaysProratedFlag = Billrun_Factory::config()->getConfigValue('discounts.always_prorated', false);
 		return ($proratedStart && $proratedEnd) ||
                 ($proratedStart && (isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) ) || 
                 ($proratedEnd && (isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end())) ) ||

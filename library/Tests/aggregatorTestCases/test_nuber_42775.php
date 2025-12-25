@@ -85,7 +85,7 @@ class Test_Case_42775
                 'function' => ['basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'],
                 'options' => ["stamp" => "202510", "force_accounts" => [$account['aid']]],
                 'overrideConfig' => [
-                    'key' => 'discounts.allways_prorated',
+                    'key' => 'discounts.always_prorated',
                     'value' => true,
                 ],
             ],
