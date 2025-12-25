@@ -735,4 +735,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $model->updateConfig("export_generators", $updated_config);
     }
 
+    public function setLocalPath($path) {
+		$this->localDir = $path;
+	}
+
 }

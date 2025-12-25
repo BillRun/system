@@ -52,6 +52,7 @@ import ChargeList from '@/components/Charging';
 import { ImporterSetup } from '../components/Importer';
 import { ExporterSetup } from '../components/Exporter';
 import { ImmediateInvoiceSetup } from '../components/ImmediateInvoice';
+import { RefundInvoiceSetup } from '../components/RefundInvoice';
 import SuggestionsSetup, { SuggestionsList } from '../components/Suggestions';
 import { TaxList, TaxSetup, TaxMapping } from '@/components/Tax';
 
@@ -152,8 +153,8 @@ const routes = () => (
         <Route path="/invoices" component={Authentication(InvoicesList)} title="Invoices" />
         <Route path="/payments" component={Authentication(PaymentsFiles)} title="Payments" />
         <Route path="/charging" component={Authentication(ChargeList)} title="Charging" />
-        <Route path="/custom-payment-files" component={Authentication(RequestPaymentFiles)} title="Custom Transactions Request File" />
-        <Route path="/response-custom-payment-files" component={Authentication(ResponsePaymentFiles)} title="Custom Transactions Response File"/>
+	<Route path="/payment-files" component={Authentication(RequestPaymentFiles)} title="Transactions Request File" />
+        <Route path="/response-payment-files" component={Authentication(ResponsePaymentFiles)} title="Transactions Response File"/>
         <Route path="/settings" component={Authentication(Settings)} title="General Settings" />
         <Route path="/payment_gateways" component={Authentication(PaymentGateways)} title="Payment Gateways" />
         <Route path="/select_input_processor_template" component={Authentication(SelectTemplate)} title="Create New Input Processor" />
@@ -169,7 +170,8 @@ const routes = () => (
         <Route path="/changepassword(/:itemId)" component={ChangePassword} title="Change Password" />
         <Route path="/import(/:itemType)" component={Authentication(ImporterSetup)} />
         <Route path="/export(/:itemType)" component={Authentication(ExporterSetup)} />
-        <Route path="/immediate-invoice" component={Authentication(ImmediateInvoiceSetup)} title="Create immediate invoices" />
+        <Route path="/immediate-invoice-charge" component={Authentication(ImmediateInvoiceSetup)} title="Create an Invoice for Immediate Charge" />
+        <Route path="/immediate-invoice-refund" component={Authentication(RefundInvoiceSetup)} title="Create an Invoice for Immediate Refund" />
         <Route path="suggestions" >
           <IndexRoute component={Authentication(SuggestionsSetup)} title="Repricing Suggestions" />
           <Route path=":itemId" component={Authentication(SuggestionsList)} title="Customer Repricing Suggestions" />
