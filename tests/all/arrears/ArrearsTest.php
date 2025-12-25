@@ -75,8 +75,8 @@ class ArrearsTest extends \Codeception\Test\Unit
         $this->tester->runCycle($this->defaultOptions);
         // $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine1 = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'key'=>'SUBSCRIBER_DISCOUNT_1_PLAN_5076'));
-        $discountLine2 = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'key'=>'SUBSCRIBER_DISCOUNT_2_PLAN_5076'));
+        $discountLine1 = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'key'=>'SUBSCRIBER_DISCOUNT_1'));
+        $discountLine2 = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'key'=>'SUBSCRIBER_DISCOUNT_2'));
 
   
         $this->assertEqualsWithDelta(22.403333333, $planLine['aprice'],$this->epsilon);
@@ -123,11 +123,10 @@ class ArrearsTest extends \Codeception\Test\Unit
         $planName = 'PLAN_5102';
         $this->tester->generatePlan(['name' => $planName, "prorated_termination" =>false, "prorated_start" =>false]);
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
-         //should enable this test after fix proration: yes 
-        // $this->defaultOptions['stamp'] = '202510';
-        // $this->tester->runCycle($this->defaultOptions);
-        // $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        // $this->assertEqualsWithDelta((31.924), $billrun['totals']['before_vat'], $this->epsilon);
+        $this->defaultOptions['stamp'] = '202510';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((31.924), $billrun['totals']['before_vat'], $this->epsilon);
         
         $this->defaultOptions['stamp'] = '202511';
         $this->tester->runCycle($this->defaultOptions);
@@ -152,11 +151,10 @@ class ArrearsTest extends \Codeception\Test\Unit
         $planName = 'PLAN_5102_2';
         $this->tester->generatePlan(['name' => $planName, "prorated_termination" =>true , "prorated_start" =>false]);
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
-        //should enable this test after fix proration: yes 
-        // $this->defaultOptions['stamp'] = '202510';
-        // $this->tester->runCycle($this->defaultOptions);
-        // $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        // $this->assertEqualsWithDelta((31.924), $billrun['totals']['before_vat'], $this->epsilon);
+        $this->defaultOptions['stamp'] = '202510';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((31.924), $billrun['totals']['before_vat'], $this->epsilon);
         
         $this->defaultOptions['stamp'] = '202511';
         $this->tester->runCycle($this->defaultOptions);
