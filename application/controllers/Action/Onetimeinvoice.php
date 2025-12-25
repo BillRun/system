@@ -291,7 +291,9 @@ class OnetimeinvoiceAction extends ApiAction {
 		$aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
-
+		if (!empty($chargingOptions['adjusts']) && !$this->validateCdrsAmountVsAdjustments($chargingOptions)) {
+			return false;
+		}
 		//Create bill for the invioce and attach the payment to it. (TODO ACTUALLY LIMIT THE INVOICE/PAYMENT ASSOCIATION)
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
 		$billrunToBillParams = [
@@ -591,10 +593,6 @@ class OnetimeinvoiceAction extends ApiAction {
 		$adjusts = json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY);
 		if (!is_array($adjusts)) {
 			return "Adjusts that was sent was not decoded as array\n";
-		}
-		$flow = isset($request['charge_flow']) ? $request['charge_flow'] : 'regular';
-		if ($flow === "charge_before_invoice") {
-			return "Invoice can not be adjusted, when charging the amount before creating the immediate invoice (charge_before_invoice flow)\n";
 		}
 		$allowedKeys = ['invoice_id', 'amount'];
 		foreach ($adjusts as $adjustment) {
