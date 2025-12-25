@@ -51,8 +51,6 @@ class expandSubRevisions_2Test extends \Codeception\Test\Unit
             "price" => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]],
         ];
         $service1 = $this->tester->generateService($service1);
-        $service1['from'] =  new Mongodloid_Date($service1['from']['sec']);
-        $service1['to'] =  new Mongodloid_Date($service1['to']['sec']);
         $services[$service1['name']] = new Mongodloid_Entity($service1);
 
         $service2 = [
@@ -61,8 +59,6 @@ class expandSubRevisions_2Test extends \Codeception\Test\Unit
             "price" => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]],
         ];
         $service2 = $this->tester->generateService($service2);
-        $service2['from'] =  new Mongodloid_Date($service2['from']['sec']);
-        $service2['to'] =  new Mongodloid_Date($service2['to']['sec']);
         $services[$service2['name']] = new Mongodloid_Entity($service2);
 
         $service3 = [
@@ -71,8 +67,6 @@ class expandSubRevisions_2Test extends \Codeception\Test\Unit
             "price" => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]],
         ];
         $service3 = $this->tester->generateService($service3);
-        $service3['from'] =  new Mongodloid_Date($service3['from']['sec']);
-        $service3['to'] =  new Mongodloid_Date($service3['to']['sec']);
         $services[$service3['name']] = new Mongodloid_Entity($service3);        
 
         $this->tester->createAccountWithAllMandatoryCustomFields();
