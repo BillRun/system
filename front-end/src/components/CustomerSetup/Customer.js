@@ -473,7 +473,6 @@ class Customer extends Component {
           <EntityFields
             entityName={['subscribers', 'account']}
             entity={customer}
-            defaultHiddenFields={Immutable.List(['payment_gateway', 'services'])}
             onChangeField={this.props.onChange}
             onRemoveField={this.props.onRemoveField}
           />
