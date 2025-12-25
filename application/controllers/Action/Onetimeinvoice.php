@@ -291,7 +291,9 @@ class OnetimeinvoiceAction extends ApiAction {
 		$aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
-
+		if (!empty($chargingOptions['adjusts']) && !$this->validateCdrsAmountVsAdjustments($chargingOptions)) {
+			return false;
+		}
 		//Create bill for the invioce and attach the payment to it. (TODO ACTUALLY LIMIT THE INVOICE/PAYMENT ASSOCIATION)
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
 		$billrunToBillParams = [
@@ -378,8 +380,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 		//Validate adjustments array
 		if (isset($request['adjusts'])) {
-			$adjusts = json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY);
-			$msg = $this->validateAdjustsStructure($adjusts);
+			$msg = $this->validateAdjustsStructure($request);
 		}		
 		
 		if (!empty($msg)) {
@@ -588,16 +589,24 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 	}
 
-	protected function validateAdjustsStructure($adjusts) {
+	protected function validateAdjustsStructure($request) {
+		$adjusts = json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY);
 		if (!is_array($adjusts)) {
 			return "Adjusts that was sent was not decoded as array\n";
 		}
-		$flow = isset($request['charge_flow']) ? $request['charge_flow'] : 'regular';
-		if ($flow === "charge_before_invoice") {
-			return "Invoice can not be adjusted, when charging the amount before creating the immediate invoice (charge_before_invoice flow)\n";
-		}
 		$allowedKeys = ['invoice_id', 'amount'];
 		foreach ($adjusts as $adjustment) {
+			$invoice_instance = Billrun_Bill_Invoice::getInstanceByid($adjustment['invoice_id']);
+			if (empty($invoice_instance)) {
+				return "Couldn't create adjusted invoice " . $adjustment['invoice_id'] . " object\n";
+			}
+			$adjustment_aid = $invoice_instance->getAccountNo();
+			if (empty($adjustment_aid)) {
+				return "Couldn't find account id for adjusted invoice id " . $adjustment['invoice_id'] . "\n";
+			}
+			if (intval($adjustment_aid) !== intval($request['aid'])) {
+				return "Adjustment with invoice_id " . $adjustment['invoice_id'] . " belongs to account " . $adjustment_aid. ", and can not be adjusted by account " . $request['aid'] . " invoice\n";
+			}
 			if(!isset($adjustment['invoice_id']) || !isset($adjustment['amount'])){
 				return "One of the adjustments array does not contain invoice_id or amount\n";
 			}
@@ -607,6 +616,7 @@ class OnetimeinvoiceAction extends ApiAction {
 			if ($diff_keys = array_diff(array_keys($adjustment), $allowedKeys)) {
 				return "Adjustments allowed keys are invoice_id and amount, " . implode("," , $diff_keys) . " is not allowed\n";
 			}
+			$adjustment_aid = null;
 		}
 		return "";
 	}

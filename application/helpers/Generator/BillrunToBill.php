@@ -429,11 +429,17 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	
 	protected function handleAdjustments(&$bill) {
 		Billrun_Factory::log("Starting handle adjustments function. Processing adjustments array, and updating new immediate invoice " . $bill['invoice_id'] . " accordingly", Zend_Log::DEBUG);
+		$invoices_to_adjust = [];
 		try {
 			foreach ($this->adjustments as $index => $adjustment) {
 				$amount = $invoice_to_adjust = null;
 				$amount = $adjustment['amount'];
-				$invoice_to_adjust = Billrun_Bill_Invoice::getInstanceByid($adjustment['invoice_id']);
+				if (!isset($invoices_to_adjust[$adjustment['invoice_id']])) {
+					$invoices_to_adjust[$adjustment['invoice_id']] = Billrun_Bill_Invoice::getInstanceByid($adjustment['invoice_id']);
+				} else {
+					$invoices_to_adjust[$adjustment['invoice_id']] = Billrun_Bill_Invoice::getInstanceByData($invoices_to_adjust[$adjustment['invoice_id']]->getRawData());
+				}
+				$invoice_to_adjust = $invoices_to_adjust[$adjustment['invoice_id']];
 				Billrun_Factory::log("Adding original invoice " . $invoice_to_adjust->getId() . " to new immediate invoice " . $bill['invoice_id'] . " adjusted_from_invoices list", Zend_Log::DEBUG);
 				$new_adj_array = ["invoice_id" => $invoice_to_adjust->getId(), "amount" => $amount];
 				if (isset($bill['adjusted_from_invoices'])) {
@@ -443,10 +449,13 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				}
 				Billrun_Factory::log("Adding new immediate invoice " . $bill['invoice_id'] . " to original invoice " . $invoice_to_adjust->getId() . " adjusted_by_invoices list", Zend_Log::DEBUG);
 				$invoice_to_adjust->addAdjustmentToOriginalInvoice(["invoice_id" => $bill['invoice_id'], "amount" => $amount]);
-				Billrun_Factory::log("Finished linking adjustments between invoices " . $bill['invoice_id'] . " and " . $invoice_to_adjust->getId() . ". Saving original invoice " . $invoice_to_adjust->getId(), Zend_Log::DEBUG);
-				$res = $invoice_to_adjust->save();
-				Billrun_Factory::log("Successfully saved original invoice " . $invoice_to_adjust->getId(), Zend_Log::DEBUG);
-				$saved_invoice_ids[$invoice_to_adjust->getId()] = true;
+				Billrun_Factory::log("Finished linking adjustment between invoice " . $bill['invoice_id'] . " and " . $invoice_to_adjust->getId() . ". Moving on", Zend_Log::DEBUG);
+			}
+			foreach ($invoices_to_adjust as $invoice_id => $adjusted_invoice_object) {
+				Billrun_Factory::log("Trying to save adjusted invoice " . $invoice_id, Zend_Log::DEBUG);
+				$res = $adjusted_invoice_object->save();
+				Billrun_Factory::log("Successfully saved original invoice " . $adjusted_invoice_object->getId(), Zend_Log::DEBUG);
+				$saved_invoice_ids[$adjusted_invoice_object->getId()] = true;
 			}
 			Billrun_Factory::log("Successfully attached all invoice " . $bill['invoice_id'] . " original invoices adjustments", Zend_Log::DEBUG);
 		} catch (Exception $ex) {
