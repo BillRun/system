@@ -2100,6 +2100,41 @@ runOnce(lastConfig, 'BRCD-5060', function () {
 		"display": false,
 	};
 	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ebill_vendor_number, 'account');
+
+	var ebillPlugin = {
+		"name": "eBillSwitzerlandPlugin",
+		"enabled": false,
+		"system": true,
+		"hide_from_ui": true,
+		"configuration": {
+			"values": {
+				"string_keys": [
+				],
+				"sftp_remote_directory": "",
+				"creditor_reference_prefix": "",
+				"sftp_password": "",
+				"bill_summary_template": [
+				],
+				"should_generate_ebill": {
+				},
+				"bill_headers": [
+				],
+				"header_values": [
+				],
+				"address": {
+
+				},
+				"sftp_host": "",
+				"delivery_info": [
+				],
+				"sftp_user": "",
+				"line_item_template": [
+				],
+				"response_status_files_path": ""
+			}
+		}
+	};
+	lastConfig.plugins.push(ebillPlugin);
 });
 
 if (typeof lastConfig['export'] === 'undefined') {
