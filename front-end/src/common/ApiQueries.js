@@ -584,13 +584,9 @@ export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_c
     params.push({ charge_flow: 'charge_before_invoice' });
   } else if (invoiceType === 'expected') {
     params.push({ step: 0 });
-    params.push({ allow_bill: 1 });
-    params.push({ charge_flow: 'charge_before_invoice' });
     params.push({ expected: 1 });
   } else if (invoiceType === 'download_expected') {
     params.push({ step: 0 });
-    params.push({ allow_bill: 1 });
-    params.push({ charge_flow: 'charge_before_invoice' });
     params.push({ expected: 1 });
     params.push({ send_back_invoices: 1 });
   }
