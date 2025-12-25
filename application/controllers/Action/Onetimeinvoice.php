@@ -52,6 +52,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$cdrs = [];
 		$this->aid = intval($request['aid']);
 		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''), JSON_OBJECT_AS_ARRAY);
+		$note = isset($request['note']) ? $request['note'] : null;
 		$affectedSids = [];
 		$adjustments = isset($request['adjusts']) ? json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY) : null;
 		Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($this->aid, $inputCdrs, $paymentData, $allowBill, $step, $oneTimeStamp, $sendEmail));
@@ -67,6 +68,7 @@ class OnetimeinvoiceAction extends ApiAction {
 			'uf' => $uf,
 			'request' => $request,
 			'paymentData' => $paymentData,
+			'note' => $note,
 			'adjusts' => $adjustments
 		];
 
@@ -141,7 +143,8 @@ class OnetimeinvoiceAction extends ApiAction {
 					'force_accounts' => [$this->aid],
 					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
-					'uf' => $chargingOptions['uf']]);
+					'uf' => $chargingOptions['uf'],
+					'note' => $chargingOptions['note']]);
 
 		$aggregator->aggregate();
 
@@ -208,7 +211,8 @@ class OnetimeinvoiceAction extends ApiAction {
 					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'generate_pdf' => $expected,
-					'uf' => $chargingOptions['uf']]);
+					'uf' => $chargingOptions['uf'],
+					'note' => $chargingOptions['note']]);
 
 		$aggregator->setExternalChargesForAid($this->aid, $this->processsedCdrs);
 		$aggregator->aggregate();
@@ -300,7 +304,8 @@ class OnetimeinvoiceAction extends ApiAction {
 					'force_accounts' => [$this->aid],
 					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
-					'uf' => $chargingOptions['uf']]);
+					'uf' => $chargingOptions['uf'],
+					'note' => $chargingOptions['note']]);
 		$aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
