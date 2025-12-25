@@ -11,15 +11,15 @@ import {
 import { getEntityByIdQuery} from '@/common/ApiQueries';
 
 
-export const generateOneTimeInvoice = (aid, lines, invoiceType, sendMail = false, note = '') => (dispatch) => {
-  const query = generateOneTimeInvoiceQuery(aid, lines, invoiceType, sendMail, note);
+export const generateOneTimeInvoice = (aid, lines, invoiceType, sendMail = false, note = '', invoiceUnixtime = '') => (dispatch) => {
+  const query = generateOneTimeInvoiceQuery(aid, lines, invoiceType, sendMail, note, invoiceUnixtime);
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success, 'Immediate invoice successfully generated')))
     .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error generating the invoice')))
 }
 
-export const generateOneTimeInvoiceExpected = (aid, lines, note = '') => (dispatch) => {
-  const query = generateOneTimeInvoiceExpectedQuery(aid, lines, note);
+export const generateOneTimeInvoiceExpected = (aid, lines, note = '', invoiceUnixtime = '') => (dispatch) => {
+  const query = generateOneTimeInvoiceExpectedQuery(aid, lines, note, invoiceUnixtime);
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success)))
     .catch(error => dispatch(apiBillRunErrorHandler(error, false)))
@@ -60,3 +60,5 @@ export const clearRefundInvoice = () => clearEntity('refund-invoice');
 export const updateRefundInvoiceLines = line => updateEntityField('refund-invoice', 'lines', Immutable.List([line]));
 
 export const updateRefundInvoiceReason = text => updateEntityField('refund-invoice', 'note', text);
+
+export const updateRefundInvoiceUnixtime = unixtime => updateEntityField('refund-invoice', 'invoice_unixtime', unixtime);

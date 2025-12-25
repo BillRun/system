@@ -28,6 +28,7 @@ import {
   updateRefundInvoiceLines,
   updateRefundInvoiceCustomer,
   updateRefundInvoiceReason,
+  updateRefundInvoiceUnixtime,
 } from '@/actions/invoiceActions';
 import {
   clearList,
@@ -62,10 +63,12 @@ const RefundInvoiceSetup = ({
 
   const apiFormat = getConfig('apiDateTimeFormat', '');
   const currencySymbol = getSymbolFromCurrency(currency);
+  const now = moment();
 
   const aid = refundInvoice.getIn(['customer', 'aid'], '');
   const invoiceId = refundInvoice.get('id', '');
   const reason = refundInvoice.getIn(['note'], '');
+  const invoiceUnixtime = refundInvoice.getIn(['invoice_unixtime'], now.unix());
   const pg_4_digit = refundInvoice.getIn(['customer', 'payment_gateway', 'active', 'four_digits'], '');
   const line = refundInvoice.getIn(['lines', 0], Immutable.Map({
       id: uuid.v4(),
@@ -73,7 +76,7 @@ const RefundInvoiceSetup = ({
       inv_id: '',
       rate: '',
       price: '',
-      date: moment().format(apiFormat),
+      date: now.format(apiFormat),
       volume: 1,
       type: 'credit',
   }));
@@ -86,6 +89,7 @@ const RefundInvoiceSetup = ({
   const disableProductSelect = !isAccountSelected;
   const disableRefundReason = !isAccountSelected;
   const disableRefundAmount = !isAccountSelected;
+  const disableInvoiceDate = !isAccountSelected;
   const downloadInvoiceUrl = `${getConfig(['env','serverApiUrl'], '')}/api/accountinvoices?action=download&aid=${aid}&iid=${invoiceId}`;
   const isInvoiceConfirmed = invoiceId && invoiceId !== '';
 
@@ -163,6 +167,15 @@ const RefundInvoiceSetup = ({
       }
     }
   }
+  
+  const onChangeInvoiceDate = (date) => {
+    if (moment.isMoment(date) && date.isValid()) {
+      dispatch(updateRefundInvoiceLines(line.set('date', date.format(apiFormat))));
+      return dispatch(updateRefundInvoiceUnixtime(date.unix()));
+    }
+    dispatch(updateRefundInvoiceLines(line.set('date', now.format(apiFormat))));
+    return dispatch(updateRefundInvoiceUnixtime(now.unix()));
+  }
 
   const onChangeRefundReason = (e) => {
       const value = e.target.value;
@@ -187,7 +200,7 @@ const RefundInvoiceSetup = ({
     };
     setExpectedInvoiceInProgress(true);
 
-    dispatch(generateOneTimeInvoiceExpected(aid, Immutable.List([line]) , reason))
+    dispatch(generateOneTimeInvoiceExpected(aid, Immutable.List([line]) , reason, invoiceUnixtime))
     .then(success => {
       if (success.status !== 1) {
         throw new Error();
@@ -277,6 +290,24 @@ const RefundInvoiceSetup = ({
                 </Col>
                 <Col smOffset={4} lgOffset={3} sm={6} lg={7}>
                   <HelpBlock>{getFieldName('select_invoice_id_help', 'immediate_invoice')}</HelpBlock>
+                </Col>
+              </FormGroup>
+            </Col>
+
+            <Col sm={12}>
+              <FormGroup className="form-inner-edit-row">
+                <Col componentClass={ControlLabel} sm={4} lg={3} className="mt10 text-right">
+                  {getFieldName('immediate_date', 'immediate_invoice')} <span className="danger-red"> *</span>
+                </Col>
+                <Col sm={4} lg={3}>
+                  <Field
+                    fieldType="datetime"
+                    value={invoiceUnixtime === '' ? null : moment.unix(invoiceUnixtime)}
+                    minDate={now.clone().subtract(30, 'days')}
+                    maxDate={now}
+                    onChange={onChangeInvoiceDate}
+                    disabled={disableInvoiceDate}
+                  />
                 </Col>
               </FormGroup>
             </Col>

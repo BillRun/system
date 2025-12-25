@@ -294,6 +294,7 @@
     "subscriber_input_help": "Type a subscriber ID, first, or last name to search.",
     "select_customer_help": "Type a customer name or ID to search.",
     "select_invoice_help": "Type invoice ID to search.",
+    "immediate_date": "Invoice date",
     "select_product_help": "Type product name to search.",
     "btn_download_invoice": "Download Invoice",
     "btn_download_expected_invoice": "Download Expected Invoice",

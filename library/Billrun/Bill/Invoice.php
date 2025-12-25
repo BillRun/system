@@ -105,6 +105,7 @@ class Billrun_Bill_Invoice extends Billrun_Bill {
 	 * @return Billrun_Bill_Invoice
 	 */
 	public static function getInstanceByid($id, $read_preference = null) {
+		Billrun_Factory::log("Getting bill data by invoice_id: " .$id, Zend_Log::DEBUG);
 		$data = Billrun_Factory::db()->billsCollection()->query('type', 'inv')->query('invoice_id', $id)->cursor()->setReadPreference($read_preference)->current();
 		if ($data->isEmpty()) {
 			return NULL;

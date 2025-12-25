@@ -1,5 +1,6 @@
 import Immutable from 'immutable';
 import moment from 'moment';
+import isNumber from 'is-number';
 import {
   escapeRegExp,
   isValueOn,
@@ -540,7 +541,7 @@ export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file,
   });
 }
 
-export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_charge', sendMail = false, note = '') => {
+export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_charge', sendMail = false, note = '', invoiceUnixtime = '') => {
   const cdrs = lines
     .map(line => Immutable.Map({
       aid: aid,
@@ -565,8 +566,11 @@ export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_c
   if (adjusts && !adjusts.isEmpty()) {
     params.push({ adjusts: JSON.stringify(adjusts) });
   }
-  if (typeof note === 'string' && note.length > 0) {
-      params.push({ note });
+  if (isNumber(invoiceUnixtime)) {
+      params.push({ invoice_unixtime: invoiceUnixtime });
+  }
+  if (typeof lines === 'string' && lines.length > 0) {
+      params.push({ lines });
   }
   if (invoiceType === 'without_charge') {
     params.push({ step: 1 });
@@ -596,11 +600,11 @@ export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_c
   };
 }
 
-export const generateOneTimeInvoiceDownloadExpectedQuery = (aid, lines, note = '') =>
-  generateOneTimeInvoiceQuery(aid, lines, 'download_expected', false, note);
+export const generateOneTimeInvoiceDownloadExpectedQuery = (aid, lines, note = '', invoiceUnixtime = '') =>
+  generateOneTimeInvoiceQuery(aid, lines, 'download_expected', false, note, invoiceUnixtime);
 
-export const generateOneTimeInvoiceExpectedQuery = (aid, lines, note = '') =>
-  generateOneTimeInvoiceQuery(aid, lines, 'expected', false, note);
+export const generateOneTimeInvoiceExpectedQuery = (aid, lines, note = '', invoiceUnixtime = '') =>
+  generateOneTimeInvoiceQuery(aid, lines, 'expected', false, note, invoiceUnixtime);
 
 export const auditTrailListQuery = (query, page, fields, sort, size) => ({
   action: 'get',
