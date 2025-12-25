@@ -51,7 +51,9 @@
       "discounts": [
         {
           "priority": "",
-          "params": {},
+          "params": {
+            "cycles": 2
+          },
           "from": "2025-09-17 12:31:43",
           "subject": {
             "plan": {
@@ -61,7 +63,6 @@
             }
           },
           "proration": "no",
-          "cycles": 2,
           "type": "monetary",
           "to": "2027-11-17 13:31:43",
           "description": "",

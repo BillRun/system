@@ -1492,7 +1492,7 @@ class Billrun_DiscountManager {
 		$discountFrom = $discount['from']->sec ?? $this->cycle->start();
 		$discountTo = $discount['to']->sec ?? $this->cycle->end();
 		$allwaysProratedFlag = Billrun_Factory::config()->getConfigValue('discounts.always_prorated', false);
-		$cycles  = $discount['cycles'] ??  null;
+		$cycles  = $discount['params']['cycles'] ??  null;
 		if ($this->isDiscountProrated($discount, $line)) {
 			$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
 			$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
