@@ -23,8 +23,11 @@ class Models_Services extends Models_Entity {
 		$this->validateRecurrence();
 	}
 
-	public function addToCache() {
-		$res = Billrun_Service::addEntitieToCache($this->getAfter());
+	public function addToCache($old = null , $new = null) {
+
+		$old = $old ?? (!is_null($this->before) ? $this->before->getRawData() : null);
+		$new = $new ?? (!is_null($this->after) ? $this->after->getRawData() : null);
+		$res = Billrun_Service::addEntitieToCache($old, $new);
 	}
 	
 	/**
