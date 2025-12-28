@@ -566,6 +566,9 @@ export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_c
   if (adjusts && !adjusts.isEmpty()) {
     params.push({ adjusts: JSON.stringify(adjusts) });
   }
+  if (typeof note === 'string' && note.length > 0) {
+      params.push({ note });
+  }
   if (isNumber(invoiceUnixtime)) {
       params.push({ invoice_unixtime: invoiceUnixtime });
   }
