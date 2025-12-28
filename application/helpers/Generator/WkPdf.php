@@ -368,7 +368,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	public function generateAccountInvoices($account, $lines = FALSE) {
 		$account = $this->reconstructBillrunObject($account);
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratorEntity',array($this, &$account,&$lines));
-		$maxSubsForDetails = Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_for_invoice_pdf', 5000); 
+		$maxSubsForDetails = Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_for_invoice_pdf', 10000); 
 		if (count(Billrun_Util::getFieldVal($account['subs'], [])) > $maxSubsForDetails) {
 			Billrun_Factory::log('AID: ' . $account['aid'] . '. Subscriber count exceeds limit (' . $maxSubsForDetails . '). Setting render_subscription_details to false.', Zend_Log::DEBUG);
 			$this->render_subscription_details = false;
