@@ -532,26 +532,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				} else {
 					return $retLines;
 				}
-				
-				
-				$horizonlineCount = $hq->count(true);
-				$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
-				Billrun_Factory::log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
-				if (!$horizonline->isEmpty()) {
-					if ($this->autosort) {
-						$query['urt'] = array('$lte' => $horizonline['urt']);
-						if(isset($horizonline['calc_time'])){
-							$query['calc_time'] = array('$lte' => $horizonline['calc_time']);
-						}else{
-							$query['calc_time'] = array('$exists' => false);
-
-						}
-					} else {
-						$query['_id'] = array('$lte' => $horizonline->getId()->getMongoID());
-					}
-				} else {
-					return $retLines;
-				}
 			}
 
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
