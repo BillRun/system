@@ -32,8 +32,8 @@ class CalculateAction extends Action_Base {
 			return;
 		}
 		$params = $this->getController()->getParameters();
-		if(isset($params['filter_types'])){
-			$options['filter_types'] = $params['filter_types'];
+		if(isset($params['file_types'])){
+			$options['file_types'] = $params['file_types'];
 		}
 		$this->getController()->addOutput("Loading Calculator");
 		$calculator = Billrun_Calculator::getInstance($options);

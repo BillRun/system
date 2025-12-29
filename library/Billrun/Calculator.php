@@ -108,11 +108,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->autosort = $options['autosort'];
 		}
 
-		if (isset($options['filter_types'])) {
-			if(!is_array($options['filter_types'])){
-				$options['filter_types'] = [$options['filter_types']];
+		if (isset($options['file_types'])) {
+			if(!is_array($options['file_types'])){
+				$options['file_types'] = [$options['file_types']];
 			}
-			$this->filter_types = $options['filter_types'];
+			$this->file_types = $options['file_types'];
 		}
 
 		if (!isset($options['autoload']) || $options['autoload']) {
@@ -419,9 +419,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 					'$ne' => true, '$lt' => new Mongodloid_Date($orphand_time)
 				)),
 		);
-		if(isset($this->filter_types) ){
+		if(isset($this->file_types) ){
 			
-			$query['$and'][0]['type'] = array('$in' => $this->filter_types);
+			$query['$and'][0]['type'] = array('$in' => $this->file_types);
 		}
 //		$queryData['hint'] = $current_calculator_queue_tag;
 		$queryData['query'] = $query;
