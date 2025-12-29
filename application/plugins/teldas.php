@@ -40,7 +40,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $this->tariffsProfilesCollection = Billrun_Factory::db()->plugin_teldas_tariffs_profilesCollection(['force' => true]);
     $this->tariffSwitchingClassesCollection = Billrun_Factory::db()->plugin_teldas_tariff_switching_classesCollection(['force' => true]);
 	}
-
+    
   protected function authentication() {
     Billrun_Factory::log("Sending authentication request to teldas.", Zend_Log::DEBUG);
     $authenticationUrl = $this->teldasUrl . '/auth/login';
@@ -60,6 +60,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   public function cronHour() {
+    if(date_default_timezone_get() != 'Europe/Zurich'){
+        Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
+        return;
+    }
     $houresToRun = Billrun_Util::getIn($this->options, 'cron_hours', []);  //if empty run every hour 
     if(empty($houresToRun)){
       $this->syncSystem();
@@ -70,7 +74,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
          $this->syncSystem();
         }
       }
-    } 
+    }
   }
 
   protected function syncSystem(){
@@ -82,6 +86,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   public function cronDay() {
+      if(date_default_timezone_get() != 'Europe/Zurich'){
+        Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
+        return;
+      }
       $this->importHolidays();
       $success = $this->keepSystemUpToDateOfTariffSwitchingClasses();
       if (!$success) {
@@ -763,7 +771,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return $inaNumberHistory;
   }
 
-  public function getInaNumberHistoryFromTeldas($subscriberNumber){
+  protected function getInaNumberHistoryFromTeldas($subscriberNumber){
       Billrun_Factory::log("Getting  " . $subscriberNumber . " INA number history.", Zend_Log::DEBUG);
       $url = $this->teldasUrl . '/inetina/api/number/' . $subscriberNumber . "/history";
       Billrun_Factory::log("Sending request to get INA number history for " . $subscriberNumber . " from " . $url, Zend_Log::DEBUG);
@@ -1261,6 +1269,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   public function afterGetLineUsageType(&$line, $type) {
+      if(date_default_timezone_get() != 'Europe/Zurich'){
+        Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
+        return;
+      }
       if ($type != $this->lineType) {
           return;
       }
@@ -1294,6 +1306,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   public function beforeGetLineAprice($line, &$aprice) {
+      if(date_default_timezone_get() != 'Europe/Zurich'){
+        Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
+        return;
+      }
       if ($line['type'] != $this->lineType) {
           return;
       }
@@ -1305,6 +1321,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   public function beforeGetLinePriceToTax($line, &$aprice, $instance) {
+      if(date_default_timezone_get() != 'Europe/Zurich'){
+        Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
+        return;
+      }
       if ($line['type'] != $this->lineType) {
           return;
       }
