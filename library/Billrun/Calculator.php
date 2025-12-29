@@ -520,24 +520,16 @@ abstract class Billrun_Calculator extends Billrun_Base {
 						$hq->sort(array('calc_time'=>1, 'urt' => 1));
 					}
 				}
-				$horizonlineCount = $hq->count(true);
-				$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
-				Billrun_Factory::log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
-				if (!$horizonline->isEmpty()) {
-					if ($this->autosort) {
-						$query['urt'] = array('$lte' => $horizonline['urt']);
-					} else {
-						$query['_id'] = array('$lte' => $horizonline->getId()->getMongoID());
-					}
-				} else {
+				$updateQuery = $this->getBaseUpdateQuery($query, $hq);
+				if(!$updateQuery){
 					return $retLines;
-				}
+				}		
 			}
 
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			Billrun_Factory::log('Work hash: ' . $this->workHash, Zend_Log::DEBUG);
 			$update['$set']['hash'] = $this->workHash;
-			if (($response = $this->applyQueueHash($query, $update, $queue)) === FALSE) {
+			if (($response = $this->applyQueueHash($updateQuery, $update, $queue)) === FALSE) {
 				continue;
 			}
 			Billrun_Factory::log('Queue records updated number: ' . $response['nModified'], Zend_Log::DEBUG);
@@ -557,6 +549,47 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$retLines[$line['stamp']] = $line;
 		}
 		return $retLines;
+	}
+
+	protected function getBaseUpdateQuery($query, $hq){
+		$horizonlineCount = $hq->count(true);
+		// First document
+		$first = (clone $hq)->limit(1)->current();
+
+		// Last document
+		$last = (clone $hq)->skip(abs($horizonlineCount - 1))->limit(1)->current();
+		Billrun_Factory::log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
+		if (!$last->isEmpty()) {
+			if ($this->autosort) {
+				if ($last['urt'] < $first['urt']) {
+					$query['$and'][] = [
+						'$or' => [
+							['urt' => ['$gte' => $first['urt']]]
+						]
+					];
+				} else {
+					$query['$and'][] = [
+						'urt' => ['$gte' => $first['urt'], '$lte' => $last['urt']]
+					];
+				}
+				if ($last['calc_time'] === false) {
+					$query['$and'][] = ['calc_time' => false];
+				} else {
+					$query['$and'][] = [
+						'$or' => [
+							['calc_time' => ['$lte' => $last['calc_time']]],
+							['calc_time' => false]
+						]
+					];
+				}
+				
+			} else {
+				$query['_id'] = array('$lte' => $last->getId()->getMongoID());
+			}
+			return $query;
+		} else {
+			return false;
+		}
 	}
 
 	/**
