@@ -674,7 +674,7 @@ class Billrun_Service {
 		return self::$entities;
 	}
 
-	public static function addEntitieToCache($old, $new){
+	public static function updateEntityCache($new, $old){
 		if( !empty(self::$entities)){
 			if($old == null && $new == null){
 				return;
@@ -700,7 +700,7 @@ class Billrun_Service {
 				}else{
 					$found = false;
 					foreach(self::$entities['by_name'][$old['name']] as &$entity){
-						if($entitty['entity']['id'] == $id){//update
+						if(strval($entitty['entity']['id']) == $id){//update
 							$entity = [
 								'entity' => $new,
 								'from'   => $new['from'],
