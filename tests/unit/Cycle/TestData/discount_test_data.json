@@ -933,6 +933,200 @@
 			"discount_to": "2025-09-01T00:00:00+0000"
 		}
 	]
+ },
+  "Proration is inherited from the line when proration is set to inherit": {
+    "account_revs": [
+      {
+        "aid": 1000,
+        "sid": 0,
+        "discounts": [],
+        "from": "2025-10-06T00:00:00Z",
+        "to": "2125-10-06T00:00:00Z"
+      }
+    ],
+    "subscribers_revs": {
+      "1003": [
+        {
+          "aid": 1000,
+          "sid": 1003,
+          "plan": "201000001",
+          "discounts": [
+            {
+		"key": "DISCOUNT_201000002",
+		"description": "DISCOUNT_201000002",
+		"proration": "inherited",
+		"subject": {
+                    "plan": {
+			"201000001": {
+			    "value": 0.1
+			}
+                    }
+              },
+              "type": "percentage",
+              "from": "2025-10-01T00:00:00Z",
+              "to": "2125-10-01T00:00:00Z"
+            }
+          ],
+          "from": "2025-10-15T00:00:00Z",
+          "to": "2125-10-15T00:00:00Z"
+        }
+      ]
+    },
+    "cycle": "202511",
+    "flat_lines": [
+      {
+        "_id": "proration_test_line",
+        "aid": 1000,
+        "sid": 1003,
+        "source": "billrun",
+        "billrun": "202511",
+        "type": "flat",
+        "usaget": "flat",
+        "urt": "2025-10-31T22:59:59Z",
+        "plan": "201000001",
+        "name": "201000001",
+        "aprice": 50,
+        "full_price": 100,
+	"prorated_start" : true,
+	"prorated_end":true, 	  
+        "start_date": "2025-10-15T00:00:00Z",
+        "start": "2025-10-15T00:00:00Z",	  
+        "end_date": "2025-10-31T23:59:59Z",
+        "stamp": "proration_test_stamp",
+  	"tax_data" : {
+	      "total_amount" : 9,
+	      "total_tax" : 0.18,
+	    "taxes" : [{
+		  "tax" : 0.18,
+		  "amount" : 9,
+		  "description" : "VAT Normal Rate",
+		  "key" : "DEFAULT_VAT",
+		  "type" : "vat",
+		  "pass_to_customer" : 1
+	    }]
+	  },
+          "final_charge": 59
 
- }
+      }
+    ],
+    "result": [
+      {
+          "name": "DISCOUNT_201000002",
+          "aprice": -5.483870967741935,
+          "eligible_line": "proration_test_stamp",
+	  "tax_data" : {
+	      "total_amount" : -0.9870967741935482,
+	      "total_tax" : 0.18,
+	      "taxes" : [{
+		  "tax" : 0.18,
+		  "amount" : -0.9870967741935482,
+		  "description" : "VAT Normal Rate",
+		  "key" : "DEFAULT_VAT",
+		  "type" : "vat",
+		  "pass_to_customer" : 1
+	    }]
+	  },
+	  "final_charge": -6.470967741935484,
+	  "discount_from": "2025-10-15T00:00:00Z",	  
+          "discount_to": "2025-10-31T23:59:59Z"
+      }
+    ]
+  },
+  "UnProrated CDR is inherited from the line when proration is inherit": {
+    "account_revs": [
+      {
+        "aid": 1000,
+        "sid": 0,
+        "discounts": [],
+        "from": "2025-10-06T00:00:00Z",
+        "to": "2125-10-06T00:00:00Z"
+      }
+    ],
+    "subscribers_revs": {
+      "1003": [
+        {
+          "aid": 1000,
+          "sid": 1003,
+          "plan": "201000001",
+          "discounts": [
+            {
+		"key": "DISCOUNT_201000002",
+		"description": "DISCOUNT_201000002",
+		"proration": "inherited",
+		"subject": {
+                    "plan": {
+			"201000001": {
+			    "value": 0.5
+			}
+                    }
+              },
+              "type": "percentage",
+              "from": "2025-10-15T00:00:00Z",
+              "to": "2125-10-01T00:00:00Z"
+            }
+          ],
+          "from": "2025-10-15T00:00:00Z",
+          "to": "2125-10-15T00:00:00Z"
+        }
+      ]
+    },
+    "cycle": "202511",
+    "flat_lines": [
+      {
+        "_id": "proration_test_line",
+        "aid": 1000,
+        "sid": 1003,
+        "source": "billrun",
+        "billrun": "202511",
+        "type": "flat",
+        "usaget": "flat",
+        "urt": "2025-10-31T22:59:59Z",
+        "plan": "201000001",
+        "name": "201000001",
+        "aprice": 100,
+        "full_price": 100,
+	"prorated_start" : false,
+	"prorated_end": false, 
+        "start_date": "2025-10-15T00:00:00Z",
+        "start": "2025-10-15T00:00:00Z",  
+	"end_date": "2025-10-31T23:59:59Z",
+        "stamp": "noneproration_test_stamp",
+	"tax_data" : {
+	      "total_amount" : 18,
+	      "total_tax" : 0.18,
+	    "taxes" : [{
+		  "tax" : 0.18,
+		  "amount" : 18,
+		  "description" : "VAT Normal Rate",
+		  "key" : "DEFAULT_VAT",
+		  "type" : "vat",
+		  "pass_to_customer" : 1
+	    }]
+	  },
+          "final_charge": 100
+      }
+    ],
+    "result": [
+      {
+        "name": "DISCOUNT_201000002",
+         "aprice": -50.0,
+	 "tax_data" : {
+	      "total_amount" : -9,
+	      "total_tax" : 0.18,
+	      "taxes" : [{
+		  "tax" : 0.18,
+		  "amount" : -9,
+		  "description" : "VAT Normal Rate",
+		  "key" : "DEFAULT_VAT",
+		  "type" : "vat",
+		  "pass_to_customer" : 1
+	    }]
+	  },
+	  "final_charge": -59.0,
+  	  "discount_from": "2025-10-15T00:00:00Z",	  
+          "discount_to": "2025-10-31T23:59:59Z",
+        "eligible_line": "noneproration_test_stamp"
+      }
+    ]
+  }
 }
