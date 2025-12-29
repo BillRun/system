@@ -504,9 +504,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$query = array_merge($querydata['query'], $localquery);
 		$update = $this->getBaseUpdate();
 		$retLines = array();
+		$horizonlineCount = 0;
 		do {
 			//if There limit to the calculator set an updating limit.
-			if ($this->limit != 0) {///todo::suppurt limit unset or zero !!
+			if ($this->limit != 0) {
 				Billrun_Factory::log('Looking for the last available line in the queue', Zend_Log::DEBUG);
 				if (isset($querydata['hint'])) {
 					$hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->limit($this->limit);
@@ -519,39 +520,44 @@ abstract class Billrun_Calculator extends Billrun_Base {
 						$hq->sort(array('calc_time'=>1, 'urt' => 1));
 					}
 				}
-				$stamps = [];
-				foreach ($hq as $entity) {
-					$stamps[] = $entity['stamp']; // or $line['stamp'] if you prefer
-				}
-				if(empty($stamps)){
+				$horizonlineCount = $hq->count(true);
+				$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
+				Billrun_Factory::log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
+				if (!$horizonline->isEmpty()) {
+					if ($this->autosort) {
+						$query['urt'] = array('$lte' => $horizonline['urt']);
+					} else {
+						$query['_id'] = array('$lte' => $horizonline->getId()->getMongoID());
+					}
+				} else {
 					return $retLines;
 				}
 				
 				
-				// $horizonlineCount = $hq->count(true);
-				// $horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
-				// Billrun_Factory::log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
-				// if (!$horizonline->isEmpty()) {
-				// 	if ($this->autosort) {
-				// 		$query['urt'] = array('$lte' => $horizonline['urt']);
-				// 		if(isset($horizonline['calc_time'])){
-				// 			$query['calc_time'] = array('$lte' => $horizonline['calc_time']);
-				// 		}else{
-				// 			$query['calc_time'] = array('$exists' => false);
+				$horizonlineCount = $hq->count(true);
+				$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
+				Billrun_Factory::log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
+				if (!$horizonline->isEmpty()) {
+					if ($this->autosort) {
+						$query['urt'] = array('$lte' => $horizonline['urt']);
+						if(isset($horizonline['calc_time'])){
+							$query['calc_time'] = array('$lte' => $horizonline['calc_time']);
+						}else{
+							$query['calc_time'] = array('$exists' => false);
 
-				// 		}
-				// 	} else {
-				// 		$query['_id'] = array('$lte' => $horizonline->getId()->getMongoID());
-				// 	}
-				// } else {
-				// 	return $retLines;
-				// }
+						}
+					} else {
+						$query['_id'] = array('$lte' => $horizonline->getId()->getMongoID());
+					}
+				} else {
+					return $retLines;
+				}
 			}
 
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			Billrun_Factory::log('Work hash: ' . $this->workHash, Zend_Log::DEBUG);
 			$update['$set']['hash'] = $this->workHash;
-			if (($response = $this->applyQueueHash(array('stamp'=> array('$in' => $stamps)), $update, $queue)) === FALSE) {
+			if (($response = $this->applyQueueHash($query, $update, $queue)) === FALSE) {
 				continue;
 			}
 			Billrun_Factory::log('Queue records updated number: ' . $response['nModified'], Zend_Log::DEBUG);
@@ -565,8 +571,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			if ($this->autosort) {
 				$foundLines->sort(array('urt' => 1));
 			}
-			//Todo:: need to allow loop run on all the queue lines (although the limit)+ prevent infinity if receieive more cdrs!!!
-		} while ($foundLines->count() == 0);
+		} while ($horizonlineCount != 0 && $foundLines->count() == 0);
 
 		foreach ($foundLines as $line) {
 			$retLines[$line['stamp']] = $line;
