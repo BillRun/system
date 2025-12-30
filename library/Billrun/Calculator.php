@@ -414,8 +414,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$query = array();
 		$query['$and'][0]['calc_name'] = $previous_calculator;
 		$query['$and'][0]['$or'] = array(
-			array('calc_time' => false),
-			array('calc_time' => array(
+			array('calc_name'=> $previous_calculator, 'calc_time' => false),//improving query using index with calc_name
+			array('calc_name' => $previous_calculator, 'calc_time' => array(
 					'$ne' => true, '$lt' => new Mongodloid_Date($orphand_time)
 				)),
 		);
@@ -552,37 +552,46 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	protected function getBaseUpdateQuery($query, $hq){
+		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
+		$calculator_type = $this->getCalculatorQueueType();
+		$queryData = array();
+		$queue_id = array_search($calculator_type, $queue_calculators);
+		$previous_calculator = false;
+		if ($queue_id > 0) {
+			$previous_calculator = $queue_calculators[$queue_id - 1];
+		}
 		$horizonlineCount = $hq->count(true);
+		$fields = array(
+			'urt' => 1,
+			'calc_time' => 1
+		);
 		// First document
-		$first = (clone $hq)->limit(1)->current();
+		$first = (clone $hq)->limit(1)->fields($fields)->current();
 
 		// Last document
-		$last = (clone $hq)->skip(abs($horizonlineCount - 1))->limit(1)->current();
+		$last = (clone $hq)->skip(abs($horizonlineCount - 1))->limit(1)->fields($fields)->current();
 		Billrun_Factory::log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
 		if (!$last->isEmpty()) {
 			if ($this->autosort) {
-				if ($last['urt'] < $first['urt']) {
-					$query['$and'][] = [
-						'$or' => [
-							['urt' => ['$gte' => $first['urt']]]
-						]
-					];
-				} else {
+				if (Mongodloid_Date::equals($last['calc_time'], $first['calc_time'])) {
+					$query['$and'][] = ['calc_time' => $last['calc_time']];
 					$query['$and'][] = [
 						'urt' => ['$gte' => $first['urt'], '$lte' => $last['urt']]
 					];
-				}
-				if ($last['calc_time'] === false) {
-					$query['$and'][] = ['calc_time' => false];
 				} else {
-					$query['$and'][] = [
-						'$or' => [
-							['calc_time' => ['$lte' => $last['calc_time']]],
-							['calc_time' => false]
-						]
-					];
-				}
-				
+					if($first['calc_time'] ==  false){
+						$query['$and'][] = [
+							'$or' => [
+								['calc_name' => $previous_calculator, 'calc_time' => ['$lt' => $last['calc_time'], '$gte' => $first['calc_time']]],//$lt will not update the exect limit but this prevent to update (2limit) and than can grow to more. 
+								['calc_name' => $previous_calculator, 'calc_time' => false], 
+
+							]
+						];
+					}else{
+						$query['$and'][] = ['calc_time' => ['$gte' => $first['calc_time'], '$lt' => $last['calc_time']]];//$lt will not update the exect limit but this prevent to update (2limit) and than can grow to more. 
+
+					}
+				}	
 			} else {
 				$query['_id'] = array('$lte' => $last->getId()->getMongoID());
 			}
