@@ -121,7 +121,7 @@ class RealtimeController extends ApiController {
 	 */
 	protected function getRequestType() {
 		if (Billrun_Utils_Realtime::getRealtimeConfigValue($this->config, 'postpay_charge', 'general', false)) {
-			$this->event['skip_calc'] = array('unify');
+			//$this->event['skip_calc'] = array('unify');
 			return Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST', "4");
 		}
 		
