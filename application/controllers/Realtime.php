@@ -171,10 +171,7 @@ class RealtimeController extends ApiController {
 		if ($processor) {
 			$multiLines = !Billrun_Util::isAssoc($this->event);
 			$rows = $multiLines ? $this->event : [$this->event];
-			foreach ($rows as $row) {
-				$processor->addDataRow($row);
-			}
-			$processor->process($this->config);
+			$processor->process($this->config, $rows);
 			$data = $processor->getData()['data'];
 			$allLines = $processor->getAllLines();
 			return $multiLines ? $allLines : current($allLines);
