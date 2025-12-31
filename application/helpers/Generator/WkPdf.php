@@ -28,7 +28,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
 	protected $exporterFlags = null;
-        protected $invoice_extra_params = [];
+	protected $invoice_extra_params = [];
 	protected $header_path = "";
 	protected $footer_path = "";
 	protected $header_content = "";
@@ -41,6 +41,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $tanent_css;
 	protected $paths;
 	protected $wkpdf_exec;	
+	protected $loadFromFile = FALSE;
+	
 	protected $loadFromFile = FALSE;
 	
 
@@ -273,11 +275,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 return $defaultFileName;
             }
         }
-        
+
         public function setFileName($billrunObject, $fileName) {
             $billrunObject->set('file_name', $fileName);
         }
-        
+
         public function getTranslationValue($paramObj, $billrunObject) {
             if(isset($paramObj['linked_entity'])){
                 if(isset($paramObj['type']) && $paramObj['type'] === "date"){
@@ -345,13 +347,14 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$query = array('billrun_key' => $this->stamp, '$or' => array(
 				array('totals.after_vat' => array('$not' => array('$gt' => -$this->invoice_threshold, '$lt' => $this->invoice_threshold))),
 				array('totals.credit.after_vat' => array('$not' => array('$gt' => -$this->invoice_threshold, '$lt' => $this->invoice_threshold)))
-//																		array('totals.before_discounts'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold))) 
+//					array('totals.before_discounts'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold)))
 		));
 		if (!empty($this->accountsToInvoice)) {
 			$query['aid'] = array('$in' => $this->accountsToInvoice);
 		}
 		Billrun_Factory::dispatcher()->trigger("beforeLoadWkpdf", array(&$query, $this->accountsToInvoice));
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
+ 		}
 	}
 	}
 

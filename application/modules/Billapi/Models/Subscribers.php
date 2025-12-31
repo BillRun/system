@@ -407,8 +407,7 @@ class Models_Subscribers extends Models_Entity {
 		$previousPlan = '';
 		$revisionsFrom = $this->collection->query($revisionsQuery)->cursor()->sort(array('from' => 1))->setReadPreference('RP_PRIMARY');
 		$subscriberDeactivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('to' => -1))->setReadPreference('RP_PRIMARY')->current()['to'];
-//		$subscriberActivation = $revisionsFrom->current()['from']; // MongoDB cursor should avoid double fetching on the same cursor; the next foreach cause reset the cursor
-		$first = true;
+		$subscriberActivation = $revisionsFrom->current()['from'];
 		foreach ($revisionsFrom as $revision) {
 			if ($first) {
 				$first = false;
