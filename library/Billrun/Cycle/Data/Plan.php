@@ -13,7 +13,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	use Billrun_Traits_ForeignFields;
 	
-	protected static $copyFromChargeData = ['prorated_start', 'prorated_end', 'prorated_start_date', 'is_upfront'];
+	protected static $copyFromChargeData = ['prorated_start', 'prorated_end', 'prorated_start_date', 'is_upfront', 'split'];
 	protected $plan = null;
 	protected $name = null;
 	protected $start = 0;
@@ -67,10 +67,10 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 				$entry[$field] = $chargeData[$field];
 			}
 		}
-		if (!empty($chargeData['start']) && ($this->cycle->start() < $chargeData['start'] || $chargeData['is_upfront'])) {
+		if (!empty($chargeData['start'])) {
 			$entry['start'] = new Mongodloid_Date($chargeData['start']);
 		}
-		if (!empty($chargeData['end']) && ($this->cycle->end() - 1 > $chargeData['end']|| $chargeData['is_upfront'])) {
+		if (!empty($chargeData['end'])) {
 			$entry['end'] = new Mongodloid_Date($chargeData['end']);
 		}
 

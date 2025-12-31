@@ -35,7 +35,7 @@
         "type": "subscriber",
         "from": "2025-10-23 13:04:25",
         "to": "2200-01-01 02:00:00",
-        "plan": "B2C_5GUNLIMITEDMAX_PP_INADV_2",
+        "plan": "UPFRONT_PLAN_PORATED_START_FALSE",
         "play": "MOBILE",
         "firstname": "xx",
         "lastname": "zz",
@@ -47,8 +47,8 @@
         "former_plan": null,
         "services": [],
         "imsi": [],
-        "sub_number": "35796670808",
-        "portability_code": "PTTEXXPQ",
+        "sub_number": "",
+        "portability_code": "",
         "discounts": [
           {
             "priority": "",
@@ -56,7 +56,7 @@
             "from": "2025-10-23 10:04:25",
             "subject": {
               "plan": {
-                "B2C_5GUNLIMITEDMAX_PP_INADV_2": {
+                "UPFRONT_PLAN_PORATED_START_FALSE": {
                   "value": 16.806
                 }
               }
@@ -65,7 +65,7 @@
             "cycles": 24,
             "type": "monetary",
             "to": "2025-12-23 10:04:25",
-            "description": "5G Unlimited Max 24 month Com Sim Only Youth Discount",
+            "description": "",
             "key": "SUBSCRIBER_DISCOUNT_937"
           }
         ],
@@ -73,7 +73,7 @@
           {
             "type": "plan",
             "id": null,
-            "key": "B2C_5GUNLIMITEDMAX_PP_INADV_2",
+            "key": "UPFRONT_PLAN_PORATED_START_FALSE",
             "value": {
               "price": [
                 {

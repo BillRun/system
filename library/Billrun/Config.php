@@ -24,7 +24,7 @@ class Billrun_Config {
 	/**
 	 * the config container
 	 * 
-	 * @var Yaf_Config
+	 * @var Yaf_Config_Simple
 	 */
 	protected $config;
 
@@ -635,6 +635,11 @@ class Billrun_Config {
 			}
 		}
 		return $fileType;
+	}
+
+	public function setInternalSubscribersMode() {
+		$this->config['subscribers']['subscriber']['type'] = 'db';
+		$this->config['subscribers']['account']['type'] = 'db';
 	}
 
 }

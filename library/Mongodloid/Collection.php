@@ -720,6 +720,7 @@ class Mongodloid_Collection {
 
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = !empty($collName) ? $collName : $this->getName();
+		Billrun_Factory::log("Creating auto increment for collection: " . $collection_name, Zend_Log::DEBUG);
 		//check for existing seq
 		if (!empty($params)) {
 			$key = serialize($params);

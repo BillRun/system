@@ -582,8 +582,8 @@ class ConfigModel {
 				$mandatoryQuery['$or'][] = array($field['name'] => array('$exists' => false));
 			}
 		}
-		
-		return $entityModel->getCollection()->query($mandatoryQuery)->count() === 0;
+
+		return $entityModel->getCollection()->query($mandatoryQuery)->cursor()->limit(1)->current()->isEmpty();
 	}
 	
 	/**

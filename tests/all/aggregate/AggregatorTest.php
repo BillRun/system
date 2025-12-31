@@ -31,7 +31,7 @@ class AggregatorTest extends \Codeception\Test\Unit
     public function test2DiffOverridesFor2DifferentSidsUnderSameAccount()
     {
         $this->tester->generatePlan(['name' => 'PLAN_A']);
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202410', 'aid' => 123));
         $this->assertEqualsWithDelta(117058.5, $billrun['totals']['after_vat'],$this->epsilon);
     }
@@ -49,7 +49,7 @@ class AggregatorTest extends \Codeception\Test\Unit
         ]);
         $this->defaultOptions['force_accounts'] = [125];
         $this->defaultOptions["stamp"] = "202411";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 125));
         $this->assertEqualsWithDelta(105.3, $billrun['totals']['after_vat'],$this->epsilon);
     }
@@ -69,7 +69,7 @@ class AggregatorTest extends \Codeception\Test\Unit
         ]);
         $this->defaultOptions['force_accounts'] = [126];
         $this->defaultOptions["stamp"] = "202411";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 126));
         $this->assertEqualsWithDelta(106.054838709, $billrun['totals']['after_vat'],$this->epsilon);
 
@@ -89,7 +89,7 @@ class AggregatorTest extends \Codeception\Test\Unit
         ]);
         $this->defaultOptions['force_accounts'] = [127];
         $this->defaultOptions["stamp"] = "202411";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 127));
         $this->assertEqualsWithDelta(5.85, $billrun['totals']['after_vat'],$this->epsilon);
     }
@@ -110,7 +110,7 @@ class AggregatorTest extends \Codeception\Test\Unit
         ]);
         $this->defaultOptions['force_accounts'] = [128];
         $this->defaultOptions["stamp"] = "202411";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 128));
         $this->assertEqualsWithDelta(52.65, $billrun['totals']['after_vat'],$this->epsilon);
     }
@@ -141,7 +141,7 @@ class AggregatorTest extends \Codeception\Test\Unit
         ]);
         $this->defaultOptions['force_accounts'] = [129];
         $this->defaultOptions["stamp"] = "202411";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 129));
         $this->assertEqualsWithDelta(105.3, $billrun['totals']['after_vat'],$this->epsilon);
     }
@@ -162,7 +162,7 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
         
         $this->defaultOptions['force_accounts'] = [130];
         $this->defaultOptions["stamp"] = "202411";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 130));
          $this->assertEqualsWithDelta(216.45, $billrun['totals']['after_vat'],$this->epsilon);
     }
@@ -180,7 +180,7 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
         ]);
         $this->defaultOptions['force_accounts'] = [131];
         $this->defaultOptions["stamp"] = "202411";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 131));
         $this->assertEqualsWithDelta(107.94193548387096, $billrun['totals']['after_vat'],$this->epsilon);
     }
@@ -201,7 +201,7 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
         ]);
         $this->defaultOptions['force_accounts'] = [132];
         $this->defaultOptions["stamp"] = "202411";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 132));
         $this->tester->seeNumElementsInCollection('lines', 2, ['type' => 'credit','aid'=>132]);
         $this->assertEqualsWithDelta(105.3, $billrun['totals']['after_vat'],$this->epsilon);
@@ -232,7 +232,7 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
         ]);
         $this->defaultOptions['force_accounts'] = [133];
         $this->defaultOptions["stamp"] = "202411";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 133));
         $this->assertEqualsWithDelta(210.6, $billrun['totals']['after_vat'],$this->epsilon);
     }
@@ -270,7 +270,7 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
         ]);
         $this->defaultOptions['force_accounts'] = [134];
         $this->defaultOptions["stamp"] = "202411";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 134));
         $this->assertEqualsWithDelta(351, $billrun['totals']['after_vat'],$this->epsilon);
     }
@@ -288,7 +288,7 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
         ]);
         $this->defaultOptions['force_accounts'] = [135];
         $this->defaultOptions["stamp"] = "202411";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 135));
         $this->assertEqualsWithDelta(0, $billrun['totals']['after_vat'],$this->epsilon);
     }
@@ -317,7 +317,7 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
         ]);
         $this->defaultOptions['force_accounts'] = [136];
         $this->defaultOptions["stamp"] = "202411";
-        $this->tester->aggregator($this->defaultOptions);
+        $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202411', 'aid' => 136));
         $this->assertEqualsWithDelta(117, $billrun['totals']['after_vat'],$this->epsilon);
     }

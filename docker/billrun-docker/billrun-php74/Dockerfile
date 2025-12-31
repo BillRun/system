@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && pecl install mongodb-1.15.3 \
     && pecl install xdebug-3.1.6 \
     && pecl install memcached \
-    && pecl install redis \
+    && pecl install redis-6.2.0 \
     && docker-php-ext-enable yaf mongodb xdebug memcached redis \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp calendar
 
@@ -35,11 +35,13 @@ COPY --from=composer:2.6.6 /usr/bin/composer /usr/bin/composer
 COPY composer.json /var/www/html/
 RUN composer install -d /var/www/html/  # in production we need to add --no-dev
 
+COPY enable_client_plugin.sh /enable_client_plugin.sh
+RUN chmod ug+x /enable_client_plugin.sh
+ENTRYPOINT ["/enable_client_plugin.sh"]
 ARG EXTRA_PACKAGES=""
 RUN if [ -n "${EXTRA_PACKAGES}" ]; then \
       apt-get install --no-install-recommends -y ${EXTRA_PACKAGES}; \
     fi
 WORKDIR /billrun
-
 
 CMD ["php-fpm"]
