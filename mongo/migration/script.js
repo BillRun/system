@@ -2086,6 +2086,10 @@ runOnce(lastConfig, 'BRCD-4739', function () {
 	db.createCollection("plugin_teldas_non_working_days"); 
 });
 
+runOnce(lastConfig, 'BRCD-4948', function () {
+	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariff_switching_classes_unique_index" });
+});
+
 if (typeof lastConfig['export'] === 'undefined') {
 	lastConfig.export = 1;
 }
