@@ -21,9 +21,17 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 	public function __construct($options) {
 		parent::__construct($options);
 		$hostAndPort = $this->host . ':' . $this->port;
-		$auth = array(
-			'password' => $this->password,
-		);
+		if (isset($options['key'])) {
+			$directoryPath = 'files/keys/payment_gateways/';
+			$sharedDirectoryPath = Billrun_Util::getBillRunSharedFolderPath($directoryPath);
+			$auth = array(
+				'key' => $sharedDirectoryPath . $options['key'],
+			);
+		} else {
+			$auth = array(
+				'password' => $options['password'],
+			);
+		}
 		$this->source = isset($options['type']) ? $options['type'] : self::$type;
 		$this->connection = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
 	}

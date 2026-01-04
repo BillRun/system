@@ -15,7 +15,7 @@ class Test_Case_42778
             [
 
                 "from" => "2025-09-03T22:00:00Z",
-                "name" => "B2C" . time(),
+                "name" => "B2C_42778",
                 "price" => [
                     [
                         "price" => 16.79,
@@ -32,7 +32,7 @@ class Test_Case_42778
                 "connection_type" => "postpaid",
                 "to" => "2025-09-05T13:23:53Z",
                 "creation_time" => "2017-07-01T04:00:00Z",
-                "prorated_start" => true,
+                "prorated_start" => false,
                 "prorated_end" => true,
                 "prorated_termination" => FALSE
             ]
