@@ -739,7 +739,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					$paymentParams['billrun_key'] = $billDetails['billrun_key'];
 					$gatewayDetails['currency'] = !empty($billDetails['currency']) ? $billDetails['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 					$gatewayName = $gatewayDetails['name'];
-					$gatewayInstanceName = $gatewayDetails['instance_name'];
+					$gatewayInstanceName = $gatewayDetails['instance_name'] ?? $gatewayDetails['name']; // temp fix for BRCD-4010
 					$paymentParams['gateway_details'] = $gatewayDetails;
 					if ($gatewayDetails['amount'] > 0) {
 						Billrun_Factory::log("Charging account " . $billDetails['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
