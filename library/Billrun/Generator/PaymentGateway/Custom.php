@@ -11,6 +11,12 @@
  */
 abstract class Billrun_Generator_PaymentGateway_Custom {
 
+    use Billrun_Traits_Api_FlexibleOperationsLock {
+        // Rename the trait's methods to new names because class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest  that extends
+        // it has same function names for the old Lock.
+        lock as flexibleLock;
+        release as flexibleRelease;
+    }
 	public $now;
     protected $configByType;
     protected $exportDefinitions;
@@ -288,10 +294,35 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $exportDetails = $this->configByType['export'];
         $connection = Billrun_Factory::paymentGatewayConnection($exportDetails);
         $fileName = $this->getFilename();
+
+        $exportLockId = [
+            'action'     => 'send_file',
+            'filtration' => 'send_' . $this->gatewayName,
+        ];
+        $lockAcquiredByThisProcess = false;
+        if ($this->flexibleLock($exportLockId, 6)) {
+            $lockAcquiredByThisProcess = true;
+        } else {
+            Billrun_Factory::log()->log('Failed to acquire lock, sending file is already in progress for: ' . $this->gatewayName, Zend_Log::NOTICE);
+            return;
+        }
+        try {
+        $filePath = rtrim($exportDetails['export_directory'], DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fileName;
+        $this->logFile->updateLogFileField('path', $filePath);
+        $this->logFile->updateLogFileField('start_upload_time', new Mongodloid_Date());
+        $this->logFile->saveLogFileFields();
 		$res = $connection->export($fileName);
 		if (!$res) {
 			Billrun_Factory::log()->log('Failed moving file ' . $fileName, Zend_Log::ALERT);
-		}
+		} else {
+            $this->logFile->updateLogFileField('end_upload_time', new Mongodloid_Date());
+            $this->logFile->saveLogFileFields();
+        }
+        } finally {
+            if ($lockAcquiredByThisProcess && !$this->flexibleRelease($exportLockId)) {
+                Billrun_Factory::log("Problem in releasing operation lock for gateway: " . $this->gatewayName, Zend_Log::ALERT);
+            }
+        }
 	}
 
     protected function getTranslationValue($paramObj) {
