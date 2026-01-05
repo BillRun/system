@@ -793,6 +793,24 @@ class BillRunAPI extends \Codeception\Module{
 
     $this->sendBillapiCreate($discount, 'discounts');
   }
+
+    public function sendOnetimeInvoiceApi(array $cdrs, $aid, $extra_params = []) {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+
+        $params = [
+            'cdrs' => json_encode($cdrs),
+            'aid' => $aid
+        ];
+        $params = array_merge($params, $extra_params);
+
+        // For GET request, we need to add parameters to the URL
+        $ret = $rest->sendGET("/api/onetimeinvoice", $params);
+
+        return json_decode($ret, true);
+    }
     
 }
 //billapi/accounts/permanentchange

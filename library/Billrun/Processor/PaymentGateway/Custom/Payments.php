@@ -97,6 +97,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		}
 		if (isset($ret['payment'])) {
 			$customFields = $this->getCustomPaymentGatewayFields($row);
+			$extraFields = array_merge($customFields, $this->billSavedFields);
 			foreach ($ret['payment'] as $index => $returned_payment) {
 				$payment_data = $returned_payment->getRawData();
 				if(isset($payment_data['pays'])) {
@@ -113,7 +114,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 					Billrun_Factory::log()->log($message, Zend_Log::INFO);
 					$this->informationArray['info'][] = $message;
 				}
-				$returned_payment->setExtraFields($customFields, array_keys($customFields));
+            	$returned_payment->setExtraFields($extraFields, array_keys($extraFields));
 			}
 		}
         $this->informationArray['transactions']['confirmed']++;

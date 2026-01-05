@@ -1,12 +1,29 @@
 import Immutable from 'immutable';
 import moment from 'moment';
+import isNumber from 'is-number';
 import {
   escapeRegExp,
   isValueOn,
 } from './Util';
 
+
+export const getAccountsInvoicesQuery = (aid) => {
+  return getEntitesQuery('bills', {
+    aid: 1,
+    amount: 1,
+    invoice_id: 1,
+    invoice_date: 1,
+    due_before_vat: 1,
+  }, { 
+    type: 'inv',
+    aid: parseFloat(aid),
+  }, {
+    invoice_id: 1
+  });
+}
+
 // TODO: fix to uniqueget (for now billAoi can't search by 'rates')
-export const searchProductsByKeyAndUsagetQuery = (usages, notKeys, plays = '') => {
+export const searchProductsByKeyAndUsagetQuery = (usages, notKeys = [], plays = '') => {
   const usagesToQuery = Array.isArray(usages) ? usages : [usages];
   const query = {
     key: {
@@ -38,7 +55,7 @@ export const searchProductsByKeyAndUsagetQuery = (usages, notKeys, plays = '') =
   formData.append('collection', 'rates');
   formData.append('size', 99999);
   formData.append('page', 0);
-  formData.append('project', JSON.stringify({ key: 1, name: 1 }));
+  formData.append('project', JSON.stringify({ key: 1, name: 1, description: 1 }));
   formData.append('query', JSON.stringify(query));
 
   return {
@@ -330,6 +347,7 @@ export const getEntitesQuery = (collection, project = {}, query = {}, sort = nul
   switch (collection) {
     case 'users':
     case 'suggestions':
+    case 'bills':
       action = 'get';
       break;
     default:
@@ -523,7 +541,7 @@ export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file,
   });
 }
 
-export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_charge', sendMail = false) => {
+export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_charge', sendMail = false, note = '', invoiceUnixtime = '') => {
   const cdrs = lines
     .map(line => Immutable.Map({
       aid: aid,
@@ -539,6 +557,24 @@ export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_c
     { aid },
     { send_email: sendMail ? 1 : 0 },
   ];
+  const adjusts = lines
+    .map(line => Immutable.Map({
+      invoice_id: line.get('inv_id', ''),
+      amount: line.get('price', ''),
+    }))
+    .filter(adjust => adjust.get('invoice_id', '') !== '');
+  if (adjusts && !adjusts.isEmpty()) {
+    params.push({ adjusts: JSON.stringify(adjusts) });
+  }
+  if (typeof note === 'string' && note.length > 0) {
+      params.push({ note });
+  }
+  if (isNumber(invoiceUnixtime)) {
+      params.push({ invoice_unixtime: invoiceUnixtime });
+  }
+  if (typeof lines === 'string' && lines.length > 0) {
+      params.push({ lines });
+  }
   if (invoiceType === 'without_charge') {
     params.push({ step: 1 });
     params.push({ allow_bill: 1 });
@@ -551,13 +587,9 @@ export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_c
     params.push({ charge_flow: 'charge_before_invoice' });
   } else if (invoiceType === 'expected') {
     params.push({ step: 0 });
-    params.push({ allow_bill: 1 });
-    params.push({ charge_flow: 'charge_before_invoice' });
     params.push({ expected: 1 });
   } else if (invoiceType === 'download_expected') {
     params.push({ step: 0 });
-    params.push({ allow_bill: 1 });
-    params.push({ charge_flow: 'charge_before_invoice' });
     params.push({ expected: 1 });
     params.push({ send_back_invoices: 1 });
   }
@@ -567,11 +599,11 @@ export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_c
   };
 }
 
-export const generateOneTimeInvoiceDownloadExpectedQuery = (aid, lines, invoiceType) =>
-  generateOneTimeInvoiceQuery(aid, lines, 'download_expected', false);
+export const generateOneTimeInvoiceDownloadExpectedQuery = (aid, lines, note = '', invoiceUnixtime = '') =>
+  generateOneTimeInvoiceQuery(aid, lines, 'download_expected', false, note, invoiceUnixtime);
 
-export const generateOneTimeInvoiceExpectedQuery = (aid, lines) =>
-  generateOneTimeInvoiceQuery(aid, lines, 'expected');
+export const generateOneTimeInvoiceExpectedQuery = (aid, lines, note = '', invoiceUnixtime = '') =>
+  generateOneTimeInvoiceQuery(aid, lines, 'expected', false, note, invoiceUnixtime);
 
 export const auditTrailListQuery = (query, page, fields, sort, size) => ({
   action: 'get',
