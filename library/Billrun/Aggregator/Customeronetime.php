@@ -78,6 +78,8 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
 				//Save Customer user fields
 				$aggregatedEntity->setUserFields($this->customer_uf);
+				//Add note
+				$this->addNote($aggregatedEntity);
 				//Close & Save the billrun document
 				$aggregatedEntity->closeInvoice($this->min_invoice_id, FALSE, $customCollName);
 				//Save configurable/aggretaion data
@@ -195,4 +197,12 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 	public function isOneTime() {
 		return true;
 	}
+
+	protected function addNote(Billrun_Cycle_Account $aggregatedEntity) {
+		$note = Billrun_Util::getFieldVal($this->constructOptions['note'], null);
+		if (!empty($note)) {
+			$aggregatedEntity->getInvoice()->setNote($note);
+		}
+	}
+
 }

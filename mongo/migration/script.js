@@ -2065,6 +2065,12 @@ runOnce(lastConfig, 'BRCD-4725', function () {
 	db.services.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-3218', function () {
+	db.operations.createIndex({ 'action': 1, 'filtration': 1, 'lock_end_time': 1, 'lock_expiry_time': 1 }, { background: true });
+	db.operations.createIndex({ 'lock_start_time': 1 }, { expireAfterSeconds: 5256000 });
+	db.operations.createIndex({ 'start_time': 1 }, { expireAfterSeconds: 5256000 });
+});
+
 runOnce(lastConfig, 'BRCD-4739', function () {
 	lastConfig['plugins'].push({
 		"name": "teldasPlugin",
@@ -2091,10 +2097,19 @@ runOnce(lastConfig, 'BRCD-4969', function () {
 		"billrun_key": 1
 	});
 });
+	
+runOnce(lastConfig, 'BRCD-4948', function () {
+	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariff_switching_classes_unique_index" });
+});
 
 if (typeof lastConfig['export'] === 'undefined') {
 	lastConfig.export = 1;
 }
+runOnce(lastConfig, 'BRCD-4966', function () {
+	db.billing_cycle.createIndex({'billrun_key': 1, 'page_number': 1, 'page_size': 1}, { unique: true , background: true });
+	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'end_time':1},{ unique: false , sparse: false, background: true });
+	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'count':1,'invoicing_day':1},{ unique: false , sparse: false, background: true });
+});
 
 db.config.insertOne(lastConfig);
 
