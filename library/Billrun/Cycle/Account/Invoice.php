@@ -340,6 +340,15 @@ class Billrun_Cycle_Account_Invoice {
 		$invoiceRawData['uf'] = $user_fields;
 		$this->data->setRawData($invoiceRawData);
 	}
+
+	public function setNote($note) {
+		if (empty($note)) {
+			return;
+		}
+		$invoiceRawData = $this->getRawData();
+		$invoiceRawData['note'] = $note;
+		$this->data->setRawData($invoiceRawData);
+	}
 	
 	/**
 	 * Gets the current billrun document raw data
