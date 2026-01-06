@@ -1,6 +1,7 @@
 <?php
 
 namespace Helper;
+use MongoDB\BSON\UTCDateTime;
 
 /**
  * CollectionWrapper Helper for MongoDB operations in Codeception tests
@@ -45,6 +46,23 @@ class CollectionWrapper extends \Codeception\Module
     ];
     $lastConfig->insert($lc);
     \Billrun_Config::getInstance()->loadDbConfig();
+  }
+
+  /**
+   * Function to add operation object to db
+   * @param string $action - operation action to lock
+   * @param mixed $filtration - can be array or string
+   * @param $from & $to - DateTime()
+   */
+  public function addOperationToDb($action, $filtration, $from, $to) {
+    $this->mongodb()->haveInCollection('operations', 
+                [
+                    "action" => $action,
+                    "filtration" => $filtration,
+                    "start_time" => new UTCDateTime($from),
+                    "end_time" => new UTCDateTime($to)
+                ]
+            );
   }
   
 }

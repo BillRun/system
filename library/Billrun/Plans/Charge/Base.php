@@ -22,6 +22,10 @@ abstract class Billrun_Plans_Charge_Base {
 	 * @var Billrun_DataTypes_CycleTime
 	 */
 	protected $cycle;
+	protected $proratedStart;
+	protected $proratedEnd;
+	protected $proratedTermination;
+	protected $subscriberDeactivation;
 	
 	/**
 	 * Create a new instance of the plans charge base class

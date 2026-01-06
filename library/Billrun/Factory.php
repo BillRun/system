@@ -64,11 +64,11 @@ class Billrun_Factory {
 	protected static $subscriber = null;
 	
 	/**
-	 * Account instance
+	 * Account instances
 	 * 
-	 * @var Billrun_Billrun Account
+	 * @var Billrun_Account[] Account
 	 */
-	protected static $account = null;
+	protected static $accounts = null;
 	
 	/**
 	 * Collection Steps instance
@@ -191,6 +191,15 @@ class Billrun_Factory {
 		}
 
 		return self::$config;
+	}
+
+		/**
+	 * method to update the config instance
+	 * 
+	 * @return Billrun_Config
+	 */
+	static public function updateConfig() {
+		self::$config->loadDbConfig();
 	}
 
 	/**
@@ -337,16 +346,17 @@ class Billrun_Factory {
 	 * @return Billrun_Account
 	 */
 	public static function account() {
-		if (!self::$account) {
-			$settings = self::config()->getConfigValue('subscribers.account', array());
-			if (!isset($settings['type'])) {
-				$settings['type'] = 'db';
-			}
-			self::$account = Billrun_Account::getInstance($settings);
+		$settings = self::config()->getConfigValue('subscribers.account', array());
+		if (!isset($settings['type'])) {
+			$settings['type'] = 'db';
 		}
-
-		return self::$account;
+		if (!isset(self::$accounts[$settings['type']])) {
+			self::$accounts[$settings['type']] = Billrun_Account::getInstance($settings);
+		}
+		return self::$accounts[$settings['type']];
 	}
+
+
 	
 	/**
 	 * method to retrieve the account instance

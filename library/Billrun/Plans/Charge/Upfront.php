@@ -14,13 +14,13 @@
  */
 abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 
-	protected $seperatedCrossCycleCharges = false;
+	protected $seperatedCrossCycleCharges = true;
 	
 	public function __construct($plan) {
 		parent::__construct($plan);
 		$this->seperatedCrossCycleCharges = Billrun_Util::getFieldVal(  $plan['separate_cross_cycle_charges'],
                                                                         Billrun_Factory::config()->getConfigValue('billrun.separate_cross_cycle_charges',
-																		$this->seperatedCrossCycleCharges) );
+																		true) );
 	}
 
 	/**
@@ -50,11 +50,11 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 
 			if( $this->activation < $this->cycle->end() && $this->activation >= $this->cycle->start() && $fraction > 1) {
 				$cycles = [
-							['cycle'=> $this->cycle , 'fraction'=> $fraction  - 1],
-							['cycle'=> $nextCycle , 'fraction'=> 1 ],
+							['cycle'=> $this->cycle , 'fraction'=> $fraction  - 1, 'split' => true],
+							['cycle'=> $nextCycle , 'fraction'=> 1 , 'split' => true],
 						];
 			} else if ($fraction == 1 && $this->activation <= $this->cycle->start() ) {
-				$cycles = [['cycle'=> $nextCycle , 'fraction'=> $fraction]];
+				$cycles = [['cycle'=> $nextCycle , 'fraction'=> $fraction, 'split' => false]];
 			}
 		}
 		$retCahrges = [];
@@ -62,7 +62,8 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 			$price = $this->getPriceForCycle($cycleData['cycle']);
 			$retCahrges[] = array_merge($this->getProrationData($this->price,$cycleData['cycle']),array(
 				'value'=> $price * $cycleData['fraction'] * $quantity,
-				'full_price' => floatval($price)
+				'full_price' => floatval($price),
+				'split' => $cycleData['split'] ?? false
 				));
 		}
 		return empty($retCahrges) ? null :  $retCahrges;
@@ -97,15 +98,17 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 			$nextCycle = $this->getUpfrontCycle($cycle);
 			$isUpfront =  $cycle->start() >= $this->cycle->end() || !$this->seperatedCrossCycleCharges && $this->deactivation >= $this->cycle->end() ;
 			//"this->deactivation < $this->cycle->end()" as the  deactivation date euqal the end of the current (and not next) cycle mean that the deactivation is in the future
-			return ['start' => $this->activation,
+			return ['start' => $this->activation > $cycle->start() && $this->proratedStart ? $this->activation  : ($this->seperatedCrossCycleCharges ? $cycle->start() :$nextCycle->start()),
 					'prorated_start_date' => new Mongodloid_Date($this->activation > $cycle->start() ? $this->activation  : ($this->seperatedCrossCycleCharges ? $cycle->start() :$nextCycle->start())),
-					'end' =>  $this->deactivation < $this->cycle->end() ? $this->deactivation : $cycle->end(),
+					'end' => $this->deactivation < $this->cycle->end() && $endProration ? $this->deactivation : ($this->seperatedCrossCycleCharges ? $cycle->end() :$nextCycle->end()),
 					'prorated_end_date' => new Mongodloid_Date($this->deactivation && $this->deactivation < $this->cycle->end() ? $this->deactivation : ($this->seperatedCrossCycleCharges ? $cycle->end() : $nextCycle->end()) ),
 					'start_date' =>new Mongodloid_Date(Billrun_Plan::monthDiffToDate($startOffset,  $this->activation )),
 					'end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() ? $this->deactivation : $cycle->end()),
 					'is_upfront' =>  $isUpfront,
-					'prorated_start' =>  $this->proratedStart && !($isUpfront && $this->seperatedCrossCycleCharges),
-					'prorated_end' =>  $endProration && !$isUpfront
+					'prorated_start' =>  $this->proratedStart,
+					'prorated_end' =>  $endProration,
+					'activation_date' => $this->activation,
+					'deactivation_date' => $this->deactivation
    				];
 	}
 

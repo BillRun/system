@@ -48,7 +48,9 @@ class billapiServiceCest
         }
         //update the service
         foreach ($serviceNames as $serviceName) {
-            $I->sendBillapiCloseandnew('services', ['name' => $serviceName,'effective_date'=>'2024-01-01'],['description'=>$serviceName.'_new','from'=>'2024-05-01']);
+            $I->sendBillapiCloseandnew('services', ['name' => $serviceName,'effective_date'=>'2024-01-01'],['description'=>$serviceName.'_new','from'=>'2024-05-01',
+            "recurrence" =>[
+		"periodicity" => "month"]]);
         }
         
      

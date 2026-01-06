@@ -166,8 +166,7 @@ class Billrun_Billingcycle {
 	public static function getBillrunEndTimeByDate($date, $customer = null, $invoicing_day = null) {
 		$dateTimestamp = strtotime($date);
 		$invoice_day = !empty ($customer['invoicing_day']) ? $customer['invoicing_day'] : (!empty ($invoicing_day) ? $invoicing_day : null);
-		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp, $invoice_day);
-		return self::getEndTime($billrunKey, $invoice_day);
+		return self::getBillrunEndTimeByTimestamp($dateTimestamp, $invoice_day);
 	}
 
 	/**
@@ -177,6 +176,23 @@ class Billrun_Billingcycle {
 	public static function getBillrunStartTimeByDate($date, $customer = null, $invoicing_day = null) {
 		$dateTimestamp = strtotime($date);
 		$invoice_day = !empty ($customer['invoicing_day']) ? $customer['invoicing_day'] : (!empty ($invoicing_day) ? $invoicing_day : null);
+		return self::getBillrunStartTimeByTimestamp($dateTimestamp, $invoice_day);
+	}
+
+	/**
+	 * returns the end timestamp of the input billing period
+	 * @param int $dateTimestamp
+	 */
+	public static function getBillrunEndTimeByTimestamp($dateTimestamp, $invoicing_day = null) {
+		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp, $invoice_day);
+		return self::getEndTime($billrunKey, $invoice_day);
+	}
+
+	/**
+	 * returns the start timestamp of the input billing period
+	 * @param int $dateTimestamp
+	 */
+	public static function getBillrunStartTimeByTimestamp($dateTimestamp, $invoicing_day = null) {
 		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp, $invoice_day);
 		return self::getStartTime($billrunKey, $invoice_day);
 	}
@@ -281,8 +297,8 @@ class Billrun_Billingcycle {
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
 			$existsKeyQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
-		$keyCount = $billingCycleCol->query($existsKeyQuery)->count();
-		if ($keyCount < 1) {
+		$atLeastOneDoc = $billingCycleCol->query($existsKeyQuery)->cursor()->limit(1)->current();
+		if ($atLeastOneDoc->isEmpty()) {
 			return false;
 		}
 		return true;
@@ -672,11 +688,11 @@ class Billrun_Billingcycle {
 			$query['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
 		
-		$billrunDoc = $billrunColl->query($query)->count();
-		$cycleDoc = $billingCycleCol->query($query)->count();
+		$billrunDoc = $billrunColl->query($query)->cursor()->limit(1)->current();
+		$cycleDoc = $billingCycleCol->query($query)->cursor()->limit(1)->current();
 		
 		
-		if ($billrunDoc > 0 && $cycleDoc <= 0) {
+		if (!$billrunDoc->isEmpty() && $cycleDoc->isEmpty()) {
 			return true;
 		}
 		return false;
