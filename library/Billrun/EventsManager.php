@@ -265,7 +265,7 @@ class Billrun_EventsManager {
 				if (intval($valueBefore) == intval($valueAfter)) {
 					return false;
 				}
-				$thresholdIncreasing = $rawValueAfter - ($rawValueAfter % $eventValue);
+				$thresholdIncreasing = $rawValueAfter - fmod($rawValueAfter, $eventValue);
 				$extraValues['reached_constant'] = ($rawValueBefore < $rawValueAfter) ? $thresholdIncreasing : $thresholdIncreasing + $eventValue;
 				
 				return $extraValues;

@@ -3333,7 +3333,38 @@
 										"value": "10"
 									}
 								]
-							}
+							},
+							{
+							"active" : true,
+							"event_code" : "a",
+							"event_description" : "tyw",
+							"conditions" : [
+								{
+									"paths" : [
+										{
+											"path" : "balance.groups.TY.cost",
+											"total_path" : "balance.groups.TY.total",
+											"related_entities" : [
+												{
+													"type" : "group",
+													"key" : "TY"
+												},
+												{
+													"type" : "service",
+													"key" : "SERVICE1_DD"
+												}
+											]
+										}
+									],
+									"unit" : "",
+									"usaget" : "cost",
+									"property_type" : "",
+									"all_groups" : false,
+									"type" : "reached_constant_recurring",
+									"value" : 0.1
+								}
+							]
+						}
 
 
 						]
