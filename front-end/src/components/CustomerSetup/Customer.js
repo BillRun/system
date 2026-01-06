@@ -49,6 +49,8 @@ class Customer extends Component {
     cycles: List(),
   };
 
+  static actionButtonStyle = { minWidth: 250, display: 'block' };
+
   state = {
     showRebalanceConfirmation: false,
     showOfflinePayement: false,
@@ -256,7 +258,6 @@ class Customer extends Component {
     const confirmationTitle = `Are you sure you want to rebalance account ${customer.get('aid')}?`;
     return (
       <div>
-        <Button bsSize="xsmall" className="btn-primary" onClick={this.onClickRebalance}>Rebalance</Button>
         <ConfirmModal onOk={this.checkSelectedCyclesStatus} onCancel={this.onRebalanceConfirmationClose} show={showRebalanceConfirmation} message={confirmationTitle} labelOk="Yes">
           <FormGroup>
             <Row>
@@ -285,9 +286,9 @@ class Customer extends Component {
             </Row>
           </FormGroup>
         </ConfirmModal>
-        <br />
-        <br />
-        <Button bsSize="xsmall" className="btn-primary" onClick={this.createImmediateInvoice}>Immediate Invoice</Button>
+        <Button bsSize="xsmall" className="btn-primary mb10" style={Customer.actionButtonStyle} onClick={this.onClickRebalance}>Rebalance</Button>
+        <Button bsSize="xsmall" className="btn-primary mb10" style={Customer.actionButtonStyle} onClick={this.createImmediateInvoice}>Create an Invoice for Immediate Charge</Button>
+        <Button bsSize="xsmall" className="btn-primary" style={Customer.actionButtonStyle} onClick={this.createRefundInvoice}>Create an Invoice for Immediate Refund</Button>
       </div>
     );
   }
@@ -343,7 +344,7 @@ class Customer extends Component {
     const aid = customer.get('aid', null);
     return (
       <div>
-        <Button bsSize="xsmall" className="btn-primary" onClick={this.onShowCreditCharge}>
+        <Button bsSize="xsmall" style={Customer.actionButtonStyle} className="btn-primary mt10" onClick={this.onShowCreditCharge}>
           Manual charge / refund <Help contents="To the next monthly invoice" />
         </Button>
         { showCreditCharge && (<Credit aid={aid} onClose={this.onCloseCreditCharge} />) }
@@ -353,8 +354,14 @@ class Customer extends Component {
 
   createImmediateInvoice = () => {
     const { customer } = this.props;
-    this.props.dispatch(updateEntityField('immediate-invoice', 'customer', customer));
-    this.props.router.push('/immediate-invoice');
+    this.props.dispatch(updateEntityField('charge-invoice', 'customer', customer));
+    this.props.router.push('/immediate-invoice-charge');
+  }
+
+  createRefundInvoice = () => {
+    const { customer } = this.props;
+    this.props.dispatch(updateEntityField('refund-invoice', 'customer', customer));
+    this.props.router.push('/immediate-invoice-refund');
   }
 
   onShowCreditCharge = () => {
@@ -393,7 +400,6 @@ class Customer extends Component {
             <div>See Customer <Link to={`/usage?base={"aid": ${customer.get('aid')}}`}>Usage</Link></div>
             <div>See Customer <Link to={`/invoices?base={"aid": ${customer.get('aid')}}`}>Invoices</Link> { this.renderExpectedInvoiceButton() }</div>
             { this.renderRebalanceButton() }
-            { <hr /> }
             { this.renderCreditCharge() }
           </div>
         }
