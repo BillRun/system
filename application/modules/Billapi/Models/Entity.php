@@ -482,7 +482,7 @@ class Models_Entity {
 			$newRevision['to'] = $this->update['from'];
 			$key = $this->before[$field];
 			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $this->before->getRawData(), $newRevision);
-			$this->applyCacheChange($this->before->getRawData(), $newRevision);
+			$this->applyCacheChange($newRevision, $this->before->getRawData());
 			$prevEntity = $this->before->getRawData();
 			unset($prevEntity['_id']);
 			$prevEntity['from'] = $this->update['from'];
@@ -518,7 +518,7 @@ class Models_Entity {
 				Billrun_Factory::log('No new revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate), Zend_Log::ALERT);
 			}
 			$newRevisions[$currentId] = $newRevision->getRawData();
-			$this->applyCacheChange($oldRevision, $newRevision);
+			$this->applyCacheChange($newRevision, $oldRevision);
 		}
 		$this->output['totalUpdated'] = $updatedRevisionsCount;
 		$this->output['totalCreated'] = $createdRevisionsCount;
@@ -1465,7 +1465,7 @@ class Models_Entity {
 		}
 	}
 
-	protected function applyCacheChange($old = null, $new = null) {
+	protected function applyCacheChange($new = null, $old = null,) {
 
 	}
 }

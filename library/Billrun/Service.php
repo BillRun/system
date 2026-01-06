@@ -674,7 +674,7 @@ class Billrun_Service {
 		return self::$entities;
 	}
 
-	public static function applyEntityCacheChange($old, $new){
+	public static function applyEntityCacheChange($new, $old){
 		if( !empty(self::$entities)){
 			if($old == null && $new == null){
 				return;
