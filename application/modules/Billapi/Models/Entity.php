@@ -1465,7 +1465,7 @@ class Models_Entity {
 		}
 	}
 
-	protected function applyCacheChange($new = null, $old = null,) {
+	protected function applyCacheChange($new = null, $old = null) {
 
 	}
 }
