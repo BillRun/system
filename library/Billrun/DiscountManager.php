@@ -1492,7 +1492,7 @@ class Billrun_DiscountManager {
 		$discountFrom = $discount['from']->sec ?? $this->cycle->start();
 		$discountTo = $discount['to']->sec ?? $this->cycle->end();
 		$allwaysProratedFlag = Billrun_Factory::config()->getConfigValue('discounts.always_prorated', false);
-
+		$cycles  = $discount['params']['cycles'] ??  null;
 		if ($this->isDiscountProrated($discount, $line)) {
 			$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
 			$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
@@ -1521,9 +1521,22 @@ class Billrun_DiscountManager {
 			}
 			$this->start = $from;
 			$this->end = $to;
+		} 
+		if(isset($cycles)){
+			$proratedStart = isset($proratedStart) ? $proratedStart : false;
+			$startTime =  $proratedStart ? Billrun_Utils_Time::getTime($line['start_date']) :  Billrun_Billingcycle::getBillrunStartTimeByTimestamp(Billrun_Utils_Time::getTime($line['start_date']), $this->cycle->invoicingDay());;
+			$toByCycles = strtotime("+{$cycles} months", $startTime);
+			if(!$proratedEnd && $toByCycles < $this->cycle->end()){
+				$toByCycles = $this->cycle->start();
+			}
+			$to = min($to, $toByCycles, $this->cycle->end());
 		}
 		if(!$isSequential){
-			$flatAmount = $amount = $this->getDiscountAmount($discount, $line, $value, $operations);
+			if(isset($cycles) && $to <= $this->cycle->start()){
+				$amount = 0;
+			}else{
+				$flatAmount = $amount = $this->getDiscountAmount($discount, $line, $value, $operations);
+			}
 			if ($this->isDiscountProrated($discount, $line)) {
 				$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to, 'ceil');
 				$cycleDays = $this->cycle->days();
@@ -1550,7 +1563,7 @@ class Billrun_DiscountManager {
 							$amount = $flatAmount;
 						}
 					}else{
-						$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line);//i don't think this will work for seperatedCrossCycleCharges = false
+						$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line);
 					}
 				}
 			}else{
