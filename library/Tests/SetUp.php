@@ -97,7 +97,7 @@ trait Tests_SetUp
 				continue;
 			}
 			if (!empty($parsedData['data'])) {
-				$data = $this->fixData($parsedData['data']);
+				$data = $this->fixData($parsedData['data'],$file);
 				$coll = Billrun_Factory::db()->{$parsedData['collection']}();
 				$coll->batchInsert($data);
 			}
@@ -347,7 +347,7 @@ trait Tests_SetUp
 	 * @param array $data
 	 * @return array
 	 */
-	public function fixData($data)
+	public function fixData($data, $file)
 	{
 		foreach ($data as $key => $jsonFile) {
 			$data[$key] = $this->fixArrayDates($jsonFile);
@@ -357,6 +357,9 @@ trait Tests_SetUp
 		}
 		foreach ($data as $key => $jsonFile) {
 			$data[$key] = $this->fixDbRef($jsonFile);
+		}
+		if($file == 'config'){
+			$data[0]['urt'] = new  MongoDB\BSON\UTCDateTime(round(microtime(true) * 1000));
 		}
 		return $data;
 	}
