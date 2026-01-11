@@ -89,15 +89,15 @@ trait Tests_SetUp
 		$this->cleanCollection($this->collectionToClean);
 		$collectionsToSet = $this->importData;
 		array_unshift($collectionsToSet, 'config');
-		foreach ($collectionsToSet as $file) {
-			$dataAsText = file_get_contents(dirname(__FILE__) . $this->dataPath . $file . '.json');
+		foreach ($collectionsToSet as $collectionName) {
+			$dataAsText = file_get_contents(dirname(__FILE__) . $this->dataPath . $collectionName . '.json');
 			$parsedData = json_decode($dataAsText, true);
 			if ($parsedData === null) {
-				echo (' <span style="color:#ff3385; font-style: italic;">' . $file . '.json. </span> <br>');
+				echo (' <span style="color:#ff3385; font-style: italic;">' . $collectionName . '.json. </span> <br>');
 				continue;
 			}
 			if (!empty($parsedData['data'])) {
-				$data = $this->fixData($parsedData['data']);
+				$data = $this->fixData($parsedData['data'],$collectionName);
 				$coll = Billrun_Factory::db()->{$parsedData['collection']}();
 				$coll->batchInsert($data);
 			}
@@ -347,7 +347,7 @@ trait Tests_SetUp
 	 * @param array $data
 	 * @return array
 	 */
-	public function fixData($data)
+	public function fixData($data, $collectionName)
 	{
 		foreach ($data as $key => $jsonFile) {
 			$data[$key] = $this->fixArrayDates($jsonFile);
@@ -357,6 +357,9 @@ trait Tests_SetUp
 		}
 		foreach ($data as $key => $jsonFile) {
 			$data[$key] = $this->fixDbRef($jsonFile);
+		}
+		if($collectionName == 'config'){
+			$data[0]['urt'] = new MongoDB\BSON\UTCDateTime();
 		}
 		return $data;
 	}
@@ -397,7 +400,7 @@ trait Tests_SetUp
 		$this->config = Billrun_Factory::db()->configCollection();
 		$ret = $this->config->query()
 			->cursor()
-			->sort(array('_id' => -1))
+			->sort(array('urt'=> -1, '_id' => -1))
 			->limit(1)
 			->current()
 			->getRawData();
@@ -451,7 +454,7 @@ trait Tests_SetUp
 		$config = Billrun_Factory::db()->configCollection();
 		$data = $this->config->query()
 			->cursor()
-			->sort(array('_id' => -1))
+			->sort(array('urt'=> -1, '_id' => -1))
 			->limit(1)
 			->current()
 			->getRawData();

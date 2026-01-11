@@ -40,8 +40,7 @@ class discountTest extends \Codeception\Test\Unit
         $account = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->defaultOptions['stamp'] = '202511';
         $this->defaultOptions['force_accounts'] = [$account['aid']];
-        $this->tester->generateService(['name'=>'SERVICE_DISCOUNT_TEST'.microtime(false)*1000000]);
-        $service = json_decode($this->tester->grabResponse(), true)['entity'];
+        $service = $this->tester->generateService(['name'=>'SERVICE_DISCOUNT_TEST'.microtime(false)*1000000]);
         $subscriber = $this->tester->generateSubscriber(
             [
                  'from' => '2025-09-10T10:00:00Z',
