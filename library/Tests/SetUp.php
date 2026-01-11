@@ -359,7 +359,7 @@ trait Tests_SetUp
 			$data[$key] = $this->fixDbRef($jsonFile);
 		}
 		if($file == 'config'){
-			$data[0]['urt'] = new  MongoDB\BSON\UTCDateTime(round(microtime(true) * 1000));
+			$data[0]['urt'] = new MongoDB\BSON\UTCDateTime();
 		}
 		return $data;
 	}
@@ -400,7 +400,7 @@ trait Tests_SetUp
 		$this->config = Billrun_Factory::db()->configCollection();
 		$ret = $this->config->query()
 			->cursor()
-			->sort(array('_id' => -1))
+			->sort(array('urt'=> -1, '_id' => -1))
 			->limit(1)
 			->current()
 			->getRawData();
@@ -454,7 +454,7 @@ trait Tests_SetUp
 		$config = Billrun_Factory::db()->configCollection();
 		$data = $this->config->query()
 			->cursor()
-			->sort(array('_id' => -1))
+			->sort(array('urt'=> -1, '_id' => -1))
 			->limit(1)
 			->current()
 			->getRawData();
