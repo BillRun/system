@@ -80,12 +80,12 @@ class Billrun_Account_Db extends Billrun_Account {
 		Billrun_Factory::dispatcher()->trigger('alterBillableDBActiveAccountQuery',[&$accountsQuery , $page, $size, $aids, $invoicing_days ]);
 		$pipeline = [
 			['$match' => $accountsQuery],       
-			['$sort' => ['aid' => 1]],
-			['$skip' => $page * $size],
-			['$limit' => $size],
 			['$group' => [                         // group by aid
 				'_id' => '$aid'
 			]],
+			['$sort' => ['aid' => 1]],
+			['$skip' => $page * $size],
+			['$limit' => $size],
 			['$project' => [
 				'aid' => '$_id',
 				'_id' => 0
