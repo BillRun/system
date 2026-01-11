@@ -510,14 +510,18 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			if ($this->limit != 0) {
 				Billrun_Factory::log('Looking for the last available line in the queue', Zend_Log::DEBUG);
 				if (isset($querydata['hint'])) {
-					$hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->limit($this->limit);
+					$hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1));
 					if ($this->autosort) {
-						$hq->sort(array('calc_time'=>1, 'urt' => 1));
+						$hq->limit($this->limit + 1)->sort(array('calc_time'=>1, 'urt' => 1));
+					}else{
+						$hq->limit($this->limit);
 					}
 				} else {
 					$hq = $queue->query($query)->cursor()->limit($this->limit);
 					if ($this->autosort) {
-						$hq->sort(array('calc_time'=>1, 'urt' => 1));
+						$hq->limit($this->limit + 1)->sort(array('calc_time'=>1, 'urt' => 1));
+					}else{
+						$hq->limit($this->limit);
 					}
 				}
 				$updateQuery = $this->getBaseUpdateQuery($query, $hq);
@@ -576,7 +580,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				if (Mongodloid_Date::equals($last['calc_time'], $first['calc_time'])) {
 					$query['$and'][] = ['calc_time' => $last['calc_time']];
 					$query['$and'][] = [
-						'urt' => ['$gte' => $first['urt'], '$lte' => $last['urt']]
+						'urt' => ['$gte' => $first['urt'], '$lt' => $last['urt']]
 					];
 				} else {
 					if($first['calc_time'] ==  false){
