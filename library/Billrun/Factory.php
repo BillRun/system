@@ -261,8 +261,40 @@ class Billrun_Factory {
 	 */
 	static public function mailer() {
 		try {
-			$mailer = new Zend_Mail();
-			$mailerTransport = Billrun_Factory::config()->getConfigValue('mailer.transport');
+            $mailer = new Zend_Mail();
+            $mailerTransport = Billrun_Factory::config()->getConfigValue('mailer.transport');
+			$oauthSettings = isset($mailerTransport['oauth2']) ? $mailerTransport['oauth2'] : [];
+            if (isset($mailerTransport['auth']) && $mailerTransport['auth'] === 'oauth2') {
+				$oauthParams = [
+					'access_token_url' => isset($oauthSettings['token_url']) ? $oauthSettings['token_url'] : '',
+					'cache' => true,
+					'data' => [
+						'client_id'     => isset($oauthSettings['client_id']) ? $oauthSettings['client_id'] : '',
+						'client_secret' => isset($oauthSettings['client_secret']) ? $oauthSettings['client_secret'] : '',
+						'refresh_token' => isset($oauthSettings['refresh_token']) ? $oauthSettings['refresh_token'] : '',
+						'grant_type'    => 'refresh_token',
+					]
+				];
+
+				$authClient = new Billrun_AuthClient_Oauth2($oauthParams);
+				$tokenData = $authClient->fetchTokenData();
+				$accessToken = $tokenData['access_token'] ?? null;
+
+
+				if (isset($tokenData['refresh_token']) && $tokenData['refresh_token'] !== $oauthSettings['refresh_token']) {
+					Billrun_Factory::config()->setConfigValue('mailer.transport.oauth2.refresh_token', $tokenData['refresh_token']);
+					$mailerTransport['oauth2']['refresh_token'] = $tokenData['refresh_token'];
+				}
+
+                if (!$accessToken) {
+                    throw new Exception('OAuth2 Token generation failed');
+                }
+                $mailerTransport['accessToken'] = $accessToken;                
+                if (!isset($mailerTransport['email']) && isset($mailerTransport['username'])) {
+                    $mailerTransport['email'] = $mailerTransport['username'];
+                }
+            }
+
 			if (!empty($mailerTransport)) {
 				$className = 'Zend_Mail_Transport_' . ucfirst($mailerTransport['type']);
 				$transport = new $className($mailerTransport['host'], $mailerTransport);
