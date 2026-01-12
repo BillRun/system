@@ -9,6 +9,7 @@ import CustomersList from '@/components/CustomersList';
 import CustomerSetup from '@/components/CustomerSetup';
 import ProductsList from '@/components/ProductsList';
 import Product from '@/components/Product';
+import OAuthCallback from '@/components/OAuthCallback';
 import ReportsList from '@/components/ReportsList';
 import Report from '@/components/Report';
 import PlansList from '@/components/PlansList';
@@ -163,6 +164,7 @@ const routes = () => (
         <Route path="/custom_fields" component={Authentication(CustomFields)} title="Custom Fields" />
         <Route path="/events" component={Authentication(Events)} title="Events" />
         <Route path="/email_templates" component={Authentication(EmailTemplates)} title="Email Templates" />
+        <Route path="/oauth/callback" component={OAuthCallback} title="OAuth Callback" />
 
         <Route path="/login" component={LoginPage} title="Login" />
         <Route path="/about" component={About} title="About" />

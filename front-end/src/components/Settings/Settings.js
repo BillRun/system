@@ -16,6 +16,7 @@ import Security from './Security';
 import EditMenu from './EditMenu';
 import UsageTypes from './UsageTypes';
 import System from './System';
+import Email from './Email';
 import { ActionButtons } from '@/components/Elements';
 import { getSettings, updateSetting, saveSettings, fetchFile, getCurrencies } from '@/actions/settingsActions';
 import { prossessMenuTree, combineMenuOverrides, initMainMenu } from '@/actions/guiStateActions/menuActions';
@@ -73,6 +74,7 @@ class Settings extends Component {
       'file_types',
       'system',
       'plugins',
+      'mailer',
       'plays'
     ];
     this.props.dispatch(getSettings(settingsToFetch));
@@ -168,6 +170,7 @@ class Settings extends Component {
     const tenant = settings.get('tenant', Immutable.Map());
     const mainMenuOverrides = settings.getIn(['menu', 'main'], Immutable.Map());
     const mainMenu = prossessMenuTree(combineMenuOverrides(mainMenuOverrides), 'root');
+    const mailer = settings.get('mailer', Immutable.Map());
 
     return (
       <div>
@@ -245,6 +248,12 @@ class Settings extends Component {
           <Tab title="Plugins" eventKey={10}>
             <Panel style={{ borderTop: 'none' }}>
               <Plugins onChange={this.onChangeFieldValue} data={plugins} />
+            </Panel>
+          </Tab>
+
+          <Tab title="Email" eventKey={11}>
+            <Panel style={{ borderTop: 'none' }}>
+              <Email onChange={this.onChangeFieldValue} data={mailer} />
             </Panel>
           </Tab>
 
