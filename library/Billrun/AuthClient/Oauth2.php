@@ -82,4 +82,44 @@ class Billrun_AuthClient_Oauth2 {
         $serializeDataForCacheKey = $this->params['serialize_data_for_cache_key'] ?? false;
         return "Billrun_AuthClient_Oauth2_token_" . md5(serialize($url)) . (!empty($serializeDataForCacheKey) ? "_" . md5(serialize($data)) : "");
     }
+
+    /**
+     * Helper to exchange Auth Code for Tokens.
+     * Defaults 'grant_type' to 'authorization_code' if not provided.
+     * * @param string $tokenUri
+     * @param array $params (Must include: code, client_id, client_secret, redirect_uri)
+     * @return array The JSON response from provider
+     * @throws Exception
+     */
+    public static function exchangeCodeForToken($tokenUri, array $params) {
+        $request = new Billrun_Http_Request($tokenUri);
+        $request->setMethod(Billrun_Http_Request::POST);
+        $request->setHeaders(['Content-Type' => 'application/x-www-form-urlencoded']);
+        
+        // 1. Apply Default: If grant_type is missing, use 'authorization_code'
+        if (!isset($params['grant_type'])) {
+            $params['grant_type'] = 'authorization_code';
+        }
+
+        $request->setParameterPost($params);
+        
+        // Perform Request
+        $response = $request->request();
+        
+        if ($response->isError()) {
+             $msg = "HTTP Error " . $response->getStatus() . ": " . $response->getMessage();
+             Billrun_Factory::log("OAuth2 Exchange Failed: " . $msg, Zend_Log::ERR);
+             throw new Exception($msg);
+        }
+
+        $body = json_decode($response->getBody(), true);
+        
+        if (empty($body) || isset($body['error'])) {
+            $errorMsg = isset($body['error_description']) ? $body['error_description'] : ($body['error'] ?? 'Unknown error');
+            Billrun_Factory::log("OAuth2 Provider Error: " . $errorMsg, Zend_Log::ERR);
+            throw new Exception($errorMsg);
+        }
+
+        return $body;
+    }
 }
