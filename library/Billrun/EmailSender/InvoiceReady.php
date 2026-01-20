@@ -60,6 +60,9 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 			'[[cycle_range]]' => date(Billrun_Base::base_dateformat, $data['start_date']->sec) . ' - ' . date(Billrun_Base::base_dateformat, $data['end_date']->sec),
 			'[[company_email]]' => Billrun_Factory::config()->getConfigValue('tenant.email', ''),
 			'[[company_name]]' => Billrun_Factory::config()->getConfigValue('tenant.name', ''),
+			'[[company_website]]' => Billrun_Factory::config()->getConfigValue('tenant.website', ''),
+			'[[previous_month]]' => $data['totals']['past_balance']['after_vat'] ?? 0
+
 		);
 
 		Billrun_Factory::dispatcher()->trigger('alterMessageTranslations',[&$replaces, $data, $this]);
@@ -138,6 +141,10 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	 * see Billrun_EmailSender_Base::getAttachments
 	 */
 	public function getAttachment($data) {
+		$sendPdf = Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.send_pdf', true);
+		if(!$sendPdf){
+			return [];
+		}
 		$dataFile = $this->getInvoicePDF($data);
 		if (!$dataFile) {
 			return FALSE;
