@@ -19,38 +19,40 @@ class EmailTemplate extends Component {
     name: PropTypes.string,
     fields: PropTypes.instanceOf(Immutable.List),
     emailTemplates: PropTypes.instanceOf(Immutable.Map),
-    languages: PropTypes.arrayOf(PropTypes.string),
+    // CHANGE 1: We now expect a list of template definitions (name, label, conditions)
+    templateConfig: PropTypes.instanceOf(Immutable.List),
+    placeholders: PropTypes.instanceOf(Immutable.List),
   };
 
   static defaultProps = {
     name: '',
     fields: null,
     emailTemplates: null,
-    languages: [],
+    templateConfig: Immutable.List(),
+    placeholders: Immutable.List(),
   };
 
   state = {
-    activeLang: '', 
+    activeTemplate: '', // Stores the 'name' of the active template (e.g., 'en_template')
   };
 
   componentDidMount() {
-    console.log("hi");
-    // CHANGE 2: Fetch 'email_templates' and 'subscribers' (where account lives)
-    this.props.dispatch(getSettings(['email_templates', 'subscribers']));
+    this.props.dispatch(getSettings('email_templates'));
   }
 
   componentDidUpdate(prevProps) {
-    const { languages } = this.props;
-    const { activeLang } = this.state;
-    // Set default active tab when languages load
-    if (languages.length > 0 && activeLang === '') {
-      this.setState({ activeLang: languages[0] });
+    const { templateConfig } = this.props;
+    const { activeTemplate } = this.state;
+
+    // CHANGE 2: Set default active tab to the first template in the list
+    if (templateConfig.size > 0 && activeTemplate === '') {
+      this.setState({ activeTemplate: templateConfig.first().get('name') });
     }
   }
 
   isDataReady = () => {
-    const { fields, emailTemplates, languages } = this.props;
-    if (!fields || !emailTemplates || languages.length === 0) {
+    const { fields, emailTemplates, templateConfig } = this.props;
+    if (!fields || !emailTemplates || templateConfig.size === 0) {
       return false;
     }
     return true;
@@ -69,100 +71,92 @@ class EmailTemplate extends Component {
     this.props.dispatch(getSettings('email_templates'));
   }
 
-  onSwitchLang = (lang) => {
-    this.setState({ activeLang: lang });
+  // CHANGE 3: Switch tab based on template 'name'
+  onSwitchTemplate = (templateName) => {
+    this.setState({ activeTemplate: templateName });
   }
 
+  // CHANGE 4: Update content using the active template name as the key
   onChangeContent = (content) => {
-    const { name, emailTemplates, languages } = this.props;
-    const { activeLang } = this.state;
+    const { name, emailTemplates, templateConfig } = this.props;
+    const { activeTemplate } = this.state;
 
-    // 1. Get the current raw value
+    // Migration Logic: If data is currently a string, convert to Map
     const currentContent = emailTemplates.getIn([name, 'content']);
-
-    // 2. Check if it is a legacy String
+    
     if (!Immutable.Map.isMap(currentContent)) {
-      const defaultLang = languages[0] || 'en';
-
+      const defaultName = templateConfig.first().get('name');
       const newContentMap = Immutable.Map({
-        [defaultLang]: currentContent,
-        [activeLang]: content
+        [defaultName]: currentContent,
+        [activeTemplate]: content
       });
-
-      // Update the ENTIRE 'content' field
       this.props.dispatch(updateSetting('email_templates', [name, 'content'], newContentMap));
     } else {
-      // Safe to update deeply
-      this.props.dispatch(updateSetting('email_templates', [name, 'content', activeLang], content));
+      this.props.dispatch(updateSetting('email_templates', [name, 'content', activeTemplate], content));
     }
   }
 
+  // CHANGE 5: Update subject using the active template name
   onChangeSubject = (e) => {
     const { value } = e.target;
-    const { name, emailTemplates, languages } = this.props;
-    const { activeLang } = this.state;
+    const { name, emailTemplates, templateConfig } = this.props;
+    const { activeTemplate } = this.state;
 
-    // 1. Get the current raw value
     const currentSubject = emailTemplates.getIn([name, 'subject']);
 
-    // 2. Check if it is a legacy String (not a Map)
     if (!Immutable.Map.isMap(currentSubject)) {
-      // It's a string! We need to convert it to a Map.
-      // We assume the existing string belongs to the first available language (usually English)
-      const defaultLang = languages[0] || 'en';
-      
+      const defaultName = templateConfig.first().get('name');
       const newSubjectMap = Immutable.Map({
-        [defaultLang]: currentSubject, // Preserve the old string as the default language
-        [activeLang]: value            // Set the new value for the current language
+        [defaultName]: currentSubject,
+        [activeTemplate]: value
       });
-
-      // Update the ENTIRE 'subject' field with our new Map
       this.props.dispatch(updateSetting('email_templates', [name, 'subject'], newSubjectMap));
     } else {
-      // It's already a Map, so we can safely update deep inside it
-      this.props.dispatch(updateSetting('email_templates', [name, 'subject', activeLang], value));
+      this.props.dispatch(updateSetting('email_templates', [name, 'subject', activeTemplate], value));
     }
   }
 
   getContent = () => {
-    const { name, emailTemplates } = this.props;
-    const { activeLang } = this.state;
+    const { name, emailTemplates, templateConfig } = this.props;
+    const { activeTemplate } = this.state;
+    
     const rawContent = emailTemplates.getIn([name, 'content']);
 
     if (Immutable.Map.isMap(rawContent)) {
-      return rawContent.get(activeLang, '');
+      return rawContent.get(activeTemplate, '');
     }
-    // Fallback: if string, show only on first language
-    if (typeof rawContent === 'string' && activeLang === this.props.languages[0]) {
+    // Fallback: if string, only show on the first template tab
+    if (typeof rawContent === 'string' && activeTemplate === templateConfig.first().get('name')) {
       return rawContent;
     }
     return '';
   }
 
   getSubject = () => {
-    const { name, emailTemplates } = this.props;
-    const { activeLang } = this.state;
+    const { name, emailTemplates, templateConfig } = this.props;
+    const { activeTemplate } = this.state;
+    
     const rawSubject = emailTemplates.getIn([name, 'subject']);
 
     if (Immutable.Map.isMap(rawSubject)) {
-      return rawSubject.get(activeLang, '');
+      return rawSubject.get(activeTemplate, '');
     }
-    // Fallback: if string, show only on first language
-    if (typeof rawSubject === 'string' && activeLang === this.props.languages[0]) {
+    if (typeof rawSubject === 'string' && activeTemplate === templateConfig.first().get('name')) {
       return rawSubject;
     }
     return '';
   }
 
   getFields = () => {
-    const { name, fields, emailTemplates } = this.props;
-    const templateFields = emailTemplates.getIn([name, 'html_translation'], Immutable.List());
-    return [...fields.toArray(), ...templateFields.toArray()];
+    const { name, fields, placeholders } = this.props;
+    // CHANGE 6: Combine passed fields with the "placeholders" from the new config
+    const placeholderPaths = placeholders.map(p => p.get('path', ''));
+    return [...fields.toArray(), ...placeholderPaths.toArray()];
   }
 
   render() {
-    const { name, languages } = this.props;
-    const { activeLang } = this.state;
+    const { name, templateConfig } = this.props;
+    const { activeTemplate } = this.state;
 
     if (!this.isDataReady()) {
       return (<LoadingItemPlaceholder />);
@@ -170,19 +164,27 @@ class EmailTemplate extends Component {
 
     return (
       <Form horizontal>
+        
+        {/* CHANGE 7: Render Tabs based on the 'templates' array in config */}
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={1}>Language</Col>
+          <Col componentClass={ControlLabel} sm={1}>Variation</Col>
           <Col sm={11}>
             <ButtonGroup>
-              {languages.map(lang => (
-                <Button 
-                  key={lang}
-                  bsStyle={activeLang === lang ? 'primary' : 'default'}
-                  onClick={() => this.onSwitchLang(lang)}
-                >
-                  {lang}
-                </Button>
-              ))}
+              {templateConfig.map((tmpl, index) => {
+                const tmplName = tmpl.get('name');
+                const tmplLabel = tmpl.get('label', tmplName);
+                const isActive = activeTemplate === tmplName;
+                
+                return (
+                  <Button 
+                    key={tmplName}
+                    bsStyle={isActive ? 'primary' : 'default'}
+                    onClick={() => this.onSwitchTemplate(tmplName)}
+                  >
+                    {tmplLabel}
+                  </Button>
+                );
+              })}
             </ButtonGroup>
           </Col>
         </FormGroup>
@@ -193,7 +195,7 @@ class EmailTemplate extends Component {
             <Field
               onChange={this.onChangeSubject}
               value={this.getSubject()}
-              key={`subject-${activeLang}`} 
+              key={`subject-${activeTemplate}`} 
             />
           </Col>
         </FormGroup>
@@ -201,11 +203,10 @@ class EmailTemplate extends Component {
         <FormGroup>
           <Col sm={12}>
             <Field
-              key={`editor-${activeLang}`} 
-              
+              key={`editor-${activeTemplate}`} // Important for full re-render
               fieldType="textEditor"
               value={this.getContent()}
-              editorName={`editor-${name}-${activeLang}`}
+              editorName={`editor-${name}-${activeTemplate}`}
               name={name}
               configName="invoices"
               editorHeight={150}
@@ -229,19 +230,19 @@ class EmailTemplate extends Component {
   }
 }
 
-// CHANGE 3: Update Selector to look inside subscribers -> account
 const mapStateToProps = (state, props) => {
-  // Path: settings -> subscribers -> account -> fields
-  const accountFields = state.settings.getIn(['subscribers', 'account', 'fields'], Immutable.List());
+  const { name } = props;
   
-  const langField = accountFields.find(field => field.get('field_name') === 'invoice_language');
-  const optionsStr = langField ? langField.get('select_options', '') : '';
+  const emailTemplates = emailTemplatesSelector(state, props);
   
-  const languages = optionsStr ? optionsStr.split(',') : ['en'];
+  const templateConfig = emailTemplates.getIn([name, 'templates'], Immutable.List());
+
+  const placeholders = emailTemplates.getIn([name, 'placeholders'], Immutable.List());
 
   return {
-    emailTemplates: emailTemplatesSelector(state, props),
-    languages: languages,
+    emailTemplates,
+    templateConfig,
+    placeholders
   };
 };
 
