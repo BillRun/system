@@ -13,7 +13,6 @@
  * @since    5.14
  */
 class Portal_Actions_Registration extends Portal_Actions {
-	use Billrun_Traits_ConditionsCheck;
 	const VALIDITY_TIME = [
 		'DEFAULT' => '24 hours'
 	];
