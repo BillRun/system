@@ -2099,6 +2099,27 @@ runOnce(lastConfig, 'BRCD-4966', function () {
 	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'count':1,'invoicing_day':1},{ unique: false , sparse: false, background: true });
 });
 
+runOnce(lastConfig, 'BRCD-5151', function () {
+	if (typeof lastConfig['email_templates'] !== 'undefined') {
+		Object.keys(lastConfig['email_templates']).forEach((templateType) => {
+			var oldTemplate = lastConfig['email_templates'][templateType];
+			var newTemplate = {
+				"templates": [{
+					name: "default_template",
+					label: "Default template",
+					conditions: [	
+					],
+					"subject" : oldTemplate["subject"],
+					"content" :  oldTemplate["content"],
+				}],
+			}
+
+			lastConfig['email_templates'][templateType] = newTemplate;
+		});
+		
+	}
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });
