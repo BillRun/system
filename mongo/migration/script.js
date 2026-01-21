@@ -2103,20 +2103,23 @@ runOnce(lastConfig, 'BRCD-5151', function () {
 	if (typeof lastConfig['email_templates'] !== 'undefined') {
 		Object.keys(lastConfig['email_templates']).forEach((templateType) => {
 			var oldTemplate = lastConfig['email_templates'][templateType];
-			var newTemplate = {
-				"templates": [{
-					name: "default_template",
-					label: "Default template",
-					conditions: [	
-					],
-					"subject" : oldTemplate["subject"],
-					"content" :  oldTemplate["content"],
-				}],
-			}
+			if(typeof oldTemplate['templates'] === 'undefined'){
+				var newTemplate = {
+					"templates": [{
+						name: "default_template",
+						label: "Default template",
+						conditions: [	
+						],
+						"subject" : oldTemplate["subject"],
+						"content" :  oldTemplate["content"],
+					}],
+				}
 
-			lastConfig['email_templates'][templateType] = newTemplate;
+				lastConfig['email_templates'][templateType] = newTemplate;
+			}
+			
 		});
-		
+
 	}
 });
 

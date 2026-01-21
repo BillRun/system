@@ -52,7 +52,8 @@ class EmailTemplate extends Component {
 
   isDataReady = () => {
     const { fields, emailTemplates, templateConfig } = this.props;
-    if (!fields || !emailTemplates || templateConfig.size === 0) {
+    const { activeTemplate } = this.state;
+    if (!fields || !emailTemplates || templateConfig.size === 0 || activeTemplate === '') {
       return false;
     }
     return true;
@@ -78,78 +79,55 @@ class EmailTemplate extends Component {
 
   // CHANGE 4: Update content using the active template name as the key
   onChangeContent = (content) => {
-    const { name, emailTemplates, templateConfig } = this.props;
+    const { name, templateConfig } = this.props;
     const { activeTemplate } = this.state;
 
-    // Migration Logic: If data is currently a string, convert to Map
-    const currentContent = emailTemplates.getIn([name, 'content']);
-    
-    if (!Immutable.Map.isMap(currentContent)) {
-      const defaultName = templateConfig.first().get('name');
-      const newContentMap = Immutable.Map({
-        [defaultName]: currentContent,
-        [activeTemplate]: content
-      });
-      this.props.dispatch(updateSetting('email_templates', [name, 'content'], newContentMap));
-    } else {
-      this.props.dispatch(updateSetting('email_templates', [name, 'content', activeTemplate], content));
+    const index = templateConfig.findIndex(t => t.get('name') === activeTemplate);
+
+    if (index !== -1) {
+      this.props.dispatch(updateSetting(
+        'email_templates', 
+        [name, 'templates', index, 'content'], 
+        content
+      ));
     }
   }
 
   // CHANGE 5: Update subject using the active template name
   onChangeSubject = (e) => {
     const { value } = e.target;
-    const { name, emailTemplates, templateConfig } = this.props;
+    const { name, templateConfig } = this.props;
     const { activeTemplate } = this.state;
 
-    const currentSubject = emailTemplates.getIn([name, 'subject']);
+    const index = templateConfig.findIndex(t => t.get('name') === activeTemplate);
 
-    if (!Immutable.Map.isMap(currentSubject)) {
-      const defaultName = templateConfig.first().get('name');
-      const newSubjectMap = Immutable.Map({
-        [defaultName]: currentSubject,
-        [activeTemplate]: value
-      });
-      this.props.dispatch(updateSetting('email_templates', [name, 'subject'], newSubjectMap));
-    } else {
-      this.props.dispatch(updateSetting('email_templates', [name, 'subject', activeTemplate], value));
+    if (index !== -1) {
+      this.props.dispatch(updateSetting(
+        'email_templates', 
+        [name, 'templates', index, 'subject'], 
+        value
+      ));
     }
   }
 
   getContent = () => {
-    const { name, emailTemplates, templateConfig } = this.props;
+    const { templateConfig } = this.props;
     const { activeTemplate } = this.state;
     
-    const rawContent = emailTemplates.getIn([name, 'content']);
-
-    if (Immutable.Map.isMap(rawContent)) {
-      return rawContent.get(activeTemplate, '');
-    }
-    // Fallback: if string, only show on the first template tab
-    if (typeof rawContent === 'string' && activeTemplate === templateConfig.first().get('name')) {
-      return rawContent;
-    }
-    return '';
+    const template = templateConfig.find(t => t.get('name') === activeTemplate);
+    return template ? template.get('content', '') : '';
   }
 
   getSubject = () => {
-    const { name, emailTemplates, templateConfig } = this.props;
+    const { templateConfig } = this.props;
     const { activeTemplate } = this.state;
     
-    const rawSubject = emailTemplates.getIn([name, 'subject']);
-
-    if (Immutable.Map.isMap(rawSubject)) {
-      return rawSubject.get(activeTemplate, '');
-    }
-    if (typeof rawSubject === 'string' && activeTemplate === templateConfig.first().get('name')) {
-      return rawSubject;
-    }
-    return '';
+    const template = templateConfig.find(t => t.get('name') === activeTemplate);
+    return template ? template.get('subject', '') : '';
   }
 
   getFields = () => {
     const { name, fields, placeholders } = this.props;
-    // CHANGE 6: Combine passed fields with the "placeholders" from the new config
     const placeholderPaths = placeholders.map(p => p.get('path', ''));
     return [...fields.toArray(), ...placeholderPaths.toArray()];
   }
@@ -167,7 +145,7 @@ class EmailTemplate extends Component {
         
         {/* CHANGE 7: Render Tabs based on the 'templates' array in config */}
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={1}>Variation</Col>
+          <Col componentClass={ControlLabel} sm={1}>Type</Col>
           <Col sm={11}>
             <ButtonGroup>
               {templateConfig.map((tmpl, index) => {
@@ -232,9 +210,7 @@ class EmailTemplate extends Component {
 
 const mapStateToProps = (state, props) => {
   const { name } = props;
-  
-  const emailTemplates = emailTemplatesSelector(state, props);
-  
+  const emailTemplates = emailTemplatesSelector(state, props) || Immutable.Map();
   const templateConfig = emailTemplates.getIn([name, 'templates'], Immutable.List());
 
   const placeholders = emailTemplates.getIn([name, 'placeholders'], Immutable.List());
