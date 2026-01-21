@@ -30,14 +30,16 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	 * see Billrun_EmailSender_Base::getEmailBody
 	 */
 	protected function getEmailBody($data) {
-		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.content', '');
+		$template = Billrun_Util::findMatchingEmailTemplate('invoice_ready', $data);
+		return Billrun_Util::getIn($template, 'content', '');
 	}
 
 	/**
 	 * see Billrun_EmailSender_Base::getEmailSubject
 	 */
 	protected function getEmailSubject($data) {
-		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.subject', '');
+		$template = Billrun_Util::findMatchingEmailTemplate('invoice_ready', $data);
+		return Billrun_Util::getIn($template, 'subject', '');
 	}
         
         /**

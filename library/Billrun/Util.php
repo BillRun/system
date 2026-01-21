@@ -2232,4 +2232,13 @@ class Billrun_Util {
 				Billrun_Util::generateArrayStamp( $arr2, $filterFields, true);
 	}
 
+	public static function findMatchingEmailTemplate($path, $data = []){
+		$templates = Billrun_Factory::config()->getConfigValue('email_templates.' . $path) ?? [];
+		foreach($templates as $template){
+			$conditions = $template['conditions'] ?? [];
+			if (empty($conditions)  || self::isConditionMet($data, $conditions)){
+				return $template;
+			}
+		}
+	}
 }
