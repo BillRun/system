@@ -998,3 +998,17 @@ export const pushToConfirmQueueQuery = (billrun_key, include_aids = [], exclude_
     },
   });
 }
+
+export const saveOAuth2SettingsQuery = (settingsData) => {
+  const formData = new FormData();
+  formData.append('action', 'save');
+  formData.append('data', JSON.stringify(settingsData));
+
+  return ({
+    api: 'oauth2refresh',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+};
