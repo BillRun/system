@@ -144,18 +144,16 @@ class OnetimeinvoiceAction extends ApiAction {
 					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'uf' => $chargingOptions['uf'],
-					'note' => $chargingOptions['note']]);
+					'note' => $chargingOptions['note'],
+					'adjusts' => $chargingOptions['adjusts']]);
 
 		$aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
-		if (!empty($chargingOptions['adjusts']) && !$this->validateCdrsAmountVsAdjustments($chargingOptions)) {
-			return false;
-		}
 		$results['pdfPath'] = $this->invoice->getInvoicePath();
 
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
-		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail'], 'adjusts' => $chargingOptions['adjusts']]);
+		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail']]);
 
 		if ($chargingOptions['step'] >= self::STEP_PDF_AND_BILL) {
 			$billrunToBill->load();
@@ -212,16 +210,14 @@ class OnetimeinvoiceAction extends ApiAction {
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'generate_pdf' => $expected,
 					'uf' => $chargingOptions['uf'],
-					'note' => $chargingOptions['note']]);
+					'note' => $chargingOptions['note'],
+					'adjusts' => $chargingOptions['adjusts']]);
 
 		$aggregator->setExternalChargesForAid($this->aid, $this->processsedCdrs);
 		$aggregator->aggregate();
 
 		//Get The fake invoice totals
 		$fakeInvoice = $aggregator->getLastBillrunObj();
-		if (!empty($chargingOptions['adjusts']) && !$this->validateCdrsAmountVsAdjustments($chargingOptions, $fakeInvoice)) {
-			return false;
-		}
 		return $fakeInvoice;
 	}
 
@@ -305,13 +301,11 @@ class OnetimeinvoiceAction extends ApiAction {
 					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'uf' => $chargingOptions['uf'],
-					'note' => $chargingOptions['note']]);
+					'note' => $chargingOptions['note'],
+					'adjusts' => $chargingOptions['adjusts']]);
 		$aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
-		if (!empty($chargingOptions['adjusts']) && !$this->validateCdrsAmountVsAdjustments($chargingOptions)) {
-			return false;
-		}
 		//Create bill for the invioce and attach the payment to it. (TODO ACTUALLY LIMIT THE INVOICE/PAYMENT ASSOCIATION)
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
 		$billrunToBillParams = [
@@ -637,20 +631,6 @@ class OnetimeinvoiceAction extends ApiAction {
 			$adjustment_aid = null;
 		}
 		return "";
-	}
-
-	protected function validateCdrsAmountVsAdjustments($chargingOptions, $fakeInvoice = false) {
-		$invoice_amount = $fakeInvoice ? $fakeInvoice->getInvoice()->getRawData()['totals']['after_vat_rounded'] : $this->invoice->getRawData()['totals']['after_vat_rounded'];
-		$adj_total_amount = array_sum(array_column($chargingOptions['adjusts'], "amount"));
-		if (($invoice_amount * $adj_total_amount) <= 0) {
-			$this->setError("Invoice amount and adjustments amount need to be with the same sign. Immediate invoice total amount is " . $invoice_amount . ", while adjusted total amount is " . $adj_total_amount);
-			return false;
-		}
-		if (abs($adj_total_amount) > abs($invoice_amount)) {
-			$this->setError("Adjusted total amount " . $adj_total_amount . " is bigger than immediate invoice total amount " . $invoice_amount);
-			return false;
-		}
-		return true;
 	}
 
 	/**
