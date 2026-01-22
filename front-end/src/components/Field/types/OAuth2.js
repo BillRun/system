@@ -1,32 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { Button, Modal, FormGroup, ControlLabel, HelpBlock } from 'react-bootstrap';
+import { Button, Modal, FormGroup, ControlLabel } from 'react-bootstrap';
 import Field from '../Field';
+import { apiBillRun } from '../../../common/Api';
+import { saveOAuth2SettingsQuery } from '../../../common/ApiQueries';
+import { showSuccess, showDanger } from '../../../actions/alertsActions';
 
-const OAuth2 = ({ value = Immutable.Map(), onChange, editable = true }) => {
+const OAuth2 = (props) => {
+    const { value: propValue, onChange, editable = true, dispatch } = props;
+    const value = Immutable.Map.isMap(propValue) ? propValue : Immutable.fromJS(propValue || {});
     const [showModal, setShowModal] = useState(false);
     const [tempValue, setTempValue] = useState(value);
     const [tokenStatus, setTokenStatus] = useState(null);
     const [requestId, setRequestId] = useState(null);
-
-    const REDIRECT_URI = "http://localhost:5000/callback";
+    const REDIRECT_URI = `${window.location.origin}/api/oauth2refresh`;
+    const isDirty = !Immutable.is(value || Immutable.Map(), tempValue);
 
     useEffect(() => {
         if (!requestId) return;
-
         const handleMessageReceived = (event) => {
-            const { type, refresh_token, state } = event.data;
-
+            const { type, refresh_token, refresh_date, state } = event.data;
             if (state !== requestId) return;
-
             if (type === 'OAUTH_TOKEN_RECEIVED') {
-                setTempValue(prev => prev.set('refresh_token', refresh_token));
+                setTempValue(prev => prev
+                    .set('refresh_token', refresh_token)
+                    .set('refresh_date', refresh_date)
+                );
                 setTokenStatus('success');
                 setRequestId(null);
             }
         };
-
         window.addEventListener('message', handleMessageReceived);
         return () => window.removeEventListener('message', handleMessageReceived);
     }, [requestId]);
@@ -41,9 +46,32 @@ const OAuth2 = ({ value = Immutable.Map(), onChange, editable = true }) => {
     const closeModal = () => setShowModal(false);
 
     const saveChanges = () => {
-        const fakeEvent = { target: { value: tempValue } };
-        onChange(fakeEvent);
-        closeModal();
+        const settingsData = tempValue.toJS();
+
+        if (!settingsData.config_path) {
+            dispatch(showDanger('Missing Database Config Key. Cannot save.'));
+            return;
+        }
+
+        const query = saveOAuth2SettingsQuery(settingsData);
+
+        apiBillRun(query).then(
+            (success) => {
+                dispatch(showSuccess('OAuth settings saved successfully!'));
+                const fakeEvent = { target: { value: tempValue } };
+                onChange(fakeEvent);
+                closeModal();
+            },
+            (failure) => {
+                console.log('Save failed:', failure);
+                dispatch(showDanger('Error saving OAuth settings'));
+            }
+        ).catch(
+            (error) => {
+                console.error('Network Error:', error);
+                dispatch(showDanger('Network error - please try again'));
+            }
+        );
     };
 
     const onFieldChange = (key, e) => {
@@ -57,18 +85,19 @@ const OAuth2 = ({ value = Immutable.Map(), onChange, editable = true }) => {
         const configPath = tempValue.get('config_path', '').trim();
         const scope = tempValue.get('scope', '').trim();
         let extraParams = tempValue.get('extra_params');
-        extraParams = extraParams.toJS();
-
+        extraParams = (extraParams && typeof extraParams.toJS === 'function')
+            ? extraParams.toJS()
+            : (extraParams || {});
 
         if (!clientId || !authUrl || !configPath) {
-            alert("Error: Auth URL, Client ID, and Config Key are required.");
+            dispatch(showDanger("Error: Auth URL, Client ID, and Config Key are required."));
             return;
         }
-
+        const nonce = crypto.randomUUID();
+        const state = `${configPath}|${nonce}`;
         setTokenStatus('loading');
-        setRequestId(configPath);
-
-        let url = `${authUrl}?response_type=code&client_id=${clientId}&redirect_uri=${REDIRECT_URI}&scope=${encodeURIComponent(scope)}&state=${configPath}`;
+        setRequestId(state);
+        let url = `${authUrl}?response_type=code&client_id=${clientId}&redirect_uri=${REDIRECT_URI}&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}`;
 
         if (extraParams && typeof extraParams === 'object') {
             Object.keys(extraParams).forEach(key => {
@@ -76,7 +105,6 @@ const OAuth2 = ({ value = Immutable.Map(), onChange, editable = true }) => {
                 url += `&${key}=${encodeURIComponent(val)}`;
             });
         }
-
         window.open(url, 'OAuthPopup', "width=600,height=700,left=200,top=200");
     };
 
@@ -91,7 +119,11 @@ const OAuth2 = ({ value = Immutable.Map(), onChange, editable = true }) => {
                     <Modal.Title>OAuth 2.0 Connection</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-
+                    {isDirty && (
+                        <div className="alert alert-warning" style={{ marginBottom: '15px', padding: '10px' }}>
+                            <i className="fa fa-exclamation-triangle" /> You have unsaved changes
+                        </div>
+                    )}
                     <FormGroup>
                         <ControlLabel>Auth URL</ControlLabel>
                         <Field
@@ -125,16 +157,14 @@ const OAuth2 = ({ value = Immutable.Map(), onChange, editable = true }) => {
                         />
                     </FormGroup>
 
-                    <FormGroup validationState={!tempValue.get('config_path') ? 'error' : null}>
-                        <ControlLabel>Database Config Key</ControlLabel>
-                        <Field
-                            value={tempValue.get('config_path', '')}
-                            onChange={(e) => onFieldChange('config_path', e)}
-                        />
-                    </FormGroup>
+                    <Field
+                        value={tempValue.get('config_path', '')}
+                        onChange={(e) => onFieldChange('config_path', e)}
+                        style={{ display: 'none' }}
+                    />
 
                     <FormGroup>
-                        <ControlLabel>Scope</ControlLabel>
+                        <ControlLabel>Scope (Seperate by spaces)</ControlLabel>
                         <Field
                             value={tempValue.get('scope', '')}
                             onChange={(e) => onFieldChange('scope', e)}
@@ -142,7 +172,7 @@ const OAuth2 = ({ value = Immutable.Map(), onChange, editable = true }) => {
                     </FormGroup>
 
                     <FormGroup>
-                        <ControlLabel>Extra URL Parameters (JSON)</ControlLabel>
+                        <ControlLabel>Extra URL Parameters</ControlLabel>
                         <Field
                             fieldType="json"
                             value={tempValue.get('extra_params') || {}}
@@ -161,11 +191,17 @@ const OAuth2 = ({ value = Immutable.Map(), onChange, editable = true }) => {
                                     disabled={true}
                                     placeholder="No token present"
                                 />
+                                {tempValue.get('refresh_date') && (
+                                    <span className="help-block">
+                                        Last refresh: {tempValue.get('refresh_date')}
+                                    </span>
+                                )}
                             </div>
                             <Button
                                 bsStyle={tokenStatus === 'success' ? "success" : "primary"}
                                 onClick={handleGetToken}
-                                disabled={tokenStatus === 'loading'}
+                                disabled={tokenStatus === 'loading' || isDirty}
+                                title={isDirty ? "Save changes first" : ""}
                             >
                                 {tokenStatus === 'loading' ? 'Wait...' : (tokenStatus === 'success' ? 'Success!' : 'Get Token')}
                             </Button>
@@ -186,6 +222,7 @@ OAuth2.propTypes = {
     value: PropTypes.instanceOf(Immutable.Map),
     onChange: PropTypes.func.isRequired,
     editable: PropTypes.bool,
+    dispatch: PropTypes.func.isRequired,
 };
 
-export default OAuth2;
+export default connect()(OAuth2);

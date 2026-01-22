@@ -257,7 +257,7 @@
 				"token_url": "",
 				"config_path": "",
 				"scope": "",
-				"extra_params": {},
+				"extra_params": "",
 				"refresh_token": ""
 			}
 		}

@@ -285,7 +285,6 @@ class Billrun_Factory {
 					Billrun_Factory::config()->setConfigValue('mailer.transport.oauth2.refresh_token', $tokenData['refresh_token']);
 					$mailerTransport['oauth2']['refresh_token'] = $tokenData['refresh_token'];
 				}
-
                 if (!$accessToken) {
                     throw new Exception('OAuth2 Token generation failed');
                 }

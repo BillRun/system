@@ -9,7 +9,7 @@ import CustomersList from '@/components/CustomersList';
 import CustomerSetup from '@/components/CustomerSetup';
 import ProductsList from '@/components/ProductsList';
 import Product from '@/components/Product';
-import OAuthCallback from '@/components/OAuthCallback';
+import OAuthCallback from '@/components/Elements/OAuthCallback';
 import ReportsList from '@/components/ReportsList';
 import Report from '@/components/Report';
 import PlansList from '@/components/PlansList';

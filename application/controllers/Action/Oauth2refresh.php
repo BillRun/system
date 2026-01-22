@@ -1,100 +1,116 @@
 <?php
 
-/**
- * @package         Billing
- * @copyright       Copyright (C) 2012-2025 BillRun Technologies Ltd. All rights reserved.
- * @license         GNU Affero General Public License Version 3; see LICENSE.txt
- */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
  * OAuth2 Refresh action class
+ * Handles both the OAuth Callback (GET) and Saving Settings (POST)
  *
  * @package  Action
- * @since    5.14
  */
-class Oauth2refreshAction extends ApiAction {
+class Oauth2refreshAction extends ApiAction
+{
     use Billrun_Traits_Api_UserPermissions;
 
-    /**
-     * Execute the OAuth2 token exchange
-     */
-    public function execute() {
+    public function execute()
+    {
         $this->allowed();
-        Billrun_Factory::log()->log("Execute oauth2refresh api", Zend_Log::INFO);
         $request = $this->getRequest()->getRequest();
 
-        // 1. Validate Input
-        if (empty($request['code'])) {
-            $this->setError('Missing code param', $request);
-            return TRUE;
+        if ($this->getRequest()->isPost() && isset($request['action']) && $request['action'] === 'save') {
+            return $this->handleSaveRequest($request);
         }
-        if (empty($request['state'])) {
-            $this->setError('Missing state param', $request);
-            return TRUE;
+        return $this->handleCallbackRequest($request);
+    }
+
+    protected function handleSaveRequest($request)
+    {
+        $jsonString = $request['data'] ?? '{}';
+        $dataToSave = json_decode($jsonString, true);
+        
+        if (empty($dataToSave)) {
+            $this->setError('No data provided for save', $request);
+        }
+        $configKey = $dataToSave['config_path'] ?? '';
+        try {
+            $targetKey = $configKey . '.oauth2';
+            $config_model = new ConfigModel();
+            if ($config_model->updateConfig($targetKey, $dataToSave, true)) {
+                Billrun_Factory::log()->log("OAuth2: Saved settings for '{$targetKey}'", Zend_Log::INFO);
+                $this->getController()->setOutput(array(
+                    'status' => 1,
+                    'desc' => 'Settings saved successfully',
+                ));
+            } else {
+                Billrun_Factory::log()->log("OAuth2: ConfigModel failed to update settings for '{$targetKey}'", Zend_Log::ERR);
+                $this->setError('Failed to save configuration', $request);
+            }
+        } catch (Exception $e) {
+            Billrun_Factory::log()->log("OAuth2 Save Failed: " . $e->getMessage(), Zend_Log::ERR);
+            $this->setError('Database Save Failed: ' . $e->getMessage(), $request);
+        }
+    }
+
+    protected function handleCallbackRequest($request)
+    {
+        if (empty($request['code']) || empty($request['state'])) {
+            $this->setError('Invalid Request: Missing code or state', $request);
         }
 
         $code = $request['code'];
-        $configKey = $request['state'];
+        $rawState = isset($request['state']) ? $request['state'] : '';
+        $stateParts = explode('|', $rawState);
+        $configKey = $stateParts[0];
+        $oauthConfig = $this->getOauthSettings($configKey);
 
-        // 2. Load Configuration
-        $configPath = "shared_secret." . $configKey;
-        $oauthConfig = Billrun_Factory::config()->getConfigValue($configPath);
-
-        if (empty($oauthConfig)) {
-            Billrun_Factory::log()->log("OAuth2: Config key '{$configKey}' not found.", Zend_Log::ERR);
-            $this->setError('Invalid Configuration Key', $request);
-            return TRUE;
-        }
-
-        $tokenUri = $oauthConfig['token_uri'] ?? '';
-        $clientId = $oauthConfig['client_id'] ?? '';
+        $tokenUri     = $oauthConfig['token_url'] ?? '';
+        $clientId     = $oauthConfig['client_id'] ?? '';
         $clientSecret = $oauthConfig['client_secret'] ?? '';
-        $redirectUri = Billrun_Util::getBaseUrl($this->getRequest()) . 'api/oauth2refresh';
 
         if (empty($tokenUri) || empty($clientId) || empty($clientSecret)) {
-             $this->setError('Incomplete OAuth Configuration', $request);
-             return TRUE;
+            $this->setError('Incomplete Configuration', $request);
         }
 
         try {
-            // Note: We do NOT send 'grant_type' here, so the Helper will default it to 'authorization_code'.
+            $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? "https" : "http";
+            $dynamicRedirectUri = "$protocol://" . $_SERVER['HTTP_HOST'] . "/api/oauth2refresh";
             $params = [
                 'code'          => $code,
                 'client_id'     => $clientId,
                 'client_secret' => $clientSecret,
-                'redirect_uri'  => $redirectUri
+                'redirect_uri'  => $dynamicRedirectUri
             ];
 
             $body = Billrun_AuthClient_Oauth2::exchangeCodeForToken($tokenUri, $params);
-            
             $refreshToken = $body['refresh_token'] ?? '';
-
-            if (empty($refreshToken)) {
-                 Billrun_Factory::log()->log("OAuth2: No refresh token received.", Zend_Log::WARN);
-            }
-
-            //Redirect back to Frontend
-            $baseUrl = Billrun_Util::getBaseUrl($this->getRequest());
-            $frontendUrl = $baseUrl . '#/oauth/callback';
-            
-            $redirectLocation = $frontendUrl . 
-                                "?refresh_token=" . urlencode($refreshToken) . 
-                                "&state=" . urlencode($configKey);
-            
-            Billrun_Factory::log()->log("OAuth2 Success, redirecting...", Zend_Log::INFO);
-            $this->getController()->redirect($redirectLocation);
-            
-            return FALSE; 
-
+            $refreshDate = date('Y-m-d H:i:s');
+            $this->redirectBackToFrontend($refreshToken, $refreshDate, $rawState);
         } catch (Exception $e) {
             Billrun_Factory::log()->log("OAuth2 Exception: " . $e->getMessage(), Zend_Log::ERR);
-            $this->setError('Token exchange failed: ' . $e->getMessage(), $request);
-            return TRUE;
-        }
+            $this->setError('Token exchange failed', $request);
+        }   
     }
 
-    protected function getPermissionLevel() {
+    protected function getOauthSettings($key)
+    {
+        $config = Billrun_Factory::config()->getConfigValue($key);
+        return $config['oauth2'] ?? [];
+    }
+
+
+    protected function redirectBackToFrontend($refreshToken, $refreshDate, $state)
+    {
+        $redirectLocation = "/#/oauth/callback" .
+            "?refresh_token=" . urlencode($refreshToken) .
+            "&refresh_date=" . urlencode($refreshDate) .
+            "&state=" . urlencode($state);
+
+        Billrun_Factory::log()->log("OAuth2 Success, redirecting to " . $redirectLocation, Zend_Log::INFO);
+        $this->getController()->redirect($redirectLocation);
+    }
+
+    protected function getPermissionLevel()
+    {
         return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
     }
 }
