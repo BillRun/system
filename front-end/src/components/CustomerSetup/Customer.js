@@ -287,8 +287,8 @@ class Customer extends Component {
           </FormGroup>
         </ConfirmModal>
         <Button bsSize="xsmall" className="btn-primary mb10" style={Customer.actionButtonStyle} onClick={this.onClickRebalance}>Rebalance</Button>
-        <Button bsSize="xsmall" className="btn-primary mb10" style={Customer.actionButtonStyle} onClick={this.createImmediateInvoice}>Create an Invoice for Immediate Charge</Button>
-        <Button bsSize="xsmall" className="btn-primary" style={Customer.actionButtonStyle} onClick={this.createRefundInvoice}>Create an Invoice for Immediate Refund</Button>
+        <Button bsSize="xsmall" className="btn-primary mb10" style={Customer.actionButtonStyle} onClick={this.createImmediateInvoice}>Create an Immediate Charge Invoice</Button>
+        <Button bsSize="xsmall" className="btn-primary" style={Customer.actionButtonStyle} onClick={this.createRefundInvoice}>Create an Immediate Refund Invoice</Button>
       </div>
     );
   }
