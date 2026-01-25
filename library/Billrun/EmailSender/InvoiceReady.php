@@ -61,10 +61,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 			'[[invoice_due_date]]' => date(Billrun_Base::base_dateformat, $data['due_date']->sec),
 			'[[cycle_range]]' => date(Billrun_Base::base_dateformat, $data['start_date']->sec) . ' - ' . date(Billrun_Base::base_dateformat, $data['end_date']->sec),
 			'[[company_email]]' => Billrun_Factory::config()->getConfigValue('tenant.email', ''),
-			'[[company_name]]' => Billrun_Factory::config()->getConfigValue('tenant.name', ''),
-			'[[company_website]]' => Billrun_Factory::config()->getConfigValue('tenant.website', ''),
-			'[[previous_month]]' => $data['totals']['past_balance']['after_vat'] ?? 0
-
+			'[[company_name]]' => Billrun_Factory::config()->getConfigValue('tenant.name', '')
 		);
 
 		Billrun_Factory::dispatcher()->trigger('alterMessageTranslations',[&$replaces, $data, $this]);
