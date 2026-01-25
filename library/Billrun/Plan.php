@@ -254,7 +254,7 @@ class Billrun_Plan {
 	 * 
 	 * @return false when no group found, else string name of the group selected
 	 */
-	protected function setNextStrongestGroup($rate, $usageType, $reset = FALSE) {
+	public function setNextStrongestGroup($rate, $usageType, $reset = FALSE) {
 		if (is_null($this->groups)) {
 			$this->groups = $this->getRateGroups($rate, $usageType);
 		}
@@ -301,7 +301,7 @@ class Billrun_Plan {
 			if ($groupSelected === FALSE) {
 				$rateUsageIncluded = 0;
 				// @todo: add more logic instead of fallback to first
-				$this->setPlanGroup($this->setNextStrongestGroup($rate, $usageType, true));
+				// $this->setPlanGroup($this->setNextStrongestGroup($rate, $usageType, true));
 				break; // do-while
 			}
 			// not group included in the specific usage try to take iterate next group
@@ -410,8 +410,8 @@ class Billrun_Plan {
 	}
 
 	public function isNonBillableGroup($groupName) {
-		$planGroupConfig = $this->get('includes.groups.'.$groupName);
-		return !empty($planGroupConfig) && @$planGroupConfig['non_billable'];
+		$planGroupConfig = $this->get('include.groups.'.$groupName);
+		return !empty($planGroupConfig) && @$planGroupConfig['limits']['no_billable_affects'];
 	}
 
 }

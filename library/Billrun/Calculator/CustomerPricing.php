@@ -16,7 +16,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	const DEF_CALC_DB_FIELD = 'aprice';
 
-	protected $pricingField = self::DEF_CALC_DB_FIELD;
+	public $pricingField = self::DEF_CALC_DB_FIELD;
 	static protected $type = "pricing";
 
 	/**
@@ -207,14 +207,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				return false;
 			}
 
-			$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . ".";
-			foreach ($pricingData as $key => $value) {
-				if ($key == 'roaming_balances') {
-					continue;
-				}
-				$pricingDataTxt .= " " . $key . ": " . $value . ".";
-			}
-			Billrun_Factory::log()->log($pricingDataTxt, Zend_Log::DEBUG);
+			$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . " ";
+			
+			Billrun_Factory::log()->log($pricingDataTxt .json_encode($pricingData), Zend_Log::DEBUG);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
 
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
@@ -301,24 +296,52 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$ret['over_plan'] = $volumeToCharge;
 			}
 		} else if ($plan->isRateInPlanGroup($rate, $usageType)) {
-			$groupVolumeLeft = $plan->usageLeftInPlanGroup($sub_balance, $rate, $usageType);
-			$volumeToCharge = $volume - $groupVolumeLeft;
-			if ($volumeToCharge < 0) {
+			$volumeToCharge = $volume;
+			$lastBillableGroup = FALSE;
+			$groupVolumeLeft=0;
+			do {
+				$localGroupVolumeLeft = $plan->usageLeftInPlanGroup($sub_balance, $rate, $usageType);
+				$volumeToCharge = $volumeToCharge - $localGroupVolumeLeft;
+				$groupFound = $plan->getPlanGroup();
+				if ($groupFound === FALSE) {
+					$plan->setPlanGroup($plan->setNextStrongestGroup($rate, $usageType, true));
+					$groupFound = $plan->getPlanGroup();
+					//$lastBillableGroup = $plan->isNonBillableGroup($groupFound) ? $lastBillableGroup : $groupFound;
+					break; // do-while
+				}
+				if( $localGroupVolumeLeft ||  $groupFound !== FALSE ) {
+					$lastBillableGroup = $plan->isNonBillableGroup($groupFound) ? $lastBillableGroup : $groupFound;
+					if($plan->isNonBillableGroup($groupFound) || $localGroupVolumeLeft) {
+						$ret['groups'][$plan->getPlanGroup()] =  [
+																	'usagev' => ($plan->isNonBillableGroup($groupFound) ?
+																						$volumeToCharge	:
+																						min($localGroupVolumeLeft, $volume)),
+																	'price' =>  ( $plan->isNonBillableGroup($groupFound)  ?
+																						self::getPriceByRate($rate, $usageType, $volumeToCharge) :
+																						0 )
+																];
+						$groupVolumeLeft += $localGroupVolumeLeft;
+					}
+				}
+			} while($volumeToCharge > 0 );
+			if ($volumeToCharge <= 0) {
 				$volumeToCharge = 0;
-				$ret['in_group'] = $ret['in_plan'] = $volume;
+				if ($groupVolumeLeft > 0) {
+					$ret['in_group'] = $ret['in_plan'] = $volume;
+				}
 				$accessPrice = empty($rate['rates'][$usageType]['access_price_out_of_package']) ?  0 : $accessPrice ;
 			} else if ($volumeToCharge > 0) {
 				if ($groupVolumeLeft > 0) {
 					$ret['in_group'] = $ret['in_plan'] = $volume - $volumeToCharge;
 				}
-				if ($plan->getPlanGroup() !== FALSE) { // verify that after all calculations we are in group
+				if ( $lastBillableGroup  !== FALSE ) { // verify that after all calculations we are in group
 					$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
 				} else {
 					$ret['out_group'] = $ret['out_plan'] = $volumeToCharge;
 				}
 			}
-			if (($plan->getPlanGroup() !== FALSE) && (!empty($ret['in_plan']))) {
-				$ret['arategroup'] = $plan->getPlanGroup();
+			if ( $lastBillableGroup  !== FALSE && (!empty($ret['in_plan']))) {
+				$ret['arategroup'] = $lastBillableGroup;
 			}
 		} else { // else if (dispatcher->chain_of_responsibilty)->isRateInPlugin {dispatcher->trigger->calc}
 			$ret['out_plan'] = $volumeToCharge = $volume;
@@ -345,7 +368,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
-		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroup', 'over_arate', 'over_group', 'in_group', 'in_arate', 'vf_count_days', 'roaming_balances', 'addon_balances', 'plan_usage','vf_addon_days','plan_usage','base_arategroups');
+		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroup', 'over_arate', 'over_group', 'in_group', 'in_arate', 'vf_count_days', 'roaming_balances', 'addon_balances', 'plan_usage','vf_addon_days','plan_usage','base_arategroups','balances_affected','groups');
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -435,16 +458,24 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$update['$inc']['balance.totals.' . $key . '.count'] = 1;
 			// update balance group (if exists)
 			if ($plan->isRateInPlanGroup($rate, $usage_type)) {
-				$group = $plan->getPlanGroup();
+				$lastGroup = $plan->getPlanGroup();
+				$groupsToBalance = empty($pricingData['groups']) ? ( $lastGroup !== FALSE ?
+																		[$plan->getPlanGroup() => ['usagev'=> $value, 'price' => $pricingData[$this->pricingField] ] ] :
+																		[] )
+														: $pricingData['groups'];
+				foreach($groupsToBalance as $group => $groupValue ) {
 				if ($group !== FALSE && !is_null($group)) {
 					// @TODO: check if $usage_type should be $key
-					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
-					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+						$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $groupValue['usagev'];
+						$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $groupValue['price'];
 					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
+						if( !$plan->isNonBillableGroup($group) ) {
 					if (isset($subRaw['balance']['groups'][$group][$usage_type]['usagev'])) {
 						$pricingData['usagesb'] = floatval($subRaw['balance']['groups'][$group][$usage_type]['usagev']);
 					} else {
 						$pricingData['usagesb'] = 0;
+					}
+				}
 					}
 				}
 			} else {
@@ -599,7 +630,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor();
+		$rates = $rates_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			$this->rates[strval($rate->getId())] = $rate;
@@ -608,7 +639,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor();
+		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;
