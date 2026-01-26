@@ -1500,6 +1500,7 @@ class Billrun_DiscountManager {
 				$start = $start == $this->cycle->end() ? $this->cycle->start() : $start;
 			}
 			$from = max($discountFrom, $from, $start);
+			$this->start = $from;
 		}else{
 			$from = $this->cycle->start();
 		}
@@ -1510,20 +1511,19 @@ class Billrun_DiscountManager {
 			}else{
 				$to = min($discountTo , $to, $end);
 			}
+			$this->end = $to;
 		}else{
 			$to = $this->cycle->end();
 		}
 		if(isset($cycles)){
-			$proratedStart = isset($proratedStart) ? $proratedStart : false;
-			$startTime =  $proratedStart ? Billrun_Utils_Time::getTime($line['start_date']) :  Billrun_Billingcycle::getBillrunStartTimeByTimestamp(Billrun_Utils_Time::getTime($line['start_date']), $this->cycle->invoicingDay());;
+			$startTime =  $discountStartProrated ? Billrun_Utils_Time::getTime($line['start_date']) :  Billrun_Billingcycle::getBillrunStartTimeByTimestamp(Billrun_Utils_Time::getTime($line['start_date']), $this->cycle->invoicingDay());;
 			$toByCycles = strtotime("+{$cycles} months", $startTime);
-			if(!$proratedEnd && $toByCycles < $this->cycle->end()){
+			if(!$discountEndProrated && $toByCycles < $this->cycle->end()){
 				$toByCycles = $this->cycle->start();
 			}
 			$to = min($to, $toByCycles, $this->cycle->end());
 		}
-		$this->start = $from;
-		$this->end = $to;
+
 		if(!$isSequential){
 			if(isset($cycles) && $to <= $this->cycle->start()){
 				$amount = 0;
@@ -1561,13 +1561,15 @@ class Billrun_DiscountManager {
 				}
 			}else{
 				if($isUpfront) {
-					if($from > $this->cycle->start() && $to < $this->cycle->end()){
+					if($from > $this->cycle->start() && $to < $this->cycle->end() ||
+						$discountFrom > $this->cycle->start() && $discountTo < $this->cycle->end()
+					){
 						$this->start = $this->cycle->start();
 						$this->end = $this->cycle->end();
 						$amount = $amount;
 					} elseif($to < $this->cycle->end() || 
-						(isset($line['charge_op']) && $line['charge_op'] ==  "refund" && Billrun_Utils_Time::getTime($line['start']) + 1 < $this->cycle->end())){
-						//do not give discount on current month if the discount finish in the previous month
+						$discountTo < $this->cycle->end() ||
+						(isset($line['charge_op']) && $line['charge_op'] ==  "refund" && Billrun_Utils_Time::getTime($line['start']) + 1 < $this->cycle->end())){						//do not give discount on current month if the discount finish in the previous month
 						$amount = 0;
 					}
 				}
