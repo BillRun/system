@@ -1982,6 +1982,22 @@ class Billrun_Util {
 		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
 	}
 	
+	public static function isConditionsMet($row, $conditions) {
+        if (empty($conditions)) {
+            return true;
+        }
+
+        foreach ($conditions as $condition) {
+            // If any single condition fails, the whole check fails.
+            if (!self::isConditionMet($row, $condition)) {
+                return false;
+            }
+        }
+
+        // If we survived the loop, all conditions passed.
+        return true;
+    }
+
 	/**
 	 * try to fork, and if successful update the process log stamp
 	 * to match the correct pid after the fork
@@ -2233,10 +2249,10 @@ class Billrun_Util {
 	}
 
 	public static function findMatchingEmailTemplate($path, $data = []){
-		$templates = Billrun_Factory::config()->getConfigValue('email_templates.' . $path) ?? [];
+		$templates = Billrun_Factory::config()->getConfigValue('email_templates.' . $path .'.templates') ?? [];
 		foreach($templates as $template){
 			$conditions = $template['conditions'] ?? [];
-			if (empty($conditions)  || self::isConditionMet($data, $conditions)){
+			if (empty($conditions)  || self::isConditionsMet($data, $conditions)){
 				return $template;
 			}
 		}
