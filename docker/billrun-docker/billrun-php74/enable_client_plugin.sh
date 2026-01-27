@@ -77,6 +77,16 @@ if test -d "/plugin/conf/exporter/"; then
      done
 fi 
 
+
+if test -d "/plugin/docker/billrun-docker/mockup-servers/crm_data/"; then
+     cd /plugin/docker/billrun-docker/mockup-servers/crm_data/
+     for d in *
+     do
+          rm -f "/billrun/docker/billrun-docker/mockup-servers/crm_data/"$d
+          ln -s /plugin/docker/billrun-docker/mockup-servers/crm_data/$d "/billrun/docker/billrun-docker/mockup-servers/crm_data/"$d
+     done
+fi
+
 cd /billrun
 
 ln -s /usr/local/bin/wkhtmltopdf /bin/wkhtmltopdf
