@@ -1486,6 +1486,8 @@ class Billrun_DiscountManager {
 	 * @return float
 	 */
 	protected function calculateDiscountAmount($discount, $line, $value, &$from, &$to, $operations = [], $sequential = false) {
+		$discountEligibilityFrom = $from;
+		$discountEligibilityTo = $to;
 		$isPercentage = Billrun_Util::getIn($discount, 'type', 'percentage') === 'percentage';
 		$isSequential = $isPercentage && $sequential;
 		$isUpfront = $line['is_upfront'] ?? false;
@@ -1499,7 +1501,7 @@ class Billrun_DiscountManager {
 			if(isset($line['is_upfront']) && $line['is_upfront']){
 				$start = $this->cycle->start();
 			}
-			$from = max($discountFrom, $from, $start);
+			$from = max($discountFrom, $discountEligibilityFrom, $start);
 			$this->start = $from;
 		}else{
 			$from = $this->cycle->start();
@@ -1507,9 +1509,9 @@ class Billrun_DiscountManager {
 		if ($discountEndProrated) {
 			$end = Billrun_Utils_Time::getTime($line['end']) ?? $this->cycle->end();
 			if(isset($line['charge_op']) && $line['charge_op'] ==  "refund"){
-				$to = min($discountTo , $to + 1, Billrun_Utils_Time::getTime($line['start']) + 1);
+				$to = min($discountTo , $discountEligibilityTo + 1, Billrun_Utils_Time::getTime($line['start']) + 1);
 			}else{
-				$to = min($discountTo , $to, $end);
+				$to = min($discountTo , $discountEligibilityTo, $end);
 			}
 			$this->end = $to;
 		}else{
@@ -1523,7 +1525,7 @@ class Billrun_DiscountManager {
 			}
 			$to = min($to, $toByCycles, $this->cycle->end());
 		}
-
+		Billrun_Factory::dispatcher()->trigger('beforeCalculateDiscountAmount', array($discount, $this->cycle, &$from, &$to, $discountEligibilityFrom, $discountEligibilityTo));
 		if(!$isSequential){
 			if(isset($cycles) && $to <= $this->cycle->start()){
 				$amount = 0;
@@ -1577,6 +1579,7 @@ class Billrun_DiscountManager {
 		} else {
 			$amount = $this->calcSeqDiscountAmount($from, $to, $line, $value);
 		}
+		Billrun_Factory::dispatcher()->trigger('afterCalculateDiscountAmount', array($discount, &$amount));
 		return $amount;
 	}
 
@@ -1709,6 +1712,7 @@ class Billrun_DiscountManager {
 	}
 
 	protected function getDiscountProratedType($discount, $type = 'start'){
+		Billrun_Factory::dispatcher()->trigger('beforeGetDiscountProratedType', array(&$discount));
 		$prorationTypeValue = Billrun_Util::getIn($discount, 'prorated_' . $type, null);
 		$proration = Billrun_Util::getIn($discount, 'proration', 'inherited');
 		if(isset($prorationTypeValue) && $this->validProrationValue($prorationTypeValue)){
