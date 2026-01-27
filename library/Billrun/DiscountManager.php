@@ -1497,7 +1497,7 @@ class Billrun_DiscountManager {
 		if ($discountStartProrated) {
 			$start = Billrun_Utils_Time::getTime($line['start']);
 			if(isset($line['is_upfront']) && $line['is_upfront']){
-				$start = $start == $this->cycle->end() ? $this->cycle->start() : $start;
+				$start = $this->cycle->start();
 			}
 			$from = max($discountFrom, $from, $start);
 			$this->start = $from;

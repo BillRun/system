@@ -62,7 +62,7 @@
                 }
               }
             },
-            "proration": "inherited",
+            "proration": "yes",
             "cycles": 24,
             "type": "monetary",
             "to": "2028-01-14 14:07:57",
@@ -80,7 +80,7 @@
                 }
               }
             },
-            "proration": "inherited",
+            "proration": "yes",
             "cycles": 24,
             "type": "monetary",
             "to": "2026-01-14 14:07:57",
@@ -137,7 +137,7 @@
                 }
               }
             },
-            "proration": "inherited",
+            "proration": "yes",
             "cycles": 24,
             "type": "monetary",
             "to": "2028-01-14 14:07:57",
@@ -155,7 +155,7 @@
                 }
               }
             },
-            "proration": "inherited",
+            "proration": "yes",
             "cycles": 24,
             "type": "monetary",
             "to": "2026-01-14 14:07:57",
