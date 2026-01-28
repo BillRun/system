@@ -20,6 +20,7 @@ class billapiBalanceCest
             self::$isIPSet = true;
             Billrun_Factory::config();
             $this->defaultTimezone = date_default_timezone_get();
+            date_default_timezone_set('Asia/Jerusalem');
         }
     }
     
@@ -177,10 +178,10 @@ class billapiBalanceCest
             'status' => 1
         ]);
         
-        $timezone = new DateTimeZone($this->defaultTimezone);
-        $expectedFromDate = (new DateTime('first day of this month 00:00:00', $timezone))
+     //   $timezone = new DateTimeZone($this->defaultTimezone);
+        $expectedFromDate = (new DateTime('first day of this month 00:00:00'))
             ->format('Y-m-01\T00:00:00O'); // First day of current month (local TZ)
-        $expectedToDate = (new DateTime('first day of next month 00:00:00', $timezone))
+        $expectedToDate = (new DateTime('first day of next month 00:00:00'))
             ->format('Y-m-01\T00:00:00O'); // First day of next month (local TZ)
         
         // Check that get the correct balance
@@ -212,6 +213,7 @@ class billapiBalanceCest
         // Check the details array length is 1 ,  validate the response contains only one balance object
         $details = json_decode($I->grabResponse(), true)['details'];
         $I->assertCount(1, $details);
+          date_default_timezone_set($this->defaultTimezone );
 
     }
    
