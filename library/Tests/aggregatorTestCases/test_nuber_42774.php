@@ -15,7 +15,7 @@ class Test_Case_42774
             [
 
                 "from" => "2019-05-31T22:00:00Z",
-                "name" => "PLAN" . time()+random_int(1,111111111),
+                "name" => "PLAN" . (int) floor(microtime(true) * 1000),
                 "price" => [
                     [
                         "price" => 100,
@@ -42,7 +42,7 @@ class Test_Case_42774
             [
 
                 "from" => "2019-05-31T22:00:00Z",
-                "name" => "PLAN" . time()+random_int(1,111111111),
+                "name" => "PLAN" . (int) floor(microtime(true) * 1000),
                 "price" => [
                     [
                         "price" => 80,
@@ -67,11 +67,10 @@ class Test_Case_42774
         $service = generat_services::generateService([
 
             'from' => '2017-07-01T04:00:00Z',
-            'name' => "SERVICE_DISCOUNT" . time(),
+            'name' => "SERVICE_DISCOUNT" . (int) floor(microtime(true) * 1000),
             "price" => [["price" => 20, "from" => 0, "to" => "UNLIMITED"]]
         ]);
-        $discount_name = time()+random_int(1,111111111);
-
+        $discount_name = (int) floor(microtime(true) * 1000);
         $discount2 = generat_discounts::generateDiscount([
             "from" => "2019-05-31T22:00:00Z",
             "to" => "2166-10-16T13:23:53Z",
