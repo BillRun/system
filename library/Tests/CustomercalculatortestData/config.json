@@ -686,9 +686,10 @@
 			},
 	"invoice_export" : {
 		"export" : "files/invoices/",
+		"onetime_view_path" : "/views/invoices/onetime/",
 		"generator" : {
 			"type" : "WkPdf"
-				},
+		},
 		"disable_stamp_export_directory" : 1,
 		"theme" : "/application/views/invoices/theme/theme1.css",
 		"sumup_template" : "/application/views/invoices/sumup/sumup1.phtml",
@@ -700,10 +701,10 @@
 		"html_translation" : [
 			"company_name",
 			"date"
-				],
-		"header" : "/header/header_tpl.html",
-		"footer" : "/footer/footer_tpl.html"
-			},
+		],
+		"header" : "/header/header_tpl.phtml",
+		"footer" : "/footer/footer_tpl.phtml"
+	},
 	"export_generators" : [ ],
 	"payment_gateways" : [ ],
 	"email_templates" : {
