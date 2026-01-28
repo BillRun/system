@@ -247,7 +247,8 @@
 								{
 									"field_name": "services",
 									"system": true,
-									"mandatory": false
+									"mandatory": false,
+									"multiple": true
 								}
 								
 							]

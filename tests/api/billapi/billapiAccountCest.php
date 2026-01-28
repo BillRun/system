@@ -21,7 +21,7 @@ class billapiAccountCest
             "country"=> "israel",
             "address"=> "fgd",
             "zip_code"=> "hntr",
-            "invoice_shipping_method"=> "email",
+         //   "invoice_shipping_method"=> "email",
             "payment_gateway"=> [
                 "former"=> [],
                 "active"=> [
@@ -45,7 +45,7 @@ class billapiAccountCest
             "country"=> "israel",
             "address"=> "fgd",
             "zip_code"=> "hntr",
-            "invoice_shipping_method"=> "email"
+          //  "invoice_shipping_method"=> "email"
         ]]);
         $I->verifyCollectionRecord(
             'subscribers',
