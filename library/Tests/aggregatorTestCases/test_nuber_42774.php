@@ -84,7 +84,7 @@ class Test_Case_42774
               ],
               'key'=> $discount_name,
           ]);
-          $discount_name = time()+random_int(1,111111111);
+        $discount_name = (int) floor(microtime(true) * 1000);
 
         $discount1 = generat_discounts::generateDiscount([
             "from" => "2019-05-31T22:00:00Z",
