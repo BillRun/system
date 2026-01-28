@@ -1375,15 +1375,15 @@ class Billrun_DiscountManager {
 				$from = $currValueEligibilityInterval['from'];
 				$to = $currValueEligibilityInterval['to'];
 				if ($from < $to) {
-					$amount = $this->calculateDiscountAmount($discount, $line, $value, $from, $to, $operations, $sequential);
+					$res = $this->calculateDiscountAmount($discount, $line, $value, $from, $to, $operations, $sequential);
 					$ret[] = [
 						'from' => $from,
 						'to' => $to,
-						'amount' => $amount,
+						'amount' => $res['amount'],
 						'discountDays' => Billrun_Utils_Time::getDaysDiff($from, $to),
 						'sid' =>  $valueEligibility['sid'] ?? null,
-						'start' => $this->start ?? null,
-						'end' => $this->end ?? null
+						'start' => $res['start'] ?? null,
+						'end' => $res['end'] ?? null
 
 					];
 		}
@@ -1502,7 +1502,7 @@ class Billrun_DiscountManager {
 				$start = $this->cycle->start();
 			}
 			$from = max($discountFrom, $discountEligibilityFrom, $start);
-			$this->start = $from;
+			$lineStart = $from;
 		}else{
 			$from = $this->cycle->start();
 		}
@@ -1513,10 +1513,11 @@ class Billrun_DiscountManager {
 			}else{
 				$to = min($discountTo , $discountEligibilityTo, $end);
 			}
-			$this->end = $to;
+			$lineEnd = $to;
 		}else{
 			$to = $this->cycle->end();
 		}
+		Billrun_Factory::dispatcher()->trigger('beforeCalculateDiscountAmount', array($discount, $this->cycle, &$from, &$to, &$lineStart, &$lineEnd));
 		if(isset($cycles)){
 			$startTime =  $discountStartProrated ? Billrun_Utils_Time::getTime($line['start_date']) :  Billrun_Billingcycle::getBillrunStartTimeByTimestamp(Billrun_Utils_Time::getTime($line['start_date']), $this->cycle->invoicingDay());;
 			$toByCycles = strtotime("+{$cycles} months", $startTime);
@@ -1525,7 +1526,6 @@ class Billrun_DiscountManager {
 			}
 			$to = min($to, $toByCycles, $this->cycle->end());
 		}
-		Billrun_Factory::dispatcher()->trigger('beforeCalculateDiscountAmount', array($discount, $this->cycle, &$from, &$to, $discountEligibilityFrom, $discountEligibilityTo));
 		if(!$isSequential){
 			if(isset($cycles) && $to <= $this->cycle->start()){
 				$amount = 0;
@@ -1549,16 +1549,16 @@ class Billrun_DiscountManager {
 						if($to < $this->cycle->start()){
 							$amount = 0;
 						}else if($to < $this->cycle->end() || $discountTo <= $this->cycle->end()){
-						 	$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line);
+						 	$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line,  $lineStart, $lineEnd);
 						}else if($from > $this->cycle->start() && isset($line['split']) && !$line['split']){
 							$amount += $flatAmount;
 						}else{
-							$this->start = Billrun_Utils_Time::getTime($line['start']);
-							$this->end = Billrun_Utils_Time::getTime($line['end']);
+							$lineStart = Billrun_Utils_Time::getTime($line['start']);
+							$lineEnd = Billrun_Utils_Time::getTime($line['end']);
 							$amount = $flatAmount;
 						}
 					}else{
-						$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line);
+						$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line,  $lineStart, $lineEnd);
 					}
 				}
 			}else{
@@ -1566,8 +1566,8 @@ class Billrun_DiscountManager {
 					if($from > $this->cycle->start() && $to < $this->cycle->end() ||
 						$discountFrom > $this->cycle->start() && $discountTo < $this->cycle->end()
 					){
-						$this->start = $this->cycle->start();
-						$this->end = $this->cycle->end();
+						$lineStart = $this->cycle->start();
+						$lineEnd = $this->cycle->end();
 						$amount = $amount;
 					} elseif($to < $this->cycle->end() || 
 						$discountTo < $this->cycle->end() ||
@@ -1580,27 +1580,32 @@ class Billrun_DiscountManager {
 			$amount = $this->calcSeqDiscountAmount($from, $to, $line, $value);
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculateDiscountAmount', array($discount, &$amount));
-		return $amount;
+		$res = [
+			'amount' => $amount,
+			'start' => $lineStart,
+			'end' => $lineEnd
+		];
+		return $res;
 	}
 
-	protected function calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line){
+	protected function calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line,  &$lineStart, &$lineEnd){
 
-		if(!$this->calculateDiscountAmountForUpfrontLineStartInMiddle($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line)){	
-			$this->start = $to;
-			$this->end = $this->cycle->end();
+		if(!$this->calculateDiscountAmountForUpfrontLineStartInMiddle($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line,  $lineStart, $lineEnd)){	
+			$lineStart = $to;
+			$lineEnd = $this->cycle->end();
 			$amount = $amount - $flatAmount;
 		}
 		return $amount;
 	}
 
-	protected function calculateDiscountAmountForUpfrontLineStartInMiddle($discountFrom, $discountTo, $from, $to, $cycleDays, &$amount, $flatAmount, $line){
+	protected function calculateDiscountAmountForUpfrontLineStartInMiddle($discountFrom, $discountTo, $from, $to, $cycleDays, &$amount, $flatAmount, $line,  &$lineStart, &$lineEnd){
 		if( $from > $this->cycle->start() && $from != $this->cycle->end()){
 			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to, 'ceil');//todo::need to check i think this should be floor 
 			if ($discountDays < $cycleDays) {
 				$amount = $flatAmount * ($discountDays / $cycleDays);
 			}
-			$this->start = $from;
-			$this->end = $to;
+			$lineStart = $from;
+			$lineEnd = $to;
 			return true;
 
 		}
@@ -1619,7 +1624,8 @@ class Billrun_DiscountManager {
 	protected function getDiscountAmount($discount, $line, $value, $operations) {
 		$isPercentage = Billrun_Util::getIn($discount, 'type', 'percentage') === 'percentage';
 		$lineQuantity = Billrun_Util::getIn($line, 'usagev', 1);
-		$price = $isPercentage ? $line['full_price'] * $lineQuantity : $value;
+		$field = Billrun_Factory::config()->getConfigValue('discounts.percentage_on_field', 'full_price');
+		$price = $isPercentage ? $line[$field] * $lineQuantity : $value;
 		if (empty($operations)) {
 			$ret = $isPercentage ? $price * $value : $price;
 		} else {

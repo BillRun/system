@@ -47,7 +47,6 @@ class Billrun_Plans_Charge {
 				$results['refund'] = $refund;
 			}
 		}
-
 		return $results;
 	}
 
