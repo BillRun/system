@@ -1680,7 +1680,7 @@ class Billrun_DiscountManager {
 	}
 	
 	/**
-	 * whether or not the discount is prorated
+	 * whether or not the discount start is prorated
 	 * 
 	 * @param array $discount
 	 * @param array $line
@@ -1698,7 +1698,13 @@ class Billrun_DiscountManager {
 		return $proratedStart;
 		
 	}
-
+	/**
+	 * whether or not the discount end is prorated
+	 * 
+	 * @param array $discount
+	 * @param array $line
+	 * @return boolean
+	 */
 	protected function isDiscountProratedEnd($discount, $line) {
 		$proration = $this->getDiscountProrationByPhase($discount, 'end');
 		if ($proration === self::PRORATION_NO) {
