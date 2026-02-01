@@ -36,7 +36,7 @@ class ArrearsTest extends \Codeception\Test\Unit
         /*
         BRCD-5076 + 5080: arrears plan with two subscribers discounts not creates the second discount 
         */
-        $aid =5100002472;
+        $aid = 12472;
         $this->defaultOptions['stamp'] = '202512';
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = 'PLAN_5076';
@@ -90,7 +90,7 @@ class ArrearsTest extends \Codeception\Test\Unit
         /*
         BRCD-5102: cycles not work when proration: no
         */
-        $aid =5100002243;
+        $aid = 12243;
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = 'PLAN_5102_1';
         $this->tester->generatePlan(['name' => $planName]);
@@ -118,7 +118,7 @@ class ArrearsTest extends \Codeception\Test\Unit
         /*
         BRCD-5102: cycles not work when proration:inherited with false
         */
-        $aid =5100002244;
+        $aid = 12244;
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = 'PLAN_5102';
         $this->tester->generatePlan(['name' => $planName, "prorated_termination" =>false, "prorated_start" =>false]);
@@ -146,7 +146,7 @@ class ArrearsTest extends \Codeception\Test\Unit
         /*
         BRCD-5102: cycles not work when proration:inherited with "prorated_termination" =>true , "prorated_start" =>false
         */
-        $aid =5100002245;
+        $aid = 12245;
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = 'PLAN_5102_2';
         $this->tester->generatePlan(['name' => $planName, "prorated_termination" =>true , "prorated_start" =>false]);
@@ -174,7 +174,7 @@ class ArrearsTest extends \Codeception\Test\Unit
         /*
         BRCD-5102: cycles not work when proration:inherited with "prorated_termination" =>false , "prorated_start" =>true - therothical test no practical use
         */
-        $aid =5100002246;
+        $aid = 12246;
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = 'PLAN_5102_3';
         $this->tester->generatePlan(['name' => $planName, "prorated_termination" =>false , "prorated_start" =>true]);
@@ -200,7 +200,7 @@ class ArrearsTest extends \Codeception\Test\Unit
         /*
         BRCD-5102: cycles not work when proration:inherited with "prorated_termination" =>true , "prorated_start" =>true - therothical test no practical use
         */
-        $aid =5100002247;
+        $aid = 12247;
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = 'PLAN_5102_4';
         $this->tester->generatePlan(['name' => $planName]);
