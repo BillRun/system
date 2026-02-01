@@ -8,6 +8,9 @@ class Billrun_DiscountManager {
 	use Billrun_Traits_ConditionsCheck;
 	use Billrun_Traits_ForeignFields;
 
+	const PRORATION_YES = 'yes';
+    const PRORATION_NO = 'no';
+    const PRORATION_INHERITED = 'inherited';
 	protected $cycle = null;
 	protected $eligibleDiscounts = [];
 	protected $eligibleCharges = [];
@@ -1684,11 +1687,11 @@ class Billrun_DiscountManager {
 	 * @return boolean
 	 */
 	protected function isDiscountProratedStart($discount, $line) {
-		$proration = $this->getDiscountProratedType($discount, 'start');
-		if ($proration === 'no') {
+		$proration = $this->getDiscountProrationByPhase($discount, 'start');
+		if ($proration === self::PRORATION_NO) {
 			return false;
 		}
-		if ($proration === 'yes') {
+		if ($proration === self::PRORATION_YES) {
 			return true;
 		}
 		$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
@@ -1697,11 +1700,11 @@ class Billrun_DiscountManager {
 	}
 
 	protected function isDiscountProratedEnd($discount, $line) {
-		$proration = $this->getDiscountProratedType($discount, 'end');
-		if ($proration === 'no') {
+		$proration = $this->getDiscountProrationByPhase($discount, 'end');
+		if ($proration === self::PRORATION_NO) {
 			return false;
 		}
-		if ($proration === 'yes') {
+		if ($proration === self::PRORATION_YES) {
 			return true;
 		}
 		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
@@ -1710,21 +1713,32 @@ class Billrun_DiscountManager {
 	}
 
 	protected function validProrationValue($prorationValue){
-		$vailedProrationValues = ['yes', 'no', 'inherited'];
+		$vailedProrationValues = [self::PRORATION_YES, self::PRORATION_NO, self::PRORATION_INHERITED];
 		if(in_array($prorationValue, $vailedProrationValues)){
 			return true;
 		}
 		return false;
 	}
 
-	protected function getDiscountProratedType($discount, $type = 'start'){
-		Billrun_Factory::dispatcher()->trigger('beforeGetDiscountProratedType', array(&$discount));
-		$prorationTypeValue = Billrun_Util::getIn($discount, 'prorated_' . $type, null);
-		$proration = Billrun_Util::getIn($discount, 'proration', 'inherited');
+	/**
+	 * Resolve the proration value for a discount per phase.
+	 *
+	 * The method checks for a phase-specific proration value (prorated_start, prorated_end),
+	 * validates it, and falls back to the general proration value or inherited.
+	 *
+	 * @param array  $discountData Discount configuration data
+	 * @param string $phase        Proration phase (e.g. 'start', 'end')
+	 *
+	 * @return string Resolved proration value
+	 */
+	protected function getDiscountProrationByPhase($discountData, $phase = 'start'){
+		Billrun_Factory::dispatcher()->trigger('beforeGetDiscountProrationByPhase', array(&$discountData, $phase));
+		$prorationTypeValue = Billrun_Util::getIn($discountData, 'prorated_' . $type, null);
+		$proration = Billrun_Util::getIn($discountData, 'proration', self::PRORATION_INHERITED);
 		if(isset($prorationTypeValue) && $this->validProrationValue($prorationTypeValue)){
 			$proration = $prorationTypeValue;
 		}else if(!$this->validProrationValue($proration)){
-			$proration = 'inherited';//default if not valid
+			$proration = self::PRORATION_INHERITED;//default if not valid
 		}
 		return $proration;
 	}
