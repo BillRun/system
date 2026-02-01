@@ -18,12 +18,12 @@
         "invoice_language": "gr_CY",
         "invoice_detailed": false,
         "street": "DIMITRIOU PAPANIKOLI",
-        "house_number": "2",
+        "house_number": "",
         "apartment": "",
-        "province": "Lefkosia",
-        "city": "Nicosia",
-        "country": "CY",
-        "zip_code": "1077",
+        "province": "",
+        "city": "",
+        "country": "",
+        "zip_code": "",
         "po_box": "",
         "creation_time": "2025-10-23 13:02:37",
         "activation_date": "2024-10-23 13:04:25",
@@ -55,8 +55,8 @@
           }
         ],
         "imsi": [],
-        "sub_number": "35796670808",
-        "portability_code": "PTTEXXPQ",
+        "sub_number": "",
+        "portability_code": "",
         "discounts": [
           {
             "priority": "",

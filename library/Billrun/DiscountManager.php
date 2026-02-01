@@ -1203,6 +1203,7 @@ class Billrun_DiscountManager {
 					Billrun_Factory::log("Cannot get '{$key}', CDR was not generated", Billrun_Log::ERR);
 					continue;
 				}
+				Billrun_Factory::dispatcher()->trigger('beforeGenerateDiscountCdrs', array(&$entity));
 
 				$currentCdrs = $this->generateDiscountCdrs($type, $lines, $entity, $eligibility);
 				if ($currentCdrs) {
@@ -1627,7 +1628,7 @@ class Billrun_DiscountManager {
 	protected function getDiscountAmount($discount, $line, $value, $operations) {
 		$isPercentage = Billrun_Util::getIn($discount, 'type', 'percentage') === 'percentage';
 		$lineQuantity = Billrun_Util::getIn($line, 'usagev', 1);
-		$field = Billrun_Factory::config()->getConfigValue('discounts.percentage_on_field', 'full_price');
+		$field = $this->getPercentageOnField($discount);
 		$price = $isPercentage ? $line[$field] * $lineQuantity : $value;
 		if (empty($operations)) {
 			$ret = $isPercentage ? $price * $value : $price;
@@ -1738,7 +1739,6 @@ class Billrun_DiscountManager {
 	 * @return string Resolved proration value
 	 */
 	protected function getDiscountProrationByPhase($discountData, $phase = 'start'){
-		Billrun_Factory::dispatcher()->trigger('beforeGetDiscountProrationByPhase', array(&$discountData, $phase));
 		$prorationTypeValue = Billrun_Util::getIn($discountData, 'prorated_' . $type, null);
 		$proration = Billrun_Util::getIn($discountData, 'proration', self::PRORATION_INHERITED);
 		if(isset($prorationTypeValue) && $this->validProrationValue($prorationTypeValue)){
@@ -1920,5 +1920,15 @@ class Billrun_DiscountManager {
 			];
 		}
 		return $discountLine;
+	}
+
+	protected function getPercentageOnField($discount){
+		$defualtField = 'full_price';
+		$vailedProrationOnFields = [$defualtField, 'aprice'];
+		$field = Billrun_Util::getIn($discount, 'percentage_on_field', $defualtField);
+		if(in_array($field,  $vailedProrationOnFields)){
+			return $field;
+		}
+		return $defualtField;
 	}
 }
