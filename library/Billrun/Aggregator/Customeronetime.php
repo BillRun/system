@@ -246,6 +246,9 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 	}
 
 	protected function addAdjustments(Billrun_Cycle_Account $aggregatedEntity) {
+		if (empty($this->adjustments)) {
+			return;
+		}
 		if(!$this->validateAdjustments($aggregatedEntity)) {
 			throw new Exception("Adjustments validation test didn't pass. No billrun was created");
 		}
