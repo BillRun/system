@@ -5,9 +5,11 @@ namespace Helper;
 // all public methods declared in helper class will be available in $I
 use Codeception\Module\REST;
 
-class BillRunAPI extends \Codeception\Module
-{
+class BillRunAPI extends \Codeception\Module{
+  
+
     protected $accessToken = false;
+
 
     /**
      *get access token, it run once.
@@ -52,7 +54,20 @@ class BillRunAPI extends \Codeception\Module
         }
         return $this->accessToken;
     }
-    
+      /**
+     * Returns the last API response's 'entity' field, or null if not present.
+     * This works only if the REST module is available and has grabResponse().
+     */
+    public function getLastEntity()
+    {
+        $rest = $this->getModule('REST');
+        if (method_exists($rest, 'grabResponse')) {
+            $resp = $rest->grabResponse();
+            $data = json_decode($resp, true);
+            return $data['entity'] ?? null;
+        }
+        return null;
+    }
     /**
      * send post billapi requset to create entitys.
      * @param Array $data - entity fields 
@@ -327,7 +342,7 @@ class BillRunAPI extends \Codeception\Module
 
         return $this->generateAccount($account);
     }
-    public function getCustomFields($entity) {
+    public function getModel($entity) {
         switch ($entity) {
             case 'account':
                 $model = new \Models_Accounts(['collection' => 'accounts', 'no_init' => true]);
@@ -345,7 +360,11 @@ class BillRunAPI extends \Codeception\Module
                 $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
                 break;
         }
+        return $model;
+    }
 
+    public function getCustomFields($entity) {
+        $model = $this->getModel($entity);
         $mandatoryFields = $model->getMandatoryCustomFields();
         $populatedValues = [];
         foreach ($mandatoryFields as $field) {
@@ -436,17 +455,19 @@ class BillRunAPI extends \Codeception\Module
                 ]
             ],
             "upfront" => false,
+            // "recurrence" => [
+            //     "frequency" => 1,
+            //     "start" => 1
+            // ],
             "recurrence" => [
-                "frequency" => 1,
-                "start" => 1
-            ],
-        
+                "periodicity" => "month"
+             ],
             "prorated_end" => true,
             "rates" => [],
             "prorated_start" => true,
             "connection_type" => "postpaid",
             "prorated_termination" => true,
-            "description" => "plan"
+            "description" => $override['name'] ?? "plan"
 
         ], $override);
         $this->sendBillapiCreate($plan, 'plans');
@@ -455,7 +476,7 @@ class BillRunAPI extends \Codeception\Module
      * create an service.
      * @param Array $override - fields to override the default values 
      */
-    public function generateService(array $override = [])
+    public function generateService(array $override = [], $byApi= false)
     {
         $customeFields = $this->getCustomFields('service');
         $override = array_merge($customeFields, $override);
@@ -482,8 +503,23 @@ class BillRunAPI extends \Codeception\Module
                 "start" => 1
             ],
         ], $override);
+        if($byApi){
+            $this->sendBillapiCreate($service, 'services');
+            return $service;
 
-        $this->sendBillapiCreate($service, 'services');
+        }else{
+            if(isset($service["from"]) && !($service["from"] instanceof \Mongodloid_Date)){
+                $service["from"] = new \Mongodloid_Date(strtotime($service['from']));
+            }
+            if(isset($service["to"]) && !($service["to"] instanceof \Mongodloid_Date)){
+                $service["to"] = new \Mongodloid_Date(strtotime($service['to']));
+            }
+            $model = $this->getModel('service');
+            $model->setUpdate($service);
+            $model->create();
+            return $model->getUpdate();
+        }
+
     }
 
         /**
@@ -776,6 +812,24 @@ class BillRunAPI extends \Codeception\Module
 
     $this->sendBillapiCreate($discount, 'discounts');
   }
+
+    public function sendOnetimeInvoiceApi(array $cdrs, $aid, $extra_params = []) {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+
+        $params = [
+            'cdrs' => json_encode($cdrs),
+            'aid' => $aid
+        ];
+        $params = array_merge($params, $extra_params);
+
+        // For GET request, we need to add parameters to the URL
+        $ret = $rest->sendGET("/api/onetimeinvoice", $params);
+
+        return json_decode($ret, true);
+    }
     
 }
 //billapi/accounts/permanentchange

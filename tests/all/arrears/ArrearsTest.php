@@ -21,25 +21,13 @@ class ArrearsTest extends \Codeception\Test\Unit
     {
         ini_set('error_reporting', E_ALL & ~E_WARNING & ~E_NOTICE);
         $this->tester->enableExternalModeSettings();
-        $this->cleanDB();
+        $this->tester->cleanDB();
     }
 
     protected function _after()
     {
     }
-    
-    protected function cleanDB(){
 
-        $plans = Billrun_Factory::db()->plansCollection();
-        $plans->remove(['_id'=>['$exists' => true]]);
-        $lines = Billrun_Factory::db()->linesCollection();
-        $lines->remove(['_id'=>['$exists' => true]]);
-        $billruns = Billrun_Factory::db()->billrunCollection();
-        $billruns->remove(['_id'=>['$exists' => true]]);
-        $billing_cycleCollection = Billrun_Factory::db()->billing_cycleCollection();
-        $billing_cycleCollection->remove(['_id'=>['$exists' => true]]);
-
-    }
 
     
 
@@ -51,8 +39,8 @@ class ArrearsTest extends \Codeception\Test\Unit
         $aid =5100002472;
         $this->defaultOptions['stamp'] = '202512';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = 'PLAN_5080';
-        $discount_name = 'DIS_PLAN_5080';
+        $planName = 'PLAN_5076';
+        $discount_name = 'DIS_PLAN_5076';
         $this->tester->generatePlan(['name' => $planName]);// charge on termination = true
         $this->tester->generateDiscount([
             "from" => "2025-08-01T21:00:00Z",
@@ -95,5 +83,175 @@ class ArrearsTest extends \Codeception\Test\Unit
         $this->assertEqualsWithDelta(-11.204, $discountLine1['aprice'],$this->epsilon);
         $this->assertEqualsWithDelta(-2.801, $discountLine2['aprice'],$this->epsilon);
        
+    }
+
+    public function testDiscountsArrearsWithCycles_1()
+    {
+        /*
+        BRCD-5102: cycles not work when proration: no
+        */
+        $aid =5100002243;
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'PLAN_5102_1';
+        $this->tester->generatePlan(['name' => $planName]);
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->defaultOptions['stamp'] = '202510';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((13.553333333), $billrun['totals']['before_vat'], $this->epsilon);
+
+        $this->defaultOptions['stamp'] = '202511';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((31.924), $billrun['totals']['before_vat'], $this->epsilon);
+
+        $this->defaultOptions['stamp'] = '202512';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((34.445), $billrun['totals']['before_vat'], $this->epsilon);
+
+       
+    }
+
+    public function testDiscountsArrearsWithCycles_2()
+    {
+        /*
+        BRCD-5102: cycles not work when proration:inherited with false
+        */
+        $aid =5100002244;
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'PLAN_5102';
+        $this->tester->generatePlan(['name' => $planName, "prorated_termination" =>false, "prorated_start" =>false]);
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->defaultOptions['stamp'] = '202510';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((31.924), $billrun['totals']['before_vat'], $this->epsilon);
+        
+        $this->defaultOptions['stamp'] = '202511';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((31.924), $billrun['totals']['before_vat'], $this->epsilon);
+
+        $this->defaultOptions['stamp'] = '202512';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((34.445), $billrun['totals']['before_vat'], $this->epsilon);
+
+       
+    }
+
+    public function testDiscountsArrearsWithCycles_3()
+    {
+        /*
+        BRCD-5102: cycles not work when proration:inherited with "prorated_termination" =>true , "prorated_start" =>false
+        */
+        $aid =5100002245;
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'PLAN_5102_2';
+        $this->tester->generatePlan(['name' => $planName, "prorated_termination" =>true , "prorated_start" =>false]);
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->defaultOptions['stamp'] = '202510';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((31.924), $billrun['totals']['before_vat'], $this->epsilon);
+        
+        $this->defaultOptions['stamp'] = '202511';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((31.924), $billrun['totals']['before_vat'], $this->epsilon);
+
+        $this->defaultOptions['stamp'] = '202512';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((34.445), $billrun['totals']['before_vat'], $this->epsilon);
+
+       
+    }
+
+    public function testDiscountsArrearsWithCycles_4()
+    {
+        /*
+        BRCD-5102: cycles not work when proration:inherited with "prorated_termination" =>false , "prorated_start" =>true - therothical test no practical use
+        */
+        $aid =5100002246;
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'PLAN_5102_3';
+        $this->tester->generatePlan(['name' => $planName, "prorated_termination" =>false , "prorated_start" =>true]);
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->defaultOptions['stamp'] = '202510';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((14.897866667), $billrun['totals']['before_vat'], $this->epsilon);
+        
+        $this->defaultOptions['stamp'] = '202511';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((31.924), $billrun['totals']['before_vat'], $this->epsilon);
+
+        $this->defaultOptions['stamp'] = '202512';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((34.445), $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    public function testDiscountsArrearsWithCycles_5()
+    {
+        /*
+        BRCD-5102: cycles not work when proration:inherited with "prorated_termination" =>true , "prorated_start" =>true - therothical test no practical use
+        */
+        $aid =5100002247;
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'PLAN_5102_4';
+        $this->tester->generatePlan(['name' => $planName]);
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->defaultOptions['stamp'] = '202510';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((14.897866666666669), $billrun['totals']['before_vat'], $this->epsilon);
+        
+        $this->defaultOptions['stamp'] = '202511';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((31.924), $billrun['totals']['before_vat'], $this->epsilon);
+
+        $this->defaultOptions['stamp'] = '202512';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((33.016433333), $billrun['totals']['before_vat'], $this->epsilon);
+
+       
+    }
+
+
+
+    // BRCD-5156 Discount elgibilty is empty for subscribers with revisions out side of the discount span
+    public function testDiscountsOutsideOfRevisionData()
+    {
+   
+        $aid =5156;
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = '201000003';
+        $this->tester->generatePlan(['name' => $planName, "price" => [
+                [
+                    "price" => 100,
+                    "from" => 0,
+                    "to" => "UNLIMITED"
+                ]
+            ]]);
+
+        //partial month - proration discount 
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->defaultOptions['stamp'] = '202602';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((37.096774193548384), $billrun['totals']['before_vat'], $this->epsilon);
+        //full month  - full discount
+        $this->defaultOptions['stamp'] = '202603';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((50), $billrun['totals']['before_vat'], $this->epsilon);
+
+
     }
 }

@@ -101,8 +101,11 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 	 */
 	protected function isFileReceived($filename, $type) {
 		$log = Billrun_Factory::db()->logCollection();
-		$resource = $log->query()->equals('type', $type)->equals('file_name', $filename);
-		return $resource->count() > 0;
+        $query = [
+            'type' => $type,
+            'file_name' => $filename,
+        ];
+        return !$log->query($query)->cursor()->limit(1)->current()->isEmpty();
 	}
 
 }
