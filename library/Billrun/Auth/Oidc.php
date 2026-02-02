@@ -40,7 +40,10 @@ class Billrun_Auth_Oidc extends Billrun_Auth_Abstract
         );
 
         $oidc->setRedirectURL($this->redirectUri);
-        $oidc->addScope(['openid', 'profile', 'email', 'billrun']);
+        $scopes = isset($this->config['scopes']) 
+            ? $this->config['scopes'] 
+            : ['openid', 'profile','billrun'];
+        $oidc->addScope($scopes);
 
         if (empty($request->get('code'))) {
             $oidc->authenticate();
@@ -48,8 +51,10 @@ class Billrun_Auth_Oidc extends Billrun_Auth_Abstract
 
         try {
             $oidc->authenticate();
-            $fullUserInfo = $oidc->requestUserInfo();
-            $userData = $this->mapUserToBillRun($fullUserInfo);
+            $userInfo = $oidc->requestUserInfo();
+            $tokenClaims = $oidc->getVerifiedClaims();
+            $fullData = array_merge((array)$userInfo, (array)$tokenClaims);
+            $userData = $this->mapUserToBillRun($fullData);
             $extraData = ['id_token' => $oidc->getIdToken()];
             if ($this->createVirtualSession($userData, $extraData)) {
                 Billrun_Factory::log("AuthOpenIDConnect: Success.", Zend_Log::INFO);
@@ -79,20 +84,18 @@ class Billrun_Auth_Oidc extends Billrun_Auth_Abstract
         );
     }
 
-    private function mapUserToBillRun($oidcData)
+   private function mapUserToBillRun($oidcData)
     {
-        $dataArray = (array)$oidcData;
+        $dataArray = json_decode(json_encode($oidcData), true);
         $username = isset($dataArray['preferred_username'])
             ? $dataArray['preferred_username']
             : (isset($dataArray['sub']) ? $dataArray['sub'] : null);
-        $roles = [];
+        $rolesPath = isset($this->config['roles_path']) 
+            ? $this->config['roles_path'] 
+            : 'billrun_roles.billing';
+        $foundRoles = Billrun_Util::getIn($dataArray, $rolesPath, []);
+        $roles = is_array($foundRoles) ? $foundRoles : [];
 
-        if (isset($dataArray['billrun_roles'])) {
-            $billrunRoles = (array)$dataArray['billrun_roles'];
-            if (isset($billrunRoles['billing'])) {
-                $roles = (array)$billrunRoles['billing'];
-            }
-        }
         return [
             'username' => $username,
             'roles'    => $roles,
