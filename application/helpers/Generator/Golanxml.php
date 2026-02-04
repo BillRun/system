@@ -38,7 +38,14 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $lines_coll;
 	protected $invoice_version = "1.1";
 	protected $balances;
-	protected $groupsInPlan = array('VF', 'PALESTINIAN', 'INTERNATIONAL_CALLS', 'NATIONAL_CALLS','VF_INCLUDED','PALESTINIAN_NO_FRANCE','INTERNATIONAL_CALLS_CHINA');
+	protected $groupsInPlan = array('VF',
+                                    'PALESTINIAN',
+                                    'INTERNATIONAL_CALLS',
+                                    'NATIONAL_CALLS',
+                                    'VF_INCLUDED',
+                                    'PALESTINIAN_NO_FRANCE',
+                                    'INTERNATIONAL_CALLS_CHINA',
+                                    'INTERNATIONAL_CALLS_WITH_UK_MOBILE');
 
 	/**
 	 * Flush XMLWriter every $flush_size billing lines
