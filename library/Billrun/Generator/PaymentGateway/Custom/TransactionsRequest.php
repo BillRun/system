@@ -113,21 +113,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}, $this->customers);
 
 		$account = Billrun_Factory::account();
-		$gadBatchLimit = Billrun_Factory::config()->getConfigValue('subscribers.account.gad_limit', false, "int");
-		if ($gadBatchLimit) {
-			Billrun_Factory::log("Found gad batch limit of size " . $gadBatchLimit, Zend_Log::DEBUG);
-		} else {
-			Billrun_Factory::log("Couldn't find gad batch limit", Zend_Log::DEBUG);
-		}
-		$aidsBatches = array_chunk($customersAids, $gadBatchLimit);
-		Billrun_Factory::log("Got " . count($aidsBatches) . " aids chunks" , Zend_Log::DEBUG);
-		$accounts = [];
-		for ($i = 0; $i < count($aidsBatches); $i++) {
-			
-			$query = ['aid' => array('$in' => $aidsBatches[$i])];
-			$accounts = array_merge($account->loadAccountsForQuery($query), $accounts);
-		}
-		
+		$accounts = $account->loadAccountsByAidsWithBatches($customersAids);
 		if (is_array($accounts)) {
 			foreach ($accounts as $account) {
 				$accountsInArray[$account['aid']] = $account;
