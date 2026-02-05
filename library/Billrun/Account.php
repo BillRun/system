@@ -209,11 +209,7 @@ abstract class Billrun_Account extends Billrun_Base {
 
 	public function loadAccountsByAidsWithBatches($aidsValues, $queryOptions = []) {
 		$gadBatchLimit = Billrun_Factory::config()->getConfigValue('subscribers.account.gad_limit', 5000, "int");
-		if ($gadBatchLimit) {
-			Billrun_Factory::log("Found gad batch limit of size " . $gadBatchLimit, Zend_Log::DEBUG);
-		} else {
-			Billrun_Factory::log("Couldn't find gad batch limit", Zend_Log::DEBUG);
-		}
+		Billrun_Factory::log("Found gad batch limit of size " . $gadBatchLimit, Zend_Log::DEBUG);
 		$aidsBatches = array_chunk($aidsValues, $gadBatchLimit);
 		Billrun_Factory::log("Got " . count($aidsBatches) . " aids chunks" , Zend_Log::DEBUG);
 		$accounts = [];
