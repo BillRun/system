@@ -214,9 +214,9 @@ abstract class Billrun_Account extends Billrun_Base {
 		Billrun_Factory::log("Got " . count($aidsBatches) . " aids chunks" , Zend_Log::DEBUG);
 		$accounts = [];
 		for ($i = 0; $i < count($aidsBatches); $i++) {
-			
+			Billrun_Factory::log("Load accounts of batch number " . $i+1 , Zend_Log::DEBUG);
 			$query = array_merge(['aid' => array('$in' => $aidsBatches[$i])], $queryOptions);
-			$accounts = array_merge($account->loadAccountsForQuery($query), $accounts);
+			$accounts = array_merge($this->loadAccountsForQuery($query), $accounts);
 		}
 		return $accounts;
 	}
