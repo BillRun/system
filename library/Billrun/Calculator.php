@@ -547,7 +547,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			if ($this->autosort) {
 				$foundLines->sort(array('urt' => 1));
 			}
-		} while ($horizonlineCount != 0 && $foundLines->count() == 0);
+		} while ($horizonlineCount != 0 && $foundLines->count() == 0);//this is probably because another process already 'stole' and mark this so this process should try again.
 
 		foreach ($foundLines as $line) {
 			$retLines[$line['stamp']] = $line;
