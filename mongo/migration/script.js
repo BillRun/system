@@ -1312,6 +1312,13 @@ _dropIndex("archive", "sid_1_session_id_1_request_num_");
 _dropIndex("archive", "session_id_1_request_num_");
 _dropIndex("archive", "sid_1_call_reference_1");
 _dropIndex("archive", "call_reference_1");
+db.audit.createIndex({'stamp': 1 },  { unique: true });
+db.audit.createIndex({'type': 1 }, { unique: false , sparse: true, background: true });
+db.audit.createIndex({'key': 1 }, { unique: false , sparse: false, background: true });
+db.audit.createIndex({'collection': 1 }, { unique: false , sparse: false, background: true });
+db.audit.createIndex({'urt': 1 }, { unique: false , sparse: false, background: true });
+db.audit.createIndex({'user.name': 1 }, { unique: false , sparse: false, background: true });
+
 if (db.serverStatus().ok == 0) {
 	print('Cannot shard archive collection - no permission')
 } else if (db.serverStatus().process == 'mongos') {
