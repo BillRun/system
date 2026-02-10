@@ -172,7 +172,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         //flat-42.566333333(9.756290323+33.605), discount(-16.806 +(-4.87916129))(start in in 2025-10-23 10:04:25) 9/30*16.806
         $this->assertEqualsWithDelta(21.676129033, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2025-10-23 13:04:25"), $planLine['start']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2025-11-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-11-01 00:00:00"), $planLine['end_date']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-11-01 00:00:00"), $planLineUpfront['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLineUpfront['end']->toDateTime()->getTimestamp());
 
@@ -268,7 +268,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         //flat-42.566333333(9.756290323+33.605), discount(-16.806 +(-4.87916129)) 9/30*16.806
         $this->assertEqualsWithDelta(21.676129033, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2025-10-23 13:04:25"), $planLine['start']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2025-11-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-11-01 00:00:00"), $planLine['end_date']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-11-01 00:00:00"), $planLineUpfront['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLineUpfront['end']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-10-23 13:04:25"), $discountLine['start']->toDateTime()->getTimestamp());
@@ -485,7 +485,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         
         $this->assertEqualsWithDelta(3.252096774, $planLine['aprice'],$this->epsilon);
         $this->assertEquals(strtotime("2025-10-29 17:38:59"), $planLine['start']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2025-11-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-11-01 00:00:00"), $planLine['end_date']->toDateTime()->getTimestamp());
 
         //B2C_ARREARS 31.436935484(arrears)
         $this->assertEqualsWithDelta(31.436935484, $planLineArrears['aprice'],$this->epsilon);
@@ -521,7 +521,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         //5/30*33.605
         $this->assertEqualsWithDelta(5.600833333, $planLine['aprice'],$this->epsilon);
         $this->assertEquals(strtotime("2025-11-26 15:06:42"), $planLine['start']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['end_date']->toDateTime()->getTimestamp());
     }
 
     public function testChangeSubFroUpfrontPlanToUpfrontPlan()
