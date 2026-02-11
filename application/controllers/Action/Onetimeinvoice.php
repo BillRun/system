@@ -140,7 +140,8 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 
 		// run aggregate on cdrs generate invoice
-		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
+		try {
+			$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
 					'stamp' => $chargingOptions['oneTimeStamp'],
 					'force_accounts' => [$this->aid],
 					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
@@ -149,7 +150,18 @@ class OnetimeinvoiceAction extends ApiAction {
 					'note' => $chargingOptions['note'],
 					'adjusts' => $chargingOptions['adjusts']]);
 
-		$aggregator->aggregate();
+			$aggregator->aggregate();
+		} catch (\Exception $e) {
+			Billrun_Factory::log("Aggregation failed. Rolling back CDRs.", Zend_Log::ERR);
+			$stampsToDelete = array_column($this->processsedCdrs, 'stamp');
+			if (!empty($stampsToDelete)) {
+				Billrun_Factory::db()->linesCollection()->remove([
+					'stamp' => ['$in' => $stampsToDelete]
+				]);
+			}
+			$this->setError("Invoice creation failed during aggregation. Reason: " . $e->getMessage());
+			return false;
+		}
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
 		$results['pdfPath'] = $this->invoice->getInvoicePath();
