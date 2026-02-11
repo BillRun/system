@@ -705,48 +705,6 @@ class BillRunAPI extends \Codeception\Module{
         return json_decode($ret, true);
     }
 
-    public function SendInitial($fileType, $request)
-    {
-        $request['requestType'] = 1; // Set requestType to 1 for initial
-
-        return $this->sendRealTimeRequest($fileType, $request);
-    }
-    public function SendUpdate($fileType, $request)
-    {
-        $request['requestType'] = 2; // Set requestType to 2 for update
-
-        return $this->sendRealTimeRequest($fileType, $request);
-    }
-    public function SendFinal($fileType, $request)
-    {
-        $request['requestType'] = 3; // Set requestType to 3 for final
-
-        return $this->sendRealTimeRequest($fileType, $request);
-    }
-
-    /**
-     * Assert that the realtime API response contains the expected granted volume.
-     *
-     * @param int|float|string $expectedGrantedVolume
-     * @param string $jsonPath JSONPath used to locate granted volume in response
-     */
-    public function assertGrantedVolume($expectedGrantedVolume, $jsonPath = '$..grantedVolume')
-    {
-        /** @var REST $rest */
-        $rest = $this->getModule('REST');
-        $values = $rest->grabDataFromResponseByJsonPath($jsonPath);
-
-        \PHPUnit\Framework\Assert::assertNotEmpty(
-            $values,
-            "No grantedVolume field found in response (jsonPath: {$jsonPath})"
-        );
-
-        \PHPUnit\Framework\Assert::assertEquals(
-            $expectedGrantedVolume,
-            $values[0],
-            "grantedVolume does not match expected value"
-        );
-    }
 
     function generateDemoValue($type = 'text') {
         switch ($type) {
