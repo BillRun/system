@@ -290,6 +290,18 @@ class ReportModel {
 		if(gettype($value) == 'boolean') {
 			return $value ? 'TRUE' : 'FALSE';
 		}
+
+		$numFormat = Billrun_Factory::config()->getConfigValue('reports.formatting.numbers', 'scientific');
+		if ($numFormat == 'decimal') {
+			if (is_float($value)) {
+				$value = sprintf('%.20f', $value);
+				if (strpos($value, '.') !== false) {
+					$value = rtrim(rtrim($value, '0'), '.');
+				}
+			}
+		}
+
+
 		return $value;
 	}
 	
@@ -1116,7 +1128,7 @@ class ReportModel {
 					$queryDate = ($op === 'gt' || $op === 'lte') ? $date + 59 : $date;
 					$formatedExpression = array(
 						"\${$op}" => new MongoDate($queryDate),
-					);
+						);
 				} elseif ($type === 'number') {
 					$formatedExpression = array(
 						"\${$op}" => floatval($value)
