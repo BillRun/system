@@ -117,7 +117,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		Billrun_Factory::log("Aggregating services!");
 		$aggregatedServices = $this->generalAggregate($this->records['services'], Billrun_Cycle_Data_Service::class);
 
-		$usageLines = $this->cycleAggregator->isOneTime() ? [] : $this->loadSubscriberLines();
+		$usageLines = $this->loadSubscriberLines();
 		$results = array_merge($aggregatedPlans, $aggregatedServices);
 		Billrun_Factory::log("Subscribers aggregated " . count($results) . ' lines');
 		//TODO add usage aggregation per subscriber here
@@ -141,7 +141,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		);
 		
 		// in case of expected invoice we might want to ignore usage lines
-		if ($this->cycleAggregator->ignoreCdrs) {
+		if ($this->cycleAggregator->ignoreCdrs || $this->cycleAggregator->isOneTime()) {
 			$query['type'] = 'credit';
 		}
 		
