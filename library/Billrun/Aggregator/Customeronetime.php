@@ -25,6 +25,11 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 	protected $customer_uf = array();
 	protected $lastAggregatedEntity = null;
 	protected $constructOptions = [];
+	/**
+	 * Array of [invoice_id => amount] arrays, in order to force adjusted invoices and amount
+	 * @array of arrays
+	 */
+	protected $adjustments = [];
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -50,6 +55,9 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		$this->aggregationLogic = Billrun_Account::getAccountAggregationLogic($aggregateOptions);
 
 		$this->affectedSids = Billrun_Util::getFieldVal($options['affected_sids'],[]);
+		if (isset($options['adjusts'])) {
+			$this->adjustments = $options['adjusts'];
+		}
 		$this->constructOptions = $options;
 	}
 	
@@ -80,6 +88,8 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 				$aggregatedEntity->setUserFields($this->customer_uf);
 				//Add note
 				$this->addNote($aggregatedEntity);
+				//Add adjustments
+				$this->addAdjustments($aggregatedEntity);
 				//Close & Save the billrun document
 				$aggregatedEntity->closeInvoice($this->min_invoice_id, FALSE, $customCollName);
 				//Save configurable/aggretaion data
@@ -88,6 +98,8 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 			} else {
 				$this->addExternalCharges($aggregatedEntity);
 				$aggregatedEntity->finalizeInvoice( $aggregatedResults );
+				//Add adjustments
+				$this->addAdjustments($aggregatedEntity);
 				$aggregatedEntity->closeInvoice(str_pad('0', strlen($this->min_invoice_id), '0') , $this->isFakeCycle() , $customCollName );
 				//Save configurable/aggretaion data
 				$aggregatedEntity->addConfigurableData();
@@ -205,4 +217,41 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		}
 	}
 
+	protected function validateAdjustments(Billrun_Cycle_Account $aggregatedEntity) {
+		Billrun_Factory::log("Found " . count($this->adjustments) . " adjustments of invoice . Pulling invoices according to the adjustments list", Zend_Log::DEBUG);
+		$adj_total_amount = 0;
+		foreach ($this->adjustments as $index => $adjust) {
+			$adj_total_amount += $adjust['amount'];
+			Billrun_Factory::log("Adjustment index " . $index . " - checking if invoice " . $adjust['invoice_id'] . " exists", Zend_Log::DEBUG);
+			$invoice = null;
+			$invoice = Billrun_Bill_Invoice::getInvoices(['invoice_id' => $adjust['invoice_id']]);
+			if (!empty($invoice)) {
+				$invoice_adjusted_amount = isset($invoice['adjusted_by_invoices']) ? abs(array_sum(array_column($invoice['adjusted_by_invoices'], "amount"))) : 0;
+				Billrun_Factory::log("Invoice " . $invoice['invoice_id'] . " current adjusted amount is " . $invoice_adjusted_amount, Zend_Log::DEBUG);
+			} else {
+				Billrun_Factory::log("Couldn't find bill with invoice id " . $adjust['invoice_id'] . " to adjust to the immediate invoice. No invoice was created", Zend_Log::ALERT);
+				return false;
+			}
+		}
+		$invoice_amount = $this->isFakeCycle() ? $this->getLastBillrunObj()->getInvoice()->getRawData()['totals']['after_vat_rounded'] : $aggregatedEntity->getInvoice()->getRawData()['totals']['after_vat_rounded'];
+		if (($invoice_amount * $adj_total_amount) <= 0) {
+			Billrun_Factory::log("Invoice amount and adjustments amount need to be with the same sign. Immediate invoice total amount is " . $invoice_amount . ", while adjusted total amount is " . $adj_total_amount, Zend_Log::ALERT);
+			return false;
+		}
+		if (abs($adj_total_amount) > abs($invoice_amount)) {
+			Billrun_Factory::log("Adjusted total amount " . $adj_total_amount . " is bigger than immediate invoice total amount " . $invoice_amount, Zend_Log::ALERT);
+			return false;
+		}
+		return true;
+	}
+
+	protected function addAdjustments(Billrun_Cycle_Account $aggregatedEntity) {
+		if (empty($this->adjustments)) {
+			return;
+		}
+		if(!$this->validateAdjustments($aggregatedEntity)) {
+			throw new Exception("Adjustments validation test didn't pass. No billrun was created");
+		}
+		$this->isFakeCycle() ? $this->getLastBillrunObj()->getInvoice()->setdAdjustments($this->adjustments) : $aggregatedEntity->getInvoice()->setdAdjustments($this->adjustments);
+	}
 }

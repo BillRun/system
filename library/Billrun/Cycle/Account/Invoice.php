@@ -692,4 +692,13 @@ class Billrun_Cycle_Account_Invoice {
 	public function addAggragtionTranslations($translations) {
 		$this->aggregationTranslations = array_merge($this->aggregationTranslations,$translations);
 	}
+
+	public function setdAdjustments($adj) {
+		if (empty($adj)) {
+			return;
+		}
+		$invoiceRawData = $this->getRawData();
+		$invoiceRawData['adjusted_from_invoices'] = $adj;
+		$this->data->setRawData($invoiceRawData);
+	}
 }
