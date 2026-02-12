@@ -1521,7 +1521,7 @@ class Billrun_DiscountManager {
 		}else{
 			$to = $this->cycle->end();
 		}
-		Billrun_Factory::dispatcher()->trigger('beforeCalculateDiscountAmount', array($discount, $this->cycle, &$from, &$to, &$lineStart, &$lineEnd));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculateDiscountAmount', array($discount, $this->cycle, &$from, &$to, &$lineStart, &$lineEnd, $discountEligibilityFrom, $discountEligibilityTo));
 		if(isset($cycles)){
 			$startTime =  $discountStartProrated ? Billrun_Utils_Time::getTime($line['start_date']) :  Billrun_Billingcycle::getBillrunStartTimeByTimestamp(Billrun_Utils_Time::getTime($line['start_date']), $this->cycle->invoicingDay());;
 			$toByCycles = strtotime("+{$cycles} months", $startTime);
@@ -1739,7 +1739,7 @@ class Billrun_DiscountManager {
 	 * @return string Resolved proration value
 	 */
 	protected function getDiscountProrationByPhase($discountData, $phase = 'start'){
-		$prorationTypeValue = Billrun_Util::getIn($discountData, 'prorated_' . $type, null);
+		$prorationTypeValue = Billrun_Util::getIn($discountData, 'prorated_' . $phase, null);
 		$proration = Billrun_Util::getIn($discountData, 'proration', self::PRORATION_INHERITED);
 		if(isset($prorationTypeValue) && $this->validProrationValue($prorationTypeValue)){
 			$proration = $prorationTypeValue;
