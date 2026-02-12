@@ -84,7 +84,7 @@ function _dropIndex(collname, indexname) {
 }
 
 // =============================================================================
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty().next();
+var lastConfig = db.config.find().sort({urt: -1, _id: -1}).limit(1).pretty().next();
 delete lastConfig['_id'];
 // =============================================================================
 
@@ -2071,6 +2071,11 @@ lastConfig = runOnce(lastConfig, 'BRCD-3218', function () {
 	db.operations.createIndex({ 'start_time': 1 }, { expireAfterSeconds: 5256000 });
 });
 
+// BRCD-4430: Create index for config collection on urt field
+runOnce(lastConfig, 'BRCD-4430', function () {
+	db.config.createIndex({ urt: -1 }, { unique: false, background: true });
+});
+
 runOnce(lastConfig, 'BRCD-4739', function () {
 	lastConfig['plugins'].push({
 		"name": "teldasPlugin",
@@ -2102,6 +2107,7 @@ runOnce(lastConfig, 'BRCD-4948', function () {
 	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariff_switching_classes_unique_index" });
 });
 
+lastConfig.urt = new Date();
 if (typeof lastConfig['export'] === 'undefined') {
 	lastConfig.export = 1;
 }

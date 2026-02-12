@@ -689,6 +689,15 @@ class Billrun_Cycle_Account_Invoice {
 		$this->aggregationTranslations = array_merge($this->aggregationTranslations,$translations);
 	}
 
+	public function setdAdjustments($adj) {
+		if (empty($adj)) {
+			return;
+		}
+		$invoiceRawData = $this->getRawData();
+		$invoiceRawData['adjusted_from_invoices'] = $adj;
+		$this->data->setRawData($invoiceRawData);
+	}
+
 	protected function _saveWithTransaction(array $rawData)
 	{
 		$billrun_subs_coll = Billrun_Factory::db()->billrun_subsCollection();

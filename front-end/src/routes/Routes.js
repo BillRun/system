@@ -170,8 +170,8 @@ const routes = () => (
         <Route path="/changepassword(/:itemId)" component={ChangePassword} title="Change Password" />
         <Route path="/import(/:itemType)" component={Authentication(ImporterSetup)} />
         <Route path="/export(/:itemType)" component={Authentication(ExporterSetup)} />
-        <Route path="/immediate-invoice-charge" component={Authentication(ImmediateInvoiceSetup)} title="Create an Invoice for Immediate Charge" />
-        <Route path="/immediate-invoice-refund" component={Authentication(RefundInvoiceSetup)} title="Create an Invoice for Immediate Refund" />
+        <Route path="/immediate-invoice-charge" component={Authentication(ImmediateInvoiceSetup)} title="Create an Immediate Charge Invoice" />
+        <Route path="/immediate-invoice-refund" component={Authentication(RefundInvoiceSetup)} title="Create an Immediate Refund Invoice" />
         <Route path="suggestions" >
           <IndexRoute component={Authentication(SuggestionsSetup)} title="Repricing Suggestions" />
           <Route path=":itemId" component={Authentication(SuggestionsList)} title="Customer Repricing Suggestions" />

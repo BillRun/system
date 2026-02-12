@@ -36,23 +36,24 @@ use function reset;
  * those operations (e.g. MongoDB\Driver\Cursor).
  *
  * @internal
+ * @template TKey of array-key
+ * @template TValue
+ * @template-implements Iterator<TKey, TValue>
  */
 class CachingIterator implements Countable, Iterator
 {
     private const FIELD_KEY = 0;
     private const FIELD_VALUE = 1;
 
-    /** @var array */
-    private $items = [];
+    /** @var list<array{0: TKey, 1: TValue}> */
+    private array $items = [];
 
-    /** @var Iterator */
-    private $iterator;
+    /** @var Iterator<TKey, TValue> */
+    private Iterator $iterator;
 
-    /** @var boolean */
-    private $iteratorAdvanced = false;
+    private bool $iteratorAdvanced = false;
 
-    /** @var boolean */
-    private $iteratorExhausted = false;
+    private bool $iteratorExhausted = false;
 
     /**
      * Initialize the iterator and stores the first item in the cache. This
@@ -60,7 +61,7 @@ class CachingIterator implements Countable, Iterator
      * Additionally, this mimics behavior of the SPL iterators and allows users
      * to omit an explicit call to rewind() before using the other methods.
      *
-     * @param Traversable $traversable
+     * @param Traversable<TKey, TValue> $traversable
      */
     public function __construct(Traversable $traversable)
     {
@@ -70,9 +71,7 @@ class CachingIterator implements Countable, Iterator
         $this->storeCurrentItem();
     }
 
-    /**
-     * @see https://php.net/countable.count
-     */
+    /** @see https://php.net/countable.count */
     public function count(): int
     {
         $this->exhaustIterator();
@@ -89,12 +88,13 @@ class CachingIterator implements Countable, Iterator
     {
         $currentItem = current($this->items);
 
-        return $currentItem !== false ? $currentItem[self::FIELD_VALUE] : false;
+        return $currentItem !== false ? $currentItem[self::FIELD_VALUE] : null;
     }
 
     /**
      * @see https://php.net/iterator.key
      * @return mixed
+     * @psalm-return TKey|null
      */
     #[ReturnTypeWillChange]
     public function key()
@@ -104,9 +104,7 @@ class CachingIterator implements Countable, Iterator
         return $currentItem !== false ? $currentItem[self::FIELD_KEY] : null;
     }
 
-    /**
-     * @see https://php.net/iterator.next
-     */
+    /** @see https://php.net/iterator.next */
     public function next(): void
     {
         if (! $this->iteratorExhausted) {
@@ -114,16 +112,12 @@ class CachingIterator implements Countable, Iterator
             $this->iterator->next();
 
             $this->storeCurrentItem();
-
-            $this->iteratorExhausted = ! $this->iterator->valid();
         }
 
         next($this->items);
     }
 
-    /**
-     * @see https://php.net/iterator.rewind
-     */
+    /** @see https://php.net/iterator.rewind */
     public function rewind(): void
     {
         /* If the iterator has advanced, exhaust it now so that future iteration
@@ -136,9 +130,7 @@ class CachingIterator implements Countable, Iterator
         reset($this->items);
     }
 
-    /**
-     * @see https://php.net/iterator.valid
-     */
+    /** @see https://php.net/iterator.valid */
     public function valid(): bool
     {
         return $this->key() !== null;
@@ -160,6 +152,8 @@ class CachingIterator implements Countable, Iterator
     private function storeCurrentItem(): void
     {
         if (! $this->iterator->valid()) {
+            $this->iteratorExhausted = true;
+
             return;
         }
 

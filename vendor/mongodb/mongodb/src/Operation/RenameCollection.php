@@ -32,21 +32,17 @@ use function is_bool;
 /**
  * Operation for the renameCollection command.
  *
- * @api
  * @see \MongoDB\Collection::rename()
  * @see \MongoDB\Database::renameCollection()
  * @see https://mongodb.com/docs/manual/reference/command/renameCollection/
  */
 class RenameCollection implements Executable
 {
-    /** @var string */
-    private $fromNamespace;
+    private string $fromNamespace;
 
-    /** @var string */
-    private $toNamespace;
+    private string $toNamespace;
 
-    /** @var array */
-    private $options;
+    private array $options;
 
     /**
      * Constructs a renameCollection command.
