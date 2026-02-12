@@ -705,7 +705,6 @@ class BillRunAPI extends \Codeception\Module{
         return json_decode($ret, true);
     }
 
-
     function generateDemoValue($type = 'text') {
         switch ($type) {
             case 'boolean':
