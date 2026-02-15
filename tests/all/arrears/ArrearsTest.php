@@ -222,4 +222,36 @@ class ArrearsTest extends \Codeception\Test\Unit
 
        
     }
+
+
+
+    // BRCD-5156 Discount elgibilty is empty for subscribers with revisions out side of the discount span
+    public function testDiscountsOutsideOfRevisionData()
+    {
+   
+        $aid =5156;
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = '201000003';
+        $this->tester->generatePlan(['name' => $planName, "price" => [
+                [
+                    "price" => 100,
+                    "from" => 0,
+                    "to" => "UNLIMITED"
+                ]
+            ]]);
+
+        //partial month - proration discount 
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->defaultOptions['stamp'] = '202602';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((37.096774193548384), $billrun['totals']['before_vat'], $this->epsilon);
+        //full month  - full discount
+        $this->defaultOptions['stamp'] = '202603';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta((50), $billrun['totals']['before_vat'], $this->epsilon);
+
+
+    }
 }

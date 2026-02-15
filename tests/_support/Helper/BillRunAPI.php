@@ -704,7 +704,7 @@ class BillRunAPI extends \Codeception\Module{
         $ret =  $rest->sendPOST("/realtime", $params);
         return json_decode($ret, true);
     }
-    
+
     function generateDemoValue($type = 'text') {
         switch ($type) {
             case 'boolean':
