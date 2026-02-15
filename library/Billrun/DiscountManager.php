@@ -1364,7 +1364,7 @@ class Billrun_DiscountManager {
 	 */
 	protected function getLineEligibility($line, $discount, $eligibility) {
 		$ret = [];
-		$lineEligibility = $this->getLineFullEligibility($line);
+		$lineEligibility = $this->getLineFullEligibility($line, $discount);
 		$valuesEligibility = $this->getLineValueEligibility($line, $discount, $eligibility);
 		
 		foreach ($valuesEligibility as $valueEligibility) {
@@ -1765,14 +1765,16 @@ class Billrun_DiscountManager {
 	 * @param array $line
 	 * @return array
 	 */
-	protected function getLineFullEligibility($line) {
+	protected function getLineFullEligibility($line, $discount) {
 		$isUpfront = $line['is_upfront'] ?? false;
-		return [
+		$lineFullEligibility = [
 			[
 				'from' => ($isUpfront == true ? $this->cycle->start() : (isset($line['start']) ? Billrun_Utils_Time::getTime($line['start']) : (isset($line['start_date']) ? Billrun_Utils_Time::getTime($line['start_date']) : $this->cycle->start()))),
 				'to' => ($isUpfront == true ? $this->cycle->end() : (isset($line['end']) ? Billrun_Utils_Time::getTime($line['end']) : (isset($line['end_date']) ? Billrun_Utils_Time::getTime($line['end_date']) : $this->cycle->end()))),
 			],
 		];
+		Billrun_Factory::dispatcher()->trigger('afterGetLineFullEligibility', array(&$lineFullEligibility, $discount, $this->cycle));
+		return $lineFullEligibility;
 	}
 	
 	/**
