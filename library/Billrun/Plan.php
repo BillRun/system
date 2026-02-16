@@ -76,10 +76,13 @@ class Billrun_Plan extends Billrun_Service {
 	 */
 	protected function constructWithActivePlan($params) {
 		$date = new Mongodloid_Date($params['time']);
-		$plan = static::getByNameAndTime($params['name'], $date);
-		if ($plan) {
-			$this->data = $plan;
-			return;
+		
+		if (empty($params['disable_cache_plan'])) {
+			$plan = static::getByNameAndTime($params['name'], $date);
+			if ($plan) {
+				$this->data = $plan;
+				return;
+			}
 		}
 
 		$planQuery = array(
