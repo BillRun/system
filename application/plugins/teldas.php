@@ -20,7 +20,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   protected $teldasPassword;
   protected $teldasAccessToken;
   protected $cache;
-  protected $lineType;
+  protected $matchingPathsByType;
   protected $moreSelctiveQuery = array();
 
   const RESPONSE_STATUS_OK = 200;
@@ -32,14 +32,17 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $this->teldasUrl = Billrun_Util::getIn($options, 'url', 'https://ws.numberportability.ch');
     $this->teldasUser = Billrun_Util::getIn($options, 'user', '');
     $this->teldasPassword = Billrun_Util::getIn($options, 'password', '');
-    $this->lineType = Billrun_Util::getIn($options, 'matching_paths.line_type', '');
+    $matchingPaths = Billrun_Util::getIn($options, 'matching_paths', '');
+    foreach($matchingPaths as $matchingPathsConf){
+        $this->matchingPathsByType[$matchingPathsConf['line_type']] = $matchingPathsConf;
+    }
     $this->teldasAccessToken = !empty($this->cache) ? ($this->cache->get(self::ACCESS_TOKEN_CACHE_KEY) ?? '' ) : '';
     $this->options = $options;
     $this->nonWorkingDaysCollection = Billrun_Factory::db()->plugin_teldas_non_working_daysCollection(['force' => true]);
     $this->inaNumbersCollection = Billrun_Factory::db()->plugin_teldas_ina_numbersCollection(['force' => true]);
     $this->tariffsProfilesCollection = Billrun_Factory::db()->plugin_teldas_tariffs_profilesCollection(['force' => true]);
     $this->tariffSwitchingClassesCollection = Billrun_Factory::db()->plugin_teldas_tariff_switching_classesCollection(['force' => true]);
-	}
+  }
     
   protected function authentication() {
     Billrun_Factory::log("Sending authentication request to teldas.", Zend_Log::DEBUG);
@@ -1048,6 +1051,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   protected function calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
       $chargeConfigurations = $tariffProfile['chargeConfigurations'];
       $matchingChargeConfigurations = null;
       foreach ($chargeConfigurations as $chargeConfiguration) {
@@ -1060,13 +1064,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           Billrun_Factory::log("Empty week charge configurations for sequence : " . $sequence . ". Tariff proffile revision: " . print_r($tariffProfile, 1), Zend_Log::ALERT);
           return false;
       }
-      $durationPath = Billrun_Util::getIn($this->options, 'matching_paths.duration.path');
+      $durationPath = Billrun_Util::getIn($matchingPaths, 'duration.path');
       $duration = Billrun_Util::getIn($line, $durationPath);
       if (is_null($duration)) {
           Billrun_Factory::log("Failed to get " . $durationPath . "  from line." . print_r($line, 1), Zend_Log::ALERT);
           return false;
       }
-      $durationDivide = Billrun_Util::getIn($this->options, 'matching_paths.duration.divide_to_seconds', 1000);
+      $durationDivide = Billrun_Util::getIn($matchingPaths, 'duration.divide_to_seconds', 1000);
       if($durationDivide == 0){
         Billrun_Factory::log("Invalid divide_to_seconds value. Can't divide by zero, please change matching_paths.duration.divide_to_seconds to valid value.", Zend_Log::ALERT);
         return false;
@@ -1151,8 +1155,8 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return false;
   }
 
-  protected function convertDestNumberToSubscriberNumber($destNumber){
-      $convertPatterns = Billrun_Util::getIn($this->options, 'matching_paths.subscriber_number.convertion',[]);
+  protected function convertDestNumberToSubscriberNumber($destNumber, $matchingPaths){
+      $convertPatterns = Billrun_Util::getIn($matchingPaths, 'subscriber_number.convertion',[]);
       foreach($convertPatterns as $convert){
         $pattern = $convert['pattern'] ?? '';
         $replacement = $convert['replacement'] ?? '';
@@ -1161,18 +1165,19 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return $destNumber;
   }
   protected function pricingCdr($line) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
       $urt =  $line['urt']->sec;
       if (!isset($line['urt'])) {
           Billrun_Factory::log("Failed to get urt from line." . print_r($line, 1), Zend_Log::ALERT);
           return false;
       }
-      $inaNumberPath = Billrun_Util::getIn($this->options, 'matching_paths.subscriber_number.path');
+      $inaNumberPath = Billrun_Util::getIn($matchingPaths, 'subscriber_number.path');
       $inaNumber = Billrun_Util::getIn($line, $inaNumberPath);
       if (!$inaNumber) {
           Billrun_Factory::log("Failed to get $inaNumberPath from line." . print_r($line, 1), Zend_Log::ALERT);
           return false;
       }
-      $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber);
+      $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber, $matchingPaths);
       $inaNumberRevison = $this->getMatchingInaNumberRevision($inaNumber, $urt);
       if ($inaNumberRevison === false) {
           Billrun_Factory::log("Failed found matching subscriberNumber  revision for $inaNumberPath in INA numbers collection. subscriberNumber: $inaNumber, urt: ". date("Y-m-d H:i:s", $urt), Zend_Log::DEBUG);
@@ -1215,13 +1220,14 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   protected function calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line) {
-    $durationPath = Billrun_Util::getIn($this->options, 'matching_paths.duration.path');
+    $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+    $durationPath = Billrun_Util::getIn($matchingPaths, 'duration.path');
     $duration = Billrun_Util::getIn($line, $durationPath) ?? 0;
     if (is_null($duration)) {
         Billrun_Factory::log("Failed to get " . $durationPath . "  from line." . print_r($line, 1), Zend_Log::ALERT);
         return false;
     }
-    $durationDivide = Billrun_Util::getIn($this->options, 'matching_paths.duration.divide_to_seconds', 1000);
+    $durationDivide = Billrun_Util::getIn($matchingPaths, 'duration.divide_to_seconds', 1000);
     $aprice = 0 ;
     $left = (float) $duration / $durationDivide;
     $left = $this->converFieldByRoundingRules($left, 'duration');
@@ -1332,12 +1338,18 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   public function afterGetLineUsageType(&$line, $type) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+
       if(date_default_timezone_get() != 'Europe/Zurich'){
         Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
         return;
       }
-      if ($type != $this->lineType) {
+      if (!isset($matchingPaths)) {
           return;
+      }
+      Billrun_Factory::log("Checking if line "  . $line['stamp'] .  " should be fillter out", Zend_Log::DEBUG);
+      if($this->shouldFilterLine($line, $matchingPaths)){
+        return;
       }
       Billrun_Factory::log("Checking if line "  . $line['stamp'] .  " is Teldas INA number", Zend_Log::DEBUG);
       $urt = $line['urt']->sec;
@@ -1345,13 +1357,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           Billrun_Factory::log("Failed to get urt from line." . print_r($line, 1), Zend_Log::ALERT);
           return;
       }
-      $inaNumberPath = Billrun_Util::getIn($this->options, 'matching_paths.subscriber_number.path');
+      $inaNumberPath = Billrun_Util::getIn($matchingPaths, 'subscriber_number.path');
       $inaNumber = Billrun_Util::getIn($line, $inaNumberPath);
       if (!$inaNumber) {
           Billrun_Factory::log("Failed to get " . $inaNumberPath . " from line " . $line['stamp'], Zend_Log::DEBUG);
           return;
       }
-      $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber);
+      $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber, $matchingPaths);
       if (!$this->checkIfValidPrefixInaNumber($inaNumber)) {
           return;
       }
@@ -1360,7 +1372,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           return;
       }
       $this->addCfTeldasFieldsByInaNumber($inaNumberRevison, $line);
-      $line['usaget'] = Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call');
+      $line['usaget'] = Billrun_Util::getIn($matchingPaths, 'usage.type', 'ina_vas_call');
       $line['prepriced'] = true;
     //   $usagevUnit = Billrun_Util::getIn($this->options, 'matching_paths.usage.unit', 'seconds');
     //   $volumeType = Billrun_Util::getIn($this->options, 'matching_paths.volume.type', 'field');
@@ -1368,15 +1380,30 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     //   $stampFields = Billrun_Util::getIn($this->options, 'matching_paths.stamps_fields', array());
   }
 
+  protected function shouldFilterLine($line, $matchingPaths){
+    if(!isset($matchingPaths['filters'])){
+        return true;
+    }
+    foreach ($$matchingPaths['filters'] as $filter) {
+        if (isset($filter['conditions'])  && Billrun_Util::isConditionsMet($line, $filter['conditions'])) {
+            $desc = $filter['description'] ?? 'No description';
+            Billrun_Factory::log("Line should not be mapped for teldas. Reason: " . $desc . ". Line details: " . print_r($line, true), Zend_Log::INFO);
+            return true;
+        }
+    }
+	return false;	
+  }
+
   public function beforeGetLineAprice($line, &$aprice) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
       if(date_default_timezone_get() != 'Europe/Zurich'){
         Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
         return;
       }
-      if ($line['type'] != $this->lineType) {
+      if (!isset($matchingPaths)) {
           return;
       }
-      if ($line['usaget'] != Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call')) {
+      if ($line['usaget'] != Billrun_Util::getIn($matchingPaths, 'usage.type', 'ina_vas_call')) {
         return;
       }
       $this->priceByStamp[$line['stamp']] = $this->pricingCdr($line);
@@ -1384,14 +1411,16 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   public function beforeGetLinePriceToTax($line, &$aprice, $instance) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+
       if(date_default_timezone_get() != 'Europe/Zurich'){
         Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
         return;
       }
-      if ($line['type'] != $this->lineType) {
+      if (!isset($matchingPaths)) {
           return;
       }
-      if ($line['usaget'] != Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call')) {
+      if ($line['usaget'] != Billrun_Util::getIn($matchingPaths, 'usage.type', 'ina_vas_call')) {
         return;
       }
       $taxData = $instance->getPreTaxedRowTaxData($line);

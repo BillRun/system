@@ -2112,6 +2112,26 @@ runOnce(lastConfig, 'BRCD-4966', function () {
 	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'count':1,'invoicing_day':1},{ unique: false , sparse: false, background: true });
 });
 
+runOnce(lastConfig, 'BRCD-5190', function () {
+	for (var i = 0; i < lastConfig.plugins.length; i++) {
+		if (lastConfig.plugins[i].name === "teldasPlugin") {
+			if (typeof lastConfig.plugins[i].configuration !== 'undefined'){
+				var configValues = lastConfig.plugins[i].configuration.values;
+
+				if (typeof configValues !== 'undefined' && typeof configValues.matching_paths !== 'undefined') {
+					var paths = configValues.matching_paths;
+					if (typeof paths === 'object' && !Array.isArray(paths)) {				
+						lastConfig.plugins[i].configuration.values.matching_paths = [paths];
+					}
+				}
+			}
+		}
+	};
+	dropIndex("plugin_teldas_tariff_switching_classes", "tariff_switching_classes_unique_index");
+	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: false , sparse: false, background: true });
+});
+
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });
