@@ -1384,7 +1384,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     if(!isset($matchingPaths['filters'])){
         return true;
     }
-    foreach ($$matchingPaths['filters'] as $filter) {
+    foreach ($matchingPaths['filters'] as $filter) {
         if (isset($filter['conditions'])  && Billrun_Util::isConditionsMet($line, $filter['conditions'])) {
             $desc = $filter['description'] ?? 'No description';
             Billrun_Factory::log("Line should not be mapped for teldas. Reason: " . $desc . ". Line details: " . print_r($line, true), Zend_Log::INFO);
