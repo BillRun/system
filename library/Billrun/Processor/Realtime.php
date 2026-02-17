@@ -31,6 +31,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 	 * @return true
 	 */
 	public function parse($config, $rowsToParse) {
+		   Billrun_Factory::dispatcher()->trigger('beforeRealtimeProcessorParsing', array($this, &$rowsToParse));
 	       foreach ($rowsToParse as $row) {
             $row['usaget'] = $this->getLineUsageType($row);
             if ($row['usaget'] === false) {
