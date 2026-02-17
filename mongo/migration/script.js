@@ -2127,7 +2127,7 @@ runOnce(lastConfig, 'BRCD-5190', function () {
 			}
 		}
 	};
-	dropIndex("plugin_teldas_tariff_switching_classes", "tariff_switching_classes_unique_index");
+	_dropIndex("plugin_teldas_tariff_switching_classes", "tariff_switching_classes_unique_index");
 	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: false , sparse: false, background: true });
 });
 
