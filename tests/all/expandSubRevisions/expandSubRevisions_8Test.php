@@ -49,10 +49,7 @@ class expandSubRevisions_8Test extends \Codeception\Test\Unit
             'name' => "SERVICE_1" . time(),
             "price" => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]],
         ];
-        $this->tester->generateService($service1);
-        $service1 = json_decode($this->tester->grabResponse(), true)['entity'];
-        $service1['from'] =  new Mongodloid_Date($service1['from']['sec']);
-        $service1['to'] =  new Mongodloid_Date($service1['to']['sec']);
+        $service1 = $this->tester->generateService($service1);
         $services[$service1['name']] = new Mongodloid_Entity($service1);
 
         $service2 = [
@@ -60,10 +57,7 @@ class expandSubRevisions_8Test extends \Codeception\Test\Unit
             'name' => "SERVICE_2" . time(),
             "price" => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]],
         ];
-        $this->tester->generateService($service2);
-        $service2 = json_decode($this->tester->grabResponse(), true)['entity'];
-        $service2['from'] =  new Mongodloid_Date($service2['from']['sec']);
-        $service2['to'] =  new Mongodloid_Date($service2['to']['sec']);
+        $service2 = $this->tester->generateService($service2);
         $services[$service2['name']] = new Mongodloid_Entity($service2);
 
         $service3 = [
@@ -71,10 +65,7 @@ class expandSubRevisions_8Test extends \Codeception\Test\Unit
             'name' => "SERVICE_3" . time(),
             "price" => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]],
         ];
-        $this->tester->generateService($service3);
-        $service3 = json_decode($this->tester->grabResponse(), true)['entity'];
-        $service3['from'] =  new Mongodloid_Date($service3['from']['sec']);
-        $service3['to'] =  new Mongodloid_Date($service3['to']['sec']);
+        $service3 = $this->tester->generateService($service3);
         $services[$service3['name']] = new Mongodloid_Entity($service3);        
 
         $this->tester->createAccountWithAllMandatoryCustomFields();

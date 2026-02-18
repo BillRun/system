@@ -137,7 +137,7 @@ class Mongodloid_Collection {
 		// This function changes fields, should I clone fields before sending?
 		$this->setEntityFields($entity, $fields);
 
-		return Mongodloid_Result::getResult($this->updateOne($data, array('$set' => $fields)), __FUNCTION__);
+		return Mongodloid_Result::getResult($this->updateOne( Mongodloid_TypeConverter::fromMongodloid($data), array('$set' => $fields)), __FUNCTION__);
 	}
 
 	/**
@@ -720,6 +720,7 @@ class Mongodloid_Collection {
 
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = !empty($collName) ? $collName : $this->getName();
+		Billrun_Factory::log("Creating auto increment for collection: " . $collection_name, Zend_Log::DEBUG);
 		//check for existing seq
 		if (!empty($params)) {
 			$key = serialize($params);

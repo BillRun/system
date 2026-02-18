@@ -421,7 +421,7 @@ class Billrun_Factory {
 			return new Billrun_Plan($params);
 		}
 		// unique stamp per plan
-		$stamp = Billrun_Util::generateArrayStamp($params);
+		$stamp = Billrun_Util::generateArrayStamp($params,['name','time','id','data']);
 
 		if (!isset(self::$plan[$stamp])) {
 			self::$plan[$stamp] = new Billrun_Plan($params);

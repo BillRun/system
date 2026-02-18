@@ -20,6 +20,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	protected $backup = false;
 	protected $checkReceivedSize = true;
 	protected $connect_type;
+	protected $currentConnection = null;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -44,7 +45,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 		$useNameAsSubfolder = $this->areConnectionNamesUnique();
 		
 		foreach ($this->sshConfig as $config) {
-
+			$this->currentConnection = $config;
 			// Check if private key exist
 			if (isset($config['key'])) {
 				$directoryPath = 'files/keys/input_processors/';
@@ -330,5 +331,9 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 		$areNamesUnique = (count($configNames) === count(array_unique($configNames)));
 
 		return $allNamesExist && $areNamesUnique;
+	}
+
+	public function getCurrentConnection() {
+		return $this->currentConnection;
 	}
 }
