@@ -2100,9 +2100,9 @@ runOnce(lastConfig, 'BRCD-4969', function () {
 		"aid": 1,
 		"billrun_key": 1
 	});
-	if (typeof _dbName !== 'undefined') {
-		sh.shardCollection(_dbName + ".billrun_subs", { "aid": 1, "key": 1 });
-		sh.shardCollection(_dbName + ".billrun_grouping", { "aid": 1, "billrun_key": 1 });
+	if (db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos') {
+		sh.shardCollection(db.getName() + ".billrun_subs", { "aid": 1, "key": 1 });
+		sh.shardCollection(db.getName() + ".billrun_grouping", { "aid": 1, "billrun_key": 1 });
 	}
 });
 	
