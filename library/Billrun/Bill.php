@@ -1137,7 +1137,7 @@ abstract class Billrun_Bill {
 		return (isset($this->data['pending']) && $this->data['pending']);
 	}
 	
-	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment') {
+	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment', $limit = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$filters = array_merge($filters, $nonRejectedOrCanceled);
@@ -1207,7 +1207,11 @@ abstract class Billrun_Bill {
 				'suspend_debit' => NULL,
 			),
 		);
-		
+		if(!is_null($limit)){
+			$pipelines[] = array(
+				'$limit' => $limit
+			);
+		}
 		$res = $billsColl->aggregateWithOptions($pipelines, ['allowDiskUse' => true]);
 		return $res;
 	}
