@@ -28,9 +28,13 @@ class Models_Discounts extends Models_Entity {
 		$this->validateSimultaneousLimit();
 	}
 
-	public function addToCache() {
-		$res = Billrun_DiscountManager::addDiscountToCache($this->getAfter());
+	public function applyCacheChange($new = null, $old = null) {
+
+		$old = $old ?? (!is_null($this->before) ? $this->before->getRawData() : null);
+		$new = $new ?? (!is_null($this->after) ? $this->after->getRawData() : null);
+		$res = Billrun_DiscountManager::applyEntityCacheChange($new, $old);
 	}
+	
 
 	/**
 	 * Return the key field

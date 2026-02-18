@@ -1869,31 +1869,63 @@ class Billrun_DiscountManager {
 		return $discountLine;
 	}
 
-	public static function addDiscountToCache($entity){
-		if (empty(self::$discounts) || empty($entity['from']) || empty($entity['to']) || empty($entity['key'])) {
-			return false;
-		}
-	
-		$entityFrom   = $entity['from'];
-		$entityTo     = strtotime($entity['to']);
-		$discountKey  = $entity['key'];
-	
-		// Run over only EXISTING billrun keys already in the cache
-		foreach (self::$discounts as $billrunKey => $discountsForKey) {
-	
-			$billrunStart = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($billrunKey));
-			$billrunEnd   = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrunKey));
-	
-			// Check intersection with this billrun
-			if (!($entityFrom < $billrunEnd->sec && $entityTo > $billrunStart->sec)) {
-				continue;
-			}
-	
+	public static function applyEntityCacheChange($new, $old){
+		if( !empty(self::$discounts)){
 			
-			self::$discounts[$billrunKey][$discountKey] = $entity;
-	
-			// Resort the discounts under this billrun
-			self::$discounts[$billrunKey] = self::sortDiscounts(self::$discounts[$billrunKey]);
+			if($old == null && $new == null){
+				return;
+			}else if($old == null){
+				$old = $new;
+			}
+			$id = strval($old['_id']);
+			if($new == null){//remove
+				$entityFrom   = $old['from'];
+				$entityTo     = strtotime($old['to']);
+				$discountKey  = $old['key'];
+				foreach (self::$discounts as $billrunKey => $discountsForKey) {
+
+					$billrunStart = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($billrunKey));
+					$billrunEnd   = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrunKey));
+			
+					// Check intersection with this billrun
+					if (!($entityFrom < $billrunEnd->sec && $entityTo > $billrunStart->sec)) {
+						continue;
+					}
+					if(isset(self::$discounts[$billrunKey][$discountKey])){
+						unset(self::$discounts[$billrunKey][$discountKey]);
+					}
+				}
+
+			}else{
+				$entityFrom   = $new['from']->sec;
+				$entityTo     = $new['to']->sec;
+				$discountKey  = $new['key'];
+				foreach (self::$discounts as $billrunKey => $discountsForKey) {
+					
+					$billrunStart = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($billrunKey));
+					$billrunEnd   = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrunKey));
+			
+					// Check intersection with this billrun
+					if (!($entityFrom < $billrunEnd->sec && $entityTo > $billrunStart->sec)) {
+						continue;
+					}
+					if (!isset(self::$discounts[$billrunKey][$discountKey])) {//insert
+						self::$discounts[$billrunKey][$discountKey] = $new;
+
+					}else{//update
+						$oldEntity =  self::$discounts[$billrunKey][$discountKey];
+						if($entityFrom == $oldEntity['to']){
+							self::$discounts[$billrunKey][$discountKey] = $new;
+							self::$discounts[$billrunKey][$discountKey]['from'] = $oldEntity['from'];
+						}
+					}
+								
+					// Resort the discounts under this billrun
+					self::$discounts[$billrunKey] = self::sortDiscounts(self::$discounts[$billrunKey]);
+				}		
+			}
+			
+			
 		}
 	
 		return true;
