@@ -1870,7 +1870,7 @@ class Billrun_DiscountManager {
 	}
 
 	public static function applyEntityCacheChange($new, $old){
-		if( !empty(self::$discounts)){
+		if( !empty(self::$discounts)){//only for tests support (insert discount on runtime)
 			
 			if($old == null && $new == null){
 				return;
@@ -1879,6 +1879,7 @@ class Billrun_DiscountManager {
 			}
 			$id = strval($old['_id']);
 			if($new == null){//remove
+				//still not checked (no codecetion test remove discount)
 				$entityFrom   = $old['from'];
 				$entityTo     = strtotime($old['to']);
 				$discountKey  = $old['key'];
@@ -1913,6 +1914,7 @@ class Billrun_DiscountManager {
 						self::$discounts[$billrunKey][$discountKey] = $new;
 
 					}else{//update
+						//still not checked (no codecetion test update discount)
 						$oldEntity =  self::$discounts[$billrunKey][$discountKey];
 						if($entityFrom == $oldEntity['to']){
 							self::$discounts[$billrunKey][$discountKey] = $new;
