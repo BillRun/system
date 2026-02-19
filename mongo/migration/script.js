@@ -2112,6 +2112,14 @@ runOnce(lastConfig, 'BRCD-4966', function () {
 	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'count':1,'invoicing_day':1},{ unique: false , sparse: false, background: true });
 });
 
+runOnce(lastConfig, 'BRCD-4966', function () {
+	_dropIndex("subscribers", "aid_1");
+	db.subscribers.createIndex({'aid':1,'type:':1,'from': 1 , 'to': 1}, { unique: false, sparse: true, background: true });
+
+});
+
+
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });
