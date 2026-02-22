@@ -270,10 +270,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               if($inaNumber['modifyPending'] === true){
                   //handle modifyPending= true in initialize
                   $modifyPendingRevision = $this->handleModifyPending($inaNumber);
-                  if($modifyPendingRevision === false){
-                      return false;
+                  if($modifyPendingRevision !== false){
+                    $modifyPendingRevisions[] = $modifyPendingRevision;
                   }
-                  $modifyPendingRevisions[] = $modifyPendingRevision;
               }
               $totalInaNumbers[] = $inaNumber;
               $historyBackLimit = strtotime(Billrun_Factory::config()->getConfigValue('teldas.initialize.ina_numbers_history.limit', "-1 month"));              
@@ -282,10 +281,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               }
               $modifyPendingFound = false;
               $inaNumberHistory = $this->getInaNumberHistory($inaNumber['subscriberNumber'], $historyBackLimit, $modifyPendingFound, false, true);
-              if($inaNumberHistory === false){
-                  return false;
+              if($inaNumberHistory !== false){
+                $totalHistoryInaNumbers = array_merge($totalHistoryInaNumbers, $inaNumberHistory);               
               }
-              $totalHistoryInaNumbers = array_merge($totalHistoryInaNumbers, $inaNumberHistory);               
           }
           $parameters = array(
             'transactionDateTimeTo' => $parameters['transactionDateTimeFrom'],
@@ -484,10 +482,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           if($inaNumber['modifyPending'] === true){
               //handle modifyPending= true in update
               $modifyPendingRevision = $this->handleModifyPending($inaNumber);
-              if($modifyPendingRevision === false){
-                  return false;
+              if($modifyPendingRevision !== false){
+                $modifyPendingRevisions[] = $modifyPendingRevision;
               }
-              $modifyPendingRevisions[] = $modifyPendingRevision;
           } 
           $query = array('subscriberNumber' => $inaNumber['subscriberNumber'], 'transactionDatetimeTo' => null);
           $update = array('$set' => array('transactionDatetimeTo' => $inaNumber['transactionDatetime']));
@@ -888,10 +885,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           }
           if($modifyPendingFound){
               $modifyPendingRevision = $this->handleModifyPending($missingInaNumberRevisions[0]);
-              if($modifyPendingRevision === false){
-                  return false;
+              if($modifyPendingRevision !== false){
+                $modifyPendingRevisions[] = $modifyPendingRevision;
               }
-              $modifyPendingRevisions[] = $modifyPendingRevision;
           }
           $missingInaNumbersRevisions = array_merge($missingInaNumbersRevisions, $missingInaNumberRevisions);
           $oldestMissingInaNumberRevision = end($missingInaNumberRevisions);
@@ -933,7 +929,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       $modifyPendingRevision = $inaNumberHistory[0];
       if($modifyPendingRevision['status'] !== 'F_MOD'){
-          Billrun_Factory::log("Something wrong. modify pending revision status need to be F_MOD" . print_r($modifyPendingRevision, 1), Zend_Log::ERR);
+          Billrun_Factory::log("modify pending revision status need to be F_MOD if not the last revision already modify " . print_r($modifyPendingRevision, 1), Zend_Log::DEBUG);
           return false;
       }
       $modifyPendingRevision['originalTransactionDatetime'] = $modifyPendingRevision['transactionDatetime'];
