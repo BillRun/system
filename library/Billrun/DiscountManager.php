@@ -1868,4 +1868,85 @@ class Billrun_DiscountManager {
 		}
 		return $discountLine;
 	}
+
+	public static function applyEntityCacheChange($new, $old){
+		if( !empty(self::$discounts)){//only for tests support (insert discount on runtime)
+			
+			if($old == null && $new == null){
+				return;
+			}else if($old == null){
+				$old = $new;
+			}
+			$id = strval($old['_id']);
+			if($new == null){//remove
+				//still not checked (no codecetion test remove discount)
+				$entityFrom   = $old['from'];
+				$entityTo     = strtotime($old['to']);
+				$discountKey  = $old['key'];
+				foreach (self::$discounts as $billrunKey => $discountsForKey) {
+
+					$billrunStart = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($billrunKey));
+					$billrunEnd   = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrunKey));
+			
+					// Check intersection with this billrun
+					if (!($entityFrom < $billrunEnd->sec && $entityTo > $billrunStart->sec)) {
+						continue;
+					}
+					if(isset(self::$discounts[$billrunKey][$discountKey])){
+						unset(self::$discounts[$billrunKey][$discountKey]);
+					}
+				}
+
+			}else{
+				$entityFrom   = $new['from']->sec;
+				$entityTo     = $new['to']->sec;
+				$discountKey  = $new['key'];
+				foreach (self::$discounts as $billrunKey => $discountsForKey) {
+					
+					$billrunStart = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($billrunKey));
+					$billrunEnd   = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrunKey));
+			
+					// Check intersection with this billrun
+					if (!($entityFrom < $billrunEnd->sec && $entityTo > $billrunStart->sec)) {
+						continue;
+					}
+					if (!isset(self::$discounts[$billrunKey][$discountKey])) {//insert
+						self::$discounts[$billrunKey][$discountKey] = $new;
+
+					}else{//update
+						//still not checked (no codecetion test update discount)
+						$oldEntity =  self::$discounts[$billrunKey][$discountKey];
+						if($entityFrom == $oldEntity['to']){
+							self::$discounts[$billrunKey][$discountKey] = $new;
+							self::$discounts[$billrunKey][$discountKey]['from'] = $oldEntity['from'];
+						}
+					}
+								
+					// Resort the discounts under this billrun
+					self::$discounts[$billrunKey] = self::sortDiscounts(self::$discounts[$billrunKey]);
+				}		
+			}
+			
+			
+		}
+	
+		return true;
+	
+	}
+
+	private static function sortDiscounts($discounts) {
+		uasort($discounts, function($a, $b) {
+			// priority DESC
+			if ($a['priority'] != $b['priority']) {
+				return $a['priority'] > $b['priority'] ? -1 : 1;
+			}
+			// to DESC
+			return $a['to'] > $b['to'] ? -1 : 1;
+		});
+		return $discounts;
+	}
+
+	public static function resetDiscountsCache(){
+		self::$discounts= [];
+	}
 }

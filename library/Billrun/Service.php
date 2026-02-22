@@ -675,7 +675,7 @@ class Billrun_Service {
 	}
 
 	public static function applyEntityCacheChange($new, $old){
-		if( !empty(self::$entities)){
+		if( !empty(self::$entities)){//only for tests support (insert service on runtime)
 			if($old == null && $new == null){
 				return;
 			}else if($old == null){
