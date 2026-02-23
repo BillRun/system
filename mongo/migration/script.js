@@ -2113,7 +2113,7 @@ runOnce(lastConfig, 'BRCD-4966', function () {
 });
 
 runOnce(lastConfig, 'BRCD-4966', function () {
-	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1, 'futureModify':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
+	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1, 'futureModify':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index_1" });
 	_dropIndex("plugin_teldas_ina_numbers", "ina_numbers_unique_index");
 
 });
