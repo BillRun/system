@@ -141,11 +141,11 @@ class Billrun_Utils_Arrayquery_Expression {
 	protected function _in($field, $value) {
 		$nonStrictPairs = [['integer', 'float'], ['integer', 'double']];
 		return  is_array($value) && is_array($field) && !empty(array_intersect($value,$field))
-				|| is_array($value) && static::in_array_custom($field, $value, $nonStrictPairs)
-				|| is_array($field) && static::in_array_custom($value,$field, $nonStrictPairs)
-				|| static::equal_custom($field, $value, $nonStrictPairs);
+		|| is_array($value) && static::in_array_custom($field, $value, $nonStrictPairs)
+		|| is_array($field) && static::in_array_custom($value,$field, $nonStrictPairs)
+		|| static::equal_custom($field, $value, $nonStrictPairs);
 	}
-
+	
 	protected function _nin($field, $value) {
 		return  !$this->_in($field, $value);
 	}

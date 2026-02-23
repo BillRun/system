@@ -270,6 +270,10 @@ abstract class Billrun_PaymentGateway {
 		}
 	}
 	
+	public function adjustOkPage($okPage) {
+		return $okPage;
+	}
+	
 	 /**
 	  * True if there's a need to request token from the payment gateway. 
 	  * 
@@ -475,7 +479,7 @@ abstract class Billrun_PaymentGateway {
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			Billrun_Factory::log("Payment gateway token request: " . print_R($postArray, 1), Zend_Log::DEBUG);
-			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, $this->requestHeaders, null, 0);
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, $this->getTokenRequestType(), $this->requestHeaders, null, 0);
 			Billrun_Factory::log("Payment gateway token response: " . print_R($result, 1), Zend_Log::DEBUG);
 			if ($this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage))) {
 				$response = $this->getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $options, $maxTries - 1);
@@ -485,6 +489,10 @@ abstract class Billrun_PaymentGateway {
 		}
 		
 		return $response;
+	}
+	
+	protected function getTokenRequestType() {
+		return Zend_Http_Client::POST;
 	}
 
 	/**
@@ -526,7 +534,7 @@ abstract class Billrun_PaymentGateway {
 			$this->savePaymentGateway();
 		}
 		
-		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date']);
+		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date'], 'params' => $this->saveDetails);
 	}
 
 	/**
@@ -543,10 +551,7 @@ abstract class Billrun_PaymentGateway {
 		);
 		$update = array();
 		$setQuery = $this->buildSetQuery();
-		$generateTokenTime = date("Y-m-d H:i:s", $setQuery['active']['generate_token_time']->sec);
-		$generateTokenTimeArray = explode(' ', $generateTokenTime);
-		$generateTokenTimeISOFormat = $generateTokenTimeArray[0] . 'T' . $generateTokenTimeArray[1] . 'Z';
-		$setQuery['active']['generate_token_time'] = $generateTokenTimeISOFormat;
+		$setQuery['active']['generate_token_time'] = $setQuery['active']['generate_token_time']->toDateTime()->format('c');
 		$update['payment_gateway'] = $setQuery;
 		$update['from'] = $time;
 		if (!$this->validateStructureForCharge($update['payment_gateway']['active'])) {
@@ -911,7 +916,7 @@ abstract class Billrun_PaymentGateway {
 	 * Returns relevant data for ok page response
 	 */
 	public function getTransactionDetails($details) {
-		return array('credit_card' => $details['creditCard'], 'expiration_date' => $details['expirationDate']);
+		return array('credit_card' => $details['creditCard'], 'expiration_date' => $details['expirationDate'], 'params' => $details['params'] ?? []);
 	}
 
 	/**

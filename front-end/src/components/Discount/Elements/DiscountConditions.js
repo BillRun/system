@@ -166,7 +166,6 @@ const DiscountConditions = ({
   ]);
 
   const removeServiceAccountConditionsGroup = useCallback(({idx, anyIdx}) => {
-    debugger;
     const path = [...conditionsPath, idx, ...servicesAccountConditionsPath];
     const allEmpty = discount.getIn(path, Immutable.List())
       .every(anyCondition => anyCondition.getIn(servicesAnyConditionsPath, Immutable.List()).isEmpty());

@@ -12,6 +12,7 @@ class Json extends Component {
     id: PropTypes.string,
     value: PropTypes.oneOfType([
       PropTypes.object,
+      PropTypes.array,
     ]),
     required: PropTypes.bool,
     disabled: PropTypes.bool,

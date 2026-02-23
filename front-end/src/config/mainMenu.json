@@ -135,22 +135,40 @@
     "order": 1,
     "parent":"cycle"
   },
+  "charge": {
+    "title": "Charging",
+    "icon": "",
+    "route": "charging",
+    "show": true,
+    "roles": [],
+    "order": 2,
+    "parent": "cycle"
+  },
   "suggestions": {
     "title": "Repricing Suggestions",
     "icon": "",
     "route": "suggestions",
     "show": true,
     "roles": [],
-    "order": 2,
+    "order": 3,
     "parent":"cycle"
   },
-  "immediate-invoice": {
-    "title": "Immediate Invoice",
+  "charge-invoice": {
+    "title": "Immediate Charges",
     "icon": "",
-    "route": "immediate-invoice",
+    "route": "immediate-invoice-charge",
     "show": true,
     "roles": [],
-    "order": 3,
+    "order": 4,
+    "parent": "cycle"
+  },
+  "refund-invoice": {
+    "title": "Immediate Refunds",
+    "icon": "",
+    "route": "immediate-invoice-refund",
+    "show": true,
+    "roles": [],
+    "order": 5,
     "parent": "cycle"
   },
   "account_receivables": {
@@ -180,19 +198,19 @@
     "order": 0,
     "parent": "account_receivables"
   },
-  "custom-payment-files": {
+  "payment-files": {
     "title": "Transactions Request File",
     "icon": "",
-    "route": "custom-payment-files",
+    "route": "payment-files",
     "show": true,
     "roles": [],
     "order": 1,
     "parent": "account_receivables"
   },
-  "receive-custom-payment-files": {
+  "receive-payment-files": {
     "title": "Transactions Response File",
     "icon": "",
-    "route": "response-custom-payment-files",
+    "route": "response-payment-files",
     "show": true,
     "roles": [],
     "order": 2,
@@ -254,7 +272,7 @@
   },
   "reports": {
     "title": "Reports",
-    "icon": "fa-list-alt",
+    "icon": "fa-bar-chart",
     "route": "reports",
     "show": true,
     "roles": [],
@@ -325,7 +343,7 @@
     "parent": "settings"
   },
   "collections": {
-    "title": "Collection",
+    "title": "Dunning",
     "icon": "",
     "route": "collections",
     "show": true,

@@ -160,7 +160,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 		if ($this->isAccountLevelLine($row)) {
 			$row = $this->enrichWithSubscriberInformation($row);
-			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+			try {
+				Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+			} catch (Exception $e) {
+				Billrun_Factory::log()->log("Failed calculate customer row with the following error: " . $e->getMessage(), Zend_Log::ALERT);
+				Billrun_Factory::log()->log($e->getTrace(), Zend_Log::DEBUG);
+				return false;
+			}
 			return $row;
 		}
 
@@ -194,7 +200,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'] . ', line ' . $row['stamp'], Zend_Log::ALERT);
 			return false;
 		}
-		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
+		$isRealtime = isset($row['realtime']) ? $row['realtime'] : false;
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true, 'disable_cache_plan' => $isRealtime));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'] . ', line ' . $row['stamp'], Zend_Log::ALERT);
@@ -215,8 +222,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$row['plan_ref'] = $plan_ref;
-
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+		try{
+			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log("Failed calculate customer row with the following error: " . $e->getMessage(), Zend_Log::ALERT);
+			Billrun_Factory::log()->log($e->getTrace(), Zend_Log::DEBUG);
+			return false;
+		}
 		return $row;
 	}
 
@@ -413,12 +425,20 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $priorities;
 	}
 
+	protected function getCustomerIdentificationTranslationByRow($row){
+		if(isset($row['linet'])){
+			return Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['linet'] , $row['usaget']), array());
+		}// b/c
+		return Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['usaget']), array());
+		
+	}
+
 	protected function getIdentityParams($row) {
 		if (!$row instanceof Mongodloid_Entity) {
 			$row = new Mongodloid_Entity($row);
 		}
 		$params = array();
-		$customer_identification_translation = Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['usaget']), array());
+		$customer_identification_translation = $this->getCustomerIdentificationTranslationByRow($row);
 		foreach ($customer_identification_translation as $translationRules) {
 			if (!empty($translationRules['conditions'])) {
 				foreach ($translationRules['conditions'] as $condition) {
@@ -529,7 +549,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function getCustomerIdentificationTranslation() {
 		$customerIdentificationTranslation = array();
 		foreach (Billrun_Factory::config()->getConfigValue('file_types', array()) as $fileSettings) {
-			if (Billrun_Config::isFileTypeConfigEnabled($fileSettings) && !empty($fileSettings['customer_identification_fields'])) {
+			if(Billrun_Config::isFileTypeConfigEnabled($fileSettings) && isset($fileSettings['line_types']) && Billrun_Config::haveMultipleLineTypes($fileSettings['line_types'])){
+				$customerIdentificationTranslation[$fileSettings['file_type']] =  Billrun_Config::getLineTypesField($fileSettings, 'customer_identification_fields');
+			} else if (Billrun_Config::isFileTypeConfigEnabled($fileSettings) && !empty($fileSettings['customer_identification_fields'])) {// b/c + default if not exists
 				$customerIdentificationTranslation[$fileSettings['file_type']] = $fileSettings['customer_identification_fields'];
 			}
 		}
@@ -578,7 +600,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @param boolean $addServiceData
 	 * @return array - services names array if $addServiceData is false, services names and data otherwise
 	 */
-	protected function getPlanIncludedServices($planName, $time, $addServiceData, $subscriberData ) {
+	protected function getPlanIncludedServices($planName, $time, $addServiceData, $subscriberData, $isRealtime = false) {
 		if (is_null($planName)) {
 			return array();
 		}
@@ -592,11 +614,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 //		$plansQuery = Billrun_Utils_Mongo::getDateBoundQuery($time);
 //		$plansQuery['name'] = $planName;
 //		$plan = Billrun_Factory::db()->plansCollection()->query($plansQuery)->cursor()->current();
-
 		$planParams = array(
 			'name' => $planName,
 			'time' => $time,
-			'disableCache' => true
+			'disableCache' => true,
+			'disable_cache_plan' => $isRealtime
 		);
 
 		$planObject = Billrun_Factory::plan($planParams);
@@ -635,7 +657,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$retServices[] = $service['name'];
 			}
 		}
-		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], false, $subscriber);
+		$isRealtime = isset($row['realtime']) ? $row['realtime'] : false;
+		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], false, $subscriber, $isRealtime);
 		return array_merge($planIncludedServices, $retServices);
 	}
 
@@ -651,6 +674,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	public function getServicesDataFromRow($services, $translationRules,$subscriber,$row) {
 		$retServices = array();
+		$isRealtime = isset($row['realtime']) ? $row['realtime'] : false;
 		foreach(Billrun_Util::getFieldVal($services, array()) as $service) {
 			if($service['from'] <= $row['urt'] && $row['urt'] < $service['to']) {
 				$retServices[] = array(
@@ -664,7 +688,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				);
 			}
 		}
-		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], true, $subscriber);
+		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], true, $subscriber, $isRealtime);
 		return array_merge($planIncludedServices, $retServices);
 	}
 

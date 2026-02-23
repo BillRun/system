@@ -21,7 +21,13 @@ class Models_Services extends Models_Entity {
 		$this->validatePrice();
 		$this->validateTierLimitCycles();
 		$this->validateRecurrence();
-		$this->validateRoundingRules();
+	}
+
+	public function applyCacheChange($new = null, $old = null) {
+
+		$old = $old ?? (!is_null($this->before) ? $this->before->getRawData() : null);
+		$new = $new ?? (!is_null($this->after) ? $this->after->getRawData() : null);
+		$res = Billrun_Service::applyEntityCacheChange($new, $old);
 	}
 	
 	/**
@@ -89,26 +95,6 @@ class Models_Services extends Models_Entity {
             return true;
 	}
 
-	/**
-	 * Verify services has all Rounding Rules required parameters.
-	 */
-	protected function validateRoundingRules() {
-		$rounding_rules = Billrun_Util::getIn($this->update, 'rounding_rules', null);
-		if (!empty($rounding_rules)) {
-			$rounding_type = Billrun_Util::getIn($rounding_rules, 'rounding_type', 'None');
-			if (!empty($rounding_type ) && $rounding_type !== 'None') {
-				if (!in_array($rounding_type, ['down', 'up', 'nearest'])) {
-					throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Rounding rules must have rounding type');
-				}
-				$rounding_decimals = Billrun_Util::getIn($rounding_rules, 'rounding_decimals', null);
-				if (is_null($rounding_decimals)) {
-					throw new Billrun_Exceptions_Api($this->update, array(), "Rounding rules must have rounding decimal");
-				}
-			}
-		}
-		return true;
-	}
-	
 	/**
 	 * method to add entity custom fields values from request
 	 * 

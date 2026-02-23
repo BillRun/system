@@ -88,13 +88,18 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 		if ($this->mode == 'page') {
 			$jobSettings = [
 				"billrun_key" => $this->billrun_key,
+				'generate_pdf' => $this->config['generate_pdf'] ?? Billrun_Factory::config()->getConfigValue('billrun.generate_pdf'),
 			];
 
-			if ($this->config['invoicing_day']) {
+			if ($this->invoicing_day) {
 				$jobSettings['invoicing_day'] = $this->invoicing_day;
 			}
 
-			for ($i = 0; $i <= $this->zero_pages_limit; $i++) {
+			if (!empty($this->config['exclude'])) {
+				$jobSettings['exclude'] = (array) $this->config['exclude'];
+			}
+
+			for ($i = 0; $i < $this->zero_pages_limit; $i++) {
 				Billrun_Factory::log("Going to create job cycle page " . $i);
 				$jobSettings["page_number"] = $i;
 				Billrun_Jobsmanager::getInstance()->push('Cycle_Page', $jobSettings, $this->queueMsg->md5);
@@ -110,20 +115,19 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 			}
 			$parent = $this->queueMsg->md5;
 			foreach ($this->data as $entry) {
-				$this->addCycleAccountJob($aid, $parent);
+				$this->addCycleAccountJob($entry, $parent);
+				$this->count++;
 			}
 			
 		}
 	}
 	
-	public function markCompleted() {
-		$ret = parent::markCompleted();
+	protected function finished() {
 		if (get_parent_class($this) == 'Billrun_Job_Abstract') {
 			// this will not run in the inherited classes
 			$this->addBillingCycle();
 		}
-		
-		return $ret;
+		return true;
 	}
 	
 	protected function addCycleAccountJob($aid, $parent) {
@@ -131,6 +135,7 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 			'aid' => $aid,
 			'billrun_key' => $this->billrun_key,
 			'generate_pdf' => $this->config['generate_pdf'] ?? Billrun_Factory::config()->getConfigValue('billrun.generate_pdf'),
+			'parent_ref' => strtolower($this->method),
 		];
 		if ($this->invoicing_day) {
 			$jobSettings['invoicing_day'] = $this->invoicing_day;
@@ -159,33 +164,50 @@ class Billrun_Job_Cycle extends Billrun_Job_Abstract {
 			'page_size' => $this->fetch_page_size,
 			'host' => Billrun_Util::getHostName(),
 			'start_time' => new Mongodloid_Date($this->start_time),
-			'count' => 0,
+			'count' => $this->count,
 			'job_md5' => $this->queueMsg->md5,
 			'completed' => 0,
 			'zero_pages' => 0,
 		];
 
-//		if ($this->invoicing_day) {
-//			$record['invoicing_day'] = $invoicing_day;
-//		}
-
-//		if ($count === 0) { // if there is no inherited jobs - done
-//			$record['end_time'] = new Mongodloid_Date();
-//		}
-
 		$coll->insert($record);
-
-//		if ($count === 0) { // if there is no inherited jobs - mark fake pages to be counted as cycle done
-//			$record['fake'] = 1;
-//			$record['count'] = 0;
-//			$record['end_time'] = new Mongodloid_Date();
-//			// add fake zero pages for FE backward compatibility
-//			$zero_pages_limit = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit', 3);
-//			for ($i = 0; $i < $zero_pages_limit; $i++) { // todo: take the 10 from config
-//				$record['page_number'] = $record['page_number'] + 1;
-//				unset($record['_id']);
-//				$coll->insert($record);
-//			}
-//		}
+	}
+	
+	protected function checkCycleFinished($billing_cycle) {
+		if ($billing_cycle['count'] <= $billing_cycle['completed'] && 
+			($this->config['parent_ref'] == 'cycle' || $billing_cycle['zero_pages'] >= $this->zero_pages_limit)) {
+			$query = [
+				'billrun_key' => $this->billrun_key,
+				'page_number' => 0,
+			];
+			if ($this->invoicing_day) {
+				$query['invoicing_day'] = $this->invoicing_day;
+			}
+			$update = [
+				'$set' => [
+					'end_time' => new Mongodloid_Date(),
+				],
+			];
+			$coll = Billrun_Factory::db()->billing_cycleCollection();
+			Billrun_Factory::db()->billing_cycleCollection()->update($query, $update);
+			$billing_cycle['fake'] = 1;
+			$billing_cycle['count'] = 0;
+			$billing_cycle['completed'] = 0;
+			unset($billing_cycle['zero_pages']);
+			unset($billing_cycle['job_md5']);
+			$billing_cycle['start_time'] = new Mongodloid_Date();
+			$billing_cycle['end_time'] = new Mongodloid_Date();
+			// add fake zero pages for FE backward compatibility
+			for ($i = 0; $i < $this->zero_pages_limit; $i++) {
+				$billing_cycle['page_number'] = $billing_cycle['page_number'] + 1;
+				unset($billing_cycle['_id']);
+				// the try-catch for case that we are adding to closing cycle
+				try {
+					$coll->insert($billing_cycle);
+				} catch (Exception $ex) {
+					
+				}
+			}
+		}
 	}
 }

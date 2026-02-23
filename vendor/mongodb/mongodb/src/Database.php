@@ -1,12 +1,12 @@
 <?php
 /*
- * Copyright 2015-2017 MongoDB, Inc.
+ * Copyright 2015-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,12 +18,14 @@
 namespace MongoDB;
 
 use Iterator;
+use MongoDB\Driver\ClientEncryption;
 use MongoDB\Driver\Cursor;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\Manager;
 use MongoDB\Driver\ReadConcern;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\WriteConcern;
+use MongoDB\Exception\CreateEncryptedCollectionException;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnexpectedValueException;
 use MongoDB\Exception\UnsupportedException;
@@ -33,52 +35,43 @@ use MongoDB\Model\BSONDocument;
 use MongoDB\Model\CollectionInfoIterator;
 use MongoDB\Operation\Aggregate;
 use MongoDB\Operation\CreateCollection;
+use MongoDB\Operation\CreateEncryptedCollection;
 use MongoDB\Operation\DatabaseCommand;
 use MongoDB\Operation\DropCollection;
 use MongoDB\Operation\DropDatabase;
+use MongoDB\Operation\DropEncryptedCollection;
 use MongoDB\Operation\ListCollectionNames;
 use MongoDB\Operation\ListCollections;
 use MongoDB\Operation\ModifyCollection;
+use MongoDB\Operation\RenameCollection;
 use MongoDB\Operation\Watch;
+use Throwable;
 use Traversable;
+
 use function is_array;
 use function strlen;
 
 class Database
 {
-    /** @var array */
-    private static $defaultTypeMap = [
+    private const DEFAULT_TYPE_MAP = [
         'array' => BSONArray::class,
         'document' => BSONDocument::class,
         'root' => BSONDocument::class,
     ];
 
-    /** @var integer */
-    private static $wireVersionForReadConcern = 4;
+    private const WIRE_VERSION_FOR_READ_CONCERN_WITH_WRITE_STAGE = 8;
 
-    /** @var integer */
-    private static $wireVersionForWritableCommandWriteConcern = 5;
+    private string $databaseName;
 
-    /** @var integer */
-    private static $wireVersionForReadConcernWithWriteStage = 8;
+    private Manager $manager;
 
-    /** @var string */
-    private $databaseName;
+    private ReadConcern $readConcern;
 
-    /** @var Manager */
-    private $manager;
+    private ReadPreference $readPreference;
 
-    /** @var ReadConcern */
-    private $readConcern;
+    private array $typeMap;
 
-    /** @var ReadPreference */
-    private $readPreference;
-
-    /** @var array */
-    private $typeMap;
-
-    /** @var WriteConcern */
-    private $writeConcern;
+    private WriteConcern $writeConcern;
 
     /**
      * Constructs new Database instance.
@@ -107,7 +100,7 @@ class Database
      * @param array   $options      Database options
      * @throws InvalidArgumentException for parameter/option parsing errors
      */
-    public function __construct(Manager $manager, $databaseName, array $options = [])
+    public function __construct(Manager $manager, string $databaseName, array $options = [])
     {
         if (strlen($databaseName) < 1) {
             throw new InvalidArgumentException('$databaseName is invalid: ' . $databaseName);
@@ -130,17 +123,17 @@ class Database
         }
 
         $this->manager = $manager;
-        $this->databaseName = (string) $databaseName;
+        $this->databaseName = $databaseName;
         $this->readConcern = $options['readConcern'] ?? $this->manager->getReadConcern();
         $this->readPreference = $options['readPreference'] ?? $this->manager->getReadPreference();
-        $this->typeMap = $options['typeMap'] ?? self::$defaultTypeMap;
+        $this->typeMap = $options['typeMap'] ?? self::DEFAULT_TYPE_MAP;
         $this->writeConcern = $options['writeConcern'] ?? $this->manager->getWriteConcern();
     }
 
     /**
      * Return internal properties for debugging purposes.
      *
-     * @see http://php.net/manual/en/language.oop5.magic.php#language.oop5.magic.debuginfo
+     * @see https://php.net/manual/en/language.oop5.magic.php#language.oop5.magic.debuginfo
      * @return array
      */
     public function __debugInfo()
@@ -162,12 +155,12 @@ class Database
      * be selected with complex syntax (e.g. $database->{"system.profile"}) or
      * {@link selectCollection()}.
      *
-     * @see http://php.net/oop5.overloading#object.get
-     * @see http://php.net/types.string#language.types.string.parsing.complex
+     * @see https://php.net/oop5.overloading#object.get
+     * @see https://php.net/types.string#language.types.string.parsing.complex
      * @param string $collectionName Name of the collection to select
      * @return Collection
      */
-    public function __get($collectionName)
+    public function __get(string $collectionName)
     {
         return $this->selectCollection($collectionName);
     }
@@ -188,7 +181,7 @@ class Database
      * and $listLocalSessions. Requires MongoDB >= 3.6
      *
      * @see Aggregate::__construct() for supported options
-     * @param array $pipeline List of pipeline operations
+     * @param array $pipeline Aggregation pipeline
      * @param array $options  Command options
      * @return Traversable
      * @throws UnexpectedValueException if the command response was malformed
@@ -204,21 +197,19 @@ class Database
             $options['readPreference'] = $this->readPreference;
         }
 
-        if ($hasWriteStage) {
-            $options['readPreference'] = new ReadPreference(ReadPreference::RP_PRIMARY);
-        }
-
-        $server = select_server($this->manager, $options);
+        $server = $hasWriteStage
+            ? select_server_for_aggregate_write_stage($this->manager, $options)
+            : select_server($this->manager, $options);
 
         /* MongoDB 4.2 and later supports a read concern when an $out stage is
          * being used, but earlier versions do not.
          *
          * A read concern is also not compatible with transactions.
          */
-        if (! isset($options['readConcern']) &&
-            server_supports_feature($server, self::$wireVersionForReadConcern) &&
+        if (
+            ! isset($options['readConcern']) &&
             ! is_in_transaction($options) &&
-            ( ! $hasWriteStage || server_supports_feature($server, self::$wireVersionForReadConcernWithWriteStage))
+            ( ! $hasWriteStage || server_supports_feature($server, self::WIRE_VERSION_FOR_READ_CONCERN_WITH_WRITE_STAGE))
         ) {
             $options['readConcern'] = $this->readConcern;
         }
@@ -227,10 +218,7 @@ class Database
             $options['typeMap'] = $this->typeMap;
         }
 
-        if ($hasWriteStage &&
-            ! isset($options['writeConcern']) &&
-            server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) &&
-            ! is_in_transaction($options)) {
+        if ($hasWriteStage && ! isset($options['writeConcern']) && ! is_in_transaction($options)) {
             $options['writeConcern'] = $this->writeConcern;
         }
 
@@ -264,29 +252,82 @@ class Database
     /**
      * Create a new collection explicitly.
      *
+     * If the "encryptedFields" option is specified, this method additionally
+     * creates related metadata collections and an index on the encrypted
+     * collection.
+     *
      * @see CreateCollection::__construct() for supported options
-     * @param string $collectionName
-     * @param array  $options
+     * @see https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.rst#create-collection-helper
+     * @see https://www.mongodb.com/docs/manual/core/queryable-encryption/fundamentals/manage-collections/
      * @return array|object Command result document
      * @throws UnsupportedException if options are not supported by the selected server
      * @throws InvalidArgumentException for parameter/option parsing errors
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
-    public function createCollection($collectionName, array $options = [])
+    public function createCollection(string $collectionName, array $options = [])
     {
         if (! isset($options['typeMap'])) {
             $options['typeMap'] = $this->typeMap;
         }
 
-        $server = select_server($this->manager, $options);
-
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) && ! is_in_transaction($options)) {
+        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
             $options['writeConcern'] = $this->writeConcern;
         }
 
-        $operation = new CreateCollection($this->databaseName, $collectionName, $options);
+        if (! isset($options['encryptedFields'])) {
+            $options['encryptedFields'] = get_encrypted_fields_from_driver($this->databaseName, $collectionName, $this->manager);
+        }
+
+        $operation = isset($options['encryptedFields'])
+            ? new CreateEncryptedCollection($this->databaseName, $collectionName, $options)
+            : new CreateCollection($this->databaseName, $collectionName, $options);
+
+        $server = select_server_for_write($this->manager, $options);
 
         return $operation->execute($server);
+    }
+
+    /**
+     * Create a new encrypted collection explicitly.
+     *
+     * The "encryptedFields" option is required.
+     *
+     * This method will automatically create data keys for any encrypted fields
+     * where "keyId" is null. A copy of the modified "encryptedFields" option
+     * will be returned in addition to the result from creating the collection.
+     *
+     * If any error is encountered creating data keys or the collection, a
+     * CreateEncryptedCollectionException will be thrown. The original exception
+     * and modified "encryptedFields" option can be accessed via the
+     * getPrevious() and getEncryptedFields() methods, respectively.
+     *
+     * @see CreateCollection::__construct() for supported options
+     * @return array A tuple containing the command result document from creating the collection and the modified "encryptedFields" option
+     * @throws InvalidArgumentException for parameter/option parsing errors
+     * @throws CreateEncryptedCollectionException for any errors creating data keys or creating the collection
+     * @throws UnsupportedException if Queryable Encryption is not supported by the selected server
+     */
+    public function createEncryptedCollection(string $collectionName, ClientEncryption $clientEncryption, string $kmsProvider, ?array $masterKey, array $options): array
+    {
+        if (! isset($options['typeMap'])) {
+            $options['typeMap'] = $this->typeMap;
+        }
+
+        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
+            $options['writeConcern'] = $this->writeConcern;
+        }
+
+        $operation = new CreateEncryptedCollection($this->databaseName, $collectionName, $options);
+        $server = select_server_for_write($this->manager, $options);
+
+        try {
+            $operation->createDataKeys($clientEncryption, $kmsProvider, $masterKey, $encryptedFields);
+            $result = $operation->execute($server);
+
+            return [$result, $encryptedFields];
+        } catch (Throwable $e) {
+            throw new CreateEncryptedCollectionException($e, $encryptedFields ?? []);
+        }
     }
 
     /**
@@ -305,9 +346,9 @@ class Database
             $options['typeMap'] = $this->typeMap;
         }
 
-        $server = select_server($this->manager, $options);
+        $server = select_server_for_write($this->manager, $options);
 
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) && ! is_in_transaction($options)) {
+        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
             $options['writeConcern'] = $this->writeConcern;
         }
 
@@ -327,19 +368,26 @@ class Database
      * @throws InvalidArgumentException for parameter/option parsing errors
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
-    public function dropCollection($collectionName, array $options = [])
+    public function dropCollection(string $collectionName, array $options = [])
     {
         if (! isset($options['typeMap'])) {
             $options['typeMap'] = $this->typeMap;
         }
 
-        $server = select_server($this->manager, $options);
+        $server = select_server_for_write($this->manager, $options);
 
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) && ! is_in_transaction($options)) {
+        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
             $options['writeConcern'] = $this->writeConcern;
         }
 
-        $operation = new DropCollection($this->databaseName, $collectionName, $options);
+        if (! isset($options['encryptedFields'])) {
+            $options['encryptedFields'] = get_encrypted_fields_from_driver($this->databaseName, $collectionName, $this->manager)
+                ?? get_encrypted_fields_from_server($this->databaseName, $collectionName, $this->manager, $server);
+        }
+
+        $operation = isset($options['encryptedFields'])
+            ? new DropEncryptedCollection($this->databaseName, $collectionName, $options)
+            : new DropCollection($this->databaseName, $collectionName, $options);
 
         return $operation->execute($server);
     }
@@ -367,7 +415,7 @@ class Database
     /**
      * Return the read concern for this database.
      *
-     * @see http://php.net/manual/en/mongodb-driver-readconcern.isdefault.php
+     * @see https://php.net/manual/en/mongodb-driver-readconcern.isdefault.php
      * @return ReadConcern
      */
     public function getReadConcern()
@@ -398,7 +446,7 @@ class Database
     /**
      * Return the write concern for this database.
      *
-     * @see http://php.net/manual/en/mongodb-driver-writeconcern.isdefault.php
+     * @see https://php.net/manual/en/mongodb-driver-writeconcern.isdefault.php
      * @return WriteConcern
      */
     public function getWriteConcern()
@@ -413,7 +461,7 @@ class Database
      * @throws InvalidArgumentException for parameter/option parsing errors
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
-    public function listCollectionNames(array $options = []) : Iterator
+    public function listCollectionNames(array $options = []): Iterator
     {
         $operation = new ListCollectionNames($this->databaseName, $options);
         $server = select_server($this->manager, $options);
@@ -425,7 +473,6 @@ class Database
      * Returns information for all collections in this database.
      *
      * @see ListCollections::__construct() for supported options
-     * @param array $options
      * @return CollectionInfoIterator
      * @throws InvalidArgumentException for parameter/option parsing errors
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
@@ -449,19 +496,53 @@ class Database
      * @throws InvalidArgumentException for parameter/option parsing errors
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
-    public function modifyCollection($collectionName, array $collectionOptions, array $options = [])
+    public function modifyCollection(string $collectionName, array $collectionOptions, array $options = [])
     {
         if (! isset($options['typeMap'])) {
             $options['typeMap'] = $this->typeMap;
         }
 
-        $server = select_server($this->manager, $options);
+        $server = select_server_for_write($this->manager, $options);
 
-        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) && ! is_in_transaction($options)) {
+        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
             $options['writeConcern'] = $this->writeConcern;
         }
 
         $operation = new ModifyCollection($this->databaseName, $collectionName, $collectionOptions, $options);
+
+        return $operation->execute($server);
+    }
+
+    /**
+     * Rename a collection within this database.
+     *
+     * @see RenameCollection::__construct() for supported options
+     * @param string      $fromCollectionName Collection name
+     * @param string      $toCollectionName   New name of the collection
+     * @param string|null $toDatabaseName     New database name of the collection. Defaults to the original database.
+     * @param array       $options            Additional options
+     * @return array|object Command result document
+     * @throws UnsupportedException if options are unsupported on the selected server
+     * @throws InvalidArgumentException for parameter/option parsing errors
+     * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
+     */
+    public function renameCollection(string $fromCollectionName, string $toCollectionName, ?string $toDatabaseName = null, array $options = [])
+    {
+        if (! isset($toDatabaseName)) {
+            $toDatabaseName = $this->databaseName;
+        }
+
+        if (! isset($options['typeMap'])) {
+            $options['typeMap'] = $this->typeMap;
+        }
+
+        $server = select_server_for_write($this->manager, $options);
+
+        if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
+            $options['writeConcern'] = $this->writeConcern;
+        }
+
+        $operation = new RenameCollection($this->databaseName, $fromCollectionName, $toDatabaseName, $toCollectionName, $options);
 
         return $operation->execute($server);
     }
@@ -475,7 +556,7 @@ class Database
      * @return Collection
      * @throws InvalidArgumentException for parameter/option parsing errors
      */
-    public function selectCollection($collectionName, array $options = [])
+    public function selectCollection(string $collectionName, array $options = [])
     {
         $options += [
             'readConcern' => $this->readConcern,
@@ -511,7 +592,7 @@ class Database
      * Create a change stream for watching changes to the database.
      *
      * @see Watch::__construct() for supported options
-     * @param array $pipeline List of pipeline operations
+     * @param array $pipeline Aggregation pipeline
      * @param array $options  Command options
      * @return ChangeStream
      * @throws InvalidArgumentException for parameter/option parsing errors
@@ -524,7 +605,7 @@ class Database
 
         $server = select_server($this->manager, $options);
 
-        if (! isset($options['readConcern']) && server_supports_feature($server, self::$wireVersionForReadConcern) && ! is_in_transaction($options)) {
+        if (! isset($options['readConcern']) && ! is_in_transaction($options)) {
             $options['readConcern'] = $this->readConcern;
         }
 

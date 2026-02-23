@@ -54,12 +54,12 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot update by parser lines " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
+		if ($this->getType() == 'transactions_response') {
+			$this->updateLeftPaymentsByFileStatus();
+		}
 		if ($this->logDB() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action" . $this->filePath, Zend_Log::WARN);
 			return FALSE;
-		}
-		if ($this->getType() == 'transactions_response') {
-			$this->updateLeftPaymentsByFileStatus();
 		}
 
 		$this->removefromWorkspace($this->getFileStamp());
@@ -114,7 +114,7 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 			// backward compatibility
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
 			$entity = new Mongodloid_Entity($trailer);
-			if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
+			if (!$log->query(['stamp' => $entity->get('stamp')])->cursor()->limit(1)->current()->isEmpty()) {
 				Billrun_Factory::log()->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				return FALSE;
 			}

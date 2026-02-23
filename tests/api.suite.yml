@@ -5,6 +5,9 @@ modules:
         - Asserts
         - \Helper\Api
         - \Helper\BillRunAPI
+        - \Helper\RealTimeApiHelper
+        - \Helper\TestHelper
+        - \Helper\LogChecker
         - REST:
             depends: PhpBrowser
             part: Json
@@ -20,4 +23,4 @@ modules:
         PhpBrowser:
             url: http://web
             curl:
-                CURLOPT_TIMEOUT: 60
+                CURLOPT_TIMEOUT: 180

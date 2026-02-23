@@ -34,7 +34,9 @@ class Billrun_Plans_Charge_Singleperiod extends Billrun_Plans_Charge_Base {
 						'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE),
 						'end_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE,  $this->deactivation )),
 						'cycle' => $tariff['from'],
-						'full_price' => floatval($tariff['price']) );
+						'full_price' => floatval($tariff['price']),
+						'activation_date' => $this->activation,
+						'deactivation_date' => $this->deactivation );
 
 				}
 			}

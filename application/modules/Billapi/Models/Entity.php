@@ -151,6 +151,9 @@ class Models_Entity {
 	 * @var Boolean
 	 */
 	protected $is_import = false;
+
+
+	protected $output = [];
 	public static function getInstance($params) {
 		$modelPrefix = 'Models_';
 		$className = $modelPrefix . ucfirst($params['collection']);
@@ -214,6 +217,35 @@ class Models_Entity {
 
 		//transalte all date fields
 		Billrun_Utils_Mongo::convertQueryMongodloidDates($this->update);
+
+		if (in_array($this->collectionName, ['services', 'plans', 'rates'])) {
+			$this->validateRoundingRules();
+		}
+	}
+
+
+	/**
+	 * Verify entity has all Rounding Rules required parameters.
+	 */
+	protected function validateRoundingRules() {
+		$rounding_rules = Billrun_Util::getIn($this->update, 'rounding_rules', null);
+		if (!empty($rounding_rules)) {
+			$rounding_stage = Billrun_Util::getIn($rounding_rules, 'rounding_stage', 'None');
+			$rounding_type = Billrun_Util::getIn($rounding_rules, 'rounding_type', 'None');
+			$rounding_decimals = Billrun_Util::getIn($rounding_rules, 'rounding_decimals', null);
+			if ($rounding_stage !== 'None') {
+				if (empty($rounding_stage)) {
+					throw new Billrun_Exceptions_Api(0, array(), 'Rounding rules must have rounding amount to round');
+				}
+				if (empty($rounding_type) || $rounding_type === 'None' | !in_array($rounding_type, ['down', 'up', 'nearest'])) {
+					throw new Billrun_Exceptions_Api(0, array(), 'Rounding rules must have rounding type');
+				}
+				if (is_null($rounding_decimals) || $rounding_decimals == '') {
+					throw new Billrun_Exceptions_Api(0, array(), "Rounding rules must have rounding decimal");
+				}
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -297,7 +329,7 @@ class Models_Entity {
 	}
 
 	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val, $fieldType = 'string') {
-		Billrun_Factory::log('Running hasEntitiesWithSameUniqueFieldValue for field ' . $field, Zend_Log::DEBUG);
+		Billrun_Factory::log('Running hasEntitiesWithSameUniqueFieldValue for field ' . $field . ' and value ' . $val, Zend_Log::DEBUG);
 		$nonRevisionsQuery = $this->getNotRevisionsOfEntity($data);
 		if ($fieldType == 'ranges') {
 			$uniqueQuery = Api_Translator_RangesModel::getOverlapQuery($field, $val);
@@ -314,7 +346,7 @@ class Models_Entity {
 			$query['$and'][] = $nonRevisionsQuery;
 		}
 
-		return $this->collection->query($query)->count() > 0;
+		return !$this->collection->query($query)->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**
@@ -393,7 +425,11 @@ class Models_Entity {
             $this->after = $this->update;
 			$this->fixEntityFields($this->before);
 			$this->trackChanges($this->update['_id']);
-			return isset($status['ok']) && $status['ok'];
+			$res = isset($status['ok']) && $status['ok'];
+			if($res == 1){
+				$this->applyCacheChange();
+			}
+			return $res;
 		} else {
 			throw new Billrun_Exceptions_Api(0, array(), 'Entity already exists');
 		}
@@ -410,6 +446,7 @@ class Models_Entity {
 		$this->checkUpdate();
 		$this->fixEntityFields($this->before);
 		$this->trackChanges($this->query['_id']);
+		$this->applyCacheChange();
 		return true;
 	}
 
@@ -419,6 +456,8 @@ class Models_Entity {
 	public function permanentChange() {
 		$this->setReadPrefForAction(__FUNCTION__);
 		Billrun_Factory::log("Performs the permanentchange action", Zend_Log::DEBUG);
+		$updatedRevisionsCount = 0;
+		$createdRevisionsCount = 0;
 		$this->action = 'permanentchange';
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
@@ -439,37 +478,56 @@ class Models_Entity {
 			if($this->before === null){
 				throw new Exception('No entity before the change was found. Query: ' . json_encode($this->query));
 			}
-                        $newRevision = $this->before->getRawData();
-                        $newRevision['to'] = $this->update['from'];
-                        $key = $this->before[$field];
-                        Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $this->before->getRawData(), $newRevision);
+			$newRevision = $this->before->getRawData();
+			$newRevision['to'] = $this->update['from'];
+			$key = $this->before[$field];
+			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $this->before->getRawData(), $newRevision);
+			$this->applyCacheChange($newRevision, $this->before->getRawData());
 			$prevEntity = $this->before->getRawData();
 			unset($prevEntity['_id']);
 			$prevEntity['from'] = $this->update['from'];
 			$this->insert($prevEntity);
+			$createdRevisionsCount++;
 		}
-		$beforeChangeRevisions = $this->collection->query($permanentQuery)->cursor();
+		$beforeChangeRevisions = $this->collection->query($permanentQuery)->cursor()->setReadPreference('RP_PRIMARY');
 		$oldRevisions = array_map(function ($e) {return $e->getRawData();}, iterator_to_array($beforeChangeRevisions));
 		$this->collection->update($permanentQuery, $permanentUpdate, array('multiple' => true));
-		$afterChangeRevisions = $this->collection->query($permanentQuery)->cursor();
+		$afterChangeRevisions = $this->collection->query($permanentQuery)->cursor()->setReadPreference('RP_PRIMARY');
 		$this->fixEntityFields($this->before);
 		$newRevisions = [];
 		// Map and validate new revisions
+		$first = true;
+
+
 		foreach ($afterChangeRevisions as $newRevision) {
+			if($first){
+				$this->after = $newRevision;
+				$first = false;
+			}
+
 			$currentId = $newRevision['_id']->getMongoId()->{'$id'};
 			$oldRevision = $oldRevisions[$currentId];
 			
 			$key = $oldRevision[$field];
-			if($oldRevision === null){
-				throw new Exception('No old revision was found. Query: ' . json_encode($permanentQuery));
+			if ($oldRevision === null){
+				Billrun_Factory::log('No old revision was found. Query: ' . json_encode($permanentQuery), Zend_Log::ALERT);
+			}else{
+				$updatedRevisionsCount++;
 			}
 			if ($newRevision === null){
-				throw new Exception('No new revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate));
+				Billrun_Factory::log('No new revision was found after updating these relevant revisions: ' . json_encode($permanentQuery) . ', with this update : ' . json_encode($permanentUpdate), Zend_Log::ALERT);
 			}
 			$newRevisions[$currentId] = $newRevision->getRawData();
+			$this->applyCacheChange($newRevision, $oldRevision);
 		}
+		$this->output['totalUpdated'] = $updatedRevisionsCount;
+		$this->output['totalCreated'] = $createdRevisionsCount;
 		Billrun_AuditTrail_Util::trackMultipleChanges($this->action, $field, $this->entityName, $oldRevisions, $newRevisions);
 		return true;
+	}
+
+	public function getMoreOutputFileds(){
+		return $this->output;
 	}
 
 	protected function getPermanentChangeQuery() {
@@ -597,6 +655,7 @@ class Models_Entity {
 		$newId = $this->update['_id'];
 		$this->fixEntityFields($this->before);
 		$this->trackChanges($newId);
+		$this->applyCacheChange();
 		return isset($status['ok']) && $status['ok'];
 	}
 
@@ -745,7 +804,7 @@ class Models_Entity {
 			return false;
 		}
 		$this->trackChanges(null); // assuming remove by _id
-
+		$this->applyCacheChange();
 		if ($this->shouldReopenPreviousEntry()) {
 			return $this->reopenPreviousEntry();
 		}
@@ -790,6 +849,7 @@ class Models_Entity {
 		}
 		$this->fixEntityFields($this->before);
 		$this->trackChanges($this->query['_id']);
+		$this->applyCacheChange();
 		return true;
 	}
 
@@ -843,6 +903,7 @@ class Models_Entity {
 		$newId = $this->update['_id'];
 		$this->fixEntityFields($this->before);
 		$this->trackChanges($newId);
+		$this->applyCacheChange();
 		return isset($status['ok']) && $status['ok'];
 	}
 
@@ -914,7 +975,7 @@ class Models_Entity {
 			$this->updateCreationTime($keyField, $edge);
 		}
 		$this->trackChanges($this->query['_id']);
-
+		$this->applyCacheChange();
 		if (!empty($followingEntry) && !$followingEntry->isEmpty() && ($this->before[$edge]->sec === $followingEntry[$otherEdge]->sec)) {
 			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
 			$this->setUpdate(array($otherEdge => new Mongodloid_Date($this->update[$edge]->sec)));
@@ -1197,7 +1258,7 @@ class Models_Entity {
 				'$nin' => $ignoreIds,
 			);
 		}
-		return $query ? !$this->collection->query($query)->count() : TRUE;
+		return $query ? $this->collection->query($query)->cursor()->limit(1)->current()->isEmpty() : TRUE;
 	}
 
 	/**
@@ -1290,7 +1351,7 @@ class Models_Entity {
 			$query[$fieldName] = $record[$fieldName];
 		}
 		$recordCollection = Billrun_Factory::db()->{$collection . 'Collection'}();
-		return $recordCollection->query($query)->count() === 0;
+		return $recordCollection->query($query)->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**
@@ -1404,4 +1465,7 @@ class Models_Entity {
 		}
 	}
 
+	protected function applyCacheChange($new = null, $old = null) {
+
+	}
 }

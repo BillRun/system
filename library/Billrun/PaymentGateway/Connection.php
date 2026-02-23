@@ -28,6 +28,7 @@ abstract class Billrun_PaymentGateway_Connection {
 	protected $fileType;
 	protected $localDir;
 	protected $delete_received;
+	protected $received_extension;
 
 	public function __construct($options) {
 		$this->host = $options['host'];
@@ -38,6 +39,7 @@ abstract class Billrun_PaymentGateway_Connection {
 		$this->recursive_mode = isset($options['recursive_mode']) ? $options['recursive_mode'] : false;
 		$this->filenameRegex = !empty($options['filename_regex']) ? $options['filename_regex'] : '/.*/';
 		$this->delete_received = isset($options['delete_received']) ? $options['delete_received'] : false;
+		$this->received_extension = isset($options['received_extension']) ? $options['received_extension'] : false;
 		$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getFieldVal($options['workspace'], 'workspace'));
 		if (isset($options['backup_path'])) {
 			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath($options['backup_path']);
@@ -87,7 +89,7 @@ abstract class Billrun_PaymentGateway_Connection {
 		$gateway = $options['payment_gateway'];
 		$pgReceivers = array();
 		$paymentGatewaySettings = array_filter(Billrun_Factory::config()->getConfigValue('payment_gateways'), function($paymentGateway) use ($gateway) {
-			return ($paymentGateway['name'] === $gateway) && !empty($paymentGateway['custom']);
+			return ($paymentGateway['name'] === $gateway);
 		});
 		if ($paymentGatewaySettings) {
 			$paymentGatewaySettings = current($paymentGatewaySettings);

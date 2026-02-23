@@ -100,9 +100,12 @@ class Billrun_Util {
 	 * @param array $ar array to generate the stamp from
 	 * @return string the array stamp
 	 */
-	public static function generateArrayStamp($ar, $filter = array()) {
-		
-		return md5(serialize(empty($filter) ? $ar : array_intersect_key($ar, array_flip($filter))));
+	public static function generateArrayStamp($ar, $filter = array(), $sortEnable = false) {
+		$arrayToHash = empty($filter) ? $ar : array_intersect_key($ar, array_flip($filter));
+		if($sortEnable){
+			ksort($arrayToHash); 
+		}
+		return md5(serialize($arrayToHash));
 	}
         
     /**
@@ -596,25 +599,40 @@ class Billrun_Util {
 	 * 
 	 * @return Boolean true on success else FALSE
 	 */
-	public static function forkProcessCli($cmd) {
+	public static function forkProcessCli($cmd)
+	{
 		if (!defined('STDERR')) {
 			define('STDERR', fopen('php://stderr', 'w'));
 		}
-		$syscmd = $cmd . " > /dev/null & ";
+
+		$syscmd = "nohup " . $cmd . " > /dev/null 2>&1 &";
 		if (defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT) {
 			$syscmd = 'export APPLICATION_MULTITENANT=1 ; ' . $syscmd;
 		}
+
+		//Define empty pipes to prevent Web Server hanging
 		$descriptorspec = array(
-			2 => STDERR,
+			0 => array("file", "/dev/null", "r"),
+			1 => array("file", "/dev/null", "w"),
+			2 => array("file", "/dev/null", "w")
 		);
-		Billrun_Factory::log("About to run CLI command: " . $syscmd,Zend_Log::DEBUG);
+
+		Billrun_Factory::log("About to run CLI command: " . $syscmd, Zend_Log::DEBUG);
 		$process = proc_open($syscmd, $descriptorspec, $pipes);
+
 		if ($process === FALSE) {
-			Billrun_Factory::log('Can\'t execute CLI command',Zend_Log::ERR);
+			Billrun_Factory::log('Can\'t execute CLI command', Zend_Log::ERR);
 			return false;
 		}
-		if (proc_close($process) === -1) {
-			Billrun_Factory::log('CLI command returned with error ',Zend_Log::ERR);
+
+
+		// NOTE: Because we use '&' (background), this returns the status of the
+		// Shell Launcher (usually 0 = Success), not the actual background script.
+		$status = proc_close($process);
+
+		// Original Check (Will likely never be -1)
+		if ($status === -1) {
+			Billrun_Factory::log('CLI command returned with error ', Zend_Log::ERR);
 			return false;
 		}
 		return true;
@@ -1856,13 +1874,20 @@ class Billrun_Util {
 	 * @param type $hashKeys the  keys to search for.
 	 * @return type
 	 */
-	public static function mapArrayToStructuredHash($arrayData,$hashKeys) {
+	public static function mapArrayToStructuredHash($arrayData,$hashKeys,$accumulate = false) {
 		$retHash =array();
 		$currentKey = array_shift($hashKeys);
 		if(isset($arrayData[0]) && is_array($arrayData) && $currentKey) {
 			foreach($arrayData as $data) {
 				if(isset($data[$currentKey])) {
-					$retHash[$data[$currentKey]] = static::mapArrayToStructuredHash( $data, $hashKeys );
+					if( $accumulate && !empty($retHash[$data[$currentKey]]) ) {
+							if( Billrun_Util::isAssoc($retHash[$data[$currentKey]]) ) {
+								$retHash[$data[$currentKey]] = [$retHash[$data[$currentKey]]];
+							}
+							$retHash[$data[$currentKey]][] = static::mapArrayToStructuredHash( $data, $hashKeys );
+					} else {
+						$retHash[$data[$currentKey]] = static::mapArrayToStructuredHash( $data, $hashKeys );
+					}
 				} else {
 					Billrun_Factory::log("Could not map the $currentKey in array to hashed value, received array :".print_r($data,1), Zend_Log::WARN);
 				}
@@ -2199,7 +2224,12 @@ class Billrun_Util {
 			}
 		}
 		return $mainArr;
+	}
 
+	public static function isArrayDiffer($arr1 ,$arr2 ,$filterFields = []) {
+		return 	Billrun_Util::generateArrayStamp( $arr1, $filterFields, true)
+					!=
+				Billrun_Util::generateArrayStamp( $arr2, $filterFields, true);
 	}
 
 }

@@ -37,6 +37,9 @@ class Billrun_Cycle_Subscriber_Invoice {
         protected $groupingExtraFields = array();
         protected $groupingEnabled = true;
 		protected $groupingSumExtraFields = array();
+		protected $groupingMinExtraFields = array();
+		protected $groupingMaxExtraFields = array();
+
 
         /**
 	 * 
@@ -54,6 +57,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->groupingExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', array()); 
         $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
 		$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array()); 
+		$this->groupingMinExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.min_fields', array()); 
+		$this->groupingMaxExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.max_fields', array()); 
+
 		$this->invoiceGrouping = $this->getInvoiceGrouping();
 	}
 
@@ -68,6 +74,12 @@ class Billrun_Cycle_Subscriber_Invoice {
                 }, $this->groupingExtraFields)]);
 			foreach ($this->groupingSumExtraFields as $sum_field) {
 				$group_array[0]['fields'][] = ['field_name' => $sum_field, 'op' => 'sum'];
+			}
+			foreach ($this->groupingMinExtraFields as $min_field) {
+				$group_array[0]['fields'][] = ['field_name' => $min_field, 'op' => 'min'];
+			}
+			foreach ($this->groupingMaxExtraFields as $max_field) {
+				$group_array[0]['fields'][] = ['field_name' => $max_field, 'op' => 'max'];
 			}
 			return $group_array;		
 		} else {
@@ -385,6 +397,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @return type
 	 */
 	public function updateTotals($newTotals) {
+		Billrun_Factory::dispatcher()->trigger('beforeUpdateTotals', array($this, $this->data['aid'], $this->data['sid'], $this->data['key'], &$newTotals));
 		$totalsKeys = array('flat','service','refund','charge','usage','discount');
 		foreach($totalsKeys as $totalsKey) {
 			$newTotals[$totalsKey]['before_vat'] += Billrun_Util::getFieldVal($this->data['totals'][$totalsKey]['before_vat'], 0);
@@ -588,14 +601,15 @@ class Billrun_Cycle_Subscriber_Invoice {
 					Billrun_Factory::log("Updating unknown type: " . $row['type'], Zend_Log::NOTICE);
 				}
 		}
-		$taxes = Billrun_Util::getIn($row, 'tax_data.taxes', array());
-		foreach ($taxes as $tax) {
-			$tax_key = isset($tax['key']) ? $tax['key'] : "";
-			$tax_type = isset($tax['type']) ? $tax['type'] : "";
-			$groupingKeys['tax_key'][$tax_key][] = $tax_type;
+		$groupByTax = Billrun_Factory::config()->getConfigValue('billrun.group.id.taxes.enable', true); 
+		if($groupByTax){
+			$taxes = Billrun_Util::getIn($row, 'tax_data.taxes', array());
+			foreach ($taxes as $tax) {
+				$tax_key = isset($tax['key']) ? $tax['key'] : "";
+				$tax_type = isset($tax['type']) ? $tax['type'] : "";
+				$groupingKeys['tax_key'][$tax_key][] = $tax_type;
+			}
 		}
-
-
 		foreach ($custom_grouping_fields as $field) {
 			if ($field['op'] == 'group') {
 				$value = Billrun_Util::getIn($row, $field['field_name'], null);
@@ -622,7 +636,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		if(isset($row_grouping_options['name'])) {
 			$this->data['totals']['grouping'][$index]['grouping'] = $row_grouping_options['name'];
 		}
-		$this->updateTotalsGrouping($row, $index, $row_grouping_options['fields']);
+		$this->updateTotalsGrouping($row, $index, $row_grouping_options['fields'] ?? []);
 	}
 
 	protected function updateTotalsGrouping($row, $index, $row_grouping_fields = []) {
@@ -637,6 +651,14 @@ class Billrun_Cycle_Subscriber_Invoice {
 				$current_grouping_value = Billrun_Util::getIn($this->data['totals']['grouping'][$index], $field['field_name'], 0);
 				$row_value = Billrun_Util::getIn($row, $field['field_name'], 0);
 				Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field['field_name'], $current_grouping_value + $row_value);
+			}elseif($field['op'] == 'min') {
+				$row_value = Billrun_Util::getIn($row, $field['field_name'], null);
+				$current_grouping_value = Billrun_Util::getIn($this->data['totals']['grouping'][$index], $field['field_name'], $row_value);
+				Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field['field_name'], min($current_grouping_value, $row_value));
+			}elseif($field['op'] == 'max') {
+				$row_value = Billrun_Util::getIn($row, $field['field_name'], null);
+				$current_grouping_value = Billrun_Util::getIn($this->data['totals']['grouping'][$index], $field['field_name'], $row_value);
+				Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field['field_name'], max($current_grouping_value, $row_value));
 			}
 		}
 	}

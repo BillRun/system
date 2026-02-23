@@ -6,6 +6,8 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+br_yaf_register_autoload('Customjob', APPLICATION_PATH . '/application/helpers');
+
 /**
  * Billing Job Manager
  *
@@ -82,8 +84,8 @@ class Billrun_Jobsmanager {
 	}
 	
 	protected function validateInput($job_type, $config) {
-		if (!class_exists('Billrun_Job_' . $job_type)) {
-			$this->lastError = "job type is not exists";
+		if (!class_exists('Billrun_Job_' . $job_type) && !class_exists('Customjob_' . $job_type)) {
+			$this->lastError = "job type " . $job_type . " is not exists";
 			Billrun_Factory::log($this->lastError, Zend_Log::WARN);
 			return false;
 		}
@@ -103,6 +105,9 @@ class Billrun_Jobsmanager {
 				return false;
 			}
 			$class = 'Billrun_Job_' . (string) $entry->body['type'];
+			if (!class_exists($class)) {
+				$class = 'Customjob_' . (string) $entry->body['type'];
+			}
 			$job = new $class($entry);
 		}
 		return $job ?? false;
@@ -133,9 +138,6 @@ class Billrun_Jobsmanager {
 			$queueName = $queue->getName();
 		}
 		Billrun_Factory::cleanQueue($queueName);
-		if (empty($queue)) {
-			$queue = Billrun_Factory::queue($queueName);
-		}
 		self::$instances[$queueName] = null;
 	}
 	

@@ -61,12 +61,16 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 	protected function getMergedUpdateFields($unificationPerType) {
 		$updateFields = array();
-		foreach ($unificationPerType as $type => $unificationFields) {
-			foreach ($unificationFields as $settings) {
-				$updateFields[$type] = array();
-				$fields = !empty($settings['fields']) && is_array($settings['fields']) ? $settings['fields'] : array();
-				foreach ($fields as $fieldSpecific) {
-					$updateFields[$type] = array_merge_recursive($updateFields[$type], $fieldSpecific['update']);
+		foreach ($unificationPerType as $type => $lineTypeConf) {
+			if(is_array($lineTypeConf)){
+				foreach ($lineTypeConf as $lineType => $unificationFields){
+					foreach ($unificationFields as $settings) {
+						$updateFields[$type][$lineType] = array();
+						$fields = !empty($settings['fields']) && is_array($settings['fields']) ? $settings['fields'] : array();
+						foreach ($fields as $fieldSpecific) {
+							$updateFields[$type][$lineType] = array_merge_recursive($updateFields[$type][$lineType], $fieldSpecific['update']);
+						}
+					}
 				}
 			}
 		}
@@ -96,7 +100,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			return array();
 		}
 		
-		return array($type => $unificationFields);
+		return array($type => ['default' => $unificationFields]);
 	}
 
 	/**
@@ -160,7 +164,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected function getLineSpecificUpdateFields($line) {
 		$fields = array();
 		$usaget = $line['usaget'];
-		foreach ($this->unificationFields[$line['type']]['unification_fields']['fields'] as $field) {
+		$lineType = $line['linet'] ?? 'default';
+		$unifyConf  = $this->unificationFields[$line['type']][$lineType] ?? ($this->unificationFields[$line['type']]['default']?? null);
+		foreach ($unifyConf['unification_fields']['fields'] as $field) {
 			if ($this->verifyMatchField($field['match'], $line)) {
 				$fields = array_merge_recursive($fields, $this->getUpdateQueries($field['update'], $usaget));
 			}
@@ -247,6 +253,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$updateFailedLines = array();
 		foreach ($this->unifiedLines as $key => $row) {
 			$query = array('stamp' => $key, 'type' => $row['type'], 'tx' => array('$nin' => $this->unifiedToRawLines[$key]['update']));
+			$lineType = $row['linet'] ?? 'default';
 			$base_update = array(
 				'$setOnInsert' => array(
 					'stamp' => $key,
@@ -255,7 +262,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 //					'billrun' => $this->activeBillrun,
 			));
 			$update = array_merge($base_update, $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
-			foreach ($this->mergedUpdateFields[$row['type']] as $operations) {
+			$mergedUpdateFields = $this->mergedUpdateFields[$row['type']][$lineType] ?? ($this->mergedUpdateFields[$row['type']]['default'] ?? []);
+			foreach ($mergedUpdateFields as $operations) {
 				$fkey = $operations['operation'];
 				$fields = $operations['data'];
 				if(isset($operations['custom_value'][$row['usaget']]['data'])){
@@ -306,6 +314,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	protected function getUnifiedRowForSingleRow($updatedRowStamp, $newRow, $typeFields) {
 		$type = $newRow['type'];
+		$lineType = $newRow['linet'] ?? 'default';
 		if (isset($this->unifiedLines[$updatedRowStamp])) {
 			$existingRow = $this->unifiedLines[$updatedRowStamp];
 			$this->setMinUrt($newRow, $existingRow);
@@ -318,7 +327,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			}
 		} else {
 			//Billrun_Factory::log(print_r($newRow,1),Zend_Log::ERR);
-			$existingRow = array('lcount' => 0, 'type' => $type);
+			$existingRow = array('lcount' => 0, 'type' => $type, 'usaget' => $newRow['usaget'], 'linet' => $lineType);
 			foreach ($typeFields as $key => $fields) {
 				foreach ($fields as $field) {
 					$newVal = Billrun_Util::getIn($newRow, $field, null);
@@ -343,9 +352,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	protected function getLineUnifiedLineStamp($newRow) {
 		$usaget = $newRow['usaget'];
-		$typeData = $this->unificationFields[$newRow['type']]['unification_fields'];
+		$lineType = $newRow['linet'] ?? 'default';
+		$unifyConf  = $this->unificationFields[$newRow['type']][$lineType] ?? ($this->unificationFields[$newRow['type']]['default']?? null);
+		$typeData = $unifyConf['unification_fields'];
 		$serialize_array = array();
-		$arategroupsCount = isset($newRow['arategroups']) ? count($newRow['arategroups']) : 0;
 		foreach ($typeData['stamp']['value'] as $type => $field) {
 			if($type === 'custom_value'  || $type === 'calculated_fields' ){
 				continue;
@@ -355,30 +365,28 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				Billrun_Util::setIn($serialize_array, $field, $newVal);
 			}
 		}
-
-		foreach ($typeData['stamp']['value']['custom_value'][$usaget] as $field) {
-			$newVal = Billrun_Util::getIn($newRow, $field, null);
-			if (!is_null($newVal)) {
-				Billrun_Util::setIn($serialize_array, $field, $newVal);
+		if(isset($typeData['stamp']['value']['custom_value'][$usaget])){
+			foreach ($typeData['stamp']['value']['custom_value'][$usaget] as $field) {
+				$newVal = Billrun_Util::getIn($newRow, $field, null);
+				if (!is_null($newVal)) {
+					Billrun_Util::setIn($serialize_array, $field, $newVal);
+				}
 			}
 		}
-		foreach ($typeData['stamp']['value']['calculated_fields'][$usaget] as $field) {
-			$newVal = Billrun_Util::getIn($newRow, $field, null);
-			if (!is_null($newVal)) {
-				Billrun_Util::setIn($serialize_array, $field, $newVal);
+		if(isset($typeData['stamp']['value']['calculated_fields'][$usaget])){
+			foreach ($typeData['stamp']['value']['calculated_fields'][$usaget] as $field) {
+				$newVal = Billrun_Util::getIn($newRow, $field, null);
+				if (!is_null($newVal)) {
+					Billrun_Util::setIn($serialize_array, $field, $newVal);
+				}
 			}
+	
 		}
-
 		foreach ($typeData['stamp']['field'] as $field) {
 			$serialize_array['exists'][$field] = isset($newRow[$field]) ? '1' : '0';
 		}
 		if (($dateSeparationValue = $this->getDateSeparation($newRow, $typeData)) !== FALSE) {
 			$serialize_array['dateSeperation'] = $dateSeparationValue;
-		}
-		if (isset($newRow['arategroups']) && $arategroupsCount > 0) {
-			$currentArategroup = current($newRow['arategroups']);
-			$arategroupsArray = array('name' => $currentArategroup['name'], 'count' => $arategroupsCount);
-			Billrun_Util::setIn($serialize_array, 'arategroups', $arategroupsArray);
 		}
 		return Billrun_Util::generateArrayStamp($serialize_array);
 	}
@@ -389,12 +397,14 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	}
 
 	public function isLineLegitimate($line) {
-		$matched = $line['source'] != 'unify' && isset($this->unificationFields[$line['type']]) && $this->limitGroupsSize($line);
+		$lineType = $line['linet'] ?? 'default';
+		$unifyConf  = $this->unificationFields[$line['type']][$lineType] ?? ($this->unificationFields[$line['type']]['default']?? null);
+		$matched = $line['source'] != 'unify' &&  !empty($unifyConf) && $this->limitGroupsSize($line);
 
 		if ($matched) {
-			$requirements = $this->unificationFields[$line['type']]['unification_fields']['required'];
+			$requirements = $unifyConf['unification_fields']['required'];
 			$matched = $this->verifyMatchField($requirements['match'], $line) && (count(array_intersect(array_keys($line->getRawData()), $requirements['fields'])) == count($requirements['fields']));
-			if (!$matched && isset($this->unificationFields[$line['type']]['archive_fallback']) && $this->verifyMatchField($this->unificationFields[$line['type']]['archive_fallback'], $line)) {
+			if (!$matched && isset($unifyConf['archive_fallback']) && $this->verifyMatchField($unifyConf['archive_fallback'], $line)) {
 				$this->archivedLines[$line['stamp']] = $line->getRawData();
 			}
 		}
@@ -527,6 +537,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected function limitGroupsSize($line) {
 		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
 		$taxes = isset($line['tax_data']['taxes']) ? $line['tax_data']['taxes'] : array();
+		// Filter out items where counter_only is true
+		$arategroups = array_filter($arategroups, fn($group) => 
+			!isset($group['counter_only']) || $group['counter_only'] !== true
+		);
 		if (count($arategroups) > 1 || count($taxes) > 1) {
 			return false;
 		}
@@ -537,32 +551,41 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$configByType = array();
 		$fileTypes = Billrun_Factory::config()->getFileTypesSettings(true);
 		foreach ($fileTypes as $fileType) {
-			if (empty($fileType['unify'])) {
-				continue;
+			if(isset($fileType['line_types']) && Billrun_Config::haveMultipleLineTypes($fileType['line_types'])){
+				 $unifyByLineTypes =  Billrun_Config::getLineTypesField($fileType, 'unify');
+				 if(empty($unifyByLineTypes) && !empty($fileType['unify'])){
+					$configByType['file_types'][$fileType['file_type']]['default'] = $fileType['unify'];	
+				 }else{
+					$configByType['file_types'][$fileType['file_type']] = $unifyByLineTypes;
+				 }
+				 
+			} else if (!empty($fileType['unify'])) {
+				$configByType['file_types'][$fileType['file_type']]['default'] = $fileType['unify'];
 			}
-			$configByType['file_types'][$fileType['file_type']] = $fileType['unify'];
 		}
-
-		foreach ($configByType['file_types'] as $type => &$unifyDef) {
-			$ufByUsaget = Billrun_Processor_Util::getCustomerAndRateUfByUsaget($type);
-			$cfByUsaget = Billrun_Processor_Util::getCustomerAndRateCfByUsaget($type);
-			Billrun_Util::setIn($configByType, 'file_types.' . $type . '.unification_fields.stamp.value.custom_value', $ufByUsaget);
-			Billrun_Util::setIn($configByType, 'file_types.' . $type . '.unification_fields.stamp.value.calculated_fields', $cfByUsaget);
-			foreach ($unifyDef['unification_fields']['fields'] as &$fields) {
-				foreach ($fields['update'] as &$setOnInsertDef) {
-					if ($setOnInsertDef['operation'] != '$setOnInsert') {
-						continue;
-					}
-					foreach ($ufByUsaget as $usaget => $ufFields) {
-						$setOnInsertDef['custom_value'][$usaget]['data'] = $ufFields;
-					}
-					foreach ($cfByUsaget as $usaget => $cfFields) {
-						$setOnInsertDef['calculated_fields'][$usaget]['data'] = $cfFields;
+		if(isset($configByType['file_types'])){
+			foreach ($configByType['file_types'] as $type => &$lineTypeConf) {
+				foreach ($lineTypeConf as $lineType => &$unifyDef){
+					$ufByUsaget = Billrun_Processor_Util::getCustomerAndRateUfByUsaget($type, $lineType);
+					$cfByUsaget = Billrun_Processor_Util::getCustomerAndRateCfByUsaget($type, $lineType);
+					Billrun_Util::setIn($unifyDef, 'unification_fields.stamp.value.custom_value', $ufByUsaget);
+					Billrun_Util::setIn($unifyDef, 'unification_fields.stamp.value.calculated_fields', $cfByUsaget);
+					foreach ($unifyDef['unification_fields']['fields'] as &$fields) {
+						foreach ($fields['update'] as &$setOnInsertDef) {
+							if ($setOnInsertDef['operation'] != '$setOnInsert') {
+								continue;
+							}
+							foreach ($ufByUsaget as $usaget => $ufFields) {
+								$setOnInsertDef['custom_value'][$usaget]['data'] = $ufFields;
+							}
+							foreach ($cfByUsaget as $usaget => $cfFields) {
+								$setOnInsertDef['calculated_fields'][$usaget]['data'] = $cfFields;
+							}
+						}
 					}
 				}
 			}
 		}
-
 		return array_merge($options, $configByType);
 	}
 

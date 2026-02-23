@@ -24,23 +24,26 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 			return null;
 		}
 
-		if (empty($this->deactivation) && $this->activation < $this->cycle->start()  ) {
+		if ((empty($this->deactivation) || $this->deactivation >= $this->cycle->end()) && $this->activation < $this->cycle->start()  ) {
 			return 1;
 		} 
 
 		// subscriber activates in the middle of the cycle and should be charged for a partial month and should be charged for the next month (upfront) 
-		if ($this->activation >= $this->cycle->start() && $this->deactivation > $this->cycle->end()) {
-			$endActivation = strtotime('-1 second', $this->deactivation);
-			return 1 + Billrun_Plan::calcFractionOfMonthUnix($this->cycle->key(), $this->activation, $endActivation);
+		$formatCycleStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
+		$formatCycleEnd = date(Billrun_Base::base_dateformat,  $this->cycle->end()-1);
+		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatCycleStart,$formatCycleEnd);
+
+		$startActivation =  ($this->proratedStart ? $this->activation : $this->cycle->start()) ;
+		// subscriber activates in the middle of the cycle and should be charged for a partial month and should be charged for the next month (upfront)
+		if ($this->activation >= $this->cycle->start() && $this->deactivation >= $this->cycle->end()) {
+			return 1 + (Billrun_Utils_Time::getDaysSpanDiffUnix($startActivation, $this->cycle->end()-1,$cycleSpan) );
 		}
+		$endProration =  $this->proratedEnd && !$this->isTerminated($cycle) || ($this->proratedTermination && $this->isTerminated($cycle));
+
 		// subscriber activates in the middle of the cycle and should be charged for a partial month
 		if ($this->activation >= $this->cycle->start() && $this->deactivation <= $this->cycle->end()) {
-			$endActivation = strtotime('-1 second', $this->deactivation);
-			return Billrun_Plan::calcFractionOfMonthUnix($this->cycle->key(), $this->activation, $endActivation);
-		}
-
-		if ($this->deactivation > $this->cycle->end() ) {
-			return 1;
+			$endActivation = ($endProration ? $this->deactivation : $this->cycle->end())-1;
+			return Billrun_Utils_Time::getDaysSpanDiffUnix($startActivation, $endActivation,$cycleSpan);
 		} 		
 
 		return null;
@@ -48,7 +51,9 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 
 	public function getRefund(Billrun_DataTypes_CycleTime $cycle, $quantity=1) {
 		
-		if (empty($this->deactivation)  ) {
+		if (empty($this->deactivation) || //dont have  deactivateion
+				!$this->proratedEnd && // dont need to be prorated on ending
+				!($this->proratedTermination && $this->isTerminated()) ) { // dont return if termination and sub actually terminate
 			return null;
 		}
 		$endProration =  $this->proratedEnd && !$this->isTerminated($cycle) || ($this->proratedTermination && $this->isTerminated($cycle));
@@ -63,17 +68,24 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 			return null;
 		}
 		
-		$lastUpfrontCharge = $this->getPriceForCycle($cycle);
-		$endActivation  = strtotime('-1 second', $this->deactivation);
-		$refundFraction = 1- Billrun_Plan::calcFractionOfMonthUnix($cycle->key(), $this->activation, $endActivation);
+		$formatCycleStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
+		$formatCycleEnd = date(Billrun_Base::base_dateformat,  $this->cycle->end()-1);
+
+		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatCycleStart,$formatCycleEnd);
+
+
+		$lastUpfrontCharge = $this->getPriceForCycle($this->cycle);
+		$endActivation  =  $this->deactivation;
+		$refundFraction = 1- Billrun_Utils_Time::getDaysSpanDiffUnix($this->cycle->start(), $endActivation, $cycleSpan);
+
 		
 		return array( 'value' => -$lastUpfrontCharge * $refundFraction * $quantity,
 			'full_price' => floatval($lastUpfrontCharge),
-			'start' => $this->activation,
+			'start' => $this->deactivation ,
 			'prorated_start_date' => new Mongodloid_Date($this->deactivation),
-			'end' => $this->deactivation,
+			'end' => $this->cycle->end(),
 			'prorated_end_date' =>  new Mongodloid_Date($this->cycle->end()),
-			'prorated_end' => true,
+			'prorated_end' => $endProration,
 			'is_upfront' => true);
 	}
 }

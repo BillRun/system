@@ -18,7 +18,7 @@
     }
   },
   "http":{
-    "mthods": ["get","post"],
+    "methods": ["get","post"],
     "decoders": ["json", "xml"]
   }
 }

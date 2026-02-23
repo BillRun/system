@@ -1,0 +1,179 @@
+{
+	"collection": "ratesCollection",
+	"data": [
+		{
+			"old_id": "5a55cacc6d5b993da318bad2",
+			"from": "time*2017-11-01T00:00:00Z",
+			"key": "CALL",
+			"rates": {
+				"call": {
+					"BASE": {
+						"rate": [
+							{
+								"from": 0,
+								"to": "UNLIMITED",
+								"interval": 1,
+								"price": "1",
+								"uom_display": {
+									"range": "seconds",
+									"interval": "seconds"
+								}
+							}
+						]
+					}
+				}
+			},
+			"description": "call",
+			"params": [],
+			"pricing_method": "tiered",
+			"tariff_category": "retail",
+			"to": "time*2167-01-10T08:11:56Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"tax": [
+				{
+					"type": "vat",
+					"taxation": "global"
+				}
+			]
+		},
+		{
+			"old_id": "5a55caf46d5b993da24f4ac3",
+			"from": "time*2017-11-01T00:00:00Z",
+			"key": "SMS",
+			"rates": {
+				"sms": {
+					"BASE": {
+						"rate": [
+							{
+								"from": 0,
+								"to": "UNLIMITED",
+								"interval": 1,
+								"price": "1",
+								"uom_display": {
+									"range": "counter",
+									"interval": "counter"
+								}
+							}
+						]
+					}
+				}
+			},
+			"description": "sms",
+			"params": [],
+			"pricing_method": "tiered",
+			"tariff_category": "retail",
+			"to": "time*2167-01-10T08:12:36Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"tax": [
+				{
+					"type": "vat",
+					"taxation": "global"
+				}
+			]
+		},
+		{
+			"old_id": "5a55cb196d5b993de65c5ff3",
+			"from": "time*2017-11-01T00:00:00Z",
+			"key": "DATA",
+			"rates": {
+				"data": {
+					"BASE": {
+						"rate": [
+							{
+								"from": 0,
+								"to": "UNLIMITED",
+								"interval": 1000000,
+								"price": "1",
+								"uom_display": {
+									"range": "mb1000",
+									"interval": "mb1000"
+								}
+							}
+						]
+					}
+				}
+			},
+			"description": "data",
+			"params": [],
+			"pricing_method": "tiered",
+			"tariff_category": "retail",
+			"to": "time*2167-01-10T08:13:13Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"tax": [
+				{
+					"type": "vat",
+					"taxation": "global"
+				}
+			]
+		},
+		{
+			"old_id": "5a55f0af6d5b990a943fc3f2",
+			"from": "time*2017-11-01T00:00:00Z",
+			"key": "CALL_WHOLESALE",
+			"rates": {
+				"call": {
+					"BASE": {
+						"rate": [
+							{
+								"from": 0,
+								"to": "UNLIMITED",
+								"interval": 1,
+								"price": "0.5",
+								"uom_display": {
+									"range": "seconds",
+									"interval": "seconds"
+								}
+							}
+						]
+					}
+				}
+			},
+			"description": "Call_Wholesale",
+			"params": [],
+			"pricing_method": "tiered",
+			"tariff_category": "wholesale",
+			"to": "time*2167-01-10T10:53:35Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"tax": [
+				{
+					"type": "vat",
+					"taxation": "global"
+				}
+			]
+		},
+		{
+			"from": "time*2021-01-07T00:00:00Z",
+			"key": "RATE_S",
+			"rates": {
+				"call": {
+					"BASE": {
+						"rate": [
+							{
+								"from": 0,
+								"to": "UNLIMITED",
+								"interval": 1,
+								"price": 1,
+								"uom_display": {
+									"range": "seconds",
+									"interval": "seconds"
+								}
+							}
+						]
+					}
+				}
+			},
+			"description": "s",
+			"pricing_method": "tiered",
+			"tariff_category": "retail",
+			"add_to_retail": true,
+			"tax": [
+				{
+					"type": "vat",
+					"taxation": "global"
+				}
+			],
+			"to": "time*2175-01-06T12:17:45Z",
+			"creation_time": "time*2021-01-07T00:00:00Z"
+		}
+	]
+}

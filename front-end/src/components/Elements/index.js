@@ -24,6 +24,8 @@ import SubscriberAsyncSearch from './SubscriberAsyncSearch';
 import RateAsyncSearch from './RateAsyncSearch';
 import RecurrenceFrequency from './RecurrenceFrequency';
 import RoundingRules from './RoundingRules';
+import OverridePrice from './OverridePrice';
+import ServiceCounters from './ServiceCounters';
 
 export {
   WithEntityLink,
@@ -53,4 +55,6 @@ export {
   RateAsyncSearch,
   RecurrenceFrequency,
   RoundingRules,
+  OverridePrice,
+  ServiceCounters,
 };

@@ -52,8 +52,14 @@ class Billrun_Job_Cycle_Page extends Billrun_Job_Cycle {
 		}
 		foreach ($page as $entry) {
 			$aid = $entry->getInvoice()->getAid();
-			$ret[] = $aid;
+			$ret[] = (int) $aid;
 		}
+		
+		if (!empty($this->config['exclude'])) {
+			$exclude = Billrun_Util::verify_array($this->config['exclude'], 'int');
+			$ret = array_diff($ret, $exclude);
+		}
+
 		$this->count = count($ret);
 		return $ret;
 	}
@@ -62,16 +68,18 @@ class Billrun_Job_Cycle_Page extends Billrun_Job_Cycle {
 		if (!count($this->data)) {
 			return;
 		}
-				
+		
 		foreach ($this->data as $aid) {
 			$this->addCycleAccountJob($aid, $this->parent);
 		}
 	}
 		
-	public function markCompleted() {
-		parent::markCompleted();
+	protected function finished() {
 		$coll = Billrun_Factory::db()->billing_cycleCollection();
-		$query = ['billrun_key' => $this->config['billrun_key']];
+		$query = [
+			'billrun_key' => $this->config['billrun_key'],
+			'page_number' => 0,
+		];
 		if ($this->invoicing_day) {
 			$query['invoicing_day'] = $this->invoicing_day;
 		}
@@ -85,8 +93,9 @@ class Billrun_Job_Cycle_Page extends Billrun_Job_Cycle {
 					'zero_pages' => 1,
 				],
 			];
-			$options = array('upsert' => false, 'new' => true);
+			$options = array('upsert' => true, 'new' => true);
 			$record = $coll->findAndModify($query, $set, null, $options);
+			$this->checkCycleFinished($record);
 		} else {
 			// create the next page
 			$jobSettings = $this->config;
@@ -102,8 +111,8 @@ class Billrun_Job_Cycle_Page extends Billrun_Job_Cycle {
 			];
 			$options = array('upsert' => false, 'new' => true);
 			$record = $coll->findAndModify($query, $set, null, $options);
-			
 		}
+		return true;
 	}
 
 }
