@@ -883,7 +883,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           if ($missingInaNumberRevisions === false) {
               return false;
           }
-          if($modifyPendingFound){
+          if($modifyPendingFound && $missingInaNumberRevisions[0]['modifyPending'] === true){
               $modifyPendingRevision = $this->handleModifyPending($missingInaNumberRevisions[0]);
               if($modifyPendingRevision !== false){
                 $modifyPendingRevisions[] = $modifyPendingRevision;
