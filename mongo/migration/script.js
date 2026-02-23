@@ -2115,9 +2115,6 @@ runOnce(lastConfig, 'BRCD-4966', function () {
 runOnce(lastConfig, 'BRCD-4966', function () {
 	print("Creating new subscribers index: { aid: 1, type: 1, from: 1, to: 1 }...");
 	db.subscribers.createIndex({'aid':1,'type:':1,'from': 1 , 'to': 1}, { unique: false, sparse: false, background: true });
-	print("Dropping old subscribers index: { 'aid_1'}...");
-	_dropIndex("subscribers", "aid_1");
-
 });
 
 
