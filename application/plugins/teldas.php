@@ -798,12 +798,12 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
   protected function getMatchingInaNumberRevision($inaNumber, $urt) {
       $query = array('subscriberNumber' => $inaNumber, 'transactionDatetime' => array('$lte' => new MongoDate($urt)), '$or' => array(array('transactionDatetimeTo' => array('$gt' => new MongoDate($urt))), array('transactionDatetimeTo' => array('$eq' => null))));
-      $inaNumberRevisions = $this->inaNumbersCollection->query($query)->cursor()->limit(1)->current();
-      if ($inaNumberRevisions->isEmpty()) {
+      $inaNumberRevision = $this->inaNumbersCollection->query($query)->cursor()->limit(1)->current();//can be more then 1 but with the same info (future modify)
+      if ($inaNumberRevision->isEmpty()) {
           Billrun_Factory::log("Not found matching subscriberNumber for Dest_Number in INA numbers collection. query: " . print_r($query), Zend_Log::NOTICE);
           return false;
       }
-            return $inaNumberRevisions;//can be more then 1 but with the same info (future modify)
+            return $inaNumberRevision;
   }
 
   protected function getInaNumberHistory($subscriberNumber, $historyBackLimit, &$modifyPendingFound, $addFirst = true, $addPreviousBeforeLimit = false) {
