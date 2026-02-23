@@ -414,6 +414,7 @@ trait Tests_SetUp
 	public function setConfig($data)
 	{
 		unset($data['_id']);
+		$data['urt'] = new MongoDB\BSON\UTCDateTime();
 		$this->config->insert($data);
 	}
 
@@ -460,6 +461,7 @@ trait Tests_SetUp
 			->getRawData();
 		unset($data['_id']);
 		Billrun_Util::setIn($data, $newConfig['key'],$newConfig['value']);
+		$data['urt'] = new MongoDB\BSON\UTCDateTime();
 		$config->insert($data);
 		Billrun_Config::getInstance()->loadDbConfig();
 	}
