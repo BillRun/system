@@ -1507,10 +1507,11 @@ class Billrun_DiscountManager {
 				$start = $this->cycle->start();
 			}
 			$from = max($discountFrom, $discountEligibilityFrom, $start);
-			$lineStart = $from;
+			
 		}else{
 			$from = $this->cycle->start();
 		}
+		$lineStart = $from;
 		if ($discountEndProrated) {
 			$end = Billrun_Utils_Time::getTime($line['end']) ?? $this->cycle->end();
 			if(isset($line['charge_op']) && $line['charge_op'] ==  "refund"){
@@ -1518,10 +1519,10 @@ class Billrun_DiscountManager {
 			}else{
 				$to = min($discountTo , $discountEligibilityTo, $end);
 			}
-			$lineEnd = $to;
 		}else{
 			$to = $this->cycle->end();
 		}
+		$lineEnd = $to;
 		Billrun_Factory::dispatcher()->trigger('beforeCalculateDiscountAmount', array($discount, $this->cycle, &$from, &$to, &$lineStart, &$lineEnd, $discountEligibilityFrom, $discountEligibilityTo));
 		if(isset($cycles)){
 			$startTime =  $discountStartProrated ? Billrun_Utils_Time::getTime($line['start_date']) :  Billrun_Billingcycle::getBillrunStartTimeByTimestamp(Billrun_Utils_Time::getTime($line['start_date']), $this->cycle->invoicingDay());;
