@@ -210,6 +210,10 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		return true;
 	}
 
+	public function shouldLoadSubscriberLines($sid){
+ 		return in_array($sid, $this->affectedSids) ;
+	}
+
 	protected function addNote(Billrun_Cycle_Account $aggregatedEntity) {
 		$note = Billrun_Util::getFieldVal($this->constructOptions['note'], null);
 		if (!empty($note)) {
