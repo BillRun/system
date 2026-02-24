@@ -1466,59 +1466,34 @@ abstract class Billrun_Bill {
 				return $ele['aid'];
 			}, $results), $results);
 	}
-	
-	/*protected static function getRejectionRequiredAids($account_query){
-		$account = Billrun_Factory::account();
-		$currentAccounts = [];
-		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
-		Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 
-		if(empty($account_query)){
-			$rejectionQuery = $account->convertConditionsToAccountQuery($rejection_required_conditions);
-			$currentAccounts = $account->loadAccountsForQuery($rejectionQuery);
-		}else{
-			$currentAccounts = $account->loadAccountsForQuery(array_merge($account_query, $rejection_required_conditions));
-			foreach ($accounts as $entity) {
-				if (!$account->isConditionsMeet($entity->getRawData(), $rejection_required_conditions)) {
-					continue;
-				}
-				$currentAccounts[] = $entity;
-			}
-		}
-		Billrun_Factory::log()->log("Pulled " . count($currentAccounts) . " accounts. Filtering aids", Zend_Log::DEBUG);
-		$rejection_required_aids = array_column(array_map(function($account) {
-				return $account->getRawData();
-			}, $currentAccounts), 'aid') ?? [];
-		return $rejection_required_aids;
-	}*/
-
-	protected function getRejectionRequiredAids($account_query){
+	protected static function getRejectionRequiredAids($account_query){
 		$account = Billrun_Factory::account();
 		$currentAccounts = [];	
 		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
+		$rejectionQuery =$account->convertConditionsToAccountQuery($rejection_required_conditions);
 		Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
-		$billsFields = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.bills_queries", ['aid']);
-		if(!empty($account_query)){
-			$rejection_required_conditions = array_merge($account_query, $rejection_required_conditions);
-		}
-		Billrun_Factory::log()->log("Pulled " . count($currentAccounts) . " accounts. Filtering aids", Zend_Log::DEBUG);
+		$billsFields = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.bills_queries.fields", ['aid']);
 		$loadFromBills = true;
-		foreach($query as $queryKey => $field){
+		if(!empty($account_query)){
+			$rejectionQuery = array_merge($account_query, $rejectionQuery);
+		}
+		foreach($rejectionQuery as $queryKey => $field){
 			if(!in_array($queryKey, $billsFields)){
 				$loadFromBills = false;
 				break;
 			}
 		}
 		if($loadFromBills){
-			$rejection_required_aids = Billrun_Factory::db()->billsCollection()->query($rejection_required_conditions)->cursor()->fields(array('aid' => 1));//should not convert query 
+			$currentAccounts = Billrun_Factory::db()->billsCollection()->query($rejectionQuery)->cursor();
 		}else{
-			$rejectionQuery = $account->convertConditionsToAccountQuery($rejection_required_conditions);
 			$currentAccounts = $account->loadAccountsForQuery($rejectionQuery);
-			$rejection_required_aids = array_column(array_map(function($account) {
+			$currentAccounts = empty($currentAccounts) ? [] : $currentAccounts;
+		}
+		$rejection_required_aids = array_column(array_map(function($account) {
 				return $account->getRawData();
 			}, $currentAccounts), 'aid') ?? [];
-		}
-		illrun_Factory::log()->log("Pulled " . count($rejection_required_aids) . " accounts.", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Pulled " . count($rejection_required_aids) . " accounts.", Zend_Log::DEBUG);
 		return $rejection_required_aids;
 	}
 	
