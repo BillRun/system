@@ -1065,4 +1065,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			"terminalNumber" => $this->terminalNumber
 		);
 	}
+	
+	public function getTransactionDetails($details) {
+		unset($details['params']['terminal_number']);
+		return parent::getTransactionDetails($details);
+	}
+
 }

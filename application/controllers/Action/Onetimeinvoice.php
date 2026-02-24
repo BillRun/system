@@ -53,7 +53,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$this->aid = intval($request['aid']);
 		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''), JSON_OBJECT_AS_ARRAY);
 		$note = isset($request['note']) ? $request['note'] : null;
-		$affectedSids = [];
+		$affectedSids = array_column($inputCdrs, 'sid');
 		$adjustments = isset($request['adjusts']) ? json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY) : null;
 		Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($this->aid, $inputCdrs, $paymentData, $allowBill, $step, $oneTimeStamp, $sendEmail));
 		Billrun_Factory::log('One time invoice action running for account ' . $this->aid, Zend_Log::INFO);
@@ -140,24 +140,34 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 
 		// run aggregate on cdrs generate invoice
-		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
+		try {
+			$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
 					'stamp' => $chargingOptions['oneTimeStamp'],
 					'force_accounts' => [$this->aid],
 					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'uf' => $chargingOptions['uf'],
-					'note' => $chargingOptions['note']]);
+					'note' => $chargingOptions['note'],
+					'adjusts' => $chargingOptions['adjusts']]);
 
-		$aggregator->aggregate();
-
-		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
-		if (!empty($chargingOptions['adjusts']) && !$this->validateCdrsAmountVsAdjustments($chargingOptions)) {
+			$aggregator->aggregate();
+		} catch (\Exception $e) {
+			Billrun_Factory::log("Aggregation failed. Rolling back CDRs.", Zend_Log::ERR);
+			$stampsToDelete = array_column($this->processsedCdrs, 'stamp');
+			if (!empty($stampsToDelete)) {
+				Billrun_Factory::db()->linesCollection()->remove([
+					'stamp' => ['$in' => $stampsToDelete]
+				]);
+			}
+			$this->setError("Invoice creation failed during aggregation. Reason: " . $e->getMessage());
 			return false;
 		}
+
+		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
 		$results['pdfPath'] = $this->invoice->getInvoicePath();
 
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
-		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail'], 'adjusts' => $chargingOptions['adjusts']]);
+		$billrunToBill = Billrun_Generator::getInstance(['type' => 'BillrunToBill', 'stamp' => $chargingOptions['oneTimeStamp'], 'invoices' => [$this->invoice->getInvoiceID()], 'send_email' => $chargingOptions['sendEmail']]);
 
 		if ($chargingOptions['step'] >= self::STEP_PDF_AND_BILL) {
 			$billrunToBill->load();
@@ -214,16 +224,14 @@ class OnetimeinvoiceAction extends ApiAction {
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'generate_pdf' => $expected,
 					'uf' => $chargingOptions['uf'],
-					'note' => $chargingOptions['note']]);
+					'note' => $chargingOptions['note'],
+					'adjusts' => $chargingOptions['adjusts']]);
 
 		$aggregator->setExternalChargesForAid($this->aid, $this->processsedCdrs);
 		$aggregator->aggregate();
 
 		//Get The fake invoice totals
 		$fakeInvoice = $aggregator->getLastBillrunObj();
-		if (!empty($chargingOptions['adjusts']) && !$this->validateCdrsAmountVsAdjustments($chargingOptions, $fakeInvoice)) {
-			return false;
-		}
 		return $fakeInvoice;
 	}
 
@@ -307,13 +315,11 @@ class OnetimeinvoiceAction extends ApiAction {
 					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'uf' => $chargingOptions['uf'],
-					'note' => $chargingOptions['note']]);
+					'note' => $chargingOptions['note'],
+					'adjusts' => $chargingOptions['adjusts']]);
 		$aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
-		if (!empty($chargingOptions['adjusts']) && !$this->validateCdrsAmountVsAdjustments($chargingOptions)) {
-			return false;
-		}
 		//Create bill for the invioce and attach the payment to it. (TODO ACTUALLY LIMIT THE INVOICE/PAYMENT ASSOCIATION)
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
 		$billrunToBillParams = [
@@ -639,20 +645,6 @@ class OnetimeinvoiceAction extends ApiAction {
 			$adjustment_aid = null;
 		}
 		return "";
-	}
-
-	protected function validateCdrsAmountVsAdjustments($chargingOptions, $fakeInvoice = false) {
-		$invoice_amount = $fakeInvoice ? $fakeInvoice->getInvoice()->getRawData()['totals']['after_vat_rounded'] : $this->invoice->getRawData()['totals']['after_vat_rounded'];
-		$adj_total_amount = array_sum(array_column($chargingOptions['adjusts'], "amount"));
-		if (($invoice_amount * $adj_total_amount) <= 0) {
-			$this->setError("Invoice amount and adjustments amount need to be with the same sign. Immediate invoice total amount is " . $invoice_amount . ", while adjusted total amount is " . $adj_total_amount);
-			return false;
-		}
-		if (abs($adj_total_amount) > abs($invoice_amount)) {
-			$this->setError("Adjusted total amount " . $adj_total_amount . " is bigger than immediate invoice total amount " . $invoice_amount);
-			return false;
-		}
-		return true;
 	}
 
 	/**

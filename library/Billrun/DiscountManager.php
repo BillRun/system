@@ -1364,7 +1364,7 @@ class Billrun_DiscountManager {
 	 */
 	protected function getLineEligibility($line, $discount, $eligibility) {
 		$ret = [];
-		$lineEligibility = $this->getLineFullEligibility($line);
+		$lineEligibility = $this->getLineFullEligibility($line, $discount);
 		$valuesEligibility = $this->getLineValueEligibility($line, $discount, $eligibility);
 		
 		foreach ($valuesEligibility as $valueEligibility) {
@@ -1497,6 +1497,7 @@ class Billrun_DiscountManager {
 		$isUpfront = $line['is_upfront'] ?? false;
 		$discountFrom = $discount['from']->sec ?? $this->cycle->start();
 		$discountTo = $discount['to']->sec ?? $this->cycle->end();
+		$allwaysProratedFlag = Billrun_Factory::config()->getConfigValue('discounts.always_prorated', false);
 		$cycles  = $discount['params']['cycles'] ??  null;
 		$discountStartProrated =  $this->isDiscountProratedStart($discount, $line);
 		$discountEndProrated = $this->isDiscountProratedEnd($discount, $line);
@@ -1521,7 +1522,7 @@ class Billrun_DiscountManager {
 		}else{
 			$to = $this->cycle->end();
 		}
-		Billrun_Factory::dispatcher()->trigger('beforeCalculateDiscountAmount', array($discount, $this->cycle, &$from, &$to, &$lineStart, &$lineEnd));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculateDiscountAmount', array($discount, $this->cycle, &$from, &$to, &$lineStart, &$lineEnd, $discountEligibilityFrom, $discountEligibilityTo));
 		if(isset($cycles)){
 			$startTime =  $discountStartProrated ? Billrun_Utils_Time::getTime($line['start_date']) :  Billrun_Billingcycle::getBillrunStartTimeByTimestamp(Billrun_Utils_Time::getTime($line['start_date']), $this->cycle->invoicingDay());;
 			$toByCycles = strtotime("+{$cycles} months", $startTime);
@@ -1739,7 +1740,7 @@ class Billrun_DiscountManager {
 	 * @return string Resolved proration value
 	 */
 	protected function getDiscountProrationByPhase($discountData, $phase = 'start'){
-		$prorationTypeValue = Billrun_Util::getIn($discountData, 'prorated_' . $type, null);
+		$prorationTypeValue = Billrun_Util::getIn($discountData, 'prorated_' . $phase, null);
 		$proration = Billrun_Util::getIn($discountData, 'proration', self::PRORATION_INHERITED);
 		if(isset($prorationTypeValue) && $this->validProrationValue($prorationTypeValue)){
 			$proration = $prorationTypeValue;
@@ -1765,14 +1766,16 @@ class Billrun_DiscountManager {
 	 * @param array $line
 	 * @return array
 	 */
-	protected function getLineFullEligibility($line) {
+	protected function getLineFullEligibility($line, $discount) {
 		$isUpfront = $line['is_upfront'] ?? false;
-		return [
+		$lineFullEligibility = [
 			[
 				'from' => ($isUpfront == true ? $this->cycle->start() : (isset($line['start']) ? Billrun_Utils_Time::getTime($line['start']) : (isset($line['start_date']) ? Billrun_Utils_Time::getTime($line['start_date']) : $this->cycle->start()))),
 				'to' => ($isUpfront == true ? $this->cycle->end() : (isset($line['end']) ? Billrun_Utils_Time::getTime($line['end']) : (isset($line['end_date']) ? Billrun_Utils_Time::getTime($line['end_date']) : $this->cycle->end()))),
 			],
 		];
+		Billrun_Factory::dispatcher()->trigger('afterGetLineFullEligibility', array(&$lineFullEligibility, $discount, $this->cycle));
+		return $lineFullEligibility;
 	}
 	
 	/**
@@ -1930,5 +1933,86 @@ class Billrun_DiscountManager {
 			return $field;
 		}
 		return $defualtField;
+	}
+
+	public static function applyEntityCacheChange($new, $old){
+		if( !empty(self::$discounts)){//only for tests support (insert discount on runtime)
+			
+			if($old == null && $new == null){
+				return;
+			}else if($old == null){
+				$old = $new;
+			}
+			$id = strval($old['_id']);
+			if($new == null){//remove
+				//still not checked (no codecetion test remove discount)
+				$entityFrom   = $old['from'];
+				$entityTo     = strtotime($old['to']);
+				$discountKey  = $old['key'];
+				foreach (self::$discounts as $billrunKey => $discountsForKey) {
+
+					$billrunStart = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($billrunKey));
+					$billrunEnd   = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrunKey));
+			
+					// Check intersection with this billrun
+					if (!($entityFrom < $billrunEnd->sec && $entityTo > $billrunStart->sec)) {
+						continue;
+					}
+					if(isset(self::$discounts[$billrunKey][$discountKey])){
+						unset(self::$discounts[$billrunKey][$discountKey]);
+					}
+				}
+
+			}else{
+				$entityFrom   = $new['from']->sec;
+				$entityTo     = $new['to']->sec;
+				$discountKey  = $new['key'];
+				foreach (self::$discounts as $billrunKey => $discountsForKey) {
+					
+					$billrunStart = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($billrunKey));
+					$billrunEnd   = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrunKey));
+			
+					// Check intersection with this billrun
+					if (!($entityFrom < $billrunEnd->sec && $entityTo > $billrunStart->sec)) {
+						continue;
+					}
+					if (!isset(self::$discounts[$billrunKey][$discountKey])) {//insert
+						self::$discounts[$billrunKey][$discountKey] = $new;
+
+					}else{//update
+						//still not checked (no codecetion test update discount)
+						$oldEntity =  self::$discounts[$billrunKey][$discountKey];
+						if($entityFrom == $oldEntity['to']){
+							self::$discounts[$billrunKey][$discountKey] = $new;
+							self::$discounts[$billrunKey][$discountKey]['from'] = $oldEntity['from'];
+						}
+					}
+								
+					// Resort the discounts under this billrun
+					self::$discounts[$billrunKey] = self::sortDiscounts(self::$discounts[$billrunKey]);
+				}		
+			}
+			
+			
+		}
+	
+		return true;
+	
+	}
+
+	private static function sortDiscounts($discounts) {
+		uasort($discounts, function($a, $b) {
+			// priority DESC
+			if ($a['priority'] != $b['priority']) {
+				return $a['priority'] > $b['priority'] ? -1 : 1;
+			}
+			// to DESC
+			return $a['to'] > $b['to'] ? -1 : 1;
+		});
+		return $discounts;
+	}
+
+	public static function resetDiscountsCache(){
+		self::$discounts= [];
 	}
 }
