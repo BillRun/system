@@ -15,6 +15,8 @@
 
 class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billrun_Generator_PaymentGateway_Custom {
 	
+	use Billrun_Traits_Api_OperationsLock;
+	
 	const INITIAL_FILE_STATE = "waiting_for_confirmation";
 	const ASSUME_APPROVED_FILE_STATE = "assume_approved";
 	use Billrun_Traits_ConditionsCheck;
@@ -31,6 +33,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected $fileNameStructure;
 	protected $fileNameParams;
 	protected $affects_bills = true;
+	protected $locked_aid_bills_to_recharge = [];
+	protected $locked_aids_to_recharge = [];
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -120,105 +124,122 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers));
 		Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::INFO);
 		$this->setFileMandatoryFields();
-		foreach ($this->customers as $customer) {
-			if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
-				break;
-			}
-			$paymentParams = array();
-			if (isset($accountsInArray[$customer['aid']])) {
-				$account = $accountsInArray[$customer['aid']];
-				$mandatory_fields_res = $this->validateMandatoryFieldsExistence($account, 'account');
-				if (!empty($mandatory_fields_res)) {
-					$message = implode(",", $mandatory_fields_res) . " fields are missing for account with aid: " . $customer['aid'] . ". No payment was created. Skipping this account..";
+		$current_loop_bills = $this->customers;
+		$loop_counter = 0;
+		do {
+			$loop_counter++;
+			$this->locked_aid_bills_to_recharge = [];
+			$this->locked_aids_to_recharge = [];
+			Billrun_Factory::log()->log("Starting transactions request file charging loop number " . $loop_counter . " with " . count($current_loop_bills) . " bills", Zend_Log::DEBUG);
+			foreach ($current_loop_bills as $customer) {
+				$this->aid_to_lock = null;
+				if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
+					break;
+				}
+				$paymentParams = array();
+				if (isset($accountsInArray[$customer['aid']])) {
+					$account = $accountsInArray[$customer['aid']];
+					$mandatory_fields_res = $this->validateMandatoryFieldsExistence($account, 'account');
+					if (!empty($mandatory_fields_res)) {
+						$message = implode(",", $mandatory_fields_res) . " fields are missing for account with aid: " . $customer['aid'] . ". No payment was created. Skipping this account..";
+						Billrun_Factory::log($message, Zend_Log::ALERT);
+						$this->logFile->updateLogFileField('errors', $message);
+						continue;
+					}
+				} else {
+					$message = "The aid in one of the payments is : " . $customer['aid'] . " - didn't find account with this aid. Skipping this payment process";
 					Billrun_Factory::log($message, Zend_Log::ALERT);
 					$this->logFile->updateLogFileField('errors', $message);
 					continue;
 				}
-			} else {
-				$message = "The aid in one of the payments is : " . $customer['aid'] . " - didn't find account with this aid. Skipping this payment process";
-				Billrun_Factory::log($message, Zend_Log::ALERT);
-				$this->logFile->updateLogFileField('errors', $message);
-				continue;
-			}
-			$accountConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['accounts']) ? $this->generatorFilters['accounts'] : array();
-			if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
-				continue;
-			}
-			$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedLogFileStamp);
-			if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
-				$message = "Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid'];
-				Billrun_Factory::log($message, Zend_Log::ALERT);
-				$this->logFile->updateLogFileField('errors', $message);
-				continue;
-			}
-			if (Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
-				$message = "Can't pay! left and left_to_pay fields are missing, Account id: " . $customer['aid'];
-				Billrun_Factory::log($message, Zend_Log::ALERT);
-				$this->logFile->updateLogFileField('errors', $message);
-				continue;
-			} else if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision)) {
-				$paymentParams['amount'] = $customer['left_to_pay'];
-				$paymentParams['dir'] = 'fc';
-			} else if (!Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
-				$paymentParams['amount'] = $customer['left'];
-				$paymentParams['dir'] = 'tc';
-			}
-			if (!empty($customer['invoices']) && is_array($customer['invoices'])) {
-				foreach ($customer['invoices'] as $invoice) {
-					$id = isset($invoice['invoice_id']) ? $invoice['invoice_id'] : $invoice['txid'];
-					$amount = isset($invoice['left']) ? $invoice['left'] : $invoice['left_to_pay'];
-					if (Billrun_Util::isEqual($amount, 0, Billrun_Bill::precision)) {
-						continue;
-					}
-					$payDir = isset($invoice['left']) ? 'paid_by' : 'pays';
-					$paymentParams[$payDir][$invoice['type']][$id] = $amount;
+				$accountConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['accounts']) ? $this->generatorFilters['accounts'] : array();
+				if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
+					continue;
 				}
-			}
-			if (Billrun_Util::isEqual($paymentParams['amount'], 0, Billrun_Bill::precision)) {
-				continue;
-			}
-			if (($this->isChargeMode() && $paymentParams['amount'] < 0) || ($this->isRefundMode() && $paymentParams['amount'] > 0)) {
-				continue;
-			}
-			$paymentParams['aid'] = $customer['aid'];
-			$paymentParams['billrun_key'] = $customer['billrun_key'];
-			$paymentParams['source'] = $customer['source'];
-			$placeHoldersConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['placeholders']) ? $this->generatorFilters['placeholders'] : array();
-			if (!$this->isPaymentUpholdPlaceholders($paymentParams, $placeHoldersConditions)) {
-				continue;
-			}
-			$currentPayment = $this->handlePayment($account, $paymentParams, $customer, $options);
-			
-			if ($currentPayment == FALSE) {
-				continue;
-			}
-			//If payment is pre-approved don't wait for confirmation and lfag it as such
-			if ($this->isAssumeApproved()) {
-				$currentPayment->setExtraFields([static::ASSUME_APPROVED_FILE_STATE => true]);
-			}
-			$params = is_array($currentPayment)? $currentPayment : $currentPayment->getRawData();
-			if (isset($account['payment_gateway']['active']['card_token'])) {
-				$params['card_token'] = $account['payment_gateway']['active']['card_token'];
-			}
-			if (isset($account['payment_gateway']['active']['card_expiration'])) {
-				$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
-			}
-			if (!empty($this->validateMandatoryFieldsExistence($params, 'payment_request'))) {
-				$message = "One or more of the file's mandatory fields is missing for the payment request that was created for aid: " . $customer['aid'] . ". The payment was created anyway.";
-				Billrun_Factory::log($message, Zend_Log::WARN);
-				$this->logFile->updateLogFileField('warnings', $message);
-			}
-			$extraFields = $this->getCustomPaymentGatewayFields();
-			$mergeToExistingArrayFields = ['cpg_name', 'cpg_type', 'cpg_file_type'];
-			Billrun_Factory::dispatcher()->trigger('beforeGettingRequestFilePaymentDataLine', array(static::$type, $currentPayment, &$params, &$extraFields, &$mergeToExistingArrayFields, $account, $this));
-			$line = $this->getDataLine($params);
-			if ($this->affects_bills) {
+				$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedLogFileStamp);
+				if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
+					$message = "Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid'];
+					Billrun_Factory::log($message, Zend_Log::ALERT);
+					$this->logFile->updateLogFileField('errors', $message);
+					continue;
+				}
+				if (Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
+					$message = "Can't pay! left and left_to_pay fields are missing, Account id: " . $customer['aid'];
+					Billrun_Factory::log($message, Zend_Log::ALERT);
+					$this->logFile->updateLogFileField('errors', $message);
+					continue;
+				} else if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision)) {
+					$paymentParams['amount'] = $customer['left_to_pay'];
+					$paymentParams['dir'] = 'fc';
+				} else if (!Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
+					$paymentParams['amount'] = $customer['left'];
+					$paymentParams['dir'] = 'tc';
+				}
+				if (!empty($customer['invoices']) && is_array($customer['invoices'])) {
+					foreach ($customer['invoices'] as $invoice) {
+						$id = isset($invoice['invoice_id']) ? $invoice['invoice_id'] : $invoice['txid'];
+						$amount = isset($invoice['left']) ? $invoice['left'] : $invoice['left_to_pay'];
+						if (Billrun_Util::isEqual($amount, 0, Billrun_Bill::precision)) {
+							continue;
+						}
+						$payDir = isset($invoice['left']) ? 'paid_by' : 'pays';
+						$paymentParams[$payDir][$invoice['type']][$id] = $amount;
+					}
+				}
+				if (Billrun_Util::isEqual($paymentParams['amount'], 0, Billrun_Bill::precision)) {
+					continue;
+				}
+				if (($this->isChargeMode() && $paymentParams['amount'] < 0) || ($this->isRefundMode() && $paymentParams['amount'] > 0)) {
+					continue;
+				}
+				$paymentParams['aid'] = $customer['aid'];
+				$paymentParams['billrun_key'] = $customer['billrun_key'];
+				$paymentParams['source'] = $customer['source'];
+				$placeHoldersConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['placeholders']) ? $this->generatorFilters['placeholders'] : array();
+				if (!$this->isPaymentUpholdPlaceholders($paymentParams, $placeHoldersConditions)) {
+					continue;
+				}
+				$currentPayment = $this->handlePayment($account, $paymentParams, $customer, $options);
+				
+				if ($currentPayment == FALSE) {
+					continue;
+				}
+				//If payment is pre-approved don't wait for confirmation and lfag it as such
+				if ($this->isAssumeApproved()) {
+					$currentPayment->setExtraFields([static::ASSUME_APPROVED_FILE_STATE => true]);
+				}
+				$params = is_array($currentPayment)? $currentPayment : $currentPayment->getRawData();
+				if (isset($account['payment_gateway']['active']['card_token'])) {
+					$params['card_token'] = $account['payment_gateway']['active']['card_token'];
+				}
+				if (isset($account['payment_gateway']['active']['card_expiration'])) {
+					$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
+				}
+				if (!empty($this->validateMandatoryFieldsExistence($params, 'payment_request'))) {
+					$message = "One or more of the file's mandatory fields is missing for the payment request that was created for aid: " . $customer['aid'] . ". The payment was created anyway.";
+					Billrun_Factory::log($message, Zend_Log::WARN);
+					$this->logFile->updateLogFileField('warnings', $message);
+				}
+				$extraFields = $this->getCustomPaymentGatewayFields();
+				$mergeToExistingArrayFields = ['cpg_name', 'cpg_type', 'cpg_file_type'];
+				Billrun_Factory::dispatcher()->trigger('beforeGettingRequestFilePaymentDataLine', array(static::$type, $currentPayment, &$params, &$extraFields, &$mergeToExistingArrayFields, $account, $this));
+				$line = $this->getDataLine($params);
+				if ($this->affects_bills) {
 				$currentPayment->setExtraFields(array_merge_recursive($extraFields, ['pg_request' => $this->billSavedFields]), $mergeToExistingArrayFields);
 				$currentPayment->save();
-			}
-			if (!empty($line)) {
+				}
+				if (!empty($line)) {
 				$this->data[] = $line;
+				}
 			}
+			Billrun_Factory::log()->log("Finishing transactions request file charging loop number " . $loop_counter . " with " . (count($current_loop_bills) - count($this->locked_aid_bills_to_recharge)) . " charged bills. Checking if need to start a new one", Zend_Log::DEBUG);
+			$current_loop_bills = $this->locked_aid_bills_to_recharge;
+			if (count($current_loop_bills) > 0) {
+				Billrun_Factory::log()->log("There are " . count($current_loop_bills) . " skipped bills in charging loop number " . $loop_counter . ". Starting a new one", Zend_Log::DEBUG);
+			}
+		} while ((!empty($current_loop_bills)) &&  ($loop_counter < 3));
+		if ($loop_counter == 3) {
+			Billrun_Factory::log()->log("Stopped waiting for the skipped accounts to be released after " . $loop_counter . " charging attempts. Failed to load data to the request file, of aids " . implode(",", array_unique(array_keys($this->locked_aids_to_recharge))), Zend_Log::ALERT);
 		}
 		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;
@@ -366,13 +387,28 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				if ($this->isAssumeApproved()) {
 					$options['waiting_for_confirmation'] = false;
 				}
+					$this->aid_to_lock = $customer['aid'];
+					Billrun_Factory::log("Trying to lock charge_account operation in order to generate cpf request payment for account " . $customer['aid'], Zend_Log::DEBUG);
+					if (!$this->lock()) {
+						Billrun_Factory::log("Charging is already running for account " . $customer['aid'] . ". Moving on to the next account", Zend_Log::NOTICE);
+						$this->locked_aids_to_recharge[$this->aid_to_lock] = true;
+						$this->locked_aid_bills_to_recharge[] = $customer;
+						return false;
+					}
 				$paymentReseponse = Billrun_PaymentManager::getInstance()->pay($customer['payment_method'], array($paymentParams), $options);
+					if (!$this->release()) {
+						Billrun_Factory::log("Problem in releasing operation charge_account for account " . $customer['aid'] . " in cpf request file generation", Zend_Log::ALERT);
+						return false;
+					}
 				$payment = $paymentReseponse['payment'];
 				Billrun_Factory::log()->log('Updated debt payment details - aid: ' . $paymentParams['aid'] . ' ,amount: ' . $paymentParams['amount'] . '. This payment is wating for approval.', Zend_Log::INFO);
 			} catch (Exception $e) {
-				$message = 'Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage();
+				$message = 'Error paying debt for account ' . $paymentParams['aid'] . ' when generating transactions request file, ' . $e->getMessage();
 				Billrun_Factory::log()->log($message, Zend_Log::ALERT);
 				$this->logFile->updateLogFileField('errors', $message);
+				if (!$this->release()) {
+					Billrun_Factory::log("Problem in releasing operation charge_account for account " . $customer['aid'] . " in cpf request file generation", Zend_Log::ALERT);
+				}
 				return false;
 			}
 			$currentPayment = $payment[0];
@@ -396,5 +432,5 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		else {
 			return $res_params;
 		}
-    }
+        }
 }

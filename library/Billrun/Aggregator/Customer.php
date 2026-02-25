@@ -392,6 +392,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return false;
 	}
 
+	public function shouldLoadSubscriberLines($sid){
+		return true;
+	}
+
 	//--------------------------------------------------------------------
 	/**
 	 * Override  entiries  values  based on certain condtions.
@@ -532,6 +536,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return \Billrun_Cycle_Account
 	 */
 	protected function parseToAccounts($outputArr) {
+		Billrun_Factory::dispatcher()->trigger('beforeParseToAccounts',[&$outputArr]);
 		$accounts = array();
 		$billrunData = array(
 			'billrun_key' => $this->getCycle()->key(),
@@ -584,7 +589,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				$accountsToRet[] = $accountToAdd;
 			}
 		}
-
+		Billrun_Factory::dispatcher()->trigger('afterParseToAccounts',[&$accountsToRet, $outputArr]);
 		return $accountsToRet;
 	}
 

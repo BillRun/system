@@ -265,7 +265,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 					return;
 				}
 			}
-			throw new Exception('Input Processor have multiple line types and Line '. $lineNumber . ' does not match any of the regex patterns.');
+			throw new Exception('Input Processor have multiple line types and line '. $lineNumber . ' does not match any of the regex patterns.');
 		}
 	}
 

@@ -386,6 +386,12 @@ fieldset[disabled] .btn {
 .cycle.active {
   background-color: #7AC943;
 }
+.cycle.removed {
+  background-color: #e80000;
+}
+.cycle.idle {
+  background:#fff;
+}
 .cycle.all {
   background: radial-gradient(closest-side, #7AC943, #FF931E, #BDCCD4);
 }
@@ -527,4 +533,12 @@ ul.revision-history-list li.active .cycle {
 .included-excluded-items {
   max-height: 200px;
   overflow-y: auto;
+}
+
+.remove-range {
+  background-color: #eeeeee;
+}
+.field-group-remove-button {
+  vertical-align: top;
+  padding-left: 10px;
 }

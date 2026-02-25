@@ -22,6 +22,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	const STEP_PDF_ONLY = 0;
 	const STEP_PDF_AND_BILL = 1;
 	const STEP_FULL = 2;
+	const ERROR_CODE_MIN_BACKDATE = 17579;
 
 	protected $aid;
 	
@@ -51,7 +52,9 @@ class OnetimeinvoiceAction extends ApiAction {
 		$cdrs = [];
 		$this->aid = intval($request['aid']);
 		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''), JSON_OBJECT_AS_ARRAY);
-		$affectedSids = [];
+		$note = isset($request['note']) ? $request['note'] : null;
+		$affectedSids = array_column($inputCdrs, 'sid');
+		$adjustments = isset($request['adjusts']) ? json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY) : null;
 		Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($this->aid, $inputCdrs, $paymentData, $allowBill, $step, $oneTimeStamp, $sendEmail));
 		Billrun_Factory::log('One time invoice action running for account ' . $this->aid, Zend_Log::INFO);
 
@@ -64,7 +67,9 @@ class OnetimeinvoiceAction extends ApiAction {
 			'allowBill' => $allowBill,
 			'uf' => $uf,
 			'request' => $request,
-			'paymentData' => $paymentData
+			'paymentData' => $paymentData,
+			'note' => $note,
+			'adjusts' => $adjustments
 		];
 
 		if ($expected) {
@@ -74,18 +79,26 @@ class OnetimeinvoiceAction extends ApiAction {
 			}
 			$expectedInvoice = $this->expectedInvoice($chargingOptions, $expected ? true : false);
 			$expectedInvoiceData = $expectedInvoice->getInvoice()->getRawData();
+			br_yaf_register_autoload('Generator', APPLICATION_PATH . '/application/helpers');
+
 			$results = [
 				'pdfPath' => Generator_WkPdf::getTempDir($chargingOptions['oneTimeStamp']) . "/pdf/{$chargingOptions['oneTimeStamp']}_{$this->aid}_{$expectedInvoiceData['invoice_id']}.pdf",
 				'invoiceData' => $expectedInvoiceData,
 			];
-		} else if ($chargeFlow === 'charge_before_invoice') {
-			if ($step != self::STEP_FULL) {
-				$this->setError('charge_before_invoice must to be with step 2 only');
+		} else {
+			if (!is_null($adjustments) && $step == self::STEP_PDF_ONLY) {
+				$this->setError('Adjustments are not supported when only invoice pdf file is created');
 				return false;
 			}
-			$results = $this->chargeBeforeInvoiceFlow($chargingOptions);
-		} else {
-			$results = $this->invoiceChargeFlow($chargingOptions);
+			if ($chargeFlow === 'charge_before_invoice') {
+				if ($step != self::STEP_FULL) {
+					$this->setError('When choosing to charge account invoice before creating it - you must choose to create account bill and charge it (step 2)');
+					return false;
+				}
+				$results = $this->chargeBeforeInvoiceFlow($chargingOptions);
+			} else {
+				$results = $this->invoiceChargeFlow($chargingOptions);
+			}
 		}
 
 		if ($results === false) {
@@ -121,16 +134,34 @@ class OnetimeinvoiceAction extends ApiAction {
 			//Error message will be provided  for the  spesific CDR for within processCDRs  function
 			return false;
 		}
+		//Validate invoice and CDRs dates
+		if (!$this->validateInvoiceBackdating($chargingOptions)) {
+			return false;
+		}
 
 		// run aggregate on cdrs generate invoice
-		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
+		try {
+			$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
 					'stamp' => $chargingOptions['oneTimeStamp'],
 					'force_accounts' => [$this->aid],
-					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
+					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
-					'uf' => $chargingOptions['uf']]);
+					'uf' => $chargingOptions['uf'],
+					'note' => $chargingOptions['note'],
+					'adjusts' => $chargingOptions['adjusts']]);
 
-		$aggregator->aggregate();
+			$aggregator->aggregate();
+		} catch (\Exception $e) {
+			Billrun_Factory::log("Aggregation failed. Rolling back CDRs.", Zend_Log::ERR);
+			$stampsToDelete = array_column($this->processsedCdrs, 'stamp');
+			if (!empty($stampsToDelete)) {
+				Billrun_Factory::db()->linesCollection()->remove([
+					'stamp' => ['$in' => $stampsToDelete]
+				]);
+			}
+			$this->setError("Invoice creation failed during aggregation. Reason: " . $e->getMessage());
+			return false;
+		}
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
 		$results['pdfPath'] = $this->invoice->getInvoicePath();
@@ -178,23 +209,29 @@ class OnetimeinvoiceAction extends ApiAction {
 			//Error message will be provided  for the  spesific CDR for within processCDRs  function
 			return false;
 		}
+		//Validate invoice and CDRs dates
+		if (!$this->validateInvoiceBackdating($chargingOptions)) {
+			return false;
+		}
+		
 
 		// run aggregate on cdrs and fake invoice generate invoice
 		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
 					'stamp' => $chargingOptions['oneTimeStamp'],
 					'force_accounts' => [$this->aid],
 					'fake_cycle' => true,
-					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
+					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
 					'generate_pdf' => $expected,
-					'uf' => $chargingOptions['uf']]);
+					'uf' => $chargingOptions['uf'],
+					'note' => $chargingOptions['note'],
+					'adjusts' => $chargingOptions['adjusts']]);
 
 		$aggregator->setExternalChargesForAid($this->aid, $this->processsedCdrs);
 		$aggregator->aggregate();
 
 		//Get The fake invoice totals
 		$fakeInvoice = $aggregator->getLastBillrunObj();
-		
 		return $fakeInvoice;
 	}
 
@@ -204,6 +241,10 @@ class OnetimeinvoiceAction extends ApiAction {
 
 		if (empty($this->processsedCdrs)) {
 			$this->processsedCdrs = $this->processCDRs($chargingOptions['inputCdrs'], $chargingOptions['oneTimeStamp'], true);
+		}
+		//Validate invoice and CDRs dates
+		if (!$this->validateInvoiceBackdating($chargingOptions)) {
+			return false;
 		}
 
 		$fakeInvoice = $this->expectedInvoice($chargingOptions);
@@ -271,13 +312,14 @@ class OnetimeinvoiceAction extends ApiAction {
 		$aggregator = Billrun_Aggregator::getInstance(['type' => 'customeronetime',
 					'stamp' => $chargingOptions['oneTimeStamp'],
 					'force_accounts' => [$this->aid],
-					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], 'regular'),
+					'invoice_subtype' => Billrun_Util::getFieldVal($chargingOptions['request']['type'], $this->calcInvoiceSubType()),
 					'affected_sids' => $chargingOptions['affectedSids'],
-					'uf' => $chargingOptions['uf']]);
+					'uf' => $chargingOptions['uf'],
+					'note' => $chargingOptions['note'],
+					'adjusts' => $chargingOptions['adjusts']]);
 		$aggregator->aggregate();
 
 		$this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $chargingOptions['oneTimeStamp'], 'autoload' => true]);
-
 		//Create bill for the invioce and attach the payment to it. (TODO ACTUALLY LIMIT THE INVOICE/PAYMENT ASSOCIATION)
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
 		$billrunToBillParams = [
@@ -300,6 +342,21 @@ class OnetimeinvoiceAction extends ApiAction {
 		];
 
 		return $results;
+	}
+	
+	protected function calcInvoiceSubType() {
+		if ($this->sumCdrsAprice() < 0) {
+			return 'refund';
+		}
+		return 'regular';
+	}
+	
+	protected function sumCdrsAprice() {
+		$sum = 0;
+		foreach ($this->processsedCdrs as $cdr) {
+			$sum += (double) $cdr['aprice'];
+		}
+		return $sum;
 	}
 
 	protected function processCDRs($inputCdrs, $oneTimeStamp, $inMemory = false) {
@@ -347,6 +404,11 @@ class OnetimeinvoiceAction extends ApiAction {
 				}
 			}
 		}
+		//Validate adjustments array
+		if (isset($request['adjusts'])) {
+			$msg = $this->validateAdjustsStructure($request);
+		}		
+		
 		if (!empty($msg)) {
 			$this->setError($msg, $request);
 		}
@@ -551,6 +613,64 @@ class OnetimeinvoiceAction extends ApiAction {
 			Billrun_Aggregator_Customer::setupCycleCache();
 			Billrun_Factory::account()->getBillable(new Billrun_DataTypes_MongoCycleTime(new Billrun_DataTypes_CycleTime($stamp)),0,1,[$this->aid]);
 		}
+	}
+
+	protected function validateAdjustsStructure($request) {
+		$adjusts = json_decode($request['adjusts'], JSON_OBJECT_AS_ARRAY);
+		if (!is_array($adjusts)) {
+			return "Adjusts that was sent was not decoded as array\n";
+		}
+		$allowedKeys = ['invoice_id', 'amount'];
+		foreach ($adjusts as $adjustment) {
+			$invoice_instance = Billrun_Bill_Invoice::getInstanceByid($adjustment['invoice_id']);
+			if (empty($invoice_instance)) {
+				return "Couldn't create adjusted invoice " . $adjustment['invoice_id'] . " object\n";
+			}
+			$adjustment_aid = $invoice_instance->getAccountNo();
+			if (empty($adjustment_aid)) {
+				return "Couldn't find account id for adjusted invoice id " . $adjustment['invoice_id'] . "\n";
+			}
+			if (intval($adjustment_aid) !== intval($request['aid'])) {
+				return "Adjustment with invoice_id " . $adjustment['invoice_id'] . " belongs to account " . $adjustment_aid. ", and can not be adjusted by account " . $request['aid'] . " invoice\n";
+			}
+			if(!isset($adjustment['invoice_id']) || !isset($adjustment['amount'])){
+				return "One of the adjustments array does not contain invoice_id or amount\n";
+			}
+			if (!is_int($adjustment['invoice_id']) || $adjustment['invoice_id'] <= 0 || !is_numeric($adjustment['amount'])) {
+				return "Adjustments array invoice_id/amount is not valid - " . json_encode($adjustment) . "\n";
+			}
+			if ($diff_keys = array_diff(array_keys($adjustment), $allowedKeys)) {
+				return "Adjustments allowed keys are invoice_id and amount, " . implode("," , $diff_keys) . " is not allowed\n";
+			}
+			$adjustment_aid = null;
+		}
+		return "";
+	}
+
+	/**
+	 * Function to check backdating block
+	 * @return bool
+	 */
+	protected function validateInvoiceBackdating($charging_options) {
+		if (empty(Billrun_Factory::config()->getConfigValue("billrun.immediate_invoice.min_backdate", []))) {
+			return true;
+		}
+		$oneTime_stamp = isset($charging_options["request"]["invoice_unixtime"]) ?  [intval($charging_options["request"]["invoice_unixtime"])] : [];
+		$cdrs_urt = array_map(fn($cdr) => $cdr['urt']->sec, $this->processsedCdrs);
+		$backdate_config = Billrun_Factory::config()->getConfigValue("billrun.immediate_invoice.min_backdate");
+		$backdating_limit = Billrun_Util::calcRelativeTime($backdate_config['relative_time'], strtotime($backdate_config['anchor_field']));
+		foreach (array_merge($cdrs_urt, $oneTime_stamp) as $time) {
+			if ($time < $backdating_limit) {
+				$error = array(
+					'status' => 0,
+					'desc' => "One of the given dates, " . date("Y-m-d H:i:s", $time) . ", is older than allowed. Dates have to be after " . date("Y-m-d H:i:s", $backdating_limit),
+					'code' => self::ERROR_CODE_MIN_BACKDATE
+				);
+				$this->getController()->setOutput(array($error));
+				return false;
+			}
+		}
+		return true;
 	}
 
 }

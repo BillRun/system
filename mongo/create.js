@@ -86,6 +86,9 @@ db.counters.createIndex({coll: 1, key: 1}, { sparse: false, background: true});
 // Add indecies to insure that theres no duplicate lines.
 db.createCollection('billing_cycle');
 db.billing_cycle.createIndex({'billrun_key': 1, 'page_number': 1, 'page_size': 1}, { unique: true , background: true });
+db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'end_time':1},{ unique: false , sparse: false, background: true });
+db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'count':1,'invoicing_day':1},{ unique: false , sparse: false, background: true });
+
 
 db.createCollection('balances');
 db.balances.createIndex( { aid: 1, sid: 1, from: 1, to: 1, priority: 1 },{ unique: true, background: true });
@@ -119,6 +122,7 @@ db.cards.createIndex({ 'from':1 }, { unique: false, background: true });
 db.cards.createIndex({ 'to':1 }, { unique: false, background: true });
 
 //Subscribers
+db.createCollection('subscribers');
 db.subscribers.createIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
 db.subscribers.createIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
 db.subscribers.createIndex({'sid': 1 }, { unique: false, sparse: true, background: true });
@@ -139,7 +143,10 @@ db.services.createIndex({'name':1, 'from': 1, 'to': 1}, { unique: true, backgrou
 db.services.createIndex({name : 1}, {unique: false});
 db.services.createIndex({ 'description': 1}, { unique: false, background: true });
 
+//Config Collection
 db.createCollection('config', {capped: true, size:104857600});
+db.config.createIndex({ 'urt': -1 }, { unique: false, background: true });
+
 db.createCollection('events');
 db.createCollection('carriers');
 
@@ -179,6 +186,9 @@ db.autorenew.createIndex({ 'sid': 1, 'aid': 1}, { unique: false, sparse: true, b
 //operations
 db.operations.createIndex({action:1,filtration:1,start_time:1,end_time:1},{ background: true });
 db.operations.createIndex({action:1,end_time:1},{ background: true });
+db.operations.createIndex({ 'action': 1, 'filtration': 1, 'lock_end_time': 1, 'lock_expiry_time': 1 }, { background: true });
+db.operations.createIndex({ 'lock_start_time': 1 }, { expireAfterSeconds: 5256000 });
+db.operations.createIndex({ 'start_time': 1 }, { expireAfterSeconds: 5256000 });
 
 // Taxes Collection
 db.createCollection('taxes');

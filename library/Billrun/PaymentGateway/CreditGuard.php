@@ -128,6 +128,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['card_brand'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardBrand->attributes()->code;
 			$this->saveDetails['card_acquirer'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardAcquirer->attributes()->code;
 			$this->saveDetails['terminal_number'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->terminalNumber;
+			//BRCD-4417:We currently don't use this field, that is why it's in comment.
+			//$this->saveDetails['credit_type'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->creditType->attributes()->code;
 			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
 			$retParams['action'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
 			$retParams['transferred_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
@@ -200,7 +202,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'credit_company' => (string) $this->saveDetails['credit_company'],
 				'card_type' => (string) $this->saveDetails['card_type'],
 				'keepCCDetails' => $this->saveDetails['keepCCDetails'],
-				'terminal_number' => $this->saveDetails['terminal_number'],
+				'terminal_number' => $this->saveDetails['terminal_number']
+				////BRCD-4417:We currently don't use this field, that is why it's in comment.
+				//'credit_type' => (string) $this->saveDetails['credit_type']
 			)
 		);
 	}
@@ -401,7 +405,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$result = iconv("utf-8", "iso-8859-8", $result);
 		}
 		$xmlObj = simplexml_load_string($result);
-		if ($xmlObj !== false) {
+		if ($xmlObj !== false && !empty($xmlObj->response)) {
+
 			$codeResult = (string) $xmlObj->response->result;
 			$this->transactionId = (string) $xmlObj->response->tranId;
 			$slaveNumber = (string) $xmlObj->response->doDeal->slaveTerminalNumber;
@@ -416,6 +421,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$additionalParams['card_type'] = $xmlObj->response->doDeal->cardType ? current($xmlObj->response->doDeal->cardType->attributes()->code) : '';
 			$additionalParams['uid'] = $xmlObj->response->doDeal->ashraitEmvData->uid ? (string) $xmlObj->response->doDeal->ashraitEmvData->uid : '';
 			$additionalParams['auth_number'] = $xmlObj->response->doDeal->authNumber ? (string) $xmlObj->response->doDeal->authNumber : '';
+			
 		}	
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
@@ -1059,4 +1065,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			"terminalNumber" => $this->terminalNumber
 		);
 	}
+	
+	public function getTransactionDetails($details) {
+		unset($details['params']['terminal_number']);
+		return parent::getTransactionDetails($details);
+	}
+
 }
