@@ -64,6 +64,7 @@ class Test_Case_42779
                       $plan1['name'] => ["value" => 4.2]
                   ]
               ],
+              'proration' => 'yes',
               'key'=> $discount_name,
 
           ]);
