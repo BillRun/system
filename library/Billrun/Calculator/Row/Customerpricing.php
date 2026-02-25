@@ -127,9 +127,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		if ($this->row['sid'] == 0 && $this->row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
 			$this->plan = null;
 		} else {
+			$isRealtime = isset($this->row['realtime']) ? $this->row['realtime'] : false;
 			$planSettings = array(
 				'name' => $this->row['plan'],
 				'time' => $this->row['urt']->sec,
+				'disable_cache_plan' => $isRealtime
 			);
 			$this->plan = Billrun_Factory::plan($planSettings);
 		}
