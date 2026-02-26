@@ -109,7 +109,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 
 					// Lock
 					if (!$this->lockFileForReceive($filename, $type, $stamp_fields)) {
-						Billrun_Factory::log('File ' . $filename . ' has been received already', Zend_Log::INFO);
+						Billrun_Factory::log('File ' . $filename . ' has been received already', Zend_Log::DEBUG);
 						continue;
 					}
 					
