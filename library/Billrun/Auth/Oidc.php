@@ -84,15 +84,18 @@ class Billrun_Auth_Oidc extends Billrun_Auth_Abstract
         );
     }
 
-   private function mapUserToBillRun($oidcData)
+    private function mapUserToBillRun($oidcData)
     {
         $dataArray = json_decode(json_encode($oidcData), true);
+
         $username = isset($dataArray['preferred_username'])
             ? $dataArray['preferred_username']
             : (isset($dataArray['sub']) ? $dataArray['sub'] : null);
-        $rolesPath = isset($this->config['roles_path']) 
-            ? $this->config['roles_path'] 
+
+        $rolesPath = isset($this->config['roles_path'])
+            ? $this->config['roles_path']
             : 'billrun_roles.billing';
+
         $foundRoles = Billrun_Util::getIn($dataArray, $rolesPath, []);
         $roles = is_array($foundRoles) ? $foundRoles : [];
 
