@@ -12,7 +12,8 @@ class CreditguardTest extends \Codeception\Test\Unit
     
     protected function _before()
     {
-     
+        $this->tester->enableDBModeSettings();
+
         // $this->tester->enableCreditGuardPGWithSettings();
        
     }
