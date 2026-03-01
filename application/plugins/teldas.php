@@ -638,8 +638,14 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             if($selectiveResult === false){
                 return false;
             }
-            if($result["errors"][0]["numberOfRecords"] !== count($selectiveResult)){
-                Billrun_Factory::log("Missing records. Need to have: " . $result["errors"][0]["numberOfRecords"] . " found only  " .  count($selectiveResult)  , Zend_Log::ALERT);
+            $selectiveResultCount = count($selectiveResult);
+            $totalNumberOfRecords = $result["errors"][0]["numberOfRecords"];
+            if($totalNumberOfRecords !== $selectiveResultCount){
+                Billrun_Factory::log("Missing records. Need to have: " . $totalNumberOfRecords . " found only " .  $selectiveResultCount  , Zend_Log::ALERT);
+                $allowMistakeError = Billrun_Factory::config()->getConfigValue('teldas.initialize.allow_mistake_error', 0.0001);
+                if(Billrun_Util::isEqual($selectiveResultCount/$totalNumberOfRecords, 1, $allowMistakeError)){
+                    return $selectiveResult;
+                }
                 return false;
             }
             return $selectiveResult;
@@ -658,29 +664,25 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   protected function doMoreSelectiveQuery($parameters){
-    $stamp =  Billrun_Util::generateArrayStamp($parameters);
-    if(isset($this->moreSelctiveQuery[$stamp])){
-        $res = $this->moreSelectiveQueryWithSubscriberNumber($parameters);
-        if($res === false){
+    $res = $this->moreSelectiveQueryWithSubscriberNumber($parameters);
+    if($res === false){
+        $endDateStr = $parameters["transactionDateTimeTo"];
+        $startDateStr = $parameters["transactionDateTimeFrom"];
+        $parameters["transactionDateTimeTo"] =  $this->getMiddleDatetimeWithMilliseconds($startDateStr, $endDateStr);
+        $result1 = $this->getInaNumbers($parameters);
+        if($result1 === false){
             return false;
         }
-        return $res;
+        $parameters["transactionDateTimeFrom"] = $parameters["transactionDateTimeTo"];
+        $parameters["transactionDateTimeTo"] = $endDateStr;
+        $result2 = $this->getInaNumbers($parameters);
+        if($result2 === false){
+            return false;
+        }
+        return array_merge($result2, $result1);
     }
-    $this->moreSelctiveQuery[$stamp] = true;
-    $endDateStr = $parameters["transactionDateTimeTo"];
-    $startDateStr = $parameters["transactionDateTimeFrom"];
-    $parameters["transactionDateTimeTo"] =  $this->getMiddleDatetimeWithMilliseconds($startDateStr, $endDateStr);
-    $result1 = $this->getInaNumbers($parameters);
-    if($result1 === false){
-        return false;
-    }
-    $parameters["transactionDateTimeFrom"] = $parameters["transactionDateTimeTo"];
-    $parameters["transactionDateTimeTo"] = $endDateStr;
-    $result2 = $this->getInaNumbers($parameters);
-    if($result2 === false){
-        return false;
-    }
-    return array_merge($result2, $result1);
+    return $res;
+   
   }
 
   protected function moreSelectiveQueryWithSubscriberNumber($parameters){
@@ -693,6 +695,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         [
             'from' => '0840000000',
             'to' => '0849999999'
+        ],
+        [
+            'from' => '0878000000',
+            'to' => '0878999999'
         ],
         [
             'from' => '0900000000',
@@ -713,6 +719,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             Billrun_Factory::log("Failed to do more selective query api with params: " . print_r($parameters, true), Zend_Log::ALERT);
             return false;
         }
+        Billrun_Factory::log("Found " . count($result)." INA numbers for more selective query api with params: " . print_r($parameters, true), Zend_Log::DEBUG);
         $selectiveResult = array_merge($selectiveResult, $result);
     }
     return $selectiveResult;
