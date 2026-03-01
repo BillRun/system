@@ -63,7 +63,9 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation, $frequency) : $this->cycle->end(),
 					'prorated_end_date' => new Mongodloid_Date($endProration && $this->cycle->end() > $this->deactivation ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation, $frequency) : $this->cycle->end()),
 					'end_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['end'],  $this->activation , FALSE, $this->deactivation ,$this->deactivation && $this->cycle->end() > $this->deactivation, $frequency)),
-					'prorated_end' =>  $endProration
+					'prorated_end' =>  $endProration,
+					'deactivation_date'=>  $this->deactivation,
+					'activation_date'=>  $this->activation,
 				];
 	}
 

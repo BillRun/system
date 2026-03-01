@@ -61,7 +61,9 @@ trait Billrun_Traits_ForeignFields  {
 					//if the foreign entity has the  requested field retirve  it`s value.
 					if($this->hasForeginEntityFieldValue($foreignEntities[$fieldConf['foreign']['entity']], $fieldConf['foreign'])) {
 						$pathToInsert = $this->buildPathToInsert($fieldConf);
-						Billrun_Util::setIn($foreignFieldsData, $pathToInsert, $this->getForeginEntityFieldValue($foreignEntities[$fieldConf['foreign']['entity']], $fieldConf['foreign']));
+						$foreginEntityValue = $this->getForeginEntityFieldValue($foreignEntities[$fieldConf['foreign']['entity']], $fieldConf['foreign']);
+						Billrun_Factory::dispatcher()->trigger('beforeSetForeginField', array($foreignEntities, $fullData, $pathToInsert, &$foreginEntityValue));
+						Billrun_Util::setIn($foreignFieldsData, $pathToInsert, $foreginEntityValue);
 					}
 				} else {
 					//if there are multiple foreign  entites  go through each one of them and retrive it`s value/nonvalue and add them to an array  on the requesting row

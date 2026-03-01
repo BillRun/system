@@ -674,6 +674,58 @@ class Billrun_Service {
 		return self::$entities;
 	}
 
+	public static function applyEntityCacheChange($new, $old){
+		if( !empty(self::$entities)){//only for tests support (insert service on runtime)
+			if($old == null && $new == null){
+				return;
+			}else if($old == null){
+				$old = $new;
+			}
+			$id = strval($old['_id']);
+			if($new == null){//remove
+				unset(self::$entities['by_id'][$id]);
+				unset(self::$entities['by_name'][$old['name']]);
+			}else{
+				if(!($new instanceof Mongodloid_Entity)){
+					$new = new Mongodloid_Entity($new);
+				}
+				self::$entities['by_id'][$id] = $new;
+				if (!isset(self::$entities['by_name'][$old['name']])) {//insert
+					self::$entities['by_name'][$old['name']] = [];
+					self::$entities['by_name'][$old['name']][] = [
+						'entity' => $new,
+						'from'   => $new['from'],
+						'to'     => $new['to'],
+					];
+				}else{
+					$found = false;
+					foreach(self::$entities['by_name'][$old['name']] as &$entity){
+						if(strval($entitty['entity']['id']) == $id){//update
+							$entity = [
+								'entity' => $new,
+								'from'   => $new['from'],
+								'to'     => $new['to'],
+							];
+							$found = true;
+							break;
+						}
+					}
+					if(!$found){
+						self::$entities['by_name'][$old['name']][] = [//insert
+							'entity' => $new,
+							'from'   => $new['from'],
+							'to'     => $new['to']
+						];
+					}
+				}
+				
+				
+			}
+			
+			
+		}
+	}
+
 	/**
 	 * get the entity by its id
 	 *

@@ -11,6 +11,7 @@ import {
     scheduleChargeParser,
     cancelledChargeParser,
     statusIconChargeParser,
+    md5ShorterParser,
 } from '@/common/Parsers';
 import {
     getFieldName,
@@ -95,7 +96,7 @@ const mapStateToProps = (state, props) => ({
 
 const mapDispatchToProps = (dispatch, props) => ({
     onChangeSize: (e) => props.onUpdateSize(parseInt(e.target.value)),
-    onChangeType: (e )=> dispatch(setPageFlag('charging', 'listType', e.target.value)),
+    onChangeType: (e) => dispatch(setPageFlag('charging', 'listType', e.target.value)),
     isItemCancelable: (item) => getChargeStatus(item) === 'future',
 });
 
@@ -103,6 +104,7 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
 
     const listFields = [
         { id: 'state', parser: statusIconChargeParser, cssClass: 'state'},
+        { id: 'md5', title: getFieldName('md5', 'charging_process'), parser: md5ShorterParser, cssClass: 'text-center'},
         { id: 'created', title: getFieldName('created', 'charging_process'), type: 'datetime', cssClass: 'text-center'},
         { id: 'schedule', title: getFieldName('schedule', 'charging_process'), type: 'datetime', parser: scheduleChargeParser, cssClass: 'text-center'},
         { id: 'start_time', title: getFieldName('start_time', 'charging_process'), type: 'datetime', cssClass: 'text-center'},
@@ -129,6 +131,7 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
         showIcon: true,
         helpText: 'View',
         onClick: ownProps.onShowDetails,
+        onClickColumn: 'md5',
     }, {
         type: 'remove',
         showIcon: true,

@@ -27,6 +27,8 @@ services:
         - "BR_MDB_DBNAME=billing_container"
         volumes:
             - ${PWD}/../..:/billrun
+            - ./../../cache:/billrun/cache
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         healthcheck:
             test: ["CMD-SHELL", "test -f /billrun/vendor/bin/codecept || exit 1"] 
             interval: 20s
@@ -42,6 +44,7 @@ services:
             # - ${PWD}/../persist/data/db/mongo-3.6:/data/db
             # - ${PWD}/../persist/backup:/backup
             - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27017:27017
     chrome:
@@ -54,12 +57,17 @@ services:
             context: ./mockup-servers
             dockerfile: Dockerfile-webserver
         container_name: billrun-mockups
+        environment:
+        - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 discover_client_host=false mode=develop"
         volumes:
             - ${PWD}/mockup-servers:/mockups
         command: php -S 0.0.0.0:8081 router.php
         ports:
         - 8081:8081
         restart: always
+        networks:
+            default:
+                ipv4_address: 10.103.0.10
 
 networks:
   default:

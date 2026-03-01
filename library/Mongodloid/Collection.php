@@ -54,14 +54,14 @@ class Mongodloid_Collection {
 				unset($options['upsert']);
 				$upsert = true;
 			}
-			$res = Mongodloid_Result::getResult($this->replaceOne($query, $values, $options));
+			$res = Mongodloid_Result::getResult($this->replaceOne($query, $values, $options), __FUNCTION__);
 			if($upsert && $res['n'] === 0){
 				$res = $this->insert($values, $options);
 			}
 		} else if ($multiple) {
-			$res =  Mongodloid_Result::getResult($this->updateMany($query, $values, $options));
+			$res =  Mongodloid_Result::getResult($this->updateMany($query, $values, $options), __FUNCTION__);
 		} else {
-			$res = Mongodloid_Result::getResult($this->updateOne($query, $values, $options));
+			$res = Mongodloid_Result::getResult($this->updateOne($query, $values, $options), __FUNCTION__);
 		}
 		return $res;
 	}
@@ -137,7 +137,7 @@ class Mongodloid_Collection {
 		// This function changes fields, should I clone fields before sending?
 		$this->setEntityFields($entity, $fields);
 
-		return Mongodloid_Result::getResult($this->updateOne($data, array('$set' => $fields)));
+		return Mongodloid_Result::getResult($this->updateOne( Mongodloid_TypeConverter::fromMongodloid($data), array('$set' => $fields)), __FUNCTION__);
 	}
 
 	/**
@@ -145,7 +145,7 @@ class Mongodloid_Collection {
 	 * @return mongodloid getName result
 	 */
 	public function getName() {
-		return Mongodloid_Result::getResult($this->_collection->getCollectionName());
+		return Mongodloid_Result::getResult($this->_collection->getCollectionName(), __FUNCTION__);
 	}
 
 	/**
@@ -154,7 +154,7 @@ class Mongodloid_Collection {
 	 * @return mongodloid dropIndexes result
 	 */
 	public function dropIndexes() {
-		return Mongodloid_Result::getResult($this->_collection->dropIndexes());
+		return Mongodloid_Result::getResult($this->_collection->dropIndexes(), __FUNCTION__);
 	}
 
 	/**
@@ -163,7 +163,7 @@ class Mongodloid_Collection {
 	 * @return mongodloid dropIndexe result
 	 */
 	public function dropIndex($field) {
-		return Mongodloid_Result::getResult($this->_collection->dropIndex($field));
+		return Mongodloid_Result::getResult($this->_collection->dropIndex($field), __FUNCTION__);
 	}
 
 	/**
@@ -200,7 +200,7 @@ class Mongodloid_Collection {
 		if (!is_array($fields)) {
 			$fields = array($fields => 1);
 		}
-		return Mongodloid_Result::getResult($this->_collection->createIndex($fields, $params));
+		return Mongodloid_Result::getResult($this->_collection->createIndex($fields, $params), __FUNCTION__);
 	}
 	
 	/**
@@ -226,7 +226,7 @@ class Mongodloid_Collection {
 	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-listIndexes/#phpmethod.MongoDB\Collection::listIndexes
 	 */
 	public function getIndexes() {
-		return Mongodloid_Result::getResult($this->_collection->listIndexes());
+		return Mongodloid_Result::getResult($this->_collection->listIndexes(), __FUNCTION__);
 	}
 
 	/**
@@ -256,10 +256,10 @@ class Mongodloid_Collection {
 		$id = $entity->getId();
 		if($id){
 			$options['upsert'] = true;
-			$result = Mongodloid_Result::getResult($this->update(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id)), $data, $options));
+			$result = Mongodloid_Result::getResult($this->update(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id)), $data, $options), __FUNCTION__);
 			$entity->setRawData($data);
 		}else{
-			$result = Mongodloid_Result::getResult($this->insert($data, $options));
+			$result = Mongodloid_Result::getResult($this->insert($data, $options), __FUNCTION__);
 			$entity->setRawData($data);
 		}
 		
@@ -273,7 +273,7 @@ class Mongodloid_Collection {
 	 * @return array\Mongodloid_Entity - dependence on $want_array
 	 */
 	public function findOne($id, $want_array = false) {
-		$values = Mongodloid_Result::getResult($this->_collection->findOne(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id))));
+		$values = Mongodloid_Result::getResult($this->_collection->findOne(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id))), __FUNCTION__);
 
 		if ($want_array) {
 			return $values;
@@ -287,7 +287,7 @@ class Mongodloid_Collection {
 	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-drop/#phpmethod.MongoDB\Collection::drop
 	 */
 	public function drop() {
-		return Mongodloid_Result::getResult($this->_collection->drop());
+		return Mongodloid_Result::getResult($this->_collection->drop(), __FUNCTION__);
 	}
 
 	/**
@@ -295,7 +295,7 @@ class Mongodloid_Collection {
 	 * @return mongodloid count result.
 	 */
 	public function count() {
-		return Mongodloid_Result::getResult($this->_collection->count());
+		return Mongodloid_Result::getResult($this->_collection->count(), __FUNCTION__);
 	}
 
 	/**
@@ -311,7 +311,7 @@ class Mongodloid_Collection {
 	 * @return mongodloid count result.
 	 */
 	public function estimatedDocumentCount() {
-		return Mongodloid_Result::getResult($this->_collection->estimatedDocumentCount());
+		return Mongodloid_Result::getResult($this->_collection->estimatedDocumentCount(), __FUNCTION__);
 	}
 
 	public function clear() {//TODO:: check this - I dont think this works also before changes
@@ -367,7 +367,7 @@ class Mongodloid_Collection {
 		}else{
 			$ret = $this->deleteOne($query, $options);
 		}
-		return Mongodloid_Result::getResult($ret);
+		return Mongodloid_Result::getResult($ret, __FUNCTION__);
 	}
 
 	/**
@@ -585,7 +585,7 @@ class Mongodloid_Collection {
 				$ret = $this->findOneAndUpdate($query, $update, $options);
 			}
 		}
-		$ret = Mongodloid_Result::getResult($ret);
+		$ret = Mongodloid_Result::getResult($ret, __FUNCTION__);
 		if ($retEntity) {
 			return new Mongodloid_Entity($ret, $this);
 		}
@@ -645,7 +645,7 @@ class Mongodloid_Collection {
 			$documents[] = $doc;
 		}
 		$this->convertWriteConcernOptions($options);
-		return Mongodloid_Result::getResult($this->insertMany(Mongodloid_TypeConverter::fromMongodloid($documents), $options));
+		return Mongodloid_Result::getResult($this->insertMany(Mongodloid_TypeConverter::fromMongodloid($documents), $options), __FUNCTION__);
 	}
 
 	private function insertMany(array $documents, array $options = array()) {
@@ -674,7 +674,7 @@ class Mongodloid_Collection {
 			$ins = $a;
             $ins['_id'] = new Mongodloid_Id($ret->getInsertedId());
 		}
-		return Mongodloid_Result::getResult($ret);
+		return Mongodloid_Result::getResult($ret, __FUNCTION__);
 	}
 	
 	/**
@@ -697,8 +697,6 @@ class Mongodloid_Collection {
 		// check if id exists (cannot create auto increment without id)
 		$id = $entity->getId();
 		if (!$id) {
-			Billrun_Factory::log("createAutoIncForEntity no id.");
-			// TODO: Report error?
 			return;
 		}
 
@@ -722,6 +720,7 @@ class Mongodloid_Collection {
 
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = !empty($collName) ? $collName : $this->getName();
+		Billrun_Factory::log("Creating auto increment for collection: " . $collection_name, Zend_Log::DEBUG);
 		//check for existing seq
 		if (!empty($params)) {
 			$key = serialize($params);
@@ -783,7 +782,7 @@ class Mongodloid_Collection {
 
 	public function distinct($key, array $query = array()) {
 		$query = Mongodloid_TypeConverter::fromMongodloid($query);
-		return Mongodloid_Result::getResult($this->_collection->distinct($key, $query));
+		return Mongodloid_Result::getResult($this->_collection->distinct($key, $query), __FUNCTION__);
 	}
 
 	public function getWriteConcern($var = null) {
@@ -859,33 +858,36 @@ class Mongodloid_Collection {
 		if (!method_exists($this->_collection, 'watch')) {
 			throw new Exception("MongoDB driver does not support change streams.");
 		}
-		if (!is_callable($handler)) {
-			throw new Exception("watch change: handle is not callable");
-		}
 
-		$defaultOptions = [
-			'fullDocument' => \MongoDB\Operation\Watch::FULL_DOCUMENT_UPDATE_LOOKUP,
-			'loopDelayUs' => 500000, // 0.5s between invalid reads
-		];
-		$watchOptions = array_intersect_key($options, array_flip(['fullDocument']));
-		$loopDelayUs = $options['loopDelayUs'] ?? $defaultOptions['loopDelayUs'];
+		// App-level options (not sent to driver)
+		$loopDelayUs = $options['loopDelayUs'] ?? 500000;
 		$maxDuration = $options['maxDurationSeconds'] ?? null;
-		$startTime = time();
+		unset($options['loopDelayUs'], $options['maxDurationSeconds']);
 
+		// Allowlist of driver options for watch()
+		$allowed = [
+			'fullDocument', 'maxAwaitTimeMS', 'resumeAfter', 'startAfter',
+			'startAtOperationTime', 'batchSize', 'collation', 'readConcern',
+			'readPreference', 'session', 'typeMap'
+		];
+		
+		$watchDefaultOptions = [
+			'fullDocument' => \MongoDB\Operation\Watch::FULL_DOCUMENT_UPDATE_LOOKUP,
+		];
+
+		$watchOptions = array_intersect_key(array_merge($options, $watchDefaultOptions), array_flip($allowed));
 		$this->watching = true;
+		$startTime = time();
 
 		try {
 			$changeStream = $this->_collection->watch($pipeline, $watchOptions);
 			$changeStream->rewind();
 
 			while ($this->watching) {
-				if ($maxDuration && (time() - $startTime) >= $maxDuration) {
-					Billrun_Factory::log('[ChangeStream] Max duration exceeded. Exiting.', Zend_Log::INFO);
+				if ($maxDuration && (time() - $startTime) >= $maxDuration)
 					break;
-				}
 
 				$changeStream->next();
-
 				if (!$changeStream->valid()) {
 					usleep($loopDelayUs);
 					continue;
@@ -894,13 +896,12 @@ class Mongodloid_Collection {
 				$change = $changeStream->current();
 				$handler(Mongodloid_Result::getResult($change['fullDocument']));
 
-				if (($change['operationType'] ?? '') === 'invalidate') {
-					Billrun_Factory::log('[ChangeStream] Received invalidate. Exiting.', Zend_Log::INFO);
+				if (($change['operationType'] ?? '') === 'invalidate')
 					break;
-				}
 			}
 		} catch (\Throwable $e) {
-			Billrun_Factory::log('[ChangeStream] Error: ' . $e->getMessage(), Zend_Log::ERR);
+			throw new Exception('[ChangeStream] Error: ' . $e->getMessage());
 		}
 	}
+
 }

@@ -17,12 +17,13 @@
 
 namespace MongoDB;
 
+use Composer\InstalledVersions;
 use Iterator;
-use Jean85\PrettyVersions;
 use MongoDB\Driver\ClientEncryption;
 use MongoDB\Driver\Exception\InvalidArgumentException as DriverInvalidArgumentException;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\Manager;
+use MongoDB\Driver\Monitoring\Subscriber;
 use MongoDB\Driver\ReadConcern;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\Session;
@@ -46,36 +47,27 @@ class Client
 {
     public const DEFAULT_URI = 'mongodb://127.0.0.1/';
 
-    /** @var array */
-    private static $defaultTypeMap = [
+    private const DEFAULT_TYPE_MAP = [
         'array' => BSONArray::class,
         'document' => BSONDocument::class,
         'root' => BSONDocument::class,
     ];
 
-    /** @var string */
-    private static $handshakeSeparator = ' / ';
+    private const HANDSHAKE_SEPARATOR = '/';
 
-    /** @var string|null */
-    private static $version;
+    private static ?string $version = null;
 
-    /** @var Manager */
-    private $manager;
+    private Manager $manager;
 
-    /** @var ReadConcern */
-    private $readConcern;
+    private ReadConcern $readConcern;
 
-    /** @var ReadPreference */
-    private $readPreference;
+    private ReadPreference $readPreference;
 
-    /** @var string */
-    private $uri;
+    private string $uri;
 
-    /** @var array */
-    private $typeMap;
+    private array $typeMap;
 
-    /** @var WriteConcern */
-    private $writeConcern;
+    private WriteConcern $writeConcern;
 
     /**
      * Constructs a new Client instance.
@@ -102,7 +94,7 @@ class Client
      */
     public function __construct(?string $uri = null, array $uriOptions = [], array $driverOptions = [])
     {
-        $driverOptions += ['typeMap' => self::$defaultTypeMap];
+        $driverOptions += ['typeMap' => self::DEFAULT_TYPE_MAP];
 
         if (! is_array($driverOptions['typeMap'])) {
             throw InvalidArgumentException::invalidType('"typeMap" driver option', $driverOptions['typeMap'], 'array');
@@ -173,6 +165,16 @@ class Client
     }
 
     /**
+     * Registers a monitoring event subscriber with this Client's Manager
+     *
+     * @see Manager::addSubscriber()
+     */
+    final public function addSubscriber(Subscriber $subscriber): void
+    {
+        $this->manager->addSubscriber($subscriber);
+    }
+
+    /**
      * Returns a ClientEncryption instance for explicit encryption and decryption
      *
      * @param array $options Encryption options
@@ -209,7 +211,7 @@ class Client
             $options['typeMap'] = $this->typeMap;
         }
 
-        $server = select_server($this->manager, $options);
+        $server = select_server_for_write($this->manager, $options);
 
         if (! isset($options['writeConcern']) && ! is_in_transaction($options)) {
             $options['writeConcern'] = $this->writeConcern;
@@ -306,6 +308,16 @@ class Client
     }
 
     /**
+     * Unregisters a monitoring event subscriber with this Client's Manager
+     *
+     * @see Manager::removeSubscriber()
+     */
+    final public function removeSubscriber(Subscriber $subscriber): void
+    {
+        $this->manager->removeSubscriber($subscriber);
+    }
+
+    /**
      * Select a collection.
      *
      * @see Collection::__construct() for supported options
@@ -354,7 +366,7 @@ class Client
      * Create a change stream for watching changes to the cluster.
      *
      * @see Watch::__construct() for supported options
-     * @param array $pipeline List of pipeline operations
+     * @param array $pipeline Aggregation pipeline
      * @param array $options  Command options
      * @return ChangeStream
      * @throws InvalidArgumentException for parameter/option parsing errors
@@ -384,9 +396,9 @@ class Client
     {
         if (self::$version === null) {
             try {
-                self::$version = PrettyVersions::getVersion('mongodb/mongodb')->getPrettyVersion();
+                self::$version = InstalledVersions::getPrettyVersion('mongodb/mongodb') ?? 'unknown';
             } catch (Throwable $t) {
-                return 'unknown';
+                self::$version = 'error';
             }
         }
 
@@ -405,7 +417,7 @@ class Client
                 throw InvalidArgumentException::invalidType('"name" handshake option', $driver['name'], 'string');
             }
 
-            $mergedDriver['name'] .= self::$handshakeSeparator . $driver['name'];
+            $mergedDriver['name'] .= self::HANDSHAKE_SEPARATOR . $driver['name'];
         }
 
         if (isset($driver['version'])) {
@@ -413,7 +425,7 @@ class Client
                 throw InvalidArgumentException::invalidType('"version" handshake option', $driver['version'], 'string');
             }
 
-            $mergedDriver['version'] .= self::$handshakeSeparator . $driver['version'];
+            $mergedDriver['version'] .= self::HANDSHAKE_SEPARATOR . $driver['version'];
         }
 
         if (isset($driver['platform'])) {

@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y \
     wkhtmltopdf libpng-dev zlib1g-dev libzip-dev libgmp-dev libcurl4-openssl-dev pkg-config libssl-dev wget \
         unzip openjdk-11-jre-headless \
     && pecl install yaf-3.1.4 \
-    && pecl install mongodb-1.11.1 \
+    && pecl install mongodb-1.15.3 \
     && docker-php-ext-enable yaf mongodb \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp \    
     && apt-get clean
