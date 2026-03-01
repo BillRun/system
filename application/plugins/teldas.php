@@ -232,6 +232,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       $model = new ConfigModel();
       $updatedData = $model->getConfig();
       unset($updatedData['_id']);
+      $updatedData['urt'] = new Mongodloid_Date();
       $updatedData['teldas'][$field] = $value;
       $ret = Billrun_Factory::db()->configCollection(['force' => true])->insert($updatedData);
       $saveResult = !empty($ret['ok']);
