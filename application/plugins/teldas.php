@@ -719,8 +719,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 
   protected function getMiddleDatetimeWithMilliseconds($startDateStr, $endDateStr) {
-    $start = new DateTime($startDateStr);
-    $end = new DateTime($endDateStr);
+    $tz = new DateTimeZone('UTC');
+    $start = new DateTime($startDateStr, $tz);
+    $end = new DateTime($endDateStr, $tz);
 
     // Convert to float seconds including microtime
     $startTs = (float) $start->format('U.u');
@@ -730,9 +731,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $middleTs = ($startTs + $endTs) / 2;
 
     // Create DateTime from float seconds
-    $middle = DateTime::createFromFormat('U.u', number_format($middleTs, 6, '.', ''));
+    $middle = DateTime::createFromFormat('U.u', number_format($middleTs, 6, '.', ''), $tz);
 
     // Format with milliseconds (3 digits of microseconds)
+    $middle->setTimezone(new DateTimeZone('Europe/Zurich'));
     $formatted = $middle->format("Y-m-d\TH:i:s.") . substr($middle->format('u'), 0, 3);
 
     return $formatted;
