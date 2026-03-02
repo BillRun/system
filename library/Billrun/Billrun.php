@@ -1192,7 +1192,7 @@ class Billrun_Billrun {
 
 		foreach ($plugins as &$plugin) {
 			if (Billrun_Util::getIn($plugin, 'name') === $pluginName) {
-				Billrun_Util::setIn($plugin, "fields.$fieldName", $value);
+				Billrun_Util::setIn($plugin, $fieldName, $value);
 				$pluginFound = true;
 				break;
 			}
@@ -1201,7 +1201,7 @@ class Billrun_Billrun {
 
 		if (!$pluginFound) {
 			$newPlugin = ['name' => $pluginName];
-			Billrun_Util::setIn($newPlugin, "fields.$fieldName", $value);
+			Billrun_Util::setIn($newPlugin, $fieldName, $value);
 			$plugins[] = $newPlugin;
 		}
 		$this->data['plugins'] = $plugins;
@@ -1220,7 +1220,7 @@ class Billrun_Billrun {
 
 		foreach ($plugins as $plugin) {
 			if (isset($plugin['name']) && $plugin['name'] === $pluginName) {
-				return Billrun_Util::getIn($plugin, "fields.$fieldName");
+				return Billrun_Util::getIn($plugin, $fieldName);
 			}
 		}
 		return null;
@@ -1240,7 +1240,7 @@ class Billrun_Billrun {
 
         foreach ($plugins as $plugin) {
             if (Billrun_Util::getIn($plugin, 'name') === $pluginName) {
-                return Billrun_Util::getIn($plugin, "fields.$fieldName");
+                return Billrun_Util::getIn($plugin, $fieldName);
             }
         }
         return null;

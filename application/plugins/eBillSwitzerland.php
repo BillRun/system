@@ -218,7 +218,9 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 		if (!$this->shouldGenerateInvoice($accountBillrun)) {
 			return;
 		}
-
+		if (!$this->validateInvoiceTotalCost($accountBillrun, $lines)) {
+			return;
+		}
 		$exportDir = $generator->getExportDirectory();
 		$baseDir = dirname(rtrim($exportDir, '/\\'));
 		$billrunKey = isset($accountBillrun['billrun_key']) ? $accountBillrun['billrun_key'] : '';
@@ -835,6 +837,32 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
             'eBillSwitzerland', 
             'invoice_swiss_ebill_xml'
         );
+	}
+
+	/**
+	 * Validates that the sum of the line items' aprice equals the invoice's totals.before_vat
+	 * @param array $accountBillrun
+	 * @return bool True if valid, false if there is a mismatch
+	 */
+	protected function validateInvoiceTotalCost($accountBillrun, $lines)
+	{
+		$totalLineItemsAprice = 0;
+		if (!empty($lines) && is_array($lines)) {
+			foreach ($lines as $line) {
+				$totalLineItemsAprice += (float)Billrun_Util::getIn($line, 'aprice', 0);
+			}
+		}
+
+		$totalsBeforeVat = (float)Billrun_Util::getIn($accountBillrun, 'totals.before_vat', 0);
+
+		// Compare using rounding to avoid floating-point precision issues
+		if (round($totalLineItemsAprice, 5) !== round($totalsBeforeVat, 5)) {
+			$aid = $accountBillrun['aid'];
+			Billrun_Factory::log("eBill Plugin: invoice total cost (totals.before_vat: {$totalsBeforeVat}) does not match eBill total cost (sum of aprice: {$totalLineItemsAprice}). Aborting XML generation for AID: {$aid}", Zend_Log::ERR);
+			return false;
+		}
+
+		return true;
 	}
 	
 }
