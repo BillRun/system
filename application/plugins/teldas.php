@@ -1348,7 +1348,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           return;
       }
       Billrun_Factory::log("Checking if line "  . $line['stamp'] .  " should be fillter out", Zend_Log::DEBUG);
-      if($this->shouldFilterLine($line, $matchingPaths)){
+      if(!$this->lineMatchConditions($line, $matchingPaths)){
         return;
       }
       Billrun_Factory::log("Checking if line "  . $line['stamp'] .  " is Teldas INA number", Zend_Log::DEBUG);
@@ -1380,18 +1380,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     //   $stampFields = Billrun_Util::getIn($this->options, 'matching_paths.stamps_fields', array());
   }
 
-  protected function shouldFilterLine($line, $matchingPaths){
-    if(!isset($matchingPaths['filters'])){
-        return true;
+  protected function lineMatchConditions($line, $matchingPaths){
+    if (isset($matchingPaths['conditions']) && !Billrun_Util::isConditionsMet($line, $matchingPaths['conditions'])) {
+        Billrun_Factory::log("Line should not be mapped for teldas. conditions: " . print_r($$matchingPaths['conditions'], true) . ". Line details: " . print_r($line, true), Zend_Log::INFO);
+        return false;
     }
-    foreach ($matchingPaths['filters'] as $filter) {
-        if (isset($filter['conditions'])  && Billrun_Util::isConditionsMet($line, $filter['conditions'])) {
-            $desc = $filter['description'] ?? 'No description';
-            Billrun_Factory::log("Line should not be mapped for teldas. Reason: " . $desc . ". Line details: " . print_r($line, true), Zend_Log::INFO);
-            return true;
-        }
-    }
-	return false;	
+    
+	return true;	
   }
 
   public function beforeGetLineAprice($line, &$aprice) {
