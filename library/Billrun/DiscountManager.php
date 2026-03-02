@@ -1203,7 +1203,7 @@ class Billrun_DiscountManager {
 					Billrun_Factory::log("Cannot get '{$key}', CDR was not generated", Billrun_Log::ERR);
 					continue;
 				}
-				Billrun_Factory::dispatcher()->trigger('beforeGenerateDiscountCdrs', array(&$entity));
+				Billrun_Factory::dispatcher()->trigger('beforeGenerateDiscountCdrs', array(&$entity, $type, $lines, $eligibility));
 
 				$currentCdrs = $this->generateDiscountCdrs($type, $lines, $entity, $eligibility);
 				if ($currentCdrs) {
@@ -1584,7 +1584,7 @@ class Billrun_DiscountManager {
 		} else {
 			$amount = $this->calcSeqDiscountAmount($from, $to, $line, $value);
 		}
-		Billrun_Factory::dispatcher()->trigger('afterCalculateDiscountAmount', array($discount, &$amount));
+		Billrun_Factory::dispatcher()->trigger('afterCalculateDiscountAmount', array($discount, &$amount, &$lineStart, &$lineEnd, $line, $value, $from, $to, $operations, $sequential));
 		$res = [
 			'amount' => $amount,
 			'start' => $lineStart,
@@ -1774,7 +1774,7 @@ class Billrun_DiscountManager {
 				'to' => ($isUpfront == true ? $this->cycle->end() : (isset($line['end']) ? Billrun_Utils_Time::getTime($line['end']) : (isset($line['end_date']) ? Billrun_Utils_Time::getTime($line['end_date']) : $this->cycle->end()))),
 			],
 		];
-		Billrun_Factory::dispatcher()->trigger('afterGetLineFullEligibility', array(&$lineFullEligibility, $discount, $this->cycle));
+		Billrun_Factory::dispatcher()->trigger('afterGetLineFullEligibility', array(&$lineFullEligibility, $discount, $this->cycle, $line));
 		return $lineFullEligibility;
 	}
 	

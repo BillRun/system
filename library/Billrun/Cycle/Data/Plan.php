@@ -89,7 +89,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		if (!empty($this->plan)) {
 			$entry['plan'] = $this->plan;
 		}
-		Billrun_Factory::dispatcher()->trigger('afterPlanChargeLineConstruction', array(&$entry));
+		Billrun_Factory::dispatcher()->trigger('afterPlanChargeLineConstruction', array(&$entry, $chargeingKey, $chargeData));
 		return $entry;
 	}
 
