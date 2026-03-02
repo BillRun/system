@@ -647,10 +647,23 @@ class unifyCest
                 'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
             ]
         );
-        $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
+        $subscriberDetails1 = json_decode($I->grabResponse(), true)['entity'];
+
+        $I->generateSubscriber(
+            [
+                'from' => '2025-01-01',
+                'firstname' => '0541234567',
+                'aid' => $this->accountDetails['aid'],
+                'plan' => $this->planDetails['name'],
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+            ]
+        );
+        $subscriberDetails2 = json_decode($I->grabResponse(), true)['entity'];
+
         $customProcessor = $this->inputProcessor;
         $customProcessor['file_type'] = 'abc1';
         $customProcessor['unify']['unification_fields']['required']['match'] = ["uf.firstname"=> "/^054\\d+/"]; 
+        $customProcessor['unify']['unification_fields']['fields'][0]['match'] = ["uf.firstname"=> "/^054\\d+/"]; 
 
         // 2. Apply it directly via the Tester
         $I->setSettings('file_types', $customProcessor);
@@ -658,19 +671,27 @@ class unifyCest
         $this->process(
             [
                 'type' => 'abc1',
-                'path' => 'tests/all/calculators/test_files/test1.csv'
+                'path' => 'tests/all/calculators/test_files/test3.csv'
             ]
         );
 
         $I->assertEquals(3, $I->grabCollectionCount('lines', [
             'aid' => $this->accountDetails['aid'],
-            'sid' => $this->subscriberDetails['sid']
+            'sid' => $subscriberDetails1['sid']
         ]));
-
+         $I->assertEquals(1, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriberDetails2['sid'],
+            "lcount" => 3
+        ]));
 
         $I->assertEquals(0, $I->grabCollectionCount('archive', [
             'aid' => $this->accountDetails['aid'],
-            'sid' => $this->subscriberDetails['sid']
+            'sid' => $subscriberDetails1['sid']
+        ]));
+        $I->assertEquals(3, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriberDetails2['sid']
         ]));
     }
 }
