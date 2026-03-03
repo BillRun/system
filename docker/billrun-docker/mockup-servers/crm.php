@@ -116,11 +116,16 @@ function loadAidData($aid) {
 	}
 
 	$filePath = "crm_data/{$aid}.json";
-	if (!is_readable($filePath)) {
-		return '';
+	if (is_readable($filePath)) {
+		return file_get_contents($filePath, true);
 	}
 
-	return file_get_contents($filePath, true);
+	$filePath = "crm_data/plugin/{$aid}.json";
+	if (is_readable($filePath)) {
+		return file_get_contents($filePath, true);
+	}
+
+	return '';
 }
 
 /**
