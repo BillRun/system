@@ -7,12 +7,13 @@
  * The endpoints read CRM fixtures from crm_data/<aid>.json and shape the payload
  * to mimic the original CRM behavior for tests and local development.
  */
+$pluginName = getenv('CURRENT_PLUGIN');
 $rawBody = file_get_contents('php://input');
 $payload = json_decode($rawBody, true);
 
 $aid = extractAid($payload);
 $sid = extractSid($payload);
-$data = loadAidData($aid);
+$data = loadAidData($aid, $pluginName);
 
 if (preg_match('/\/gad/', $_SERVER["REQUEST_URI"])) {
 	$response = filterAccountsOnly($data);
@@ -110,7 +111,7 @@ function extractSid($payload) {
  * Load the CRM fixture for the given aid.
  * Returns an empty string when aid is missing or file unreadable.
  */
-function loadAidData($aid) {
+function loadAidData($aid, $pluginName) {
 	if ($aid === null) {
 		return '';
 	}
@@ -120,7 +121,7 @@ function loadAidData($aid) {
 		return file_get_contents($filePath, true);
 	}
 
-	$filePath = "crm_data/plugin/{$aid}.json";
+	$filePath = "crm_data/plugin/{$pluginName}/{$aid}.json";
 	if (is_readable($filePath)) {
 		return file_get_contents($filePath, true);
 	}
