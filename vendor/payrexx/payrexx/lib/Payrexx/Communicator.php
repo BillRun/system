@@ -138,13 +138,15 @@ class Communicator
 
         $convertedResponse = array();
         if (!isset($response['body']['data']) || !is_array($response['body']['data'])) {
-            if(!isset($response['body'])){
-                throw new \Payrexx\PayrexxException('Payrexx PHP: Something went wrong, response: ' . print_r($response, true), $response['info']['http_code']);
+            $code = $response['info']['http_code'] ?? null;
+            $httpSuffix = isset($code) ? " http code: $code" : "";
+            if (!isset($response['body'])){
+                throw new \Payrexx\PayrexxException("Payrexx PHP: Something went wrong$httpSuffix, response: " . print_r($response, true), (int)$code);
             }
             if (!isset($response['body']['message'])) {
-                throw new \Payrexx\PayrexxException('Payrexx PHP: Something went wrong, response from payrexx: ' . print_r($response['body'], true) , $response['info']['http_code']);
+                throw new \Payrexx\PayrexxException("Payrexx PHP: Something went wrong$httpSuffix, response from payrexx: " . print_r($response['body'], true), (int)$code);
             }
-            $exception = new \Payrexx\PayrexxException($response['body']['message'], $response['info']['http_code']);
+            $exception = new \Payrexx\PayrexxException("Payrexx PHP: Something went wrong$httpSuffix, response from payrexx: " . $response['body']['message'], (int)$code);
             if (!empty($response['body']['reason'])) {
                 $exception->setReason($response['body']['reason']);
             }
