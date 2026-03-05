@@ -139,7 +139,7 @@ class Communicator
         $convertedResponse = array();
         if (!isset($response['body']['data']) || !is_array($response['body']['data'])) {
             $code = $response['info']['http_code'] ?? null;
-            $httpSuffix = isset($code) ? " http code: $code" : "";
+            $httpSuffix = isset($code) ? ", http code: $code" : "";
             if (!isset($response['body'])){
                 throw new \Payrexx\PayrexxException("Payrexx PHP: Something went wrong$httpSuffix, response: " . print_r($response, true), (int)$code);
             }
