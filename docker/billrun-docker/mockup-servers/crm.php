@@ -134,7 +134,7 @@ function extractSid($payload) {
  * Load the CRM fixture for the given aid.
  * Returns an empty string when aid is missing or file unreadable.
  */
-function loadAidData($aid, $folderPath) {
+function loadAidData($aid, $folderPath = null) {
 	if ($aid === null) {
 		return '';
 	}
@@ -143,6 +143,11 @@ function loadAidData($aid, $folderPath) {
 		if (is_readable($filePath)) {
 			return file_get_contents($filePath, true);
 		}
+	}
+
+	$filePath = "crm_data/{$aid}.json";
+	if (!is_readable($filePath)) {
+		return file_get_contents($filePath, true);
 	}
 
 	return '';
