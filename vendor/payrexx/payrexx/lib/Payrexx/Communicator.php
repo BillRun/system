@@ -138,15 +138,10 @@ class Communicator
 
         $convertedResponse = array();
         if (!isset($response['body']['data']) || !is_array($response['body']['data'])) {
-            $code = $response['info']['http_code'] ?? null;
-            $httpSuffix = isset($code) ? ", http code: $code" : "";
-            if (!isset($response['body'])){
-                throw new \Payrexx\PayrexxException("Payrexx PHP: Something went wrong$httpSuffix, response: " . print_r($response, true), (int)$code);
-            }
             if (!isset($response['body']['message'])) {
-                throw new \Payrexx\PayrexxException("Payrexx PHP: Something went wrong$httpSuffix, response from payrexx: " . print_r($response['body'], true), (int)$code);
+                throw new \Payrexx\PayrexxException('Payrexx PHP: Configuration is wrong! Check instance name and API secret', $response['info']['http_code']);
             }
-            $exception = new \Payrexx\PayrexxException("Payrexx PHP: Something went wrong$httpSuffix, response from payrexx: " . $response['body']['message'], (int)$code);
+            $exception = new \Payrexx\PayrexxException($response['body']['message'], $response['info']['http_code']);
             if (!empty($response['body']['reason'])) {
                 $exception->setReason($response['body']['reason']);
             }
