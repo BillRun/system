@@ -1312,6 +1312,13 @@ _dropIndex("archive", "sid_1_session_id_1_request_num_");
 _dropIndex("archive", "session_id_1_request_num_");
 _dropIndex("archive", "sid_1_call_reference_1");
 _dropIndex("archive", "call_reference_1");
+db.audit.createIndex({'stamp': 1 },  { unique: true });
+db.audit.createIndex({'type': 1 }, { unique: false , sparse: true, background: true });
+db.audit.createIndex({'key': 1 }, { unique: false , sparse: false, background: true });
+db.audit.createIndex({'collection': 1 }, { unique: false , sparse: false, background: true });
+db.audit.createIndex({'urt': 1 }, { unique: false , sparse: false, background: true });
+db.audit.createIndex({'user.name': 1 }, { unique: false , sparse: false, background: true });
+
 if (db.serverStatus().ok == 0) {
 	print('Cannot shard archive collection - no permission')
 } else if (db.serverStatus().process == 'mongos') {
@@ -2083,12 +2090,12 @@ runOnce(lastConfig, 'BRCD-4739', function () {
 		"system": true,
 		"hide_from_ui": true
 	})
-	db.createCollection('plugin_teldas_ina_numbers');
+	_createCollection('plugin_teldas_ina_numbers');
 	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
-	db.createCollection('plugin_teldas_tariffs_profiles');
+	_createCollection('plugin_teldas_tariffs_profiles');
 	db.plugin_teldas_tariffs_profiles.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariffs_profiles_unique_index" });
-	db.createCollection('plugin_teldas_tariff_switching_classes');
-	db.createCollection("plugin_teldas_non_working_days"); 
+	_createCollection('plugin_teldas_tariff_switching_classes');
+	_createCollection("plugin_teldas_non_working_days"); 
 });
 
 runOnce(lastConfig, 'BRCD-4948', function () {
@@ -2104,6 +2111,13 @@ runOnce(lastConfig, 'BRCD-4966', function () {
 	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'end_time':1},{ unique: false , sparse: false, background: true });
 	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'count':1,'invoicing_day':1},{ unique: false , sparse: false, background: true });
 });
+
+runOnce(lastConfig, 'BRCD-4966', function () {
+	print("Creating new subscribers index: { aid: 1, type: 1, from: 1, to: 1 }...");
+	db.subscribers.createIndex({'aid':1,'type':1,'from': 1 , 'to': 1}, { unique: false, sparse: false, background: true });
+});
+
+
 
 db.config.insertOne(lastConfig);
 

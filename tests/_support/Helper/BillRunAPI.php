@@ -359,6 +359,9 @@ class BillRunAPI extends \Codeception\Module{
             case 'rates';
                 $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
                 break;
+            case 'discount';
+                $model = new \Models_Discounts(['collection' => 'discounts', 'no_init' => true]);
+                break;
         }
         return $model;
     }
@@ -704,7 +707,7 @@ class BillRunAPI extends \Codeception\Module{
         $ret =  $rest->sendPOST("/realtime", $params);
         return json_decode($ret, true);
     }
-    
+
     function generateDemoValue($type = 'text') {
         switch ($type) {
             case 'boolean':
@@ -791,8 +794,10 @@ class BillRunAPI extends \Codeception\Module{
     }
     
 
-    public function generateDiscount($override = [])
+    public function generateDiscount($override = [], $byApi= false)
   {
+    $customeFields = $this->getCustomFields('discount');
+    $override = array_merge($customeFields, $override);
     //http://billrun/billapi/discounts/create
     $discount = array_merge([
       
@@ -809,8 +814,14 @@ class BillRunAPI extends \Codeception\Module{
         "type" => "monetary"
       
     ], $override);
+    if($byApi){
+        $this->sendBillapiCreate($discount, 'discounts');
 
-    $this->sendBillapiCreate($discount, 'discounts');
+    }else{
+        $model = $this->getModel('discount');
+	    $model->setUpdate($discount);
+        $model->create();
+    }
   }
 
     public function sendOnetimeInvoiceApi(array $cdrs, $aid, $extra_params = []) {

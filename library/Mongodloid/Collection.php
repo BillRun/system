@@ -137,7 +137,7 @@ class Mongodloid_Collection {
 		// This function changes fields, should I clone fields before sending?
 		$this->setEntityFields($entity, $fields);
 
-		return Mongodloid_Result::getResult($this->updateOne($data, array('$set' => $fields)), __FUNCTION__);
+		return Mongodloid_Result::getResult($this->updateOne( Mongodloid_TypeConverter::fromMongodloid($data), array('$set' => $fields)), __FUNCTION__);
 	}
 
 	/**
