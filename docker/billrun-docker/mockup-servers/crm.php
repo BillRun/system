@@ -29,7 +29,7 @@ if (preg_match('/\/gad/', $_SERVER["REQUEST_URI"])) {
 function getFolderPath($path){
 	$pluginName = extractPlugin($path);
 	if(isset($pluginName)){
-		$folderPath = "crm_data/plugin/{$pluginName}";
+		$folderPath = "crm_data/plugins/{$pluginName}";
 	}else{
 		$folderPath = "crm_data";
 	}

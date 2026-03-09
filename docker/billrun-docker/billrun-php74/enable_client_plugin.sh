@@ -78,12 +78,13 @@ if test -d "/plugin/conf/exporter/"; then
 fi 
 
 
-if test -d "/plugin/docker/billrun-docker/mockup-servers/crm_data/plugin"; then
-     cd /plugin/docker/billrun-docker/mockup-servers/crm_data/plugin/
+if test -d "/plugin/docker/billrun-docker/mockup-servers/crm_data/plugins/"; then
+     cd /plugin/docker/billrun-docker/mockup-servers/crm_data/plugins/
+     mkdir -p "/billrun/docker/billrun-docker/mockup-servers/crm_data/plugins/"
      for d in *
      do
-          rm -f "/billrun/docker/billrun-docker/mockup-servers/crm_data/plugin/"$d
-          ln -s /plugin/docker/billrun-docker/mockup-servers/crm_data/plugin/$d "/billrun/docker/billrun-docker/mockup-servers/crm_data/plugin/"$d
+          rm -rf "/billrun/docker/billrun-docker/mockup-servers/crm_data/plugins/"$d
+          ln -s /plugin/docker/billrun-docker/mockup-servers/crm_data/plugins/$d "/billrun/docker/billrun-docker/mockup-servers/crm_data/plugins/"$d
      done
 fi
 
