@@ -537,10 +537,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected function limitGroupsSize($line) {
 		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
 		$taxes = isset($line['tax_data']['taxes']) ? $line['tax_data']['taxes'] : array();
-		// Filter out items where counter_only is true
-		$arategroups = array_filter($arategroups, fn($group) => 
-			!isset($group['counter_only']) || $group['counter_only'] !== true
-		);
 		if (count($arategroups) > 1 || count($taxes) > 1) {
 			return false;
 		}
