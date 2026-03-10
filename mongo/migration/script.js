@@ -2155,63 +2155,6 @@ runOnce(lastConfig, 'BRCD-5060', function () {
 	lastConfig.plugins.push(ebillPlugin);
 });
 
-runOnce(lastConfig, 'BRCD-5060', function () {
-	var ebill_id = {
-		"field_name": "ebill_id",
-		"title": "eBill ID",
-		"mandatory": false,
-		"system": true,
-		"editable": true,
-		"display": false,
-	};
-	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ebill_id, 'account');
-
-	var ebill_vendor_number = {
-		"field_name": "ebill_vendor_number",
-		"title": "eBill vendor number",
-		"mandatory": false,
-		"system": true,
-		"editable": true,
-		"display": false,
-	};
-	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ebill_vendor_number, 'account');
-
-	var ebillPlugin = {
-		"name": "eBillSwitzerlandPlugin",
-		"enabled": false,
-		"system": true,
-		"hide_from_ui": true,
-		"configuration": {
-			"values": {
-				"string_keys": [
-				],
-				"sftp_remote_directory": "",
-				"creditor_reference_prefix": "",
-				"sftp_password": "",
-				"bill_summary_template": [
-				],
-				"should_generate_ebill": {
-				},
-				"bill_headers": [
-				],
-				"header_values": [
-				],
-				"address": {
-
-				},
-				"sftp_host": "",
-				"delivery_info": [
-				],
-				"sftp_user": "",
-				"line_item_template": [
-				],
-				"response_status_files_path": ""
-			}
-		}
-	};
-	lastConfig.plugins.push(ebillPlugin);
-});
-
 runOnce(lastConfig, 'BRCD-4948', function () {
 	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariff_switching_classes_unique_index" });
 });
