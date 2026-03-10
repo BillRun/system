@@ -2,7 +2,7 @@
     "status": 1,
     "data": [
       {
-        "aid": 5100002413,
+        "aid": 12415,
         "crm_account_id": null,
         "type": "account",
         "from": "2025-10-23 13:02:37",
@@ -30,19 +30,19 @@
         "deactivation_date": "2200-01-01 02:00:00"
       },
       {
-        "sid": 39144,
-        "aid": 5100002413,
+        "sid": 39146,
+        "aid": 12415,
         "type": "subscriber",
         "from": "2025-10-23 13:04:25",
-        "to": "2200-01-01 02:00:00",
+        "to": "2025-12-20 02:00:00",
         "plan": "UPFRONT_PLAN_PORATED_TERMINATION_FALSE",
         "play": "MOBILE",
         "firstname": "xx",
         "lastname": "zz",
         "activation_date": "2025-10-23 13:04:25",
-        "deactivation_date": "2200-01-01 02:00:00",
+        "deactivation_date": "2025-12-20 02:00:00",
         "plan_activation": "2025-10-23 13:04:25",
-        "plan_deactivation": "2200-01-01 02:00:00",
+        "plan_deactivation": "2025-12-20 02:00:00",
         "creation_time": null,
         "former_plan": null,
         "services": [],
@@ -64,9 +64,9 @@
             "proration": "inherited",
             "cycles": 24,
             "type": "monetary",
-            "to": "2025-12-23 10:04:25",
+            "to": "2200-01-01 02:00:00",
             "description": "",
-            "key": "UPFRONT_PLAN_PORATED_TERMINATION_FALSE"
+            "key": "SUBSCRIBER_DISCOUNT_1"
           }
         ],
         "overrides": [

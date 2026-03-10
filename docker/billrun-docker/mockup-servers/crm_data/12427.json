@@ -2,7 +2,7 @@
     "status": 1,
     "data": [
       {
-        "aid": 5100002419,
+        "aid": 12427,
         "crm_account_id": null,
         "type": "account",
         "from": "2025-10-23 13:02:37",
@@ -18,7 +18,7 @@
         "invoice_language": "gr_CY",
         "invoice_detailed": false,
         "street": "",
-        "house_number": "2",
+        "house_number": "",
         "apartment": "",
         "province": "",
         "city": "",
@@ -30,15 +30,15 @@
         "deactivation_date": "2200-01-01 02:00:00"
       },
       {
-        "sid": 39150,
-        "aid": 5100002419,
+        "sid": 391487,
+        "aid": 12427,
         "type": "subscriber",
         "from": "2025-10-23 13:04:25",
         "to": "2200-01-01 02:00:00",
-        "plan": "UPFRONT_PLAN_PORATED",
+        "plan": "UPFRONT_PLAN_PORATED_FALSE",
         "play": "MOBILE",
-        "firstname": "xx",
-        "lastname": "zz",
+        "firstname": "",
+        "lastname": "",
         "activation_date": "2025-10-23 13:04:25",
         "deactivation_date": "2200-01-01 02:00:00",
         "plan_activation": "2025-10-23 13:04:25",
@@ -53,18 +53,18 @@
           {
             "priority": "",
             "params": {},
-            "from": "2025-10-23 10:04:25",
+            "from": "2025-11-10 10:04:25",
             "subject": {
               "plan": {
-                "UPFRONT_PLAN_PORATED": {
+                "UPFRONT_PLAN_PORATED_FALSE": {
                   "value": 16.806
                 }
               }
             },
-            "proration": "no",
+            "proration": "yes",
             "cycles": 24,
             "type": "monetary",
-            "to": "2025-12-23 10:04:25",
+            "to": "2025-11-23 10:04:25",
             "description": "",
             "key": "SUBSCRIBER_DISCOUNT_1"
           }
@@ -73,7 +73,7 @@
           {
             "type": "plan",
             "id": null,
-            "key": "UPFRONT_PLAN_PORATED",
+            "key": "UPFRONT_PLAN_PORATED_FALSE",
             "value": {
               "price": [
                 {

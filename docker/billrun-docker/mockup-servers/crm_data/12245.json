@@ -2,7 +2,7 @@
   "status": 1,
   "data": [
     {
-      "aid": 5100002243,
+      "aid": 12245,
       "crm_account_id": null,
       "type": "account",
       "from": "2025-09-17 10:11:54",
@@ -11,7 +11,7 @@
       "lastname": "",
       "title": null,
       "email": null,
-      "invoice_shipping_method": "",
+      "invoice_shipping_method": "post",
       "category": "",
       "sub_category": "",
       "invoice_message": null,
@@ -30,12 +30,12 @@
       "deactivation_date": "2200-01-01 02:00:00"
     },
     {
-      "sid": 39044,
-      "aid": 5100002243,
+      "sid": 39046,
+      "aid": 12245,
       "type": "subscriber",
       "from": "2025-09-17 15:31:43",
       "to": "2200-01-01 02:00:00",
-      "plan": "PLAN_5102_1",
+      "plan": "PLAN_5102_2",
       "play": "MOBILE",
       "firstname": "",
       "lastname": "",
@@ -57,12 +57,12 @@
           "from": "2025-09-17 12:31:43",
           "subject": {
             "plan": {
-              "PLAN_5102_1": {
+              "PLAN_5102_2": {
                 "value": 2.521
               }
             }
           },
-          "proration": "no",
+          "proration": "inherited",
           "type": "monetary",
           "to": "2027-11-17 13:31:43",
           "description": "",
@@ -73,7 +73,7 @@
         {
           "type": "plan",
           "id": null,
-          "key": "PLAN_5102_1",
+          "key": "PLAN_5102_2",
           "value": {
             "price": [
               {

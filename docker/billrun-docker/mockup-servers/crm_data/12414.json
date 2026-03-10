@@ -2,13 +2,13 @@
     "status": 1,
     "data": [
       {
-        "aid": 5100002411,
+        "aid": 12414,
         "crm_account_id": null,
         "type": "account",
         "from": "2025-10-23 13:02:37",
         "to": "2200-01-01 02:00:00",
-        "firstname": "xFx",
-        "lastname": "zzF",
+        "firstname": "xx",
+        "lastname": "zz",
         "title": null,
         "email": null,
         "invoice_shipping_method": "post",
@@ -30,19 +30,19 @@
         "deactivation_date": "2200-01-01 02:00:00"
       },
       {
-        "sid": 39142,
-        "aid": 5100002411,
+        "sid": 39145,
+        "aid": 12414,
         "type": "subscriber",
         "from": "2025-10-23 13:04:25",
-        "to": "2200-01-01 02:00:00",
-        "plan": "UPFRONT_PLAN_PORATED",
+        "to": "2025-12-20 02:00:00",
+        "plan": "UPFRONT_PLAN_PORATED_TERMINATION_FALSE",
         "play": "MOBILE",
-        "firstname": "xxI",
-        "lastname": "zzI",
+        "firstname": "xx",
+        "lastname": "zz",
         "activation_date": "2025-10-23 13:04:25",
-        "deactivation_date": "2200-01-01 02:00:00",
+        "deactivation_date": "2025-12-20 02:00:00",
         "plan_activation": "2025-10-23 13:04:25",
-        "plan_deactivation": "2200-01-01 02:00:00",
+        "plan_deactivation": "2025-12-20 02:00:00",
         "creation_time": null,
         "former_plan": null,
         "services": [],
@@ -53,10 +53,10 @@
           {
             "priority": "",
             "params": {},
-            "from": "2022-10-23 10:04:25",
+            "from": "2025-10-23 10:04:25",
             "subject": {
               "plan": {
-                "UPFRONT_PLAN_PORATED": {
+                "UPFRONT_PLAN_PORATED_TERMINATION_FALSE": {
                   "value": 16.806
                 }
               }
@@ -73,7 +73,7 @@
           {
             "type": "plan",
             "id": null,
-            "key": "UPFRONT_PLAN_PORATED",
+            "key": "UPFRONT_PLAN_PORATED_TERMINATION_FALSE",
             "value": {
               "price": [
                 {
