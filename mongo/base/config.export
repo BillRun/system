@@ -411,8 +411,8 @@
   "email_templates": {
     "invoice_ready": {
         "templates":[{
-            "name": "default_template",
-            "label": "Default template",
+            "name": "default",
+            "label": "Default",
             "conditions": [	
             ],
             "subject": "Your invoice is ready",

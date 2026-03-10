@@ -145,7 +145,7 @@ class EmailTemplate extends Component {
         
         {/* CHANGE 7: Render Tabs based on the 'templates' array in config */}
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={1}>Type</Col>
+          <Col componentClass={ControlLabel} sm={1}>Template</Col>
           <Col sm={11}>
             <ButtonGroup>
               {templateConfig.map((tmpl, index) => {

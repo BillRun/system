@@ -52,8 +52,8 @@
 	"email_templates": {
 		"invoice_ready": {
 			"templates":[{
-				"name": "default_template",
-				"label": "Default template",
+				"name": "default ",
+				"label": "Default",
 				"conditions": [	
 				],
 				"subject": "Your invoice is ready",
@@ -63,8 +63,8 @@
 		},
 		"fraud_notification": {
 			"templates":[{
-				"name": "default_template",
-				"label": "Default template",
+				"name": "default",
+				"label": "Default",
 				"conditions": [	
 				],
 				"subject": "Event [[event_code]] was triggered",
@@ -73,8 +73,8 @@
 		},
 		"email_authentication": {
 			"templates":[{
-				"name": "default_template",
-				"label": "Default template",
+				"name": "default",
+				"label": "Default",
 				"conditions": [	
 				],
 				"subject": "BillRun Customer Portal - Email Address Verification",
@@ -83,8 +83,8 @@
 		},
 		"reset_password": {
 			"templates":[{
-				"name": "default_template",
-				"label": "Default template",
+				"name": "default",
+				"label": "Default",
 				"conditions": [	
 				],
 				"subject": "BillRun Customer Portal - Reset Password",
@@ -93,8 +93,8 @@
 		},
 		"welcome_account": {
 			"templates":[{
-				"name": "default_template",
-				"label": "Default template",
+				"name": "default",
+				"label": "Default",
 				"conditions": [	
 				],
 				"subject": "BillRun Customer Portal - Welcome Account",

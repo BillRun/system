@@ -2124,8 +2124,8 @@ runOnce(lastConfig, 'BRCD-5151', function () {
 			if(typeof oldTemplate['templates'] === 'undefined'){
 				var newTemplate = {
 					"templates": [{
-						name: "default_template",
-						label: "Default template",
+						name: "default",
+						label: "Default",
 						conditions: [	
 						],
 						"subject" : oldTemplate["subject"],
