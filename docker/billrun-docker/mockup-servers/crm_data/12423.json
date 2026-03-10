@@ -2,7 +2,7 @@
     "status": 1,
     "data": [
       {
-        "aid": 5100002424,
+        "aid": 12423,
         "crm_account_id": null,
         "type": "account",
         "from": "2024-10-23 13:02:37",
@@ -18,12 +18,12 @@
         "invoice_language": "gr_CY",
         "invoice_detailed": false,
         "street": "DIMITRIOU PAPANIKOLI",
-        "house_number": "2",
+        "house_number": "",
         "apartment": "",
-        "province": "Lefkosia",
-        "city": "Nicosia",
-        "country": "CY",
-        "zip_code": "1077",
+        "province": "",
+        "city": "",
+        "country": "",
+        "zip_code": "",
         "po_box": "",
         "creation_time": "2025-10-23 13:02:37",
         "activation_date": "2024-10-23 13:04:25",
@@ -31,7 +31,7 @@
       },
       {
         "sid": 39154,
-        "aid": 5100002424,
+        "aid": 12423,
         "type": "subscriber",
         "from": "2024-10-23 13:04:25",
         "to": "2027-11-15 00:00:00",
@@ -49,14 +49,14 @@
           {
             "name": "SERVICE",
             "from": "2024-11-06 16:32:11",
-            "to": "2024-11-23 02:00:00",
+            "to": "2025-11-06 02:00:00",
             "service_id": 47987,
             "creation_time": "2025-11-06 16:32:10"
           }
         ],
         "imsi": [],
-        "sub_number": "35796670808",
-        "portability_code": "PTTEXXPQ",
+        "sub_number": "",
+        "portability_code": "",
         "discounts": [
           {
             "priority": "",

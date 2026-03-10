@@ -126,6 +126,8 @@ class Billrun_Service {
 			$queryTime = new Mongodloid_Date();
 		} else if (!$time instanceof Mongodloid_Date) {
 			$queryTime = new Mongodloid_Date($time);
+		} else {
+			$queryTime = $time;
 		}
 		$serviceQuery = array(
 			$loadByField => $param,

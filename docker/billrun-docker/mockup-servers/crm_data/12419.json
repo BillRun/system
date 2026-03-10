@@ -2,7 +2,7 @@
     "status": 1,
     "data": [
       {
-        "aid": 5100002414,
+        "aid": 12419,
         "crm_account_id": null,
         "type": "account",
         "from": "2025-10-23 13:02:37",
@@ -18,7 +18,7 @@
         "invoice_language": "gr_CY",
         "invoice_detailed": false,
         "street": "",
-        "house_number": "",
+        "house_number": "2",
         "apartment": "",
         "province": "",
         "city": "",
@@ -30,19 +30,19 @@
         "deactivation_date": "2200-01-01 02:00:00"
       },
       {
-        "sid": 39145,
-        "aid": 5100002414,
+        "sid": 39150,
+        "aid": 12419,
         "type": "subscriber",
         "from": "2025-10-23 13:04:25",
-        "to": "2025-12-20 02:00:00",
-        "plan": "UPFRONT_PLAN_PORATED_TERMINATION_FALSE",
+        "to": "2200-01-01 02:00:00",
+        "plan": "UPFRONT_PLAN_PORATED",
         "play": "MOBILE",
         "firstname": "xx",
         "lastname": "zz",
         "activation_date": "2025-10-23 13:04:25",
-        "deactivation_date": "2025-12-20 02:00:00",
+        "deactivation_date": "2200-01-01 02:00:00",
         "plan_activation": "2025-10-23 13:04:25",
-        "plan_deactivation": "2025-12-20 02:00:00",
+        "plan_deactivation": "2200-01-01 02:00:00",
         "creation_time": null,
         "former_plan": null,
         "services": [],
@@ -56,12 +56,12 @@
             "from": "2025-10-23 10:04:25",
             "subject": {
               "plan": {
-                "UPFRONT_PLAN_PORATED_TERMINATION_FALSE": {
+                "UPFRONT_PLAN_PORATED": {
                   "value": 16.806
                 }
               }
             },
-            "proration": "inherited",
+            "proration": "no",
             "cycles": 24,
             "type": "monetary",
             "to": "2025-12-23 10:04:25",
@@ -73,7 +73,7 @@
           {
             "type": "plan",
             "id": null,
-            "key": "UPFRONT_PLAN_PORATED_TERMINATION_FALSE",
+            "key": "UPFRONT_PLAN_PORATED",
             "value": {
               "price": [
                 {

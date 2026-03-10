@@ -2,7 +2,7 @@
     "status": 1,
     "data": [
       {
-        "aid": 5100002593,
+        "aid": 12593,
         "crm_account_id": null,
         "type": "account",
         "from": "2025-12-04 15:57:14",
@@ -32,7 +32,7 @@
       },
       {
         "sid": 39280,
-        "aid": 5100002593,
+        "aid": 12593,
         "type": "subscriber",
         "from": "2025-12-04 15:59:00",
         "to": "2026-01-14 16:07:57",
@@ -62,7 +62,7 @@
                 }
               }
             },
-            "proration": "inherited",
+            "proration": "yes",
             "cycles": 24,
             "type": "monetary",
             "to": "2028-01-14 14:07:57",
@@ -80,7 +80,7 @@
                 }
               }
             },
-            "proration": "inherited",
+            "proration": "yes",
             "cycles": 24,
             "type": "monetary",
             "to": "2026-01-14 14:07:57",
@@ -107,7 +107,7 @@
       },
       {
         "sid": 39280,
-        "aid": 5100002593,
+        "aid": 12593,
         "type": "subscriber",
         "from": "2026-01-14 16:07:57",
         "to": "2200-01-01 02:00:00",
@@ -137,7 +137,7 @@
                 }
               }
             },
-            "proration": "inherited",
+            "proration": "yes",
             "cycles": 24,
             "type": "monetary",
             "to": "2028-01-14 14:07:57",
@@ -155,7 +155,7 @@
                 }
               }
             },
-            "proration": "inherited",
+            "proration": "yes",
             "cycles": 24,
             "type": "monetary",
             "to": "2026-01-14 14:07:57",

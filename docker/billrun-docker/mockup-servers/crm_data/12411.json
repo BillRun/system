@@ -2,13 +2,13 @@
     "status": 1,
     "data": [
       {
-        "aid": 5100002417,
+        "aid": 12411,
         "crm_account_id": null,
         "type": "account",
         "from": "2025-10-23 13:02:37",
         "to": "2200-01-01 02:00:00",
-        "firstname": "xx",
-        "lastname": "zz",
+        "firstname": "",
+        "lastname": "",
         "title": null,
         "email": null,
         "invoice_shipping_method": "post",
@@ -30,15 +30,15 @@
         "deactivation_date": "2200-01-01 02:00:00"
       },
       {
-        "sid": 39148,
-        "aid": 5100002417,
+        "sid": 39142,
+        "aid": 12411,
         "type": "subscriber",
         "from": "2025-10-23 13:04:25",
         "to": "2200-01-01 02:00:00",
-        "plan": "UPFRONT_PLAN_PORATED_FALSE",
+        "plan": "UPFRONT_PLAN_PORATED",
         "play": "MOBILE",
-        "firstname": "xx",
-        "lastname": "zz",
+        "firstname": "xxI",
+        "lastname": "zzI",
         "activation_date": "2025-10-23 13:04:25",
         "deactivation_date": "2200-01-01 02:00:00",
         "plan_activation": "2025-10-23 13:04:25",
@@ -53,10 +53,10 @@
           {
             "priority": "",
             "params": {},
-            "from": "2025-11-10 10:04:25",
+            "from": "2022-10-23 10:04:25",
             "subject": {
               "plan": {
-                "UPFRONT_PLAN_PORATED_FALSE": {
+                "UPFRONT_PLAN_PORATED": {
                   "value": 16.806
                 }
               }
@@ -64,7 +64,7 @@
             "proration": "inherited",
             "cycles": 24,
             "type": "monetary",
-            "to": "2025-11-23 10:04:25",
+            "to": "2025-12-23 10:04:25",
             "description": "",
             "key": "SUBSCRIBER_DISCOUNT_1"
           }
@@ -73,7 +73,7 @@
           {
             "type": "plan",
             "id": null,
-            "key": "UPFRONT_PLAN_PORATED_FALSE",
+            "key": "UPFRONT_PLAN_PORATED",
             "value": {
               "price": [
                 {
