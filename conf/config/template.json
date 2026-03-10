@@ -238,7 +238,7 @@
 	"subscribers":{
 		"subscriber" :{"type":"","external_url":"","timeout":""},
         "account" :{"type":"","external_url":"","timeout":""},
-        "billable"  :{ "external_url":"" }
+        "billable"  :{ "url":""}
       
 	}
 }

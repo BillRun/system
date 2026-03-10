@@ -356,7 +356,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$unifyConf  = $this->unificationFields[$newRow['type']][$lineType] ?? ($this->unificationFields[$newRow['type']]['default']?? null);
 		$typeData = $unifyConf['unification_fields'];
 		$serialize_array = array();
-		$arategroupsCount = isset($newRow['arategroups']) ? count($newRow['arategroups']) : 0;
 		foreach ($typeData['stamp']['value'] as $type => $field) {
 			if($type === 'custom_value'  || $type === 'calculated_fields' ){
 				continue;
@@ -388,11 +387,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		if (($dateSeparationValue = $this->getDateSeparation($newRow, $typeData)) !== FALSE) {
 			$serialize_array['dateSeperation'] = $dateSeparationValue;
-		}
-		if (isset($newRow['arategroups']) && $arategroupsCount > 0) {
-			$currentArategroup = current($newRow['arategroups']);
-			$arategroupsArray = array('name' => $currentArategroup['name'], 'count' => $arategroupsCount);
-			Billrun_Util::setIn($serialize_array, 'arategroups', $arategroupsArray);
 		}
 		return Billrun_Util::generateArrayStamp($serialize_array);
 	}
@@ -543,6 +537,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected function limitGroupsSize($line) {
 		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
 		$taxes = isset($line['tax_data']['taxes']) ? $line['tax_data']['taxes'] : array();
+		// Filter out items where counter_only is true
+		$arategroups = array_filter($arategroups, fn($group) => 
+			!isset($group['counter_only']) || $group['counter_only'] !== true
+		);
 		if (count($arategroups) > 1 || count($taxes) > 1) {
 			return false;
 		}
