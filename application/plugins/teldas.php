@@ -1486,7 +1486,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           "display" => true,
           "nullable" => false,
           /*
-          '{
+          '[{
             "line_type": "Teles", 
             "duration": {
                 "path": "uf.Duration", 
@@ -1508,7 +1508,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
                 "type": "ina_vas_call", 
                 "unit": "seconds"
             }
-          }'*/
+          }]'*/
         ],
         [
           'type' => 'boolean',
