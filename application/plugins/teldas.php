@@ -33,6 +33,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $this->teldasUser = Billrun_Util::getIn($options, 'user', '');
     $this->teldasPassword = Billrun_Util::getIn($options, 'password', '');
     $matchingPaths = Billrun_Util::getIn($options, 'matching_paths', '');
+    if(!is_array($matchingPaths)){
+        $matchingPaths = [$matchingPaths];
+    }
     foreach($matchingPaths as $matchingPathsConf){
         $this->matchingPathsByType[$matchingPathsConf['line_type']] = $matchingPathsConf;
     }
