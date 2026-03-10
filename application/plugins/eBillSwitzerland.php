@@ -858,7 +858,7 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 		// Compare using rounding to avoid floating-point precision issues
 		if (round($totalLineItemsAprice, 5) !== round($totalsBeforeVat, 5)) {
 			$aid = $accountBillrun['aid'];
-			Billrun_Factory::log("eBill Plugin: invoice total cost (totals.before_vat: {$totalsBeforeVat}) does not match eBill total cost (sum of aprice: {$totalLineItemsAprice}). Aborting XML generation for AID: {$aid}", Zend_Log::ERR);
+			Billrun_Factory::log("eBill Plugin: invoice total cost (totals.before_vat: {$totalsBeforeVat}) does not match eBill total cost (sum of aprice: {$totalLineItemsAprice}). Aborting XML generation for AID: {$aid}", Zend_Log::ALERT);
 			return false;
 		}
 
