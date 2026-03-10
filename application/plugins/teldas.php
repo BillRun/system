@@ -1156,7 +1156,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   protected function convertDestNumberToSubscriberNumber($destNumber, $matchingPaths){
-      $convertPatterns = Billrun_Util::getIn($matchingPaths, 'subscriber_number.convertion',[]);
+      $convertPatterns = Billrun_Util::getIn($matchingPaths, 'subscriber_number.conversion',[]);
       foreach($convertPatterns as $convert){
         $pattern = $convert['pattern'] ?? '';
         $replacement = $convert['replacement'] ?? '';
@@ -1494,7 +1494,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             }, 
             "subscriber_number": {
                 "path": "uf.Dest_Number",
-                "convertion": [{ 
+                "conversion": [{ 
                     'pattern':'/^\\+41(?=\\d{4}$)/',
                     'replacement':''
                   },
