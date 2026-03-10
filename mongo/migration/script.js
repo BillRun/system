@@ -2125,7 +2125,11 @@ runOnce(lastConfig, 'BRCD-5190', function () {
 
 				if (typeof configValues !== 'undefined' && typeof configValues.matching_paths !== 'undefined') {
 					var paths = configValues.matching_paths;
-					if (typeof paths === 'object' && !Array.isArray(paths)) {				
+					if (typeof paths === 'object' && !Array.isArray(paths)) {
+						if(typeof paths.subscriber_number.convertion !== 'undefined'){
+							paths.subscriber_number.conversion = paths.subscriber_number.convertion;
+							delete paths.subscriber_number.convertion;
+						}
 						lastConfig.plugins[i].configuration.values.matching_paths = [paths];
 					}
 				}
