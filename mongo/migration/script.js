@@ -84,7 +84,7 @@ function _dropIndex(collname, indexname) {
 }
 
 // =============================================================================
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty().next();
+var lastConfig = db.config.find().sort({urt: -1, _id: -1}).limit(1).pretty().next();
 delete lastConfig['_id'];
 // =============================================================================
 
@@ -1312,6 +1312,13 @@ _dropIndex("archive", "sid_1_session_id_1_request_num_");
 _dropIndex("archive", "session_id_1_request_num_");
 _dropIndex("archive", "sid_1_call_reference_1");
 _dropIndex("archive", "call_reference_1");
+db.audit.createIndex({'stamp': 1 },  { unique: true });
+db.audit.createIndex({'type': 1 }, { unique: false , sparse: true, background: true });
+db.audit.createIndex({'key': 1 }, { unique: false , sparse: false, background: true });
+db.audit.createIndex({'collection': 1 }, { unique: false , sparse: false, background: true });
+db.audit.createIndex({'urt': 1 }, { unique: false , sparse: false, background: true });
+db.audit.createIndex({'user.name': 1 }, { unique: false , sparse: false, background: true });
+
 if (db.serverStatus().ok == 0) {
 	print('Cannot shard archive collection - no permission')
 } else if (db.serverStatus().process == 'mongos') {
@@ -2071,6 +2078,11 @@ lastConfig = runOnce(lastConfig, 'BRCD-3218', function () {
 	db.operations.createIndex({ 'start_time': 1 }, { expireAfterSeconds: 5256000 });
 });
 
+// BRCD-4430: Create index for config collection on urt field
+runOnce(lastConfig, 'BRCD-4430', function () {
+	db.config.createIndex({ urt: -1 }, { unique: false, background: true });
+});
+
 runOnce(lastConfig, 'BRCD-4739', function () {
 	lastConfig['plugins'].push({
 		"name": "teldasPlugin",
@@ -2078,18 +2090,19 @@ runOnce(lastConfig, 'BRCD-4739', function () {
 		"system": true,
 		"hide_from_ui": true
 	})
-	db.createCollection('plugin_teldas_ina_numbers');
+	_createCollection('plugin_teldas_ina_numbers');
 	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
-	db.createCollection('plugin_teldas_tariffs_profiles');
+	_createCollection('plugin_teldas_tariffs_profiles');
 	db.plugin_teldas_tariffs_profiles.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariffs_profiles_unique_index" });
-	db.createCollection('plugin_teldas_tariff_switching_classes');
-	db.createCollection("plugin_teldas_non_working_days"); 
+	_createCollection('plugin_teldas_tariff_switching_classes');
+	_createCollection("plugin_teldas_non_working_days"); 
 });
 
 runOnce(lastConfig, 'BRCD-4948', function () {
 	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariff_switching_classes_unique_index" });
 });
 
+lastConfig.urt = new Date();
 if (typeof lastConfig['export'] === 'undefined') {
 	lastConfig.export = 1;
 }
@@ -2097,6 +2110,11 @@ runOnce(lastConfig, 'BRCD-4966', function () {
 	db.billing_cycle.createIndex({'billrun_key': 1, 'page_number': 1, 'page_size': 1}, { unique: true , background: true });
 	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'end_time':1},{ unique: false , sparse: false, background: true });
 	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'count':1,'invoicing_day':1},{ unique: false , sparse: false, background: true });
+});
+
+runOnce(lastConfig, 'BRCD-4966', function () {
+	print("Creating new subscribers index: { aid: 1, type: 1, from: 1, to: 1 }...");
+	db.subscribers.createIndex({'aid':1,'type':1,'from': 1 , 'to': 1}, { unique: false, sparse: false, background: true });
 });
 
 runOnce(lastConfig, 'BRCD-5151', function () {
@@ -2122,6 +2140,7 @@ runOnce(lastConfig, 'BRCD-5151', function () {
 
 	}
 });
+
 
 db.config.insertOne(lastConfig);
 

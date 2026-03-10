@@ -739,7 +739,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					$paymentParams['billrun_key'] = $billDetails['billrun_key'];
 					$gatewayDetails['currency'] = !empty($billDetails['currency']) ? $billDetails['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 					$gatewayName = $gatewayDetails['name'];
-					$gatewayInstanceName = $gatewayDetails['instance_name'];
+					$gatewayInstanceName = $gatewayDetails['instance_name'] ?? $gatewayDetails['name']; // temp fix for BRCD-4010
 					if (!empty($chargeOptions['uf'])) {
 						$paymentParams['uf'] = $chargeOptions['uf'];
 					}
