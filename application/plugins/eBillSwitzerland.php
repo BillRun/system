@@ -462,6 +462,10 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 
 	public function afterInvoiceConfirmed($bill, $invoice)
 	{
+		if (!$this->shouldGenerateInvoice($invoice)) {
+			return;
+		}
+
 		$xmlPath = $this->getEbillXmlPath($invoice);
 		if (!empty($xmlPath)) {
 			$this->xmlFullPath = $xmlPath;
@@ -469,12 +473,17 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 			Billrun_Factory::log("eBill Plugin: Uploading confirmed invoice XML from: " . $this->xmlFullPath, Zend_Log::INFO);
 			$this->uploadToSftp();
 		} else {
-			Billrun_Factory::log("eBill Plugin: No 'invoice_swiss_ebill_xml' path found for invoice confirmation.", Zend_Log::DEBUG);
+			Billrun_Factory::log("eBill Plugin: No 'invoice_swiss_ebill_xml' path found for invoice confirmation, eBill invoice was not uploaded to SFTP", Zend_Log::ALERT);
 		}
 	}
 
 	public function beforeInvoiceConfirmed($bill, $invoice, &$should_be_confirmed)
 	{
+		if (!$this->shouldGenerateInvoice($invoice)) {
+			return;
+		}
+			
+		
 		if (empty($this->getEbillXmlPath($invoice))) {
 			$should_be_confirmed = false;
 			Billrun_Factory::log("eBill Plugin: Blocking invoice confirmation. 'invoice_swiss_ebill_xml' path is missing for invoice ID: " . ($invoice['invoice_id'] ?? 'unknown'), Zend_Log::ERR);
