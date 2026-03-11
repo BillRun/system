@@ -19,15 +19,12 @@ $secret = 'YOUR_SECRET';
 $payrexx = new \Payrexx\Payrexx($instanceName, $secret);
 
 $transaction = new \Payrexx\Models\Request\Transaction();
-$transaction->setFilterDatetimeUtcGreaterThan(new \DateTime('2019-12-01 00:00:00'));
-$transaction->setFilterDatetimeUtcLessThan(new \DateTime('2020-10-01 00:00:00'));
-$transaction->getFilterMyTransactionsOnly(true);
-$transaction->setOrderByTime('ASC');
-$transaction->setOffset(40);
-$transaction->setLimit(20);
+$transaction->setId(1);
+// Amount in cents
+$transaction->setAmount(1.00 * 100);
 
 try {
-    $response = $payrexx->getAll($transaction);
+    $response = $payrexx->preAuthorize($transaction);
     var_dump($response);
 } catch (\Payrexx\PayrexxException $e) {
     print $e->getMessage();
