@@ -483,7 +483,6 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 			return;
 		}
 			
-		
 		if (empty($this->getEbillXmlPath($invoice))) {
 			$should_be_confirmed = false;
 			Billrun_Factory::log("eBill Plugin: Blocking invoice confirmation. 'invoice_swiss_ebill_xml' path is missing for invoice ID: " . ($invoice['invoice_id'] ?? 'unknown'), Zend_Log::ERR);
