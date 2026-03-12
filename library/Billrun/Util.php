@@ -1989,7 +1989,7 @@ class Billrun_Util {
 	 * @param array $conditions - array of condtions includes the following attributes: "field_name", "op", "value"
 	 * @return boolean
 	 */
-	public static function isConditionsMet($row, $conditions) {
+	public static function areConditionsMet($row, $conditions) {
 		foreach ($conditions as $condition) {
 			if (!Billrun_Util::isConditionMet($row, $condition)) {
 				return false;

@@ -1381,7 +1381,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   protected function lineMatchConditions($line, $matchingPaths){
-    if (isset($matchingPaths['conditions']) && !Billrun_Util::isConditionsMet($line, $matchingPaths['conditions'])) {
+    if (isset($matchingPaths['conditions']) && !Billrun_Util::areConditionsMet($line, $matchingPaths['conditions'])) {
         Billrun_Factory::log("Line should not be mapped for teldas. conditions: " . print_r($$matchingPaths['conditions'], true) . ". Line details: " . print_r($line, true), Zend_Log::INFO);
         return false;
     }
