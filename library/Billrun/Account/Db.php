@@ -83,7 +83,7 @@ class Billrun_Account_Db extends Billrun_Account {
 			['$group' => [                         // group by aid
 				'_id' => '$aid'
 			]],
-			['$sort' => ['aid' => 1]],
+			['$sort' => ['_id' => 1]],
 			['$skip' => $page * $size],
 			['$limit' => $size],
 			['$project' => [
