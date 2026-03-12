@@ -8,6 +8,9 @@ class Billrun_DiscountManager {
 	use Billrun_Traits_ConditionsCheck;
 	use Billrun_Traits_ForeignFields;
 
+	const PRORATION_YES = 'yes';
+    const PRORATION_NO = 'no';
+    const PRORATION_INHERITED = 'inherited';
 	protected $cycle = null;
 	protected $eligibleDiscounts = [];
 	protected $eligibleCharges = [];
@@ -1200,6 +1203,7 @@ class Billrun_DiscountManager {
 					Billrun_Factory::log("Cannot get '{$key}', CDR was not generated", Billrun_Log::ERR);
 					continue;
 				}
+				Billrun_Factory::dispatcher()->trigger('beforeGenerateDiscountCdrs', array(&$entity, $type, $lines, $eligibility));
 
 				$currentCdrs = $this->generateDiscountCdrs($type, $lines, $entity, $eligibility);
 				if ($currentCdrs) {
@@ -1360,7 +1364,7 @@ class Billrun_DiscountManager {
 	 */
 	protected function getLineEligibility($line, $discount, $eligibility) {
 		$ret = [];
-		$lineEligibility = $this->getLineFullEligibility($line);
+		$lineEligibility = $this->getLineFullEligibility($line, $discount);
 		$valuesEligibility = $this->getLineValueEligibility($line, $discount, $eligibility);
 		
 		foreach ($valuesEligibility as $valueEligibility) {
@@ -1375,15 +1379,15 @@ class Billrun_DiscountManager {
 				$from = $currValueEligibilityInterval['from'];
 				$to = $currValueEligibilityInterval['to'];
 				if ($from < $to) {
-					$amount = $this->calculateDiscountAmount($discount, $line, $value, $from, $to, $operations, $sequential);
+					$res = $this->calculateDiscountAmount($discount, $line, $value, $from, $to, $operations, $sequential);
 					$ret[] = [
 						'from' => $from,
 						'to' => $to,
-						'amount' => $amount,
+						'amount' => $res['amount'],
 						'discountDays' => Billrun_Utils_Time::getDaysDiff($from, $to),
 						'sid' =>  $valueEligibility['sid'] ?? null,
-						'start' => $this->start ?? null,
-						'end' => $this->end ?? null
+						'start' => $res['start'] ?? null,
+						'end' => $res['end'] ?? null
 
 					];
 		}
@@ -1486,6 +1490,8 @@ class Billrun_DiscountManager {
 	 * @return float
 	 */
 	protected function calculateDiscountAmount($discount, $line, $value, &$from, &$to, $operations = [], $sequential = false) {
+		$discountEligibilityFrom = $from;
+		$discountEligibilityTo = $to;
 		$isPercentage = Billrun_Util::getIn($discount, 'type', 'percentage') === 'percentage';
 		$isSequential = $isPercentage && $sequential;
 		$isUpfront = $line['is_upfront'] ?? false;
@@ -1493,40 +1499,34 @@ class Billrun_DiscountManager {
 		$discountTo = $discount['to']->sec ?? $this->cycle->end();
 		$allwaysProratedFlag = Billrun_Factory::config()->getConfigValue('discounts.always_prorated', false);
 		$cycles  = $discount['params']['cycles'] ??  null;
-		if ($this->isDiscountProrated($discount, $line)) {
-			$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
-			$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
-			if (!$proratedStart) {
-				$from = $allwaysProratedFlag ? max($discountFrom, $this->cycle->start()) :$this->cycle->start();
-			}else if (isset($line['start'])) {
-				$start = Billrun_Utils_Time::getTime($line['start']);
-				if(isset($line['is_upfront']) && $line['is_upfront']){
-					$start = $start == $this->cycle->end() ? $this->cycle->start() : $start;
-				}
-				$from = max($discountFrom, $from, $start);
-				
-			} else if (isset($line['start_date'])) {
-				$from = max($discountFrom ?? $from, $from, Billrun_Utils_Time::getTime($line['start_date']));
+		$discountStartProrated =  $this->isDiscountProratedStart($discount, $line);
+		$discountEndProrated = $this->isDiscountProratedEnd($discount, $line);
+		if ($discountStartProrated) {
+			$start = Billrun_Utils_Time::getTime($line['start']);
+			if(isset($line['is_upfront']) && $line['is_upfront']){
+				$start = $this->cycle->start();
 			}
-			if (!$proratedEnd) {
-				$to = $allwaysProratedFlag ? min($discountTo, $this->cycle->end()): $this->cycle->end();
-			} else if (isset($line['end'])) {
-				if(isset($line['charge_op']) && $line['charge_op'] ==  "refund"){
-					$to = min($discountTo , $to + 1, Billrun_Utils_Time::getTime($line['start']) + 1);
-				}else{
-					$to = min($discountTo , $to, Billrun_Utils_Time::getTime($line['end']));
-				}
-			} else if (isset($line['end_date'])) {
-				$to = min($discountTo, $to, Billrun_Utils_Time::getTime($line['end_date']));
+			$from = max($discountFrom, $discountEligibilityFrom, $start);
+			$lineStart = $from;
+		}else{
+			$from = $this->cycle->start();
+		}
+		if ($discountEndProrated) {
+			$end = Billrun_Utils_Time::getTime($line['end']) ?? $this->cycle->end();
+			if(isset($line['charge_op']) && $line['charge_op'] ==  "refund"){
+				$to = min($discountTo , $discountEligibilityTo + 1, Billrun_Utils_Time::getTime($line['start']) + 1);
+			}else{
+				$to = min($discountTo , $discountEligibilityTo, $end);
 			}
-			$this->start = $from;
-			$this->end = $to;
-		} 
+			$lineEnd = $to;
+		}else{
+			$to = $this->cycle->end();
+		}
+		Billrun_Factory::dispatcher()->trigger('beforeCalculateDiscountAmount', array($discount, $this->cycle, &$from, &$to, &$lineStart, &$lineEnd, $discountEligibilityFrom, $discountEligibilityTo));
 		if(isset($cycles)){
-			$proratedStart = isset($proratedStart) ? $proratedStart : false;
-			$startTime =  $proratedStart ? Billrun_Utils_Time::getTime($line['start_date']) :  Billrun_Billingcycle::getBillrunStartTimeByTimestamp(Billrun_Utils_Time::getTime($line['start_date']), $this->cycle->invoicingDay());;
+			$startTime =  $discountStartProrated ? Billrun_Utils_Time::getTime($line['start_date']) :  Billrun_Billingcycle::getBillrunStartTimeByTimestamp(Billrun_Utils_Time::getTime($line['start_date']), $this->cycle->invoicingDay());;
 			$toByCycles = strtotime("+{$cycles} months", $startTime);
-			if(!$proratedEnd && $toByCycles < $this->cycle->end()){
+			if(!$discountEndProrated && $toByCycles < $this->cycle->end()){
 				$toByCycles = $this->cycle->start();
 			}
 			$to = min($to, $toByCycles, $this->cycle->end());
@@ -1537,7 +1537,7 @@ class Billrun_DiscountManager {
 			}else{
 				$flatAmount = $amount = $this->getDiscountAmount($discount, $line, $value, $operations);
 			}
-			if ($this->isDiscountProrated($discount, $line)) {
+			if ($discountStartProrated || $discountEndProrated) {
 				$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to, 'ceil');
 				$cycleDays = $this->cycle->days();
 				if ($discountDays < $cycleDays) {
@@ -1554,27 +1554,29 @@ class Billrun_DiscountManager {
 						if($to < $this->cycle->start()){
 							$amount = 0;
 						}else if($to < $this->cycle->end() || $discountTo <= $this->cycle->end()){
-						 	$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line);
+						 	$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line,  $lineStart, $lineEnd);
 						}else if($from > $this->cycle->start() && isset($line['split']) && !$line['split']){
 							$amount += $flatAmount;
 						}else{
-							$this->start = Billrun_Utils_Time::getTime($line['start']);
-							$this->end = Billrun_Utils_Time::getTime($line['end']);
+							$lineStart = Billrun_Utils_Time::getTime($line['start']);
+							$lineEnd = Billrun_Utils_Time::getTime($line['end']);
 							$amount = $flatAmount;
 						}
 					}else{
-						$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line);
+						$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line,  $lineStart, $lineEnd);
 					}
 				}
 			}else{
 				if($isUpfront) {
-					if($from > $this->cycle->start() && $to < $this->cycle->end()){
-						$this->start = $this->cycle->start();
-						$this->end = $this->cycle->end();
+					if($from > $this->cycle->start() && $to < $this->cycle->end() ||
+						$discountFrom > $this->cycle->start() && $discountTo < $this->cycle->end()
+					){
+						$lineStart = $this->cycle->start();
+						$lineEnd = $this->cycle->end();
 						$amount = $amount;
 					} elseif($to < $this->cycle->end() || 
-						(isset($line['charge_op']) && $line['charge_op'] ==  "refund" && Billrun_Utils_Time::getTime($line['start']) + 1 < $this->cycle->end())){
-						//do not give discount on current month if the discount finish in the previous month
+						$discountTo < $this->cycle->end() ||
+						(isset($line['charge_op']) && $line['charge_op'] ==  "refund" && Billrun_Utils_Time::getTime($line['start']) + 1 < $this->cycle->end())){						//do not give discount on current month if the discount finish in the previous month
 						$amount = 0;
 					}
 				}
@@ -1582,27 +1584,33 @@ class Billrun_DiscountManager {
 		} else {
 			$amount = $this->calcSeqDiscountAmount($from, $to, $line, $value);
 		}
-		return $amount;
+		Billrun_Factory::dispatcher()->trigger('afterCalculateDiscountAmount', array($discount, &$amount, &$lineStart, &$lineEnd, $line, $value, $from, $to, $operations, $sequential));
+		$res = [
+			'amount' => $amount,
+			'start' => $lineStart,
+			'end' => $lineEnd
+		];
+		return $res;
 	}
 
-	protected function calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line){
+	protected function calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line,  &$lineStart, &$lineEnd){
 
-		if(!$this->calculateDiscountAmountForUpfrontLineStartInMiddle($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line)){	
-			$this->start = $to;
-			$this->end = $this->cycle->end();
+		if(!$this->calculateDiscountAmountForUpfrontLineStartInMiddle($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line,  $lineStart, $lineEnd)){	
+			$lineStart = $to;
+			$lineEnd = $this->cycle->end();
 			$amount = $amount - $flatAmount;
 		}
 		return $amount;
 	}
 
-	protected function calculateDiscountAmountForUpfrontLineStartInMiddle($discountFrom, $discountTo, $from, $to, $cycleDays, &$amount, $flatAmount, $line){
+	protected function calculateDiscountAmountForUpfrontLineStartInMiddle($discountFrom, $discountTo, $from, $to, $cycleDays, &$amount, $flatAmount, $line,  &$lineStart, &$lineEnd){
 		if( $from > $this->cycle->start() && $from != $this->cycle->end()){
 			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to, 'ceil');//todo::need to check i think this should be floor 
 			if ($discountDays < $cycleDays) {
 				$amount = $flatAmount * ($discountDays / $cycleDays);
 			}
-			$this->start = $from;
-			$this->end = $to;
+			$lineStart = $from;
+			$lineEnd = $to;
 			return true;
 
 		}
@@ -1621,7 +1629,8 @@ class Billrun_DiscountManager {
 	protected function getDiscountAmount($discount, $line, $value, $operations) {
 		$isPercentage = Billrun_Util::getIn($discount, 'type', 'percentage') === 'percentage';
 		$lineQuantity = Billrun_Util::getIn($line, 'usagev', 1);
-		$price = $isPercentage ? $line['full_price'] * $lineQuantity : $value;
+		$field = $this->getPercentageOnField($discount);
+		$price = $isPercentage ? $line[$field] * $lineQuantity : $value;
 		if (empty($operations)) {
 			$ret = $isPercentage ? $price * $value : $price;
 		} else {
@@ -1673,27 +1682,72 @@ class Billrun_DiscountManager {
 	}
 	
 	/**
-	 * whether or not the discount is prorated
+	 * whether or not the discount start is prorated
 	 * 
 	 * @param array $discount
 	 * @param array $line
 	 * @return boolean
 	 */
-	protected function isDiscountProrated($discount, $line) {
-		$proration = Billrun_Util::getIn($discount, 'proration', 'inherited');
-		if ($proration === 'no') {
+	protected function isDiscountProratedStart($discount, $line) {
+		$proration = $this->getDiscountProrationByPhase($discount, 'start');
+		if ($proration === self::PRORATION_NO) {
 			return false;
 		}
-		
+		if ($proration === self::PRORATION_YES) {
+			return true;
+		}
 		$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
-		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
-		$allwaysProratedFlag = Billrun_Factory::config()->getConfigValue('discounts.always_prorated', false);
-		return ($proratedStart && $proratedEnd) ||
-                ($proratedStart && (isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) ) || 
-                ($proratedEnd && (isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end())) ) ||
-                $allwaysProratedFlag ||
-					(isset($line['is_upfront']) && $line['is_upfront'] && ($proratedStart || $proratedEnd))	;
+		return $proratedStart;
 		
+	}
+	/**
+	 * whether or not the discount end is prorated
+	 * 
+	 * @param array $discount
+	 * @param array $line
+	 * @return boolean
+	 */
+	protected function isDiscountProratedEnd($discount, $line) {
+		$proration = $this->getDiscountProrationByPhase($discount, 'end');
+		if ($proration === self::PRORATION_NO) {
+			return false;
+		}
+		if ($proration === self::PRORATION_YES) {
+			return true;
+		}
+		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
+		return $proratedEnd;
+		
+	}
+
+	protected function validProrationValue($prorationValue){
+		$vailedProrationValues = [self::PRORATION_YES, self::PRORATION_NO, self::PRORATION_INHERITED];
+		if(in_array($prorationValue, $vailedProrationValues)){
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Resolve the proration value for a discount per phase.
+	 *
+	 * The method checks for a phase-specific proration value (prorated_start, prorated_end),
+	 * validates it, and falls back to the general proration value or inherited.
+	 *
+	 * @param array  $discountData Discount configuration data
+	 * @param string $phase        Proration phase (e.g. 'start', 'end')
+	 *
+	 * @return string Resolved proration value
+	 */
+	protected function getDiscountProrationByPhase($discountData, $phase = 'start'){
+		$prorationTypeValue = Billrun_Util::getIn($discountData, 'prorated_' . $phase, null);
+		$proration = Billrun_Util::getIn($discountData, 'proration', self::PRORATION_INHERITED);
+		if(isset($prorationTypeValue) && $this->validProrationValue($prorationTypeValue)){
+			$proration = $prorationTypeValue;
+		}else if(!$this->validProrationValue($proration)){
+			$proration = self::PRORATION_INHERITED;//default if not valid
+		}
+		return $proration;
 	}
 	
 	/**
@@ -1712,14 +1766,16 @@ class Billrun_DiscountManager {
 	 * @param array $line
 	 * @return array
 	 */
-	protected function getLineFullEligibility($line) {
+	protected function getLineFullEligibility($line, $discount) {
 		$isUpfront = $line['is_upfront'] ?? false;
-		return [
+		$lineFullEligibility = [
 			[
 				'from' => ($isUpfront == true ? $this->cycle->start() : (isset($line['start']) ? Billrun_Utils_Time::getTime($line['start']) : (isset($line['start_date']) ? Billrun_Utils_Time::getTime($line['start_date']) : $this->cycle->start()))),
 				'to' => ($isUpfront == true ? $this->cycle->end() : (isset($line['end']) ? Billrun_Utils_Time::getTime($line['end']) : (isset($line['end_date']) ? Billrun_Utils_Time::getTime($line['end_date']) : $this->cycle->end()))),
 			],
 		];
+		Billrun_Factory::dispatcher()->trigger('afterGetLineFullEligibility', array(&$lineFullEligibility, $discount, $this->cycle, $line));
+		return $lineFullEligibility;
 	}
 	
 	/**
@@ -1867,5 +1923,96 @@ class Billrun_DiscountManager {
 			];
 		}
 		return $discountLine;
+	}
+
+	protected function getPercentageOnField($discount){
+		$defualtField = 'full_price';
+		$vailedProrationOnFields = [$defualtField, 'aprice'];
+		$field = Billrun_Util::getIn($discount, 'percentage_on_field', $defualtField);
+		if(in_array($field,  $vailedProrationOnFields)){
+			return $field;
+		}
+		return $defualtField;
+	}
+
+	public static function applyEntityCacheChange($new, $old){
+		if( !empty(self::$discounts)){//only for tests support (insert discount on runtime)
+			
+			if($old == null && $new == null){
+				return;
+			}else if($old == null){
+				$old = $new;
+			}
+			$id = strval($old['_id']);
+			if($new == null){//remove
+				//still not checked (no codecetion test remove discount)
+				$entityFrom   = $old['from'];
+				$entityTo     = strtotime($old['to']);
+				$discountKey  = $old['key'];
+				foreach (self::$discounts as $billrunKey => $discountsForKey) {
+
+					$billrunStart = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($billrunKey));
+					$billrunEnd   = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrunKey));
+			
+					// Check intersection with this billrun
+					if (!($entityFrom < $billrunEnd->sec && $entityTo > $billrunStart->sec)) {
+						continue;
+					}
+					if(isset(self::$discounts[$billrunKey][$discountKey])){
+						unset(self::$discounts[$billrunKey][$discountKey]);
+					}
+				}
+
+			}else{
+				$entityFrom   = $new['from']->sec;
+				$entityTo     = $new['to']->sec;
+				$discountKey  = $new['key'];
+				foreach (self::$discounts as $billrunKey => $discountsForKey) {
+					
+					$billrunStart = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($billrunKey));
+					$billrunEnd   = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrunKey));
+			
+					// Check intersection with this billrun
+					if (!($entityFrom < $billrunEnd->sec && $entityTo > $billrunStart->sec)) {
+						continue;
+					}
+					if (!isset(self::$discounts[$billrunKey][$discountKey])) {//insert
+						self::$discounts[$billrunKey][$discountKey] = $new;
+
+					}else{//update
+						//still not checked (no codecetion test update discount)
+						$oldEntity =  self::$discounts[$billrunKey][$discountKey];
+						if($entityFrom == $oldEntity['to']){
+							self::$discounts[$billrunKey][$discountKey] = $new;
+							self::$discounts[$billrunKey][$discountKey]['from'] = $oldEntity['from'];
+						}
+					}
+								
+					// Resort the discounts under this billrun
+					self::$discounts[$billrunKey] = self::sortDiscounts(self::$discounts[$billrunKey]);
+				}		
+			}
+			
+			
+		}
+	
+		return true;
+	
+	}
+
+	private static function sortDiscounts($discounts) {
+		uasort($discounts, function($a, $b) {
+			// priority DESC
+			if ($a['priority'] != $b['priority']) {
+				return $a['priority'] > $b['priority'] ? -1 : 1;
+			}
+			// to DESC
+			return $a['to'] > $b['to'] ? -1 : 1;
+		});
+		return $discounts;
+	}
+
+	public static function resetDiscountsCache(){
+		self::$discounts= [];
 	}
 }

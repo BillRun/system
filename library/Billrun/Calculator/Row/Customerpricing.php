@@ -602,7 +602,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				'disableCache' => true,
 				'plan_included' => isset($service['plan_included']) ? $service['plan_included'] : false,
 			);
-			
+
+			$isRealtime = isset($this->row['realtime']) ? $this->row['realtime'] : false;
+			if ($isRealtime) {
+				$serviceSettings['disable_service_cache'] = true;
+			}
+
 			if (isset($service['from']->sec)) {
 				$serviceSettings['service_start_date'] = $service['from']->sec;
 			}

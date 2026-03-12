@@ -22,6 +22,8 @@ class All extends \Codeception\Module
         $plans->remove(['_id'=>['$exists' => true]]);
         $discounts = \Billrun_Factory::db()->discountsCollection();
         $discounts->remove(['_id'=>['$exists' => true]]);
+        $charges = \Billrun_Factory::db()->chargesCollection();
+        $charges->remove(['_id'=>['$exists' => true]]);
         $billruns =\Billrun_Factory::db()->billrunCollection();
         $billruns->remove(['_id'=>['$exists' => true]]);
         $billing_cycleCollection = \Billrun_Factory::db()->billing_cycleCollection();

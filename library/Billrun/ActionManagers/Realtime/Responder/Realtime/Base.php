@@ -77,6 +77,9 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 	}
 	
 	protected function getExpirationTime() {
+		if (isset($this->row['foreign']['rate']['ocsExpiryTime'])) {
+			return $this->row['foreign']['rate']['ocsExpiryTime'];
+		}
 		return $this->config['realtime'][$this->row['usaget']]['expiryTime'] ?? 3600;
 	}
 	

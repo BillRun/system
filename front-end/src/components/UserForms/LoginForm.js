@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Form, FormGroup, FormControl, InputGroup, Button, Alert, Panel, Col, Row } from 'react-bootstrap';
 import { Conflict409 } from '../StaticPages';
-import { userDoLogin, sendResetMail } from '@/actions/userActions';
+import { userDoLogin, sendResetMail, getAuthOptions} from '@/actions/userActions';
 import ResetPassword from './ResetPassword';
 
 class LoginForm extends Component {
@@ -26,7 +26,21 @@ class LoginForm extends Component {
     progress: false,
     resetPassword: false,
     sending: false,
+    authOptions: [],
   };
+
+  componentDidMount() {
+    this.props.dispatch(getAuthOptions())
+      .then((response) => {
+        const options = response.data[0]?.data?.details?.protocols || [];
+
+        this.setState({ authOptions: options });
+      })
+      .catch((err) => {
+        console.error('Failed to load auth protocols', err);
+        this.setState({ authOptions: [] });
+      });
+  }
 
   componentWillReceiveProps(nextProps) {
     if (this.state.error !== nextProps.error) {
@@ -49,6 +63,10 @@ class LoginForm extends Component {
           this.setState({ progress: false });
         }
       });
+  }
+
+  clickExternalProtocol = (protocol, providerName) => {
+    this.props.dispatch(userDoLogin(null, null, protocol, providerName));
   }
 
   clickResetPassword = () => {
@@ -83,7 +101,8 @@ class LoginForm extends Component {
   }
 
   renderLoginForm = () => {
-    const { error, progress, resetPassword, sending } = this.state;
+    const { error, progress, resetPassword, sending, authOptions } = this.state;
+    const externalOptions = authOptions.filter(opt => opt.type && opt.type.toLowerCase() !== 'internal');
     return (
       <Col md={4} mdOffset={4}>
         <Panel header="Please Sign In" className="login-panel">
@@ -119,7 +138,38 @@ class LoginForm extends Component {
               </Button>
             </fieldset>
           </Form>
+
+          {externalOptions.length > 0 && (
+             <div style={{ margin: '15px 0', textAlign: 'center' }}>
+                <span className="text-muted">- OR -</span>
+             </div>
+          )}
+          {externalOptions.map((option, index) => {
+            return (
+              <div key={option.name || index}>
+                {index > 0 && (
+                  <div style={{ margin: '10px 0', textAlign: 'center' }}>
+                    <span className="text-muted" style={{ fontSize: '0.9em' }}>- OR -</span>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: '10px' }}>
+                  <Button
+                    type="button"
+                    bsStyle="primary"
+                    bsSize="large"
+                    block
+                    onClick={() => this.clickExternalProtocol(option.type, option.name)}
+                    disabled={progress}
+                  >
+                    <i className="fa fa-key fa-fw" /> &nbsp; Login with {option.label}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
           {(error.length > 0) && <Alert bsStyle="danger" style={{ marginTop: 15 }} className="mb0">{error}</Alert>}
+          <div style={{ borderTop: '1px solid #eee', marginTop: '15px' }}></div>
           <Button type="button" bsStyle="link" bsSize="small" block onClick={this.clickResetPassword} disabled={progress}>
             Forgot Your Password?
           </Button>
