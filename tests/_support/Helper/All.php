@@ -16,6 +16,10 @@ class All extends \Codeception\Module
         $lines->remove(['_id'=>['$exists' => true]]);
         $queue = \Billrun_Factory::db()->queueCollection();
         $queue->remove(['_id'=>['$exists' => true]]);
+        $log = \Billrun_Factory::db()->logCollection();
+        $log->remove(['_id'=>['$exists' => true]]);
+        $archive = \Billrun_Factory::db()->archiveCollection();
+        $archive->remove(['_id'=>['$exists' => true]]);
         $services = \Billrun_Factory::db()->servicesCollection();
         $services->remove(['_id'=>['$exists' => true]]);
         $plans = \Billrun_Factory::db()->plansCollection();

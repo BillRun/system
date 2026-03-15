@@ -771,6 +771,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * "garbage" lines are defined by "filters" configuration of input processor
 	 */
 	public function filterLines() {
+		$type = $this->receiverSource ?? static::$type;
+		$filtersPathExists = $this->checkIfPathExistsInProcessor('filters', $type);
+		if(!$filtersPathExists){
+			return;
+		}
 		$data = &$this->getData();
 		foreach ($data['data'] as &$row) {
 			$filters = $this->getConfigValue($row, 'filters') ?? [];
@@ -788,12 +793,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 
 	public function dropLines() {
-		$data = &$this->getData();
-		$dropLinesConfig = $this->getConfigValue($row, 'drop_lines') ?? [];
-		if(empty($dropLinesConfig)){
+		$type = $this->receiverSource ?? static::$type;
+		$dropLinesPathExists = $this->checkIfPathExistsInProcessor('drop_lines', $type);
+		if(!$dropLinesPathExists){
 			return;
 		}
+		$data = &$this->getData();
 		foreach ($data['data'] as $stamp => &$row) {
+			$dropLinesConfig = $this->getConfigValue($row, 'drop_lines') ?? [];
 			foreach ($dropLinesConfig as $index => $dropLineConf) {
 				if (isset($dropLineConf['conditions'])  && Billrun_Util::areConditionsMet($row, $dropLineConf['conditions'])) {
 					$desc = $dropLineConf['description'] ?? "No description (config index: $index)";
@@ -951,6 +958,20 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		$this->setShouldremovefromWorkspace(false);
 		return $this->process_files(Billrun_Util::getBillRunPath($options['path']));
+	}
+
+	protected function checkIfPathExistsInFileTypeProcessor($path, $fileType){
+		$inputProcessorConf =  Billrun_Factory::config()->getLineTypeConfigByName($fileType, true);
+		$exists = $inputProcessorConf[$path] ?? false;
+		if(!$exists && isset($parserConf['line_types']) && !empty($parserConf['line_types'])){
+			foreach($parserConf['line_types'] as $parserLineTypeConf){
+				$exists = $parserLineTypeConf[$path] ?? false;
+				if($exists){
+					return true;
+				}
+			}
+		}
+		return $exists;
 	}
 
 }

@@ -1175,9 +1175,11 @@ class ConfigModel {
 							if (isset($fileSettings['unify'])) {
 								$updatedFileSettings['unify'] = $this->getUnifyConfig($updatedFileSettings, $fileSettings['unify']);
 							}
-							
 							if (isset($fileSettings['filters'])) {
 								$updatedFileSettings['filters'] = $fileSettings['filters'];
+							}
+							if (isset($fileSettings['drop_lines'])) {
+								$updatedFileSettings['drop_lines'] = $fileSettings['drop_lines'];
 							}
 						}
 					}
