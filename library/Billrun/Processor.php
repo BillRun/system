@@ -772,7 +772,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	public function filterLines() {
 		$type = $this->receiverSource ?? static::$type;
-		$filtersPathExists = $this->checkIfPathExistsInProcessor('filters', $type);
+		$filtersPathExists = $this->checkIfPathExistsInFileTypeProcessor('filters', $type);
 		if(!$filtersPathExists){
 			return;
 		}
@@ -794,7 +794,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	public function dropLines() {
 		$type = $this->receiverSource ?? static::$type;
-		$dropLinesPathExists = $this->checkIfPathExistsInProcessor('drop_lines', $type);
+		$dropLinesPathExists = $this->checkIfPathExistsInFileTypeProcessor('drop_lines', $type);
 		if(!$dropLinesPathExists){
 			return;
 		}
@@ -962,16 +962,17 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	protected function checkIfPathExistsInFileTypeProcessor($path, $fileType){
 		$inputProcessorConf =  Billrun_Factory::config()->getLineTypeConfigByName($fileType, true);
-		$exists = $inputProcessorConf[$path] ?? false;
-		if(!$exists && isset($parserConf['line_types']) && !empty($parserConf['line_types'])){
-			foreach($parserConf['line_types'] as $parserLineTypeConf){
-				$exists = $parserLineTypeConf[$path] ?? false;
-				if($exists){
+		$value = $inputProcessorConf[$path] ?? false;
+		if(!$value && isset($inputProcessorConf['line_types']) && !empty($inputProcessorConf['line_types'])){
+			foreach($inputProcessorConf['line_types'] as $lineTypeConf){
+				$value = $lineTypeConf[$path] ?? false;
+				if($value && !empty($value)){
 					return true;
 				}
 			}
+			return false;
 		}
-		return $exists;
+		return $value;
 	}
 
 }
