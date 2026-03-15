@@ -61,6 +61,7 @@ services:
         - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 discover_client_host=false mode=develop"
         volumes:
             - ${PWD}/mockup-servers:/mockups
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         command: php -S 0.0.0.0:8081 router.php
         ports:
         - 8081:8081

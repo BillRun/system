@@ -100,7 +100,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             //check all the relevant types (update/permanentchange through GUI / rates importer / API) 
             'type' => array('$in' => ['update', 'closeandnew', 'permanentchange']),
             //retroactive change
-            '$where' => 'this.new.from < this.urt'
+            '$where' => 'this.new && this.new.from < this.urt'
         );
         Billrun_Factory::log()->log("Searching all the retroactive " . $this->getRecalculateType() . " changes.", Zend_Log::INFO);
         $retroactiveChanges = iterator_to_array(Billrun_Factory::db()->auditCollection()->find($query)->sort(array('_id' => 1)));
