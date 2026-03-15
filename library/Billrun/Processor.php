@@ -312,7 +312,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$header['linesStats']['queue'] = count($this->queue_data);
 		$header['linesStats']['good'] = count($this->data['data']) - $header['linesStats']['queue'];
-		$header['linesStats']['drop'] = count($this->drop_lines);
+		$header['linesStats']['dropped'] = count($this->drop_lines);
 
 		$current_stamp = $this->getStamp(); // mongo id in new version; else string
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
@@ -789,11 +789,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	public function dropLines() {
 		$data = &$this->getData();
+		$dropLinesConfig = $this->getConfigValue($row, 'drop_lines') ?? [];
+		if(empty($dropLinesConfig)){
+			return;
+		}
 		foreach ($data['data'] as $stamp => &$row) {
-			$dropLinesConfig = $this->getConfigValue($row, 'drop_lines') ?? [];
-			foreach ($dropLinesConfig as $dropLineConf) {
-				if (isset($dropLineConf['conditions'])  && Billrun_Util::isConditionsMet($row, $dropLineConf['conditions'])) {
-					$desc = $dropLineConf['description'] ?? 'No description';
+			foreach ($dropLinesConfig as $index => $dropLineConf) {
+				if (isset($dropLineConf['conditions'])  && Billrun_Util::areConditionsMet($row, $dropLineConf['conditions'])) {
+					$desc = $dropLineConf['description'] ?? "No description (config index: $index)";
 					Billrun_Factory::log("Line dropped. Reason: " . $desc . ". Line details: " . print_r($row, true), Zend_Log::INFO);
 					$this->drop_lines[] = $row;
 					unset($data['data'][$stamp]);
