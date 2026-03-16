@@ -259,12 +259,14 @@ const mapStateToProps = (state, props) => {
     const scheduleItemsDates = Immutable.List.isList(scheduleItems)
         ? scheduleItems.map(scheduleItem => scheduleItem.get('schedule', '')) : Immutable.List();
 
+    const maxAllowScheduleCharge = parseInt(getConfig('maxAllowScheduleCharge', 5)) || 5;
+
     return ({
         typeOptions,
         runOnOptions,
         scheduleItemsDates,
         allowStartRun: !(Immutable.Map.isMap(activeCharge) && activeCharge.get('md5', '') !== ''),
-        allowStartScheduleRun: !Immutable.List.isList(scheduleItems) || scheduleItems.size < 5,
+        allowStartScheduleRun: !Immutable.List.isList(scheduleItems) || scheduleItems.size < maxAllowScheduleCharge,
         datetimeFormat: getConfig('datetimeFormat', 'DD/MM/YYYY HH:mm'),
         timezone: state.settings.getIn([ 'billrun','timezone']),
     });
