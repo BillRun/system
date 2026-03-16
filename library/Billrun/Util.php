@@ -2255,7 +2255,18 @@ class Billrun_Util {
 	{
 		$server = $request->getServer();
 		$host = $server['HTTP_HOST'];
-		$protocol = (!empty($server['HTTPS']) && $server['HTTPS'] !== 'off') ? 'https' : 'http';
+		$protocol = 'http';
+
+		$forwardedProto = !empty($server['HTTP_X_FORWARDED_PROTO'])
+			? trim(explode(',', $server['HTTP_X_FORWARDED_PROTO'])[0])
+			: '';
+
+		if ((!empty($server['HTTPS']) && $server['HTTPS'] !== 'off') ||
+			strtolower($forwardedProto) === 'https'
+		) {
+			$protocol = 'https';
+		}
+
 		return $protocol . '://' . $host . '/';
 	}
 
