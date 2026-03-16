@@ -1632,8 +1632,11 @@ abstract class Billrun_Bill {
 			if (!in_array($path, $mergeToExistingArray) || in_array($path, $mergeToExistingArray) && empty(Billrun_Util::getIn($paymentData, $path))) {
 				Billrun_Util::setIn($paymentData, $path, $value);
 			} else {
-				$currentArray = Billrun_Util::getIn($paymentData, $path);
-				Billrun_Util::setIn($paymentData, $path, array_unique(array_merge_recursive($currentArray, $value)));
+				$current_value = Billrun_Util::getIn($paymentData, $path);
+				if (is_array($current_value)) {
+					$current_value = array_unique(array_merge_recursive($current_value, $value));
+				}
+				Billrun_Util::setIn($paymentData, $path, $current_value);
 			}
 		}
 		$this->setRawData($paymentData);
