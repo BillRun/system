@@ -13,4 +13,5 @@ modules:
             port: 4444
             browser: chrome
         - \Helper\Acceptance
+        - \Helper\Aggregate
 step_decorators: ~        
