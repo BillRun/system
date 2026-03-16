@@ -31,6 +31,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 	 * @return true
 	 */
 	public function parse($config, $rowsToParse) {
+		   Billrun_Factory::dispatcher()->trigger('beforeRealtimeProcessorParsing', array($this, &$rowsToParse));
 	       foreach ($rowsToParse as $row) {
             $row['usaget'] = $this->getLineUsageType($row);
             if ($row['usaget'] === false) {
@@ -58,6 +59,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
                 $row['urt'] = new Mongodloid_Date($datetime->format('U'));
             }
             $row['eurt'] = $row['urt'];
+			Billrun_Factory::dispatcher()->trigger('afterRealtimeProcessorParsing', array(&$row, $row['type']));
             $this->data['data'][$stamp] = $row;
         }
 
@@ -145,7 +147,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		if (!isset($this->data['data'])) {
 			$this->data['data'] = array();
 		}
-		$this->data['data'][] = $row;
+		$this->data['data'][$row['stamp']] = $row;
 		return true;
 	}
 	
