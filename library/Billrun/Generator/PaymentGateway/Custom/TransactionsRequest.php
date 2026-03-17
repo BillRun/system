@@ -35,7 +35,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected $affects_bills = true;
 	protected $locked_aid_bills_to_recharge = [];
 	protected $locked_aids_to_recharge = [];
-	const GENERATOR_MAX_LIMIT_PER_TRANSACTION = 50000;
+	const GENERATOR_MAX_RECORDS_PER_BATCH = 50000;
 
 
 	public function __construct($options) {
@@ -103,31 +103,30 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->logFile->setStartProcessTime();
 		Billrun_Factory::log()->log('Parameters are valid for file type ' . $this->configByType['file_type'] . '. Starting to pull entities..', Zend_Log::INFO);
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
-		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';
+		$payMode = 'multiple_payments'/*isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment'*/;
 		$numberOfRecordsToTreat = 0;
 		$maxRecords = !empty($this->configByType['generator']['max_records']) ? $this->configByType['generator']['max_records'] : INF;
-		$maxRecordsPerTransaction = !empty($this->configByType['generator']['max_records_per_transaction']) ? $this->configByType['generator']['max_records_per_transaction'] : self::GENERATOR_MAX_LIMIT_PER_TRANSACTION;
+		$maxRecordsPerTransaction = 2/*!empty($this->configByType['generator']['max_records_per_batch']) ? $this->configByType['generator']['max_records_per_batch'] : self::GENERATOR_MAX_RECORDS_PER_BATCH*/;
 		$maxRecordsPerTransaction = min($maxRecords, $maxRecordsPerTransaction);
 		$loadedEntities = 0;
 		$allreadyLoadedAids = [];
 		$this->data = array();
 		do{
 			$filtersQuery =  array_merge_recursive($filtersQuery, array('aid' => array('$nin' => $allreadyLoadedAids)));
-
 			$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode, $maxRecordsPerTransaction));
 			$loadedEntities = count($this->customers);
-			if($loadedEntities == 0 ){
-				break;
-			} 
 			$message = 'generator entities loaded: ' . $loadedEntities;
 			Billrun_Factory::log()->log($message, Zend_Log::INFO);
 			$this->logFile->updateLogFileField('info', $message);
+			if($loadedEntities == 0 ){
+				break;
+			}
 			Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 			$customersAids = array_map(function($ele) {
 				return $ele['aid'];
 			}, $this->customers);
 			$allreadyLoadedAids = array_merge($allreadyLoadedAids, $customersAids);
-
+			Billrun_Factory::log()->log("Pulling $loadedEntities accounts", Zend_Log::INFO);
 			$account = Billrun_Factory::account();
 			$accountQuery = array('aid' => array('$in' => $customersAids));
 			$accounts = $account->loadAccountsForQuery($accountQuery);
@@ -137,7 +136,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				}
 			}
 			Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers));
-			Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::INFO);
+			Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::DEBUG);
 			$this->setFileMandatoryFields();
 			$current_loop_bills = $this->customers;
 			$loop_counter = 0;
