@@ -621,6 +621,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$planParams = array(
 			'name' => $planName,
 			'time' => $time,
+			'disableCache' => true,
 			'disable_cache_plan' => $isRealtime
 		);
 		Billrun_Factory::log()->log("CustomerCalculator loading plan '{$planName}' for included services", Zend_Log::DEBUG);
