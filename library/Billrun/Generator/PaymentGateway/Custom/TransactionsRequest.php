@@ -109,10 +109,11 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$maxRecordsPerTransaction = 2/*!empty($this->configByType['generator']['max_records_per_batch']) ? $this->configByType['generator']['max_records_per_batch'] : self::GENERATOR_MAX_RECORDS_PER_BATCH*/;
 		$maxRecordsPerTransaction = min($maxRecords, $maxRecordsPerTransaction);
 		$loadedEntities = 0;
-		$allreadyLoadedAids = [];
+		$allreadyLoadedQuery = [];
 		$this->data = array();
 		do{
-			$filtersQuery =  array_merge_recursive($filtersQuery, array('aid' => array('$nin' => $allreadyLoadedAids)));
+			$customersAidsPerTransaction = [];
+			$filtersQuery =  array_merge_recursive($filtersQuery, $allreadyLoadedQuery);
 			$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode, $maxRecordsPerTransaction));
 			$loadedEntities = count($this->customers);
 			$message = 'generator entities loaded: ' . $loadedEntities;
@@ -125,7 +126,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$customersAids = array_map(function($ele) {
 				return $ele['aid'];
 			}, $this->customers);
-			$allreadyLoadedAids = array_merge($allreadyLoadedAids, $customersAids);
+			$lastBllAggregateValue = last($this->customers);
+			$allreadyLoadedQuery = $this->getAlreadyLoadedQuery($payMode, $lastBllAggregateValue);
 			Billrun_Factory::log()->log("Pulling $loadedEntities accounts", Zend_Log::INFO);
 			$account = Billrun_Factory::account();
 			$accountQuery = array('aid' => array('$in' => $customersAids));
@@ -266,6 +268,27 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->logFile->updateLogFileField('info', $message);
 		$this->headers = !empty($header = $this->getHeaderLine()) ? [$header] : [];
 		$this->trailers = !empty($trailer = $this->getTrailerLine()) ? [$trailer] : [];
+	}
+
+	protected function getAlreadyLoadedQuery($payMode, $lastBllAggregateValue){
+		$query = [];
+		if ($payMode == 'multiple_payments' && !empty($lastBllAggregateValue['unique_id'])){
+			$query =
+			//todo still wrong!!! - maybe to sort be type first and then by uniqueu id ? so first or invoice id gt  then last + invoice_id not exists 
+			//then txid gt the last + or
+			['unique_id' => [
+				'$or' => [
+					['invoice_id' => array('$gt' => $lastBllAggregateValue['unique_id'])], 
+					[
+						'invoice_id' => ['$exists' => false], 
+						'txid' => array('$gt' => $lastBllAggregateValue['unique_id'])
+					]]
+				]
+			];
+		}else if(!empty($lastBllAggregateValue['aid'])){
+			$query = array('aid' => array('$gt' => $lastBllAggregateValue['aid']));
+		}
+		return $query;
 	}
 
 	/**

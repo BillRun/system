@@ -1155,19 +1155,18 @@ abstract class Billrun_Bill {
 				array('left' => array('$gt' => 0)),
 		));
 		$pipelines[] = $match;
-		$pipelines[] = array(
-			'$sort' => array(
-				'type' => 1,
-				'charge.not_before' => -1,
-			),
-		);
+		
 		$pipelines[] = array(
 			'$addFields' => array(
 				'method' => 'automatic',
 				'unique_id' => array('$ifNull' => array('$invoice_id', '$txid')),
 			),
 		);
-		
+		$primarySort = ($pay_mode === 'multiple_payments') ? ['unique_id' => 1] : ['aid' => 1];
+
+		$pipelines[] = [
+			'$sort' => array_merge($primarySort, array('type' => 1, 'charge.not_before' => -1))
+		];
 		$pipelines[] = array(
 			'$group' => self::getGroupByMode($payMode),
 		);
