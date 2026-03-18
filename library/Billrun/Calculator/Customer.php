@@ -201,7 +201,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return false;
 		}
 		$isRealtime = isset($row['realtime']) ? $row['realtime'] : false;
-		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true, 'disable_cache_plan' => $isRealtime));
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => !$isRealtime, 'disable_cache_plan' => $isRealtime));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'] . ', line ' . $row['stamp'], Zend_Log::ALERT);
@@ -621,7 +621,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$planParams = array(
 			'name' => $planName,
 			'time' => $time,
-			'disableCache' => true,
+			'disableCache' => !$isRealtime,
 			'disable_cache_plan' => $isRealtime
 		);
 		Billrun_Factory::log()->log("CustomerCalculator loading plan '{$planName}' for included services", Zend_Log::DEBUG);
