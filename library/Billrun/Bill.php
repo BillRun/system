@@ -1141,6 +1141,11 @@ abstract class Billrun_Bill {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$filters = array_merge($filters, $nonRejectedOrCanceled);
+		$uniqueIdBatchFilter = null;
+		if (isset($filters['unique_id'])) {
+			$uniqueIdBatchFilter = $filters['unique_id'];
+			unset($filters['unique_id']);
+		}
 		if (!empty($filters)) {
 			$match = array(
 				'$match' => $filters
@@ -1162,14 +1167,37 @@ abstract class Billrun_Bill {
 				'unique_id' => array('$ifNull' => array('$invoice_id', '$txid')),
 			),
 		);
-		$primarySort = ($pay_mode === 'multiple_payments') ? ['unique_id' => 1] : ['aid' => 1];
-
-		$pipelines[] = [
-			'$sort' => array_merge($primarySort, array('type' => 1, 'charge.not_before' => -1))
-		];
+		$pipelines[] = array(
+			'$addFields' => array(
+				'method' => 'automatic',
+				// We concatenate with an empty string to force everything to become a String type
+				'unique_id_str' => array(
+					'$concat' => array(
+						array('$substr' => array(array('$ifNull' => array('$invoice_id', '$txid')), 0, -1)),
+						""
+					)
+				),
+			),
+		);
+		if (!is_null($uniqueIdBatchFilter)) {
+			$pipelines[] = array(
+				'$match' => array('unique_id_str' => $uniqueIdBatchFilter)
+			);
+		}
+		
 		$pipelines[] = array(
 			'$group' => self::getGroupByMode($payMode),
 		);
+
+		$primarySort = ($payMode === 'multiple_payments') ? ['unique_id_str' => -1] : ['aid' => -1];
+		$pipelines[] = [
+			'$sort' => array_merge($primarySort, array('type' => 1, 'charge.not_before' => -1))
+		];
+		if(!is_null($limit)){
+			$pipelines[] = array(
+				'$limit' => $limit
+			);
+		}
 
 		$pipelines[] = array(
 			'$project' => array(
@@ -1206,11 +1234,8 @@ abstract class Billrun_Bill {
 				'suspend_debit' => NULL,
 			),
 		);
-		if(!is_null($limit)){
-			$pipelines[] = array(
-				'$limit' => $limit
-			);
-		}
+
+		
 		$res = $billsColl->aggregateWithOptions($pipelines, ['allowDiskUse' => true]);
 		return $res;
 	}
@@ -1276,6 +1301,7 @@ abstract class Billrun_Bill {
 		if ($mode == 'multiple_payments') {
 			$group['_id'] = '$unique_id';
 			$group['unique_id'] = array('$first' => '$unique_id');
+			$group['unique_id_str'] = array('$first' => '$unique_id_str');
 		}
 			
 		return $group;

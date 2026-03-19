@@ -103,18 +103,18 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->logFile->setStartProcessTime();
 		Billrun_Factory::log()->log('Parameters are valid for file type ' . $this->configByType['file_type'] . '. Starting to pull entities..', Zend_Log::INFO);
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
-		$payMode = 'multiple_payments'/*isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment'*/;
+		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';
 		$numberOfRecordsToTreat = 0;
 		$maxRecords = !empty($this->configByType['generator']['max_records']) ? $this->configByType['generator']['max_records'] : INF;
-		$maxRecordsPerTransaction = 2/*!empty($this->configByType['generator']['max_records_per_batch']) ? $this->configByType['generator']['max_records_per_batch'] : self::GENERATOR_MAX_RECORDS_PER_BATCH*/;
+		$maxRecordsPerTransaction = !empty($this->configByType['generator']['max_records_per_batch']) ? $this->configByType['generator']['max_records_per_batch'] : self::GENERATOR_MAX_RECORDS_PER_BATCH;
 		$maxRecordsPerTransaction = min($maxRecords, $maxRecordsPerTransaction);
 		$loadedEntities = 0;
 		$allreadyLoadedQuery = [];
 		$this->data = array();
 		do{
 			$customersAidsPerTransaction = [];
-			$filtersQuery =  array_merge_recursive($filtersQuery, $allreadyLoadedQuery);
-			$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode, $maxRecordsPerTransaction));
+			$batchFiltersQuery =  array_merge_recursive($filtersQuery, $allreadyLoadedQuery);
+			$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($batchFiltersQuery, $payMode, $maxRecordsPerTransaction));
 			$loadedEntities = count($this->customers);
 			$message = 'generator entities loaded: ' . $loadedEntities;
 			Billrun_Factory::log()->log($message, Zend_Log::INFO);
@@ -123,10 +123,10 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				break;
 			}
 			Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
-			$customersAids = array_map(function($ele) {
+			$customersAids = array_unique(array_map(function($ele) {
 				return $ele['aid'];
-			}, $this->customers);
-			$lastBllAggregateValue = last($this->customers);
+			}, $this->customers));
+			$lastBllAggregateValue = end($this->customers);
 			$allreadyLoadedQuery = $this->getAlreadyLoadedQuery($payMode, $lastBllAggregateValue);
 			Billrun_Factory::log()->log("Pulling $loadedEntities accounts", Zend_Log::INFO);
 			$account = Billrun_Factory::account();
@@ -273,20 +273,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected function getAlreadyLoadedQuery($payMode, $lastBllAggregateValue){
 		$query = [];
 		if ($payMode == 'multiple_payments' && !empty($lastBllAggregateValue['unique_id'])){
-			$query =
-			//todo still wrong!!! - maybe to sort be type first and then by uniqueu id ? so first or invoice id gt  then last + invoice_id not exists 
-			//then txid gt the last + or
-			['unique_id' => [
-				'$or' => [
-					['invoice_id' => array('$gt' => $lastBllAggregateValue['unique_id'])], 
-					[
-						'invoice_id' => ['$exists' => false], 
-						'txid' => array('$gt' => $lastBllAggregateValue['unique_id'])
-					]]
-				]
-			];
+			$query = ['unique_id' => array('$lt' => (string)$lastBllAggregateValue['unique_id'])];
 		}else if(!empty($lastBllAggregateValue['aid'])){
-			$query = array('aid' => array('$gt' => $lastBllAggregateValue['aid']));
+			$query = array('aid' => array('$lt' => $lastBllAggregateValue['aid']));
 		}
 		return $query;
 	}
