@@ -2084,12 +2084,14 @@ runOnce(lastConfig, 'BRCD-4430', function () {
 });
 
 runOnce(lastConfig, 'BRCD-4739', function () {
-	lastConfig['plugins'].push({
-		"name": "teldasPlugin",
-		"enabled": false,
-		"system": true,
-		"hide_from_ui": true
-	})
+	if (!lastConfig['plugins'].some(p => p.name === 'teldasPlugin')) {
+		lastConfig['plugins'].push({
+			"name": 'teldasPlugin',
+			"enabled": false,
+			"system": true,
+			"hide_from_ui": true
+		});
+	}
 	_createCollection('plugin_teldas_ina_numbers');
 	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
 	_createCollection('plugin_teldas_tariffs_profiles');
