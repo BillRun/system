@@ -61,12 +61,6 @@ class Billrun_Config {
 	 */
 	protected function __construct($config) {
 		$this->config = $config;
-		$configInclude = $config['configuration']['include'];
-		if (!empty($configInclude) && $configInclude->valid()) {
-			foreach ($config->toArray()['configuration']['include'] as $filePath) {
-				$this->addConfig($filePath);
-			}
-		}
 		if (!isset($config['disableHostConfigLoad']) && file_exists($env_conf = APPLICATION_PATH . '/conf/' . Billrun_Util::getHostName() . '.ini')) {
 			$this->addConfig($env_conf);
 		}
@@ -79,6 +73,13 @@ class Billrun_Config {
 			$this->loadTenantConfig();
 		} else {
 			$this->tenant = $this->getEnv();
+		}
+
+		$configInclude = $this->config['configuration']['include'];
+		if (!empty($configInclude) && $configInclude->valid()) {
+			foreach ($this->config->toArray()['configuration']['include'] as $filePath) {
+				$this->addConfig($filePath);
+			}
 		}
 	}
 	
