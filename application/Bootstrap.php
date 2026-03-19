@@ -83,6 +83,7 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 				if (isset($plugins_conf['configuration']['values'])) {
 					$pluginObject->setOptions($plugins_conf['configuration']['values']);
 				}
+				Billrun_Factory::log()->log("Bootstrap: successfully loaded plugin: " . $plugin_name, Zend_Log::INFO);
 			}
 		}
 
