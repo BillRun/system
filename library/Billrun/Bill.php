@@ -1471,29 +1471,30 @@ abstract class Billrun_Bill {
 		$account = Billrun_Factory::account();
 		$currentAccounts = [];	
 		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
-		$rejectionQuery =$account->convertConditionsToAccountQuery($rejection_required_conditions);
-		Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
+		$rejectionQuery = $account->convertConditionsToAccountQuery($rejection_required_conditions);
 		$billsFields = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.bills_queries.fields", ['aid']);
 		$loadFromBills = true;
-		if(!empty($account_query)){
-			$rejectionQuery = array_merge($account_query, $rejectionQuery);
-		}
-		foreach($rejectionQuery as $queryKey => $field){
-			if(!in_array($queryKey, $billsFields)){
+		foreach(array_merge($rejectionQuery, $account_query) as $queryKey => $field){
+			if(!in_array($queryKey, $billsFields)) {	
 				$loadFromBills = false;
 				break;
 			}
 		}
+		if(!empty($account_query)){
+			$rejectionQuery = ['$and' => [$account_query, $rejectionQuery]];
+		}
 		if($loadFromBills){
+			Billrun_Factory::log()->log("Pulling the bills of accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 			$currentAccounts = Billrun_Factory::db()->billsCollection()->query($rejectionQuery)->cursor();
 		}else{
+			Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 			$currentAccounts = $account->loadAccountsForQuery($rejectionQuery);
 			$currentAccounts = empty($currentAccounts) ? [] : $currentAccounts;
 		}
 		$rejection_required_aids = array_column(array_map(function($account) {
 				return $account->getRawData();
 			}, $currentAccounts), 'aid') ?? [];
-		Billrun_Factory::log()->log("Pulled " . count($rejection_required_aids) . " accounts.", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Pulled " . count($rejection_required_aids) . " accounts that require rejection in order to be in collection.", Zend_Log::DEBUG);
 		return $rejection_required_aids;
 	}
 	
