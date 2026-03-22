@@ -1981,6 +1981,22 @@ class Billrun_Util {
 		
 		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
 	}
+
+	/**
+	 * check all conditions is met
+	 * 
+	 * @param array $row
+	 * @param array $conditions - array of condtions includes the following attributes: "field_name", "op", "value"
+	 * @return boolean
+	 */
+	public static function areConditionsMet($row, $conditions) {
+		foreach ($conditions as $condition) {
+			if (!Billrun_Util::isConditionMet($row, $condition)) {
+				return false;
+			}
+		}
+		return true;
+	}
 	
 	/**
 	 * try to fork, and if successful update the process log stamp
@@ -2230,6 +2246,17 @@ class Billrun_Util {
 		return 	Billrun_Util::generateArrayStamp( $arr1, $filterFields, true)
 					!=
 				Billrun_Util::generateArrayStamp( $arr2, $filterFields, true);
+	}
+
+	/**
+	 * Get the base URL from the request object.
+	 */
+	public static function getBaseUrl($request)
+	{
+		$server = $request->getServer();
+		$host = $server['HTTP_HOST'];
+		$protocol = (!empty($server['HTTPS']) && $server['HTTPS'] !== 'off') ? 'https' : 'http';
+		return $protocol . '://' . $host . '/';
 	}
 
 }

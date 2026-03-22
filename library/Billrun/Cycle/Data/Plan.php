@@ -119,6 +119,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 	
 	//TODO move this to the account/subscriber lines addition logic and work in batch mode.
 	protected function addTaxationToLine($entry) {
+		Billrun_Factory::dispatcher()->trigger('beforeAddTaxationToLine', array(&$entry));
 		$entryWithTax = FALSE;
 		if( !empty($this->constructionOptions['rounding_rules']) ) {
 			$entry['rounding_rules'] = $this->constructionOptions['rounding_rules'];

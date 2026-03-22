@@ -2,7 +2,6 @@
 
 namespace Helper;
 
-use AcceptanceTester;
 use Codeception\Lib\ModuleContainer;
 use Codeception\Module\Cli;
 
