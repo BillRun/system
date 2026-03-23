@@ -1489,8 +1489,8 @@ abstract class Billrun_Bill {
 		}else{
 			Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 			$currentAccounts = $account->loadAccountsForQuery($rejectionQuery);
-			$currentAccounts = empty($currentAccounts) ? [] : $currentAccounts;
 		}
+		$currentAccounts = empty($currentAccounts) ? [] : iterator_to_array($currentAccounts);
 		$rejection_required_aids = array_column(array_map(function($account) {
 				return $account->getRawData();
 			}, $currentAccounts), 'aid') ?? [];
