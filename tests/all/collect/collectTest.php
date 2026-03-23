@@ -25,7 +25,7 @@ class collectTest extends \Codeception\Test\Unit
         'conditions' => [
             'customers' => [
                 [
-                   'field' => 'payment_gateway.active',
+                   'field' => 'payment_gateway', //this is hack should be payment_gateway.active but need to add it to custom field 
                     'op' => 'exists',
                     'value' => true
                 ]
@@ -111,7 +111,7 @@ class collectTest extends \Codeception\Test\Unit
     {
     }
     
-    public function testCollectWithAidAndWithoutRejectionRquired()
+    public function testCollectWithAidAndWithoutRejectionRquired_1()
     {
         $this->tester->createAccountWithAllMandatoryCustomFields();
         $account = json_decode($this->tester->grabResponse(), true)['entity'];
@@ -125,12 +125,22 @@ class collectTest extends \Codeception\Test\Unit
         $this->tester->dontSeeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
         $this->tester->payApi($payment);
         $this->sendCollectCommand($options);
+        //in collection
         $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
         $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
-
+        $payment['dir'] = 'fc';
+        $this->tester->payApi($payment);
+        // $this->sendCollectCommand($options);
+        //out collection
+        $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+        $lastAccount = $this->tester->grabFromCollection('subscribers', [
+                'aid' => $aid, 
+                'type' => 'account'
+            ], ['_id' => -1]);
+        $this->tester->seeInCollection('subscribers', ['_id' => $lastAccount['_id'], 'in_collection' => null, 'aid' =>  $aid, 'type'=>"account"]);
     }
 
-    public function testCollectWithAidAndWithoutRejectionRquiredWithCondition()
+    public function testCollectWithAidAndWithoutRejectionRquiredWithCondition_2()
     {
         $this->tester->createAccountWithAllMandatoryCustomFields(['country'=> 'ISREAL']);
         $account = json_decode($this->tester->grabResponse(), true)['entity'];
@@ -144,9 +154,19 @@ class collectTest extends \Codeception\Test\Unit
         $this->tester->dontSeeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
         $this->tester->payApi($payment);
         $this->sendCollectCommand($options);
+        //in collection
         $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
         $this->tester->seeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid, 'step_type'=>"mail"]);
-
+        $payment['dir'] = 'fc';
+        $this->tester->payApi($payment);
+        // $this->sendCollectCommand($options);
+        //out collection
+        $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid, 'step_type'=>"mail"]);
+        $lastAccount = $this->tester->grabFromCollection('subscribers', [
+                'aid' => $aid, 
+                'type' => 'account'
+            ], ['_id' => -1]);
+        $this->tester->seeInCollection('subscribers', ['_id' => $lastAccount['_id'], 'in_collection' => null, 'aid' =>  $aid, 'type'=>"account"]);
     }
 
     public function testCollectWithAidAndWithoutRejectionRquiredWithConditionNotPassMinDebt()

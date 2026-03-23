@@ -30,5 +30,7 @@ class All extends \Codeception\Module
         $billing_cycleCollection->remove(['_id'=>['$exists' => true]]);
         $bills = \Billrun_Factory::db()->billsCollection();
         $bills->remove(['_id'=>['$exists' => true]]);
+        $collection_steps = \Billrun_Factory::db()->collection_stepsCollection();
+        $collection_steps->remove(['_id'=>['$exists' => true]]);
     }
 }
