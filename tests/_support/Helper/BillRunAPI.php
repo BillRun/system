@@ -818,6 +818,12 @@ class BillRunAPI extends \Codeception\Module{
         $this->sendBillapiCreate($discount, 'discounts');
 
     }else{
+        if(isset($discount["from"]) && !($discount["from"] instanceof \Mongodloid_Date)){
+            $discount["from"] = new \Mongodloid_Date(strtotime($discount['from']));
+        }
+        if(isset($discount["to"]) && !($discount["to"] instanceof \Mongodloid_Date)){
+            $discount["to"] = new \Mongodloid_Date(strtotime($discount['to']));
+        }
         $model = $this->getModel('discount');
 	    $model->setUpdate($discount);
         $model->create();
