@@ -13,6 +13,8 @@ fi
 
 touch $CURRENT_UPLOAD_FILE
 
+echo -e "\nUploading at : `date +'%Y-%m-%d %H:%M:%S'` cut off file at `stat -c '%y' $CURRENT_UPLOAD_FILE` ,  Old refrence file : `stat -c '%y' $OLD_UPLOAD_FILE` \n";
+
 if [ -f $OLD_UPLOAD_FILE ]; then  
 	find $1 -type f -mmin -30 -mmin +0 -newer $OLD_UPLOAD_FILE   -exec bash -c 'FULL_PATH="{}"; FILE_NAME="`basename {}`" ; sleep 1; /var/www/billrun/scripts/sftp_upload.expct $FULL_PATH $FILE_NAME '$UPLOAD_FTP_PASS' '$DEST_DIRECTORY'' \;
 else 
