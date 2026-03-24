@@ -137,7 +137,7 @@ class collectTest extends \Codeception\Test\Unit
                 'aid' => $aid, 
                 'type' => 'account'
             ], ['_id' => -1]);
-        $this->tester->seeInCollection('subscribers', ['_id' => $lastAccount['_id'], 'in_collection' => null, 'aid' =>  $aid, 'type'=>"account"]);
+        $this->tester->seeInCollection('subscribers', ['_id' => $lastAccount['_id'], 'in_collection' => ['$exists' => false], 'aid' =>  $aid, 'type'=>"account"]);
     }
 
     public function testCollectWithAidAndWithoutRejectionRquiredWithCondition_2()
@@ -162,11 +162,7 @@ class collectTest extends \Codeception\Test\Unit
         // $this->sendCollectCommand($options);
         //out collection
         $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid, 'step_type'=>"mail"]);
-        $lastAccount = $this->tester->grabFromCollection('subscribers', [
-                'aid' => $aid, 
-                'type' => 'account'
-            ], ['_id' => -1]);
-        $this->tester->seeInCollection('subscribers', ['_id' => $lastAccount['_id'], 'in_collection' => null, 'aid' =>  $aid, 'type'=>"account"]);
+        $this->tester->seeInCollection('subscribers', [ 'in_collection' => ['$exists' => false], 'aid' =>  $aid, 'type'=>"account", 'to' => ['$gt' => new \MongoDB\BSON\UTCDateTime(strtotime('2027-01-01'))]]);
     }
 
     public function testCollectWithAidAndWithoutRejectionRquiredWithConditionNotPassMinDebt()
@@ -249,6 +245,59 @@ class collectTest extends \Codeception\Test\Unit
         $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid, 'step_type'=>"mail"]);
 
     }
+
+public function testCollectInCollectionWithoutAids()
+    {
+        $this->tester->createAccountWithAllMandatoryCustomFields();
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $aid1 = $account['aid'];
+        $payment = [
+            "amount"=>10,
+            "aid"=>$aid1,
+            "dir"=>"tc",
+        ];
+        $this->tester->payApi($payment);
+        $this->tester->createAccountWithAllMandatoryCustomFields(['country'=> 'ISREAL']);
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $aid2 = $account['aid'];
+        $payment = [
+            "amount"=>12,
+            "aid"=>$aid2,
+            "dir"=>"tc",
+        ];
+        $this->tester->payApi($payment);
+        $this->sendCollectCommand($options);
+        //in collection
+        $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid1, 'type'=>"account"]);
+        $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid1, 'step_type'=>"http"]);
+        $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid2, 'type'=>"account"]);
+        $this->tester->seeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid2, 'step_type'=>"mail"]);
+
+        
+    }
+
+    public function testCollectOutCollectionWithoutAids()
+    {
+         $this->tester->createAccountWithAllMandatoryCustomFields(['in_collection' => true]);
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $aid1 = $account['aid'];
+        $this->tester->createAccountWithAllMandatoryCustomFields(['country'=> 'ISREAL', 'in_collection' => true]);
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $aid2 = $account['aid'];
+
+        $this->sendCollectCommand($options);
+
+
+        //out collection
+        $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid1, 'step_type'=>"http"]);
+        $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid2, 'step_type'=>"mail"]);
+
+       
+        $this->tester->seeInCollection('subscribers', [ 'in_collection' => ['$exists' => false], 'aid' =>  $aid1, 'type'=>"account", 'to' => ['$gt' => new \MongoDB\BSON\UTCDateTime(strtotime('2027-01-01'))]]);
+        $this->tester->seeInCollection('subscribers', [ 'in_collection' => ['$exists' => false], 'aid' =>  $aid2, 'type'=>"account", 'to' => ['$gt' =>new \MongoDB\BSON\UTCDateTime(strtotime('2027-01-01'))]]);
+    }
+
+
 
     protected function initCollectionConfig($collectionProcesses, $rejectionSettings){
         $this->tester->setSettings('collection', ['processes' => $collectionProcesses, 'settings' => [
