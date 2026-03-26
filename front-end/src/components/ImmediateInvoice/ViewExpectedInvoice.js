@@ -37,7 +37,7 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
   const note = item.get('note', '');
   const invoiceUnixtime = item.get('invoice_unixtime', '');
   
-  const downloadExpectedInvoiceUrl = buildRequestUrl(generateOneTimeInvoiceDownloadExpectedQuery(aid, lines, sendMail, note, invoiceUnixtime));
+  const downloadExpectedInvoiceUrl = buildRequestUrl(generateOneTimeInvoiceDownloadExpectedQuery(aid, lines, note, invoiceUnixtime));
   const downloadInvoiceUrl = `${getConfig(['env','serverApiUrl'], '')}/api/accountinvoices?action=download&aid=${aid}&iid=${invoiceId}`;
   const advancedOptionsStyle = {textAlign: 'left', maxWidth: 250, margin: '0 auto'};
   

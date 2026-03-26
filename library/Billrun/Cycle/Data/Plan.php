@@ -67,10 +67,10 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 				$entry[$field] = $chargeData[$field];
 			}
 		}
-		if (!empty($chargeData['start'])) {
+		if (!empty($chargeData['start']) && ($this->cycle->start() < $chargeData['start'] || $chargeData['is_upfront'])) {
 			$entry['start'] = new Mongodloid_Date($chargeData['start']);
 		}
-		if (!empty($chargeData['end'])) {
+		if (!empty($chargeData['end']) && ($this->cycle->end() - 1 > $chargeData['end']|| $chargeData['is_upfront'])) {
 			$entry['end'] = new Mongodloid_Date($chargeData['end']);
 		}
 
@@ -119,6 +119,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 	
 	//TODO move this to the account/subscriber lines addition logic and work in batch mode.
 	protected function addTaxationToLine($entry) {
+		Billrun_Factory::dispatcher()->trigger('beforeAddTaxationToLine', array(&$entry));
 		$entryWithTax = FALSE;
 		if( !empty($this->constructionOptions['rounding_rules']) ) {
 			$entry['rounding_rules'] = $this->constructionOptions['rounding_rules'];

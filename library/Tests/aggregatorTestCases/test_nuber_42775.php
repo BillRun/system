@@ -65,6 +65,7 @@ class Test_Case_42775
                   ]
               ],
               'key'=> $discount_name,
+              'proration' => 'yes'
 
           ]);
 
@@ -77,17 +78,12 @@ class Test_Case_42775
        
 
         return [
-            'preRun' => 'changeConfig',
             'test' => [
                 'label' => 'BRCD-5000: Discount for not prorate charge on termination plan with prorate discount',
                 'test_number' => 42775,
                 "aid" => $account['aid'],
                 'function' => ['basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'],
-                'options' => ["stamp" => "202510", "force_accounts" => [$account['aid']]],
-                'overrideConfig' => [
-                    'key' => 'discounts.always_prorated',
-                    'value' => true,
-                ],
+                'options' => ["stamp" => "202510", "force_accounts" => [$account['aid']]]
             ],
             'expected' => [
                 'billrun' => [
