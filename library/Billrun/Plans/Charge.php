@@ -47,7 +47,6 @@ class Billrun_Plans_Charge {
 				$results['refund'] = $refund;
 			}
 		}
-
 		return $results;
 	}
 
@@ -59,6 +58,7 @@ class Billrun_Plans_Charge {
 	protected function getChargeObject($plan) {
 		$object = __CLASS__;
 		//TODO change this to configurtion based mapping
+		Billrun_Factory::dispatcher()->trigger('beforeGetPlanChargeObject', array(&$plan));
 		if(empty($plan['balance_period'])) {
 			//Should  the  charge be  upfornt or  arrears
 			$object .=!empty($plan['upfront']) ? '_Upfront' : '_Arrears';
