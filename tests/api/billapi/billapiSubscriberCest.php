@@ -9,10 +9,19 @@ class billapiSubscriberCest
     public $planDetails;
     public $serviceDetails;
     public $subscriberDetails;
-    public function _before(ApiTester $I)
+    public $defaultTimezone;
+
+    public static $isRun = false;
+     public function _before(ApiTester $I)
     {
+        if (!self::$isRun) {
+          
+            self::$isRun = true;
+            Billrun_Factory::config();
+            $this->defaultTimezone = date_default_timezone_get();
+            date_default_timezone_set('Asia/Jerusalem');
+        }
     }
-    
 
 
     protected function createData(ApiTester $I , $accountDetails = [], $planDetails = [], $serviceDetails = [])
@@ -161,6 +170,8 @@ class billapiSubscriberCest
         $I->seeResponseIsJson();
         $I->seeResponseContains('{"status":1');
         $I->seeResponseContainsJson(['firstname' => 'eviatar']);       
+        date_default_timezone_set($this->defaultTimezone );
+
     }
 
 
