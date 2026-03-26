@@ -2084,12 +2084,14 @@ runOnce(lastConfig, 'BRCD-4430', function () {
 });
 
 runOnce(lastConfig, 'BRCD-4739', function () {
-	lastConfig['plugins'].push({
-		"name": "teldasPlugin",
-		"enabled": false,
-		"system": true,
-		"hide_from_ui": true
-	})
+	if (!lastConfig['plugins'].some(p => p.name === 'teldasPlugin')) {
+		lastConfig['plugins'].push({
+			"name": 'teldasPlugin',
+			"enabled": false,
+			"system": true,
+			"hide_from_ui": true
+		});
+	}
 	_createCollection('plugin_teldas_ina_numbers');
 	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
 	_createCollection('plugin_teldas_tariffs_profiles');
@@ -2117,6 +2119,28 @@ runOnce(lastConfig, 'BRCD-4966', function () {
 	db.subscribers.createIndex({'aid':1,'type':1,'from': 1 , 'to': 1}, { unique: false, sparse: false, background: true });
 });
 
+runOnce(lastConfig, 'BRCD-5190', function () {
+	for (var i = 0; i < lastConfig.plugins.length; i++) {
+		if (lastConfig.plugins[i].name === "teldasPlugin") {
+			if (typeof lastConfig.plugins[i].configuration !== 'undefined'){
+				var configValues = lastConfig.plugins[i].configuration.values;
+
+				if (typeof configValues !== 'undefined' && typeof configValues.matching_paths !== 'undefined') {
+					var paths = configValues.matching_paths;
+					if (typeof paths === 'object' && !Array.isArray(paths)) {
+						if(typeof paths.subscriber_number.convertion !== 'undefined'){
+							paths.subscriber_number.conversion = paths.subscriber_number.convertion;
+							delete paths.subscriber_number.convertion;
+						}
+						lastConfig.plugins[i].configuration.values.matching_paths = [paths];
+					}
+				}
+			}
+		}
+	};
+	_dropIndex("plugin_teldas_tariff_switching_classes", "tariff_switching_classes_unique_index");
+	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: false , sparse: false, background: true });
+});
 
 
 db.config.insertOne(lastConfig);

@@ -215,6 +215,7 @@ const RefundInvoiceSetup = ({
         price: success?.data?.invoiceData?.totals?.after_vat_rounded || '',
         pg_4_digit,
         note: reason,
+        invoice_unixtime: invoiceUnixtime,
       });
       dispatch(showFormModal(data, ViewExpectedInvoice, config));
     }).catch(error => {
