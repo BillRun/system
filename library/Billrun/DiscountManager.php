@@ -1586,7 +1586,7 @@ class Billrun_DiscountManager {
 		} else {
 			$amount = $this->calcSeqDiscountAmount($from, $to, $line, $value);
 		}
-		Billrun_Factory::dispatcher()->trigger('afterCalculateDiscountAmount', array($discount, &$amount, &$lineStart, &$lineEnd, $line, $value, $from, $to, $operations, $sequential));
+		Billrun_Factory::dispatcher()->trigger('afterCalculateDiscountAmount', array($discount, &$amount, &$discountStart, &$discountEnd, $line, $value, $from, $to, $operations, $sequential, $cycle));
 		$res = [
 			'amount' => $amount,
 			'discountStart' => $discountStart,
