@@ -2267,7 +2267,7 @@ class Billrun_Util {
 		$templates = Billrun_Factory::config()->getConfigValue('email_templates.' . $path .'.templates') ?? [];
 		foreach($templates as $template){
 			$conditions = $template['conditions'] ?? [];
-			if (empty($conditions)  || self::isConditionsMet($data, $conditions)){
+			if (empty($conditions)  || self::areConditionsMet($data, $conditions)){
 				return $template;
 			}
 		}
