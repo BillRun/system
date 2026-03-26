@@ -59,7 +59,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * the drop lines
 	 * @var array
 	 */
-	protected $drop_lines = array();
+	protected $drop_lines_counter = 0;
 	
 	/**
 	 * Limit iterator
@@ -312,7 +312,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$header['linesStats']['queue'] = count($this->queue_data);
 		$header['linesStats']['good'] = count($this->data['data']) - $header['linesStats']['queue'];
-		$header['linesStats']['dropped'] = count($this->drop_lines);
+		$header['linesStats']['dropped'] = $this->drop_lines_counter;
 
 		$current_stamp = $this->getStamp(); // mongo id in new version; else string
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
@@ -805,7 +805,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				if (isset($dropLineConf['conditions'])  && Billrun_Util::areConditionsMet($row, $dropLineConf['conditions'])) {
 					$desc = $dropLineConf['description'] ?? "No description (config index: $index)";
 					Billrun_Factory::log("Line dropped. Reason: " . $desc . ". Line details: " . print_r($row, true), Zend_Log::INFO);
-					$this->drop_lines[] = $row;
+					$this->drop_lines_counter ++;
 					unset($data['data'][$stamp]);
 					continue 2;
 				}
