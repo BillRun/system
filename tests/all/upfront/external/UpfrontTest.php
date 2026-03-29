@@ -22,7 +22,6 @@ class UpfrontTest extends \Codeception\Test\Unit
         ini_set('error_reporting', E_ALL & ~E_WARNING & ~E_NOTICE);
         $this->tester->cleanDB();
         $this->tester->setTimezone('UTC');
-        $this->changeDiscountsProrationFlags(false);
         $this->tester->enableExternalModeSettings();
     }
 
