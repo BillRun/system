@@ -1990,6 +1990,9 @@ class Billrun_Util {
 	 * @return boolean
 	 */
 	public static function areConditionsMet($row, $conditions) {
+		 if (empty($conditions)) {
+            return true;
+        }
 		foreach ($conditions as $condition) {
 			if (!Billrun_Util::isConditionMet($row, $condition)) {
 				return false;
@@ -1998,6 +2001,7 @@ class Billrun_Util {
 		return true;
 	}
 	
+
 	/**
 	 * try to fork, and if successful update the process log stamp
 	 * to match the correct pid after the fork
@@ -2259,4 +2263,13 @@ class Billrun_Util {
 		return $protocol . '://' . $host . '/';
 	}
 
+	public static function findMatchingEmailTemplate($path, $data = []){
+		$templates = Billrun_Factory::config()->getConfigValue('email_templates.' . $path .'.templates') ?? [];
+		foreach($templates as $template){
+			$conditions = $template['conditions'] ?? [];
+			if (empty($conditions)  || self::areConditionsMet($data, $conditions)){
+				return $template;
+			}
+		}
+	}
 }
