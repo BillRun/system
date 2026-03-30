@@ -2142,6 +2142,29 @@ runOnce(lastConfig, 'BRCD-5190', function () {
 	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: false , sparse: false, background: true });
 });
 
+runOnce(lastConfig, 'BRCD-5151', function () {
+	if (typeof lastConfig['email_templates'] !== 'undefined') {
+		Object.keys(lastConfig['email_templates']).forEach((templateType) => {
+			var oldTemplate = lastConfig['email_templates'][templateType];
+			if(typeof oldTemplate['templates'] === 'undefined'){
+				var newTemplate = {
+					"templates": [{
+						name: "default",
+						label: "Default",
+						conditions: [	
+						],
+						"subject" : oldTemplate["subject"],
+						"content" :  oldTemplate["content"],
+					}],
+				}
+
+				lastConfig['email_templates'][templateType] = newTemplate;
+			}
+			
+		});
+
+	}
+});
 
 db.config.insertOne(lastConfig);
 
