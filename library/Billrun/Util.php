@@ -1800,9 +1800,6 @@ class Billrun_Util {
 		}
 		
 		if (!is_array($keys)) {
-			if (!is_string($keys)) {
-				return '';
-			}
 			if (isset($arr[$keys])) {
 				return $arr[$keys];
 			}
@@ -1984,7 +1981,27 @@ class Billrun_Util {
 		
 		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
 	}
+
+	/**
+	 * check all conditions is met
+	 * 
+	 * @param array $row
+	 * @param array $conditions - array of condtions includes the following attributes: "field_name", "op", "value"
+	 * @return boolean
+	 */
+	public static function areConditionsMet($row, $conditions) {
+		 if (empty($conditions)) {
+            return true;
+        }
+		foreach ($conditions as $condition) {
+			if (!Billrun_Util::isConditionMet($row, $condition)) {
+				return false;
+			}
+		}
+		return true;
+	}
 	
+
 	/**
 	 * try to fork, and if successful update the process log stamp
 	 * to match the correct pid after the fork
@@ -2235,4 +2252,35 @@ class Billrun_Util {
 				Billrun_Util::generateArrayStamp( $arr2, $filterFields, true);
 	}
 
+	/**
+	 * Get the base URL from the request object.
+	 */
+	public static function getBaseUrl($request)
+	{
+		$server = $request->getServer();
+		$host = $server['HTTP_HOST'];
+		$protocol = 'http';
+
+		$forwardedProto = !empty($server['HTTP_X_FORWARDED_PROTO'])
+			? trim(explode(',', $server['HTTP_X_FORWARDED_PROTO'])[0])
+			: '';
+
+		if ((!empty($server['HTTPS']) && $server['HTTPS'] !== 'off') ||
+			strtolower($forwardedProto) === 'https'
+		) {
+			$protocol = 'https';
+		}
+
+		return $protocol . '://' . $host . '/';
+	}
+
+	public static function findMatchingEmailTemplate($path, $data = []){
+		$templates = Billrun_Factory::config()->getConfigValue('email_templates.' . $path .'.templates') ?? [];
+		foreach($templates as $template){
+			$conditions = $template['conditions'] ?? [];
+			if (empty($conditions)  || self::areConditionsMet($data, $conditions)){
+				return $template;
+			}
+		}
+	}
 }

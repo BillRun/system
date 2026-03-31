@@ -188,7 +188,7 @@ class discountData {
 					'PLAN_X' => 30,
 				],
 			],
-			'proration' => false,
+			'proration' => 'no',
 			'excludes' =>
 			[
 				0 => 'DISCOUNT1',
@@ -204,7 +204,7 @@ class discountData {
 			'creation_time' => '2019-08-01T00:00:00Z',
 			'type' => 'monetary',
 			'subject' => [],
-			'proration' => true
+			'proration' => 'yes'
 		]
 	];
 

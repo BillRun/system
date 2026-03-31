@@ -137,7 +137,7 @@ class Mongodloid_Collection {
 		// This function changes fields, should I clone fields before sending?
 		$this->setEntityFields($entity, $fields);
 
-		return Mongodloid_Result::getResult($this->updateOne($data, array('$set' => $fields)), __FUNCTION__);
+		return Mongodloid_Result::getResult($this->updateOne( Mongodloid_TypeConverter::fromMongodloid($data), array('$set' => $fields)), __FUNCTION__);
 	}
 
 	/**
@@ -825,7 +825,7 @@ class Mongodloid_Collection {
 			$collectionWriteConcern = $this->getWriteConcern();
 
 			$wstring = $options['w'] ?? $collectionWriteConcern['w'];
-			$wtimeout = isset($options['wTimeoutMS']) ? $options['wTimeoutMS'] : $collectionWriteConcern['wtimeout'];
+			$wtimeout = $options['wTimeoutMS'] ?? $collectionWriteConcern['wtimeout'];
 			$writeConcern = new \MongoDB\Driver\WriteConcern($wstring, max($wtimeout, 0));
 			$options['writeConcern'] = $writeConcern;
 		}

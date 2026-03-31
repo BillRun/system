@@ -100,7 +100,7 @@ class Billrun_Account_External extends Billrun_Account {
 				}
 
 			}
-			Billrun_Factory::dispatcher()->trigger('afterGetBillable',[&$results]);
+			Billrun_Factory::dispatcher()->trigger('afterGetBillable',[&$results,['requestParams' => $requestParams ,'cycle' => $cycle, 'page'=> $page , 'size' => $size, 'aids' => $aids, 'invoicing_days' => $invoicing_days] ]);
 			return $results;
 	}
 

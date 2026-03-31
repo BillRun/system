@@ -367,7 +367,7 @@ export default class FieldsMapping extends Component {
             <label htmlFor="date_field">Date Time</label>
             <p className="help-block">
               Date and time of record creation<br />
-              <a target="_blank" rel="noopener noreferrer" href="http://php.net/manual/en/function.date.php#refsect1-function.date-parameters">Formatting info</a>
+              <a target="_blank" rel="noopener noreferrer" href="https://www.php.net/manual/en/datetime.format.php#refsect1-datetime.format-parameters">Formatting info</a>
             </p>
           </div>
           <div className="col-lg-9">

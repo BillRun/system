@@ -45,6 +45,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	
 	protected $loadFromFile = FALSE;
 	
+	protected $loadFromFile = FALSE;
+	
 
 
 	/**
@@ -355,7 +357,6 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		Billrun_Factory::dispatcher()->trigger("beforeLoadWkpdf", array(&$query, $this->accountsToInvoice));
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
  		}
-	}
 	}
 
 	public function loadLines( $data ) {

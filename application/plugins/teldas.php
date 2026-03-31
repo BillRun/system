@@ -20,7 +20,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   protected $teldasPassword;
   protected $teldasAccessToken;
   protected $cache;
-  protected $lineType;
+  protected $matchingPathsByType;
   protected $moreSelctiveQuery = array();
 
   const RESPONSE_STATUS_OK = 200;
@@ -32,14 +32,17 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $this->teldasUrl = Billrun_Util::getIn($options, 'url', 'https://ws.numberportability.ch');
     $this->teldasUser = Billrun_Util::getIn($options, 'user', '');
     $this->teldasPassword = Billrun_Util::getIn($options, 'password', '');
-    $this->lineType = Billrun_Util::getIn($options, 'matching_paths.line_type', '');
+    $matchingPaths = Billrun_Util::getIn($options, 'matching_paths', '');
+    foreach($matchingPaths as $matchingPathsConf){
+        $this->matchingPathsByType[$matchingPathsConf['line_type']] = $matchingPathsConf;
+    }
     $this->teldasAccessToken = !empty($this->cache) ? ($this->cache->get(self::ACCESS_TOKEN_CACHE_KEY) ?? '' ) : '';
     $this->options = $options;
     $this->nonWorkingDaysCollection = Billrun_Factory::db()->plugin_teldas_non_working_daysCollection(['force' => true]);
     $this->inaNumbersCollection = Billrun_Factory::db()->plugin_teldas_ina_numbersCollection(['force' => true]);
     $this->tariffsProfilesCollection = Billrun_Factory::db()->plugin_teldas_tariffs_profilesCollection(['force' => true]);
     $this->tariffSwitchingClassesCollection = Billrun_Factory::db()->plugin_teldas_tariff_switching_classesCollection(['force' => true]);
-	}
+  }
     
   protected function authentication() {
     Billrun_Factory::log("Sending authentication request to teldas.", Zend_Log::DEBUG);
@@ -119,15 +122,11 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           $importingNonWorkingDays[] = array_merge($nonWorkingDay, array('dateTo' => $dateTo));
       }
       $newestNonWorkingDays = $this->nonWorkingDaysCollection->query()->cursor()->sort(array('_id' => -1))->limit(1)->current()->getRawData();
-      Billrun_Factory::log("Inserting " . count($importingNonWorkingDays) . " non working days.", Zend_Log::DEBUG);
-      try {
-          if(!empty($importingNonWorkingDays)){
-            $this->nonWorkingDaysCollection->batchInsert($importingNonWorkingDays);
-          }
-      } catch (Exception $e){
-          Billrun_Factory::log("Inserting non working days failed. Error: " . $e->getMessage(), Zend_Log::ERR);
-          return;
-      }   
+
+      $result = $this->batchInsert($this->nonWorkingDaysCollection, $importingNonWorkingDays, "non working days");
+      if(!$result){
+        return;
+      } 
       if(!empty($newestNonWorkingDays) ){
           $this->nonWorkingDaysCollection->remove(array('_id' => array('$lte' => $newestNonWorkingDays['_id'])));
       }
@@ -185,7 +184,8 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       $success1 = $this->getCompleteListOfInaNumbers($parameters);
       if (!$success1) {
           Billrun_Factory::log("Failed to get the complete list of INA numbers", Zend_Log::ALERT);
-          return;
+          $this->clearTeldasCollections();
+          return; 
       }
       $updateOnlineTariffProfile = Billrun_Util::getIn($this->options, 'update_online');
       $success2 = true;
@@ -194,15 +194,16 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         $success2 = $this->getCompleteListOfTariffsProfiles($type);
         if (!$success2) {
             Billrun_Factory::log("Failed to get the complete list of  $type tariffs profiles", Zend_Log::ALERT);
-            //todo::should revert and return 
+            $this->clearTeldasCollections();
+            return; 
         }
       }
       
       $success3 = $this->getCompleteListOfTariffSwitchingClasses();
       if (!$success3) {
           Billrun_Factory::log("Failed to get the complete list of tariffs switching classes", Zend_Log::ALERT);
-          //todo::should revert and return 
-      }
+          $this->clearTeldasCollections();
+          return;       }
 
       $updateOfflineATariffProfile = Billrun_Util::getIn($this->options, 'update_offline-a');
       $success4 = true;
@@ -211,8 +212,8 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         $success4 = $this->getCompleteListOfTariffsProfiles($type);
         if (!$success4) {
             Billrun_Factory::log("Failed to get the complete list of $type tariffs profiles", Zend_Log::ALERT);
-            //todo::should revert and return 
-        }
+            $this->clearTeldasCollections();
+            return;         }
       }
       
       if ($success1 && $success2 && $success3 && $success4) { //todo::remove this if 
@@ -221,6 +222,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           $this->updateConfigTeldasData('last_update_time', new MongoDate(strtotime($parameters['transactionDateTimeTo'])));
       }
   }
+    protected function clearTeldasCollections(){
+        Billrun_Factory::log("Clearing teldas collections", Zend_Log::INFO);
+        $this->inaNumbersCollection->remove(array('_id'=> ['$exists' => true]));
+        $this->tariffsProfilesCollection->remove(array('_id'=> ['$exists' => true]));
+        $this->tariffSwitchingClassesCollection->remove(array('_id'=> ['$exists' => true]));
+    }
+
 
   protected function updateConfigTeldasData($field, $value) {
       Billrun_Factory::log("Updating teldas." . $field . " in config to value: " . $value, Zend_Log::DEBUG);
@@ -298,33 +306,20 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           }
       }
       $totalInaNumbers = array_unique($totalInaNumbers, SORT_REGULAR);
-      Billrun_Factory::log("Inserting " . count($totalInaNumbers) . " INA numbers.", Zend_Log::DEBUG);
-      try {
-          if(!empty($totalInaNumbers)){
-            $this->inaNumbersCollection->batchInsert($totalInaNumbers);  
-          }     
-      } catch (Exception $e){
-          Billrun_Factory::log("Inserting INA numbers failed. Error: " . $e->getMessage(), Zend_Log::ERR);
-          return false;
-      }   
-      Billrun_Factory::log("Inserting " . count($totalHistoryInaNumbers) . " history INA numbers.", Zend_Log::DEBUG);
-      try {
-          if(!empty($totalHistoryInaNumbers)){
-            $this->inaNumbersCollection->batchInsert($totalHistoryInaNumbers);
-          }
-      } catch (Exception $e){
-          Billrun_Factory::log("Inserting INA numbers history failed. Error: " . $e->getMessage(), Zend_Log::ERR);
-          return false;
+      $result = $this->batchInsert($this->inaNumbersCollection, $totalInaNumbers, "INA numbers");
+      if(!$result){
+        return false;
       }
-      Billrun_Factory::log("Inserting " . count($modifyPendingRevisions) . " modify pending INA numbers.", Zend_Log::DEBUG);
-      try {
-          if(!empty($modifyPendingRevisions)){
-            $this->inaNumbersCollection->batchInsert($modifyPendingRevisions);
-          }
-      } catch (Exception $e){
-          Billrun_Factory::log("Inserting modify pending INA numbers failed. Error: " . $e->getMessage(), Zend_Log::ERR);
-          return false;
-      }   
+      $result = $this->batchInsert($this->inaNumbersCollection, $totalHistoryInaNumbers, "history INA numbers");
+      if(!$result){
+        return false;
+      }
+
+        $result = $this->batchInsert($this->inaNumbersCollection, $modifyPendingRevisions, "modify pending INA numbers");
+        if(!$result){
+            return false;
+        }
+ 
       return true;
   }
 
@@ -338,15 +333,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           $tariffsProfile['transactionDateTime'] = new MongoDate(strtotime($tariffsProfile['transactionDateTime']));
           $tariffsProfile['transactionDateTimeTo'] = null;
       }
-      Billrun_Factory::log("Inserting " . count($tariffsProfiles) . " $type tariffs profiles.", Zend_Log::DEBUG);
-      try {
-        if(!empty($tariffsProfiles)){
-            $this->tariffsProfilesCollection->batchInsert($tariffsProfiles);
-        }
-      } catch (Exception $e){
-          Billrun_Factory::log("Inserting $type tariffs profiles failed. Error: " . $e->getMessage(), Zend_Log::ERR);
+      $result = $this->batchInsert($this->tariffsProfilesCollection, $tariffsProfiles, "$type tariffs profiles");
+      if(!$result){
           return false;
-      }   
+      }
       return true;
   }
 
@@ -360,15 +350,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           $tariffsSwitchingClass['transactionDateTime'] = new MongoDate(strtotime($tariffsSwitchingClass['transactionDateTime']));
           $tariffsSwitchingClass['transactionDateTimeTo'] = null;
       }
-      Billrun_Factory::log("Inserting " . count($tariffsSwitchingClasses) . " tariffs switching classes.", Zend_Log::DEBUG);
-      try {
-          if(!empty($tariffsSwitchingClasses)){
-            $this->tariffSwitchingClassesCollection->batchInsert($tariffsSwitchingClasses);
-          }
-    } catch (Exception $e){
-          Billrun_Factory::log("Inserting tariffs switching classes failed. Error: " . $e->getMessage(), Zend_Log::ERR);
+      $result = $this->batchInsert($this->tariffSwitchingClassesCollection, $tariffsSwitchingClasses, "tariffs switching classes");
+      if(!$result){
           return false;
-      }  
+      }
       return true;
   }
 
@@ -398,7 +383,8 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       if (!$success1) {
           Billrun_Factory::log("Failed to keep system up to date of INA numbers", Zend_Log::ALERT);
-          //todo :: should revert and return 
+          $this->revertTeldasCollections($lastUpdateTime);
+          return;
       }
       $updateOnlineTariffProfile = Billrun_Util::getIn($this->options, 'update_online');
       $success2 = true;
@@ -407,8 +393,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         $success2 = $this->keepSystemUpToDateOfTariffsProfiles($parameters, $type);
         if (!$success2) {
             Billrun_Factory::log("Failed to keep system up to date of $type tariffs profiles", Zend_Log::ALERT);
+            $this->revertTeldasCollections($lastUpdateTime);
+            return;
         }
-        //todo :: should revert and return 
       }
       $updateOfflineATariffProfile = Billrun_Util::getIn($this->options, 'update_offline-a');
       $success3 = true;
@@ -417,8 +404,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         $success3 = $this->keepSystemUpToDateOfTariffsProfiles($parameters, $type);
         if (!$success3) {
             Billrun_Factory::log("Failed to keep system up to date of $type tariffs profiles", Zend_Log::ALERT);
+            $this->revertTeldasCollections($lastUpdateTime);
+            return;        
         }
-        //todo :: should revert and return 
       }
     
       if ($success1 && $success2 && $success3) {//todo:: remove this if 
@@ -427,10 +415,69 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
   }
 
+  protected function revertTeldasCollections($lastUpdateTime){
+    Billrun_Factory::log("Reverting all changes of teldas collection until last update time " .  $lastUpdateTime, Zend_Log::DEBUG);
+    $query = array(
+        'transactionDatetime' => array (
+            '$gt' => $lastUpdateTime
+        )
+    );
+    $ret = $this->inaNumbersCollection->remove($query);
+    Billrun_Factory::log("Removed " . $ret['n'] ." INA numbers", Zend_Log::DEBUG);
+    $ret = $this->tariffsProfilesCollection->remove($query);
+    Billrun_Factory::log("Removed " . $ret['n'] ." tariffs profiles", Zend_Log::DEBUG);
+    $ret = $this->tariffSwitchingClassesCollection->remove($query);
+    Billrun_Factory::log("Removed " . $ret['n'] ." tariffs switching classes", Zend_Log::DEBUG);
+    $mappingUpdates = [
+        ['collection' =>  $this->inaNumbersCollection, 'sortField' => 'subscriberNumber'],
+        ['collection' =>  $this->tariffsProfilesCollection, 'sortField' => 'id'],
+        ['collection' =>  $this->tariffSwitchingClassesCollection, 'sortField' => 'id']
+    ];
+    foreach($mappingUpdates as $map){
+        $collection = $map['collection'];
+        // Step 1: Find the latest document _id per sortField
+        $pipeline = [
+            ['$sort' => [$map['sortField'] => 1, 'transactionDatetime' => -1]],
+            [
+                '$group' => [
+                    '_id' => '$' . $map['sortField'],
+                    'latestId' => ['$first' => '$_id'],
+                    'transactionDatetimeTo' => ['$first' => '$transactionDatetimeTo'],
+                ]
+            ],
+            [
+                '$match' => ['transactionDatetimeTo' => ['$ne' => null]]
+            ]
+
+        ];
+        
+        $cursor = $collection->aggregate($pipeline);
+    
+        $latestIds = [];
+        $latestIdsCount = 0;
+        foreach ($cursor as $doc) {
+            $latestIdsCount++;
+            $latestIds[] = $doc['latestId'];
+        }
+        Billrun_Factory::log("Updating " . $latestIdsCount . " teldas collection: " . $collection->getName() .",  transactionDatetimeTo to null." , Zend_Log::DEBUG);
+
+        // Step 2: Update only those latest documents
+        if (!empty($latestIds)) {
+            $res = $collection->update(
+                ['_id' => ['$in' => $latestIds]],
+                ['$set' => ['transactionDatetimeTo' => null]]
+            , ['multiple' => true]);
+
+        }
+    }
+  }
+    
+
   protected function keepSystemUpToDateOfInaNumbers($parameters) {
       Billrun_Factory::log("Keeping system up-to-date of INA numbers", Zend_Log::DEBUG);
       $inaNumbers = $this->getInaNumbers($parameters);
       $modifyPendingRevisions = [];
+      $updatingInaNumbers = 0;
       if ($inaNumbers === false) {
           return false;
       }
@@ -453,25 +500,18 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               Billrun_Factory::log("Something wrong. Modified transactionDatetimeTo field to " . $ret['nModified'] . " revisions instead of one. query: " . print_r($query, 1), Zend_Log::ERR);
               false;
           }
+          $updatingInaNumbers += $ret['nModified'];
       }
-      Billrun_Factory::log("Inserting " . count($inaNumbers) . " INA numbers.", Zend_Log::DEBUG);
-      try {
-          if(!empty($inaNumbers)){
-            $this->inaNumbersCollection->batchInsert($inaNumbers);
-          }
-      } catch (Exception $e){
-          Billrun_Factory::log("Inserting INA numbers failed. Error: " . $e->getMessage(), Zend_Log::ERR);
+      Billrun_Factory::log("Update " . $updatingInaNumbers . " INA number previous record ", Zend_Log::DEBUG);
+
+      $result = $this->batchInsert($this->inaNumbersCollection, $inaNumbers, "INA numbers");
+      if(!$result){
           return false;
       }
-      Billrun_Factory::log("Inserting " . count($modifyPendingRevisions) . " modify pending INA numbers.", Zend_Log::DEBUG);
-      try {
-          if(!empty($modifyPendingRevisions)){
-            $this->inaNumbersCollection->batchInsert($modifyPendingRevisions);
-          }
-      } catch (Exception $e){
-          Billrun_Factory::log("Inserting modify pending INA numbers failed. Error: " . $e->getMessage(), Zend_Log::ERR);
-          return false;
-      }
+        $result = $this->batchInsert($this->inaNumbersCollection, $modifyPendingRevisions, "modify pending INA numbers");
+        if(!$result){
+            return false;
+        }
       return true;
   }
 
@@ -481,6 +521,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       if ($tariffsProfiles === false) {
           return false;
       }
+      $updatingTariffsProfiles = 0;
       foreach ($tariffsProfiles as &$tariffsProfile) {
           $tariffsProfile['transactionDateTime'] = new MongoDate(strtotime($tariffsProfile['transactionDateTime']));
           $tariffsProfile['transactionDateTimeTo'] = null;
@@ -492,17 +533,54 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               Billrun_Factory::log("Something wrong. Modified transactionDatetimeTo field to " . $ret['nModified'] . " revisions instead of one. query: " . print_r($query, 1), Zend_Log::ERR);
               false;
           }
+          $updatingTariffsProfiles += $ret['nModified'];
       }
-      Billrun_Factory::log("Inserting " . count($tariffsProfiles) . " online tariffs profiles.", Zend_Log::DEBUG);
-      try {
-          if(!empty($tariffsProfiles)){
-            $this->tariffsProfilesCollection->batchInsert($tariffsProfiles);
-          }
-      } catch (Exception $e){
-          Billrun_Factory::log("Inserting online tariffs profiles failed. Error: " . $e->getMessage(), Zend_Log::ERR);
-          return false;
-      }  
+      Billrun_Factory::log("Update " . $updatingTariffsProfiles . " $type tariffs profiles previous record ", Zend_Log::DEBUG);
+      $result = $this->batchInsert($this->tariffsProfilesCollection, $tariffsProfiles, "$type tariffs profiles");
+        if(!$result){
+            return false;
+        }
       return true;
+  }
+
+
+  
+  protected function batchInsert($collection, $entitiesToInsert, $logTiltle){
+    Billrun_Factory::log("Inserting " . count($entitiesToInsert) . " $logTiltle."  , Zend_Log::DEBUG);
+    try {
+        if(!empty($entitiesToInsert)){
+            $ret = $collection->batchInsert($entitiesToInsert);
+			if (isset($ret['err']) && !is_null($ret['err'])) {
+                Billrun_Factory::log("Batch Insert of " . $logTiltle . " failed. Error: " . $ret['errmsg'], Zend_Log::ALERT);
+				throw new Exception($ret['err'], $ret['errmsg']);
+			}
+        }
+	} catch (Exception $e) {
+        try {
+            Billrun_Factory::log("Inserting " . $logTiltle . " line by line",  Zend_Log::DEBUG);
+
+            foreach ($entitiesToInsert as $entity) {
+                try {
+                    $ret = $collection->insert($entity); // ok==1, err null
+                    if (isset($ret['err']) && !is_null($ret['err'])) {
+                        throw new Exception($ret['err'], $ret['errmsg']);
+                    }
+                } catch (Exception $e) {
+                    if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+                        Billrun_Factory::log("Insertion of " . $logTiltle . "  failed, Insert Error: " . $e->getMessage() , Zend_Log::NOTICE);
+                        continue;
+                    } else {
+                        Billrun_Factory::log("Insertion of " . $logTiltle . "  failed, Insert Error: " . $e->getMessage() , Zend_Log::ALERT);
+                        throw $e;
+                    }
+                }
+            }
+        } catch (Exception $ex) {
+            Billrun_Factory::log("Inserting " . $logTiltle .  "failed. Error: " . $e->getMessage(), Zend_Log::ERR);
+            return false;
+        }
+	}
+    return true;
   }
 
   protected function keepSystemUpToDateOfTariffSwitchingClasses() {
@@ -516,15 +594,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           $tariffSwitchingClass['transactionDateTimeTo'] = null;
       }
       $newestTariffSwitchingClass = $this->tariffSwitchingClassesCollection->query()->cursor()->sort(array('_id' => -1))->limit(1)->current()->getRawData();
-      Billrun_Factory::log("Inserting " . count($tariffSwitchingClasses) . " tariff switching classes.", Zend_Log::DEBUG);
-      try {
-          if(!empty($tariffSwitchingClasses)){
-            $this->tariffSwitchingClassesCollection->batchInsert($tariffSwitchingClasses);
-          }
-      } catch (Exception $e){
-          Billrun_Factory::log("Inserting tariff switching classes failed. Error: " . $e->getMessage(), Zend_Log::ERR);
+      $result = $this->batchInsert($this->tariffSwitchingClassesCollection, $tariffSwitchingClasses, "tariff switching classes");
+      if(!$result){
           return false;
-      }   
+      }
       if(!empty($newestTariffSwitchingClass) ){
           $this->tariffSwitchingClassesCollection->remove(array('_id' => array('$lte' => $newestTariffSwitchingClass['_id'])));
       }
@@ -809,6 +882,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       $missingInaNumbersRevisions = [];
       $modifyPendingRevisions = [] ; 
+      $updatingInaNumbers = 0;
       foreach ($inaNumbers as $inaNumber) {
           $modifyPendingFound = false;
           $missingInaNumberRevisions = $this->getMissingInaNumberRevisions($inaNumber['subscriberNumber'], strtotime($parameters['transactionDateTimeFrom']), $modifyPendingFound);
@@ -831,25 +905,17 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           if ($ret['nModified'] > 1) {
               Billrun_Factory::log("Something wrong. Modified transactionDatetimeTo field to " . $ret['nModified'] . " revisions instead of one. query: " . print_r($query, 1), Zend_Log::ERR);
               false;
-          }           
+            }
+            $updatingInaNumbers += $ret['nModified'] ?? 0;
       }
-      Billrun_Factory::log("Inserting " . count($missingInaNumbersRevisions) . " missing INA numbers.", Zend_Log::DEBUG);
-      try {
-          if(!empty($missingInaNumbersRevisions)){
-            $this->inaNumbersCollection->batchInsert($missingInaNumbersRevisions);
-          }
-      } catch (Exception $e){
-          Billrun_Factory::log("Inserting missing INA number failed. Error: " . $e->getMessage(), Zend_Log::ERR);
-          return false;
+      Billrun_Factory::log("Update " . $updatingInaNumbers . " INA number previous record ", Zend_Log::DEBUG);
+      $result = $this->batchInsert($this->inaNumbersCollection, $missingInaNumbersRevisions, "missing INA numbers");
+      if(!$result){
+        return false;
       }
-      Billrun_Factory::log("Inserting " . count($modifyPendingRevisions) . " modify pending INA numbers.", Zend_Log::DEBUG);
-      try {
-          if(!empty($modifyPendingRevisions)){
-            $this->inaNumbersCollection->batchInsert($modifyPendingRevisions);
-          }
-      } catch (Exception $e){
-          Billrun_Factory::log("Inserting modify pending INA numbers failed. Error: " . $e->getMessage(), Zend_Log::ERR);
-          return false;
+      $result = $this->batchInsert($this->inaNumbersCollection, $modifyPendingRevisions, "modify pending INA numbers.");
+      if(!$result){
+        return false;
       }
       return true;
   }
@@ -985,6 +1051,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   protected function calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
       $chargeConfigurations = $tariffProfile['chargeConfigurations'];
       $matchingChargeConfigurations = null;
       foreach ($chargeConfigurations as $chargeConfiguration) {
@@ -997,13 +1064,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           Billrun_Factory::log("Empty week charge configurations for sequence : " . $sequence . ". Tariff proffile revision: " . print_r($tariffProfile, 1), Zend_Log::ALERT);
           return false;
       }
-      $durationPath = Billrun_Util::getIn($this->options, 'matching_paths.duration.path');
+      $durationPath = Billrun_Util::getIn($matchingPaths, 'duration.path');
       $duration = Billrun_Util::getIn($line, $durationPath);
       if (is_null($duration)) {
           Billrun_Factory::log("Failed to get " . $durationPath . "  from line." . print_r($line, 1), Zend_Log::ALERT);
           return false;
       }
-      $durationDivide = Billrun_Util::getIn($this->options, 'matching_paths.duration.divide_to_seconds', 1000);
+      $durationDivide = Billrun_Util::getIn($matchingPaths, 'duration.divide_to_seconds', 1000);
       if($durationDivide == 0){
         Billrun_Factory::log("Invalid divide_to_seconds value. Can't divide by zero, please change matching_paths.duration.divide_to_seconds to valid value.", Zend_Log::ALERT);
         return false;
@@ -1088,8 +1155,8 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return false;
   }
 
-  protected function convertDestNumberToSubscriberNumber($destNumber){
-      $convertPatterns = Billrun_Util::getIn($this->options, 'matching_paths.subscriber_number.convertion',[]);
+  protected function convertDestNumberToSubscriberNumber($destNumber, $matchingPaths){
+      $convertPatterns = Billrun_Util::getIn($matchingPaths, 'subscriber_number.conversion',Billrun_Util::getIn($matchingPaths, 'subscriber_number.convertion',[]));
       foreach($convertPatterns as $convert){
         $pattern = $convert['pattern'] ?? '';
         $replacement = $convert['replacement'] ?? '';
@@ -1098,18 +1165,19 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return $destNumber;
   }
   protected function pricingCdr($line) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
       $urt =  $line['urt']->sec;
       if (!isset($line['urt'])) {
           Billrun_Factory::log("Failed to get urt from line." . print_r($line, 1), Zend_Log::ALERT);
           return false;
       }
-      $inaNumberPath = Billrun_Util::getIn($this->options, 'matching_paths.subscriber_number.path');
+      $inaNumberPath = Billrun_Util::getIn($matchingPaths, 'subscriber_number.path');
       $inaNumber = Billrun_Util::getIn($line, $inaNumberPath);
       if (!$inaNumber) {
           Billrun_Factory::log("Failed to get $inaNumberPath from line." . print_r($line, 1), Zend_Log::ALERT);
           return false;
       }
-      $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber);
+      $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber, $matchingPaths);
       $inaNumberRevison = $this->getMatchingInaNumberRevision($inaNumber, $urt);
       if ($inaNumberRevison === false) {
           Billrun_Factory::log("Failed found matching subscriberNumber  revision for $inaNumberPath in INA numbers collection. subscriberNumber: $inaNumber, urt: ". date("Y-m-d H:i:s", $urt), Zend_Log::DEBUG);
@@ -1152,13 +1220,14 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   protected function calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line) {
-    $durationPath = Billrun_Util::getIn($this->options, 'matching_paths.duration.path');
+    $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+    $durationPath = Billrun_Util::getIn($matchingPaths, 'duration.path');
     $duration = Billrun_Util::getIn($line, $durationPath) ?? 0;
     if (is_null($duration)) {
         Billrun_Factory::log("Failed to get " . $durationPath . "  from line." . print_r($line, 1), Zend_Log::ALERT);
         return false;
     }
-    $durationDivide = Billrun_Util::getIn($this->options, 'matching_paths.duration.divide_to_seconds', 1000);
+    $durationDivide = Billrun_Util::getIn($matchingPaths, 'duration.divide_to_seconds', 1000);
     $aprice = 0 ;
     $left = (float) $duration / $durationDivide;
     $left = $this->converFieldByRoundingRules($left, 'duration');
@@ -1267,14 +1336,25 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       $inaNumberPrefixes = Billrun_Util::getIn($this->options, 'ina_number_prefixes', "/^(0800|0848|0900|0901|0906|0840|0842|0844|0878)|^18[0-9][0-9]$/");
       return preg_match($inaNumberPrefixes, $inaNumber);
   }
+ 
+  public function afterRealtimeProcessorParsing(&$line, $type){
+    return $this->afterGetLineUsageType($line, $type);
+  }
+
 
   public function afterGetLineUsageType(&$line, $type) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+
       if(date_default_timezone_get() != 'Europe/Zurich'){
         Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
         return;
       }
-      if ($type != $this->lineType) {
+      if (!isset($matchingPaths)) {
           return;
+      }
+      Billrun_Factory::log("Checking if line "  . $line['stamp'] .  " should be fillter out", Zend_Log::DEBUG);
+      if(!$this->lineMatchConditions($line, $matchingPaths)){
+        return;
       }
       Billrun_Factory::log("Checking if line "  . $line['stamp'] .  " is Teldas INA number", Zend_Log::DEBUG);
       $urt = $line['urt']->sec;
@@ -1282,13 +1362,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           Billrun_Factory::log("Failed to get urt from line." . print_r($line, 1), Zend_Log::ALERT);
           return;
       }
-      $inaNumberPath = Billrun_Util::getIn($this->options, 'matching_paths.subscriber_number.path');
+      $inaNumberPath = Billrun_Util::getIn($matchingPaths, 'subscriber_number.path');
       $inaNumber = Billrun_Util::getIn($line, $inaNumberPath);
       if (!$inaNumber) {
           Billrun_Factory::log("Failed to get " . $inaNumberPath . " from line " . $line['stamp'], Zend_Log::DEBUG);
           return;
       }
-      $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber);
+      $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber, $matchingPaths);
       if (!$this->checkIfValidPrefixInaNumber($inaNumber)) {
           return;
       }
@@ -1297,7 +1377,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           return;
       }
       $this->addCfTeldasFieldsByInaNumber($inaNumberRevison, $line);
-      $line['usaget'] = Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call');
+      $line['usaget'] = Billrun_Util::getIn($matchingPaths, 'usage.type', 'ina_vas_call');
       $line['prepriced'] = true;
     //   $usagevUnit = Billrun_Util::getIn($this->options, 'matching_paths.usage.unit', 'seconds');
     //   $volumeType = Billrun_Util::getIn($this->options, 'matching_paths.volume.type', 'field');
@@ -1305,15 +1385,25 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     //   $stampFields = Billrun_Util::getIn($this->options, 'matching_paths.stamps_fields', array());
   }
 
+  protected function lineMatchConditions($line, $matchingPaths){
+    if (isset($matchingPaths['conditions']) && !Billrun_Util::areConditionsMet($line, $matchingPaths['conditions'])) {
+        Billrun_Factory::log("Line " . $line['stamp'] . " should not be mapped for teldas, conditions are not match." , Zend_Log::DEBUG);
+        return false;
+    }
+    
+	return true;	
+  }
+
   public function beforeGetLineAprice($line, &$aprice) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
       if(date_default_timezone_get() != 'Europe/Zurich'){
         Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
         return;
       }
-      if ($line['type'] != $this->lineType) {
+      if (!isset($matchingPaths)) {
           return;
       }
-      if ($line['usaget'] != Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call')) {
+      if ($line['usaget'] != Billrun_Util::getIn($matchingPaths, 'usage.type', 'ina_vas_call')) {
         return;
       }
       $this->priceByStamp[$line['stamp']] = $this->pricingCdr($line);
@@ -1321,14 +1411,16 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   public function beforeGetLinePriceToTax($line, &$aprice, $instance) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+
       if(date_default_timezone_get() != 'Europe/Zurich'){
         Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
         return;
       }
-      if ($line['type'] != $this->lineType) {
+      if (!isset($matchingPaths)) {
           return;
       }
-      if ($line['usaget'] != Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call')) {
+      if ($line['usaget'] != Billrun_Util::getIn($matchingPaths, 'usage.type', 'ina_vas_call')) {
         return;
       }
       $taxData = $instance->getPreTaxedRowTaxData($line);
@@ -1399,7 +1491,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           "display" => true,
           "nullable" => false,
           /*
-          '{
+          '[{
             "line_type": "Teles", 
             "duration": {
                 "path": "uf.Duration", 
@@ -1407,7 +1499,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             }, 
             "subscriber_number": {
                 "path": "uf.Dest_Number",
-                "convertion": [{ 
+                "conversion": [{ 
                     'pattern':'/^\\+41(?=\\d{4}$)/',
                     'replacement':''
                   },
@@ -1421,7 +1513,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
                 "type": "ina_vas_call", 
                 "unit": "seconds"
             }
-          }'*/
+          }]'*/
         ],
         [
           'type' => 'boolean',
