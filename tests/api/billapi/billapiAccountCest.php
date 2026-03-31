@@ -6,8 +6,18 @@ class billapiAccountCest
     public $accountDetails;
     public $planDetails;
     public $serviceDetails;
+    protected $isRun =false;
+    	private $defaultTimezone;
+
     public function _before(ApiTester $I)
     {
+        	if(!$this->isRun) {
+			$this->isRun = true;
+			//load the  config so  we  can  ovverride the  timezone AFTER  it  waas  set by configuration
+			Billrun_Factory::config();
+			$this->defaultTimezone = date_default_timezone_get();
+			date_default_timezone_set('Asia/Jerusalem');
+		}
     }
 
 
@@ -185,6 +195,8 @@ class billapiAccountCest
         ]
     ]);
     $I->seeResponseContains('"status":1');
+    date_default_timezone_set($this->defaultTimezone );
+
 }
 
 }

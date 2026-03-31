@@ -1,8 +1,10 @@
 <?php
 
 use phpseclib3\Crypt\PublicKeyLoader;
-use phpseclib3\Net\SFTP;
 use phpseclib3\System\SSH\Agent;
+use phpseclib3\Net\SSH2;
+use phpseclib3\Crypt\RSA;
+use phpseclib3\Net\SFTP;
 
 /**
  * @package         Billing
@@ -15,7 +17,9 @@ use phpseclib3\System\SSH\Agent;
  *
  * @package  Billrun SSH
  * @since    5.0
- * @uses Net_SFTP, Crypt_RSA, System_SSH_Agent
+ * @uses phpseclib3\Net\SFTP
+ * @uses phpseclib3\Crypt\RSA
+ * @uses phpseclib3\System\SSH\Agent
  */
 class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 
@@ -168,7 +172,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @return string|null
 	 */
 	public function nextLine() {
-		$value = $this->getConnection()->_get_channel_packet(\phpseclib\Net\SSH2::CHANNEL_EXEC);
+		$value = $this->getConnection()->_get_channel_packet(SSH2::CHANNEL_EXEC);
 
 		return $value === true ? null : $value;
 	}
@@ -312,7 +316,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * Create a new RSA key instance.
 	 *
 	 * @param  array  $auth
-	 * @return Crypt_RSA
+	 * @return RSA
 	 * 
 	 * @deprecated since version 5.16
 	 */
@@ -350,8 +354,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @deprecated since version 5.16
 	 */
 	public function getNewKey() {
-		return phpseclib3\Crypt\RSA::load();
-		//return Crypt_RSA::factory();
+		return;
 	}
 
 	/**
@@ -384,7 +387,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	/**
 	 * Get the underlying Net_SFTP connection.
 	 *
-	 * @return Net_SFTP
+	 * @return SFTP
 	 */
 	public function getConnection() {
 		if ($this->connection) {

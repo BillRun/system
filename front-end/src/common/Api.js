@@ -63,6 +63,7 @@ const buildApiString = (params = {}) => {
     case 'custompaymentgateway':
     case 'billrun':
     case 'queue':
+    case 'Auth':
       return `/${params.api}/${params.action}`;
     default:
       return `/api/${params.api}`;

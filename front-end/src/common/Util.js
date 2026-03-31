@@ -92,19 +92,28 @@ export const getConfig = (key, defaultValue = null) => {
   return configCache.getIn(path, defaultValue);
 };
 
-export const getFieldName = (field, category, defaultValue = null) => {
+export const replaceReplacements = (str, replacements = null, defaultValue = '') => {
+  if (replacements === null) {
+    replacements = {}; // force replace placeholders by empty string by default
+  }
+  return str.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return replacements[key] !== undefined ? replacements[key] : defaultValue;
+  });
+};
+
+export const getFieldName = (field, category, defaultValue = null, replacements = null, defaultReplacementValue = '') => {
   const categoryName = getConfig(['fieldNames', category, field], false);
   if (typeof categoryName === 'string' && categoryName.length > 0) {
-    return categoryName;
+    return replaceReplacements(categoryName, replacements, defaultReplacementValue);
   }
   const rootName = getConfig(['fieldNames', field], false);
   if (typeof rootName === 'string' && rootName.length > 0) {
-    return rootName;
+    return replaceReplacements(rootName, replacements, defaultReplacementValue);
   }
   if (defaultValue !== null) {
-    return defaultValue;
+    return replaceReplacements(defaultValue, replacements, defaultReplacementValue);
   }
-  return field;
+  return replaceReplacements(field, replacements, defaultReplacementValue);
 };
 
 

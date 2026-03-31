@@ -374,7 +374,13 @@
     "billrun_key": "Billing cycle"
   },
   "immediate_invoice": {
+    "type_refund": "refund",
+    "type_charge": "charge",
+    "refund_amount": "Amount",
+    "no_tax": "before taxes",
+    "refund_reason": "Refund Reason",
     "list_title": "Invoice Lines",
+    "refund_details": "Refund Details",
     "popup_title": "View and confirm invoice",
     "error_generate_invoice": "Error, can not generate expected invoice",
     "error_retrieving_invoice": "Error retrieving invoice data",
@@ -387,11 +393,14 @@
     "select_rate_help": "Select Product",
     "select_subscriber_help": "Select Subscriber",
     "select_customer": "Select Customer",
-    "select_invoice_without_charge": "Issue invoice only, without charge",
-    "select_invoice_charge": "Issue invoice and charge it",
-    "select_invoice_successful_charge": "Issue invoice upon successful charge",
+    "select_invoice_id": "Adjusted Invoice",
+    "select_invoice_id_help": "Invoice ID | Invoice amount including tax | Invoice date",
+    "select_invoice_without_charge": "Issue invoice only, without {{type}}",
+    "select_invoice_charge": "Issue invoice and {{type}} it",
+    "select_invoice_successful_charge": "Issue invoice upon successful {{type}}",
     "confirm_reset_form": "Are you sure you want to reset invoice ?",
     "confirm_reset_lines": "Are you sure you want to remove lines ?",
+    "confirm_reset_refund_inv": "Are you sure you want to clear invoice ?",
     "reset_form": "Clear",
     "send_invoice_email": "Send invoice to customer by email",
     "view_expected_invoice_btn": "View Expected Invoice",
@@ -401,9 +410,12 @@
     "price_input_help": "Value can be empty, will be auto-calculate by volume field and product",
     "subscriber_input_help": "Type a subscriber ID, first, or last name to search.",
     "select_customer_help": "Type a customer name or ID to search.",
+    "select_invoice_help": "Type invoice ID to search.",
+    "immediate_date": "Invoice date",
+    "select_product_help": "Type product name to search.",
     "btn_download_invoice": "Download Invoice",
     "btn_download_expected_invoice": "Download Expected Invoice",
-    "btn_confirm_expected_invoice": "Confirm and issue invoice"
+    "btn_confirm_expected_invoice": "Confirm and issue {{type}} invoice"
   },
   "export_generator": {
     "name": "Name",
@@ -447,6 +459,7 @@
     "charging_type.charge": "Charge Only",
     "charging_type.refund": "Refund Only"
   },
+  "optional": "optional",
   "is_schedule": "Schedule",
   "exclude_aids": "Excluded Customer IDs",
   "include_aids": "Include Customer IDs",

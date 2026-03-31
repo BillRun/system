@@ -227,7 +227,8 @@
 								{
 									"field_name": "services",
 									"system": true,
-									"mandatory": false
+									"mandatory": false,
+									"multiple": true
 								}
 							]
 						},
@@ -2711,24 +2712,25 @@
 						"website": "example.com"
 					},
 					"invoice_export": {
-						"export": "files/invoices/",
-						"generator": {
-							"type": "WkPdf"
+						"export" : "files/invoices/",
+						"onetime_view_path" : "/views/invoices/onetime/",
+						"generator" : {
+							"type" : "WkPdf"
 						},
-						"disable_stamp_export_directory": 1,
-						"theme": "theme/theme1.css",
-						"header_tpl": "header/header_tpl.html",
-						"footer_tpl": "footer/footer_tpl.html",
-						"sumup_template": "sumup/sumup1.phtml",
-						"details_template": "details/details1.phtml",
-						"decimal_mark": ".",
-						"thousands_separator": ",",
-						"date_separator": "/",
-						"move_exported": 0,
-						"html_translation": [
+						"disable_stamp_export_directory" : 1,
+						"theme" : "/application/views/invoices/theme/theme1.css",
+						"sumup_template" : "/application/views/invoices/sumup/sumup1.phtml",
+						"details_template" : "/application/views/invoices/details/details1.phtml",
+						"decimal_mark" : ".",
+						"thousands_separator" : ",",
+						"date_separator" : "/",
+						"move_exported" : 0,
+						"html_translation" : [
 							"company_name",
 							"date"
-						]
+						],
+						"header" : "/header/header_tpl.phtml",
+						"footer" : "/footer/footer_tpl.phtml"
 					},
 					"export_generators": [],
 					"payment_gateways": [
@@ -2745,22 +2747,20 @@
 						}
 					],
 					"taxation": {
-						"tax_type": "usage",
-						"CSI": {
-							"taxation_mapping": [],
-							"provider": "",
-							"auth_code": "",
-							"apply_optional_charges": true
+						"tax_type" : "usage",
+						"default" : {
+							"key" : "DEFAULT_VAT"
 						},
-						"vat": {
-							"v": 0.17,
-							"t": "Float",
-							"range": {
-								"max": 1,
-								"min": 0
+						"mapping" : {
+							"vat" : {
+								"priorities" : [ ],
+								"default_fallback" : true
 							}
-						}
+						},
+						"vat" : 0,
+						"vat_label" : "Vat"
 					},
+
 					"property_types": [
 						{
 							"system": true,
@@ -2989,13 +2989,25 @@
 					},
 					"email_templates": {
 						"invoice_ready": {
-							"subject": "Your invoice is ready",
-							"content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
+							"templates":[{
+								"name": "default",
+								"label": "Default",
+								"conditions": [	
+								],
+								"subject": "Your invoice is ready",
+								"content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
+							}],
 							"html_translation": ["date", "invoice_id", "invoice_total", "invoice_due_date", "cycle_range", "company_email", "company_name"]
 						},
 						"fraud_notification": {
-							"subject": "Event [[event_code]] was triggered",
-							"content": "<pre>\n[[fraud_event_details]]</pre>\n"
+							"templates":[{
+								"name": "default",
+								"label": "Default",
+								"conditions": [	
+								],
+								"subject": "Event [[event_code]] was triggered",
+								"content": "<pre>\n[[fraud_event_details]]</pre>\n"
+							}]
 						}
 					},
 					"menu": {
@@ -3333,7 +3345,38 @@
 										"value": "10"
 									}
 								]
-							}
+							},
+							{
+							"active" : true,
+							"event_code" : "a",
+							"event_description" : "tyw",
+							"conditions" : [
+								{
+									"paths" : [
+										{
+											"path" : "balance.groups.TY.cost",
+											"total_path" : "balance.groups.TY.total",
+											"related_entities" : [
+												{
+													"type" : "group",
+													"key" : "TY"
+												},
+												{
+													"type" : "service",
+													"key" : "SERVICE1_DD"
+												}
+											]
+										}
+									],
+									"unit" : "",
+									"usaget" : "cost",
+									"property_type" : "",
+									"all_groups" : false,
+									"type" : "reached_constant_recurring",
+									"value" : 0.1
+								}
+							]
+						}
 
 
 						]

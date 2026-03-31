@@ -249,7 +249,7 @@ class Billrun_Config {
 			if ($configColl) {
 				$dbCursor = $configColl->query()
 					->cursor()->setReadPreference('RP_PRIMARY')
-					->sort(array('_id' => -1))
+					->sort(array('urt' => -1,'_id' => -1))
 					->limit(1)
 					->current();
 				if ($dbCursor->isEmpty()) {

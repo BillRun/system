@@ -49,10 +49,11 @@ class Mongodloid_TypeConverter
 				return new Mongodloid_Binary($value);
 			case $value instanceof MongoDB\Model\BSONDocument:
 			case $value instanceof MongoDB\Model\BSONArray:
-				return array_map(
-					[self::class, 'toMongodloid'],
-					$value->getArrayCopy()
-				);
+				$result = [];
+				foreach ($value as $key => $item) {
+					$result[$key] = self::toMongodloid($item);
+				}
+				return $result;
 			default:
 				return $value;
 		}
@@ -68,6 +69,8 @@ class Mongodloid_TypeConverter
     {
         switch (true) {
             case $value instanceof Mongodloid_TypeInterface:
+				return $value->toBSONType();
+			case $value instanceof Alcaeus\MongoDbAdapter\TypeInterface://still support mongo - after remove all this usages in the code can remove this.
 				return $value->toBSONType();
             case $value instanceof MongoDB\BSON\Type:
                 return $value;

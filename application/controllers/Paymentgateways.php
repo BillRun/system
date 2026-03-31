@@ -203,6 +203,7 @@ class PaymentGatewaysController extends ApiController {
 	 */
 	public function OkPageAction() {
 		$request = $this->getRequest();
+		Billrun_Factory::log("OKPage request is: " . json_encode($request->getRequest()), Zend_Log::DEBUG);
 		$name = urldecode($request->get("name"));
 		if (is_null($name)) {
 			return $this->setError("Missing payment gateway name", $request);
