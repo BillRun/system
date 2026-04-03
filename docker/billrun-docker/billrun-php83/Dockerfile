@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
                 libssl-dev unzip \ 
                 openjdk-17-jre-headless \
     && pecl install yaf \
-    && pecl install mongodb-2.1.1 \
+    && pecl install mongodb-2.1.8 \
     && pecl install xdebug \
     && docker-php-ext-enable yaf mongodb xdebug \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp
