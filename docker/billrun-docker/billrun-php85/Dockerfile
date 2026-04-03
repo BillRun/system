@@ -2,10 +2,10 @@ from php:8.5-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
 RUN apt-get update && apt-get install -y \
-        wkhtmltopdf wget  \
+        wget  \
 		libpng-dev zlib1g-dev libzip-dev libgmp-dev  \
                 libssl-dev unzip \ 
-                openjdk-17-jre-headless \
+                openjdk-21-jre-headless \
     && pecl install yaf \
     && pecl install mongodb-2.2.1 \
     && pecl install xdebug \
