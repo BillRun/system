@@ -200,4 +200,3 @@ function filterAccountsOnly($data) {
 
 	return json_encode($decoded);
 }
-?>

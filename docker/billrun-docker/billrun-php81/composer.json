@@ -8,7 +8,7 @@
     "license": "AGPL-3.0-or-later",
     "require": {
         "phpoffice/phpspreadsheet": "^1.16",
-        "mongodb/mongodb": "~1.21.1",
+        "mongodb/mongodb": "~1.21.3",
         "bshaffer/oauth2-server-php": "1.11.1",
         "league/omnipay": ">=3.2",
         "payrexx/omnipay-payrexx": "1.1",
