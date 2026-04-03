@@ -43,12 +43,6 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $wkpdf_exec;	
 	protected $loadFromFile = FALSE;
 	
-	protected $loadFromFile = FALSE;
-	
-	protected $loadFromFile = FALSE;
-	
-
-
 	/**
 	 *
 	 * @var Mongodloid_Cursor
