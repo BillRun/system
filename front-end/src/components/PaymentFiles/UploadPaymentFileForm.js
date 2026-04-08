@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, Button, ControlLabel, HelpBlock} from 'react-bootstrap';
-
+import { Form, Col, Button } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 const UploadTransactionsFile = (props) => {
   const { item = Immutable.Map() } = props;
   const fileError = null;
@@ -19,16 +19,16 @@ const UploadTransactionsFile = (props) => {
     props.updateField('file_name', files[0].name);
   };
     return (
-    <Form horizontal>
+    <Form className="form-horizontal">
        <FormGroup validationState={fileError === null ? null : 'error'}>
-            <Col sm={3} componentClass={ControlLabel}>Select File</Col>
+            <Col sm={3} as={ControlLabel}>Select File</Col>
             <Col sm={9}>
               <div style={{ paddingTop: 5 }} >
                 { isFileSelected ? (
                   <p style={{ margin: 0 }}>
                     {item.get('file_name', '')}
                     <Button
-                      bsStyle="link"
+                      variant="link"
                       title="Remove file"
                       onClick={onFileReset}
                       style={{ padding: '0 0 0 10px', marginBottom: 1 }}
@@ -53,9 +53,6 @@ const UploadTransactionsFile = (props) => {
 
 UploadTransactionsFile.propTypes = {
   onChange: PropTypes.func.isRequired,
-};
-
-UploadTransactionsFile.defaultProps = {
 };
 
 

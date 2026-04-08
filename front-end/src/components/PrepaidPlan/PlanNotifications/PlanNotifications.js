@@ -2,7 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { List, Map } from 'immutable';
 import { connect } from 'react-redux';
-import { Row, Col, Form, Panel } from 'react-bootstrap';
+import { Row, Col, Form } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import Notifications from './Notifications';
 import Field from '@/components/Field';
@@ -73,7 +74,7 @@ const PlanNotifications = (props) => {
     <div className="PlanNotifications">
       <Row>
         <Col lg={12}>
-          <Form>
+          <Form className="form-horizontal">
             { editable && (
               <Panel header={<h4>Select prepaid bucket</h4>}>
                 <Field
@@ -106,15 +107,6 @@ const PlanNotifications = (props) => {
       </Row>
     </div>
   );
-};
-
-PlanNotifications.defaultProps = {
-  plan: Map(),
-  ppIncludes: List(),
-  mode: 'create',
-  usageTypesData: List(),
-  propertyTypes: List(),
-  currency: '',
 };
 
 PlanNotifications.propTypes = {

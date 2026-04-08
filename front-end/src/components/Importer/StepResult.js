@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Label, Panel } from 'react-bootstrap';
+import { Label, Panel } from '@/common/BootstrapCompat';
 import { CSVLink } from 'react-csv';
 import pluralize from 'pluralize';
 import isNumber from 'is-number';
@@ -44,9 +44,9 @@ const StepResult = (props) => {
         <dl className="mb5" key={`status_${key}`}>
           <dt>
             {isNumber(key) ? `row ${key}` : key}
-            {status === true && <Label bsStyle="success" className="ml10">Success</Label>}
-            {status === false && <Label bsStyle="info" className="ml10">No errors</Label>}
-            {status !== false && status !== true && !Immutable.Iterable.isIterable(status) && <Label bsStyle="danger" className="ml10">{status}</Label>}
+            {status === true && <Label variant="success" className="ml10">Success</Label>}
+            {status === false && <Label variant="info" className="ml10">No errors</Label>}
+            {status !== false && status !== true && !Immutable.Iterable.isIterable(status) && <Label variant="danger" className="ml10">{status}</Label>}
           </dt>
           { Immutable.Iterable.isIterable(status) && status.map((message, type) => {
             let messageStyle = 'default';
@@ -57,7 +57,7 @@ const StepResult = (props) => {
             }
             return (
               <dd className="ml10" key={`status_error_${key}_${type}`}>
-                - <Label bsStyle={messageStyle}>{message}</Label>
+                - <Label variant={messageStyle}>{message}</Label>
               </dd>
             )})
             .toList()
@@ -79,7 +79,7 @@ const StepResult = (props) => {
       const errors = item.getIn(['result', 'general_errors'], Immutable.List());
       const errorsMessages = (
         <div className="mb5">
-          <Label bsStyle="danger">Errors :</Label>
+          <Label variant="danger">Errors :</Label>
           <ol className="pt0 pb0">
             {errors.map((error, idx) => (<li key={`error_${idx}`}>{error}</li>)).toArray()}
           </ol>
@@ -88,7 +88,7 @@ const StepResult = (props) => {
       const warnings = item.getIn(['result', 'general_warnings'], Immutable.List());
       const warningMessages = (
         <div className="mb5">
-          <Label bsStyle="warning">Warnings :</Label>
+          <Label variant="warning">Warnings :</Label>
           <ol className="pt0 pb0">
             {warnings.map((warning, idx) => (<li key={`warning_${idx}`}>{warning}</li>)).toArray()}
           </ol>
@@ -96,7 +96,7 @@ const StepResult = (props) => {
       );
       return (
         <div className="ml10">
-          <Label bsStyle="success">Success :</Label>
+          <Label variant="success">Success :</Label>
           <ul className="pt0 pb0" >
             <li>Created {created} {nameCreated}</li>
             <li>Updated {updated} {nameUpdated}</li>
@@ -111,7 +111,7 @@ const StepResult = (props) => {
     if (result.size === 0) {
       return (
         <div className="ml10">
-          <Label bsStyle="default">No records were imported</Label>
+          <Label variant="default">No records were imported</Label>
         </div>
       );
     }
@@ -120,7 +120,7 @@ const StepResult = (props) => {
     if (allSuccess) {
       return (
         <div className="ml10">
-          <Label bsStyle="success">{result.size} records were successfully imported</Label>
+          <Label variant="success">{result.size} records were successfully imported</Label>
         </div>
       );
     }
@@ -129,7 +129,7 @@ const StepResult = (props) => {
     if (allFails) {
       return (
         <div className="ml10">
-          <Label bsStyle="danger">No records were imported. please fix the errors and try again.</Label>
+          <Label variant="danger">No records were imported. please fix the errors and try again.</Label>
         </div>
       );
     }
@@ -153,8 +153,8 @@ const StepResult = (props) => {
     return (
       <div className="ml10">
         <p>
-          <Label bsStyle="success">{success.size}</Label> rows were successfully imported.<br />
-          <Label bsStyle="danger">{result.size - success.size}</Label> rows failed to import.<br />
+          <Label variant="success">{success.size}</Label> rows were successfully imported.<br />
+          <Label variant="danger">{result.size - success.size}</Label> rows failed to import.<br />
           Please remove successfully imported rows from the file, fix the errors and try again.
         </p>
         {downlodCsvWithErrors}
@@ -172,10 +172,6 @@ const StepResult = (props) => {
       </Panel>
     </div>
   );
-};
-
-StepResult.defaultProps = {
-  item: Immutable.Map(),
 };
 
 StepResult.propTypes = {

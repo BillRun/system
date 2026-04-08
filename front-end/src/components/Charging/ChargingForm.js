@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { Col, Form, FormGroup, ControlLabel, HelpBlock } from 'react-bootstrap';
+import { Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 import moment from 'moment';
 import Field from '@/components/Field';
@@ -100,10 +101,10 @@ const ChargingForm = ({
     };
 
     return (
-        <Form horizontal id='charging-wrapper'>
+        <Form id='charging-wrapper'>
             {allowStartScheduleRun && (
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={3}></Col>
+                    <Col as={ControlLabel} sm={3}></Col>
                     <Col sm={6}>
                         <Field
                             fieldType="toggeledInput"
@@ -118,7 +119,7 @@ const ChargingForm = ({
                 </FormGroup>
             )}
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={4}>
+                <Col as={ControlLabel} sm={4}>
                     {getFieldName('mode', 'charging_process', 'Charge Type')}:
                 </Col>
                 <Col sm={5}>
@@ -133,7 +134,7 @@ const ChargingForm = ({
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={4} >
+                <Col as={ControlLabel} sm={4} >
                     {getFieldName('billrun_key', 'charging_process', 'Select cycle')}:
                 </Col>
                 <Col sm={5}>
@@ -147,7 +148,7 @@ const ChargingForm = ({
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={4} >
+                <Col as={ControlLabel} sm={4} >
                     {getFieldName('pay_mode', 'charging_process', 'Charge Bill Mode')}:
                 </Col>
                 <Col sm={5}>
@@ -173,7 +174,7 @@ const ChargingForm = ({
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={4}>
+                <Col as={ControlLabel} sm={4}>
                     {getFieldName('min_invoice_date', 'charging_process', 'Minimum Invoice Date')}:
                 </Col>
                 <Col sm={5}>
@@ -186,7 +187,7 @@ const ChargingForm = ({
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={4}>
+                <Col as={ControlLabel} sm={4}>
                     {getFieldName('run_on', 'charging_process', 'Specific Accounts')}:
                 </Col>
                 <Col sm={5}>
@@ -202,7 +203,7 @@ const ChargingForm = ({
 
             {item.get('run_on', '') === 'include' && (
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={4}>
+                    <Col as={ControlLabel} sm={4}>
                         {getFieldName('include_aids', 'charging_process', 'Include Customer IDs')}:
                         <HelpBlock><small>Comma \ new line separated numbers</small></HelpBlock>
                     </Col>
@@ -217,7 +218,7 @@ const ChargingForm = ({
 
             {item.get('run_on', '') === 'exclude' && (
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={4}>
+                    <Col as={ControlLabel} sm={4}>
                         {getFieldName('exclude_aids', 'charging_process', 'Exclude Customer IDs')}:
                         <HelpBlock><small>Comma \ new line separated numbers</small></HelpBlock>
                     </Col>

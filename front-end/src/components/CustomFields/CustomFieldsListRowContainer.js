@@ -1,6 +1,5 @@
 import { connect } from 'react-redux';
 import { List, Map } from 'immutable';
-import { SortableElement } from 'react-sortable-hoc';
 import CustomFieldsListRow from './CustomFieldsListRow';
 import {
   isFieldSortable,
@@ -39,8 +38,8 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
   const onRemove = field => propsOnRemove(entity, field);
   const onEdit = field => propsOnEdit(entity, field);
   const actions = [
-    { type: 'edit', onClick: onEdit, enable: isEditable },
-    { type: 'remove', onClick: onRemove, enable: isRemoveable },
+    { type: 'edit', onClick: onEdit, enable: isEditable, actionSize: 'small' },
+    { type: 'remove', onClick: onRemove, enable: isRemoveable, actionSize: 'small' },
   ];
   return ({
     ...otherStateProps,
@@ -58,4 +57,4 @@ export default connect(
   mapStateToProps,
   mapDispatchToProps,
   mergeProps,
-)(SortableElement(CustomFieldsListRow));
+)(CustomFieldsListRow);

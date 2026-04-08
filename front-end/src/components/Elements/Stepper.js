@@ -1,45 +1,55 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import ReactStepper from 'react-stepper-horizontal';
 
 /**
- * Important !
- * The font size changed from 24, remember to update style file that fix bug
- * src/styles/scss/overrides/react-stepper-horizontal.scss
-   * https://github.com/mu29/react-stepper/issues/21
+ * Stepper — inline replacement for abandoned react-stepper-horizontal.
+ * Renders a step indicator with the same visual contract.
  */
+const Stepper = ({ steps = [], activeIndex = 0 }) => (
+  <div className="stepper-container" style={{ display: 'flex', alignItems: 'flex-start', width: '100%', padding: '0 8px' }}>
+    {steps.map((step, i) => {
+      const isComplete = i < activeIndex;
+      const isActive = i === activeIndex;
+      const circleColor = (isComplete || isActive) ? '#008cba' : '#fff';
+      const circleBorder = (isComplete || isActive) ? '#004b63' : '#cccccc';
+      const textColor = isComplete ? '#757575' : '#333';
 
-const Stepper = ({steps, activeIndex}) => (
-  <div className='stepper-container'>
-    <ReactStepper
-      titleTop={5}
-      lineMarginOffset={10}
-      circleTop={0}
-      size={25}
-      titleFontSize={12}
-      circleFontSize={12}
-      activeStep={activeIndex}
-      steps={steps}
-      defaultBorderColor="#cccccc"
-      defaultBorderStyle="solid"
-      defaultBorderWidth={1}
-      activeColor="#008cba"
-      activeBorderColor="#004b63"
-      activeBorderStyle="solid"
-      activeBorderWidth={1}
-      completeColor="#008cba"
-      completeTitleColor="#757575"
-      completeBorderColor="#008cba"
-      completeBorderStyle="solid"
-      completeBorderWidth={1}
-    />
+      return (
+        <React.Fragment key={i}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+            <div style={{
+              width: 25,
+              height: 25,
+              borderRadius: '50%',
+              border: `1px solid ${circleBorder}`,
+              backgroundColor: circleColor,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 12,
+              color: (isComplete || isActive) ? '#fff' : '#333',
+              fontWeight: isActive ? 'bold' : 'normal',
+              marginBottom: 5,
+            }}>
+              {isComplete ? '✓' : i + 1}
+            </div>
+            <div style={{ fontSize: 12, color: textColor, textAlign: 'center', maxWidth: 80 }}>
+              {step.title}
+            </div>
+          </div>
+          {i < steps.length - 1 && (
+            <div style={{
+              flex: 1,
+              height: 1,
+              backgroundColor: i < activeIndex ? '#008cba' : '#cccccc',
+              marginTop: 12,
+            }} />
+          )}
+        </React.Fragment>
+      );
+    })}
   </div>
 );
-
-Stepper.defaultProps = {
-  activeStep: 0,
-  steps: [],
-};
 
 Stepper.propTypes = {
   activeIndex: PropTypes.number,

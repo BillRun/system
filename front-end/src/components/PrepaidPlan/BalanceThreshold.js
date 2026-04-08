@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { FormGroup, Col, ControlLabel } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { Actions } from '@/components/Elements';
 
@@ -21,32 +22,26 @@ const BalanceThreshold = (props) => {
       type: 'remove',
       showIcon: true,
       onClick: onRemove,
+      actionStyle: 'outline-secondary',
+      actionSize: 'small',
     },
   ];
 
   return (
     <FormGroup>
-      <Col componentClass={ControlLabel} md={2}>
+      <Col as={ControlLabel} md={2}>
         { `${name} (${unitLabel})` }
       </Col>
-      <Col md={7}>
+      <Col md={7} className="pr5">
         <Field fieldType="number" onChange={onChange} value={value} editable={editable} />
       </Col>
-      <Col md={2}>
+      <Col md={2} className="actions pl5">
         <Actions actions={actions} />
       </Col>
     </FormGroup>
   );
 };
 
-
-BalanceThreshold.defaultProps = {
-  name: '',
-  unitLabel: '',
-  value: '',
-  ppId: '',
-  editable: true,
-};
 
 BalanceThreshold.propTypes = {
   name: PropTypes.string,

@@ -2,7 +2,8 @@ import React, { useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Map, List } from 'immutable';
 import { sentenceCase, titleCase } from 'change-case';
-import { FormGroup, ControlLabel, Col } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import {
   getFieldName,
@@ -11,8 +12,7 @@ import {
   getConfig,
 } from '@/common/Util';
 
-
-const EntityDefaultTax = ({tax, disabled, itemName, typeOptions, taxRateOptions, onUpdate}) => {
+const EntityDefaultTax = ({tax = Map(), disabled = false, itemName = '', typeOptions = List([Map({ id:'vat', title: 'Vat'})]), taxRateOptions = List(), onUpdate}) => {
 
   const onChengeType = useCallback((value) => {
     onUpdate(['custom_tax'], value)
@@ -47,7 +47,7 @@ const EntityDefaultTax = ({tax, disabled, itemName, typeOptions, taxRateOptions,
   return (
     <>
       <FormGroup>
-        <Col componentClass={ControlLabel} sm={3} lg={2}>
+        <Col as={ControlLabel} sm={3} lg={2}>
           { getFieldName('type', getFieldNameType(itemName), sentenceCase('type'))}
         </Col>
         <Col sm={8} lg={9}>
@@ -63,7 +63,7 @@ const EntityDefaultTax = ({tax, disabled, itemName, typeOptions, taxRateOptions,
       </FormGroup>
 
       <FormGroup>
-        <Col componentClass={ControlLabel} sm={3} lg={2}>
+        <Col as={ControlLabel} sm={3} lg={2}>
 
         </Col>
         <Col sm={8} lg={9}>
@@ -105,7 +105,7 @@ const EntityDefaultTax = ({tax, disabled, itemName, typeOptions, taxRateOptions,
 
           {tax.get('taxation', '') === 'custom' && (
             <FormGroup className="mb0">
-              <Col smOffset={2} xsOffset={1}>
+              <Col className="col-sm-offset-2 col-xs-offset-1"  >
                 <Field
                   fieldType="radio"
                   onChange={onChengeCustomLogic}
@@ -148,13 +148,5 @@ EntityDefaultTax.propTypes = {
   taxRateOptions: PropTypes.instanceOf(List),
   onUpdate: PropTypes.func.isRequired,
 }
-
-EntityDefaultTax.defaultProps = {
-  tax: Map(),
-  disabled: false,
-  itemName: '',
-  typeOptions: List([Map({ id:'vat', title: 'Vat'})]),
-  taxRateOptions: List(),
-};
 
 export default EntityDefaultTax;

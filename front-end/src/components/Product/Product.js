@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { connect } from 'react-redux';
 import { sentenceCase } from 'change-case';
-import { Form, FormGroup, ControlLabel, Col, Row, Panel, HelpBlock } from 'react-bootstrap';
+import { Form, Col, Row } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel, HelpBlock } from '@/common/BootstrapCompat';
 import Help from '../Help';
 import Field from '@/components/Field';
 import { CreateButton, RoundingRules } from '@/components/Elements';
@@ -11,7 +12,6 @@ import ProductPrice from './components/ProductPrice';
 import { ProductDescription } from '@/language/FieldDescriptions';
 import { EntityFields } from '../Entity';
 import UsageTypesSelector from '../UsageTypes/UsageTypesSelector';
-import PlaysSelector from '../Plays/PlaysSelector';
 import { EntityTaxDetails } from '@/components/Tax';
 import {
   getConfig,
@@ -83,10 +83,6 @@ class Product extends Component {
     const newError = (!getConfig('keyUppercaseRegex', /./).test(value)) ? allowedCharacters : '';
     this.setState({ errors: Object.assign({}, errors, { name: newError }) });
     this.props.onFieldUpdate(['key'], value);
-  }
-
-  onChangePlay = (play) => {
-    this.props.onFieldUpdate(['play'], play);
   }
 
   onChangeDescription = (e) => {
@@ -231,17 +227,11 @@ class Product extends Component {
     return (
       <Row>
         <Col lg={12}>
-          <Form horizontal>
+          <Form className="form-horizontal">
             <Panel>
 
-              <PlaysSelector
-                entity={product}
-                editable={editable && mode === 'create'}
-                onChange={this.onChangePlay}
-              />
-
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
+                <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('description', getFieldNameType('service'), sentenceCase('title'))}
                   <span className="danger-red"> *</span>
                   <Help contents={ProductDescription.description} />
@@ -253,7 +243,7 @@ class Product extends Component {
 
               { ['clone', 'create'].includes(mode) &&
                 <FormGroup validationState={errors.name.length > 0 ? 'error' : null} >
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     { getFieldName('key', getFieldNameType('service'), sentenceCase('key'))}
                     <span className="danger-red"> *</span>
                     <Help contents={ProductDescription.key} />
@@ -276,7 +266,7 @@ class Product extends Component {
 
               { !this.isRetailRate() &&
                 <FormGroup>
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     { getFieldName('add_to_retail', getFieldNameType('product'), sentenceCase('add to retail'))}
                     <Help contents={ProductDescription.addToRetail} />
                   </Col>
@@ -292,7 +282,7 @@ class Product extends Component {
               }
 
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
+                <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('usage_type', getFieldNameType('product'), 'Unit Type')}
                   <span className="danger-red"> *</span>
                 </Col>
@@ -307,12 +297,12 @@ class Product extends Component {
                       />
                     )
                     : (
-                      <div>
+                      <Row>
                         <Col sm={3} style={{ paddingTop: 7 }}>{usaget}</Col>
-                        <Col sm={4} componentClass={ControlLabel} className="pr0 pl0">
+                        <Col sm={4} as={ControlLabel}>
                           Units of Measure
                         </Col>
-                        <Col sm={5} className="pr0">
+                        <Col sm={5}>
                           <UsageTypesSelector
                             usaget={usaget}
                             unit={unit}
@@ -322,7 +312,7 @@ class Product extends Component {
                             editable={mode !== 'view'}
                           />
                         </Col>
-                      </div>)
+                      </Row>)
                   }
                 </Col>
               </FormGroup>

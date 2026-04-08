@@ -35,6 +35,267 @@ fieldset[disabled] .btn {
 .modal {
   z-index: 2000;
 }
+
+/* ─── Bootstrap 3 → Bootstrap 5 / react-bootstrap v2 compatibility ─────────
+ * yeti.css ships Bootstrap 3 CSS (.fade.in = visible) but react-bootstrap v2
+ * uses .show instead of .in.  Without these rules every modal and tab-pane
+ * stays at opacity:0 (invisible), and the backdrop stays solid black.
+ *
+ * IMPORTANT: .modal-backdrop is intentionally excluded from the opacity:1 rule
+ * so it keeps its own 0.5 semi-transparent value (see below).
+ */
+
+/* Make all fade-able elements visible when .show is applied — but NOT the
+   backdrop (which has its own opacity below). */
+.fade.show:not(.modal-backdrop) {
+  opacity: 1;
+}
+
+/* Modal dialog position — Bootstrap 3 CSS translates the dialog upward on
+   .modal.fade; Bootstrap 5 resets it when .show is present. */
+.modal.show .modal-dialog {
+  transform: none;
+}
+
+/* Backdrop: semi-transparent dark overlay (0.5 opacity, not solid black).
+   Must be explicit here because yeti.css uses .modal-backdrop.in, not .show. */
+.modal-backdrop {
+  opacity: 0;          /* start transparent (before transition) */
+}
+.modal-backdrop.show,
+.modal-backdrop.fade.show {
+  opacity: 0.5;        /* standard semi-transparent backdrop */
+}
+
+/* Ensure the modal itself is visible when shown (react-bootstrap v2 sets
+   display:block inline, but belt-and-suspenders for any overrides). */
+.modal.show {
+  display: block;
+}
+
+/* RB2 close button compatibility on top of BS3 theme.
+   RB2 renders .btn-close, but BS3 theme has no styles for it. Recreate
+   BS5 close-button rendering via background SVG (no text symbol fallback). */
+.modal-header .btn-close {
+  box-sizing: content-box;
+  width: 1em;
+  height: 1em;
+  padding: .25em .25em;
+  margin: -.25em -.25em -.25em auto;
+  color: #000;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%23000' d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 1em;
+  border: 0;
+  border-radius: .375rem;
+  opacity: .5;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.modal-header .btn-close:hover,
+.modal-header .btn-close:focus {
+  color: #000;
+  text-decoration: none;
+  opacity: .75;
+  outline: 0;
+  box-shadow: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* ─── InputGroup button compat: RB2 places Button/DropdownButton directly inside
+ * InputGroup without the BS3 .input-group-btn wrapper that yeti.css expects.
+ * InputGroupButton shim (BootstrapCompat) renders .input-group-btn explicitly;
+ * these rules also handle DropdownButton (.btn-group) placed directly by RB2. */
+.input-group > .btn-group,
+.input-group > .dropdown {
+  position: relative;
+  display: table-cell;
+  width: 1%;
+  white-space: nowrap;
+  font-size: 0; /* collapse inline-block gaps, like .input-group-btn */
+}
+.input-group > .btn-group > .btn,
+.input-group > .btn-group > .dropdown-toggle,
+.input-group > .dropdown > .btn {
+  font-size: 14px;
+  position: relative;
+}
+.input-group > .btn-group:last-child > .btn:last-child,
+.input-group > .btn-group:last-child > .dropdown-toggle,
+.input-group > .dropdown:last-child > .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.input-group > .btn-group:first-child > .btn:first-child,
+.input-group > .dropdown:first-child > .btn {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* Bootstrap 5 input-group-text compatibility on top of Bootstrap 3 theme.
+   RB2 renders .input-group-text while yeti.css styles only .input-group-addon. */
+.input-group-text {
+  display: table-cell;
+  width: 1%;
+  white-space: nowrap;
+  vertical-align: middle;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+  color: #555;
+  text-align: center;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  border-radius: 0;
+}
+.input-group > .input-group-text:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.input-group > .input-group-text:last-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+/* Align with BS3 behavior: addon next to .form-control shares border side. */
+.input-group > .input-group-text + .form-control {
+  margin-left: -1px;
+}
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* Bootstrap 5 button variants not present in yeti.css (Bootstrap 3 theme).
+   Without these, btn-secondary / btn-light render with no background/border. */
+.btn-secondary {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
+.btn-secondary:hover,
+.btn-secondary:focus {
+  color: #333;
+  background-color: #d4d4d4;
+  border-color: #8c8c8c;
+}
+.btn-secondary:active,
+.btn-secondary.active {
+  color: #333;
+  background-color: #d4d4d4;
+  border-color: #8c8c8c;
+}
+.btn-light {
+  color: #333;
+  background-color: #f8f9fa;
+  border-color: #ced4da;
+}
+.btn-light:hover,
+.btn-light:focus {
+  color: #333;
+  background-color: #e2e6ea;
+  border-color: #b0b8c1;
+}
+/* btn-outline-secondary: used in ConfirmModal cancel button (replaces removed btn-default).
+   Matches BS3 btn-default appearance: white bg, grey border. */
+.btn-outline-secondary {
+  color: #333;
+  background-color: #fff;
+  border-color: #ccc;
+}
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
+.btn-outline-secondary:active,
+.btn-outline-secondary.active {
+  color: #333;
+  background-color: #d4d4d4;
+  border-color: #8c8c8c;
+}
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Tab nav: react-bootstrap v2 renders button.nav-link, yeti.css targets li > a ──
+ * Without these rules tabs are unstyled (buttons without tab borders/backgrounds).
+ * We replicate yeti's Bootstrap 3 tab appearance on the .nav-item / .nav-link structure. */
+.nav-tabs > .nav-item {
+  float: left;
+  margin-bottom: -1px;
+}
+.nav-tabs > .nav-item > .nav-link {
+  display: block;
+  padding: 10px 15px;
+  line-height: 1.42857143;
+  margin-right: 2px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  color: #222222;
+  text-decoration: none;
+  background-color: #e7e7e7;
+  cursor: pointer;
+}
+.nav-tabs > .nav-item > .nav-link:hover,
+.nav-tabs > .nav-item > .nav-link:focus {
+  border-color: #eee #eee #ddd;
+  background-color: #eee;
+  outline: none;
+}
+.nav-tabs > .nav-item > .nav-link.active {
+  color: #555;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-bottom-color: transparent;
+  cursor: default;
+}
+.nav-tabs > .nav-item > .nav-link.disabled,
+.nav-tabs > .nav-item > .nav-link:disabled {
+  color: #777;
+  cursor: not-allowed;
+  background-color: transparent;
+  border-color: transparent;
+}
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Dropdown items: BS5 renders a.dropdown-item / button.dropdown-item,
+ * yeti.css styles only li > a inside .dropdown-menu. ─────────────────────── */
+.dropdown-menu .dropdown-item {
+  display: block;
+  padding: 3px 20px;
+  clear: both;
+  font-weight: 400;
+  line-height: 1.42857143;
+  color: #333;
+  white-space: nowrap;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  width: 100%;
+  text-align: left;
+}
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus {
+  color: #262626;
+  text-decoration: none;
+  background-color: #f5f5f5;
+  outline: none;
+}
+.dropdown-menu .dropdown-item.active,
+.dropdown-menu .dropdown-item:active {
+  color: #fff;
+  text-decoration: none;
+  background-color: #008cba;
+  outline: 0;
+}
+.dropdown-menu .dropdown-item.disabled,
+.dropdown-menu .dropdown-item:disabled {
+  color: #777;
+  cursor: not-allowed;
+  background-color: transparent;
+}
+/* ─────────────────────────────────────────────────────────────────────────── */
 .tooltip{
   z-index: 2001;
 }
@@ -258,21 +519,79 @@ fieldset[disabled] .btn {
 .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {
     font-size: 14px;
 }
+/* Events: Settings tab aligned to the right of the tab bar (BS3-style) */
+#events-tabs-page [role='tablist'] {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+#events-tabs-page [role='tablist'] > *:last-child {
+  margin-left: auto;
+}
+
+/* BS2 extra-small button size compatibility (global) */
+.btn.btn-xs,
+.btn-group.btn-xs > .btn,
+.dropdown.btn-xs > .btn {
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 3px;
+}
+
+/* BS2/legacy look: square corners everywhere on buttons */
+.btn,
+.btn-group > .btn,
+.btn-group > .btn-group > .btn,
+.btn-group > .dropdown-toggle,
+.dropdown-toggle,
+.input-group > .btn-group > .btn,
+.input-group > .btn-group > .dropdown-toggle,
+.input-group-btn > .btn,
+.modal-header .btn-close {
+  border-radius: 0 !important;
+}
 .panel-heading .btn-xs{
     margin-top: -2px;
     padding: 2px 4px;
 }
-.panel.collapsible .panel-heading .panel-title > a{
+.panel-heading .btn-group.btn-xs > .btn,
+.panel-heading .dropdown.btn-xs > .btn {
+  margin-top: -2px;
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 3px;
+}
+
+/* Panel headers: keep action buttons compact (BS2/BS3), even if RB2 emits .btn-sm */
+.panel-heading .btn.btn-sm,
+.panel-heading .btn-group > .btn.btn-sm,
+.panel-heading .btn-group > .dropdown-toggle.btn-sm,
+.panel-heading .dropdown-toggle.btn-sm {
+  margin-top: -2px;
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  height: auto;
+}
+.panel.collapsible .panel-heading .panel-title > a,
+.panel.collapsible .panel-heading .panel-title > button{
   cursor: pointer;
   text-decoration: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
 }
-.panel.collapsible .panel-heading .panel-title > a:before {
+.panel.collapsible .panel-heading .panel-title > a:before,
+.panel.collapsible .panel-heading .panel-title > button:before {
     font-family: "FontAwesome";
     content: "\f107";
     margin-right: 10px;
     color: grey;
 }
-.panel.collapsible .panel-heading .panel-title > a.collapsed:before {
+.panel.collapsible .panel-heading .panel-title > a.collapsed:before,
+.panel.collapsible .panel-heading .panel-title > button.collapsed:before {
     content: "\f105";
     padding: 0 3px 0 2px
 }
@@ -330,6 +649,43 @@ fieldset[disabled] .btn {
 }
 .actions-buttons button.btn-link {
   text-decoration: none;
+}
+
+/* Forms/editors: `remove` next to selects/inputs should be a square outlined button.
+   Scope to `.actions` (not `.td-actions`) to avoid affecting table row action icons. */
+.form-horizontal .actions .actions-buttons .action-button .btn.btn-link,
+.form-horizontal .actions .actions-buttons .action-button .btn.btn-link.btn-xs {
+  border: 1px solid #ccc;
+  background: #fff;
+  padding: 9px 12px;
+  height: 39px;
+}
+/* Same treatment for plain remove buttons (not rendered through <Actions />). */
+.form-horizontal .form-inner-edit-row .actions > .btn.btn-link {
+  border: 1px solid #ccc;
+  background: #fff;
+  padding: 9px 12px;
+  height: 39px;
+}
+.td-actions .actions-buttons > span {
+  margin-right: 2px !important;
+}
+.td-actions .actions-buttons > span:last-child {
+  margin-right: 0 !important;
+}
+.td-actions .actions-buttons .action-button .btn.btn-link.btn-xs {
+  padding: 0 2px;
+  line-height: 1.2;
+}
+.td-actions .actions-buttons .action-button .btn.btn-link.btn-xs .fa {
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* Ensure consistent action icon size across the app (tables + inline actions). */
+.actions-buttons .action-button .btn .fa {
+  font-size: 15px;
+  line-height: 1;
 }
 .td-ellipsis{
   white-space: nowrap;
@@ -474,10 +830,27 @@ ul.revision-history-list li.active .cycle {
   text-align: center;
   background-color: #eeeeee;
 }
+#move-entity .nav-tabs .nav-item,
+#move-entity .nav-pills .nav-item {
+  width: 50%;
+  text-align: center;
+  background-color: #eeeeee;
+}
+#move-entity .nav-tabs .nav-item .nav-link,
+#move-entity .nav-pills .nav-item .nav-link {
+  width: 100%;
+}
 #move-entity .nav-pills>li+li {
      margin-left: 0;
 }
+#move-entity .nav-pills .nav-item + .nav-item {
+  margin-left: 0;
+}
 #move-entity .nav-pills li.disabled {
+  cursor: not-allowed;
+}
+#move-entity .nav-pills .nav-item .nav-link.disabled,
+#move-entity .nav-tabs .nav-item .nav-link.disabled {
   cursor: not-allowed;
 }
 

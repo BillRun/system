@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import changeCase from 'change-case';
 import Field from '@/components/Field';
@@ -44,10 +44,7 @@ class ProductsList extends Component {
     selectedType: '',
   }
 
-  componentWillMount() {
-    this.props.dispatch(getSettings('rates.fields'));
-  }
-
+  
   onSelectFilterField = (value) => {
     const newVal= (value) ? value : '';
     this.setState(() => ({ selectedType: newVal }));
@@ -70,10 +67,18 @@ class ProductsList extends Component {
     return isPlaysEnabled;
   }
 
+  isVisibleListField = (field) => {
+    const fieldName = field.get('field_name', '');
+    if (fieldName === 'play') {
+      return false;
+    }
+    return field.get('show_in_list', false) || ProductsList.defaultListFields.includes(fieldName);
+  }
+
   getProjectFields = () => {
     const { fields } = this.props;
     return fields
-      .filter(field => (field.get('show_in_list', false) || ProductsList.defaultListFields.includes(field.get('field_name', ''))))
+      .filter(this.isVisibleListField)
       .reduce((acc, field) => acc.set(field.get('field_name'), 1), Immutable.Map({}))
       .toJS();
   };
@@ -86,8 +91,7 @@ class ProductsList extends Component {
   getFields = () => {
     const { fields } = this.props;
     return fields
-      .filter(this.filterPlayField)
-      .filter(field => (field.get('show_in_list', false) || ProductsList.defaultListFields.includes(field.get('field_name', ''))))
+      .filter(this.isVisibleListField)
       .map((field) => {
         const fieldname = field.get('field_name');
         const fieldTitle = field.get('title', getFieldName(fieldname, 'subscription', changeCase.sentenceCase(fieldname)));
@@ -125,6 +129,11 @@ class ProductsList extends Component {
         placeholder="Select Activity Type..."
       />
     );
+  }
+
+  
+  componentDidMount() {
+    this.props.dispatch(getSettings('rates.fields'));
   }
 
   render() {

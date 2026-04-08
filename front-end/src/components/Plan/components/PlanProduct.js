@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import isNumber from 'is-number';
-import { Col, Panel, Button, FormGroup, ControlLabel } from 'react-bootstrap';
+import { Col, Button } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import Help from '../../Help';
 import { CreateButton } from '@/components/Elements';
@@ -37,11 +38,7 @@ export default class PlanProduct extends Component {
     percentage: null,
   };
 
-  componentWillMount() {
-    const { item, usaget, prices, percentage } = this.props;
-    this.addDefaultPriceIfNoPrice(item, usaget, prices, percentage);
-  }
-
+  
   shouldComponentUpdate(nextProps, nextState) { // eslint-disable-line no-unused-vars
     const { prices, mode, usageTypes, propertyTypes, percentage } = this.props;
     return !Immutable.is(prices, nextProps.prices)
@@ -52,11 +49,7 @@ export default class PlanProduct extends Component {
       || !Immutable.is(propertyTypes, nextProps.propertyTypes);
   }
 
-  componentWillUpdate(nextProps, nextState) { // eslint-disable-line no-unused-vars
-    const { item, usaget, prices, percentage } = nextProps;
-    this.addDefaultPriceIfNoPrice(item, usaget, prices, percentage);
-  }
-
+  
   addDefaultPriceIfNoPrice = (item, usaget, prices, percentage) => {
     // if product don't have pricing for this plan, init with BASE price
     const isPercentage = percentage !== null;
@@ -137,6 +130,18 @@ export default class PlanProduct extends Component {
     this.props.onProductEditRate(fieldPath, newValue);
   }
 
+  
+  componentDidMount() {
+    const { item, usaget, prices, percentage } = this.props;
+    this.addDefaultPriceIfNoPrice(item, usaget, prices, percentage);
+  }
+
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { item, usaget, prices, percentage } = this.props;
+    this.addDefaultPriceIfNoPrice(item, usaget, prices, percentage);
+  }
+
   render() {
     const { item, prices, usaget, mode, propertyTypes, usageTypes, percentage } = this.props;
     const unit = prices.getIn([0, 'uom_display', 'range'], '');
@@ -145,11 +150,13 @@ export default class PlanProduct extends Component {
     const isPercentage = percentage !== null;
     const pricingMethod = (item.get('pricing_method', 'Tiered') === 'volume') ? 'Volume' : 'Tiered';
     const header = (
-      <h3>
+      <div className="panel-title clearfix">
+        <div className="pull-right">
+          { editable && <Button onClick={this.onProductRestore} size="sm" style={{ marginRight: 10, minWidth: 80 }}><i className="fa fa-undo fa-lg" /> &nbsp;Undo Changes </Button>}
+          { editable && <Button onClick={this.onProductRemove} size="sm" variant="outline-secondary" style={{ minWidth: 80 }}><i className="fa fa-trash-o danger-red" />&nbsp;Remove</Button>}
+        </div>
         { `${item.get('key')} (${usaget}) `} <i>{item.get('code', '')}</i><Help contents={item.get('description', '')} />
-        { editable && <Button onClick={this.onProductRemove} bsSize="xsmall" className="pull-right" style={{ minWidth: 80 }}><i className="fa fa-trash-o danger-red" />&nbsp;Remove</Button>}
-        { editable && <Button onClick={this.onProductRestore} bsSize="xsmall" className="pull-right" style={{ marginRight: 10, minWidth: 80 }}><i className="fa fa-undo fa-lg" /> &nbsp;Undo Changes </Button>}
-      </h3>
+      </div>
     );
 
     return (

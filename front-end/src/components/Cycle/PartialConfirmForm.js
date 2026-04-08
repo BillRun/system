@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel, HelpBlock, Label } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Label } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { getDateToDisplay } from './CycleUtil';
 import { parseIncludeExcludeIdsListValue } from '@/common/Util';
 
-
-const PartialConfirmForm = ({ item,updateField }) => {
+const PartialConfirmForm = ({ item = Immutable.Map(),updateField }) => {
 
   const [isPartial, togglePartial] = useState(false);
   const [isInclude, toggleInclude] = useState(true);
@@ -54,13 +54,13 @@ const PartialConfirmForm = ({ item,updateField }) => {
   }
 
   return (
-    <Form horizontal>
+    <Form>
       <FormGroup>
-        <Col sm={5} componentClass={ControlLabel}></Col>
-        <Col sm={6}><Label bsStyle="danger">This action is irreversible</Label></Col>
+        <Col sm={5} as={ControlLabel}></Col>
+        <Col sm={6}><Label variant="danger">This action is irreversible</Label></Col>
       </FormGroup>
       <FormGroup>
-        <Col sm={5} componentClass={ControlLabel}></Col>
+        <Col sm={5} as={ControlLabel}></Col>
         <Col sm={6} className='mt10'>
           <Field fieldType="checkbox" value={isPartial} onChange={onTogglePartial} label={
             <span>Partial Confirmation</span>
@@ -69,19 +69,19 @@ const PartialConfirmForm = ({ item,updateField }) => {
       </FormGroup>
       {!isPartial && (
         <FormGroup>
-          <Col sm={5} componentClass={ControlLabel} className="pt5"><strong>All the invoices for the cycle:</strong></Col>
+          <Col sm={5} as={ControlLabel} className="pt5"><strong>All the invoices for the cycle:</strong></Col>
           <Col sm={6}>{getDateToDisplay(selectedCycle, 'start_date')} - {getDateToDisplay(selectedCycle, 'end_date')}</Col>
         </FormGroup>
       )}
       {!isPartial && (
         <FormGroup>
-          <Col sm={5} componentClass={ControlLabel} className="pt5"><strong>Invoices will be confirmed after this action:</strong></Col>
+          <Col sm={5} as={ControlLabel} className="pt5"><strong>Invoices will be confirmed after this action:</strong></Col>
           <Col sm={6}>{invoicesNum}</Col>
         </FormGroup>
       )}
       {isPartial && (
-        <FormGroup>
-          <Col sm={5} componentClass={ControlLabel}></Col>
+        <FormGroup validationState={excludeError === null ? null : 'error'}>
+          <Col sm={5} as={ControlLabel}></Col>
           <Col sm={6} className='mt10'>
             <Field fieldType="radio" onChange={onSetInclude} name="type" value="monetary" label="Include" checked={isInclude} className="inline" />
             <Field fieldType="radio" onChange={onSetExclude} name="type" value="monetary" label="Exclude" checked={!isInclude} className="inline ml10" />
@@ -90,7 +90,7 @@ const PartialConfirmForm = ({ item,updateField }) => {
       )}
       {isPartial && isInclude && (
         <FormGroup validationState={includeError === null ? null : 'error'}>
-          <Col sm={5} componentClass={ControlLabel}>
+          <Col sm={5} as={ControlLabel}>
             Include Customer IDs
             <HelpBlock><small>Comma \ new line<br />separated numbers</small></HelpBlock>
           </Col>
@@ -105,7 +105,7 @@ const PartialConfirmForm = ({ item,updateField }) => {
       )}
       {isPartial && !isInclude && (
         <FormGroup validationState={excludeError === null ? null : 'error'}>
-          <Col sm={5} componentClass={ControlLabel}>
+          <Col sm={5} as={ControlLabel}>
             Exclude Customer IDs
             <HelpBlock><small>Comma \ new line<br />separated numbers</small></HelpBlock>
           </Col>
@@ -122,14 +122,9 @@ const PartialConfirmForm = ({ item,updateField }) => {
   );
 }
 
-
 PartialConfirmForm.propTypes = {
   item: PropTypes.instanceOf(Immutable.Map),
   updateField: PropTypes.func,
-};
-
-PartialConfirmForm.defaultProps = {
-  item: Immutable.Map(),
 };
 
 export default PartialConfirmForm;

@@ -66,12 +66,7 @@ export default class FieldsMapping extends Component {
     };
   }
 
-  componentWillMount() {
-    if (this.props.settings.getIn(['processor', 'time_field'])) {
-      this.setState({ separateTime: true });
-    }
-  }
-
+  
   onChangePattern(index, e) {
     const { conditions } = this.state;
     const { value } = e.target;
@@ -300,6 +295,13 @@ export default class FieldsMapping extends Component {
     conditions[index].pattern = e;
     this.setState({ pattern: e, conditions });
   };
+
+  
+  componentDidMount() {
+    if (this.props.settings.getIn(['processor', 'time_field'])) {
+      this.setState({ separateTime: true });
+    }
+  }
 
   render() {
     const {
@@ -568,6 +570,7 @@ export default class FieldsMapping extends Component {
                       onChangeUnit={this.onChangeStaticUom}
                       enabled={settings.get('usaget_type', '') === 'static'}
                       showDisplayUnits={true}
+                      compact={true}
                     />
                   </div>
                   <div className="col-lg-1">
@@ -752,6 +755,7 @@ export default class FieldsMapping extends Component {
                       onChangeUnit={this.onChangeUom}
                       enabled={settings.get('usaget_type', '') === 'dynamic'}
                       showDisplayUnits={true}
+                      compact={true}
                     />
                   </div>
                   <div className="col-lg-2 field-mapping-radio">

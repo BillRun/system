@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel, Button, ButtonGroup } from 'react-bootstrap';
+import { Form, Col, Button, ButtonGroup } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { ActionButtons, LoadingItemPlaceholder } from '@/components/Elements';
 import { emailTemplatesSelector } from '@/selectors/settingsSelector';
@@ -141,11 +142,11 @@ class EmailTemplate extends Component {
     }
 
     return (
-      <Form horizontal>
+      <Form>
         
         {/* CHANGE 7: Render Tabs based on the 'templates' array in config */}
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={1}>Template</Col>
+          <Col as={ControlLabel} sm={1}>Template</Col>
           <Col sm={11}>
             <ButtonGroup>
               {templateConfig.map((tmpl, index) => {
@@ -156,7 +157,7 @@ class EmailTemplate extends Component {
                 return (
                   <Button 
                     key={tmplName}
-                    bsStyle={isActive ? 'primary' : 'default'}
+                    variant={isActive ? 'primary' : 'default'}
                     onClick={() => this.onSwitchTemplate(tmplName)}
                   >
                     {tmplLabel}
@@ -168,7 +169,7 @@ class EmailTemplate extends Component {
         </FormGroup>
 
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={1}>Subject</Col>
+          <Col as={ControlLabel} sm={1}>Subject</Col>
           <Col sm={8}>
             <Field
               onChange={this.onChangeSubject}

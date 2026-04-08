@@ -72,14 +72,4 @@ SelectDelimiter.propTypes = {
   onChangeDelimiter: PropTypes.func.isRequired,
 };
 
-
-SelectDelimiter.defaultProps = {
-  settings: Map(),
-  delimiterOptions: [
-    { value: '	', label: 'Tab' }, // eslint-disable-line no-tabs
-    { value: ' ', label: 'Space' },
-    { value: ',', label: 'Comma' },
-  ],
-};
-
 export default SelectDelimiter;

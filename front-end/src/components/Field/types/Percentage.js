@@ -3,9 +3,8 @@ import PropTypes from 'prop-types';
 import { InputGroup } from 'react-bootstrap';
 import isNumber from 'is-number';
 
-
 const Percentage = ({
-  onChange, value, editable, disabled, tooltip, preffix, ...otherProps
+  onChange = () => {}, value = '', editable = true, disabled = false, tooltip = '', preffix = null, ...otherProps
 }) => {
 
   const onChangePercentage = (e) => {
@@ -20,7 +19,7 @@ const Percentage = ({
   if (editable) {
     return (
       <InputGroup>
-        {preffix !== null && (<InputGroup.Addon>{preffix}</InputGroup.Addon>)}
+        {preffix !== null && (<InputGroup.Text>{preffix}</InputGroup.Text>)}
         <input
           {...otherProps}
           type="number"
@@ -30,7 +29,7 @@ const Percentage = ({
           disabled={disabled}
           title={tooltip}
         />
-        <InputGroup.Addon>%</InputGroup.Addon>
+        <InputGroup.Text>%</InputGroup.Text>
       </InputGroup>
     );
   }
@@ -44,18 +43,6 @@ const Percentage = ({
       </span>
     </div>
   );
-};
-
-
-Percentage.defaultProps = {
-  value: '',
-  required: false,
-  disabled: false,
-  editable: true,
-  placeholder: '',
-  tooltip: '',
-  preffix: null,
-  onChange: () => {},
 };
 
 Percentage.propTypes = {

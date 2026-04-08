@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
-import { Panel, Tabs, Tab } from 'react-bootstrap';
-import Modal from 'react-bootstrap/lib/Modal';
+import { Tabs, Tab, Modal, Button } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 
 export default class GatewayParamsModal extends Component {
   constructor(props) {
@@ -21,23 +21,7 @@ export default class GatewayParamsModal extends Component {
     };
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { gateway, settings } = nextProps;
-    if (gateway) {
-      const currentTransactionsConnection = gateway.getIn(['transactions', 'receiver', 'connections', 0]) === undefined ? {} :
-        gateway.getIn(['transactions', 'receiver', 'connections', 0]).toJS();
-      const currentDenialsConnection = gateway.getIn(['denials', 'receiver', 'connections', 0]) === undefined ? {} :
-        gateway.getIn(['denials', 'receiver', 'connections', 0]).toJS();
-
-      return this.setState({
-        transactionsConnection: currentTransactionsConnection,
-        denialsConnection: currentDenialsConnection,
-        gateway: gateway.toJS(),
-      });
-    }
-    return this.setState({gateway: {name: settings.get('name'), params: {}}});
-  }
-
+  
   onChangeParam = () => {
     const { onChangeParam, gateway } = this.props;
     onChangeParam(gateway.get('name'));
@@ -134,7 +118,7 @@ export default class GatewayParamsModal extends Component {
     const denialsConnection = denialsConnections[0] !== undefined ? denialsConnections[0] : [];
     const secretFields = settings.get('secret_fields') !== undefined ? settings.get('secret_fields') : [];
     return (
-      <Tabs activeKey={activeTab} animation={false} id="PaymentGatewayTab" onSelect={this.handleSelectTab}>
+      <Tabs activeKey={activeTab} transition={false} id="PaymentGatewayTab" onSelect={this.handleSelectTab}>
         <Tab title="API Parameters" eventKey={1}>
           <Panel style={{ borderTop: 'none' }}>
             <form className="form-horizontal">
@@ -147,7 +131,7 @@ export default class GatewayParamsModal extends Component {
                       autoComplete="new-password"
                       onChange={this.onChangeParamValue}
                       className="form-control"
-                      value={gateway['params'][param]} />
+                      value={gateway['params'][param] ?? ''} />
                   </div>
                 </div>
               ))}
@@ -166,7 +150,7 @@ export default class GatewayParamsModal extends Component {
                       id={param}
                       onChange={this.onChangeExportValue}
                       className="form-control"
-                      value={exportValue[param]} />
+                      value={exportValue[param] ?? ''} />
                   </div>
                 </div>
               ))}
@@ -185,7 +169,7 @@ export default class GatewayParamsModal extends Component {
                       id={param}
                       onChange={this.onChangeTransactionsReceiverValue}
                       className="form-control"
-                      value={transactionsConnection[param]} />
+                      value={transactionsConnection[param] ?? ''} />
                   </div>
                 </div>
               ))}
@@ -204,7 +188,7 @@ export default class GatewayParamsModal extends Component {
                       id={param}
                       onChange={this.onChangeDenialsReceiverValue}
                       className="form-control"
-                      value={denialsConnection[param]} />
+                      value={denialsConnection[param] ?? ''} />
                   </div>
                 </div>
               ))}
@@ -231,7 +215,7 @@ export default class GatewayParamsModal extends Component {
                 onChange={this.onChangeParamValue}
                 autoComplete="new-password"
                 className="form-control"
-                value={gateway['params'][param]} />
+                value={gateway['params'][param] ?? ''} />
             </div>
           </div>
         ))}
@@ -253,12 +237,39 @@ export default class GatewayParamsModal extends Component {
     );
   }
 
+  
+  componentDidUpdate(prevProps) {
+    const { gateway, settings } = this.props;
+    // Only sync local state when the gateway prop reference actually changes —
+    // calling setState unconditionally here caused an infinite re-render loop.
+    if (gateway === prevProps.gateway) {
+      return;
+    }
+    if (gateway) {
+      const currentTransactionsConnection =
+        gateway.getIn(['transactions', 'receiver', 'connections', 0]) === undefined
+          ? {}
+          : gateway.getIn(['transactions', 'receiver', 'connections', 0]).toJS();
+      const currentDenialsConnection =
+        gateway.getIn(['denials', 'receiver', 'connections', 0]) === undefined
+          ? {}
+          : gateway.getIn(['denials', 'receiver', 'connections', 0]).toJS();
+      this.setState({
+        transactionsConnection: currentTransactionsConnection,
+        denialsConnection: currentDenialsConnection,
+        gateway: gateway.toJS(),
+      });
+    } else {
+      this.setState({ gateway: { name: settings.get('name'), params: {} } });
+    }
+  }
+
   render() {
     const { settings, show = false } = this.props;
 
     return (
 
-      <Modal show={show} onHide={this.onClose} bsSize="large">
+      <Modal show={show} onHide={this.onClose} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>{settings.get('title')} parameters</Modal.Title>
         </Modal.Header>
@@ -266,8 +277,8 @@ export default class GatewayParamsModal extends Component {
           { this.renderModalBody() }
         </Modal.Body>
         <Modal.Footer>
-          <button type="button" className="btn btn-default" onClick={this.onClose}>Cancel</button>
-          <button type="button" className="btn btn-primary" onClick={this.onSave}>Save</button>
+          <Button variant="outline-secondary" onClick={this.onClose}>Cancel</Button>
+          <Button variant="primary" onClick={this.onSave}>Save</Button>
         </Modal.Footer>
       </Modal>
     );

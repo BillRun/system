@@ -4,7 +4,7 @@ import Immutable from 'immutable';
 
 
 /* COMPONENTS */
-import Multiselect from 'react-bootstrap-multiselect';
+import Field from '@/components/Field';
 
 export default class Filter extends Component {
 
@@ -82,17 +82,9 @@ export default class Filter extends Component {
     });
   };
 
-  onSelectFilterField(option, checked) {
-    const value = option.val();
-    const { filter_by } = this.state;
-    const included = filter_by.includes(value);
-    if (checked && included) {
-      return;
-    }
-    if (!checked && included) {
-      return this.setState({filter_by: filter_by.filter(f => f !== value)});
-    }
-    return this.setState({filter_by: filter_by.concat(value)});
+  onSelectFilterField(value = '') {
+    const filter_by = value === '' ? [] : value.split(',').filter(field => field !== '');
+    this.setState({ filter_by });
   }
 
   render() {
@@ -117,11 +109,13 @@ export default class Filter extends Component {
                    className="form-control"/>
           </div>
           <div className="pull-left">
-            <Multiselect data={fields_options}
-                         multiple
-                         onChange={this.onSelectFilterField}
-                         buttonWidth="100%"
-                         nonSelectedText="Search in fields"
+            <Field
+              fieldType="select"
+              multi
+              value={filter_by.join(',')}
+              options={fields_options}
+              onChange={this.onSelectFilterField}
+              placeholder="Search in fields"
             />
           </div>
           <div className="search-button pull-left">

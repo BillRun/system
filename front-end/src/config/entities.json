@@ -35,7 +35,8 @@
     "itemName": "prepaid plan",
     "itemsName": "prepaid plans",
     "itemType": "prepaid_plan",
-    "itemsType": "prepaid_plans"
+    "itemsType": "prepaid_plans",
+    "settingsKey": "plans"
   },
   "prepaid_include": {
     "collection": "prepaidincludes",

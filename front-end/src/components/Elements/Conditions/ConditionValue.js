@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import Immutable from 'immutable';
 import moment from 'moment';
 import isNumber from 'is-number';
-import { InputGroup, DropdownButton, MenuItem } from 'react-bootstrap';
+import { InputGroup, DropdownButton, Dropdown } from 'react-bootstrap';
 import Field from '@/components/Field';
 import {
   formatSelectOptions,
@@ -380,15 +380,14 @@ class ConditionValue extends Component {
           <DropdownButton
             disabled={disabled}
             onSelect={this.onChangeDateOption}
-            componentClass={InputGroup.Button}
             id="date-select-options"
             title={actionTitle}
             className="full-width"
           >
-            <MenuItem key="date" eventKey="date">Select Date:</MenuItem>
-            <MenuItem divider />
+            <Dropdown.Item key="date" eventKey="date">Select Date:</Dropdown.Item>
+            <Dropdown.Divider />
             { options.map(option => (
-                <MenuItem key={option.value} eventKey={option.value}>{option.label}</MenuItem>
+                <Dropdown.Item key={option.value} eventKey={option.value}>{option.label}</Dropdown.Item>
             )) }
           </DropdownButton>
           {selectedOptionIdx === -1 && (
@@ -510,7 +509,7 @@ class ConditionValue extends Component {
     if (operator.has('prefix')) {
       return (
         <InputGroup>
-          <InputGroup.Addon>{operator.get('prefix', '')}</InputGroup.Addon>
+          <InputGroup.Text>{operator.get('prefix', '')}</InputGroup.Text>
           {input}
         </InputGroup>
       );
@@ -519,7 +518,7 @@ class ConditionValue extends Component {
       return (
         <InputGroup>
           {input}
-          <InputGroup.Addon>{operator.get('suffix', '')}</InputGroup.Addon>
+          <InputGroup.Text>{operator.get('suffix', '')}</InputGroup.Text>
         </InputGroup>
       );
     }

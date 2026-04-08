@@ -83,11 +83,11 @@ class CollectionStepsList extends Component {
   ]
 
   getListActions = () => [
-    { type: 'edit', showIcon: true, helpText: 'Edit', onClick: this.props.onClickEdit },
-    { type: 'enable', showIcon: true, helpText: 'Enable', onClick: this.onClickToggle, show: this.parseShowEnable },
-    { type: 'disable', showIcon: true, helpText: 'Disable', onClick: this.onClickToggle, show: this.parseShowDisable },
-    { type: 'clone', showIcon: true, helpText: 'Clone', onClick: this.props.onClickClone },
-    { type: 'remove', showIcon: true, helpText: 'Remove', onClick: this.onClickRemove },
+    { type: 'edit', showIcon: true, helpText: 'Edit', onClick: this.props.onClickEdit, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'enable', showIcon: true, helpText: 'Enable', onClick: this.onClickToggle, show: this.parseShowEnable, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'disable', showIcon: true, helpText: 'Disable', onClick: this.onClickToggle, show: this.parseShowDisable, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'clone', showIcon: true, helpText: 'Clone', onClick: this.props.onClickClone, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'remove', showIcon: true, helpText: 'Remove', onClick: this.onClickRemove, actionStyle: 'link', actionSize: 'xsmall' },
   ];
 
   renderPanelHeader = () => {

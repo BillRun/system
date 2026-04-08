@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import Immutable from 'immutable';
 import { LoginForm } from '../UserForms';
 import { Forbidden403 } from '../StaticPages';
@@ -65,5 +66,15 @@ export default function (ComposedComponent) {
     action: actionSelector(state, props),
   });
 
-  return connect(mapStateToProps)(Authenticate);
+  const ConnectedAuthenticate = connect(mapStateToProps)(Authenticate);
+
+  // Wrapper to inject react-router v6 location (with .query) into the class component
+  function AuthenticateWithLocation(props) {
+    const rawLocation = useLocation();
+    const query = Object.fromEntries(new URLSearchParams(rawLocation.search));
+    const location = { ...rawLocation, query };
+    return <ConnectedAuthenticate {...props} location={location} />;
+  }
+
+  return AuthenticateWithLocation;
 }

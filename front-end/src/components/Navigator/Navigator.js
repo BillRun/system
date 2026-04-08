@@ -1,16 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { Link, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import Immutable from 'immutable';
 import classNames from 'classnames';
-import {
-  NavDropdown,
-  Button,
-  MenuItem as BootstrapMenuItem,
-  OverlayTrigger,
-  Tooltip,
-} from 'react-bootstrap';
+import { NavDropdown, Dropdown, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { toggleSideBar } from '@/actions/guiStateActions/menuActions';
 import { userDoLogout } from '@/actions/userActions';
 import MenuItem from './MenuItem';
@@ -51,20 +45,24 @@ class Navigator extends Component {
     openSubMenu: [],
   };
 
-  componentWillMount() {
-    this.onWindowResize();
-    window.addEventListener('resize', this.onWindowResize);
-  }
-
+  
   componentDidMount() {
+    this.onWindowResize();
+        window.addEventListener('resize', this.onWindowResize);
+    
     this.setOpenMenusItems();
   }
 
   componentDidUpdate(prevProps) {
-    const { routes, collapseSideBar } = this.props;
-    const oldpath = prevProps.routes[prevProps.routes.length - 1].path;
-    const newpath = routes[routes.length - 1].path;
-    if (!collapseSideBar && oldpath !== newpath) {
+    const { collapseSideBar } = this.props;
+    // Use router location to detect route change (v6: routes stub no longer carries .path)
+    const prevPath = prevProps.router && prevProps.router.location
+      ? prevProps.router.location.pathname
+      : '';
+    const currPath = this.props.router && this.props.router.location
+      ? this.props.router.location.pathname
+      : '';
+    if (!collapseSideBar && prevPath !== currPath) {
       this.setOpenMenusItems();
     }
   }
@@ -75,15 +73,16 @@ class Navigator extends Component {
 
   setOpenMenusItems = () => {
     const { router, menuItems } = this.props;
-    const { openSubMenu } = this.state;
-    menuItems
+    const openSubMenu = menuItems
       .filter(this.filterEnabledMenu)
       .filter(this.filterPermission)
-      .forEach((item) => {
-        if (item.get('subMenus', Immutable.List()).filter(subMenu => router.isActive(subMenu.get('route', ''))).size > 0) {
-          this.setState({ openSubMenu: [...openSubMenu, item.get('id')] });
-        }
-      });
+      .filter(item => item
+        .get('subMenus', Immutable.List())
+        .some(subMenu => router.isActive(subMenu.get('route', ''))))
+      .map(item => item.get('id'))
+      .toArray();
+
+    this.setState({ openSubMenu });
   }
 
   onWindowResize = () => {
@@ -253,7 +252,7 @@ class Navigator extends Component {
             <span className="brand-name">{ companyNeme }</span>
           </Link>
           { !showCollapseButton &&
-            <Button bsSize="xsmall" id="btn-collapse-menu" onClick={this.onCollapseSidebar}>
+            <Button size="sm" id="btn-collapse-menu" onClick={this.onCollapseSidebar}>
               <i className="fa fa-chevron-left" />
               <i className="fa fa-chevron-left" />
             </Button>
@@ -262,13 +261,13 @@ class Navigator extends Component {
 
         <ul className={topNavClassName}>
           <OnBoardingNavigation eventKeyBase={2} />
-          <NavDropdown id="nav-user-menu" eventKey={1} title={<span><i className="fa fa-user fa-fw" />{ userName }</span>}>
-            <BootstrapMenuItem eventKey={1.1} href="#about" active={router.isActive('about')}>
+          <NavDropdown id="nav-user-menu" title={<span><i className="fa fa-user fa-fw" />{ userName }</span>}>
+            <NavDropdown.Item eventKey={1.1} href="#about" active={router.isActive('about')}>
               <i className="fa fa-question-circle fa-fw" /> About
-            </BootstrapMenuItem>
-            <BootstrapMenuItem eventKey={1.2} onClick={this.clickLogout}>
+            </NavDropdown.Item>
+            <NavDropdown.Item eventKey={1.2} onClick={this.clickLogout}>
               <i className="fa fa-sign-out fa-fw" /> Logout
-            </BootstrapMenuItem>
+            </NavDropdown.Item>
           </NavDropdown>
         </ul>
 
@@ -301,4 +300,4 @@ const mapStateToProps = state => ({
   userRoles: state.user.get('roles') || undefined,
   logo: state.settings.getIn(['files', 'logo']) || undefined,
 });
-export default withRouter(connect(mapStateToProps)(Navigator));
+export default connect(mapStateToProps)(Navigator);

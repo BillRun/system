@@ -59,7 +59,7 @@ class InvoiceTemplate extends Component {
       <div>
         <div className="row">
           <div className="col-lg-12">
-            <Form horizontal>
+            <Form>
               { header !== null && (
                 <EditBlock
                   name="header"

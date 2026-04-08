@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Help from '@/components/Help';
 import Field from '@/components/Field';
 import { getConfig, formatSelectOptions, parseConfigSelectOptions } from '@/common/Util';
@@ -32,12 +33,7 @@ class ComputedRate extends Component {
     onChangeHardCodedValue: () => {},
   };
 
-  componentWillMount() {
-    this.props.dispatch(getSettings([
-      'lines',
-    ]));
-  }
-
+  
   getConditionResultProjectOptions = () => [
     'condition_result',
     'hard_coded',
@@ -51,6 +47,13 @@ class ComputedRate extends Component {
     const { value } = e.target;
     const callback = this.props.onChangeComputedLineKey(['line_keys', 1, 'key']);
     callback(value);
+  }
+
+  
+  componentDidMount() {
+    this.props.dispatch(getSettings([
+      'lines',
+    ]));
   }
 
   render() {
@@ -70,9 +73,9 @@ class ComputedRate extends Component {
     const checkboxStyle = { marginTop: 10 };
     const conditionOption = this.getConditionResultProjectOptions().concat(computedlineKeyOptions);
     return (
-      <Form horizontal>
+      <Form>
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={2}>
+          <Col as={ControlLabel} sm={2}>
             Computation Type
           </Col>
           <Col sm={10}>
@@ -104,7 +107,7 @@ class ComputedRate extends Component {
         </FormGroup>
         <div className="separator" />
         <FormGroup key="computed-field-1">
-          <Col sm={2} componentClass={ControlLabel}>{computedTypeRegex ? 'Field' : 'First Field' }</Col>
+          <Col sm={2} as={ControlLabel}>{computedTypeRegex ? 'Field' : 'First Field' }</Col>
           <Col sm={5}>
             <Field
               fieldType="select"
@@ -128,7 +131,7 @@ class ComputedRate extends Component {
         { !computedTypeRegex && (
           <>
             <FormGroup key="computed-operator">
-              <Col sm={2} componentClass={ControlLabel}>Operator</Col>
+              <Col sm={2} as={ControlLabel}>Operator</Col>
               <Col sm={5}>
                 <Field
                   fieldType="select"
@@ -139,7 +142,7 @@ class ComputedRate extends Component {
               </Col>
             </FormGroup>
             <FormGroup key="computed-field-2">
-              <Col sm={2} componentClass={ControlLabel}>Second Field</Col>
+              <Col sm={2} as={ControlLabel}>Second Field</Col>
               <Col sm={5}>
                 { computedLineKey.get('operator', '') === '$regex' && (
                   <Field
@@ -169,7 +172,7 @@ class ComputedRate extends Component {
               </Col>
             </FormGroup>
             <FormGroup key="computed-must-met">
-              <Col componentClass={ControlLabel} sm={2}>
+              <Col as={ControlLabel} sm={2}>
                 Must met?
                 <Help contents={mustMetHelper} />
               </Col>
@@ -185,7 +188,7 @@ class ComputedRate extends Component {
               </Col>
             </FormGroup>
             <FormGroup key="computed-cond-project-true">
-              <Col sm={2} componentClass={ControlLabel}>Value when True</Col>
+              <Col sm={2} as={ControlLabel}>Value when True</Col>
               <Col sm={5}>
                 <Field
                   fieldType="select"
@@ -216,7 +219,7 @@ class ComputedRate extends Component {
               )}
             </FormGroup>
             <FormGroup key="computed-cond-project-false">
-              <Col sm={2} componentClass={ControlLabel}>Value when False</Col>
+              <Col sm={2} as={ControlLabel}>Value when False</Col>
               <Col sm={5}>
                 <Field
                   fieldType="select"

@@ -1,9 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-
-
-const WithTooltip = ({ helpText, children }) => {
+const WithTooltip = ({ helpText = '', children = null }) => {
 
   if (children === null) {
     return null;
@@ -24,11 +22,6 @@ const WithTooltip = ({ helpText, children }) => {
         </span>
       </OverlayTrigger>
   );
-};
-
-WithTooltip.defaultProps = {
-  children: null,
-  helpText: '',
 };
 
 WithTooltip.propTypes = {

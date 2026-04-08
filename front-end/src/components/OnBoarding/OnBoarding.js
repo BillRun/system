@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { Col, Row, Button } from 'react-bootstrap';
-import Joyride from 'react-joyride';
+import Joyride, { ACTIONS, EVENTS, STATUS } from 'react-joyride';
 import { ModalWrapper } from '@/components/Elements'
 import {
   setOnBoardingStep,
@@ -51,29 +51,12 @@ class OnBoarding extends Component {
   };
 
   state = {
-    // Ugly workaround https://github.com/gilbarbara/react-joyride/issues/223
-    // Joyride set stepIndex only in componentWillReceiveProps if it was changed!
-    // startIndex var need to trigget change in value from 0 to real step.
     startIndex: 0,
     autoStart: true,
     run: false,
   }
 
-  componentWillReceiveProps(nextProps, nextState) {
-    const { isPaused, isRunnig } = this.props;
-    const { autoStart } = this.state;
-    if ((isPaused && !nextProps.isPaused) || (!isRunnig && nextProps.isRunnig)) {
-      if (autoStart || nextState.autoStart) {
-        setTimeout(this.switchToRun, 500); // fix first step position - let invoce HTML to load before first step start
-      } else {
-        this.switchToRun();
-      }
-    }
-    if (!nextProps.isRunnig) {
-      this.setState({ startIndex: 0 });
-    }
-  }
-
+  
   onCancel = () => {
     this.props.dispatch(cancelOnBoarding());
   }
@@ -121,69 +104,60 @@ class OnBoarding extends Component {
     this.props.dispatch(showConfirmModal(confirm));
   };
 
+  // react-joyride v2: steps use `target` (was `selector`) and `content` (was `text`)
   getSteps = () => ([{
     title: '1. Customer details',
-    text: (
+    content: (
       <span>
         Customer name, id and address. Invoices are generated per customer.
         <br />
-        <Link to="customers/customer" onClick={this.onPause}>Click here to create a customer</Link>
+        <Link to="/customers/customer" onClick={this.onPause}>Click here to create a customer</Link>
       </span>
     ),
-    style: { beacon: { offsetY: -75 } },
-    selector: '.table-info',
-    type: 'click',
+    target: '.table-info',
   }, {
     title: '2. Plans',
-    text: (
+    content: (
       <span>
         A customer can have multiple subscriptions, each one tied to exactly one
         plan with recurring charges.
         <br />
-        <Link to="plans/plan" onClick={this.onPause}>Click here to create a plan</Link>
+        <Link to="/plans/plan" onClick={this.onPause}>Click here to create a plan</Link>
       </span>
     ),
-    style: { beacon: { offsetY: -25 } },
-    selector: '.step-plan',
-    type: 'click',
+    target: '.step-plan',
   }, {
     title: '3. Services',
-    text: (
+    content: (
       <span>
         Every subscription can register to extra services that are charged periodically.
         <br />
-        <Link to="services/service" onClick={this.onPause}>Click here to create a service</Link>
+        <Link to="/services/service" onClick={this.onPause}>Click here to create a service</Link>
       </span>
     ),
-    style: { beacon: { offsetY: -25 } },
-    selector: '.step-service',
-    type: 'click',
+    target: '.step-service',
   }, {
     title: '4. Discounts',
-    text: (
+    content: (
       <span>
         Build automatic discounts based on various combinations on subscription plans / services.
         <br />
-        <Link to="discounts/discount" onClick={this.onPause}>Click here to create a discount</Link>
+        <Link to="/discounts/discount" onClick={this.onPause}>Click here to create a discount</Link>
       </span>
     ),
-    style: { beacon: { offsetY: -25 } },
-    selector: '.step-discount',
-    type: 'click',
+    target: '.step-discount',
   }, {
     title: '5. Subscription details',
-    text: (
+    content: (
       <span>
         This section appears for every subscription of the customer and shows aggregated
         amounts on the subscription level.
       </span>
     ),
-    style: { beacon: { offsetY: -25 } },
-    selector: '.step-subscription-details',
-    type: 'click',
+    target: '.step-subscription-details',
   }, {
     title: '6. Usage details',
-    text: (
+    content: (
       <span>
         If billing also by usage, the usage details can be included in the invoice (optional).<br />
         BillRun&apos;s input processors can receive events either in online (HTTP request)
@@ -192,82 +166,76 @@ class OnBoarding extends Component {
         <Link to={{ pathname: '/select_input_processor_template', query: { action: 'new' } }} onClick={this.onPause}>Click here to set up an input processor</Link>
       </span>
     ),
-    style: { beacon: { offsetY: -25 } },
-    selector: '.table-usage',
-    type: 'click',
+    target: '.table-usage',
   }, {
     title: '7. Products',
-    text: (
+    content: (
       <span>
         You can create different products which define pricing rules based on various usage events.
         <br />
         <Link to="/products/product" onClick={this.onPause}>Click here to create a product</Link>
       </span>
     ),
-    style: { beacon: { offsetY: -25 } },
-    selector: '.step-products',
-    type: 'click',
+    target: '.step-products',
   }, {
     title: '8. Company details',
-    text: (
+    content: (
       <span>
         Your company logo, name, address, etc. appear at the invoice header & footer.
         <br />
         <Link to={{ pathname: '/settings', query: { tab: 1 } }} onClick={this.onPause}>Set up your company details here</Link>
       </span>
     ),
-    style: { beacon: { offsetY: -25 } },
-    selector: '.step-company-details-header',
-    type: 'click',
+    target: '.step-company-details-header',
   }, {
     title: '9. Billing cycle management',
-    text: (
+    content: (
       <span>
         You are in full control of the billing cycle run. See the billing cycle run progress
          as it runs and watch invoices as soon as they&apos;re created. Confirm or reset the
          cycle after reviewing it and charge your customers, all functionalities available
          from one screen!
         <br />
-        <Link to="run_cycle" onClick={this.onPause}>Go to billing cycle management screen</Link>
+        <Link to="/run_cycle" onClick={this.onPause}>Go to billing cycle management screen</Link>
       </span>
     ),
-    style: { beacon: { offsetY: -65 } },
-    selector: '.step-period',
-    type: 'click',
+    target: '.step-period',
   }]);
 
-  joyrideEventHandler = (e) => {
+  // react-joyride v2 callback — event shape: { action, index, status, type, lifecycle }
+  joyrideEventHandler = ({ action, index, status, type }) => {
     const { step } = this.props;
-    if (!['close'].includes(e.action) && e.type === 'finished') {
+
+    if (status === STATUS.FINISHED) {
       this.onFinish();
-    } else if (e.type === 'error:target_not_found') {
-      const skiptedIndex = (e.action === 'next') ? e.index + 1 : e.index - 1;
-      this.setState({ startIndex: skiptedIndex });
-      this.onStepChanged(skiptedIndex);
-    } else if (e.action === 'close' && e.type === 'finished') {
-      const lastStep = Math.max(e.steps.length - 2, 0);
+    } else if (type === EVENTS.TARGET_NOT_FOUND) {
+      const skippedIndex = action === ACTIONS.NEXT ? index + 1 : index - 1;
+      this.setState({ startIndex: skippedIndex });
+      this.onStepChanged(skippedIndex);
+    } else if (action === ACTIONS.CLOSE && status === STATUS.PAUSED) {
+      const lastStep = Math.max(this.getSteps().length - 2, 0);
       this.setState({ startIndex: lastStep, run: true, autoStart: false });
-    } else if (e.action === 'start') {
+    } else if (action === ACTIONS.START) {
       if (step !== 0) {
         this.setState({ startIndex: step });
       }
-    } else if (e.action === 'next' && e.type === 'step:before') {
-      this.onStepChanged(e.index);
-    } else if (e.action === 'back' && e.type === 'step:after') {
-      this.onStepChanged(e.index - 1);
+    } else if (type === EVENTS.STEP_BEFORE && action === ACTIONS.NEXT) {
+      this.onStepChanged(index);
+    } else if (type === EVENTS.STEP_AFTER && action === ACTIONS.PREV) {
+      this.onStepChanged(index - 1);
     }
   }
 
   renderIsReadyContent = () => (
     <Row>
-      <Col smPush={1} sm={10}>
+      <Col sm={10}>
         <p>In this short tutorial we will walk you through the main features of BillRun
            by examining a sample BillRun invoice and guiding you how to
            do it yourself with just a few clicks.
         </p>
       </Col>
-      <Col smPush={1} sm={10}>
-        <Button onClick={this.onStart} bsStyle="success">
+      <Col sm={10}>
+        <Button onClick={this.onStart} variant="success">
           Let&apos;s start the tour!
         </Button>
       </Col>
@@ -276,21 +244,48 @@ class OnBoarding extends Component {
 
   renderIsFinishedContent = () => (
     <Row>
-      <Col smPush={1} sm={10}>
+      <Col sm={10}>
         <p>We&apos;re done!</p>
         <p>Thank you for taking the tour!</p>
       </Col>
-      <Col smPush={1} sm={10}>
-        <Button onClick={this.onPending} bsStyle="success">
+      <Col sm={10}>
+        <Button onClick={this.onPending} variant="success">
           Start Using BillRun
         </Button>
       </Col>
     </Row>
   )
 
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { isPaused, isRunnig } = prevProps;
+    const { autoStart } = this.state;
+    if ((isPaused && !this.props.isPaused) || (!isRunnig && this.props.isRunnig)) {
+      if (autoStart) {
+        setTimeout(this.switchToRun, 500); // let DOM settle before first step
+      } else {
+        this.switchToRun();
+      }
+    }
+    // Prevent infinite update loop: reset local state only on transition
+    // from running -> not running, not on every render while not running.
+    if (isRunnig && !this.props.isRunnig) {
+      const nextState = {};
+      if (this.state.startIndex !== 0) {
+        nextState.startIndex = 0;
+      }
+      if (this.state.run) {
+        nextState.run = false;
+      }
+      if (Object.keys(nextState).length > 0) {
+        this.setState(nextState);
+      }
+    }
+  }
+
   render() {
     const { isRunnig, isFinished, isStarting, mobalTitle } = this.props;
-    const { startIndex, autoStart, run } = this.state;
+    const { startIndex, run } = this.state;
     if (isStarting) {
       return (
         <ModalWrapper
@@ -310,17 +305,13 @@ class OnBoarding extends Component {
     if (isRunnig) {
       return (
         <Joyride
-          type="continuous"
-          showStepsProgress={false}
+          continuous={true}
           scrollToFirstStep={true}
-          scrollToSteps={true}
-          disableOverlay={true}
-          showOverlay={true}
-          debug={false}
+          disableOverlay={false}
+          showSkipButton={true}
           stepIndex={startIndex}
           steps={this.getSteps()}
           run={run}
-          autoStart={autoStart}
           callback={this.joyrideEventHandler}
         />
       );

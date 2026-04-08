@@ -2,55 +2,58 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button } from 'react-bootstrap';
 
+// Map Bootstrap 3 size names to Bootstrap 5 equivalents accepted by react-bootstrap v2
+const mapModalSize = size => {
+  if (size === 'large') return 'lg';
+  if (size === 'small') return 'sm';
+  return size; // 'lg', 'sm', 'xl', undefined — pass through
+};
 
-const ModalWrapper = props => (
-  <Modal show={props.show} bsSize={props.modalSize}>
-    <Modal.Header closeButton={props.onHide !== null} onHide={props.onHide}>
-      <Modal.Title>{ props.title }</Modal.Title>
-    </Modal.Header>
-    <Modal.Body>
-      { props.children }
-    </Modal.Body>
-    { (props.onCancel || (props.onOk && props.showOnOk)) &&
-      <Modal.Footer>
-        { props.onCancel && (
-          <Button bsSize="small" style={{ minWidth: 90 }} onClick={props.onCancel} bsStyle={props.styleCancel}>
-            { props.labelCancel }
-          </Button>
+const ModalWrapper = props => {
+  const handleHide = props.onHide || props.onCancel;
+  return (
+    <Modal
+      show={props.show}
+      size={mapModalSize(props.modalSize)}
+      onHide={handleHide || (() => {})}
+      enforceFocus={typeof props.enforceFocus === 'boolean' ? props.enforceFocus : true}
+      animation={props.animation !== false}
+    >
+      <div className="modal-header">
+        { handleHide && (
+          <button type="button" className="close" onClick={handleHide} aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         ) }
-        { props.onOk && props.showOnOk && (
-          <Button bsSize="small" style={{ minWidth: 90 }} onClick={props.onOk} bsStyle={props.styleOk} disabled={props.progress}>
-            { props.progress && (<span><i className="fa fa-spinner fa-pulse" />&nbsp;&nbsp;</span>) }
-            { (props.progress && props.labelProgress !== null)
-              ? props.labelProgress
-              : props.labelOk
-            }
-          </Button>
-        ) }
-      </Modal.Footer>
-    }
-  </Modal>
-);
-
-ModalWrapper.defaultProps = {
-  children: null,
-  title: '',
-  show: false,
-  progress: false,
-  labelOk: 'OK',
-  labelCancel: 'Cancel',
-  labelProgress: null,
-  modalSize: undefined,
-  onHide: null,
-  onOk: null,
-  showOnOk: true,
-  onCancel: null,
-  styleOk: 'primary',
-  styleCancel: undefined,
+        <h4 className="modal-title">{ props.title }</h4>
+      </div>
+      <Modal.Body>
+        { props.children }
+      </Modal.Body>
+      { (props.onCancel || (props.onOk && props.showOnOk)) &&
+        <Modal.Footer>
+          { props.onCancel && (
+            <Button size="sm" style={{ minWidth: 90 }} onClick={props.onCancel} variant={props.styleCancel}>
+              { props.labelCancel }
+            </Button>
+          ) }
+          { props.onOk && props.showOnOk && (
+            <Button size="sm" style={{ minWidth: 90 }} onClick={props.onOk} variant={props.styleOk} disabled={props.progress}>
+              { props.progress && (<span><i className="fa fa-spinner fa-pulse" />&nbsp;&nbsp;</span>) }
+              { (props.progress && props.labelProgress !== null)
+                ? props.labelProgress
+                : props.labelOk
+              }
+            </Button>
+          ) }
+        </Modal.Footer>
+      }
+    </Modal>
+  );
 };
 
 ModalWrapper.propTypes = {
-  children: PropTypes.element,
+  children: PropTypes.node,
   labelOk: PropTypes.string,
   labelCancel: PropTypes.string,
   onOk: PropTypes.func,
@@ -59,11 +62,26 @@ ModalWrapper.propTypes = {
   show: PropTypes.bool.isRequired,
   progress: PropTypes.bool,
   labelProgress: PropTypes.string,
-  modalSize: PropTypes.oneOf(['large', 'small', undefined]),
+  modalSize: PropTypes.oneOf(['large', 'small', 'lg', 'sm', 'xl', undefined]),
   title: PropTypes.node,
   onHide: PropTypes.func,
+  /** When false, disables Fade transition (avoids React 18+/19 issues with modal transitions). */
+  animation: PropTypes.bool,
+  enforceFocus: PropTypes.bool,
   styleOk: PropTypes.string,
   styleCancel: PropTypes.string,
+};
+
+ModalWrapper.defaultProps = {
+  labelOk: 'Save',
+  labelCancel: 'Cancel',
+  showOnOk: true,
+  progress: false,
+  labelProgress: null,
+  /** Cancel defaults to outline-secondary (white bg, grey border — BS3 btn-default look via index.css compat rule) */
+  styleCancel: 'outline-secondary',
+  /** OK defaults to primary (blue) */
+  styleOk: 'primary',
 };
 
 export default ModalWrapper;

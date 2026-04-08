@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import isNumber from 'is-number';
-import { Form, FormGroup, ControlLabel, Col, HelpBlock, InputGroup } from 'react-bootstrap';
+import { Form, Col, InputGroup } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import { getFieldName } from '@/common/Util';
 import { ModalWrapper, Actions } from '@/components/Elements';
@@ -191,10 +192,10 @@ class DiscountServiceValue extends Component {
 
     return (
       <ModalWrapper show={true} onOk={this.onCloseModal} title={title}>
-        <Form horizontal>
+        <Form>
           {isQuantitative && (
             <FormGroup>
-              <Col sm={11} smOffset={1}>
+              <Col sm={11} className="col-sm-offset-1" >
                 <Field
                   fieldType="toggeledInput"
                   value={this.getDiscountAmount()}
@@ -263,7 +264,7 @@ class DiscountServiceValue extends Component {
     const showSequential = isPercentage && !isQuantitative;
     return (
       <FormGroup>
-        <Col componentClass={ControlLabel} sm={3} lg={2}>
+        <Col as={ControlLabel} sm={3} lg={2}>
           { label }
         </Col>
         <Col sm={8} lg={9}>
@@ -276,25 +277,25 @@ class DiscountServiceValue extends Component {
               suffix={this.renderSuffix()}
             />
             { hasEnabledActions && (
-              <InputGroup.Addon className="input-group-space pr0 pl5"> </InputGroup.Addon>
+              <InputGroup.Text className="input-group-space pr0 pl5"> </InputGroup.Text>
             )}
             { hasEnabledActions && (
-                <InputGroup.Addon className="not-left-border">
+                <InputGroup.Text className="not-left-border">
                   <Actions actions={actions} data={service} />
-                </InputGroup.Addon>
+                </InputGroup.Text>
             )}
             { showSequential && (
-                <InputGroup.Addon className="input-group-space pr0 pl5"> </InputGroup.Addon>
+                <InputGroup.Text className="input-group-space pr0 pl5"> </InputGroup.Text>
             )}
             { showSequential && (
-              <InputGroup.Addon>
+              <InputGroup.Text>
                 <Field
                   value={service.get('sequential', '')}
                   onChange={this.onChangeSequential}
                   fieldType="checkbox"
                   label={this.renderSequentialLabel()}
                 />
-              </InputGroup.Addon>
+              </InputGroup.Text>
             )}
           </InputGroup>
           { isQuantitative && this.renderQuantitativeDescription() }

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel, HelpBlock, Label } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Label } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { parseIncludeExcludeIdsListValue } from '@/common/Util';
 
-
-const PartialForm = ({ item, updateField }) => {
+const PartialForm = ({ item = Immutable.Map(), updateField }) => {
   const [isPartial, togglePartial] = useState(false);
   const [isInclude, toggleInclude] = useState(true);
   const [includeDisplay, setInclude] = useState('');
@@ -51,17 +51,17 @@ const PartialForm = ({ item, updateField }) => {
   }
 
   return (
-    <Form horizontal>
+    <Form>
       {isRerun && (
         <FormGroup className="mb0">
-          <Col sm={3} componentClass={ControlLabel}></Col>
+          <Col sm={3} as={ControlLabel}></Col>
           <Col sm={8}>
-            <Label bsStyle="danger">Cycle data will be reset (except for confirmed invoices)</Label>
+            <Label variant="danger">Cycle data will be reset (except for confirmed invoices)</Label>
           </Col>
         </FormGroup>
       )}
       <FormGroup>
-        <Col sm={3} componentClass={ControlLabel}></Col>
+        <Col sm={3} as={ControlLabel}></Col>
         <Col sm={8} className='mt10'>
           <Field fieldType="checkbox" value={isPartial} onChange={onTogglePartial} label={
             <span>Partial Cycle</span>
@@ -70,8 +70,8 @@ const PartialForm = ({ item, updateField }) => {
       </FormGroup>
 
       {isPartial && (
-        <FormGroup>
-          <Col sm={3} componentClass={ControlLabel}></Col>
+        <FormGroup validationState={includeError === null ? null : 'error'}>
+          <Col sm={3} as={ControlLabel}></Col>
           <Col sm={8} className='mt10'>
             <Field fieldType="radio" onChange={onSetInclude} name="type" value="monetary" label="Include" checked={isInclude} className="inline" />
             <Field fieldType="radio" onChange={onSetExclude} name="type" value="monetary" label="Exclude" checked={!isInclude} className="inline ml10" />
@@ -79,8 +79,8 @@ const PartialForm = ({ item, updateField }) => {
         </FormGroup>
       )}
       {isPartial && isInclude && (
-        <FormGroup validationState={includeError === null ? null : 'error'}>
-          <Col sm={3} componentClass={ControlLabel}>
+        <FormGroup validationState={excludeError === null ? null : 'error'}>
+          <Col sm={3} as={ControlLabel}>
             Include Customer IDs
             <HelpBlock><small>Comma \ new line<br />separated numbers</small></HelpBlock>
           </Col>
@@ -95,7 +95,7 @@ const PartialForm = ({ item, updateField }) => {
       )}
       {isPartial && !isInclude && (
         <FormGroup validationState={excludeError === null ? null : 'error'}>
-          <Col sm={3} componentClass={ControlLabel}>
+          <Col sm={3} as={ControlLabel}>
             Exclude Customer IDs
             <HelpBlock><small>Comma \ new line<br />separated numbers</small></HelpBlock>
           </Col>
@@ -116,10 +116,5 @@ PartialForm.propTypes = {
   item: PropTypes.instanceOf(Immutable.Map),
   updateField: PropTypes.func,
 };
-
-PartialForm.defaultProps = {
-  item: Immutable.Map(),
-};
-
 
 export default PartialForm;

@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { Form, FormGroup, ControlLabel, Col, Panel, Table } from 'react-bootstrap';
+import { Form, Col, Table } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import uuid from 'uuid';
 import moment from 'moment';
 import SubscriptionServicesDetails from './SubscriptionElements/SubscriptionServicesDetails';
@@ -70,12 +71,7 @@ class Subscription extends Component {
     };
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (!Immutable.is(this.props.subscription, nextProps.subscription)) {
-      this.setState({ subscription: nextProps.subscription });
-    }
-  }
-
+  
   initService = (serviceName) => {
     const { subscription: originSubscription } = this.props;
     const { subscription } = this.state;
@@ -464,7 +460,7 @@ class Subscription extends Component {
         />
     ), (
       <FormGroup key="plan">
-        <Col componentClass={ControlLabel}sm={3} lg={2}>Plan <span className="danger-red"> *</span></Col>
+        <Col as={ControlLabel}sm={3} lg={2}>Plan <span className="danger-red"> *</span></Col>
         <Col sm={8} lg={9}>
           <Field
             fieldType="select"
@@ -477,14 +473,14 @@ class Subscription extends Component {
       </FormGroup>
     ), (
       <FormGroup key="includedServices">
-        <Col componentClass={ControlLabel} sm={3} lg={2}>Included Services</Col>
+        <Col as={ControlLabel} sm={3} lg={2}>Included Services</Col>
         <Col sm={7}>
           <Field value={this.getPlanIncludedServices(plan)} editable={false} />
         </Col>
       </FormGroup>
     ), (
       <FormGroup key="services">
-        <Col componentClass={ControlLabel} sm={3} lg={2}>Services</Col>
+        <Col as={ControlLabel} sm={3} lg={2}>Services</Col>
         <Col sm={8} lg={9}>
           <Field
             fieldType="select"
@@ -520,6 +516,13 @@ class Subscription extends Component {
     return moment.max(subscriptionFrom, subscriptionActivation);
   }
 
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    if (!Immutable.is(prevProps.subscription, this.props.subscription)) {
+      this.setState({ subscription: this.props.subscription });
+    }
+  }
+
   render() {
     const { progress, subscription } = this.state;
     const { revisions, mode, allServices, subscription: originSubscription } = this.props;
@@ -550,7 +553,7 @@ class Subscription extends Component {
 
           <hr />
 
-          <Form horizontal>
+          <Form>
             { this.renderSystemFields(allowEdit) }
             <SubscriptionServicesDetails
               subscriptionServices={services}

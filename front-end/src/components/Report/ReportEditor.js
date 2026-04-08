@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Form, Button, Col, Row, Panel } from 'react-bootstrap';
+import { Form, Button, Col, Row } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 import uuid from 'uuid';
 import classNames from 'classnames';
@@ -430,8 +431,8 @@ class ReportEditor extends Component {
     });
     return (
       <div className="ReportEditor">
-        <Form horizontal>
-          <Panel header={<span>Basic Details</span>} collapsible={mode === 'update'} className="collapsible">
+        <Form className="form-horizontal">
+          <Panel header={<span>Basic Details</span>} collapsible={mode === 'update'} className="collapsible mb10">
             <EditorDetails
               mode={mode}
               title={report.get('key', '')}
@@ -443,7 +444,7 @@ class ReportEditor extends Component {
               onChangeType={this.onChangeReportType}
             />
           </Panel>
-          <Panel header={<span>Columns {mandatory}</span>}>
+          <Panel header={<span>Columns {mandatory}</span>} className="mb10">
             <EditorColumns
               mode={mode}
               columns={columns}
@@ -458,7 +459,7 @@ class ReportEditor extends Component {
               onMove={this.onMoveColumn}
             />
           </Panel>
-          <Panel header={<span>Conditions</span>} collapsible className="collapsible">
+          <Panel header={<span>Conditions</span>} collapsible className="collapsible mb10" defaultExpanded={false}>
             <EditorConditions
               mode={mode}
               conditions={report.get('conditions', Immutable.List())}
@@ -471,7 +472,7 @@ class ReportEditor extends Component {
               onChangeValue={this.onChangeConditionValue}
             />
           </Panel>
-          <Panel header={<span>Sort</span>} collapsible className="collapsible">
+          <Panel header={<span>Sort</span>} collapsible className="collapsible mb10" defaultExpanded={false}>
             <EditorSorts
               mode={mode}
               sorts={report.get('sorts', Immutable.List())}
@@ -484,7 +485,7 @@ class ReportEditor extends Component {
               onMove={this.onMoveSort}
             />
           </Panel>
-          <Panel header={<span>Formatting Style</span>} collapsible className="collapsible">
+          <Panel header={<span>Formatting Style</span>} collapsible className="collapsible mb10" defaultExpanded={false}>
             <EditorFormatters
               mode={mode}
               formats={report.get('formats', Immutable.List())}
@@ -500,9 +501,9 @@ class ReportEditor extends Component {
             />
           </Panel>
         </Form>
-        <Row>
+        <Row className="mt10">
           <Col sm={12}>
-            <Button bsStyle="primary" onClick={this.onPreview} block disabled={progress}>
+            <Button variant="primary" onClick={this.onPreview} className="btn-block" disabled={progress}>
               <i className={previewBtnClass} />&nbsp;Preview
             </Button>
           </Col>

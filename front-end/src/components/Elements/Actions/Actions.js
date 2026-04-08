@@ -4,23 +4,34 @@ import classNames from 'classnames';
 import Action from './Action';
 import { ButtonGroup, DropdownButton } from 'react-bootstrap';
 
+// Map Bootstrap 3 size names to Bootstrap 5 equivalents
+const mapSize = size => {
+  if (size === 'small') return 'sm';
+  if (size === 'large') return 'lg';
+  if (size === 'xsmall') return undefined;
+  return size;
+};
 const Actions = ({
-  actions,
-  data,
-  type,
-  doropDownLabel,
-  doropDownStyle,
-  doropDownSize,
-  doropDownClass,
+  actions = [],
+  data = null,
+  type = 'default',
+  doropDownLabel = 'Actions',
+  doropDownStyle = 'primary',
+  doropDownSize = 'xsmall',
+  doropDownClass = '',
 }) => {
+  const doropDownClassName = classNames(doropDownClass, {
+    'btn-xs': doropDownSize === 'xsmall',
+  });
+
   if (type === 'dropdown') {
     return (
       <DropdownButton
-        bsStyle={doropDownStyle === 'default' ? undefined : doropDownStyle}
-        bsSize={doropDownSize}
+        variant={doropDownStyle === 'default' ? undefined : doropDownStyle}
+        size={mapSize(doropDownSize)}
         title={doropDownLabel}
         id="dropdown-size-extra-small"
-        className={doropDownClass}
+        className={doropDownClassName}
       >
       { actions.map((action, idx) => (
         <Action {...action} data={data} key={idx} isDropdown={true} index={idx} />)
@@ -63,17 +74,6 @@ const Actions = ({
     </div>
   );
 }
-
-Actions.defaultProps = {
-  actions: [],
-  data: null,
-  type: 'default',
-  doropDownLabel: 'Actions',
-  doropDownStyle: 'primary',
-  doropDownSize: 'xsmall',
-  doropDownClass: '',
-
-};
 
 Actions.propTypes = {
   actions: PropTypes.arrayOf(PropTypes.object),

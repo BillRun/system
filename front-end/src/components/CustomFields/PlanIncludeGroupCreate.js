@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { Modal, Form, FormGroup, FormControl, ControlLabel, HelpBlock, Button, Checkbox, Col } from 'react-bootstrap';
+import { Modal, Form, FormControl, Button, Col } from 'react-bootstrap';
+import { Checkbox, ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import changeCase from 'change-case';
 import isNumber from 'is-number';
 import Stepper from '@material-ui/core/Stepper';
@@ -361,7 +362,7 @@ class PlanIncludeGroupCreate extends Component {
       case steps.get('SetNameAndType', { index: -1 }).index:
         return ([
           <FormGroup key="group_name" validationState={error.length > 0 ? 'error' : null} className="mb10">
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Name<Help contents={GroupsInclude.name} />
             </Col>
             <Col sm={8}>
@@ -370,7 +371,7 @@ class PlanIncludeGroupCreate extends Component {
             </Col>
           </FormGroup>,
           <FormGroup key="group_type" validationState={error.length > 0 ? 'error' : null} style={{ marginBottom: 8 }}>
-            <Col smOffset={3} sm={8}>
+            <Col  sm={8} className="col-sm-offset-3">
               <Field
                 fieldType="radio"
                 name="based-on"
@@ -398,7 +399,7 @@ class PlanIncludeGroupCreate extends Component {
           <div>
             { usages.map((usaget, index) => (
                 <FormGroup validationState={error.length > 0 ? 'error' : null} key={`usages_${usaget}_${index}`}>
-                  <Col componentClass={ControlLabel} sm={3}>{index === 0 ? 'Unit Type/s' : ''}</Col>
+                  <Col as={ControlLabel} sm={3}>{index === 0 ? 'Unit Type/s' : ''}</Col>
                   <Col sm={8}>
                     <UsageTypesSelector
                       usaget={usaget}
@@ -412,7 +413,7 @@ class PlanIncludeGroupCreate extends Component {
                   </Col>
                   { index !== 0 && (
                     <Col sm={1} className="pr0 pl0">
-                      <Button onClick={this.onRemoveUnitType(index)} bsStyle="link" className="pl0">
+                      <Button onClick={this.onRemoveUnitType(index)} variant="link" className="pl0">
                         <i className="fa fa-fw danger-red fa-trash-o" />
                       </Button>
                     </Col>
@@ -420,7 +421,7 @@ class PlanIncludeGroupCreate extends Component {
                 </FormGroup>
               ))
             }
-            <FormGroup>
+            <FormGroup validationState={error.length > 0 ? 'error' : null}>
               <Col sm={3} />
               <Col sm={8}>
                 <CreateButton onClick={this.onClickAddUnitType} label="Additional" disabled={usages.get(0, '') === '' || this.noMoreOptions()} />
@@ -432,7 +433,7 @@ class PlanIncludeGroupCreate extends Component {
       case steps.get('SetIncludes', { index: -1 }).index:
         return ([
           <FormGroup validationState={error.length > 0 ? 'error' : null} key={`${usages.get(0, '')}_includes`} className="mb10">
-            <Col componentClass={ControlLabel} sm={4}>
+            <Col as={ControlLabel} sm={4}>
               {setIncludesTitle}
             </Col>
             <Col sm={7}>
@@ -444,20 +445,20 @@ class PlanIncludeGroupCreate extends Component {
             </Col>
           </FormGroup>,
           <FormGroup key={`${usages.get(0, '')}_shared`} className="mb10">
-            <Col smOffset={3} sm={8}>
+            <Col  sm={8} className="col-sm-offset-3">
               <Checkbox checked={shared} onChange={this.onChangeShared}>
                 {"Share with all account's subscribers"}
                 <Help contents={GroupsInclude.shared_desc} />
               </Checkbox>
             </Col>
-            <Col smOffset={3} sm={8}>
+            <Col  sm={8} className="col-sm-offset-3">
               <Checkbox disabled={!shared} checked={pooled} onChange={this.onChangePooled}>
                 {'Includes is pooled?'}
                 <Help contents={GroupsInclude.pooled_desc} />
               </Checkbox>
             </Col>
             {type === 'service' &&
-              <Col smOffset={3} sm={8}>
+              <Col  sm={8} className="col-sm-offset-3">
                 <Checkbox checked={quantityAffected} onChange={this.onChangeQuantityAffected}>
                   {'Multiply by Service Quantity'}
                   <Help contents={GroupsInclude.quantityAffected_desc} />
@@ -471,8 +472,8 @@ class PlanIncludeGroupCreate extends Component {
         return (
           <FormGroup validationState={error.length > 0 ? 'error' : null}>
             {monetaryBased
-              ? <Col componentClass={ControlLabel} sm={3}>Products</Col>
-              : <Col componentClass={ControlLabel} sm={3} style={{ paddingTop: 2 }}>
+              ? <Col as={ControlLabel} sm={3}>Products</Col>
+              : <Col as={ControlLabel} sm={3} style={{ paddingTop: 2 }}>
                 Products of type/s <br />{this.getUsagesLabel()}
                 <Help contents={GroupsInclude.products} />
               </Col>
@@ -522,27 +523,28 @@ class PlanIncludeGroupCreate extends Component {
         <CreateButton onClick={this.handleToggleBoby} type="Group" label="Create New" />
         <Modal show={open} keyboard={false}>
 
-          <Modal.Header closeButton onHide={this.handleCancel}>
-            <Modal.Title>
-              {modalTitle}
-            </Modal.Title>
-          </Modal.Header>
+          <div className="modal-header">
+            <button type="button" className="close" onClick={this.handleCancel} aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 className="modal-title">{modalTitle}</h4>
+          </div>
 
           <Modal.Body style={{ minHeight: 235 }}>
             <Stepper activeStep={stepIndex} style={styleStepper}>
               {this.renderSteps()}
             </Stepper>
             <hr style={{ margin: '20px -20px 35px -20px' }} />
-            <Form horizontal className="mb0">
+            <Form className="form-horizontal mb0">
               {this.getStepContent(stepIndex)}
             </Form>
           </Modal.Body>
 
           <Modal.Footer>
-            <Button bsSize="small" onClick={this.handlePrev} style={{ marginRight: 9, minWidth: 90 }}><i className="fa fa-angle-left" />&nbsp;Back</Button>
+            <Button size="sm" onClick={this.handlePrev} style={{ marginRight: 9, minWidth: 90 }}><i className="fa fa-angle-left" />&nbsp;Back</Button>
             { (stepIndex === steps.count() - 1)
-              ? <Button bsSize="small" onClick={this.handleFinish} style={{ minWidth: 90 }} bsStyle="primary">Add</Button>
-              : <Button bsSize="small" onClick={this.handleNext} style={{ minWidth: 90 }}>Next&nbsp;<i className="fa fa-angle-right" /></Button>
+              ? <Button size="sm" onClick={this.handleFinish} style={{ minWidth: 90 }} variant="primary">Add</Button>
+              : <Button size="sm" onClick={this.handleNext} style={{ minWidth: 90 }}>Next&nbsp;<i className="fa fa-angle-right" /></Button>
             }
           </Modal.Footer>
         </Modal>

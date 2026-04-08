@@ -112,21 +112,23 @@ class Importer extends Component {
     this.props.dispatch(getSettings('import.mapping'));
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { restartString, item, entityOptions } = nextProps;
-    if (restartString !== this.props.restartString) {
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { restartString, item, entityOptions } = this.props;
+    if (restartString !== prevProps.restartString) {
       this.props.dispatch(initImporter());
       this.setState({
         status: 'create',
         stepIndex: 0,
       });
     }
-    if (!Immutable.is(this.props.entityOptions, entityOptions)) {
+    if (!Immutable.is(prevProps.entityOptions, entityOptions)) {
       this.initImportEntity(entityOptions);
     }
     // import entity changes to new entity
     const newEntity = item.get('entity', '');
-    const oldEntity = this.props.item.get('entity', '');
+    const oldEntity = prevProps.item.get('entity', '');
     if (newEntity !== '' && oldEntity !== newEntity) {
       const collection = getConfig(['systemItems', newEntity, 'collection'], '');
       const importName = `import${upperCaseFirst(collection)}`;
@@ -828,7 +830,7 @@ class Importer extends Component {
       <div className="Importer">
         {this.renderStepper()}
         <hr style={{ margin: '20px -15px 0 -15px' }} />
-        <Form horizontal className="mb0">
+        <Form className="mb0">
           {this.renderStepContent()}
         </Form>
         <div className="clearfix" />

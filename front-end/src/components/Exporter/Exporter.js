@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import moment from 'moment';
 import { sentenceCase } from 'change-case';
-import { Form, FormGroup, Col, ControlLabel } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { Action } from '@/components/Elements';
 import {
@@ -150,10 +151,10 @@ class Exporter extends Component {
       to: moment(query.get('to', null)).isValid() ? moment(query.get('to', null)) : '',
     });
     return (
-      <Form horizontal>
+      <Form>
         { entityKey === '' && (
           <FormGroup>
-            <Col sm={3} lg={2} componentClass={ControlLabel}>
+            <Col sm={3} lg={2} as={ControlLabel}>
               Entity<span className="danger-red"> *</span>
             </Col>
             <Col sm={8} lg={9}>
@@ -169,7 +170,7 @@ class Exporter extends Component {
           </FormGroup>
         )}
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             Revision date 
           </Col>
           <Col sm={8} lg={9}>
@@ -184,7 +185,7 @@ class Exporter extends Component {
           </Col>
         </FormGroup>
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             File Name
           </Col>
           <Col sm={8} lg={9}>

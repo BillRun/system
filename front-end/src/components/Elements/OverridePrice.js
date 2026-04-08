@@ -2,14 +2,14 @@ import React from "react";
 import PropTypes from "prop-types";
 import Immutable from "immutable";
 import isNumber from "is-number";
-import { FormGroup, ControlLabel, Col, Panel, Form } from "react-bootstrap";
+import { FormGroup, Col, Form } from "react-bootstrap";
+import { ControlLabel, Panel } from "@/common/BootstrapCompat";
 import Field from "@/components/Field";
 import { CreateButton } from "@/components/Elements";
 import PlanPrice from "../Plan/components/PlanPrice";
 import { getConfig, getFieldName, reCalculateCycles } from "@/common/Util";
 
-
-const OverridePrice = ({ type, overrides, options, onChange, editable }) => {
+const OverridePrice = ({ type, overrides = Immutable.List(), options = [], onChange, editable = true }) => {
 
   const unlimitedKey = type === "service" ? "serviceCycleUnlimitedValue" : "planCycleUnlimitedValue";
   const unlimitedValue = getConfig(unlimitedKey, "UNLIMITED");
@@ -123,10 +123,10 @@ const OverridePrice = ({ type, overrides, options, onChange, editable }) => {
   };
 
   return (
-    <Form horizontal>
+    <Form>
       <Panel header={<h3>{getFieldName("subscriber_price_override_panel_title", type)}</h3>}>
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             {getFieldName("subscriber_price_override_panel_select", type)}:
           </Col>
           <Col sm={8} lg={9}>
@@ -152,13 +152,6 @@ const OverridePrice = ({ type, overrides, options, onChange, editable }) => {
       </Panel>
     </Form>
   );
-};
-
-
-OverridePrice.defaultProps = {
-  overrides: Immutable.List(),
-  options: [],
-  editable: true,
 };
 
 OverridePrice.propTypes = {

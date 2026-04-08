@@ -4,11 +4,10 @@ import ReactSelect from 'react-select';
 import Creatable from 'react-select/creatable';
 import AsyncSelect from 'react-select/async';
 
-
 const Select = ({
-  value, onChange, editable, disabled,
-  multi, clearable, noResultsText, options, allowCreate, addLabelText, placeholder,
-  isAsync, isControlled, loadAsyncOptions,
+  value = '', onChange = () => {}, editable = true, disabled = false,
+  multi = false, clearable = true, noResultsText = undefined, options = [], allowCreate = false, addLabelText = undefined, placeholder = undefined,
+  isAsync = false, isControlled = true, loadAsyncOptions = () => {},
   ...otherProps
 }) => {
   const fixBoolValues = (value) => {
@@ -52,7 +51,6 @@ const Select = ({
     formatCreateLabel = (label) => addLabelText.replace('{label}', label);
   }
 
-
   const onChangeValue = (option, { action, removedValue, name }) => {
     let newValue = '';
     if (action !== 'clear' && option !== null) {
@@ -85,6 +83,7 @@ const Select = ({
         placeholder={placeholder}
         classNamePrefix="react-select"
         onChange={onChangeValue}
+        captureMenuScroll={false}
         isMulti={isMulti}
         isClearable={isClearable}
         isDisabled={isDisabled}
@@ -103,6 +102,7 @@ const Select = ({
         value={selectValue}
         classNamePrefix="react-select"
         onChange={onChangeValue}
+        captureMenuScroll={false}
         isMulti={isMulti}
         isClearable={isClearable}
         isDisabled={isDisabled}
@@ -122,6 +122,7 @@ const Select = ({
         value={selectValue}
         classNamePrefix="react-select"
         onChange={onChangeValue}
+        captureMenuScroll={false}
         isMulti={isMulti}
         isClearable={isClearable}
         isDisabled={isDisabled}
@@ -139,30 +140,13 @@ const Select = ({
       value={selectValue}
       classNamePrefix="react-select"
       onChange={onChangeValue}
+      captureMenuScroll={false}
       isMulti={isMulti}
       isClearable={isClearable}
       isDisabled={isDisabled}
       noOptionsMessage={noOptionsMessage}
     />
   );
-};
-
-Select.defaultProps = {
-  value: '',
-  disabled: false,
-  editable: true,
-  multi: false,
-  isAsync: false,
-  isControlled: true,
-  clearable: true,
-  allowCreate:false,
-  noResultsText: undefined,
-  placeholder: undefined,
-  addLabelText: undefined,
-  options: [],
-  inputProps: {},
-  onChange: () => {},
-  loadAsyncOptions: () => {},
 };
 
 Select.propTypes = {

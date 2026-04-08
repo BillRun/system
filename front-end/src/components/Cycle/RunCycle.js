@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { Col, Row, Panel, Form, FormGroup, ControlLabel, Label } from 'react-bootstrap';
+import { Col, Row, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Label, Panel } from '@/common/BootstrapCompat';
 import { Map, List } from 'immutable';
 import moment from 'moment';
 import isNumber from 'is-number';
@@ -76,7 +77,7 @@ class RunCycle extends Component {
     this.props.dispatch(getList('charge_status', getChargeStatusQuery()));
   }
 
-  componentWillReceiveProps() {
+  componentDidUpdate() {
     const { cycleAdditionalData } = this.props;
     const { autoRefreshRunning, showRefreshButton } = this.state;
     if (!showRefreshButton && !autoRefreshRunning && cycleAdditionalData.get('cycle_status', '') === 'running') {
@@ -332,7 +333,7 @@ class RunCycle extends Component {
     const confirm = {
       type: 'confirm',
       message: `Are you sure you want to reset ${getCycleName(cycleAdditionalData)}?`,
-      children: <p className="text-center"><Label bsStyle="danger">Cycle data will be reset (except for confirmed invoices)</Label></p>,
+      children: <p className="text-center"><Label variant="danger">Cycle data will be reset (except for confirmed invoices)</Label></p>,
       onOk: this.resetCycle,
       labelOk: 'Reset',
     };
@@ -344,7 +345,7 @@ class RunCycle extends Component {
     const confirm = {
       type: 'confirm',
       message: `Are you sure you want to re-run ${getCycleName(cycleAdditionalData)}?`,
-      children: <p className="text-center"><Label bsStyle="danger">Cycle data will be reset (except for confirmed invoices)</Label></p>,
+      children: <p className="text-center"><Label variant="danger">Cycle data will be reset (except for confirmed invoices)</Label></p>,
       onOk: this.onRerun,
       labelOk: 'ReRun!',
     };
@@ -359,7 +360,7 @@ class RunCycle extends Component {
     const confirm = {
       type: 'confirm',
       message: 'Are you sure you want to run a "Charge All" request?',
-      children: <p className="text-center"><Label bsStyle="danger">The action will charge all customers</Label></p>,
+      children: <p className="text-center"><Label variant="danger">The action will charge all customers</Label></p>,
       onOk: this.onChargeAll,
       labelOk: 'Run',
     };
@@ -472,9 +473,9 @@ class RunCycle extends Component {
         <Row>
           <Col lg={12}>
             <Panel header={this.renderPanelHeader()}>
-              <Form horizontal>
+              <Form className="form-horizontal">
                 <FormGroup>
-                  <Col sm={3} lg={2} componentClass={ControlLabel}>Select cycle</Col>
+                  <Col sm={3} lg={2} as={ControlLabel}>Select cycle</Col>
                   <Col sm={6} lg={6}>
                     <CyclesSelector
                       onChange={this.onChangeSelectedCycle}
@@ -485,18 +486,18 @@ class RunCycle extends Component {
                   </Col>
                 </FormGroup>
                 <FormGroup>
-                  <Col sm={3} lg={2} componentClass={ControlLabel}>Status</Col>
+                  <Col sm={3} lg={2} as={ControlLabel}>Status</Col>
                   <Col sm={6} lg={6}>
                     {cycleStatus === '' 
                       ? <Field value="-" editable={false} />
-                      : <Label bsStyle={this.getStatusStyle(cycleStatus)} className="non-editable-field">
+                      : <Label variant={this.getStatusStyle(cycleStatus)} className="non-editable-field">
                           {cycleStatus.toUpperCase()}
                         </Label>
                     }
                   </Col>
                 </FormGroup>
                 <FormGroup>
-                  <Col sm={3} lg={2} componentClass={ControlLabel}>
+                  <Col sm={3} lg={2} as={ControlLabel}>
                     {isWorkers ? 'Process start time' : 'Start date'}
                   </Col>
                   <Col sm={6} lg={6}>
@@ -507,7 +508,7 @@ class RunCycle extends Component {
                   </Col>
                 </FormGroup>
                 <FormGroup>
-                  <Col sm={3} lg={2} componentClass={ControlLabel}>
+                  <Col sm={3} lg={2} as={ControlLabel}>
                     {isWorkers ? 'Process end time' : 'End date'}
                   </Col>
                   <Col sm={6} lg={6}>
@@ -518,7 +519,7 @@ class RunCycle extends Component {
                   </Col>
                 </FormGroup>
                 <FormGroup>
-                  <Col sm={3} lg={2} componentClass={ControlLabel}>Last Run Completion percentage</Col>
+                  <Col sm={3} lg={2} as={ControlLabel}>Last Run Completion percentage</Col>
                   <Col sm={6} lg={6}>
                     { isNumber(completionPercentage)
                       ? <Field fieldType="percentage" value={completionPercentage / 100} editable={false} />
@@ -527,7 +528,7 @@ class RunCycle extends Component {
                   </Col>
                 </FormGroup>
                 <FormGroup>
-                  <Col sm={3} lg={2} componentClass={ControlLabel}>Confirmation percentage</Col>
+                  <Col sm={3} lg={2} as={ControlLabel}>Confirmation percentage</Col>
                   <Col sm={6} lg={6}>
                     { isNumber(confirmationPercentage)
                       ? <Field fieldType="percentage" value={confirmationPercentage / 100} editable={false} />
@@ -537,14 +538,14 @@ class RunCycle extends Component {
                 </FormGroup>
                 { isWorkers && (
                   <FormGroup>
-                    <Col sm={3} lg={2} componentClass={ControlLabel}>Total Generated Invoices</Col>
+                    <Col sm={3} lg={2} as={ControlLabel}>Total Generated Invoices</Col>
                     <Col sm={6} lg={6}>
                       <Field value={cycleAdditionalData.get('generated_invoices', '-')} editable={false} />
                     </Col>
                   </FormGroup>
                 )}
                 <FormGroup>
-                  <Col sm={3} lg={2} componentClass={ControlLabel} />
+                  <Col sm={3} lg={2} as={ControlLabel} />
                   <Col sm={6} lg={6}>
                     <div className="pull-left">
                       <Actions actions={this.getRunCycleActions()} />

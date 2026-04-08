@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import Field from '@/components/Field';
-import { Button, FormGroup, Col } from 'react-bootstrap';
+import { Button, Col } from 'react-bootstrap'
+import { FormGroup } from '@/common/BootstrapCompat';
 import { parseConfigSelectOptions } from '@/common/Util';
 import ConditionValue from './ConditionValue';
 
@@ -127,7 +128,7 @@ class Condition extends Component {
     const disableVal = disabled || item.get('op', '') === '' || disableOp;
     return (
       <FormGroup className="form-inner-edit-row">
-        <Col smHidden mdHidden lgHidden>
+        <Col className="d-sm-none">
           <label htmlFor="field_field">Field</label>
         </Col>
         <Col sm={4} className="pl0">
@@ -141,7 +142,7 @@ class Condition extends Component {
           />
         </Col>
 
-        <Col smHidden mdHidden lgHidden>
+        <Col className="d-sm-none">
           <label htmlFor="operator_field">Operator</label>
         </Col>
         <Col sm={3}>
@@ -155,7 +156,7 @@ class Condition extends Component {
           />
         </Col>
 
-        <Col smHidden mdHidden lgHidden>
+        <Col className="d-sm-none">
           <label htmlFor="value_field">Value</label>
         </Col>
         <Col sm={4}>
@@ -169,7 +170,7 @@ class Condition extends Component {
         </Col>
 
         <Col sm={1} className="actions">
-          <Button onClick={this.onRemove} bsSize="small" className="pull-left" disabled={disabled}>
+          <Button onClick={this.onRemove} size="sm" variant="outline-secondary" className="pull-left" disabled={disabled}>
             <i className="fa fa-trash-o danger-red" />
           </Button>
         </Col>

@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react'
 import PropTypes from 'prop-types'
 import { List, Map } from 'immutable';
-import { Form, Panel } from 'react-bootstrap';
+import { Form } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import uuid from 'uuid';
 import { CreateButton } from '@/components/Elements';
 import Field from '@/components/Field';
@@ -16,15 +17,14 @@ const newDefaultPriority = Map({
   cache_db_queries: true
 });
 
-
 const Priorities = ({
   type,
   category,
-  priorities,
-  lineKeyOptions,
-  paramsKeyOptions,
-  conditionFieldsOptions,
-  valueWhenOptions,
+  priorities = Map(),
+  lineKeyOptions = [],
+  paramsKeyOptions = [],
+  conditionFieldsOptions = [],
+  valueWhenOptions = [],
   onAdd,
   onUpdate,
   onRemove,
@@ -51,7 +51,7 @@ const Priorities = ({
   }, [onRemove, category]);
 
   return (
-    <Form horizontal>
+    <Form>
       <Panel header={<div style={demmyTitleStyle}>Priority 1</div>}>
         <Field
           fieldType="checkbox"
@@ -103,16 +103,6 @@ const Priorities = ({
   );
 }
 
-
-Priorities.defaultProps = {
-  priorities: Map(),
-  lineKeyOptions: [],
-  paramsKeyOptions: [],
-  conditionFieldsOptions: [],
-  valueWhenOptions: [],
-};
-
-
 Priorities.propTypes = {
   type: PropTypes.string.isRequired,
   category: PropTypes.string.isRequired,
@@ -145,6 +135,5 @@ Priorities.propTypes = {
   onUpdate: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
 };
-
 
 export default Priorities;

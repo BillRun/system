@@ -97,8 +97,8 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
     { type: 'add', onClick: entity => onNew(entity, fields), label: 'Add new foreign field', actionStyle: 'primary', actionSize: 'xsmall' },
   ];
   const rowActions = [
-    { type: 'edit', onClick: onEdit },
-    { type: 'remove', onClick: onRemove },
+    { type: 'edit', onClick: onEdit, actionSize: 'small' },
+    { type: 'remove', onClick: onRemove, actionSize: 'small' },
   ];
   return ({
     ...stateProps,
