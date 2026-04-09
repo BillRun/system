@@ -140,4 +140,14 @@ class Billrun_Bill_Invoice extends Billrun_Bill {
 		return false; 
 	}
 
+	public function addAdjustmentToOriginalInvoice($adj) {
+		$data = $this->getRawData();
+		if (!empty($data['adjusted_by_invoices'])) {
+			$data['adjusted_by_invoices'][] = $adj;
+		} else {
+			$data['adjusted_by_invoices'] = [$adj];
+		}
+		$this->setRawData($data);
+	}
+
 }

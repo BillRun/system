@@ -74,6 +74,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'cron' => 'scheduled tasks',
 				'compute' => 'Compute',
 				'worker' => 'Worker',
+				'send_file' => 'Send files to the configured remote directory'
 			);
 
 			$this->options = new Zend_Console_Getopt($input);

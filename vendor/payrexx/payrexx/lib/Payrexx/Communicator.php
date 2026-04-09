@@ -15,7 +15,7 @@ use Payrexx\Models\Request\PaymentMethod;
  */
 class Communicator
 {
-    const VERSIONS = [1.0, 1.1, 1.2];
+    const VERSIONS = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9];
     const API_URL_FORMAT = 'https://api.%s/%s/%s/%s/%s';
     const API_URL_BASE_DOMAIN = 'payrexx.com';
     const DEFAULT_COMMUNICATION_HANDLER = '\Payrexx\CommunicationAdapter\CurlCommunication';
@@ -24,16 +24,18 @@ class Communicator
      * @var array A set of methods which can be used to communicate with the API server.
      */
     protected static $methods = array(
-        'create'  => 'POST',
-        'charge'  => 'POST',
-        'refund'  => 'POST',
-        'capture' => 'POST',
-        'receipt' => 'POST',
-        'cancel'  => 'DELETE',
-        'delete'  => 'DELETE',
-        'update'  => 'PUT',
-        'getAll'  => 'GET',
-        'getOne'  => 'GET',
+        'create'       => 'POST',
+        'charge'       => 'POST',
+        'refund'       => 'POST',
+        'capture'      => 'POST',
+        'receipt'      => 'POST',
+        'preAuthorize' => 'POST',
+        'cancel'       => 'DELETE',
+        'delete'       => 'DELETE',
+        'update'       => 'PUT',
+        'getAll'       => 'GET',
+        'getOne'       => 'GET',
+        'details'      => 'GET',
     );
     /**
      * @var string The Payrexx instance name.
@@ -80,7 +82,8 @@ class Communicator
         if ($version && in_array($version, self::VERSIONS)) {
             $this->version = $version;
         } else {
-            $this->version = current(self::VERSIONS);
+            $versions = self::VERSIONS;
+            $this->version = end($versions);
         }
 
         if (!class_exists($communicationHandler)) {
@@ -123,7 +126,7 @@ class Communicator
             $id = $params['uuid'];
         }
 
-        $act = in_array($method, ['refund', 'capture', 'receipt']) ? $method : '';
+        $act = in_array($method, ['refund', 'capture', 'receipt', 'preAuthorize', 'details']) ? $method : '';
         $apiUrl = sprintf(self::API_URL_FORMAT, $this->apiBaseDomain, 'v' . $this->version, $params['model'], $id, $act);
 
         $httpMethod = $this->getHttpMethod($method) === 'PUT' && $params['model'] === 'Design'

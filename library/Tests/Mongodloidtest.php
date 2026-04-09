@@ -590,7 +590,45 @@ class Tests_Mongodloid extends UnitTestCase{
 			'values' => ['stamp' => '5aeee57b05e68c02d035e211', 'val' => 'unack'], 
 			'w' => 0,
 			'expected'    => ['result' => true],
-		]
+		],
+		//61 check success update Entity
+		array('function' => 'checkUpdateEntity', 'description' => 'check success update Entity', 'collection' => 'lines',
+			'params'=> array(
+				'options' => array(),
+				'values' => array('firstname' => 'or1', 'lastname' => 'SHAASHUA1'),
+				'query' => array('_id' => '5aeee57b05e68c02d035e1f6')
+			),
+			'expected' => array('result' => array('n'=>1,  'nModified' => 1, 'updatedExisting' => true, 'ok' => 1 ),
+				'dbValues'=> array('firstname' => 'or1', 'lastname' => 'SHAASHUA1', 'stamp'=> 'a305a9e1d842cf9d632010bf39dcb674')
+			)
+		),
+		//62 check failed update Entity - because already updated values
+		array('function' => 'checkUpdateEntity', 'description' => 'check failed update Entity- because already updated values', 'collection' => 'lines',
+			'params'=> array(
+				'options' => array(),
+				'values' => array('firstname' => 'or1', 'lastname' => 'SHAASHUA1'),
+				'query' => array('_id' => '5aeee57b05e68c02d035e1f6')
+			),
+			'expected' => array('result' => array('n'=>1,'nModified' => 0, 'ok' => 1 ))
+		),
+		//63 check failed update Entity- because not found query
+		array('function' => 'checkUpdateEntity', 'description' => 'check failed update Entity- because not found query', 'collection' => 'lines',
+			'params'=> array(
+				'options' => array(),
+				'values' => array('plan' => 'new_plan'),
+				'query' => array('_id' => '5aeee57b05e68c02d035e111')
+			),
+			'expected' => array('result' => array('n'=>0, 'nModified' => 0, 'ok' => 1 ))
+		),
+		//64 check failed update Entity- with error 
+		array('function' => 'checkUpdateEntityResult', 'description' => 'check error of update Entity', 'collection' => 'lines',
+			'params'=> array(
+				'options' => array(),
+				'values' => array('$set' => array('firstname' => 'or', 'lastname' => 'SHAASHUA')),
+				'query' => array('_id' => '5aeee57b05e68c02d035e1f6')
+			),
+			'expected' => array('result' => array('ok' => 0, 'errmsg' =>"The dollar ($) prefixed field '\$set' in '\$set' is not valid for storage."))
+		),
 	);
 
 
@@ -642,6 +680,17 @@ class Tests_Mongodloid extends UnitTestCase{
 		$options = $test['params']['options'];
 		$values = $test['params']['values'];
 		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->update($query, $values, $options);
+		return $this->checkResult($result, $test['expected']['result'])
+			&& (!isset($test['expected']['dbValues']) || $this->checkDb($collection, $query, $test['expected']['dbValues']));
+	}
+	
+	protected function checkUpdateEntity($test){
+		$collection = $test['collection'];
+		$query = $test['params']['query'];
+		$this->changeValues($query);
+		$options = $test['params']['options'];
+		$values = $test['params']['values'];
+		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->updateEntity(new Mongodloid_Entity($query), $values, $options);
 		return $this->checkResult($result, $test['expected']['result'])
 			&& (!isset($test['expected']['dbValues']) || $this->checkDb($collection, $query, $test['expected']['dbValues']));
 	}
@@ -794,7 +843,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		$this->changeValues($values);
 		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->save(new Mongodloid_Entity($values), $w);
 		return $this->basicCompare($result, $test['expected']['result'], 'result') && 
-			$this->checkDb($collection, $values, $test['expected']['dbValues']);
+			$this->checkDb($collection, $values, $test['expected']['dbValues'] ?? []);
 
 	}
 	protected function checkFindAndModify($test){
@@ -816,7 +865,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		$options = $test['params']['options'];
 		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->batchInsert($documents, $options);
 		$res = true;
-		if($result['ok'] == 1){
+		if(isset($result['ok']) && $result['ok'] == 1){
 			foreach ($documents as $doc){
 				$res = $this->checkDb($collection, $doc, $doc);
 			}
@@ -830,7 +879,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		$options = $test['params']['options'];
 		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->insert($document, $options);
 		$res = true;
-		if($result['ok'] == 1){
+		if(isset($result['ok']) && $result['ok'] == 1){
 			$res = $this->checkDb($collection, $document, $document);
 		}
 		return $this->checkResult($result, $test['expected']['result']) && $res;
@@ -1093,6 +1142,14 @@ class Tests_Mongodloid extends UnitTestCase{
 	public function checkUpdateResult($test) {
 		try {
 			return $this->checkUpdate($test);
+		} catch (Exception $e) {
+			$res = Mongodloid_Result::getResult($e->getWriteResult(), 'update');
+			return $this->checkResult($res, $test['expected']['result']);
+		}
+	}
+	public function checkUpdateEntityResult($test) {
+		try {
+			return $this->checkUpdateEntity($test);
 		} catch (Exception $e) {
 			$res = Mongodloid_Result::getResult($e->getWriteResult(), 'update');
 			return $this->checkResult($res, $test['expected']['result']);

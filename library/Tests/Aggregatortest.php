@@ -10,7 +10,7 @@
   * @package  calculator
   * @since    0.5
   */
-require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
+(@include_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php')) || require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
 //known isuss fails in 5.13 is : |---|30|--|61|---|62|---|63|---|65|---|71
  define('UNIT_TESTING', 'true');
 
@@ -49,7 +49,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
 	public function test_cases() {
 
 	}
-
+ 
      public function __construct($label = false) {
          parent::__construct("test Aggregatore");
          $this->autoload_tests('aggregatorTestCases');
@@ -109,7 +109,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
         $this->tests =  $this->getTestCases();
         if (empty($this->test_cases_to_run)) {
             $this->tests = $this->skip_tests($this->tests, 'test.test_number');
-          }
+        }
         // execute test cases pass by tests or all if it empty
         $request = new Yaf_Request_Http;
         $this->test_cases_to_run = $request->get('tests');
