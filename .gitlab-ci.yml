@@ -110,5 +110,15 @@ include:
   - template: Jobs/SAST.latest.gitlab-ci.yml
 
 secret_detection:
+  tags: [CI_SAST]
   variables:
     GIT_STRATEGY: clone
+
+dependency_scanning:
+  tags: [CI_SAST]
+
+semgrep-sast:
+  tags: [CI_SAST]
+
+container_scanning:
+  tags: [CI_SAST]
