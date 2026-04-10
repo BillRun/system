@@ -114,7 +114,7 @@ secret_detection:
   variables:
     GIT_STRATEGY: clone
 
-dependency_scanning:
+dependency-scanning:
   tags: [CI_SAST]
 
 semgrep-sast:
