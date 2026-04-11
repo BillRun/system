@@ -37,9 +37,15 @@ if (!empty($invoice_display_options['print_date_field'])) {
 if (!empty($invoice_display_options['print_date_relative_arg'])) {
     $invoicing_time = strtotime($data->get($invoice_display_options['print_date_relative_arg']), $invoicing_time);
 }
+
+// Detect text direction from the account's invoice_language attribute.
+// Hebrew (he_IL / he) and Arabic (ar / ar_*) are RTL.
+$invoiceLang = strtolower(!empty($data->get('attributes')['invoice_language']) ? $data->get('attributes')['invoice_language'] : '');
+$isRtl = in_array($invoiceLang, ['he_il', 'he', 'ar']) || strpos($invoiceLang, 'ar_') === 0;
+$textDir = $isRtl ? 'rtl' : 'ltr';
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo htmlspecialchars($invoiceLang ?: 'en'); ?>" dir="<?php echo $textDir; ?>">
 <head>
   <meta charset="utf-8">
   <link rel="stylesheet" href="<?php echo $weasyprint_css_path; ?>">
@@ -91,7 +97,7 @@ if (!empty($invoice_display_options['print_date_relative_arg'])) {
 </dl>
 
 <!-- ============================================================
-     From / To addresses  (WeasyPrint sample <aside> pattern)
+     Customer details
      ============================================================ -->
 <aside>
   <address id="from"><?php
@@ -100,13 +106,6 @@ if (!empty($invoice_display_options['print_date_relative_arg'])) {
     if (!empty($data->get('attributes')['address'])) echo "\n" . htmlspecialchars($data->get('attributes')['address']);
     if (!empty($data->get('attributes')['email']))   echo "\n" . htmlspecialchars($data->get('attributes')['email']);
     echo "\n" . Generator_Translations::stranslate('DEF_INV_ACCOUNT_NO', [], 'Account number') . ': ' . htmlspecialchars($data->get('aid'));
-  ?></address>
-
-  <address id="to"><?php
-    echo htmlspecialchars($company_name);
-    if (!empty($company_address)) echo "\n" . htmlspecialchars($company_address);
-    if (!empty($company_phone))   echo "\n" . htmlspecialchars($company_phone);
-    if (!empty($company_email))   echo "\n" . htmlspecialchars($company_email);
   ?></address>
 </aside>
 
@@ -133,7 +132,7 @@ if (!empty($invoice_display_options['print_date_relative_arg'])) {
 ?>
 <div class="subscriber-section">
   <h2>
-    <?php echo Generator_Translations::stranslate('DEF_INV_SUBSCRIBER_NO') . ($subIndex + 1); ?>:
+    <?php echo Generator_Translations::stranslate('DEF_INV_SUBSCRIBER_NO') . ' ' . ($subIndex + 1); ?>:
     <?php echo htmlspecialchars($sub['firstname'] . ' ' . $sub['lastname']); ?>
   </h2>
 

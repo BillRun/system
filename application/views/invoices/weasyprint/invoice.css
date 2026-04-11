@@ -290,3 +290,68 @@ table.header-table a {
 .table.table-default {
   margin-bottom: 0.5cm;
 }
+
+/* ----- RTL overrides (Hebrew, Arabic, etc.) ----- */
+
+/* Flip the metadata block from top-right to top-left */
+html[dir="rtl"] dl#informations {
+  right: auto;
+  left: 0;
+  text-align: left;
+}
+
+/* Flip the "to" address (company, left side in RTL).
+   WeasyPrint normalises physical "left"/"right" to logical "start"/"end"
+   in RTL context, so we must use the logical keyword "end" to reach the
+   physical-left edge when direction is rtl. */
+html[dir="rtl"] aside address#to {
+  text-align: end;
+}
+
+/* Override explicit text-align: left on th/td so RTL direction takes effect */
+html[dir="rtl"] th {
+  text-align: right;
+}
+
+html[dir="rtl"] td {
+  text-align: right;
+}
+
+/* Amount column (last child) flips to left in RTL */
+html[dir="rtl"] th:last-child {
+  text-align: left;
+}
+
+html[dir="rtl"] td:last-child {
+  text-align: left;
+}
+
+/* Quantity stays centred */
+html[dir="rtl"] td.qty {
+  text-align: center;
+}
+
+/* Flip explicit right-aligned amount/rate cells */
+html[dir="rtl"] td.rate,
+html[dir="rtl"] td.amount {
+  text-align: left;
+}
+
+/* Header table: align content to the right in RTL and force direction */
+html[dir="rtl"] table.header-table {
+  direction: rtl;
+}
+
+html[dir="rtl"] table.header-table td {
+  text-align: right;
+}
+
+/* Page-number cell stays on the (now-left) end */
+html[dir="rtl"] table.header-table td.header-page {
+  text-align: left;
+}
+
+/* Flip page-number display in body */
+html[dir="rtl"] .paging {
+  text-align: left;
+}
