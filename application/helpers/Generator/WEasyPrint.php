@@ -46,6 +46,48 @@ class Generator_WEasyPrint extends Generator_WkPdf {
 			$options['exporter_flags'],
 			Billrun_Factory::config()->getConfigValue('weasyprint.exporter_flags', '')
 		);
+
+		// Override view_path to use the WeasyPrint-specific template directory.
+		$appDir = Billrun_Factory::config()->getConfigValue('application.directory');
+		$this->view_path = $appDir . Billrun_Factory::config()->getConfigValue(
+			'invoice_export.weasyprint_view_path',
+			'/views/invoices/weasyprint/'
+		);
+
+		// Reset header/footer paths to match the new view_path.
+		$this->header_path = $this->view_path . 'header/header_tpl.html';
+		$this->footer_path = $this->view_path . 'footer/footer_tpl.html';
+	}
+
+	/**
+	 * Extends parent prepereView to supply WeasyPrint-specific view variables:
+	 *   $logo_path          – absolute path to the company logo image
+	 *   $weasyprint_css_path – absolute path to weasyprint/invoice.css
+	 */
+	public function prepereView($params = FALSE) {
+		parent::prepereView($params);
+		$this->view->assign('logo_path', $this->logo_path);
+		$this->view->assign('weasyprint_css_path', rtrim($this->view_path, '/') . '/invoice.css');
+	}
+
+	/**
+	 * Returns the footer content without font-awesome icon dependencies.
+	 * The WeasyPrint template uses plain text for company contact details.
+	 */
+	protected function getInvoiceFooterContent() {
+		$website = $this->getCompanyWebsite();
+		$websiteHref = (parse_url($website, PHP_URL_SCHEME) === null) ? 'https://' . $website : $website;
+		return "
+			{$this->tanent_css}
+			<div class='section section-footer'>
+				<span>" . htmlspecialchars($this->getCompanyAddress()) . "</span>
+				&nbsp;&nbsp;|&nbsp;&nbsp;
+				<span>" . htmlspecialchars($this->getCompanyPhone()) . "</span>
+				&nbsp;&nbsp;|&nbsp;&nbsp;
+				<a href='" . htmlspecialchars($websiteHref) . "'>" . htmlspecialchars($website) . "</a>
+				&nbsp;&nbsp;|&nbsp;&nbsp;
+				<a href='mailto:" . htmlspecialchars($this->getCompanyEmail()) . "'>" . htmlspecialchars($this->getCompanyEmail()) . "</a>
+			</div>";
 	}
 
 	// -------------------------------------------------------------------------
@@ -113,6 +155,12 @@ class Generator_WEasyPrint extends Generator_WkPdf {
 			Zend_Log::INFO
 		);
 		exec(escapeshellcmd($this->weasyprint_exec) . " {$this->exporterFlags} " . escapeshellarg($html) . " " . escapeshellarg($pdf));
+
+		if (!file_exists($pdf)) {
+			Billrun_Factory::log('WeasyPrint failed to generate PDF: ' . $pdf_name, Zend_Log::ERR);
+			Billrun_Factory::dispatcher()->trigger('afterGeneratorEntity', array($this, &$account, &$lines));
+			return;
+		}
 
 		if (Billrun_Factory::config()->getConfigValue(self::$type . '.exclude_pages')) {
 			$firstPage = $this->view_path . 'first_page/main.phtml';
@@ -235,17 +283,40 @@ class Generator_WEasyPrint extends Generator_WkPdf {
 	 * @return string
 	 */
 	protected function getInvoiceHeaderContent() {
+		$website = $this->getCompanyWebsite();
+		$websiteHref = (parse_url($website, PHP_URL_SCHEME) === null) ? 'https://' . $website : $website;
+
+		$contactParts = [];
+		if (!empty($this->getCompanyAddress())) {
+			$contactParts[] = htmlspecialchars($this->getCompanyAddress());
+		}
+		if (!empty($this->getCompanyPhone())) {
+			$contactParts[] = htmlspecialchars($this->getCompanyPhone());
+		}
+		if (!empty($website)) {
+			$contactParts[] = '<a href="' . htmlspecialchars($websiteHref) . '">' . htmlspecialchars($website) . '</a>';
+		}
+		if (!empty($this->getCompanyEmail())) {
+			$contactParts[] = '<a href="mailto:' . htmlspecialchars($this->getCompanyEmail()) . '">' . htmlspecialchars($this->getCompanyEmail()) . '</a>';
+		}
+
 		return "
 			{$this->tanent_css}
-			<div class='table'>
-				<table>
-					<tbody>
-					<tr>
-						<td><img src='" . $this->logo_path . "' alt='' style='width:100px;object-fit:contain;'>&nbsp;&nbsp;" . $this->getCompanyName() . "</td>
-						<td><div class='paging'> " . Generator_Translations::stranslate('DEF_INV_PAGE') . " <span class='page'></span>  " . Generator_Translations::stranslate('DEF_INV_OF') . " <span class='topage'></span></div></td>
-					</tr>
-					</tbody>
-				</table>
-			</div>";
+			<table class='header-table'>
+				<tbody>
+				<tr>
+					<td class='header-logo'>
+						<img src='" . $this->logo_path . "' alt='' style='height:36px;object-fit:contain;max-width:130px;'>
+					</td>
+					<td class='header-details'>
+						<strong>" . htmlspecialchars($this->getCompanyName()) . "</strong><br>
+						" . implode('&nbsp;&nbsp;|&nbsp;&nbsp;', $contactParts) . "
+					</td>
+					<td class='header-page'>
+						<div class='paging'>" . Generator_Translations::stranslate('DEF_INV_PAGE') . " <span class='page'></span> " . Generator_Translations::stranslate('DEF_INV_OF') . " <span class='topage'></span></div>
+					</td>
+				</tr>
+				</tbody>
+			</table>";
 	}
 }

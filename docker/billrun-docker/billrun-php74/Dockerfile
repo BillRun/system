@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && pecl install redis-6.2.0 \
     && docker-php-ext-enable yaf mongodb xdebug memcached redis \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp calendar \
-    && pip3 install 'weasyprint>=60,<62'
+    && pip3 install 'weasyprint>=62'
 
 RUN  wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb' \
 	&& apt install -y ./wkhtmltox_0.12.5-1.buster_amd64.deb

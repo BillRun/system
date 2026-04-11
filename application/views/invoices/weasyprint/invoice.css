@@ -1,0 +1,292 @@
+/* ============================================================
+   BillRun WeasyPrint Invoice CSS
+   Based on the WeasyPrint sample invoice template style.
+   https://github.com/CourtBouillon/weasyprint-samples/tree/main/invoice
+   ============================================================ */
+
+/* ----- Variables ----- */
+:root {
+  --primary:    #14213d;
+  --accent:     #1a7fb5;
+  --grey:       #888888;
+  --light-grey: #f6f6f6;
+  --border:     #dddddd;
+}
+
+/* ----- Page ----- */
+/* Side margins only; top/bottom are overridden by WeasyPrint's running-element
+   injection (see Generator_WEasyPrint::injectHeaderAndFooterIntoHtml). */
+@page {
+  margin: 2cm;
+}
+
+/* ----- Base typography ----- */
+html {
+  color: var(--primary);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10pt;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+}
+
+/* ----- Article (positioning context for dl#informations) ----- */
+article {
+  position: relative;
+}
+
+/* ----- Headings ----- */
+h1 {
+  color: var(--accent);
+  font-size: 62pt;
+  font-weight: 700;
+  line-height: 1;
+  margin: 0 0 0.7cm;
+}
+
+h2 {
+  color: var(--primary);
+  font-size: 13pt;
+  margin: 0.6cm 0 0.3cm;
+  border-bottom: 0.4mm solid var(--border);
+  padding-bottom: 0.15cm;
+}
+
+h3 {
+  font-size: 10.5pt;
+  color: var(--grey);
+  font-weight: 600;
+  margin: 0.5cm 0 0.2cm;
+}
+
+/* ----- From / To addresses ----- */
+aside {
+  display: flex;
+  column-gap: 1cm;
+  margin: 0 0 0.8cm;
+}
+
+aside address {
+  flex: 1;
+  font-style: normal;
+  white-space: pre-line;
+}
+
+aside address#from {
+  color: var(--grey);
+  font-size: 9pt;
+}
+
+aside address#to {
+  text-align: right;
+  font-size: 10pt;
+  font-weight: 600;
+}
+
+/* ----- Invoice metadata (number, date, period, due date) — top-right ----- */
+dl#informations {
+  position: absolute;
+  top: 0;
+  right: 0;
+  text-align: right;
+  margin: 0;
+  font-size: 9.5pt;
+}
+
+dl#informations dt,
+dl#informations dd {
+  display: inline;
+  margin: 0;
+}
+
+dl#informations dt {
+  color: var(--grey);
+}
+
+dl#informations dt::before {
+  content: '';
+  display: block;
+}
+
+dl#informations dt::after {
+  content: ': ';
+}
+
+/* ----- Tables (shared rules) ----- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 0.4cm;
+}
+
+th {
+  background: var(--light-grey);
+  border-bottom: 0.5mm solid var(--grey);
+  color: var(--grey);
+  font-size: 8.5pt;
+  font-weight: 600;
+  padding: 0.15cm 0.25cm;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+th:last-child {
+  text-align: right;
+}
+
+td {
+  border-bottom: 0.2mm solid var(--border);
+  font-size: 9.5pt;
+  padding: 0.18cm 0.25cm;
+  text-align: left;
+}
+
+td:last-child {
+  text-align: right;
+}
+
+/* Last row before a sub-total separator */
+tr.last td {
+  border-bottom: 0.5mm solid var(--border);
+}
+
+/* Sub-total rows */
+tr.total td,
+tr.subtotal td {
+  background: var(--light-grey);
+  border-top: 0.5mm solid var(--border);
+  font-weight: 600;
+}
+
+/* Grand-total row */
+tr.grand-total td {
+  background: var(--light-grey);
+  border-bottom: none;
+  border-top: 0.8mm solid var(--accent);
+  color: var(--accent);
+  font-size: 11pt;
+  font-weight: 700;
+}
+
+/* ----- Complex sumup column widths ----- */
+td.desc  { width: 38%; }
+td.qty   { width: 10%; text-align: center; }
+td.rate  { width: 14%; text-align: right; }
+td.span.small-text { width: 14%; text-align: center; color: var(--grey); font-size: 8pt; }
+td.amount { width: 14%; text-align: right; font-weight: 600; }
+
+/* ----- Invoice footer (payment summary at bottom of overview page) ----- */
+footer {
+  margin-top: 1cm;
+  border-top: 0.5mm solid var(--accent);
+  padding-top: 0.4cm;
+}
+
+footer table {
+  margin-bottom: 0;
+}
+
+footer td {
+  border: none;
+  padding: 0.15cm 0.4cm;
+}
+
+footer td:first-child {
+  color: var(--grey);
+  font-weight: 700;
+  font-size: 8.5pt;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+footer td:last-child {
+  text-align: left;
+  font-weight: 600;
+}
+
+footer p.thank-you {
+  color: var(--grey);
+  font-size: 9pt;
+  text-align: center;
+  margin: 0.4cm 0 0;
+}
+
+/* ----- Subscriber sections (page-break before each) ----- */
+.subscriber-section {
+  page-break-before: always;
+}
+
+.subscriber-section h2 {
+  margin-top: 0;
+}
+
+.subscriber-desc {
+  color: var(--grey);
+  font-size: 9pt;
+  margin: 0 0 0.4cm;
+}
+
+/* ----- Running page header (colored band with logo + company details + page) ----- */
+.weasyprint-header-running {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+table.header-table {
+  width: 100%;
+  margin: 0;
+  border: none;
+}
+
+table.header-table td {
+  border: none;
+  padding: 0.15cm 0.3cm;
+  font-size: 8pt;
+  color: #ffffff;
+  vertical-align: middle;
+}
+
+table.header-table td.header-logo {
+  width: 140px;
+}
+
+table.header-table td.header-page {
+  width: 90px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+table.header-table a {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+/* ----- Running page footer ----- */
+.weasyprint-footer-running {
+  font-size: 8pt;
+  color: var(--grey);
+}
+
+.weasyprint-footer-running table {
+  margin: 0;
+  border: none;
+}
+
+.weasyprint-footer-running td {
+  border: none;
+  padding: 0 0.2cm;
+  font-size: 8pt;
+}
+
+/* Page-number spans (.page / .topage) — filled by CSS counter shim */
+.paging {
+  color: #ffffff;
+  font-size: 8pt;
+}
+
+/* ----- Details / usage line-item table ----- */
+.table.table-default {
+  margin-bottom: 0.5cm;
+}

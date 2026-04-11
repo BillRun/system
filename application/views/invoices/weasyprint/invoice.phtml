@@ -1,0 +1,204 @@
+<?php
+/**
+ * WeasyPrint invoice template.
+ * Based on the WeasyPrint sample invoice structure:
+ *   https://github.com/CourtBouillon/weasyprint-samples/tree/main/invoice
+ *
+ * Available view variables (assigned in Generator_WEasyPrint::prepereView):
+ *   $data                    - Mongodloid_Entity  (the billrun document)
+ *   $company_name / address / phone / email
+ *   $logo_path               - absolute path to company logo
+ *   $weasyprint_css_path     - absolute path to weasyprint/invoice.css
+ *   $use_complex_sumup       - bool
+ *   $simple_sumup_template   - absolute path to simple_sumup.phtml
+ *   $complex_sumup_template  - absolute path to complex_sumup.phtml
+ *   $tax_template            - absolute path to tax.phtml
+ *   $discount_template       - absolute path to discounts.phtml
+ *   $details_table_template  - absolute path to details_table.phtml
+ *   $details_keys            - array of breakdown keys
+ *   $flat_line_types         - array of flat charge types
+ *   $usage_line_types        - array of usage charge types
+ *   $render_subscription_details / $render_usage_details
+ *   $invoice_display_options - display flags
+ *   $date_format / $span_date_format
+ *   $decimal_mark / $thousands_separator
+ *   $tanent_css              - tenant-specific inline CSS
+ */
+require_once dirname(__FILE__) . '/../helpers/helper_functions.php';
+
+// Compute invoice print date, honouring the same display-options as sumup1.phtml
+$invoicing_time = time();
+if (!empty($invoice_display_options['print_date_field'])) {
+    $invoicing_time = $data->get($invoice_display_options['print_date_field']);
+    if ($invoicing_time instanceof MongoDate) {
+        $invoicing_time = $invoicing_time->sec;
+    }
+}
+if (!empty($invoice_display_options['print_date_relative_arg'])) {
+    $invoicing_time = strtotime($data->get($invoice_display_options['print_date_relative_arg']), $invoicing_time);
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="<?php echo $weasyprint_css_path; ?>">
+  <title><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE'); ?></title>
+  <?php echo $tanent_css; ?>
+</head>
+<body>
+
+<!-- ============================================================
+     Article wrapper — provides the positioning context so that
+     dl#informations can be placed absolutely at the top-right
+     (mirrors the WeasyPrint sample invoice layout).
+     Note: the running header/footer divs are injected by PHP
+     *before* this article element and therefore sit outside it.
+     ============================================================ -->
+<article>
+
+<!-- ============================================================
+     Invoice title
+     ============================================================ -->
+<h1><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE'); ?></h1>
+
+<!-- ============================================================
+     Invoice metadata (number, date, period, due date)
+     Positioned top-right via CSS (position: absolute; right: 0).
+     Must appear early in the DOM so the absolute box is anchored
+     to the top of <article>.
+     ============================================================ -->
+<dl id="informations">
+  <dt><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE_NO'); ?></dt>
+  <dd><?php echo $data->get('invoice_id'); ?></dd>
+
+  <?php if (!isset($data['attributes']['invoice_type']) || strcmp($data['attributes']['invoice_type'], 'immediate') != 0) { ?>
+  <dt><?php echo Generator_Translations::stranslate('DEF_INV_PERIOD'); ?></dt>
+  <dd><?php echo Billrun_Util::billrunKeyToPeriodSpan(
+        $data->get('billrun_key'),
+        $span_date_format,
+        !empty($data->get('invoicing_day')) ? $data->get('invoicing_day') : null
+      ); ?></dd>
+  <?php } ?>
+
+  <dt><?php echo Generator_Translations::stranslate('DEF_INV_PRINT_DATE'); ?></dt>
+  <dd><?php echo date($date_format, $invoicing_time); ?></dd>
+
+  <?php if ((!array_key_exists('due_date', $invoice_display_options) || !empty($invoice_display_options['due_date'])) && $data->get('due_date')) { ?>
+  <dt><?php echo Generator_Translations::stranslate('DEF_INV_DUE_DATE'); ?></dt>
+  <dd><?php echo date($date_format, $data->get('due_date')->sec); ?></dd>
+  <?php } ?>
+</dl>
+
+<!-- ============================================================
+     From / To addresses  (WeasyPrint sample <aside> pattern)
+     ============================================================ -->
+<aside>
+  <address id="from"><?php
+    $customerName = trim($data->get('attributes')['firstname'] . ' ' . $data->get('attributes')['lastname']);
+    echo htmlspecialchars($customerName);
+    if (!empty($data->get('attributes')['address'])) echo "\n" . htmlspecialchars($data->get('attributes')['address']);
+    if (!empty($data->get('attributes')['email']))   echo "\n" . htmlspecialchars($data->get('attributes')['email']);
+    echo "\n" . Generator_Translations::stranslate('DEF_INV_ACCOUNT_NO', [], 'Account number') . ': ' . htmlspecialchars($data->get('aid'));
+  ?></address>
+
+  <address id="to"><?php
+    echo htmlspecialchars($company_name);
+    if (!empty($company_address)) echo "\n" . htmlspecialchars($company_address);
+    if (!empty($company_phone))   echo "\n" . htmlspecialchars($company_phone);
+    if (!empty($company_email))   echo "\n" . htmlspecialchars($company_email);
+  ?></address>
+</aside>
+
+<!-- ============================================================
+     Invoice summary — rendered by existing sumup sub-templates
+     (simple_sumup.phtml or complex_sumup.phtml, which also call
+      tax.phtml and discounts.phtml internally)
+     ============================================================ -->
+<h2><?php echo Generator_Translations::stranslate('DEF_INV_INVOICE_SUMMARY'); ?></h2>
+
+<?php echo $this->render($use_complex_sumup ? $complex_sumup_template : $simple_sumup_template); ?>
+
+</article><!-- /.article -->
+
+<!-- ============================================================
+     Per-subscriber sections (optional, each on its own page)
+     ============================================================ -->
+<?php if ($render_subscription_details) :
+  $this->createSubscriberInvoiceTables($this->lines, $flat_line_types, $usage_line_types, $details_keys);
+  foreach ($data->get('subs') as $subIndex => $sub) :
+    if (empty($sub['sid']) && (empty($sub['totals']['after_vat']) || !empty($this->hide_account_subscriber))) {
+      continue;
+    }
+?>
+<div class="subscriber-section">
+  <h2>
+    <?php echo Generator_Translations::stranslate('DEF_INV_SUBSCRIBER_NO') . ($subIndex + 1); ?>:
+    <?php echo htmlspecialchars($sub['firstname'] . ' ' . $sub['lastname']); ?>
+  </h2>
+
+  <?php if (!empty($sub['desc'])) { ?>
+    <p class="subscriber-desc"><?php echo htmlspecialchars($sub['desc']); ?></p>
+  <?php } ?>
+
+  <!-- Subscriber charge summary table -->
+  <h3><?php echo Generator_Translations::stranslate('DEF_INV_SUBSCRIBER_SUMMARY'); ?></h3>
+  <table>
+    <thead>
+      <tr>
+        <th><?php echo Generator_Translations::stranslate('DEF_INV_DESCRIPTION'); ?></th>
+        <th><?php echo Generator_Translations::stranslate('DEF_INV_AMOUNT'); ?></th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php foreach ($details_keys as $title => $key) : ?>
+        <?php if (empty($sub['totals'][$key])) { continue; } ?>
+        <tr class="<?php echo (end($details_keys) === $key ? 'last' : ''); ?>">
+          <td><?php echo Generator_Translations::stranslate(getDefInvi18nSlug($title), [], $title); ?></td>
+          <td><?php echo $this->currencySymbol() . number_format($sub['totals'][$key]['before_vat'], 2); ?></td>
+        </tr>
+      <?php endforeach; ?>
+
+      <tr class="total">
+        <td><?php echo Generator_Translations::stranslate('DEF_INV_SUBTOTAL'); ?></td>
+        <td><?php echo $this->currencySymbol() . number_format($sub['totals']['before_vat'], 2); ?></td>
+      </tr>
+
+      <?php echo $this->render($tax_template, ['data' => $sub['totals']]); ?>
+
+      <tr class="grand-total">
+        <td><?php echo Generator_Translations::stranslate('DEF_INV_GRAND_TOTAL'); ?></td>
+        <td><?php echo $this->currencySymbol() . number_format($sub['totals']['after_vat'], 2); ?></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Usage / flat line-item details (optional) -->
+  <?php if ($render_usage_details) :
+    $sidLines = array_filter((array) $this->lines, function ($l) use ($sub) {
+      return $l['sid'] == $sub['sid'];
+    });
+    if (!empty($sidLines)) :
+      $subFlatTabels  = !empty($this->invoice_flat_tabels[$sub['sid']])  ? $this->invoice_flat_tabels[$sub['sid']]  : [];
+      $subUsageTabels = !empty($this->invoice_usage_tabels[$sub['sid']]) ? $this->invoice_usage_tabels[$sub['sid']] : [];
+  ?>
+    <h3><?php echo Generator_Translations::stranslate('DEF_INV_SUBSCRIBER_LINE_ITEMS'); ?></h3>
+    <?php echo $this->render($details_table_template, [
+      'lines'              => $sidLines,
+      'lines_detail_types' => $flat_line_types,
+      'tabels'             => $subFlatTabels,
+    ]); ?>
+
+    <h3><?php echo Generator_Translations::stranslate('DEF_INV_USAGE_DETAILS'); ?></h3>
+    <?php echo $this->render($details_table_template, [
+      'lines'              => $sidLines,
+      'lines_detail_types' => $usage_line_types,
+      'tabels'             => $subUsageTabels,
+    ]); ?>
+  <?php endif; endif; ?>
+
+</div><!-- .subscriber-section -->
+<?php endforeach; endif; ?>
+
+</body>
+</html>
