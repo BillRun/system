@@ -397,10 +397,30 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 		}
 	}
 
+	protected function formatLanguage()
+	{
+		$path = 'Body.Bill.Header.Language';
+		$language = Billrun_Util::getIn($this->xmlInvoice, $path, '');
+		if (!empty($language) && strpos($language, '_') !== false) {
+			Billrun_Util::setIn($this->xmlInvoice, $path, explode('_', $language)[0]);
+		}
+	}
+
+	protected function formatEBillAccountID()
+	{
+		$path = 'Body.DeliveryInfo.eBillAccountID';
+		$eBillAccountID = Billrun_Util::getIn($this->xmlInvoice, $path, '');
+		if (!empty($eBillAccountID)) {
+			Billrun_Util::setIn($this->xmlInvoice, $path, str_pad($eBillAccountID, 17, '0', STR_PAD_LEFT));
+		}
+	}
+
 	protected function formatInvoice()
 	{
 		$this->formatDates();
 		$this->formatVat();
+		$this->formatLanguage();
+		$this->formatEBillAccountID();
 	}
 
 	protected function uploadToSftp()
