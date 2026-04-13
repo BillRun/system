@@ -234,7 +234,8 @@
 								{
 									"field_name": "services",
 									"system": true,
-									"mandatory": false
+									"mandatory": false,
+									"multiple": true
 								}
 							]
 						},
@@ -318,6 +319,21 @@
 									"editable": true,
 									"display": true,
 									"title": "Salutation"
+								},
+								{
+									"system" : false,
+									"select_list" : true,
+									"display" : true,
+									"editable" : true,
+									"field_name" : "invoice_shipping_method",
+									"default_value" : "email",
+									"show_in_list" : true,
+									"title" : "Invoice shipping method",
+									"mandatory" : false,
+									"select_options" : "email",
+									"changeable_props" : [
+										"select_options"
+									]
 								}
 							]
 						}
@@ -677,7 +693,7 @@
 										"name": "Preprice_Dynamic",
 										"host": "46.101.149.208",
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"remote_directory": "/yossi"
 									}
 								],
@@ -798,7 +814,7 @@
 										"user": "yossi",
 										"remote_directory": "/yossi",
 										"delete_received": false,
-										"password": "j8(B2c_sV",
+										"password": "",
 										"key": "Wholesale"
 									}
 								],
@@ -987,7 +1003,7 @@
 										"name": "computed_regex",
 										"host": "46.101.149.208",
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"remote_directory": "/yossi"
 									}
 								],
@@ -1086,13 +1102,244 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "p",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
 									}
 								],
 								"limit": 3
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
+						},
+						{
+							"file_type": "2longest_prefix",
+							"parser": {
+								"type": "separator",
+								"separator": ",",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "rate"
+									},
+									{
+										"name": "prefix"
+									}
+								],
+								"csv_has_header": true,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"rate",
+									"prefix"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Usage",
+								"date_field": "date",
+								"default_usaget": "call",
+								"default_unit": "seconds",
+								"default_volume_src": [
+									"volume"
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"call": [
+										[
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.prefix",
+												"line_key": "number"
+											},
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.vlr_number",
+												"line_key": "vlr"
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"call": []
+							},
+							"receiver": {
+								"type": "ftp",
+								"connections": [
+									{
+									
+									}
+								],
+								"limit": 3
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
+						},
+						{
+							"file_type": "2longest_prefix_realtime",
+							"type": "realtime",
+							"parser": {
+								"type": "json",
+								"separator": "",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "rate"
+									},
+									{
+										"name": "d.m"
+									}
+								],
+								"csv_has_header": false,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"rate",
+									"d.m"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Realtime",
+								"date_field": "date",
+								"usaget_mapping": [
+									{
+										"src_field": "usage",
+										"pattern": "call",
+										"usaget": "call",
+										"unit": "seconds",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									}
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"call": [
+										[
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.prefix",
+												"line_key": "number"
+											},
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.vlr_number",
+												"line_key": "vlr"
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"call": []
+							},
+							"realtime": {
+								"postpay_charge": true
+							},
+							"response": {
+								"encode": "json",
+								"fields": [
+									{
+										"response_field_name": "requestNum",
+										"row_field_name": "request_num"
+									},
+									{
+										"response_field_name": "requestType",
+										"row_field_name": "request_type"
+									},
+									{
+										"response_field_name": "sessionId",
+										"row_field_name": "session_id"
+									},
+									{
+										"response_field_name": "returnCode",
+										"row_field_name": "granted_return_code"
+									},
+									{
+										"response_field_name": "sid",
+										"row_field_name": "sid"
+									},
+									{
+										"response_field_name": "grantedVolume",
+										"row_field_name": "usagev"
+									}
+								]
 							},
 							"unify": [],
 							"filters": [],
@@ -1192,7 +1439,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "longest_prefix",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -1289,7 +1536,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "old_revision",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -1476,7 +1723,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "computed",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -1622,7 +1869,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "many_prefix",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -2148,7 +2395,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "conditions",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -2288,7 +2535,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "Duplicate_mapping",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi",
@@ -2730,24 +2977,25 @@
 						"website": "example.com"
 					},
 					"invoice_export": {
-						"export": "files/invoices/",
-						"generator": {
-							"type": "WkPdf"
+						"export" : "files/invoices/",
+						"onetime_view_path" : "/views/invoices/onetime/",
+						"generator" : {
+							"type" : "WkPdf"
 						},
-						"disable_stamp_export_directory": 1,
-						"theme": "theme/theme1.css",
-						"header_tpl": "header/header_tpl.html",
-						"footer_tpl": "footer/footer_tpl.html",
-						"sumup_template": "sumup/sumup1.phtml",
-						"details_template": "details/details1.phtml",
-						"decimal_mark": ".",
-						"thousands_separator": ",",
-						"date_separator": "/",
-						"move_exported": 0,
-						"html_translation": [
+						"disable_stamp_export_directory" : 1,
+						"theme" : "/application/views/invoices/theme/theme1.css",
+						"sumup_template" : "/application/views/invoices/sumup/sumup1.phtml",
+						"details_template" : "/application/views/invoices/details/details1.phtml",
+						"decimal_mark" : ".",
+						"thousands_separator" : ",",
+						"date_separator" : "/",
+						"move_exported" : 0,
+						"html_translation" : [
 							"company_name",
 							"date"
-						]
+						],
+						"header" : "/header/header_tpl.phtml",
+						"footer" : "/footer/footer_tpl.phtml"
 					},
 					"export_generators": [],
 					"payment_gateways": [
@@ -2755,7 +3003,7 @@
 							"name": "CreditGuard",
 							"params": {
 								"user": "SDOC",
-								"password": "sD#4R!3r",
+								"password": "",
 								"mid": "10912",
 								"endpoint_url": "https://kupot1t.creditguard.co.il/xpo/Relay",
 								"redirect_terminal": "0962832",
@@ -3003,13 +3251,25 @@
 					},
 					"email_templates": {
 						"invoice_ready": {
-							"subject": "Your invoice is ready",
-							"content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
+							"templates":[{
+								"name": "default",
+								"label": "Default",
+								"conditions": [	
+								],
+								"subject": "Your invoice is ready",
+								"content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
+							}],
 							"html_translation": ["date", "invoice_id", "invoice_total", "invoice_due_date", "cycle_range", "company_email", "company_name"]
 						},
 						"fraud_notification": {
-							"subject": "Event [[event_code]] was triggered",
-							"content": "<pre>\n[[fraud_event_details]]</pre>\n"
+							"templates":[{
+								"name": "default",
+								"label": "Default",
+								"conditions": [	
+								],
+								"subject": "Event [[event_code]] was triggered",
+								"content": "<pre>\n[[fraud_event_details]]</pre>\n"
+							}]
 						}
 					},
 					"menu": {

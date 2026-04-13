@@ -1,0 +1,10 @@
+/.idea
+/.pytest_cache
+/.git
+/venv
+.env
+/*.egg-info
+/.mypy_cache
+/allure-results
+*.pyc
+.DS_Store

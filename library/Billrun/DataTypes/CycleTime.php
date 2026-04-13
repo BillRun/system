@@ -72,8 +72,18 @@ class Billrun_DataTypes_CycleTime {
 		return $this->end;
 	}
 	
+	/**
+	 * Get the cycle billrun key.
+	 */
+
 	public function key() {
 		return $this->key;
+	}
+	/**
+	 * Get the cycle invoicing day  if it is configured
+	 */
+	public function invoicingDay() {
+		return $this->invoicing_day;
 	}
 	
 	/**
@@ -85,5 +95,12 @@ class Billrun_DataTypes_CycleTime {
 			$this->days = Billrun_Utils_Time::getDaysDiff($this->start(), $this->end());
 		}
 		return $this->days;
+	}
+	/**
+	 * returm the time  flats (plans/services/discounts/etc..) should be at for this  cycle.$GLOBALS
+	 */
+	public function getFlatsTime() {
+		// return 1 milliseconds  before the  end of the cycle
+		return $this->end() - 0.001;
 	}
 }

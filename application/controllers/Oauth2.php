@@ -18,6 +18,8 @@
  */
 class Oauth2Controller extends ApiController {
 	
+	protected $opencors = false;
+	
 	/**
 	 * no need for indexAction
 	 */

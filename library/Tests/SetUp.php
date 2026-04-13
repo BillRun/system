@@ -13,7 +13,8 @@
  * @subpackage      Config
  * @since           4.4
  */
-trait Tests_SetUp {
+trait Tests_SetUp
+{
 	/**
 	 * json files names in data dir
 	 * each file will be added to the relevant collection.
@@ -56,7 +57,10 @@ trait Tests_SetUp {
 	 */
 	protected $dataPath = '/data/';
 
-	public function construct($unitTestName = null, $dataToLoad = null) {
+	protected static $request = null;
+
+	public function construct($unitTestName = null, $dataToLoad = null)
+	{
 		$this->unitTestName = $unitTestName;
 		if (isset($this->unitTestName)) {
 			$this->dataPath = "/{$this->unitTestName}Data/";
@@ -67,40 +71,202 @@ trait Tests_SetUp {
 		}
 	}
 
+	public function  getRequest(){
+		if(self::$request == null){
+			self::$request = new Yaf_Request_Http;
+		}
+		return self::$request;
+	}
+
+
 	/**
 	 * executes set up for the unit runing unit test 
 	 */
-	public function setColletions() {
+	public function setColletions()
+	{
 		$this->originalConfig = $this->loadConfig();
 		$this->backUpCollection($this->importData);
 		$this->cleanCollection($this->collectionToClean);
 		$collectionsToSet = $this->importData;
 		array_unshift($collectionsToSet, 'config');
-		foreach ($collectionsToSet as $file) {
-			$dataAsText = file_get_contents(dirname(__FILE__) . $this->dataPath . $file . '.json');
+		foreach ($collectionsToSet as $collectionName) {
+			$dataAsText = file_get_contents(dirname(__FILE__) . $this->dataPath . $collectionName . '.json');
 			$parsedData = json_decode($dataAsText, true);
 			if ($parsedData === null) {
-				echo(' <span style="color:#ff3385; font-style: italic;">' . $file . '.json. </span> <br>');
+				echo (' <span style="color:#ff3385; font-style: italic;">' . $collectionName . '.json. </span> <br>');
 				continue;
 			}
 			if (!empty($parsedData['data'])) {
-				$data = $this->fixData($parsedData['data']);
+				$data = $this->fixData($parsedData['data'],$collectionName);
 				$coll = Billrun_Factory::db()->{$parsedData['collection']}();
 				$coll->batchInsert($data);
 			}
 		}
 	}
 
-	public function restoreColletions() {
+	public function restoreColletions()
+	{
 		$this->cleanCollection($this->collectionToClean);
 		$this->restoreCollection();
 	}
+
+	public function skip_tests($tests, $path)
+	{
+		$this->test_cases_to_skip = $this->getRequest()->get('skip');
+		if ($this->test_cases_to_skip !== null && !empty($this->test_cases_to_skip)) {
+			$this->test_cases_to_skip = explode(',', $this->test_cases_to_skip);
+			foreach ($tests as $case) {
+				$test_number = Billrun_Util::getIn($case, $path);
+				if (!in_array($test_number, $this->test_cases_to_skip)) {
+					$cases[] = $case;
+				}
+			}
+		}
+		return !empty($cases) ? $cases : $tests;
+	}
+
+	public function autoload_tests($dir)
+	{
+		$dir = new DirectoryIterator(__DIR__ . '/' . $dir);
+		foreach ($dir as $fileinfo) {
+			if (!$fileinfo->isDot()) {
+				$filename = $fileinfo->getFilename();
+				// check if the file has .php extension
+				if (pathinfo($filename, PATHINFO_EXTENSION) === 'php') {
+					require_once($fileinfo->getPathname());
+				}
+			}
+		}
+	}
+
+
+	public function getTestCases($legacy_tests = [])
+	{
+		$all_test_cases = [];
+    $label = explode(" ", $this->getLabel())[1];
+    $first = '';
+    $second = '';
+    $path = '';
+    
+		switch ($label) {
+				case 'Aggregatore':
+            $first = 'test';
+            $second = 'test_number';
+            $path = APPLICATION_PATH . '/library/Tests/aggregatorTestCases/';
+					break;
+				case 'Customercalculatortest':
+            $first = 'row';
+            $second = 'stamp';
+            $path = APPLICATION_PATH . '/library/Tests/CustomerCalculator/';
+					break;
+				case 'Ratetest':
+            $first = 'row';
+            $second = 'stamp';
+            $path = APPLICATION_PATH . '/library/Tests/Rate/';
+					break;
+				case 'UpdateRow':
+            $first = 'row';
+            $second = 'stamp';
+            $path = APPLICATION_PATH . '/library/Tests/UpdateRow/';
+            break;
+        case 'Taxmapping':
+            $first = 'test';
+            $second = 'test_number';
+            $path = APPLICATION_PATH . '/library/Tests/taxmappingTestCases/';
+					break;
+				case 'event':
+					$first='row';
+					$secound='stamp';
+					break;
+				default:
+					throw new Exception("Unknown label: $label");
+			}
+	
+    // Load all PHP files from the specified path
+    if (!empty($path)) {
+        foreach (glob($path . "*.php") as $filename) {
+            require_once $filename;
+        }
+    }
+
+    $test_cases_to_skip = !empty($this->getRequest()->get('skip')) ? explode(',', $this->getRequest()->get('skip')) : [];
+    $test_cases_to_run = !empty($this->getRequest()->get('tests')) ? explode(',', $this->getRequest()->get('tests')) : [];
+	
+		// Get all declared classes
+		$classes = get_declared_classes();
+
+		// Iterate over the classes
+		foreach ($classes as $class) {
+			// Check if the class name starts with 'Test_Case_'
+			if (strpos($class, 'Test_Case_') === 0) {
+				$test_number = filter_var($class, FILTER_SANITIZE_NUMBER_INT);
+            
+            // Check if the test should be run based on skip and run filters
+            if (
+                (empty($test_cases_to_skip) && empty($test_cases_to_run)) ||
+                (empty($test_cases_to_skip) && in_array($test_number, $test_cases_to_run)) ||
+                (!empty($test_cases_to_skip) && !in_array($test_number, $test_cases_to_skip))
+            ) {
+						// Create an instance of the class
+						$instance = new $class();
+
+						// Call the test_case method and store the result
+						if (method_exists($instance, 'test_case')) {
+							$test_case = $instance->test_case();
+							$all_test_cases[] = $test_case;
+                }
+            }
+			}
+		}
+
+		// Sort the test cases by test_number
+    usort($legacy_tests, function ($a, $b) use ($first, $second) {
+        return $a[$first][$second] <=> $b[$first][$second];
+		});
+    
+    usort($all_test_cases, function ($a, $b) use ($first, $second) {
+        return $a[$first][$second] <=> $b[$first][$second];
+		});
+
+    // Merge legacy tests with all test cases
+    return $this->mergeArraysByKey($all_test_cases, $legacy_tests, "$first.$second");
+	}
+	function mergeArraysByKey($array1, $array2, $path) {
+		$mergedArray = [];
+	
+		foreach ($array1 as $item1) {
+			$mergedItem = $item1;
+			$test_number1 = Billrun_Util::getIn($item1, $path);
+	
+			foreach ($array2 as $key => $item2) {
+				$test_number2 = Billrun_Util::getIn($item2, $path);
+	
+				if ($test_number1 == $test_number2) {
+					$mergedItem = array_merge($item1, $item2);
+					// Remove item from array2 so we don't process it again.
+					unset($array2[$key]);
+					break;
+				}
+			}
+	
+			$mergedArray[] = $mergedItem;
+		}
+	
+		// Add any remaining items from array2.
+		foreach ($array2 as $item2) {
+			$mergedArray[] = $item2;
+		}
+	
+		return $mergedArray;
+	}
+	
 
 	/**
 	 * tranform all fields starts with time* into Mongodloid_Date object
 	 * @param array $jsonAr 
 	 */
-	protected function fixDates($jsonAr) {
+	protected function fixDates($jsonAr)
+	{
 		foreach ($jsonAr as $key => $jsonFile) {
 			$jsonAr[$key] = $this->fixArrayDates($jsonFile);
 		}
@@ -111,7 +277,8 @@ trait Tests_SetUp {
 	 * tranform all fields starts with time* into Mongodloid_Date object
 	 * @param array $jsonAr 
 	 */
-	protected function fixArrayDates($arr) {
+	protected function fixArrayDates($arr)
+	{
 		if (!is_array($arr)) {
 			return $arr;
 		}
@@ -143,12 +310,13 @@ trait Tests_SetUp {
 	 * @param array $data
 	 * @return array
 	 */
-	public function fixDbRef($data) {
+	public function fixDbRef($data)
+	{
 		foreach ($data as $key => $value) {
 			if (is_array($value)) {
 				if (!empty($value['isDbRef'])) {
 					unset($value['isDbRef']);
-					$data[$key] = Billrun_Factory::db()->getCollection($data[$key]['collection'])->createRefByEntity([ '_id'=>$data[$key]['ObjectId']]);
+					$data[$key] = Billrun_Factory::db()->getCollection($data[$key]['collection'])->createRefByEntity(['_id' => $data[$key]['ObjectId']]);
 				}
 			}
 		}
@@ -164,7 +332,8 @@ trait Tests_SetUp {
 	 * @param array $data
 	 * @return array
 	 */
-	public function fixDBobjID($data) {
+	public function fixDBobjID($data)
+	{
 		if (isset($data['OBJID'])) {
 			$data['_id'] = $data['OBJID'];
 			$data['_id'] = new Mongodloid_Id($data['OBJID']);
@@ -178,7 +347,8 @@ trait Tests_SetUp {
 	 * @param array $data
 	 * @return array
 	 */
-	public function fixData($data) {
+	public function fixData($data, $collectionName)
+	{
 		foreach ($data as $key => $jsonFile) {
 			$data[$key] = $this->fixArrayDates($jsonFile);
 		}
@@ -188,13 +358,17 @@ trait Tests_SetUp {
 		foreach ($data as $key => $jsonFile) {
 			$data[$key] = $this->fixDbRef($jsonFile);
 		}
+		if($collectionName == 'config'){
+			$data[0]['urt'] = new MongoDB\BSON\UTCDateTime();
+		}
 		return $data;
 	}
 
 	/**
 	 * @param array $colNames array of collectins names to clean
 	 */
-	protected function cleanCollection($colNames) {
+	protected function cleanCollection($colNames)
+	{
 		foreach ($colNames as $colName) {
 			$colName = $colName . 'Collection';
 			Billrun_Factory::db()->$colName()->remove([null]);
@@ -205,7 +379,8 @@ trait Tests_SetUp {
 	 * store the collection from DB for restore after the unit test run
 	 * @param arrray $colNames
 	 */
-	protected function backUpCollection($colNames) {
+	protected function backUpCollection($colNames)
+	{
 		foreach ($colNames as $colName) {
 			$colName = $colName . 'Collection';
 			$items = iterator_to_array(Billrun_Factory::db()->$colName()->query(array())->getIterator());
@@ -220,11 +395,12 @@ trait Tests_SetUp {
 	 * return the current config from DB
 	 * @return Mongo_object
 	 */
-	public function loadConfig() {
+	public function loadConfig()
+	{
 		$this->config = Billrun_Factory::db()->configCollection();
 		$ret = $this->config->query()
 			->cursor()
-			->sort(array('_id' => -1))
+			->sort(array('urt'=> -1, '_id' => -1))
 			->limit(1)
 			->current()
 			->getRawData();
@@ -235,8 +411,10 @@ trait Tests_SetUp {
 	 * insert config
 	 * @param array $data
 	 */
-	public function setConfig($data) {
+	public function setConfig($data)
+	{
 		unset($data['_id']);
+		$data['urt'] = new MongoDB\BSON\UTCDateTime();
 		$this->config->insert($data);
 	}
 
@@ -246,7 +424,8 @@ trait Tests_SetUp {
 	 * @param string $key key to change its value
 	 * @param string | int|array $value new value
 	 */
-	public function changeConfigKey($data, $key, $value) {
+	public function changeConfigKey($data, $key, $value)
+	{
 		Billrun_Util::setIn($data, $key, $value);
 		$this->setConfig($data);
 	}
@@ -254,13 +433,37 @@ trait Tests_SetUp {
 	/**
 	 * after unit test run ,restore the original collection to DB
 	 */
-	protected function restoreCollection() {
+	protected function restoreCollection()
+	{
 		foreach ($this->backUpData as $colName => $items) {
 			if (count($items) > 0) {
 				Billrun_Factory::db()->$colName()->batchInsert($items);
 			}
 		}
 		$this->setConfig($this->originalConfig);
+	}
+
+
+
+    /**
+	*function to set new config value during the test run 
+	*@param array $newConfig['key'] config key, can be singel key or path seperate by .
+	*@param array $newConfig['value']
+	 */
+	public function setConfigValue($row = [],$newConfig){
+
+		$config = Billrun_Factory::db()->configCollection();
+		$data = $this->config->query()
+			->cursor()
+			->sort(array('urt'=> -1, '_id' => -1))
+			->limit(1)
+			->current()
+			->getRawData();
+		unset($data['_id']);
+		Billrun_Util::setIn($data, $newConfig['key'],$newConfig['value']);
+		$data['urt'] = new MongoDB\BSON\UTCDateTime();
+		$config->insert($data);
+		Billrun_Config::getInstance()->loadDbConfig();
 	}
 
 }

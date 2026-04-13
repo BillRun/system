@@ -21,10 +21,18 @@ class Billrun_Utils_Cycle {
 		$startDateStr = date(Billrun_Base::base_dateformat,($startDate < $cycle->end() ? $startDate : $cycle->end()));
 		$endDateStr = date(Billrun_Base::base_dateformat,($startDate < $cycle->end() ? $cycle->end() : $startDate));
 
-		return empty($entryConfig['recurrence']['frequency']) ||
-				(Billrun_Utils_Time::getMonthsDiff($startDateStr, $endDateStr) % $entryConfig['recurrence']['frequency']) == 0 ||
-				(!empty($entryConfig['deactivation_date']) && $entryConfig['deactivation_date']->sec <= $cycle->end() &&  $entryConfig['deactivation_date']->sec >= $cycle->start() ) ||
-				(!empty($entryConfig['end']) && $entryConfig['end'] < $cycle->end() &&  $entryConfig['end'] > $cycle->start() );
+		return !( empty($entryConfig['upfront']) && $entryConfig['start'] >= $cycle->end() ) && ( // dont include falto in the future that are not upfront
+				// does entry is a regular cycle entry AND  falls   within the current  cycle?
+				( empty($entryConfig['recurrence']['frequency']) &&	( empty($entryConfig['end']) || $entryConfig['end'] >= $cycle->start() ) &&
+																	( empty($entryConfig['start']) || $entryConfig['start'] < $cycle->end() ) )
+				|| //  is the  entry a  custom cycle and is aligned  with  current  cycle AND the flat dates is overlaps the curent cycle
+				 (!empty($entryConfig['recurrence']['frequency']) && Billrun_Utils_Time::getMonthsDiff($startDateStr, $endDateStr) % $entryConfig['recurrence']['frequency']) == 0
+					&& ( empty($entryConfig['end']) || $entryConfig['end'] >= $cycle->start() ) &&
+						( empty($entryConfig['start']) || $entryConfig['start'] < $cycle->end() )
+				|| // is the entry a custom cycle entry AND the  subscriber deactevidted  during the current  cycle?
+				(!empty($entryConfig['deactivation_date']) && $entryConfig['deactivation_date']->sec <= $cycle->end() &&  $entryConfig['deactivation_date']->sec >= $cycle->start() )
+				||// is the entry a custom cycle entry AND the plan was deactevidted  during the current  cycle?
+				(!empty($entryConfig['end']) && $entryConfig['end'] < $cycle->end() &&  $entryConfig['end'] > $cycle->start() ) );
 
 	}
 
@@ -76,4 +84,32 @@ class Billrun_Utils_Cycle {
 		return $months;
 	}
 
+	/**
+	 * Merge subscriber revisions into one revision  by a given  rules
+	 **/
+	public static function mergeCycleRevisions($mainRevision, $revisionsToMerge, $mergeRules = []) {
+		$generalMergeRules = [
+				'plan_activation' => ['$min'=>1],
+				'plan_deactivation' => ['$max' => 1],
+				'from' => ['$min' => 1],
+				'to' => ['$max' => 1],
+				'services' => ['$addToSet' => 1],
+
+				'plans' => [
+							'$mergeMultiArraysByRules' =>
+								[
+								'plan_activation' => ['$min' => 1],
+								'plan_deactivation' => ['$max' => 1],
+								'from' => ['$min' => 1],
+								'to' => ['$max' => 1],
+								]
+					]
+				];
+
+		$mergeRules = empty($mappingRules) ? $generalMergeRules : $mergeRules;
+		foreach($revisionsToMerge as  $secRevision) {
+			$mainRevision = Billrun_Util::mergeArrayByRules($mainRevision,$secRevision, $mergeRules);
+		}
+		return $mainRevision;
+	}
 }

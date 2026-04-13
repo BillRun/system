@@ -298,15 +298,23 @@ class Billrun_Utils_Time {
 	 * @param string $roundingType
 	 * @return int
 	 */
-	public static function getDaysDiff($date1, $date2, $roundingType = 'ceil') {
+	public static function getDaysDiff($date1, $date2, $roundingType = 'ceil')
+    {
 		if ($date1 > $date2) {
 			$datediff = $date1 - $date2;
+            $daysInMonth = date('t', $date2);
 		} else {
 			$datediff = $date2 - $date1;
+            $daysInMonth = date('t', $date1);
 		}
 		
-		
 		$days = $datediff / (60 * 60 * 24);
+        $diff = static::isClockChangeBetweenDates($date1, $date2);
+		
+        //We need to sub diff between dates from total days
+        if ( $diff ) {
+            $days -= $diff;
+        }
 		switch ($roundingType){
 			case 'floor':
 				return floor($days);
@@ -317,6 +325,30 @@ class Billrun_Utils_Time {
 				return ceil($days);
 		}
 	}
+
+   /**
+     * Check if clock change between the given dates.
+     * @param unixtimestamp $date1
+     * @param unixtimestamp $date2
+     * @return boolean/int - if not change return false otherwise return the unixtimestamp that the clook change between those dates
+     */
+    public static function isClockChangeBetweenDates($date1, $date2)
+    {
+		$timezone =new DateTimeZone(date_default_timezone_get());
+        if ($date1 > $date2) {
+            $datediff = strtotime(date("Y-m-d", $date1)) - strtotime(date("Y-m-d", $date2));
+			$dateTrans= $timezone->getTransitions( $date2, $date1);
+        } else {
+            $datediff = strtotime(date("Y-m-d", $date2)) - strtotime(date("Y-m-d", $date1));
+			$dateTrans= $timezone->getTransitions( $date1, $date2);
+        }
+        $days = ($datediff) / (60 * 60 * 24);
+        $diff = $days - floor($days);
+        if ($diff == 0 ||  count($dateTrans) < 2) {
+            return false;
+        }
+        return $diff > 0.5 ? -1+$diff : $diff;
+    }
 
 	/**
 	 * Function calculates inclusive diff. i.e. identical dates return diff > 0 by day amount
@@ -394,5 +426,19 @@ class Billrun_Utils_Time {
 		$formatedTo = date(Billrun_Base::base_dateformat,$to);
 
 		return static::getMonthsDiff($formatedFrom,$formatedTo);
+	}
+
+	public static function getServiceTime($subscriberService, $subscriberRevision, $field = 'from'){
+		$serviceTime = null;
+		if (isset($subscriberService[$field])){
+			if ($subscriberService[$field] instanceof Mongodloid_Date) {
+				$serviceTime  = Billrun_Utils_Time::getTime($subscriberService[$field]);
+			}else{
+				$serviceTime  = $subscriberService[$field]['sec'] ?? Billrun_Utils_Time::getTime($subscriberRevision[$field]);
+			}				
+		}else {
+			$serviceTime  = Billrun_Utils_Time::getTime($subscriberRevision[$field]);
+		}
+		return $serviceTime;
 	}
 }

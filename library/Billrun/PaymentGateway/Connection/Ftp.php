@@ -17,14 +17,12 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 	protected $port = '21';
 	protected $passive;
 	protected $checkReceivedSize = true;
-	protected $deleteReceived;
 
 	public function __construct($options) {
 		parent::__construct($options);
 		$this->connection = Zend_Ftp::connect($this->host, $this->username, $this->password);
 		$this->passive = isset($options['passive']) ? $options['passive'] : false;
 		$this->source = isset($options['type']) ? $options['type'] : self::$type;
-		$this->deleteReceived = !empty($options['delete_received']) ? true : false;
 	}
 	
 	public function receive() {
@@ -88,7 +86,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 		$count = 0;
 		foreach ($this->sortByFileDate($files) as $file) {
 			Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file));
-			Billrun_Factory::log("FTP: Found file " . $file->name . " on remote host", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: Found file " . $file->name . " on remote host", Zend_Log::DEBUG);
 			$extraData = array();
 			Billrun_Factory::dispatcher()->trigger('beforeFTPFileReceived', array(&$file, $this, $hostName, &$extraData));
 			$isFileReceivedMoreFields = array('retrieved_from' => $hostName);
@@ -106,7 +104,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 			if (substr($targetPath, -1) != '/') {
 				$targetPath .= '/';
 			}
-			$config = array($this->deleteReceived, $this->passive, $this->connection, $this->source);
+			$config = array($this->delete_received, $this->passive, $this->connection, $this->source);
 			$targetPath.=date("Ym") . DIRECTORY_SEPARATOR . substr(md5(serialize($config)), 0, 7) . DIRECTORY_SEPARATOR;
 			if (!file_exists($targetPath)) {
 				mkdir($targetPath, 0777, true);
@@ -134,11 +132,12 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 				$fileData['backed_to'] = $backedTo;
 				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path'], $hostName));
 			}
+			Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file->name, &$fileData));
 			if ($this->logDB($fileData)) {
 				$ret[] = $fileData['path'];
 				$count++; //count the file as recieved
 				// delete the file after downloading and store it to processing queue
-				if ($this->deleteReceived) {
+				if ($this->delete_received) {
 					Billrun_Factory::log("FTP: Deleting file {$file->name} from remote host ", Zend_Log::INFO);
 					$file->delete();
 				}
@@ -163,7 +162,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 			Billrun_Factory::log("FTP: " . $file->name . " is not a valid file", Zend_Log::DEBUG);
 			$ret = false;
 		} else if (!$this->lockFileForReceive($file->name, $this->source, $isFileReceivedMoreFields)) {
-			Billrun_Factory::log("FTP: " . $file->name . " received already", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: " . $file->name . " received already", Zend_Log::DEBUG);
 			$ret = false;
 		}
 		return $ret;

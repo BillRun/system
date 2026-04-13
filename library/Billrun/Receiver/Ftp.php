@@ -84,6 +84,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			Billrun_Factory::dispatcher()->trigger('afterFTPReceived', array($this, $hostRet, $hostName));
 
 			$ret = array_merge($ret, $hostRet);
+			$this->ftp->disconnect();
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterFTPReceivedFullRun', array($this, $ret, $hostName));

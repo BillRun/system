@@ -24,12 +24,14 @@ class ApiController extends Yaf_Controller_Abstract {
 	protected $output;
 	
 	protected $start_time = 0;
-		
+	
+	protected $opencors = false;
+	
 	/**
 	 * initialize method for yaf controller (instead of constructor)
 	 */
 	public function init() {
-		Billrun_Factory::log("Start API call", Zend_Log::DEBUG);
+		Billrun_Factory::log('Start ' . $this->getRequest()->getActionName() . ' API call', Zend_Log::DEBUG);
 		
 		$this->start_time = microtime(1);
 		// all output will be store at class output class
@@ -39,14 +41,9 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->setActions();
 		$this->setOutputMethod();
 		
-		//TODO add security configuration
-		if( isset($_SERVER['HTTP_ORIGIN']) ) {
-			header('Access-Control-Allow-Origin: '.$_SERVER['HTTP_ORIGIN']); // cross domain
-			header('Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS');
-			header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
-			header('Access-Control-Allow-Credentials: true');
+		if ($this->opencors) {
+			Billrun_Utils_Security::openCrossDomain();
 		}
-		
 	}
 	
 	/**

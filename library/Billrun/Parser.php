@@ -14,6 +14,7 @@
  */
 abstract class Billrun_Parser extends Billrun_Base {
 
+    const DEFAULT_TARGET_ENCODING = 'UTF-8';
 	/**
 	 * the type of the object
 	 *
@@ -34,8 +35,13 @@ abstract class Billrun_Parser extends Billrun_Base {
 	protected $return = 'array';
 	
 	protected $headerRows = array();
+	protected $extraData = array();
 	protected $dataRows = array();
 	protected $trailerRows = array();
+    
+    protected $encodingSource = null;
+    
+    protected $encodingTarget = null;
 
 	public function __construct($options) {
 
@@ -44,6 +50,14 @@ abstract class Billrun_Parser extends Billrun_Base {
 		if (isset($options['return'])) {
 			$this->return = $options['return'];
 		}
+        
+        if (isset($options['encoding_source'])) {
+            $this->encodingSource = $options['encoding_source'];
+        }
+        
+        if (isset($options['encoding_target'])) {
+            $this->encodingTarget = $options['encoding_target'];
+        }
 	}
 
 	/**
@@ -81,5 +95,16 @@ abstract class Billrun_Parser extends Billrun_Base {
 	
 	public function getTrailerRows() {
 		return $this->trailerRows;
+	}
+
+	public function resetData() {
+		$this->headerRows = array();
+		$this->dataRows = array();
+		$this->trailerRows = array();
+		$this->extraData = array();
+	}
+
+	public function getExtraData(){
+		return $this->extraData;
 	}
 }

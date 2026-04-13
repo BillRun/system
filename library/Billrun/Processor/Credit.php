@@ -17,6 +17,15 @@ class Billrun_Processor_Credit extends Billrun_Processor {
 	static protected $type = 'credit';
 	
 	protected $queueCalculators = null;
+	protected $inMemoryProcessing = false;
+
+
+	public function __construct(array $options)
+	{
+	    parent::__construct($options);
+		$this->inMemoryProcessing = Billrun_Util::getIn($options,'in_memory',false);;
+	}
+
 
 	/**
 	 * override abstract method
@@ -56,7 +65,7 @@ class Billrun_Processor_Credit extends Billrun_Processor {
 			return FALSE;
 		}
 
-		if ($this->store() === FALSE) {
+		if ( !$this->inMemoryProcessing && $this->store() === FALSE) {
 			Billrun_Factory::log("Billrun_Processor: cannot store the parser lines " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
@@ -68,6 +77,17 @@ class Billrun_Processor_Credit extends Billrun_Processor {
 		if ($this->queueCalculators) {
 			$this->queueCalculators->release();
 		}	
+	}
+
+	public function storeWhenInMemory() {
+		if(!$this->inMemoryProcessing) {
+			Billrun_Factory::log("Billrun_Processor_Credit: Not in Memory mode will not store to DB", Zend_Log::ERR);
+			return FALSE;
+		}
+		if ( $this->inMemoryProcessing && $this->store() === FALSE) {
+			Billrun_Factory::log("Billrun_Processor_Credit: cannot store the parser lines " . $this->filePath, Zend_Log::ERR);
+			return FALSE;
+		}
 	}
 
 	protected function processLines() {

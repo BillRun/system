@@ -63,9 +63,8 @@ class Billrun_DataTypes_FieldEnforcer_Unique extends Billrun_DataTypes_FieldEnfo
 		// TODO: Should this check be date bound?
 		$query = $this->baseQuery;
 		$query[$this->fieldName] = $data[$this->fieldName];
-		$count = $this->collection->query($query)->cursor()->count();
-		if($count > 0) {
-			return new Billrun_DataTypes_InvalidField($this->fieldName,5);			
+		if (!$this->collection->query($query)->cursor()->limit(1)->current()->isEmpty()) {
+			return new Billrun_DataTypes_InvalidField($this->fieldName,5);
 		}
 		
 		return true;

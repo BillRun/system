@@ -226,4 +226,23 @@ class Billrun_Utils_Units {
 		return isset($seconds) ? $hours * 3600 + $minutes * 60 + $seconds : $hours * 60 + $minutes;
 	}
 	
+
+	protected function formatNumber($format, $value)  {
+        if (isset($format['dec_point']) && isset($format['thousands_sep']) && isset($format['decimals'])){
+            return number_format((float)$value, $format['decimals'] ?? 5 , $format['dec_point'], $format['thousands_sep']);
+        } else {
+            if (isset($format['decimals'])){
+                return number_format((float)$value, $format['decimals'] ?? 5);
+            }
+        }
+    }
+
+	public static function getPropertyTypeByUsaget($usaget) {
+		$usageTypeData = self::getUsageTypeData($usaget);
+		if (!$usageTypeData || !isset($usageTypeData['property_type'])) {
+			return false;
+		}
+		return $usageTypeData['property_type'];
+	}
+
 }

@@ -11,7 +11,7 @@
   *
   * @author yossi
   */
-require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
 
  define('UNIT_TESTING', 'true');
 
@@ -117,6 +117,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
      }
 
      public function TestPerform() {
+        $this->rows  = $this->skip_tests($this->rows ,'row.stamp');
          foreach ($this->rows as $key => $row) {
              $this->message .= 'test stamp : ' . $row['row']['stamp'];
              $fixrow = $this->fixRow($row['row'], $key);

@@ -32,6 +32,7 @@ if (!defined('APPLICATION_ENV')) {
 define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/" . APPLICATION_ENV . ".ini");
 
 if (!file_exists(BILLRUN_CONFIG_PATH)) {
+	error_log('Configuration file ' . BILLRUN_CONFIG_PATH . ' was not found.');
 	die('Configuration file was not found');
 }
 

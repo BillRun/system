@@ -1,0 +1,28 @@
+actor: ApiTester
+bootstrap: ../_support/Helper/BillRun/bootstrap.php
+error_level: E_ALL & ~E_WARNING & ~E_NOTICE
+modules:
+    enabled:
+        - Asserts
+        - \Helper\Api
+        - \Helper\BillRunAPI
+        - \Helper\RealTimeApiHelper
+        - \Helper\TestHelper
+        - \Helper\LogChecker
+        - \Helper\Aggregate
+        - REST:
+            depends: PhpBrowser
+            part: Json
+        - MongoDb:
+              dsn: "mongodb://mongodb:27017/billing_container"
+              user: ""
+              password: ""
+#              dump_type: "mongodump-tar-gz"
+#              dump: "tests/_data/db_test_dump.tar.gz"
+              populate: false
+              cleanup: false
+    config:
+        PhpBrowser:
+            url: http://web
+            curl:
+                CURLOPT_TIMEOUT: 180

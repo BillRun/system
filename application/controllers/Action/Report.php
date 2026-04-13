@@ -25,7 +25,7 @@ class ReportAction extends ApiAction {
 	protected $status = 1;
 	protected $desc = 'success';
 	protected $next_page = true;
-	protected $response = array();
+	protected $output = array();
 	protected $type = null;
 	protected $headers = array();
 	protected $executionTime = null;
@@ -59,7 +59,7 @@ class ReportAction extends ApiAction {
 			},
 			array()
 		);
-		$this->response = $this->model->applyFilter(0, -1);
+		$this->output = $this->model->applyFilter(0, -1);
 	}
 	
 	public function exportCSVReport($report, $page, $size) {
@@ -76,7 +76,7 @@ class ReportAction extends ApiAction {
 		);
 		// add 1 to check it next page exists
 		$limit = ($size === -1) ? $size : $size + 1;
-		$this->response = $this->model->applyFilter($page, $limit);
+		$this->output = $this->model->applyFilter($page, $limit);
 	}
 	
 	public function generateReport($report, $page, $size) {
@@ -91,7 +91,7 @@ class ReportAction extends ApiAction {
 		if ($nextPageExists) {
 			array_pop($rows);
 		}
-		$this->response = $rows;
+		$this->output = $rows;
 		$this->next_page = $nextPageExists;
 		$this->executionTime = number_format($executionTime, 2);
 	}
@@ -99,7 +99,7 @@ class ReportAction extends ApiAction {
 	public function taxationReport($report, $page, $size) {	
 		$parsed_query = json_decode($report, TRUE);
 		$reportData = Billrun_Factory::chain()->trigger('getTaxationReport',array($parsed_query['billrun_key']));
-		$this->response =  $reportData['data'];
+		$this->output =  $reportData['data'];
 		$this->getRequest()->setParam('headers', json_encode($reportData['headers']));
 		$this->next_page = false; 
 	}
@@ -109,7 +109,7 @@ class ReportAction extends ApiAction {
 			array(
 				'status' => $this->status,
 				'desc' => $this->desc,
-				'details' => $this->response,
+				'details' => $this->output,
 				'next_page' => $this->next_page,
 				'execution_time' => $this->executionTime,
 			)
@@ -136,7 +136,7 @@ class ReportAction extends ApiAction {
 		$delimiter = isset($request['delimiter']) ? $request['delimiter'] : ',';
 		$this->getController()->setOutputVar('headers', $headers);
 		$this->getController()->setOutputVar('delimiter', $delimiter);
-		$resp = $this -> getResponse();
+		$resp = $this->getResponse();
 		$resp->setHeader("Cache-Control", "max-age=0");
 		$resp->setHeader("Content-type",  "application/csv; charset=UTF-8");
 		$resp->setHeader('Content-disposition', 'inline; filename="' . $filename . '.csv"');

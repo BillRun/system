@@ -22,9 +22,11 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		'$first' => '_first',
 		'$last' => '_last',
 		'$cond' => '_cond',
+		'$ifNull' => '_ifNull',
 		'$substr' => '_substr',
 		'$min' => '_min',
 		'$max' => '_max',
+		'$abs' => '_abs',
 		'__aggregate' => '_aggregate',
 		'__callback' => '_callback'
 	);
@@ -100,7 +102,7 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 	}
 	
 	protected function _push($data, $expression, $pastValue = FALSE) {
-		$result = empty($pastValue) ? array() : is_array($pastValue)  ? $pastValue : [$pastValue];
+		$result = (empty($pastValue) ? array() : (is_array($pastValue)  ? $pastValue : [$pastValue]));
 		if(is_array($expression)) {
 			foreach($expression as $dstKey => $subExpression) {
 				$addedData[$dstKey] = $this->evaluate($data, $subExpression);
@@ -168,6 +170,10 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		return is_null($pastValue) || $currValue > $pastValue ? $currValue : $pastValue ;
 	}
 
+	protected function _abs($data, $expression, $pastValue = null) {
+		$currValue = $this->evaluate($data, $expression);
+		return  abs($currValue);
+	}
 
 	//======================================= String operations ===============================
 	
@@ -181,11 +187,17 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		$condition = array_shift($expression);
 		$truthValue = array_shift($expression);
 		$falseValue = array_shift($expression);
-		$expressionCheck = new Billrun_Utils_Arrayquery_Expression();
+
 		return $this->evaluate($data, Billrun_Utils_Arrayquery_Query::exists(array($data), $condition) ?  $truthValue : $falseValue, array());
 
 	}
-	
+
+	protected function _ifNull($data, $expression) {
+		$firstField =  array_shift($expression);
+		$secondField =  array_shift($expression) ;
+		$evaluateQuery = (Billrun_Utils_Arrayquery_Aggregate::getFieldValue($data ,$firstField) !== null ? $firstField : $secondField);
+		return $this->evaluate($data, $evaluateQuery );
+	}
 	//==================================== Programatic extenstions logic (Unsupported by mongo) =======================
 	
 	protected function _callback($data, $expression, $pastValue = FALSE) {

@@ -35,6 +35,7 @@ class Models_Subscribers extends Models_Entity {
 		
 		$this->verifyServices();
 		$this->validatePlan();
+		$this->verifyOverrides();
 	}
 
 	public function get() {
@@ -50,13 +51,38 @@ class Models_Subscribers extends Models_Entity {
 	protected function getCustomFields($update = array()) {
 		$customFields = parent::getCustomFields();
 		$subscriberFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
-		$subscriberPlay = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
+		$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+		$defaultPlayName = isset($defaultPlay['name'])? $defaultPlay['name'] : '';
+		$subscriberPlay = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', $defaultPlayName));
 		$subscriberFields = Billrun_Utils_Plays::filterCustomFields($subscriberFields, $subscriberPlay);
 		return array_merge($subscriberFields, $customFields);
 	}
 	
 	public function getCustomFieldsPath() {
 		return $this->collectionName . ".subscriber.fields";
+	}
+
+		/**
+	 * Verify overrides plan \ services are correct before update is applied to the subscription
+	 */
+	protected function verifyOverrides() {
+		if (!empty($this->update['overrides'])) {
+			$overrides = Billrun_Util::getIn($this->update, 'overrides', []);
+			foreach ($overrides as $override) {
+				$priceIntervals = Billrun_Util::getIn($override, ['value','price'], []);
+				$type = Billrun_Util::getIn($override, 'type', 'item');
+				$key = Billrun_Util::getIn($override, 'key', '');
+				foreach ($priceIntervals as $price) {
+					if (!isset($price['from']) || $price['from'] === '' || 
+						!isset($price['to']) || $price['to'] === '') {
+						throw new Billrun_Exceptions_Api(0, array(), "Override {$type} {$key} missing cycles parameters");
+					}
+					if (!isset($price['price']) || $price['price'] === '') {
+						throw new Billrun_Exceptions_Api(0, array(), "Override {$type} {$key} missing price parameter");
+					}
+				}
+			}
+		}
 	}
 
 	/**
@@ -90,7 +116,8 @@ class Models_Subscribers extends Models_Entity {
 					$service['to'] = new Mongodloid_Date(strtotime($service['to']));
 				}
 				// handle custom period service or limited cycles service
-				$serviceRate = new Billrun_Service(array('name' => $service['name']));
+				$serviceTime = $service['from']->sec ?? time();
+				$serviceRate = new Billrun_Service(array('name' => $service['name'], 'time' => $serviceTime));
 				// if service not found, throw exception
 				if (empty($serviceRate) || empty($serviceRate->get('_id'))) {
 					throw new Billrun_Exceptions_Api(66601, array(), "Service was not found");
@@ -102,7 +129,7 @@ class Models_Subscribers extends Models_Entity {
 					$serviceAvailableCycles = $serviceRate->getServiceCyclesCount();
 					if ($serviceAvailableCycles !== Billrun_Service::UNLIMITED_VALUE) {
 						$vDate = date(Billrun_Base::base_datetimeformat, $service['from']->sec);
-						$to = strtotime('+' . $serviceAvailableCycles . ' months', Billrun_Billingcycle::getBillrunStartTimeByDate($vDate));
+						$to = strtotime('+' . $serviceAvailableCycles . ' months', $service['from']->sec);
 						$service['to'] = new Mongodloid_Date($to);
 					}
 				}
@@ -151,7 +178,7 @@ class Models_Subscribers extends Models_Entity {
 		if (empty($servicePlays)) {
 			return true;
 		}
-		$subscriberPlay = Billrun_Util::getIn($this->update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
+		$subscriberPlay = Billrun_Util::getIn($this->update, 'play', Billrun_Util::getIn($this->before, 'play', Billrun_Utils_Plays::getDefaultPlay()['name']));
 		if (!in_array($subscriberPlay, $servicePlays)) {
 			throw new Billrun_Exceptions_Api(0, array(), "\"{$service->get('description')}\" does not match subscriber's play");
 		}
@@ -378,8 +405,8 @@ class Models_Subscribers extends Models_Entity {
 		$indicator = 0; 
 		$plansDeactivation = array();
 		$previousPlan = '';
-		$revisionsFrom = $this->collection->query($revisionsQuery)->cursor()->sort(array('from' => 1));
-		$subscriberDeactivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('to' => -1))->current()['to'];
+		$revisionsFrom = $this->collection->query($revisionsQuery)->cursor()->sort(array('from' => 1))->setReadPreference('RP_PRIMARY');
+		$subscriberDeactivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('to' => -1))->setReadPreference('RP_PRIMARY')->current()['to'];
 		$subscriberActivation = $revisionsFrom->current()['from'];
 		foreach ($revisionsFrom as $revision) {
 			$revisionsArray[] = $revision->getRawData();
@@ -476,6 +503,6 @@ class Models_Subscribers extends Models_Entity {
 	public function permanentChange() {
 		unset($this->update['plan_activation']);
 		unset($this->update['type']);
-		parent::permanentChange();
+		return parent::permanentChange();
 	}
 }
