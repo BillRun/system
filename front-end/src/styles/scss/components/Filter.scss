@@ -1,0 +1,72 @@
+.Filter {
+  .filter-warp {
+    /* Custom, iPhone Retina */
+    @media only screen and (min-width: 320px) {
+      width: 100%;
+      > div,
+      > div.search-button {
+        width: 80%;
+        margin: 0 10% 3px;
+      }
+      .search-btn {
+        width: 100%;
+      }
+    }
+
+    /* Extra Small Devices, Phones */
+    @media only screen and (min-width: 480px) {
+      width: 100%;
+      > div,
+      > div.search-button {
+        width: 80%;
+        margin: 0 10% 3px;
+      }
+      .search-btn {
+        width: 100%;
+      }
+    }
+
+    /* Small Devices, Tablets */
+    @media only screen and (min-width: 768px) {
+      width: 100%;
+      padding: 0;
+      padding: 0 15px;
+
+      > div {
+        margin: 0;
+        padding: 0 3px 0 0;
+        width: 190px;
+      }
+      > div.search-button {
+        width: 50px;
+        margin: 0;
+      }
+      & div:last-child {
+        padding-right: 0;
+      }
+    }
+  }
+
+  .search-btn {
+    height: 39px;
+  }
+}
+
+.mini-list-filter {
+  width: 200px;
+  input {
+    padding: 2px 10px;
+    margin: 0;
+    line-height: 24px;
+    height: 24px;
+    &::placeholder {
+      font-size: 12px;
+    }
+  }
+  .filter-reset {
+    padding: 0;
+    i {
+      vertical-align: bottom;
+    }
+  }
+}

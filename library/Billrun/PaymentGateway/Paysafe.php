@@ -20,14 +20,14 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	protected $completionCodes = "/^COMPLETED$/";
 	protected $customerId;
 
-	protected function __construct() {
-		parent::__construct();
+	protected function __construct($instanceName =  null) {
+		parent::__construct($instanceName);
 		$credentials = $this->getGatewayCredentials();
 		$this->setRedirectHostUrl($credentials);
 		$this->setEndpointUrl($credentials);
 	}
 
-	public function updateSessionTransactionId() {
+	public function updateSessionTransactionId($result) {
 		$this->transactionId = $this->customerId;
 	}
 
@@ -52,6 +52,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		return array(
 			'active' => array(
 				'name' => $this->billrunName,
+				'instance_name' => $this->instanceName,
 				'card_token' => $this->saveDetails['card_token'],
 				'transaction_exhausted' => true,
 				'generate_token_time' => new Mongodloid_Date(time()),

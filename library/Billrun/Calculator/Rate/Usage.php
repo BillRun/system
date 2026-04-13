@@ -113,6 +113,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 * make the calculation
 	 */
 	public function updateRow($row) {
+		try {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$usaget = $row['usaget'];
 		$type = $row['type'];
@@ -127,9 +128,22 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 				return false;
 			}
 
+		if (!empty($row['realtime'])) {
+			foreach ($rates as $rate) {
+				if ($this->isRateBlockedByPlan($row, $rate)) {
+					$row['blocked_rate'] = true;
+					return false;
+				}
+			}
+		}
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log("Failed to update usage row with the following error: " . $e->getMessage(), Zend_Log::ALERT);
+			Billrun_Factory::log()->log($e->getTrace(), Zend_Log::DEBUG);
+			return false;
+		}
 	}
 	
 	/**
@@ -190,8 +204,8 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 
 	protected function getFilters($row = [], $params = []) {
 		$type = $params['type'] ?: '';
-		return Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
-		}
+		return Billrun_Factory::config()->getLineTypeConfigByName($type, true, $row['linet'] ?? null)['rate_calculators'];
+	}
 
 	protected function getBasicMatchQuery($row, $category = '', $params = []) {
 		$usaget = $params['usaget'];
@@ -244,6 +258,10 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	}
 	
 		$newData['rates'][] = $this->getRateData($category, $entity);
+                
+                if(isset($entity['rounding_rules'])){
+                    $newData['rounding_rules'] = $entity['rounding_rules'];
+                }
 		$row->setRawData($newData);
 	}
 	

@@ -18,8 +18,12 @@ class Billrun_Bill_Payment_Cheque extends Billrun_Bill_Payment_Transfer {
 
 	public function __construct($options) {
 		parent::__construct($options);
-		if ($this->getDir() == 'fc' && isset($options['deposit_slip'])) {
-			$this->data['deposit_slip'] = $options['deposit_slip'];
+		if ($this->getDir() == 'fc') {
+			if (isset($options['deposit_slip']) && $options['deposit_slip'] !== ""){
+				$this->data['deposit_slip'] = $options['deposit_slip'];
+			} else if (isset($options['cheque_no'])) {
+				$this->data['cheque_no'] = $options['cheque_no'];
+			}
 		} else if ($this->getDir() == 'tc' && isset($options['cheque_no'])) {
 			$this->data['cheque_no'] = $options['cheque_no'];
 		} else {

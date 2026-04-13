@@ -54,7 +54,7 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
     }
 
     protected function recalculationPrice($line) {
-        $updateRate = Billrun_Rates_Util::getRateByName($line['key'], $line['from']->sec);
+        $updateRate = Billrun_Rates_Util::getRateByName($line['key'], $line['min_urt_line']->sec);
         $usageType = Billrun_Rates_Util::getRateUsageType($updateRate);
         $newPrice = Billrun_Rates_Util::getTotalCharge($updateRate, $usageType, $line['usagev']);
         //Doesn't contain more than one tier and if that tier's interval is 1
@@ -65,41 +65,49 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
         }
     }
 
-    protected function addGroupsIdsForMatchingLines() {
-        return array(
+    protected function addGroupsIdsForMatchingLines() {       
+        $groupsIds = parent::addGroupsIdsForMatchingLines();
+        return array_merge(array(
             'plan' => '$plan',
             'services' => '$services'
-        );
+        ), $groupsIds);
     }
     
     protected function addFieldsForMatchingLines($retroactiveChange) {
         $rate =  Billrun_Rates_Util::getRateByName($retroactiveChange['key'], $retroactiveChange['new']['from']->sec);
-        return array('description' => $rate['description']);
+        return array('description' => $rate['description'], 'invoice_label' => $rate['invoice_label']);
     }
     
     protected function addForeignFieldsForSuggestion($line) {
-        return array('description' => $line['description']);
+        return array('description' => $line['description'], 'invoice_label' => $line['invoice_label']);
+    }
+
+    protected function getGroupingFields(){
+        return Billrun_Factory::config()->getConfigValue('billrun.compute.suggestions.rate_recalculations.grouping.fields', array());
     }
 
     protected function addProjectsForMatchingLines() {
-        return array('plan' => '$_id.plan', 'services' => '$_id.services', 'description' => 1);
+        $projectsIds = parent::addProjectsForMatchingLines();        
+        return array_merge(array('plan' => '$_id.plan', 'services' => '$_id.services', 'description' => 1, 'invoice_label' => 1), $projectsIds);
     }
 
     protected function checkIfValidLine($line) {
         $rate_key = $line['key'];
 
         //check if rate include/overrride in plan -> return false
-        $planData = Billrun_Plan::getByNameAndTime($line['plan'], $line['from']);
+        $planData = Billrun_Plan::getByNameAndTime($line['plan'], $line['min_urt_line']);
         if (Billrun_Rates_Util::checkIfRateInclude($rate_key, $planData) ||
                 Billrun_Rates_Util::checkIfRateOverride($rate_key, $planData)) {
+            Billrun_Factory::log()->log("line is invalid. Rate " . $rate_key . " include/overrride in plan " . $line['plan'], Zend_Log::DEBUG);
             return false;
         }
-
+        $services = $line['services'] ?? [];
         //check if rate include/overrride in services -> return false
-        foreach ($line['services'] as $service) {
-            $serviceData = Billrun_Service::getByNameAndTime($service, $line['from']);
+        foreach ($services as $service) {
+            $serviceData = Billrun_Service::getByNameAndTime($service, $line['min_urt_line']);
             if (Billrun_Rates_Util::checkIfRateInclude($rate_key, $serviceData) ||
                     Billrun_Rates_Util::checkIfRateOverride($rate_key, $serviceData)) {
+                Billrun_Factory::log()->log("line is invalid. Rate " . $rate_key . " include/overrride in service" . $service, Zend_Log::DEBUG);
                 return false;
             }
         }

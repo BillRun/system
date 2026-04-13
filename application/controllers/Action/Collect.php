@@ -30,6 +30,7 @@ class CollectAction extends ApiAction {
 			$this->allowed();
 		}
 
+		Billrun_Factory::log()->log("Processing request parameters", Zend_Log::DEBUG);
 		$aids = !empty($extraParams) && isset($extraParams['aids']) ? Billrun_Util::verify_array($extraParams['aids'], 'int') : array();
 		try {
 			$jsonAids = $request->getPost('aids', '[]');
@@ -38,16 +39,20 @@ class CollectAction extends ApiAction {
 				return $this->setError('Illegal account ids', $request->getPost());
 			}
 			$collection = Billrun_Factory::collection();
-			$result = $collection->collect($aids);
+			Billrun_Factory::log()->log("Started collecting", Zend_Log::DEBUG);
+			$results = $collection->collect($aids);
+			Billrun_Factory::log()->log("Processing collector response", Zend_Log::DEBUG);
 			if (RUNNING_FROM_CLI) {
-				foreach ($result as $colection_state => $aids) {
-					$this->getController()->addOutput("aids " . $colection_state . " : " . implode(", ", $aids));
+				foreach ($results as $process_name => $result) {
+					foreach ($result as $colection_state => $aids) {
+						$this->getController()->addOutput($process_name . ": aids " . $colection_state . " : " . implode(", ", $aids));
+					}
 				}
 			} else {
 				$this->getController()->setOutput(array(array(
 						'status' => 1,
 						'desc' => 'success',
-						'details' => $result,
+						'details' => $results,
 						'input' => $request->getRequest(),
 				)));
 			}

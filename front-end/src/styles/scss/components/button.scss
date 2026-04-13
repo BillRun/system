@@ -1,0 +1,34 @@
+.input-group-addon {
+  &.text-danger {
+      color: #f04124;
+      &:focus {
+        color: #731708;
+      }
+      &:hover {
+        color: #b1240c;
+      }
+      &:active  {
+        color: #b1240c;
+        &:hover,
+        &:focus{
+          color: #731708;
+        }
+      }
+  }
+  &.text-primary {
+    color: #008cba;
+    &:focus {
+      color: #006687;
+    }
+    &:hover {
+      color: #004b63;
+    }
+    &:active {
+      color: #006687;
+      &:hover,
+      &:focus{
+        color: #004b63;
+      }
+    }
+  }
+}

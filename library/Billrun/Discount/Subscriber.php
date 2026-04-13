@@ -45,7 +45,14 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         return FALSE;
     }
 
-	public static function getByNameAndTime($name, $time) {
+	public static function getByNameAndTime($name, $time, $subscriber = null) {
+		if(isset($subscriber)){
+			foreach($subscriber['discounts'] as $discount){
+				if($discount['description'] ==  $name  && $discount['from']->sec <= $time->sec  && $discount['to']->sec > $time->sec){
+					return $discount;
+				}		
+			}
+		}
 		if (isset(static::$cache['by_key'][$name])) {
 			foreach (static::$cache['by_key'][$name] as $revision) {
 				if ($revision['from'] <= $time && (!isset($revision['to']) || is_null($revision['to']) || $revision['to'] >= $time)) {

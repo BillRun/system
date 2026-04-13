@@ -341,6 +341,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (is_array($balance['tx']) && empty($balance['tx'])) {
 				$balance['tx'] = new stdClass();
 			}
+                        if (is_array($balance['tx2']) && empty($balance['tx2'])) {
+				$balance['tx2'] = new stdClass();
+			}
 			$balance->collection($balances_coll);
 			$balanceObj = new Billrun_Balance();
 			$balanceObj->setRawData($balance->getRawData());

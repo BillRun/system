@@ -8,7 +8,13 @@
 class Mongodloid_Connection {
 
 	protected $_connected = false;
+	
+	/**
+	 * the db connection class
+	 * @var MongoDB\Client
+	 */
 	protected $_connection = null;
+	
 	protected $_persistent = false;
 	protected $_server = '';
 	protected $_dbs = array();
@@ -41,7 +47,12 @@ class Mongodloid_Connection {
 				}
 			}
 		}
-		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
+		if (!empty($options['refresh'])) {
+			$this->_connected = false;
+			$this->_dbs[$db] = null;
+		}
+		
+		if (empty($this->_dbs[$db]) || !$this->_dbs[$db]) {
 			if ($user) {
 				$this->username = $user;
 			}
@@ -84,7 +95,7 @@ class Mongodloid_Connection {
 			$options['password'] = $this->password;
 		}
 
-		if (isset($options['readPreference'])) {
+		if (!empty($options['readPreference'])) {
 			$readPreference = $options['readPreference'];
 			if (substr($readPreference, 0, strlen('RP_')) == 'RP_') {
 				$readPreference = substr($readPreference, strlen('RP_'));
@@ -96,12 +107,12 @@ class Mongodloid_Connection {
 			$options['readPreference'] = constant('MongoDB\Driver\ReadPreference::' . $readPreference);
 		}
 
-		if (isset($options['tags'])) {
+		if (!empty($options['tags'])) {
 			$options['readPreferenceTags'] = (array) $options['tags'];
 			unset($options['tags']);
 		}
 
-		if (isset($options['context'])) {
+		if (!empty($options['context'])) {
 			$driver_options = array(
 				'context' => @stream_context_create($options['context'])
 			);
@@ -111,7 +122,7 @@ class Mongodloid_Connection {
 			$driver_options = array();
 		}
 		
-		if(isset($this->_server) && false === strpos($this->_server, '://')){
+		if(!empty($this->_server) && false === strpos($this->_server, '://')){
 			$this->_server = 'mongodb://' . $this->_server;
 		}
 		
@@ -149,7 +160,7 @@ class Mongodloid_Connection {
 
 		settype($persistent, 'boolean');
 
-		if (!isset(self::$instances[$server_port]) || !self::$instances[$server_port]) {
+		if (empty(self::$instances[$server_port]) || !self::$instances[$server_port]) {
 			self::$instances[$server_port] = new static($server_port, $persistent);
 		}
 

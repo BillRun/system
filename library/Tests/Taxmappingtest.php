@@ -11,7 +11,7 @@
  * @package  calculator
  * @since    0.5
  */
-require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
 
 define('UNIT_TESTING', 'true');
 
@@ -39,31 +39,31 @@ class Tests_TaxMappingTest extends UnitTestCase {
 	protected $tests = [
 		//Test num 1 a1
 		//non tax rate																    
-		array('functions' => ['compareCdr'], 'type' => 'cdr', 'row' => array('stamp' => '2a59f077692f3247811d50598b64e892'),
+		array('test'=>['test_number'=>1],'functions' => ['compareCdr'], 'type' => 'cdr', 'row' => array('stamp' => '2a59f077692f3247811d50598b64e892'),
 			'expected' => array('aid' => 1, 'sid' => '2', 'tax_data' => ['total_amount' => 0, 'total_tax' => 0, 'taxes' => []])),
 		//rate use default tax
-		array('functions' => ['compareCdr'], 'type' => 'cdr', 'row' => array('stamp' => '0f721f8984107a5cc3e3e3a6b06babd2'),
+		array('test'=>['test_number'=>2],'functions' => ['compareCdr'], 'type' => 'cdr', 'row' => array('stamp' => '0f721f8984107a5cc3e3e3a6b06babd2'),
 			'expected' => array('aid' => 1, 'sid' => '2',
 				'tax_data' => ['total_amount' => 17, 'total_tax' => 0.17, 'taxes' => [["tax" => 0.17, "amount" => 17, "key" => "DEFAULT_VAT"]]])),
 		//rate use global tax
-		array('functions' => ['compareCdr'], 'type' => 'cdr', 'row' => array('stamp' => '54c97046cd6cfcd877f99783e1f48d2c'),
+		array('test'=>['test_number'=>3],'functions' => ['compareCdr'], 'type' => 'cdr', 'row' => array('stamp' => '54c97046cd6cfcd877f99783e1f48d2c'),
 			'expected' => array('aid' => 1, 'sid' => '2',
 				'tax_data' => ['total_amount' => 17, 'total_tax' => 0.17, 'taxes' => [["tax" => 0.17, "amount" => 17, "key" => "DEFAULT_VAT"]]])),
 		//rate overide global tax mppping 
-		array('functions' => ['compareCdr'], 'type' => 'cdr', 'row' => array('stamp' => '7d9ea6298c17a9336410592f09fb1c65'),
+		array('test'=>['test_number'=>4],'functions' => ['compareCdr'], 'type' => 'cdr', 'row' => array('stamp' => '7d9ea6298c17a9336410592f09fb1c65'),
 			'expected' => array('aid' => 1, 'sid' => '2',
 				'tax_data' => ['total_amount' => 1, 'total_tax' => 0.1, 'taxes' => [["tax" => 0.1, "amount" => 1, "key" => "A"]]])),
 		//rate fallback  -Apply if tax rate not found via global mapping rules *** use fallback ***
-		array('functions' => ['compareCdr'], 'type' => 'cdr', 'row' => array('stamp' => '169788ab8db858b08659e74db90185f5'),
+		array('test'=>['test_number'=>5],'functions' => ['compareCdr'], 'type' => 'cdr', 'row' => array('stamp' => '169788ab8db858b08659e74db90185f5'),
 			'expected' => array('aid' => 1, 'sid' => '2',
 				'tax_data' => ['total_amount' => 1, 'total_tax' => 0.1, 'taxes' => [["tax" => 0.1, "amount" => 1, "key" => "A"]]])),
 	//rate fallback  - Apply if tax rate not found via global mapping rules *** use global ***
-		array('functions' => ['compareCdr'], 'type' => 'cdr', 'row' => array('stamp' => '7d9ea6298c17a9336410592f09fb1c66'),
+		array('test'=>['test_number'=>6],'functions' => ['compareCdr'], 'type' => 'cdr', 'row' => array('stamp' => '7d9ea6298c17a9336410592f09fb1c66'),
 			'expected' => array('aid' => 1, 'sid' => '3',
 				'tax_data' => ['total_amount' => 1, 'total_tax' => 0.1, 'taxes' => [["tax" => 0.1, "amount" => 1, "key" => "A"]]])),
    		//cycle
 		//subscriber with non tax plan service discount 
-		array('functions' => ['compareCycleLines'], 'type' => 'cycle', 'test' => array('aid' => 1, 'options' => ['stamp' => '201905']),
+		array('test'=>['test_number'=>7],'functions' => ['compareCycleLines'], 'type' => 'cycle', 'test' => array('aid' => 1, 'options' => ['stamp' => '201905']),
 			'expected' => array('aid' => 1, 'sid' => '2',
 				'lines' => [
 					'credits' => ['NOT_VAT_PLANANDSERVICE' => ['tax_data' => ['total_amount' => 0, 'total_tax' => 0]]],
@@ -72,7 +72,7 @@ class Tests_TaxMappingTest extends UnitTestCase {
 				]
 			)),
 		//subscriber with "use global" plan service discount 
-		array('functions' => ['compareCycleLines'], 'type' => 'cycle', 'test' => array('aid' => 9, 'options' => ['stamp' => '201905']),
+		array('test'=>['test_number'=>8],'functions' => ['compareCycleLines'], 'type' => 'cycle', 'test' => array('aid' => 9, 'options' => ['stamp' => '201905']),
 			'expected' => array('aid' => 9, 'sid' => '10',
 				'lines' => [
 					'credits' => ['USE_GLOBAL_PLANANDSERVICE' => ['tax_data' => ['total_amount' => -1.7, 'total_tax' => 0.17]]],
@@ -81,7 +81,7 @@ class Tests_TaxMappingTest extends UnitTestCase {
 				]
 			)),
 		//subscriber with "OVERRIDE_GLOBAL" plan service discount - the discount has 2 taxes 1 plan and second for service with diffrent taxes
-		array('functions' => ['compareCycleLines'], 'type' => 'cycle', 'test' => array('aid' => 11, 'options' => ['stamp' => '201905']),
+		array('test'=>['test_number'=>9],'functions' => ['compareCycleLines'], 'type' => 'cycle', 'test' => array('aid' => 11, 'options' => ['stamp' => '201905']),
 			'expected' => array('aid' => 11, 'sid' => '12',
 				'lines' => [
 					'credits' => ['OVERRIDE_GLOBAL_TAX_PLANANDSERVICE' => ['tax_data' => ['total_amount' => -1.5, 'total_tax' => 0.15,
@@ -91,19 +91,59 @@ class Tests_TaxMappingTest extends UnitTestCase {
 				]
 			)),
 		//subscriber with "use fallback" plan service 
-		array('functions' => ['compareCycleLines'], 'type' => 'cycle', 'test' => array('aid' => 13, 'options' => ['stamp' => '201905']),
+		array('test'=>['test_number'=>10],'functions' => ['compareCycleLines'], 'type' => 'cycle', 'test' => array('aid' => 13, 'options' => ['stamp' => '201905']),
 			'expected' => array('aid' => 13, 'sid' => '14',
 				'lines' => [
 					'flat' => ['FALLBACK_TAX_PLAN' => ['tax_data' => ['total_amount' => 10, 'total_tax' => 0.1]]],
 					'services' => ['FALLBACK_TAX_SERVICE' => ['tax_data' => ['total_amount' => 2, 'total_tax' => 0.2]]],
 				]
 			)),		
+                //Test rounding rules
+                //rounding up (without decimals)
+                array('test'=>['test_number'=>11],'functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '900f025a36c8ce1e32eda0a8b24e9a69'),
+			'expected' => array('final_charge' => 2, 'aprice' => 1.7094017094017095, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.2905982905982906,  'total_amount_before_rounding' => 0.255])),
+	
+                //rounding up with 1 decimal
+                 array('test'=>['test_number'=>12],'functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => 'feaa63e389a04d9607dfa0645d3cef1d'),
+			'expected' => array('final_charge' => 1.8, 'aprice' => 1.5384615384615388, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.26153846153846155,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding up with 2 decimal
+                 array('test'=>['test_number'=>13],'functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => 'ae9020df9411a9bbf7f9d73968ff5e4b'),
+			'expected' => array('final_charge' => 1.76, 'aprice' => 1.5042735042735043, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.25572649572649575,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding down (without decimals)
+                array('test'=>['test_number'=>14],'functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => 'f70cf4bb941d16d1d91ea331d4373ab0'),
+			'expected' => array('final_charge' => 1, 'aprice' => 0.8547008547008548, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.1452991452991453,  'total_amount_before_rounding' => 0.255])),
+	
+                //rounding down with 1 decimal
+                 array('test'=>['test_number'=>15],'functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => 'ac3a827b3ad76df44605ff2466b591dc'),
+			'expected' => array('final_charge' => 1.7, 'aprice' => 1.4529914529914532, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.24700854700854702,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding down with 2 decimal
+                 array('test'=>['test_number'=>16],'functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '5e6e0b9b481e5c03f61df07aeef56e8b'),
+			'expected' => array('final_charge' => 1.75, 'aprice' => 1.4957264957264957, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.2542735042735043,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding nearest (without decimals)
+                array('test'=>['test_number'=>1],'functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '45bd347b51b7235ef91fcac3652ed498'),
+			'expected' => array('final_charge' => 2, 'aprice' => 1.7094017094017095, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.2905982905982906,  'total_amount_before_rounding' => 0.255])),
+	
+                //rounding nearest with 1 decimal
+                 array('test'=>['test_number'=>17],'functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '69a4914a231ae416625a9fc832f09b10'),
+			'expected' => array('final_charge' => 1.8, 'aprice' => 1.5384615384615388, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.26153846153846155,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding nearest with 2 decimal
+                 array('test'=>['test_number'=>18],'functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '598283049a9d8e7b4accadca5fa0c50b'),
+			'expected' => array('final_charge' => 1.76, 'aprice' => 1.5042735042735043, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.25572649572649575,  'total_amount_before_rounding' => 0.255])),
+                
+                //rounding empty
+                 array('test'=>['test_number'=>19],'functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '598283049a9d8e7b4accadca5fa0c51b'),
+			'expected' => array('final_charge' => 1.755, 'aprice' => 1.5, 'tax_data' => ['total_amount' => 0.255])),
 	];
 	
 
 	public function __construct($label = false) {
      
-		parent::__construct("test tax");
+		parent::__construct("test Taxmapping");
        
         $request= new Yaf_Request_Http;
         $this->overrideDB = $request->get( 'overrideDB' );
@@ -114,7 +154,8 @@ class Tests_TaxMappingTest extends UnitTestCase {
 		$this->construct(basename(__FILE__, '.php'), ['discounts', 'taxes']);
 		$this->setColletions();
 		$this->loadDbConfig();
-		$this->calculator = Billrun_Calculator::getInstance(array('type' => 'tax', 'autoload' => false));
+		$this->customerPricingCalculator = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
+		$this->taxCalculatorcalculator = Billrun_Calculator::getInstance(array('type' => 'tax', 'autoload' => false));
 	}
 
 	public function addExpected($expected) {
@@ -143,6 +184,10 @@ class Tests_TaxMappingTest extends UnitTestCase {
 	}
    
 	public function TestPerform() {
+		$this->tests =  $this->getTestCases($this->tests);
+        if (empty($this->test_cases_to_run)) {
+            $this->tests = $this->skip_tests($this->tests, 'test.test_number');
+          }
 		foreach ($this->tests as $key => $row) {
 			if (!isset($row['expected']['lines'])) {
 				$this->message .= '<span style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . ' </br><b> Expected: </b> ';
@@ -169,6 +214,11 @@ class Tests_TaxMappingTest extends UnitTestCase {
 					continue;
 				}
 			} elseif ($row['type'] == 'cdr') {
+				if ($row['run_customer_pricinig'] == true) {
+					$fixrow = $this->fixRow($row['row'], $key);
+					$this->linesCol->insert($fixrow, ['w' => 'majority']);
+					$updatedRow = $this->runPricing($fixrow['stamp']);
+				}
 				$updatedRow = $this->runCdr($row);
 			} else {
 				continue;
@@ -224,8 +274,8 @@ class Tests_TaxMappingTest extends UnitTestCase {
 	protected function runCdr($row) {
 		$stamp = $row['row']['stamp'];
 		$entity = $this->linesCol->query(array('stamp' => $stamp))->cursor()->current();
-		$this->calculator->updateRow($entity);
-		$this->calculator->writeLine($entity, '123');
+		$this->taxCalculatorcalculator->updateRow($entity);
+		$this->taxCalculatorcalculator->writeLine($entity, '123');
 		$entityAfter = $entity->getRawData();
 		return ($entityAfter);
 	}
@@ -257,6 +307,11 @@ class Tests_TaxMappingTest extends UnitTestCase {
 			}
 		}
 		return $passed;
+	}
+
+	public function checkBillrun($key, $updatedRow, $row) {
+		$this->message .= 'Billrun : '.$row['expected']['billrun'].'<br>';
+		return $this->assertTrue($updatedRow['billrun'] == $row['expected']['billrun']);
 	}
     
 	public function getRow($lines, $type, $key, $updatedRow) {
@@ -318,6 +373,132 @@ class Tests_TaxMappingTest extends UnitTestCase {
 		}
 		$this->message .= ' </p>';
 		return $passed;
+	}
+        
+        
+        protected function checkRounding($key, $returnRow, $row) {
+		$passed = true;
+		$epsilon = 0.000001;
+
+		if (isset($row['expected']['final_charge'])) {
+			if (!Billrun_Util::isEqual($returnRow['final_charge'], $row['expected']['final_charge'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng final_charge {$returnRow['final_charge'] } " . $this->fail;
+			} else {
+				$this->message .= "final_charge is :  {$returnRow['final_charge'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['aprice'])) {
+			if (!Billrun_Util::isEqual($returnRow['aprice'], $row['expected']['aprice'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng aprice {$returnRow['aprice'] } " . $this->fail;
+			} else {
+				$this->message .= "aprice is :  {$returnRow['aprice'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['before_rounding']['final_charge'])) {
+			if (!Billrun_Util::isEqual($returnRow['before_rounding']['final_charge'], $row['expected']['before_rounding']['final_charge'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng before rounding final_charge {$returnRow['before_rounding']['final_charge'] } " . $this->fail;
+			} else {
+				$this->message .= "before rounding final_charge is :  {$returnRow['before_rounding']['final_charge'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['before_rounding']['aprice'])) {
+			if (!Billrun_Util::isEqual($returnRow['before_rounding']['aprice'], $row['expected']['before_rounding']['aprice'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng before rounding aprice {$returnRow['before_rounding']['aprice'] } " . $this->fail;
+			} else {
+				$this->message .= "before rounding aprice is :  {$returnRow['before_rounding']['aprice'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['tax_data']['total_amount'])) {
+			if (!Billrun_Util::isEqual($returnRow['tax_data']['total_amount'], $row['expected']['tax_data']['total_amount'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng tax total_amount {$returnRow['tax_data']['total_amount'] } " . $this->fail;
+			} else {
+				$this->message .= "tax total_amount is :  {$returnRow['tax_data']['total_amount'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['tax_data']['total_amount_before_rounding'])) {
+			if (!Billrun_Util::isEqual($returnRow['tax_data']['total_amount_before_rounding'], $row['expected']['tax_data']['total_amount_before_rounding'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng tax total_amount_before_rounding {$returnRow['tax_data']['total_amount_before_rounding'] } " . $this->fail;
+			} else {
+				$this->message .= "tax total_amount_before_rounding is :  {$returnRow['tax_data']['total_amount_before_rounding'] } " . $this->pass;
+				}
+		}
+		$this->message .= ' </p>';
+		return $passed;
+	}
+
+
+	protected function fixRow($row, $key) {
+
+		if (!array_key_exists('process_time', $row)) {
+			$row['process_time'] = new Mongodloid_Date(time() - 200);
+		} else {
+			$row['process_time'] = new Mongodloid_Date(strtotime($row['urt']) - 200);
+		}
+		if (!array_key_exists('urt', $row)) {
+			$row['urt'] = new Mongodloid_Date(time() + $key);
+		} else {
+			$row['urt'] = new Mongodloid_Date(strtotime($row['urt']));
+		}
+		if (!isset($row['aid'])) {
+			$row['aid'] = 1234;
+		}
+		if (!isset($row['sid'])) {
+			$row['sid'] = 1234;
+		}
+		if (!isset($row['type'])) {
+			$row['type'] = 'mytype';
+		}
+		if (!isset($row['usaget'])) {
+			$row['usaget'] = 'call';
+		}
+		if (isset($row['services_data'])) {
+			foreach ($row['services_data'] as $key => $service) {
+				if (!is_array($service)) {
+					$row['services_data'][$key] = array('name' => $service);
+					$row['services_data'][$key]['service_id'] = $this->calcServiceId($row['aid'], $row['sid'], $service);
+				}
+				if (isset($service['from'])) {
+					$row['services_data'][$key]['from'] = new Mongodloid_Date(strtotime($service['from']));
+				}
+				if (isset($service['to'])) {
+					$row['services_data'][$key]['to'] = new Mongodloid_Date(strtotime($service['to']));
+				}
+				if (isset($service['creation_time'])) {
+					$row['services_data'][$key]['creation_time'] = new Mongodloid_Date(strtotime($service['creation_time']));
+				}
+			}
+		}
+
+		if (isset($row['arate_key'])) {
+			$row['rates'] = array($row['arate_key'] => 'retail');
+		}
+		$keys = [];
+		foreach ($row['rates'] as $rate_key => $tariff_category) {
+			$rate = $this->ratesCol->setReadPreference('RP_PRIMARY')->query(array('key' => $rate_key))->cursor()->current();
+			$keys[] = array(
+				'rate' => Mongodloid_Ref::create('rates', (new Mongodloid_Id((string) $rate['_id']))),
+				'tariff_category' => $tariff_category,
+			);
+		}
+		$row['rates'] = $keys;
+		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();
+		$row['plan_ref'] = Mongodloid_Ref::create('plans', (new Mongodloid_Id((string) $plan['_id'])));
+		return $row;
+	}
+
+	protected function runPricing($stamp) {
+		$entity = $this->linesCol->setReadPreference('RP_PRIMARY')->query(array('stamp' => $stamp))->cursor()->current();
+		$ret = $this->customerPricingCalculator->updateRow($entity);
+		$this->customerPricingCalculator->writeLine($entity, '123');
+		$this->customerPricingCalculator->removeBalanceTx($entity);
+		$entityAfter = $entity->getRawData();
+		return ($entityAfter);
 	}
 
 }

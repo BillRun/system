@@ -13,10 +13,14 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * Description of Auth
  * TODO merge  this logic withe  the admin login logic
  * @author eran
+ * @deprecated since version 5.17
  */
 class AuthAction extends ApiAction  {
-		
+
+	protected $opencors = false;
+
 	public function execute() {
+		Billrun_Factory::log('This API action (Auth) is deprecated.', Zend_Log::DEBUG);
 		$params = array_merge($this->getRequest()->getRequest(), $this->getRequest()->getPost());
 		switch(Billrun_Util::getFieldVal($params['action'],'')) {
 			case 'logout':

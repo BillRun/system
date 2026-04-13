@@ -66,8 +66,9 @@ class BillrunController extends ApiController {
 		if ($billrunKey >= $currentBillrunKey) {
 			throw new Exception("Can't run billing cycle on active or future cycles");
 		}
-		if (Billrun_Billingcycle::isCycleRunning($billrunKey, $this->size, $invoicingDay)) {
-			throw new Exception("Already Running");
+		$host = Billrun_Util::getHostName();
+		if (Billrun_Billingcycle::isCycleRunningOnHost($billrunKey, $host, $this->size)) {
+			throw new Exception("Billing cycle $billrunKey is already running on host $host");
 		}
 		$cycleStatus = Billrun_Billingcycle::getCycleStatus($billrunKey, null, $invoicingDay);
 		if ($cycleStatus == 'finished' || $cycleStatus == 'to_rerun') {
@@ -77,14 +78,30 @@ class BillrunController extends ApiController {
 			Billrun_Factory::log("Rerunning cycle " . $billrunKey, Zend_Log::DEBUG);
 			Billrun_Billingcycle::removeBeforeRerun($billrunKey, $invoicingDay);
 		}
-
-		$success = self::processCycle($billrunKey, $generatedPdf, $invoicingDay);
-		Billrun_Factory::log("Finished running cycle " . $billrunKey, Zend_Log::DEBUG);
-		$output = array (
-			'status' => $success ? 1 : 0,
-			'desc' => $success ? 'success' : 'error',
-			'details' => array(),
-		);
+		if (Billrun_Jobsmanager::getInstance()->isWorkerEnabled()) {
+			$jobSettings = [
+				'billrun_key' => $billrunKey,
+				'generate_pdf' => filter_var($generatedPdf, FILTER_VALIDATE_BOOLEAN)
+			];
+			if ($invoicingDay) {
+				$jobSettings['invoicing_day'] = $invoicingDay;
+			}
+			$schedule = $request->get('schedule');
+			$message = Billrun_Jobsmanager::getInstance()->push('Cycle', $jobSettings, null, $schedule);
+			$output = array (
+				'status' => 1,
+				'desc' => 'success',
+				'details' => $message,
+			);
+		} else {
+			$success = self::processCycle($billrunKey, $generatedPdf, $invoicingDay);
+			Billrun_Factory::log("Finished running cycle " . $billrunKey, Zend_Log::DEBUG);
+			$output = array (
+				'status' => $success ? 1 : 0,
+				'desc' => $success ? 'success' : 'error',
+				'details' => array(),
+			);
+		}
 		$this->setOutput(array($output));
 	}
 	
@@ -153,13 +170,31 @@ class BillrunController extends ApiController {
 		if (Billrun_Factory::config()->isMultiDayCycle() && (empty($invoicingDay) || (!empty($invoicingDay) && !is_numeric($invoicingDay)))) {
 			return $this->setError('Need to pass numeric invoicing day when on multi day cycle mode.', $request);
 		}
-		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay) && (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices))){
-			if (is_null($invoices)) {
-				$success = self::processConfirmCycle($billrunKey, [], [$invoicingDay]);
-			} else {
-				$success = self::processConfirmCycle($billrunKey, $invoicesId, $invoicingDay);
-			}
+		if(!Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay)){
+			return $this->setError("Can't confirm invoices while the billing cycle run is ongoing", $request);
 		}
+		if (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices)) {
+			if (Billrun_Jobsmanager::getInstance()->isWorkerEnabled()) {
+				$jobSettings = [
+					'billrun_key' => $billrunKey,
+				];
+				if (!is_null($invoices)) {
+					$jobSettings['include_invoices'] = array_diff(Billrun_util::verify_array($invoicesId, 'int'), array(0));
+				}
+				$schedule = $request->get('schedule');
+				$message = Billrun_Jobsmanager::getInstance()->push('Confirm', $jobSettings, null, $schedule);
+				$success = $message ? 1 : 0;
+			} else {
+				if (is_null($invoices)) {
+					$success = self::processConfirmCycle($billrunKey, [], [$invoicingDay]);
+				} else {
+					$success = self::processConfirmCycle($billrunKey, $invoicesId, $invoicingDay);
+				}
+			}
+		} else {
+			return $this->setError("Cycle was confirmed already, or no invoices were found to confirm", $request);
+		}
+
 		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
@@ -203,6 +238,7 @@ class BillrunController extends ApiController {
 		$params['mode'] = $request->get('charge_mode');
 		$params['min_invoice_date'] = $request->get('min_invoice_date');
 		$params['exclude_accounts'] = $request->get('exclude_accounts');
+		$params['uf'] = json_decode($request->get('uf'), true);
 		if (!$this->validateParams($params)) {
 			throw new Exception("One or more of the parameters of the 'charge' command is not valid");
 		}
@@ -273,7 +309,7 @@ class BillrunController extends ApiController {
 	 */
 	protected function canSyncCharge($request) {
 		$aids = Billrun_Util::verify_array($request->get('aids', []), 'int');
-		return (count($aids) == 1 && $request->get('pay_mode', '') == 'one_payment');
+		return count($aids) == 1;
 	}
 
 	/**
@@ -349,6 +385,18 @@ class BillrunController extends ApiController {
 		if (!empty($invoicingDay)) {
 			$setting['invoicing_day'] = $invoicingDay;
 		}
+		$entry = Billrun_Billingcycle::getCycleDetails($billrunKey, $invoicingDay);
+		if (!empty($entry['job_md5'])) {
+			$setting['job_md5'] = $entry['job_md5'];
+			$setting['entry'] = $entry->getRawData();
+			if ($entry['count'] > 0) {
+				$setting['completion_percentage'] = round(min($entry['completed'] / $entry['count'], 1) * 100, 2); // min in case complete is more than count
+			} else if (isset($entry['zero_pages']) && $entry['zero_pages'] > 0) {
+				$setting['completion_percentage'] = 100;
+			} else {
+				$setting['completion_percentage'] = 0;
+			}
+		}
 		$output = array(
 			'status' => !empty($setting) ? 1 : 0,
 			'desc' => !empty($setting) ? 'success' : 'error',
@@ -413,14 +461,14 @@ class BillrunController extends ApiController {
 			$invoicesId = implode(',', $invoicesArray);			
 		}
 		if (!empty($invoicesId)) {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . escapeshellarg($billrunKey) . ' invoices=' . escapeshellarg($invoicesId);
 		} else {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey;
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . escapeshellarg($billrunKey);
 		}
 		if (!empty($invoicing_day)) {
-			$cmd .= ' invoicing_days=' . $invoicing_day;
+			$cmd .= ' invoicing_days=' . escapeshellarg($invoicing_day);
 		}
-		return Billrun_Util::forkProcessCli(escapeshellarg($cmd));
+		return Billrun_Util::forkProcessCli(escapeshellcmd($cmd));
 	}
 	
 	protected function processCharge($mode, $params = array()) {
@@ -514,16 +562,28 @@ class BillrunController extends ApiController {
 					break;
 				case 'pay_mode':
 				case 'mode':
-					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge‎'];	
+					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge'];	
 					if (!is_null($value) && !in_array(trim($value, '"'), $array)) {
 						return false;
 					}
+					break;
+				case 'uf':
 					break;
 				default:
 					return false;
 			}
 		}
 		return true;
+	}
+	
+	public function workerstatusAction() {
+		$workerStatus = Billrun_Jobsmanager::getInstance()->isWorkerEnabled();
+		$output = array (
+			'status' => $workerStatus ? 1 : 0,
+			'desc' => 'Worker status is ' . ($workerStatus ? 'enabled' : 'disabled'),
+			'details' => array(),
+		);
+		$this->setOutput(array($output));
 	}
 
 }

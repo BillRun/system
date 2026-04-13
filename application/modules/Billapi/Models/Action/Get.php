@@ -38,6 +38,13 @@ class Models_Action_Get extends Models_Action {
 	 * @var array
 	 */
 	protected $sort = array();
+
+	/**
+	 * Flag to indicate if revision info should be processed.
+	 * Set by prepareProjection() and used by processResults().
+	 * @var bool
+	 */
+	protected $revisionInfoRequested = false;
 	
 	protected function __construct(array $params = array()) {
 		if (isset($params['request'])) {
@@ -76,47 +83,22 @@ class Models_Action_Get extends Models_Action {
 	 */
 	protected function runQuery() {
 
-		if (isset($this->request['project'])) {
-			$project = (array) json_decode($this->request['project'], true);
-			$revision_info = !empty($project['revision_info']);
-			unset($project['revision_info']);
-			// if revision_info requested, all entity unique fields are required for query
-			if($revision_info){
-				$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$this->request['collection']}.duplicate_check", array());
-				foreach ($uniqueFields as $fieldName) {
-					$project[$fieldName] = 1;
-				}
-			}
-		} else {
-			$revision_info = true;
-			$project = array();
-		}
+		$project = $this->prepareProjection();
 
-		$ret = $this->collectionHandler->find($this->query, $project);
+		Billrun_Factory::log("Billapi get runs query: " . json_encode($this->query), Zend_Log::DEBUG);
+		$cursor = $this->collectionHandler->find($this->query, $project);
 
 		if ($this->size != 0) {
-			$ret->limit($this->size + 1); // the +1 is to indicate if there is next page
+			$cursor->limit($this->size + 1);
 		}
-
 		if ($this->page != 0) {
-			$ret->skip($this->page * $this->size);
+			$cursor->skip($this->page * $this->size);
 		}
-
 		if (!empty($this->sort)) {
-			$ret->sort((array) $this->sort);
+			$cursor->sort((array) $this->sort);
 		}
 
-		$records = array_values(iterator_to_array($ret));
-		foreach($records as  &$record) {
-			if (isset($record['invoice_id'])) {
-				$record['invoice_id'] = (int)$record['invoice_id'];
-			}
-			if ($revision_info && isset($record['from'], $record['to'])) {
-				$record = Models_Entity::setRevisionInfo($record, $this->getCollectionName(), $this->request['collection']);
-			}
-			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongodloidDatetimeFields($record, $this->getDateFields());
-		}
-		return $records;
+		return $this->processResults($cursor);
 	}
 	
 	/**
@@ -182,6 +164,39 @@ class Models_Action_Get extends Models_Action {
 	 */
 	public function getSize() {
 		return $this->size;
+	}
+
+	protected function prepareProjection() {
+		if (isset($this->request['project'])) {
+			$project = (array) json_decode($this->request['project'], true);
+			$this->revisionInfoRequested = !empty($project['revision_info']);
+			unset($project['revision_info']);
+			if ($this->revisionInfoRequested) {
+				$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$this->request['collection']}.duplicate_check", array());
+				foreach ($uniqueFields as $fieldName) {
+					$project[$fieldName] = 1;
+				}
+			}
+		} else {
+			$this->revisionInfoRequested = true;
+			$project = array();
+		}
+		return $project;
+	}
+
+	protected function processResults(Mongodloid_Cursor $cursor) {
+		$records = array_values(iterator_to_array($cursor));
+		Billrun_Factory::log('Billapi get received ' . count($records) . " results", Zend_Log::DEBUG);
+		foreach($records as  &$record) {
+			if (isset($record['invoice_id'])) {
+				$record['invoice_id'] = (int)$record['invoice_id'];
+			}
+			if ($this->revisionInfoRequested && isset($record['from'], $record['to'])) {
+				$record = Models_Entity::setRevisionInfo($record, $this->getCollectionName(), $this->request['collection']);
+			}
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongodloidDatetimeFields($record, $this->getDateFields());
+		}
+		return $records;
 	}
 
 }

@@ -68,11 +68,20 @@ class AccountInvoicesAction extends ApiAction {
 		return $retValue;
 	}
 
-	protected function downloadPDF($request) {
-		$aid = $request->get('aid');
-		$confirmedOnly = $request->get('confirmed_only');
-		$billrun_key = $request->get('billrun_key');
-		$invoiceId = $request->get('iid');
+	public function downloadPDF($request) {
+		if ($request instanceof Yaf_Request_Abstract) {
+			$aid = $request->get('aid');
+			$confirmedOnly = $request->get('confirmed_only');
+			$billrun_key = $request->get('billrun_key');
+			$invoiceId = $request->get('iid');
+			$detailed = $request->get('detailed');
+		} else {
+			$aid = $request['aid'] ?? '';
+			$confirmedOnly = $request['confirmed_only'] ?? false;
+			$billrun_key = $request['billrun_key'] ?? '';
+			$invoiceId = $request['iid'] ?? '';
+			$detailed = $request['detailed'] ?? false;
+		}
 		
 		$query = array(
 			'aid' => (int) $aid,
@@ -96,7 +105,7 @@ class AccountInvoicesAction extends ApiAction {
 		$file_name =  !empty($invoiceData['file_name']) ? $invoiceData['file_name'] : (!empty($invoiceData['invoice_file']) ? basename($invoiceData['invoice_file']) : $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf");
 		$pdf = $invoiceData['invoice_file'];
 
-		if( $request->get('detailed') ) {
+		if ($detailed) {
 			$generator = Billrun_Generator::getInstance(array('type'=>'wkpdf','accounts'=>array((int)$aid),'subscription_details'=>1,'usage_details'=> 1,'stamp'=>$billrun_key));
 			$generator->load();
 			$generator->generate();
@@ -105,14 +114,21 @@ class AccountInvoicesAction extends ApiAction {
                         Billrun_Factory::log('Invoice file ' . $pdf . ' does not exist', Zend_Log::NOTICE);
 			echo "Invoice not found";
 		} else {
-			$cont = file_get_contents($pdf);
+			$params = array(
+				'content_type' => 'Content-Type: application/pdf',
+				'content_disposition' => 'inline',
+				'filename' => $pdf,
+			);
+			Billrun_Factory::dispatcher()->trigger('onInvoiceDownload', array(&$params, $invoiceData));
+
+			$cont = file_get_contents($params['filename']);
 			if ($cont) {
-				header('Content-disposition: inline; filename="'.$file_name.'"');
+				header('Content-disposition: ' . $params['content_disposition'] . '; filename="' . basename($params['filename']) . '"');
 				header('Cache-Control: public, must-revalidate, max-age=0');
 				header('Pragma: public');
 				header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
-				header('Content-Type: application/pdf');
-				Billrun_Factory::log('Transfering invoice content from : '.$pdf .' to http connection');
+				header($params['content_type']);
+				Billrun_Factory::log('Transfering invoice content from : ' . $params['filename'] . ' to http connection');
 				echo $cont;
 			} 
 		}
