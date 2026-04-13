@@ -29,6 +29,7 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 	protected $lineItemCounter;
 	protected $line_item_template;
 	protected $string_keys;
+	protected $optional_keys = [];
 	protected $bill_summary_template;
 	protected $abortGeneration = false;
 	protected $should_generate_ebill;
@@ -69,6 +70,10 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 		if (is_array($string_keys_array)) {
 			$this->string_keys = array_flip($string_keys_array);
 		}
+		$optional_keys_array = Billrun_Util::getIn($options, "optional_keys", false);
+		if (is_array($optional_keys_array)) {
+			$this->optional_keys = array_flip($optional_keys_array);
+		}
 		$this->should_generate_ebill = Billrun_Util::getIn($options, "should_generate_ebill", []);
 		$this->response_status_files_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getIn($options, "response_status_files_path", ""));
 		$this->creditor_reference_prefix = Billrun_Util::getIn($options, "creditor_reference_prefix", "");
@@ -90,6 +95,15 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 				"type" => "json",
 				"field_name" => "string_keys",
 				"title" => "Whitelisted String Keys",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			],
+			[
+				"type" => "json",
+				"field_name" => "optional_keys",
+				"title" => "Optional Keys",
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
@@ -514,14 +528,19 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 		$populatedData = is_array($config) ? $config : [];
 		$plugin = $this;
 		$isOptionalString = $this->string_keys;
+		$isOptionalKey = $this->optional_keys;
 
-		array_walk_recursive($populatedData, function (&$value, $key) use ($dataSource, $plugin, $isOptionalString) {
+		array_walk_recursive($populatedData, function (&$value, $key) use ($dataSource, $plugin, $isOptionalString, $isOptionalKey) {
 			$foundValue = Billrun_Util::getIn($dataSource, $value);
 			if ($foundValue !== null) {
 				$value = $foundValue;
 				return;
 			}
 			if (isset($isOptionalString[$key])) {
+				return;
+			}
+			if (isset($isOptionalKey[$key])) {
+				$value = '';
 				return;
 			}
 			Billrun_Factory::log("eBill Plugin: Data path missing for tag '$key'. Path: '$value'", Zend_Log::ALERT);
