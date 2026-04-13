@@ -79,13 +79,24 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 		$refundFraction = 1- Billrun_Utils_Time::getDaysSpanDiffUnix($this->cycle->start(), $endActivation, $cycleSpan);
 
 		
-		return array( 'value' => -$lastUpfrontCharge * $refundFraction * $quantity,
+		$ret = array(
+			'value' => -$lastUpfrontCharge * $refundFraction * $quantity,
 			'full_price' => floatval($lastUpfrontCharge),
 			'start' => $this->deactivation ,
 			'prorated_start_date' => new Mongodloid_Date($this->deactivation),
 			'end' => $this->cycle->end(),
 			'prorated_end_date' =>  new Mongodloid_Date($this->cycle->end()),
 			'prorated_end' => $endProration,
-			'is_upfront' => true);
+			'is_upfront' => true
+		);
+
+		if ($this->shouldAddOriginalCurrency()) {
+			$ret['original_currency'] = [
+				'aprice' => $price['orig_price'],
+				'currency' => $this->defaultCurrency,
+			];
+		}
+
+		return $ret;
 	}
 }
