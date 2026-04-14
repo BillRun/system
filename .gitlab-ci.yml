@@ -71,6 +71,7 @@ codecept:
 
 build:
   stage: build
+  tags: [new_docker_runner]
   image: docker:20.10.16
   services:
     - docker:dind
@@ -83,6 +84,7 @@ build:
 
 push:
   stage: build
+  tags: [new_docker_runner]
   image: docker:20.10.16
   services:
     - docker:dind
