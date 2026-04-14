@@ -61,7 +61,6 @@ class accountSubscribersIPCest
         //add params.call_to_same_account 
         $feilds = $I->getSettings('rates', [])['details']['fields'];
         $feilds[] = [
-            "select_list" => false,
             "display" => true,
             "searchable" => false,
             "editable" => true,
@@ -71,8 +70,7 @@ class accountSubscribersIPCest
             "default_value" => false,
             "title" => "Call to same account",
             "mandatory" => false,
-            "type" => "boolean",
-            "select_options" => ""
+            "type" => "boolean"
         ];
         $I->setSettings('rates.fields', $feilds);
 

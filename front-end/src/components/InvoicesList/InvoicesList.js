@@ -81,7 +81,7 @@ class InvoicesList extends Component {
   }
 
   onCreateImmediateInvoice = () => {
-    this.props.router.push('/immediate-invoice');
+    this.props.router.push('/immediate-invoice-charge');
   }
 
   fetchItems = () => {

@@ -30,6 +30,7 @@ use function is_array;
 use function is_bool;
 use function is_object;
 use function is_string;
+use function MongoDB\is_document;
 use function MongoDB\is_first_key_operator;
 use function MongoDB\is_pipeline;
 use function MongoDB\is_write_concern_acknowledged;
@@ -46,14 +47,11 @@ use function MongoDB\server_supports_feature;
  */
 class Update implements Executable, Explainable
 {
-    /** @var integer */
-    private static $wireVersionForHint = 8;
+    private const WIRE_VERSION_FOR_HINT = 8;
 
-    /** @var string */
-    private $databaseName;
+    private string $databaseName;
 
-    /** @var string */
-    private $collectionName;
+    private string $collectionName;
 
     /** @var array|object */
     private $filter;
@@ -61,8 +59,7 @@ class Update implements Executable, Explainable
     /** @var array|object */
     private $update;
 
-    /** @var array */
-    private $options;
+    private array $options;
 
     /**
      * Constructs a update command.
@@ -114,8 +111,8 @@ class Update implements Executable, Explainable
      */
     public function __construct(string $databaseName, string $collectionName, $filter, $update, array $options = [])
     {
-        if (! is_array($filter) && ! is_object($filter)) {
-            throw InvalidArgumentException::invalidType('$filter', $filter, 'array or object');
+        if (! is_document($filter)) {
+            throw InvalidArgumentException::expectedDocumentType('$filter', $filter);
         }
 
         if (! is_array($update) && ! is_object($update)) {
@@ -135,8 +132,8 @@ class Update implements Executable, Explainable
             throw InvalidArgumentException::invalidType('"bypassDocumentValidation" option', $options['bypassDocumentValidation'], 'boolean');
         }
 
-        if (isset($options['collation']) && ! is_array($options['collation']) && ! is_object($options['collation'])) {
-            throw InvalidArgumentException::invalidType('"collation" option', $options['collation'], 'array or object');
+        if (isset($options['collation']) && ! is_document($options['collation'])) {
+            throw InvalidArgumentException::expectedDocumentType('"collation" option', $options['collation']);
         }
 
         if (isset($options['hint']) && ! is_string($options['hint']) && ! is_array($options['hint']) && ! is_object($options['hint'])) {
@@ -148,7 +145,7 @@ class Update implements Executable, Explainable
         }
 
         if ($options['multi'] && ! is_first_key_operator($update) && ! is_pipeline($update)) {
-            throw new InvalidArgumentException('"multi" option cannot be true if $update is a replacement document');
+            throw new InvalidArgumentException('"multi" option cannot be true unless $update has update operator(s) or non-empty pipeline');
         }
 
         if (isset($options['session']) && ! $options['session'] instanceof Session) {
@@ -163,8 +160,8 @@ class Update implements Executable, Explainable
             throw InvalidArgumentException::invalidType('"writeConcern" option', $options['writeConcern'], WriteConcern::class);
         }
 
-        if (isset($options['let']) && ! is_array($options['let']) && ! is_object($options['let'])) {
-            throw InvalidArgumentException::invalidType('"let" option', $options['let'], 'array or object');
+        if (isset($options['let']) && ! is_document($options['let'])) {
+            throw InvalidArgumentException::expectedDocumentType('"let" option', $options['let']);
         }
 
         if (isset($options['bypassDocumentValidation']) && ! $options['bypassDocumentValidation']) {
@@ -196,7 +193,7 @@ class Update implements Executable, Explainable
          * unacknowledged write concern on an unsupported server. */
         if (
             isset($this->options['writeConcern']) && ! is_write_concern_acknowledged($this->options['writeConcern']) &&
-            isset($this->options['hint']) && ! server_supports_feature($server, self::$wireVersionForHint)
+            isset($this->options['hint']) && ! server_supports_feature($server, self::WIRE_VERSION_FOR_HINT)
         ) {
             throw UnsupportedException::hintNotSupported();
         }
@@ -220,16 +217,12 @@ class Update implements Executable, Explainable
      * @see Explainable::getCommandDocument()
      * @return array
      */
-    public function getCommandDocument(Server $server)
+    public function getCommandDocument()
     {
         $cmd = ['update' => $this->collectionName, 'updates' => [['q' => $this->filter, 'u' => $this->update] + $this->createUpdateOptions()]];
 
         if (isset($this->options['bypassDocumentValidation'])) {
             $cmd['bypassDocumentValidation'] = $this->options['bypassDocumentValidation'];
-        }
-
-        if (isset($this->options['writeConcern'])) {
-            $cmd['writeConcern'] = $this->options['writeConcern'];
         }
 
         return $cmd;

@@ -23,6 +23,7 @@ import {
   buildPageTitle,
   toImmutableList,
   getFieldName,
+  getServiceType,
   plansOrServicesToSelectOptions,
 } from '@/common/Util';
 
@@ -77,9 +78,9 @@ class Subscription extends Component {
   }
 
   initService = (serviceName) => {
-    const { subscription: originSubscription } = this.props;
+    const { subscription: originSubscription, allServices } = this.props;
     const { subscription } = this.state;
-    const type = this.getServiceType(serviceName);
+    const type = getServiceType(allServices.find(option => option.get('name', '') === serviceName));
     const from = getItemDateValue(subscription, 'from').format('YYYY-MM-DD');
     const to = getItemDateValue(subscription, 'to').format('YYYY-MM-DD');
     const newService = Immutable.Map({ name: serviceName, from, to });
@@ -305,7 +306,7 @@ class Subscription extends Component {
   }
 
   updateServicesDates = (subscription, newFrom = null) => {
-    const { subscription: originSubscription } = this.props;
+    const { subscription: originSubscription, allServices } = this.props;
     const originServices = originSubscription.get('services', Immutable.List()) || Immutable.List();
     // const services = subscription.get('services', Immutable.List()) || Immutable.List();
     const from = newFrom || getItemDateValue(subscription, 'from').toISOString();
@@ -315,7 +316,7 @@ class Subscription extends Component {
         return Immutable.List();
       }
       return services.map((service) => {
-        const serviceType = this.getServiceType(service); // 'normal', 'quantitative', 'balance_period'
+        const serviceType = getServiceType(allServices.find(option => option.get('name', '') === service.get('name', '')));
         const existingService = originServices.find(originService => originService.getIn(['ui_flags', 'serviceId'], '') === service.getIn(['ui_flags', 'serviceId'], ''));
         const newService = service.getIn(['ui_flags', 'serviceId'], '') === '';
 
@@ -351,22 +352,6 @@ class Subscription extends Component {
 
   removeSubscriptionField = (path, value) => {
     this.setState(prevState => ({ subscription: prevState.subscription.deleteIn(path, value) }));
-  }
-
-  getServiceType = (service) => {
-    const { allServices } = this.props;
-    const serviceName = (Immutable.Map.isMap(service)) ? service.get('name', '') : service;
-    const serviceOption = allServices.find(option => option.get('name', '') === serviceName);
-    if (!serviceOption) {
-      return null;
-    }
-    if (serviceOption.get('quantitative', false)) {
-      return 'quantitative';
-    }
-    if (serviceOption.get('balance_period', 'default') !== 'default') {
-      return 'balance_period';
-    }
-    return 'normal';
   }
 
   getAvailablePlans = () => {

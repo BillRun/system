@@ -110,13 +110,13 @@ const mapDispatchToProps = (dispatch, props) => ({
         return false;
       }
       const rates = newItem.get('rates', '');
-      if ((typeof rates === 'string' || rates instanceof String) && rates.length == 0) {
+      if ((typeof rates === 'string' || rates instanceof String) && rates.length === 0) {
         dispatch(setFormModalError('rates_regex', 'Regex of product key is required'));
         return false;
-      } else if (Immutable.List.isList(rates) && rates.size == 0) {
+      } else if (Immutable.List.isList(rates) && rates.size === 0) {
         dispatch(setFormModalError('rates_select', 'At least one product is required'));
         return false;
-      } else if (Array.isArray(rates) && rates.length == 0) {
+      } else if (Array.isArray(rates) && rates.length === 0) {
         dispatch(setFormModalError('rates_select', 'At least one product is required'));
         return false;
       }
@@ -145,13 +145,13 @@ const mapDispatchToProps = (dispatch, props) => ({
     const group_key = item.get('group_key', '');
     const onOk = (updatedItem) => {
       const rates = updatedItem.get('rates', '');
-      if ((typeof rates === 'string' || rates instanceof String) && rates.length == 0) {
+      if ((typeof rates === 'string' || rates instanceof String) && rates.length === 0) {
         dispatch(setFormModalError('rates_regex', 'Regex of product key is required'));
         return false;
-      } else if (Immutable.List.isList(rates) && rates.size == 0) {
+      } else if (Immutable.List.isList(rates) && rates.size === 0) {
         dispatch(setFormModalError('rates_select', 'At least one product is required'));
         return false;
-      } else if (Array.isArray(rates) && rates.length == 0) {
+      } else if (Array.isArray(rates) && rates.length === 0) {
         dispatch(setFormModalError('rates_select', 'At least one product is required'));
         return false;
       }

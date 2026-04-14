@@ -5,6 +5,8 @@ use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Current;
 
 class TestHelper extends \Codeception\Module {
     protected $tester;
+    protected $defaultConfigTimezone = null;
+    protected $defaultSystemTimezone = null;
     /**
      * Verify records in collection (warp to Codeception method seeInCollection)
      * 
@@ -22,7 +24,7 @@ class TestHelper extends \Codeception\Module {
      * @return \MongoDB\BSON\UTCDateTime The current time in milliseconds since the Unix epoch.
      */
     public static function CurrentTime(){
-       return  new \MongoDb\BSON\UTCDateTime(time() * 1000);
+       return  new \MongoDB\BSON\UTCDateTime(time() * 1000);
     }
     /**
      * Convert a string date to MongoDB UTCDateTime format
@@ -95,6 +97,85 @@ class TestHelper extends \Codeception\Module {
         
         $this->getModule('MongoDb')->seeInCollection($collection, $processedCriteria);
     }
-    
-}
 
+    public function overrideConfigValue($key, $value)
+    {
+        $config = \Billrun_Factory::db()->configCollection();
+		$data = $config->query()
+			->cursor()
+			->sort(array('urt'=> -1, '_id' => -1))
+			->limit(1)
+			->current()
+			->getRawData();
+		unset($data['_id']);
+		\Billrun_Util::setIn($data, $key,$value);
+        $data['urt'] = new \MongoDB\BSON\UTCDateTime();
+		$config->insert($data);
+		\Billrun_Config::getInstance()->loadDbConfig();
+    }
+
+    public function setTimezone($timezone)
+    {
+        if (empty($timezone)) {
+            return;
+        }
+        // Load config so we can store original values and override timezone.
+        \Billrun_Factory::config();
+        if ($this->defaultConfigTimezone === null) {
+            $this->defaultConfigTimezone = $this->getCurrentConfigTimezone();
+        }
+        if ($this->defaultSystemTimezone === null) {
+            $this->defaultSystemTimezone = date_default_timezone_get();
+        }
+
+        $currentConfigTimezone = $this->getCurrentConfigTimezone();
+        if ($currentConfigTimezone !== $timezone) {
+            $this->overrideConfigValue('billrun.timezone', [
+                'v' => $timezone,
+                't' => 'Timezone',
+            ]);
+        }
+
+        if (date_default_timezone_get() !== $timezone) {
+            date_default_timezone_set($timezone);
+        }
+    }
+
+    public function restoreTimezone()
+    {
+        \Billrun_Factory::config();
+
+        if (!empty($this->defaultConfigTimezone)) {
+            $currentConfigTimezone = $this->getCurrentConfigTimezone();
+            if ($currentConfigTimezone !== $this->defaultConfigTimezone) {
+                $this->overrideConfigValue('billrun.timezone', [
+                    'v' => $this->defaultConfigTimezone,
+                    't' => 'Timezone',
+                ]);
+            }
+        }
+
+        if (!empty($this->defaultSystemTimezone) && date_default_timezone_get() !== $this->defaultSystemTimezone) {
+            date_default_timezone_set($this->defaultSystemTimezone);
+        }
+
+        $this->defaultConfigTimezone = null;
+        $this->defaultSystemTimezone = null;
+    }
+
+    protected function getCurrentConfigTimezone()
+    {
+        $timezone = \Billrun_Factory::config()->getConfigValue('billrun.timezone');
+        if (is_array($timezone) && isset($timezone['v'])) {
+            return $timezone['v'];
+        }
+
+        $timezoneV = \Billrun_Factory::config()->getConfigValue('billrun.timezone.v');
+        if (!empty($timezoneV)) {
+            return $timezoneV;
+        }
+
+        return $timezone;
+    }
+
+}

@@ -127,11 +127,15 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		if ($this->row['sid'] == 0 && $this->row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
 			$this->plan = null;
 		} else {
+			$isRealtime = isset($this->row['realtime']) ? $this->row['realtime'] : false;
 			$planSettings = array(
 				'name' => $this->row['plan'],
 				'time' => $this->row['urt']->sec,
+				'disable_cache_plan' => $isRealtime
 			);
+			Billrun_Factory::log()->log("CustomerPricing - loading plan '{$this->row['plan']}'", Zend_Log::DEBUG);
 			$this->plan = Billrun_Factory::plan($planSettings);
+			Billrun_Factory::log()->log("CustomerPricing - finished loading plan '{$this->row['plan']}'", Zend_Log::DEBUG);
 		}
 		$this->services = [];
 		$this->servicesUsed = array();
@@ -589,6 +593,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @todo remove backward compatibility of service as string (should be only array)
 	 */
 	protected function loadSubscriberServices($services, $time) {
+		Billrun_Factory::log()->log("CustomerPricing - loading all services for subscribers", Zend_Log::DEBUG);
 		$ret = array();
 		$servicesIds = [];
 		foreach ($services as $service) {
@@ -600,7 +605,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				'disableCache' => true,
 				'plan_included' => isset($service['plan_included']) ? $service['plan_included'] : false,
 			);
-			
+
+			$isRealtime = isset($this->row['realtime']) ? $this->row['realtime'] : false;
+			if ($isRealtime) {
+				$serviceSettings['disable_service_cache'] = true;
+			}
+
 			if (isset($service['from']->sec)) {
 				$serviceSettings['service_start_date'] = $service['from']->sec;
 			}
@@ -633,7 +643,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		ksort($ret);
 		ksort($servicesIds);
 		$this->servicesIds = array_values($servicesIds);
-
+		Billrun_Factory::log()->log("CustomerPricing - finished loading all services for subscribers", Zend_Log::DEBUG);
 		return array_values($ret); // array of service objects
 	}
 	

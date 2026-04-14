@@ -40,7 +40,7 @@ export default class ProductSearch extends Component {
       .map(option => ({
         value: option.key,
         label: `${option.key} (${option.description})`,
-        play: option.play,
+        ...option,
       }));
       this.setState({ rates: options });
     })

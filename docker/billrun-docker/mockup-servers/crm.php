@@ -9,10 +9,10 @@
  */
 $rawBody = file_get_contents('php://input');
 $payload = json_decode($rawBody, true);
-
+$folderPath = getFolderPath($path);
 $aid = extractAid($payload);
 $sid = extractSid($payload);
-$data = loadAidData($aid);
+$data = loadAidData($aid, $folderPath);
 
 if (preg_match('/\/gad/', $_SERVER["REQUEST_URI"])) {
 	$response = filterAccountsOnly($data);
@@ -24,6 +24,30 @@ if (preg_match('/\/gad/', $_SERVER["REQUEST_URI"])) {
 	echo $data;
 } else {
 	// unsupported endpoint
+}
+
+function getFolderPath($path){
+	$pluginName = extractPlugin($path);
+	if(isset($pluginName)){
+		$folderPath = "crm_data/plugins/{$pluginName}";
+	}else{
+		$folderPath = "crm_data";
+	}
+	if (is_dir($folderPath) && is_readable($folderPath)) {
+		return $folderPath;
+	}
+	return null;
+}
+
+function extractPlugin($path) {
+	$parts = explode('/', trim($path, '/'));
+	if(count($parts)== 3){
+		// $parts[0] is 'crm'
+		// $parts[1] is your plugin
+		$plugin = $parts[1] ?? null;
+		return $plugin;
+	}
+	return null;
 }
 
 /**
@@ -110,17 +134,23 @@ function extractSid($payload) {
  * Load the CRM fixture for the given aid.
  * Returns an empty string when aid is missing or file unreadable.
  */
-function loadAidData($aid) {
+function loadAidData($aid, $folderPath = null) {
 	if ($aid === null) {
 		return '';
+	}
+	if(isset($folderPath)){
+		$filePath = "{$folderPath}/{$aid}.json";
+		if (is_readable($filePath)) {
+			return file_get_contents($filePath, true);
+		}
 	}
 
 	$filePath = "crm_data/{$aid}.json";
 	if (!is_readable($filePath)) {
-		return '';
+		return file_get_contents($filePath, true);
 	}
 
-	return file_get_contents($filePath, true);
+	return '';
 }
 
 /**

@@ -21,6 +21,7 @@ import Range from './types/Range';
 import Percentage from './types/Percentage';
 import Json from './types/Json';
 import Password from './types/Password';
+import ApiButton from './types/ApiButton';
 import OAuth2 from './types/OAuth2';
 
 
@@ -97,6 +98,8 @@ class Field extends PureComponent {
         return (<Json {...inputProps} />);
       case 'password':
         return (<Password {...inputProps} />);
+      case 'apiButton':
+        return (<ApiButton {...inputProps} />);
       case 'oauth2':
         return (<OAuth2 {...inputProps} />);
       default:

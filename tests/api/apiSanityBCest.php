@@ -43,7 +43,7 @@ class apiSanityBCest
     public function testCreateService(ApiTester $I)
     {
 
-        $I->generateService(['name' => 'TEST_SERVICE'.time()]);
+        $I->generateService(['name' => 'TEST_SERVICE'.time()], true);
         $this->serviceDetails = json_decode($I->grabResponse(), true)['entity'];
         $I->seeResponseIsJson();
         $I->seeResponseContains('{"status":1');

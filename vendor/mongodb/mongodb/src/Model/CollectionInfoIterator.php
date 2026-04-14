@@ -25,8 +25,8 @@ use ReturnTypeWillChange;
  *
  * This iterator is used for enumerating collections in a database.
  *
- * @api
  * @see \MongoDB\Database::listCollections()
+ * @template-extends Iterator<int, CollectionInfo>
  */
 interface CollectionInfoIterator extends Iterator
 {

@@ -27,17 +27,14 @@ use MongoDB\Model\CollectionInfoIterator;
 /**
  * Operation for the listCollections command.
  *
- * @api
  * @see \MongoDB\Database::listCollections()
  * @see https://mongodb.com/docs/manual/reference/command/listCollections/
  */
 class ListCollections implements Executable
 {
-    /** @var string */
-    private $databaseName;
+    private string $databaseName;
 
-    /** @var ListCollectionsCommand */
-    private $listCollections;
+    private ListCollectionsCommand $listCollections;
 
     /**
      * Constructs a listCollections command.

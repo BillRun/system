@@ -1,4 +1,4 @@
-import { apiBillRun, apiBillRunSuccessHandler, apiBillRunErrorHandler } from '../common/Api';
+import { apiBillRun, apiBillRunSuccessHandler, apiBillRunErrorHandler, buildRequestUrl } from '../common/Api';
 import {
   fetchUserByIdQuery,
   getUserLoginQuery,
@@ -6,6 +6,8 @@ import {
   getUserLogoutQuery,
   sendResetMailQuery,
   changePasswordQuery,
+  getAuthOptionsQuery,
+  getExternalLoginQuery
 } from '../common/ApiQueries';
 import { clearAppStorage } from './settingsActions';
 import { startProgressIndicator, finishProgressIndicator } from './progressIndicatorActions';
@@ -68,7 +70,7 @@ export const userCheckLogin = () => (dispatch) => {
       dispatch(finishProgressIndicator());
       return success;
     })
-    .catch((error) => { // eslint-disable-line no-unused-vars
+    .catch((error) => { 
       dispatch(logoutSuccess());
       dispatch(finishProgressIndicator());
       return error;
@@ -76,8 +78,16 @@ export const userCheckLogin = () => (dispatch) => {
 };
 
 
-export const userDoLogin = (username, password) => (dispatch) => {
-  const query = getUserLoginQuery(username, password);
+export const userDoLogin = (username, password, protocol = 'Internal', provider = null) => (dispatch) => {
+  if (protocol !== 'Internal') {
+    const returnTo = window.location.href;
+    const query = getExternalLoginQuery(protocol, returnTo, provider);
+    const fullRedirectUrl = buildRequestUrl(query);
+    window.location.href = fullRedirectUrl;
+    return Promise.resolve();
+  }
+  const query = getUserLoginQuery(username, password, protocol);
+  
   dispatch(startProgressIndicator());
   dispatch(clearLoginError());
   return apiBillRun(query)
@@ -86,7 +96,7 @@ export const userDoLogin = (username, password) => (dispatch) => {
       dispatch(finishProgressIndicator());
       return success;
     })
-    .catch((error) => { // eslint-disable-line no-unused-vars
+    .catch((error) => {
       const message = 'Incorrect username or password, please try again.';
       dispatch(loginError(message));
       dispatch(finishProgressIndicator());
@@ -94,8 +104,14 @@ export const userDoLogin = (username, password) => (dispatch) => {
     });
 };
 
-export const userDoLogout = () => (dispatch) => {
-  const query = getUserLogoutQuery();
+export const getAuthOptions = () => (dispatch) => {
+  const query = getAuthOptionsQuery();
+  return apiBillRun(query);
+};
+
+export const userDoLogout = () => (dispatch, getState) => {
+  const protocol = getState().user.get('protocol') || 'Internal';
+  const query = getUserLogoutQuery(protocol);
   dispatch(startProgressIndicator());
   return apiBillRun(query)
     .then((success) => {

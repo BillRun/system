@@ -10,4 +10,5 @@ modules:
     enabled:
         # add a framework module here
         - \Helper\Functional
+        - \Helper\Aggregate
     step_decorators: ~        

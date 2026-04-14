@@ -1,3 +1,4 @@
+# 
 # Docker configuration
 
 ## Description
@@ -33,3 +34,7 @@ Stop the stack and delete docker created volumes
     ```bash
     docker-compose -f docker-compose-php74.yml down -v
     ```
+
+# Credits
+
+Initial Docker setup authored by Jean-Blaise Rey (Netplus CH)

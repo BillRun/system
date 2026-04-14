@@ -8,6 +8,7 @@ const User = Immutable.Record({
   roles: ['guest'],
   error: '',
   lastLogin: null,
+  protocol: 'Internal',
 });
 
 export default function (state = new User(), action) {
@@ -18,6 +19,7 @@ export default function (state = new User(), action) {
         roles: action.data.permissions,
         name: action.data.user,
         lastLogin: (action.data.last_login) ? moment(action.data.last_login) : null,
+        protocol: action.data.protocol || 'Internal',
       });
 
     case LOGOUT:

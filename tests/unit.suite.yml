@@ -9,6 +9,7 @@ modules:
  #       - Asserts
  #       - \Helper\Unit
          - \Helper\BillRun\Mockups\PaymentGateway
+         - \Helper\Aggregate
          - MongoDb:
               dsn: "mongodb://mongodb:27017/billing_container"
               user: ""

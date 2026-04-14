@@ -43,8 +43,9 @@ class ClearcacheAction extends ApiAction {
 		$subscriber = Billrun_Factory::subscriber();
 		if($subscriber->getType() == 'external') {
 			$id = $query[$subscriber->getCachingEntityIdKey()];
-
-			return $subscriber->cleanExternalCache($id);
+			$res1 = $subscriber->cleanExternalCache(intval($id));
+			$res2 = $subscriber->cleanExternalCache($id);//support also string values
+			return $res1 || $res2;			
 		}
 		return FALSE;
 	}
@@ -54,7 +55,9 @@ class ClearcacheAction extends ApiAction {
 		$account = Billrun_Factory::account();
 		if($account->getType() == 'external') {
 			$id = $query[$account->getCachingEntityIdKey()];
-			return $account->cleanExternalCache($id);
+			$res1 = $account->cleanExternalCache(intval($id));
+			$res2 =$account->cleanExternalCache($id);//support also string values
+			return $res1 || $res2;
 		}
 		return FALSE;
 	}

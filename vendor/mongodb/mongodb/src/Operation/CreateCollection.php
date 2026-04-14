@@ -28,9 +28,9 @@ use function current;
 use function is_array;
 use function is_bool;
 use function is_integer;
-use function is_object;
 use function is_string;
-use function sprintf;
+use function MongoDB\is_document;
+use function MongoDB\is_pipeline;
 use function trigger_error;
 
 use const E_USER_DEPRECATED;
@@ -38,7 +38,6 @@ use const E_USER_DEPRECATED;
 /**
  * Operation for the create command.
  *
- * @api
  * @see \MongoDB\Database::createCollection()
  * @see https://mongodb.com/docs/manual/reference/command/create/
  */
@@ -47,14 +46,11 @@ class CreateCollection implements Executable
     public const USE_POWER_OF_2_SIZES = 1;
     public const NO_PADDING = 2;
 
-    /** @var string */
-    private $databaseName;
+    private string $databaseName;
 
-    /** @var string */
-    private $collectionName;
+    private string $collectionName;
 
-    /** @var array */
-    private $options = [];
+    private array $options = [];
 
     /**
      * Constructs a create command.
@@ -87,7 +83,8 @@ class CreateCollection implements Executable
      *
      *  * collation (document): Collation specification.
      *
-     *  * encryptedFields (document): CSFLE specification.
+     *  * encryptedFields (document): Configuration for encrypted fields.
+     *    See: https://www.mongodb.com/docs/manual/core/queryable-encryption/fundamentals/encrypt-and-query/
      *
      *  * expireAfterSeconds: The TTL for documents in time series collections.
      *
@@ -152,20 +149,20 @@ class CreateCollection implements Executable
             throw InvalidArgumentException::invalidType('"capped" option', $options['capped'], 'boolean');
         }
 
-        if (isset($options['changeStreamPreAndPostImages']) && ! is_array($options['changeStreamPreAndPostImages']) && ! is_object($options['changeStreamPreAndPostImages'])) {
-            throw InvalidArgumentException::invalidType('"changeStreamPreAndPostImages" option', $options['changeStreamPreAndPostImages'], 'array or object');
+        if (isset($options['changeStreamPreAndPostImages']) && ! is_document($options['changeStreamPreAndPostImages'])) {
+            throw InvalidArgumentException::expectedDocumentType('"changeStreamPreAndPostImages" option', $options['changeStreamPreAndPostImages']);
         }
 
-        if (isset($options['clusteredIndex']) && ! is_array($options['clusteredIndex']) && ! is_object($options['clusteredIndex'])) {
-            throw InvalidArgumentException::invalidType('"clusteredIndex" option', $options['clusteredIndex'], 'array or object');
+        if (isset($options['clusteredIndex']) && ! is_document($options['clusteredIndex'])) {
+            throw InvalidArgumentException::expectedDocumentType('"clusteredIndex" option', $options['clusteredIndex']);
         }
 
-        if (isset($options['collation']) && ! is_array($options['collation']) && ! is_object($options['collation'])) {
-            throw InvalidArgumentException::invalidType('"collation" option', $options['collation'], 'array or object');
+        if (isset($options['collation']) && ! is_document($options['collation'])) {
+            throw InvalidArgumentException::expectedDocumentType('"collation" option', $options['collation']);
         }
 
-        if (isset($options['encryptedFields']) && ! is_array($options['encryptedFields']) && ! is_object($options['encryptedFields'])) {
-            throw InvalidArgumentException::invalidType('"encryptedFields" option', $options['encryptedFields'], 'array or object');
+        if (isset($options['encryptedFields']) && ! is_document($options['encryptedFields'])) {
+            throw InvalidArgumentException::expectedDocumentType('"encryptedFields" option', $options['encryptedFields']);
         }
 
         if (isset($options['expireAfterSeconds']) && ! is_integer($options['expireAfterSeconds'])) {
@@ -176,8 +173,8 @@ class CreateCollection implements Executable
             throw InvalidArgumentException::invalidType('"flags" option', $options['flags'], 'integer');
         }
 
-        if (isset($options['indexOptionDefaults']) && ! is_array($options['indexOptionDefaults']) && ! is_object($options['indexOptionDefaults'])) {
-            throw InvalidArgumentException::invalidType('"indexOptionDefaults" option', $options['indexOptionDefaults'], 'array or object');
+        if (isset($options['indexOptionDefaults']) && ! is_document($options['indexOptionDefaults'])) {
+            throw InvalidArgumentException::expectedDocumentType('"indexOptionDefaults" option', $options['indexOptionDefaults']);
         }
 
         if (isset($options['max']) && ! is_integer($options['max'])) {
@@ -200,12 +197,12 @@ class CreateCollection implements Executable
             throw InvalidArgumentException::invalidType('"size" option', $options['size'], 'integer');
         }
 
-        if (isset($options['storageEngine']) && ! is_array($options['storageEngine']) && ! is_object($options['storageEngine'])) {
-            throw InvalidArgumentException::invalidType('"storageEngine" option', $options['storageEngine'], 'array or object');
+        if (isset($options['storageEngine']) && ! is_document($options['storageEngine'])) {
+            throw InvalidArgumentException::expectedDocumentType('"storageEngine" option', $options['storageEngine']);
         }
 
-        if (isset($options['timeseries']) && ! is_array($options['timeseries']) && ! is_object($options['timeseries'])) {
-            throw InvalidArgumentException::invalidType('"timeseries" option', $options['timeseries'], ['array', 'object']);
+        if (isset($options['timeseries']) && ! is_document($options['timeseries'])) {
+            throw InvalidArgumentException::expectedDocumentType('"timeseries" option', $options['timeseries']);
         }
 
         if (isset($options['typeMap']) && ! is_array($options['typeMap'])) {
@@ -220,8 +217,8 @@ class CreateCollection implements Executable
             throw InvalidArgumentException::invalidType('"validationLevel" option', $options['validationLevel'], 'string');
         }
 
-        if (isset($options['validator']) && ! is_array($options['validator']) && ! is_object($options['validator'])) {
-            throw InvalidArgumentException::invalidType('"validator" option', $options['validator'], 'array or object');
+        if (isset($options['validator']) && ! is_document($options['validator'])) {
+            throw InvalidArgumentException::expectedDocumentType('"validator" option', $options['validator']);
         }
 
         if (isset($options['viewOn']) && ! is_string($options['viewOn'])) {
@@ -240,20 +237,8 @@ class CreateCollection implements Executable
             trigger_error('The "autoIndexId" option is deprecated and will be removed in a future release', E_USER_DEPRECATED);
         }
 
-        if (isset($options['pipeline'])) {
-            $expectedIndex = 0;
-
-            foreach ($options['pipeline'] as $i => $operation) {
-                if ($i !== $expectedIndex) {
-                    throw new InvalidArgumentException(sprintf('The "pipeline" option is not a list (unexpected index: "%s")', $i));
-                }
-
-                if (! is_array($operation) && ! is_object($operation)) {
-                    throw InvalidArgumentException::invalidType(sprintf('$options["pipeline"][%d]', $i), $operation, 'array or object');
-                }
-
-                $expectedIndex += 1;
-            }
+        if (isset($options['pipeline']) && ! is_pipeline($options['pipeline'], true /* allowEmpty */)) {
+            throw new InvalidArgumentException('"pipeline" option is not a valid aggregation pipeline');
         }
 
         $this->databaseName = $databaseName;

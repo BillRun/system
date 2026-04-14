@@ -14,7 +14,6 @@ import {
   getList,
   pushToList,
 } from './listActions';
-import moment from 'moment';
 
 export const getSuggestionRates = eventRatesKeys => dispatch =>
   dispatch(pushToList('suggestions_products', getProductsByKeysQuery(eventRatesKeys.toArray(), { key: 1, rates: 1 })));
@@ -57,26 +56,6 @@ export const rebalanceSuggestion = (suggestion) => (dispatch) => {
       return dispatch(apiBillRunSuccessHandler(success, 'Rebalance request sent'));
     })
     .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error rebalancing customer')));
-}
-
-const buildQueryParams = (suggestion, type, aprice_field) => {
-  const mult = (type === 'charge' ? 1 : (type === 'refund' ? -1 : 0));
-  let params = [
-    { aid : suggestion.get('aid', '')},
-    { sid : suggestion.get('sid', '')},
-    { aprice : mult * suggestion.get(aprice_field, '')},
-    { usagev : 1},
-    { credit_time: moment(suggestion.get('to', suggestion.get('max_urt_line', ''))).subtract(1, 'second').toISOString() },
-    { label: `"${suggestion.get('invoice_label', '') ? suggestion.get('invoice_label', '') : suggestion.get('description', '')}" - correction`}
-  ];
-
-  //In the future more retroactive changes will be supported (for now only rate).   
-  if(suggestion.get('recalculation_type', '') === 'rates'){
-    params = [...params,
-      { rate: suggestion.get('key', '') },
-    ];
-  }
-  return params;
 }
 
 export const creditSuggestion = (suggestion) => (dispatch) => {

@@ -64,7 +64,7 @@ const Charging = ({
             removeCharges();
             onClearCharge();
         }
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         loadCharges(listSize);

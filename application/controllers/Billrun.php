@@ -238,6 +238,7 @@ class BillrunController extends ApiController {
 		$params['mode'] = $request->get('charge_mode');
 		$params['min_invoice_date'] = $request->get('min_invoice_date');
 		$params['exclude_accounts'] = $request->get('exclude_accounts');
+		$params['uf'] = json_decode($request->get('uf'), true);
 		if (!$this->validateParams($params)) {
 			throw new Exception("One or more of the parameters of the 'charge' command is not valid");
 		}
@@ -565,6 +566,8 @@ class BillrunController extends ApiController {
 					if (!is_null($value) && !in_array(trim($value, '"'), $array)) {
 						return false;
 					}
+					break;
+				case 'uf':
 					break;
 				default:
 					return false;

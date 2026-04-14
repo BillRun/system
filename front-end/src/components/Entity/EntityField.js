@@ -199,7 +199,7 @@ class EntityField extends Component {
     return (
       <InputGroup>
         {input}
-        <InputGroup.Button>
+        <InputGroup.Button className="field-group-remove-button">
           <Button onClick={this.onClickRemoveInput}>
             <i
               className="fa fa-fw fa-trash-o danger-red"

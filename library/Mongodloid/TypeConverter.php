@@ -49,10 +49,11 @@ class Mongodloid_TypeConverter
 				return new Mongodloid_Binary($value);
 			case $value instanceof MongoDB\Model\BSONDocument:
 			case $value instanceof MongoDB\Model\BSONArray:
-				return array_map(
-					['self', 'toMongodloid'],
-					$value->getArrayCopy()
-				);
+				$result = [];
+				foreach ($value as $key => $item) {
+					$result[$key] = self::toMongodloid($item);
+				}
+				return $result;
 			default:
 				return $value;
 		}

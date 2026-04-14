@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
                 libssl-dev pkg-config openssl \
                 libmemcached-dev \
     && pecl install yaf-3.1.4 \
-    && pecl install mongodb-1.15.3 \
+    && pecl install mongodb-1.19.4 \
     && pecl install xdebug-3.1.6 \
     && pecl install memcached \
     && pecl install redis-6.2.0 \

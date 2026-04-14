@@ -40,6 +40,8 @@ use function is_integer;
 use function is_object;
 use function is_string;
 use function MongoDB\create_field_path_type_map;
+use function MongoDB\document_to_array;
+use function MongoDB\is_document;
 use function MongoDB\is_mapreduce_output_inline;
 use function trigger_error;
 
@@ -48,29 +50,24 @@ use const E_USER_DEPRECATED;
 /**
  * Operation for the mapReduce command.
  *
- * @api
  * @see \MongoDB\Collection::mapReduce()
  * @see https://mongodb.com/docs/manual/reference/command/mapReduce/
+ * @psalm-import-type MapReduceCallable from MapReduceResult
  */
 class MapReduce implements Executable
 {
-    /** @var string */
-    private $databaseName;
+    private string $databaseName;
 
-    /** @var string */
-    private $collectionName;
+    private string $collectionName;
 
-    /** @var JavascriptInterface */
-    private $map;
+    private JavascriptInterface $map;
 
-    /** @var JavascriptInterface */
-    private $reduce;
+    private JavascriptInterface $reduce;
 
     /** @var array|object|string */
     private $out;
 
-    /** @var array */
-    private $options;
+    private array $options;
 
     /**
      * Constructs a mapReduce command.
@@ -169,8 +166,8 @@ class MapReduce implements Executable
             throw InvalidArgumentException::invalidType('"bypassDocumentValidation" option', $options['bypassDocumentValidation'], 'boolean');
         }
 
-        if (isset($options['collation']) && ! is_array($options['collation']) && ! is_object($options['collation'])) {
-            throw InvalidArgumentException::invalidType('"collation" option', $options['collation'], 'array or object');
+        if (isset($options['collation']) && ! is_document($options['collation'])) {
+            throw InvalidArgumentException::expectedDocumentType('"collation" option', $options['collation']);
         }
 
         if (isset($options['finalize']) && ! $options['finalize'] instanceof JavascriptInterface) {
@@ -189,8 +186,8 @@ class MapReduce implements Executable
             throw InvalidArgumentException::invalidType('"maxTimeMS" option', $options['maxTimeMS'], 'integer');
         }
 
-        if (isset($options['query']) && ! is_array($options['query']) && ! is_object($options['query'])) {
-            throw InvalidArgumentException::invalidType('"query" option', $options['query'], 'array or object');
+        if (isset($options['query']) && ! is_document($options['query'])) {
+            throw InvalidArgumentException::expectedDocumentType('"query" option', $options['query']);
         }
 
         if (isset($options['readConcern']) && ! $options['readConcern'] instanceof ReadConcern) {
@@ -201,16 +198,16 @@ class MapReduce implements Executable
             throw InvalidArgumentException::invalidType('"readPreference" option', $options['readPreference'], ReadPreference::class);
         }
 
-        if (isset($options['scope']) && ! is_array($options['scope']) && ! is_object($options['scope'])) {
-            throw InvalidArgumentException::invalidType('"scope" option', $options['scope'], 'array or object');
+        if (isset($options['scope']) && ! is_document($options['scope'])) {
+            throw InvalidArgumentException::expectedDocumentType('"scope" option', $options['scope']);
         }
 
         if (isset($options['session']) && ! $options['session'] instanceof Session) {
             throw InvalidArgumentException::invalidType('"session" option', $options['session'], Session::class);
         }
 
-        if (isset($options['sort']) && ! is_array($options['sort']) && ! is_object($options['sort'])) {
-            throw InvalidArgumentException::invalidType('"sort" option', $options['sort'], 'array or object');
+        if (isset($options['sort']) && ! is_document($options['sort'])) {
+            throw InvalidArgumentException::expectedDocumentType('"sort" option', $options['sort']);
         }
 
         if (isset($options['typeMap']) && ! is_array($options['typeMap'])) {
@@ -309,16 +306,14 @@ class MapReduce implements Executable
         return new MapReduceResult($getIterator, $result);
     }
 
-    /**
-     * @param string|array|object $out
-     */
+    /** @param string|array|object $out */
     private function checkOutDeprecations($out): void
     {
         if (is_string($out)) {
             return;
         }
 
-        $out = (array) $out;
+        $out = document_to_array($out);
 
         if (isset($out['nonAtomic']) && ! $out['nonAtomic']) {
             @trigger_error('Specifying false for "out.nonAtomic" is deprecated.', E_USER_DEPRECATED);
@@ -359,6 +354,7 @@ class MapReduce implements Executable
     /**
      * Creates a callable for MapReduceResult::getIterator().
      *
+     * @psalm-return MapReduceCallable
      * @throws UnexpectedValueException if the command response was malformed
      */
     private function createGetIteratorCallable(stdClass $result, Server $server): callable
@@ -367,9 +363,7 @@ class MapReduce implements Executable
         if (isset($result->results) && is_array($result->results)) {
             $results = $result->results;
 
-            return function () use ($results) {
-                return new ArrayIterator($results);
-            };
+            return fn () => new ArrayIterator($results);
         }
 
         if (isset($result->result) && (is_string($result->result) || is_object($result->result))) {
@@ -379,9 +373,7 @@ class MapReduce implements Executable
                 ? new Find($this->databaseName, $result->result, [], $options)
                 : new Find($result->result->db, $result->result->collection, [], $options);
 
-            return function () use ($find, $server) {
-                return $find->execute($server);
-            };
+            return fn () => $find->execute($server);
         }
 
         throw new UnexpectedValueException('mapReduce command did not return inline results or an output collection');
