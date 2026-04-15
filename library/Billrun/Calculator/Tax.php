@@ -41,6 +41,14 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$current = $row instanceof Mongodloid_Entity ? $row->getRawData() : $row;
+
+		// DEPRECATED: tax is now applied inside the pricing calculator.
+		// If tax_data and final_charge are already set, skip to avoid double-taxing.
+		if (isset($current['tax_data']) && isset($current['final_charge'])) {
+			Billrun_Factory::log("Line {$current['stamp']} already tax-calculated by pricing calculator, skipping tax calculator.", Zend_Log::DEBUG);
+			return $row;
+		}
+
 		if (!$this->isLineTaxable($current)) {
 			$newData = $this->updateNonTaxableRowTaxInformation($current);
 		} else {
