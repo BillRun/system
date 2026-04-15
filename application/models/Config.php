@@ -96,7 +96,12 @@ class ConfigModel {
 				$data[$option] = 0;
 			}
 		}
-		return $this->collection->insert($updatedData);
+		$result = $this->collection->insert($updatedData);
+		$cache = Billrun_Factory::cache();
+		if ($cache) {
+			$cache->remove('db_config', 'config');
+		}
+		return $result;
 	}
 
 	public function getFromConfig($category, $data) {
@@ -386,6 +391,10 @@ class ConfigModel {
 			$ret = $this->collection->insert($updatedData);
 			$saveResult = !empty($ret['ok']);
 			if ($saveResult) {
+				$cache = Billrun_Factory::cache();
+				if ($cache) {
+					$cache->remove('db_config', 'config');
+				}
 				// Reload timezone.
 				Billrun_Config::getInstance()->refresh();
 				if ($category === 'shared_secret') {

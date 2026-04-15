@@ -241,6 +241,16 @@ class Billrun_Config {
 	
 	public function loadDbConfig() {
 		try {
+			$cache = Billrun_Factory::cache();
+			if ($cache) {
+				$cachedConfig = $cache->get('db_config', 'config');
+				if (!empty($cachedConfig)) {
+					$this->config = new Yaf_Config_Simple($cachedConfig);
+					$this->setTenantTimezone($cachedConfig);
+					return true;
+				}
+			}
+
 			$configColl = Billrun_Factory::db()->configCollection();
 			if ($configColl) {
 				$dbCursor = $configColl->query()
@@ -255,8 +265,14 @@ class Billrun_Config {
 				unset($dbConfig['_id']);
 				$iniConfig = $this->config->toArray();
 				$this->translateComplex($dbConfig);
-				$this->config = new Yaf_Config_Simple(self::mergeConfigs($iniConfig, $dbConfig));
-				
+				$mergedConfig = self::mergeConfigs($iniConfig, $dbConfig);
+				$this->config = new Yaf_Config_Simple($mergedConfig);
+
+				if ($cache) {
+					$configTtl = $this->getConfigValue('cache.config_ttl', 3600);
+					$cache->set('db_config', $mergedConfig, 'config', $configTtl);
+				}
+
 				// Set the timezone from the config.
 				$this->setTenantTimezone($dbConfig);
 			}
