@@ -325,9 +325,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	public function updateBalance($rate, $plan, $usage_type, $volume) {
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $plan);
 
-		// Compute final_charge (aprice + tax) for balance cost_with_tax.
-		// Runs before afterCalculatorUpdateRow trigger — same timing as balance.cost.
-		// Both balance.cost and balance.cost_with_tax are therefore consistent with each other.
 		$aprice = $pricingData[$this->pricingField] ?? null;
 		if (is_numeric($aprice)) {
 			$taxCalc = $this->calculator->getTaxCalculator();
