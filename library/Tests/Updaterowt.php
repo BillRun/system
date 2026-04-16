@@ -634,6 +634,17 @@ class Tests_Updaterowt extends UnitTestCase {
 	public function testUpdateRow() {
 		$this->rows =  $this->getTestCases($this->tests());
 		$this->rows  = $this->skip_tests($this->rows ,'row.stamp');
+		$request = new Yaf_Request_Http;
+        $this->test_cases_to_run = $request->get('tests');
+        if ($this->test_cases_to_run) {
+            $this->test_cases_to_run = explode(',', $this->test_cases_to_run);
+            foreach ($this->rows as $case) {
+                if (in_array($case['row']['stamp'], $this->test_cases_to_run)){
+                    $this->cases[] = $case;
+                }
+             }
+             $this->rows =  $this->cases;
+        }
 		//running test
 	//	$this->rows = $this->tests();
 		foreach ($this->rows as $key => $row) {
@@ -751,7 +762,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	 * @param type $balances
 	 */
 	public function RecorsiveTest($balances) {
-		$resetFildes = ['cost', 'count', 'usagev'];
+		$resetFildes = ['cost', 'count', 'usagev', 'cost_with_tax'];
 		foreach ($balances as $key => $value) {
 			if (is_array($value) && !empty($value)) {
 				$this->message .= " $key . ";
