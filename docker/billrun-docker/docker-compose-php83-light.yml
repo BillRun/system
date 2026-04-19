@@ -6,7 +6,7 @@ services:
         image: nginx:latest
         container_name: billrun-nginx
         ports:
-            - "8083:80"
+            - "8074:80"
         restart: always
         volumes:
             - ./../..:/billrun:ro

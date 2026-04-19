@@ -5,7 +5,7 @@ services:
         image: nginx:latest
         container_name: billrun-nginx
         ports:
-            - "8082:80"
+            - "8074:80"
         restart: always
         volumes:
             - ./../..:/billrun:ro
@@ -24,7 +24,7 @@ services:
         restart: always
         environment:
         - "APPLICATION_ENV=container"
-        - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9091 mode=develop"
+        - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
         - "BR_MDB_HOST=billrun-mongodb:27017"
         - "BR_MDB_DBNAME=billing_container"
         volumes:
@@ -32,11 +32,11 @@ services:
             - ./../../cache:/billrun/cache
         command: sh -c "cp -r /var/www/html/vendor/* /billrun/vendor/&& php-fpm "
     mongodb:
-        image: mongo:6.0
+        image: mongo:7.0
         container_name: billrun-mongodb
         restart: always
         volumes:
-            - ./data/mongodb6:/data/db/
+            - ./data/mongodb7:/data/db/
             - ./../..:/billrun:ro
             - ./init-mongosh.sh:/docker-entrypoint-initdb.d/init-mongosh.sh
         ports:
