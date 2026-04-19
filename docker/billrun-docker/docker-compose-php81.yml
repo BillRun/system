@@ -5,7 +5,7 @@ services:
         image: nginx:latest
         container_name: billrun-nginx
         ports:
-            - "8081:80"
+            - "8074:80"
         restart: always
         volumes:
             - ./../..:/billrun:ro
@@ -24,13 +24,13 @@ services:
         restart: always
         environment:
         - "APPLICATION_ENV=container"
-        - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9092 mode=develop"
+        - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
         volumes:
             - ./../..:/billrun
             - ./../../cache:/billrun/cache
         command: sh -c "cp -r /var/www/html/vendor/* /billrun/vendor/&& php-fpm "
     mongodb:
-        image: mongo:5.0
+        image: mongo:6.0
         container_name: billrun-mongodb
         restart: always
         volumes:

@@ -316,6 +316,9 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 			'default' => function($type, $data) {
 				return (is_array($data) ? '' : implode('', unpack($type, $data)));
 			},
+            'parsed_user_location_info' =>  function($data) {
+				return  $this->parseUserLocationInfo($data);
+			},
 			'multi_ip' => function($fieldData) {
 
 				return is_array($fieldData) ? array_map(function($data) {
@@ -327,6 +330,40 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		$this->parsingMethods = array_merge($this->parsingMethods, $newParsingMethods);
 	}
 
+
+    /**
+     * Parses user location information from a binary data string.
+     * This method utilizes PHP's `unpack` function to extract structured data. The `$types` array,
+     * which can be overriden with the 'user_location_parsing_rules'  configuration that
+     * defines the `unpack` format codes, offsets, and half-byte mappings for each location type.
+     *
+     * @param string $data The binary data string containing the user location information.
+     * @return array|[] An associative array containing the parsed location details,
+     *                     or [] if the location type is unknown or parsing fails.
+     */
+    protected function parseUserLocationInfo( $data ) {
+        $types =$this->ggsnConfig['user_location_parsing_rules'] ?? [ ];
+        $type=unpack('C', $data);
+        $hexData=unpack('h*', $data);
+        $userInfoMap = !empty($type[1]) ? $types[$type[1]] : [];
+        $res = [];
+        if(!empty($userInfoMap['type'])) {
+            $res['type'] = $userInfoMap['type'];
+            unset($userInfoMap['type']);
+        }
+        foreach( $userInfoMap as $name => $mapping) {
+            $infoArr = $unpacked =  unpack($mapping['type'], $data, $mapping['offset'] );
+            if(!empty($mapping['half_byte_mapping'])) {
+                $infoArr = [];
+	            foreach($mapping['half_byte_mapping'] as $src => $dst ) {
+  	              $infoArr[$dst] = $unpacked[$src];
+            	}
+            } 
+            ksort($infoArr);
+            $res[$name] = implode('',$infoArr);
+        }
+        return $res;
+    }
 }
 
 ?>

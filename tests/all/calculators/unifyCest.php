@@ -13,7 +13,9 @@ class unifyCest
             Billrun_Config::getInstance()->loadDbConfig();
             // $this->createServices($I);
         }
+        $I->cleanDB();
     }
+
     protected function setUP(ApiTester $I, $inputProcessor = null)
     {
         $inputProcessor = $inputProcessor ?: $this->inputProcessor;
@@ -29,6 +31,7 @@ class unifyCest
             ]
         ];
         $I->setSettings('usage_types', $type);
+        Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
     }
 
     //workaround for the issue with service instence (not update the service list in the 2nd process on the same run)
@@ -160,7 +163,7 @@ class unifyCest
                 "fields" => [
                     [
                         "match" => [
-                            "type" => "/^abc$/",
+                            "type" => "/^abc/",
                         ],
                         "update" => [
                             [
@@ -281,7 +284,6 @@ class unifyCest
             ]
         );
         $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-        Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
         $this->process(
             [
                 'type' => 'abc',
@@ -371,7 +373,6 @@ class unifyCest
             ]
         );
         $subscriber2 = json_decode($I->grabResponse(), true)['entity'];
-        Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
         //die();
         $this->process(
             [
@@ -421,6 +422,276 @@ class unifyCest
         ]));
     }
 
+    public function testUnifyWithRequiredMatch(ApiTester $I): void
+    {
+
+        $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
+            'from' => '2025-01-01',
+            "include" => [
+                "groups" => [
+                    "LOCAL_CALLS_5000" => [
+                        "account_shared" => false,
+                        "account_pool" => false,
+                        "rates" => [
+                            "CALL"
+                        ],
+                        "value" => 300000,
+                        "usage_types" => [
+                            "call" => [
+                                "unit" => "minutes"
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ], [
+            'key' => 'CALL',
+            "rates" => [
+                "call" => [
+                    "BASE" => [
+                        "rate" => [
+                            [
+                                "from" => 0,
+                                "to" => "UNLIMITED",
+                                "interval" => 1,
+                                "price" => 1,
+                                "uom_display" => [
+                                    "range" => "seconds",
+                                    "interval" => "seconds"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+        ]);
+        $I->generateSubscriber(
+            [
+                'from' => '2025-01-01',
+                'firstname' => '0531234567',
+                'aid' => $this->accountDetails['aid'],
+                'plan' => $this->planDetails['name'],
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+            ]
+        );
+        $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
+        $customProcessor = $this->inputProcessor;
+        $customProcessor['file_type'] = 'abc3';
+        $customProcessor['unify']['unification_fields']['required']['match'] = ["sid"=> "/\\d+/"];
 
 
+        // 2. Apply it directly via the Tester
+        $I->setSettings('file_types', $customProcessor);
+        Billrun_Config::getInstance()->loadDbConfig();
+        $this->process(
+            [
+                'type' => 'abc3',
+                'path' => 'tests/all/calculators/test_files/test1.csv'
+            ]
+        );
+
+        $I->assertEquals(1, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'usaget' => 'call',
+            'usagev' => 112,
+            'aprice' => 0,
+            'arategroups.0.left' => 299888
+        ]);
+
+        $I->assertEquals(3, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+    }
+
+    public function testUnifyWithRequiredMatchNestedField(ApiTester $I): void
+    {
+        $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
+            'from' => '2025-01-01',
+            "include" => [
+                "groups" => [
+                    "LOCAL_CALLS_5000" => [
+                        "account_shared" => false,
+                        "account_pool" => false,
+                        "rates" => [
+                            "CALL"
+                        ],
+                        "value" => 300000,
+                        "usage_types" => [
+                            "call" => [
+                                "unit" => "minutes"
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ], [
+            'key' => 'CALL',
+            "rates" => [
+                "call" => [
+                    "BASE" => [
+                        "rate" => [
+                            [
+                                "from" => 0,
+                                "to" => "UNLIMITED",
+                                "interval" => 1,
+                                "price" => 1,
+                                "uom_display" => [
+                                    "range" => "seconds",
+                                    "interval" => "seconds"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+        ]);
+        $I->generateSubscriber(
+            [
+                'from' => '2025-01-01',
+                'firstname' => '0531234567',
+                'aid' => $this->accountDetails['aid'],
+                'plan' => $this->planDetails['name'],
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+            ]
+        );
+        $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
+        $customProcessor = $this->inputProcessor;
+        $customProcessor['file_type'] = 'abc2';
+        $customProcessor['unify']['unification_fields']['required']['match'] = ["uf.firstname"=> "/^053\\d+/"]; 
+
+        // 2. Apply it directly via the Tester
+        $I->setSettings('file_types', $customProcessor);
+        Billrun_Config::getInstance()->loadDbConfig();
+        $this->process(
+            [
+                'type' => 'abc2',
+                'path' => 'tests/all/calculators/test_files/test1.csv'
+            ]
+        );
+
+        $I->assertEquals(1, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'usaget' => 'call',
+            'usagev' => 112,
+            'aprice' => 0,
+            'arategroups.0.left' => 299888
+        ]);
+
+        $I->assertEquals(3, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+    }
+
+    public function testUnifyWithRequiredNotMatchNestedField(ApiTester $I): void
+    {
+        $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
+            'from' => '2025-01-01',
+            "include" => [
+                "groups" => [
+                    "LOCAL_CALLS_5000" => [
+                        "account_shared" => false,
+                        "account_pool" => false,
+                        "rates" => [
+                            "CALL"
+                        ],
+                        "value" => 300000,
+                        "usage_types" => [
+                            "call" => [
+                                "unit" => "minutes"
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ], [
+            'key' => 'CALL',
+            "rates" => [
+                "call" => [
+                    "BASE" => [
+                        "rate" => [
+                            [
+                                "from" => 0,
+                                "to" => "UNLIMITED",
+                                "interval" => 1,
+                                "price" => 1,
+                                "uom_display" => [
+                                    "range" => "seconds",
+                                    "interval" => "seconds"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+        ]);
+        $I->generateSubscriber(
+            [
+                'from' => '2025-01-01',
+                'firstname' => '0531234567',
+                'aid' => $this->accountDetails['aid'],
+                'plan' => $this->planDetails['name'],
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+            ]
+        );
+        $subscriberDetails1 = json_decode($I->grabResponse(), true)['entity'];
+
+        $I->generateSubscriber(
+            [
+                'from' => '2025-01-01',
+                'firstname' => '0541234567',
+                'aid' => $this->accountDetails['aid'],
+                'plan' => $this->planDetails['name'],
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+            ]
+        );
+        $subscriberDetails2 = json_decode($I->grabResponse(), true)['entity'];
+
+        $customProcessor = $this->inputProcessor;
+        $customProcessor['file_type'] = 'abc1';
+        $customProcessor['unify']['unification_fields']['required']['match'] = ["uf.firstname"=> "/^054\\d+/"]; 
+        $customProcessor['unify']['unification_fields']['fields'][0]['match'] = ["uf.firstname"=> "/^054\\d+/"]; 
+
+        // 2. Apply it directly via the Tester
+        $I->setSettings('file_types', $customProcessor);
+        Billrun_Config::getInstance()->loadDbConfig();
+        $this->process(
+            [
+                'type' => 'abc1',
+                'path' => 'tests/all/calculators/test_files/test3.csv'
+            ]
+        );
+
+        $I->assertEquals(3, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriberDetails1['sid']
+        ]));
+         $I->assertEquals(1, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriberDetails2['sid'],
+            "lcount" => 3
+        ]));
+
+        $I->assertEquals(0, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriberDetails1['sid']
+        ]));
+        $I->assertEquals(3, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriberDetails2['sid']
+        ]));
+    }
 }
