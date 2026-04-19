@@ -13,7 +13,9 @@
  */
 abstract class Billrun_PaymentGateway_Connection {
 
-	use Billrun_Traits_FileActions;
+	use Billrun_Traits_FileActions {
+		getFileLogData as traitGetFileLogData;
+	}
 
 	protected $host;
 	protected $username;
@@ -29,6 +31,8 @@ abstract class Billrun_PaymentGateway_Connection {
 	protected $localDir;
 	protected $delete_received;
 	protected $received_extension;
+	protected $cpgName;
+	protected $cpf_type;
 
 	public function __construct($options) {
 		$this->host = $options['host'];
@@ -50,7 +54,8 @@ abstract class Billrun_PaymentGateway_Connection {
 			$this->limit = $options['limit'];
 		}
 		$this->fileType = isset($options['file_type']) ? $options['file_type'] : null;
-		$this->cpgName = isset($options['cpg_name']) ? $options['cpg_name'] : null;
+		$this->cpgName = isset($options['payment_gateway']) ? $options['payment_gateway'] : null;
+		$this->cpf_type = isset($options['cpf_type']) ? $options['cpf_type'] : null;
 	}
 
 	/**
@@ -111,5 +116,29 @@ abstract class Billrun_PaymentGateway_Connection {
 	
 	public function getWorkspace() {
 		return $this->workspace;
+	}
+
+
+	public function getCustomPaymentGatewayFields() {
+		return [
+			'cpg_name' => [!empty($this->cpgName) ? $this->cpgName : ""],
+			'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""],
+			'pg_file_type' => $this->fileType
+		];
+	}
+
+	/**
+	 * build the structure that will be used as a base to log the file in the DB, and generate the file uniqe stamp.
+	 * @param type $filename
+	 * @param type $type
+	 * @param type $more_fields
+	 * @return type
+	 */
+	protected function getFileLogData($filename, $type, $more_fields = array()) {
+		$log_data = $this->traitGetFileLogData($filename, $type, $more_fields);
+		$cpg_fields = $this->getCustomPaymentGatewayFields();
+		$cpg_fields["type"] = "custom_payment_gateway";
+		$cpg_fields["payments_file_type"] = $this->cpf_type;
+		return array_merge($log_data, $cpg_fields);
 	}
 }
