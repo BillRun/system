@@ -7,7 +7,7 @@ import { List, Map, fromJS } from "immutable";
 import moment from "moment";
 import uuid from 'uuid';
 import pluralize from "pluralize";
-import { titleCase } from "change-case";
+import { titleCase, pascalCase } from "change-case";
 import { Form, FormGroup, ControlLabel, Col, Panel } from "react-bootstrap";
 import { WithTooltip, CreateButton } from "@/components/Elements";
 import EntityList from "@/components/EntityList";
@@ -374,8 +374,9 @@ class PaymentsFiles extends Component {
   onUploadTransactionsFileClickOK = (paymentFile) => {
     const { paymentGateway, fileType } = this.props;
     const file = paymentFile.get("file", null);
+    const normalizedPaymentGateway = pascalCase(paymentGateway);
     return this.props
-      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'payments'))
+      .dispatch(sendTransactionsReceiveFile(normalizedPaymentGateway, fileType, file, 'payments'))
       .then(this.afterSuccessUploadTransactionsFile)
       .catch((error) => Promise.reject());
   };
@@ -452,7 +453,7 @@ class PaymentsFiles extends Component {
               api="get"
               showRevisionBy={false}
               baseFilter={{
-                source: paymentGateway + 'Payments',
+                source: pascalCase(paymentGateway) + 'Payments',
                 cpg_file_type: {"$in" : [fileType]},
               }}
               // filterFields={this.getFilterFields()}

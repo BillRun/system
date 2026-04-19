@@ -373,8 +373,9 @@ class ResponsePaymentFiles extends Component {
   onUploadTransactionsFileClickOK = (paymentFile) => {
     const { paymentGateway, fileType } = this.props;
     const file = paymentFile.get("file", null);
+    const normalizedPaymentGateway = pascalCase(paymentGateway);
     return this.props
-      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'transactions_response'))
+      .dispatch(sendTransactionsReceiveFile(normalizedPaymentGateway, fileType, file, 'transactions_response'))
       .then(this.afterSuccessUploadTransactionsFile)
       .catch((error) => Promise.reject());
   };
