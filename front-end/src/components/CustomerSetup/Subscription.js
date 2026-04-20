@@ -459,7 +459,7 @@ class Subscription extends Component {
     ), (
       <FormGroup key="includedServices">
         <Col as={ControlLabel} sm={3} lg={2}>Included Services</Col>
-        <Col sm={7}>
+        <Col sm={8} lg={9}>
           <Field value={this.getPlanIncludedServices(plan)} editable={false} />
         </Col>
       </FormGroup>
@@ -538,7 +538,7 @@ class Subscription extends Component {
 
           <hr />
 
-          <Form>
+          <Form className="form-horizontal">
             { this.renderSystemFields(allowEdit) }
             <SubscriptionServicesDetails
               subscriptionServices={services}

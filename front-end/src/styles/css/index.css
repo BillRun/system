@@ -296,6 +296,28 @@ fieldset[disabled] .btn {
   background-color: transparent;
 }
 /* ─────────────────────────────────────────────────────────────────────────── */
+
+/* User menu in top navbar (Admin: About/Logout) — force legacy BS3 look */
+#nav-user-menu + .dropdown-menu.dropdown-user .dropdown-item,
+.navbar-top-links #nav-user-menu + .dropdown-menu .dropdown-item {
+  color: #008cba !important;
+  padding: 3px 20px !important;
+  line-height: 1.42857143 !important;
+  font-size: 14px !important;
+  border-radius: 0 !important;
+}
+
+#nav-user-menu + .dropdown-menu.dropdown-user .dropdown-item:hover,
+#nav-user-menu + .dropdown-menu.dropdown-user .dropdown-item:focus,
+#nav-user-menu + .dropdown-menu.dropdown-user .dropdown-item.active,
+#nav-user-menu + .dropdown-menu.dropdown-user .dropdown-item:active,
+.navbar-top-links #nav-user-menu + .dropdown-menu .dropdown-item:hover,
+.navbar-top-links #nav-user-menu + .dropdown-menu .dropdown-item:focus {
+  color: #008cba !important;
+  background-color: #eeeeee !important;
+  text-decoration: none !important;
+  font-weight: bold !important;
+}
 .tooltip{
   z-index: 2001;
 }

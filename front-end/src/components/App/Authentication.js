@@ -45,6 +45,12 @@ export default function (ComposedComponent) {
         return (<ComposedComponent {...composedComponentProps} location={location} />);
       }
       const pageRoute = location.pathname.substr(1);
+      const isChargingRoute = pageRoute === 'charging' || pageRoute.startsWith('charging/');
+      const isChargingPlansRoute = pageRoute === 'charging_plans' || pageRoute.startsWith('charging_plans/');
+      // Local premium-like access override for charging pages.
+      if (isChargingRoute || isChargingPlansRoute) {
+        return (<ComposedComponent {...composedComponentProps} location={location} />);
+      }
       const perms = permissions.getIn([pageRoute, action], Immutable.List());
       // If no permissions required -> return true
       if (perms.size === 0) {

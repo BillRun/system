@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 import Immutable from 'immutable';
 import classNames from 'classnames';
-import { NavDropdown, Dropdown, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { NavDropdown, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { toggleSideBar } from '@/actions/guiStateActions/menuActions';
 import { userDoLogout } from '@/actions/userActions';
 import MenuItem from './MenuItem';
@@ -261,7 +261,12 @@ class Navigator extends Component {
 
         <ul className={topNavClassName}>
           <OnBoardingNavigation eventKeyBase={2} />
-          <NavDropdown id="nav-user-menu" title={<span><i className="fa fa-user fa-fw" />{ userName }</span>}>
+          <NavDropdown
+            id="nav-user-menu"
+            align="end"
+            menuClassName="dropdown-user legacy-user-dropdown-menu"
+            title={<span><i className="fa fa-user fa-fw" />{ userName }</span>}
+          >
             <NavDropdown.Item eventKey={1.1} href="#about" active={router.isActive('about')}>
               <i className="fa fa-question-circle fa-fw" /> About
             </NavDropdown.Item>

@@ -490,9 +490,11 @@ class RunCycle extends Component {
                   <Col sm={6} lg={6}>
                     {cycleStatus === '' 
                       ? <Field value="-" editable={false} />
-                      : <Label variant={this.getStatusStyle(cycleStatus)} className="non-editable-field">
+                      : (
+                        <span className={`label label-${this.getStatusStyle(cycleStatus)} non-editable-field`}>
                           {cycleStatus.toUpperCase()}
-                        </Label>
+                        </span>
+                      )
                     }
                   </Col>
                 </FormGroup>

@@ -36,9 +36,13 @@ const Action = (props) => {
   const effectiveActionStyle = typeof actionStyle === 'undefined' && iconLinkTypes.includes(type)
     ? 'link'
     : actionStyle;
-  const effectiveActionSize = typeof actionSize === 'undefined' && iconLinkTypes.includes(type)
+  const shouldUseXsIconButton = typeof actionSize === 'undefined'
+    && iconLinkTypes.includes(type)
+    && effectiveActionStyle !== 'default';
+  const effectiveActionSize = shouldUseXsIconButton
     ? 'xsmall'
     : actionSize;
+  const mappedVariant = effectiveActionStyle === 'default' ? 'outline-secondary' : effectiveActionStyle;
 
   const showAction = useMemo(() => {
     if (typeof show === 'undefined') {
@@ -120,7 +124,7 @@ const Action = (props) => {
         onSelect={onSelect}
         onClick={onClickAction}
         disabled={!isEnable}
-        variant={effectiveActionStyle === 'default' ? undefined : effectiveActionStyle}
+        variant={mappedVariant}
         size={mapActionSize(effectiveActionSize)}
         className={actionClassName}
       >
@@ -139,7 +143,7 @@ const Action = (props) => {
           : (
             <Button
               onClick={onClickAction}
-              variant={effectiveActionStyle === 'default' ? undefined : effectiveActionStyle}
+              variant={mappedVariant}
               size={mapActionSize(effectiveActionSize)}
               className={actionClassName}
               disabled={!isEnable}
