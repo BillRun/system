@@ -306,7 +306,6 @@ export default class FieldsMapping extends Component {
   render() {
     const {
       separateTime,
-      separateTimeZone,
       usaget,
       unit,
       volumeType,

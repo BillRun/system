@@ -9,19 +9,26 @@ import { Form, Col, Button, Row } from 'react-bootstrap';
 import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import classNames from 'classnames';
+import Field from '@/components/Field';
 import Help from '@/components/Help';
-import OfflinePayment from '../Payments/OfflinePayment';
-import CyclesSelector from '../Cycle/CyclesSelector';
-import { EntityFields } from '../Entity';
-import Credit from '../Credit/Credit';
+import { EntityFields } from '@/components/Entity';
 import { ConfirmModal, Actions } from '@/components/Elements';
+import OfflinePayment from '@/components/Payments/OfflinePayment';
+import CyclesSelector from '@/components/Cycle/CyclesSelector';
+import Credit from '@/components/Credit/Credit';
+import SubscriptionServicesDetails from './SubscriptionElements/SubscriptionServicesDetails.js';
 import { currencySelector, paymentGatewaysSelector } from '@/selectors/settingsSelector';
 import { getSettings } from '@/actions/settingsActions';
 import { rebalanceAccount, getCollectionDebt } from '@/actions/customerActions';
 import { showConfirmModal } from '@/actions/guiStateActions/pageActions';
 import { buildRequestUrl } from '@/common/Api';
 import { getExpectedInvoiceQuery, getCyclesQuery } from '@/common/ApiQueries';
-import { getConfig } from '@/common/Util';
+import {
+  getConfig,
+  getItemDateValue,
+  getServiceType,
+  plansOrServicesToSelectOptions,
+} from '@/common/Util';
 import { getList, clearList } from '@/actions/listActions';
 import {
   updateEntityField,
@@ -32,6 +39,8 @@ class Customer extends Component {
   static propTypes = {
     dispatch: PropTypes.func.isRequired,
     customer: PropTypes.instanceOf(Immutable.Map),
+    originalCustomer: PropTypes.instanceOf(Immutable.Map),
+    allServices: PropTypes.instanceOf(Immutable.List),
     supportedGateways: PropTypes.instanceOf(Immutable.List),
     onChangePaymentGateway: PropTypes.func.isRequired,
     onChange: PropTypes.func.isRequired,
@@ -46,6 +55,8 @@ class Customer extends Component {
     action: 'create',
     currency: '',
     customer: Immutable.Map(),
+    originalCustomer: Immutable.Map(),
+    allServices: Immutable.List(),
     supportedGateways: Immutable.List(),
     payment_gateways: undefined,
     cycles: List(),
@@ -86,22 +97,38 @@ class Customer extends Component {
       });
   }
 
-  onRemovePaymentGateway = () => {
-    this.props.onChange(['payment_gateway', 'active'], Immutable.Map());
+  initService = (serviceName) => {
+    const { customer, originalCustomer, allServices } = this.props;
+    const type = getServiceType(allServices.find(option => option.get('name', '') === serviceName));
+    const tomorrow = moment().add(1, 'day').format('YYYY-MM-DD');
+    const to = getItemDateValue(customer, 'to').format('YYYY-MM-DD');
+    const newService = Immutable.Map({ name: serviceName, from: tomorrow, to });
+    const originServices = originalCustomer.get('services', Immutable.List()) || Immutable.List();
+    const existingService = originServices.find(originService => originService.get('name', '') === serviceName);
+
+    switch (type) {
+      case 'quantitative': {
+        return (existingService && existingService.get('quantity', '') === 1) ? existingService : newService.set('quantity', 1);
+      }
+      case 'balance_period': {
+        return newService.setIn(['ui_flags', 'balance_period'], true);
+      }
+      default: {
+        return newService;
+      }
+    }
   }
 
-  renderPaymentGatewayLabel = () => {
-    const { customer, supportedGateways } = this.props;
-    let customerPgName = customer.getIn(['payment_gateway', 'active', 'instance_name'], '');
-    if (!customerPgName) {
-      customerPgName = customer.getIn(['payment_gateway', 'active', 'name'], '');
+  checkSelectedCyclesStatus = () => {
+    const { selectedCyclesNames } = this.state;
+    const { cycles} = this.props;
+    const selectedCycles = selectedCyclesNames.split(',');
+    const selectedCyclesDetails = cycles.filter(cycle => selectedCycles.includes(cycle.get('billrun_key', ''))).map(selectedCycleDetails => selectedCycleDetails.get('cycle_status',''));
+    if (selectedCyclesDetails.includes('finished') || selectedCyclesDetails.includes('confirmed')|| selectedCyclesDetails.includes('to_rerun')){
+      this.renderConfirmMessageRebalanceClosedCycles();
+    } else {
+      this.onRebalanceConfirmationOk();
     }
-    const pg = supportedGateways.filter(item => customerPgName === item.get('name'));
-    return (!pg.isEmpty() && pg.get(0).get('image_url', ''))
-      ? <span>
-          <img src={`${getConfig(['env','serverApiUrl'], '')}/${pg.get(0).get('image_url', '')}`} height="30" alt={pg.get(0).get('title', customerPgName)} /> {pg.get(0).get('title', customerPgName)}
-        </span>
-      : customerPgName;
   }
 
   getPaymentGatewaysActions = () => {
@@ -132,6 +159,13 @@ class Customer extends Component {
     }]);
   }
 
+  getServiceStartMinDate = () => {
+    const { customer } = this.props;
+    const revisionFrom = getItemDateValue(customer, 'from');
+    const revisionCreationTime = getItemDateValue(customer, 'creation_time', revisionFrom);
+    return moment.max(revisionFrom, revisionCreationTime);
+  }
+
   onClickRemovePaymentGateway = (customer) => {
     const paymentGatewayName = customer.getIn(['payment_gateway', 'active', 'name'], 'payment gateway');
     const confirm = {
@@ -141,6 +175,110 @@ class Customer extends Component {
       labelOk: 'Remove',
     };
     this.props.dispatch(showConfirmModal(confirm));
+  }
+
+  onClickRebalance = () => {
+    this.setState({ showRebalanceConfirmation: true });
+  }
+
+  onRebalanceConfirmationClose = () => {
+    this.setState({ showRebalanceConfirmation: false, selectedCyclesNames: '' });
+  }
+
+  onRebalanceConfirmationOk = () => {
+    const { customer } = this.props;
+    const { selectedCyclesNames } = this.state;
+    this.props.dispatch(rebalanceAccount(customer.get('aid'), selectedCyclesNames));
+    this.onRebalanceConfirmationClose();
+  }
+
+  onClickOfflinePayment = () => {
+    this.setState({ showOfflinePayement: true });
+  }
+
+  onCloseOfflinePayment = () => {
+    this.setState({ showOfflinePayement: false });
+    this.initDebt();
+  }
+
+  onChangeSelectedCycle = (selectedCyclesNames) => {
+    this.setState({ selectedCyclesNames });
+  }
+
+  onChangeExpectedCycle = (expectedCyclesNames) => {
+    this.setState({ expectedCyclesNames });
+  }
+
+  onClickExpectedInvoice = () => {
+    const { customer } = this.props;
+    const { expectedCyclesNames } = this.state;
+    const query = getExpectedInvoiceQuery(customer.get('aid'), expectedCyclesNames);
+    window.open(buildRequestUrl(query));
+  }
+
+  onChangeServiceDetails = (index, key, value) => {
+    const path = Array.isArray(key) ? key : [key];
+    this.props.onChange(['services', index, ...path], value);
+  }
+
+  onChangeService = (services) => {
+    const { customer } = this.props;
+    if (!services.length) {
+      this.props.onChange(['services'], Immutable.List());
+      return;
+    }
+    const servicesNames = Immutable.Set(services.split(','));
+    const originServices = customer.get('services', Immutable.List()) || Immutable.List();
+    const originServicesNames = Immutable.Set(originServices.map(originService => originService.get('name', '')));
+
+    const addedServices = servicesNames.filter(item => !originServicesNames.has(item));
+    const removedServices = originServicesNames.filter(item => !servicesNames.has(item));
+
+    if (addedServices.size) {
+      addedServices.forEach((newServiceName) => { this.onAddService(newServiceName); });
+    }
+    if (removedServices.size) {
+      removedServices.forEach((removeService) => {
+        originServices.forEach((originService, index) => {
+          if (originService.get('name', '') === removeService) {
+            this.onRemoveService(index);
+          }
+        });
+      });
+    }
+  }
+
+  onRemoveService = (index) => {
+    const { customer } = this.props;
+    const services = customer.get('services', Immutable.List()) || Immutable.List();
+    const newServices = services.delete(index);
+    this.props.onChange(['services'], newServices);
+  }
+
+  onAddService = (name) => {
+    const { customer } = this.props;
+    const newService = this.initService(name);
+    const services = customer.get('services', Immutable.List()) || Immutable.List();
+    const newServices = services.push(newService);
+    this.props.onChange(['services'], newServices);
+  }
+
+  onRemovePaymentGateway = () => {
+    this.props.onChange(['payment_gateway', 'active'], Immutable.Map());
+  }
+
+  renderPaymentGatewayLabel = () => {
+    const { customer, supportedGateways } = this.props;
+    let customerPgName = customer.getIn(['payment_gateway', 'active', 'instance_name'], '');
+    if (!customerPgName) {
+      customerPgName = customer.getIn(['payment_gateway', 'active', 'name'], '');
+    }
+    const pg = supportedGateways.filter(item => customerPgName === item.get('name'));
+    return (!pg.isEmpty() && pg.get(0).get('image_url', ''))
+      ? <span>
+          <img src={`${getConfig(['env','serverApiUrl'], '')}/${pg.get(0).get('image_url', '')}`} height="30" alt={pg.get(0).get('title', customerPgName)} /> {pg.get(0).get('title', customerPgName)}
+        </span>
+      : customerPgName;
   }
 
   renderChangePaymentGateway = () => {
@@ -188,57 +326,6 @@ class Customer extends Component {
       return (<p className="danger-red">In collection from {fromDate}</p>);
     }
     return null;
-  }
-
-  onClickRebalance = () => {
-    this.setState({ showRebalanceConfirmation: true });
-  }
-
-  onRebalanceConfirmationClose = () => {
-    this.setState({ showRebalanceConfirmation: false, selectedCyclesNames: '' });
-  }
-
-  onRebalanceConfirmationOk = () => {
-    const { customer } = this.props;
-    const { selectedCyclesNames } = this.state;
-    this.props.dispatch(rebalanceAccount(customer.get('aid'), selectedCyclesNames));
-    this.onRebalanceConfirmationClose();
-  }
-
-  onClickOfflinePayment = () => {
-    this.setState({ showOfflinePayement: true });
-  }
-
-  onCloseOfflinePayment = () => {
-    this.setState({ showOfflinePayement: false });
-    this.initDebt();
-  }
-
-  onChangeSelectedCycle = (selectedCyclesNames) => {
-    this.setState({ selectedCyclesNames });
-  }
-
-  onChangeExpectedCycle = (expectedCyclesNames) => {
-    this.setState({ expectedCyclesNames });
-  }
-
-  onClickExpectedInvoice = () => {
-    const { customer } = this.props;
-    const { expectedCyclesNames } = this.state;
-    const query = getExpectedInvoiceQuery(customer.get('aid'), expectedCyclesNames);
-    window.open(buildRequestUrl(query));
-  }
-
-  checkSelectedCyclesStatus = () => {
-    const { selectedCyclesNames } = this.state;
-    const { cycles} = this.props;
-    const selectedCycles = selectedCyclesNames.split(',');
-    const selectedCyclesDetails = cycles.filter(cycle => selectedCycles.includes(cycle.get('billrun_key', ''))).map(selectedCycleDetails => selectedCycleDetails.get('cycle_status',''));
-    if (selectedCyclesDetails.includes('finished') || selectedCyclesDetails.includes('confirmed')|| selectedCyclesDetails.includes('to_rerun')){
-      this.renderConfirmMessageRebalanceClosedCycles();
-    } else {
-      this.onRebalanceConfirmationOk();
-    }
   }
 
   renderConfirmMessageRebalanceClosedCycles = () => {
@@ -376,11 +463,17 @@ class Customer extends Component {
 
 
   render() {
-    const { customer, action } = this.props;
+    const { customer, originalCustomer, action, allServices } = this.props;
     // in update mode wait for item before render edit screen
     if (action !== 'create' && typeof customer.getIn(['_id', '$id']) === 'undefined') {
       return (<div> <p>Loading...</p> </div>);
     }
+
+    const services = customer.get('services', Immutable.List()) || Immutable.List();
+    const servicesList = Immutable.Set(services.map(service => service.get('name', ''))).join(',');
+    const originServices = originalCustomer.get('services', Immutable.List());
+    const minStartDate = this.getServiceStartMinDate();
+    const servicesOptions = plansOrServicesToSelectOptions(allServices).toJS();
 
     return (
       <div className="Customer">
@@ -391,9 +484,35 @@ class Customer extends Component {
             onChangeField={this.props.onChange}
             onRemoveField={this.props.onRemoveField}
           />
+
+          <FormGroup key="services">
+            <Col componentClass={ControlLabel} sm={3} lg={2}>Services</Col>
+            <Col sm={8} lg={9}>
+              <Field
+                fieldType="select"
+                multi={true}
+                value={servicesList}
+                options={servicesOptions}
+                onChange={this.onChangeService}
+                clearable={false}
+                />
+            </Col>
+          </FormGroup>
+
+          <SubscriptionServicesDetails
+            subscriptionServices={services}
+            originSubscriptionServices={originServices}
+            servicesOptions={allServices}
+            minStartDate={minStartDate}
+            onChangeService={this.onChangeServiceDetails}
+            onRemoveService={this.onRemoveService}
+            onAddService={this.onAddService}
+          />
+
           { (action !== 'create') && this.renderChangePaymentGateway() }
           { (action !== 'create') && this.renderOfflinePaymentsButton() }
           { (action !== 'create') && this.renderDebt() }
+
         </Form>
         {(action !== 'create') &&
           <div>

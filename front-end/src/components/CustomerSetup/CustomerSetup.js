@@ -46,6 +46,7 @@ import { showSuccess, showAlert } from '@/actions/alertsActions';
 import {
   modeSelector,
   itemSelector,
+  itemSourceSelector,
   idSelector,
   tabSelector,
   messageSelector,
@@ -61,6 +62,7 @@ class CustomerSetup extends Component {
     aid: PropTypes.number,
     mode: PropTypes.string,
     customer: PropTypes.instanceOf(Immutable.Map),
+    originalCustomer: PropTypes.instanceOf(Immutable.Map),
     subscription: PropTypes.instanceOf(Immutable.Map),
     settings: PropTypes.instanceOf(Immutable.Map),
     plans: PropTypes.instanceOf(Immutable.List),
@@ -86,6 +88,7 @@ class CustomerSetup extends Component {
   static defaultProps = {
     activeTab: 1,
     customer: Immutable.Map(),
+    originalCustomer: Immutable.Map(),
     subscription: Immutable.Map(),
     settings: Immutable.Map(),
     gateways: Immutable.List(),
@@ -108,8 +111,8 @@ class CustomerSetup extends Component {
     } else {
       this.props.dispatch(getList('available_gateways', getPaymentGatewaysQuery()));
       this.props.dispatch(getList('available_plans', getPlansKeysQuery({ name: 1, play: 1, description: 1, 'include.services': 1 })));
-      this.props.dispatch(getList('available_services', getServicesKeysWithInfoQuery()));
     }
+    this.props.dispatch(getList('available_services', getServicesKeysWithInfoQuery()));
     if (allowancesEnabled) {
       this.props.dispatch(getList('available_subscriptions', getSubscriptionsWithAidQuery()));
       this.props.dispatch(getList('available_accounts', getAccountsQuery()));
@@ -266,6 +269,7 @@ class CustomerSetup extends Component {
   render() {
     const {
       customer,
+      originalCustomer,
       settings,
       plans,
       services,
@@ -299,6 +303,8 @@ class CustomerSetup extends Component {
                   <Panel style={{ borderTop: 'none' }}>
                     <Customer
                       customer={customer}
+                      originalCustomer={originalCustomer}
+                      allServices={services}
                       action={mode}
                       supportedGateways={gateways}
                       onChange={this.onChangeCustomerField}
@@ -391,6 +397,7 @@ class CustomerSetup extends Component {
 const mapStateToProps = (state, props) => ({
   itemId: idSelector(state, props, 'customer'),
   customer: itemSelector(state, props, 'customer'),
+  originalCustomer: itemSourceSelector(state, props, 'customer'),
   subscription: itemSelector(state, props, 'subscription'),
   mode: modeSelector(state, props, 'customer'),
   activeTab: tabSelector(state, props),

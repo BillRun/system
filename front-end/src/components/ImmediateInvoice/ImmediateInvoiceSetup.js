@@ -63,7 +63,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions = [], currency = '', immediateI
         // dispatch(clearImmediateInvoice());
       }
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isLinesValid = () => {
     const res = lines.reduce((acc, line, idx) => {

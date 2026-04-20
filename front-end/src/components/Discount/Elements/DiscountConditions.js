@@ -249,7 +249,12 @@ const DiscountConditions = ({
     label: getFieldName('add_sub_service_cond_add_action', 'discount'),
     showIcon: false,
     onClick: addServiceSubscriberConditionsGroup,
-  }], [addAccountConditions, addSubscriberConditions, addServiceSubscriberConditionsGroup, addServiceAccountConditionsGroup]);
+  }], [
+    addAccountConditions,
+    addSubscriberConditions,
+    addServiceSubscriberConditionsGroup,
+    addServiceAccountConditionsGroup
+  ]);
 
   const conditionAddActionsBtns = useMemo(() => [{
     type: 'add',
@@ -275,7 +280,12 @@ const DiscountConditions = ({
     actionSize: 'xsmall',
     actionStyle: 'primary',
     onClick: addServiceSubscriberConditionsGroup,
-  }], [addAccountConditions, addSubscriberConditions, addServiceSubscriberConditionsGroup, addServiceAccountConditionsGroup]);
+  }], [
+    addAccountConditions,
+    addSubscriberConditions,
+    addServiceSubscriberConditionsGroup,
+    addServiceAccountConditionsGroup
+  ]);
 
   const removeGroupHelpText = idx => `Remove conditions set ${idx + 1}`;
 
@@ -459,7 +469,13 @@ const DiscountConditions = ({
                 >
                   {!anyConditions.getIn(servicesAnyConditionsPath, Immutable.List()).isEmpty() && (
                     <DiscountCondition
-                      path={[...conditionsPath, idx, ...servicesAccountConditionsPath, anyIdx, ...servicesAnyConditionsPath]}
+                      path={[
+                        ...conditionsPath,
+                        idx,
+                        ...servicesAccountConditionsPath,
+                        anyIdx,
+                        ...servicesAnyConditionsPath,
+                      ]}
                       conditions={anyConditions.getIn(servicesAnyConditionsPath, Immutable.List())}
                       editable={editable}
                       fields={servicesConditionFields}
@@ -504,7 +520,13 @@ const DiscountConditions = ({
                 >
                   {!anyConditions.getIn(servicesAnyConditionsPath, Immutable.List()).isEmpty() && (
                     <DiscountCondition
-                      path={[...conditionsPath, idx, ...servicesSubscriberConditionsPath, anyIdx, ...servicesAnyConditionsPath]}
+                      path={[
+                        ...conditionsPath,
+                        idx,
+                        ...servicesSubscriberConditionsPath,
+                        anyIdx,
+                        ...servicesAnyConditionsPath
+                      ]}
                       conditions={anyConditions.getIn(servicesAnyConditionsPath, Immutable.List())}
                       editable={editable}
                       fields={servicesConditionFields}

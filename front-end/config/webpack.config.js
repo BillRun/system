@@ -270,6 +270,9 @@ module.exports = function(webpackEnv) {
         // Support React Native Web
         // https://www.smashingmagazine.com/2016/08/a-glimpse-into-the-future-with-react-native-for-web/
         'react-native': 'react-native-web',
+        // webpack 4 has issues with react-joyride ESM bundle (.mjs)
+        // and React interop; force CJS entry for compatibility.
+        'react-joyride$': path.resolve(paths.appNodeModules, 'react-joyride/dist/index.js'),
         '@': paths.appSrc
       },
       plugins: [
@@ -376,6 +379,11 @@ module.exports = function(webpackEnv) {
                     require.resolve('babel-preset-react-app/dependencies'),
                     { helpers: true },
                   ],
+                ],
+                plugins: [
+                  require.resolve('@babel/plugin-proposal-class-properties'),
+                  require.resolve('@babel/plugin-proposal-optional-chaining'),
+                  require.resolve('@babel/plugin-proposal-nullish-coalescing-operator'),
                 ],
                 cacheDirectory: true,
                 cacheCompression: isEnvProduction,

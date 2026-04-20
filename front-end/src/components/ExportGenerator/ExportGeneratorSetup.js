@@ -123,7 +123,14 @@ class ExportGeneratorSetup extends Component {
 
     switch (step.id) {
       case 'segmentation':
-        return (<Segmentation data={exportGenerator} onChange={this.onChangeValue} onRemove={this.onRemoveValue} mode={mode} />);
+        return (
+          <Segmentation
+            data={exportGenerator}
+            onChange={this.onChangeValue}
+            onRemove={this.onRemoveValue}
+            mode={mode}
+          />
+        );
       case 'filtration':
         return (<Filtration data={exportGenerator} onChange={this.onChangeValue} onRemove={this.onRemoveValue} />);
       case 'mapping':

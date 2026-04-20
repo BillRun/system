@@ -91,7 +91,11 @@ export default class SubscriptionServicesDetails extends Component {
     if (!service.hasIn(['ui_flags', 'serviceId'])) {
       return (<Badge>new</Badge>);
     }
-    const existingService = originSubscriptionServices.find(originService => originService.getIn(['ui_flags', 'serviceId'], '') === service.getIn(['ui_flags', 'serviceId'], ''));
+    const existingService = originSubscriptionServices.find(
+      originService => originService.getIn(['ui_flags', 'serviceId'], '') === service.getIn(['ui_flags', 'serviceId'], ''),
+      null,
+      Immutable.Map(),
+    );
     if (type === 'byPeriod' && !moment(existingService.get('from', '')).isSame(moment(service.get('from', '')), 'days')) {
       return (<Badge>updated</Badge>);
     }
