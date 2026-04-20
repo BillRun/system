@@ -470,8 +470,11 @@ class Mongodloid_Collection {
 	 * @return boolean TRUE on success, or FALSE otherwise.
 	 */
 	public function setReadPreference($readPreference, array $tags = array()) {
+		$strippedReadPreference = preg_replace('/^RP_/', '', $readPreference);
 		if (defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
 			$mode = constant('MongoDB\Driver\ReadPreference::' . $readPreference);
+		} else if (defined('MongoDB\Driver\ReadPreference::' . $strippedReadPreference)) {
+			$mode = constant('MongoDB\Driver\ReadPreference::' . $strippedReadPreference);
 		} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
 			$mode = $readPreference;
 		} else {
