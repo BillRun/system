@@ -119,6 +119,12 @@ class Customer extends Component {
     }
   }
 
+  createImmediateInvoice = () => {
+    const { customer } = this.props;
+    this.props.dispatch(updateEntityField('immediate-invoice', 'customer', customer));
+    this.props.router.push('/immediate-invoice');
+  }
+
   checkSelectedCyclesStatus = () => {
     const { selectedCyclesNames } = this.state;
     const { cycles} = this.props;
@@ -214,6 +220,14 @@ class Customer extends Component {
     const { expectedCyclesNames } = this.state;
     const query = getExpectedInvoiceQuery(customer.get('aid'), expectedCyclesNames);
     window.open(buildRequestUrl(query));
+  }
+
+  onShowCreditCharge = () => {
+    this.setState({ showCreditCharge: true });
+  }
+
+  onCloseCreditCharge = () => {
+    this.setState({ showCreditCharge: false });
   }
 
   onChangeServiceDetails = (index, key, value) => {
