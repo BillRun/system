@@ -111,7 +111,7 @@ class Mongodloid_Result {
     private static function extractError($result) {
         // MongoDB PHP library does not always expose error info in the write result object.
         // Usually, errors are thrown as exceptions. But if your result contains error info, add extraction here.
-        if (method_exists($result, 'getWriteErrors')) {
+        if (is_object($result) && method_exists($result, 'getWriteErrors')) {
             $errors = $result->getWriteErrors();
             if (!empty($errors)) {
                 $firstError = $errors[0];

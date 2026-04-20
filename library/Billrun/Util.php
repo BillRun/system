@@ -1524,6 +1524,9 @@ class Billrun_Util {
 	}
 
 	public static function isValidRegex($regex) {
+		if (!is_string($regex)) {
+			return false;
+		}
 		return !(@preg_match($regex, null) === false);
 	}
 
