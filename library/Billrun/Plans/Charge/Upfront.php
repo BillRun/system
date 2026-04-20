@@ -60,18 +60,11 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		$retCahrges = [];
 		foreach($cycles as $cycleData) {
 			$price = $this->getPriceForCycle($cycleData['cycle']);
-			$retCahrge = array_merge($this->getProrationData($this->price,$cycleData['cycle']),array(
+			$retCahrges[] = array_merge($this->getProrationData($this->price,$cycleData['cycle']),array(
 				'value'=> $price * $cycleData['fraction'] * $quantity,
 				'full_price' => floatval($price),
 				'split' => $cycleData['split'] ?? false
 				));
-			if ($this->shouldAddOriginalCurrency()) {
-				$retCahrge['original_currency'] = [
-					'aprice' => $price['orig_price'],
-					'currency' => $this->defaultCurrency,
-				];
-			}
-			$retCahrges[] = $retCahrge;
 
 		}
 		return empty($retCahrges) ? null :  $retCahrges;
