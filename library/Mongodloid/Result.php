@@ -15,8 +15,7 @@ class Mongodloid_Result {
 			case 'remove':
 				return self::buildRemoveResult($result);
 			case 'save':
-				$error = self::extractError($result);
-				return $error ? false : true;
+				return isset($result['err']) ? false : true;
 			case 'batchInsert':
 				return self::buildBatchInsertResult($result);
 			case 'insert':
