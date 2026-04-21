@@ -97,9 +97,11 @@ class ConfigModel {
 			}
 		}
 		$result = $this->collection->insert($updatedData);
-		$cache = Billrun_Factory::cache();
-		if ($cache) {
-			$cache->remove('db_config', 'config');
+		if (Billrun_Factory::config()->getConfigValue('cache.config.enabled', false)) {
+			$cache = Billrun_Factory::cache();
+			if ($cache) {
+				$cache->remove('db_config', 'config');
+			}
 		}
 		return $result;
 	}
@@ -391,9 +393,11 @@ class ConfigModel {
 			$ret = $this->collection->insert($updatedData);
 			$saveResult = !empty($ret['ok']);
 			if ($saveResult) {
-				$cache = Billrun_Factory::cache();
-				if ($cache) {
-					$cache->remove('db_config', 'config');
+				if (Billrun_Factory::config()->getConfigValue('cache.config.enabled', false)) {
+					$cache = Billrun_Factory::cache();
+					if ($cache) {
+						$cache->remove('db_config', 'config');
+					}
 				}
 				// Reload timezone.
 				Billrun_Config::getInstance()->refresh();

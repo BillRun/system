@@ -241,7 +241,8 @@ class Billrun_Config {
 	
 	public function loadDbConfig() {
 		try {
-			$cache = Billrun_Factory::cache();
+			$cacheEnabled = $this->getConfigValue('cache.config.enabled', false);
+			$cache = $cacheEnabled ? Billrun_Factory::cache() : null;
 			if ($cache) {
 				$cachedConfig = $cache->get('db_config', 'config');
 				if (!empty($cachedConfig)) {
@@ -269,7 +270,7 @@ class Billrun_Config {
 				$this->config = new Yaf_Config_Simple($mergedConfig);
 
 				if ($cache) {
-					$configTtl = $this->getConfigValue('cache.config_ttl', 3600);
+					$configTtl = $this->getConfigValue('cache.config.ttl', 600);
 					$cache->set('db_config', $mergedConfig, 'config', $configTtl);
 				}
 
