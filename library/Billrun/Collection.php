@@ -17,42 +17,47 @@ class Billrun_Collection extends Billrun_Base {
 
 
 	public function collect($aids = array(), $collectDir = '') {
-		$account = Billrun_Factory::account();
-		Billrun_Factory::log()->log("Pulling accounts that are subject to collection", Zend_Log::DEBUG);
-		$markedAsInCollection = $account->getInCollection($aids);
-		Billrun_Factory::log()->log("Processing accounts that are actually in collection", Zend_Log::DEBUG);
-		$processes = Billrun_Factory::config()->getConfigValue('collection.processes', array());
-		$minDebt = $this->getMinDebtOfAllProcesses($processes);
-		$debtByAids = Billrun_Bill::getContractorsInCollection($aids, $minDebt);
-		$aidsValues = array_values(array_map(function($debtByAid) {
-			return $debtByAid->getRawData()['aid'];
-		}, $debtByAids));
-		
-		$updateCollectionStateChangedByProcess = [];
+		try {
+			$account = Billrun_Factory::account();
+			Billrun_Factory::log()->log("Pulling accounts that are subject to collection", Zend_Log::DEBUG);
+			$markedAsInCollection = $account->getInCollection($aids);
+			Billrun_Factory::log()->log("Processing accounts that are actually in collection", Zend_Log::DEBUG);
+			$processes = Billrun_Factory::config()->getConfigValue('collection.processes', array());
+			$minDebt = $this->getMinDebtOfAllProcesses($processes);
+			$debtByAids = Billrun_Bill::getContractorsInCollection($aids, $minDebt);
+			$aidsValues = array_values(array_map(function($debtByAid) {
+				return $debtByAid->getRawData()['aid'];
+			}, $debtByAids));
 
-		$gadBatchLimit = Billrun_Factory::config()->getConfigValue('subscribers.account.gad_limit', false, "int");
-		if ($gadBatchLimit) {
-			Billrun_Factory::log("Found gad batch limit of size " . $gadBatchLimit, Zend_Log::DEBUG);
-		} else {
-			Billrun_Factory::log("Couldn't find gad batch limit", Zend_Log::DEBUG);
+			$updateCollectionStateChangedByProcess = [];
+
+			$gadBatchLimit = Billrun_Factory::config()->getConfigValue('subscribers.account.gad_limit', false, "int");
+			if ($gadBatchLimit) {
+				Billrun_Factory::log("Found gad batch limit of size " . $gadBatchLimit, Zend_Log::DEBUG);
+			} else {
+				Billrun_Factory::log("Couldn't find gad batch limit", Zend_Log::DEBUG);
+			}
+			$aidsBatches = array_chunk($aidsValues, $gadBatchLimit);
+			Billrun_Factory::log("Got " . count($aidsBatches) . " aids chunks" , Zend_Log::DEBUG);
+			$accountsInConditions = [];
+			for ($i = 0; $i < count($aidsBatches); $i++) {
+
+				$query = ['aid' => array('$in' => $aidsBatches[$i])];
+				$query['read_preference'] = 'RP_PRIMARY';
+				$accountsInConditions = array_merge($account->loadAccountsForQuery($query), $accountsInConditions);
+			}
+			$updateCollectionStateChangedByProcess = $this->getUpdateCollectionStateChangedByProcess(array_merge($accountsInConditions, $markedAsInCollection), $debtByAids, $collectDir);
+			Billrun_Factory::log()->log("Updating crm if needed", Zend_Log::DEBUG);
+			$result = [];
+			foreach($updateCollectionStateChangedByProcess as $processIndex => $updateCollectionStateChanged){
+				$matchProcess = $processes[$processIndex];
+				$result[$matchProcess['label']] = $account->updateCrmInCollection($updateCollectionStateChanged, $matchProcess);
+			}
+			return $result;
+		} catch (Exception $e) {
+			Billrun_Factory::log('Collection collect failed: ' . $e->getMessage(), Zend_Log::ERR);
+			return [];
 		}
-		$aidsBatches = array_chunk($aidsValues, $gadBatchLimit);
-		Billrun_Factory::log("Got " . count($aidsBatches) . " aids chunks" , Zend_Log::DEBUG);
-		$accountsInConditions = [];
-		for ($i = 0; $i < count($aidsBatches); $i++) {
-			
-			$query = ['aid' => array('$in' => $aidsBatches[$i])];
-			$query['read_preference'] = 'RP_PRIMARY'; 
-			$accountsInConditions = array_merge($account->loadAccountsForQuery($query), $accountsInConditions);
-		}
-		$updateCollectionStateChangedByProcess = $this->getUpdateCollectionStateChangedByProcess(array_merge($accountsInConditions, $markedAsInCollection), $debtByAids, $collectDir);
-		Billrun_Factory::log()->log("Updating crm if needed", Zend_Log::DEBUG);
-		$result = [];
-		foreach($updateCollectionStateChangedByProcess as $processIndex => $updateCollectionStateChanged){
-			$matchProcess = $processes[$processIndex];
-			$result[$matchProcess['label']] = $account->updateCrmInCollection($updateCollectionStateChanged, $matchProcess);
-		}
-		return $result;
 	}
 
 	/**
