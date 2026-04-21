@@ -760,7 +760,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 						}
 					} catch (Exception $e) {
 						$paymentResponses['completed'] = 0;
-						Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
+						Billrun_Factory::log($e->getMessage(). ", Stack Trace:\n" . $e->getTraceAsString(), Zend_Log::ALERT);
 						Billrun_Factory::log("Trying to release charge action for account " . $customerAid, Zend_Log::DEBUG);
 						if (!$payment_manager->releasePaymentAction(['action' => 'charge_account', 'aid' => $customerAid])) {
 							Billrun_Factory::log("Failed releasing charge_account action for account " . $customerAid, Zend_Log::ALERT);	
@@ -810,7 +810,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 									}
 								}
 							} catch (Exception $ex) {
-								Billrun_Factory::log($ex->getMessage(), Zend_Log::ALERT);
+								Billrun_Factory::log($ex->getMessage() . ", Stack Trace:\n" . $e->getTraceAsString(), Zend_Log::ALERT);
 								Billrun_Factory::log("Trying to release charge action for account " . $customerAid, Zend_Log::DEBUG);
 								if (!$payment_manager->releasePaymentAction(['action' => 'charge_account', 'aid' => $customerAid])) {
 									Billrun_Factory::log("Failed releasing charge_account action for account " . $customerAid, Zend_Log::ALERT);	

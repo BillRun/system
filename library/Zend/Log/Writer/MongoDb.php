@@ -187,12 +187,9 @@ class Zend_Log_Writer_MongoDb extends Zend_Log_Writer_Abstract
                 $dataToInsert[$columnName] = $event[$fieldKey];
             }
         }
-        try {
-            $this->_collection->insert($dataToInsert);
-        } catch (Exception $e) {
-            // MongoDB connection failure must not crash application code
-            error_log('Billrun MongoDb log writer failed: ' . $e->getMessage());
-        }
+        
+        $this->_collection->insert($dataToInsert);
+           
     }
     /**
      *
