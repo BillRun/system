@@ -94,6 +94,7 @@ trait Billrun_Traits_FileActions {
 		$orphan_window = $orphan_window ? $orphan_window : $this->file_fetch_orphan_time;
 		$logData = $this->getFileLogData($filename, $type, $more_fields);
 		$query = array(
+			'source' => $logData['source'],
 			'stamp' => $logData['stamp'],
 			'file_name' => $filename,
 			'fetching_time' => array('$lt' => new Mongodloid_Date(time() - $orphan_window)),
