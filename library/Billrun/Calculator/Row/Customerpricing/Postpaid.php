@@ -27,10 +27,6 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		return parent::validate();
 	}
 
-	public function update($pricingOnly = false) {
-		return parent::update($pricingOnly);
-	}
-
 	/**
 	 * In case balance is in over charge, 
 	 * adds a refund row to the balance.
