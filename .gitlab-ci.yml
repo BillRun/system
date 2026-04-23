@@ -108,3 +108,17 @@ include:
   - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
   - template: Jobs/Container-Scanning.latest.gitlab-ci.yml
   - template: Jobs/SAST.latest.gitlab-ci.yml
+
+secret_detection:
+  tags: [CI_SAST]
+  variables:
+    GIT_STRATEGY: clone
+
+dependency-scanning:
+  tags: [CI_SAST]
+
+semgrep-sast:
+  tags: [CI_SAST]
+
+container_scanning:
+  tags: [CI_SAST]
