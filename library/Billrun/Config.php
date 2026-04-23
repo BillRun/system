@@ -239,10 +239,13 @@ class Billrun_Config {
 		}, $this->getConfigValue('file_types')));
 	}
 	
+	public function isConfigCacheEnabled() {
+		return $this->getConfigValue('cache.config.enabled', false);
+	}
+
 	public function loadDbConfig() {
 		try {
-			$cacheEnabled = $this->getConfigValue('cache.config.enabled', false);
-			$cache = $cacheEnabled ? Billrun_Factory::cache() : null;
+			$cache = $this->isConfigCacheEnabled() ? Billrun_Factory::cache() : null;
 			if ($cache) {
 				$cachedConfig = $cache->get('db_config', 'config');
 				if (!empty($cachedConfig)) {

@@ -97,7 +97,7 @@ class ConfigModel {
 			}
 		}
 		$result = $this->collection->insert($updatedData);
-		if (Billrun_Factory::config()->getConfigValue('cache.config.enabled', false)) {
+		if (Billrun_Config::getInstance()->isConfigCacheEnabled()) {
 			$cache = Billrun_Factory::cache();
 			if ($cache) {
 				$cache->remove('db_config', 'config');
@@ -393,7 +393,7 @@ class ConfigModel {
 			$ret = $this->collection->insert($updatedData);
 			$saveResult = !empty($ret['ok']);
 			if ($saveResult) {
-				if (Billrun_Factory::config()->getConfigValue('cache.config.enabled', false)) {
+				if (Billrun_Config::getInstance()->isConfigCacheEnabled()) {
 					$cache = Billrun_Factory::cache();
 					if ($cache) {
 						$cache->remove('db_config', 'config');
