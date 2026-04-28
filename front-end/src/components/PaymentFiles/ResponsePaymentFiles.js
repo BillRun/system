@@ -456,12 +456,10 @@ class ResponsePaymentFiles extends Component {
               api="get"
               showRevisionBy={false}
               baseFilter={{
-                // Mirror BE's construction in `application/controllers/Action/UploadFile.php:30`
-                // (`str_replace('_', '', $payment_gateway . ucwords($payments_file_type, '_'))`),
-                // which is what's actually persisted to `log.source`. The `source` we send on
-                // upload is currently dropped on the BE — when BE starts honoring it, switch
-                // this back to `pascalCase(paymentGateway) + 'TransactionsResponse'`.
-                source: paymentGateway.replace(/_/g, '') + 'TransactionsResponse',
+                // Source format mirrors how BE persists `log.source` on upload/CLI receive:
+                // pascalCase(cpg_name) + ucfirst(cpg_type), e.g. `manual_files` + `transactions_response`
+                // → `ManualFilesTransactionsResponse`. Same formula is used on the upload request.
+                source: pascalCase(paymentGateway) + 'TransactionsResponse',
                 pg_file_type: fileType,
               }}
               // filterFields={this.getFilterFields()}

@@ -457,7 +457,10 @@ class PaymentsFiles extends Component {
               api="get"
               showRevisionBy={false}
               baseFilter={{
-                source: paymentGateway.replace(/_/g, '') + 'Payments',
+                // Source format mirrors how BE persists `log.source` on upload/CLI receive:
+                // pascalCase(cpg_name) + ucfirst(cpg_type), e.g. `manual_files` + `payments`
+                // → `ManualFilesPayments`. Same formula is used on the upload request.
+                source: pascalCase(paymentGateway) + 'Payments',
                 cpg_file_type: {"$in" : [fileType]},
               }}
               // filterFields={this.getFilterFields()}
