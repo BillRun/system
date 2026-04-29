@@ -2223,6 +2223,20 @@ runOnce(lastConfig, 'BRCD-5151', function () {
 	}
 });
 
+runOnce(lastConfig, 'BRCD-5273', function () {
+var invoiceTemplate = {
+    "field_name": "invoice",
+    "title": "Invoice Configuration",
+    "mandatory": false,
+    "system": true,
+    "editable": true,
+    "display": false,
+	"type": "json",
+
+};
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoiceTemplate, 'account');
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });
