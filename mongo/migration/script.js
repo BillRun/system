@@ -2225,7 +2225,7 @@ runOnce(lastConfig, 'BRCD-5151', function () {
 
 runOnce(lastConfig, 'BRCD-5273', function () {
 var invoiceTemplate = {
-    "field_name": "invoice",
+    "field_name": "invoice_config",
     "title": "Invoice Configuration",
     "mandatory": false,
     "system": true,
