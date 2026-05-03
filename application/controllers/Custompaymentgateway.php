@@ -95,7 +95,7 @@ class CustompaymentgatewayController extends ApiController {
 					if (preg_match($email_reg, $value)) {
 						continue;
 					} elseif (!preg_match($general_reg, $value)) {
-						return false;
+						return $name;
 					}
 				}
 			}
