@@ -30,7 +30,7 @@ class CustompaymentgatewayController extends ApiController {
 			if (is_null($options['params'])) {
 				return $this->setError("Wrong parameters structure, no file was generated");
 			}
-			$system_params = ['aids', 'exclude_accounts', 'min_invoice_date', 'pay_mode', 'mode'];
+			$system_params = ['aids', 'exclude_accounts', 'min_invoice_date', 'pay_mode', 'mode', 'invoices', 'billrun_key', 'date'];
 			$options['params'] = array_filter(
 				$options['params'],
 				function ($value, $key) use ($system_params) {
@@ -73,7 +73,7 @@ class CustompaymentgatewayController extends ApiController {
 	}
 
 	protected function validateOptions($options) {
-		$validation_excluded_params = ['aids', 'exclude_accounts', 'min_invoice_date', 'pay_mode', 'mode'];
+		$validation_excluded_params = ['aids', 'exclude_accounts', 'min_invoice_date', 'pay_mode', 'mode', 'invoices', 'billrun_key', 'date'];
 		if (isset($options['pay_mode']) && !in_array($options['pay_mode'], ['one_payment', 'multiple_payments'])) {
 			return "pay_mode parameter's value isn't valid";
 		}
