@@ -180,7 +180,12 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 			],
 			'four_digits_field' => [
 				'default_path' => 'four_digits',
-				'billPaths' => ['payment_method.last_four_digits']
+				'billPaths' => ['payment_method.last_four_digits'],
+				"substring" => [
+					"offset" => -4,
+					"length" => 4,
+				]
+
 			],
 			'card_expiration_field' => [
 				'default_path' => 'card_expiration',
@@ -191,13 +196,14 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 				'billPaths' => ['vendor_response.payment_identifier']
 			],
 		];
-		foreach ($transactionsFieldsStructure as $field => $values) {
-			$path = $currentProcessor['processor'][$field] ?? $values['default_path'];//the path in the transaction response
+		foreach ($transactionsFieldsStructure as $field => $structure) {
+			$path = $currentProcessor['processor'][$field] ?? $structure['default_path'];
 			$value = Billrun_Util::getIn($row, $path);
 			if(isset($value)){
-				$types = $values['type'] ?? ['rejection', 'success'];
+				$value = Billrun_Util::formattingValue($structure, $value);
+				$types = $structure['type'] ?? ['rejection', 'success'];
 				foreach ($types as $type) {
-					foreach ($values['billPaths'] as $billPath) {
+					foreach ($structure['billPaths'] as $billPath) {
 						Billrun_Util::setIn($this->transactionsFields, [$type , $billPath], $value);
 					}
 				}
