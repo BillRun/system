@@ -2232,7 +2232,7 @@ var invoiceTemplate = {
     "editable": true,
     "display": false,
 	"type": "json",
-
+    "description": "Holds configuration regarding the formatting and appearance of the invoice (banners, etc.)"
 };
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoiceTemplate, 'account');
 });
