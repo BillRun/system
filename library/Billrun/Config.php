@@ -240,7 +240,7 @@ class Billrun_Config {
 	}
 	
 	public function isConfigCacheEnabled() {
-		return $this->getConfigValue('cache.config.enabled', false);
+		return $this->getConfigValue('config_cache.enabled', false);
 	}
 
 	public function loadDbConfig() {
@@ -273,7 +273,7 @@ class Billrun_Config {
 				$this->config = new Yaf_Config_Simple($mergedConfig);
 
 				if ($cache) {
-					$configTtl = $this->getConfigValue('cache.config.ttl', 600);
+					$configTtl = $this->getConfigValue('config_cache.ttl', 600);
 					$cache->set('db_config', $mergedConfig, 'config', $configTtl);
 				}
 
