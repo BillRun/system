@@ -27,10 +27,8 @@ class UploadFileAction extends Action_Base {
 		$payment_gateway = $request->get('payment_gateway');
 		$options["payment_gateway"] = $payment_gateway;
 		$options["payments_file_type"] = $request->get('payments_file_type');
-		$options["type"] = str_replace("_", '', $payment_gateway . ucwords($options['payments_file_type'], '_'));
+		$options["type"] = str_replace('_', '', ucwords($payment_gateway, '_')) . str_replace('_', '', ucwords($options['payments_file_type'], '_'));
 		$options["file_type"] = $request->get('file_type');
-
-
 		$pgOptions = $options;
 		//			$pgOptions['file_type'] = $options['type'];
 		$pgOptions["receiver"]["receiver_type"] = "PaymentGateway_" .
@@ -43,7 +41,7 @@ class UploadFileAction extends Action_Base {
 				$directoryPath = $this->getFilesUploadPath($options);
 				$sharedDirectoryPath = Billrun_Util::getBillRunSharedFolderPath($directoryPath);
 				if (!file_exists($sharedDirectoryPath)) {
-					 mkdir($sharedDirectoryPath, 0777, true);
+					mkdir($sharedDirectoryPath, 0664, true);
 				}
 				$targetPath = $sharedDirectoryPath . DIRECTORY_SEPARATOR . $file['name'];
 				if (@move_uploaded_file($file['tmp_name'], $targetPath)) {
@@ -52,10 +50,13 @@ class UploadFileAction extends Action_Base {
 				}
 			}
 		}
+		Billrun_Factory::log()->log("Loading receiver using processed receiver_type " . $pgOptions["receiver"]["receiver_type"], Zend_Log::DEBUG);
 		$receiver = $this->loadReceiver($pgOptions);
 		if ($receiver) {
+			Billrun_Factory::log()->log("Receiving file", Zend_Log::DEBUG);
 			$status = $receiver->receive();
 		}
+
 		$warnings = [];
 		$this->getController()->setOutput([
 			[

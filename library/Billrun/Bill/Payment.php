@@ -221,6 +221,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @return Billrun_Bill_Payment
 	 */
 	public static function getInstanceByid($id, $read_preference = null) {
+		Billrun_Factory::log("Getting bill data by txid: " .$id, Zend_Log::DEBUG);
                 $id = self::padTxId($id);
 		$data = Billrun_Factory::db()->billsCollection()->query('txid', $id)->cursor()->setReadPreference($read_preference)->current();
 		if ($data->isEmpty()) {
@@ -738,7 +739,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					$paymentParams['billrun_key'] = $billDetails['billrun_key'];
 					$gatewayDetails['currency'] = !empty($billDetails['currency']) ? $billDetails['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 					$gatewayName = $gatewayDetails['name'];
-					$gatewayInstanceName = $gatewayDetails['instance_name'];
+					$gatewayInstanceName = $gatewayDetails['instance_name'] ?? $gatewayDetails['name']; // temp fix for BRCD-4010
+					if (!empty($chargeOptions['uf'])) {
+						$paymentParams['uf'] = $chargeOptions['uf'];
+					}
 					$paymentParams['gateway_details'] = $gatewayDetails;
 					if ($gatewayDetails['amount'] > 0) {
 						Billrun_Factory::log("Charging account " . $billDetails['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
@@ -756,7 +760,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 						}
 					} catch (Exception $e) {
 						$paymentResponses['completed'] = 0;
-						Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
+						Billrun_Factory::log($e->getMessage(). ", Stack Trace:\n" . $e->getTraceAsString(), Zend_Log::ALERT);
 						Billrun_Factory::log("Trying to release charge action for account " . $customerAid, Zend_Log::DEBUG);
 						if (!$payment_manager->releasePaymentAction(['action' => 'charge_account', 'aid' => $customerAid])) {
 							Billrun_Factory::log("Failed releasing charge_account action for account " . $customerAid, Zend_Log::ALERT);	
@@ -806,7 +810,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 									}
 								}
 							} catch (Exception $ex) {
-								Billrun_Factory::log($ex->getMessage(), Zend_Log::ALERT);
+								Billrun_Factory::log($ex->getMessage() . ", Stack Trace:\n" . $e->getTraceAsString(), Zend_Log::ALERT);
 								Billrun_Factory::log("Trying to release charge action for account " . $customerAid, Zend_Log::DEBUG);
 								if (!$payment_manager->releasePaymentAction(['action' => 'charge_account', 'aid' => $customerAid])) {
 									Billrun_Factory::log("Failed releasing charge_account action for account " . $customerAid, Zend_Log::ALERT);	
@@ -1296,7 +1300,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function setUserFields($data, $unsetOriginalUfFromData = false) {
 		$paymentUf = [];
 		$config = Billrun_Factory::config();
-		$confUserFields = $config->getConfigValue('payments.offline.uf', []);
+		$paymentUfConfig = $config->getConfigValue('payments.offline.uf', []);
+		$billUfConfig = $config->getConfigValue('bills.uf', []);
+		$confUserFields = array_unique(array_merge($paymentUfConfig, $billUfConfig));
 		$paymentData = ($this instanceof Billrun_Bill) ? $this->getRawData() : $this->getData();
 		if (!empty($confUserFields)) {
 			foreach ($confUserFields as $key => $field_name) {

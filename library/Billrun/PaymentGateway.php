@@ -534,7 +534,7 @@ abstract class Billrun_PaymentGateway {
 			$this->savePaymentGateway();
 		}
 		
-		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date']);
+		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date'], 'params' => $this->saveDetails);
 	}
 
 	/**
@@ -551,10 +551,7 @@ abstract class Billrun_PaymentGateway {
 		);
 		$update = array();
 		$setQuery = $this->buildSetQuery();
-		$generateTokenTime = date("Y-m-d H:i:s", $setQuery['active']['generate_token_time']->sec);
-		$generateTokenTimeArray = explode(' ', $generateTokenTime);
-		$generateTokenTimeISOFormat = $generateTokenTimeArray[0] . 'T' . $generateTokenTimeArray[1] . 'Z';
-		$setQuery['active']['generate_token_time'] = $generateTokenTimeISOFormat;
+		$setQuery['active']['generate_token_time'] = $setQuery['active']['generate_token_time']->toDateTime()->format('c');
 		$update['payment_gateway'] = $setQuery;
 		$update['from'] = $time;
 		if (!$this->validateStructureForCharge($update['payment_gateway']['active'])) {
@@ -919,7 +916,7 @@ abstract class Billrun_PaymentGateway {
 	 * Returns relevant data for ok page response
 	 */
 	public function getTransactionDetails($details) {
-		return array('credit_card' => $details['creditCard'], 'expiration_date' => $details['expirationDate']);
+		return array('credit_card' => $details['creditCard'], 'expiration_date' => $details['expirationDate'], 'params' => $details['params'] ?? []);
 	}
 
 	/**

@@ -37,6 +37,9 @@ class Billrun_Cycle_Subscriber_Invoice {
         protected $groupingExtraFields = array();
         protected $groupingEnabled = true;
 		protected $groupingSumExtraFields = array();
+		protected $groupingMinExtraFields = array();
+		protected $groupingMaxExtraFields = array();
+
 
         /**
 	 * 
@@ -54,6 +57,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->groupingExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', array()); 
         $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
 		$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array()); 
+		$this->groupingMinExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.min_fields', array()); 
+		$this->groupingMaxExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.max_fields', array()); 
+
 		$this->invoiceGrouping = $this->getInvoiceGrouping();
 	}
 
@@ -68,6 +74,12 @@ class Billrun_Cycle_Subscriber_Invoice {
                 }, $this->groupingExtraFields)]);
 			foreach ($this->groupingSumExtraFields as $sum_field) {
 				$group_array[0]['fields'][] = ['field_name' => $sum_field, 'op' => 'sum'];
+			}
+			foreach ($this->groupingMinExtraFields as $min_field) {
+				$group_array[0]['fields'][] = ['field_name' => $min_field, 'op' => 'min'];
+			}
+			foreach ($this->groupingMaxExtraFields as $max_field) {
+				$group_array[0]['fields'][] = ['field_name' => $max_field, 'op' => 'max'];
 			}
 			return $group_array;		
 		} else {
@@ -305,6 +317,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 		if ($vatable) {
 			$priceAfterVat = $this->addLineVatableData($pricingData, $breakdownKey, Billrun_Util::getFieldVal($row['tax_data'],array()));
 			if(!empty($row['tax_data']['taxes'])) {
+				$this->data['totals']['tax_data']['total_amount'] = Billrun_Util::getFieldVal($this->data['totals']['tax_data']['total_amount'], 0) + Billrun_Util::getIn($row, 'tax_data.total_amount', 0);
+                $this->data['totals']['tax_data']['total_tax'] = Billrun_Util::getFieldVal($this->data['totals']['tax_data']['total_tax'], 0) + Billrun_Util::getIn($row, 'tax_data.total_tax', 0);
 				foreach ($row['tax_data']['taxes'] as $tax) {
 					if(empty($tax['description'])) {
 						Billrun_Factory::log("Received Tax with empty decription on row {$row['stamp']} , Skipping...",Zend_log::DEBUG);
@@ -316,6 +330,13 @@ class Billrun_Cycle_Subscriber_Invoice {
 						Billrun_Factory::config()->getConfigValue('taxation.CSI.apply_optional_charges',FALSE) && $tax['pass_to_customer'] == 0 && $row['tax_data']['total_amount'] !== 0 ) {
 						$prevAmount = Billrun_Util::getFieldVal($this->data['totals']['taxes'][$tax['description']],0);
 						$this->data['totals']['taxes'][$tax['description']] = $prevAmount + $tax['amount'];
+						$taxKey = $tax['key'];
+						if (!isset($this->data['totals']['tax_data']['taxes'][$taxKey])) {
+							$this->data['totals']['tax_data']['taxes'][$taxKey] = $tax;
+							$this->data['totals']['tax_data']['taxes'][$taxKey]['amount'] = 0;
+						}
+						Billrun_Factory::log("Tax Key: $taxKey | Current Sum: " . $this->data['totals']['tax_data']['taxes'][$taxKey]['amount'] . " | Adding: " . $tax['amount'], Zend_Log::DEBUG);
+						$this->data['totals']['tax_data']['taxes'][$taxKey]['amount'] += $tax['amount'];
 					}
 				}
 			}
@@ -402,6 +423,24 @@ class Billrun_Cycle_Subscriber_Invoice {
 				$newTotals['taxes'][$key] = Billrun_Util::getFieldVal($newTotals['taxes'][$key], 0);
 				$newTotals['taxes'][$key] += $taxAmount; 
 			}
+		}
+
+		$newTotals['tax_data']['total_amount'] = Billrun_Util::getFieldVal($newTotals['tax_data']['total_amount'], 0) + Billrun_Util::getFieldVal($this->data['totals']['tax_data']['total_amount'], 0);
+		$totalBeforeVat = $newTotals['before_vat'];
+
+		if ($totalBeforeVat != 0) {
+			$newTotals['tax_data']['total_tax'] = $newTotals['tax_data']['total_amount'] / $totalBeforeVat;
+		} else {
+			$newTotals['tax_data']['total_tax'] = 0;
+		}
+		$subTaxes = Billrun_Util::getFieldVal($this->data['totals']['tax_data']['taxes'], array());
+		
+		foreach ($subTaxes as $taxKey => $taxInfo) {
+			if (!isset($newTotals['tax_data']['taxes'][$taxKey])) {
+				$newTotals['tax_data']['taxes'][$taxKey] = $taxInfo;
+				$newTotals['tax_data']['taxes'][$taxKey]['amount'] = 0; // Reset amount for clean summation
+			}
+			$newTotals['tax_data']['taxes'][$taxKey]['amount'] += $taxInfo['amount'];
 		}
 		return $newTotals;
 	}
@@ -639,6 +678,14 @@ class Billrun_Cycle_Subscriber_Invoice {
 				$current_grouping_value = Billrun_Util::getIn($this->data['totals']['grouping'][$index], $field['field_name'], 0);
 				$row_value = Billrun_Util::getIn($row, $field['field_name'], 0);
 				Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field['field_name'], $current_grouping_value + $row_value);
+			}elseif($field['op'] == 'min') {
+				$row_value = Billrun_Util::getIn($row, $field['field_name'], null);
+				$current_grouping_value = Billrun_Util::getIn($this->data['totals']['grouping'][$index], $field['field_name'], $row_value);
+				Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field['field_name'], min($current_grouping_value, $row_value));
+			}elseif($field['op'] == 'max') {
+				$row_value = Billrun_Util::getIn($row, $field['field_name'], null);
+				$current_grouping_value = Billrun_Util::getIn($this->data['totals']['grouping'][$index], $field['field_name'], $row_value);
+				Billrun_Util::setIn($this->data['totals']['grouping'][$index], $field['field_name'], max($current_grouping_value, $row_value));
 			}
 		}
 	}

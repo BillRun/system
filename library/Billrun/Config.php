@@ -24,7 +24,7 @@ class Billrun_Config {
 	/**
 	 * the config container
 	 * 
-	 * @var Yaf_Config
+	 * @var Yaf_Config_Simple
 	 */
 	protected $config;
 
@@ -245,7 +245,7 @@ class Billrun_Config {
 			if ($configColl) {
 				$dbCursor = $configColl->query()
 					->cursor()->setReadPreference('RP_PRIMARY')
-					->sort(array('_id' => -1))
+					->sort(array('urt' => -1,'_id' => -1))
 					->limit(1)
 					->current();
 				if ($dbCursor->isEmpty()) {
@@ -631,6 +631,11 @@ class Billrun_Config {
 			}
 		}
 		return $fileType;
+	}
+
+	public function setInternalSubscribersMode() {
+		$this->config['subscribers']['subscriber']['type'] = 'db';
+		$this->config['subscribers']['account']['type'] = 'db';
 	}
 
 }

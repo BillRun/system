@@ -64,11 +64,11 @@ class Billrun_Factory {
 	protected static $subscriber = null;
 	
 	/**
-	 * Account instance
+	 * Account instances
 	 * 
-	 * @var Billrun_Billrun Account
+	 * @var Billrun_Account[] Account
 	 */
-	protected static $account = null;
+	protected static $accounts = null;
 	
 	/**
 	 * Collection Steps instance
@@ -346,16 +346,17 @@ class Billrun_Factory {
 	 * @return Billrun_Account
 	 */
 	public static function account() {
-		if (!self::$account) {
-			$settings = self::config()->getConfigValue('subscribers.account', array());
-			if (!isset($settings['type'])) {
-				$settings['type'] = 'db';
-			}
-			self::$account = Billrun_Account::getInstance($settings);
+		$settings = self::config()->getConfigValue('subscribers.account', array());
+		if (!isset($settings['type'])) {
+			$settings['type'] = 'db';
 		}
-
-		return self::$account;
+		if (!isset(self::$accounts[$settings['type']])) {
+			self::$accounts[$settings['type']] = Billrun_Account::getInstance($settings);
+		}
+		return self::$accounts[$settings['type']];
 	}
+
+
 	
 	/**
 	 * method to retrieve the account instance
@@ -420,7 +421,7 @@ class Billrun_Factory {
 			return new Billrun_Plan($params);
 		}
 		// unique stamp per plan
-		$stamp = Billrun_Util::generateArrayStamp($params);
+		$stamp = Billrun_Util::generateArrayStamp($params,['name','time','id','data']);
 
 		if (!isset(self::$plan[$stamp])) {
 			self::$plan[$stamp] = new Billrun_Plan($params);

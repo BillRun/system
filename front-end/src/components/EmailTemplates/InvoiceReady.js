@@ -22,7 +22,7 @@ class InvoiceReady extends Component {
   };
 
   componentDidMount() {
-    this.props.dispatch(getSettings(['subscribers']));
+    this.props.dispatch(getSettings(['subscribers', 'email_templates']));
   }
 
   getFields = () => {

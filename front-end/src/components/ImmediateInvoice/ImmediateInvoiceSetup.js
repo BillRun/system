@@ -62,7 +62,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
         // dispatch(clearImmediateInvoice());
       }
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isLinesValid = () => {
     const res = lines.reduce((acc, line, idx) => {
@@ -104,6 +104,9 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
     }
     if (line.get('volume', '') === '') {
       return { field: 'volume', message: 'required'} 
+    }
+    if (isNumber(line.get('price', '')) && line.get('price', '') < 0) {
+      return { field: 'price', message: 'positive'} 
     }
     return true;
   }
@@ -226,7 +229,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
   )]);
 
   return (
-    <div className="immediate-invoice-setup">
+    <div className="charge-invoice-setup">
       <Col sm={12}>
         <FormGroup className="form-inner-edit-row">
           <Col componentClass={ControlLabel} sm={4} lg={3} className="mt10 text-right">
@@ -332,7 +335,7 @@ ImmediateInvoiceSetup.propTypes = {
 const mapStateToProps = (state, props) => ({
   accountsOptions: accountsOptionsSelector(state, props),
   currency: currencySelector(state, props),
-  immediateInvoice: itemSelector(state, props, 'immediate-invoice'),
+  immediateInvoice: itemSelector(state, props, 'charge-invoice'),
 });
 
 export default connect(mapStateToProps)(ImmediateInvoiceSetup);

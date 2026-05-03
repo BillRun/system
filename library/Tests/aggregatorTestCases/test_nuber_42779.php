@@ -64,6 +64,7 @@ class Test_Case_42779
                       $plan1['name'] => ["value" => 4.2]
                   ]
               ],
+              'proration' => 'yes',
               'key'=> $discount_name,
 
           ]);
@@ -89,8 +90,8 @@ class Test_Case_42779
                     'billrun_key' => '202509',
                     'aid' => $account['aid'],
                     'vat' => 17,
-                    'total' => 14.7303,
-                    'vatable' => 12.59, //subscriber1 ->plan1(16.79) discount1(4.2)
+                    'total' => 9.974816129,
+                    'vatable' => 8.525483871, //subscriber1 ->plan1(16.79) discount1(-4.2 -4.064516129)
                 ],
                 'line' => ['types' => ['flat', 'credit']]
             ],
