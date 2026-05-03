@@ -38,7 +38,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * Optional fields to be saved to the payment. For some payment methods they are mandatory.
 	 * @var array
 	 */
-	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by', 'vendor_response');
+	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by', 'vendor_response', 'payment_method');
 	protected $known_sources;
 	protected static $aids;
         
@@ -278,8 +278,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$rawData['rejection_code'] = $response['status'];
 		$rawData['urt'] = date('c');
 		if (isset($response['additional_params'])) {
-			$rawData['vendor_response'] = $response['additional_params'];
-		}
+			$paymentMethodParams = $response['additional_params']['payment_method'] ?? array();
+			if(!empty($paymentMethodParams)){
+				$rawData['payment_method'] = $paymentMethodParams;
+				unset($response['additional_params']['payment_method']);
+			}
+			$rawData['vendor_response'] = array_merge($response['additional_params'], $rawData['vendor_response'] ?? []);		}
         if (isset($response['urt'])) {
 			$rawData['force_urt'] = $response['urt'];
 		}
@@ -541,6 +545,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function setPaymentStatus($response, $gatewayName) {
 		$vendorResponse = array('name' => $gatewayName, 'status' => $response['status']);
 		$this->data['last_checked_pending'] = new Mongodloid_Date();
+		$paymentMethodParams = $response['additional_params']['payment_method'] ?? array();
+		if(!empty($paymentMethodParams)){
+			$this->data['payment_method'] = $paymentMethodParams;
+			unset($response['additional_params']['payment_method']);
+		}
 		$extraParams = isset($response['additional_params']) ? $response['additional_params'] : array();
 		$vendorResponse = array_merge($vendorResponse, $extraParams);
 		$this->data['vendor_response'] = $vendorResponse;
