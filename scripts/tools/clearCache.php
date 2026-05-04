@@ -1,7 +1,7 @@
 <?php
 
-// Example: php scripts/tools/clearConfigCache.php --env <env>
-// docker exec -it -w /billrun/ billrun-app php scripts/tools/clearConfigCache.php --env container
+// Example: php scripts/tools/clearCache.php --env <env>
+// docker exec -it -w /billrun/ billrun-app php scripts/tools/clearCache.php --env container
 
 chdir(dirname(dirname(__DIR__)));
 
@@ -23,4 +23,10 @@ if (!$cache) {
 
 $cache->remove('db_config', 'config');
 echo 'Config cache cleared.' . PHP_EOL;
+
+if (function_exists('opcache_reset') && ini_get('opcache.enable')) {
+	opcache_reset();
+	echo 'OPcache reset.' . PHP_EOL;
+}
+
 exit(0);
