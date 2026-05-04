@@ -1069,7 +1069,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$errorMessage = "Wrong input! mode can be charge or refund";
 		}
 		if (isset($filters['billrun_key']) && !Billrun_Util::isBillrunKey($filters['billrun_key'])) {
-			$errorMessage = "Wrong input! billrun key is not supported";
+			$errorMessage = "Wrong input! billrun key is invalid";
 		}
 		if (!$errorMessage) {
 			return self::validateArrayNumericValues($filters);
