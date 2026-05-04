@@ -41,7 +41,7 @@ class UploadFileAction extends Action_Base {
 				$directoryPath = $this->getFilesUploadPath($options);
 				$sharedDirectoryPath = Billrun_Util::getBillRunSharedFolderPath($directoryPath);
 				if (!file_exists($sharedDirectoryPath)) {
-					mkdir($sharedDirectoryPath, 0664, true);
+					mkdir($sharedDirectoryPath, 0774, true);
 				}
 				$targetPath = $sharedDirectoryPath . DIRECTORY_SEPARATOR . $file['name'];
 				if (@move_uploaded_file($file['tmp_name'], $targetPath)) {
