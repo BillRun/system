@@ -21,10 +21,15 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 	protected $delivery_info;
 	protected $bill_headers;
 	protected $address;
-	protected $sftp_host;
-	protected $sftp_user;
-	protected $sftp_password;
-	protected $sftp_remote_directory;
+	protected $export_sftp_host;
+	protected $export_sftp_user;
+	protected $export_sftp_password;
+	protected $export_sftp_remote_directory;
+	protected $response_sftp_host;
+	protected $response_sftp_user;
+	protected $response_sftp_password;
+	protected $response_sftp_remote_directory;
+	protected $response_retention_months;
 	protected $xmlFullPath;
 	protected $lineItemCounter;
 	protected $line_item_template;
@@ -33,7 +38,6 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 	protected $bill_summary_template;
 	protected $abortGeneration = false;
 	protected $should_generate_ebill;
-	protected $response_status_files_path;
 	protected $creditor_reference_prefix;
 	protected $plugin_name = 'eBillSwitzerland';
 
@@ -60,10 +64,15 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 		$this->bill_summary_template = $this->flattenOrderedConfig(Billrun_Util::getIn($options, "bill_summary_template", false));
 		Billrun_Util::setIn($this->xmlInvoice, 'Body.Bill.Summary', []);
 		$this->address = Billrun_Util::getIn($options, "address", false);
-		$this->sftp_host = Billrun_Util::getIn($options, "sftp_host", "");
-		$this->sftp_user = Billrun_Util::getIn($options, "sftp_user", "");
-		$this->sftp_password = Billrun_Util::getIn($options, "sftp_password", "");
-		$this->sftp_remote_directory = Billrun_Util::getIn($options, "sftp_remote_directory", "");
+		$this->export_sftp_host = Billrun_Util::getIn($options, "export_sftp_host", "");
+		$this->export_sftp_user = Billrun_Util::getIn($options, "export_sftp_user", "");
+		$this->export_sftp_password = Billrun_Util::getIn($options, "export_sftp_password", "");
+		$this->export_sftp_remote_directory = Billrun_Util::getIn($options, "export_sftp_remote_directory", "");
+		$this->response_sftp_host = Billrun_Util::getIn($options, "response_sftp_host", "");
+		$this->response_sftp_user = Billrun_Util::getIn($options, "response_sftp_user", "");
+		$this->response_sftp_password = Billrun_Util::getIn($options, "response_sftp_password", "");
+		$this->response_sftp_remote_directory = Billrun_Util::getIn($options, "response_sftp_remote_directory", "");
+		$this->response_retention_months = (int) Billrun_Util::getIn($options, "response_retention_months", 6);
 		//$this->line_item_template = Billrun_Util::getIn($options, "line_item_template", false);
 		$this->line_item_template = $this->flattenOrderedConfig(Billrun_Util::getIn($options, "line_item_template", false));
 		$string_keys_array = Billrun_Util::getIn($options, "string_keys", false);
@@ -75,7 +84,6 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 			$this->optional_keys = array_flip($optional_keys_array);
 		}
 		$this->should_generate_ebill = Billrun_Util::getIn($options, "should_generate_ebill", []);
-		$this->response_status_files_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getIn($options, "response_status_files_path", ""));
 		$this->creditor_reference_prefix = Billrun_Util::getIn($options, "creditor_reference_prefix", "");
 	}
 
@@ -156,32 +164,32 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 			],
 			[
 				"type" => "string",
-				"field_name" => "sftp_host",
-				"title" => "SFTP Host (XML Invoice Destination After Confirmation)",
+				"field_name" => "export_sftp_host",
+				"title" => "Export SFTP Host (XML Invoice Destination After Confirmation)",
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
 			],
 			[
 				"type" => "string",
-				"field_name" => "sftp_user",
-				"title" => "SFTP Username",
+				"field_name" => "export_sftp_user",
+				"title" => "Export SFTP Username",
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
 			],
 			[
 				"type" => "string",
-				"field_name" => "sftp_password",
-				"title" => "SFTP Password",
+				"field_name" => "export_sftp_password",
+				"title" => "Export SFTP Password",
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
 			],
 			[
 				"type" => "string",
-				"field_name" => "sftp_remote_directory",
-				"title" => "SFTP Remote Directory",
+				"field_name" => "export_sftp_remote_directory",
+				"title" => "Export SFTP Remote Directory",
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
@@ -197,11 +205,44 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 			],
 			[
 				"type" => "string",
-				"field_name" => "response_status_files_path",
-				"title" => "Response Status Files Path",
+				"field_name" => "response_sftp_host",
+				"title" => "Response SFTP Host (Status Files Source)",
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
+			],
+			[
+				"type" => "string",
+				"field_name" => "response_sftp_user",
+				"title" => "Response SFTP Username",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+			],
+			[
+				"type" => "string",
+				"field_name" => "response_sftp_password",
+				"title" => "Response SFTP Password",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+			],
+			[
+				"type" => "string",
+				"field_name" => "response_sftp_remote_directory",
+				"title" => "Response SFTP Remote Directory",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+			],
+			[
+				"type" => "number",
+				"field_name" => "response_retention_months",
+				"title" => "Response Files Retention (Months)",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"default_value" => 6
 			],
 			[
 				"type" => "string",
@@ -442,10 +483,10 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 		$localFilePath = $this->xmlFullPath;
 		$fileName = $this->xmlFilename;
 
-		$host = $this->sftp_host;
-		$user = $this->sftp_user;
-		$password = $this->sftp_password;
-		$remoteDirConf = $this->sftp_remote_directory;
+		$host = $this->export_sftp_host;
+		$user = $this->export_sftp_user;
+		$password = $this->export_sftp_password;
+		$remoteDirConf = $this->export_sftp_remote_directory;
 
 		if (empty($host) || empty($user)) {
 			Billrun_Factory::log("eBill Plugin: SFTP configuration missing (host or user). Skipping upload.", Zend_Log::ALERT);
@@ -746,36 +787,84 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 
 	public function processResponseStatusFiles()
 	{
-		$inputPath = $this->response_status_files_path;
+		$host = $this->response_sftp_host;
+		$user = $this->response_sftp_user;
+		$password = $this->response_sftp_password;
+		$remoteDirConf = $this->response_sftp_remote_directory;
 
-		if (empty($inputPath) || !is_dir($inputPath)) {
-			Billrun_Factory::log("eBill Plugin: Response Status Files Path invalid: " . $inputPath, Zend_Log::ERR);
+		if (empty($host) || empty($user)) {
+			Billrun_Factory::log("eBill Plugin: Response SFTP configuration missing (host or user). Skipping response files processing.", Zend_Log::ERR);
 			return;
 		}
 
-		$files = glob(rtrim($inputPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '*.xml');
+		$auth = ['password' => $password];
+		$connection = null;
+		try {
+			$connection = new Billrun_Ssh_Seclibgateway($host, $auth, []);
+			Billrun_Factory::log("eBill Plugin: Connecting to Response SFTP server: " . $host, Zend_Log::DEBUG);
 
-		if (empty($files)) {
-			Billrun_Factory::log("eBill Plugin: No response status files found in " . $inputPath, Zend_Log::INFO);
-			return;
-		}
+			if (!$connection->connect($user)) {
+				Billrun_Factory::log("eBill Plugin: Response SFTP connection failed. Skipping response files processing.", Zend_Log::ERR);
+				return;
+			}
 
-		foreach ($files as $filePath) {
-			$this->processSingleResponseStatusFile($filePath);
-			$newPath = $filePath . '.DONE';
-			if (!rename($filePath, $newPath)) {
-				Billrun_Factory::log("eBill Plugin: Failed to mark processed status file as done: " . basename($filePath), Zend_Log::NOTICE);
+			$remoteDir = !empty($remoteDirConf) ? rtrim($remoteDirConf, '/') : '';
+			$listDir = $remoteDir !== '' ? $remoteDir : '.';
+			$entries = $connection->getListOfFiles($listDir, false);
+
+			if (empty($entries)) {
+				Billrun_Factory::log("eBill Plugin: No response status files found on SFTP at " . $listDir, Zend_Log::INFO);
+				return;
+			}
+
+			$today = date('Y-m-d');
+			$retentionMonths = $this->response_retention_months > 0 ? $this->response_retention_months : 6;
+			$cutoffTimestamp = strtotime('-' . $retentionMonths . ' months');
+
+			foreach ($entries as $entry) {
+				$fileName = basename($entry);
+				$remoteFilePath = $remoteDir !== '' ? $remoteDir . '/' . $fileName : $fileName;
+
+				if (preg_match('/\.(\d{4}-\d{2}-\d{2})$/', $fileName, $matches)) {
+					$processedTimestamp = strtotime($matches[1]);
+					if ($processedTimestamp !== false && $processedTimestamp < $cutoffTimestamp) {
+						if ($connection->deleteFile($remoteFilePath)) {
+							Billrun_Factory::log("eBill Plugin: Deleted processed response file older than " . $retentionMonths . " months from SFTP: " . $fileName, Zend_Log::INFO);
+						} else {
+							Billrun_Factory::log("eBill Plugin: Failed to delete old processed file from SFTP: " . $fileName, Zend_Log::NOTICE);
+						}
+					}
+					continue;
+				}
+
+				if (!preg_match('/\.xml$/i', $fileName)) {
+					continue;
+				}
+				$xmlContent = $connection->getString($remoteFilePath);
+				if (empty($xmlContent)) {
+					Billrun_Factory::log("eBill Plugin: Failed to download response status file: " . $remoteFilePath, Zend_Log::ERR);
+					continue;
+				}
+				$this->processSingleResponseStatusFile($xmlContent, $fileName);
+				$newRemotePath = $remoteFilePath . '.' . $today;
+				if (!$connection->renameFile($remoteFilePath, $newRemotePath)) {
+					Billrun_Factory::log("eBill Plugin: Failed to mark processed status file with date on SFTP: " . $fileName, Zend_Log::NOTICE);
+				}
+			}
+		} catch (Exception $e) {
+			Billrun_Factory::log("eBill Plugin: Response SFTP exception: " . $e->getMessage(), Zend_Log::ALERT);
+		} finally {
+			if ($connection !== null) {
+				$connection->disconnect();
 			}
 		}
 	}
 
-	protected function processSingleResponseStatusFile($filePath)
+	protected function processSingleResponseStatusFile($xmlContent, $fileName)
 	{
-		$fileName = basename($filePath);
-		Billrun_Factory::log("eBill Plugin: Processing response status file: " . basename($filePath), Zend_Log::INFO);
+		Billrun_Factory::log("eBill Plugin: Processing response status file: " . $fileName, Zend_Log::INFO);
 
 		try {
-			$xmlContent = file_get_contents($filePath);
 			$xml = new SimpleXMLElement($xmlContent);
 
 			if (isset($xml->Body->DeliveryDate)) {
@@ -800,7 +889,7 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 				}
 			}
 		} catch (Exception $e) {
-			Billrun_Factory::log("eBill Plugin Error: processing response status file " . basename($filePath) . ": " . $e->getMessage(), Zend_Log::ERR);
+			Billrun_Factory::log("eBill Plugin Error: processing response status file " . $fileName . ": " . $e->getMessage(), Zend_Log::ERR);
 		}
 	}
 
