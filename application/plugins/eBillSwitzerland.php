@@ -240,15 +240,14 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 		$billrunKey = isset($accountBillrun['billrun_key']) ? $accountBillrun['billrun_key'] : '';
 		Billrun_Factory::log("eBill Plugin: Starting XML generation for AID: " . $accountBillrun['aid'] . ", Key: " . $billrunKey, Zend_Log::INFO);
 		$this->xmlOutputPath = $baseDir . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR . 'ebillSwitzerland' . DIRECTORY_SEPARATOR . $billrunKey . DIRECTORY_SEPARATOR;
-		if (isset($accountBillrun['file_name'])) {
-			$baseName = preg_replace('/\.[^.]+$/', '', $accountBillrun['file_name']);
-			$this->xmlFilename = $baseName . '.xml';
-		} else {
-			Billrun_Factory::log("eBill Plugin: Billrun did not contain file_name. Aborting XML generation.", Zend_Log::ALERT);
+		$this->buildDeliveryInfo($accountBillrun);
+		$billerID = Billrun_Util::getIn($this->xmlInvoice, 'Body.DeliveryInfo.BillerID', '');
+		$transactionID = Billrun_Util::getIn($this->xmlInvoice, 'Body.DeliveryInfo.TransactionID', '');
+		if (empty($billerID) || empty($transactionID)) {
+			Billrun_Factory::log("eBill Plugin: Missing BillerID or TransactionID in DeliveryInfo. Aborting XML generation.", Zend_Log::ALERT);
 			return;
 		}
-
-		$this->buildDeliveryInfo($accountBillrun);
+		$this->xmlFilename = $billerID . '_' . $transactionID . '.xml';
 		$this->buildBillHeader($accountBillrun);
 		$this->buildBillSummary($accountBillrun);
 		$this->formatInvoice();
