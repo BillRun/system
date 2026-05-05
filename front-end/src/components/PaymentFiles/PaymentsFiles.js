@@ -7,7 +7,7 @@ import { List, Map, fromJS } from "immutable";
 import moment from "moment";
 import uuid from 'uuid';
 import pluralize from "pluralize";
-import { titleCase } from "change-case";
+import { titleCase, pascalCase } from "change-case";
 import { Form, Col, Button } from "react-bootstrap";
 import { ControlLabel, FormGroup, Panel } from "@/common/BootstrapCompat";
 import { WithTooltip } from "@/components/Elements";
