@@ -56,13 +56,13 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 		$proratedActivation =  $this->proratedStart  ? $this->activation :Billrun_Billingcycle::getBillrunStartTimeByDate(date(Billrun_Base::base_dateformat,$this->activation));
 		$proratedEnding =  $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE  ;
 		$frequency = $this->recurrenceConfig['frequency'];
-		return [	'start_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['start'],  $proratedActivation ,true,false,false, $frequency)),
+		return [	'start_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['start'],  $this->activation ,true,false,false, $frequency)),
 					'start' => $this->proratedStart ? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation,true,false,false,$frequency) : $this->cycle->start(),
 					'prorated_start_date' => new Mongodloid_Date($this->proratedStart   && $this->activation > $this->cycle->start()? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation,true,false,false,$frequency) : $this->cycle->start()),
 					'prorated_start' =>  $this->proratedStart ,
 					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation, $frequency) : $this->cycle->end(),
 					'prorated_end_date' => new Mongodloid_Date($endProration && $this->cycle->end() > $this->deactivation ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation, $frequency) : $this->cycle->end()),
-					'end_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['end'],  $proratedActivation , FALSE, $this->deactivation ,$this->deactivation && $this->cycle->end() > $this->deactivation, $frequency)),
+					'end_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['end'],  $this->activation , FALSE, $this->deactivation ,$this->deactivation && $this->cycle->end() > $this->deactivation, $frequency)),
 					'prorated_end' =>  $endProration,
 					'deactivation_date'=>  $this->deactivation,
 					'activation_date'=>  $this->activation,
