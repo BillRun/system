@@ -382,12 +382,34 @@ class RequestPaymentFiles extends Component {
     if (!showGeneratePaymentFile) {
       return List();
     }
-    return paymentFiles
+
+    const additionalFields = List([
+      Map({ name: 'aids', title: 'Include Customer IDs', type: 'text' }),
+      Map({ name: 'invoices', title: 'Include Invoices IDs', type: 'text' }),
+      Map({ name: 'exclude_accounts', title: 'Exclude Customer IDs', type: 'text' }),
+      Map({ name: 'billrun_key', title: 'Invoice BillRun Key', type: 'text' }),
+      Map({ name: 'min_invoice_date', title: 'Minimum Invoice Date', type: 'date' }),
+      Map({
+        name: 'mode',
+        title: 'Charge/Refund',
+        type: 'select',
+        select_list: true,
+        select_options: List([
+          Map({ label: '', value: '' }),
+          Map({ label: 'Charges only', value: 'charge' }),
+          Map({ label: 'Refunds only', value: 'refund' })
+        ]),
+      }),
+      Map({ name: 'pay_mode', title: 'Payment per invoice?', type: 'boolean' }),
+    ]);
+    
+    const fields = paymentFiles
       .find((paymentFile) => paymentFile.get("name", "") === paymentGateway, null, Map())
       .get("transactions_request", List())
       .find((transactionsRequest) => transactionsRequest.get("file_type", "") === fileType, null, Map())
       .get("parameters", List())
-      .map(this.fixGeneratePaymentFileFields);
+
+      return additionalFields.concat(fields).map(this.fixGeneratePaymentFileFields);
   };
 
   getAffectsBills = (data) => {
@@ -403,11 +425,31 @@ class RequestPaymentFiles extends Component {
     if (!this.props.dispatch(validateGeneratePaymentFile(paymentFile))) {
       return false;
     }
-    const data = paymentFile.get("values", Map());
+    let data = paymentFile.get("values", Map());
+    if (data.get('mode') === '') {
+      data = data.delete('mode');
+    }
+    if (data.has('pay_mode')) {
+      const payModeValue = data.get('pay_mode') ? 'multiple_payments' : 'one_payment';
+      data = data.set('pay_mode', payModeValue);
+    }
+    if (data.has('min_invoice_date')) {
+      const minInvoiceDate = data.get('min_invoice_date');
+
+      data = data.set(
+          'min_invoice_date',
+          minInvoiceDate && moment(minInvoiceDate).isValid()
+              ? moment(minInvoiceDate).format('YYYY-MM-DD')
+              : undefined
+      );
+    }
+    if (data.has('collection_date')) {
+      data = data.set('collection_date', moment(data.get('collection_date')).format('YYYY-MM-DD'));
+    }
     return this.props
       .dispatch(sendGenerateNewFile(paymentGateway, fileType, data))
       .then(this.afterSuccessGenerateNewFile)
-      .catch((error) => Promise.reject());
+      .catch(() => Promise.reject());
   };
 
   afterSuccessGenerateNewFile = () => {
