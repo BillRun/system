@@ -273,12 +273,9 @@ class Billrun_DiscountManager {
 		protected function handleOverrideDiscountForSubRev($overrideDiscount, $subscriberRevision, $accountRevisions,$subscriberRevisions, $overrideDiscountName = true){
 			$sid = $subscriberRevision['sid'];
 			if($overrideDiscountName){
-				$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference(@$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid], [['from' => $subscriberRevision['from']->sec, 'to' =>  $subscriberRevision['to']->sec]]);
-				if (empty($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid])) {
-					unset($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid]);
-				}
+				unset($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid]);//remove general discount eligibilty if exists override to existing discount 
 				$overrideDiscount['key'] = "SUBSCRIBER_DISCOUNT_" . $overrideDiscount['key'] . "_SID_" . $sid;
-				if (isset($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid])){//only the last one will set the eligibilty to all revisions 
+				if (isset($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid])){//only the last one will set the eligibilty to all relevant revisions 
 					$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid]  = [];
 				}
 			}
