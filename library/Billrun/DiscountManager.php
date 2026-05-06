@@ -220,7 +220,7 @@ class Billrun_DiscountManager {
 								)){
 								$overrideDiscountName = true;
 								$subDiscount['key_forced'] = true;
-								$this->handleOverrideDiscountForSubRev($subDiscount, $subscriberRevision, $accountRevisions, $subscriberRevisions, $overrideDiscountName);
+								$this->handleForceDiscountForSubRev($subDiscount, $subscriberRevision, $accountRevisions, $subscriberRevisions, $overrideDiscountName);
 							}
 						}	
 					}
@@ -266,8 +266,22 @@ class Billrun_DiscountManager {
 				];
 				$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues([$subDiscount['key'] => $generalDiscount], [$overrideSubDis],'discount');
 				$overrideSubscriberDiscount = $subscriberDiscounts[$subDiscount['key']] ?? [];
-				$this->handleOverrideDiscountForSubRev($overrideSubscriberDiscount, $subscriberRevision, $accountRevisions, $subscriberRevisions);
+				$this->handleForceDiscountForSubRev($overrideSubscriberDiscount, $subscriberRevision, $accountRevisions, $subscriberRevisions);
 			
+		}
+
+		protected function handleForceDiscountForSubRev($overrideDiscount, $subscriberRevision, $accountRevisions, $overrideDiscountName = true){
+			$sid = $subscriberRevision['sid'];
+			if($overrideDiscountName){
+				$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference(@$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid], [['from' => $subscriberRevision['from']->sec, 'to' =>  $subscriberRevision['to']->sec]]);
+				if (empty($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid])) {
+					unset($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid]);
+				}
+				$overrideDiscount['key'] = "SUBSCRIBER_DISCOUNT_" . $overrideDiscount['key'] . "_SID_" . $sid;
+			}
+			$eligibility = $this->getDiscountEligibility($overrideDiscount, $accountRevisions, [$sid =>[$subscriberRevision]]);
+			$this->setEligibility($this->eligibleDiscounts, $overrideDiscount, $eligibility);
+			$this->setSubscriberDiscount($overrideDiscount, $this->cycle->key());
 		}
 
 		protected function handleOverrideDiscountForSubRev($overrideDiscount, $subscriberRevision, $accountRevisions,$subscriberRevisions, $overrideDiscountName = true){
