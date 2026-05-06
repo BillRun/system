@@ -95,6 +95,10 @@ const Charging = ({
         }
     }, [items, loadActiveCharge]);
 
+    if (!isWorkers) {
+        return <p>This feature is available for <strong>BillRun Premium</strong> customers</p>
+    }
+
     const idleItems = items.filter(item => getChargeStatus(item) === 'idle');
     const allowCreate = activeItem.get('md5', '') === '' && idleItems.isEmpty();
     const futureItems = scheduleItems.map((scheduleCharge) => moment(scheduleCharge.get('schedule', null)))

@@ -101,10 +101,10 @@ const ChargingForm = ({
     };
 
     return (
-        <Form id='charging-wrapper'>
+        <Form id='charging-wrapper' className="form-horizontal">
             {allowStartScheduleRun && (
                 <FormGroup>
-                    <Col as={ControlLabel} sm={3}></Col>
+                    <Col as={ControlLabel} sm={3}>&nbsp;</Col>
                     <Col sm={6}>
                         <Field
                             fieldType="toggeledInput"

@@ -121,9 +121,6 @@ class Column extends Component {
           <DragHandle />
         </Col>
 
-        <Col className="d-sm-none">
-          <label htmlFor="field_field">Field</label>
-        </Col>
         <Col sm={4}>
           {!isCountColumn && (
             <Field
@@ -138,11 +135,6 @@ class Column extends Component {
           )}
         </Col>
 
-        <Col className="d-sm-none">
-          {type !== reportTypes.SIMPLE && (
-            <label htmlFor="operator_field">Function</label>
-          )}
-        </Col>
         <Col sm={3}>
           {type !== reportTypes.SIMPLE && (
             <Field
@@ -156,9 +148,6 @@ class Column extends Component {
           )}
         </Col>
 
-        <Col className="d-sm-none">
-          <label htmlFor="label_field">Label</label>
-        </Col>
         <Col sm={3}>
           <Field
             value={item.get('label', '')}
