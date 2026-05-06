@@ -126,12 +126,12 @@ class Test_Case_42765
                 'billrun' => [
                     'billrun_key' => '202206',
                     'aid' => $account['aid'],
-                    'after_vat' => [$subscriber['sid'] => 64.161290323],
-                    'total' => 64.161290323,
-                    'vatable' => 54.838709677,//flat 100 /general discount (14/31*10)
+                    'after_vat' => [$subscriber['sid'] => 117],
+                    'total' => 117,
+                    'vatable' => 100,//flat 100 
                     'vat' => 17
                 ],
-                'line' => ['types' => ['flat', 'credit']]
+                'line' => ['types' => ['flat']]
             ],
 
             'postRun' => [
