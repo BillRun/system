@@ -229,7 +229,7 @@ class Billrun_DiscountManager {
 					$overrideSubscriberDiscounts =  array_column(array_filter($subscriberRevision['overrides'], function($override) {
 						return isset($override['type']) && $override['type'] === 'discount';
 					}), 'key');	
-					$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues(self::getDiscounts($this->cycle->key()), @$subscriberRevision['overrides'],'discount', array('from' => $subscriberRevision['from'], 'to' => $subscriberRevision['to']));
+					$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues(self::getDiscounts($this->cycle->key()), @$subscriberRevision['overrides'],'discount');
 					foreach($subscriberDiscounts as $subscriberDiscount){
 						if(in_array($subscriberDiscount['key'], $overrideSubscriberDiscounts)){
 							$this->handleOverrideDiscountForSubRev($subscriberDiscount, $subscriberRevision, $accountRevisions);
@@ -264,7 +264,7 @@ class Billrun_DiscountManager {
 					'type' => 'discount',
 					'value' => $subDiscount
 				];
-				$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues([$subDiscount['key'] => $generalDiscount], [$overrideSubDis],'discount', array('from' => $subscriberRevision['from'], 'to' => $subscriberRevision['to']));
+				$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues([$subDiscount['key'] => $generalDiscount], [$overrideSubDis],'discount');
 				$overrideSubscriberDiscount = $subscriberDiscounts[$subDiscount['key']] ?? [];
 				$this->handleOverrideDiscountForSubRev($overrideSubscriberDiscount, $subscriberRevision, $accountRevisions);
 			
