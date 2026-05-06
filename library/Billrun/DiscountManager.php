@@ -278,6 +278,9 @@ class Billrun_DiscountManager {
 					unset($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid]);
 				}
 				$overrideDiscount['key'] = "SUBSCRIBER_DISCOUNT_" . $overrideDiscount['key'] . "_SID_" . $sid;
+				if (isset($this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid])){//only the last one will set the eligibilty
+					$this->eligibleDiscounts[$overrideDiscount['key']]['subs'][$sid]  = [];
+				}
 			}
 			$eligibility = $this->getDiscountEligibility($overrideDiscount, $accountRevisions, [$sid =>[$subscriberRevision]]);
 			$this->setEligibility($this->eligibleDiscounts, $overrideDiscount, $eligibility);

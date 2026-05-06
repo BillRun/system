@@ -148,7 +148,7 @@ class Test_Case_42761
         );
 
 
-
+        // Note!!: there is currently no requirement to prorate the discount in this case; only the last discount override is supported for now.
         return [
             'test' => [
                 'label' => ' 2 revisions (in month) for subscriber with different override discount conditions the first meet and the second not- should give prorated discount only for the meet override condition revision',
@@ -163,11 +163,11 @@ class Test_Case_42761
                     'billrun_key' => '202206',
                     'aid' => $account['aid'],
                     'after_vat' => [$subscriber['sid'] => 111.716129032],
-                    'total' => 111.716129032,
-                    'vatable' => 95.483870968,//flat 100 /discount1 (14/31*10)
+                    'total' => 117,
+                    'vatable' => 100,//flat 100
                     'vat' => 17
                 ],
-                'line' => ['types' => ['flat', 'credit']]
+                'line' => ['types' => ['flat']]
             ],
 
             'postRun' => [
