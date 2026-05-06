@@ -220,7 +220,7 @@ class Billrun_DiscountManager {
 								)){
 								$overrideDiscountName = true;
 								$subDiscount['key_forced'] = true;
-								$this->handleForceDiscountForSubRev($subDiscount, $subscriberRevision, $accountRevisions, $subscriberRevisions, $overrideDiscountName);
+								$this->handleForceDiscountForSubRev($subDiscount, $subscriberRevision, $accountRevisions, $overrideDiscountName);
 							}
 						}	
 					}
@@ -254,7 +254,7 @@ class Billrun_DiscountManager {
 
 		}
 
-		protected function forceSubscriberDiscount($generalDiscount, $subDiscount, $accountRevisions, $subscriberRevision, $subscriberRevisions){
+		protected function forceSubscriberDiscount($generalDiscount, $subDiscount, $accountRevisions, $subscriberRevision){
 				if(!isset($subDiscount['params']['conditions'])){
 					$subDiscount['params'] = array_merge_recursive($generalDiscount['params'] ?? [], $subDiscount['params'] ?? []);
 					$subDiscount['params']['conditions'] = [];//force this discount
@@ -266,7 +266,7 @@ class Billrun_DiscountManager {
 				];
 				$subscriberDiscounts = Billrun_Aggregator_Customer::overrideEntityValues([$subDiscount['key'] => $generalDiscount], [$overrideSubDis],'discount');
 				$overrideSubscriberDiscount = $subscriberDiscounts[$subDiscount['key']] ?? [];
-				$this->handleForceDiscountForSubRev($overrideSubscriberDiscount, $subscriberRevision, $accountRevisions, $subscriberRevisions);
+				$this->handleForceDiscountForSubRev($overrideSubscriberDiscount, $subscriberRevision, $accountRevisions);
 			
 		}
 
