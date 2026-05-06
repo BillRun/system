@@ -21,12 +21,12 @@ if (!$cache) {
 	exit(1);
 }
 
+echo 'Clearing config cache...' . PHP_EOL;
 $cache->remove('db_config', 'config');
-echo 'Config cache cleared.' . PHP_EOL;
 
 if (function_exists('opcache_reset') && ini_get('opcache.enable')) {
+	echo 'Resetting OPcache...' . PHP_EOL;
 	opcache_reset();
-	echo 'OPcache reset.' . PHP_EOL;
 }
 
 exit(0);
