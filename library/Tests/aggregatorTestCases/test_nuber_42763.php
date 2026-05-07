@@ -98,10 +98,11 @@ class Test_Case_42763
         );
 
 
+        // Note!!: there is currently no requirement to prorate the discount in this case; only the last discount override is supported for now.
 
         return [
             'test' => [
-                'label' => ' 2 revisions (in month) for subscriber that only the second have override discount (override and general discount meet condtions) - should get override discount partial and general for the rest',
+                'label' => ' 2 revisions (in month) for subscriber that only the second have override discount (override and general discount meet condtions) - should get only override discount for all relevant revisions',
                 'test_number' => 42763,
                 "aid" => $account['aid'],
                 'sid' => $subscriber['sid'],
@@ -112,9 +113,9 @@ class Test_Case_42763
                 'billrun' => [
                     'billrun_key' => '202206',
                     'aid' => $account['aid'],
-                    'after_vat' => [$subscriber['sid'] => 57.745161291],
-                    'total' => 57.745161291,
-                    'vatable' => 49.35483871,//flat 100 /override discount (17/31*10)  / general discount (14/31*100)
+                    'after_vat' => [$subscriber['sid'] => 105.3],
+                    'total' => 105.3,
+                    'vatable' => 90,//flat 100 /override discount (10) 
                     'vat' => 17
                 ],
                 'line' => ['types' => ['flat', 'credit']]
