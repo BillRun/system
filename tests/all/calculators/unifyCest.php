@@ -20,6 +20,25 @@ class unifyCest
     {
         $inputProcessor = $inputProcessor ?: $this->inputProcessor;
         $I->setSettings('file_types', $inputProcessor);
+
+        // Register all custom file_types up front so tests don't mutate config mid-run
+        // (changing config inside a test caused the first run to use stale settings).
+        $abc1 = $inputProcessor;
+        $abc1['file_type'] = 'abc1';
+        $abc1['unify']['unification_fields']['required']['match'] = ["uf.firstname" => "/^054\\d+/"];
+        $abc1['unify']['unification_fields']['fields'][0]['match'] = ["uf.firstname" => "/^054\\d+/"];
+        $I->setSettings('file_types', $abc1);
+
+        $abc2 = $inputProcessor;
+        $abc2['file_type'] = 'abc2';
+        $abc2['unify']['unification_fields']['required']['match'] = ["uf.firstname" => "/^053\\d+/"];
+        $I->setSettings('file_types', $abc2);
+
+        $abc3 = $inputProcessor;
+        $abc3['file_type'] = 'abc3';
+        $abc3['unify']['unification_fields']['required']['match'] = ["sid" => "/\\d+/"];
+        $I->setSettings('file_types', $abc3);
+
         $type = [
 
             [
@@ -475,14 +494,6 @@ class unifyCest
             ]
         );
         $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-        $customProcessor = $this->inputProcessor;
-        $customProcessor['file_type'] = 'abc3';
-        $customProcessor['unify']['unification_fields']['required']['match'] = ["sid"=> "/\\d+/"];
-
-
-        // 2. Apply it directly via the Tester
-        $I->setSettings('file_types', $customProcessor);
-        Billrun_Config::getInstance()->loadDbConfig();
         $this->process(
             [
                 'type' => 'abc3',
@@ -562,13 +573,6 @@ class unifyCest
             ]
         );
         $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-        $customProcessor = $this->inputProcessor;
-        $customProcessor['file_type'] = 'abc2';
-        $customProcessor['unify']['unification_fields']['required']['match'] = ["uf.firstname"=> "/^053\\d+/"]; 
-
-        // 2. Apply it directly via the Tester
-        $I->setSettings('file_types', $customProcessor);
-        Billrun_Config::getInstance()->loadDbConfig();
         $this->process(
             [
                 'type' => 'abc2',
@@ -660,14 +664,6 @@ class unifyCest
         );
         $subscriberDetails2 = json_decode($I->grabResponse(), true)['entity'];
 
-        $customProcessor = $this->inputProcessor;
-        $customProcessor['file_type'] = 'abc1';
-        $customProcessor['unify']['unification_fields']['required']['match'] = ["uf.firstname"=> "/^054\\d+/"]; 
-        $customProcessor['unify']['unification_fields']['fields'][0]['match'] = ["uf.firstname"=> "/^054\\d+/"]; 
-
-        // 2. Apply it directly via the Tester
-        $I->setSettings('file_types', $customProcessor);
-        Billrun_Config::getInstance()->loadDbConfig();
         $this->process(
             [
                 'type' => 'abc1',
