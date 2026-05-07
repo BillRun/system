@@ -239,10 +239,9 @@ export default class GatewayParamsModal extends Component {
 
   
   componentDidUpdate(prevProps) {
-    const { gateway, settings } = this.props;
-    // Only sync local state when the gateway prop reference actually changes —
-    // calling setState unconditionally here caused an infinite re-render loop.
-    if (gateway === prevProps.gateway) {
+    const { gateway, settings, show } = this.props;
+    // Re-init on open/prop change to ensure `gateway.name` is set before save.
+    if (gateway === prevProps.gateway && show === prevProps.show) {
       return;
     }
     if (gateway) {
@@ -260,7 +259,17 @@ export default class GatewayParamsModal extends Component {
         gateway: gateway.toJS(),
       });
     } else {
-      this.setState({ gateway: { name: settings.get('name'), params: {} } });
+      this.setState({
+        transactionsConnection: {},
+        denialsConnection: {},
+        gateway: {
+          name: settings.get('name'),
+          params: {},
+          transactions: {},
+          denials: {},
+          export: {},
+        },
+      });
     }
   }
 

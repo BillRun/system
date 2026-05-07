@@ -83,9 +83,6 @@ class Sort extends Component {
           <DragHandle />
         </Col>
 
-        <Col className="d-sm-none">
-          <label htmlFor="field_field">Field</label>
-        </Col>
         <Col sm={5}>
           <Field
             fieldType="select"
@@ -97,9 +94,6 @@ class Sort extends Component {
           />
         </Col>
 
-        <Col className="d-sm-none">
-          <label htmlFor="order_field">Order</label>
-        </Col>
         <Col sm={5}>
           <Field
             fieldType="select"
