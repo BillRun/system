@@ -20,25 +20,6 @@ class unifyCest
     {
         $inputProcessor = $inputProcessor ?: $this->inputProcessor;
         $I->setSettings('file_types', $inputProcessor);
-
-        // Register all custom file_types up front so tests don't mutate config mid-run
-        // (changing config inside a test caused the first run to use stale settings).
-        $abc1 = $inputProcessor;
-        $abc1['file_type'] = 'abc1';
-        $abc1['unify']['unification_fields']['required']['match'] = ["uf.firstname" => "/^054\\d+/"];
-        $abc1['unify']['unification_fields']['fields'][0]['match'] = ["uf.firstname" => "/^054\\d+/"];
-        $I->setSettings('file_types', $abc1);
-
-        $abc2 = $inputProcessor;
-        $abc2['file_type'] = 'abc2';
-        $abc2['unify']['unification_fields']['required']['match'] = ["uf.firstname" => "/^053\\d+/"];
-        $I->setSettings('file_types', $abc2);
-
-        $abc3 = $inputProcessor;
-        $abc3['file_type'] = 'abc3';
-        $abc3['unify']['unification_fields']['required']['match'] = ["sid" => "/\\d+/"];
-        $I->setSettings('file_types', $abc3);
-
         $type = [
 
             [
@@ -51,6 +32,26 @@ class unifyCest
         ];
         $I->setSettings('usage_types', $type);
         Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
+    }
+
+    /**
+     * Apply a custom file_type config from within a test.
+     *
+     * Billrun_Helpers_QueueCalculators fetches the Unify calculator via
+     * Billrun_Calculator::getInstance(['type' => 'unify', 'autoload' => false]),
+     * which Billrun_Base caches in a process-wide singleton keyed only by
+     * those args. The calc snapshots file_types at construction, so adding a
+     * file_type after the first process() call leaves the cached calc stale —
+     * loadDbConfig alone is not enough. Clearing Billrun_Base::$instance
+     * forces the next process() to rebuild the calc with the fresh config.
+     */
+    protected function applyCustomFileType(ApiTester $I, array $customProcessor)
+    {
+        $I->setSettings('file_types', $customProcessor);
+        Billrun_Config::getInstance()->loadDbConfig();
+        $instances = new ReflectionProperty('Billrun_Base', 'instance');
+        $instances->setAccessible(true);
+        $instances->setValue(null, []);
     }
 
     //workaround for the issue with service instence (not update the service list in the 2nd process on the same run)
@@ -494,6 +495,12 @@ class unifyCest
             ]
         );
         $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
+
+        $customProcessor = $this->inputProcessor;
+        $customProcessor['file_type'] = 'abc3';
+        $customProcessor['unify']['unification_fields']['required']['match'] = ["sid" => "/\\d+/"];
+        $this->applyCustomFileType($I, $customProcessor);
+
         $this->process(
             [
                 'type' => 'abc3',
@@ -573,6 +580,12 @@ class unifyCest
             ]
         );
         $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
+
+        $customProcessor = $this->inputProcessor;
+        $customProcessor['file_type'] = 'abc2';
+        $customProcessor['unify']['unification_fields']['required']['match'] = ["uf.firstname" => "/^053\\d+/"];
+        $this->applyCustomFileType($I, $customProcessor);
+
         $this->process(
             [
                 'type' => 'abc2',
@@ -663,6 +676,12 @@ class unifyCest
             ]
         );
         $subscriberDetails2 = json_decode($I->grabResponse(), true)['entity'];
+
+        $customProcessor = $this->inputProcessor;
+        $customProcessor['file_type'] = 'abc1';
+        $customProcessor['unify']['unification_fields']['required']['match'] = ["uf.firstname" => "/^054\\d+/"];
+        $customProcessor['unify']['unification_fields']['fields'][0]['match'] = ["uf.firstname" => "/^054\\d+/"];
+        $this->applyCustomFileType($I, $customProcessor);
 
         $this->process(
             [
