@@ -24,9 +24,6 @@ class apiSanityBCest
     }
 
 
-    /**
-     * @skip Skip testCreatePlan duo to "recurrence" old/new struckture issue
-     */
     public function testCreatePlan(ApiTester $I)
     {
 
@@ -37,9 +34,6 @@ class apiSanityBCest
         $I->seeResponseContainsJson(['name' => $this->planDetails['name']]);
     }
 
-     /**
-     * @skip Skip testCreateService duo to "recurrence" old/new struckture issue
-     */
     public function testCreateService(ApiTester $I)
     {
 
@@ -53,12 +47,9 @@ class apiSanityBCest
     }
 
     /**
-     * @depends testCreateAccount
+     * @depends testCreateAccountSanity
      * @depends testCreatePlan
      * @depends testCreateService
-     */
-     /**
-     * @skip Skip testCreateSubscriber duo to "recurrence" old/new struckture issue
      */
     public function testCreateSubscriber(ApiTester $I)
     {

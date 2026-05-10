@@ -1990,6 +1990,9 @@ class Billrun_Util {
 	 * @return boolean
 	 */
 	public static function areConditionsMet($row, $conditions) {
+		 if (empty($conditions)) {
+            return true;
+        }
 		foreach ($conditions as $condition) {
 			if (!Billrun_Util::isConditionMet($row, $condition)) {
 				return false;
@@ -1998,6 +2001,7 @@ class Billrun_Util {
 		return true;
 	}
 	
+
 	/**
 	 * try to fork, and if successful update the process log stamp
 	 * to match the correct pid after the fork
@@ -2255,8 +2259,28 @@ class Billrun_Util {
 	{
 		$server = $request->getServer();
 		$host = $server['HTTP_HOST'];
-		$protocol = (!empty($server['HTTPS']) && $server['HTTPS'] !== 'off') ? 'https' : 'http';
+		$protocol = 'http';
+
+		$forwardedProto = !empty($server['HTTP_X_FORWARDED_PROTO'])
+			? trim(explode(',', $server['HTTP_X_FORWARDED_PROTO'])[0])
+			: '';
+
+		if ((!empty($server['HTTPS']) && $server['HTTPS'] !== 'off') ||
+			strtolower($forwardedProto) === 'https'
+		) {
+			$protocol = 'https';
+		}
+
 		return $protocol . '://' . $host . '/';
 	}
 
+	public static function findMatchingEmailTemplate($path, $data = []){
+		$templates = Billrun_Factory::config()->getConfigValue('email_templates.' . $path .'.templates') ?? [];
+		foreach($templates as $template){
+			$conditions = $template['conditions'] ?? [];
+			if (empty($conditions)  || self::areConditionsMet($data, $conditions)){
+				return $template;
+			}
+		}
+	}
 }

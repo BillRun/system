@@ -38,7 +38,7 @@ class Test_Case_42778
             ]
         );
         
-        $discount_name = "DIS_B2C_" . time();
+        $discount_name = generat_test_data::uniqueName("DIS_B2C_");
 
         $discount = generat_discounts::generateDiscount([
             "from" => "2025-08-01T21:00:00Z",

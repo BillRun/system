@@ -1,6 +1,5 @@
 import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '../common/Api';
 import {
-  getWorkersQuery,
   pushToCycleQueueQuery,
   pushToConfirmQueueQuery,
   getRunCycleQuery,
@@ -21,6 +20,7 @@ export const runBillingCycle = (billrunKey, rerun = false, generatePdf = true) =
     .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error running cycle')));
 };
 
+// eslint-disable-next-line max-len
 export const runBillingCycleWithWorkers = (billrunKey, isGeneratePdf = true, include_aids = [], exclude_aids = []) => (dispatch) => { // eslint-disable-line import/prefer-default-export
   dispatch(startProgressIndicator());
   const query = pushToCycleQueueQuery(billrunKey, isGeneratePdf, include_aids, exclude_aids);

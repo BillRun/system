@@ -1,0 +1,16 @@
+{
+    "token_sequence": [
+        {
+            "access_token": "T1",
+            "expires_in": 30
+        }
+    ],
+    "token_index": 0,
+    "token_calls": [],
+    "api_calls": [],
+    "api_rules": [],
+    "default_api_status": 200,
+    "default_api_body": {
+        "ok": true
+    }
+}
