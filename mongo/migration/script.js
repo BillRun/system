@@ -2237,6 +2237,27 @@ var invoiceTemplate = {
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoiceTemplate, 'account');
 });
 
+runOnce(lastConfig, 'BRCD-5278', function () {
+	var plugin = lastConfig.plugins.find(function (p) { return p.name === "eBillSwitzerlandPlugin"; });
+	if (!plugin || typeof plugin.configuration === 'undefined' || typeof plugin.configuration.values === 'undefined') {
+		return;
+	}
+	var configValues = plugin.configuration.values;
+	delete configValues.sftp_host;
+	delete configValues.sftp_user;
+	delete configValues.sftp_password;
+	delete configValues.sftp_remote_directory;
+	delete configValues.response_status_files_path;
+	configValues.export_sftp_host = "";
+	configValues.export_sftp_user = "";
+	configValues.export_sftp_password = "";
+	configValues.export_sftp_remote_directory = "";
+	configValues.response_sftp_host = "";
+	configValues.response_sftp_user = "";
+	configValues.response_sftp_password = "";
+	configValues.response_sftp_remote_directory = "";
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });
