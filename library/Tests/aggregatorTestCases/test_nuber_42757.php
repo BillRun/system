@@ -118,9 +118,10 @@ class Test_Case_42757
 
 
 
+        // Note!!: there is currently no requirement to prorate the discount in this case; only the last discount override is supported for now.
         return [
             'test' => [
-                'label' => ' 2 revisions (in month) for subscriber with different override discount price- should give prorated discount each by the overide price',
+                'label' => ' 2 revisions (in month) for subscriber with different override discount price- should give last discount price',
                 'test_number' => 42757,
                 "aid" => $account['aid'],
                 'sid' => $subscriber['sid'],

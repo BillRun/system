@@ -5,9 +5,11 @@ services:
         ports:
             - "8074:80"
         restart: always
+        user: "${USER_ID:-0}:${GROUP_ID:-0}"
         volumes:
             - ${PWD}/../..:/billrun:ro
             - ${PWD}/nginx.conf:/etc/nginx/nginx.conf
+            - /etc/passwd:/etc/passwd:ro
         depends_on:
             - "php"
             - "mongodb"
@@ -20,15 +22,18 @@ services:
         image: billrun-php74
         container_name: billrun-app
         restart: always
+        user: "${USER_ID:-0}:${GROUP_ID:-0}"
         environment:
         - "APPLICATION_ENV=container"
         - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
         - "BR_MDB_HOST=billrun-mongodb:27017"
         - "BR_MDB_DBNAME=billing_container"
+        - "COMPOSER_HOME=/tmp/composer"
         volumes:
             - ${PWD}/../..:/billrun
             - ./../../cache:/billrun/cache
             - ${PLUGIN_PATH:-/dev/null}:/plugin
+            - /etc/passwd:/etc/passwd:ro
         healthcheck:
             test: ["CMD-SHELL", "test -f /billrun/vendor/bin/codecept || exit 1"] 
             interval: 20s
