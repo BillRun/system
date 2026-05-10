@@ -10,6 +10,7 @@ services:
             - ${PWD}/../..:/billrun:ro
             - ${PWD}/nginx.conf:/etc/nginx/nginx.conf
             - /etc/passwd:/etc/passwd:ro
+            - /etc/group:/etc/group:ro
         depends_on:
             - "php"
             - "mongodb"
