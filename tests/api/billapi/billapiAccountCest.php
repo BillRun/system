@@ -6,14 +6,24 @@ class billapiAccountCest
     public $accountDetails;
     public $planDetails;
     public $serviceDetails;
+    protected $isRun =false;
+    	private $defaultTimezone;
+
     public function _before(ApiTester $I)
     {
+        	if(!$this->isRun) {
+			$this->isRun = true;
+			//load the  config so  we  can  ovverride the  timezone AFTER  it  waas  set by configuration
+			Billrun_Factory::config();
+			$this->defaultTimezone = date_default_timezone_get();
+		}
     }
 
 
 
     public function testCreateAccount(ApiTester $I)
     {
+        date_default_timezone_set('UTC');
         $I->createAccountWithAllMandatoryCustomFields([
             "firstname"=> "rgf",
             "lastname"=> "yhtr",
@@ -54,11 +64,13 @@ class billapiAccountCest
                 'email' => "gresw@gmail.com"
             ]);
         $this->accountDetails = json_decode($I->grabResponse(), true)['entity'];
+      date_default_timezone_set($this->defaultTimezone );
     }
 
 
     public function testAccountPermanentchange(ApiTester $I)
     {
+        date_default_timezone_set('UTC');
         $I->createAccountWithAllMandatoryCustomFields([
             "payment_gateway"=> [
                 "former"=> [],
@@ -110,13 +122,14 @@ class billapiAccountCest
                 'from' => $effective_date
             ]
         );
-        
+       date_default_timezone_set($this->defaultTimezone );     
     }
 
 
 
     public function testAccountBillapiUniqueget(ApiTester $I)
    {
+	date_default_timezone_set('UTC');
     $from = date('Y-m-d H:i:s', strtotime('-10 day'));
 
     $I->createAccountWithAllMandatoryCustomFields([
@@ -185,6 +198,8 @@ class billapiAccountCest
         ]
     ]);
     $I->seeResponseContains('"status":1');
+    date_default_timezone_set($this->defaultTimezone );
+
 }
 
 }
