@@ -454,7 +454,7 @@
 		"start_date" : "2025-10-06T13:33:00Z",
 		"end_date" : "2125-10-06T07:00:00Z",
 		"start" : "2025-10-06T13:33:00Z",
-		"discount_from" : "2025-10-06T13:33:00Z",
+		"discount_from" : "2025-10-01T00:00:00Z",
 		"discount_to" : "2025-11-01T00:00:00Z"
 	    }
 
@@ -1123,8 +1123,8 @@
 	    }]
 	  },
 	  "final_charge": -59.0,
-  	  "discount_from": "2025-10-15T00:00:00Z",	  
-          "discount_to": "2025-10-31T23:59:59Z",
+  	  "discount_from": "2025-10-01T00:00:00Z",	  
+          "discount_to": "2025-11-01T00:00:00Z",
         "eligible_line": "noneproration_test_stamp"
       }
     ]

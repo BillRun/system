@@ -17,6 +17,7 @@ class Billrun_Collection extends Billrun_Base {
 
 
 	public function collect($aids = array(), $collectDir = '') {
+
 		$account = Billrun_Factory::account();
 		Billrun_Factory::log()->log("Pulling accounts that are subject to collection", Zend_Log::DEBUG);
 		$markedAsInCollection = $account->getInCollection($aids);
@@ -27,7 +28,7 @@ class Billrun_Collection extends Billrun_Base {
 		$aidsValues = array_values(array_map(function($debtByAid) {
 			return $debtByAid->getRawData()['aid'];
 		}, $debtByAids));
-		
+
 		$updateCollectionStateChangedByProcess = [];
 
 		$gadBatchLimit = Billrun_Factory::config()->getConfigValue('subscribers.account.gad_limit', false, "int");
@@ -40,9 +41,9 @@ class Billrun_Collection extends Billrun_Base {
 		Billrun_Factory::log("Got " . count($aidsBatches) . " aids chunks" , Zend_Log::DEBUG);
 		$accountsInConditions = [];
 		for ($i = 0; $i < count($aidsBatches); $i++) {
-			
+
 			$query = ['aid' => array('$in' => $aidsBatches[$i])];
-			$query['read_preference'] = 'RP_PRIMARY'; 
+			$query['read_preference'] = 'RP_PRIMARY';
 			$accountsInConditions = array_merge($account->loadAccountsForQuery($query), $accountsInConditions);
 		}
 		$updateCollectionStateChangedByProcess = $this->getUpdateCollectionStateChangedByProcess(array_merge($accountsInConditions, $markedAsInCollection), $debtByAids, $collectDir);
