@@ -2000,24 +2000,6 @@ class Billrun_Util {
 		}
 		return true;
 	}
-	
-
-	/**
-	 * check all conditions are met
-	 * 
-	 * @param array $row
-	 * @param array $conditions - array of condtions includes the following attributes: "field_name", "op", "value"
-	 * @return boolean
-	 */
-	public static function areConditionsMet($row, $conditions) {
-		foreach ($conditions as $condition) {
-			if (!Billrun_Util::isConditionMet($row, $condition)) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 
 	/**
 	 * try to fork, and if successful update the process log stamp
