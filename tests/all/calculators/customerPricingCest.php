@@ -53,7 +53,7 @@ class customerPricingCest
     protected function loadFixtures()
     {
         $filesToLoad = [
-            'config', 'plans', 'services', 'subscribers',
+            'plans', 'services', 'subscribers',
             'rates', 'lines', 'taxes', 'discounts', 'balances',
         ];
         foreach ($filesToLoad as $fileName) {
@@ -727,4 +727,5 @@ class customerPricingCest
             'tax_data'     => ['total_amount' => 0.255],
         ]);
     }
-}
+  
+ }
