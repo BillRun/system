@@ -88,7 +88,7 @@ const ServiceCountersForm = ({item = Immutable.Map(), mode = 'create', usages = 
   }
 
   return (
-    <Form className="pt10">
+    <Form className="form-horizontal pt10">
 
       {mode === 'create' && (
         <FormGroup key="group_name" validationState={errors.has('group_key') ? 'error' : null} className="mb10">

@@ -3,7 +3,8 @@
  * Provides wrappers for removed/renamed components so existing JSX doesn't need to change.
  */
 import React, { useState } from 'react';
-import { Card, Form, Container, Badge, Collapse } from 'react-bootstrap';
+import classNames from 'classnames';
+import { Card, Form, Container, Collapse } from 'react-bootstrap';
 // ---------------------------------------------------------------------------
 // Panel  →  Card  (supports: header, bsStyle, collapsible, expanded props)
 // ---------------------------------------------------------------------------
@@ -21,15 +22,27 @@ export const Panel = ({
   const borderVariant = bsStyle && bsStyle !== 'default' ? `border-${bsStyle}` : '';
   const panelStyle = bsStyle && bsStyle !== 'default' ? `panel-${bsStyle}` : 'panel-default';
   const panelClassName = `panel ${panelStyle} ${borderVariant} ${className}`.trim();
-  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded !== false);
+  // BS3 react-bootstrap 0.31: collapsible Panel defaults to closed (defaultExpanded = false).
+  // Match that behaviour: undefined → false (closed), true → true (open).
+  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded ?? false);
   const isControlled = typeof expanded === 'boolean';
   const isExpanded = isControlled ? expanded : internalExpanded;
+  // Mirrors RB 0.31.5 Panel.renderHeader: React elements get panel-title class cloned in
+  // (h1-h6 also get clearfix for floated buttons); primitives render as-is (no h3 wrapper).
+  const isHeadingTag = node =>
+    React.isValidElement(node)
+    && typeof node.type === 'string'
+    && /^h[1-6]$/.test(node.type);
+
   const normalizeHeaderNode = (headerValue) => {
-    if (typeof headerValue === 'string') {
-      return <h3 className="panel-title">{headerValue}</h3>;
-    }
-    if (React.isValidElement(headerValue) && typeof headerValue.type === 'string' && /^h[1-6]$/.test(headerValue.type)) {
-      return <h3 className="panel-title">{headerValue.props.children}</h3>;
+    if (React.isValidElement(headerValue)) {
+      return React.cloneElement(headerValue, {
+        className: classNames(
+          headerValue.props.className,
+          'panel-title',
+          isHeadingTag(headerValue) && 'clearfix',
+        ),
+      });
     }
     return headerValue;
   };
@@ -48,7 +61,14 @@ export const Panel = ({
     };
     const collapsibleHeader = (
       <h3 className="panel-title">
-        <button type="button" className={isExpanded ? '' : 'collapsed'} onClick={onToggle}>{headerContent}</button>
+        <a
+          href="#"
+          role="button"
+          className={isExpanded ? '' : 'collapsed'}
+          onClick={onToggle}
+        >
+          {headerContent}
+        </a>
       </h3>
     );
     return (
@@ -65,10 +85,16 @@ export const Panel = ({
 
   const headerNode = normalizeHeaderNode(header);
 
+  // Match react-bootstrap 0.31.5 Panel.renderBody: when there are no body
+  // children, the body <div class="panel-body"> is NOT rendered at all
+  // (avoid showing an empty 30px white strip below the heading).
+  const bodyArray = React.Children.toArray(children);
+  const hasBody = bodyArray.length > 0;
+
   return (
     <Card className={panelClassName} style={style} {...rest}>
       {header && <div className="panel-heading">{headerNode}</div>}
-      <div className="panel-body">{children}</div>
+      {hasBody && <div className="panel-body">{bodyArray}</div>}
     </Card>
   );
 };
@@ -160,18 +186,22 @@ export const FormGroup = ({ children, className = '', validationState, ...props 
 };
 
 // ---------------------------------------------------------------------------
-// Label  →  Badge  (react-bootstrap Label with bsStyle/variant → Badge with bg)
-// Accepts both the old bsStyle prop AND the newer variant prop (some call sites
-// already use variant="info" etc.) so that either form works.
+// Label  →  <span class="label label-{variant}">  (BS3 etalon DOM)
+// RB v2 dropped <Label>; using <Badge> renders <span class="badge bg-danger">,
+// which yeti.css styles incorrectly: `.badge { bg: #008cba }` (line 4018) comes
+// AFTER `.bg-danger { bg: #f2dede }` (line 421) and wins because of equal
+// specificity, so every variant ends up rendering blue.
+// Render the etalon DOM directly so yeti's `.label.label-danger`,
+// `.label-info`, `.label-success`, ... fire as designed.
+// Accepts both the old bsStyle prop AND the newer variant prop.
 // ---------------------------------------------------------------------------
 export const Label = ({ children, bsStyle, variant, className = '', ...props }) => {
-  // Resolve effective style: prefer bsStyle (BS3 API), fall back to variant
   const effective = bsStyle || variant || 'default';
-  const bg = effective === 'default' ? 'secondary' : effective;
+  const labelClass = classNames('label', `label-${effective}`, className);
   return (
-    <Badge bg={bg} className={className} {...props}>
+    <span className={labelClass} {...props}>
       {children}
-    </Badge>
+    </span>
   );
 };
 

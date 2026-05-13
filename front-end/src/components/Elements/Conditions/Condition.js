@@ -45,7 +45,7 @@ class Condition extends Component {
     onChangeOperator: () => {},
     onChangeValue: () => {},
     onRemove: () => {},
-    removeButtonVariant: 'link',
+    removeButtonVariant: 'default',
     removeButtonClass: 'pull-left btn-xs',
   }
 

@@ -38,8 +38,8 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
   const onRemove = field => propsOnRemove(entity, field);
   const onEdit = field => propsOnEdit(entity, field);
   const actions = [
-    { type: 'edit', onClick: onEdit, enable: isEditable, actionSize: 'small' },
-    { type: 'remove', onClick: onRemove, enable: isRemoveable, actionSize: 'small' },
+    { type: 'edit', onClick: onEdit, enable: isEditable },
+    { type: 'remove', onClick: onRemove, enable: isRemoveable },
   ];
   return ({
     ...otherStateProps,

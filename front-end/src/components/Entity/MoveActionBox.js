@@ -214,12 +214,12 @@ class MoveActionBox extends Component {
             item={item}
             size={10}
           />
-          <Form className="form-horizontal pt20">
+          <Form className="form-horizontal" style={{ padding: '35px 50px 0 50px' }}>
             <FormGroup>
-              <Tabs defaultActiveKey={activeTab} transition={false} id="move-entity" onSelect={this.handleSelectTab}>
+              <Tabs variant="pills" defaultActiveKey={activeTab} transition={false} id="move-entity" onSelect={this.handleSelectTab}>
                 <Tab title="Move Start Date" eventKey={1} disabled={!item.getIn(['revision_info', 'movable_from'], true)}>
-                  <div className="pt10" />
-                  <Col sm={3} className="text-right pt10">
+                  <br />
+                  <Col sm={3} className="text-right" style={{ padding: '10px 15px' }}>
                     &nbsp;
                   </Col>
                   <Col sm={6} className="pr0">
@@ -237,7 +237,7 @@ class MoveActionBox extends Component {
                     />
                   </Col>
                   <Col sm={3} className="pl0 text-left">
-                    <Button onClick={this.toggleStartConfirm} className="ml5" disabled={disableFromSubmit} variant="primary">
+                    <Button onClick={this.toggleStartConfirm} style={{ marginLeft: 4, verticalAlign: 'bottom' }} disabled={disableFromSubmit} variant="primary">
                       OK
                     </Button>
                     <ConfirmModal onOk={this.onClickStartMoveOk} onCancel={this.onClickCloseConfirm} show={showStartConfirm} message={startConfirmMessage} labelOk="Yes" />
@@ -245,8 +245,8 @@ class MoveActionBox extends Component {
                 </Tab>
 
                 <Tab title="Move End Date" eventKey={2} disabled={!item.getIn(['revision_info', 'movable_to'], true)}>
-                  <div className="pt10" />
-                  <Col sm={3} className="text-right pt10">
+                  <br />
+                  <Col sm={3} className="text-right" style={{ padding: '10px 15px' }}>
                     <Field value={isEndDateUnlimited} onChange={this.onUnlimitedChanged} fieldType="checkbox" label="Infinite" disabled={!isLast} />
                   </Col>
                   <Col sm={6} className="pr0">
@@ -264,7 +264,7 @@ class MoveActionBox extends Component {
                     />
                   </Col>
                   <Col sm={3} className="pl0 text-left">
-                    <Button onClick={this.toggleEndConfirm} className="ml5" disabled={disableToSubmit} variant="primary">
+                    <Button onClick={this.toggleEndConfirm} style={{ marginLeft: 4, verticalAlign: 'bottom' }} disabled={disableToSubmit} variant="primary">
                       OK
                     </Button>
                     <ConfirmModal onOk={this.onClickEndMoveOk} onCancel={this.onClickCloseConfirm} show={showEndConfirm} message={endConfirmMessage} labelOk="Yes" />

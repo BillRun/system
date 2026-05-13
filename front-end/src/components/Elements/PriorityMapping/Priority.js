@@ -2,11 +2,10 @@ import React, { memo, useMemo, useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
 import { titleCase } from 'change-case';
 import { List, Map } from 'immutable';
-import { Col } from 'react-bootstrap';
+import { Col, Collapse } from 'react-bootstrap';
 import { FormGroup } from '@/common/BootstrapCompat';
 import PriorityCondition from './PriorityCondition';
 import { CreateButton, Actions } from '@/components/Elements';
-import { Collapse } from 'react-bootstrap';
 
 const createBtnStyle = { marginTop: 5 };
 
@@ -61,22 +60,26 @@ const Priority = ({
           <Actions actions={actions} data={priorityPath} />
         </div>
         <h3 className="panel-title">
-          <button type="button" className={isExpanded ? '' : 'collapsed'} onClick={onToggle}>
+          <a
+            href="#"
+            role="button"
+            className={isExpanded ? '' : 'collapsed'}
+            onClick={onToggle}
+          >
             {`Priority ${index + 2}`}
-          </button>
+          </a>
         </h3>
       </div>
       <Collapse in={isExpanded}>
         <div>
           <div className="panel-body">
             <div className="priority-conditions">
-              <div className="row">
-                <div className="col-sm-12 form-inner-edit-rows">
+              <Col sm={12} className="form-inner-edit-rows">
                 {priorityConditions.isEmpty() && (
                   <small>No conditions found</small>
                 )}
                 {!priorityConditions.isEmpty() && (
-                  <FormGroup className="form-inner-edit-row row">
+                  <FormGroup className="form-inner-edit-row">
                     <Col sm={4} className="hidden-xs"><label className="ml5 mb0">CDR Field</label></Col>
                     <Col sm={3} className="hidden-xs"><label className="mb0">Operator</label></Col>
                     <Col sm={4} className="hidden-xs"><label className="mb0">{titleCase(type)} Parameter</label></Col>
@@ -99,18 +102,15 @@ const Priority = ({
                     onRemove={removeCondition}
                   />
                 )) }
-                </div>
-              </div>
-              <div className="row">
-                <div className="col-sm-12 ml5 pl0">
+              </Col>
+              <Col sm={12} className="ml5 pl0">
                 <CreateButton
                   onClick={onAdd}
                   data={conditionPath}
                   label="Add Condition"
                   buttonStyle={createBtnStyle}
                 />
-                </div>
-              </div>
+              </Col>
             </div>
           </div>
         </div>

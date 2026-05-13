@@ -289,10 +289,10 @@ class Collections extends Component {
     const { isDirty, dirtySets, processes } = this.props;
     const { reordering } = this.state;
     return (
-      <Panel variant={dirtySets.includes(-1) ? "warning" : "default"}>
+      <Panel bsStyle={dirtySets.includes(-1) ? "warning" : "default"} className="collections-outer">
         {isDirty && (<Col sm={12} className="pr0 pl0"><p className="alert-warning mb0 pl10 pr10 pt5 pb5">You have unsaved changes!</p></Col>)}
-        <Form>
-          <Col sm={12}>
+        <Form className="form-horizontal">
+          <Col sm={12} className="pr0 pl0">
             <SortableFieldsContainer
               lockAxis="y"
               helperClass="draggable-row"

@@ -2,7 +2,9 @@ import React, { useCallback, memo } from 'react';
 import PropTypes from 'prop-types';
 import { Button } from 'react-bootstrap';
 const CreateButton = ({
-  label = 'New', onClick = () => {}, type = '', action = '', disabled = false, title = '', data = null, buttonStyle = { marginTop: 15 }, buttonClass = '',
+  // Default matches react-bootstrap 0.31 behavior (bsSize="xsmall" → .btn-xs).
+  // RB2 has no native xs size, so we drive it through className.
+  label = 'New', onClick = () => {}, type = '', action = '', disabled = false, title = '', data = null, buttonStyle = { marginTop: 15 }, buttonClass = 'btn-xs',
 }) => {
   const cachedOnClick = useCallback(() => onClick(data), [onClick, data]);
   const isXs = /\bbtn-xs\b/.test(buttonClass);
@@ -10,7 +12,6 @@ const CreateButton = ({
     <Button variant="primary"
       size={isXs ? undefined : 'sm'}
       className={buttonClass}
-      
       onClick={cachedOnClick}
       style={buttonStyle}
       disabled={disabled}

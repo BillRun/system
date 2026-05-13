@@ -65,7 +65,7 @@ class ReopenActionBox extends Component {
     return (
       <ModalWrapper show={true} title={title} labelCancel="Close" onCancel={this.onClickCancel} onHide={this.onClickCancel} labelOk="Reopen" onOk={this.onClickOk}>
         <div className="text-center reopen-modal">
-          <Form style={formStyle}>
+          <Form className="form-horizontal" style={formStyle}>
             <FormGroup validationState={fromError.length > 0 ? 'error' : null}>
               <Col as={ControlLabel} sm={4}>
                 Reopen From Date

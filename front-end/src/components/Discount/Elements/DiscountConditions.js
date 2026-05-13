@@ -293,7 +293,7 @@ const DiscountConditions = ({
     type: 'remove',
     helpText: removeGroupHelpText,
     showIcon: true,
-    actionStyle: 'link',
+    actionStyle: 'danger',
     actionSize: 'xsmall',
     onClick: removeConditionsGroup,
   }], [removeConditionsGroup]);
@@ -304,7 +304,7 @@ const DiscountConditions = ({
     type: 'remove',
     helpText: removeServiceGroupHelpText,
     showIcon: true,
-    actionStyle: 'link',
+    actionStyle: 'danger',
     actionSize: 'xsmall',
     onClick: removeServiceSubscriberConditionsGroup,
   }], [removeServiceSubscriberConditionsGroup]);
@@ -324,7 +324,7 @@ const DiscountConditions = ({
     type: 'remove',
     helpText: removeServiceAccountGroupHelpText,
     showIcon: true,
-    actionStyle: 'link',
+    actionStyle: 'danger',
     actionSize: 'xsmall',
     onClick: removeServiceAccountConditionsGroup,
   }], [removeServiceAccountConditionsGroup]);
@@ -409,9 +409,9 @@ const DiscountConditions = ({
   ), [isConditoinsExists]);
 
   const conditionsHeader = useMemo(() => (
-    <div className="panel-title clearfix">
+    <div>
+      <h4 className="inline mt0 mb0">Conditions<small> | {conditionsHeaderDescription}</small></h4>
       <div className="pull-right">{addNewConditionsBtn}</div>
-      Conditions<small> | {conditionsHeaderDescription}</small>
     </div>
   ), [addNewConditionsBtn, conditionsHeaderDescription]);
 
@@ -420,7 +420,7 @@ const DiscountConditions = ({
   return (
     <Panel header={conditionsHeader}>
       {discount.getIn(conditionsPath, Immutable.List()).map((conditions, idx) => (
-        <Panel header={getConditionHeader(idx)} key={idx} variant={errors.has([...conditionsPath, idx].join('.')) ? "danger" : undefined }>
+        <Panel header={getConditionHeader(idx)} key={idx} bsStyle={errors.has([...conditionsPath, idx].join('.')) ? "danger" : undefined }>
           { conditions.getIn(accountConditionsPath, Immutable.List()).isEmpty()
           && conditions.getIn(subscriberConditionsPath, Immutable.List()).isEmpty()
           && conditions.getIn(servicesAccountConditionsPath, Immutable.List()).isEmpty()

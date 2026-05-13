@@ -151,7 +151,7 @@ class Exporter extends Component {
       to: moment(query.get('to', null)).isValid() ? moment(query.get('to', null)) : '',
     });
     return (
-      <Form>
+      <Form className="form-horizontal">
         { entityKey === '' && (
           <FormGroup>
             <Col sm={3} lg={2} as={ControlLabel}>

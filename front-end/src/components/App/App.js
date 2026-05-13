@@ -188,33 +188,112 @@ class App extends Component {
     }
   }
 
-  getMenuTitleByPathname = (pathname) => {
-    const { mainMenu } = this.props;
-    const route = (pathname || '').replace(/^\//, '');
-    if (!route || !Immutable.Iterable.isIterable(mainMenu)) {
-      return '';
+  // Static route→title map ported from RRv5 route config (Routes.js title= props).
+  //
+  // WHY a static map and not loader + useMatches() (the "proper" RRv6 approach):
+  //   loader/useMatches requires migrating to a data router (createBrowserRouter),
+  //   which would mean rewriting the entire routing layer — out of scope for a
+  //   React 19 upgrade whose goal is visual/API parity, not architecture refactor.
+  //
+  // If the routing layer is ever migrated to createBrowserRouter, this map should
+  // be replaced with per-route `handle.title` metadata consumed via useMatches().
+  //
+  // In the meantime: when adding a new top-level route, add its title here too.
+  // Sub-routes (e.g. products/product) set their own title via setPageTitle()
+  // in componentDidMount — do NOT add them here (see syncMenuPageTitle guard).
+  static routeTitles = {
+    '':                              '',
+    'users':                         'Users',
+    'plans':                         'Plans',
+    'services':                      'Services',
+    'discounts':                     'Discounts',
+    'charges':                       'Conditional Charges',
+    'products':                      'Products',
+    'prepaid_plans':                 'Prepaid Plans',
+    'charging_plans':                'Buckets Groups',
+    'auto_renews':                   'Recurring Charges',
+    'prepaid_includes':              'Prepaid Buckets',
+    'customers':                     'Customers',
+    'taxes':                         'Tax Rates',
+    'reports':                       'Reports',
+    'input_processors':              'Input Processors',
+    'input_processor':               'Input Processors',
+    'export_generator':              'Export Generator',
+    'export_generators':             'Export Generators',
+    'usage':                         'Usage',
+    'run_cycle':                     'Billing Cycle',
+    'queue':                         'Queue',
+    'invoices':                      'Invoices',
+    'payments':                      'Payments',
+    'charging':                      'Charging',
+    'payment-files':                 'Transactions Request File',
+    'response-payment-files':        'Transactions Response File',
+    'settings':                      'General Settings',
+    'payment_gateways':              'Payment Gateways',
+    'select_input_processor_template': 'Create New Input Processor',
+    'collections':                   'Dunning',
+    'invoice-template':              'Invoice Template',
+    'audit-trail':                   'Audit Trail',
+    'custom_fields':                 'Custom Fields',
+    'events':                        'Events',
+    'email_templates':               'Email Templates',
+    'about':                         'About',
+    'immediate-invoice-charge':      'Create an Immediate Charge Invoice',
+    'immediate-invoice-refund':      'Create an Immediate Refund Invoice',
+    'suggestions':                   'Repricing Suggestions',
+    'login':                         'Login',
+  };
+
+  getRouteTitleByPathname = (pathname) => {
+    const path = (pathname || '').replace(/^\//, '');
+    // Check the explicit static map (covers top-level routes and any sub-routes
+    // we choose to handle here, e.g. 'taxes/mapping-rules').
+    if (App.routeTitles[path] !== undefined) {
+      return App.routeTitles[path];
+    }
+    return null;
+  }
+
+  syncMenuPageTitle = () => {
+    const pathname = this.props.router?.location?.pathname || '';
+    const path = (pathname || '').replace(/^\//, '');
+
+    const routeTitle = this.getRouteTitleByPathname(pathname);
+    if (routeTitle !== null) {
+      if (routeTitle) {
+        this.props.dispatch(setPageTitle(routeTitle));
+      }
+      return;
     }
 
+    // Sub-routes (path contains '/') that are NOT in the static map are
+    // handled by the individual route component via setPageTitle in
+    // componentDidMount.  Do NOT overwrite their title with a menu lookup here,
+    // because componentDidUpdate fires *after* componentDidMount.
+    if (path.includes('/')) {
+      return;
+    }
+
+    // Fallback for unknown top-level routes: search the sidebar menu tree.
+    const { mainMenu } = this.props;
+    if (!path || !Immutable.Iterable.isIterable(mainMenu)) {
+      return;
+    }
     const stack = mainMenu.toArray();
     while (stack.length > 0) {
       const menuItem = stack.pop();
       const menuRoute = menuItem.get('route', '');
-      if (menuRoute === route) {
-        return menuItem.get('title', '');
+      if (menuRoute === path) {
+        const menuTitle = menuItem.get('title', '');
+        if (menuTitle) {
+          this.props.dispatch(setPageTitle(menuTitle));
+        }
+        return;
       }
       const subMenus = menuItem.get('subMenus', Immutable.List());
       if (subMenus.size > 0) {
         stack.push(...subMenus.toArray());
       }
-    }
-    return '';
-  }
-
-  syncMenuPageTitle = () => {
-    const pathname = this.props.router?.location?.pathname || '';
-    const menuTitle = this.getMenuTitleByPathname(pathname);
-    if (menuTitle) {
-      this.props.dispatch(setPageTitle(menuTitle));
     }
   }
 

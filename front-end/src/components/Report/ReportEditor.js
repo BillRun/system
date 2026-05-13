@@ -432,7 +432,7 @@ class ReportEditor extends Component {
     return (
       <div className="ReportEditor">
         <Form className="form-horizontal">
-          <Panel header={<span>Basic Details</span>} collapsible={mode === 'update'} className="collapsible mb10">
+          <Panel header={<span>Basic Details</span>} collapsible={mode === 'update'} className="collapsible">
             <EditorDetails
               mode={mode}
               title={report.get('key', '')}
@@ -444,7 +444,7 @@ class ReportEditor extends Component {
               onChangeType={this.onChangeReportType}
             />
           </Panel>
-          <Panel header={<span>Columns {mandatory}</span>} className="mb10">
+          <Panel header={<span>Columns {mandatory}</span>}>
             <EditorColumns
               mode={mode}
               columns={columns}
@@ -459,7 +459,7 @@ class ReportEditor extends Component {
               onMove={this.onMoveColumn}
             />
           </Panel>
-          <Panel header={<span>Conditions</span>} collapsible className="collapsible mb10" defaultExpanded={false}>
+          <Panel header={<span>Conditions</span>} collapsible className="collapsible" defaultExpanded={false}>
             <EditorConditions
               mode={mode}
               conditions={report.get('conditions', Immutable.List())}
@@ -472,7 +472,7 @@ class ReportEditor extends Component {
               onChangeValue={this.onChangeConditionValue}
             />
           </Panel>
-          <Panel header={<span>Sort</span>} collapsible className="collapsible mb10" defaultExpanded={false}>
+          <Panel header={<span>Sort</span>} collapsible className="collapsible" defaultExpanded={false}>
             <EditorSorts
               mode={mode}
               sorts={report.get('sorts', Immutable.List())}
@@ -485,7 +485,7 @@ class ReportEditor extends Component {
               onMove={this.onMoveSort}
             />
           </Panel>
-          <Panel header={<span>Formatting Style</span>} collapsible className="collapsible mb10" defaultExpanded={false}>
+          <Panel header={<span>Formatting Style</span>} collapsible className="collapsible" defaultExpanded={false}>
             <EditorFormatters
               mode={mode}
               formats={report.get('formats', Immutable.List())}

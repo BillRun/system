@@ -51,7 +51,7 @@ const Priorities = ({
   }, [onRemove, category]);
 
   return (
-    <Form>
+    <Form className="form-horizontal">
       <Panel header={<div style={demmyTitleStyle}>Priority 1</div>}>
         <Field
           fieldType="checkbox"

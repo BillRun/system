@@ -52,7 +52,7 @@ class CustomerMappings extends Component {
     const { settings, subscriberFields } = this.props;
     const customerMappings = settings.get('customer_identification_fields', Immutable.Map());
     return (
-      <Form className="customerMappings">
+      <Form className="form-horizontal customerMappings">
         <div className="form-group">
           <div className="col-lg-12">
             <h4>

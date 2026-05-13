@@ -12,6 +12,7 @@ import ProductPrice from './components/ProductPrice';
 import { ProductDescription } from '@/language/FieldDescriptions';
 import { EntityFields } from '../Entity';
 import UsageTypesSelector from '../UsageTypes/UsageTypesSelector';
+import PlaysSelector from '../Plays/PlaysSelector';
 import { EntityTaxDetails } from '@/components/Tax';
 import {
   getConfig,
@@ -83,6 +84,10 @@ class Product extends Component {
     const newError = (!getConfig('keyUppercaseRegex', /./).test(value)) ? allowedCharacters : '';
     this.setState({ errors: Object.assign({}, errors, { name: newError }) });
     this.props.onFieldUpdate(['key'], value);
+  }
+
+  onChangePlay = (play) => {
+    this.props.onFieldUpdate(['play'], play);
   }
 
   onChangeDescription = (e) => {
@@ -230,6 +235,12 @@ class Product extends Component {
           <Form className="form-horizontal">
             <Panel>
 
+              <PlaysSelector
+                entity={product}
+                editable={editable && mode === 'create'}
+                onChange={this.onChangePlay}
+              />
+
               <FormGroup>
                 <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('description', getFieldNameType('service'), sentenceCase('title'))}
@@ -297,12 +308,12 @@ class Product extends Component {
                       />
                     )
                     : (
-                      <Row>
+                      <div>
                         <Col sm={3} style={{ paddingTop: 7 }}>{usaget}</Col>
-                        <Col sm={4} as={ControlLabel}>
+                        <Col sm={4} as={ControlLabel} className="pr0 pl0">
                           Units of Measure
                         </Col>
-                        <Col sm={5}>
+                        <Col sm={5} className="pr0">
                           <UsageTypesSelector
                             usaget={usaget}
                             unit={unit}
@@ -312,7 +323,7 @@ class Product extends Component {
                             editable={mode !== 'view'}
                           />
                         </Col>
-                      </Row>)
+                      </div>)
                   }
                 </Col>
               </FormGroup>

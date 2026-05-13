@@ -10,12 +10,15 @@ const mapModalSize = size => {
 };
 
 const ModalWrapper = props => {
-  const handleHide = props.onHide || props.onCancel;
+  // onHide controls both backdrop/Escape closing AND the visible ×-button.
+  // onCancel is only for the footer Cancel button — it does NOT add a × close button.
+  // This matches react-bootstrap 0.31 behaviour: closeButton={props.onHide !== null}.
+  const handleHide = props.onHide || null;
   return (
     <Modal
       show={props.show}
       size={mapModalSize(props.modalSize)}
-      onHide={handleHide || (() => {})}
+      onHide={handleHide || props.onCancel || (() => {})}
       enforceFocus={typeof props.enforceFocus === 'boolean' ? props.enforceFocus : true}
       animation={props.animation !== false}
     >

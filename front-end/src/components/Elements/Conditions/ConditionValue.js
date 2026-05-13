@@ -382,6 +382,7 @@ class ConditionValue extends Component {
             onSelect={this.onChangeDateOption}
             id="date-select-options"
             title={actionTitle}
+            variant="outline-secondary"
             className="full-width"
           >
             <Dropdown.Item key="date" eventKey="date">Select Date:</Dropdown.Item>

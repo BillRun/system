@@ -54,7 +54,7 @@ const PartialConfirmForm = ({ item = Immutable.Map(),updateField }) => {
   }
 
   return (
-    <Form>
+    <Form className="form-horizontal">
       <FormGroup>
         <Col sm={5} as={ControlLabel}></Col>
         <Col sm={6}><Label variant="danger">This action is irreversible</Label></Col>

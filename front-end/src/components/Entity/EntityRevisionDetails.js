@@ -268,13 +268,13 @@ class EntityRevisionDetails extends Component {
     }
     // create / clone
     return (
-      <div className="inline" style={{ padding: 0, margin: 7 }}>
-        <Form style={{ marginBottom: 0 }}>
+      <div className="inline" style={{ width: 220, padding: 0, margin: 7 }}>
+        <Form className="form-horizontal" style={{ marginBottom: 0 }}>
           <FormGroup style={{ marginBottom: 0 }}>
-            <div className="inline" style={{ verticalAlign: 'middle', marginRight: 15 }}>
+            <div className="inline" style={{ verticalAlign: 'top', marginRight: 15 }}>
               <ControlLabel>From</ControlLabel>
             </div>
-            <div className="inline" style={{ padding: 0 }}>
+            <div className="inline" style={{ padding: 0, width: 200 }}>
               <Field
                 fieldType="date"
                 value={from}

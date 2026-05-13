@@ -4,7 +4,7 @@ import Immutable from 'immutable';
 
 
 /* COMPONENTS */
-import Field from '@/components/Field';
+import BS3Multiselect from '@/components/Filter/BS3Multiselect';
 
 export default class Filter extends Component {
 
@@ -109,13 +109,11 @@ export default class Filter extends Component {
                    className="form-control"/>
           </div>
           <div className="pull-left">
-            <Field
-              fieldType="select"
-              multi
-              value={filter_by.join(',')}
-              options={fields_options}
+            <BS3Multiselect
+              data={fields_options}
               onChange={this.onSelectFilterField}
-              placeholder="Search in fields"
+              buttonWidth="100%"
+              nonSelectedText="Search in fields"
             />
           </div>
           <div className="search-button pull-left">

@@ -500,7 +500,7 @@ class Customer extends Component {
           />
 
           <FormGroup key="services">
-            <Col componentClass={ControlLabel} sm={3} lg={2}>Services</Col>
+            <Col as={ControlLabel} sm={3} lg={2}>Services</Col>
             <Col sm={8} lg={9}>
               <Field
                 fieldType="select"

@@ -142,7 +142,7 @@ class EmailTemplate extends Component {
     }
 
     return (
-      <Form>
+      <Form className="form-horizontal">
         
         {/* CHANGE 7: Render Tabs based on the 'templates' array in config */}
         <FormGroup>

@@ -73,7 +73,7 @@ class ComputedRate extends Component {
     const checkboxStyle = { marginTop: 10 };
     const conditionOption = this.getConditionResultProjectOptions().concat(computedlineKeyOptions);
     return (
-      <Form>
+      <Form className="form-horizontal">
         <FormGroup>
           <Col as={ControlLabel} sm={2}>
             Computation Type

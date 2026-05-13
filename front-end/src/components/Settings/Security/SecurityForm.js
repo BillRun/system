@@ -93,6 +93,7 @@ class SecurityForm extends Component {
                   dateFormat={toDateFnsFormat(getConfig('dateFormat', 'DD/MM/YYYY'))}
                   selected={item.get('from', '').length ? moment(item.get('from', '')).toDate() : null}
                   onChange={this.onChangeDateFrom}
+                  isClearable={true}
                   placeholderText="Select Date..."
                 />
               </div>
@@ -110,6 +111,7 @@ class SecurityForm extends Component {
                   dateFormat={toDateFnsFormat(getConfig('dateFormat', 'DD/MM/YYYY'))}
                   selected={item.get('to', '').length ? moment(item.get('to', '')).toDate() : null}
                   onChange={this.onChangeDateTo}
+                  isClearable={true}
                   placeholderText="Select Date..."
                 />
               </div>

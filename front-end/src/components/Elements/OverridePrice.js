@@ -123,7 +123,7 @@ const OverridePrice = ({ type, overrides = Immutable.List(), options = [], onCha
   };
 
   return (
-    <Form>
+    <Form className="form-horizontal">
       <Panel header={<h3>{getFieldName("subscriber_price_override_panel_title", type)}</h3>}>
         <FormGroup>
           <Col as={ControlLabel} sm={3} lg={2}>

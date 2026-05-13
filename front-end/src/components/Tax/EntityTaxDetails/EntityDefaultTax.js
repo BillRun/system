@@ -45,7 +45,7 @@ const EntityDefaultTax = ({tax = Map(), disabled = false, itemName = '', typeOpt
   const entityLabel = useMemo(() => getConfig(['systemItems', itemName, 'itemName'], ''), [itemName]);
 
   return (
-    <>
+    <div className="form-horizontal">
       <FormGroup>
         <Col as={ControlLabel} sm={3} lg={2}>
           { getFieldName('type', getFieldNameType(itemName), sentenceCase('type'))}
@@ -136,7 +136,7 @@ const EntityDefaultTax = ({tax = Map(), disabled = false, itemName = '', typeOpt
           />
         </Col>
       </FormGroup>
-    </>
+    </div>
   );
 }
 

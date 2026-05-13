@@ -98,7 +98,7 @@ const PriorityCondition = ({
   }
 
   return (
-    <FormGroup className="form-inner-edit-row row">
+    <FormGroup className="form-inner-edit-row">
       <Col className="visible-xs-block">
         <label>CDR Field</label>
       </Col>

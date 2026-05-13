@@ -56,7 +56,7 @@ const Usage = ({
   return (
     <Row>
       <Col lg={12}>
-        <Form>
+        <Form className="form-horizontal">
           <Panel header={renderMainPanelTitle()}>
             { renderRemove() }
             <Panel header={<h3>BillRun fields</h3>}>

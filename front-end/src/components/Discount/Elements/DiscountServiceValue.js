@@ -192,7 +192,7 @@ class DiscountServiceValue extends Component {
 
     return (
       <ModalWrapper show={true} onOk={this.onCloseModal} title={title}>
-        <Form>
+        <Form className="form-horizontal">
           {isQuantitative && (
             <FormGroup>
               <Col sm={11} className="col-sm-offset-1" >

@@ -5,7 +5,7 @@ import { Form, Col } from 'react-bootstrap';
 import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 const APIDetails = (props) => (
   <div className="APIDetails">
-    <Form>
+    <Form className="form-horizontal">
       <FormGroup>
         <Col as={ ControlLabel } md={ 1 }>URL</Col>
         <Col lg={ 7 }>

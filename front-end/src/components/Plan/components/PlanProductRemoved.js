@@ -30,7 +30,7 @@ export default class PlanProductRemoved extends Component {
       <h3 className="product-removed">
         {item.get('key', '')} ({usaget}) <i>{item.get('code', '')}</i>
         <Help contents={item.get('description', '')} />
-        <Button onClick={this.onProductUndoRemove} size="sm" className="pull-right" style={{ minWidth: 80 }}><i className="fa fa-mail-reply" />&nbsp;Undo</Button>
+        <Button onClick={this.onProductUndoRemove} variant="default" className="btn-xs pull-right" style={{ minWidth: 80 }}><i className="fa fa-mail-reply" />&nbsp;Undo</Button>
       </h3>
     );
     return (<Panel header={header} />);

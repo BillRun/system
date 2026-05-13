@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
-import { Tabs, Tab } from 'react-bootstrap';
+import { Modal, Tabs, Tab } from 'react-bootstrap';
 import { Panel } from '@/common/BootstrapCompat';
-import { ModalWrapper } from '@/components/Elements';
 
 export default class GatewayParamsModal extends Component {
   constructor(props) {
@@ -278,18 +277,21 @@ export default class GatewayParamsModal extends Component {
     const { settings, show = false } = this.props;
 
     return (
-      <ModalWrapper
-        show={show}
-        title={`${settings.get('title')} parameters`}
-        onCancel={this.onClose}
-        onHide={this.onClose}
-        onOk={this.onSave}
-        labelOk="Save"
-        labelCancel="Cancel"
-        modalSize="large"
-      >
-        { this.renderModalBody() }
-      </ModalWrapper>
+      <Modal show={show} onHide={this.onClose} size="lg">
+        <div className="modal-header">
+          <button type="button" className="close" onClick={this.onClose} aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 className="modal-title">{settings.get('title')} parameters</h4>
+        </div>
+        <Modal.Body>
+          { this.renderModalBody() }
+        </Modal.Body>
+        <Modal.Footer>
+          <button type="button" className="btn btn-default" onClick={this.onClose}>Cancel</button>
+          <button type="button" className="btn btn-primary" onClick={this.onSave}>Save</button>
+        </Modal.Footer>
+      </Modal>
     );
   }
 }

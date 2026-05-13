@@ -203,7 +203,6 @@ const ImmediateInvoiceSetup = ({ accountsOptions = [], currency = '', immediateI
     {
       type: 'remove',
       showIcon: true,
-      actionSize: 'xsmall',
       enable: !lines.isEmpty() && !isInvoiceConfirmed,
       onClick: onRemoveClick,
     },
@@ -212,7 +211,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions = [], currency = '', immediateI
   const header = (
     <div>
       {getFieldName('list_title', 'immediate_invoice')}
-      <div className="pull-right" style={{ marginTop: -2 }}>
+      <div className="pull-right" style={{ marginTop: -5 }}>
         <Actions actions={actions} />
       </div>
     </div>

@@ -79,6 +79,7 @@ const InvoiceLine = ({ line = Immutable.Map(), index, aid, editable = true, curr
             sid={line.get('sid')}
             aid={aid}
             label={line.get('subscriber_name')}
+            searchPlaceholder={getFieldName('subscriber_input_help', 'immediate_invoice')}
             onChange={onChangeSubscriber}
             editable={editable}
           />

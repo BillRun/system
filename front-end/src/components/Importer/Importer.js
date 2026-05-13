@@ -830,7 +830,7 @@ class Importer extends Component {
       <div className="Importer">
         {this.renderStepper()}
         <hr style={{ margin: '20px -15px 0 -15px' }} />
-        <Form className="mb0">
+        <Form className="form-horizontal mb0">
           {this.renderStepContent()}
         </Form>
         <div className="clearfix" />

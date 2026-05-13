@@ -6,7 +6,13 @@ import PropTypes from 'prop-types';
  * Renders a step indicator with the same visual contract.
  */
 const Stepper = ({ steps = [], activeIndex = 0 }) => (
-  <div className="stepper-container" style={{ display: 'flex', alignItems: 'flex-start', width: '100%', padding: '0 8px' }}>
+  <div className="stepper-container" style={{
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+    padding: '0 80px',
+    minHeight: 50,
+  }}>
     {steps.map((step, i) => {
       const isComplete = i < activeIndex;
       const isActive = i === activeIndex;
@@ -16,24 +22,33 @@ const Stepper = ({ steps = [], activeIndex = 0 }) => (
 
       return (
         <React.Fragment key={i}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+          <div style={{
+            position: 'relative',
+            width: 25,
+            height: 25,
+            borderRadius: '50%',
+            border: `1px solid ${circleBorder}`,
+            backgroundColor: circleColor,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 12,
+            color: (isComplete || isActive) ? '#fff' : '#333',
+            fontWeight: isActive ? 'bold' : 'normal',
+            flex: '0 0 auto',
+          }}>
+            {isComplete ? '✓' : i + 1}
             <div style={{
-              width: 25,
-              height: 25,
-              borderRadius: '50%',
-              border: `1px solid ${circleBorder}`,
-              backgroundColor: circleColor,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              position: 'absolute',
+              top: 30,
+              left: '50%',
+              transform: 'translateX(-50%)',
               fontSize: 12,
-              color: (isComplete || isActive) ? '#fff' : '#333',
-              fontWeight: isActive ? 'bold' : 'normal',
-              marginBottom: 5,
+              color: textColor,
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+              fontWeight: 'normal',
             }}>
-              {isComplete ? '✓' : i + 1}
-            </div>
-            <div style={{ fontSize: 12, color: textColor, textAlign: 'center', maxWidth: 80 }}>
               {step.title}
             </div>
           </div>
@@ -42,7 +57,8 @@ const Stepper = ({ steps = [], activeIndex = 0 }) => (
               flex: 1,
               height: 1,
               backgroundColor: i < activeIndex ? '#008cba' : '#cccccc',
-              marginTop: 12,
+              marginLeft: 8,
+              marginRight: 8,
             }} />
           )}
         </React.Fragment>

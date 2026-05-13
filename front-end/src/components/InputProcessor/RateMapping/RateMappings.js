@@ -156,7 +156,7 @@ class RateMappings extends Component {
   render() {
     const rateCategoriesInUse = this.getRateCategoriesInUse();
     return (
-      <Form className="rateMappings">
+      <Form className="form-horizontal rateMappings">
         <div className="form-group">
           <div className="col-lg-12">
             <h4>

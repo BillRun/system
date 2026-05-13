@@ -15,33 +15,25 @@ const mapActionSize = size => {
 
 const Action = (props) => {
   const {
-    type,
-    label,
-    data,
-    actionStyle,
+    type = '',
+    label = '',
+    data = null,
+    actionStyle = 'link',
     showIcon = true,
     actionSize,
-    actionClass,
-    show,
-    enable,
-    helpText,
-    renderFunc,
-    onClick,
-    index,
-    isDropdown,
+    actionClass = '',
+    show = true,
+    enable = true,
+    helpText = '',
+    renderFunc = null,
+    onClick = () => {},
+    index = '',
+    isDropdown = false,
     ...otherProps
   } = props;
   const actionLabel = typeof label === 'string' ? label : '';
-  const iconLinkTypes = ['remove', 'edit', 'view', 'clone', 'enable', 'disable', 'collapse'];
-  const effectiveActionStyle = typeof actionStyle === 'undefined' && iconLinkTypes.includes(type)
-    ? 'link'
-    : actionStyle;
-  const shouldUseXsIconButton = typeof actionSize === 'undefined'
-    && iconLinkTypes.includes(type)
-    && effectiveActionStyle !== 'default';
-  const effectiveActionSize = shouldUseXsIconButton
-    ? 'xsmall'
-    : actionSize;
+  const effectiveActionStyle = actionStyle;
+  const effectiveActionSize = actionSize;
   const mappedVariant = effectiveActionStyle === 'default' ? 'outline-secondary' : effectiveActionStyle;
 
   const showAction = useMemo(() => {

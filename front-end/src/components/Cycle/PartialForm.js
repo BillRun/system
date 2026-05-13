@@ -51,7 +51,7 @@ const PartialForm = ({ item = Immutable.Map(), updateField }) => {
   }
 
   return (
-    <Form>
+    <Form className="form-horizontal">
       {isRerun && (
         <FormGroup className="mb0">
           <Col sm={3} as={ControlLabel}></Col>

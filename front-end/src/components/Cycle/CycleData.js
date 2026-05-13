@@ -194,7 +194,7 @@ class CycleData extends Component {
       onOk: this.onClickConfirmAllConfirm,
       labelOk: 'Yes',
       message: 'Are you sure you want to confirm all the invoices?',
-      children: <Form>
+      children: <Form className="form-horizontal">
         <FormGroup>
           <Col sm={6} as={ControlLabel} className="pt5"><strong>All the invoices for the cycle:</strong></Col>
           <Col sm={6}>{getDateToDisplay(selectedCycle, 'start_date')} - {getDateToDisplay(selectedCycle, 'end_date')}</Col>
@@ -252,7 +252,7 @@ class CycleData extends Component {
       onOk: () => this.onClickInvoiceConfirm(entity),
       labelOk: 'Yes',
       message: 'Are you sure you want to confirm invoice?',
-      children: <Form>
+      children: <Form className="form-horizontal">
         <FormGroup>
           <Col sm={5} as={ControlLabel} className="pt5"><strong>Invoice ID:</strong></Col>
           <Col sm={6} >{entity.get('invoice_id')}</Col>

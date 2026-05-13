@@ -22,8 +22,6 @@ const BalanceThreshold = (props) => {
       type: 'remove',
       showIcon: true,
       onClick: onRemove,
-      actionStyle: 'outline-secondary',
-      actionSize: 'small',
     },
   ];
 
@@ -32,10 +30,10 @@ const BalanceThreshold = (props) => {
       <Col as={ControlLabel} md={2}>
         { `${name} (${unitLabel})` }
       </Col>
-      <Col md={7} className="pr5">
+      <Col md={7}>
         <Field fieldType="number" onChange={onChange} value={value} editable={editable} />
       </Col>
-      <Col md={2} className="actions pl5">
+      <Col md={2}>
         <Actions actions={actions} />
       </Col>
     </FormGroup>

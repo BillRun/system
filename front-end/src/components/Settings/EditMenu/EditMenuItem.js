@@ -103,7 +103,7 @@ class EditMenuItem extends Component {
 
     return (
       <ModalWrapper show={editMode} onOk={this.onSaveAdvencedEdit} onCancel={this.onCancelAdvencedEdit} title={`Edit ${currentTitle} Details`}>
-        <Form>
+        <Form className="form-horizontal">
           <FormGroup>
             <Col sm={2} as={ControlLabel}>Label</Col>
             <Col sm={10}>

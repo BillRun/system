@@ -160,7 +160,7 @@ class OfflinePayment extends Component {
         onCancel={this.props.onClose}
         progress={progress}
       >
-        <Form>
+        <Form className="form-horizontal">
 
           <FormGroup validationState={validationErrors.get('method', '').length > 0 ? 'error' : null}>
             <Col sm={2} as={ControlLabel}>Method</Col>

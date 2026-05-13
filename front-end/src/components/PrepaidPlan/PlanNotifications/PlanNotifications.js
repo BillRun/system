@@ -74,7 +74,7 @@ const PlanNotifications = (props) => {
     <div className="PlanNotifications">
       <Row>
         <Col lg={12}>
-          <Form className="form-horizontal">
+          <Form>
             { editable && (
               <Panel header={<h4>Select prepaid bucket</h4>}>
                 <Field

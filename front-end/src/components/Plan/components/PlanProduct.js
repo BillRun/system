@@ -150,13 +150,11 @@ export default class PlanProduct extends Component {
     const isPercentage = percentage !== null;
     const pricingMethod = (item.get('pricing_method', 'Tiered') === 'volume') ? 'Volume' : 'Tiered';
     const header = (
-      <div className="panel-title clearfix">
-        <div className="pull-right">
-          { editable && <Button onClick={this.onProductRestore} size="sm" style={{ marginRight: 10, minWidth: 80 }}><i className="fa fa-undo fa-lg" /> &nbsp;Undo Changes </Button>}
-          { editable && <Button onClick={this.onProductRemove} size="sm" variant="outline-secondary" style={{ minWidth: 80 }}><i className="fa fa-trash-o danger-red" />&nbsp;Remove</Button>}
-        </div>
+      <h3>
         { `${item.get('key')} (${usaget}) `} <i>{item.get('code', '')}</i><Help contents={item.get('description', '')} />
-      </div>
+        { editable && <Button onClick={this.onProductRemove} variant="default" className="btn-xs pull-right" style={{ minWidth: 80 }}><i className="fa fa-trash-o danger-red" />&nbsp;Remove</Button>}
+        { editable && <Button onClick={this.onProductRestore} variant="default" className="btn-xs pull-right" style={{ marginRight: 10, minWidth: 80 }}><i className="fa fa-undo fa-lg" /> &nbsp;Undo Changes </Button>}
+      </h3>
     );
 
     return (

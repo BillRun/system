@@ -68,8 +68,9 @@ class ProductsList extends Component {
   }
 
   isVisibleListField = (field) => {
+    const { isPlaysEnabled } = this.props;
     const fieldName = field.get('field_name', '');
-    if (fieldName === 'play') {
+    if (fieldName === 'play' && !isPlaysEnabled) {
       return false;
     }
     return field.get('show_in_list', false) || ProductsList.defaultListFields.includes(fieldName);

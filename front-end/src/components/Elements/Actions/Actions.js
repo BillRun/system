@@ -26,7 +26,12 @@ const Actions = ({
 
   if (type === 'dropdown') {
     return (
+      // Use ButtonGroup as the dropdown root so the rendered DOM has
+      // `.btn-group` — matches react-bootstrap 0.31 markup. Yeti styles
+      // `.btn-group .dropdown-toggle.btn-primary~.dropdown-menu` (blue bg,
+      // white items) only when the parent has `.btn-group`.
       <DropdownButton
+        as={ButtonGroup}
         variant={doropDownStyle === 'default' ? undefined : doropDownStyle}
         size={mapSize(doropDownSize)}
         title={doropDownLabel}

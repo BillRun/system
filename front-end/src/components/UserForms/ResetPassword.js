@@ -32,7 +32,7 @@ const ResetPassword = ({ show = true, sending = false, onCancel, updateSending, 
 
   return (
     <ModalWrapper title={'Reset Password'} show={show} closeButton onHide={onCancel}>
-      <Form>
+      <Form className="form-horizontal">
         <FormGroup validationState={error !== '' ? 'error' : null}>
           <Col as={ControlLabel} sm={3} lg={2}>
             Email

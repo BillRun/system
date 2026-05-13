@@ -55,7 +55,7 @@ const Notification = (props) => {
         </Col>
         <Col lg={1} md={1} sm={1} className="text-right">
           { (!first && last && editable) &&
-            <Button variant="outline-secondary" className="pull-right btn-xs" onClick={onRemove}>
+            <Button variant="outline-secondary" size="sm" className="pull-right" onClick={onRemove}>
               <i className="fa fa-trash-o danger-red" />&nbsp;Remove
             </Button>
           }

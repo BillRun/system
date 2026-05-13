@@ -544,7 +544,7 @@ class PlanIncludeGroupCreate extends Component {
             <Button size="sm" onClick={this.handlePrev} style={{ marginRight: 9, minWidth: 90 }}><i className="fa fa-angle-left" />&nbsp;Back</Button>
             { (stepIndex === steps.count() - 1)
               ? <Button size="sm" onClick={this.handleFinish} style={{ minWidth: 90 }} variant="primary">Add</Button>
-              : <Button size="sm" onClick={this.handleNext} style={{ minWidth: 90 }}>Next&nbsp;<i className="fa fa-angle-right" /></Button>
+              : <Button size="sm" variant="outline-secondary" onClick={this.handleNext} style={{ minWidth: 90 }}>Next&nbsp;<i className="fa fa-angle-right" /></Button>
             }
           </Modal.Footer>
         </Modal>
