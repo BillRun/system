@@ -1050,7 +1050,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return date($format, $timestamp);
   }
 
-  protected function calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line) {
+  protected function calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line, $callDurationBefore = 0.0) {
       $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
       $chargeConfigurations = $tariffProfile['chargeConfigurations'];
       $matchingChargeConfigurations = null;
@@ -1077,8 +1077,20 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       $chargeRate = $matchingChargeConfigurations['chargeRate'] ?? 0; //price in cents per 60 seconds
       $baseCharge = $matchingChargeConfigurations['baseCharge'] ?? 0; //price in cents
-      $startInterval = $matchingChargeConfigurations['startInterval'] ?? 0; //in seconds 
-      return $baseCharge / 100 + $chargeRate / 100 / 60 * max($duration / $durationDivide - $startInterval, 0);
+      $startInterval = $matchingChargeConfigurations['startInterval'] ?? 0; //in seconds
+
+      $segmentDuration = (float) $duration / $durationDivide;
+
+      // baseCharge only on the first CDR of the call (call_offset == 0 or absent)
+      $applyBaseCharge = ($callDurationBefore == 0.0);
+
+      // How much of the free startInterval pool is still remaining for this segment
+      $startIntervalRemaining = max($startInterval - $callDurationBefore, 0.0);
+
+      $charge = ($applyBaseCharge ? $baseCharge / 100 : 0.0)
+              + $chargeRate / 100 / 60 * max($segmentDuration - $startIntervalRemaining, 0.0);
+
+      return $charge;
   }
 
   protected function getChargeConfigurations($weekChargeConfigurations, $urt){
@@ -1164,6 +1176,28 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       return $destNumber;
   }
+
+  /**
+   * Returns how many seconds of the call occurred before this CDR's segment.
+   *
+   * Read from $line['call_offset'] (raw value in same unit as duration).
+   * If the field is absent or zero this CDR is the first (or only) CDR of
+   * the call — full startInterval and baseCharge apply.
+   *
+   * The value is divided by the same divide_to_seconds as duration so the
+   * switch only needs to write one unit consistently.
+   */
+  protected function getCallDurationBefore($line, $matchingPaths) {
+      $raw = $line['call_offset'] ?? null;
+      if (is_null($raw) || $raw === '') {
+          return 0.0;
+      }
+      $durationDivide = Billrun_Util::getIn($matchingPaths, 'duration.divide_to_seconds', 1000);
+      if ($durationDivide == 0) {
+          return 0.0;
+      }
+      return max(0.0, (float) $raw / $durationDivide);
+  }
   protected function pricingCdr($line) {
       $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
       $urt =  $line['urt']->sec;
@@ -1211,15 +1245,16 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     if (!$this->checkIfValidTariffProfile($tariffProfile, $urt, $inaNumberRevison['tariffProfile'])) {
         return false;
     }
-    
+    $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+    $callDurationBefore = $this->getCallDurationBefore($line, $matchingPaths);
     $chargeConfigurations = $this->findMatchingOfflineAChargeConfigurations($tariffProfile, $urt);
     if (!$chargeConfigurations) {
         return false;
     }
-    return $this->calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line);
+    return $this->calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line, $callDurationBefore);
   }
 
-  protected function calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line) {
+  protected function calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line, $callDurationBefore = 0.0) {
     $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
     $durationPath = Billrun_Util::getIn($matchingPaths, 'duration.path');
     $duration = Billrun_Util::getIn($line, $durationPath) ?? 0;
@@ -1228,9 +1263,14 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         return false;
     }
     $durationDivide = Billrun_Util::getIn($matchingPaths, 'duration.divide_to_seconds', 1000);
-    $aprice = 0 ;
+    $aprice = 0;
     $left = (float) $duration / $durationDivide;
     $left = $this->converFieldByRoundingRules($left, 'duration');
+
+    // How many seconds of the call were already consumed by previous CDRs.
+    // We walk through sequences skipping capacity that was used before this segment.
+    $alreadyConsumed = (float) $callDurationBefore;
+
     foreach ($chargeConfigurations as $sequence => $chargeConfiguration){
         if($left <= 0){
             break;
@@ -1239,18 +1279,44 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             Billrun_Factory::log("not support unsorted 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
             return false;
         }
-        $ruleType = $chargeConfiguration['ruleType'];
-        $chargeRate = $chargeConfiguration['rate'] ?? 0; //price in cents per second
-        $interval = $chargeConfiguration['time'] ?? 0; //interval in seconds
-        $sign = $chargeConfiguration['sign']; 
-        $ruleDuration = $chargeConfiguration['ruleDuration']; 
+        $ruleType     = $chargeConfiguration['ruleType'];
+        $chargeRate   = $chargeConfiguration['rate']         ?? 0; // price in cents per interval
+        $interval     = $chargeConfiguration['time']         ?? 0; // interval in seconds
+        $sign         = $chargeConfiguration['sign'];
+        $ruleDuration = $chargeConfiguration['ruleDuration'];
         if ($ruleDuration == 0){
             $ruleDuration = INF;
         }
+
+        // Total capacity of this sequence in seconds
+        if ($ruleType === 'FIX_PRICE') {
+            // FIX_PRICE has no duration — treated as consuming $interval seconds (or 0 if unset)
+            $seqCapacity = ($interval > 0) ? $interval : INF;
+        } else {
+            $seqCapacity = ($ruleDuration === INF) ? INF : ($interval * $ruleDuration);
+        }
+
+        // Skip capacity already consumed by previous CDRs of this call
+        if ($alreadyConsumed > 0) {
+            if ($seqCapacity !== INF && $alreadyConsumed >= $seqCapacity) {
+                // Entire sequence consumed before this CDR — skip it completely
+                $alreadyConsumed -= $seqCapacity;
+                continue;
+            }
+            // Sequence partially consumed — reduce its remaining capacity
+            if ($seqCapacity !== INF) {
+                $remainingCapacity = $seqCapacity - $alreadyConsumed;
+                // Recalculate ruleDuration based on remaining capacity
+                if ($ruleType !== 'FIX_PRICE' && $interval > 0) {
+                    $ruleDuration = ($ruleDuration === INF) ? INF : ($remainingCapacity / $interval);
+                }
+            }
+            $alreadyConsumed = 0.0;
+        }
+
         if($sign === 'DEBIT'){
             if($ruleType === 'NOT_PRO_RATA'){
                 $useRuleDuration = ceil($left/$interval);
-
                 if($useRuleDuration >= $ruleDuration){
                     $aprice += ($ruleDuration*$chargeRate)/100;
                     $left -= $interval*$ruleDuration;
@@ -1260,6 +1326,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
                 }
             }elseif($ruleType === 'FIX_PRICE'){
                 $aprice += $chargeRate/100;
+                $left   -= ($interval > 0) ? min($interval, $left) : $left;
             }elseif($ruleType === 'PRO_RATA'){
                 $useRuleDuration = $left/$interval;
                 if($useRuleDuration >= $ruleDuration){
@@ -1276,7 +1343,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         }else{
             Billrun_Factory::log("Not support sign $sign of 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
             return false;
-        }  
+        }
     }
     $aprice = $this->converFieldByRoundingRules($aprice, 'final_charge');
     return $aprice;
@@ -1305,6 +1372,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   protected function updateOnlineTariffProfile($inaNumberRevison, $urt, $line){
+    $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+    $callDurationBefore = $this->getCallDurationBefore($line, $matchingPaths);
+
+    // For TSC lookup: use real call start, not segment start
+    // real callStart = urt - callDurationBefore
+    $callStart = (int) ((float) $urt - $callDurationBefore);
+
     $tariffProfile = $this->getMatchingTariffProfile($inaNumberRevison['tariffProfile'], $urt);
     if ($tariffProfile === false) {
         return false;
@@ -1314,22 +1388,23 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     }
     $sequence = $this->isOnlyOneSequence($tariffProfile);
     if ($sequence !== false) {
-        return $this->calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line);
+        return $this->calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line, $callDurationBefore);
     }
 
-    $tariffSwitchingClassRevision = $this->getMatchingTariffSwitchingClass($tariffProfile['tariffSwitchingClassId'], $urt);
+    // Use $callStart so TSC finds the sequence active at real call answer time
+    $tariffSwitchingClassRevision = $this->getMatchingTariffSwitchingClass($tariffProfile['tariffSwitchingClassId'], $callStart);
     if ($tariffSwitchingClassRevision === false) {
         return false;
     }
-    if (!$this->checkIfValidTariffSwitchingClassId($tariffSwitchingClassRevision, $urt, $tariffProfile['tariffSwitchingClassId'])) {
+    if (!$this->checkIfValidTariffSwitchingClassId($tariffSwitchingClassRevision, $callStart, $tariffProfile['tariffSwitchingClassId'])) {
         return false;
     }
 
-    $sequence = $this->findMatchingSwitchingClassesSequence($tariffSwitchingClassRevision, $urt);
+    $sequence = $this->findMatchingSwitchingClassesSequence($tariffSwitchingClassRevision, $callStart);
     if (!$sequence) {
         return false;
     }
-    return $this->calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line);
+    return $this->calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line, $callDurationBefore);
   }
 
   protected function checkIfValidPrefixInaNumber($inaNumber){
