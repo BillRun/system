@@ -1272,9 +1272,6 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $alreadyConsumed = (float) $callDurationBefore;
 
     foreach ($chargeConfigurations as $sequence => $chargeConfiguration){
-        if($left <= 0){
-            break;
-        }
         if($sequence + 1 !== $chargeConfiguration['sequence']){
             Billrun_Factory::log("not support unsorted 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
             return false;
@@ -1286,6 +1283,12 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         $ruleDuration = $chargeConfiguration['ruleDuration'];
         if ($ruleDuration == 0){
             $ruleDuration = INF;
+        }
+
+        // FIX_PRICE (drop charge) fires even on zero-duration answered calls.
+        // All other rule types have nothing to charge if no seconds remain.
+        if ($left <= 0 && $ruleType !== 'FIX_PRICE') {
+            break;
         }
 
         // Total capacity of this sequence in seconds
@@ -1306,35 +1309,40 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             // Sequence partially consumed — reduce its remaining capacity
             if ($seqCapacity !== INF) {
                 $remainingCapacity = $seqCapacity - $alreadyConsumed;
-                // Recalculate ruleDuration based on remaining capacity
+                // Cap $left to remainingCapacity so we don't price beyond this sequence
+                $leftInThisSeq = min($left, $remainingCapacity);
                 if ($ruleType !== 'FIX_PRICE' && $interval > 0) {
-                    $ruleDuration = ($ruleDuration === INF) ? INF : ($remainingCapacity / $interval);
+                    $ruleDuration = $remainingCapacity / $interval;
                 }
+            } else {
+                $leftInThisSeq = $left;
             }
             $alreadyConsumed = 0.0;
+        } else {
+            $leftInThisSeq = $left;
         }
 
         if($sign === 'DEBIT'){
             if($ruleType === 'NOT_PRO_RATA'){
-                $useRuleDuration = ceil($left/$interval);
+                $useRuleDuration = ceil($leftInThisSeq / $interval);
                 if($useRuleDuration >= $ruleDuration){
-                    $aprice += ($ruleDuration*$chargeRate)/100;
-                    $left -= $interval*$ruleDuration;
+                    $aprice += ($ruleDuration * $chargeRate) / 100;
+                    $left   -= $interval * $ruleDuration;
                 }else{
-                    $aprice += ($useRuleDuration * $chargeRate)/100;
-                    $left -= $interval*ceil($useRuleDuration);
+                    $aprice += ($useRuleDuration * $chargeRate) / 100;
+                    $left   -= $interval * ceil($useRuleDuration);
                 }
             }elseif($ruleType === 'FIX_PRICE'){
-                $aprice += $chargeRate/100;
+                $aprice += $chargeRate / 100;
                 $left   -= ($interval > 0) ? min($interval, $left) : $left;
             }elseif($ruleType === 'PRO_RATA'){
-                $useRuleDuration = $left/$interval;
+                $useRuleDuration = $leftInThisSeq / $interval;
                 if($useRuleDuration >= $ruleDuration){
-                    $aprice += ($ruleDuration * $chargeRate)/100;
-                    $left -= $interval*$ruleDuration;
+                    $aprice += ($ruleDuration * $chargeRate) / 100;
+                    $left   -= $interval * $ruleDuration;
                 }else{
-                    $aprice += ($useRuleDuration * $chargeRate)/100;
-                    $left -= $interval*ceil($useRuleDuration);
+                    $aprice += ($useRuleDuration * $chargeRate) / 100;
+                    $left   -= $interval * ceil($useRuleDuration);
                 }
             }else{
                 Billrun_Factory::log("Not support ruleType $ruleType of 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
