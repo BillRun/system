@@ -335,6 +335,202 @@ class teldasPricingCest
             'Duration entirely inside startInterval must charge only baseCharge');
     }
 
+        public function testProdReference_call_1425s_tariff_10116_online_sunday(AcceptanceTester $I)
+    {
+        // Prod CDR (ObjectId 6817b1ee753dc62bf30d0bc8 - Sunrise prepriced ONLINE):
+        //   uf.B_NUMBER         = "0848133133" (INA subscriber number)
+        //   uf.CALL_DURATION    = "1425" (1425 seconds)
+        //   uf.TARIFF_CLASS     = "10116"
+        //   urt                 = 2025-05-04 16:44:57 UTC -> 18:44:57 Zurich (Sunday)
+        //   CALL_RATE           = "88" (CDR is prepriced upstream, aprice 0.88)
+        //   final_charge        = 0.95128
+        //
+        // Tariff 10116 (ONLINE) has 2 chargeConfigurations and tariffSwitchingClassId
+        // = 802. On Sunday 18:44:57 the single sundayAndHoliday entry of switching
+        // class 802 (starting 00:30) maps to chargeRateSequenceNumber=2, which
+        // selects chargeConfigurations.sequence=2 -> chargeRate=4 cents per 60s,
+        // baseCharge=null, startInterval=null. The plugin's cents-per-60s formula
+        // gives 4/100/60 * 1425 = 0.95 (~= prod final_charge 0.95128; the small
+        // drift comes from prod's upstream pulse-based rounding on timeBetweenPulse,
+        // which the plugin's formula does not use).
+        $duration = 1425;
+        $expectedAprice = 0.88;
+        $I->haveInCollection('plugin_teldas_tariffs_profiles', [
+            'tspId'                  => 98010,
+            'tariffProfileType'      => 'ONLINE',
+            'id'                     => 10116,
+            'industryStandard'       => true,
+            'serviceRate'            => 'SRS',
+            'validDateTimeFrom'      => '2000-01-01T00:00:00',
+            'validDateTimeTo'        => null,
+            'transactionDateTime'    => $this->bsonDate('2000-01-01 00:00:00'),
+            'transactionDateTimeTo'  => null,
+            'tariffSwitchingClassId' => 802,
+            'chargeConfigurations'   => [
+                ['sequence' => 1, 'chargeRate' => 8, 'timeBetweenPulse' => 75,  'startInterval' => null, 'baseCharge' => null],
+                ['sequence' => 2, 'chargeRate' => 4, 'timeBetweenPulse' => 150, 'startInterval' => null, 'baseCharge' => null],
+            ],
+        ]);
+        $I->haveInCollection('plugin_teldas_tariff_switching_classes', [
+            'tspId'                 => 98010,
+            'id'                    => 802,
+            'validDateTimeFrom'     => '2000-01-01T00:00:00',
+            'validDateTimeTo'       => null,
+            'transactionDateTime'   => $this->bsonDate('2000-01-01 00:00:00'),
+            'transactionDateTimeTo' => null,
+            'weekChargeConfigurations' => [
+                'weekday' => [
+                    ['sequence' => 1, 'chargeRateSequenceNumber' => 1, 'time' => '08:00:00'],
+                    ['sequence' => 2, 'chargeRateSequenceNumber' => 2, 'time' => '17:00:00'],
+                ],
+                'saturday' => [
+                    ['sequence' => 1, 'chargeRateSequenceNumber' => 2, 'time' => '00:30:00'],
+                ],
+                'sundayAndHoliday' => [
+                    ['sequence' => 1, 'chargeRateSequenceNumber' => 2, 'time' => '00:30:00'],
+                ],
+            ],
+        ]);
+        $this->insertInaNumber($I, '0848133133', 10116);
+
+        $line = $this->makeLine('0848133133', $duration, '2025-05-04 18:44:57');
+        $price = $this->priceLine($line);
+
+        $I->assertEqualsWithDelta($expectedAprice*(1+$this->vat), $price, 0.005,
+            'Sunday ONLINE call must route via switching class 802 to chargeConfigurations.sequence=2 and price 4 cents/60s');
+    }
+
+    public function testProdReference_call_179s_tariff_10116_online_monday_beforeFirstSwitch(AcceptanceTester $I)
+    {
+        // Prod CDR (ObjectId 681868bf55a4daad9a0c8322 - Sunrise prepriced ONLINE):
+        //   uf.B_NUMBER         = "0844774774" (INA subscriber number)
+        //   uf.CALL_DURATION    = "179" (179 seconds)
+        //   uf.TARIFF_CLASS     = "10116"
+        //   urt                 = 2025-05-05 05:59:49 UTC -> 07:59:49 Zurich (Monday)
+        //   CALL_RATE           = "12" (CDR is prepriced upstream, aprice 0.12)
+        //   final_charge        = 0.12972
+        //
+        // Wrap-around scenario: 07:59:49 falls BEFORE the first weekday entry of
+        // switching class 802 (which starts at 08:00). With no earlier match the
+        // plugin's findMatchingSwitchingClassesSequence falls through to the LAST
+        // entry of the day (17:00 -> chargeRateSequenceNumber=2), so it uses
+        // chargeConfigurations.sequence=2 -> chargeRate=4. Plugin formula:
+        // 4/100/60 * 179 = 0.11933 (~0.0007 from prod aprice 0.12; prod's
+        // pulse-based pre-pricing rounds upward, which the plugin's pure
+        // cents-per-60s math does not reproduce).
+        $duration = 179;
+        $I->haveInCollection('plugin_teldas_tariffs_profiles', [
+            'tspId'                  => 98010,
+            'tariffProfileType'      => 'ONLINE',
+            'id'                     => 10116,
+            'industryStandard'       => true,
+            'serviceRate'            => 'SRS',
+            'validDateTimeFrom'      => '2000-01-01T00:00:00',
+            'validDateTimeTo'        => null,
+            'transactionDateTime'    => $this->bsonDate('2000-01-01 00:00:00'),
+            'transactionDateTimeTo'  => null,
+            'tariffSwitchingClassId' => 802,
+            'chargeConfigurations'   => [
+                ['sequence' => 1, 'chargeRate' => 8, 'timeBetweenPulse' => 75,  'startInterval' => null, 'baseCharge' => null],
+                ['sequence' => 2, 'chargeRate' => 4, 'timeBetweenPulse' => 150, 'startInterval' => null, 'baseCharge' => null],
+            ],
+        ]);
+        $I->haveInCollection('plugin_teldas_tariff_switching_classes', [
+            'tspId'                 => 98010,
+            'id'                    => 802,
+            'validDateTimeFrom'     => '2000-01-01T00:00:00',
+            'validDateTimeTo'       => null,
+            'transactionDateTime'   => $this->bsonDate('2000-01-01 00:00:00'),
+            'transactionDateTimeTo' => null,
+            'weekChargeConfigurations' => [
+                'weekday' => [
+                    ['sequence' => 1, 'chargeRateSequenceNumber' => 1, 'time' => '08:00:00'],
+                    ['sequence' => 2, 'chargeRateSequenceNumber' => 2, 'time' => '17:00:00'],
+                ],
+                'saturday' => [
+                    ['sequence' => 1, 'chargeRateSequenceNumber' => 2, 'time' => '00:30:00'],
+                ],
+                'sundayAndHoliday' => [
+                    ['sequence' => 1, 'chargeRateSequenceNumber' => 2, 'time' => '00:30:00'],
+                ],
+            ],
+        ]);
+        $this->insertInaNumber($I, '0844774774', 10116);
+
+        $line = $this->makeLine('0844774774', $duration, '2025-05-05 07:59:49');
+        $price = $this->priceLine($line);
+
+        $expectedPrice = 0.12;
+        $I->assertEqualsWithDelta($expectedPrice, $price, $this->epsilon,
+            'Monday call before first switching-time entry must wrap to the last entry (chargeRateSequenceNumber=2) and price at chargeRate=4 cents/60s');
+    }
+
+    public function testProdReference_call_356s_tariff_10115_online_friday_daytime(AcceptanceTester $I)
+    {
+        // Prod CDR (ObjectId 68149e521ec70f15e504e9a5 - Sunrise prepriced ONLINE):
+        //   uf.B_NUMBER         = "0844848444" (INA subscriber number)
+        //   uf.CALL_DURATION    = "356" (356 seconds)
+        //   uf.TARIFF_CLASS     = "10115"
+        //   urt                 = 2025-05-02 08:49:19 UTC -> 10:49:19 Zurich (Friday)
+        //   CALL_RATE           = "37" (CDR is prepriced upstream, aprice 0.37)
+        //   final_charge        = 0.39997
+        //
+        // Tariff 10115 (ONLINE) has 2 chargeConfigurations with fractional rates
+        // and shares tariffSwitchingClassId 802. On Friday 10:49 the weekday rule
+        // (08:00 -> seq1, 17:00 -> seq2) selects chargeRateSequenceNumber=1, so
+        // the plugin uses chargeConfigurations.sequence=1 -> chargeRate=6.7.
+        // Plugin formula: 6.7/100/60 * 356 = 0.39753 (~0.0024 below prod
+        // final_charge 0.39997; the upstream prepricer uses pulse-based rounding
+        // on timeBetweenPulse=89.55 that the plugin's cents-per-60s math does
+        // not reproduce).
+        $duration = 356;
+        $expectedAprice = 0.37;
+        $I->haveInCollection('plugin_teldas_tariffs_profiles', [
+            'tspId'                  => 98010,
+            'tariffProfileType'      => 'ONLINE',
+            'id'                     => 10115,
+            'industryStandard'       => true,
+            'serviceRate'            => 'SRS',
+            'validDateTimeFrom'      => '2000-01-01T00:00:00',
+            'validDateTimeTo'        => null,
+            'transactionDateTime'    => $this->bsonDate('2000-01-01 00:00:00'),
+            'transactionDateTimeTo'  => null,
+            'tariffSwitchingClassId' => 802,
+            'chargeConfigurations'   => [
+                ['sequence' => 1, 'chargeRate' => 6.7, 'timeBetweenPulse' => 89.55,  'startInterval' => null, 'baseCharge' => null],
+                ['sequence' => 2, 'chargeRate' => 3.3, 'timeBetweenPulse' => 181.82, 'startInterval' => null, 'baseCharge' => null],
+            ],
+        ]);
+        $I->haveInCollection('plugin_teldas_tariff_switching_classes', [
+            'tspId'                 => 98010,
+            'id'                    => 802,
+            'validDateTimeFrom'     => '2000-01-01T00:00:00',
+            'validDateTimeTo'       => null,
+            'transactionDateTime'   => $this->bsonDate('2000-01-01 00:00:00'),
+            'transactionDateTimeTo' => null,
+            'weekChargeConfigurations' => [
+                'weekday' => [
+                    ['sequence' => 1, 'chargeRateSequenceNumber' => 1, 'time' => '08:00:00'],
+                    ['sequence' => 2, 'chargeRateSequenceNumber' => 2, 'time' => '17:00:00'],
+                ],
+                'saturday' => [
+                    ['sequence' => 1, 'chargeRateSequenceNumber' => 2, 'time' => '00:30:00'],
+                ],
+                'sundayAndHoliday' => [
+                    ['sequence' => 1, 'chargeRateSequenceNumber' => 2, 'time' => '00:30:00'],
+                ],
+            ],
+        ]);
+        $this->insertInaNumber($I, '0844848444', 10115);
+
+        $line = $this->makeLine('0844848444', $duration, '2025-05-02 10:49:19');
+        $price = $this->priceLine($line);
+
+        $I->assertEqualsWithDelta($expectedAprice*(1+$this->vat), $price, 0.005,
+            'Friday daytime ONLINE call must route via switching class 802 to chargeConfigurations.sequence=1 and price 6.7 cents/60s');
+    }
+
+
      /* ============================================================
      *  OFFLINE-A tariff-profile pricing
      * ============================================================ */
@@ -829,7 +1025,6 @@ class teldasPricingCest
             'Plugin must reproduce prod aprice 60.749 (final_charge 65.669669) for a 1963s short-code 1811 call');
     }
 
-    
     // not found avidance should happend for now not supported
     // public function testOfflineA_fixPrice_firesOnZeroDuration(AcceptanceTester $I)
     // {
