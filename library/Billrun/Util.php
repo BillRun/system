@@ -2003,7 +2003,6 @@ class Billrun_Util {
 		}
 		return true;
 	}
-	
 
 	/**
 	 * try to fork, and if successful update the process log stamp

@@ -21,6 +21,7 @@ class ClearcacheAction extends ApiAction {
 	protected $queryFieldsToOp = [
 		'clearCacheForSubscriber' => ['sid'],
 		'clearCacheForAccount' => ['aid'],
+		'resetOpcache' => ['opcache'],
 	];
 
 	public function execute() {
@@ -60,6 +61,13 @@ class ClearcacheAction extends ApiAction {
 			return $res1 || $res2;
 		}
 		return FALSE;
+	}
+
+	protected function resetOpcache($query) {
+		if (empty($query['opcache']) || !function_exists('opcache_reset') || !ini_get('opcache.enable')) {
+			return FALSE;
+		}
+		return opcache_reset();
 	}
 
 	protected function setReponse($retValue) {
