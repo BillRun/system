@@ -3,8 +3,12 @@ import PropTypes from 'prop-types';
 import DatePicker from 'react-datepicker';
 import moment from 'moment';
 import { getConfig } from '@/common/Util';
-
-const toDateFnsFormat = format => format.replace(/YYYY/g, 'yyyy').replace(/DD/g, 'dd');
+import {
+  adaptDateList,
+  adaptFilterDate,
+  momentToPickerDate,
+  toDateFnsFormat,
+} from './datePickerAdapter';
 
 const DateTime = (props) => {
   const {
@@ -19,6 +23,9 @@ const DateTime = (props) => {
     timeIntervals,
     minDate,
     maxDate,
+    filterDate,
+    highlightDates,
+    excludeDates,
     ...otherProps
   } = props;
   const resolvedDateFormat = dateFormat || getConfig('dateFormat', 'DD/MM/YYYY');
@@ -33,23 +40,24 @@ const DateTime = (props) => {
     );
   }
   const onDateTimeChangeRaw = (newDate) => {
-    const date = moment( (newDate).target.value, dateTimeFormat );
-    onDateTimeChange( date );
-
-  }
+    const date = moment((newDate).target.value, dateTimeFormat);
+    onDateTimeChange(date);
+  };
   const onDateTimeChange = (newDate) => {
     const utcDate = newDate ? moment(newDate).utc() : '';
     onChange(utcDate);
-  }
+  };
   const placeholderText = (disabled && !value) ? '' : placeholder;
   const selected = (moment.isMoment(value) && value.isValid()) ? value.local().toDate() : null;
-  const minDateValue = moment.isMoment(minDate) ? minDate.toDate() : undefined;
-  const maxDateValue = moment.isMoment(maxDate) ? maxDate.toDate() : undefined;
+
   return (
     <DatePicker
       {...otherProps}
-      minDate={minDateValue}
-      maxDate={maxDateValue}
+      minDate={momentToPickerDate(minDate)}
+      maxDate={momentToPickerDate(maxDate)}
+      filterDate={adaptFilterDate(filterDate)}
+      highlightDates={adaptDateList(highlightDates)}
+      excludeDates={adaptDateList(excludeDates)}
       calendarClassName="date-picker-with-time"
       className="form-control DatePickerTime"
       showTimeSelect
