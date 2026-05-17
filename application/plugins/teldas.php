@@ -1192,11 +1192,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       if (is_null($raw) || $raw === '') {
           return 0.0;
       }
-      $durationDivide = Billrun_Util::getIn($matchingPaths, 'duration.divide_to_seconds', 1000);
-      if ($durationDivide == 0) {
-          return 0.0;
-      }
-      return max(0.0, (float) $raw / $durationDivide);
+      return max(0.0, (float) $raw);//assume call_offset already in seconds
   }
   protected function pricingCdr($line) {
       $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
@@ -1285,9 +1281,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             $ruleDuration = INF;
         }
 
-        // FIX_PRICE (drop charge) fires even on zero-duration answered calls.
-        // All other rule types have nothing to charge if no seconds remain.
-        if ($left <= 0 && $ruleType !== 'FIX_PRICE') {
+        if ($left <= 0) {//for now not support usagev=0 with FIX_PRICE should charge(still not found real example to this)
             break;
         }
 
@@ -1303,7 +1297,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         if ($alreadyConsumed > 0) {
             if ($seqCapacity !== INF && $alreadyConsumed >= $seqCapacity) {
                 // Entire sequence consumed before this CDR — skip it completely
-                $alreadyConsumed -= $seqCapacity;
+                if ($ruleType !== 'FIX_PRICE') {
+                    $alreadyConsumed -= $seqCapacity;
+                }
                 continue;
             }
             // Sequence partially consumed — reduce its remaining capacity
@@ -1334,7 +1330,6 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
                 }
             }elseif($ruleType === 'FIX_PRICE'){
                 $aprice += $chargeRate / 100;
-                $left   -= ($interval > 0) ? min($interval, $left) : $left;
             }elseif($ruleType === 'PRO_RATA'){
                 $useRuleDuration = $leftInThisSeq / $interval;
                 if($useRuleDuration >= $ruleDuration){
