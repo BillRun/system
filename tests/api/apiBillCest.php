@@ -9,6 +9,12 @@ class apiBillCest
    
     public function _before(ApiTester $I)
     {
+        $I->cleanDB();
+        \Billrun_Factory::db()->billsCollection()->remove(['_id' => ['$exists' => true]]);
+        // The aggregator/etc. test fixtures insert partial config docs (unit_test_config: true)
+        // that overwrite the baseline. Remove them so loadDbConfig picks up the original config.
+        \Billrun_Factory::db()->configCollection()->remove(['unit_test_config' => true]);
+        Billrun_Config::getInstance()->loadDbConfig();
     }
     
 
