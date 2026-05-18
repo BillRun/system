@@ -62,6 +62,11 @@ codecept:
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run all
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-tests.yml down --remove-orphans
+  after_script:
+    - if [ "$CI_JOB_STATUS" = "success" ]; then exit 0; fi
+    - cd $CI_PROJECT_DIR/docker/billrun-docker
+    - docker-compose -f docker-compose-php74-tests.yml ps
+    - docker logs billrun-app
   artifacts:
     when: on_failure
     paths:

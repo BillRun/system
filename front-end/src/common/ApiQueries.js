@@ -548,11 +548,17 @@ export const sendGenerateNewFileQuery = (paymentGateway, fileType, data) => {
   };
 }
 
-export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file, paymentsFileType) => {
+export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file, paymentsFileType, source) => {
   const formData = new FormData();
   formData.append('payment_gateway', paymentGateway);
   formData.append('file_type', fileType);
   formData.append('payments_file_type', paymentsFileType);
+  // `source` is the value persisted on `log.source` and looked up by the list query.
+  // Pass it explicitly so FE owns the naming contract and BE doesn't need to reconstruct it
+  // from `payment_gateway + payments_file_type` (which mis-handled snake_case gateway keys).
+  if (typeof source !== 'undefined') {
+    formData.append('source', source);
+  }
   formData.append('file', file);
   return ({
     api: 'uploadfile',
