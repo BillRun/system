@@ -142,7 +142,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	public function prepareData($lines) {
-		if ($this->isBulk() && empty($this->subscribers)) {
+		if ($this->isBulk()) {
 			$this->subscribers = $this->loadSubscribers($lines);
 		}
 		if ($this->bulkAccounts) {
