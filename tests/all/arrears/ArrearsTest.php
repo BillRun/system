@@ -26,6 +26,7 @@ class ArrearsTest extends \Codeception\Test\Unit
 
     protected function _after()
     {
+        $this->tester->enableDBModeSettings();
     }
 
 
