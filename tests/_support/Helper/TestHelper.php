@@ -178,4 +178,34 @@ class TestHelper extends \Codeception\Module {
         return $timezone;
     }
 
+    /**
+     * Clear the Billrun_Base::$instance singleton cache via reflection.
+     *
+     * Billrun_Base::getInstance() caches every instance it constructs by a
+     * hash of its constructor args, so tests that change config a calc reads
+     * at construction time (e.g. customer.calculator.bulk, a freshly added
+     * file_type) need to drop the cache — otherwise the next getInstance()
+     * returns the stale instance built with the old config.
+     */
+    public function resetBillrunInstances()
+    {
+        $instances = new \ReflectionProperty('Billrun_Base', 'instance');
+        $instances->setAccessible(true);
+        $instances->setValue(null, []);
+    }
+
+    /**
+     * Drive the file processor over the given path, which may be either a
+     * single file or a directory of files. A directory is iterated in one
+     * processor run so any cached calculators are reused across files (the
+     * production behaviour the receiver -> processor pipeline relies on).
+     *
+     * @param array $options at least 'type' and 'path'
+     */
+    public function processByPath(array $options)
+    {
+        $processor = \Billrun_Processor::getInstance($options);
+        return $processor->processorByPath($options);
+    }
+
 }
