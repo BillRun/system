@@ -112,6 +112,10 @@ class TestHelper extends \Codeception\Module {
         $data['urt'] = new \MongoDB\BSON\UTCDateTime();
 		$config->insert($data);
 		\Billrun_Config::getInstance()->loadDbConfig();
+        // Drop the Billrun_Base singleton cache so the next getInstance()
+        // call constructs a fresh object that reads the just-changed config
+        // (calculators latch options like bulk at construction time).
+        $this->resetBillrunInstances();
     }
 
     public function setTimezone($timezone)
@@ -192,6 +196,18 @@ class TestHelper extends \Codeception\Module {
         $instances = new \ReflectionProperty('Billrun_Base', 'instance');
         $instances->setAccessible(true);
         $instances->setValue(null, []);
+
+        // Billrun_Factory keeps its OWN process-wide singletons that survive
+        // Billrun_Base::$instance clearing — most notably $subscriber and
+        // $accounts. These latch on subscribers.subscriber.type at first
+        // access, so once a Db subscriber is cached, every subsequent test
+        // gets the same Db instance even after the config flips to external.
+        // Clear them so the next factory call rebuilds against fresh config.
+        foreach (['subscriber', 'accounts'] as $prop) {
+            $factoryProp = new \ReflectionProperty('Billrun_Factory', $prop);
+            $factoryProp->setAccessible(true);
+            $factoryProp->setValue(null, null);
+        }
     }
 
     /**

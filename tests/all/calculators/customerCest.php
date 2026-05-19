@@ -15,8 +15,6 @@ class customerCest
             Billrun_Config::getInstance()->loadDbConfig();
         }
         $I->cleanDB();
-        // Drop cached calc singletons so the upcoming process() builds a fresh
-        // Customer calc that reads this test's config (BRCD-4564 needs bulk=true).
         $I->resetBillrunInstances();
     }
 
@@ -47,7 +45,7 @@ class customerCest
     {
         // Bulk mode is only required for this scenario — keep it scoped here
         // so the rest of the suite is not affected.
-        Billrun_Factory::config()->setConfigValue('customer.calculator.bulk', true);
+        $I->overrideConfigValue('customer.calculator.bulk', true);
 
         $I->generatePlan(['name' => 'TEST_PLAN_BRCD4564_' . microtime(true) * 10000, 'from' => '2025-01-01']);
         $planDetails = json_decode($I->grabResponse(), true)['entity'];
@@ -124,7 +122,7 @@ class customerCest
             'uf.firstname' => ['$in' => ['0531234567', '0539999999']],
             'sid' => ['$exists' => false],
         ]), 'no line should be left without sid (BRCD-4564)');
-        Billrun_Factory::config()->setConfigValue('customer.calculator.bulk', false);
+        $I->overrideConfigValue('customer.calculator.bulk', false);
 
     }
 

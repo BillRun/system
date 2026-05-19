@@ -17,8 +17,8 @@ class customerExternalCest
         }
         $I->cleanDB();
         
-        $I->resetBillrunInstances();
         $I->enableExternalModeSettings();
+        $I->resetBillrunInstances();
     }
 
     public function _after(ApiTester $I)
@@ -52,8 +52,10 @@ class customerExternalCest
      */
     public function testCustomerBulkModeExternalDbProcessingTwoFiles(ApiTester $I): void
     {
-        // Bulk + external scoped to this test only.
-        Billrun_Factory::config()->setConfigValue('customer.calculator.bulk', true);
+        // Bulk + external scoped to this test only. Use overrideConfigValue
+        // so the flag actually lands in the config collection — setConfigValue
+        // alone only sets in-memory and isn't visible when running the suite.
+        $I->overrideConfigValue('customer.calculator.bulk', true);
 
         // Plan referenced by the BRCD-4564 CRM fixtures must exist locally
         // so the customer calc's plan_ref lookup resolves.
@@ -113,7 +115,7 @@ class customerExternalCest
             'uf.firstname' => ['$in' => ['0531234567', '0539999999']],
             'sid' => ['$exists' => false],
         ]), 'no line should be left without sid (BRCD-4564)');
-        Billrun_Factory::config()->setConfigValue('customer.calculator.bulk', false);
+        $I->overrideConfigValue('customer.calculator.bulk', false);
 
     }
 
