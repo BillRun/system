@@ -36,7 +36,7 @@ class Billrun_Version {
 	public static $URL = '<a href="https://bill.run">BillRun</a>';
 
 	/**
-	 * Gets a "PHP standardized" version string for the current Joomla.
+	 * Gets a "PHP standardized" version string for the current BillRun.
 	 *
 	 * @return  string  Version string.
 	 *
@@ -47,7 +47,7 @@ class Billrun_Version {
 	}
 
 	/**
-	 * Gets a version string for the current Joomla with all release information.
+	 * Gets a version string for the current BillRun with all release information.
 	 *
 	 * @return  string  Complete version string.
 	 *

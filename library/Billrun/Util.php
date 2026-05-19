@@ -606,7 +606,7 @@ class Billrun_Util {
 		}
 
 		$syscmd = "nohup " . $cmd . " > /dev/null 2>&1 &";
-		if (defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT) {
+		if (Billrun_Config::isMultitenantEnabled()) {
 			$syscmd = 'export APPLICATION_MULTITENANT=1 ; ' . $syscmd;
 		}
 
@@ -1572,7 +1572,7 @@ class Billrun_Util {
 	 */
 	public static function getCmdEnvParams() {
 		$ret = '--env ' . Billrun_Factory::config()->getEnv();
-		if (defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT) {
+		if (Billrun_Config::isMultitenantEnabled()) {
 			$ret .= ' --tenant ' . Billrun_Factory::config()->getTenant();
 		}
 		return $ret;

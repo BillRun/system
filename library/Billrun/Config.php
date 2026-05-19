@@ -173,24 +173,39 @@ class Billrun_Config {
 	}
 	
 	/**
-	 * method to set db config from environment variables
-	 * the env variables are useful for docker
+	 * Apply BR_MDB_* environment variables to the db config block in-place.
+	 *
+	 * BREAKING CHANGE in 5.25.0: env values now override the corresponding
+	 * ini values UNCONDITIONALLY (previously env was only applied when the
+	 * matching ini key was empty). This is deliberate, to make containerized
+	 * deployments behave predictably regardless of whatever ships in the
+	 * baked-in *.ini files. Deployments that mix env vars and host.ini must
+	 * be aware that env wins for any BR_MDB_* variable present at runtime.
+	 *
+	 * @param Yaf_Config_Simple $config
 	 */
 	static protected function setDbEnvConfig($config) {
 		$mdbConfigEnv = array(
-			'BR_MDB_HOST'   => 'host',
-			'BR_MDB_PORT'   => 'port',
-			'BR_MDB_DBNAME' => 'name',
-			'BR_MDB_USER'   => 'user',
-			'BR_MDB_PASS'   => 'password',
-			'BR_MDB_AUTHDB' => 'authSource',
+			'BR_MDB_HOST'            => 'host',
+			'BR_MDB_PORT'            => 'port',
+			'BR_MDB_DBNAME'          => 'name',
+			'BR_MDB_USER'            => 'user',
+			'BR_MDB_PASS'            => 'password',
+			'BR_MDB_AUTHDB'          => 'options.authSource',
+			'BR_MDB_TLS'             => 'options.tls',
+			'BR_MDB_TLSKEYFILE'      => 'options.tlsCertificateKeyFile',
+			'BR_MDB_TLSPASSWORD'     => 'options.tlsCertificateKeyFilePassword',
+			'BR_MDB_TLSCAFILE'       => 'options.tlsCAFile',
+			'BR_MDB_TLSINSECURE'     => 'options.tlsInsecure',
+			'BR_MDB_TLSINVALIDCERT'  => 'options.tlsAllowInvalidCertificates',
+			'BR_MDB_TLSINVALIDHOST'  => 'options.tlsAllowInvalidHostnames',
 		);
 
-		$dbConfig = $config['db'];
+		$dbConfig = $config['db']->toArray();
 		$changed = false;
 		foreach ($mdbConfigEnv as $envVar => $confVar) {
-			if (empty($config['db'][$confVar]) && !empty($envVal = getenv($envVar))) {
-				$dbConfig->set($confVar, $envVal);
+			if (!empty($envVal = getenv($envVar))) {
+				Billrun_Util::setIn($dbConfig, $confVar, $envVal);
 				$changed = true;
 			}
 		}
@@ -551,6 +566,10 @@ class Billrun_Config {
 	
 	public static function getMultitenantConfigPath() {
 		return self::$multitenantDir;
+	}
+
+	public static function isMultitenantEnabled() {
+		return defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT;
 	}
 		
 	public static function isFileTypeConfigEnabled($fileTypeSettings) {
