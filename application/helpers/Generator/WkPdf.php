@@ -568,7 +568,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * @return type
 	 */
 	protected function getLogoPath($options = array()) {
-		if (!defined('APPLICATION_MULTITENANT') || !APPLICATION_MULTITENANT) {
+		if (!Billrun_Config::isMultitenantEnabled()) {
 			return APPLICATION_PATH . Billrun_Util::getFieldVal($options['header_tpl_logo'], "/application/views/invoices/theme/logo.png");
 		}
 		return $this->getTempDir($this->stamp) . DIRECTORY_SEPARATOR . 'logo.png';

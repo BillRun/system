@@ -1,6 +1,10 @@
 /* 
  * General (idempotent) DB migration script goes here.
  * Please try to avoid using migration script and instead make special treatment in the code!
+ * 
+ * @deprecated since version 5.25.0
+ *             please use application/migrations
+ *             more info in application/migrations/README.md
  */
 
 // =============================== Helper functions ============================
