@@ -2084,18 +2084,77 @@ runOnce(lastConfig, 'BRCD-4430', function () {
 });
 
 runOnce(lastConfig, 'BRCD-4739', function () {
-	lastConfig['plugins'].push({
-		"name": "teldasPlugin",
-		"enabled": false,
-		"system": true,
-		"hide_from_ui": true
-	})
+	if (!lastConfig['plugins'].some(p => p.name === 'teldasPlugin')) {
+		lastConfig['plugins'].push({
+			"name": 'teldasPlugin',
+			"enabled": false,
+			"system": true,
+			"hide_from_ui": true
+		});
+	}
 	_createCollection('plugin_teldas_ina_numbers');
 	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
 	_createCollection('plugin_teldas_tariffs_profiles');
 	db.plugin_teldas_tariffs_profiles.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariffs_profiles_unique_index" });
 	_createCollection('plugin_teldas_tariff_switching_classes');
 	_createCollection("plugin_teldas_non_working_days"); 
+});
+
+runOnce(lastConfig, 'BRCD-5060', function () {
+	var ebill_id = {
+		"field_name": "ebill_id",
+		"title": "eBill ID",
+		"mandatory": false,
+		"system": true,
+		"editable": true,
+		"display": false,
+	};
+	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ebill_id, 'account');
+
+	var ebill_vendor_number = {
+		"field_name": "ebill_vendor_number",
+		"title": "eBill vendor number",
+		"mandatory": false,
+		"system": true,
+		"editable": true,
+		"display": false,
+	};
+	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ebill_vendor_number, 'account');
+
+	var ebillPlugin = {
+		"name": "eBillSwitzerlandPlugin",
+		"enabled": false,
+		"system": true,
+		"hide_from_ui": true,
+		"configuration": {
+			"values": {
+				"string_keys": [
+				],
+				"sftp_remote_directory": "",
+				"creditor_reference_prefix": "",
+				"sftp_password": "",
+				"bill_summary_template": [
+				],
+				"should_generate_ebill": {
+				},
+				"bill_headers": [
+				],
+				"header_values": [
+				],
+				"address": {
+
+				},
+				"sftp_host": "",
+				"delivery_info": [
+				],
+				"sftp_user": "",
+				"line_item_template": [
+				],
+				"response_status_files_path": ""
+			}
+		}
+	};
+	lastConfig.plugins.push(ebillPlugin);
 });
 
 runOnce(lastConfig, 'BRCD-4948', function () {
@@ -2140,6 +2199,64 @@ runOnce(lastConfig, 'BRCD-5190', function () {
 	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: false , sparse: false, background: true });
 });
 
+runOnce(lastConfig, 'BRCD-5151', function () {
+	if (typeof lastConfig['email_templates'] !== 'undefined') {
+		Object.keys(lastConfig['email_templates']).forEach((templateType) => {
+			var oldTemplate = lastConfig['email_templates'][templateType];
+			if(typeof oldTemplate['templates'] === 'undefined'){
+				var newTemplate = {
+					"templates": [{
+						name: "default",
+						label: "Default",
+						conditions: [	
+						],
+						"subject" : oldTemplate["subject"],
+						"content" :  oldTemplate["content"],
+					}],
+				}
+
+				lastConfig['email_templates'][templateType] = newTemplate;
+			}
+			
+		});
+
+	}
+});
+
+runOnce(lastConfig, 'BRCD-5273', function () {
+var invoiceTemplate = {
+    "field_name": "invoice_config",
+    "title": "Invoice Configuration",
+    "mandatory": false,
+    "system": true,
+    "editable": true,
+    "display": false,
+	"type": "json",
+    "description": "Holds configuration regarding the formatting and appearance of the invoice (banners, etc.)"
+};
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoiceTemplate, 'account');
+});
+
+runOnce(lastConfig, 'BRCD-5278', function () {
+	var plugin = lastConfig.plugins.find(function (p) { return p.name === "eBillSwitzerlandPlugin"; });
+	if (!plugin || typeof plugin.configuration === 'undefined' || typeof plugin.configuration.values === 'undefined') {
+		return;
+	}
+	var configValues = plugin.configuration.values;
+	delete configValues.sftp_host;
+	delete configValues.sftp_user;
+	delete configValues.sftp_password;
+	delete configValues.sftp_remote_directory;
+	delete configValues.response_status_files_path;
+	configValues.export_sftp_host = "";
+	configValues.export_sftp_user = "";
+	configValues.export_sftp_password = "";
+	configValues.export_sftp_remote_directory = "";
+	configValues.response_sftp_host = "";
+	configValues.response_sftp_user = "";
+	configValues.response_sftp_password = "";
+	configValues.response_sftp_remote_directory = "";
+});
 
 db.config.insertOne(lastConfig);
 

@@ -158,7 +158,8 @@ class Models_Accounts extends Models_Entity {
 				$serviceRate = new Billrun_Service(array('name' => $service['name'], 'time' => $serviceTime));
 				// if service not found, throw exception
 				if (empty($serviceRate) || empty($serviceRate->get('_id'))) {
-					throw new Billrun_Exceptions_Api(66601, array(), "Service was not found");
+					$searchDate = !empty($serviceTime) ? date('Y-m-d H:i:s', $serviceTime) : "";
+					throw new Billrun_Exceptions_Api(66601, array(), "Service {$service['name']} ({$searchDate}) not found");
 				}
 				if (!empty($servicePeriod = @$serviceRate->get('balance_period')) && $servicePeriod !== "default") {
 					$service['to'] = new Mongodloid_Date(strtotime($servicePeriod, $service['from']->sec));

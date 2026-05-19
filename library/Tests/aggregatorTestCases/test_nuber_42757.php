@@ -15,7 +15,7 @@ class Test_Case_42757
             [
 
                 "from" => "2019-05-31T22:00:00Z",
-                "name" => "PLAN" . time()+random_int(1,111111111),
+                "name" => generat_test_data::uniqueName("PLAN"),
                 "price" => [
                     [
                         "price" => 100,
@@ -37,7 +37,7 @@ class Test_Case_42757
                 "prorated_termination" => true
             ]
         );
-        $discount_name = time()+random_int(1,111111111);
+        $discount_name = generat_test_data::uniqueName();
 
         $discount = generat_discounts::generateDiscount([
           "from" => "2019-05-31T22:00:00Z",
@@ -118,9 +118,10 @@ class Test_Case_42757
 
 
 
+        // Note!!: there is currently no requirement to prorate the discount in this case; only the last discount override is supported for now.
         return [
             'test' => [
-                'label' => ' 2 revisions (in month) for subscriber with different override discount price- should give prorated discount each by the overide price',
+                'label' => ' 2 revisions (in month) for subscriber with different override discount price- should give last discount price',
                 'test_number' => 42757,
                 "aid" => $account['aid'],
                 'sid' => $subscriber['sid'],
