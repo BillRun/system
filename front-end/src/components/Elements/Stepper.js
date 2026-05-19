@@ -3,67 +3,88 @@ import PropTypes from 'prop-types';
 
 /**
  * Stepper — inline replacement for abandoned react-stepper-horizontal.
- * Renders a step indicator with the same visual contract.
+ * DOM: .stepper-container > div[table] > div[table-cell] × N
+ *   each cell contains a circle, a label <a>, and two half-connectors (absolute).
  */
-const Stepper = ({ steps = [], activeIndex = 0 }) => (
-  <div className="stepper-container" style={{
-    display: 'flex',
-    alignItems: 'center',
-    width: '100%',
-    padding: '0 80px',
-    minHeight: 50,
-  }}>
-    {steps.map((step, i) => {
-      const isComplete = i < activeIndex;
-      const isActive = i === activeIndex;
-      const circleColor = (isComplete || isActive) ? '#008cba' : '#fff';
-      const circleBorder = (isComplete || isActive) ? '#004b63' : '#cccccc';
-      const textColor = isComplete ? '#757575' : '#333';
 
-      return (
-        <React.Fragment key={i}>
-          <div style={{
-            position: 'relative',
-            width: 25,
-            height: 25,
-            borderRadius: '50%',
-            border: `1px solid ${circleBorder}`,
-            backgroundColor: circleColor,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 12,
-            color: (isComplete || isActive) ? '#fff' : '#333',
-            fontWeight: isActive ? 'bold' : 'normal',
-            flex: '0 0 auto',
-          }}>
-            {isComplete ? '✓' : i + 1}
+const lineColor = (done) => (done ? '#333333' : 'rgb(224, 224, 224)');
+
+const Stepper = ({ steps = [], activeIndex = 0 }) => (
+  <div className="stepper-container" style={{ width: '100%', minHeight: 0, padding: 0 }}>
+    <div style={{ display: 'table', width: '100%', margin: '0 auto' }}>
+      {steps.map((step, i) => {
+        const isComplete = i < activeIndex;
+        const isActive   = i === activeIndex;
+        const isFirst    = i === 0;
+        const isLast     = i === steps.length - 1;
+
+        return (
+          <div
+            key={i}
+            style={{
+              width: `${100 / steps.length}%`,
+              display: 'table-cell',
+              position: 'relative',
+              paddingTop: 0,
+            }}
+          >
             <div style={{
-              position: 'absolute',
-              top: 30,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              fontSize: 12,
-              color: textColor,
+              width: 25,
+              height: 25,
+              margin: '0 auto',
+              backgroundColor: (isComplete || isActive) ? '#008cba' : '#e0e0e0',
+              borderRadius: '50%',
               textAlign: 'center',
-              whiteSpace: 'nowrap',
-              fontWeight: 'normal',
+              padding: 1,
+              fontSize: 12,
+              lineHeight: '22px',
+              color: '#fff',
+              display: 'block',
+              borderWidth: 1,
+              borderColor: (isComplete || isActive) ? '#004b63' : '#cccccc',
+              borderStyle: 'solid',
+            }}>
+              {i + 1}
+            </div>
+
+            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+            <a style={{
+              marginTop: 5,
+              fontSize: 12,
+              fontWeight: 300,
+              textAlign: 'center',
+              display: 'block',
+              color: isActive ? '#000' : '#757575',
             }}>
               {step.title}
-            </div>
+            </a>
+
+            {!isFirst && (
+              <div style={{
+                position: 'absolute',
+                top: 12.5,
+                height: 1,
+                borderTop: `1px solid ${lineColor(isComplete || isActive)}`,
+                left: 0,
+                right: '50%',
+                marginRight: 22.5,
+              }} />
+            )}
+            {!isLast && (
+              <div style={{
+                position: 'absolute',
+                top: 12.5,
+                height: 1,
+                borderTop: `1px solid ${lineColor(isComplete)}`,
+                right: 0,
+                left: '50%',
+                marginLeft: 22.5,
+              }} />
+            )}
           </div>
-          {i < steps.length - 1 && (
-            <div style={{
-              flex: 1,
-              height: 1,
-              backgroundColor: i < activeIndex ? '#008cba' : '#cccccc',
-              marginLeft: 8,
-              marginRight: 8,
-            }} />
-          )}
-        </React.Fragment>
-      );
-    })}
+        );
+      })}
+    </div>
   </div>
 );
 

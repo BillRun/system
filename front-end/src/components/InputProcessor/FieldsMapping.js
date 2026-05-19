@@ -569,7 +569,6 @@ export default class FieldsMapping extends Component {
                       onChangeUnit={this.onChangeStaticUom}
                       enabled={settings.get('usaget_type', '') === 'static'}
                       showDisplayUnits={true}
-                      compact={true}
                     />
                   </div>
                   <div className="col-lg-1">
@@ -754,7 +753,6 @@ export default class FieldsMapping extends Component {
                       onChangeUnit={this.onChangeUom}
                       enabled={settings.get('usaget_type', '') === 'dynamic'}
                       showDisplayUnits={true}
-                      compact={true}
                     />
                   </div>
                   <div className="col-lg-2 field-mapping-radio">

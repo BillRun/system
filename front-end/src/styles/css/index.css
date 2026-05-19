@@ -486,17 +486,12 @@ fieldset[disabled] .btn {
 .tooltip{
   z-index: 2001;
 }
-/* ─── BS3Multiselect: yeti.css handles hover/active/padding on the ul>li>a DOM.
- * Only override what the original jQuery plugin overrode: zero out <a> padding,
- * push it to <label.checkbox>. */
+/* ─── BS3Multiselect: yeti.css supplies all hover/active/padding on ul>li>a.
+ * We only add what yeti doesn't: label layout and checkbox positioning. */
 .bs3-multiselect-menu {
   margin-top: 0 !important;  /* kill any residual Popper margin */
 }
-/* Override yeti .dropdown-menu > li > a { padding: 3px 20px } — label takes the padding */
-.bs3-multiselect-menu > li > a {
-  padding: 0;
-}
-/* label.checkbox — mirrors multiselect-container>li>a>label from bundle.css exactly */
+/* label.checkbox — block layout so it fills the <a> padding box */
 .bs3-multiselect-menu > li > a > label.checkbox {
   display: block;
   margin: 0;

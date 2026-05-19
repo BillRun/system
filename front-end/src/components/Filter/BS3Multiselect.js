@@ -5,6 +5,8 @@ import { Dropdown } from 'react-bootstrap';
 /**
  * React replacement for the jQuery react-bootstrap-multiselect plugin.
  * Preserves the original BS3 DOM structure so yeti.css styles apply as-is.
+ * btn-group wrapper is required: yeti scopes item color/hover under
+ * .btn-group .dropdown-toggle.btn-default ~ .dropdown-menu.
  *
  * Props: data [{ value, label, selected, disabled }], onChange, nonSelectedText,
  *        buttonWidth, disabled, renderToggle({ selectedOptions, defaultLabel })
@@ -44,66 +46,67 @@ const BS3Multiselect = ({
       : defaultLabel;
 
   return (
-    <Dropdown autoClose="outside" align="start">
-      <Dropdown.Toggle
-        id={toggleId}
-        as="button"
-        type="button"
-        disabled={disabled}
-        className="btn btn-default dropdown-toggle"
-        style={{
-          width: buttonWidth,
-          maxWidth: '100%',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          textAlign: 'center',
-        }}
-      >
-        {toggleContent}
-      </Dropdown.Toggle>
-      {/* ul > li > a > label matches original jQuery plugin DOM; yeti.css styles it automatically */}
-      <Dropdown.Menu
-        as="ul"
-        className="multiselect-container bs3-multiselect-menu"
-        style={{ maxHeight: 280, overflowY: 'auto' }}
-        popperConfig={{ modifiers: [{ name: 'offset', options: { offset: [0, 0] } }] }}
-      >
-        {data.map((opt) => (
-          <li
-            key={String(opt.value)}
-            className={opt.selected ? 'active' : ''}
-          >
-            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */} {/* toggle handled by <a> onClick */}
-            <a
-              tabIndex={0}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!opt.disabled && !disabled) toggleValue(opt.value);
-              }}
+    <div className="btn-group" style={{ width: buttonWidth, maxWidth: '100%' }}>
+      <Dropdown autoClose="outside" align="start">
+        <Dropdown.Toggle
+          id={toggleId}
+          as="button"
+          type="button"
+          disabled={disabled}
+          className="btn btn-default"
+          style={{
+            width: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            textAlign: 'center',
+          }}
+        >
+          {toggleContent}
+        </Dropdown.Toggle>
+        {/* ul > li > a > label matches original jQuery plugin DOM; yeti.css styles it automatically */}
+        <Dropdown.Menu
+          as="ul"
+          className="multiselect-container bs3-multiselect-menu"
+          style={{ maxHeight: 280, overflowY: 'auto' }}
+          popperConfig={{ modifiers: [{ name: 'offset', options: { offset: [0, 0] } }] }}
+        >
+          {data.map((opt) => (
+            <li
+              key={String(opt.value)}
+              className={opt.selected ? 'active' : ''}
             >
-              <label
-                className="checkbox"
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  cursor: opt.disabled ? 'not-allowed' : 'pointer',
-                  opacity: opt.disabled ? 0.6 : 1,
+              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */} {/* toggle handled by <a> onClick */}
+              <a
+                tabIndex={0}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!opt.disabled && !disabled) toggleValue(opt.value);
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={!!opt.selected}
-                  disabled={disabled || !!opt.disabled}
-                  onChange={() => !opt.disabled && !disabled && toggleValue(opt.value)}
-                />
-                {opt.label}
-              </label>
-            </a>
-          </li>
-        ))}
-      </Dropdown.Menu>
-    </Dropdown>
+                <label
+                  className="checkbox"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    cursor: opt.disabled ? 'not-allowed' : 'pointer',
+                    opacity: opt.disabled ? 0.6 : 1,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!opt.selected}
+                    disabled={disabled || !!opt.disabled}
+                    onChange={() => !opt.disabled && !disabled && toggleValue(opt.value)}
+                  />
+                  {opt.label}
+                </label>
+              </a>
+            </li>
+          ))}
+        </Dropdown.Menu>
+      </Dropdown>
+    </div>
   );
 };
 
