@@ -13,28 +13,35 @@
  * @since    5.0
  */
 class Billrun_View_Invoice extends Yaf_View_Simple {
-	
-	public $lines = array();
-	protected $subServices = [];
-	protected $tariffMultiplier = array(
-		'call' => 60,
-		'incoming_call' => 60,
-		'data' => 1024*1024
-	);
-	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^972/'=>'0');
-	public $invoice_flat_tabels = [];
-	public $invoice_usage_tabels = [];
-	public $details_keys = [];
-	
+
+	private function ensureInit() {
+		if (!isset($this->_billrun_initialized)) {
+			$this->lines = $this->lines ?? array();
+			$this->subServices = $this->subServices ?? [];
+			$this->tariffMultiplier = $this->tariffMultiplier ?? array(
+				'call' => 60,
+				'incoming_call' => 60,
+				'data' => 1024 * 1024,
+			);
+			$this->destinationsNumberTransforms = $this->destinationsNumberTransforms ?? array('/B/' => '*', '/A/' => '#', '/^972/' => '0');
+			$this->invoice_flat_tabels = $this->invoice_flat_tabels ?? [];
+			$this->invoice_usage_tabels = $this->invoice_usage_tabels ?? [];
+			$this->details_keys = $this->details_keys ?? [];
+			$this->_billrun_initialized = true;
+		}
+	}
+
 	/*
 	 * get and set lines of the account
 	 */
 	public function setLines($accountLines) {
+		$this->ensureInit();
 		$this->lines = $accountLines;
 		$this->subServices = [];
 	}
 	
 	public function loadLines() {
+		$this->ensureInit();
 		$lines_collection = Billrun_Factory::db()->linesCollection();
 		$this->lines = array();
 		$aid = $this->data['aid'];
@@ -90,6 +97,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 
 
 	public function buildSubscriptionListFromLines($lines) {
+		$this->ensureInit();
 		$subscriptionList = array();
 		$typeNames = array_flip($this->details_keys);
 		foreach($lines as $line) {
@@ -183,6 +191,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	* Get usage traiff based on the usage type  , rate ,plan, services  the subscriber had.
 	*/
 	public function getRateTariff($rateName, $usaget,$planName = FALSE, $services = [], $addTax = FALSE ) {
+		$this->ensureInit();
 		if(!empty($rateName)) {
 			$rate = Billrun_Rates_Util::getRateByName($rateName, $this->data['end_date']->sec);
 			if(!empty($rate)) {
@@ -222,6 +231,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	}
 	
 	public function getInvoicePhonenumber($rawNumber) {
+		$this->ensureInit();
 		$retNumber = $rawNumber;
 		foreach($this->destinationsNumberTransforms as $regex => $transform) {
 			$retNumber = preg_replace($regex,$transform,$retNumber);
@@ -243,6 +253,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	}
 	
 	public function getSubscriberServices($sid) {
+		$this->ensureInit();
 		if(!isset($this->subServices[$sid])) {
 			$this->subServices[$sid] = [];
 			//Get  only relevent subscriber revisions
@@ -280,6 +291,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	}
 	
 	public function createSubscriberInvoiceTables($lines, $flatTypes = [], $usageTypes = [], $details_keys = []) {
+		$this->ensureInit();
 		$config = Billrun_Factory::config();
 		$invoice_display = $config->getInvoiceDisplayConfig();
 		if (is_a($lines, 'Traversable')) {
