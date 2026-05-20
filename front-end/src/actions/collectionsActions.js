@@ -20,10 +20,37 @@ const updateCollectionAction = (path, value) => ({
   value,
 });
 
-export const getCollections = () => (dispatch) => {
+const addUiFlagsToConditions = (processes) =>
+  processes.map(process =>
+    process.updateIn(['account', 'fields'], Immutable.List(), conditions =>
+      conditions.map(condition =>
+        condition.hasIn(['ui_flags', 'id'])
+          ? condition
+          : condition.setIn(['ui_flags', 'id'], uuid.v4())
+      )
+    )
+  );
+
+const removeUiFlagsFromConditions = (processes) =>
+  processes.map(process =>
+    process.updateIn(['account', 'fields'], Immutable.List(), conditions =>
+      conditions.map(condition => condition.delete('ui_flags'))
+    )
+  );
+
+export const getCollections = () => (dispatch, getState) => {
   dispatch(setPageError('collection')); // reset errors
   dispatch(setPageFlag('collection')); // reset flags
-  return dispatch(getSettings(['collection']));
+  return dispatch(getSettings(['collection'])).then((result) => {
+    if (result) {
+      const processes = collectionSelector(getState());
+      if (processes) {
+        const processesWithUiFlags = addUiFlagsToConditions(processes);
+        dispatch({ type: settingsActions.UPDATE_SETTING, category: 'collection', name: ['processes'], value: processesWithUiFlags });
+      }
+    }
+    return result;
+  });
 }
 
 export const updateCollections = (path, value) => (dispatch, getState) => {
@@ -35,11 +62,20 @@ export const updateCollections = (path, value) => (dispatch, getState) => {
   return dispatch(updateCollectionAction(path, value));
 };
 
-export const saveCollections = () => (dispatch) => {
+export const saveCollections = () => (dispatch, getState) => {
+  const processes = collectionSelector(getState());
+  if (processes) {
+    const cleanedProcesses = removeUiFlagsFromConditions(processes);
+    dispatch({ type: settingsActions.UPDATE_SETTING, category: 'collection', name: ['processes'], value: cleanedProcesses });
+  }
   return dispatch(saveSettings(['collection']))
     .then((res) => {
       if (res && res.status && res.status === 1) {
         return dispatch(getCollections());
+      }
+      // Restore ui_flags if save failed
+      if (processes) {
+        dispatch({ type: settingsActions.UPDATE_SETTING, category: 'collection', name: ['processes'], value: processes });
       }
       return res;
     });
