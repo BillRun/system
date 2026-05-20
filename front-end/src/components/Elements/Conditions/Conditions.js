@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { Col } from 'react-bootstrap'
 import { FormGroup } from '@/common/BootstrapCompat';
+import uuid from 'uuid';
 import { CreateButton } from '@/components/Elements';
 import Condition from './Condition';
 
@@ -79,14 +80,14 @@ class Conditions extends Component {
   }
 
   onAddCondition = () => {
-    this.props.onAdd(Conditions.defaultCondition);
+    this.props.onAdd(Conditions.defaultCondition.set('_key', uuid.v4()));
   }
 
   renderRow = (condition, index) => {
     const { conditions, operators, fields, customValueOptions, disabled, editable, errors, removeButtonVariant, removeButtonClass } = this.props;    
     return (
       <Condition
-        key={index}
+        key={condition.get('_key', index)}
         item={condition}
         index={index}
         fields={fields}
