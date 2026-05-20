@@ -15,6 +15,12 @@ class Mongodloid_Result {
 			case 'remove':
 				return self::buildRemoveResult($result);
 			case 'save':
+				if (is_object($result)) {
+					if (method_exists($result, 'isAcknowledged') && !$result->isAcknowledged()) {
+						return true;
+					}
+					return self::extractError($result) ? false : true;
+				}
 				return isset($result['err']) ? false : true;
 			case 'batchInsert':
 				return self::buildBatchInsertResult($result);
