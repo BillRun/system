@@ -46,7 +46,7 @@ export const getCollections = () => (dispatch, getState) => {
       const processes = collectionSelector(getState());
       if (processes) {
         const processesWithUiFlags = addUiFlagsToConditions(processes);
-        dispatch({ type: settingsActions.UPDATE_SETTING, category: 'collection', name: ['processes'], value: processesWithUiFlags });
+        dispatch(updateCollectionAction([], processesWithUiFlags));
       }
     }
     return result;
@@ -66,7 +66,7 @@ export const saveCollections = () => (dispatch, getState) => {
   const processes = collectionSelector(getState());
   if (processes) {
     const cleanedProcesses = removeUiFlagsFromConditions(processes);
-    dispatch({ type: settingsActions.UPDATE_SETTING, category: 'collection', name: ['processes'], value: cleanedProcesses });
+    dispatch(updateCollectionAction([], cleanedProcesses));
   }
   return dispatch(saveSettings(['collection']))
     .then((res) => {
@@ -75,7 +75,7 @@ export const saveCollections = () => (dispatch, getState) => {
       }
       // Restore ui_flags if save failed
       if (processes) {
-        dispatch({ type: settingsActions.UPDATE_SETTING, category: 'collection', name: ['processes'], value: processes });
+        dispatch(updateCollectionAction([], processes));
       }
       return res;
     });
