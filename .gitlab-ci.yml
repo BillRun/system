@@ -89,17 +89,18 @@ build:
     - echo "Building Docker image from Tag $CI_COMMIT_TAG"
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
     - |
-      # Move :latest only when this tag is the highest stable tag in the repo.
-      # A "stable" tag is exactly MAJOR.MINOR.PATCH - any suffix (-rc, -alpha,
-      # -beta, -dev, etc.) disqualifies the tag from being :latest. Backports
-      # on older release lines (e.g. 5.24.5 published after 6.0.0 already
-      # exists) also leave :latest alone.
+      # Move :latest only when this tag is the highest stable tag in the repo
+      # AND its major version is >= 5. A "stable" tag is exactly
+      # MAJOR.MINOR.PATCH - any suffix (-rc, -alpha, -beta, -dev, etc.)
+      # disqualifies the tag from being :latest. Backports on older release
+      # lines (e.g. 5.24.5 published after 6.0.0 already exists) also leave
+      # :latest alone. Legacy tags (4.x and below) are not pushed at all.
       LATEST_TAG=""
-      if echo "$CI_COMMIT_TAG" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+      if echo "$CI_COMMIT_TAG" | grep -qE '^([5-9]|[1-9][0-9]+)\.[0-9]+\.[0-9]+$'; then
         HIGHEST=$(git ls-remote --tags --refs origin 2>/dev/null \
           | awk '{print $2}' \
           | sed 's|refs/tags/||' \
-          | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
+          | grep -E '^([5-9]|[1-9][0-9]+)\.[0-9]+\.[0-9]+$' \
           | sort -V \
           | tail -1)
         if [ "$CI_COMMIT_TAG" = "$HIGHEST" ]; then
@@ -110,7 +111,7 @@ build:
       fi
       docker buildx build --tag billrun/billrun:$CI_COMMIT_TAG $LATEST_TAG --push --no-cache -f docker/cicd/Dockerfile .
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
+    - if: '$CI_COMMIT_TAG =~ /^([5-9]|[1-9]\d+)\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
 
 container_scanning:
   tags: [CI_SAST]
@@ -124,7 +125,7 @@ container_scanning:
     GIT_STRATEGY: clone
     CS_SEVERITY_THRESHOLD: HIGH
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
+    - if: '$CI_COMMIT_TAG =~ /^([5-9]|[1-9]\d+)\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
 
 include:
   - template: Jobs/Secret-Detection.gitlab-ci.yml
