@@ -12,7 +12,7 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
     {
      
         $this->tester->setIsraelInvoiceSettings( $this->tester);
-        // $this->tester->cleanDB();
+        $this->tester->cleanDB();
     }
 
     protected function _after()
