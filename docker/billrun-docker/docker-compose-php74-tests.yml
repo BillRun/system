@@ -9,7 +9,6 @@ services:
         volumes:
             - ${PWD}/../..:/billrun:ro
             - ${PWD}/nginx.conf:/etc/nginx/nginx.conf
-            - /etc/passwd:/etc/passwd:ro
         depends_on:
             - "php"
             - "mongodb"
@@ -33,9 +32,8 @@ services:
             - ${PWD}/../..:/billrun
             - ./../../cache:/billrun/cache
             - ${PLUGIN_PATH:-/dev/null}:/plugin
-            - /etc/passwd:/etc/passwd:ro
         healthcheck:
-            test: ["CMD-SHELL", "test -f /billrun/vendor/bin/codecept || exit 1"] 
+            test: ["CMD-SHELL", "test -f /billrun/vendor/bin/codecept || exit 1"]
             interval: 20s
             timeout: 3s
             retries: 4
