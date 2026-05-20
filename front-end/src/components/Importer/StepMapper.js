@@ -8,7 +8,15 @@ import MapField from './MapField';
 
 
 const StepMapper = (props) => {
-  const { item, fields, ignoredHeaders, mapperPrefix, defaultFieldsValues } = props;
+  const {
+    item = Immutable.Map(),
+    fields = [],
+    ignoredHeaders = [],
+    mapperPrefix = '',
+    defaultFieldsValues = Immutable.Map(),
+    defaultValuesOperation,
+    customFilterFields = () => true,
+  } = props;
   const fileContent = item.get('fileContent', []) || [];
   const linkerField = item.getIn(['linker', 'field'], '') || '';
   const linkerValue = item.getIn(['linker', 'value'], '') || '';
@@ -83,7 +91,7 @@ const StepMapper = (props) => {
       && field.value !== 'effective_date'
       && field.editable
       && (!field.hasOwnProperty('linker') || !field.linker)
-      && props.customFilterFields(field)
+      && customFilterFields(field)
     );
 
   const csvHeaders = headers
@@ -210,6 +218,7 @@ const StepMapper = (props) => {
           options={csvHeaders}
           mapResult={item.get('map')}
           multiFieldAction={item.get('multiFieldAction')}
+          defaultValuesOperation={defaultValuesOperation}
           mapperPrefix={mapperPrefix}
           onChange={props.onChange}
           onDelete={props.onDelete}
@@ -249,6 +258,7 @@ StepMapper.propTypes = {
   item: PropTypes.instanceOf(Immutable.Map),
   fields: PropTypes.array,
   defaultFieldsValues: PropTypes.instanceOf(Immutable.Map),
+  defaultValuesOperation: PropTypes.instanceOf(Immutable.Map),
   ignoredHeaders: PropTypes.array,
   mapperPrefix: PropTypes.string,
   customFilterFields: PropTypes.func,

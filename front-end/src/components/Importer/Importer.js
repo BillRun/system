@@ -105,6 +105,10 @@ class Importer extends Component {
     mapperPrefix: '__csvindex__',
   }
 
+  // Holds the hasError value computed by alterProductsData during render.
+  // Flushed to Redux in componentDidUpdate to avoid dispatching during render.
+  _pendingError = undefined;
+
   componentDidMount() {
     const { entityOptions } = this.props;
     this.props.dispatch(initImporter());
@@ -133,6 +137,15 @@ class Importer extends Component {
       const collection = getConfig(['systemItems', newEntity, 'collection'], '');
       const importName = `import${upperCaseFirst(collection)}`;
       this.props.dispatch(getSettings('plugin_actions', { actions: [importName] }));
+    }
+    // Flush validation error computed during render (alterProductsData) to Redux.
+    // Using componentDidUpdate prevents dispatching inside render (React 19 violation).
+    if (this._pendingError !== undefined) {
+      const pending = this._pendingError;
+      this._pendingError = undefined;
+      if (item.get('error', false) !== pending) {
+        this.props.dispatch(updateImporterValue('error', pending));
+      }
     }
   }
 
@@ -218,8 +231,8 @@ class Importer extends Component {
 
   createManualMappingImportData = () => {
     const { item, importFields } = this.props;
-    return Immutable.Map({
-      files: [item.get('file', '')],
+    const file = item.get('file');
+    const mapData = {
       map: item.get('map', Immutable.List()),
       delimiter: item.get('fileDelimiter', ','),
       linker: item.get('linker', Immutable.Map()),
@@ -229,7 +242,11 @@ class Importer extends Component {
       default_values: this.getDefaultValues(),
       import_fields: importFields,
       mapper_name: item.get('mapperName', Immutable.Map()),
-    });
+    };
+    if (file instanceof Blob) {
+      mapData.files = [file];
+    }
+    return Immutable.Map(mapData);
   }
 
   onClearItems = (itemName) => {
@@ -525,7 +542,7 @@ class Importer extends Component {
         });
       });
     });
-    this.props.dispatch(updateImporterValue('error', hasError));
+    this._pendingError = hasError;
   });
 
   alterData = (data) => {
@@ -745,6 +762,7 @@ class Importer extends Component {
       entityOptions,
       ignoredHeaders,
       defaultValues,
+      defaultValuesOperation,
       savedMappers,
       showPlay,
       typeSelectOptions,
@@ -779,6 +797,7 @@ class Importer extends Component {
           onDelete={this.onDelete}
           fields={importFields}
           defaultFieldsValues={defaultValues.get(entity, Immutable.Map())}
+          defaultValuesOperation={defaultValuesOperation}
           ignoredHeaders={ignoredHeaders}
           mapperPrefix={mapperPrefix}
         />

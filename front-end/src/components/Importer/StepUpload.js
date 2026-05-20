@@ -241,7 +241,7 @@ class StepUpload extends Component {
     const oldImportType = prevProps.item.get('importType', '');
     // remove files if mapper was changed
     if (oldImportType !== '' && oldImportType !== importType) {
-      prevProps.onDelete('files');
+      this.props.onDelete('files');
     }
   }
 

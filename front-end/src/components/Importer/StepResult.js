@@ -9,7 +9,7 @@ import { getConfig } from '@/common/Util';
 
 
 const StepResult = (props) => {
-  const { item } = props;
+  const { item = Immutable.Map() } = props;
   const fileDelimiter = item.get('fileDelimiter', ',');
   const fileContent = item.get('fileContent', []) || [];
   const fileName = item.get('fileName', 'errors');

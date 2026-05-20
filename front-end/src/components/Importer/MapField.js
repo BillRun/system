@@ -11,15 +11,15 @@ import { getConfig } from '@/common/Util';
 
 const MapField = (props) => {
   const {
-    mapFrom,
-    mapTo,
-    defaultValue,
-    options,
-    mapResult,
-    operation,
-    defaultValuesOperation,
-    entity,
-    multiFieldAction,
+    mapFrom = '',
+    mapTo = '',
+    defaultValue = null,
+    options = [],
+    mapResult = Immutable.Map(),
+    operation = '',
+    defaultValuesOperation = getConfig(['import', 'default_values_allowed_actions'], Immutable.Map()),
+    entity = '',
+    multiFieldAction = Immutable.Map(),
   } = props;
 
   const onChange = (value) => {
@@ -196,7 +196,7 @@ const MapField = (props) => {
         {typeof mapFrom.help === 'string' && mapFrom.help !== '' && (
           <HelpBlock className="mb0 mt0">{mapFrom.help}</HelpBlock>
         )}
-        {defaultValue !== null && defaultValuesOperation.get(operation).includes(entity) && (
+        {defaultValue !== null && defaultValuesOperation.get(operation, Immutable.List()).includes(entity) && (
           <HelpBlock className="mb0">
             Default value if no value is selected:&nbsp;
             <Label variant="primary" style={{ padding: '1px 6px', fontWeight: 'bold' }} >

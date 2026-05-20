@@ -100,7 +100,9 @@ const buildRequestData = (item, action) => {
       const formData = new FormData();
       if (item.has('files')) {
         item.get('files', []).forEach((file, i) => {
-          formData.append(`files[${i}]`, file, file.name)
+          if (file instanceof Blob) {
+            formData.append(`files[${i}]`, file, file.name);
+          }
         });
       }
       formData.append('update', JSON.stringify(item.delete('files')));
