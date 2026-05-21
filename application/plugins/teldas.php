@@ -218,8 +218,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       
       if ($success1 && $success2 && $success3 && $success4) { //todo::remove this if 
           Billrun_Factory::log("Initialize system succeeded", Zend_Log::INFO);
-          $this->updateConfigTeldasData('is_system_initialize', true);
-          $this->updateConfigTeldasData('last_update_time', new MongoDate(strtotime($parameters['transactionDateTimeTo'])));
+          $this->updateConfigTeldasData(['is_system_initialize' => true, 'last_update_time' => new MongoDate(strtotime($parameters['transactionDateTimeTo']))]);
       }
   }
     protected function clearTeldasCollections(){
@@ -230,22 +229,25 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     }
 
 
-  protected function updateConfigTeldasData($field, $value) {
+  protected function updateConfigTeldasData($fields) {
       Billrun_Factory::log("Updating teldas." . $field . " in config to value: " . $value, Zend_Log::DEBUG);
       $model = new ConfigModel();
       $updatedData = $model->getConfig();
       unset($updatedData['_id']);
       $updatedData['urt'] = new Mongodloid_Date();
-      $updatedData['teldas'][$field] = $value;
+      foreach($fields as $field => $value){
+        Billrun_Factory::log("Updating teldas." . $field . " in config to value: " . $value, Zend_Log::DEBUG);
+        $updatedData['teldas'][$field] = $value;
+      }
       $ret = Billrun_Factory::db()->configCollection(['force' => true])->insert($updatedData);
       $saveResult = !empty($ret['ok']);
       if ($saveResult) {
           // Reload timezone.
           Billrun_Config::getInstance()->refresh();
-          Billrun_Factory::log("Succeeded to update teldas." . $field . " in config to value: " . $value, Zend_Log::DEBUG);
+          Billrun_Factory::log("Succeeded to update teldas fields :" . json_encode($fields). " in config", Zend_Log::DEBUG);
           return;
       }
-      Billrun_Factory::log("Failed to update teldas." . $field . " in config to value: " . $value, Zend_Log::ALERT);
+      Billrun_Factory::log("Failed to update teldas." . json_encode($fields). " in config" , Zend_Log::ALERT);
       return;
   }
 
@@ -410,7 +412,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     
       if ($success1 && $success2 && $success3) {//todo:: remove this if 
           Billrun_Factory::log("Keep system up to date succeeded", Zend_Log::INFO);
-          $this->updateConfigTeldasData('last_update_time', new MongoDate(strtotime($parameters['transactionDateTimeTo'])));
+          $this->updateConfigTeldasData(['last_update_time' => new MongoDate(strtotime($parameters['transactionDateTimeTo']))]);
       }
   }
 
