@@ -848,6 +848,19 @@ class BillRunAPI extends \Codeception\Module{
         return json_decode($ret, true);
     }
 
+    /**
+     * Clear Billrun_Base's process-wide singleton cache. Callers that change
+     * file_types / queue.calculators / similar config mid-test should call
+     * this before getInstance() so the new config is picked up rather than a
+     * cached calc/processor built against the previous config.
+     */
+    public function resetBillrunSingletons()
+    {
+        $instances = new \ReflectionProperty('Billrun_Base', 'instance');
+        $instances->setAccessible(true);
+        $instances->setValue(null, []);
+    }
+
     public static function cleanDB(){
 
         $subs = \Billrun_Factory::db()->subscribersCollection();

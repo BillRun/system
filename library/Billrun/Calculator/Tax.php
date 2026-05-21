@@ -190,9 +190,9 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
 
 	public function isLineLegitimate($line) {
-		return (empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc'])) && 
+		return (empty($line['skip_calc']) || (!in_array(static::$type, $line['skip_calc']) && !in_array('pricing', $line['skip_calc']))) &&
 			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
-	}	
+	}
 	
 	protected function isLineTaxable($line) {
 		$rate = $this->getRateForLine($line);
