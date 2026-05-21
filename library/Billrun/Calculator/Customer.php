@@ -201,7 +201,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return false;
 		}
 		$isRealtime = isset($row['realtime']) ? $row['realtime'] : false;
-		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true, 'disable_cache_plan' => $isRealtime));
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => !$isRealtime, 'disable_cache_plan' => $isRealtime));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'] . ', line ' . $row['stamp'], Zend_Log::ALERT);
@@ -386,15 +386,19 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @return type
 	 */
 	protected function loadSubscriberForLine($row) {
+		$stamp = $row instanceof Mongodloid_Entity ? $row->get('stamp') : $row['stamp'];
+		Billrun_Factory::log()->log("CustomerCalculator loading subscriber from DB for row {$stamp}", Zend_Log::DEBUG);
 		$priorities = $this->buildPriorities([$row]);
 		foreach ($priorities as $priority) {
 			if ( $subData = $this->subscriber->loadSubscriberForQuery($priority) ) {
 				$type = array('type' => Billrun_Factory::config()->getConfigValue('subscribers.subscriber.type', 'db'));
 				$options = array('data' => $subData->getRawData());
 				$subscriber = Billrun_Subscriber::getInstance(array_merge($subData->getRawData(), $options, $type));
+				Billrun_Factory::log()->log("CustomerCalculator - finished loading subscriber from DB for row {$stamp}", Zend_Log::DEBUG);
 				return $subscriber;
 			}
 		}
+		Billrun_Factory::log()->log("CustomerCalculator - finished loading subscriber from DB for row {$stamp} (Not Found)", Zend_Log::DEBUG);
 		return false;
 	}
 
@@ -454,7 +458,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$this->getParamsByPrefixAndTranslationRules($translationRules, $params, 'cf', $row, $key);
 			} 
 			else {
-				Billrun_Factory::log('Customer calculator missing field ' . $key . ' for line with stamp ' . $row['stamp'], Zend_Log::ALERT);
+				Billrun_Factory::log('Customer calculator missing field ' . $key . ' for line with stamp ' . $row['stamp'], Zend_Log::WARN);
 			}
 		}
 		if (empty($params) && $row['type'] === 'credit' && isset($row['sid'])) {
@@ -617,11 +621,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$planParams = array(
 			'name' => $planName,
 			'time' => $time,
-			'disableCache' => true,
+			'disableCache' => !$isRealtime,
 			'disable_cache_plan' => $isRealtime
 		);
-
+		Billrun_Factory::log()->log("CustomerCalculator loading plan '{$planName}' for included services", Zend_Log::DEBUG);
 		$planObject = Billrun_Factory::plan($planParams);
+		Billrun_Factory::log()->log("CustomerCalculator finished loading plan '{$planName}' for included services", Zend_Log::DEBUG);
 		if (empty($planObject)) {
 			return array();
 		}

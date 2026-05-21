@@ -19,12 +19,15 @@ class UpfrontDBTest extends \Codeception\Test\Unit
 
     protected function _before()
     {
+        $this->tester->setTimezone('UTC');
         $this->tester->enableDBModeSettings();
         $this->tester->cleanDB();
+       
     }
 
     protected function _after()
     {
+       $this->tester->restoreTimezone();
     }
     
 
