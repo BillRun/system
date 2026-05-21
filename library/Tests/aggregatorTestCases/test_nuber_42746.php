@@ -8,8 +8,8 @@ class Test_Case_42746
 
     public function test_case()
     {
-        $plan_name = time()+random_int(1,111111111);
-        $discount_name = time()+random_int(1,111111111);
+        $plan_name = generat_test_data::uniqueName();
+        $discount_name = generat_test_data::uniqueName();
 
 
         generat_test_data::setTestNumber(4298_2);

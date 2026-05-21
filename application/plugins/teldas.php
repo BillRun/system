@@ -1336,6 +1336,11 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       $inaNumberPrefixes = Billrun_Util::getIn($this->options, 'ina_number_prefixes', "/^(0800|0848|0900|0901|0906|0840|0842|0844|0878)|^18[0-9][0-9]$/");
       return preg_match($inaNumberPrefixes, $inaNumber);
   }
+ 
+  public function afterRealtimeProcessorParsing(&$line, $type){
+    return $this->afterGetLineUsageType($line, $type);
+  }
+
 
   public function afterGetLineUsageType(&$line, $type) {
       $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;

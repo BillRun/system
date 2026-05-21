@@ -22,4 +22,5 @@ export default {
   logoMaxSize: 2,
   importMaxSize: 100,
   chargingBufferDays: 5,
+  maxAllowScheduleCharge: 8,
 }
