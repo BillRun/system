@@ -16,11 +16,15 @@ class billapiAccountCest
 			//load the  config so  we  can  ovverride the  timezone AFTER  it  waas  set by configuration
 			Billrun_Factory::config();
 			$this->defaultTimezone = date_default_timezone_get();
-			date_default_timezone_set('Asia/Jerusalem');
 		}
+        $I->setTimezone('UTC');
     }
 
-
+    public function _after(ApiTester $I)   
+    {
+        	
+        $I->setTimezone($this->$defaultTimezone);
+    }
 
     public function testCreateAccount(ApiTester $I)
     {
@@ -120,7 +124,6 @@ class billapiAccountCest
                 'from' => $effective_date
             ]
         );
-        
     }
 
 
@@ -195,7 +198,6 @@ class billapiAccountCest
         ]
     ]);
     $I->seeResponseContains('"status":1');
-    date_default_timezone_set($this->defaultTimezone );
 
 }
 

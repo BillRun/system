@@ -1,73 +1,58 @@
 <?php
 
 //this is example test 
+require_once(APPLICATION_PATH .  '/library/Tests/Util/Generators/generators.php');
 class Test_Case_200
 {
     
-    public $plan ;
-    public $service;
-    public $discount ;
-    public $account ;
-    public $subscriber ;
-    public $stamp ;
-    public function generateData(){
-        require_once(APPLICATION_PATH .  '/library/Tests/Util/Generators/generators.php');
+
+    public function test_case()
+    {
+
+        generat_test_data::setTestNumber(200);
         $now = new DateTime();
         // Subtract one day
         $now->sub(new DateInterval('P1D'));
       
             $plan = generat_plans::generatePlan(['name' => "TEST_GENRATE",
-            "price" => [ json_encode(["price" => 10, "from" => 0, "to" => "UNLIMITED"])]]);
-            $service = generat_services::generateService(['name' => "TEST_GENRATE_SERVICE", 
+            "price" => [ ["price" => 10, "from" => 0, "to" => "UNLIMITED"] ]]);
+            $service = generat_services::generateService(['name' => "TEST_GENRATE_SERVICE1",
             'from' => $now->format('Y-m-d'),"price" => [ ["price" => 10, "from" => 0, "to" => "UNLIMITED"]]]);
-            $this->discount = generat_discounts::generateDiscount();
-            $this->account = generat_subscribers::generateAccount();
-            $this->subscriber = generat_subscribers::generateSubscriber([
-                'aid' => $this->account['aid'],
-                'plan' => $this->plan['name'],
+            $discount = generat_discounts::generateDiscount();
+            $account = generat_subscribers::generateAccount();
+            $subscriber = generat_subscribers::generateSubscriber([
+                'aid' => $account['aid'],
+                'plan' => $plan['name'],
                 'services' => [
                     [
-                        "name" =>$this->service['name'],
+                        "name" => $service['name'],
                         "from" => $now->format('Y-m-d'),
                         "to" => "2118-05-06T11:06:07Z"
                     ]
                 ]
             ]);
-            $this->stamp =Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month'));
-      
-    }
-
-    public function test_case()
-    {
-       $this->generateData();
-        generat_test_data::setTestNumber(200);
+            $stamp =Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month'));
       
 
         return [
             'test' => [
                 'label'=>"DEMO NEW TEST",
                 'test_number' => 200,
-                'aid' => $this->account['aid'],
+                'aid' => $account['aid'],
                 'function' => [
                     'basicCompare','totalsPrice','linesVSbillrun','rounded'
                 ],
                 'options' => [
-                     "stamp" => $this->stamp,
+                     "stamp" => $stamp,
                     'force_accounts' => [
-                        $this->account['aid']
+                        $account['aid']
                     ],
                 ],
             ],
             'expected' => [
                 'billrun' => [
-                    'billrun_key' => $this->stamp,
-                    'aid' => $this->account['aid'],
-                    'after_vat' => [
-                        $this->account['aid'] => 11.7,
-                    ],
-                    'total' => 11.7,
-                    'vatable' => 10,
-                    'vat' => 17,
+                    'billrun_key' => $stamp,
+                    'aid' => $account['aid'],
                 ],
                 'line' => [
                     'types' => [

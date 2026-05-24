@@ -12,10 +12,14 @@
 abstract class Billrun_Generator_PaymentGateway_Custom {
 
     use Billrun_Traits_Api_FlexibleOperationsLock {
-        // Rename the trait's methods to new names because class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest  that extends
-        // it has same function names for the old Lock.
+        // Alias to flexibleLock/flexibleRelease and demote the originals to private so the
+        // subclass Billrun_Generator_PaymentGateway_Custom_TransactionsRequest can declare its
+        // own lock()/release() via Billrun_Traits_Api_OperationsLock without PHP 8 signature-
+        // compatibility errors against the inherited methods.
         lock as flexibleLock;
         release as flexibleRelease;
+        lock as private;
+        release as private;
     }
 	public $now;
     protected $configByType;
@@ -147,7 +151,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
                 continue;
             }
-            Billrun_Factory::dispatcher()->trigger('afterPreparingCpfDataField', array(static::$type, $dataField, &$dataLine, &$attributes, $this));
+            Billrun_Factory::dispatcher()->trigger('afterPreparingCpfDataField', array(static::$type, $dataField, &$dataLine, &$attributes, $this, $params));
         }
         if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
             ksort($dataLine);

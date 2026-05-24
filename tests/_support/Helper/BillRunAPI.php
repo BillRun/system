@@ -356,10 +356,10 @@ class BillRunAPI extends \Codeception\Module{
             case 'service':
                 $model = new \Models_Services(['collection' => 'services', 'no_init' => true]);
                 break;
-            case 'rates';
+            case 'rates':
                 $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
                 break;
-            case 'discount';
+            case 'discount':
                 $model = new \Models_Discounts(['collection' => 'discounts', 'no_init' => true]);
                 break;
         }

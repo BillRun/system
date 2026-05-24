@@ -21,8 +21,11 @@ class generat_test_data
      self::$test_number = $test_number;
   }
 
-  
-  
+  public static function uniqueName($prefix = '')
+  {
+    return $prefix . strtoupper(bin2hex(random_bytes(8)));
+  }
+
   public static function getCurrentDateTimeWithMilliseconds() {
     $now = new DateTime();
     $milliseconds = round(microtime(true) * 1000) % 1000; // Get current milliseconds
@@ -74,6 +77,10 @@ class generat_test_data
     $count =0;
    while($count < 10){
       $response = self::bulidAPI($entity, $params);
+      if(($response['message'] ?? '') == 'Entity already exists' ){
+             $params['name'] = self::uniqueName('RETRY_');
+             $response = self::bulidAPI($entity, $params);
+      }
       $count++;
       if ($response['status'] == '1' || $response['status'] == 1) {
         $count += 10;

@@ -1803,6 +1803,9 @@ class Billrun_Util {
 		}
 		
 		if (!is_array($keys)) {
+			if (is_object($keys)) {
+				$keys = (string) $keys;
+			}
 			if (isset($arr[$keys])) {
 				return $arr[$keys];
 			}
@@ -2003,7 +2006,6 @@ class Billrun_Util {
 		}
 		return true;
 	}
-	
 
 	/**
 	 * try to fork, and if successful update the process log stamp

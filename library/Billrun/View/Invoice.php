@@ -13,19 +13,7 @@
  * @since    5.0
  */
 class Billrun_View_Invoice extends Yaf_View_Simple {
-	
-	public $lines = array();
-	protected $subServices = [];
-	protected $tariffMultiplier = array(
-		'call' => 60,
-		'incoming_call' => 60,
-		'data' => 1024*1024
-	);
-	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^972/'=>'0');
-	public $invoice_flat_tabels = [];
-	public $invoice_usage_tabels = [];
-	public $details_keys = [];
-	
+
 	/*
 	 * get and set lines of the account
 	 */
@@ -33,7 +21,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$this->lines = $accountLines;
 		$this->subServices = [];
 	}
-	
+
 	public function loadLines() {
 		$lines_collection = Billrun_Factory::db()->linesCollection();
 		$this->lines = array();

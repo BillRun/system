@@ -120,7 +120,7 @@ class expandSubRevisions_8Test extends \Codeception\Test\Unit
         $cycle = new Billrun_DataTypes_CycleTime($stamp);
         $subRevisions = Billrun_Cycle_Account::expandSubRevisions($subscriber, $cycle->start(),$cycle->end(), $services);
 		$this->assertEquals(1, count($subRevisions));
-        $this->assertEquals(0, count($subRevisions[0]['services']));
+        $this->assertEquals(0, count($subRevisions[0]['services'] ?? []));
         $this->assertEquals(1759276800, $subRevisions[0]['from']->sec);//1.10
         $this->assertEquals(1761955200, $subRevisions[0]['to']->sec);//1.10
 

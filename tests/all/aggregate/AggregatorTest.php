@@ -16,6 +16,7 @@ class AggregatorTest extends \Codeception\Test\Unit
 
     protected function _after()
     {
+        $this->tester->enableDBModeSettings();
     }
     public $defaultOptions = array(
         "type" => "customer",
