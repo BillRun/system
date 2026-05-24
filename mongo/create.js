@@ -1,4 +1,7 @@
-//Lines collection
+// create base db for BillRun
+// this script is deprecated since version 5.25.0, please use application/controllers/Action/Dbinit.php
+
+////Lines collection
 // Add indecies to insure that theres no duplicate lines.
 db.createCollection('lines');
 db.lines.createIndex({'stamp': 1 }, { unique: true });
