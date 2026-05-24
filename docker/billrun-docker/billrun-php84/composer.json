@@ -7,7 +7,7 @@
     },
     "license": "AGPL-3.0-or-later",
     "require": {
-        "phpoffice/phpspreadsheet": "^1.16",
+        "phpoffice/phpspreadsheet": ">=1.28.0",
         "mongodb/mongodb": "~2.1.2",
         "bshaffer/oauth2-server-php": "1.11.1",
         "league/omnipay": ">=3.2",

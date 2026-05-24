@@ -33,7 +33,7 @@ services:
         volumes:
             - ./../..:/billrun
             - ./../../cache:/billrun/cache
-        command: sh -c "cp -r /var/www/html/vendor/* /billrun/vendor/&& php-fpm "
+        command: sh -c "mkdir -p /billrun/vendor && cp -r /var/www/html/vendor/* /billrun/vendor/ && php-fpm"
 
 networks:
   default:

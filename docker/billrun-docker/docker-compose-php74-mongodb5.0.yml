@@ -31,6 +31,7 @@ services:
         volumes:
             - ./../..:/billrun
             - ${PWD}/../../cache:/billrun/cache
+        command: sh -c "mkdir -p /billrun/vendor && cp -r /var/www/html/vendor/* /billrun/vendor/ && php-fpm"
     mongodb:
         image: mongo:5.0
         container_name: billrun-mongodb
