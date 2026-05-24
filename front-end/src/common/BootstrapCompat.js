@@ -2,7 +2,7 @@
  * Bootstrap 3 → Bootstrap 5 / react-bootstrap v0.33 → v2 compatibility shim.
  * Provides wrappers for removed/renamed components so existing JSX doesn't need to change.
  */
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import classNames from 'classnames';
 import { Card, Form, Container, Collapse } from 'react-bootstrap';
 // ---------------------------------------------------------------------------
@@ -234,3 +234,50 @@ export const Well = ({ children, bsSize, size, className = '', ...props }) => {
     </div>
   );
 };
+
+export const NavDropdownCompat = ({ id, title, children, align, active }) => {
+  const [show, setShow] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!show) return;
+    const onOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setShow(false);
+    };
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, [show]);
+
+  const menuClass = classNames('dropdown-menu', {
+    'dropdown-menu-right': align === 'end',
+  });
+
+  return (
+    <li ref={ref} className={classNames('dropdown', { open: show, active })}>
+      <a
+        id={id}
+        href="#"
+        role="button"
+        className="dropdown-toggle"
+        aria-haspopup="true"
+        aria-expanded={show}
+        onClick={(e) => { e.preventDefault(); setShow(s => !s); }}
+      >
+        {title}
+      </a>
+      {show && (
+        <ul role="menu" className={menuClass} aria-labelledby={id} onClick={() => setShow(false)}>
+          {children}
+        </ul>
+      )}
+    </li>
+  );
+};
+
+export const NavDropdownItem = ({ href, onClick, active, children }) => (
+  <li role="presentation" className={active ? 'active' : ''}>
+    <a role="menuitem" tabIndex={-1} href={href || '#'} onClick={onClick}>
+      {children}
+    </a>
+  </li>
+);

@@ -84,13 +84,16 @@ $page-wrapper-transition: margin 200ms linear;
     }
 
     ul.navbar-top-links.navbar-right > li > a,
-    ul.navbar-top-links.navbar-right > .nav-item > a,
-    ul.navbar-top-links.navbar-right > .dropdown > a,
-    ul.navbar-top-links.navbar-right > .dropdown > .dropdown-toggle {
+    ul.navbar-top-links.navbar-right > .nav-item > a {
       display: block;
       padding: 15px;
       min-height: 50px;
       text-decoration: none;
+    }
+
+    /* Restore active-state padding overridden by the general > li > a rule above. */
+    ul.navbar-top-links.navbar-right > li.active > a {
+      padding-top: 9px;
     }
 
     /* BS2 caret for RB2 dropdown toggle in top-right nav */

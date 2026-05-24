@@ -4,7 +4,8 @@ import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 import Immutable from 'immutable';
 import classNames from 'classnames';
-import { NavDropdown, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { NavDropdownCompat, NavDropdownItem } from '@/common/BootstrapCompat';
 import { toggleSideBar } from '@/actions/guiStateActions/menuActions';
 import { userDoLogout } from '@/actions/userActions';
 import MenuItem from './MenuItem';
@@ -261,19 +262,19 @@ class Navigator extends Component {
 
         <ul className={topNavClassName}>
           <OnBoardingNavigation eventKeyBase={2} />
-          <NavDropdown
+          <NavDropdownCompat
             id="nav-user-menu"
             align="end"
-            menuClassName="dropdown-user legacy-user-dropdown-menu"
+            active={router.isActive('about')}
             title={<span><i className="fa fa-user fa-fw" />{ userName }</span>}
           >
-            <NavDropdown.Item eventKey={1.1} href="#about" active={router.isActive('about')}>
+            <NavDropdownItem href="#about" active={router.isActive('about')}>
               <i className="fa fa-question-circle fa-fw" /> About
-            </NavDropdown.Item>
-            <NavDropdown.Item eventKey={1.2} onClick={this.clickLogout}>
+            </NavDropdownItem>
+            <NavDropdownItem onClick={this.clickLogout}>
               <i className="fa fa-sign-out fa-fw" /> Logout
-            </NavDropdown.Item>
-          </NavDropdown>
+            </NavDropdownItem>
+          </NavDropdownCompat>
         </ul>
 
         { (!showCollapseButton || (showCollapseButton && openSmallMenu)) &&
