@@ -145,6 +145,17 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 	public function prepereView($params = FALSE) {
 		$this->view = new Billrun_View_Invoice($this->view_path);
+		$this->view->assign('lines', array());
+		$this->view->assign('subServices', []);
+		$this->view->assign('tariffMultiplier', array(
+			'call' => 60,
+			'incoming_call' => 60,
+			'data' => 1024 * 1024,
+		));
+		$this->view->assign('destinationsNumberTransforms', array('/B/' => '*', '/A/' => '#', '/^972/' => '0'));
+		$this->view->assign('invoice_flat_tabels', []);
+		$this->view->assign('invoice_usage_tabels', []);
+		$this->view->assign('details_keys', []);
 		$this->view->assign('css_path', $this->css_path);
 		$this->view->assign('decimal_mark', Billrun_Factory::config()->getConfigValue(self::$type . '.decimal_mark', '.'));
 		$this->view->assign('thousands_separator', Billrun_Factory::config()->getConfigValue(self::$type . '.thousands_separator', ','));

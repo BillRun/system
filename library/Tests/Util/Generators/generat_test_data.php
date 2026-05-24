@@ -77,6 +77,10 @@ class generat_test_data
     $count =0;
    while($count < 10){
       $response = self::bulidAPI($entity, $params);
+      if(($response['message'] ?? '') == 'Entity already exists' ){
+             $params['name'] = self::uniqueName('RETRY_');
+             $response = self::bulidAPI($entity, $params);
+      }
       $count++;
       if ($response['status'] == '1' || $response['status'] == 1) {
         $count += 10;

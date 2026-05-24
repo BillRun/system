@@ -657,9 +657,5 @@ class Billrun_Config {
 		return $fileType;
 	}
 
-	public function setInternalSubscribersMode() {
-		$this->config['subscribers']['subscriber']['type'] = 'db';
-		$this->config['subscribers']['account']['type'] = 'db';
-	}
 
 }
