@@ -1,0 +1,63 @@
+token:
+  post:
+    tags: [OAuth2]
+    summary: Issue an OAuth2 access token
+    description: |
+      OAuth2 token endpoint. Supports the `client_credentials`,
+      `password`, and `refresh_token` grants depending on what the
+      BillRun OAuth2 server is configured for.
+
+      The returned `access_token` should be sent on subsequent calls as
+      `Authorization: Bearer <token>`.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            required: [grant_type, client_id, client_secret]
+            properties:
+              grant_type:
+                type: string
+                enum: [client_credentials, password, refresh_token]
+              client_id: { type: string }
+              client_secret: { type: string, format: password }
+              scope:
+                type: string
+                description: Space-separated list of requested scopes.
+                example: "read write"
+              username:
+                type: string
+                description: Required for the `password` grant.
+              password:
+                type: string
+                format: password
+                description: Required for the `password` grant.
+              refresh_token:
+                type: string
+                description: Required for the `refresh_token` grant.
+    responses:
+      "200":
+        description: Access token issued
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                access_token: { type: string }
+                token_type:   { type: string, example: Bearer }
+                expires_in:   { type: integer, example: 3600 }
+                scope:        { type: string }
+                refresh_token: { type: string }
+      "400":
+        description: Invalid request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error: { type: string, example: invalid_grant }
+                error_description: { type: string }
+      "401":
+        $ref: "../components/responses.yaml#/Unauthorized"
