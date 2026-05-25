@@ -1,7 +1,9 @@
 stages:
- - build
- 
+  - build
+
 placeholder-build:
   stage: build
   script:
     - echo "ok"
+  rules:
+    - when: never
