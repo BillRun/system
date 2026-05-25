@@ -417,7 +417,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			// @todo: make it pluginable with chain of responsibility
 			if ($field == 'classMethod') {
 				$matched &= call_user_func_array(array($this, $regex), array($line));
-			} elseif (!preg_match($regex, $line[$field])) {
+			} elseif (!preg_match($regex, Billrun_Util::getIn($line, $field, ''))) {
 				$matched &= false;
 			}
 		}
@@ -537,6 +537,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected function limitGroupsSize($line) {
 		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
 		$taxes = isset($line['tax_data']['taxes']) ? $line['tax_data']['taxes'] : array();
+		// Filter out items where counter_only is true
+		$arategroups = array_filter($arategroups, fn($group) => 
+			!isset($group['counter_only']) || $group['counter_only'] !== true
+		);
 		if (count($arategroups) > 1 || count($taxes) > 1) {
 			return false;
 		}

@@ -8,8 +8,8 @@ class Test_Case_4298_2
 
     public function test_case()
     {
-        $service_name = time()+random_int(1,111111111);
-        $plan_name = time()+random_int(1,111111111);
+        $service_name = generat_test_data::uniqueName();
+        $plan_name = generat_test_data::uniqueName();
 
         generat_test_data::setTestNumber(4298_2);
         $plan = generat_plans::generatePlan(['name' => $plan_name, 'from' => '2020-01-01',

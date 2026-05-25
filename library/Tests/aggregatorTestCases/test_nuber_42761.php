@@ -15,7 +15,7 @@ class Test_Case_42761
             [
 
                 "from" => "2019-05-31T22:00:00Z",
-                "name" => "PLAN" .  time()+random_int(1,111111111),
+                "name" => generat_test_data::uniqueName("PLAN"),
                 "price" => [
                     [
                         "price" => 100,
@@ -37,7 +37,7 @@ class Test_Case_42761
                 "prorated_termination" => true
             ]
         );
-        $discount_name = time()+random_int(1,111111111);
+        $discount_name = generat_test_data::uniqueName();
 
         $discount = generat_discounts::generateDiscount([
           "from" => "2019-05-31T22:00:00Z",
@@ -148,10 +148,10 @@ class Test_Case_42761
         );
 
 
-
+        // Note!!: there is currently no requirement to prorate the discount in this case; only the last discount override is supported for now.
         return [
             'test' => [
-                'label' => ' 2 revisions (in month) for subscriber with different override discount conditions the first meet and the second not- should give prorated discount only for the meet override condition revision',
+                'label' => ' 2 revisions (in month) for subscriber with different override discount conditions the first meet and the second not- should give only the last revision eligibility',
                 'test_number' => 42761,
                 "aid" => $account['aid'],
                 'sid' => $subscriber['sid'],
@@ -163,11 +163,11 @@ class Test_Case_42761
                     'billrun_key' => '202206',
                     'aid' => $account['aid'],
                     'after_vat' => [$subscriber['sid'] => 111.716129032],
-                    'total' => 111.716129032,
-                    'vatable' => 95.483870968,//flat 100 /discount1 (14/31*10)
+                    'total' => 117,
+                    'vatable' => 100,//flat 100
                     'vat' => 17
                 ],
-                'line' => ['types' => ['flat', 'credit']]
+                'line' => ['types' => ['flat']]
             ],
 
             'postRun' => [

@@ -359,6 +359,9 @@ class BillRunAPI extends \Codeception\Module{
             case 'rates';
                 $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
                 break;
+            case 'discount';
+                $model = new \Models_Discounts(['collection' => 'discounts', 'no_init' => true]);
+                break;
         }
         return $model;
     }
@@ -704,7 +707,7 @@ class BillRunAPI extends \Codeception\Module{
         $ret =  $rest->sendPOST("/realtime", $params);
         return json_decode($ret, true);
     }
-    
+
     function generateDemoValue($type = 'text') {
         switch ($type) {
             case 'boolean':
@@ -791,8 +794,10 @@ class BillRunAPI extends \Codeception\Module{
     }
     
 
-    public function generateDiscount($override = [])
+    public function generateDiscount($override = [], $byApi= false)
   {
+    $customeFields = $this->getCustomFields('discount');
+    $override = array_merge($customeFields, $override);
     //http://billrun/billapi/discounts/create
     $discount = array_merge([
       
@@ -809,8 +814,20 @@ class BillRunAPI extends \Codeception\Module{
         "type" => "monetary"
       
     ], $override);
+    if($byApi){
+        $this->sendBillapiCreate($discount, 'discounts');
 
-    $this->sendBillapiCreate($discount, 'discounts');
+    }else{
+        if(isset($discount["from"]) && !($discount["from"] instanceof \Mongodloid_Date)){
+            $discount["from"] = new \Mongodloid_Date(strtotime($discount['from']));
+        }
+        if(isset($discount["to"]) && !($discount["to"] instanceof \Mongodloid_Date)){
+            $discount["to"] = new \Mongodloid_Date(strtotime($discount['to']));
+        }
+        $model = $this->getModel('discount');
+	    $model->setUpdate($discount);
+        $model->create();
+    }
   }
 
     public function sendOnetimeInvoiceApi(array $cdrs, $aid, $extra_params = []) {
@@ -829,6 +846,36 @@ class BillRunAPI extends \Codeception\Module{
         $ret = $rest->sendGET("/api/onetimeinvoice", $params);
 
         return json_decode($ret, true);
+    }
+
+    public static function cleanDB(){
+
+        $subs = \Billrun_Factory::db()->subscribersCollection();
+        $subs->remove(['_id'=>['$exists' => true]]);
+        $lines = \Billrun_Factory::db()->linesCollection();
+        $lines->remove(['_id'=>['$exists' => true]]);
+        $queue = \Billrun_Factory::db()->queueCollection();
+        $queue->remove(['_id'=>['$exists' => true]]);
+        $log = \Billrun_Factory::db()->logCollection();
+        $log->remove(['_id'=>['$exists' => true]]);
+        $archive = \Billrun_Factory::db()->archiveCollection();
+        $archive->remove(['_id'=>['$exists' => true]]);
+        $balances = \Billrun_Factory::db()->balancesCollection();
+        $balances->remove(['_id'=>['$exists' => true]]);
+        $services = \Billrun_Factory::db()->servicesCollection();
+        $services->remove(['_id'=>['$exists' => true]]);
+        $plans = \Billrun_Factory::db()->plansCollection();
+        $plans->remove(['_id'=>['$exists' => true]]);
+        $rates = \Billrun_Factory::db()->ratesCollection();
+        $rates->remove(['_id'=>['$exists' => true]]);
+        $discounts = \Billrun_Factory::db()->discountsCollection();
+        $discounts->remove(['_id'=>['$exists' => true]]);
+        $charges = \Billrun_Factory::db()->chargesCollection();
+        $charges->remove(['_id'=>['$exists' => true]]);
+        $billruns =\Billrun_Factory::db()->billrunCollection();
+        $billruns->remove(['_id'=>['$exists' => true]]);
+        $billing_cycleCollection = \Billrun_Factory::db()->billing_cycleCollection();
+        $billing_cycleCollection->remove(['_id'=>['$exists' => true]]);
     }
     
 }

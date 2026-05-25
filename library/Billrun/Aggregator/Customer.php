@@ -431,6 +431,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return false;
 	}
 
+	public function shouldLoadSubscriberLines($sid){
+		return true;
+	}
+
 	//--------------------------------------------------------------------
 	/**
 	 * Override  entiries  values  based on certain condtions.
