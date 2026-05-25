@@ -1,3 +1,7 @@
-placeholder:
+stages:
+ - build
+ 
+placeholder-build:
+  stage: build
   script:
     - echo "ok"
