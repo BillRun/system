@@ -21,7 +21,7 @@ import {
 const ChargingForm = ({
     updateField,
     removeField,
-    item,
+    item = Immutable.Map(),
     typeOptions,
     runOnOptions,
     datetimeFormat,
@@ -235,9 +235,6 @@ const ChargingForm = ({
 }
 
 
-ChargingForm.defaultProps = ({
-    item: Immutable.Map(),
-});
 
 ChargingForm.propTypes = ({
     item: PropTypes.instanceOf(Immutable.Map),

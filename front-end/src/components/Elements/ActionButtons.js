@@ -1,10 +1,23 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Button } from 'react-bootstrap';
-const ActionButtons = (props) => {
-  const { hide, progress, progressLabel, reversed } = props;
-  const { saveLabel, hideSave, disableSave, onClickSave, saveTitle } = props;
-  const { cancelLabel, hideCancel, disableCancel, onClickCancel, cancelTitle } = props;
+const ActionButtons = ({
+  hide = false,
+  progress = false,
+  progressLabel = null,
+  reversed = false,
+  saveLabel = 'Save',
+  hideSave = false,
+  disableSave = false,
+  onClickSave,
+  saveTitle,
+  cancelLabel = 'Cancel',
+  hideCancel = false,
+  disableCancel = false,
+  onClickCancel,
+  cancelTitle,
+  children,
+}) => {
   if (hide) {
     return null;
   }
@@ -31,7 +44,7 @@ const ActionButtons = (props) => {
           {cancelLabel}
         </Button>
       )}
-      { props.children }
+      { children }
     </div>
   );
 };
@@ -54,17 +67,5 @@ ActionButtons.propTypes = {
   progressLabel: PropTypes.string,
 };
 
-ActionButtons.defaultProps = {
-  saveLabel: 'Save',
-  cancelLabel: 'Cancel',
-  hide: false,
-  hideCancel: false,
-  hideSave: false,
-  progress: false,
-  disableSave: false,
-  disableCancel: false,
-  reversed: false,
-  progressLabel: null,
-};
 
 export default ActionButtons;

@@ -44,7 +44,7 @@ SortableItem.propTypes = {
   child: PropTypes.node.isRequired,
 };
 
-const SortableFieldsContainer = ({ items = [], onSortEnd, collection }) => {
+const SortableFieldsContainer = ({ items = [], onSortEnd = () => {}, collection = '' }) => {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -89,9 +89,5 @@ SortableFieldsContainer.propTypes = {
   collection: PropTypes.string,
 };
 
-SortableFieldsContainer.defaultProps = {
-  onSortEnd: () => {},
-  collection: '',
-};
 
 export default SortableFieldsContainer;

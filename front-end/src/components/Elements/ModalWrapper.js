@@ -9,18 +9,37 @@ const mapModalSize = size => {
   return size; // 'lg', 'sm', 'xl', undefined — pass through
 };
 
-const ModalWrapper = props => {
+const ModalWrapper = ({
+  show,
+  title,
+  children,
+  onOk,
+  onCancel,
+  onHide,
+  modalSize,
+  animation,
+  enforceFocus,
+  labelOk = 'Save',
+  labelCancel = 'Cancel',
+  showOnOk = true,
+  progress = false,
+  labelProgress = null,
+  /** Cancel defaults to outline-secondary (white bg, grey border — BS3 btn-default look via index.css compat rule) */
+  styleCancel = 'outline-secondary',
+  /** OK defaults to primary (blue) */
+  styleOk = 'primary',
+}) => {
   // onHide controls both backdrop/Escape closing AND the visible ×-button.
   // onCancel is only for the footer Cancel button — it does NOT add a × close button.
   // This matches react-bootstrap 0.31 behaviour: closeButton={props.onHide !== null}.
-  const handleHide = props.onHide || null;
+  const handleHide = onHide || null;
   return (
     <Modal
-      show={props.show}
-      size={mapModalSize(props.modalSize)}
-      onHide={handleHide || props.onCancel || (() => {})}
-      enforceFocus={typeof props.enforceFocus === 'boolean' ? props.enforceFocus : true}
-      animation={props.animation !== false}
+      show={show}
+      size={mapModalSize(modalSize)}
+      onHide={handleHide || onCancel || (() => {})}
+      enforceFocus={typeof enforceFocus === 'boolean' ? enforceFocus : true}
+      animation={animation !== false}
     >
       <div className="modal-header">
         { handleHide && (
@@ -28,24 +47,24 @@ const ModalWrapper = props => {
             <span aria-hidden="true">&times;</span>
           </button>
         ) }
-        <h4 className="modal-title">{ props.title }</h4>
+        <h4 className="modal-title">{ title }</h4>
       </div>
       <Modal.Body>
-        { props.children }
+        { children }
       </Modal.Body>
-      { (props.onCancel || (props.onOk && props.showOnOk)) &&
+      { (onCancel || (onOk && showOnOk)) &&
         <Modal.Footer>
-          { props.onCancel && (
-            <Button size="sm" style={{ minWidth: 90 }} onClick={props.onCancel} variant={props.styleCancel}>
-              { props.labelCancel }
+          { onCancel && (
+            <Button size="sm" style={{ minWidth: 90 }} onClick={onCancel} variant={styleCancel}>
+              { labelCancel }
             </Button>
           ) }
-          { props.onOk && props.showOnOk && (
-            <Button size="sm" style={{ minWidth: 90 }} onClick={props.onOk} variant={props.styleOk} disabled={props.progress}>
-              { props.progress && (<span><i className="fa fa-spinner fa-pulse" />&nbsp;&nbsp;</span>) }
-              { (props.progress && props.labelProgress !== null)
-                ? props.labelProgress
-                : props.labelOk
+          { onOk && showOnOk && (
+            <Button size="sm" style={{ minWidth: 90 }} onClick={onOk} variant={styleOk} disabled={progress}>
+              { progress && (<span><i className="fa fa-spinner fa-pulse" />&nbsp;&nbsp;</span>) }
+              { (progress && labelProgress !== null)
+                ? labelProgress
+                : labelOk
               }
             </Button>
           ) }
@@ -75,16 +94,5 @@ ModalWrapper.propTypes = {
   styleCancel: PropTypes.string,
 };
 
-ModalWrapper.defaultProps = {
-  labelOk: 'Save',
-  labelCancel: 'Cancel',
-  showOnOk: true,
-  progress: false,
-  labelProgress: null,
-  /** Cancel defaults to outline-secondary (white bg, grey border — BS3 btn-default look via index.css compat rule) */
-  styleCancel: 'outline-secondary',
-  /** OK defaults to primary (blue) */
-  styleOk: 'primary',
-};
 
 export default ModalWrapper;
