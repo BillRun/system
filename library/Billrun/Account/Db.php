@@ -67,24 +67,7 @@ class Billrun_Account_Db extends Billrun_Account {
 		$hierarchyInUse = $this->isHierarchyInUse();
 		$hierarchy = $hierarchyInUse ? new Billrun_Cycle_Hierarchy($cycle) : null;
 
-		$accountsQuery = ['type' => 'account'];
-		if ($hierarchyInUse) {
-			// The billable unit is an "invoicing account": a root (parent_aid null/absent) OR issues_invoice
-			// != false. Non-invoicing sub-accounts are never billed on their own - they are pulled in as
-			// rollup descendants of their invoicing owner below, so a parent and its children can never be
-			// split across pages/processes.
-			// MongoDB null-matching semantics: {parent_aid: null} matches docs where parent_aid is null OR
-			// the field is absent (legacy/root accounts); {issues_invoice: {$ne: false}} matches true, any
-			// non-false value, AND absent (default true). The end-of-cycle revision is re-checked below via
-			// the resolver so accounts with conflicting intra-cycle revisions are filtered correctly.
-			// Both fragments use $or, so they are combined under $and.
-			$accountsQuery['$and'] = [
-				$subsActiveQuery,
-				['$or' => [['parent_aid' => null], ['issues_invoice' => ['$ne' => false]]]],
-			];
-		} else {
-			$accountsQuery = array_merge($accountsQuery, $subsActiveQuery);
-		}
+		$accountsQuery = array_merge(['type' => 'account'], $subsActiveQuery);
 
 		if(!empty($aids)) {
 			if ($hierarchyInUse) {
@@ -110,25 +93,53 @@ class Billrun_Account_Db extends Billrun_Account {
 			$accountsQuery['invoicing_day'] = [ $inDayOp =>  $daysToInovice ];
 		}
 		Billrun_Factory::dispatcher()->trigger('alterBillableDBActiveAccountQuery',[&$accountsQuery , $page, $size, $aids, $invoicing_days ]);
-		$pipeline = [
-			['$match' => $accountsQuery],
-			['$group' => [                         // group by aid
-				'_id' => '$aid'
-			]],
-			['$sort' => ['_id' => 1]],
-			['$skip' => $page * $size],
-			['$limit' => $size],
-			['$project' => [
-				'aid' => '$_id',
-				'_id' => 0
-			]]
-		];
+
+		if ($hierarchyInUse) {
+			// The billable unit is an "invoicing account": a root (parent_aid null/absent) OR issues_invoice
+			// != false, evaluated on the END-OF-CYCLE revision. We $group by aid keeping the latest revision's
+			// hierarchy fields ($first after sort by 'from' desc) and only then apply the invoicing predicate,
+			// so the paginated candidate set is exactly the invoicing accounts. This is what makes the page
+			// slots stable: filtering per-revision in $match would let an account that flipped issues_invoice
+			// mid-cycle occupy a slot and then be dropped, yielding uneven pages and even premature "zero page"
+			// termination. MongoDB null semantics: $first of an absent field is null, which matches
+			// {parent_aid:null} (root) and {issues_invoice:{$ne:false}} (default true). Non-invoicing accounts
+			// are pulled in as rollup descendants of their invoicing owner below, so none are lost.
+			$pipeline = [
+				['$match' => $accountsQuery],
+				['$sort' => ['from' => -1]],
+				['$group' => [
+					'_id' => '$aid',
+					'parent_aid' => ['$first' => '$parent_aid'],
+					'issues_invoice' => ['$first' => '$issues_invoice'],
+				]],
+				['$match' => ['$or' => [['parent_aid' => null], ['issues_invoice' => ['$ne' => false]]]]],
+				['$sort' => ['_id' => 1]],
+				['$skip' => $page * $size],
+				['$limit' => $size],
+				['$project' => ['aid' => '$_id', '_id' => 0]],
+			];
+		} else {
+			$pipeline = [
+				['$match' => $accountsQuery],
+				['$group' => [                         // group by aid
+					'_id' => '$aid'
+				]],
+				['$sort' => ['_id' => 1]],
+				['$skip' => $page * $size],
+				['$limit' => $size],
+				['$project' => [
+					'aid' => '$_id',
+					'_id' => 0
+				]]
+			];
+		}
 		$activeAidsRevs = $this->collection->aggregate($pipeline);
 		$activeAids = array_values(array_map(function($ar) { return $ar['aid'];},iterator_to_array($activeAidsRevs)));
 
 		if ($hierarchyInUse) {
-			// Keep only accounts that are invoicing at the end-of-cycle revision (handles conflicting
-			// intra-cycle revisions), then expand each to its full subtree (owner + rollup descendants).
+			// Candidate aids are now exactly the invoicing accounts (predicate evaluated on the end-of-cycle
+			// revision); the resolver re-check below is defense-in-depth. Expand each invoicing account to its
+			// full subtree (owner + rollup descendants).
 			$subtreeAids = [];
 			foreach ($activeAids as $activeAid) {
 				if (!$hierarchy->isInvoicingAccount($activeAid)) {

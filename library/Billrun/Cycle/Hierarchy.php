@@ -224,7 +224,9 @@ class Billrun_Cycle_Hierarchy {
 	}
 
 	protected function collectRollupDescendants($aid, &$result, $depth) {
-		if ($depth >= $this->maxDepth) {
+		// Strictly-greater bound: a pure runaway guard against corrupted/cyclic child data. It is deliberately
+		// looser than the validator's total-depth limit so it never under-collects legitimate descendants.
+		if ($depth > $this->maxDepth) {
 			return;
 		}
 		foreach ($this->getChildAids($aid) as $childAid) {

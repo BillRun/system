@@ -670,17 +670,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return array
 	 */
 	protected function consolidateHierarchyAccounts($accounts) {
-		$hierarchyInPage = false;
-		foreach ($accounts as $accountData) {
-			foreach (Billrun_Util::getFieldVal($accountData['subscribers'][0], array()) as $accountRevision) {
-				if (isset($accountRevision['parent_aid']) && $accountRevision['parent_aid'] !== '' && !is_null($accountRevision['parent_aid'])) {
-					$hierarchyInPage = true;
-					break 2;
-				}
-			}
-		}
-		if (!$hierarchyInPage) {
-			return $accounts;
+		// Single source of truth for "does this tenant use hierarchy" (memoized DB probe). Avoids probing
+		// the per-page subscriber buckets, which is both fragile (the account-level fields live only in the
+		// sid=0 bucket, which may be absent) and a silent-failure risk if the probe wrongly returns false.
+		if (!$this->isHierarchyInUse()) {
+			return $accounts; // flat tenant: every account is its own invoicing owner
 		}
 
 		$hierarchy = new Billrun_Cycle_Hierarchy($this->getCycle());
