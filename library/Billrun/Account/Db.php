@@ -62,10 +62,37 @@ class Billrun_Account_Db extends Billrun_Account {
 
 	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = [], $invoicing_days = null) {
 		$subsActiveQuery =Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $cycle->start()->sec, $cycle->end()->sec);
-		//
-		$accountsQuery = array_merge(['type' => 'account'],$subsActiveQuery);;
+
+		// BRCD-785: when no account uses customer hierarchy, behave exactly as before (no resolver overhead).
+		$hierarchyInUse = $this->isHierarchyInUse();
+		$hierarchy = $hierarchyInUse ? new Billrun_Cycle_Hierarchy($cycle) : null;
+
+		$accountsQuery = ['type' => 'account'];
+		if ($hierarchyInUse) {
+			// The billable unit is an "invoicing account": a root (parent_aid null/absent) OR issues_invoice
+			// != false. Non-invoicing sub-accounts are never billed on their own - they are pulled in as
+			// rollup descendants of their invoicing owner below, so a parent and its children can never be
+			// split across pages/processes. Both fragments use $or, so combine them under $and.
+			$accountsQuery['$and'] = [
+				$subsActiveQuery,
+				['$or' => [['parent_aid' => null], ['issues_invoice' => ['$ne' => false]]]],
+			];
+		} else {
+			$accountsQuery = array_merge($accountsQuery, $subsActiveQuery);
+		}
+
 		if(!empty($aids)) {
-			$accountsQuery['aid'] = ['$in' => $aids ];
+			if ($hierarchyInUse) {
+				// force_accounts: process the invoice owner (whole subtree) of each requested aid, so a
+				// non-invoicing child resolves up to the account that actually issues its invoice.
+				$owners = [];
+				foreach ($aids as $forcedAid) {
+					$owners[$hierarchy->getInvoiceOwner($forcedAid)] = true;
+				}
+				$accountsQuery['aid'] = ['$in' => array_values(array_map('intval', array_keys($owners)))];
+			} else {
+				$accountsQuery['aid'] = ['$in' => $aids ];
+			}
 		}
 
 		if (!empty($invoicing_days)) {
@@ -79,7 +106,7 @@ class Billrun_Account_Db extends Billrun_Account {
 		}
 		Billrun_Factory::dispatcher()->trigger('alterBillableDBActiveAccountQuery',[&$accountsQuery , $page, $size, $aids, $invoicing_days ]);
 		$pipeline = [
-			['$match' => $accountsQuery],       
+			['$match' => $accountsQuery],
 			['$group' => [                         // group by aid
 				'_id' => '$aid'
 			]],
@@ -93,11 +120,40 @@ class Billrun_Account_Db extends Billrun_Account {
 		];
 		$activeAidsRevs = $this->collection->aggregate($pipeline);
 		$activeAids = array_values(array_map(function($ar) { return $ar['aid'];},iterator_to_array($activeAidsRevs)));
+
+		if ($hierarchyInUse) {
+			// Keep only accounts that are invoicing at the end-of-cycle revision (handles conflicting
+			// intra-cycle revisions), then expand each to its full subtree (owner + rollup descendants).
+			$subtreeAids = [];
+			foreach ($activeAids as $activeAid) {
+				if (!$hierarchy->isInvoicingAccount($activeAid)) {
+					continue;
+				}
+				foreach ($hierarchy->getSubtreeAids($activeAid) as $subtreeAid) {
+					$subtreeAids[$subtreeAid] = true;
+				}
+			}
+			$activeAids = array_keys($subtreeAids);
+		}
+
 		$finalQuery = array_merge(['aid'=> ['$in' =>$activeAids ], 'type' => ['$exists' => true]], $subsActiveQuery);
 		Billrun_Factory::dispatcher()->trigger('alterBillableDBSubcriberRevisionsQuery',[&$finalQuery, $accountsQuery , $page, $size, $aids, $invoicing_days, $subsActiveQuery ]);
 		$results = $this->collection->query($finalQuery)->cursor()->setRawReturn(true)->sort([	'from' => -1]);
 		return iterator_to_array($results);
 
+	}
+
+	/**
+	 * Whether any account in the collection uses customer hierarchy (has a non-null parent_aid).
+	 * Lets getBillable() short-circuit to its legacy behavior for flat tenants.
+	 *
+	 * @return bool
+	 */
+	protected function isHierarchyInUse() {
+		$record = $this->collection
+			->query(['type' => 'account', 'parent_aid' => ['$exists' => true, '$ne' => null]])
+			->cursor()->limit(1)->current();
+		return $record && !$record->isEmpty();
 	}
 
 	/**

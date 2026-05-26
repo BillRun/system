@@ -25,11 +25,106 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function loadLines() {
 		$lines_collection = Billrun_Factory::db()->linesCollection();
 		$this->lines = array();
-		$aid = $this->data['aid'];
 		$billrun_key = $this->data['billrun_key'];
-		$query = array('aid' => $aid, 'billrun' => $billrun_key);
+		// BRCD-785: a consolidated invoice may contain subscribers from sub-accounts (each subs entry
+		// carries its own aid), so load lines for every contributing aid - not just the invoicing account.
+		// For a flat account this degenerates to the single own aid.
+		$query = array('aid' => array('$in' => $this->getContributingAids()), 'billrun' => $billrun_key);
 		$accountLines = $lines_collection->query($query);
 		$this->setLines($accountLines);
+	}
+
+	/**
+	 * BRCD-785: the distinct account ids that contribute lines to this invoice - the invoicing account
+	 * plus any rolled-up sub-accounts present in the subs array.
+	 *
+	 * @return int[]
+	 */
+	protected function getContributingAids() {
+		$aids = array(intval($this->data['aid']));
+		if (!empty($this->data['subs'])) {
+			foreach ($this->data['subs'] as $sub) {
+				if (isset($sub['aid'])) {
+					$aids[] = intval($sub['aid']);
+				}
+			}
+		}
+		return array_values(array_unique($aids));
+	}
+
+	/**
+	 * BRCD-2826: per-sub-account breakdown for a hierarchical (consolidated) invoice. Each entry carries a
+	 * textual hierarchy breadcrumb (root > ... > account) and the subtotal rolled up from that account's
+	 * subscribers. Templates can iterate this to render breadcrumbs and per-sub-account subtotals; a flat
+	 * invoice returns a single entry for its own account.
+	 *
+	 * @return array list of ['aid','name','breadcrumb','level','totals'=>['before_vat','after_vat'],'sids'=>int[]]
+	 */
+	public function getSubAccountsBreakdown() {
+		if (empty($this->data['subs'])) {
+			return array();
+		}
+		$byAid = array();
+		foreach ($this->data['subs'] as $sub) {
+			$aid = intval(Billrun_Util::getIn($sub, 'aid', $this->data['aid']));
+			if (!isset($byAid[$aid])) {
+				$byAid[$aid] = array('before_vat' => 0, 'after_vat' => 0, 'sids' => array());
+			}
+			$byAid[$aid]['before_vat'] += Billrun_Util::getIn($sub, array('totals', 'before_vat'), 0);
+			$byAid[$aid]['after_vat'] += Billrun_Util::getIn($sub, array('totals', 'after_vat'), 0);
+			if (isset($sub['sid'])) {
+				$byAid[$aid]['sids'][] = intval($sub['sid']);
+			}
+		}
+		$result = array();
+		foreach ($byAid as $aid => $entry) {
+			$breadcrumb = $this->getAccountBreadcrumb($aid);
+			$result[] = array(
+				'aid' => $aid,
+				'name' => empty($breadcrumb) ? ('Account ' . $aid) : end($breadcrumb),
+				'breadcrumb' => implode(' > ', $breadcrumb),
+				'level' => count($breadcrumb),
+				'totals' => array('before_vat' => $entry['before_vat'], 'after_vat' => $entry['after_vat']),
+				'sids' => $entry['sids'],
+			);
+		}
+		return $result;
+	}
+
+	/**
+	 * Ordered display names from the root account down to $aid (the BRCD-2826 breadcrumb segments).
+	 *
+	 * @param int $aid
+	 * @return string[]
+	 */
+	protected function getAccountBreadcrumb($aid) {
+		$collection = Billrun_Factory::db()->subscribersCollection();
+		$maxDepth = intval(Billrun_Factory::config()->getConfigValue('customer.hierarchy.max_depth', 4));
+		$names = array();
+		$visited = array();
+		$current = intval($aid);
+		while ($current && !isset($visited[$current]) && count($names) <= $maxDepth) {
+			$visited[$current] = true;
+			$record = $collection->query(array('aid' => $current, 'type' => 'account'))
+				->cursor()->sort(array('from' => -1))->limit(1)->current();
+			if (!$record || $record->isEmpty()) {
+				break;
+			}
+			array_unshift($names, $this->getAccountDisplayName($record));
+			$parent = isset($record['parent_aid']) ? $record['parent_aid'] : null;
+			$current = ($parent === '' || is_null($parent)) ? null : intval($parent);
+		}
+		return $names;
+	}
+
+	protected function getAccountDisplayName($record) {
+		foreach (array('company_name', 'fullname') as $field) {
+			if (!empty($record[$field])) {
+				return $record[$field];
+			}
+		}
+		$name = trim((isset($record['first_name']) ? $record['first_name'] : '') . ' ' . (isset($record['last_name']) ? $record['last_name'] : ''));
+		return $name !== '' ? $name : ('Account ' . intval($record['aid']));
 	}
 	
 	

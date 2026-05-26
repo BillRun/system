@@ -201,4 +201,63 @@ class billapiAccountCest
 
 }
 
+    // BRCD-785 customer hierarchy validation
+
+    public function testCreateInvoicingChildAccount(ApiTester $I)
+    {
+        date_default_timezone_set('UTC');
+        $I->createAccountWithAllMandatoryCustomFields(["firstname" => "parent", "lastname" => "root"]);
+        $I->seeResponseContains('"status":1');
+        $parent = json_decode($I->grabResponse(), true)['entity'];
+
+        // A child that issues its own invoice but is paid by the parent is valid.
+        $I->createAccountWithAllMandatoryCustomFields([
+            "firstname" => "child",
+            "lastname" => "node",
+            "parent_aid" => $parent['aid'],
+            "issues_invoice" => true,
+            "is_payer" => false,
+        ]);
+        $I->seeResponseContains('"status":1');
+        $child = json_decode($I->grabResponse(), true)['entity'];
+        $I->verifyCollectionRecord('subscribers', [
+            'aid' => $child['aid'],
+            'parent_aid' => (int) $parent['aid'],
+            'is_payer' => false,
+        ]);
+        date_default_timezone_set($this->defaultTimezone);
+    }
+
+    public function testRejectNonInvoicingPayer(ApiTester $I)
+    {
+        date_default_timezone_set('UTC');
+        $I->createAccountWithAllMandatoryCustomFields(["firstname" => "parent2"]);
+        $I->seeResponseContains('"status":1');
+        $parent = json_decode($I->grabResponse(), true)['entity'];
+
+        // issues_invoice=false must imply is_payer=false -> rejected.
+        $I->createAccountWithAllMandatoryCustomFields([
+            "firstname" => "bad",
+            "parent_aid" => $parent['aid'],
+            "issues_invoice" => false,
+            "is_payer" => true,
+        ]);
+        $I->dontSeeResponseContains('"status":1');
+        date_default_timezone_set($this->defaultTimezone);
+    }
+
+    public function testRejectNonexistentParent(ApiTester $I)
+    {
+        date_default_timezone_set('UTC');
+        // parent_aid pointing to a non-existent account is rejected.
+        $I->createAccountWithAllMandatoryCustomFields([
+            "firstname" => "orphan",
+            "parent_aid" => 99999999,
+            "issues_invoice" => true,
+            "is_payer" => false,
+        ]);
+        $I->dontSeeResponseContains('"status":1');
+        date_default_timezone_set($this->defaultTimezone);
+    }
+
 }
