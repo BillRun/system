@@ -1,12 +1,12 @@
 <?php
 
 /**
- * CustomerPricing calculator tests - Codeception port of Taxmappingtest.php
+ * CustomerPricing tax-related tests - Codeception port of Taxmappingtest.php
  *
  * Covers:
  *  - CDR tax mapping: no-tax, default, global, override, fallback (Tests 1-6)
  *  - Billing-cycle tax on plan/service/discount lines (Tests 7-10)
- *  - Tax rounding rules: up/down/nearest × 0-2 decimals + empty (Tests 11-19)
+ *  - Tax rounding rules: up/down/nearest x 0-2 decimals + empty (Tests 11-19)
  *
  * Fixture data is loaded from library/Tests/TaxmappingtestData/ before every test.
  * Rounding-specific rates are inserted directly with their fixture ObjectIds so the
@@ -16,7 +16,7 @@
  * @copyright       Copyright (C) 2012-2024 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-class customerPricingCest
+class customerPricingTaxCest
 {
     protected $epsilon = 0.000001;
     protected $fixturesPath;
@@ -53,7 +53,7 @@ class customerPricingCest
     protected function loadFixtures()
     {
         $filesToLoad = [
-            'config', 'plans', 'services', 'subscribers',
+            'plans', 'services', 'subscribers',
             'rates', 'lines', 'taxes', 'discounts', 'balances',
         ];
         foreach ($filesToLoad as $fileName) {
@@ -73,7 +73,7 @@ class customerPricingCest
     /**
      * Insert rounding-test rates with the exact ObjectIds referenced in the lines.json
      * fixture so that the arate DBRefs on those lines resolve correctly.
-     * All rounding rates use taxation=default (→ DEFAULT_VAT, 17%).
+     * All rounding rates use taxation=default (-> DEFAULT_VAT, 17%).
      */
     protected function insertRoundingRates()
     {
@@ -367,7 +367,7 @@ class customerPricingCest
     // =========================================================================
 
     /**
-     * Test 1 – Rate with taxation=no: no tax should be applied.
+     * Test 1 - Rate with taxation=no: no tax should be applied.
      * Rate: NONTAX_CALL | Plan: NONTAX_PLAN | aprice: 100
      */
     public function testCdrNonTaxRate(ApiTester $I): void
@@ -384,7 +384,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 2 – Rate with taxation=default → DEFAULT_VAT (17%).
+     * Test 2 - Rate with taxation=default -> DEFAULT_VAT (17%).
      * Rate: DEFAULT_TAX_CALL | Plan: NONTAX_PLAN | aprice: 100
      */
     public function testCdrRateUsesDefaultTax(ApiTester $I): void
@@ -401,7 +401,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 3 – Rate with taxation=global → resolves to DEFAULT_VAT via global mapping.
+     * Test 3 - Rate with taxation=global -> resolves to DEFAULT_VAT via global mapping.
      * Rate: USE_GLOBAL_TAX_CALL | Plan: NONTAX_PLAN | aprice: 100
      */
     public function testCdrRateUsesGlobalTaxMapping(ApiTester $I): void
@@ -418,7 +418,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 4 – Rate with taxation=custom, custom_logic=override, custom_tax=A → tax "A" (10%).
+     * Test 4 - Rate with taxation=custom, custom_logic=override, custom_tax=A -> tax "A" (10%).
      * Rate: OVERRIDE_GLOBAL_TAX_CALL | Plan: NONTAX_PLAN | aprice: 10
      */
     public function testCdrRateOverridesGlobalTaxMapping(ApiTester $I): void
@@ -435,7 +435,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 5 – Rate with fallback logic; plan has no global mapping match → fallback to tax "A" (10%).
+     * Test 5 - Rate with fallback logic; plan has no global mapping match -> fallback to tax "A" (10%).
      * Rate: FALLBACK_TAX_CALL | Plan: NONTAX_PLAN | aprice: 10
      */
     public function testCdrRateFallbackToCustomTaxWhenGlobalNotFound(ApiTester $I): void
@@ -452,8 +452,8 @@ class customerPricingCest
     }
 
     /**
-     * Test 6 – Rate with fallback logic; plan has a global mapping match (OVERRIDE_GLOBAL_TAX_PLAN →
-     * tax "A") → uses the global result, also "A" (10%).
+     * Test 6 - Rate with fallback logic; plan has a global mapping match (OVERRIDE_GLOBAL_TAX_PLAN ->
+     * tax "A") -> uses the global result, also "A" (10%).
      * Rate: FALLBACK_TAX_CALL | Plan: OVERRIDE_GLOBAL_TAX_PLAN | aprice: 10
      */
     public function testCdrRateFallbackUsesGlobalMappingWhenFound(ApiTester $I): void
@@ -474,8 +474,8 @@ class customerPricingCest
     // =========================================================================
 
     /**
-     * Test 7 – Billing cycle for aid=1 (sid=2): plan NONTAX_PLAN, service NONTAX_SERVICE,
-     * discount NOT_VAT_PLANANDSERVICE → all lines have zero tax.
+     * Test 7 - Billing cycle for aid=1 (sid=2): plan NONTAX_PLAN, service NONTAX_SERVICE,
+     * discount NOT_VAT_PLANANDSERVICE -> all lines have zero tax.
      */
     public function testCycleNonTaxPlanServiceDiscount(ApiTester $I): void
     {
@@ -498,8 +498,8 @@ class customerPricingCest
     }
 
     /**
-     * Test 8 – Billing cycle for aid=9 (sid=10): plan USE_GLOBAL_TAX_PLAN, service
-     * USE_GLOBAL_TAX_SERVICE, discount USE_GLOBAL_PLANANDSERVICE → DEFAULT_VAT (17%).
+     * Test 8 - Billing cycle for aid=9 (sid=10): plan USE_GLOBAL_TAX_PLAN, service
+     * USE_GLOBAL_TAX_SERVICE, discount USE_GLOBAL_PLANANDSERVICE -> DEFAULT_VAT (17%).
      */
     public function testCycleGlobalTaxPlanServiceDiscount(ApiTester $I): void
     {
@@ -522,7 +522,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 9 – Billing cycle for aid=11 (sid=12): plan OVERRIDE_GLOBAL_TAX_PLAN (tax A, 10%),
+     * Test 9 - Billing cycle for aid=11 (sid=12): plan OVERRIDE_GLOBAL_TAX_PLAN (tax A, 10%),
      * service OVERRIDE_GLOBAL_TAX_SERVICE (tax B, 20%), discount with both taxes.
      */
     public function testCycleOverrideGlobalTaxPlanServiceDiscount(ApiTester $I): void
@@ -553,8 +553,8 @@ class customerPricingCest
     }
 
     /**
-     * Test 10 – Billing cycle for aid=13 (sid=14): plan FALLBACK_TAX_PLAN (fallback → tax A, 10%),
-     * service FALLBACK_TAX_SERVICE (fallback → tax B, 20%).
+     * Test 10 - Billing cycle for aid=13 (sid=14): plan FALLBACK_TAX_PLAN (fallback -> tax A, 10%),
+     * service FALLBACK_TAX_SERVICE (fallback -> tax B, 20%).
      */
     public function testCycleFallbackTaxPlanService(ApiTester $I): void
     {
@@ -575,12 +575,12 @@ class customerPricingCest
     // ROUNDING TESTS  (Tests 11-19 + empty)
     // =========================================================================
     // All rounding lines start with aprice=1.5 and use DEFAULT_VAT (17%).
-    // Pre-rounding total = 1.5 × 1.17 = 1.755.  The rounding_rules on each
+    // Pre-rounding total = 1.5 x 1.17 = 1.755.  The rounding_rules on each
     // line dictate how final_charge is rounded; aprice and tax are then
     // back-calculated proportionally.
 
     /**
-     * Test 11 – Round UP to 0 decimals: 1.755 → 2.
+     * Test 11 - Round UP to 0 decimals: 1.755 -> 2.
      */
     public function testRoundingUpNoDecimals(ApiTester $I): void
     {
@@ -595,7 +595,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 12 – Round UP to 1 decimal: 1.755 → 1.8.
+     * Test 12 - Round UP to 1 decimal: 1.755 -> 1.8.
      */
     public function testRoundingUpOneDecimal(ApiTester $I): void
     {
@@ -610,7 +610,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 13 – Round UP to 2 decimals: 1.755 → 1.76.
+     * Test 13 - Round UP to 2 decimals: 1.755 -> 1.76.
      */
     public function testRoundingUpTwoDecimals(ApiTester $I): void
     {
@@ -625,7 +625,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 14 – Round DOWN to 0 decimals: 1.755 → 1.
+     * Test 14 - Round DOWN to 0 decimals: 1.755 -> 1.
      */
     public function testRoundingDownNoDecimals(ApiTester $I): void
     {
@@ -640,7 +640,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 15 – Round DOWN to 1 decimal: 1.755 → 1.7.
+     * Test 15 - Round DOWN to 1 decimal: 1.755 -> 1.7.
      */
     public function testRoundingDownOneDecimal(ApiTester $I): void
     {
@@ -655,7 +655,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 16 – Round DOWN to 2 decimals: 1.755 → 1.75.
+     * Test 16 - Round DOWN to 2 decimals: 1.755 -> 1.75.
      */
     public function testRoundingDownTwoDecimals(ApiTester $I): void
     {
@@ -670,7 +670,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 17 – Round NEAREST to 0 decimals: 1.755 → 2.
+     * Test 17 - Round NEAREST to 0 decimals: 1.755 -> 2.
      */
     public function testRoundingNearestNoDecimals(ApiTester $I): void
     {
@@ -685,7 +685,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 18 – Round NEAREST to 1 decimal: 1.755 → 1.8.
+     * Test 18 - Round NEAREST to 1 decimal: 1.755 -> 1.8.
      */
     public function testRoundingNearestOneDecimal(ApiTester $I): void
     {
@@ -700,7 +700,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 19 – Round NEAREST to 2 decimals: 1.755 → 1.76.
+     * Test 19 - Round NEAREST to 2 decimals: 1.755 -> 1.76.
      */
     public function testRoundingNearestTwoDecimals(ApiTester $I): void
     {
@@ -715,7 +715,7 @@ class customerPricingCest
     }
 
     /**
-     * Test 19b – Rounding type is empty string → no rounding applied; final_charge = 1.755.
+     * Test 19b - Rounding type is empty string -> no rounding applied; final_charge = 1.755.
      */
     public function testRoundingEmpty(ApiTester $I): void
     {
