@@ -176,7 +176,7 @@ class Models_Accounts extends Models_Entity {
 	}
 
 	protected function getMaxHierarchyDepth() {
-		return intval(Billrun_Factory::config()->getConfigValue('customer.hierarchy.max_depth', 4));
+		return Billrun_Cycle_Hierarchy::getMaxDepth();
 	}
 
 	/**

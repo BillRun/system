@@ -83,11 +83,20 @@ class Billrun_Cycle_Hierarchy {
 		$end = $cycle->end();
 		$this->startSec = is_object($start) ? $start->sec : $start;
 		$this->endSec = is_object($end) ? $end->sec : $end;
-		$this->maxDepth = is_null($maxDepth)
-			? intval(Billrun_Factory::config()->getConfigValue('customer.hierarchy.max_depth', 4))
-			: intval($maxDepth);
+		$this->maxDepth = is_null($maxDepth) ? self::getMaxDepth() : intval($maxDepth);
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 		$this->overlapQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $this->startSec, $this->endSec);
+	}
+
+	/**
+	 * Configured maximum customer-hierarchy depth (number of levels). Single source of truth for the
+	 * customer.hierarchy.max_depth config read, shared by the aggregate, validation, generate and payment
+	 * paths.
+	 *
+	 * @return int
+	 */
+	public static function getMaxDepth() {
+		return intval(Billrun_Factory::config()->getConfigValue('customer.hierarchy.max_depth', 4));
 	}
 
 	/**

@@ -916,7 +916,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @return array|null payer account raw data
 	 */
 	protected static function findPayerAccount($data) {
-		$maxDepth = intval(Billrun_Factory::config()->getConfigValue('customer.hierarchy.max_depth', 4));
+		$maxDepth = Billrun_Cycle_Hierarchy::getMaxDepth();
 		$visited = array();
 		if (isset($data['aid'])) {
 			$visited[intval($data['aid'])] = true;

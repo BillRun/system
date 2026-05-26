@@ -99,7 +99,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	 */
 	protected function getAccountBreadcrumb($aid) {
 		$collection = Billrun_Factory::db()->subscribersCollection();
-		$maxDepth = intval(Billrun_Factory::config()->getConfigValue('customer.hierarchy.max_depth', 4));
+		$maxDepth = Billrun_Cycle_Hierarchy::getMaxDepth();
 		$names = array();
 		$visited = array();
 		$current = intval($aid);
