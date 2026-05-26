@@ -32,6 +32,7 @@ class unifyCest
         ];
         $I->setSettings('usage_types', $type);
         Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
+        $I->resetBillrunSingletons();
     }
 
     /**
