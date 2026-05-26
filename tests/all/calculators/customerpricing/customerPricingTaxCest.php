@@ -20,6 +20,7 @@ class customerPricingTaxCest
 {
     protected $epsilon = 0.000001;
     protected $fixturesPath;
+    protected $originalTaxes = [];
 
     // =========================================================================
     // LIFECYCLE
@@ -28,10 +29,36 @@ class customerPricingTaxCest
     public function _before(ApiTester $I)
     {
         $this->fixturesPath = APPLICATION_PATH . '/library/Tests/TaxmappingtestData/';
+        $this->snapshotTaxes();
         $this->cleanCollections();
         $this->loadFixtures();
         $this->insertRoundingRates();
         \Billrun_Config::getInstance()->loadDbConfig();
+    }
+
+    public function _after(ApiTester $I)
+    {
+        // cleanDB() (used by later cests like unifyCest) does not wipe the
+        // taxes collection, so we restore the snapshot taken in _before to
+        // avoid leaking fixture taxes into other tests.
+        $this->restoreTaxes();
+    }
+
+    protected function snapshotTaxes()
+    {
+        $this->originalTaxes = [];
+        foreach (\Billrun_Factory::db()->taxesCollection()->query()->cursor() as $tax) {
+            $this->originalTaxes[] = $tax->getRawData();
+        }
+    }
+
+    protected function restoreTaxes()
+    {
+        $taxesCol = \Billrun_Factory::db()->taxesCollection();
+        $taxesCol->remove([null]);
+        if (!empty($this->originalTaxes)) {
+            $taxesCol->batchInsert($this->originalTaxes);
+        }
     }
 
     // =========================================================================
