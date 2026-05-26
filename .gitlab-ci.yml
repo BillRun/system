@@ -32,6 +32,7 @@ print-info:
     - 'echo "Job start: $CI_JOB_STARTED_AT"'
     - 'echo "Branch: $CI_COMMIT_BRANCH"'
     - 'echo "Commit Author: $CI_COMMIT_AUTHOR"'
+
 codecept:
   services:
     - name: docker:dind
