@@ -261,4 +261,24 @@ class billapiAccountCest
         date_default_timezone_set($this->defaultTimezone);
     }
 
+    public function testFourLevelChainAcceptedAndFifthRejected(ApiTester $I)
+    {
+        date_default_timezone_set('UTC');
+        // Build a root + 3 descendants (4 levels total) - each create must be accepted.
+        $parent = null;
+        foreach (array('L1', 'L2', 'L3', 'L4') as $name) {
+            $override = array("firstname" => $name);
+            if (!is_null($parent)) {
+                $override["parent_aid"] = $parent;
+            }
+            $I->createAccountWithAllMandatoryCustomFields($override);
+            $I->seeResponseContains('"status":1');
+            $parent = json_decode($I->grabResponse(), true)['entity']['aid'];
+        }
+        // A 5th level exceeds the default max_depth of 4 -> rejected.
+        $I->createAccountWithAllMandatoryCustomFields(array("firstname" => "L5", "parent_aid" => $parent));
+        $I->dontSeeResponseContains('"status":1');
+        date_default_timezone_set($this->defaultTimezone);
+    }
+
 }
