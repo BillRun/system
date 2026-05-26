@@ -398,10 +398,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return int[]
 	 */
 	protected static function expandProtectedAidsToSubtrees($billrunKey, $protectedAids) {
-		$subscribers = Billrun_Factory::db()->subscribersCollection();
-		$record = $subscribers->query(array('type' => 'account', 'parent_aid' => array('$exists' => true, '$ne' => null)))
-			->cursor()->limit(1)->current();
-		if (!$record || $record->isEmpty()) {
+		if (!Billrun_Cycle_Hierarchy::isInUse()) {
 			return $protectedAids; // no hierarchy in use
 		}
 		$hierarchy = new Billrun_Cycle_Hierarchy(new Billrun_DataTypes_CycleTime($billrunKey));
@@ -442,10 +439,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return bool
 	 */
 	protected function isHierarchyInUse() {
-		$record = Billrun_Factory::db()->subscribersCollection()
-			->query(array('type' => 'account', 'parent_aid' => array('$exists' => true, '$ne' => null)))
-			->cursor()->limit(1)->current();
-		return $record && !$record->isEmpty();
+		return Billrun_Cycle_Hierarchy::isInUse();
 	}
 
 	public function isFakeCycle() {
@@ -690,14 +684,28 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 
 		$hierarchy = new Billrun_Cycle_Hierarchy($this->getCycle());
+		$hierarchyMeta = array(); // ownerAid => [contributingAid => ['name'=>..., 'parent_aid'=>...]]
 		foreach (array_keys($accounts) as $aidStr) {
 			if (!isset($accounts[$aidStr])) {
 				continue;
 			}
 			$aid = intval($aidStr);
 			$ownerAid = $hierarchy->getInvoiceOwner($aid);
-			if ($ownerAid === $aid || !isset($accounts[(string) $ownerAid])) {
-				continue; // invoicing account keeps its own data (or owner not on this page - defensive)
+			// Record per-contributing-account metadata on the owner's invoice (display name + parent link)
+			// so the generate step can render BRCD-2826 breadcrumbs/subtotals without re-querying the DB.
+			$hierarchyMeta[$ownerAid][$aid] = array(
+				'name' => $this->getHierarchyAccountName(Billrun_Util::getFieldVal($accounts[$aidStr]['attributes'], array()), $aid),
+				'parent_aid' => $hierarchy->getParentAid($aid),
+			);
+			if ($ownerAid === $aid) {
+				continue; // invoicing account keeps its own data
+			}
+			if (!isset($accounts[(string) $ownerAid])) {
+				// Should never happen: getBillable loads each invoicing account with its full subtree, so the
+				// owner is always co-located on the page. If it ever does, keep the account as its own invoice
+				// (never drop its charges) and surface it loudly.
+				Billrun_Factory::log("Hierarchy: invoice owner {$ownerAid} for account {$aid} is not loaded on this page; leaving the account as its own invoice", Zend_Log::ALERT);
+				continue;
 			}
 			$accountData = $accounts[$aidStr];
 			if (isset($accountData['subscribers'])) {
@@ -715,7 +723,28 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			}
 			unset($accounts[$aidStr]); // non-invoicing account -> no billrun document
 		}
+
+		// Persist the per-account hierarchy map onto each consolidating owner's attributes (stored verbatim
+		// in the billrun doc). Only attach when the owner actually absorbed sub-accounts.
+		foreach ($hierarchyMeta as $ownerAid => $contributors) {
+			if (count($contributors) > 1 && isset($accounts[(string) $ownerAid]['attributes'])) {
+				$accounts[(string) $ownerAid]['attributes']['hierarchy'] = $contributors;
+			}
+		}
 		return $accounts;
+	}
+
+	/**
+	 * Display name for an account from its constructed invoice attributes (used in hierarchy breadcrumbs).
+	 */
+	protected function getHierarchyAccountName($attributes, $aid) {
+		foreach (array('company_name', 'fullname') as $field) {
+			if (!empty($attributes[$field])) {
+				return $attributes[$field];
+			}
+		}
+		$name = trim(Billrun_Util::getFieldVal($attributes['firstname'], '') . ' ' . Billrun_Util::getFieldVal($attributes['lastname'], ''));
+		return $name !== '' ? $name : ('Account ' . $aid);
 	}
 
 	/**

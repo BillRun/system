@@ -43,4 +43,20 @@ class HierarchyTest extends \Codeception\Test\Unit
 		$this->assertSame(123, $this->invokeStatic('Billrun_Bill_Payment', 'parentAidOf', [['parent_aid' => 123]]));
 		$this->assertSame(123, $this->invokeStatic('Billrun_Bill_Payment', 'parentAidOf', [['parent_aid' => '123']]));
 	}
+
+	public function testUtilToBool()
+	{
+		$this->assertTrue(Billrun_Util::toBool(true, false));
+		$this->assertFalse(Billrun_Util::toBool(false, true));
+		$this->assertTrue(Billrun_Util::toBool(1, false));
+		$this->assertFalse(Billrun_Util::toBool(0, true));
+		$this->assertTrue(Billrun_Util::toBool('true', false));
+		$this->assertFalse(Billrun_Util::toBool('false', true));
+		$this->assertFalse(Billrun_Util::toBool('0', true));
+		$this->assertFalse(Billrun_Util::toBool('off', true));
+		// null and empty string fall back to the provided default
+		$this->assertTrue(Billrun_Util::toBool(null, true));
+		$this->assertFalse(Billrun_Util::toBool(null, false));
+		$this->assertTrue(Billrun_Util::toBool('', true));
+	}
 }

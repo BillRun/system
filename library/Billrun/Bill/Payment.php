@@ -901,16 +901,16 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!array_key_exists('is_payer', $data) || is_null($data['is_payer'])) {
 			return true;
 		}
-		$value = $data['is_payer'];
-		if (is_string($value)) {
-			$normalized = strtolower(trim($value));
-			return $normalized !== '' && !in_array($normalized, array('0', 'false', 'no', 'off'), true);
-		}
-		return (bool) $value;
+		return Billrun_Util::toBool($data['is_payer'], true);
 	}
 
 	/**
-	 * Walk up the parent_aid chain (current revisions) to the nearest payer ancestor; null if none.
+	 * Walk up the parent_aid chain to the nearest payer ancestor; null if none resolves.
+	 *
+	 * Intentionally resolves from each account's CURRENT (latest) revision, not an end-of-cycle snapshot:
+	 * per spec, charging/collection uses the payer in effect at execution time, so debt on older invoices
+	 * follows the account's latest is_payer/parent_aid. (This is why it loads via Billrun_Account_Db
+	 * directly rather than through the cycle-scoped Billrun_Cycle_Hierarchy resolver.)
 	 *
 	 * @param array $data account raw data
 	 * @return array|null payer account raw data

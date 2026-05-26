@@ -72,7 +72,12 @@ class Billrun_Account_Db extends Billrun_Account {
 			// The billable unit is an "invoicing account": a root (parent_aid null/absent) OR issues_invoice
 			// != false. Non-invoicing sub-accounts are never billed on their own - they are pulled in as
 			// rollup descendants of their invoicing owner below, so a parent and its children can never be
-			// split across pages/processes. Both fragments use $or, so combine them under $and.
+			// split across pages/processes.
+			// MongoDB null-matching semantics: {parent_aid: null} matches docs where parent_aid is null OR
+			// the field is absent (legacy/root accounts); {issues_invoice: {$ne: false}} matches true, any
+			// non-false value, AND absent (default true). The end-of-cycle revision is re-checked below via
+			// the resolver so accounts with conflicting intra-cycle revisions are filtered correctly.
+			// Both fragments use $or, so they are combined under $and.
 			$accountsQuery['$and'] = [
 				$subsActiveQuery,
 				['$or' => [['parent_aid' => null], ['issues_invoice' => ['$ne' => false]]]],
@@ -150,10 +155,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	 * @return bool
 	 */
 	protected function isHierarchyInUse() {
-		$record = $this->collection
-			->query(['type' => 'account', 'parent_aid' => ['$exists' => true, '$ne' => null]])
-			->cursor()->limit(1)->current();
-		return $record && !$record->isEmpty();
+		return Billrun_Cycle_Hierarchy::isInUse();
 	}
 
 	/**

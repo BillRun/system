@@ -156,23 +156,7 @@ class Models_Accounts extends Models_Entity {
 	 * Coerce a request/stored value to a strict boolean (handles bool, int and string representations).
 	 */
 	protected function toHierarchyBool($value, $default) {
-		if (is_null($value)) {
-			return $default;
-		}
-		if (is_bool($value)) {
-			return $value;
-		}
-		if (is_int($value)) {
-			return $value !== 0;
-		}
-		if (is_string($value)) {
-			$normalized = strtolower(trim($value));
-			if ($normalized === '') {
-				return $default;
-			}
-			return !in_array($normalized, array('0', 'false', 'no', 'off'), true);
-		}
-		return (bool) $value;
+		return Billrun_Util::toBool($value, $default);
 	}
 
 	protected function getMaxHierarchyDepth() {
@@ -210,10 +194,9 @@ class Models_Accounts extends Models_Entity {
 			$visited[$currentAid] = true;
 			$revision = $this->getAccountRevision($currentAid);
 			if (is_null($revision)) {
-				if ($levels === 0) {
-					throw new Billrun_Exceptions_Api(0, array(), "Parent account {$currentAid} does not exist");
-				}
-				break; // a missing ancestor higher up the chain is treated as the root
+				// Reject any dangling reference in the chain (immediate or higher up) rather than silently
+				// treating it as a root, which could let a deeper-than-allowed tree pass validation.
+				throw new Billrun_Exceptions_Api(0, array(), "Parent account {$currentAid} does not exist");
 			}
 			$levels++;
 			if ($levels > $maxDepth + 1) {

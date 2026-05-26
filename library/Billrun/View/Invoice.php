@@ -64,12 +64,17 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		if (empty($this->data['subs'])) {
 			return array();
 		}
+		// Per-account breadcrumb metadata is persisted on the invoice during aggregation, so no live DB
+		// queries are needed at render time.
+		$hierarchyMeta = Billrun_Util::getIn($this->data, array('attributes', 'hierarchy'), array());
 		$byAid = array();
 		foreach ($this->data['subs'] as $sub) {
 			$aid = intval(Billrun_Util::getIn($sub, 'aid', $this->data['aid']));
 			if (!isset($byAid[$aid])) {
 				$byAid[$aid] = array('before_vat' => 0, 'after_vat' => 0, 'sids' => array());
 			}
+			// Each subs entry carries its own per-subscriber totals; summing them per aid yields the
+			// sub-account subtotal.
 			$byAid[$aid]['before_vat'] += Billrun_Util::getIn($sub, array('totals', 'before_vat'), 0);
 			$byAid[$aid]['after_vat'] += Billrun_Util::getIn($sub, array('totals', 'after_vat'), 0);
 			if (isset($sub['sid'])) {
@@ -78,7 +83,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		}
 		$result = array();
 		foreach ($byAid as $aid => $entry) {
-			$breadcrumb = $this->getAccountBreadcrumb($aid);
+			$breadcrumb = $this->buildHierarchyBreadcrumb($aid, $hierarchyMeta);
 			$result[] = array(
 				'aid' => $aid,
 				'name' => empty($breadcrumb) ? ('Account ' . $aid) : end($breadcrumb),
@@ -92,39 +97,45 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	}
 
 	/**
-	 * Ordered display names from the root account down to $aid (the BRCD-2826 breadcrumb segments).
+	 * Ordered display names from the invoice's top account down to $aid (BRCD-2826 breadcrumb segments),
+	 * built from the metadata persisted on the invoice during aggregation - no live DB queries.
 	 *
 	 * @param int $aid
+	 * @param array $hierarchyMeta aid => ['name'=>..., 'parent_aid'=>...]
 	 * @return string[]
 	 */
-	protected function getAccountBreadcrumb($aid) {
-		$collection = Billrun_Factory::db()->subscribersCollection();
-		$maxDepth = Billrun_Cycle_Hierarchy::getMaxDepth();
+	protected function buildHierarchyBreadcrumb($aid, $hierarchyMeta) {
+		if (empty($hierarchyMeta)) {
+			$name = $this->getInvoiceAccountName();
+			return $name === '' ? array() : array($name);
+		}
 		$names = array();
 		$visited = array();
 		$current = intval($aid);
-		while ($current && !isset($visited[$current]) && count($names) <= $maxDepth) {
+		$maxDepth = Billrun_Cycle_Hierarchy::getMaxDepth();
+		while ($current && !isset($visited[$current]) && isset($hierarchyMeta[$current]) && count($names) <= $maxDepth) {
 			$visited[$current] = true;
-			$record = $collection->query(array('aid' => $current, 'type' => 'account'))
-				->cursor()->sort(array('from' => -1))->limit(1)->current();
-			if (!$record || $record->isEmpty()) {
-				break;
-			}
-			array_unshift($names, $this->getAccountDisplayName($record));
-			$parent = isset($record['parent_aid']) ? $record['parent_aid'] : null;
-			$current = ($parent === '' || is_null($parent)) ? null : intval($parent);
+			array_unshift($names, Billrun_Util::getIn($hierarchyMeta, array($current, 'name'), 'Account ' . $current));
+			$parent = Billrun_Util::getIn($hierarchyMeta, array($current, 'parent_aid'), null);
+			$current = is_null($parent) ? null : intval($parent);
+		}
+		if (empty($names)) {
+			$names[] = 'Account ' . intval($aid);
 		}
 		return $names;
 	}
 
-	protected function getAccountDisplayName($record) {
+	/**
+	 * Display name of the invoice's own account, from its persisted attributes.
+	 */
+	protected function getInvoiceAccountName() {
+		$attributes = Billrun_Util::getIn($this->data, 'attributes', array());
 		foreach (array('company_name', 'fullname') as $field) {
-			if (!empty($record[$field])) {
-				return $record[$field];
+			if (!empty($attributes[$field])) {
+				return $attributes[$field];
 			}
 		}
-		$name = trim((isset($record['first_name']) ? $record['first_name'] : '') . ' ' . (isset($record['last_name']) ? $record['last_name'] : ''));
-		return $name !== '' ? $name : ('Account ' . intval($record['aid']));
+		return trim(Billrun_Util::getFieldVal($attributes['firstname'], '') . ' ' . Billrun_Util::getFieldVal($attributes['lastname'], ''));
 	}
 	
 	

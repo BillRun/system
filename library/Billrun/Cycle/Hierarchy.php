@@ -75,6 +75,12 @@ class Billrun_Cycle_Hierarchy {
 	protected $ownerCache = array();
 
 	/**
+	 * Process-lifetime memo for isInUse().
+	 * @var bool|null
+	 */
+	protected static $hierarchyInUseCache = null;
+
+	/**
 	 * @param Billrun_DataTypes_CycleTime|Billrun_DataTypes_MongoCycleTime $cycle
 	 * @param int|null $maxDepth defaults to config customer.hierarchy.max_depth (4)
 	 */
@@ -97,6 +103,23 @@ class Billrun_Cycle_Hierarchy {
 	 */
 	public static function getMaxDepth() {
 		return intval(Billrun_Factory::config()->getConfigValue('customer.hierarchy.max_depth', 4));
+	}
+
+	/**
+	 * Whether any account uses customer hierarchy (has a non-null parent_aid). Memoized for the lifetime
+	 * of the PHP process - the single shared probe used by getBillable, the aggregator and the re-run
+	 * cleanup so they don't each query the DB per page/call. Flat tenants thus pay one probe per process.
+	 *
+	 * @return bool
+	 */
+	public static function isInUse() {
+		if (is_null(self::$hierarchyInUseCache)) {
+			$record = Billrun_Factory::db()->subscribersCollection()
+				->query(array('type' => 'account', 'parent_aid' => array('$exists' => true, '$ne' => null)))
+				->cursor()->limit(1)->current();
+			self::$hierarchyInUseCache = ($record && !$record->isEmpty());
+		}
+		return self::$hierarchyInUseCache;
 	}
 
 	/**
@@ -229,7 +252,7 @@ class Billrun_Cycle_Hierarchy {
 			return $this->childrenCache[$aid];
 		}
 		$query = array_merge(array('parent_aid' => $aid, 'type' => 'account'), $this->overlapQuery);
-		$cursor = $this->collection->query($query)->cursor();
+		$cursor = $this->collection->query($query)->cursor()->sort(array('from' => -1));
 		$children = array();
 		$seen = array();
 		foreach ($cursor as $revision) {
@@ -294,21 +317,7 @@ class Billrun_Cycle_Hierarchy {
 		if (!array_key_exists($field, $data) || is_null($data[$field])) {
 			return $default;
 		}
-		$value = $data[$field];
-		if (is_bool($value)) {
-			return $value;
-		}
-		if (is_int($value)) {
-			return $value !== 0;
-		}
-		if (is_string($value)) {
-			$normalized = strtolower(trim($value));
-			if ($normalized === '') {
-				return $default;
-			}
-			return !in_array($normalized, array('0', 'false', 'no', 'off'), true);
-		}
-		return (bool) $value;
+		return Billrun_Util::toBool($data[$field], $default);
 	}
 
 }
