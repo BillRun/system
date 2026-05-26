@@ -189,9 +189,12 @@ class Models_Accounts extends Models_Entity {
 		if (!is_null($editedAid)) {
 			$visited[intval($editedAid)] = true;
 		}
-		$maxDepth = $this->getMaxHierarchyDepth();
 		$currentAid = intval($parentAid);
 		while (!is_null($currentAid)) {
+			// The visited-set guard both detects cycles and bounds the walk (max iterations = distinct
+			// accounts in the chain). The depth LIMIT is enforced authoritatively by the resultingDepth
+			// check in verifyHierarchy() (ancestorLevels + self + descendantLevels), so this method only
+			// counts ancestors and rejects structural corruption (cycles / dangling links).
 			if (isset($visited[$currentAid])) {
 				throw new Billrun_Exceptions_Api(0, array(), "Customer hierarchy cycle detected at account {$currentAid}");
 			}
@@ -203,11 +206,6 @@ class Models_Accounts extends Models_Entity {
 				throw new Billrun_Exceptions_Api(0, array(), "Parent account {$currentAid} does not exist");
 			}
 			$levels++;
-			if ($levels > $maxDepth) {
-				// Ancestors alone already exceed the limit; the resulting tree is too deep. (Cycles are
-				// caught above by the visited-set check.)
-				throw new Billrun_Exceptions_Api(0, array(), "Customer hierarchy depth exceeds the maximum of {$maxDepth} levels");
-			}
 			$nextParent = isset($revision['parent_aid']) && $revision['parent_aid'] !== '' && !is_null($revision['parent_aid'])
 				? intval($revision['parent_aid'])
 				: null;
