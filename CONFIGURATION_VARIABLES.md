@@ -330,7 +330,7 @@ It is generated from a static scan of every `getConfigValue()` call site under `
 | `customer.aggregator.{$type}.passthrough_data` | `[]` | Type-specific subscriber/account passthrough fields appended to the global list. |
 | `customer.calculator` | `(array)` | Extra options passed to the customer queue calculator. |
 | `customer.calculator.row_enrichment` | `(array)` | Extra subscriber fields the customer calculator may update on a line. |
-| `customer.hierarchy.max_depth` | `4` | Maximum depth (number of levels, root included) of the customer account hierarchy tree. Enforced on account save (`parent_aid` chains deeper than this are rejected) and used to bound the hierarchy walks in the aggregate, invoice and payment paths. Valid range: a positive integer; defaults to 4 (phase-1 limit). |
+| `customer.hierarchy.max_depth` | `4` | Maximum depth of the customer account hierarchy tree: root + up to 3 descendant levels (4 total by default). Enforced on account save (`parent_aid` chains deeper than this are rejected) and used to bound the hierarchy walks in the aggregate, invoice and payment paths. Valid range: a positive integer; defaults to 4 (phase-1 limit). |
 
 ## customeronetime
 

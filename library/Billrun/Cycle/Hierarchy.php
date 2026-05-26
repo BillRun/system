@@ -123,6 +123,15 @@ class Billrun_Cycle_Hierarchy {
 	}
 
 	/**
+	 * Invalidate the isInUse() memo. Call after a write that may introduce (or remove) hierarchy in the
+	 * same PHP process - e.g. creating an account with a parent_aid via the API, or in test setup/teardown -
+	 * so a subsequent isInUse() re-probes the DB.
+	 */
+	public static function resetInUseCache() {
+		self::$hierarchyInUseCache = null;
+	}
+
+	/**
 	 * Hierarchy state of an account from its end-of-cycle revision, or false when the account has no
 	 * revision active in the cycle.
 	 *

@@ -78,6 +78,10 @@ class Models_Accounts extends Models_Entity {
 			return true;
 		}
 
+		// This save may introduce/remove hierarchy in the current process; invalidate the in-use memo so a
+		// subsequent getBillable()/aggregation re-probes the DB rather than trusting a stale "flat" result.
+		Billrun_Cycle_Hierarchy::resetInUseCache();
+
 		// Normalize the values being written so they are stored with their proper types.
 		if (array_key_exists('issues_invoice', $this->update)) {
 			$this->update['issues_invoice'] = $this->toHierarchyBool($this->update['issues_invoice'], true);
@@ -199,8 +203,10 @@ class Models_Accounts extends Models_Entity {
 				throw new Billrun_Exceptions_Api(0, array(), "Parent account {$currentAid} does not exist");
 			}
 			$levels++;
-			if ($levels > $maxDepth + 1) {
-				break; // safety guard against corrupted/looping data
+			if ($levels > $maxDepth) {
+				// Ancestors alone already exceed the limit; the resulting tree is too deep. (Cycles are
+				// caught above by the visited-set check.)
+				throw new Billrun_Exceptions_Api(0, array(), "Customer hierarchy depth exceeds the maximum of {$maxDepth} levels");
 			}
 			$nextParent = isset($revision['parent_aid']) && $revision['parent_aid'] !== '' && !is_null($revision['parent_aid'])
 				? intval($revision['parent_aid'])

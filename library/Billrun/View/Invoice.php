@@ -105,6 +105,9 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	 * @return string[]
 	 */
 	protected function buildHierarchyBreadcrumb($aid, $hierarchyMeta) {
+		// Empty map == a non-consolidated (flat) invoice: a single segment of the invoice account's own
+		// name. For consolidated invoices the map always includes the owner's own entry, so the walk below
+		// reaches the root and a 2-level tree yields a two-segment breadcrumb (owner > child).
 		if (empty($hierarchyMeta)) {
 			$name = $this->getInvoiceAccountName();
 			return $name === '' ? array() : array($name);
@@ -135,7 +138,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 				return $attributes[$field];
 			}
 		}
-		return trim(Billrun_Util::getFieldVal($attributes['firstname'], '') . ' ' . Billrun_Util::getFieldVal($attributes['lastname'], ''));
+		return trim(Billrun_Util::getIn($attributes, 'firstname', '') . ' ' . Billrun_Util::getIn($attributes, 'lastname', ''));
 	}
 	
 	

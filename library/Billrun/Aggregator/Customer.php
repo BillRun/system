@@ -725,7 +725,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 
 		// Persist the per-account hierarchy map onto each consolidating owner's attributes (stored verbatim
-		// in the billrun doc). Only attach when the owner actually absorbed sub-accounts.
+		// in the billrun doc). The two guards make this safe:
+		//  - count > 1: the owner actually absorbed sub-accounts (its map always contains its own entry plus
+		//    one per rolled-up descendant), so a standalone invoicing account gets no metadata.
+		//  - isset(...owner...attributes): in the "owner not on page" ALERT case the orphan child's entry was
+		//    recorded under a missing owner aid; that owner is absent from $accounts, so nothing is written.
 		foreach ($hierarchyMeta as $ownerAid => $contributors) {
 			if (count($contributors) > 1 && isset($accounts[(string) $ownerAid]['attributes'])) {
 				$accounts[(string) $ownerAid]['attributes']['hierarchy'] = $contributors;
@@ -743,7 +747,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				return $attributes[$field];
 			}
 		}
-		$name = trim(Billrun_Util::getFieldVal($attributes['firstname'], '') . ' ' . Billrun_Util::getFieldVal($attributes['lastname'], ''));
+		$name = trim(Billrun_Util::getIn($attributes, 'firstname', '') . ' ' . Billrun_Util::getIn($attributes, 'lastname', ''));
 		return $name !== '' ? $name : ('Account ' . $aid);
 	}
 

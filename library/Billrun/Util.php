@@ -1040,6 +1040,9 @@ class Billrun_Util {
 		if (is_int($value)) {
 			return $value !== 0;
 		}
+		if (is_float($value)) {
+			return $value != 0.0;
+		}
 		if (is_string($value)) {
 			$normalized = strtolower(trim($value));
 			if ($normalized === '') {

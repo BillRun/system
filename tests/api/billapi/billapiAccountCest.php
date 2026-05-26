@@ -249,12 +249,13 @@ class billapiAccountCest
     public function testRejectNonexistentParent(ApiTester $I)
     {
         date_default_timezone_set('UTC');
-        // parent_aid pointing to a non-existent account is rejected.
+        // parent_aid pointing to a non-existent account is rejected. is_payer=true keeps the other rules
+        // satisfied, so the rejection is unambiguously due to the missing parent.
         $I->createAccountWithAllMandatoryCustomFields([
             "firstname" => "orphan",
             "parent_aid" => 99999999,
             "issues_invoice" => true,
-            "is_payer" => false,
+            "is_payer" => true,
         ]);
         $I->dontSeeResponseContains('"status":1');
         date_default_timezone_set($this->defaultTimezone);
