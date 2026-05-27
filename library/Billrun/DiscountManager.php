@@ -661,8 +661,8 @@ class Billrun_DiscountManager {
 					$sid = $subscriberRevision['sid'];
 					$subEligibility = 
 						[
-							'from' => min( $subscribersEligibility[$sid]['from'] ?? PHP_INT_MAX, max($discountFrom, $subscriberRevision['from']->sec)),
-							'to' => max( $subscribersEligibility[$sid]['to'] ?? PHP_INT_MIN, min($discountTo, $subscriberRevision['to']->sec)),
+							'from' => max($discountFrom, $subscriberRevision['from']->sec),
+							'to' => min($discountTo, $subscriberRevision['to']->sec),
 						];
                     $subscribersEligibility[$sid] =  array_merge( $subscribersEligibility[$sid] ?? [],
                                                                   Billrun_Utils_Time::getIntervalsIntersections([$subEligibility], $eligibility));
