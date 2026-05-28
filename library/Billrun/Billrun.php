@@ -18,6 +18,7 @@ class Billrun_Billrun {
 	static public $accountsLines = array();
 	protected $aid;
 	protected $billrun_key;
+	protected $invoice_id;
 	protected $data;
 	protected static $runtime_billrun_key;
 	protected static $vatAtDates = array();
@@ -60,9 +61,18 @@ class Billrun_Billrun {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$this->vat = Billrun_Rates_Util::getVat(0.18); // TODO: this should not be in use since there is no single TAX
-		if (isset($options['aid']) && isset($options['billrun_key'])) {
+		if (isset($options['invoice_id'])) {
+			$this->invoice_id = (int)$options['invoice_id'];
+		}
+		if (isset($options['aid'])) {
 			$this->aid = $options['aid'];
+		}
+		if (isset($options['billrun_key'])) {
 			$this->billrun_key = $options['billrun_key'];
+		}
+
+		if ((isset($this->aid) && isset($this->billrun_key)) || isset($this->invoice_id)) {
+
 			if (isset($options['autoload']) && !$options['autoload']) {
 				if (isset($options['data']) && !$options['data']->isEmpty()) {
 					$this->data = $options['data'];
@@ -86,10 +96,27 @@ class Billrun_Billrun {
 	}
 
 	/**
+     * method to get a Billrun_Billrun instance.
+     * Returns the instance if found/valid, or FALSE if not found.
+     * * @param array $options
+     * @return Billrun_Billrun|boolean
+     */
+    public static function getInstance($options = array()) {
+        $instance = new self($options);
+
+        if ($instance->getRawData()->isEmpty() || !$instance->getRawData()->getId()) {
+            return false;
+        }
+
+        return $instance;
+    }
+
+	/**
 	 * Updates the billrun object to match the db
 	 * @return Billrun_Billrun
 	 */
 	protected function load() {
+		if (isset($this->aid) && isset($this->billrun_key)) {
 		$this->data = $this->billrun_coll->query(array(
 					'aid' => $this->aid,
 					'billrun_key' => $this->billrun_key,
@@ -100,6 +127,16 @@ class Billrun_Billrun {
 		// intenal set and get of Mongodloid_Entity still use the collection.
 		$this->data->collection($this->billrun_coll);
 		return $this;
+		}
+		if (isset($this->invoice_id)) {
+			$query = ['invoice_id' => $this->invoice_id];
+			$entry = $this->billrun_coll->query($query)->cursor()->current();
+			$this->data = $entry;
+			$this->aid = $this->data['aid'];
+			$this->billrun_key = $this->data['billrun_key'];
+			$this->data->collection($this->billrun_coll);
+			return $this;
+		}
 	}
 
 	/**
@@ -1009,7 +1046,7 @@ class Billrun_Billrun {
 			$active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($last['billrun_key'],$planConfig);
 			$billrun_start_time = !is_null($invoicing_day) ? Billrun_Billingcycle::getStartTime($active_billrun, $invoicing_day) : Billrun_Billingcycle::getStartTime($active_billrun);
 			// TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
-			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
+			if ($now - $billrun_start_time > (2592000 * Billrun_Factory::config()->getConfigValue('pricing.max_delta_months', 2))) { // more than X months diff (60*60*24*30*X)
 				$active_billrun = $runtime_billrun_key;
 			}
 		}
@@ -1097,7 +1134,7 @@ class Billrun_Billrun {
 				 return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));
 			}
 		}
-		Billrun_Factory::log()->log('Failed to match due_date for invoice id:' . $this->getInvoiceID() . ', using default configuration', Zend_Log::NOTICE);
+		Billrun_Factory::log()->log('Failed to match due_date for invoice id:' . $this->getInvoiceID() . ', using default configuration', Zend_Log::DEBUG);
 		return new Mongodloid_Date(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
 	}
 
@@ -1140,4 +1177,73 @@ class Billrun_Billrun {
                 }
                 return $billrun;
 	}
+
+	/**
+	 * Sets a plugin field in the local data structure.
+	 * Mimics MongoDB logic: Updates if plugin exists, Pushes if it doesn't.
+	 * * @param string $pluginName
+	 * @param string $fieldName
+	 * @param mixed $value
+	 */
+	public function setPluginField($pluginName, $fieldName, $value)
+	{
+		$plugins = Billrun_Util::getIn($this->data, 'plugins', []);
+		$pluginFound = false;
+
+		foreach ($plugins as &$plugin) {
+			if (Billrun_Util::getIn($plugin, 'name') === $pluginName) {
+				Billrun_Util::setIn($plugin, $fieldName, $value);
+				$pluginFound = true;
+				break;
+			}
+		}
+		unset($plugin); // Break reference safety
+
+		if (!$pluginFound) {
+			$newPlugin = ['name' => $pluginName];
+			Billrun_Util::setIn($newPlugin, $fieldName, $value);
+			$plugins[] = $newPlugin;
+		}
+		$this->data['plugins'] = $plugins;
+	}
+
+
+	/**
+	 * Gets a plugin field from the local data structure.
+	 * * @param string $pluginName
+	 * @param string $fieldName
+	 * @return mixed|null The value of the field or null if not found
+	 */
+	public function getPluginField($pluginName, $fieldName)
+	{
+		$plugins = $this->data['plugins'] ?? [];
+
+		foreach ($plugins as $plugin) {
+			if (isset($plugin['name']) && $plugin['name'] === $pluginName) {
+				return Billrun_Util::getIn($plugin, $fieldName);
+			}
+		}
+		return null;
+	}
+
+	/**
+     * Gets a plugin field from a Billrun object.
+     * * @param array|ArrayAccess $billrunObject The Billrun data structure (must contain 'plugins')
+     * @param string            $pluginName    The name of the plugin to find
+     * @param string            $fieldName     The field key (supports dot notation)
+     * @return mixed|null
+     */
+    public static function getPluginFieldFromBillrunObject($billrunObject, $pluginName, $fieldName)
+    {
+        // 1. Get the plugins list safely
+        $plugins = Billrun_Util::getIn($billrunObject, 'plugins', []);
+
+        foreach ($plugins as $plugin) {
+            if (Billrun_Util::getIn($plugin, 'name') === $pluginName) {
+                return Billrun_Util::getIn($plugin, $fieldName);
+            }
+        }
+        return null;
+    }
+
 }

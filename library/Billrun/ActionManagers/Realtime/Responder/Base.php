@@ -73,15 +73,21 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 	protected function getResponseData() {
 		$ret = array();
 		$responseFields = $this->getResponseFields();
+		Billrun_Factory::dispatcher()->trigger('beforeRealtimeResponseData', [&$responseFields]);
 		foreach ($responseFields as $field) {
 			$responseField = $field['response_field_name'];
 			$rowField = $field['row_field_name'];
 			if (is_array($rowField)) {
-				$ret[$responseField] = (isset($rowField['classMethod']) ? $this->{$rowField['classMethod']}() : '');
+				$value = (isset($rowField['classMethod']) ? $this->{$rowField['classMethod']}() : '');
 			} else {
-				$ret[$responseField] = Billrun_Util::getIn($this->row, $rowField, '');
+				$value = Billrun_Util::getIn($this->row, $rowField, array_key_exists('default_value', $field) ? $field['default_value'] : '');
+			}
+
+			if (!is_null($value)) {
+				Billrun_Util::setIn($ret, $responseField, $value);
 			}
 		}
+		Billrun_Factory::dispatcher()->trigger('afterRealtimeResponseData', [&$ret]);
 		return $ret;
 	}
 

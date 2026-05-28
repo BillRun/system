@@ -37,11 +37,11 @@ class V3_paymentHistoryAction extends ApiAction {
 		}
 	}
 	
-	protected function searchPayments($request) {
+        protected function searchPayments($request) {
 		$aid = filter_var($request->get('aid'), FILTER_VALIDATE_INT);
 		$aid = $aid === FALSE ? NULL : $aid;
 
-		//$months_back = $request->get('months_back');
+                //$months_back = $request->get('months_back');
 		$to = $request->get('to');
 		$from = $request->get('from');
 		return Billrun_Bill_Payment::getPayments($aid, array(), array(), date('Y/m/d',  strtotime($to)), date('Y/m/d',  strtotime($from)), null, true, true, true);

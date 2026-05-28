@@ -14,13 +14,13 @@
  */
 abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 
-	protected $seperatedCrossCycleCharges = false;
+	protected $seperatedCrossCycleCharges = true;
 	
 	public function __construct($plan) {
 		parent::__construct($plan);
 		$this->seperatedCrossCycleCharges = Billrun_Util::getFieldVal(  $plan['separate_cross_cycle_charges'],
                                                                         Billrun_Factory::config()->getConfigValue('billrun.separate_cross_cycle_charges',
-                                                                                                                  $this->seperatedCrossCycleCharges) );
+																		true) );
 	}
 
 	/**
@@ -35,25 +35,35 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 * @return int, null if no charge
 	 */
 	public function getPrice($quantity = 1) {
+		//Is the  activation/deactivation outside the current cycle?
+		if( $this->activation > $this->cycle->end() || $this->deactivation < $this->cycle->start()) {
+			return null;
+		}
 
 		$fraction = $this->getFractionOfMonth();
 		if($fraction === null) {
 			return null;
 		}
 		$cycles = [['cycle'=> $this->cycle , 'fraction'=> $fraction]];
-		if($this->seperatedCrossCycleCharges && $this->activation < $this->cycle->end() && $this->activation >= $this->cycle->start() && $fraction > 1) {
-		$nextCycle = $this->getUpfrontCycle($this->cycle);
-		$cycles = [
-					['cycle'=> $this->cycle , 'fraction'=> $fraction  - 1],
-					['cycle'=> $nextCycle , 'fraction'=> 1 ],
-				];
+		if($this->seperatedCrossCycleCharges ) {
+			$nextCycle = $this->getUpfrontCycle($this->cycle);
+
+			if( $this->activation < $this->cycle->end() && $this->activation >= $this->cycle->start() && $fraction > 1) {
+				$cycles = [
+							['cycle'=> $this->cycle , 'fraction'=> $fraction  - 1, 'split' => true],
+							['cycle'=> $nextCycle , 'fraction'=> 1 , 'split' => true],
+						];
+			} else if ($fraction == 1 && $this->activation <= $this->cycle->start() ) {
+				$cycles = [['cycle'=> $nextCycle , 'fraction'=> $fraction, 'split' => false]];
+			}
 		}
 		$retCahrges = [];
 		foreach($cycles as $cycleData) {
 			$price = $this->getPriceForCycle($cycleData['cycle']);
 			$retCahrges[] = array_merge($this->getProrationData($this->price,$cycleData['cycle']),array(
 				'value'=> $price * $cycleData['fraction'] * $quantity,
-				'full_price' => floatval($price)
+				'full_price' => floatval($price),
+				'split' => $cycleData['split'] ?? false
 				));
 		}
 		return empty($retCahrges) ? null :  $retCahrges;
@@ -73,7 +83,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 */
 	protected function getPriceByOffset($cycleCount) {
 		foreach ($this->price as $tariff) {
-			if ($tariff['from'] <= $cycleCount && (Billrun_Plan::isValueUnlimited($tariff['to']) ? PHP_INT_MAX : $tariff['to']) > $cycleCount) {
+			if ($tariff['from'] <= ceil($cycleCount) && (Billrun_Plan::isValueUnlimited($tariff['to']) ? PHP_INT_MAX : $tariff['to']) > $cycleCount) {
 				return $tariff['price'];
 			}
 		}
@@ -82,20 +92,40 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	}
 
 	protected function getProrationData($price,$cycle = false) {
-			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->end() )) );
+			$endProration =  $this->proratedEnd && !$this->isTerminated($cycle) || ($this->proratedTermination && $this->isTerminated($cycle));
 			$cycle = empty($cycle) ? $this->cycle : $cycle;
+			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, $cycle->start()) );
 			$nextCycle = $this->getUpfrontCycle($cycle);
-			return ['start' => $this->activation,
+			$isUpfront =  $cycle->start() >= $this->cycle->end() || !$this->seperatedCrossCycleCharges && $this->deactivation >= $this->cycle->end() ;
+			//"this->deactivation < $this->cycle->end()" as the  deactivation date euqal the end of the current (and not next) cycle mean that the deactivation is in the future
+			return ['start' => $this->activation > $cycle->start() && $this->proratedStart ? $this->activation  : ($this->seperatedCrossCycleCharges ? $cycle->start() :$nextCycle->start()),
 					'prorated_start_date' => new Mongodloid_Date($this->activation > $cycle->start() ? $this->activation  : ($this->seperatedCrossCycleCharges ? $cycle->start() :$nextCycle->start())),
-					'end' =>  $this->deactivation < $cycle->end() ? $this->deactivation : $cycle->end(),
-					'prorated_end_date' => new Mongodloid_Date($this->deactivation && $this->deactivation < $cycle->end() ? $this->deactivation : (seperatedCrossCycleCharges ? $cycle->end() : $nextCycle->end()) ),
+					'end' => $this->deactivation < $this->cycle->end() && $endProration ? $this->deactivation : ($this->seperatedCrossCycleCharges ? $cycle->end() :$nextCycle->end()),
+					'prorated_end_date' => new Mongodloid_Date($this->deactivation && $this->deactivation < $this->cycle->end() ? $this->deactivation : ($this->seperatedCrossCycleCharges ? $cycle->end() : $nextCycle->end()) ),
 					'start_date' =>new Mongodloid_Date(Billrun_Plan::monthDiffToDate($startOffset,  $this->activation )),
-					'end_date' => new Mongodloid_Date($this->deactivation < $cycle->end() ? $this->deactivation : $cycle->end())];
+					'end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() ? $this->deactivation : $cycle->end()),
+					'is_upfront' =>  $isUpfront,
+					'prorated_start' =>  $this->proratedStart,
+					'prorated_end' =>  $endProration,
+					'activation_date' => $this->activation,
+					'deactivation_date' => $this->deactivation
+   				];
 	}
 
 	protected function getUpfrontCycle($regularCycle) {
 		$nextCycleKey = Billrun_Billingcycle::getFollowingBillrunKey($regularCycle->key());
 		return new Billrun_DataTypes_CycleTime($nextCycleKey);
+	}
+
+	/**
+	 * Is the the subscriber hold  the plan  has terminated it subscription or is it just a plan change?
+	 */
+	protected function isTerminated($cycle = false) {
+
+		$fakeSubDeactivation = (empty($this->subscriberDeactivation) ? PHP_INT_MAX : $this->subscriberDeactivation);
+
+		return (	$fakeSubDeactivation <= $this->deactivation || empty($this->deactivation) &&
+					$fakeSubDeactivation <( $cycle ? $cycle->end() : $this->cycle->end() )	);
 	}
 	
 }

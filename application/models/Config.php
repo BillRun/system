@@ -69,7 +69,7 @@ class ConfigModel {
 	protected function loadConfig() {
 		$ret = $this->collection->query()
 			->cursor()
-			->sort(array('_id' => -1))
+			->sort(array('urt' => -1, '_id' => -1))
 			->limit(1)
 			->current()
 			->getRawData();
@@ -90,12 +90,20 @@ class ConfigModel {
 	public function setConfig($data) {
 		$updatedData = array_merge($this->getConfig(), $data);
 		unset($updatedData['_id']);
+		$updatedData = $this->addUrt($updatedData);
 		foreach ($this->options as $option) {
 			if (!isset($data[$option])) {
 				$data[$option] = 0;
 			}
 		}
-		return $this->collection->insert($updatedData);
+		$result = $this->collection->insert($updatedData);
+		if (Billrun_Config::getInstance()->isConfigCacheEnabled()) {
+			$cache = Billrun_Factory::cache();
+			if ($cache) {
+				$cache->remove('db_config', 'config');
+			}
+		}
+		return $result;
 	}
 
 	public function getFromConfig($category, $data) {
@@ -164,6 +172,8 @@ class ConfigModel {
 				}
 			}
 			return $plugins;
+		} elseif ($category === "taxation") {
+			return $this->getSecureTaxation($this->_getFromConfig($currentConfig, $category, $data));
 		}
 		
 		return $this->_getFromConfig($currentConfig, $category, $data);
@@ -219,7 +229,7 @@ class ConfigModel {
 	 * @param mixed $data
 	 * @return mixed
 	 */
-	public function updateConfig($category, $data) {
+	public function updateConfig($category, $data, $persist = true) {
 		$updatedData = $this->getConfig();
 		unset($updatedData['_id']);
 
@@ -266,7 +276,8 @@ class ConfigModel {
 			foreach ($data['params'] as $key => $value) {
 				if (!in_array($key, $neededParameters)){
 					unset($data['params'][$key]);
-				} elseif (in_array($key, $secretFields) && $value === $fakePassword && isset ($rawPgSettings['params'][$key])){
+				}
+				if (in_array($key, $secretFields) && $value === $fakePassword && isset($rawPgSettings['params'][$key])) {
 					$data['params'][$key] = $rawPgSettings['params'][$key];
 				}
 			}
@@ -370,26 +381,39 @@ class ConfigModel {
 					$updatedData['plugins'][$plugin_index]['configuration']['values'] = $data['configuration']['values'];
 				}
 			}
+		} else if ($category === 'collection' && $this->validateCollection($data) !== TRUE) {
+			throw new Exception("Can not save collection configuration");
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
 			}
 		}
-
-		$ret = $this->collection->insert($updatedData);
-		$saveResult = !empty($ret['ok']);
-		if ($saveResult) {
-			// Reload timezone.
-			Billrun_Config::getInstance()->refresh();
-			if ($category === 'shared_secret') {
-				// remove previous defined clientof the same secret (in case of multiple saves or name change)
-				Billrun_Factory::oauth2()->getStorage('access_token')->unsetClientDetails(null, $data['key']);
-				// save into oauth_clients
-				Billrun_Factory::oauth2()->getStorage('access_token')->setClientDetails($data['name'], $data['key'], Billrun_Util::getForkUrl());
+		if($persist){
+			$updatedData = $this->addUrt($updatedData);
+			$ret = $this->collection->insert($updatedData);
+			$saveResult = !empty($ret['ok']);
+			if ($saveResult) {
+				if (Billrun_Config::getInstance()->isConfigCacheEnabled()) {
+					$cache = Billrun_Factory::cache();
+					if ($cache) {
+						$cache->remove('db_config', 'config');
+					}
+				}
+				// Reload timezone.
+				Billrun_Config::getInstance()->refresh();
+				if ($category === 'shared_secret') {
+					// remove previous defined clientof the same secret (in case of multiple saves or name change)
+					Billrun_Factory::oauth2()->getStorage('access_token')->unsetClientDetails(null, $data['key']);
+					// save into oauth_clients
+					Billrun_Factory::oauth2()->getStorage('access_token')->setClientDetails($data['name'], $data['key'], Billrun_Util::getForkUrl(), 'client_credentials', 'global');
+				}
 			}
+			return $saveResult;
+		}else{
+			$this->data = $updatedData;
+			return true;
 		}
 
-		return $saveResult;
 	}
 		
 	/**
@@ -448,11 +472,7 @@ class ConfigModel {
 					break;
 				}
 			}
-			
-			if (isset($field['unique']) && $field['unique']) {
-				$field['mandatory'] = true;
-			}
-
+		
 			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
 				$mandatoryFields[] = [
 					'name' => $fieldName,
@@ -577,8 +597,8 @@ class ConfigModel {
 				$mandatoryQuery['$or'][] = array($field['name'] => array('$exists' => false));
 			}
 		}
-		
-		return $entityModel->getCollection()->query($mandatoryQuery)->count() === 0;
+
+		return $entityModel->getCollection()->query($mandatoryQuery)->cursor()->limit(1)->current()->isEmpty();
 	}
 	
 	/**
@@ -726,7 +746,7 @@ class ConfigModel {
 	protected function _updateConfig(&$currentConfig, $category, $data) {
 		
 		if ($category === 'taxation') {
-			$this->updateTaxationSettings($currentConfig, $data);
+			$data = $this->updateTaxationSettings($currentConfig, $data);
 		}
 		
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
@@ -785,7 +805,7 @@ class ConfigModel {
 		$splitCategory = explode('.', $category);
 
 		$template = $this->loadTemplate();
-		Billrun_Factory::log("Template: " . print_r($template,1), Zend_Log::DEBUG);
+//		Billrun_Factory::log("Template: " . print_r($template,1), Zend_Log::DEBUG);
 		$found = true;
 		$ptrTemplate = &$template;
 		$newConfig = $currentConfig;
@@ -942,7 +962,7 @@ class ConfigModel {
  				}
  			}
  		}
- 
+		$updatedData = $this->addUrt($updatedData); 
 		$ret = $this->collection->insert($updatedData);
 		
 		if ($category === 'shared_secret') {
@@ -970,7 +990,7 @@ class ConfigModel {
 				}
 			}
 		}
- 
+		$updatedData = $this->addUrt($updatedData);
 		$ret = $this->collection->insert($updatedData);
 		return !empty($ret['ok']);
 	}
@@ -989,7 +1009,7 @@ class ConfigModel {
  		if ($filtered = array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
  			return $pgSettings['name'] === $pg;
  		})) {
- 			return current($filtered);
+			return current($filtered);
  		}
  		return FALSE;
  	}
@@ -1255,6 +1275,54 @@ class ConfigModel {
 		return strlen($str) <= $size;
 	}
 	
+	protected function validateCollection($collections) {
+		$processes = Billrun_Util::getIn($collections, 'processes', []);
+		$processes_count = count($processes);
+		foreach ($processes as $process_idx => $process) {
+			$p_i = $process_idx + 1;
+			// Validate Settings 
+			if (empty($process['name'])) {
+				throw new Exception("Process #{$p_i} Settings: Key is missing");
+			}
+			if (empty($process['label'])) {
+				throw new Exception("Process #{$p_i} Settings: Title is missing");
+			}
+			$settings = Billrun_Util::getIn($process, ['settings'], []);
+			if (empty($settings['change_state_method']) && !empty($settings['change_state_url'])) {
+				throw new Exception("Process #{$p_i} Settings: HTTP Method is missing");
+			}
+			$min_debt = Billrun_Util::getIn($settings, 'min_debt', '');
+			if (!is_numeric($min_debt) || floatval($min_debt) < 0) {
+				throw new Exception("Process #{$p_i} Settings: Minimum debt must be numeric equal or greater then 0");
+			}
+			// Validate conditions
+			$conditions = Billrun_Util::getIn($process, ['conditions', 0, 'account', 'fields'], []);
+			if (empty($conditions) && $process_idx < $processes_count - 1) {
+				throw new Exception("Process #{$p_i} Conditions is missing");
+			}
+			foreach ($conditions as $condition_idx => $condition) {
+				$c_i = $condition_idx + 1;
+				if (empty(Billrun_Util::getIn($condition, 'field', ''))) {
+					throw new Exception("Process #{$p_i} Condition #{$c_i}: field is missing");
+				}
+				if (empty(Billrun_Util::getIn($condition, 'op', ''))) {
+					throw new Exception("Process #{$p_i} Condition #{$c_i}: operator is missing");
+				}
+			}
+			// Validate Stapes
+			$steps = Billrun_Util::getIn($process, ['steps'], []);
+			foreach ($steps as $step_idx => $step) {
+				$s_i = $step_idx + 1;
+				$do_after_days = Billrun_Util::getIn($step, 'do_after_days', '');
+				if (!is_numeric($do_after_days) || floatval($do_after_days) < 0) {
+					throw new Exception("Process #{$p_i} Step #{$s_i}: Trigger after days value must be numeric equal or greater than 0");
+				}
+			}
+
+		}
+		return true;
+	}
+	
 	protected function validatePaymentGatewaySettings(&$config, $pg, $paymentGateway) {
  		$connectionParameters = array_keys($pg['params']);
  		$name = $pg['name'];	
@@ -1406,7 +1474,7 @@ class ConfigModel {
 			$additionalFields = array('computed');
 			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields, $calculatedFields))) {
 				throw new Exception('Unknown source field(s) ' . implode(',', array_unique($diff)));
-			}
+		}
 		}
 		return true;
 	}
@@ -1637,7 +1705,7 @@ class ConfigModel {
 			throw new Exception('Response settings is not an array');
 		}
 		
-		if (!isset($responseSettings['encode']) || !in_array($responseSettings['encode'], array('json'))) {
+		if (!isset($responseSettings['encode']) || !in_array($responseSettings['encode'], array('json', 'array'))) {
 			throw new Exception('Invalid response encode type');
 		}
 
@@ -1699,6 +1767,7 @@ class ConfigModel {
 			   $this->setModelField($config, $model, $field, $fieldData['title'], $mandatory && $fieldData['mandatory'], $mandatory );
 		   }
 		}
+		return $this->setSecureTaxation($config, $data);
 	}
 	
 	protected function setModelField(&$config, $model, $fieldName, $title, $mandatory = true, $display = true) {
@@ -1775,7 +1844,7 @@ class ConfigModel {
 	 * @return array
 	 */
 	protected function getUnifyConfig($config, $unifyConfig) {
-		if (empty($unifyConfig) && !empty($config['realtime']) && empty($config['realtime']['postpay_charge'])) { // prepaid request
+		if (empty($unifyConfig) && !empty($config['realtime']) && empty(Billrun_Utils_Realtime::getRealtimeConfigValue($config, 'postpay_charge'))) { // prepaid request
 			$unifyConfig = $this->getPrepaidUnifyConfig();
 		}
 		
@@ -1797,8 +1866,27 @@ class ConfigModel {
 	 */
 	public function isMultiDayCycleMode() {
 		return Billrun_Factory::config()->isMultiDayCycle();
-	}
+}
 
+	protected function setSecureTaxation($conf, $taxationSetting) {
+		if (isset($taxationSetting['CSI']['auth_code'])) {
+			$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
+			if ($taxationSetting['CSI']['auth_code'] === $fakePassword) {
+				$rawTaxationSettings = $conf['taxation'];
+				$taxationSetting['CSI']['auth_code'] = $rawTaxationSettings['CSI']['auth_code'];
+			}
+		}
+		return $taxationSetting;
+	}
+	
+	protected function getSecureTaxation($taxationSetting) {
+		if (isset($taxationSetting['CSI']['auth_code'])) {
+			$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
+			$taxationSetting['CSI']['auth_code'] = $fakePassword;
+		}
+		return $taxationSetting;
+	}
+	
 	protected function getSecurePaymentGateway($paymentGatewaySetting){
 		$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
 		$securePaymentGateway = $paymentGatewaySetting; 
@@ -1824,5 +1912,19 @@ class ConfigModel {
 			$securePaymentGateways[] = $this->getSecurePaymentGateway($paymentGateway);
 		}
 		return $securePaymentGateways;
+	}
+
+	/**
+	 * Adds the 'urt' (Update Runtime) timestamp to the configuration data.
+	 * * We use this field because it captures millisecond precision, whereas 
+	 * the standard MongoDB '_id' field only captures seconds. This ensures 
+	 * correct sorting of configuration updates that occur within the same second.
+	 *
+	 * @param array $data
+	 * @return array The data with the 'urt' field added.
+	 */
+	protected function addUrt($data) {
+		$data['urt'] = new MongoDB\BSON\UTCDateTime();
+		return $data;
 	}
 }

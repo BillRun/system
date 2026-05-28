@@ -1,0 +1,12 @@
+.field-mapping-radio {
+    .field-radio {
+        label {
+            padding: 0!important;
+            margin: 0!important;
+        }
+        &:first-child {
+            margin-top: -3px;
+        }
+
+    }
+}

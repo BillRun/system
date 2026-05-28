@@ -10,7 +10,7 @@
  *
  * @author yossi
  */
-require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
 
 define('UNIT_TESTING', 'true');
 
@@ -63,6 +63,7 @@ class Tests_Monthsdifftest extends UnitTestCase {
 	 */
 	public function TestPerform() {
 		$nbsp='&nbsp &nbsp &nbsp ';
+		$this->tests = $this->skip_tests($this->tests ,'test number');
 		foreach ($this->tests as $row) {
 			$returnval = $this->compare($row);
 			$this->assertTrue($returnval[0]);

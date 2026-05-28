@@ -25,5 +25,13 @@ class Billrun_OAuth2_Storage_MongoDB extends OAuth2\Storage\MongoDB {
 		}
 		return $this->collection('client_table')->deleteOne(array('client_secret' => $client_secret));
 	}
+	
+	protected function checkPassword($user, $password)
+	{
+		return password_verify($password, $user['password']);
+	}
 
+	public function setUser($username, $password, $firstName = null, $lastName = null) {
+		return parent::setUser($username, password_hash($password, PASSWORD_DEFAULT), $firstName, $lastName);
+	}
 }

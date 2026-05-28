@@ -24,6 +24,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^972/'=>'0');
 	public $invoice_flat_tabels = [];
 	public $invoice_usage_tabels = [];
+	public $details_keys = [];
 	
 	/*
 	 * get and set lines of the account
@@ -269,7 +270,9 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$msgs = !empty($subData) && !$subData->isEmpty() && !empty($subData['invoice_messages']) ? $subData['invoice_messages'] : [];
 		$retMsgs = [];
 		foreach($msgs as $msg) {
-			$entryTime = strtotime(is_array($msg['entry_time']) ? $msg['entry_time']['sec'] : $msg['entry_time']);
+			$entryTime = is_object($msg['entry_time']) ? $msg['entry_time']->sec :
+							(is_array($msg['entry_time']) ? $msg['entry_time']['sec'] :
+								strtotime( $msg['entry_time']));
 			if( $this->data['start_date']->sec <= $entryTime && $entryTime < $this->data['end_date']->sec ) {
 				$retMsgs [] = $msg;
 			}
@@ -317,19 +320,19 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		foreach ($columns as $index => $column) {
 			switch ($column['field_name']) {
 				case 'urt':
-					$row['Date & Time'] = date($datetime_format, $line['urt']->sec - ($is_flat_type ? 1 : 0));
+					$row['DATE_TIME'] = date($datetime_format, $line['urt']->sec - ($is_flat_type ? 1 : 0));
 					break;
 				case 'usaget':
-					$row['Type'] = (!empty($flippedKeys[$line['usaget']]) ? $flippedKeys[$line['usaget']] : (empty($flippedKeys[$line['type']]) ? $line['type'] : $flippedKeys[$line['type']]));
+					$row['TYPE'] = (!empty($flippedKeys[$line['usaget']]) ? $flippedKeys[$line['usaget']] : (empty($flippedKeys[$line['type']]) ? $line['type'] : $flippedKeys[$line['type']]));
 					break;
 				case 'arate_key':
-					$row['Rate'] = $this->getLineUsageName($line);
+					$row['RATE'] = $this->getLineUsageName($line);
 					break;
 				case 'usagev':
-					$row['Volume'] = $this->getLineUsageVolume($line);
+					$row['VOLUME'] = $this->getLineUsageVolume($line);
 					break;
 				case 'aprice':
-					$row['Amount'] = number_format($line['aprice'], 2);
+					$row['AMOUNT'] = number_format($line['aprice'], 2);
 					break;
 				default:
 					$row[$column['label']] = Billrun_Util::getIn($line, $column['field_name'], "");
@@ -340,11 +343,11 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	}
 
 	public function buildNotCustomTabels($lines, $types, $is_usage_types = false, $details_keys = []) {
-		$fields = ['Date & Time' => 'urt',
-			'Type' => 'usaget',
-			'Rate' => 'arate_key',
-			'Volume' => 'usagev',
-			'Amount' => 'aprice'
+		$fields = ['DATE_TIME' => 'urt',
+			'TYPE' => 'usaget',
+			'RATE' => 'arate_key',
+			'VOLUME' => 'usagev',
+			'AMOUNT' => 'aprice'
 		];
 		$columns = [];
 		foreach ($fields as $label => $field_name) {

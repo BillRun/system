@@ -11,7 +11,7 @@
  *
  */
 class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
-	
+	   
 	/*
 	 * see Billrun_EmailSender_Base::shouldNotify
 	 */
@@ -30,20 +30,30 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	 * see Billrun_EmailSender_Base::getEmailBody
 	 */
 	protected function getEmailBody($data) {
-		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.content', '');
+		$template = Billrun_Util::findMatchingEmailTemplate('invoice_ready', $data);
+		return Billrun_Util::getIn($template, 'content', '');
 	}
 
 	/**
 	 * see Billrun_EmailSender_Base::getEmailSubject
 	 */
 	protected function getEmailSubject($data) {
-		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.subject', '');
+		$template = Billrun_Util::findMatchingEmailTemplate('invoice_ready', $data);
+		return Billrun_Util::getIn($template, 'subject', '');
+	}
+        
+        /**
+	 * see Billrun_EmailSender_Base::getEmailPlaceholders
+	 */
+	protected function getEmailPlaceholders($data) { 
+		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.placeholders', []);
 	}
 	
 	/**
 	 * see Billrun_EmailSender_Base::translateMessage
 	 */
 	public function translateMessage($msg, $data = array()) {
+                $msg = parent::translateMessage($msg, $data);
 		$replaces = array(
 			'[[date]]' => date(Billrun_Base::base_dateformat),
 			'[[invoice_id]]' => $data['invoice_id'],
@@ -51,7 +61,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 			'[[invoice_due_date]]' => date(Billrun_Base::base_dateformat, $data['due_date']->sec),
 			'[[cycle_range]]' => date(Billrun_Base::base_dateformat, $data['start_date']->sec) . ' - ' . date(Billrun_Base::base_dateformat, $data['end_date']->sec),
 			'[[company_email]]' => Billrun_Factory::config()->getConfigValue('tenant.email', ''),
-			'[[company_name]]' => Billrun_Factory::config()->getConfigValue('tenant.name', ''),
+			'[[company_name]]' => Billrun_Factory::config()->getConfigValue('tenant.name', '')
 		);
 
 		Billrun_Factory::dispatcher()->trigger('alterMessageTranslations',[&$replaces, $data, $this]);
@@ -96,7 +106,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	 */
 	public function validateData($data) {
 		if (empty($data['invoice_file']) || empty($data['attributes']['email'])) {
-			Billrun_Factory::log('sendInvoiceReadyMail - missing invoice file or email. Invoice data: ' . print_R($data, 1), Billrun_Log::NOTICE);
+			Billrun_Factory::log('sendInvoiceReadyMail - missing invoice file or email. Invoice ID: ' . $data['invoice_id'], Billrun_Log::NOTICE);
 			return false;
 		}
 		if (!$this->isShippingMethodMatch($data)) {
@@ -130,6 +140,10 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	 * see Billrun_EmailSender_Base::getAttachments
 	 */
 	public function getAttachment($data) {
+		$sendPdf = Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.send_pdf', true);
+		if(!$sendPdf){
+			return [];
+		}
 		$dataFile = $this->getInvoicePDF($data);
 		if (!$dataFile) {
 			return FALSE;

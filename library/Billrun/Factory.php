@@ -64,11 +64,11 @@ class Billrun_Factory {
 	protected static $subscriber = null;
 	
 	/**
-	 * Account instance
+	 * Account instances
 	 * 
-	 * @var Billrun_Billrun Account
+	 * @var Billrun_Account[] Account
 	 */
-	protected static $account = null;
+	protected static $accounts = null;
 	
 	/**
 	 * Collection Steps instance
@@ -147,6 +147,13 @@ class Billrun_Factory {
 	protected static $collection;
 
 	/**
+	 * Collection instance
+	 * 
+	 * @var Billrun_Billrun Collection
+	 */
+	protected static $queues;
+
+	/**
 	 * method to retrieve the log instance
 	 * 
 	 * @param string [Optional] $message message to log
@@ -186,21 +193,93 @@ class Billrun_Factory {
 		return self::$config;
 	}
 
+		/**
+	 * method to update the config instance
+	 * 
+	 * @return Billrun_Config
+	 */
+	static public function updateConfig() {
+		self::$config->loadDbConfig();
+	}
+
 	/**
 	 * method to retrieve the db instance
 	 * 
 	 * @return Billrun_Db
 	 */
-	static public function db(array $options = array()) {
+	static public function db(array $options = array(), $refresh = false) {
 		$stamp = md5(serialize($options)); // unique stamp per db connection
+		if ($refresh) {
+			self::$db[$stamp] = null;
+		}
 		if (!isset(self::$db[$stamp])) {
 			if (empty($options)) { // get the db settings from config
 				$options = Billrun_Factory::config()->getConfigValue('db');
+			}
+			if ($refresh) {
+				$options['options']['refresh'] = true;
 			}
 			self::$db[$stamp] = Billrun_Db::getInstance($options);
 		}
 
 		return self::$db[$stamp];
+	}
+
+	/**
+	 * method to retrieve the admin db instance
+	 * admin db should have higher permissions, like sharding and
+	 * create new db scheme, db user and db pass for multi-tenancy support
+	 *
+	 * Sources, in order of precedence:
+	 *   1. BR_ADMDB_* env vars (always override when set)
+	 *   2. 'admindb' config block
+	 *   3. Fall back to the default db() connection
+	 *
+	 * @return Billrun_Db
+	 */
+	static public function admindb() {
+		$options = Billrun_Factory::config()->getConfigValue('admindb');
+		if (!is_array($options)) {
+			$options = [];
+		}
+		self::setAdmindbEnvConfig($options);
+		if (empty($options)) {
+			return self::db();
+		}
+		return self::db($options);
+	}
+
+	/**
+	 * Apply BR_ADMDB_* environment variables to admindb options in-place.
+	 *
+	 * Mirrors Billrun_Config::setDbEnvConfig() for the admin connection. Env
+	 * values take precedence over anything supplied via the 'admindb' config
+	 * block, so a docker/k8s deployment can override individual fields (or
+	 * supply the whole connection) without editing config files.
+	 *
+	 * @param array $options
+	 */
+	static protected function setAdmindbEnvConfig(array &$options) {
+		$envMap = array(
+			'BR_ADMDB_HOST'            => 'host',
+			'BR_ADMDB_PORT'            => 'port',
+			'BR_ADMDB_DBNAME'          => 'name',
+			'BR_ADMDB_USER'            => 'user',
+			'BR_ADMDB_PASS'            => 'password',
+			'BR_ADMDB_AUTHDB'          => 'options.authSource',
+			'BR_ADMDB_TLS'             => 'options.tls',
+			'BR_ADMDB_TLSKEYFILE'      => 'options.tlsCertificateKeyFile',
+			'BR_ADMDB_TLSPASSWORD'     => 'options.tlsCertificateKeyFilePassword',
+			'BR_ADMDB_TLSCAFILE'       => 'options.tlsCAFile',
+			'BR_ADMDB_TLSINSECURE'     => 'options.tlsInsecure',
+			'BR_ADMDB_TLSINVALIDCERT'  => 'options.tlsAllowInvalidCertificates',
+			'BR_ADMDB_TLSINVALIDHOST'  => 'options.tlsAllowInvalidHostnames',
+		);
+		foreach ($envMap as $envVar => $confVar) {
+			if (!empty($envVal = getenv($envVar))) {
+				Billrun_Util::setIn($options, $confVar, $envVal);
+			}
+		}
 	}
 
 	/**
@@ -212,6 +291,9 @@ class Billrun_Factory {
 		try {
 			if (!self::$cache) {
 				$args = self::config()->getConfigValue('cache', array());
+				if (isset($args[2]['is_relative_path']) && $args[2]['is_relative_path']) {
+					$args[2]['cache_dir'] = APPLICATION_PATH . '/' . $args[2]['cache_dir'];
+				}
 				if (isset($args[2]['cache_id_prefix'])) {
 					$args[2]['cache_id_prefix'] .= '_' . Billrun_Factory::config()->getTenant() . '_';
 				}
@@ -223,7 +305,8 @@ class Billrun_Factory {
 
 			return self::$cache;
 		} catch (Exception $e) {
-			Billrun_Factory::log('Cache instance cannot be generated', Zend_Log::ALERT);
+			Billrun_Factory::log('Cache instance cannot be generated.', Zend_Log::ALERT);
+			Billrun_Factory::log()->logCrash($e, Zend_Log::DEBUG);
 		}
 		return false;
 	}
@@ -269,7 +352,7 @@ class Billrun_Factory {
 		}
 		$stamp = Billrun_Util::generateArrayStamp($options);
 		if (!isset(self::$smser[$stamp])) {
-			self::$smser[$stamp] = new Billrun_Sms($options);
+			self::$smser[$stamp] = Billrun_Sms_Abstract::getInstance($options);
 		}
 
 		return self::$smser[$stamp];
@@ -320,16 +403,17 @@ class Billrun_Factory {
 	 * @return Billrun_Account
 	 */
 	public static function account() {
-		if (!self::$account) {
-			$settings = self::config()->getConfigValue('subscribers.account', array());
-			if (!isset($settings['type'])) {
-				$settings['type'] = 'db';
-			}
-			self::$account = Billrun_Account::getInstance($settings);
+		$settings = self::config()->getConfigValue('subscribers.account', array());
+		if (!isset($settings['type'])) {
+			$settings['type'] = 'db';
 		}
-
-		return self::$account;
+		if (!isset(self::$accounts[$settings['type']])) {
+			self::$accounts[$settings['type']] = Billrun_Account::getInstance($settings);
+		}
+		return self::$accounts[$settings['type']];
 	}
+
+
 	
 	/**
 	 * method to retrieve the account instance
@@ -394,7 +478,7 @@ class Billrun_Factory {
 			return new Billrun_Plan($params);
 		}
 		// unique stamp per plan
-		$stamp = Billrun_Util::generateArrayStamp($params);
+		$stamp = Billrun_Util::generateArrayStamp($params,['name','time','id','data']);
 
 		if (!isset(self::$plan[$stamp])) {
 			self::$plan[$stamp] = new Billrun_Plan($params);
@@ -466,7 +550,7 @@ class Billrun_Factory {
 
 	public static function auth() {
 		if (!isset(self::$auth)) {
-			Billrun_Util::setHttpSessionTimeout();
+			Billrun_Util::setHttpSessionTimeout(null, 'Lax');
 			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf(Billrun_Factory::config()->getTenant()));
 		}
 		return self::$auth;
@@ -593,6 +677,7 @@ class Billrun_Factory {
 			$storage = new Billrun_OAuth2_Storage_MongoDB(Billrun_Factory::db()->getDb());
 			self::$oauth2[$stamp] = new OAuth2\Server($storage, $params);
 			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\ClientCredentials($storage));
+			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\UserCredentials($storage));
 			// Future compatibility
 //			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\AuthorizationCode($storage));
 //			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\JwtBearer($storage));
@@ -600,6 +685,39 @@ class Billrun_Factory {
 //			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\UserCredentials($storage));
 		}
 		return self::$oauth2[$stamp];
+	}
+	
+	/**
+	 * method to receive jobs queue
+	 * 
+	 * @param string $name name of the queue; default name is jobs
+	 * 
+	 * @return Zend_Queue
+	 */
+	public static function queue($name = null, $timeout = null) {
+		if (empty($name)) {
+			$name = 'jobs';
+		}
+		if (!isset(self::$queues[$name])) {
+			$options = array(
+				'db' => Billrun_Factory::db()->getDb(),
+				'queueCollection' => Billrun_Factory::db()->getCollection($name . '_queues')->getMongoCollection(),
+				'messageCollection' => Billrun_Factory::db()->getCollection($name . '_messages')->getMongoCollection(),
+				'name' => $name,
+				'timeout' => $timeout,
+			);
+			self::$queues[$name] = new Zend_Queue('mongodb', $options);
+		} elseif (!empty($timeout)) {
+			self::$queues[$name]->setOption('timeout', $timeout);
+		}
+		return self::$queues[$name];
+	}
+	
+	public static function cleanQueue($name = null) {
+		if (empty($name)) {
+			$name = 'jobs';
+		}
+		self::$queues[$name] = null;
 	}
 
 

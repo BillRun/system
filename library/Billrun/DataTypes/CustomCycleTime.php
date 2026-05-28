@@ -14,6 +14,8 @@
  */
 class Billrun_DataTypes_CustomCycleTime extends Billrun_DataTypes_CycleTime {
 
+	protected $recurrenceConfig = [];
+
 	/**
 	 * Create a new instance of the cycle time class.
 	 * @param string $billrunKey - Billrun key to set the cycle times by.
@@ -21,6 +23,7 @@ class Billrun_DataTypes_CustomCycleTime extends Billrun_DataTypes_CycleTime {
 	public function __construct($billrunKey,$recurrenceConfig, $invoicing_day = null,$activationDate = null) {
 		$this->key = $billrunKey;
 		$this->invoicing_day = $invoicing_day;
+		$this->recurrenceConfig = $recurrenceConfig;
 		$recurrenceOffset = Billrun_Utils_Cycle::getRecurrenceOffset($recurrenceConfig,$billrunKey,$activationDate);
 		$startCycleKey = Billrun_Utils_Cycle::substractMonthsFromCycleKey($billrunKey,$recurrenceOffset ?  $recurrenceOffset -1 : $recurrenceConfig['frequency']- 1);
 		$this->start = Billrun_Billingcycle::getStartTime($startCycleKey, $invoicing_day);

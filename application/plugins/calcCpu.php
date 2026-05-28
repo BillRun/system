@@ -67,6 +67,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function removeDuplicates(Billrun_Processor $processor) {
 		Billrun_Factory::log('Plugin ' . $this->name . ' remove duplicates', Zend_Log::INFO);
 		$lines_coll = Billrun_Factory::db()->linesCollection();
+		$archive_coll = Billrun_Factory::db()->archiveCollection();
 		$data = &$processor->getData();
 		$stamps = array();
 		foreach ($data['data'] as $key => $line) {
@@ -82,6 +83,13 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			foreach ($existing_lines as $line) {
 				$stamp = $line['stamp'];
 				Billrun_Factory::log('Plugin ' . $this->name . ' skips duplicate line ' . $stamp, Zend_Log::ALERT);
+				$processor->unsetRow($stamp);
+				$processor->unsetQueueRow($stamp);
+			}
+			$existing_lines = $archive_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+			foreach ($existing_lines as $line) {
+				$stamp = $line['stamp'];
+				Billrun_Factory::log('Plugin ' . $this->name . ' skips duplicate archive line ' . $stamp, Zend_Log::ALERT);
 				$processor->unsetRow($stamp);
 				$processor->unsetQueueRow($stamp);
 			}

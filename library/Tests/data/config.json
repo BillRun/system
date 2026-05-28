@@ -234,7 +234,8 @@
 								{
 									"field_name": "services",
 									"system": true,
-									"mandatory": false
+									"mandatory": false,
+									"multiple": true
 								}
 							]
 						},
@@ -318,6 +319,21 @@
 									"editable": true,
 									"display": true,
 									"title": "Salutation"
+								},
+								{
+									"system" : false,
+									"select_list" : true,
+									"display" : true,
+									"editable" : true,
+									"field_name" : "invoice_shipping_method",
+									"default_value" : "email",
+									"show_in_list" : true,
+									"title" : "Invoice shipping method",
+									"mandatory" : false,
+									"select_options" : "email",
+									"changeable_props" : [
+										"select_options"
+									]
 								}
 							]
 						}
@@ -677,7 +693,7 @@
 										"name": "Preprice_Dynamic",
 										"host": "46.101.149.208",
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"remote_directory": "/yossi"
 									}
 								],
@@ -798,7 +814,7 @@
 										"user": "yossi",
 										"remote_directory": "/yossi",
 										"delete_received": false,
-										"password": "j8(B2c_sV",
+										"password": "",
 										"key": "Wholesale"
 									}
 								],
@@ -987,7 +1003,7 @@
 										"name": "computed_regex",
 										"host": "46.101.149.208",
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"remote_directory": "/yossi"
 									}
 								],
@@ -1086,7 +1102,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "p",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -1423,7 +1439,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "longest_prefix",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -1520,7 +1536,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "old_revision",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -1707,7 +1723,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "computed",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -1853,7 +1869,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "many_prefix",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -2379,7 +2395,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "conditions",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
@@ -2519,7 +2535,7 @@
 										"passive": false,
 										"delete_received": false,
 										"user": "ftp_user",
-										"password": "j8(B2c_sV",
+										"password": "",
 										"name": "Duplicate_mapping",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi",
@@ -2961,24 +2977,25 @@
 						"website": "example.com"
 					},
 					"invoice_export": {
-						"export": "files/invoices/",
-						"generator": {
-							"type": "WkPdf"
+						"export" : "files/invoices/",
+						"onetime_view_path" : "/views/invoices/onetime/",
+						"generator" : {
+							"type" : "WkPdf"
 						},
-						"disable_stamp_export_directory": 1,
-						"theme": "theme/theme1.css",
-						"header_tpl": "header/header_tpl.html",
-						"footer_tpl": "footer/footer_tpl.html",
-						"sumup_template": "sumup/sumup1.phtml",
-						"details_template": "details/details1.phtml",
-						"decimal_mark": ".",
-						"thousands_separator": ",",
-						"date_separator": "/",
-						"move_exported": 0,
-						"html_translation": [
+						"disable_stamp_export_directory" : 1,
+						"theme" : "/application/views/invoices/theme/theme1.css",
+						"sumup_template" : "/application/views/invoices/sumup/sumup1.phtml",
+						"details_template" : "/application/views/invoices/details/details1.phtml",
+						"decimal_mark" : ".",
+						"thousands_separator" : ",",
+						"date_separator" : "/",
+						"move_exported" : 0,
+						"html_translation" : [
 							"company_name",
 							"date"
-						]
+						],
+						"header" : "/header/header_tpl.phtml",
+						"footer" : "/footer/footer_tpl.phtml"
 					},
 					"export_generators": [],
 					"payment_gateways": [
@@ -2986,7 +3003,7 @@
 							"name": "CreditGuard",
 							"params": {
 								"user": "SDOC",
-								"password": "sD#4R!3r",
+								"password": "",
 								"mid": "10912",
 								"endpoint_url": "https://kupot1t.creditguard.co.il/xpo/Relay",
 								"redirect_terminal": "0962832",
@@ -3234,13 +3251,25 @@
 					},
 					"email_templates": {
 						"invoice_ready": {
-							"subject": "Your invoice is ready",
-							"content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
+							"templates":[{
+								"name": "default",
+								"label": "Default",
+								"conditions": [	
+								],
+								"subject": "Your invoice is ready",
+								"content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
+							}],
 							"html_translation": ["date", "invoice_id", "invoice_total", "invoice_due_date", "cycle_range", "company_email", "company_name"]
 						},
 						"fraud_notification": {
-							"subject": "Event [[event_code]] was triggered",
-							"content": "<pre>\n[[fraud_event_details]]</pre>\n"
+							"templates":[{
+								"name": "default",
+								"label": "Default",
+								"conditions": [	
+								],
+								"subject": "Event [[event_code]] was triggered",
+								"content": "<pre>\n[[fraud_event_details]]</pre>\n"
+							}]
 						}
 					},
 					"menu": {

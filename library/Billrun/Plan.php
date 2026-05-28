@@ -76,10 +76,13 @@ class Billrun_Plan extends Billrun_Service {
 	 */
 	protected function constructWithActivePlan($params) {
 		$date = new Mongodloid_Date($params['time']);
-		$plan = static::getByNameAndTime($params['name'], $date);
-		if ($plan) {
-			$this->data = $plan;
-			return;
+		
+		if (empty($params['disable_cache_plan'])) {
+			$plan = static::getByNameAndTime($params['name'], $date);
+			if ($plan) {
+				$this->data = $plan;
+				return;
+			}
 		}
 
 		$planQuery = array(
@@ -279,12 +282,10 @@ class Billrun_Plan extends Billrun_Service {
 		}
 
 		if ($startOffset > $tariff['to'] && !static::isValueUnlimited($tariff['to'])) {
-			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.", Zend_Log::WARN);
 			return false;
 		}
 
 		if ($endOffset < $tariff['from']) {
-			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.", Zend_Log::WARN);
 			return false;
 		}
 		return true;
@@ -310,7 +311,7 @@ class Billrun_Plan extends Billrun_Service {
 			// HACK :  fix for the month length differance between the  activation and the  plan change , NOTICE will only work on monthly charges
 			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
 				$startFratcion = 1 -($startOffset-floor($startOffset));
-				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation));
+				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation, false));
 				$startPricing += ((($startFratcion * date('t',$activation)) /  $currentDays) - $startFratcion);
 			}
 		}
@@ -319,12 +320,13 @@ class Billrun_Plan extends Billrun_Service {
 			// HACK :  fix for the month length differance between the  activation and the  plan change , NOTICE will only work on monthly charges
 			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
 				$endFratcion = 1 -($startOffset - floor($startOffset));
-				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation));
+				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation, false));
 				$endPricing += (( ($endFratcion * date('t',$activation)) / $currentDays) - $endFratcion);
 			}
 		}
 		//If the tariff is of expired service/plan don't charge anything
-		if(!static::isValueUnlimited($tariff['to']) && $tariff['to'] <= $startPricing && $tariff['from'] < $startPricing) {
+		if( (!static::isValueUnlimited($tariff['to']) && $tariff['to'] <= $startPricing && $tariff['from'] < $startPricing)
+			|| $startPricing > $endPricing)  {
             return 0;
 		}
 		$fullMonth = (round(($endPricing - $startPricing), 5) == 1 || $endPricing == $startPricing);

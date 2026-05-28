@@ -1,0 +1,35 @@
+actor: AcceptanceTester
+bootstrap: ../_support/Helper/BillRun/bootstrap.php
+error_level: E_ALL & ~E_WARNING & ~E_NOTICE
+modules:
+    enabled:
+        - Asserts
+        - \Helper\Api
+        - \Helper\All
+        - \Helper\BillRunAPI
+        - \Helper\BillRun\Mockups\israelInvoice
+        - \Helper\BillRun\Mockups\Crm
+        - \Helper\Aggregate
+        - \Helper\TestHelper
+        - \Helper\PaymentStatus
+        - \Helper\ResponseWrapper
+        - \Helper\CollectionWrapper
+        - \Helper\BillRun\Mockups\PaymentGateway
+        - \Helper\LogChecker
+        - WebDriver:
+            url: http://web
+            host: chrome
+            port: 4444
+            browser: chrome
+        - REST:
+            url: http://web
+            depends: PhpBrowser
+            part: Json
+        - MongoDb:
+              dsn: "mongodb://mongodb:27017/billing_container"
+              user: ""
+              password: ""
+#              dump_type: "mongodump-tar-gz"
+#              dump: "tests/_data/db_test_dump.tar.gz"
+              populate: false
+              cleanup: false

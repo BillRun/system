@@ -1,0 +1,1 @@
+/plugin/tests/api/plugin/shanitest.php

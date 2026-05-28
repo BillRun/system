@@ -59,12 +59,13 @@ class Billrun_Service {
 		} else {
 			$time = time();
 		}
+		$disableServiceCache = isset($params['disable_service_cache']) ? $params['disable_service_cache'] : false;
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
 		} else if (isset($params['id'])) {
-			$this->load(new Mongodloid_Id($params['id']));
+			$this->load(new Mongodloid_Id($params['id']), null, '_id', $disableServiceCache);
 		} else if (isset($params['name'])) {
-			$this->load($params['name'], $time, 'name');
+			$this->load($params['name'], $time, 'name', $disableServiceCache);
 		}
 		
 		if (isset($params['service_start_date'])) {
@@ -82,7 +83,7 @@ class Billrun_Service {
 		$this->groupSelected = null;
 		$this->strongestGroup = null;
 	}
-
+	
 	/**
 	 * load the service from DB
 	 * 
@@ -90,13 +91,16 @@ class Billrun_Service {
 	 * @param int $time unix timestamp
 	 * @param string $loadByField the field to load by the value
 	 */
-	protected function load($param, $time = null, $loadByField = '_id') {
+	protected function load($param, $time = null, $loadByField = '_id', $disableCache = false) {
 		if (is_null($time)) {
 			$queryTime = new Mongodloid_Date();
 		} else {
 			$queryTime = new Mongodloid_Date($time);
 		}
-		
+		if($disableCache){
+			$this->loadFromDb($param, $queryTime, $loadByField);
+			return;
+		}
 		switch ($loadByField) {
 			case 'name':
 				$this->data = self::getEntityByNameAndTime($param, $queryTime);
@@ -122,6 +126,8 @@ class Billrun_Service {
 			$queryTime = new Mongodloid_Date();
 		} else if (!$time instanceof Mongodloid_Date) {
 			$queryTime = new Mongodloid_Date($time);
+		} else {
+			$queryTime = $time;
 		}
 		$serviceQuery = array(
 			$loadByField => $param,
@@ -157,12 +163,33 @@ class Billrun_Service {
 		}
 		return $this->data;
 	}
+
+	public function setGroupValue($groupName, $newValue) {
+		$data =  $this->data->getRawData();
+		$path = 'include.groups.'. $groupName;
+		$group =	Billrun_Util::getIn($data, $path, false);
+		if ($group){
+			Billrun_Util::setIn($data, $path . '.value', $newValue);
+			$this->data->setRawData($data);
+		}
+
+	}
 	
+	/**
+	 * 
+	 * @param string $name the property name;
+	 * @param Mongodloid_Date $time the property time
+	 * 
+	 * @return mixed the property value
+	 */
 	public static function getByNameAndTime($name, $time) {
 		$items = self::getCacheItems();
 		if (isset($items['by_name'][$name])) {
 			foreach ($items['by_name'][$name] as $itemTimes) {
-				if ($itemTimes['from'] <= $time && (!isset($itemTimes['to']) || is_null($itemTimes['to']) || $itemTimes['to'] >= $time)) {
+				$time = $time->sec ?? $time;
+				$from = $itemTimes['from']->sec ?? $itemTimes['from'];
+				$to = isset($itemTimes['to']) ? ($itemTimes['to']->sec ?? $itemTimes['to']) : null;
+				if ($from <= $time && (is_null($to) || $to >= $time)) {
 					return $itemTimes['plan'];
 				}
 			}
@@ -231,14 +258,21 @@ class Billrun_Service {
 	 * method to receive all group rates of the current plan
 	 * @param array $rate the rate to check
 	 * @param string $usageType usage type to check
+	 * @param string $counters option to include or exclude counter services; available values: with, without, only
 	 * @return false when no group rates, else array list of the groups
 	 * @since 2.6
 	 */
-	public function getRateGroups($rate, $usageType) {
+	public function getRateGroups($rate, $usageType, $counters = 'without') {
 		$groups = array();
 		if (isset($this->data['include']['groups']) && is_array($this->data['include']['groups'])) {
 			foreach ($this->data['include']['groups'] as $groupName => $groupIncludes) {
-				if ((array_key_exists($usageType, $groupIncludes) || array_key_exists('cost', $groupIncludes) || isset($groupIncludes['usage_types'][$usageType])) && !empty($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) {
+				if (
+					(array_key_exists($usageType, $groupIncludes) || array_key_exists('cost', $groupIncludes) || isset($groupIncludes['usage_types'][$usageType]) || !empty($groupIncludes['counter_only'])) && 
+					!empty($groupIncludes['rates']) && 
+					(in_array($rate['key'], $groupIncludes['rates']) || (is_string($groupIncludes['rates']) && 
+						(strtoupper($groupIncludes['rates']) === 'ALL_RATES' || preg_match($groupIncludes['rates'], $rate['key']) === 1))) &&
+					($counters == 'with' || ($counters == 'without' && empty($groupIncludes['counter_only'])) || ($counters == 'only' && !empty($groupIncludes['counter_only'])))
+				) {
 					$groups[] = $groupName;
 				}
 			}
@@ -253,7 +287,7 @@ class Billrun_Service {
 		} else {
 			return array();
 		}
-		if (!empty($groups) && isset($this->data['include']['groups'])) {
+		if (!empty($groups) && isset($this->data['include']['groups']) && $counters == 'without') {
 			return array_intersect($groups, array_keys($this->data['include']['groups']));
 		}
 		return array();
@@ -283,7 +317,7 @@ class Billrun_Service {
 	 * @return true when the rate is part of group else false
 	 */
 	public function isRateInEntityGroup($rate, $usageType) {
-		if (count($this->getRateGroups($rate, $usageType))) {
+		if (count($this->getRateGroups($rate, $usageType, 'without'))) {
 			return true;
 		}
 		return false;
@@ -303,7 +337,7 @@ class Billrun_Service {
 	 */
 	protected function setNextStrongestGroup($rate, $usageType, $reset = FALSE) {
 		if (is_null($this->groups)) {
-			$this->groups = $this->getRateGroups($rate, $usageType);
+			$this->groups = $this->getRateGroups($rate, $usageType, 'without');
 		}
 		if (!count($this->groups)) {
 			$this->setEntityGroup(FALSE);
@@ -343,7 +377,7 @@ class Billrun_Service {
 				// on some cases we have limits to check through plugin
 				$limits = $this->data['include']['groups'][$staticGroup]['limits'];
 				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$staticGroup, $limits, $this, $usageType, $rate, $subscriberBalance));
-				if ($groupSelected === FALSE) {
+				if ($staticGroup === FALSE) {
 					return array('usagev' => 0);
 				}
 			}
@@ -423,7 +457,7 @@ class Billrun_Service {
 			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
 				// on some cases we have limits to check through plugin
 				$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$groupSelected, $limits, $this, $usageType, $rate));
+				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$groupSelected, $limits, $this, $usageType, $rate, false));
 				if ($groupSelected === FALSE) {
 					$this->unsetGroup($this->getEntityGroup());
 				}
@@ -519,7 +553,7 @@ class Billrun_Service {
 			return $this->data['include']['groups'][$group][$usaget];
 		}
 		$value = $this->data['include']['groups'][$group]['value'];
-		return $value == Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX: $value;
+		return $value === Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX: $value;
 	}
 	
 	/**
@@ -644,6 +678,58 @@ class Billrun_Service {
 			self::initEntities();
 		}
 		return self::$entities;
+	}
+
+	public static function applyEntityCacheChange($new, $old){
+		if( !empty(self::$entities)){//only for tests support (insert service on runtime)
+			if($old == null && $new == null){
+				return;
+			}else if($old == null){
+				$old = $new;
+			}
+			$id = strval($old['_id']);
+			if($new == null){//remove
+				unset(self::$entities['by_id'][$id]);
+				unset(self::$entities['by_name'][$old['name']]);
+			}else{
+				if(!($new instanceof Mongodloid_Entity)){
+					$new = new Mongodloid_Entity($new);
+				}
+				self::$entities['by_id'][$id] = $new;
+				if (!isset(self::$entities['by_name'][$old['name']])) {//insert
+					self::$entities['by_name'][$old['name']] = [];
+					self::$entities['by_name'][$old['name']][] = [
+						'entity' => $new,
+						'from'   => $new['from'],
+						'to'     => $new['to'],
+					];
+				}else{
+					$found = false;
+					foreach(self::$entities['by_name'][$old['name']] as &$entity){
+						if(strval($entitty['entity']['id']) == $id){//update
+							$entity = [
+								'entity' => $new,
+								'from'   => $new['from'],
+								'to'     => $new['to'],
+							];
+							$found = true;
+							break;
+						}
+					}
+					if(!$found){
+						self::$entities['by_name'][$old['name']][] = [//insert
+							'entity' => $new,
+							'from'   => $new['from'],
+							'to'     => $new['to']
+						];
+					}
+				}
+				
+				
+			}
+			
+			
+		}
 	}
 
 	/**

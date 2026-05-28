@@ -85,7 +85,8 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			$to = Billrun_Billingcycle::getBillrunEndTimeByDate($urtDate);
 			$period = "default";
 		}
-		$plan = Billrun_Factory::plan(array('name' => $this->row['plan'], 'time' => $urt, 'disableCache' => true));
+		$isRealtime = isset($this->row['realtime']) ? $this->row['realtime'] : false;
+		$plan = Billrun_Factory::plan(array('name' => $this->row['plan'], 'time' => $urt, 'disableCache' =>!$isRealtime, 'disable_cache_plan' => $isRealtime));
 		return $this->createBasicBalance($this->row['aid'], $this->row['sid'], $from, $to, $plan, $urt, $start_period, $period, $service_name, $service_id);
 	}
 	
@@ -252,8 +253,12 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 				// $subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected]['cost'];
 				$update['$inc']['balance.groups.' . $group . '.cost'] = $arategroup['cost'];
 				$update['$inc']['balance.groups.' . $group . '.count'] = 1;
-				$update['$set']['balance.groups.' . $group . '.left'] = $arategroup['left'];
-				$update['$set']['balance.groups.' . $group . '.total'] = $arategroup['total'];
+				if (empty($arategroup['counter_only'])) {
+					$update['$set']['balance.groups.' . $group . '.left'] = $arategroup['left'];
+					$update['$set']['balance.groups.' . $group . '.total'] = $arategroup['total'];
+				} else {
+					$update['$inc']['balance.groups.' . $group . '.usagev'] = $arategroup['usagev'];
+				}
 				if (isset($this->get('balance')['groups'][$group]['cost'])) {
 					$arategroup['usagesb'] = floatval($this->get('balance')['groups'][$group]['cost']);
 				} else {

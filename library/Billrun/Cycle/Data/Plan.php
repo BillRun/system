@@ -13,7 +13,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	use Billrun_Traits_ForeignFields;
 	
-	protected  static $copyFromChargeData = ['prorated_start','prorated_end'];
+	protected static $copyFromChargeData = ['prorated_start', 'prorated_end', 'prorated_start_date', 'is_upfront', 'split'];
 	protected $plan = null;
 	protected $name = null;
 	protected $start = 0;
@@ -42,10 +42,12 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	protected function getCharges($options) {
 		$charger = new Billrun_Plans_Charge();
+		if(Billrun_Utils_Cycle::shouldBeInCycle($options,  $options['cycle'])) {
 		//Only charge  if the configuration suggest it should be in the cycle
 		return empty($options['cycle']) || Billrun_Utils_Cycle::shouldBeInCycle($options,$options['cycle'])  ?
 					$charger->charge($options, $options['cycle']) :
 					[];
+		}
 	}
 
 	protected function getLine($chargeingKey, $chargeData) {
@@ -65,16 +67,16 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 				$entry[$field] = $chargeData[$field];
 			}
 		}
-		if (!empty($chargeData['start']) && $this->cycle->start() < $chargeData['start']) {
+		if (!empty($chargeData['start']) && ($this->cycle->start() < $chargeData['start'] || $chargeData['is_upfront'])) {
 			$entry['start'] = new Mongodloid_Date($chargeData['start']);
 		}
-		if (!empty($chargeData['end']) && $this->cycle->end() - 1 > $chargeData['end']) {
+		if (!empty($chargeData['end']) && ($this->cycle->end() - 1 > $chargeData['end']|| $chargeData['is_upfront'])) {
 			$entry['end'] = new Mongodloid_Date($chargeData['end']);
 		}
 
 		$entry['stamp'] = $this->generateLineStamp($entry);
 
-		$entry = $this->addExternalFoerignFields($entry);
+		$entry = $this->addExternalFoerignFields($entry,$chargeData);
 		$entry = $this->addTaxationToLine($entry);
 		unset($entry['tax']);
 		foreach ($this->subscriberFields as $fieldName => $value) {
@@ -106,8 +108,8 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		return array_merge($flatEntry, $this->stumpLine);
 	}
 	
-	protected function addExternalFoerignFields($entry) {
-		return array_merge($this->getForeignFields(array(), array_merge($this->foreignFields, $entry), true), $entry);
+	protected function addExternalFoerignFields($entry, $addedQueryData =[]) {
+		return array_merge($this->getForeignFields(array(), array_merge($this->foreignFields, $entry), true, $addedQueryData), $entry);
 	}
 
 	protected function generateLineStamp($line) {
@@ -117,7 +119,11 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 	
 	//TODO move this to the account/subscriber lines addition logic and work in batch mode.
 	protected function addTaxationToLine($entry) {
+		Billrun_Factory::dispatcher()->trigger('beforeAddTaxationToLine', array(&$entry, $this->cycle));
 		$entryWithTax = FALSE;
+		if( !empty($this->constructionOptions['rounding_rules']) ) {
+			$entry['rounding_rules'] = $this->constructionOptions['rounding_rules'];
+		}
 		for ($i = 0; $i < 3 && !$entryWithTax; $i++) {//Try 3 times to tax the line.
 			$taxCalc = Billrun_Calculator::getInstance(array('autoload' => false, 'type' => 'tax'));
 			$entryWithTax = $taxCalc->updateRow($entry);

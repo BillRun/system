@@ -54,13 +54,20 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected static $type = 'ssh';
 	
 	protected $port = '22';
+	protected $run_after_invoice_created;
+	protected $run_after_invoice_confirmed;
+	protected $run_after_cycle_finished;
+	protected $run_after_cycle_confirmed;
 	
 	public function __construct($options = array()) {		
 		$this->reports_details = isset($options['reports']) ? $options['reports'] : [];
 		$this->metabase_details = isset($options['metabase_details']) ? $options['metabase_details'] : [];
 		$this->export_details = isset($options['export']) ? $options['export'] : [];
 		$this->values = isset($options['added_data']) ? $options['added_data'] : [];
-		
+		$this->run_after_invoice_created = Billrun_Util::getIn($options, "run_after_invoice_created", false);
+		$this->run_after_invoice_confirmed = Billrun_Util::getIn($options, "run_after_invoice_confirmed", false);
+		$this->run_after_cycle_finished = Billrun_Util::getIn($options, "run_after_cycle_finished", false);
+		$this->run_after_cycle_confirmed = Billrun_Util::getIn($options, "run_after_cycle_confirmed", false);
 	}
 	
 	/**
@@ -79,6 +86,89 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$metabase_details = !empty($this->metabase_details);
 		$export_details = !empty($this->export_details);
 		return $reports_exist && !$all_disable && $metabase_details && $export_details;
+	}
+
+	/**
+	 * Function to create any MB report that should run after aggregating account data
+	 * @param Billrun_Cycle_Account $accountBillrun the billrun data of the account
+	 * @param array $aggregatedResults
+	 * @param Billrun_Aggregator_Customer $aggragator
+	 */
+	public function afterAccountInvoiceSaved (Mongodloid_Entity $invoice, Billrun_Cycle_Account_Invoice $accountBillrun) {
+		if (!$this->run_after_invoice_created) {
+			return;
+		}
+		$aid = $accountBillrun->getAid();
+		$billrun_key = $accountBillrun->getBillrunKey();
+		$invoice_data = $invoice->getRawData();
+		Billrun_Factory::log("Checking if any metabase report should run after account " . $aid . " invoice " . $invoice_data['invoice_id'] . " created", Zend_Log::DEBUG);
+		$params = [
+			'invoices' => [$invoice_data],
+			'event' => 'customer_invoice_created'
+		];
+		Billrun_Factory::dispatcher()->trigger('beforeRunMetabaseReport', array(&$params));
+		$this->runReports($params);
+	}
+
+	/**
+	 * Function to create any MB report that should run after confirming account invoice
+	 * @param array $invoice_bill the invoice bill data
+	 */
+	public function afterInvoiceConfirmed($invoice_bill, $invoice_data) {
+		if (!$this->run_after_invoice_confirmed) {
+			return;
+		}
+		Billrun_Factory::log("Checking if any metabase report should run after account " . $invoice_bill['aid'] . " invoice " . $invoice_bill['invoice_id'] . " confirmed", Zend_Log::DEBUG);
+		$params = [
+			'invoices' => [$invoice_data],
+			'event' => 'customer_invoice_confirmed'
+		];
+		Billrun_Factory::dispatcher()->trigger('beforeRunMetabaseReport', array(&$params));
+		$this->runReports($params);
+	}
+	
+	/**
+	 * Function to create any MB report that should run after billing cycle is done
+	 * @param array $data cycle invoices
+	 * @param Billrun_DataTypes_CycleTime $cycle
+	 * @param Billrun_Aggregator_Customer $aggragator
+	 */
+	public function afterCycleDone($data, $cycle, $aggragator) {
+		if (!$this->run_after_cycle_finished) {
+			return;
+		}
+		Billrun_Factory::log("Checking if any metabase report should run after cycle " . $cycle->key() . " finished", Zend_Log::DEBUG);
+		$params = [
+			'invoices' => array_map(function($invoice) {
+				return $invoice->getInvoice()->getRawData();
+			}, $data),
+			'billrun_key' => $cycle->key(),
+			'event' => 'cycle_finished'
+		];
+		Billrun_Factory::dispatcher()->trigger('beforeRunMetabaseReport', array(&$params));
+		$this->runReports($params);
+	}
+
+	/**
+	 * Function to create any MB report that should run after billing cycle confirmation
+	 * @param array $invoices cycle confirmed invoices
+	 * @param string $billrun_key cycle stamp
+	 */
+	public function afterInvoicesConfirmation($invoices, $billrun_key) {
+		if (!$this->run_after_cycle_confirmed) {
+			return;
+		}
+		if (!Billrun_Util::isBillrunKey($billrun_key) || Billrun_Billingcycle::getCycleStatus($billrun_key) !== 'confirmed') {
+			return;
+		}
+		Billrun_Factory::log("Checking if any metabase report should run after cycle " . $billrun_key . " confirmed", Zend_Log::DEBUG);
+		$params = [
+			'invoices' => $invoices,
+			'billrun_key' => $billrun_key,
+			'event' => 'cycle_confirmed'
+		];
+		Billrun_Factory::dispatcher()->trigger('beforeRunMetabaseReport', array(&$params));
+		$this->runReports($params);
 	}
 
 	public function cronHour () {
@@ -125,8 +215,16 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"title" => "MB reports - export server's password",
 				"editable" => true,
 				"display" => true,
-				"nullable" => false,
-				"mandatory" => true
+				"nullable" => true,
+				"mandatory" => false
+			], [
+				"type" => "text",
+				"field_name" => "export.key_file_name",
+				"title" => "MB reports - export server's key file name",
+				"editable" => true,
+				"display" => true,
+				"nullable" => true,
+				"mandatory" => false
 			], [
 				"type" => "string",
 				"field_name" => "export.remote_directory",
@@ -151,20 +249,57 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"display" => true,
 				"nullable" => false,
 				"mandatory" => true,
+			], [
+				'type' => 'boolean',
+				'field_name' => 'run_after_invoice_created',
+				'title' => 'Run after account invoice created',
+				'mandatory' => false,
+				'editable' => true,
+				'display' => true,
+				'nullable' => false,
+				'default' => false
+			], [
+				'type' => 'boolean',
+				'field_name' => 'run_after_invoice_confirmed',
+				'title' => 'Run after account invoice confirmed',
+				'mandatory' => false,
+				'editable' => true,
+				'display' => true,
+				'nullable' => false,
+				'default' => false
+			], [
+				'type' => 'boolean',
+				'field_name' => 'run_after_cycle_finished',
+				'title' => 'Run after billing cycle done',
+				'mandatory' => false,
+				'editable' => true,
+				'display' => true,
+				'nullable' => false,
+				'default' => false
+			], [
+				'type' => 'boolean',
+				'field_name' => 'run_after_cycle_confirmed',
+				'title' => 'Run after billing cycle confirmed',
+				'mandatory' => false,
+				'editable' => true,
+				'display' => true,
+				'nullable' => false,
+				'default' => false
 			]
 		];
 	}
 	
 	/**
-	 * Function to fetch the reports that should run in the current day and hour.
+	 * @param array $params
+	 * Function to fetch the reports that should run in the relevant timing.
 	 */
-	public function runReports () {
+	public function runReports ($params = []) {
 		if (!$this->validateReportsConfStructure()) {
 			Billrun_Factory::log("Metabase reports - missing reports/metbase details/export info/all the reports are disabled. No action was done.", Zend_Log::WARN);
 			return;
 		}
-		$reports = $this->getReportsToRun();
-		Billrun_Factory::log("Found " . count($reports) . " reports to run."  , Zend_Log::INFO);
+		$reports = $this->getReportsToRun($params);
+		Billrun_Factory::log("Found " . count($reports) . " metabase reports to run."  , Zend_Log::INFO);
 		foreach ($reports as $index => $report_settings) {
 			if (@class_exists($report_class = 'Report_' . $report_settings['name'])) {
 				$report = new $report_class($report_settings);
@@ -173,7 +308,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			$metabase_url = rtrim($this->metabase_details['url'], "/");
 			try {
-				$report_params = $report->getReportParams ();
+				$report_params = $report->getReportParams($params);
 				$params_query = $this->createParamsQuery ($report_params);
 				Billrun_Factory::log($report->name . " report's params json query: " . $params_query, Zend_Log::DEBUG);
 				$this->fetchReport($report, $metabase_url, $params_query);
@@ -188,9 +323,9 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			try {
 				Billrun_Factory::log("Saving " . $report->name . " report." , Zend_Log::DEBUG);
-				$this->save($report);
+				$this->save($report, $params);
 				Billrun_Factory::log("Uploading " . $report->name . " report." , Zend_Log::INFO);
-				$this->upload($report);
+				$this->upload($report, $params);
 			} catch (Exception $e) {
 				Billrun_Factory::log("Report: " . $report_settings['name'] . " saving ERR: " . $e->getMessage(), Zend_Log::ALERT);
 				continue;
@@ -202,11 +337,12 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Function that returns the reports that should run in the current day and hour.
 	 * @return array of the relevant reports settings.
 	 */
-	protected function getReportsToRun() {
+	protected function getReportsToRun($params = []) {
 		$reportsToRun = [];
 		foreach ($this->reports_details as $reportSettings) {
-			if ((isset($reportSettings['enable']) ? $reportSettings['enable'] : true) && $this->shouldReportRun($reportSettings)) {
-				Billrun_Factory::log("Report: " . $reportSettings['name'] . " should run." , Zend_Log::INFO);
+			if ((isset($reportSettings['enable']) ? $reportSettings['enable'] : true) && $this->shouldReportRun($reportSettings, $params)) {
+				Billrun_Factory::log("Metabase report: " . $reportSettings['name'] . " should run." , Zend_Log::INFO);
+				Billrun_Factory::dispatcher()->trigger('beforeBuildReportSettings', array(&$reportSettings, $params, $this));
 				$reportsToRun[] = $reportSettings;
 			}
 		}
@@ -222,10 +358,15 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function shouldReportRun($reportSettings, $params = []) {
 		$currentDay = intval(date('d'));
 		$currentHour = intval(date('H'));
-		$isRightHour = $reportSettings['hour'] == $currentHour;
+		$isRightDay = $isRightHour = false;
+		if (isset($reportSettings['timing']) && isset($params['event'])) {
+			return $reportSettings['timing'] === $params['event'];
+		} else {
+			$isRightHour = isset($reportSettings['hour']) ? $reportSettings['hour'] == $currentHour : false;
 		$isRightDay = true;
 		if (!empty($reportSettings['day']) && (intval($reportSettings['day']) != $currentDay)) {
 			$isRightDay = false;
+			}
 		}
 
 		return $isRightDay && $isRightHour;
@@ -276,8 +417,8 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Function that saves the report's files locally
 	 * @param Report $report
 	 */
-	public function save($report) {
-		$file_path = $this->export_details['export_directory'] . DIRECTORY_SEPARATOR . $report->getFileName();
+	public function save($report, $manager_params) {
+		$file_path = $this->export_details['export_directory'] . DIRECTORY_SEPARATOR . $report->getFileName($manager_params);
 		Billrun_Factory::log("Saving " . $report->name . " under: " . $file_path , Zend_Log::INFO);
 		file_put_contents($file_path, $report->getData());
 	}
@@ -286,25 +427,59 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Function that saves the report's files remotely 
 	 * @param Report $report
 	 */
-	public function upload($report) {
-		$hostAndPort = $this->export_details['host'] . ':'. $this->port;
-		$auth = array(
-			'password' => $this->export_details['password'],
-		);
+	public function upload($report, $manager_params) {
+		$export_conf = !empty($report_export = $report->getExportDetails()) ? $report_export : $this->export_details;
+		$hostAndPort = $export_conf['host'] . ':'. (!empty($export_conf['port']) ? $export_conf['port'] : $this->port);
+		$fileName = $report->getFileName($manager_params);
+		// Check if private key exist
+		if (isset($export_conf['key_file_name'])) {		
+			Billrun_Factory::log("Found key file name configuration.." , Zend_Log::DEBUG);
+			$key_file_name = basename($export_conf['key_file_name']);
+			Billrun_Factory::log("Validating key file name.." , Zend_Log::DEBUG);
+			if (!preg_match("/^([-\.\_\w]+)$/", $key_file_name)) {
+				throw new Exception("Key file name isn't valid : " . $key_file_name . ". Couldn't upload " . $fileName . " report' file");
+			}
+			Billrun_Factory::log("Key file name : " .  $key_file_name . " is valid. Checking if the key file exists" , Zend_Log::DEBUG);
+			$key_file_path = Billrun_Util::getBillRunPath('application/plugins/metabaseReports/keys/' . $key_file_name);
+			if (!file_exists($key_file_path) || !is_file($key_file_path)) {
+				throw new Exception("Couldn't find " . $key_file_name . " key file under: " . $key_file_path . ". Couldn't upload " . $fileName . " report' file");
+			}
+			Billrun_Factory::log("Found " . $key_file_name . " key file under : " . $key_file_path , Zend_Log::DEBUG);
+			$auth = array(
+				'key' => $key_file_path,
+			);
+		} else {
+			$auth = array(
+				'password' => $export_conf['password'],
+			);
+		}
 		$connection = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
 		Billrun_Factory::log()->log("Connecting to SFTP server: " . $connection->getHost() , Zend_Log::INFO);
-		$connected = $connection->connect($this->export_details['user']);
+		$connected = $connection->connect($export_conf['user']);
 		 if (!$connected){
 			 Billrun_Factory::log()->log("SSH: Can't connect to server", Zend_Log::ALERT);
 			 return;
 		 }
 		Billrun_Factory::log()->log("Success: Connected to: " . $connection->getHost() , Zend_Log::INFO);
-        $fileName = $report->getFileName();
-		Billrun_Factory::log("Uploading " . $fileName . " to " . $this->export_details['remote_directory'], Zend_Log::INFO);
+		Billrun_Factory::log("Uploading " . $fileName . " to " . $export_conf['remote_directory'], Zend_Log::INFO);
 		if (!empty($connection)){
 			try {
 				$local = $this->export_details['export_directory'] . '/' . $fileName;
-				$remote = $this->export_details['remote_directory'] . '/' . $fileName;
+				Billrun_Factory::log()->log("Checking if a remote directory was configured for report " . $report->name . " before uploading", Zend_Log::DEBUG);
+				if (empty($export_conf['remote_directory'])) {
+					$current_dir = $connection->getConnection()->pwd();
+					Billrun_Factory::log()->log("Didn't find remote directory configuration. Uploading " . $fileName . " report file to current directory " . $current_dir, Zend_Log::DEBUG);
+					$remote = $current_dir . DIRECTORY_SEPARATOR . $fileName;
+				} else {
+					Billrun_Factory::log()->log("Found remote directory configuration. Uploading " . $fileName . " report file to " . $export_conf['remote_directory'], Zend_Log::DEBUG);
+					$remote = $export_conf['remote_directory'] . DIRECTORY_SEPARATOR . $fileName;
+					$remoteDir = dirname($remote);
+					if (!$connection->getConnection()->is_dir($remoteDir)) {
+						Billrun_Factory::log("Remote directory does not exist. Creating: " . $remoteDir, Zend_Log::DEBUG);
+						$connection->getConnection()->mkdir($remoteDir, 0770, true);
+					}
+				}
+				Billrun_Factory::log()->log("Trying to upload file to " . $remote, Zend_Log::DEBUG);
 				$response = $connection->put($local, $remote);
 			} catch (Exception $e) {
 				Billrun_Factory::log("Report file: " . $fileName . " uploading ERR: " . $e->getMessage(), Zend_Log::ALERT);
@@ -318,6 +493,9 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
+	public function getExportDetails() {
+		return $this->export_details;
+    }
 }
 
 class Report {
@@ -344,7 +522,19 @@ class Report {
 	 * Hour to run the report.
 	 * @var number 
 	 */
-	public $hour;
+	public $hour = null;
+	
+	/**
+	 * Predefined timing to run the report
+	 * @var string
+	 */
+	public $timing = null;
+
+	/**
+	 * export details
+	 * @var array
+	 */
+	public $export_details;
 	
 	/**
 	 * Csv file name.
@@ -388,6 +578,9 @@ class Report {
 	 * @var boolean 
 	 */
 	protected $enabled;
+	public $processed_params = [];
+	public $processed_file_name = null;
+
 	public function __construct($options) {
 		if (is_null($options['id'])) {
 			throw new Exception("Report ID is missing");
@@ -395,7 +588,8 @@ class Report {
 		$this->id = $options['id'];
 		$this->name = $options['name'];
 		$this->day = !empty($options['day']) ? $options['day'] : $this->day;
-		$this->hour = $options['hour'];
+		$this->hour = isset($options['hour']) ? $options['hour'] : $this->hour;
+		$this->timing = isset($options['timing']) ? $options['timing'] : $this->timing;
 		$this->file_name_params = isset($options['filename_params']) ? $options['filename_params'] : [];
 		$this->file_name_structure = isset($options['filename']) ? $options['filename'] : '';
 		$this->csv_name = isset($options['csv_name']) ? $options['csv_name'] : "";
@@ -403,42 +597,108 @@ class Report {
 		$this->need_post_process = !empty($options['need_post_process']) ? $options['need_post_process'] : false;
 		$this->format = $this->need_post_process ? "json" : "csv";
 		$this->enabled = !empty($options['enable']) ? $options['enable'] : true;
+		$this->export_details = !empty($options['export']) ? $options['export'] : [];
 		
 	}
 
 	public function reportPostProcess ($values = []) {
-		$data = array_map('str_getcsv', explode("\n", $report->getData()));
+		$data = array_map('str_getcsv', explode("\n", $this->getData()));
 		return;
 	}
 
 	/**
 	 * Function that process the configured report params, and return it as array.
-	 * @return type
+	 * @return array Reports API params
 	 * @throws Exception - if one of the configured params is in wrong configuration.
 	 */
-	public function getReportParams () {
+	public function getReportParams ($manager_params = []) {
 		$params = [];
 		if (!empty($this->params)) {
 			foreach ($this->params as $index => $param) {
 				switch ($param['type']) :
 					case "date" :
-						$dateFormat = isset($param['format']) ? $param['format'] : 'Y-m-d';
-						if (isset($param['value']) && is_array($param['value'])) {
+						$date = "";
+						if (preg_match('/^\[\[/', $param['value'])) {
+							$date = $this->getPlaceHolderValue($param, $manager_params);
+						} elseif (isset($param['value']) && is_array($param['value'])) {
 							$date = Billrun_Util::calcRelativeTime($param['value'],time());
-							$params[$param['template_tag']]['value'] = date($dateFormat, $date);
-						} else { throw new Exception("Invalid params for 'date' type, in parameter" . $param['template_tag']); }
+						}
+						if (empty($date)) {
+							throw new Exception("Invalid params for 'date' type, in parameter" . $param['template_tag']); 
+						}
+						$dateFormat = isset($param['format']) ? $param['format'] : 'Y-m-d';
+						$value = date($dateFormat, $date);
 					break;
-					case "string" || "number" : 
-						$params[$param['template_tag']]['value'] = $param['value'];
+					case "string":
+					case "number":
+						$value = $this->getNumberOrStringTranslationValue($param, $manager_params);
 					break;
 					default : 
-						throw new Exception("Invalid param type, in parameter" . $param['template_tag']);
+						throw new Exception("Invalid param type, in parameter " . $param['template_tag']);
 				endswitch;
-				$params[$param['template_tag']]['template-tag'] = $param['template_tag'];
-				$params[$param['template_tag']]['type'] = $param['type'];
+				$params[$param['template_tag']] = [
+					'value' => $value,
+					'template-tag' => $param['template_tag'],
+					'type' => $param['type']
+				];
+				$this->processed_params[$param['template_tag']] = $value;
 			}
 		}
 		return $params;
+	}
+
+	public function getPlaceHolderValue($param, $manager_params) {
+		$place_holder_key = str_replace(["[[", "]]"], "", $param['value']);
+		$invoice = null;
+		if (!empty($manager_params['invoices'])) {
+			$invoice = current($manager_params['invoices']);
+		}
+		switch ($place_holder_key) : 
+			case 'customer_id' :
+				if (is_null($invoice)) {
+					throw new Exception("customer_id placeholder isn't avilable in " . $manager_params['event'] . " timing");
+				}
+				return $invoice['aid'];
+			break;
+			case 'cycle_start_time':
+				return is_null($invoice) ? Billrun_Billingcycle::getStartTime($manager_params['billrun_key']) : $invoice['start_date']->sec;
+			break;
+			case 'cycle_end_time':
+				return is_null($invoice) ? Billrun_Billingcycle::getEndTime($manager_params['billrun_key']) :  $invoice['end_date']->sec;
+			break;
+			default:
+				$plugin_prefix = "plugin_";
+				if (strpos($place_holder_key, $plugin_prefix) === 0) { // Checks if placeholder starts with "plugin_"
+					$actual_attribute_key = substr($place_holder_key, strlen($plugin_prefix));
+					if (!is_null($invoice) && isset($invoice['attributes'][$actual_attribute_key])) {
+						return $invoice['attributes'][$actual_attribute_key];
+					} else {
+						throw new Exception("Plugin-specific placeholder '" . $place_holder_key . "' requires 'attributes." . $actual_attribute_key . "' in invoice, but it's missing for " . ($invoice['aid'] ?? 'N/A') . " in " . $manager_params['event'] . " timing.");
+					}
+				}
+				throw new Exception("Unsupported placeholder " . $place_holder_key . ", in parameter " . (isset($param['template_tag']) ? $param['template_tag'] : $param['param']));
+			endswitch;
+	}
+
+	public function getRelevantBillrunKey($billrun_key) {
+		switch ($billrun_key) {
+			case 'current':
+				return Billrun_Billrun::getActiveBillrun();
+			case 'first_unconfirmed':
+				if (($last = Billrun_Billingcycle::getLastConfirmedBillingCycle()) != Billrun_Billingcycle::getFirstTheoreticalBillingCycle()) {
+						return Billrun_Billingcycle::getFollowingBillrunKey($last);
+				}
+				if (is_null($lastStarted = Billrun_Billingcycle::getFirstStartedBillingCycle())) {
+						return $last;
+				}
+				return $lastStarted;
+			case 'last_confirmed':
+				return Billrun_Billingcycle::getLastConfirmedBillingCycle();
+			case 'last_cycle':
+				return Billrun_Billingcycle::getPreviousBillrunKey(Billrun_Billingcycle::getBillrunKeyByTimestamp(time()));
+			default:
+				return false;
+		}
 	}
 	
 	public function getData() {
@@ -453,29 +713,42 @@ class Report {
 		return $this->id;
 	}
 	
-	public function getFileName() {
-		$name = !empty($this->csv_name) ? $this->csv_name : $this->name;
-		$default_file_name = strtolower(str_replace(" ", "_", $name)) . '_' . date('Ymd', time()) . '.csv';
+	public function getFileName($manager_params = []) {
+		if (!is_null($this->processed_file_name)) {
+			return $this->processed_file_name;
+		}
+		$this->processed_file_name = $this->getDefaultFileName($manager_params);
 		if (!empty($this->file_name_params)) {
 			$translations = array();
 			foreach ($this->file_name_params as $paramObj) {
-				$res = $this->getTranslationValue($paramObj);
-				if($res == false){
+				/*if (isset($this->processed_params[$paramObj['']])) {
+
+				}*/
+				if (isset($paramObj['linked_entity'])) {
+					//Only invoice is supported as linked entity && report must be in account level
+					if (!isset($manager_params['invoices']) && !isset($this->processed_params['aid'])) {
+						Billrun_Factory::log("Report " . $this->name . " file name configuration is invalid - linked entity is used while it's not avilable. Default file name was used" , Zend_Log::ALERT);
+						return;						
+					}
+					$invoice_data = current($manager_params['invoices']);
+					$paramObj['value'] = Billrun_Util::getIn($invoice_data, $paramObj['linked_entity']['field_name'], "");
+					$res = $this->getTranslationValue($paramObj, $manager_params);
+				} else {
+					$res = $this->getTranslationValue($paramObj, $manager_params);
+				}
+				if($res === false){
 					break;
 				}
 				$translations[$paramObj['param']] = $res;
 			}
-			if ($res == false) {
-				return $default_file_name;
-			} else {
-				return Billrun_Util::translateTemplateValue($this->file_name_structure, $translations, null, true);
+			if ($res !== false) {
+				$this->processed_file_name = Billrun_Util::translateTemplateValue($this->file_name_structure, $translations, null, true);
 			}
-		} else {
-			return $default_file_name;
 		}
+		return $this->processed_file_name;
 	}
 	
-	protected function getTranslationValue($paramObj) {
+	protected function getTranslationValue($paramObj, $manager_params = []) {
         if (!isset($paramObj['type']) || !isset($paramObj['value'])) {
 			Billrun_Factory::log()->log("Missing filename params definitions for $this->name report. Default file name was taken", Zend_Log::ERR);
 			return false;
@@ -483,8 +756,15 @@ class Report {
         switch ($paramObj['type']) {
             case 'date':
                 $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
-                $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+				if (preg_match('/^\[\[/', $paramObj['value'])) {
+					$dateValue = $this->getPlaceHolderValue($paramObj, $manager_params);
+				} elseif (is_numeric($paramObj['value'])) {
+					$dateValue = $paramObj['value'];
+				} else {
+                	$dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+				}
                 return date($dateFormat, $dateValue);
+			break;
             case 'autoinc':
                 if (!isset($paramObj['min_value']) && !isset($paramObj['max_value'])) {
 					Billrun_Factory::log()->log("Missing filename params definitions for $this->name report. Default file name was taken", Zend_Log::ERR);
@@ -506,11 +786,34 @@ class Report {
                     $this->padSequence($seq, $paramObj);
                 }
                 return $seq;
+			break;
+			case 'number':
+			case 'string':
+				return $this->getNumberOrStringTranslationValue($paramObj, $manager_params);
+			break;
             default:
 				Billrun_Factory::log()->log("Unsupported filename_params type for $this->name report. Default file name was taken", Zend_Log::ERR);
 				return false;
         }
     }
+
+	protected function getNumberOrStringTranslationValue($param, $manager_params = []) {
+		$value = isset($param['value']) ? $param['value'] : "";
+		if (preg_match('/^\[\[/', $param['value'])) {
+			$value = $this->getPlaceHolderValue($param, $manager_params);
+		} else {
+			if ($param['type'] == 'string' && isset($param['format']) && $param['format'] == 'billrun_key') {
+				$billrun_key = Billrun_Util::isBillrunKey($param['value']) ? $param['value'] : $this->getRelevantBillrunKey($param['value']);
+				if ($billrun_key !== false) {
+						Billrun_Factory::log("Creating params query/file name for billrun key: " . $billrun_key . ", for report: " . $this->name, Zend_Log::DEBUG);
+				} else {
+						throw new Exception("Unsupported billrun key input: " . $param['value'] . ", for report: " . $this->name);
+				}
+				$value = $billrun_key;
+			}
+		}
+		return $value;
+	}
 	
 	protected function padSequence($seq, $padding) {
         $padDir = isset($padding['direction']) ? $padding['direction'] : STR_PAD_LEFT;
@@ -518,5 +821,20 @@ class Report {
         $length = isset($padding['length']) ? $padding['length'] : strlen($seq);
         return str_pad(substr($seq, 0, $length), $length, $padChar, $padDir);
     }
+
+	public function getExportDetails() {
+		return $this->export_details;
+    }
+
+	protected function getDefaultFileName($manager_params = []) {
+		$name = !empty($this->csv_name) ? $this->csv_name : $this->name;
+		$res = strtolower(str_replace(" ", "_", $name)) . '_' . date('Ymd', time()) . '.csv';
+		//Only invoice is supported as linked entity && report must be in account level
+		if (isset($manager_params['invoices']) && isset($this->processed_params['aid'])) {
+			$invoice_data = current($manager_params['invoices']);
+			$res = strtolower(str_replace(" ", "_", $name)) . '_' . $invoice_data['aid'] . '_' . date('Ym', $invoice_data['start_date']->sec) . '.csv';
+		}
+		return $res;
+	}
 
 }

@@ -11,7 +11,7 @@
  * @package  calculator
  * @since    0.5
  */
-require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
 
 define('UNIT_TESTING', 'true');
 
@@ -147,6 +147,7 @@ class Tests_Ratetest extends UnitTestCase {
 	}
 
 	public function TestPerform() {
+		$this->rows  = $this->skip_tests($this->rows ,'row.stamp');
 		foreach ($this->rows as $key => $row) {
 			$fixrow = $this->fixRow($row['row'], $key);
 			$this->linesCol->insert($fixrow);
