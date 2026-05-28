@@ -51,7 +51,7 @@ codecept:
     - mkdir logs cache
     - chmod 777 logs/ cache/
     - cp $TEST_ENV_CODECEPT $CI_PROJECT_DIR/tests/.env
-    - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+    - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-tests.yml up --wait --build --detach
   script:
