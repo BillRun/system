@@ -95,4 +95,33 @@ class aggrgateInternalModeTest extends \Codeception\Test\Unit
         $this->tester->assertEquals(1, $this->tester->grabCollectionCount('billrun', array('billrun_key' => $stamp)));
     }
 
+        public function testAggregatePdfCreate()
+    {
+        $billruns =\Billrun_Factory::db()->billrunCollection();
+        $billruns->remove(['_id'=>['$exists' => true]]);
+        $this->tester->generatePlan();
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->tester->createAccountWithAllMandatoryCustomFields(["firstname" => "or1"]);
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $aid1 = $account['aid'];
+        $this->tester->generateSubscriber(
+            [
+                'aid' => $aid1,
+                'plan' => $plan['name'],
+    
+            ]
+        );
+        $subscriber = json_decode($this->tester->grabResponse(), true)['entity'];
+        $stamp = "202511";
+        $this->defaultOptions['force_accounts'] = [$aid1];
+        $this->defaultOptions["stamp"] = $stamp;
+        $this->defaultOptions['generate_pdf'] = 0;
+        $this->tester->runCycle($this->defaultOptions);
+
+        $billrun = $this->tester->grabFromCollection('billrun', ['billrun_key' => $stamp, 'aid' => $aid1]);
+        $this->tester->assertNotEmpty($billrun, "billrun document not found for aid={$aid1} and billrun_key={$stamp}");
+        $this->tester->assertNotEmpty($billrun['invoice_file'] ?? null, "invoice_file path is empty on billrun document");
+        $this->tester->assertFileExists($billrun['invoice_file'], "PDF file not created at path: " . ($billrun['invoice_file'] ?? ''));
+    }
+
 }
