@@ -12,4 +12,12 @@ if (\Billrun_Factory::config()->isProd()) {
     exit(1);
 }
 Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+spl_autoload_register(function ($class) {
+    if (strpos($class, 'Models_') === 0) {
+        $file = APPLICATION_PATH . '/application/modules/Billapi/' . str_replace('_', '/', $class) . '.php';
+        if (file_exists($file)) {
+            require_once $file;
+        }
+    }
+});
 Yaf_Loader::getInstance()->import(APPLICATION_PATH . '/vendor/autoload.php');
