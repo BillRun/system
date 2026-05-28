@@ -20,7 +20,7 @@ class aggrgateInternalModeTest extends \Codeception\Test\Unit
     protected function _before()
     {
         ini_set('error_reporting', E_ALL & ~E_WARNING & ~E_NOTICE);
-        Billrun_Factory::config()->setInternalSubscribersMode();
+        $this->tester->enableDBModeSettings();
     }
 
     protected function _after()
@@ -115,7 +115,7 @@ class aggrgateInternalModeTest extends \Codeception\Test\Unit
         $stamp = "202511";
         $this->defaultOptions['force_accounts'] = [$aid1];
         $this->defaultOptions["stamp"] = $stamp;
-        $this->defaultOptions['generate_pdf'] = 0;
+        $this->defaultOptions['generate_pdf'] = 1;
         $this->tester->runCycle($this->defaultOptions);
 
         $billrun = $this->tester->grabFromCollection('billrun', ['billrun_key' => $stamp, 'aid' => $aid1]);

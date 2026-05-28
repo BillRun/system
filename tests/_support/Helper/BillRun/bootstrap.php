@@ -1,6 +1,6 @@
 <?php
 ini_set('yaf.use_spl_autoload', 1); // to not interrupt Codeception
-defined('APPLICATION_PATH') || define('APPLICATION_PATH', '.');
+defined('APPLICATION_PATH') || define('APPLICATION_PATH', realpath(dirname(__DIR__, 4)));
 require_once(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARATOR . 'config.php');
 define('MOCKUP_URL', 'http://mockup:8081');
 define('BILLRUN_URL', 'http://web');
