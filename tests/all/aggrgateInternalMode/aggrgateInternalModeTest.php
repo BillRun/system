@@ -20,7 +20,7 @@ class aggrgateInternalModeTest extends \Codeception\Test\Unit
     protected function _before()
     {
         ini_set('error_reporting', E_ALL & ~E_WARNING & ~E_NOTICE);
-        $this->tester->enableDBModeSettings();
+        Billrun_Factory::config()->setInternalSubscribersMode();
     }
 
     protected function _after()
