@@ -2,10 +2,10 @@ from php:8.4-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
 RUN apt-get update && apt-get install -y \
-        wkhtmltopdf wget  \
+        wget  \
 		libpng-dev zlib1g-dev libzip-dev libgmp-dev  \
                 libssl-dev unzip \ 
-                openjdk-17-jre-headless \
+                openjdk-21-jre-headless \
     && pecl install yaf \
     && pecl install mongodb-2.1.8 \
     && pecl install xdebug \
@@ -35,7 +35,9 @@ WORKDIR /billrun
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 COPY composer.json /var/www/html/
+COPY composer.lock /var/www/html/
 
 RUN composer install -d /var/www/html/  # in production we need to add --no-dev
+RUN ln -sf behat/gherkin/i18n.php /var/www/html/vendor/i18n.php
 
 CMD ["php-fpm"]

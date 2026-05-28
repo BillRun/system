@@ -44,6 +44,12 @@ RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 COPY ./ /billrun
 
+# Install Composer and project PHP dependencies (vendor/ is gitignored, so it is
+# not part of the build context and must be generated at image build time).
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress \
+    && rm /usr/local/bin/composer
+
 RUN mkdir -p /billrun/logs && touch /billrun/logs/debug.log && chmod 777 /billrun/logs/debug.log
 RUN mkdir -p /billrun/logs/container && touch /billrun/logs/container/debug.log && chmod 777 /billrun/logs/container/debug.log
 
