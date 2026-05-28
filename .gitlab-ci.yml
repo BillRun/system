@@ -131,7 +131,7 @@ build:
     DOCKER_TLS_CERTDIR: ""
   script:
     - echo "Building Docker image from Tag $CI_COMMIT_TAG"
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
     - |
       # Move :latest only when this tag is the highest stable tag in the repo
       # AND its major version is >= 5. A "stable" tag is exactly
