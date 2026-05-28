@@ -14,7 +14,10 @@ services:
         environment:
         - "APPLICATION_ENV=container"    
     php:
-        image: git.bill.run:5050/sdoc/billrun/billrun-base:1.0.0
+        build: 
+            context: ./billrun-php74
+            dockerfile: Dockerfile
+        image: billrun-php74
         container_name: billrun-app
         privileged: true
         restart: always
