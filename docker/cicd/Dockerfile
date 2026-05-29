@@ -1,4 +1,4 @@
-FROM php:7.4-fpm
+FROM php:8.5-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -30,8 +30,8 @@ RUN wget -O /tmp/jsignpdf.zip https://github.com/JSignPdf/JSignPdfBin/archive/re
 WORKDIR /billrun
 # Copy over custom configurations
 # (Assuming php-fpm.conf and php.ini are still in the old directory. If they are also in cicd, change their source paths too!)
-COPY docker/billrun-docker/billrun-php74/php-fpm.conf /usr/local/etc/
-COPY docker/billrun-docker/billrun-php74/php.ini /usr/local/etc/php/
+COPY docker/billrun-docker/billrun-php85/php-fpm.conf /usr/local/etc/
+COPY docker/billrun-docker/billrun-php85/php.ini /usr/local/etc/php/
 
 # These are now pulling right from your docker/cicd folder
 COPY docker/cicd/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
