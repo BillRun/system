@@ -2,30 +2,26 @@ FROM php:8.5-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
-        wkhtmltopdf wget  \
+        wget  \
         libpng-dev zlib1g-dev libzip-dev libgmp-dev \
-        unzip openjdk-11-jre-headless \
+        unzip openjdk-21-jre-headless \
         libssl-dev pkg-config openssl \
         libmemcached-dev \
         nginx supervisor \
         gettext-base \
-    && pecl install yaf-3.1.4 \
-    && pecl install mongodb-1.19.4 \
+    && pecl install yaf \
+    && pecl install mongodb-2.3.1 \
     && pecl install memcached \
-    && pecl install redis-6.2.0 \
+    && pecl install redis \
     && docker-php-ext-enable yaf mongodb memcached redis \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp calendar \
     && rm -rf /var/lib/apt/lists/*
 
-RUN wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb' \
-    && apt-get update && apt-get install -y ./wkhtmltox_0.12.5-1.buster_amd64.deb \
+RUN apt-get update \
+    && wget 'https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.bookworm_amd64.deb' \
+    && apt-get install -y ./wkhtmltox_0.12.6.1-3.bookworm_amd64.deb \
+    && rm wkhtmltox_0.12.6.1-3.bookworm_amd64.deb \
     && rm -rf /var/lib/apt/lists/*
-
-# install jsignpdf
-RUN wget -O /tmp/jsignpdf.zip https://github.com/JSignPdf/JSignPdfBin/archive/refs/tags/1.0.1.zip \
-    && unzip /tmp/jsignpdf.zip -d /tmp \
-    && mv /tmp/JSignPdfBin-1.0.1/bin/jsignpdf-1.6.4/ /opt \
-    && rm -rf /tmp/*
 
 WORKDIR /billrun
 # Copy over custom configurations
