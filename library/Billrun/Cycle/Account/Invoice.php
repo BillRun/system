@@ -303,10 +303,19 @@ class Billrun_Cycle_Account_Invoice {
 	protected function setSubscribers(array $invoiceRawData) {
 		// Add the subscribers.
 		$invoiceSubs = Billrun_Util::getFieldVal($invoiceRawData['subs'], array());
+		// BRCD-785: tag each subs entry with its source account's parent_aid from the hierarchy metadata
+		// persisted on this invoice (attributes.hierarchy). Consumers can identify each sub's position in
+		// the tree without re-querying. The lookup is a no-op for non-hierarchy invoices (no metadata
+		// present), so flat-tenant invoices keep their existing subs shape.
+		$hierarchyMeta = Billrun_Util::getIn($invoiceRawData, array('attributes', 'hierarchy'), array());
 		foreach ($this->subscribers as $currSub) {
-			$invoiceSubs[] = $currSub->getData();
+			$subData = $currSub->getData();
+			if (!empty($hierarchyMeta) && isset($subData['aid'])) {
+				$subData['parent_aid'] = Billrun_Util::getIn($hierarchyMeta, array(intval($subData['aid']), 'parent_aid'), null);
+			}
+			$invoiceSubs[] = $subData;
 		}
-		
+
 		$invoiceRawData['subs'] = $invoiceSubs;
 		return $invoiceRawData;
 	}

@@ -718,14 +718,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			unset($accounts[$aidStr]); // non-invoicing account -> no billrun document
 		}
 
-		// Persist the per-account hierarchy map onto each consolidating owner's attributes (stored verbatim
-		// in the billrun doc). The two guards make this safe:
-		//  - count > 1: the owner actually absorbed sub-accounts (its map always contains its own entry plus
-		//    one per rolled-up descendant), so a standalone invoicing account gets no metadata.
-		//  - isset(...owner...attributes): in the "owner not on page" ALERT case the orphan child's entry was
-		//    recorded under a missing owner aid; that owner is absent from $accounts, so nothing is written.
+		// Persist the per-account hierarchy map onto each owner's attributes (stored verbatim in the billrun
+		// doc). Every owner gets at least its own entry, so each subs entry in setSubscribers() can resolve
+		// parent_aid uniformly - including the case of a standalone invoicing account that itself has a
+		// parent. The isset(...owner...attributes) guard catches the "owner not on page" ALERT case: the
+		// orphan child's entry was recorded under a missing owner aid that is absent from $accounts, so
+		// nothing is written for that ghost owner.
 		foreach ($hierarchyMeta as $ownerAid => $contributors) {
-			if (count($contributors) > 1 && isset($accounts[(string) $ownerAid]['attributes'])) {
+			if (isset($accounts[(string) $ownerAid]['attributes'])) {
 				$accounts[(string) $ownerAid]['attributes']['hierarchy'] = $contributors;
 			}
 		}

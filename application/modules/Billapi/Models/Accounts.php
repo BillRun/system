@@ -90,7 +90,7 @@ class Models_Accounts extends Models_Entity {
 			$this->update['is_payer'] = $this->toHierarchyBool($this->update['is_payer'], true);
 		}
 		if (array_key_exists('parent_aid', $this->update)) {
-			if (is_null($this->update['parent_aid']) || $this->update['parent_aid'] === '') {
+			if (is_null($this->update['parent_aid']) || $this->update['parent_aid'] === '' || $this->update['parent_aid'] === 0) {
 				unset($this->update['parent_aid']); // detaching from the parent
 			} else {
 				$this->update['parent_aid'] = intval($this->update['parent_aid']);
