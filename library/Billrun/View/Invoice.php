@@ -140,6 +140,37 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		}
 		return trim(Billrun_Util::getIn($attributes, 'firstname', '') . ' ' . Billrun_Util::getIn($attributes, 'lastname', ''));
 	}
+
+	/**
+	 * BRCD-2826: hierarchy breadcrumb string for a single contributing account on this invoice,
+	 * e.g. "Parent 1 > Sub-Account 1 > Sub-sub-account 1a1". Built from the metadata persisted on the
+	 * billrun doc during aggregation (attributes.hierarchy) - no live DB queries.
+	 *
+	 * Returns an empty string for a flat invoice (no hierarchy metadata) or when the aid is absent from
+	 * the metadata, so callers (templates) can hide the line without their own guards.
+	 *
+	 * @param int $aid          source account aid (typically a subs entry's aid)
+	 * @param string $separator string placed between successive names
+	 * @return string
+	 */
+	public function getAccountHierarchyBreadcrumb($aid, $separator = ' > ') {
+		$meta = Billrun_Util::getIn($this->data, array('attributes', 'hierarchy'), array());
+		$aid = intval($aid);
+		if (empty($meta) || $aid === 0 || !isset($meta[$aid])) {
+			return '';
+		}
+		$names = array();
+		$visited = array();
+		$current = $aid;
+		$maxDepth = Billrun_Cycle_Hierarchy::getMaxDepth();
+		while ($current && !isset($visited[$current]) && isset($meta[$current]) && count($names) <= $maxDepth) {
+			$visited[$current] = true;
+			array_unshift($names, Billrun_Util::getIn($meta, array($current, 'name'), 'Account ' . $current));
+			$parent = Billrun_Util::getIn($meta, array($current, 'parent_aid'), null);
+			$current = is_null($parent) ? null : intval($parent);
+		}
+		return implode($separator, $names);
+	}
 	
 	
 	
