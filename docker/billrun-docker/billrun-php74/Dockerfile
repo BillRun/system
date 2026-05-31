@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
                 unzip openjdk-11-jre-headless \
                 libssl-dev pkg-config openssl \
                 libmemcached-dev \
+                docker.io \
     && pecl install yaf-3.1.4 \
     && pecl install mongodb-1.19.4 \
     && pecl install xdebug-3.1.6 \
@@ -18,11 +19,13 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 RUN  wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb' \
 	&& apt install -y ./wkhtmltox_0.12.5-1.buster_amd64.deb
 
-# install jsignpdf
-RUN wget -O /tmp/jsignpdf.zip https://github.com/JSignPdf/JSignPdfBin/archive/refs/tags/1.0.1.zip
-RUN unzip /tmp/jsignpdf.zip -d /tmp
-RUN mv /tmp/JSignPdfBin-1.0.1/bin/jsignpdf-1.6.4/ /opt
-RUN rm -rf /tmp/*
+# install jsignpdf 2.3.0 (drops bundled log4j 1.x; same CLI as 1.6.4, runs on Java 11)
+# Sourced from Maven Central rather than SourceForge so the wget doesn't hit
+# the Cloudflare/JS interstitial that SourceForge serves to non-browsers.
+RUN wget -O /tmp/jsignpdf.zip \
+        'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/2.3.0/jsignpdf-distribution-2.3.0.zip' \
+    && unzip /tmp/jsignpdf.zip -d /opt \
+    && rm -f /tmp/jsignpdf.zip
 
 COPY php-fpm.conf /usr/local/etc/
 COPY php.ini /usr/local/etc/php/
