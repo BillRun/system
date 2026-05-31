@@ -2262,6 +2262,21 @@ runOnce(lastConfig, 'BRCD-5278', function () {
 	configValues.response_sftp_remote_directory = "";
 });
 
+// BRCD-785 customer hierarchy: add the three system account fields (parent_aid / issues_invoice /
+// is_payer) and the parent_aid index. Wrapped in runOnce so the task code is recorded in
+// past_migration_tasks and the block is skipped on subsequent script runs.
+lastConfig = runOnce(lastConfig, 'BRCD-785', function () {
+    var brcd785_fields = [
+        { "field_name": "parent_aid", "system": true, "type": "integer", "mandatory": false, "editable": true, "display": true, "show_in_list": false, "unique": false, "default_value": null, "title": "Parent account" },
+        { "field_name": "issues_invoice", "system": true, "type": "boolean", "mandatory": false, "editable": true, "display": true, "show_in_list": false, "default_value": true, "title": "Issues invoice" },
+        { "field_name": "is_payer", "system": true, "type": "boolean", "mandatory": false, "editable": true, "display": true, "show_in_list": false, "default_value": true, "title": "Is payer" }
+    ];
+    for (var brcd785_idx in brcd785_fields) {
+        lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], brcd785_fields[brcd785_idx], 'account');
+    }
+    db.subscribers.createIndex({ 'parent_aid': 1 }, { unique: false, sparse: true, background: true });
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });
