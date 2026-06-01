@@ -1,20 +1,5 @@
 #!/bin/bash
 
-# When the host docker socket is bind-mounted (the jsignpdf-sidecar compose),
-# grant www-data (the php-fpm worker user) membership in a group whose gid
-# matches the socket's owning gid, so PHP's exec("docker exec ...") works.
-# No-op when the socket is absent (e.g. the original docker-compose-php74.yml).
-if [ -S /var/run/docker.sock ]; then
-    SOCK_GID=$(stat -c %g /var/run/docker.sock)
-    if [ -n "$SOCK_GID" ] && [ "$SOCK_GID" -ne 0 ]; then
-        if ! getent group "$SOCK_GID" >/dev/null 2>&1; then
-            groupadd -g "$SOCK_GID" docker_host >/dev/null 2>&1 || true
-        fi
-        DSOCK_GROUP=$(getent group "$SOCK_GID" | cut -d: -f1)
-        [ -n "$DSOCK_GROUP" ] && usermod -aG "$DSOCK_GROUP" www-data >/dev/null 2>&1 || true
-    fi
-fi
-
 if test -d "/plugin/application/"; then
 if test -d "/plugin/application/plugins/"; then
      cd /plugin/application/plugins/
