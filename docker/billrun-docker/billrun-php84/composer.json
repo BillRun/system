@@ -21,7 +21,7 @@
     "config": {
         "platform": {
             "php": "8.3",
-            "ext-mongo": "2.1"
+            "ext-mongodb": "2.1"
         },
         "allow-plugins": {
             "php-http/discovery": true

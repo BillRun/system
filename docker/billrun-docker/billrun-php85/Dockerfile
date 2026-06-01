@@ -36,6 +36,7 @@ WORKDIR /billrun
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 COPY composer.json /var/www/html/
+COPY composer.lock /var/www/html/
 
 RUN composer install -d /var/www/html/  # in production we need to add --no-dev
 RUN ln -sf behat/gherkin/i18n.php /var/www/html/vendor/i18n.php
