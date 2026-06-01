@@ -13,11 +13,57 @@ It is generated from a static scan of every `getConfigValue()` call site under `
 - Default `null` means no default was supplied in code (the key must be set in configuration).
 - Bracketed key segments like `{$collection}` or `{$action}` are placeholders interpolated from runtime values.
 
+## Configuration load order
+
+BillRun assembles its configuration from up to five layers. Each layer is merged on top of the previous one, so **later layers override earlier ones** for the same key. The merge is performed key by key via `Billrun_Config::mergeConfigs($less, $more)`, so a value set deep inside a nested structure is overridden individually without wiping out its siblings.
+
+| # | Layer | Source | When loaded |
+|---|-------|--------|-------------|
+| 1 | Application INI | The active environment section of `application.ini` (e.g. `[product:yaf]`, `[container:yaf]`), selected by `APPLICATION_ENV`. | At bootstrap, passed into the `Billrun_Config` constructor. |
+| 2 | Config includes | Every file listed in `configuration.include[]` inside the application INI, merged in the order it appears. | Inside the `Billrun_Config` constructor, immediately after layer 1. |
+| 3 | Host INI | `APPLICATION_PATH/conf/<hostname>.ini`, where `<hostname>` is the machine hostname returned by `Billrun_Util::getHostName()`. | After layer 2, only if the file exists and `disableHostConfigLoad` is not set on the base config. |
+| 4 | Tenant INI | `APPLICATION_PATH/conf/tenants/<tenant>.ini` (or the path set by `billrun.multitenant.basedir`). Tenant name is `APPLICATION_TENANT` when defined, otherwise the first subdomain of `HTTP_HOST` in multi-tenant web mode. | After layer 3, only when `APPLICATION_TENANT` is defined, or when `APPLICATION_MULTITENANT` is defined and the request is not CLI. |
+| 5 | Database config | The latest revision (highest `urt`, then `_id`) of the `config` Mongo collection on the active tenant DB. | After the `Billrun_Config` instance is constructed, via `loadDbConfig()`. |
+
+### Visual
+
+```
+application.ini (env section)
+        |
+        v
+configuration.include[]   (merged in order)
+        |
+        v
+<hostname>.ini             (optional, host-specific)
+        |
+        v
+<tenant>.ini               (optional, multi-tenant only)
+        |
+        v
+config collection          (DB; highest precedence)
+```
+
+### Notes and edge cases
+
+- **DB connection env vars are applied first.** Before layer 1 is even handed to the constructor, `Billrun_Config::setDbEnvConfig()` overlays `BR_MDB_HOST`, `BR_MDB_PORT`, `BR_MDB_DBNAME`, `BR_MDB_USER`, `BR_MDB_PASS` and `BR_MDB_AUTHDB` onto the `db.*` section if they are set in the process environment. This lets containerized deployments override DB credentials without editing any INI.
+- **DB config can be cached.** When `config_cache.enabled = 1`, layer 5 is cached under the `db_config` key for `config_cache.ttl` seconds (default `600`). Changes saved through the admin UI bypass the cache, but ad-hoc edits in MongoDB will not take effect until the cache expires or the cache is cleared.
+- **CLI vs web in multi-tenant mode.** Layer 4 is loaded automatically on web requests (tenant inferred from the subdomain) but not on CLI calls. CLI scripts must be launched with `--tenant <name>` (handled by `Billrun_Util::getCmdEnvParams()`), which sets `APPLICATION_TENANT` and triggers layer 4 explicitly.
+- **Each include file is loaded once.** `Billrun_Config::addConfig()` tracks loaded paths in `$loadedFiles` and silently skips repeats, so cyclic or duplicate includes are safe.
+- **The defaults in this document are the in-code fallbacks.** The "Default" column shows the value passed to `getConfigValue()` as the second argument, which only applies when *none* of the five layers above sets the key. In a real deployment the effective value is almost always the one produced by the merged stack of layers 1-5.
+- **`configuration.include[]` position will change soon.** In an upcoming release, `configuration.include[]` files will be repositioned to load immediately before the DB config layer. Until then, treat the position shown above as transitional.
+
+
+
 ## admindb
 
 | Key | Default | Description |
 |-----|---------|-------------|
 | `admindb` | `null` | MongoDB connection options for the admin database; falls back to main db when empty. |
+
+> **Note:** When `admindb` is left empty, BillRun falls back to the main `db` settings, which can themselves be overridden by the `BR_MDB_*` environment variables. If you set `admindb.*` explicitly, those values are used as-is and the env vars do not apply. See the [Docker container guide](https://docs.bill.run/en/installation/docker) for details.
+
+> **Note:** If `admindb` is not set, BillRun uses the main `db` settings instead, which can themselves be overridden by the `BR_MDB_*` environment variables. When `admindb.*` is set explicitly, those values are used as-is and the env vars do not apply. See the [Docker container guide](https://docs.bill.run/en/installation/docker) for details.
+
 
 
 ## api
@@ -363,6 +409,7 @@ It is generated from a static scan of every `getConfigValue()` call site under `
 | `db.long_queries_timeout` | `10800000` | Cursor timeout in milliseconds for long-running queries such as exports. |
 | `db.timeout` | `-1` | Default write concern timeout in milliseconds for DB operations. |
 
+> **Note:** The `db.*` settings can be overridden at runtime by the `BR_MDB_*` environment variables (`BR_MDB_HOST`, `BR_MDB_PORT`, `BR_MDB_DBNAME`, `BR_MDB_USER`, `BR_MDB_PASS`, `BR_MDB_AUTHDB`). These variables are applied before any INI file or DB config is loaded, and they take precedence over every other configuration source. See the [Docker container guide](https://docs.bill.run/en/installation/docker) for the recommended way to set them.
 ## discounts
 
 | Key | Default | Description |
