@@ -240,12 +240,15 @@ class Billrun_Cycle_Account_Invoice {
 			return;
 		}
 		$invoiceData = $this->data->getRawData();
-		$count = 0;
+		$count = null;
 		foreach ($options as $option) {
 			if (!empty($option['conditions']) && $this->isConditionsMeet($invoiceData, $option['conditions'])) {
 				$count = (int) ($option['count'] ?? 0);
 				break;
 			}
+		}
+		if ($count === null) {
+			return;
 		}
 		$priorBills = $count > 0 ? Billrun_Bill::getLatestValidBillsWithBalance($this->getAid(), $count) : [];
 		$currentBill = Billrun_Bill::buildBaseBillFromInvoice($invoiceData);
@@ -262,7 +265,7 @@ class Billrun_Cycle_Account_Invoice {
 
 	protected function projectLastBillsEntry(array $bill) {
 		$out = [];
-		foreach (['type', 'urt', 'invoice_id', 'invoice_date', 'balance', 'amount', 'due', 'total_paid', 'left_to_pay', 'left', 'due_before_vat', 'vatable_left_to_pay'] as $field) {
+		foreach (['type', 'urt', 'invoice_id', 'invoice_type', 'invoice_date', 'balance', 'amount', 'due', 'total_paid', 'left_to_pay', 'left', 'due_before_vat', 'vatable_left_to_pay'] as $field) {
 			if (isset($bill[$field])) {
 				$out[$field] = $bill[$field];
 			}
