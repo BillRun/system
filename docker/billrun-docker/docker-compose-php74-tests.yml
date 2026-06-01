@@ -15,10 +15,7 @@ services:
         environment:
         - "APPLICATION_ENV=container"    
     php:
-        build: 
-            context: ./billrun-php74
-            dockerfile: Dockerfile
-        image: billrun-php74
+        image: git.bill.run:5050/sdoc/billrun/billrun-dev-base:1.0.0
         container_name: billrun-app
         restart: always
         user: "${USER_ID:-0}:${GROUP_ID:-0}"
@@ -55,10 +52,7 @@ services:
         container_name: billrun-standalone-chrome
         restart: always
     mockup:
-        #image: php:7.3-fpm
-        build:
-            context: ./mockup-servers
-            dockerfile: Dockerfile-webserver
+        image: git.bill.run:5050/sdoc/billrun/billrun-mockup:1.0.0
         container_name: billrun-mockups
         environment:
         - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 discover_client_host=false mode=develop"
