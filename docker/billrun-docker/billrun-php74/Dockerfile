@@ -7,7 +7,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
                 unzip openjdk-11-jre-headless \
                 libssl-dev pkg-config openssl \
                 libmemcached-dev \
-                docker.io \
     && pecl install yaf-3.1.4 \
     && pecl install mongodb-1.19.4 \
     && pecl install xdebug-3.1.6 \
