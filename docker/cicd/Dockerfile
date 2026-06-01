@@ -23,9 +23,6 @@ RUN apt-get update \
     && rm wkhtmltox_0.12.6.1-3.bookworm_amd64.deb \
     && rm -rf /var/lib/apt/lists/*
 
-# install jsignpdf 2.3.0 (drops bundled log4j 1.x; same CLI as 1.6.4, runs on Java 11)
-# Sourced from Maven Central rather than SourceForge so the wget doesn't hit
-# the Cloudflare/JS interstitial that SourceForge serves to non-browsers.
 RUN wget -O /tmp/jsignpdf.zip \
         'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/2.3.0/jsignpdf-distribution-2.3.0.zip' \
     && unzip /tmp/jsignpdf.zip -d /opt \

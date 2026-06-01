@@ -20,9 +20,6 @@ RUN  wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/w
 
 RUN docker-php-ext-configure calendar && docker-php-ext-install calendar
 
-# install jsignpdf 2.3.0 (drops bundled log4j 1.x; same CLI as 1.6.4, runs on Java 11)
-# Sourced from Maven Central rather than SourceForge so the wget doesn't hit
-# the Cloudflare/JS interstitial that SourceForge serves to non-browsers.
 RUN wget -O /tmp/jsignpdf.zip \
         'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/2.3.0/jsignpdf-distribution-2.3.0.zip' \
     && unzip /tmp/jsignpdf.zip -d /opt \
