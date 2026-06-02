@@ -21,6 +21,7 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
         $moduleContainer = new ModuleContainer(new \Codeception\Lib\Di(), []);
         $this->cli = new Cli($moduleContainer);
         $this->configModel = new ConfigModel();
+        $this->tester->cleanDB();
     }
 
     protected function _after()
@@ -70,8 +71,8 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
      * @param array $account in case whitelist is sent to the command
      * @return Cli cli object
      */
-    protected function sendGenerateRequestFileCommand($account = null) {
-        $options = $this->getPgOptions();
+    protected function sendGenerateRequestFileCommand($account = null, $options = null) {
+        $options = !is_null($options) ? $options : $this->getPgOptions();
         $command = 'php public/index.php --env container --generate --type transactions_request payment_gateway=' . $options['payment_gateway'] . ' file_type=' . $options['file_type'];
         if (!is_null($account)) {
             $command .= " aids=" . $this->tested_whitelist_account['aid'];
@@ -168,6 +169,45 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
     }
 
     /**
+     * BRCD-5327
+     *
+     * The `value_mult` configuration in the generator's data_structure must be
+     * applied against the amount exactly ONCE, not twice.
+     *
+     * With amount = 5 and value_mult = 100 the saved value must be 500
+     * (5 * 100), and NOT 50000 (5 * 100 * 100).
+     *
+     * The amount is saved to the bill (save_to_bill => true) under
+     * `pg_request.value_mult_amount`, so we assert the single-multiplication
+     * result there.
+     */
+    public function testValueMultAppliedOnceInDataStructure() {
+        $this->insertMasavRequestFileSettings();
+        $account = $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "name" => "masav",
+                    "bank_code" => 1,
+                    "bank_branch_num" => 1,
+                    "account_num" => 1,
+                    "customer_id" => 1
+                ]
+            ]
+        ])['entity'];
+        //created debt of 5 that will be pulled to the cpg request file
+        $this->tester->payApi(['aid' => $account['aid'], 'amount' => 5, 'dir' => 'tc']);
+
+        $this->sendGenerateRequestFileCommand();
+
+        $this->tester->verifyCollectionRecord('bills', [
+            'aid' => $account['aid'],
+            'dir' => 'fc',
+            'generated_pg_file_log' => ['$exists' => true],
+            'pg_request.value_mult_amount' => 500,
+        ]);
+    }
+
+    /**
      * Function to insert masav data to db
      */
     public function insertMasavRequestFileSettings() {
@@ -242,6 +282,17 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
                             ]
 						],
 						"data_structure" => [
+							[
+								"name" => "value_mult_amount",
+								"path" => 4,
+								"type" => "number",
+								"value_mult" => 100,
+								"save_to_bill" => true,
+								"linked_entity" => [
+									"field_name" => "amount",
+									"entity" => "payment_request"
+								]
+							],
 							[
 								"name" => "customer_id",
 								"path" => 1,
