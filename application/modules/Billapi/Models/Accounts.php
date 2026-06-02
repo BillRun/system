@@ -91,7 +91,10 @@ class Models_Accounts extends Models_Entity {
 		}
 		if (array_key_exists('parent_aid', $this->update)) {
 			if (is_null($this->update['parent_aid']) || $this->update['parent_aid'] === '' || $this->update['parent_aid'] === 0) {
-				unset($this->update['parent_aid']); // detaching from the parent
+				// Write null explicitly so the new revision actually detaches the account; just unsetting
+				// the key would leave the previous parent_aid in place (the field would not be touched on
+				// save).
+				$this->update['parent_aid'] = null;
 			} else {
 				$this->update['parent_aid'] = intval($this->update['parent_aid']);
 			}
