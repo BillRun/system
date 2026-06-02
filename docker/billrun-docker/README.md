@@ -31,9 +31,14 @@ This Readme describe how to use docker and docker-compose  in order to start Bil
 
 Stop the stack and delete docker created volumes
 
-    ```bash
-    docker-compose -f docker-compose-php74.yml down -v
-    ```
+  ```bash
+  docker-compose -f docker-compose-php74.yml down -v
+  ```
+
+## Run migration script
+  ```bash
+  docker exec -it billrun-mongodb mongo billing_container billrun/mongo/migration/script.js
+  ```
 
 # Credits
 
