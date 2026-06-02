@@ -2267,7 +2267,6 @@ runOnce(lastConfig, 'BRCD-5278', function () {
 // past_migration_tasks and the block is skipped on subsequent script runs.
 lastConfig = runOnce(lastConfig, 'BRCD-785', function () {
     var brcd785_fields = [
-        { "field_name": "parent_aid", "system": true, "type": "integer", "mandatory": false, "editable": true, "display": true, "show_in_list": false, "unique": false, "default_value": null, "title": "Parent account" },
         { "field_name": "issues_invoice", "system": true, "type": "boolean", "mandatory": false, "editable": true, "display": true, "show_in_list": false, "default_value": true, "title": "Issues invoice" },
         { "field_name": "is_payer", "system": true, "type": "boolean", "mandatory": false, "editable": true, "display": true, "show_in_list": false, "default_value": true, "title": "Is payer" }
     ];
@@ -2275,6 +2274,16 @@ lastConfig = runOnce(lastConfig, 'BRCD-785', function () {
         lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], brcd785_fields[brcd785_idx], 'account');
     }
     db.subscribers.createIndex({ 'parent_aid': 1 }, { unique: false, sparse: true, background: true });
+});
+
+lastConfig = runOnce(lastConfig, 'BRCD-2885', function () {
+	lastConfig['subscribers'] = removeFieldFromConfig(lastConfig['subscribers'], 'parent_aid', 'account');
+    var brcd2885_fields = [
+        { "field_name": "parent_aid", "system": true, "select_list": true, "select_options" : "", "mandatory": false, "editable": true, "display": true, "show_in_list": false, "unique": false, "default_value": "", "title": "Parent account" },
+    ];
+    for (var brcd2885_idx in brcd2885_fields) {
+        lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], brcd2885_fields[brcd2885_idx], 'account');
+    }
 });
 
 db.config.insertOne(lastConfig);
