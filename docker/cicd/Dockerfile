@@ -23,6 +23,11 @@ RUN apt-get update \
     && rm wkhtmltox_0.12.6.1-3.bookworm_amd64.deb \
     && rm -rf /var/lib/apt/lists/*
 
+RUN wget -O /tmp/jsignpdf.zip \
+        'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/2.3.0/jsignpdf-distribution-2.3.0.zip' \
+    && unzip /tmp/jsignpdf.zip -d /opt \
+    && rm -f /tmp/jsignpdf.zip
+
 WORKDIR /billrun
 # Copy over custom configurations
 # (Assuming php-fpm.conf and php.ini are still in the old directory. If they are also in cicd, change their source paths too!)
