@@ -10,7 +10,7 @@ import classNames from 'classnames';
 import Field from '@/components/Field';
 import Help from '@/components/Help';
 import { EntityFields } from '@/components/Entity';
-import { ConfirmModal, Actions } from '@/components/Elements';
+import { ConfirmModal, Actions, WithTooltip } from '@/components/Elements';
 import OfflinePayment from '@/components/Payments/OfflinePayment';
 import CyclesSelector from '@/components/Cycle/CyclesSelector';
 import Credit from '@/components/Credit/Credit';
@@ -285,12 +285,26 @@ class Customer extends Component {
     if (!customerPgName) {
       customerPgName = customer.getIn(['payment_gateway', 'active', 'name'], '');
     }
+    const cardToken = customer.getIn(['payment_gateway', 'active', 'card_token'], '');
+    const card_expiration = String(customer.getIn(['payment_gateway', 'active', 'card_expiration'], ''))
+      .replace(/^(\d{2})(\d{2})$/, '$1/20$2');
+    const fourDigits = customer.getIn(['payment_gateway', 'active', 'four_digits'], '');
+    const tooltipText = <p>Card Number **** {fourDigits}<br/>Expiration Date: {card_expiration}</p>;
     const pg = supportedGateways.filter(item => customerPgName === item.get('name'));
-    return (!pg.isEmpty() && pg.get(0).get('image_url', ''))
+    const pgDetails = ((!pg.isEmpty() && pg.get(0).get('image_url', ''))
       ? <span>
           <img src={`${getConfig(['env','serverApiUrl'], '')}/${pg.get(0).get('image_url', '')}`} height="30" alt={pg.get(0).get('title', customerPgName)} /> {pg.get(0).get('title', customerPgName)}
         </span>
-      : customerPgName;
+      : customerPgName
+    );
+    
+    return (<>
+      {pgDetails}
+      <WithTooltip id={cardToken} helpText={tooltipText}>
+        <i class="fa fa-info-circle active-blue clickable ml10"></i>
+      </WithTooltip>
+      </>
+    );
   }
 
   renderChangePaymentGateway = () => {
@@ -495,6 +509,7 @@ class Customer extends Component {
           <EntityFields
             entityName={['subscribers', 'account']}
             entity={customer}
+            defaultHiddenFields={Immutable.List(['payment_gateway', 'services'])}
             onChangeField={this.props.onChange}
             onRemoveField={this.props.onRemoveField}
           />
