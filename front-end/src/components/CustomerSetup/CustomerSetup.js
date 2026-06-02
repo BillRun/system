@@ -5,6 +5,7 @@ import { withRouter } from 'react-router';
 import Immutable from 'immutable';
 import { Tabs, Tab, Panel } from 'react-bootstrap';
 import Customer from './Customer';
+import CustomerHierarchy from './CustomerElements/CustomerHierarchy.js';
 import Subscriptions from './Subscriptions';
 import CustomerAllowances from './CustomerAllowances';
 import {
@@ -50,7 +51,7 @@ import {
   tabSelector,
   messageSelector,
 } from '@/selectors/entitySelector';
-import { currencySelector } from '@/selectors/settingsSelector';
+import { currencySelector, isCustomerHierarchyEnabledSelector } from '@/selectors/settingsSelector';
 import { buildPageTitle, getConfig, getItemId, getFieldName, plansOrServicesToSelectOptions } from '@/common/Util';
 
 
@@ -68,6 +69,7 @@ class CustomerSetup extends Component {
     services: PropTypes.instanceOf(Immutable.List),
     currency: PropTypes.string,
     gateways: PropTypes.instanceOf(Immutable.List),
+    isCustomerHierarchyEnabled: PropTypes.bool,
     allowancesEnabled: PropTypes.bool,
     activeTab: PropTypes.oneOfType([
       PropTypes.string,
@@ -94,6 +96,7 @@ class CustomerSetup extends Component {
     plans: Immutable.List(),
     services: Immutable.List(),
     currency: '',
+    isCustomerHierarchyEnabled: false,
     allowancesEnabled: false,
   };
 
@@ -278,13 +281,14 @@ class CustomerSetup extends Component {
       aid,
       activeTab,
       allowancesEnabled,
+      isCustomerHierarchyEnabled,
     } = this.props;
     
     if (mode === 'loading') {
       return (<LoadingItemPlaceholder onClick={this.handleBack} />);
     }
     
-    const showActionButtons = [1, 3, 4, 7].includes(activeTab);
+    const showActionButtons = [1, 3, 4, 7, 8].includes(activeTab);
     const accountFields = settings.getIn(['account', 'fields'], Immutable.List());
     const subscriberFields = settings.getIn(['subscriber', 'fields'], Immutable.List());
     const allowEdit = mode !== 'view';
@@ -309,6 +313,19 @@ class CustomerSetup extends Component {
                       onChange={this.onChangeCustomerField}
                       onRemoveField={this.onRemoveCustomerField}
                       onChangePaymentGateway={this.onClickChangePaymentGateway}
+                    />
+                  </Panel>
+                </Tab>
+              }
+
+              { isCustomerHierarchyEnabled &&
+                <Tab title={getFieldName('hierarchy', 'account')} eventKey={8}>
+                  <Panel style={{ borderTop: 'none' }}>
+                    <CustomerHierarchy
+                      customer={customer}
+                      onChange={this.onChangeCustomerField}
+                      onRemoveField={this.onRemoveCustomerField}
+                      isDirty={originalCustomer.get('parent_aid', '') !== customer.get('parent_aid', '')}
                     />
                   </Panel>
                 </Tab>
@@ -408,6 +425,7 @@ const mapStateToProps = (state, props) => ({
   gateways: state.list.get('available_gateways') || undefined,
   currency: currencySelector(state, props) || undefined,
   message: messageSelector(state, props),
+  isCustomerHierarchyEnabled: isCustomerHierarchyEnabledSelector(state, props),
 });
 
 export default withRouter(connect(mapStateToProps)(CustomerSetup));

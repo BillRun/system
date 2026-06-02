@@ -77,7 +77,10 @@
   "account": {
     "aid": "Customer ID",
     "firstname": "First Name",
-    "lastname": "Last Name"
+    "lastname": "Last Name",
+    "show_tree_view": "Show Hierarchy Tree",
+    "account_hierarchy_tree_view": "Hierarchy Tree for Account {{aid}}",
+    "hierarchy": "Hierarchy"
   },
   "subscription": {
     "aid": "Customer ID",
