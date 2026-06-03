@@ -126,7 +126,7 @@ CustomerHierarchy.propTypes = {
   customer: PropTypes.instanceOf(Immutable.Map),
   isParentChanged: PropTypes.bool,
   accountsOptions: PropTypes.array,
-  onChange: PropTypes.func.isRequired,
+  onChangeField: PropTypes.func.isRequired,
   onRemoveField: PropTypes.func.isRequired,
   dispatch: PropTypes.func.isRequired,
 };
