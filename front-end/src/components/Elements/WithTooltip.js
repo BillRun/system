@@ -33,7 +33,10 @@ WithTooltip.defaultProps = {
 
 WithTooltip.propTypes = {
   children: PropTypes.element,
-  helpText: PropTypes.string,
+  helpText:  PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.element,
+  ]),
 };
 
 export default WithTooltip;
