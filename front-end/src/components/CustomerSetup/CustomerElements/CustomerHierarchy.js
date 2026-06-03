@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import isNumber from 'is-number';
-import { FormGroup, Col, ControlLabel, Button, InputGroup } from 'react-bootstrap';
+import { Form, FormGroup, Col, ControlLabel, Button, InputGroup } from 'react-bootstrap';
 import Field from '@/components/Field';
 import { EntityField } from '@/components/Entity';
 import { getList } from '@/actions/listActions';
@@ -13,15 +13,16 @@ import { entityFieldSelector } from '@/selectors/settingsSelector';
 import { getAccountsQuery } from '@/common/ApiQueries';
 import {
   getFieldName,
+  buildPageTitle,
 } from '@/common/Util';
 
 const CustomerHierarchy = ({
   customer,
   fields,
   accountsOptions,
-  onChange,
+  onChangeField,
   onRemoveField,
-  isDirty,
+  isParentChanged,
   dispatch,
 }) => {
 
@@ -31,22 +32,24 @@ const CustomerHierarchy = ({
 
   const onChangeParentAccount = (aid) => {
     if (isNumber(aid)) {
-      onChange('parent_aid', parseFloat(aid));
+      onChangeField('parent_aid', parseFloat(aid));
     } else {
-      onChange('parent_aid', '');
+      onChangeField('parent_aid', '');
     }
   }
 
-  const onChangeIssuesInvoiceField = (path, value) => {
-    onChange(path, value);
+  const onToggleIssuesInvoice = (path, value) => {
+    onChangeField(path, value);
     if (value === false) {
-      onChange('is_payer', false);
+      onChangeField('is_payer', false);
     }
   }
 
   const showTreeView = () => {
     const confirm = {
-      message: getFieldName('account_hierarchy_tree_view', 'account', null, {aid: customer.get('aid', '')}),
+      message: getFieldName('account_hierarchy_tree_view', 'account', null,
+        {customer_title: buildPageTitle('view', 'customer', customer)}
+      ),
       children: <p>Tree</p>,
       type: 'alert',
       labelOk: getFieldName('close'),
@@ -54,17 +57,24 @@ const CustomerHierarchy = ({
     dispatch(showConfirmModal(confirm));
   }
 
-  const filteredAccountsOptions = accountsOptions.filter(obj => obj.value !== customer.get('aid', ''));
-  const parentAidField = fields.find(f => f.get('field_name') === 'parent_aid', null, null);
-  const issuesInvoiceField = fields.find(f => f.get('field_name') === 'issues_invoice', null, null);
-  const isPayerField = fields.find(f => f.get('field_name') === 'is_payer', null, null);
+  const filteredAccountsOptions = accountsOptions
+    .filter(obj => obj.value !== customer.get('aid', ''));
+  const issuesInvoiceField = fields
+    .find(f => f.get('field_name') === 'issues_invoice', null, Immutable.Map())
+    .set('description', getFieldName('issues_invoice_help', 'account'))
+    .set('title', getFieldName('issues_invoice', 'account'));
+  const isPayerField = fields
+    .find(f => f.get('field_name') === 'is_payer', null, Immutable.Map())
+    .set('description', getFieldName('is_payer_help', 'account'))
+    .set('title', getFieldName('is_payer', 'account'));
+
+  const disabledTreeView = isParentChanged || customer.get('parent_aid', '') === '' || customer.get('aid', '') === '';
 
   return (
-    <div className="hierarchy-account">
-      {parentAidField !== null && (
+    <Form horizontal className="hierarchy-account">
         <FormGroup>
           <Col componentClass={ControlLabel} sm={3} lg={2}>
-            {parentAidField.get('title', 'Parent Account')}
+            {getFieldName('parent_aid', 'account')}
           </Col>
           <Col sm={8} lg={9}>
 
@@ -81,8 +91,8 @@ const CustomerHierarchy = ({
                 <Button
                   bsSize="small"
                   bsStyle="primary"
-                  disabled={isDirty || customer.get('parent_aid', '') === '' || customer.get('aid', '') === ''}
                   onClick={showTreeView}
+                  disabled={disabledTreeView}
                 >
                   <i className="fa fa-sitemap" aria-hidden="true"></i>
                   &nbsp;
@@ -93,31 +103,28 @@ const CustomerHierarchy = ({
           </Col>
 
         </FormGroup>
-      )}
 
-      { issuesInvoiceField !== null && (
-        <EntityField
-          field={issuesInvoiceField}
-          entity={customer}
-          onChange={onChangeIssuesInvoiceField}
-          onRemove={onRemoveField}
-        />
-      )}
-      { isPayerField !== null && (
-        <EntityField
-          field={isPayerField}
-          entity={customer}
-          onChange={onChange}
-          onRemove={onRemoveField}
-          disabled={customer.get('issues_invoice', false) === false}
-        />
-      )}
-    </div>
+      <EntityField
+        field={issuesInvoiceField}
+        entity={customer}
+        onChange={onToggleIssuesInvoice}
+        onRemove={onRemoveField}
+      />
+
+      <EntityField
+        field={isPayerField}
+        entity={customer}
+        onChange={onChangeField}
+        onRemove={onRemoveField}
+        disabled={customer.get('issues_invoice', false) === false}
+      />
+    </Form>
   )
 }
 
 CustomerHierarchy.propTypes = {
   customer: PropTypes.instanceOf(Immutable.Map),
+  isParentChanged: PropTypes.bool,
   accountsOptions: PropTypes.array,
   onChange: PropTypes.func.isRequired,
   onRemoveField: PropTypes.func.isRequired,
@@ -126,6 +133,7 @@ CustomerHierarchy.propTypes = {
 
 CustomerHierarchy.defaultProps = {
   customer: Immutable.Map(),
+  isParentChanged: false,
   accountsOptions: [],
 };
 

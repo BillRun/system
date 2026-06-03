@@ -323,9 +323,9 @@ class CustomerSetup extends Component {
                   <Panel style={{ borderTop: 'none' }}>
                     <CustomerHierarchy
                       customer={customer}
-                      onChange={this.onChangeCustomerField}
+                      onChangeField={this.onChangeCustomerField}
                       onRemoveField={this.onRemoveCustomerField}
-                      isDirty={originalCustomer.get('parent_aid', '') !== customer.get('parent_aid', '')}
+                      isParentChanged={originalCustomer.get('parent_aid', '') !== customer.get('parent_aid', '')}
                     />
                   </Panel>
                 </Tab>
