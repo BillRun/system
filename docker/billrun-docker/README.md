@@ -35,11 +35,6 @@ Stop the stack and delete docker created volumes
   docker-compose -f docker-compose-php74.yml down -v
   ```
 
-## Run migration script
-  ```bash
-  docker exec -it billrun-mongodb mongo billing_container billrun/mongo/migration/script.js
-  ```
-
 # Credits
 
 Initial Docker setup authored by Jean-Blaise Rey (Netplus CH)
