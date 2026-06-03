@@ -6,5 +6,5 @@ codecept:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   stage: test
   script:
-    - echo "ok"
+   - echo "ok"
 
