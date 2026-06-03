@@ -301,7 +301,7 @@ class Customer extends Component {
     return (<>
       {pgDetails}
       <WithTooltip id={cardToken} helpText={tooltipText}>
-        <i class="fa fa-info-circle active-blue clickable ml10"></i>
+        <i className="fa fa-info-circle active-blue clickable ml10"></i>
       </WithTooltip>
       </>
     );
