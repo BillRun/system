@@ -139,7 +139,7 @@ const ApiButton = (props) => {
                         <Json
                             value={getVisibleQuery(currentQuery)}
                             onChange={handleQueryChange}
-                            viewOnly={!editable}
+                            editable={editable}
                         />
                     </FormGroup>
 

@@ -1,10 +1,50 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { isImmutable } from 'immutable';
+import Editor from 'react-simple-code-editor';
+import { highlight, languages } from 'prismjs/components/prism-core';
+import 'prismjs/components/prism-json';
+import 'prismjs/components/prism-json5';
+import {
+  serializeLiteral,
+  parseLiteral,
+  toCanonicalJson,
+  textToCanonical,
+} from './jsonLiteralFormat';
+import './JsonField.scss';
 
-/**
- * Simple JSON editor replacing react-json-editor-ajrm (abandoned, used findDOMNode).
- * Uses a controlled <textarea> with JSON validation and pretty-print formatting.
- */
+const wrapperStyle = {
+  height: 'auto',
+  padding: '6px 4px',
+};
+
+const editorStyle = {
+  minHeight: '110px',
+};
+
+const toPlain = (value) => {
+  if (value == null) return null;
+  if (isImmutable(value)) return value.toJS();
+  return value;
+};
+
+const serialize = (value) => {
+  const plain = toPlain(value);
+  if (plain == null) return '';
+  try {
+    return serializeLiteral(plain);
+  } catch (e) {
+    return '';
+  }
+};
+
+const getLineNumbers = (text) => {
+  const count = Math.max(1, (text || '').split('\n').length);
+  return Array.from({ length: count }, (_, i) => i + 1);
+};
+
+const highlightLiteral = (code) => highlight(code || '', languages.json5, 'json5');
+
 class Json extends Component {
 
   static propTypes = {
@@ -33,93 +73,88 @@ class Json extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      text: this.serialize(props.value),
-      error: false,
+      text: serialize(props.value),
+      hasError: false,
     };
   }
 
-  serialize = (value) => {
-    if (value === null || typeof value === 'undefined') return '';
+  componentDidUpdate(prevProps) {
+    const { value } = this.props;
+
+    if (prevProps.value === value) return;
+
+    const newCanonical = toCanonicalJson(toPlain(value));
+    const currentCanonical = textToCanonical(this.state.text);
+
+    if (newCanonical === currentCanonical) return;
+
+    this.setState({ text: serialize(value), hasError: false });
+  }
+
+  onBlurEditor = () => {
+    const { text } = this.state;
+    if (!text.trim()) return;
     try {
-      return JSON.stringify(value, null, 2);
+      const parsed = parseLiteral(text);
+      this.setState({ text: serializeLiteral(parsed) });
     } catch (e) {
-      return '';
     }
   };
 
-  
-  onTextChange = (e) => {
+  onChangeText = (text) => {
     const { onChange } = this.props;
-    const text = e.target.value;
-    this.setState({ text });
+
     if (text.trim() === '') {
-      this.setState({ error: false });
-      onChange(null);
+      this.setState({ text, hasError: false });
+      onChange([]);
       return;
     }
+
     try {
-      const parsed = JSON.parse(text);
-      this.setState({ error: false });
+      const parsed = parseLiteral(text);
+      this.setState({ text, hasError: false });
       onChange(parsed);
-    } catch (err) {
-      this.setState({ error: true });
+    } catch (_err) {
+      this.setState({ text, hasError: true });
       onChange(false);
     }
   };
 
-  
-  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
-    // Only sync from props when not currently in error state
-    if (!this.state.error) {
-      const nextText = this.serialize(this.props.value);
-      const currentText = this.serialize(prevProps.value);
-      if (nextText !== currentText) {
-        this.setState({ text: nextText });
-      }
-    }
-  }
-
   render() {
-    const { editable, disabled } = this.props;
-    const { text, error } = this.state;
-
-    const borderColor = error ? '#dc3545' : '#ced4da';
-    const style = {
-      width: '100%',
-      minHeight: 80,
-      fontFamily: 'monospace',
-      fontSize: 12,
-      padding: '4px 6px',
-      border: `1px solid ${borderColor}`,
-      borderRadius: 4,
-      resize: 'vertical',
-      backgroundColor: (!editable || disabled) ? '#f8f9fa' : '#fff',
-      outline: 'none',
-    };
-
-    if (!editable || disabled) {
-      return (
-        <textarea
-          readOnly
-          value={text}
-          style={style}
-          rows={Math.max(3, (text.match(/\n/g) || []).length + 1)}
-        />
-      );
-    }
+    const { value, editable, disabled, id } = this.props;
+    const { text, hasError } = this.state;
+    const isReadOnly = !editable || disabled;
+    const lineNumbers = getLineNumbers(text);
 
     return (
-      <div>
-        <textarea
-          value={text}
-          onChange={this.onTextChange}
-          style={style}
-          rows={Math.max(3, (text.match(/\n/g) || []).length + 1)}
-          spellCheck={false}
-        />
-        {error && (
-          <div style={{ color: '#dc3545', fontSize: 11, marginTop: 2 }}>
-            Invalid JSON
+      <div className="form-control json-field-wrapper" style={wrapperStyle}>
+        {isReadOnly ? (
+          <pre className="json-field-view">
+            {serialize(value)}
+          </pre>
+        ) : (
+          <div className={`json-field-editor${hasError ? ' json-field-editor--error' : ''}`}>
+            <div className="json-field-editor__body">
+              <div className="json-field-editor__gutter" aria-hidden="true">
+                {lineNumbers.map((n) => (
+                  <div key={n} className="json-field-editor__line-number">{n}</div>
+                ))}
+              </div>
+              <div className="json-field-editor__content">
+                <Editor
+                  textareaId={id}
+                  value={text}
+                  onValueChange={this.onChangeText}
+                  highlight={highlightLiteral}
+                  padding={5}
+                  style={editorStyle}
+                  textareaProps={{ onBlur: this.onBlurEditor }}
+                />
+              </div>
+            </div>
+            {hasError && (
+              <div className="json-field-error-hint">Invalid JSON</div>
+            )}
           </div>
         )}
       </div>
