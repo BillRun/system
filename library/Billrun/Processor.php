@@ -322,7 +322,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			// backward compatibility
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
 			$entity = new Mongodloid_Entity($trailer);
-			if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
+			if (!$log->query(array('stamp' => $entity->get('stamp')))->cursor()->limit(1)->current()->isEmpty()) {
 				Billrun_Factory::log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				return FALSE;
 			}
@@ -730,7 +730,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function isQueueFull() {
 		$queue_max_size = Billrun_Factory::config()->getConfigValue("queue.max_size", 999999999);
-		return (Billrun_Factory::db()->queueCollection()->count() >= $queue_max_size);
+		return (Billrun_Factory::db()->queueCollection()->estimatedDocumentCount() >= $queue_max_size);
 	}
 
 	protected function setFileStamp($file) {
@@ -908,11 +908,38 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 
 	public function processorByPath($options){
+		$absPath = Billrun_Util::getBillRunPath($options['path']);
+		if (is_dir($absPath)) {
+			return $this->processorByDir($options, $absPath);
+		}
 		if(!$this->createLogForProcessWithPath($options)){
 			return;
 		}
 		$this->setShouldremovefromWorkspace(false);
-		return $this->process_files(Billrun_Util::getBillRunPath($options['path']));
+		return $this->process_files($absPath);
+	}
+
+	protected function processorByDir($options, $dir) {
+		$entries = glob(rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '*');
+		if ($entries === false) {
+			return;
+		}
+		sort($entries);
+		$hasFiles = false;
+		foreach ($entries as $entry) {
+			if (!is_file($entry)) {
+				continue;
+			}
+			$fileOptions = array_merge($options, array('path' => $entry));
+			if ($this->createLogForProcessWithPath($fileOptions)) {
+				$hasFiles = true;
+			}
+		}
+		if (!$hasFiles) {
+			return;
+		}
+		$this->setShouldremovefromWorkspace(false);
+		return $this->process_files();
 	}
 
 }

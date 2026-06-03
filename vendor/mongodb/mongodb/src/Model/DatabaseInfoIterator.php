@@ -25,8 +25,8 @@ use ReturnTypeWillChange;
  *
  * This iterator is used for enumerating databases on a server.
  *
- * @api
  * @see \MongoDB\Client::listDatabases()
+ * @template-extends Iterator<int, DatabaseInfo>
  */
 interface DatabaseInfoIterator extends Iterator
 {

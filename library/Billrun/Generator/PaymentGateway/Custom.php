@@ -11,6 +11,12 @@
  */
 abstract class Billrun_Generator_PaymentGateway_Custom {
 
+    use Billrun_Traits_Api_FlexibleOperationsLock {
+        // Rename the trait's methods to new names because class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest  that extends
+        // it has same function names for the old Lock.
+        lock as flexibleLock;
+        release as flexibleRelease;
+    }
 	public $now;
     protected $configByType;
     protected $exportDefinitions;
@@ -141,7 +147,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
                 continue;
             }
-            Billrun_Factory::dispatcher()->trigger('afterPreparingCpfDataField', array(static::$type, $dataField, &$dataLine, &$attributes, $this));
+            Billrun_Factory::dispatcher()->trigger('afterPreparingCpfDataField', array(static::$type, $dataField, &$dataLine, &$attributes, $this, $params));
         }
         if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
             ksort($dataLine);
@@ -165,9 +171,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 if (!isset($params['aid'])) {
                     throw new Exception('Missing account id');
                 }
-                $account = Billrun_Factory::account();
-                $account->loadAccountForQuery(array('aid' => $params['aid']));
-                $accountData = $account->getCustomerData();
+                if (!empty($params['_account']) && is_array($params['_account'])) {
+                    $accountData = $params['_account'];
+                } else {
+                    Billrun_Factory::log('Custom PG generator: preloaded account missing for aid ' . $params['aid'] . ', falling back to loadAccountForQuery', Zend_Log::DEBUG);
+                    $account = Billrun_Factory::account();
+                    $account->loadAccountForQuery(array('aid' => $params['aid']));
+                    $accountData = $account->getCustomerData();
+                }
                 if (is_null(Billrun_Util::getIn($accountData, $field))) {
                     $message = "Field name $field does not exist under entity " . $entity;
                     Billrun_Factory::log($message, Zend_Log::ERR);
@@ -288,10 +299,35 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $exportDetails = $this->configByType['export'];
         $connection = Billrun_Factory::paymentGatewayConnection($exportDetails);
         $fileName = $this->getFilename();
+
+        $exportLockId = [
+            'action'     => 'send_file',
+            'filtration' => 'send_' . $this->gatewayName,
+        ];
+        $lockAcquiredByThisProcess = false;
+        if ($this->flexibleLock($exportLockId, 6)) {
+            $lockAcquiredByThisProcess = true;
+        } else {
+            Billrun_Factory::log()->log('Failed to acquire lock, sending file is already in progress for: ' . $this->gatewayName, Zend_Log::NOTICE);
+            return;
+        }
+        try {
+        $filePath = rtrim($exportDetails['export_directory'], DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fileName;
+        $this->logFile->updateLogFileField('path', $filePath);
+        $this->logFile->updateLogFileField('start_upload_time', new Mongodloid_Date());
+        $this->logFile->saveLogFileFields();
 		$res = $connection->export($fileName);
 		if (!$res) {
 			Billrun_Factory::log()->log('Failed moving file ' . $fileName, Zend_Log::ALERT);
-		}
+		} else {
+            $this->logFile->updateLogFileField('end_upload_time', new Mongodloid_Date());
+            $this->logFile->saveLogFileFields();
+        }
+        } finally {
+            if ($lockAcquiredByThisProcess && !$this->flexibleRelease($exportLockId)) {
+                Billrun_Factory::log("Problem in releasing operation lock for gateway: " . $this->gatewayName, Zend_Log::ALERT);
+            }
+        }
 	}
 
     protected function getTranslationValue($paramObj) {

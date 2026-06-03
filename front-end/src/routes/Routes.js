@@ -52,6 +52,7 @@ import ChargeList from '@/components/Charging';
 import { ImporterSetup } from '../components/Importer';
 import { ExporterSetup } from '../components/Exporter';
 import { ImmediateInvoiceSetup } from '../components/ImmediateInvoice';
+import { RefundInvoiceSetup } from '../components/RefundInvoice';
 import SuggestionsSetup, { SuggestionsList } from '../components/Suggestions';
 import { TaxList, TaxSetup, TaxMapping } from '@/components/Tax';
 
@@ -169,7 +170,8 @@ const routes = () => (
         <Route path="/changepassword(/:itemId)" component={ChangePassword} title="Change Password" />
         <Route path="/import(/:itemType)" component={Authentication(ImporterSetup)} />
         <Route path="/export(/:itemType)" component={Authentication(ExporterSetup)} />
-        <Route path="/immediate-invoice" component={Authentication(ImmediateInvoiceSetup)} title="Create immediate invoices" />
+        <Route path="/immediate-invoice-charge" component={Authentication(ImmediateInvoiceSetup)} title="Create an Immediate Charge Invoice" />
+        <Route path="/immediate-invoice-refund" component={Authentication(RefundInvoiceSetup)} title="Create an Immediate Refund Invoice" />
         <Route path="suggestions" >
           <IndexRoute component={Authentication(SuggestionsSetup)} title="Repricing Suggestions" />
           <Route path=":itemId" component={Authentication(SuggestionsList)} title="Customer Repricing Suggestions" />

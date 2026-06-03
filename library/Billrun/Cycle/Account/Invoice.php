@@ -338,6 +338,15 @@ class Billrun_Cycle_Account_Invoice {
 		$invoiceRawData['uf'] = $user_fields;
 		$this->data->setRawData($invoiceRawData);
 	}
+
+	public function setNote($note) {
+		if (empty($note)) {
+			return;
+		}
+		$invoiceRawData = $this->getRawData();
+		$invoiceRawData['note'] = $note;
+		$this->data->setRawData($invoiceRawData);
+	}
 	
 	/**
 	 * Gets the current billrun document raw data
@@ -508,6 +517,7 @@ class Billrun_Cycle_Account_Invoice {
 			'billrun'=>$this->key,
 			'usaget'=>['$nin'=>['flat']],
 		];
+		Billrun_Factory::log('Checking if there are recent lines for account ' . $this->aid . ' for billrun ' . $this->key, Zend_Log::DEBUG);
 		$hasUsageLines = !$this->lines->query($query)->cursor()->limit(1)->current()->isEmpty();
 
 		return $hasUsageLines;
@@ -606,7 +616,7 @@ class Billrun_Cycle_Account_Invoice {
 				$groupingMinExtraFields = $groupingExtraFields['min'] ?? [];
 			}
 			foreach ($groupingMinExtraFields as $field) {
-				Billrun_Util::setIn($extraMinGroupData, $field, Billrun_Util::getIn($group, $field, 0));
+				Billrun_Util::setIn($extraMinGroupData, $field, Billrun_Util::getIn($group, $field, null));
 				Billrun_Util::unsetInPath($group, $field);
 			}
 			
@@ -618,7 +628,7 @@ class Billrun_Cycle_Account_Invoice {
 				$groupingMaxExtraFields = $groupingExtraFields['max'] ?? [];
 			}
 			foreach ($groupingMaxExtraFields as $field) {
-				Billrun_Util::setIn($extraMaxGroupData, $field, Billrun_Util::getIn($group, $field, 0));
+				Billrun_Util::setIn($extraMaxGroupData, $field, Billrun_Util::getIn($group, $field, null));
 				Billrun_Util::unsetInPath($group, $field);
 			}
 			$stamp = Billrun_Util::generateArrayStamp($group, [], true);
@@ -639,11 +649,11 @@ class Billrun_Cycle_Account_Invoice {
 			}
 			// min extra grouping fields
 			foreach ($groupingMinExtraFields as $field) {
-				Billrun_Util::setIn($currentTotalGroups[$index], $field, min(Billrun_Util::getIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($extraMinGroupData, $field, 0)), Billrun_Util::getIn($extraMinGroupData, $field, 0)));
+				Billrun_Util::setIn($currentTotalGroups[$index], $field, min(Billrun_Util::getIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($extraMinGroupData, $field, null)), Billrun_Util::getIn($extraMinGroupData, $field, null)));
 			}	
 			// max extra grouping fields
 			foreach ($groupingMaxExtraFields as $field) {
-				Billrun_Util::setIn($currentTotalGroups[$index], $field, max(Billrun_Util::getIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($extraMaxGroupData, $field, 0)), Billrun_Util::getIn($extraMaxGroupData, $field, 0)));
+				Billrun_Util::setIn($currentTotalGroups[$index], $field, max(Billrun_Util::getIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($extraMaxGroupData, $field, null)), Billrun_Util::getIn($extraMaxGroupData, $field, null)));
 			}	
 		}
 		return $currentTotalGroups;
@@ -682,5 +692,14 @@ class Billrun_Cycle_Account_Invoice {
 
 	public function addAggragtionTranslations($translations) {
 		$this->aggregationTranslations = array_merge($this->aggregationTranslations,$translations);
+	}
+
+	public function setdAdjustments($adj) {
+		if (empty($adj)) {
+			return;
+		}
+		$invoiceRawData = $this->getRawData();
+		$invoiceRawData['adjusted_from_invoices'] = $adj;
+		$this->data->setRawData($invoiceRawData);
 	}
 }

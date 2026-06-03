@@ -30,11 +30,12 @@ class Billrun_LogFile_CreditGuard extends Billrun_LogFile {
 			'process_time' => array('$exists' => true),
 		);
 
-		$cgLog = $this->collection->query($query)->cursor();
-		if ($cgLog->count() > 1) {
+		$cgLog = iterator_to_array($this->collection->query($query)->cursor()->limit(2));
+		$docCount = count($cgLog);
+		if ($docCount > 1) {
 			throw new Exception('Billrun_LogFile_CreditGuard: More than one log file was found');
-		} elseif ($cgLog->count() == 1) {
-			$this->data = $cgLog->current();
+		} elseif ($docCount == 1) {
+			$this->data = reset($cgLog);
 			if (isset($this->data['process_time'])) {
 				throw new Exception('Billrun_LogFile_CreditGuard: file already created');
 			}

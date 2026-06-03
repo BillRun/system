@@ -32,13 +32,13 @@ class Test_Case_42778
                 "connection_type" => "postpaid",
                 "to" => "2025-09-05T13:23:53Z",
                 "creation_time" => "2017-07-01T04:00:00Z",
-                "prorated_start" => true,
+                "prorated_start" => false,
                 "prorated_end" => true,
                 "prorated_termination" => FALSE
             ]
         );
         
-        $discount_name = "DIS_B2C_" . time();
+        $discount_name = generat_test_data::uniqueName("DIS_B2C_");
 
         $discount = generat_discounts::generateDiscount([
             "from" => "2025-08-01T21:00:00Z",

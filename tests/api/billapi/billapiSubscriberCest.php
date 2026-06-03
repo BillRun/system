@@ -9,10 +9,19 @@ class billapiSubscriberCest
     public $planDetails;
     public $serviceDetails;
     public $subscriberDetails;
-    public function _before(ApiTester $I)
+    public $defaultTimezone;
+
+    public static $isRun = false;
+     public function _before(ApiTester $I)
     {
+        if (!self::$isRun) {
+          
+            self::$isRun = true;
+            Billrun_Factory::config();
+            $this->defaultTimezone = date_default_timezone_get();
+            date_default_timezone_set('Asia/Jerusalem');
+        }
     }
-    
 
 
     protected function createData(ApiTester $I , $accountDetails = [], $planDetails = [], $serviceDetails = [])
@@ -21,8 +30,7 @@ class billapiSubscriberCest
         $this->accountDetails = json_decode($I->grabResponse(), true)['entity'];
         $I->generatePlan(array_merge(['name' => 'TEST_PLAN_2'.microtime(true)*10000],$planDetails));
         $this->planDetails = json_decode($I->grabResponse(), true)['entity'];
-        $I->generateService(array_merge(['name' => 'TEST_SERVICE'.microtime(true)*10000],$serviceDetails));
-        $this->serviceDetails = json_decode($I->grabResponse(), true)['entity'];
+        $this->serviceDetails = $I->generateService(array_merge(['name' => 'TEST_SERVICE'.microtime(true)*10000],$serviceDetails));
     }
 
     public function testCreateSubscriber(ApiTester $I)
@@ -82,6 +90,7 @@ class billapiSubscriberCest
     }
     public function testCloseSubscriber(ApiTester $I)
     {
+        date_default_timezone_set('UTC');
         $this->createData($I);
         $I->generateSubscriber(
             [
@@ -97,10 +106,12 @@ class billapiSubscriberCest
         //check the close date
         $a = $I->grabDataFromResponseByJsonPath('$.entity.to.sec');
         $I->assertEquals($a[0],strtotime(date('Y-m-d', strtotime('+1 day'))));
+        date_default_timezone_set($this->defaultTimezone );
     }
   
     public function testReopenSubscriber(ApiTester $I)
     {
+        date_default_timezone_set('UTC');
         $this->createData($I);
         $I->generateSubscriber(
             [
@@ -118,6 +129,7 @@ class billapiSubscriberCest
         //check the reopen date
         $a = $I->grabDataFromResponseByJsonPath('$.entity.from.sec');
         $I->assertEquals($a[0],strtotime(date('Y-m-d', strtotime('+1 year'))));
+        date_default_timezone_set($this->defaultTimezone );
     }
 
 
@@ -162,6 +174,8 @@ class billapiSubscriberCest
         $I->seeResponseIsJson();
         $I->seeResponseContains('{"status":1');
         $I->seeResponseContainsJson(['firstname' => 'eviatar']);       
+        date_default_timezone_set($this->defaultTimezone );
+
     }
 
 
