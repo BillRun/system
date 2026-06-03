@@ -132,6 +132,42 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
     }
 
     /**
+     * BRCD-5302
+     */
+    public function testNoPerRowAccountLoadAfterBulkLoad() {
+        $this->insertMasavRequestFileSettings();
+        $accounts = [];
+        for ($i = 0; $i < 2; $i++) {
+            $customerId = 100 + $i;
+            $account = $this->tester->createAccountWithAllMandatoryCustomFields([
+                "payment_gateway" => [
+                    "active" => [
+                        "name" => "masav",
+                        "bank_code" => 1,
+                        "bank_branch_num" => 1,
+                        "account_num" => 1,
+                        "customer_id" => $customerId
+                    ]
+                ]
+            ])['entity'];
+            $this->tester->payApi(['aid' => $account['aid'], 'amount' => 10, 'dir' => 'tc']);
+            $accounts[] = ['aid' => $account['aid'], 'customer_id' => $customerId];
+        }
+        $this->tester->clearLogFile();
+        $this->sendGenerateRequestFileCommand();
+        $this->tester->dontSeeInLogFile('Custom PG generator: preloaded account missing');
+        foreach ($accounts as $acc) {
+            $expectedSavedCustomerId = str_pad((string) $acc['customer_id'], 9, '0', STR_PAD_LEFT);
+            $this->tester->verifyCollectionRecord('bills', [
+                'aid' => $acc['aid'],
+                'dir' => 'fc',
+                'generated_pg_file_log' => ['$exists' => true],
+                'pg_request.customer_id' => $expectedSavedCustomerId,
+            ]);
+        }
+    }
+
+    /**
      * Function to insert masav data to db
      */
     public function insertMasavRequestFileSettings() {
@@ -210,6 +246,7 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
 								"name" => "customer_id",
 								"path" => 1,
 								"type" => "string",
+								"save_to_bill" => true,
 								"padding" => [
 									"character" => "0",
 									"length" => 9,
