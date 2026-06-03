@@ -13,7 +13,7 @@
  */
 require_once( APPLICATION_PATH . '/library/Tests/discounttestData/discountData.php');
 require_once(APPLICATION_PATH . '/library/Tests/discounttestData/discountTestCases.php');
-require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
 define('UNIT_TESTING', 'true');
 
 class Tests_Discounttest extends UnitTestCase {
@@ -40,6 +40,18 @@ class Tests_Discounttest extends UnitTestCase {
 	public function TestPerform() {
 
 		$this->Tests = $this->skip_tests($this->Tests ,'test_num');
+		$request = new Yaf_Request_Http;
+		$test_cases_to_run = $request->get('tests');
+
+		if ($test_cases_to_run) {
+            $test_cases_to_run = explode(',', $test_cases_to_run);
+            foreach ($this->Tests as $case) {
+                if (in_array(strval($case['test_num']), $test_cases_to_run)){
+                    $this->cases[] = $case;
+                }
+             }
+			$this->Tests =  $this->cases;
+		}
 		foreach ($this->Tests as $key => $row) {
 			$this->message .= "Test number : {$row['test_num']}<br>";
 			$aid = $row['test']['subsAccount'][0]['aid'];

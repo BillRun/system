@@ -20,6 +20,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	protected $backup = false;
 	protected $checkReceivedSize = true;
 	protected $connect_type;
+	protected $currentConnection = null;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -41,9 +42,10 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	 */
 	public function receive() {
 		$ret = array();
+		$useNameAsSubfolder = $this->areConnectionNamesUnique();
 		
 		foreach ($this->sshConfig as $config) {
-
+			$this->currentConnection = $config;
 			// Check if private key exist
 			if (isset($config['key'])) {
 				$directoryPath = 'files/keys/input_processors/';
@@ -85,7 +87,9 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				if (substr($targetPath, -1) != '/') {
 					$targetPath .= '/';
 				}
-		
+
+				$stamp_fields = $this->getExtraStampFieldsValues($config);
+
 				foreach ($files as $file) {
 					Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file, $type));
                     if (!$this->ssh->isFile($ssh_path . "/" . $file)) {
@@ -104,13 +108,13 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 					}
 
 					// Lock
-					if (!$this->lockFileForReceive($filename, $type)) {
-						Billrun_Factory::log('File ' . $filename . ' has been received already', Zend_Log::INFO);
+					if (!$this->lockFileForReceive($filename, $type, $stamp_fields)) {
+						Billrun_Factory::log('File ' . $filename . ' has been received already', Zend_Log::DEBUG);
 						continue;
 					}
 					
 					// Copy file from remote directory
-					$fileData = $this->getFileLogData($filename, $type);
+					$fileData = $this->getFileLogData($filename, $type, $stamp_fields);
 
 					Billrun_Factory::log()->log("SSH: Download file " . $file, Zend_Log::INFO);
 
@@ -119,7 +123,13 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						$sourcePath .= '/';
 					}
 
-					$fileData['path'] = $targetPath . $file;
+
+					if (!empty($stamp_fields)) {
+						$stampFieldsHash = md5(serialize($stamp_fields));
+						$fileData['path'] = rtrim($this->workspace, '/') . '/input_processors_receives/' . $type . '/' . $stampFieldsHash . '/' . $file;
+					} else {
+						$fileData['path'] = $targetPath . $file;
+					}
 
 					if (!file_exists(dirname($fileData['path']))) {
 						mkdir(dirname($fileData['path']), 0777, true);
@@ -147,9 +157,16 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						}
 					}
 
-					// Backup
 					if (!empty($this->backupPaths)) {
-						$backedTo = $this->backup($fileData['path'], $file, $this->backupPaths);
+						$backupDestinationPaths = $this->backupPaths;
+						if (!empty($stamp_fields)) {
+							$subfolderName = $useNameAsSubfolder ? $config['name'] : md5(serialize($stamp_fields));
+							$paths = is_array($this->backupPaths) ? $this->backupPaths : [$this->backupPaths];
+							$backupDestinationPaths = array_map(function ($path) use ($subfolderName) {
+								return rtrim($path, '/') . '/' . $subfolderName;
+							}, $paths);
+						}
+						$backedTo = $this->backup($fileData['path'], $file, $backupDestinationPaths);
 						$fileData['backed_to'] = $backedTo;
 					}
 
@@ -270,6 +287,53 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	protected function isFileValid($filename, $path) {
 		return preg_match($this->filenameRegex, $filename);
 	}
-    
 
+	/**
+     * Builds an array of the extra stamp fields with their actual values.
+     *
+     * @param array $config The connection-specific configuration.
+     * @return array The array of stamp fields with their values.
+     */
+	protected function getExtraStampFieldsValues(array $config)
+	{
+		$stamp_fields = [];
+		if (!empty($this->extra_stamp_fields)) {
+			foreach ($this->extra_stamp_fields as $field_name) {
+				if (!empty($config[$field_name])) {
+					$stamp_fields[$field_name] = $config[$field_name];
+				} else {
+					Billrun_Factory::log()->log(
+						"Billrun_Receiver_Ssh: The stamp_field '{$field_name}' was not found or is empty in this receiver's connection details.",
+						Zend_Log::ALERT
+					);
+				}
+			}
+		}
+		return $stamp_fields;
+	}
+
+	/**
+	 * Checks if all SSH connections have unique and valid names.
+	 *
+	 * This ensures that each connection has a 'name' key and that
+	 * no two connections share the same name.
+	 *
+	 * @return boolean True if all names are unique, false otherwise.
+	 */
+	protected function areConnectionNamesUnique()
+	{
+		if (empty($this->sshConfig) || empty($this->extra_stamp_fields)) {
+			return false;
+		}
+
+		$configNames = array_column($this->sshConfig, 'name');
+		$allNamesExist = (count($configNames) === count($this->sshConfig));
+		$areNamesUnique = (count($configNames) === count(array_unique($configNames)));
+
+		return $allNamesExist && $areNamesUnique;
+	}
+
+	public function getCurrentConnection() {
+		return $this->currentConnection;
+	}
 }

@@ -1,10 +1,15 @@
 actor: ApiTester
 bootstrap: ../_support/Helper/BillRun/bootstrap.php
+error_level: E_ALL & ~E_WARNING & ~E_NOTICE
 modules:
     enabled:
         - Asserts
         - \Helper\Api
         - \Helper\BillRunAPI
+        - \Helper\RealTimeApiHelper
+        - \Helper\TestHelper
+        - \Helper\LogChecker
+        - \Helper\Aggregate
         - REST:
             depends: PhpBrowser
             part: Json

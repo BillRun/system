@@ -24,7 +24,7 @@ class Billrun_Config {
 	/**
 	 * the config container
 	 * 
-	 * @var Yaf_Config
+	 * @var Yaf_Config_Simple
 	 */
 	protected $config;
 
@@ -173,24 +173,39 @@ class Billrun_Config {
 	}
 	
 	/**
-	 * method to set db config from environment variables
-	 * the env variables are useful for docker
+	 * Apply BR_MDB_* environment variables to the db config block in-place.
+	 *
+	 * BREAKING CHANGE in 5.25.0: env values now override the corresponding
+	 * ini values UNCONDITIONALLY (previously env was only applied when the
+	 * matching ini key was empty). This is deliberate, to make containerized
+	 * deployments behave predictably regardless of whatever ships in the
+	 * baked-in *.ini files. Deployments that mix env vars and host.ini must
+	 * be aware that env wins for any BR_MDB_* variable present at runtime.
+	 *
+	 * @param Yaf_Config_Simple $config
 	 */
 	static protected function setDbEnvConfig($config) {
 		$mdbConfigEnv = array(
-			'BR_MDB_HOST'   => 'host',
-			'BR_MDB_PORT'   => 'port',
-			'BR_MDB_DBNAME' => 'name',
-			'BR_MDB_USER'   => 'user',
-			'BR_MDB_PASS'   => 'password',
-			'BR_MDB_AUTHDB' => 'authSource',
+			'BR_MDB_HOST'            => 'host',
+			'BR_MDB_PORT'            => 'port',
+			'BR_MDB_DBNAME'          => 'name',
+			'BR_MDB_USER'            => 'user',
+			'BR_MDB_PASS'            => 'password',
+			'BR_MDB_AUTHDB'          => 'options.authSource',
+			'BR_MDB_TLS'             => 'options.tls',
+			'BR_MDB_TLSKEYFILE'      => 'options.tlsCertificateKeyFile',
+			'BR_MDB_TLSPASSWORD'     => 'options.tlsCertificateKeyFilePassword',
+			'BR_MDB_TLSCAFILE'       => 'options.tlsCAFile',
+			'BR_MDB_TLSINSECURE'     => 'options.tlsInsecure',
+			'BR_MDB_TLSINVALIDCERT'  => 'options.tlsAllowInvalidCertificates',
+			'BR_MDB_TLSINVALIDHOST'  => 'options.tlsAllowInvalidHostnames',
 		);
 
-		$dbConfig = $config['db'];
+		$dbConfig = $config['db']->toArray();
 		$changed = false;
 		foreach ($mdbConfigEnv as $envVar => $confVar) {
-			if (empty($config['db'][$confVar]) && !empty($envVal = getenv($envVar))) {
-				$dbConfig->set($confVar, $envVal);
+			if (!empty($envVal = getenv($envVar))) {
+				Billrun_Util::setIn($dbConfig, $confVar, $envVal);
 				$changed = true;
 			}
 		}
@@ -239,13 +254,27 @@ class Billrun_Config {
 		}, $this->getConfigValue('file_types')));
 	}
 	
+	public function isConfigCacheEnabled() {
+		return $this->getConfigValue('config_cache.enabled', false);
+	}
+
 	public function loadDbConfig() {
 		try {
+			$cache = $this->isConfigCacheEnabled() ? Billrun_Factory::cache() : null;
+			if ($cache) {
+				$cachedConfig = $cache->get('db_config', 'config');
+				if (!empty($cachedConfig)) {
+					$this->config = new Yaf_Config_Simple($cachedConfig);
+					$this->setTenantTimezone($cachedConfig);
+					return true;
+				}
+			}
+
 			$configColl = Billrun_Factory::db()->configCollection();
 			if ($configColl) {
 				$dbCursor = $configColl->query()
 					->cursor()->setReadPreference('RP_PRIMARY')
-					->sort(array('_id' => -1))
+					->sort(array('urt' => -1,'_id' => -1))
 					->limit(1)
 					->current();
 				if ($dbCursor->isEmpty()) {
@@ -255,8 +284,14 @@ class Billrun_Config {
 				unset($dbConfig['_id']);
 				$iniConfig = $this->config->toArray();
 				$this->translateComplex($dbConfig);
-				$this->config = new Yaf_Config_Simple(self::mergeConfigs($iniConfig, $dbConfig));
-				
+				$mergedConfig = self::mergeConfigs($iniConfig, $dbConfig);
+				$this->config = new Yaf_Config_Simple($mergedConfig);
+
+				if ($cache) {
+					$configTtl = $this->getConfigValue('config_cache.ttl', 600);
+					$cache->set('db_config', $mergedConfig, 'config', $configTtl);
+				}
+
 				// Set the timezone from the config.
 				$this->setTenantTimezone($dbConfig);
 			}
@@ -332,6 +367,25 @@ class Billrun_Config {
 
 		return $currConf;
 	}
+
+ /**
+  * Sets a value in the configuration at the specified path
+  * 
+  * This method updates the configuration by setting a value at the specified key path.
+  * It converts the current configuration to an array, creates a new array with the 
+  * specified value, and then merges them together.
+  * 
+  * @param mixed $keys String with dot notation or array representing the path to the config value
+  * @param mixed $val The value to set at the specified path
+  * 
+  * @return void
+  */
+  public function setConfigValue($keys, $val) {
+    $config = $this->config->toArray();
+    $importantConf = [];
+    Billrun_Util::setIn($importantConf, $keys, $val);
+    $this->config = new Yaf_Config_Simple(self::mergeConfigs($config, $importantConf));
+}
 
 	/**
 	 * Return a wrapper for input data.
@@ -513,6 +567,10 @@ class Billrun_Config {
 	public static function getMultitenantConfigPath() {
 		return self::$multitenantDir;
 	}
+
+	public static function isMultitenantEnabled() {
+		return defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT;
+	}
 		
 	public static function isFileTypeConfigEnabled($fileTypeSettings) {
 		return (!isset($fileTypeSettings['enabled']) || $fileTypeSettings['enabled']);
@@ -612,6 +670,11 @@ class Billrun_Config {
 			}
 		}
 		return $fileType;
+	}
+
+	public function setInternalSubscribersMode() {
+		$this->config['subscribers']['subscriber']['type'] = 'db';
+		$this->config['subscribers']['account']['type'] = 'db';
 	}
 
 }

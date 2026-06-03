@@ -69,7 +69,7 @@ class ConfigModel {
 	protected function loadConfig() {
 		$ret = $this->collection->query()
 			->cursor()
-			->sort(array('_id' => -1))
+			->sort(array('urt' => -1, '_id' => -1))
 			->limit(1)
 			->current()
 			->getRawData();
@@ -90,12 +90,20 @@ class ConfigModel {
 	public function setConfig($data) {
 		$updatedData = array_merge($this->getConfig(), $data);
 		unset($updatedData['_id']);
+		$updatedData = $this->addUrt($updatedData);
 		foreach ($this->options as $option) {
 			if (!isset($data[$option])) {
 				$data[$option] = 0;
 			}
 		}
-		return $this->collection->insert($updatedData);
+		$result = $this->collection->insert($updatedData);
+		if (Billrun_Config::getInstance()->isConfigCacheEnabled()) {
+			$cache = Billrun_Factory::cache();
+			if ($cache) {
+				$cache->remove('db_config', 'config');
+			}
+		}
+		return $result;
 	}
 
 	public function getFromConfig($category, $data) {
@@ -381,9 +389,16 @@ class ConfigModel {
 			}
 		}
 		if($persist){
+			$updatedData = $this->addUrt($updatedData);
 			$ret = $this->collection->insert($updatedData);
 			$saveResult = !empty($ret['ok']);
 			if ($saveResult) {
+				if (Billrun_Config::getInstance()->isConfigCacheEnabled()) {
+					$cache = Billrun_Factory::cache();
+					if ($cache) {
+						$cache->remove('db_config', 'config');
+					}
+				}
 				// Reload timezone.
 				Billrun_Config::getInstance()->refresh();
 				if ($category === 'shared_secret') {
@@ -582,8 +597,8 @@ class ConfigModel {
 				$mandatoryQuery['$or'][] = array($field['name'] => array('$exists' => false));
 			}
 		}
-		
-		return $entityModel->getCollection()->query($mandatoryQuery)->count() === 0;
+
+		return $entityModel->getCollection()->query($mandatoryQuery)->cursor()->limit(1)->current()->isEmpty();
 	}
 	
 	/**
@@ -947,7 +962,7 @@ class ConfigModel {
  				}
  			}
  		}
- 
+		$updatedData = $this->addUrt($updatedData); 
 		$ret = $this->collection->insert($updatedData);
 		
 		if ($category === 'shared_secret') {
@@ -975,7 +990,7 @@ class ConfigModel {
 				}
 			}
 		}
- 
+		$updatedData = $this->addUrt($updatedData);
 		$ret = $this->collection->insert($updatedData);
 		return !empty($ret['ok']);
 	}
@@ -1897,5 +1912,19 @@ class ConfigModel {
 			$securePaymentGateways[] = $this->getSecurePaymentGateway($paymentGateway);
 		}
 		return $securePaymentGateways;
+	}
+
+	/**
+	 * Adds the 'urt' (Update Runtime) timestamp to the configuration data.
+	 * * We use this field because it captures millisecond precision, whereas 
+	 * the standard MongoDB '_id' field only captures seconds. This ensures 
+	 * correct sorting of configuration updates that occur within the same second.
+	 *
+	 * @param array $data
+	 * @return array The data with the 'urt' field added.
+	 */
+	protected function addUrt($data) {
+		$data['urt'] = new MongoDB\BSON\UTCDateTime();
+		return $data;
 	}
 }

@@ -30,18 +30,15 @@ use function is_array;
 /**
  * Operation for the dropDatabase command.
  *
- * @api
  * @see \MongoDB\Client::dropDatabase()
  * @see \MongoDB\Database::drop()
  * @see https://mongodb.com/docs/manual/reference/command/dropDatabase/
  */
 class DropDatabase implements Executable
 {
-    /** @var string */
-    private $databaseName;
+    private string $databaseName;
 
-    /** @var array */
-    private $options;
+    private array $options;
 
     /**
      * Constructs a dropDatabase command.

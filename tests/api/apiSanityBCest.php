@@ -12,7 +12,7 @@ class apiSanityBCest
 
 
 
-    public function testCreateAccount(ApiTester $I)
+    public function testCreateAccountSanity(ApiTester $I)
     {
         $I->createAccountWithAllMandatoryCustomFields(['firstname' => 'yossi_test']);
         $I->seeResponseIsJson();
@@ -22,6 +22,7 @@ class apiSanityBCest
         ]);
         $this->accountDetails = json_decode($I->grabResponse(), true)['entity'];
     }
+
 
     public function testCreatePlan(ApiTester $I)
     {
@@ -36,7 +37,7 @@ class apiSanityBCest
     public function testCreateService(ApiTester $I)
     {
 
-        $I->generateService(['name' => 'TEST_SERVICE'.time()]);
+        $I->generateService(['name' => 'TEST_SERVICE'.time()], true);
         $this->serviceDetails = json_decode($I->grabResponse(), true)['entity'];
         $I->seeResponseIsJson();
         $I->seeResponseContains('{"status":1');
@@ -46,7 +47,7 @@ class apiSanityBCest
     }
 
     /**
-     * @depends testCreateAccount
+     * @depends testCreateAccountSanity
      * @depends testCreatePlan
      * @depends testCreateService
      */

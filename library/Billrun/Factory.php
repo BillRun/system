@@ -64,11 +64,11 @@ class Billrun_Factory {
 	protected static $subscriber = null;
 	
 	/**
-	 * Account instance
+	 * Account instances
 	 * 
-	 * @var Billrun_Billrun Account
+	 * @var Billrun_Account[] Account
 	 */
-	protected static $account = null;
+	protected static $accounts = null;
 	
 	/**
 	 * Collection Steps instance
@@ -193,6 +193,15 @@ class Billrun_Factory {
 		return self::$config;
 	}
 
+		/**
+	 * method to update the config instance
+	 * 
+	 * @return Billrun_Config
+	 */
+	static public function updateConfig() {
+		self::$config->loadDbConfig();
+	}
+
 	/**
 	 * method to retrieve the db instance
 	 * 
@@ -214,6 +223,63 @@ class Billrun_Factory {
 		}
 
 		return self::$db[$stamp];
+	}
+
+	/**
+	 * method to retrieve the admin db instance
+	 * admin db should have higher permissions, like sharding and
+	 * create new db scheme, db user and db pass for multi-tenancy support
+	 *
+	 * Sources, in order of precedence:
+	 *   1. BR_ADMDB_* env vars (always override when set)
+	 *   2. 'admindb' config block
+	 *   3. Fall back to the default db() connection
+	 *
+	 * @return Billrun_Db
+	 */
+	static public function admindb() {
+		$options = Billrun_Factory::config()->getConfigValue('admindb');
+		if (!is_array($options)) {
+			$options = [];
+		}
+		self::setAdmindbEnvConfig($options);
+		if (empty($options)) {
+			return self::db();
+		}
+		return self::db($options);
+	}
+
+	/**
+	 * Apply BR_ADMDB_* environment variables to admindb options in-place.
+	 *
+	 * Mirrors Billrun_Config::setDbEnvConfig() for the admin connection. Env
+	 * values take precedence over anything supplied via the 'admindb' config
+	 * block, so a docker/k8s deployment can override individual fields (or
+	 * supply the whole connection) without editing config files.
+	 *
+	 * @param array $options
+	 */
+	static protected function setAdmindbEnvConfig(array &$options) {
+		$envMap = array(
+			'BR_ADMDB_HOST'            => 'host',
+			'BR_ADMDB_PORT'            => 'port',
+			'BR_ADMDB_DBNAME'          => 'name',
+			'BR_ADMDB_USER'            => 'user',
+			'BR_ADMDB_PASS'            => 'password',
+			'BR_ADMDB_AUTHDB'          => 'options.authSource',
+			'BR_ADMDB_TLS'             => 'options.tls',
+			'BR_ADMDB_TLSKEYFILE'      => 'options.tlsCertificateKeyFile',
+			'BR_ADMDB_TLSPASSWORD'     => 'options.tlsCertificateKeyFilePassword',
+			'BR_ADMDB_TLSCAFILE'       => 'options.tlsCAFile',
+			'BR_ADMDB_TLSINSECURE'     => 'options.tlsInsecure',
+			'BR_ADMDB_TLSINVALIDCERT'  => 'options.tlsAllowInvalidCertificates',
+			'BR_ADMDB_TLSINVALIDHOST'  => 'options.tlsAllowInvalidHostnames',
+		);
+		foreach ($envMap as $envVar => $confVar) {
+			if (!empty($envVal = getenv($envVar))) {
+				Billrun_Util::setIn($options, $confVar, $envVal);
+			}
+		}
 	}
 
 	/**
@@ -239,7 +305,8 @@ class Billrun_Factory {
 
 			return self::$cache;
 		} catch (Exception $e) {
-			Billrun_Factory::log('Cache instance cannot be generated. Exception type: ' . gettype($e) . '. Error: ' . $e->getMessage() . '. Line #' . $e->getLine(), Zend_Log::ALERT);
+			Billrun_Factory::log('Cache instance cannot be generated.', Zend_Log::ALERT);
+			Billrun_Factory::log()->logCrash($e, Zend_Log::DEBUG);
 		}
 		return false;
 	}
@@ -336,16 +403,17 @@ class Billrun_Factory {
 	 * @return Billrun_Account
 	 */
 	public static function account() {
-		if (!self::$account) {
-			$settings = self::config()->getConfigValue('subscribers.account', array());
-			if (!isset($settings['type'])) {
-				$settings['type'] = 'db';
-			}
-			self::$account = Billrun_Account::getInstance($settings);
+		$settings = self::config()->getConfigValue('subscribers.account', array());
+		if (!isset($settings['type'])) {
+			$settings['type'] = 'db';
 		}
-
-		return self::$account;
+		if (!isset(self::$accounts[$settings['type']])) {
+			self::$accounts[$settings['type']] = Billrun_Account::getInstance($settings);
+		}
+		return self::$accounts[$settings['type']];
 	}
+
+
 	
 	/**
 	 * method to retrieve the account instance
@@ -410,7 +478,7 @@ class Billrun_Factory {
 			return new Billrun_Plan($params);
 		}
 		// unique stamp per plan
-		$stamp = Billrun_Util::generateArrayStamp($params);
+		$stamp = Billrun_Util::generateArrayStamp($params,['name','time','id','data']);
 
 		if (!isset(self::$plan[$stamp])) {
 			self::$plan[$stamp] = new Billrun_Plan($params);

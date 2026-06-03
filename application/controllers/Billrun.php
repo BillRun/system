@@ -66,8 +66,9 @@ class BillrunController extends ApiController {
 		if ($billrunKey >= $currentBillrunKey) {
 			throw new Exception("Can't run billing cycle on active or future cycles");
 		}
-		if (Billrun_Billingcycle::isCycleRunning($billrunKey, $this->size, $invoicingDay)) {
-			throw new Exception("Already Running");
+		$host = Billrun_Util::getHostName();
+		if (Billrun_Billingcycle::isCycleRunningOnHost($billrunKey, $host, $this->size)) {
+			throw new Exception("Billing cycle $billrunKey is already running on host $host");
 		}
 		$cycleStatus = Billrun_Billingcycle::getCycleStatus($billrunKey, null, $invoicingDay);
 		if ($cycleStatus == 'finished' || $cycleStatus == 'to_rerun') {
@@ -237,6 +238,7 @@ class BillrunController extends ApiController {
 		$params['mode'] = $request->get('charge_mode');
 		$params['min_invoice_date'] = $request->get('min_invoice_date');
 		$params['exclude_accounts'] = $request->get('exclude_accounts');
+		$params['uf'] = json_decode($request->get('uf'), true);
 		if (!$this->validateParams($params)) {
 			throw new Exception("One or more of the parameters of the 'charge' command is not valid");
 		}
@@ -560,10 +562,12 @@ class BillrunController extends ApiController {
 					break;
 				case 'pay_mode':
 				case 'mode':
-					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge‎'];	
+					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge'];	
 					if (!is_null($value) && !in_array(trim($value, '"'), $array)) {
 						return false;
 					}
+					break;
+				case 'uf':
 					break;
 				default:
 					return false;

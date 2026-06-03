@@ -109,8 +109,8 @@ trait Billrun_Cycle_Aggregation_Common {
 		return $match;
 	}
 
-	protected function getConfirmedAids($mongoCycle) {
-		return Billrun_Billingcycle::getConfirmedAccountIds($mongoCycle->key());
+	protected function getConfirmedAids($mongoCycle, $aids = array()) {
+		return Billrun_Billingcycle::getConfirmedAccountIds($mongoCycle->key(), $aids);
 	}
 
 	/**

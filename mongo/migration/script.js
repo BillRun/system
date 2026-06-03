@@ -1,6 +1,10 @@
 /* 
  * General (idempotent) DB migration script goes here.
  * Please try to avoid using migration script and instead make special treatment in the code!
+ * 
+ * @deprecated since version 5.25.0
+ *             please use application/migrations
+ *             more info in application/migrations/README.md
  */
 
 // =============================== Helper functions ============================
@@ -84,7 +88,7 @@ function _dropIndex(collname, indexname) {
 }
 
 // =============================================================================
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty().next();
+var lastConfig = db.config.find().sort({urt: -1, _id: -1}).limit(1).pretty().next();
 delete lastConfig['_id'];
 // =============================================================================
 
@@ -1312,6 +1316,13 @@ _dropIndex("archive", "sid_1_session_id_1_request_num_");
 _dropIndex("archive", "session_id_1_request_num_");
 _dropIndex("archive", "sid_1_call_reference_1");
 _dropIndex("archive", "call_reference_1");
+db.audit.createIndex({'stamp': 1 },  { unique: true });
+db.audit.createIndex({'type': 1 }, { unique: false , sparse: true, background: true });
+db.audit.createIndex({'key': 1 }, { unique: false , sparse: false, background: true });
+db.audit.createIndex({'collection': 1 }, { unique: false , sparse: false, background: true });
+db.audit.createIndex({'urt': 1 }, { unique: false , sparse: false, background: true });
+db.audit.createIndex({'user.name': 1 }, { unique: false , sparse: false, background: true });
+
 if (db.serverStatus().ok == 0) {
 	print('Cannot shard archive collection - no permission')
 } else if (db.serverStatus().process == 'mongos') {
@@ -1951,6 +1962,33 @@ runOnce(lastConfig, 'BRCD-4306', function() {
 	}
 });
 
+//BRCD-4415 CG plugin
+runOnce(lastConfig, 'BRCD-4415', function () {
+	var cgPluginSettings = {
+        "name": "creditGuardPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false,
+        "configuration" : {
+            "values" : {
+                "card_expiration_field_name" : "card_expiration",
+				"oldest_card_expiration" : "20 years ago",
+                "years_to_extend_card_expiration" : 3,
+                "extend_card_expiration" : true
+            }
+        }
+	}
+	for (var j = 0; j < lastConfig.payment_gateways.length; j++) {
+        if (lastConfig.payment_gateways[j]['name'] === "CreditGuard") {
+            for (let pg_field_name in lastConfig.payment_gateways[j]) {
+                cgPluginSettings['configuration']['values'][pg_field_name] = JSON.parse(JSON.stringify(lastConfig.payment_gateways[j][pg_field_name]));
+            }
+       
+        }
+	}
+    lastConfig['plugins'].push(cgPluginSettings);
+});
+
 //BRCD-4455 - add user_id field to Israel invoice plugin conf
 runOnce(lastConfig, 'BRCD-4455-1', function () {
 	for (var i = 0; i < lastConfig.plugins.length; i++) {
@@ -2038,9 +2076,191 @@ runOnce(lastConfig, 'BRCD-4725', function () {
 	db.services.updateMany({"rounding_rules.rounding_type":{"$exists":1}, "rounding_rules.rounding_stage":{"$exists":0}}, {"$set":{"rounding_rules.rounding_stage":"after_tax"}})
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-3218', function () {
+	db.operations.createIndex({ 'action': 1, 'filtration': 1, 'lock_end_time': 1, 'lock_expiry_time': 1 }, { background: true });
+	db.operations.createIndex({ 'lock_start_time': 1 }, { expireAfterSeconds: 5256000 });
+	db.operations.createIndex({ 'start_time': 1 }, { expireAfterSeconds: 5256000 });
+});
+
+// BRCD-4430: Create index for config collection on urt field
+runOnce(lastConfig, 'BRCD-4430', function () {
+	db.config.createIndex({ urt: -1 }, { unique: false, background: true });
+});
+
+runOnce(lastConfig, 'BRCD-4739', function () {
+	if (!lastConfig['plugins'].some(p => p.name === 'teldasPlugin')) {
+		lastConfig['plugins'].push({
+			"name": 'teldasPlugin',
+			"enabled": false,
+			"system": true,
+			"hide_from_ui": true
+		});
+	}
+	_createCollection('plugin_teldas_ina_numbers');
+	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index" });
+	_createCollection('plugin_teldas_tariffs_profiles');
+	db.plugin_teldas_tariffs_profiles.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariffs_profiles_unique_index" });
+	_createCollection('plugin_teldas_tariff_switching_classes');
+	_createCollection("plugin_teldas_non_working_days"); 
+});
+
+runOnce(lastConfig, 'BRCD-5060', function () {
+	var ebill_id = {
+		"field_name": "ebill_id",
+		"title": "eBill ID",
+		"mandatory": false,
+		"system": true,
+		"editable": true,
+		"display": false,
+	};
+	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ebill_id, 'account');
+
+	var ebill_vendor_number = {
+		"field_name": "ebill_vendor_number",
+		"title": "eBill vendor number",
+		"mandatory": false,
+		"system": true,
+		"editable": true,
+		"display": false,
+	};
+	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ebill_vendor_number, 'account');
+
+	var ebillPlugin = {
+		"name": "eBillSwitzerlandPlugin",
+		"enabled": false,
+		"system": true,
+		"hide_from_ui": true,
+		"configuration": {
+			"values": {
+				"string_keys": [
+				],
+				"sftp_remote_directory": "",
+				"creditor_reference_prefix": "",
+				"sftp_password": "",
+				"bill_summary_template": [
+				],
+				"should_generate_ebill": {
+				},
+				"bill_headers": [
+				],
+				"header_values": [
+				],
+				"address": {
+
+				},
+				"sftp_host": "",
+				"delivery_info": [
+				],
+				"sftp_user": "",
+				"line_item_template": [
+				],
+				"response_status_files_path": ""
+			}
+		}
+	};
+	lastConfig.plugins.push(ebillPlugin);
+});
+
+runOnce(lastConfig, 'BRCD-4948', function () {
+	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariff_switching_classes_unique_index" });
+});
+
+lastConfig.urt = new Date();
 if (typeof lastConfig['export'] === 'undefined') {
 	lastConfig.export = 1;
 }
+runOnce(lastConfig, 'BRCD-4966', function () {
+	db.billing_cycle.createIndex({'billrun_key': 1, 'page_number': 1, 'page_size': 1}, { unique: true , background: true });
+	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'end_time':1},{ unique: false , sparse: false, background: true });
+	db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'count':1,'invoicing_day':1},{ unique: false , sparse: false, background: true });
+});
+
+runOnce(lastConfig, 'BRCD-4966', function () {
+	print("Creating new subscribers index: { aid: 1, type: 1, from: 1, to: 1 }...");
+	db.subscribers.createIndex({'aid':1,'type':1,'from': 1 , 'to': 1}, { unique: false, sparse: false, background: true });
+});
+
+runOnce(lastConfig, 'BRCD-5190', function () {
+	for (var i = 0; i < lastConfig.plugins.length; i++) {
+		if (lastConfig.plugins[i].name === "teldasPlugin") {
+			if (typeof lastConfig.plugins[i].configuration !== 'undefined'){
+				var configValues = lastConfig.plugins[i].configuration.values;
+
+				if (typeof configValues !== 'undefined' && typeof configValues.matching_paths !== 'undefined') {
+					var paths = configValues.matching_paths;
+					if (typeof paths === 'object' && !Array.isArray(paths)) {
+						if(typeof paths.subscriber_number.convertion !== 'undefined'){
+							paths.subscriber_number.conversion = paths.subscriber_number.convertion;
+							delete paths.subscriber_number.convertion;
+						}
+						lastConfig.plugins[i].configuration.values.matching_paths = [paths];
+					}
+				}
+			}
+		}
+	};
+	_dropIndex("plugin_teldas_tariff_switching_classes", "tariff_switching_classes_unique_index");
+	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: false , sparse: false, background: true });
+});
+
+runOnce(lastConfig, 'BRCD-5151', function () {
+	if (typeof lastConfig['email_templates'] !== 'undefined') {
+		Object.keys(lastConfig['email_templates']).forEach((templateType) => {
+			var oldTemplate = lastConfig['email_templates'][templateType];
+			if(typeof oldTemplate['templates'] === 'undefined'){
+				var newTemplate = {
+					"templates": [{
+						name: "default",
+						label: "Default",
+						conditions: [	
+						],
+						"subject" : oldTemplate["subject"],
+						"content" :  oldTemplate["content"],
+					}],
+				}
+
+				lastConfig['email_templates'][templateType] = newTemplate;
+			}
+			
+		});
+
+	}
+});
+
+runOnce(lastConfig, 'BRCD-5273', function () {
+var invoiceTemplate = {
+    "field_name": "invoice_config",
+    "title": "Invoice Configuration",
+    "mandatory": false,
+    "system": true,
+    "editable": true,
+    "display": false,
+	"type": "json",
+    "description": "Holds configuration regarding the formatting and appearance of the invoice (banners, etc.)"
+};
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoiceTemplate, 'account');
+});
+
+runOnce(lastConfig, 'BRCD-5278', function () {
+	var plugin = lastConfig.plugins.find(function (p) { return p.name === "eBillSwitzerlandPlugin"; });
+	if (!plugin || typeof plugin.configuration === 'undefined' || typeof plugin.configuration.values === 'undefined') {
+		return;
+	}
+	var configValues = plugin.configuration.values;
+	delete configValues.sftp_host;
+	delete configValues.sftp_user;
+	delete configValues.sftp_password;
+	delete configValues.sftp_remote_directory;
+	delete configValues.response_status_files_path;
+	configValues.export_sftp_host = "";
+	configValues.export_sftp_user = "";
+	configValues.export_sftp_password = "";
+	configValues.export_sftp_remote_directory = "";
+	configValues.response_sftp_host = "";
+	configValues.response_sftp_user = "";
+	configValues.response_sftp_password = "";
+	configValues.response_sftp_remote_directory = "";
+});
 
 db.config.insertOne(lastConfig);
 

@@ -66,4 +66,10 @@ abstract class Billrun_Cycle_Common implements Billrun_Aggregator_Aggregateable 
 	public function getRecords() {
 		return $this->records;
 	}
+
+	public function getCycleAggregator()
+	{
+		return $this->cycleAggregator;
+	}
+
 }

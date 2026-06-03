@@ -18,6 +18,7 @@ import { getSettings, fetchFile } from '@/actions/settingsActions';
 import { onBoardingIsRunnigSelector } from '@/selectors/guiSelectors';
 import { taxationTypeSelector } from '@/selectors/settingsSelector';
 import { showDanger } from '@/actions/alertsActions';
+import { getWorkersStatus } from '@/actions/guiStateActions/appActions';
 
 class App extends Component {
 
@@ -93,6 +94,9 @@ class App extends Component {
         })
         .then(() => {
           this.props.dispatch(systemRequirementsLoadingComplete());
+        })
+        .then(() => {
+          this.props.dispatch(getWorkersStatus());
         })
         .catch(() => {});
     }

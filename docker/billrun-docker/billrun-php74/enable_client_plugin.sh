@@ -21,6 +21,15 @@ if test -d "/plugin/application/plugins/"; then
      done
 fi
 
+if test -d "/plugin/application/controllers/Action/"; then
+     cd /plugin/application/controllers/Action/
+     for f in *.php
+     do
+          rm -f "/billrun/application/controllers/Action/"$f
+          ln -s /plugin/application/controllers/Action/$f "/billrun/application/controllers/Action/"$f
+     done
+fi
+
 if test -d "/plugin/application/views/"; then
      cd /plugin/application/views/
      for d in *
@@ -67,6 +76,17 @@ if test -d "/plugin/conf/exporter/"; then
           ln -s /plugin/conf/exporter/$f "/billrun/conf/exporter/"$f
      done
 fi 
+
+
+if test -d "/plugin/docker/billrun-docker/mockup-servers/crm_data/plugins/"; then
+     cd /plugin/docker/billrun-docker/mockup-servers/crm_data/plugins/
+     mkdir -p "/billrun/docker/billrun-docker/mockup-servers/crm_data/plugins/"
+     for d in *
+     do
+          rm -rf "/billrun/docker/billrun-docker/mockup-servers/crm_data/plugins/"$d
+          ln -s /plugin/docker/billrun-docker/mockup-servers/crm_data/plugins/$d "/billrun/docker/billrun-docker/mockup-servers/crm_data/plugins/"$d
+     done
+fi
 
 cd /billrun
 

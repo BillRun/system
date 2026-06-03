@@ -11,6 +11,12 @@
  */
 abstract class Billrun_Generator_PaymentGateway_Custom {
 
+    use Billrun_Traits_Api_FlexibleOperationsLock {
+        // Rename the trait's methods to new names because class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest  that extends
+        // it has same function names for the old Lock.
+        lock as flexibleLock;
+        release as flexibleRelease;
+    }
 	public $now;
     protected $configByType;
     protected $exportDefinitions;
@@ -24,12 +30,13 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected $logFile;
     protected $fileName;
     protected $transactionsTotalAmount = 0;
-    protected $file_transactions_counter = 0;
+	protected $file_transactions_counter = 0;
     protected $file_record_counter = 0;
     protected $gatewayLogName;
     protected $fileGenerator;
 	protected $billSavedFields = array();
 	protected $mandatory_fields_per_entity = [];
+    public $aid_to_lock = null;
     
     public function __construct($options) {
         if (!isset($options['file_type'])) {
@@ -74,10 +81,10 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		if(isset($this->mandatory_fields_per_entity[$entity_type])) {
 			foreach($this->mandatory_fields_per_entity[$entity_type] as $field_name) {
 				if(!is_null(Billrun_Util::getIn($data, $field_name))) {
-					continue;
+				continue;
 				} else {
 					$missing_fields[] = $field_name;
-				}
+			}
 			}
 		}
 		return $missing_fields;
@@ -87,7 +94,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $dataLine = array();
         $this->transactionsTotalAmount += $params['amount'];
         $dataStructure = $this->configByType['generator']['data_structure'];
-        $this->billSavedFields = array();
+		$this->billSavedFields = array();
         if(!empty($dataStructure)) {
                 $this->file_record_counter++;
         }
@@ -113,14 +120,17 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             }
             if ((isset($dataField['type']) && $dataField['type'] == 'autoinc')) {
                     $dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpf_generator_' . $this->getFilename());
-            }
+                }
 	    if ((isset($dataField['type']) && $dataField['type'] == 'record_autoinc')) {
 		$dataLine[$dataField['path']] = $this->file_record_counter;
-	    }
+            }
             $warningMessages = [];
             $dataLine[$dataField['path']] = Billrun_Util::formattingValue($dataField, $dataLine[$dataField['path']], $warningMessages);
             foreach ($warningMessages as $warningMessage){
                 $this->logFile->updateLogFileField('warnings', $warningMessage);
+            }
+            if (isset($dataField['value_mult'])) {
+                $dataLine[$dataField['path']] = floatval($dataField['value_mult']) * floatval($dataLine[$dataField['path']]);
             }
             $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
@@ -137,7 +147,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
                 continue;
             }
-            Billrun_Factory::dispatcher()->trigger('afterPreparingCpfDataField', array(static::$type, $dataField, &$dataLine, &$attributes, $this));
+            Billrun_Factory::dispatcher()->trigger('afterPreparingCpfDataField', array(static::$type, $dataField, &$dataLine, &$attributes, $this, $params));
         }
         if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
             ksort($dataLine);
@@ -236,8 +246,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 $translations[$paramObj['param']] = Billrun_util::formattingValue($paramObj, $this->getTranslationValue($paramObj), $warningMessages);
                 foreach ($warningMessages as $warningMessage){
                     $this->logFile->updateLogFileField('warnings', $warningMessage);
-                }              
             }
+        }
         }
         $this->fileName = Billrun_Util::translateTemplateValue($this->fileNameStructure, $translations, null, true);
         return $this->fileName;
@@ -284,10 +294,35 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $exportDetails = $this->configByType['export'];
         $connection = Billrun_Factory::paymentGatewayConnection($exportDetails);
         $fileName = $this->getFilename();
+
+        $exportLockId = [
+            'action'     => 'send_file',
+            'filtration' => 'send_' . $this->gatewayName,
+        ];
+        $lockAcquiredByThisProcess = false;
+        if ($this->flexibleLock($exportLockId, 6)) {
+            $lockAcquiredByThisProcess = true;
+        } else {
+            Billrun_Factory::log()->log('Failed to acquire lock, sending file is already in progress for: ' . $this->gatewayName, Zend_Log::NOTICE);
+            return;
+        }
+        try {
+        $filePath = rtrim($exportDetails['export_directory'], DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fileName;
+        $this->logFile->updateLogFileField('path', $filePath);
+        $this->logFile->updateLogFileField('start_upload_time', new Mongodloid_Date());
+        $this->logFile->saveLogFileFields();
 		$res = $connection->export($fileName);
 		if (!$res) {
 			Billrun_Factory::log()->log('Failed moving file ' . $fileName, Zend_Log::ALERT);
-		}
+		} else {
+            $this->logFile->updateLogFileField('end_upload_time', new Mongodloid_Date());
+            $this->logFile->saveLogFileFields();
+        }
+        } finally {
+            if ($lockAcquiredByThisProcess && !$this->flexibleRelease($exportLockId)) {
+                Billrun_Factory::log("Problem in releasing operation lock for gateway: " . $this->gatewayName, Zend_Log::ALERT);
+            }
+        }
 	}
 
     protected function getTranslationValue($paramObj) {
@@ -343,7 +378,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             $line[$field['path']] = Billrun_Util::formattingValue($field, $line[$field['path']], $warningMessages);
             foreach ($warningMessages as $warningMessage){
                 $this->logFile->updateLogFileField('warnings', $warningMessage);
-            }
+                }
             if ((isset($field['type']) && $field['type'] == 'record_autoinc')) {
                     $line[$field['path']] = $this->file_record_counter;
             }
@@ -397,14 +432,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             return [];
         }
     }
-
+    
 	protected function getAutoincValue($params, $action = 'transactions_request') {
 		if (!isset($params['min_value']) || !isset($params['max_value'])) {
 			$message = "Missing min/max values in " . $params['name'] . " params definitions for file type " . $this->configByType['file_type'];
 			Billrun_Factory::log($message, Zend_Log::ERR);
 			$this->logFile->updateLogFileField('errors', $message);
 			return false;
-		}
+        }
 		$minValue = $params['min_value'];
 		$maxValue = $params['max_value'];
 		$dateGroup = isset($params['date_group']) ? $params['date_group'] : Billrun_Base::base_datetimeformat;
@@ -416,8 +451,44 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			$message = "Sequence exceeded max value when generating file for file type " . $this->configByType['file_type'];
 			$this->logFile->updateLogFileField('errors', $message);
 			return false;
-		}
+            }
 		return $seq;
+    }
+
+    public function getPgConfig() {
+        return $this->configByType;
+    }
+
+    public function setPgConfig($pg_config) {
+        return $this->configByType = $pg_config;
+    }
+
+    protected function getConflictingQuery() {
+		if (!empty($this->aid_to_lock)) {
+			return array(
+				'$or' => array(
+					array('filtration' => 'all'),
+					array('filtration' => array('$in' => [$this->aid_to_lock]))
+				),
+			);
+		}
+
+		return array();
 	}
 
+	protected function getInsertData() {
+		return array(
+			'action' => 'charge_account',
+			'filtration' => $this->aid_to_lock
+    	);
+	}
+
+	protected function getReleaseQuery() {
+		return array(
+			'action' => 'charge_account',
+			'filtration' => $this->aid_to_lock,
+			'end_time' => array('$exists' => false)
+		);
+
+    }
 }

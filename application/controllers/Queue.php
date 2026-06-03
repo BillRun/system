@@ -83,8 +83,9 @@ class QueueController extends ApiController {
 			return;
 		}
 		$future_only = $request->get('future_only', false);
+		$include_cancelled = $request->get('include_cancelled', false);
 		$model = new JobsqueueModel();
-		$data = $model->getLatestJobs($job_type, $limit, $future_only);
+		$data = $model->getLatestJobs($job_type, $limit, $future_only, $include_cancelled);
 		$ret = [
 			'status' => 1,
 			'details' => $data,

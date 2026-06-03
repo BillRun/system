@@ -6,6 +6,8 @@ import React, { Component } from 'react';
 import { Col, Row } from 'react-bootstrap';
 import Help from '../Help';
 import UsageTypesSelector from '../UsageTypes/UsageTypesSelector';
+import moment from 'moment-timezone';
+
 
 export default class FieldsMapping extends Component {
 
@@ -39,6 +41,14 @@ export default class FieldsMapping extends Component {
     this.onChangeStaticUsaget = this.onChangeStaticUsaget.bind(this);
     this.addFieldCondition = this.addFieldCondition.bind(this);
 
+    const { settings } = props;
+    let timeZoneOption = 'global';
+    if (settings.getIn(['processor', 'timezone'])) {
+      timeZoneOption = 'timezone';
+    } else if (settings.getIn(['processor', 'timezone_field'])) {
+      timeZoneOption = 'field';
+    }
+
     this.state = {
       fieldName: '',
       op: '',
@@ -47,7 +57,8 @@ export default class FieldsMapping extends Component {
       usaget: "",
       unit: '',
       separateTime: false,
-      separateTimeZone: false,
+      timeZoneOption,
+      timeZoneOptions: moment.tz.names().map(label => ({ label, value: label })),
       volumeType: 'field',
       volumeFields: [],
       volumeHardCodedValue: '',
@@ -58,10 +69,6 @@ export default class FieldsMapping extends Component {
   componentWillMount() {
     if (this.props.settings.getIn(['processor', 'time_field'])) {
       this.setState({ separateTime: true });
-    }
-    const timeZone = this.props.settings.getIn(['processor', 'timezone_field']);
-    if (this.props.settings.get('fields').includes(timeZone)) {
-      this.setState({ separateTimeZone: true });
     }
   }
 
@@ -205,13 +212,18 @@ export default class FieldsMapping extends Component {
     this.setState({separateTime: !this.state.separateTime});
   };
 
-  onChangeSeparateTimeZone = (e) => {
-    const { checked } = e.target;
-    if (!checked) {
+  onChangeTimeZoneOption = (e) => {
+    const { value } = e.target;
+    this.setState({ timeZoneOption: value });
+
+    if (value === 'global') {
       this.props.unsetField(['processor', 'timezone_field']);
-      this.onChangeTimeZoneExists();
+      this.props.unsetField(['processor', 'timezone']);
+    } else if (value === 'field') {
+      this.props.unsetField(['processor', 'timezone']);
+    } else if (value === 'timezone') {
+      this.props.unsetField(['processor', 'timezone_field']);
     }
-    this.setState({ separateTimeZone: !this.state.separateTimeZone });
   };
 
   onChangeDynamicUsagetVolumeType = (e) => {
@@ -261,16 +273,6 @@ export default class FieldsMapping extends Component {
     this.onChangeTimeFormat(e);
   }
 
-  onChangeTimeZoneExists = () => {
-    const e = {
-      target: {
-        value: undefined,
-        id: 'timezone_field',
-      },
-    };
-    this.onChangeTimeZoneFormat(e);
-  }
-
   getVolumeOptions = () => this.props.settings
     .get('fields', Immutable.List())
     .sortBy(field => field)
@@ -302,7 +304,6 @@ export default class FieldsMapping extends Component {
   render() {
     const {
       separateTime,
-      separateTimeZone,
       usaget,
       unit,
       volumeType,
@@ -311,6 +312,7 @@ export default class FieldsMapping extends Component {
       conditions,
       fieldName,
       pattern,
+      timeZoneOption,
       op,
     } = this.state;
     const { settings,
@@ -364,7 +366,7 @@ export default class FieldsMapping extends Component {
             <label htmlFor="date_field">Date Time</label>
             <p className="help-block">
               Date and time of record creation<br />
-              <a target="_blank" rel="noopener noreferrer" href="http://php.net/manual/en/function.date.php#refsect1-function.date-parameters">Formatting info</a>
+              <a target="_blank" rel="noopener noreferrer" href="https://www.php.net/manual/en/datetime.format.php#refsect1-datetime.format-parameters">Formatting info</a>
             </p>
           </div>
           <div className="col-lg-9">
@@ -430,27 +432,73 @@ export default class FieldsMapping extends Component {
             </div>
           </div>
 
-          <div className="col-lg-offset-3 col-lg-9" style={{ marginTop: 30 }}>
-            <div className="col-lg-offset-1 col-lg-4">
-              <div className="input-group">
-                <div className="input-group-addon">
+          <div className="col-lg-offset-3 col-lg-9" style={{ marginTop: 15 }}>
+            <div className="col-lg-offset-1 col-lg-4" style={{ display: 'flex', alignItems: 'baseline' }}>
+              <label className="control-label" style={{ marginRight: '1px' }} >Timezone</label>
+              <i className="fa fa-long-arrow-right" style={{ margin: '0 15px' }}></i>
+              <div style={{ paddingTop: '5px' }}>
+                <label style={{ marginRight: '10px', fontWeight: 'normal' }}>
                   <input
-                    type="checkbox"
-                    checked={separateTimeZone}
-                    onChange={this.onChangeSeparateTimeZone}
-                  />
-                  <small>&nbsp;Timezone in a separate field</small>
-                </div>
+                    type="radio"
+                    name="timezone-option"
+                    value="global"
+                    checked={timeZoneOption === 'global'}
+                    onChange={this.onChangeTimeZoneOption}
+                  />&nbsp;
+                  Global
+                </label>
+                <label style={{ marginRight: '10px', fontWeight: 'normal' }}>
+                  <input
+                    type="radio"
+                    name="timezone-option"
+                    value="field"
+                    checked={timeZoneOption === 'field'}
+                    onChange={this.onChangeTimeZoneOption}
+                  />&nbsp;
+                  By field
+                </label>
+                <label style={{ fontWeight: 'normal' }}>
+                  <input
+                    type="radio"
+                    name="timezone-option"
+                    value="timezone"
+                    checked={timeZoneOption === 'timezone'}
+                    onChange={this.onChangeTimeZoneOption}
+                  />&nbsp;
+                  By timezone
+                </label>
+              </div>
+            </div>
+            <div className="col-lg-5">
+              {timeZoneOption === 'field' && (
                 <select
                   id="timezone_field"
                   className="form-control"
                   onChange={onSetFieldMapping}
-                  disabled={!separateTimeZone}
                   value={settings.getIn(['processor', 'timezone_field'], '')}
                 >
-                  { available_fields }
+                  {available_fields}
                 </select>
-              </div>
+              )}
+              {timeZoneOption === 'timezone' && (
+                <select
+                  id="timezone"
+                  className="form-control"
+                  onChange={onSetFieldMapping}
+                  value={settings.getIn(['processor', 'timezone'], '')}
+                >
+                  <option disabled value="">Select Timezone...</option>
+                  {this.state.timeZoneOptions.map(opt => (
+                    <option value={opt.value} key={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              )}
+
+              {timeZoneOption === 'global' && (
+                <select className="form-control" disabled>
+                  <option>Global (Default)</option>
+                </select>
+              )}
             </div>
           </div>
         </div>

@@ -30,39 +30,42 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 	 * override abstract method
 	 * @return true
 	 */
-	public function parse($config) {
-		foreach (array_keys($this->data['data']) as $rowKey) {
-			$row = &$this->data['data'][$rowKey];
-			$row['usaget'] = $this->getLineUsageType($row);
-			if ($row['usaget'] === false) {
-				Billrun_Factory::log("Billrun_Processor: cannot get line usage type. details: " . print_R($row, 1), Zend_Log::ERR);
-				return false;
-			}
-			$row['stamp'] = md5(serialize(!empty($this->stampFields) ? $this->stampFields : $row));
-			$usagev = $this->getLineVolume($row, $config);
-			if ($usagev === false) {
-				Billrun_Factory::log("Billrun_Processor: cannot get line usage volume. details: " . print_R($row, 1), Zend_Log::ERR);
-				return false;
-			}
-			$row['usagev_unit'] = $this->usagevUnit;
-			$row['usagev'] = $usagev;
-			if ($this->isLinePrepriced($row['usaget'])) {
-				$row['prepriced'] = true;
-			}
-			$row['process_time'] = new Mongodloid_Date();
-			$datetime = $this->getRowDateTime($row);
-			if (!$datetime) {
-				$row['urt'] = new Mongodloid_Date();
-			} else {
-				$row['timezone'] = $datetime->getOffset();
-				$row['urt'] = new Mongodloid_Date($datetime->format('U'));
-			}
-			$row['eurt'] = $row['urt'];
-		}
+	public function parse($config, $rowsToParse) {
+		   Billrun_Factory::dispatcher()->trigger('beforeRealtimeProcessorParsing', array($this, &$rowsToParse));
+	       foreach ($rowsToParse as $row) {
+            $row['usaget'] = $this->getLineUsageType($row);
+            if ($row['usaget'] === false) {
+                Billrun_Factory::log("Billrun_Processor: cannot get line usage type. details: " . print_R($row, 1), Zend_Log::ERR);
+                return false;
+            }
+            $stamp = md5(serialize(!empty($this->stampFields) ? $this->stampFields : $row));
+            $row['stamp'] = $stamp;
+            $usagev = $this->getLineVolume($row, $config);
+            if ($usagev === false) {
+                Billrun_Factory::log("Billrun_Processor: cannot get line usage volume. details: " . print_R($row, 1), Zend_Log::ERR);
+                return false;
+            }
+            $row['usagev_unit'] = $this->usagevUnit;
+            $row['usagev'] = $usagev;
+            if ($this->isLinePrepriced($row['usaget'])) {
+                $row['prepriced'] = true;
+            }
+            $row['process_time'] = new Mongodloid_Date();
+            $datetime = $this->getRowDateTime($row);
+            if (!$datetime) {
+                $row['urt'] = new Mongodloid_Date();
+            } else {
+                $row['timezone'] = $datetime->getOffset();
+                $row['urt'] = new Mongodloid_Date($datetime->format('U'));
+            }
+            $row['eurt'] = $row['urt'];
+			Billrun_Factory::dispatcher()->trigger('afterRealtimeProcessorParsing', array(&$row, $row['type']));
+            $this->data['data'][$stamp] = $row;
+        }
 
 		return true;
 	}
-
+	
 	/**
 	 * process the data
 	 * @return boolean
@@ -77,10 +80,10 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		return true;
 	}
 
-	public function process($config) {
+	public function process($config, $rowsToProcess = []) {
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
-
-		if ($this->parse($config) === FALSE) {
+		$this->data['data'] = [];
+		if ($this->parse($config,$rowsToProcess) === FALSE) {
 			Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
@@ -144,7 +147,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		if (!isset($this->data['data'])) {
 			$this->data['data'] = array();
 		}
-		$this->data['data'][] = $row;
+		$this->data['data'][$row['stamp']] = $row;
 		return true;
 	}
 	

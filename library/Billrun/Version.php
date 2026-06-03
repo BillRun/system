@@ -18,25 +18,25 @@ class Billrun_Version {
 	public static $PRODUCT = 'BillRun';
 
 	/** @var  string  Release version. */
-	public static $RELEASE = '5.16';
+	public static $RELEASE = '5.24';
 
 	/** @var  string  Maintenance version. */
-	public static $DEV_LEVEL = '0';
+	public static $DEV_LEVEL = '3';
 
 	/** @var  string  Development STATUS. */
-	public static $DEV_STATUS = 'beta33';
+	public static $DEV_STATUS = '';
 
 	/** @var  string  Build number. */
 	public static $BUILD = '';
 
 	/** @var  string  Release date. */
-	public static $RELDATE = '19-Dec-2024';
+	public static $RELDATE = '28-May-2026';
 
 	/** @var  string  Link text. */
 	public static $URL = '<a href="https://bill.run">BillRun</a>';
 
 	/**
-	 * Gets a "PHP standardized" version string for the current Joomla.
+	 * Gets a "PHP standardized" version string for the current BillRun.
 	 *
 	 * @return  string  Version string.
 	 *
@@ -47,7 +47,7 @@ class Billrun_Version {
 	}
 
 	/**
-	 * Gets a version string for the current Joomla with all release information.
+	 * Gets a version string for the current BillRun with all release information.
 	 *
 	 * @return  string  Complete version string.
 	 *

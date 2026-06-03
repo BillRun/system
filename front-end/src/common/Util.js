@@ -92,19 +92,28 @@ export const getConfig = (key, defaultValue = null) => {
   return configCache.getIn(path, defaultValue);
 };
 
-export const getFieldName = (field, category, defaultValue = null) => {
+export const replaceReplacements = (str, replacements = null, defaultValue = '') => {
+  if (replacements === null) {
+    replacements = {}; // force replace placeholders by empty string by default
+  }
+  return str.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return replacements[key] !== undefined ? replacements[key] : defaultValue;
+  });
+};
+
+export const getFieldName = (field, category, defaultValue = null, replacements = null, defaultReplacementValue = '') => {
   const categoryName = getConfig(['fieldNames', category, field], false);
   if (typeof categoryName === 'string' && categoryName.length > 0) {
-    return categoryName;
+    return replaceReplacements(categoryName, replacements, defaultReplacementValue);
   }
   const rootName = getConfig(['fieldNames', field], false);
   if (typeof rootName === 'string' && rootName.length > 0) {
-    return rootName;
+    return replaceReplacements(rootName, replacements, defaultReplacementValue);
   }
   if (defaultValue !== null) {
-    return defaultValue;
+    return replaceReplacements(defaultValue, replacements, defaultReplacementValue);
   }
-  return field;
+  return replaceReplacements(field, replacements, defaultReplacementValue);
 };
 
 
@@ -231,15 +240,16 @@ export const buildPageTitle = (mode, entityName, item = Immutable.Map()) => {
 };
 
 export const getItemDateValue = (item, fieldName, defaultValue = moment()) => {
+  const fieldPath = toImmutableList(fieldName).toArray();
   if (Immutable.Map.isMap(item)) {
-    const dateString = item.get(fieldName, false);
+    const dateString = item.getIn(fieldPath, false);
     if (typeof dateString === 'string') {
       const dateFromString = moment(dateString);
       if (dateFromString.isValid()) {
         return dateFromString;
       }
     }
-    const dateUnix = item.getIn([fieldName, 'sec'], false);
+    const dateUnix = item.getIn([...fieldPath, 'sec'], false);
     if (typeof dateUnix === 'number') {
       const dateFromTimestemp = moment.unix(dateUnix);
       if (dateFromTimestemp.isValid()) {
@@ -892,3 +902,49 @@ export const isValueOn = val => {
   }
   return false;
 }
+
+
+export const parseIncludeExcludeIdsListValue = (value) => value
+  .trim()
+  .split(/\r\n|\r|\n|,/)
+  .map(v => v.trim())
+  .filter(v => v.length)
+  .map(v => isNumber(v) ? parseFloat(v) : v);
+
+export const getChargeStatus = (item) => {
+  if (!Immutable.Map.isMap(item)) {
+    return '';
+  }
+  if (parseInt(item.get('cancelled', '')) === 1) {
+    return 'cancelled';
+  }
+  if (item.get('schedule', '') !== '') {
+    const scheduleTime = moment(item.get('schedule', ''));
+    if (moment.isMoment(scheduleTime) && scheduleTime.isValid() && scheduleTime.isAfter(moment())) {
+      return 'future';
+    }
+  }
+  if (item.get('start_time', '') === '') {
+    return 'idle';
+  }
+  if (item.get('active', false)
+    || (parseInt(item.get('done', 0)) === 0 && item.get('start_time', '') !== '')
+    || (parseInt(item.get('done', 0)) === 1 && item.getIn(['details', 'done'], 0) !== item.getIn(['details', 'total'], 0))
+  ) {
+    return 'active';
+  }
+  return 'done';
+}
+
+export const getServiceType = (service) => {
+    if (!service || !Immutable.Map.isMap(service)) {
+      return null;
+    }
+    if (service.get('quantitative', false)) {
+      return 'quantitative';
+    }
+    if (service.get('balance_period', 'default') !== 'default') {
+      return 'balance_period';
+    }
+    return 'normal';
+  }

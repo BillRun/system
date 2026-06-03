@@ -1,28 +1,44 @@
+# You can override the included template(s) by including variable overrides
+# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
+# Secret Detection customization: https://docs.gitlab.com/user/application_security/secret_detection/pipeline/configure
+# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
+# Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
+# Note that environment variables can be set in several places
+# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
 image: docker
 stages:
   - build
   - test
+  - security
 
 variables:
   GIT_STRATEGY: clone
-  GIT_CHECKOUT: 'true'
-  GIT_CLEAN_FLAGS: '-ffdx -e .cache'
+  GIT_CHECKOUT: "true"
+  GIT_CLEAN_FLAGS: "-ffdx -e .cache"
+  DS_ENFORCE_NEW_ANALYZER: "true"
+  DS_INCLUDE_DEV_DEPENDENCIES: "false"
+  DS_MAX_DEPTH: -1
+  CS_IMAGE: billrun/billrun:$CI_COMMIT_TAG
+  GITLAB_ADVANCED_SAST_ENABLED: "false"
+  SAST_EXCLUDED_PATHS: "vendor/,tests/,public/vendors/,public/js/vendor/,library/stripe-php/,.git/,docker/,.idea/,conf/utest/,*.min.js,*.min.css,*.map,*.lock,*.log"
+  SAST_DISABLE_REMOTE_CHECKS: "false"
 
 print-info:
- stage: build
- rules:
-   - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS == "skip_ci"
- when: manual
- script:
-   - 'echo "Job start: $CI_JOB_STARTED_AT"'
-   - 'echo "Branch: $CI_COMMIT_BRANCH"'
-   - 'echo "Commit Author: $CI_COMMIT_AUTHOR"'
+  stage: build
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS == "skip_ci"
+  when: manual
+  script:
+    - 'echo "Job start: $CI_JOB_STARTED_AT"'
+    - 'echo "Branch: $CI_COMMIT_BRANCH"'
+    - 'echo "Commit Author: $CI_COMMIT_AUTHOR"'
+
 codecept:
   services:
-   - name: docker:dind
-     alias: dockerhost
+    - name: docker:dind
+      alias: dockerhost
   rules:
-   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   variables:
     DOCKER_HOST: tcp://dockerhost:2375/
     DOCKER_DRIVER: overlay2
@@ -30,13 +46,12 @@ codecept:
   stage: test
   tags:
     - new_docker_runner
-  # rules:
-  #   - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS != "skip_ci"
   before_script:
-    # build and run BillRun app in docker 
+    # build and run BillRun app in docker
     - mkdir logs cache
     - chmod 777 logs/ cache/
     - cp $TEST_ENV_CODECEPT $CI_PROJECT_DIR/tests/.env
+    - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-tests.yml up --wait --build --detach
   script:
@@ -46,37 +61,87 @@ codecept:
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run functional
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run api
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run acceptance
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run all 
+    - docker exec -w /billrun billrun-app php vendor/bin/codecept run all
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-tests.yml down --remove-orphans
+  after_script:
+    - if [ "$CI_JOB_STATUS" = "success" ]; then exit 0; fi
+    - cd $CI_PROJECT_DIR/docker/billrun-docker
+    - docker-compose -f docker-compose-php74-tests.yml ps
+    - docker logs billrun-app
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_PROJECT_DIR/logs/container/debug.log
+      - $CI_PROJECT_DIR/tests/_output/*
+    expire_in: 1 week
 
 build:
- stage: build
- image: docker:20.10.16
- services:
- - docker:dind
- script:
-   - echo "Building Docker image from Tag $CI_COMMIT_TAG"
-   - docker build -t billrun/billrun:$CI_COMMIT_TAG -f docker/cicd/Dockerfile  .
-   - docker images
- rules:
-   - if: '$CI_COMMIT_TAG =~ /^5\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
+  stage: build
+  tags: [new_docker_runner]
+  image: docker:24
+  services:
+    - name: docker:24-dind
+      alias: dockerhost
+  variables:
+    DOCKER_HOST: tcp://dockerhost:2375/
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - echo "Building Docker image from Tag $CI_COMMIT_TAG"
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    - |
+      # Move :latest only when this tag is the highest stable tag in the repo
+      # AND its major version is >= 5. A "stable" tag is exactly
+      # MAJOR.MINOR.PATCH - any suffix (-rc, -alpha, -beta, -dev, etc.)
+      # disqualifies the tag from being :latest. Backports on older release
+      # lines (e.g. 5.24.5 published after 6.0.0 already exists) also leave
+      # :latest alone. Legacy tags (4.x and below) are not pushed at all.
+      LATEST_TAG=""
+      if echo "$CI_COMMIT_TAG" | grep -qE '^([5-9]|[1-9][0-9]+)\.[0-9]+\.[0-9]+$'; then
+        HIGHEST=$(git ls-remote --tags --refs origin 2>/dev/null \
+          | awk '{print $2}' \
+          | sed 's|refs/tags/||' \
+          | grep -E '^([5-9]|[1-9][0-9]+)\.[0-9]+\.[0-9]+$' \
+          | sort -V \
+          | tail -1)
+        if [ "$CI_COMMIT_TAG" = "$HIGHEST" ]; then
+          LATEST_TAG="--tag billrun/billrun:latest"
+        else
+          echo "Not moving :latest - current tag $CI_COMMIT_TAG is not the highest stable ($HIGHEST)"
+        fi
+      fi
+      docker buildx build --tag billrun/billrun:$CI_COMMIT_TAG $LATEST_TAG --push --no-cache -f docker/cicd/Dockerfile .
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^([5-9]|[1-9]\d+)\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
 
-push:
- stage: build
- image: docker:20.10.16
- services:
- - docker:dind
- script:
-   - docker images
-   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
-   - docker push billrun/billrun:$CI_COMMIT_TAG
-   - docker rmi -f billrun/billrun:$CI_COMMIT_TAG
- needs:
+container_scanning:
+  tags: [CI_SAST]
+  stage: security
+  needs:
     - build
- rules:
-   - if: '$CI_COMMIT_TAG =~ /^5\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
+  variables:
+    CS_REGISTRY_USER: $CI_REGISTRY_USER
+    CS_REGISTRY_PASSWORD: $CI_REGISTRY_PASSWORD
+    CS_DOCKERFILE_PATH: docker/cicd/Dockerfile
+    GIT_STRATEGY: clone
+    CS_SEVERITY_THRESHOLD: HIGH
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^([5-9]|[1-9]\d+)\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
 
 include:
   - template: Jobs/Secret-Detection.gitlab-ci.yml
+  - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
+  - template: Jobs/Container-Scanning.latest.gitlab-ci.yml
+  - template: Jobs/SAST.latest.gitlab-ci.yml
 
+secret_detection:
+  tags: [CI_SAST]
+  variables:
+    GIT_STRATEGY: clone
+
+dependency-scanning:
+  tags: [CI_SAST]
+
+semgrep-sast:
+  tags: [CI_SAST]
