@@ -301,7 +301,7 @@ class Customer extends Component {
     return (<>
       {pgDetails}
       <WithTooltip id={cardToken} helpText={tooltipText}>
-        <i class="fa fa-info-circle active-blue clickable ml10"></i>
+        <i className="fa fa-info-circle active-blue clickable ml10"></i>
       </WithTooltip>
       </>
     );
@@ -509,7 +509,13 @@ class Customer extends Component {
           <EntityFields
             entityName={['subscribers', 'account']}
             entity={customer}
-            defaultHiddenFields={Immutable.List(['payment_gateway', 'services'])}
+            defaultHiddenFields={Immutable.List([
+              'payment_gateway',
+              'services',
+              'issues_invoice',
+              'is_payer',
+              'parent_aid',
+            ])}
             onChangeField={this.props.onChange}
             onRemoveField={this.props.onRemoveField}
           />

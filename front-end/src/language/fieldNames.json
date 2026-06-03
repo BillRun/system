@@ -77,7 +77,15 @@
   "account": {
     "aid": "Customer ID",
     "firstname": "First Name",
-    "lastname": "Last Name"
+    "lastname": "Last Name",
+    "issues_invoice": "Issues its own invoice",
+    "parent_aid": "Parent Account",
+    "issues_invoice_help": "If enabled, this account receives its own invoice every billing cycle. If disabled, its charges are rolled up into the nearest parent account that issues an invoice.",
+    "is_payer": "Pays its own bills",
+    "is_payer_help": "If enabled, this account is charged on its own payment method. If disabled, the nearest parent account marked as a payer is charged instead. Note: Can only be enabled when 'Issues its own invoice' is also enabled — a non-invoicing account cannot be a payer.",
+    "show_tree_view": "Show Hierarchy",
+    "account_hierarchy_tree_view": "Hierarchy for {{customer_title}}",
+    "hierarchy": "Hierarchy"
   },
   "subscription": {
     "aid": "Customer ID",

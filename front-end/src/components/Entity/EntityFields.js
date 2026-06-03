@@ -39,7 +39,7 @@ class EntityFields extends Component {
     errors: Immutable.Map(),
     highlightParams: null,
     fieldsFilter: null,
-    defaultHiddenFields: Immutable.List(['tariff_category', 'play']),
+    defaultHiddenFields: Immutable.List(),
     editable: true,
     isPlaysEnabled: false,
     onChangeField: () => {},
@@ -121,8 +121,10 @@ class EntityFields extends Component {
   filterPrintableFields = field => {
     const { defaultHiddenFields } = this.props;
     return !defaultHiddenFields.includes(field.get('field_name', ''))
-      // && field.get('editable', false) !== false
-      && field.get('display', false) !== false;
+    && field.get('display', false) !== false
+    // && field.get('editable', false) !== false
+    && field.get('field_name', '') !== 'tariff_category'
+    && field.get('field_name', '') !== 'play'
   } 
 
   filterParamsFields = (field) => {
