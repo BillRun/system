@@ -171,9 +171,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 if (!isset($params['aid'])) {
                     throw new Exception('Missing account id');
                 }
-                $account = Billrun_Factory::account();
-                $account->loadAccountForQuery(array('aid' => $params['aid']));
-                $accountData = $account->getCustomerData();
+                if (!empty($params['_account']) && is_array($params['_account'])) {
+                    $accountData = $params['_account'];
+                } else {
+                    Billrun_Factory::log('Custom PG generator: preloaded account missing for aid ' . $params['aid'] . ', falling back to loadAccountForQuery', Zend_Log::DEBUG);
+                    $account = Billrun_Factory::account();
+                    $account->loadAccountForQuery(array('aid' => $params['aid']));
+                    $accountData = $account->getCustomerData();
+                }
                 if (is_null(Billrun_Util::getIn($accountData, $field))) {
                     $message = "Field name $field does not exist under entity " . $entity;
                     Billrun_Factory::log($message, Zend_Log::ERR);
