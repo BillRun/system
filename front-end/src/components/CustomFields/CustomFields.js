@@ -61,7 +61,7 @@ class CustomFields extends Component {
     } = this.props;
     const label = titleCase(getConfig(['systemItems', entity, 'itemName'], entity));
     return (
-      <Tab title={label} eventKey={index} key={`custom-fields-tab-${entity}`}>
+      <Tab title={label} eventKey={index+1} key={`custom-fields-tab-${entity}`}>
         <Panel style={{ borderTop: 'none' }}>
           <CustomFieldsListContainer
             entity={entity}
