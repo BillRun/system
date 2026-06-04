@@ -734,15 +734,14 @@ class BillRunAPI extends \Codeception\Module{
         return $this->sendApiRequest('/api/pay', array_merge(['method' => $method, 'payments' => $payments], $topExtra));
     }
 
-    /** /api/pay — split a debt into installments (action=split_bill). */
+    /** /api/pay — split a debt into installments (action=split_bill). $amount=null omits it. */
     public function splitBill($aid, $amount, array $opts = [])
     {
-        return $this->sendApiRequest('/api/pay', array_merge([
-            'method' => 'installment_agreement',
-            'action' => 'split_bill',
-            'aid'    => (int) $aid,
-            'amount' => $amount,
-        ], $opts));
+        $base = ['method' => 'installment_agreement', 'action' => 'split_bill', 'aid' => (int) $aid];
+        if (!is_null($amount)) {
+            $base['amount'] = $amount;
+        }
+        return $this->sendApiRequest('/api/pay', array_merge($base, $opts));
     }
 
     /** /api/pay — merge installments of an agreement (action=merge_installments). */
@@ -836,6 +835,27 @@ class BillRunAPI extends \Codeception\Module{
             return $bill->getRawData();
         }
         return null;
+    }
+
+    /**
+     * Enable/disable named plugins in a fresh config revision (test-scoped).
+     * Some customer plugins (e.g. epicPlugin) hook generic payment events
+     * (beforeSplitDebt) and must be turned off to test core billing behavior.
+     */
+    public function setPluginsEnabled(array $names, $enabled)
+    {
+        $config = \Billrun_Factory::db()->configCollection();
+        $data = $config->query()->cursor()->sort(['urt' => -1, '_id' => -1])->limit(1)->current()->getRawData();
+        unset($data['_id']);
+        foreach ($data['plugins'] as &$plugin) {
+            if (in_array($plugin['name'] ?? '', $names, true)) {
+                $plugin['enabled'] = (bool) $enabled;
+            }
+        }
+        unset($plugin);
+        $data['urt'] = new \MongoDB\BSON\UTCDateTime();
+        $config->insert($data);
+        \Billrun_Config::getInstance()->loadDbConfig();
     }
   
     public function sendRealTimeRequest($fileType, $request)
