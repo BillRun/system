@@ -693,6 +693,150 @@ class BillRunAPI extends \Codeception\Module{
         $ret = $rest->sendPOST("/billrun/chargeAccount",   $params);
         return json_decode($ret, true);
     }
+
+    // ----------------------------------------------------------------------
+    //  Thin, single-purpose payment helpers (used by tests/all/payment/*Test)
+    //  Each is ONE authenticated request; array params are JSON-encoded as the
+    //  API endpoints expect. No business logic lives here.
+    // ----------------------------------------------------------------------
+
+    /**
+     * Authenticated request to an API path. Array values are JSON-encoded.
+     * @return array decoded JSON response
+     */
+    protected function sendApiRequest($path, array $request, $method = 'POST')
+    {
+        $encoded = [];
+        foreach ($request as $key => $value) {
+            $encoded[$key] = is_array($value) ? json_encode($value) : $value;
+        }
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        if (strtoupper($method) === 'GET') {
+            $rest->sendGET($path, $encoded);
+        } else {
+            $rest->sendPOST($path, $encoded);
+        }
+        return json_decode($rest->grabResponse(), true);
+    }
+
+    /** /api/pay — one offline payment (cash/cheque/credit/write_off). */
+    public function payOffline($aid, $amount, $dir = 'fc', $method = 'cash', array $paymentFields = [])
+    {
+        $payment = array_merge(['aid' => (int) $aid, 'amount' => $amount, 'dir' => $dir], $paymentFields);
+        return $this->sendApiRequest('/api/pay', ['method' => $method, 'payments' => [$payment]]);
+    }
+
+    /** /api/pay — a custom payments array (e.g. with a `pays` link to a bill). */
+    public function payPayments(array $payments, $method = 'cash', array $topExtra = [])
+    {
+        return $this->sendApiRequest('/api/pay', array_merge(['method' => $method, 'payments' => $payments], $topExtra));
+    }
+
+    /** /api/pay — split a debt into installments (action=split_bill). */
+    public function splitBill($aid, $amount, array $opts = [])
+    {
+        return $this->sendApiRequest('/api/pay', array_merge([
+            'method' => 'installment_agreement',
+            'action' => 'split_bill',
+            'aid'    => (int) $aid,
+            'amount' => $amount,
+        ], $opts));
+    }
+
+    /** /api/pay — merge installments of an agreement (action=merge_installments). */
+    public function mergeInstallments($aid, $splitBillId, array $opts = [])
+    {
+        return $this->sendApiRequest('/api/pay', array_merge([
+            'method'        => 'merge_installments',
+            'action'        => 'merge_installments',
+            'aid'           => (int) $aid,
+            'split_bill_id' => (string) $splitBillId,
+        ], $opts));
+    }
+
+    /** /api/pay — unfreeze/use deposit bills (action=use_deposit). */
+    public function useDeposit($aid, array $txids, array $extra = [])
+    {
+        return $this->sendApiRequest('/api/pay', array_merge([
+            'action' => 'use_deposit',
+            'aid'    => (int) $aid,
+            'txid'   => $txids,
+        ], $extra));
+    }
+
+    /** /api/pay — cancel payments (action=cancel_payments). */
+    public function cancelPayments($aid, array $cancellations, array $extra = [])
+    {
+        return $this->sendApiRequest('/api/pay', array_merge([
+            'action'        => 'cancel_payments',
+            'aid'           => (int) $aid,
+            'cancellations' => $cancellations,
+        ], $extra));
+    }
+
+    /** /api/adjustpayments — adjust existing payments. */
+    public function adjustPayments(array $adjustments, array $extra = [])
+    {
+        return $this->sendApiRequest('/api/adjustpayments', array_merge(['adjustments' => $adjustments], $extra));
+    }
+
+    /** /api/bill — query bills/invoices/balances/collection-debt by action. */
+    public function billQuery($action, array $params = [])
+    {
+        return $this->sendApiRequest('/api/bill', array_merge(['action' => $action], $params), 'GET');
+    }
+
+    /** /api/onetimeinvoice — create an immediate invoice from CDRs. */
+    public function onetimeInvoice($aid, array $cdrs, array $extra = [])
+    {
+        if (isset($extra['invoice_unixtime'])) {
+            if ($extra['invoice_unixtime'] === 'past') {
+                $extra['invoice_unixtime'] = time() - 2592000;
+            } elseif ($extra['invoice_unixtime'] === 'future') {
+                $extra['invoice_unixtime'] = time() + 2592000;
+            }
+        }
+        return $this->sendApiRequest('/api/onetimeinvoice', array_merge(['aid' => (int) $aid, 'cdrs' => $cdrs], $extra), 'GET');
+    }
+
+    /** Create an account whose active payment gateway is the mockup CreditGuard with $cardToken. */
+    public function createAccountWithCard($cardToken, array $override = [])
+    {
+        $active = array_merge([
+            'name'                  => 'CreditGuard',
+            'instance_name'         => 'CreditGuard',
+            'card_token'            => $cardToken,
+            'card_expiration'       => '1225',
+            'four_digits'           => '5606',
+            'personal_id'           => '890108566',
+            'card_acquirer'         => '1',
+            'card_brand'            => '1',
+            'credit_company'        => '1',
+            'card_type'             => '00',
+            'transaction_exhausted' => true,
+            'auth_number'           => '9433084',
+            'generate_token_time'   => '2023-11-29T08:55:32Z',
+            'keepCCDetails'         => null,
+        ], $override['payment_gateway']['active'] ?? []);
+        unset($override['payment_gateway']);
+        $resp = $this->createAccountWithAllMandatoryCustomFields(
+            array_merge(['payment_gateway' => ['active' => $active]], $override)
+        );
+        return (is_array($resp) && isset($resp['entity'])) ? $resp['entity'] : $this->getLastEntity();
+    }
+
+    /** Read one bill (raw array) matching $criteria, or null — used to chain txid/invoice_id. */
+    public function grabBill(array $criteria)
+    {
+        $cursor = \Billrun_Factory::db()->billsCollection()->query($criteria)->cursor()
+            ->setReadPreference('RP_PRIMARY');
+        foreach ($cursor as $bill) {
+            return $bill->getRawData();
+        }
+        return null;
+    }
   
     public function sendRealTimeRequest($fileType, $request)
     {
