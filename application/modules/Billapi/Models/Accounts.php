@@ -84,10 +84,10 @@ class Models_Accounts extends Models_Entity {
 
 		// Normalize the values being written so they are stored with their proper types.
 		if (array_key_exists('issues_invoice', $this->update)) {
-			$this->update['issues_invoice'] = $this->toHierarchyBool($this->update['issues_invoice'], true);
+			$this->update['issues_invoice'] = Billrun_Util::toBool($this->update['issues_invoice'], true);
 		}
 		if (array_key_exists('is_payer', $this->update)) {
-			$this->update['is_payer'] = $this->toHierarchyBool($this->update['is_payer'], true);
+			$this->update['is_payer'] = Billrun_Util::toBool($this->update['is_payer'], true);
 		}
 		if (array_key_exists('parent_aid', $this->update)) {
 			if (is_null($this->update['parent_aid']) || $this->update['parent_aid'] === '' || $this->update['parent_aid'] === 0) {
@@ -107,8 +107,8 @@ class Models_Accounts extends Models_Entity {
 		$parentAid = $this->getEffectiveHierarchyValue('parent_aid', null);
 		$parentAid = (is_null($parentAid) || $parentAid === '') ? null : intval($parentAid);
 
-		$issuesInvoice = $this->toHierarchyBool($this->getEffectiveHierarchyValue('issues_invoice', true), true);
-		$isPayer = $this->toHierarchyBool($this->getEffectiveHierarchyValue('is_payer', true), true);
+		$issuesInvoice = Billrun_Util::toBool($this->getEffectiveHierarchyValue('issues_invoice', true), true);
+		$isPayer = Billrun_Util::toBool($this->getEffectiveHierarchyValue('is_payer', true), true);
 
 		// Root account: must issue invoices and be a payer. On disconnect auto-set both (BRCD-2824).
 		if (is_null($parentAid)) {
@@ -157,13 +157,6 @@ class Models_Accounts extends Models_Entity {
 			return Billrun_Util::getIn($this->before, $field, $default);
 		}
 		return $default;
-	}
-
-	/**
-	 * Coerce a request/stored value to a strict boolean (handles bool, int and string representations).
-	 */
-	protected function toHierarchyBool($value, $default) {
-		return Billrun_Util::toBool($value, $default);
 	}
 
 	protected function getMaxHierarchyDepth() {
