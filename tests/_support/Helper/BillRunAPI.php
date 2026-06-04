@@ -838,6 +838,32 @@ class BillRunAPI extends \Codeception\Module{
     }
 
     /**
+     * Seed the CALL rate that onetimeinvoice CDRs reference, directly into Mongo
+     * (cleanDB wipes rates; the billapi rate-create path is config-state fragile).
+     * Pre-priced credit CDRs don't use the tariff, so a minimal rate suffices.
+     */
+    public function seedCallRate()
+    {
+        $rates = \Billrun_Factory::db()->ratesCollection();
+        $rates->remove(['key' => 'CALL']);
+        $rate = [
+            'key' => 'CALL',
+            'description' => 'call',
+            'from' => new \Mongodloid_Date(strtotime('2018-01-01')),
+            'to' => new \Mongodloid_Date(strtotime('2099-01-01')),
+            'tariff_category' => 'retail',
+            'add_to_retail' => true,
+            'pricing_method' => 'tiered',
+            'rates' => ['call' => ['BASE' => ['rate' => [[
+                'from' => 0, 'to' => 'UNLIMITED', 'interval' => 1, 'price' => 0,
+                'uom_display' => ['range' => 'seconds', 'interval' => 'seconds'],
+            ]]]]],
+            'tax' => [['type' => 'vat', 'taxation' => 'global']],
+        ];
+        $rates->insert($rate); // insert() takes its argument by reference
+    }
+
+    /**
      * Enable/disable named plugins in a fresh config revision (test-scoped).
      * Some customer plugins (e.g. epicPlugin) hook generic payment events
      * (beforeSplitDebt) and must be turned off to test core billing behavior.

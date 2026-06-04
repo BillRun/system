@@ -23,6 +23,9 @@ class OfflinePaymentTest extends \Codeception\Test\Unit
     {
         $this->tester->setTimezone('Asia/Jerusalem');
         $this->tester->enableCreditGuardPGWithSettings();
+        // pin VAT to 17% (DEFAULT_VAT) so invoice amounts are deterministic
+        // regardless of the tenant's default (this EPIC-CY env defaults to 19%)
+        $this->tester->overrideConfigValue('taxation.default', ['key' => 'DEFAULT_VAT']);
         $this->tester->cleanDB();
     }
 
@@ -225,7 +228,7 @@ class OfflinePaymentTest extends \Codeception\Test\Unit
     /** create the CALL rate the onetimeinvoice CDRs reference (cleanDB wipes rates) */
     private function ensureCallRate()
     {
-        $this->tester->generateRate(['key' => 'CALL', 'from' => '2018-01-01']);
+        $this->tester->seedCallRate();
     }
 
     /** build a single credit CDR for an immediate invoice of $aprice (pre-VAT) */
