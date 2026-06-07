@@ -58,12 +58,16 @@ class OnetimeInvoiceTest extends \Codeception\Test\Unit
         $this->assertRefundInvoice($aid, 11.7);
     }
 
-    // case 81 - refund (negative) with charge_before_invoice: the outbound refund
-    // is not completed by the mockup gateway, so the charge-before step aborts and
-    // no invoice is created. Refund creation itself is covered by case 80.
+    // case 81 - refund (negative) with charge_before_invoice: an outbound refund is
+    // not completed synchronously by the CreditGuard gateway, so the charge-before
+    // step fails and NO invoice is created (contrast case 80's regular flow, which
+    // records the refund invoice + a pending refund receipt).
     public function testRefundChargeBefore()
     {
-        $this->markTestSkipped('charge_before_invoice aborts on an outbound refund the mockup gateway does not complete');
+        $aid = $this->newAccount();
+        $resp = $this->tester->onetimeInvoice($aid, [$this->cdr($aid, -10)], ['step' => 2, 'charge_flow' => 'charge_before_invoice']);
+        $this->assertEquals(0, $resp['status'] ?? ($resp[0]['status'] ?? null));
+        $this->tester->verifyCollectionCount('bills', 0, ['aid' => $aid, 'type' => 'inv']);
     }
 
     // case 82 - charge_before_invoice with a card that the gateway rejects -> charge fails
@@ -81,29 +85,94 @@ class OnetimeInvoiceTest extends \Codeception\Test\Unit
     // rejection" retry scenarios depend on a pre-existing rejected/aged invoice
     // state (fixture invoice_id 8100000006) that the API can't reproduce in one
     // shot; they belong with the gateway-rejection/retry workflow.
+    // case 83 - a refund whose outbound charge is rejected: regular flow creates the
+    // refund (credit) invoice, then the refund charge is declined -> rejection bills.
     public function testRefundRejection()
     {
-        $this->markTestSkipped('rejection-refund before invoice: depends on a pre-rejected state');
+        $aid = $this->newAccount(self::CARD_REJECT);
+        $this->tester->onetimeInvoice($aid, [$this->cdr($aid, -20)], ['step' => 2, 'invoice_unixtime' => 'past']);
+        $this->tester->verifyCollectionRecord('bills', ['aid' => $aid, 'type' => 'inv', 'amount' => 23.4, 'due' => -23.4]);
+        $this->tester->verifyCollectionRecord('bills', ['aid' => $aid, 'type' => 'rec', 'rejection' => true]);
     }
 
+    // case 85 - account already has an unpaid debt, then a new immediate charge:
+    // the 35.1 charge clears the prior 23.4 debt (FIFO) and part of the new invoice,
+    // so a 35.1 gateway receipt exists and the net balance is the remaining 23.4.
     public function testChargeAccountWithExistingDebt()
     {
-        $this->markTestSkipped('needs a seeded prior debt + charge sequence (multi-cycle), beyond a single onetimeinvoice');
+        $aid = $this->newAccount();
+        // prior unpaid debt (distinct invoice_unixtime avoids the same-second billrun stamp clash)
+        $this->tester->onetimeInvoice($aid, [$this->cdr($aid, 20)], ['step' => 1, 'invoice_unixtime' => time() - 86400]);
+        // new immediate charge of 30 -> 35.1, charged through the gateway
+        $this->tester->onetimeInvoice($aid, [$this->cdr($aid, 30)], ['step' => 2, 'charge_flow' => 'charge_before_invoice']);
+
+        $this->tester->verifyCollectionRecord('bills', [
+            'aid' => $aid, 'type' => 'rec', 'amount' => 35.1, 'due' => -35.1,
+            'pending' => false, 'vendor_response.status' => '000',
+        ]);
+        $resp = $this->tester->billQuery('get_balances', ['aids' => $aid]);
+        $this->assertEqualsWithDelta(23.4, $resp['details'][$aid]['total'], 0.001);
     }
 
+    // case 86 - account is in credit (a prior refund invoice), then a new immediate
+    // charge: the credit invoice remains; the new invoice is charged 000.
     public function testChargeAccountOverpaid()
     {
-        $this->markTestSkipped('needs a seeded overpaid state, beyond a single onetimeinvoice');
+        $aid = $this->newAccount();
+        // prior credit (refund invoice) -> account in credit -23.4
+        $this->tester->onetimeInvoice($aid, [$this->cdr($aid, -20)], ['step' => 1, 'invoice_unixtime' => time() - 86400]);
+        // new immediate charge of 30 -> 35.1, charged through the gateway
+        $this->tester->onetimeInvoice($aid, [$this->cdr($aid, 30)], ['step' => 2, 'charge_flow' => 'charge_before_invoice']);
+
+        $this->tester->verifyCollectionRecord('bills', [
+            'aid' => $aid, 'type' => 'inv', 'amount' => 23.4, 'due' => -23.4, 'due_before_vat' => -20,
+        ]);
+        $this->assertChargedInvoice($aid, 35.1);
     }
 
+    // case 88 - an invoice whose charge was rejected is charged again (retry) with a
+    // working card and gets paid. Regular flow creates the invoice before charging,
+    // so the rejected charge leaves a real past-due unpaid invoice to retry.
     public function testStep2AfterRejection()
     {
-        $this->markTestSkipped('needs a prior rejected onetimeinvoice (fixture invoice_id), retry workflow');
+        $aid = $this->newAccount(self::CARD_REJECT);
+        // step 2 regular flow: invoice is created, the charge is rejected -> invoice stays unpaid
+        $this->tester->onetimeInvoice($aid, [$this->cdr($aid, 20)], ['step' => 2, 'invoice_unixtime' => 'past']);
+        $invoiceId = $this->tester->grabBill(['aid' => $aid, 'type' => 'inv', 'paid' => ['$in' => PaymentStatus::UNPAID]])['invoice_id'];
+
+        // retry: flip to a working card and charge the outstanding (past-due) debt
+        $this->tester->setAccountCardToken($aid, self::CARD_OK);
+        $this->tester->chargeAccountApi(['aids' => "$aid"]);
+
+        // the previously-rejected invoice is now paid by a 000 receipt
+        $this->tester->verifyCollectionRecord('bills', [
+            'aid' => $aid, 'type' => 'inv', 'invoice_id' => $invoiceId, 'paid' => ['$in' => PaymentStatus::PAID],
+        ]);
+        $this->tester->verifyCollectionRecord('bills', [
+            'aid' => $aid, 'type' => 'rec', 'amount' => 23.4, 'due' => -23.4, 'pending' => false, 'vendor_response.status' => '000',
+        ]);
     }
 
+    // case 89 - as case 88, but the retry uses the charge_before_invoice flow: a
+    // previously-rejected invoice is settled when a later charge (with a working
+    // card) succeeds and its receipt pays the outstanding debt (FIFO).
     public function testStep2AfterRejectionChargeBefore()
     {
-        $this->markTestSkipped('needs a prior rejected onetimeinvoice (fixture invoice_id), retry workflow');
+        $aid = $this->newAccount(self::CARD_REJECT);
+        // regular flow: invoice created, charge rejected -> past-due unpaid invoice
+        $this->tester->onetimeInvoice($aid, [$this->cdr($aid, 20)], ['step' => 2, 'invoice_unixtime' => 'past']);
+        $priorId = $this->tester->grabBill(['aid' => $aid, 'type' => 'inv', 'paid' => ['$in' => PaymentStatus::UNPAID]])['invoice_id'];
+
+        // retry via charge_before_invoice with a working card -> 000 receipt clears the prior debt
+        $this->tester->setAccountCardToken($aid, self::CARD_OK);
+        $this->tester->onetimeInvoice($aid, [$this->cdr($aid, 20)], ['step' => 2, 'charge_flow' => 'charge_before_invoice']);
+
+        $this->tester->verifyCollectionRecord('bills', [
+            'aid' => $aid, 'type' => 'inv', 'invoice_id' => $priorId, 'paid' => ['$in' => PaymentStatus::PAID],
+        ]);
+        $this->tester->verifyCollectionRecord('bills', [
+            'aid' => $aid, 'type' => 'rec', 'amount' => 23.4, 'due' => -23.4, 'pending' => false, 'vendor_response.status' => '000',
+        ]);
     }
 
     // ------------------------------------------------------------------

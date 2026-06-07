@@ -14,12 +14,15 @@ class AdjustPaymentTest extends \Codeception\Test\Unit
     protected $tester;
 
     const CARD_OK = '1022273188555888';
+    const CARD_REJECT = '1022273188'; // 10-char token -> mockup returns code 033 -> gateway rejection
 
     protected function _before()
     {
         $this->tester->setTimezone('Asia/Jerusalem');
         $this->tester->enableCreditGuardPGWithSettings();
+        $this->tester->overrideConfigValue('taxation.default', ['key' => 'DEFAULT_VAT']); // 17% VAT
         $this->tester->cleanDB();
+        $this->tester->seedCallRate(); // onetimeinvoice CDRs reference rate CALL
     }
 
     protected function _after()
@@ -138,10 +141,23 @@ class AdjustPaymentTest extends \Codeception\Test\Unit
         $this->assertNoCorrection($aid);
     }
 
-    // case 67 - adjust a rejection payment -> "not applicable" (needs a seeded rejection bill)
+    // case 67 - adjust a gateway-rejection payment -> "not applicable". A charge on a
+    // card the gateway rejects (CARD_REJECT) creates a rejection bill (rejection=true,
+    // method=automatic); adjustpayments must refuse it.
     public function testAdjustRejectionPaymentFails()
     {
-        $this->markTestSkipped('needs a seeded rejection payment bill (gateway rejection history), not reproducible offline');
+        $aid = (int) $this->tester->createAccountWithCard(self::CARD_REJECT)['aid'];
+        // a charge_before_invoice charge that the gateway declines persists a rejection bill
+        $this->tester->onetimeInvoice($aid, [[
+            'aid' => $aid, 'sid' => 0, 'rate' => 'CALL', 'usagev' => 1,
+            'type' => 'credit', 'credit_time' => '2021-04-18T17:17:56Z', 'aprice' => 20,
+        ]], ['step' => 2, 'charge_flow' => 'charge_before_invoice']);
+
+        $txid = $this->tester->grabBill(['aid' => $aid, 'rejection' => true])['txid'];
+        $resp = $this->tester->adjustPayments([['id' => $txid, 'amount' => 10]]);
+
+        $this->assertStringContainsString('not applicable', json_encode($resp));
+        $this->assertNoCorrection($aid);
     }
 
     // case 68 - empty adjustment object -> error

@@ -826,6 +826,86 @@ class BillRunAPI extends \Codeception\Module{
         return (is_array($resp) && isset($resp['entity'])) ? $resp['entity'] : $this->getLastEntity();
     }
 
+    /**
+     * Switch an account's active payment-gateway card token directly in the
+     * subscribers collection (accounts live there with type='account'). Used to
+     * flip a rejecting card to a good one between charges (e.g. retry-after-rejection).
+     */
+    public function setAccountCardToken($aid, $cardToken)
+    {
+        \Billrun_Factory::db()->subscribersCollection()->update(
+            ['aid' => (int) $aid, 'type' => 'account'],
+            ['$set' => ['payment_gateway.active.card_token' => $cardToken]],
+            ['multiple' => true]
+        );
+    }
+
+    /**
+     * Seed the 3-bill "pending gateway coverage" fixture used by the switch_links
+     * tests, directly into the bills collection (the legacy SimpleTest did the same
+     * from bills.json). It represents a tc debt of 10 that is covered 5 by an
+     * APPROVED cash payment and 5 by a PENDING automatic gateway bill that is still
+     * awaiting confirmation (cpg_* file-charge artifacts). The online CreditGuard
+     * gateway is designed never to emit this awaiting-confirmation state
+     * (hasPendingStatus()=false), so it cannot be produced through the payment API
+     * and must be seeded. txids are derived from the (dynamic) aid so they are unique
+     * and never collide with auto-generated payment txids. Returns the txid base; the
+     * three bills are base.'005' (debt invoice), base.'006' (approved), base.'007' (pending).
+     */
+    public function seedSwitchLinksFixture($aid)
+    {
+        // 13-char txids (matches Billrun_Bill_Payment::txIdLength) so padTxId is a no-op
+        // and the bill lookups by id (getInstanceByid) resolve the seeded links.
+        $base = '9' . str_pad((string) (int) $aid, 9, '0', STR_PAD_LEFT);
+        $past = new \Mongodloid_Date(strtotime('-30 days'));
+        $bills = \Billrun_Factory::db()->billsCollection();
+
+        $invoice = [
+            'dir' => 'tc', 'method' => 'cash', 'aid' => (int) $aid, 'type' => 'rec',
+            'amount' => 10, 'due' => 10, 'due_date' => $past, 'urt' => $past,
+            'payer_name' => 'yossi test', 'source' => 'web', 'left_to_pay' => 0, 'total_paid' => 10,
+            'vatable_left_to_pay' => 0, 'paid' => '2', 'pending_covering_amount' => 5,
+            'txid' => $base . '005', 'process_time' => $past,
+            'paid_by' => [
+                ['type' => 'rec', 'id' => $base . '006', 'amount' => 5, 'total_amount' => 5, 'date' => $past],
+                ['type' => 'rec', 'id' => $base . '007', 'amount' => 5, 'total_amount' => 5, 'date' => $past, 'pending' => true],
+            ],
+            'waiting_payments' => [$base . '007'],
+        ];
+        $approved = [
+            'dir' => 'fc', 'method' => 'cash', 'aid' => (int) $aid, 'type' => 'rec',
+            'amount' => 5, 'due' => -5, 'due_date' => $past, 'urt' => $past,
+            'payer_name' => 'yossi test', 'source' => 'web',
+            'pays' => [['type' => 'rec', 'id' => $base . '005', 'amount' => 5, 'total_amount' => 10, 'date' => $past]],
+            'left' => 0, 'pending_covering_amount' => 0, 'txid' => $base . '006', 'process_time' => $past,
+        ];
+        $pending = [
+            'dir' => 'fc', 'method' => 'automatic', 'aid' => (int) $aid, 'type' => 'rec',
+            'amount' => 5, 'due' => -5, 'due_date' => $past, 'urt' => $past, 'source' => 'web',
+            'generated_pg_file_log' => 'seedswitchlinks',
+            'pays' => [['type' => 'rec', 'id' => $base . '005', 'amount' => 5, 'pending' => true]],
+            'left' => 0, 'pending_covering_amount' => 0, 'waiting_for_confirmation' => true,
+            'txid' => $base . '007', 'pending' => true,
+            'cpg_name' => ['Credit_Card'], 'cpg_type' => ['transactions_request'],
+            'cpg_file_type' => ['transactions1'], 'pg_request' => [],
+        ];
+        $bills->insert($invoice);  // insert() takes its argument by reference
+        $bills->insert($approved);
+        $bills->insert($pending);
+        return $base;
+    }
+
+    /**
+     * Wipe the bills collection (cleanDB intentionally leaves it intact). Needed by
+     * tests that issue a GLOBAL charge sweep (chargeAccount without an aids filter,
+     * e.g. exclude_accounts) so the forked worker only processes this test's debt
+     * and is not slowed/contended by every prior test's leftover unpaid invoices.
+     */
+    public function clearBills()
+    {
+        \Billrun_Factory::db()->billsCollection()->remove(['_id' => ['$exists' => true]]);
+    }
+
     /** Read one bill (raw array) matching $criteria, or null — used to chain txid/invoice_id. */
     public function grabBill(array $criteria)
     {

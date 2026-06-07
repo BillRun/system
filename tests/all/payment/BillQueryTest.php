@@ -145,23 +145,56 @@ class BillQueryTest extends \Codeception\Test\Unit
         $this->assertArrayNotHasKey($aid, (array) ($resp['details'] ?? []));
     }
 
-    // cases 51, 54, 55 - require pre-existing aged (past-due) debt + a rejection,
-    // which a fresh API-created invoice can't reproduce (its due date is in the
-    // future, so it never enters collection). These belong to a collection /
-    // dunning workflow suite with seeded aged debt.
+    // cases 51, 54, 55 - aged (past-due) debt enters collection. A debt is "in
+    // collection" purely when its due_date < now AND it is unpaid (no separate
+    // rejection/aging threshold: rejection_required is unset, so the debt counts
+    // via the !paid && valid_due_date branch). An aged invoice is created with a
+    // past invoice_unixtime, so its due_date (= billrun date + due_date_interval)
+    // falls before now. NB: all_collection_debts scans the whole bills collection,
+    // which cleanDB does NOT wipe, so assertions are scoped to this test's own aids.
+
+    // case 51 - collection_debt of an account with an aged unpaid debt -> 23.4
     public function testCollectionDebtOverAgedDebt()
     {
-        $this->markTestSkipped('needs seeded past-due + rejection debt (collection workflow), not reproducible via the payment API');
+        $aid = $this->newAccount();
+        $this->agedInvoice($aid, 20); // 23.4, past-due
+        $resp = $this->tester->billQuery('collection_debt', ['aids' => json_encode([$aid])]);
+        $details = (array) ($resp['details'] ?? []);
+        $this->assertArrayHasKey($aid, $details, 'aged debt should be in collection');
+        $this->assertEqualsWithDelta(23.4, $details[$aid]['total'], 0.001);
+        $this->assertEquals($aid, $details[$aid]['aid']);
     }
 
+    // case 54 - all_collection_debts returns each account's aged debt (full + partial)
     public function testAllCollectionDebtsOverAgedDebt()
     {
-        $this->markTestSkipped('needs seeded past-due debt across accounts (collection workflow)');
+        $aidFull = $this->newAccount();
+        $this->agedInvoice($aidFull, 20);                        // 23.4 fully unpaid
+        $aidPartial = $this->newAccount();
+        $this->agedInvoice($aidPartial, 20);                     // 23.4 ...
+        $this->tester->payOffline($aidPartial, 11.7, 'fc', 'cash'); // ... 11.7 paid -> 11.7 left
+
+        $resp = $this->tester->billQuery('all_collection_debts');
+        $details = (array) ($resp['details'] ?? []);
+        $this->assertArrayHasKey($aidFull, $details);
+        $this->assertEqualsWithDelta(23.4, $details[$aidFull]['total'], 0.001);
+        $this->assertArrayHasKey($aidPartial, $details);
+        $this->assertEqualsWithDelta(11.7, $details[$aidPartial]['total'], 0.001);
     }
 
+    // case 55 - all_collection_debts includes the debtor, excludes the net-credit account
     public function testAllCollectionDebtsMixedDebtAndCredit()
     {
-        $this->markTestSkipped('needs seeded past-due debt + a credit account (collection workflow)');
+        $aidDebt = $this->newAccount();
+        $this->agedInvoice($aidDebt, 20);   // 23.4 debt -> present
+        $aidCredit = $this->newAccount();
+        $this->agedInvoice($aidCredit, -20); // net credit -> filtered out (only debts)
+
+        $resp = $this->tester->billQuery('all_collection_debts');
+        $details = (array) ($resp['details'] ?? []);
+        $this->assertArrayHasKey($aidDebt, $details);
+        $this->assertEqualsWithDelta(23.4, $details[$aidDebt]['total'], 0.001);
+        $this->assertArrayNotHasKey($aidCredit, $details);
     }
 
     // ------------------------------------------------------------------
@@ -178,6 +211,16 @@ class BillQueryTest extends \Codeception\Test\Unit
             'aid' => $aid, 'sid' => 0, 'rate' => 'CALL', 'usagev' => 1,
             'type' => 'credit', 'credit_time' => '2021-04-18T17:17:56Z', 'aprice' => $aprice,
         ]], ['step' => 1, 'invoice_unixtime' => time() - ($this->invoiceSeq++ * 3)]);
+    }
+
+    /** create an aged (past-due) immediate invoice so it enters collection */
+    private function agedInvoice($aid, $aprice)
+    {
+        $unixtime = time() - 2592000 - ($this->invoiceSeq++ * 86400); // ~30+ days ago, distinct days
+        $this->tester->onetimeInvoice($aid, [[
+            'aid' => $aid, 'sid' => 0, 'rate' => 'CALL', 'usagev' => 1,
+            'type' => 'credit', 'credit_time' => '2021-04-18T17:17:56Z', 'aprice' => $aprice,
+        ]], ['step' => 1, 'invoice_unixtime' => $unixtime]);
     }
 
     private function assertBalanceTotal($resp, $aid, $expected)

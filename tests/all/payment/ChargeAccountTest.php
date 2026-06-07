@@ -17,7 +17,7 @@ class ChargeAccountTest extends \Codeception\Test\Unit
     protected $tester;
 
     const CARD_OK = '1022273188555888';
-    const CHARGE_WAIT = 25;
+    const CHARGE_WAIT = 45;
 
     private $invoiceSeq = 0;
 
@@ -27,6 +27,9 @@ class ChargeAccountTest extends \Codeception\Test\Unit
         $this->tester->enableCreditGuardPGWithSettings();
         $this->tester->overrideConfigValue('taxation.default', ['key' => 'DEFAULT_VAT']); // 17%
         $this->tester->cleanDB();
+        // chargeAccount sweeps the (un-wiped) bills collection; clear it so a global
+        // charge (exclude_accounts) only touches this test's accounts and stays fast.
+        $this->tester->clearBills();
         $this->tester->seedCallRate();
         $this->invoiceSeq = 0;
     }
@@ -106,15 +109,43 @@ class ChargeAccountTest extends \Codeception\Test\Unit
         ]);
     }
 
-    // case 74 - min_invoice_date filters out invoices dated before the threshold.
-    // Requires invoices with specific (deep past) dates, which onetimeinvoice
-    // backdating validation rejects; covered by the date-filter logic elsewhere.
+    // case 74 - min_invoice_date filters out invoices dated before the threshold:
+    // only the newer invoice (invoice_date >= threshold) is charged; the older one
+    // stays unpaid. invoice_date for an immediate invoice == its invoice_unixtime.
     public function testChargeMinInvoiceDate()
     {
-        $this->markTestSkipped('needs deep-backdated invoices (onetimeinvoice rejects backdating beyond min_backdate)');
+        $aid = $this->newAccount();
+        $this->billAt($aid, 20, time() - 32 * 86400); // 23.4, older -> filtered out
+        $this->billAt($aid, 40, time() - 28 * 86400); // 46.8, newer -> charged
+        $minDate = date('m/d/Y', time() - 30 * 86400); // threshold strictly between the two days
+
+        $this->tester->chargeAccountApi(['aids' => "$aid", 'min_invoice_date' => $minDate]);
+        $this->waitForReceipt($aid);
+
+        // the newer invoice is charged 000
+        $this->tester->verifyCollectionRecord('bills', [
+            'aid' => $aid, 'type' => 'inv', 'amount' => 46.8, 'method' => 'automatic', 'paid' => ['$in' => PaymentStatus::PAID],
+        ]);
+        $this->tester->verifyCollectionRecord('bills', [
+            'aid' => $aid, 'type' => 'rec', 'due' => -46.8, 'pending' => false, 'vendor_response.status' => '000',
+        ]);
+        // the older invoice (before the threshold) stays unpaid, and only one receipt exists
+        $this->tester->verifyCollectionRecord('bills', [
+            'aid' => $aid, 'type' => 'inv', 'amount' => 23.4, 'paid' => ['$in' => PaymentStatus::UNPAID],
+        ]);
+        $this->tester->verifyCollectionCount('bills', 1, ['aid' => $aid, 'type' => 'rec', 'vendor_response.status' => '000']);
     }
 
     // ------------------------------------------------------------------
+
+    /** create a past-due invoice at a specific invoice_unixtime (for date-filter tests) */
+    private function billAt($aid, $aprice, $unixtime)
+    {
+        $this->tester->onetimeInvoice($aid, [[
+            'aid' => $aid, 'sid' => 0, 'rate' => 'CALL', 'usagev' => 1,
+            'type' => 'credit', 'credit_time' => '2021-04-18T17:17:56Z', 'aprice' => $aprice,
+        ]], ['step' => 1, 'invoice_unixtime' => $unixtime]);
+    }
 
     private function newAccount($card = self::CARD_OK)
     {
@@ -141,6 +172,9 @@ class ChargeAccountTest extends \Codeception\Test\Unit
             }
             usleep(400000);
         } while (time() < $deadline);
+        // fail loudly here rather than letting the caller's verifyCollectionRecord
+        // report a confusing "0 is greater than 0" when the async charge timed out.
+        $this->fail("no gateway receipt (status 000) for aid $aid within " . self::CHARGE_WAIT . 's');
     }
 
     /** assert the account's invoice was paid via the mockup gateway (receipt 000) */
