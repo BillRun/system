@@ -68,7 +68,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract { // CAUTIOUS WH
 //		return $view->render();
 	}
 	
-	protected function render($tpl, array $parameters = null) {
+	protected function render(string $tpl, array $parameters = null): string {
 		// this trick for forward compatibility
 		if ($this->getRequest()->get('tpl') == 'index2') {
 			return parent::render('index2', $parameters);

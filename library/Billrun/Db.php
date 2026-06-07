@@ -67,6 +67,13 @@ class Billrun_Db extends Mongodloid_Db {
 			return $conn->getDB($config['name'], $config['user'], $config['password']);
 		}
 
+		if (isset($config['options']['wtimeout'])) {
+			settype($config['options']['wtimeout'], 'int');
+		}
+		if (isset($config['options']['wTimeoutMS'])) {
+			settype($config['options']['wTimeoutMS'], 'int');
+		}
+		
 		return $conn->getDB($config['name'], $config['user'], $config['password'], $config['options']);
 	}
 

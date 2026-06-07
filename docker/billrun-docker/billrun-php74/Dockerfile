@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 RUN  wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb' \
 	&& apt install -y ./wkhtmltox_0.12.5-1.buster_amd64.deb
 
+RUN docker-php-ext-configure calendar && docker-php-ext-install calendar
+
 RUN wget -O /tmp/jsignpdf.zip \
         'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/2.3.0/jsignpdf-distribution-2.3.0.zip' \
     && unzip /tmp/jsignpdf.zip -d /opt \
@@ -26,7 +28,12 @@ RUN wget -O /tmp/jsignpdf.zip \
 COPY php-fpm.conf /usr/local/etc/
 COPY php.ini /usr/local/etc/php/
 COPY xdebug.ini /usr/local/etc/php/conf.d/
+
+# install composer and run it
 COPY --from=composer:2.6.6 /usr/bin/composer /usr/bin/composer
+COPY composer.json /var/www/html/
+RUN composer install -d /var/www/html/  # in production we need to add --no-dev
+
 COPY enable_client_plugin.sh /enable_client_plugin.sh
 RUN chmod ug+x /enable_client_plugin.sh
 ENTRYPOINT ["/enable_client_plugin.sh"]

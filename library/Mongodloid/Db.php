@@ -25,8 +25,9 @@ class Mongodloid_Db {
 	 * @return Mongodloid_Collection
 	 */
 	public function getCollection($name) {
-		if (!isset($this->_collections[$name]) || !$this->_collections[$name])
-			$this->_collections[$name] = new Mongodloid_Collection($this->_db->selectCollection($name), $this);
+		if (!isset($this->_collections[$name]) || !$this->_collections[$name]) {
+			$this->_collections[$name] = new Mongodloid_Collection($this->_db->selectCollection($name, ['codec' => null]), $this);
+		}
 
 		return $this->_collections[$name];
 	}

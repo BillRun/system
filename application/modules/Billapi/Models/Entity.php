@@ -193,7 +193,9 @@ class Models_Entity {
 
 		$customFields = $this->getCustomFields($update);
 		$duplicateCheck = isset($this->config['duplicate_check']) ? $this->config['duplicate_check'] : array();
-		$config = array_merge(array('fields' => Billrun_Factory::config()->getConfigValue($this->getCustomFieldsPath(), [])), $this->config[$this->action]);
+		$fieldConfig = array('fields' => Billrun_Factory::config()->getConfigValue($this->getCustomFieldsPath(), []));
+		$actionConfig = $this->config[$this->action];
+		$config = array_merge($fieldConfig, is_array($actionConfig) ? $actionConfig : []);
 		list($translatedQuery, $translatedUpdate, $translatedQueryOptions) = $this->validateRequest($query, $update, $this->action, $config, 999999, true, $options, $duplicateCheck, $customFields);
 		$this->setQuery($translatedQuery);
 		$this->setUpdate($translatedUpdate);
@@ -293,9 +295,13 @@ class Models_Entity {
 			$multipleFields[$fieldName] = Billrun_Util::getFieldVal($customField['multiple'], false);
 		}
 
-		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
-		if (is_null($defaultFields)) {
+		if (!isset($this->config[$this->action]['update_parameters'])) {
 			$defaultFields = array();
+		} else {
+			$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
+			if (is_null($defaultFields)) {
+				$defaultFields = array();
+			}
 		}
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
@@ -424,7 +430,7 @@ class Models_Entity {
 			$status = $this->insert($this->update);
             $this->after = $this->update;
 			$this->fixEntityFields($this->before);
-			$this->trackChanges($this->update['_id']);
+			$this->trackChanges($this->update['_id'] ?? null);
 			$res = isset($status['ok']) && $status['ok'];
 			if($res == 1){
 				$this->applyCacheChange();
@@ -652,7 +658,7 @@ class Models_Entity {
 //		$oldId = $this->query['_id'];
 		unset($this->update['_id']);
 		$status = $this->insert($this->update);
-		$newId = $this->update['_id'];
+		$newId = $this->update['_id'] ?? null;
 		$this->fixEntityFields($this->before);
 		$this->trackChanges($newId);
 		$this->applyCacheChange();
@@ -689,7 +695,7 @@ class Models_Entity {
 	 * @return unix timestamp
 	 */
 	public static function getMinimumUpdateDate($invoicing_day = null) {	
-		if (empty(self::$minUpdateDatetime)) {
+		if (empty(self::$minUpdateDatetime) || (!is_null($invoicing_day) && empty(self::$minUpdateDatetime[$invoicing_day]))) {
 			if (!Billrun_Factory::config()->isMultiDayCycle() && is_null($invoicing_day)) {
 				self::$minUpdateDatetime[0] = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle()) ? Billrun_Billingcycle::getEndTime($billrunKey) : 0;
 			} else {

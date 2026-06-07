@@ -60,16 +60,16 @@ function extractAid($payload) {
 				continue;
 			}
 
-				foreach ($query['params'] as $param) {
-					if (isset($param['key'], $param['value']) && $param['key'] === 'aid') {
+			foreach ($query['params'] as $param) {
+				if (isset($param['key'], $param['value']) && $param['key'] === 'aid') {
 						$aidValues = normalizeQueryValues($param['value']);
 						if (!empty($aidValues)) {
 							return (int) $aidValues[0];
 						}
-					}
 				}
 			}
 		}
+	}
 
 	return null;
 }
@@ -160,7 +160,7 @@ function loadAidData($aid) {
 	}
 
 	return loadAidDataByKey((string) $aid);
-}
+		}
 
 /**
  * Load the CRM fixture by aid-like file key.
@@ -176,8 +176,8 @@ function loadAidDataByKey($aidKey) {
 		return '';
 	}
 
-	return file_get_contents($filePath, true);
-}
+		return file_get_contents($filePath, true);
+	}
 
 /**
  * Return billable payload with pagination and optional aids filtering.
@@ -882,4 +882,3 @@ function filterAccountsOnly($data) {
 		return isset($entry['type']) && $entry['type'] === 'account';
 	}));
 }
-?>

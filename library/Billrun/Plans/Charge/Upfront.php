@@ -65,6 +65,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 				'full_price' => floatval($price),
 				'split' => $cycleData['split'] ?? false
 				));
+
 		}
 		return empty($retCahrges) ? null :  $retCahrges;
 	}

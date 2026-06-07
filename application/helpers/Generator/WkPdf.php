@@ -22,6 +22,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $render_subscription_details = TRUE;
 	protected $linesColl;
 	protected $plansColl;
+	protected $ratesColl;
 	protected $servicesColl;
 	protected $template;
 	protected $is_fake_generation = FALSE;
@@ -32,11 +33,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $footer_path = "";
 	protected $header_content = "";
 	protected $footer_content = "";
-	
+	protected $font_awesome_css_path;
+	protected $css_path;
+	protected $logo_path;
+	protected $view_path;
+	protected $billrun_footer_logo_path;
+	protected $tanent_css;
+	protected $paths;
+	protected $wkpdf_exec;	
 	protected $loadFromFile = FALSE;
 	
-
-
 	/**
 	 *
 	 * @var Mongodloid_Cursor
@@ -139,6 +145,17 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 	public function prepereView($params = FALSE) {
 		$this->view = new Billrun_View_Invoice($this->view_path);
+		$this->view->assign('lines', array());
+		$this->view->assign('subServices', []);
+		$this->view->assign('tariffMultiplier', array(
+			'call' => 60,
+			'incoming_call' => 60,
+			'data' => 1024 * 1024,
+		));
+		$this->view->assign('destinationsNumberTransforms', array('/B/' => '*', '/A/' => '#', '/^972/' => '0'));
+		$this->view->assign('invoice_flat_tabels', []);
+		$this->view->assign('invoice_usage_tabels', []);
+		$this->view->assign('details_keys', []);
 		$this->view->assign('css_path', $this->css_path);
 		$this->view->assign('decimal_mark', Billrun_Factory::config()->getConfigValue(self::$type . '.decimal_mark', '.'));
 		$this->view->assign('thousands_separator', Billrun_Factory::config()->getConfigValue(self::$type . '.thousands_separator', ','));
@@ -607,7 +624,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 		if(!$this->is_fake_generation) {
 			$account['invoice_file'] = $pdfPath;
-			$this->billrunColl->update(["_id"=>$account['_id']->getMongoID(),"invoice_id"=>$account['invoice_id'], "aid"=>$account['aid'], 'billrun_key' => $account['billrun_key']], ['$set' => $update ]);
+			$query = [
+				"_id" => $account['_id']->getMongoID(), 
+				"invoice_id" => $account['invoice_id'], 
+				"aid" => $account['aid'], 
+				"billrun_key" => $account['billrun_key']
+			];
+			$update = [
+				'$set' => $update
+			];
+			$this->billrunColl->update($query, $update);
 		}
 	}
 
@@ -685,7 +711,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 				}
 			}
 		}
-		$this->exporterFlags =   Billrun_Util::getFieldVal($options['exporter_flags'],  Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type'));
+		$this->exporterFlags =   Billrun_Util::getFieldVal($options['exporter_flags'],  Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type --enable-local-file-access'));
 	}
 
     public function signPdf(string $pdf) {
