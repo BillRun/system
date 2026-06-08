@@ -208,6 +208,49 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
     }
 
     /**
+     * BRCD-5327
+     *
+     * Regression guard: every formatting attribute handled by
+     * Billrun_Util::formattingValue() (value_mult, number_format, date,
+     * substring, padding) must be applied to the data_structure value exactly
+     * ONCE. A second application (the original value_mult bug) would corrupt the
+     * value saved to the bill, so we assert the single-application result of each
+     * attribute on its matching pg_request.<field>.
+     */
+    public function testFormattingAttributesAppliedOnceInDataStructure() {
+        $this->insertMasavRequestFileSettings();
+        
+        $account = $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "name" => "masav",
+                    "bank_code" => 1,
+                    "bank_branch_num" => 1,
+                    "account_num" => 1,
+                    "customer_id" => 1
+                ]
+            ]
+        ])['entity'];
+        //created debt of 5 that will be pulled to the cpg request file
+        $this->tester->payApi(['aid' => $account['aid'], 'amount' => 5, 'dir' => 'tc']);
+
+        $this->sendGenerateRequestFileCommand();
+
+        $this->tester->verifyCollectionRecord('bills', [
+            'aid' => $account['aid'],
+            'dir' => 'fc',
+            'generated_pg_file_log' => ['$exists' => true],
+            'pg_request.value_mult_amount' => 500,         // value_mult applied once (doubled => 50000)
+            'pg_request.customer_id'       => '000000001', // padding applied once (customer_id=1, len 9)
+            'pg_request.reg_number_format' => '1,234.50',  // number_format applied once (doubled => "1.00")
+            'pg_request.reg_date'          => '20200115',  // date applied once (doubled => "19700822")
+            'pg_request.reg_substring'     => 'BCD',       // substring applied once (doubled => "CD")
+            'pg_request.reg_padding'       => '******42',  // padding applied once
+            'pg_request.reg_relative_time' => '20200114',  // date - 1 day, applied once (doubled => "20200113")
+        ]);
+    }
+
+    /**
      * Function to insert masav data to db
      */
     public function insertMasavRequestFileSettings() {
@@ -340,7 +383,59 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
 									"field_name" => "txid",
 									"entity" => "payment_request"
                                 ]
-                            ]
+                            ],
+							[
+								"name" => "reg_number_format",
+								"path" => 5,
+								"type" => "number",
+								"hard_coded_value" => 1234.5,
+								"number_format" => [
+									"decimals" => 2,
+									"dec_point" => ".",
+									"thousands_sep" => ","
+								],
+								"save_to_bill" => true
+							],
+							[
+								"name" => "reg_date",
+								"path" => 6,
+								"type" => "date",
+								"format" => "Ymd",
+								"hard_coded_value" => 1579089600, // 2020-01-15 12:00:00 UTC
+								"save_to_bill" => true
+							],
+							[
+								"name" => "reg_substring",
+								"path" => 7,
+								"type" => "string",
+								"hard_coded_value" => "ABCDEF",
+								"substring" => [
+									"offset" => 1,
+									"length" => 3
+								],
+								"save_to_bill" => true
+							],
+							[
+								"name" => "reg_padding",
+								"path" => 8,
+								"type" => "string",
+								"hard_coded_value" => "42",
+								"padding" => [
+									"character" => "*",
+									"length" => 8,
+									"direction" => "left"
+								],
+								"save_to_bill" => true
+							],
+							[
+								"name" => "reg_relative_time",
+								"path" => 9,
+								"type" => "date",
+								"format" => "Ymd",
+								"relative_time" => "-1 day",
+								"hard_coded_value" => 1579089600, // 2020-01-15 12:00:00 UTC
+								"save_to_bill" => true
+							]
 						],
 						"trailer_structure" => [
 							[
