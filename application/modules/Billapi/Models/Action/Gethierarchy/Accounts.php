@@ -62,6 +62,8 @@ class Models_Action_Gethierarchy_Accounts extends Models_Action {
 		$result[$aid] = array(
 			'name' => $this->getAccountDisplayName($revision, $aid),
 			'parent_aid' => $parent,
+			'issues_invoice' => Billrun_Util::toBool(isset($revision['issues_invoice']) ? $revision['issues_invoice'] : null, true),
+			'is_payer' => Billrun_Util::toBool(isset($revision['is_payer']) ? $revision['is_payer'] : null, true),
 		);
 		foreach ($this->findChildAids($aid) as $childAid) {
 			$this->collectSubtree($childAid, $result, $depth + 1);
