@@ -1,6 +1,10 @@
 /* 
  * General (idempotent) DB migration script goes here.
  * Please try to avoid using migration script and instead make special treatment in the code!
+ * 
+ * @deprecated since version 5.25.0
+ *             please use application/migrations
+ *             more info in application/migrations/README.md
  */
 
 // =============================== Helper functions ============================
@@ -2221,6 +2225,41 @@ runOnce(lastConfig, 'BRCD-5151', function () {
 		});
 
 	}
+});
+
+runOnce(lastConfig, 'BRCD-5273', function () {
+var invoiceTemplate = {
+    "field_name": "invoice_config",
+    "title": "Invoice Configuration",
+    "mandatory": false,
+    "system": true,
+    "editable": true,
+    "display": false,
+	"type": "json",
+    "description": "Holds configuration regarding the formatting and appearance of the invoice (banners, etc.)"
+};
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoiceTemplate, 'account');
+});
+
+runOnce(lastConfig, 'BRCD-5278', function () {
+	var plugin = lastConfig.plugins.find(function (p) { return p.name === "eBillSwitzerlandPlugin"; });
+	if (!plugin || typeof plugin.configuration === 'undefined' || typeof plugin.configuration.values === 'undefined') {
+		return;
+	}
+	var configValues = plugin.configuration.values;
+	delete configValues.sftp_host;
+	delete configValues.sftp_user;
+	delete configValues.sftp_password;
+	delete configValues.sftp_remote_directory;
+	delete configValues.response_status_files_path;
+	configValues.export_sftp_host = "";
+	configValues.export_sftp_user = "";
+	configValues.export_sftp_password = "";
+	configValues.export_sftp_remote_directory = "";
+	configValues.response_sftp_host = "";
+	configValues.response_sftp_user = "";
+	configValues.response_sftp_password = "";
+	configValues.response_sftp_remote_directory = "";
 });
 
 db.config.insertOne(lastConfig);

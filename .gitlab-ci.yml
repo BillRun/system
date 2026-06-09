@@ -32,6 +32,7 @@ print-info:
     - 'echo "Job start: $CI_JOB_STARTED_AT"'
     - 'echo "Branch: $CI_COMMIT_BRANCH"'
     - 'echo "Commit Author: $CI_COMMIT_AUTHOR"'
+
 codecept:
   services:
     - name: docker:dind
@@ -50,6 +51,7 @@ codecept:
     - mkdir logs cache
     - chmod 777 logs/ cache/
     - cp $TEST_ENV_CODECEPT $CI_PROJECT_DIR/tests/.env
+    - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-tests.yml up --wait --build --detach
   script:
@@ -62,6 +64,11 @@ codecept:
     - docker exec -w /billrun billrun-app php vendor/bin/codecept run all
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-tests.yml down --remove-orphans
+  after_script:
+    - if [ "$CI_JOB_STATUS" = "success" ]; then exit 0; fi
+    - cd $CI_PROJECT_DIR/docker/billrun-docker
+    - docker-compose -f docker-compose-php74-tests.yml ps
+    - docker logs billrun-app
   artifacts:
     when: on_failure
     paths:
@@ -83,9 +90,30 @@ build:
   script:
     - echo "Building Docker image from Tag $CI_COMMIT_TAG"
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
-    - docker buildx build --tag billrun/billrun:$CI_COMMIT_TAG --push --no-cache -f docker/cicd/Dockerfile .
+    - |
+      # Move :latest only when this tag is the highest stable tag in the repo
+      # AND its major version is >= 5. A "stable" tag is exactly
+      # MAJOR.MINOR.PATCH - any suffix (-rc, -alpha, -beta, -dev, etc.)
+      # disqualifies the tag from being :latest. Backports on older release
+      # lines (e.g. 5.24.5 published after 6.0.0 already exists) also leave
+      # :latest alone. Legacy tags (4.x and below) are not pushed at all.
+      LATEST_TAG=""
+      if echo "$CI_COMMIT_TAG" | grep -qE '^([5-9]|[1-9][0-9]+)\.[0-9]+\.[0-9]+$'; then
+        HIGHEST=$(git ls-remote --tags --refs origin 2>/dev/null \
+          | awk '{print $2}' \
+          | sed 's|refs/tags/||' \
+          | grep -E '^([5-9]|[1-9][0-9]+)\.[0-9]+\.[0-9]+$' \
+          | sort -V \
+          | tail -1)
+        if [ "$CI_COMMIT_TAG" = "$HIGHEST" ]; then
+          LATEST_TAG="--tag billrun/billrun:latest"
+        else
+          echo "Not moving :latest - current tag $CI_COMMIT_TAG is not the highest stable ($HIGHEST)"
+        fi
+      fi
+      docker buildx build --tag billrun/billrun:$CI_COMMIT_TAG $LATEST_TAG --push --no-cache -f docker/cicd/Dockerfile .
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^5\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
+    - if: '$CI_COMMIT_TAG =~ /^([5-9]|[1-9]\d+)\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
 
 container_scanning:
   tags: [CI_SAST]
@@ -99,7 +127,7 @@ container_scanning:
     GIT_STRATEGY: clone
     CS_SEVERITY_THRESHOLD: HIGH
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^5\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
+    - if: '$CI_COMMIT_TAG =~ /^([5-9]|[1-9]\d+)\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
 
 include:
   - template: Jobs/Secret-Detection.gitlab-ci.yml
