@@ -24,7 +24,7 @@ class Billrun_Config {
 	/**
 	 * the config container
 	 * 
-	 * @var Yaf_Config
+	 * @var Yaf_Config_Simple
 	 */
 	protected $config;
 
@@ -48,6 +48,12 @@ class Billrun_Config {
 	 * @var array
 	 */
 	protected $productionValues = array('prod', 'product', 'production');
+
+	/**
+	 * Keeps track of already loaded configuration files
+	 * @var array 
+	 */
+	protected $loadedFiles = [];
 
 	/**
 	 * constructor of the class
@@ -77,21 +83,22 @@ class Billrun_Config {
 	}
 	
 	public function addConfig($path) {
-		if (file_exists($path)) {
-			if(preg_match('/\.json$/',$path)) {
-					$addedConf = json_decode(file_get_contents($path),TRUE);
-					
-			} else {
+		if (!array_key_exists($path, $this->loadedFiles)) {
+			if (file_exists($path)) {
+				if (preg_match('/\.json$/', $path)) {
+					$addedConf = json_decode(file_get_contents($path), TRUE);
+				} else {
 					$addedConf = (new Yaf_Config_Ini($path))->toArray();
-			}
-			if(is_array($addedConf)) {
-				$this->config = new Yaf_Config_Simple(self::mergeConfigs($this->config->toArray(), $addedConf));
+				}
+				if (is_array($addedConf)) {
+					$this->config = new Yaf_Config_Simple(self::mergeConfigs($this->config->toArray(), $addedConf));
+					$this->loadedFiles[$path] = true;
+				} else {
+					error_log("Couldn't load Configuration File {$path} !!");
+				}
 			} else {
-				error_log("Couldn't load Configuration File {$path} !!");
+				error_log("Configuration File {$path} doesn't exists or BillRun lack access permissions!!");
 			}
-			
-		} else {
-			error_log("Configuration File {$path} doesn't exists or BillRun lack access permissions!!");
 		}
 	}
 
@@ -136,7 +143,7 @@ class Billrun_Config {
 	}
 
 	/**
-	 * magic method for backward compatability (Yaf_Config style)
+	 * magic method for backward compatibility (Yaf_Config style)
 	 * 
 	 * @param string $key the key in the config container (Yaf_Config)
 	 * 
@@ -155,14 +162,59 @@ class Billrun_Config {
 		$stamp = Billrun_Util::generateArrayStamp($config);
 		if (empty(self::$instance[$stamp])) {
 			if (empty($config)) {
-			$config = Yaf_Application::app()->getConfig();
-		}
+				$config = new Yaf_Config_Simple(Yaf_Application::app()->getConfig()->toArray());
+				// convert ini to simple to be able to update it with env
+				self::setDbEnvConfig($config);
+			}
 			self::$instance[$stamp] = new self($config);
 			self::$instance[$stamp]->loadDbConfig();
 		}
 		return self::$instance[$stamp];
 	}
 	
+	/**
+	 * Apply BR_MDB_* environment variables to the db config block in-place.
+	 *
+	 * BREAKING CHANGE in 5.25.0: env values now override the corresponding
+	 * ini values UNCONDITIONALLY (previously env was only applied when the
+	 * matching ini key was empty). This is deliberate, to make containerized
+	 * deployments behave predictably regardless of whatever ships in the
+	 * baked-in *.ini files. Deployments that mix env vars and host.ini must
+	 * be aware that env wins for any BR_MDB_* variable present at runtime.
+	 *
+	 * @param Yaf_Config_Simple $config
+	 */
+	static protected function setDbEnvConfig($config) {
+		$mdbConfigEnv = array(
+			'BR_MDB_HOST'            => 'host',
+			'BR_MDB_PORT'            => 'port',
+			'BR_MDB_DBNAME'          => 'name',
+			'BR_MDB_USER'            => 'user',
+			'BR_MDB_PASS'            => 'password',
+			'BR_MDB_AUTHDB'          => 'options.authSource',
+			'BR_MDB_TLS'             => 'options.tls',
+			'BR_MDB_TLSKEYFILE'      => 'options.tlsCertificateKeyFile',
+			'BR_MDB_TLSPASSWORD'     => 'options.tlsCertificateKeyFilePassword',
+			'BR_MDB_TLSCAFILE'       => 'options.tlsCAFile',
+			'BR_MDB_TLSINSECURE'     => 'options.tlsInsecure',
+			'BR_MDB_TLSINVALIDCERT'  => 'options.tlsAllowInvalidCertificates',
+			'BR_MDB_TLSINVALIDHOST'  => 'options.tlsAllowInvalidHostnames',
+		);
+
+		$dbConfig = $config['db']->toArray();
+		$changed = false;
+		foreach ($mdbConfigEnv as $envVar => $confVar) {
+			if (!empty($envVal = getenv($envVar))) {
+				Billrun_Util::setIn($dbConfig, $confVar, $envVal);
+				$changed = true;
+			}
+		}
+		if ($changed) {
+			$config->set('db', $dbConfig);
+		}
+	}
+
+
 	public function getFileTypeSettings($fileType, $enabledOnly = false) {
 		$fileType = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($fileType, $enabledOnly) {
 			return $fileSettings['file_type'] === $fileType &&
@@ -172,6 +224,17 @@ class Billrun_Config {
 			$fileType = current($fileType);
 		}
 		return $fileType;
+	}
+	
+	public function getPluginSettings($pluginName, $enabledOnly = false) {
+		$plugin = array_filter($this->getConfigValue('plugins'), function($pluginSettings) use ($pluginName, $enabledOnly) {
+			return $pluginSettings['name'] === "{$pluginName}Plugin" &&
+				(!$enabledOnly || Billrun_Config::isEnabled($pluginSettings));
+		});
+		if ($plugin) {
+			$plugin = current($plugin);
+		}
+		return $plugin;
 	}
 	
 	public function getExportGeneratorSettings($exportGenerator, $enabledOnly = true) {
@@ -191,13 +254,27 @@ class Billrun_Config {
 		}, $this->getConfigValue('file_types')));
 	}
 	
+	public function isConfigCacheEnabled() {
+		return $this->getConfigValue('config_cache.enabled', false);
+	}
+
 	public function loadDbConfig() {
 		try {
+			$cache = $this->isConfigCacheEnabled() ? Billrun_Factory::cache() : null;
+			if ($cache) {
+				$cachedConfig = $cache->get('db_config', 'config');
+				if (!empty($cachedConfig)) {
+					$this->config = new Yaf_Config_Simple($cachedConfig);
+					$this->setTenantTimezone($cachedConfig);
+					return true;
+				}
+			}
+
 			$configColl = Billrun_Factory::db()->configCollection();
 			if ($configColl) {
 				$dbCursor = $configColl->query()
 					->cursor()->setReadPreference('RP_PRIMARY')
-					->sort(array('_id' => -1))
+					->sort(array('urt' => -1,'_id' => -1))
 					->limit(1)
 					->current();
 				if ($dbCursor->isEmpty()) {
@@ -207,18 +284,24 @@ class Billrun_Config {
 				unset($dbConfig['_id']);
 				$iniConfig = $this->config->toArray();
 				$this->translateComplex($dbConfig);
-				$this->config = new Yaf_Config_Simple(self::mergeConfigs($iniConfig, $dbConfig));
-				
+				$mergedConfig = self::mergeConfigs($iniConfig, $dbConfig);
+				$this->config = new Yaf_Config_Simple($mergedConfig);
+
+				if ($cache) {
+					$configTtl = $this->getConfigValue('config_cache.ttl', 600);
+					$cache->set('db_config', $mergedConfig, 'config', $configTtl);
+				}
+
 				// Set the timezone from the config.
 				$this->setTenantTimezone($dbConfig);
 			}
 		} catch (MongoException $e) {
 			// TODO: Exception should be thrown and handled by the error controller.
-			error_log('cannot load database config. Message: ' . $e->getMessage());
+			error_log('MongoException - cannot load database config. Message: ' . $e->getMessage() . '. Trace: ' . $e->getTraceAsString());
 //			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
 //			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Zend_Log::CRIT);
 			throw $e;
-			}
+		}
 
 		return true;
 		}
@@ -284,6 +367,25 @@ class Billrun_Config {
 
 		return $currConf;
 	}
+
+ /**
+  * Sets a value in the configuration at the specified path
+  * 
+  * This method updates the configuration by setting a value at the specified key path.
+  * It converts the current configuration to an array, creates a new array with the 
+  * specified value, and then merges them together.
+  * 
+  * @param mixed $keys String with dot notation or array representing the path to the config value
+  * @param mixed $val The value to set at the specified path
+  * 
+  * @return void
+  */
+  public function setConfigValue($keys, $val) {
+    $config = $this->config->toArray();
+    $importantConf = [];
+    Billrun_Util::setIn($importantConf, $keys, $val);
+    $this->config = new Yaf_Config_Simple(self::mergeConfigs($config, $importantConf));
+}
 
 	/**
 	 * Return a wrapper for input data.
@@ -355,7 +457,7 @@ class Billrun_Config {
 	 * @return true if complex.
 	 */
 	public static function isComplex($obj) {
-		if(empty($obj) || is_scalar($obj) || $obj instanceof MongoDate) {
+		if(empty($obj) || is_scalar($obj) || $obj instanceof MongoDate || $obj instanceof Mongodloid_Date) {
 			return false;
 		}
 		
@@ -465,6 +567,10 @@ class Billrun_Config {
 	public static function getMultitenantConfigPath() {
 		return self::$multitenantDir;
 	}
+
+	public static function isMultitenantEnabled() {
+		return defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT;
+	}
 		
 	public static function isFileTypeConfigEnabled($fileTypeSettings) {
 		return (!isset($fileTypeSettings['enabled']) || $fileTypeSettings['enabled']);
@@ -474,8 +580,12 @@ class Billrun_Config {
 		return (!isset($exportGeneratorSettings['enabled']) || $exportGeneratorSettings['enabled']);
 	}
 
-	public static function getParserStructure($fileTypeName) {
-		$fileType = Billrun_Factory::config()->getFileTypeSettings($fileTypeName);
+	public static function isEnabled($settings) {
+		return (!isset($settings['enabled']) || $settings['enabled']);
+	}
+
+	public static function getParserStructure($fileTypeName, $lineType = null) {
+		$fileType = Billrun_Factory::config()->getLineTypeConfigByName($fileTypeName, false, $lineType);
 		if (!empty($fileType)) {
 			return $fileType['parser']['structure'];
 		}
@@ -505,13 +615,66 @@ class Billrun_Config {
 
 		return $fileTypes;
 	}
-	
+
 	/**
 	 * method to get monthly invoice's display config
 	 * @return invoice display options if was configured, else returns null.
 	 */
 	public function getInvoiceDisplayConfig() {		
 		return $this->getConfigValue('invoice_export.invoice_display_options', null);
+	}
+
+	/**
+	 * method to check the cycle's mode
+	 * @return boolean true if it's multi day cycle mode, false otherwise.
+	 */
+	public function isMultiDayCycle() {
+		return $this->getConfigValue('billrun.multi_day_cycle', false);
+	}
+	
+	/**
+	 * 
+	 * @return returns the default charging/invoicing day from the config.
+	 */
+	public function getConfigChargingDay() {
+		return !is_null($this->getConfigValue('billrun.invoicing_day', null)) ? $this->getConfigValue('billrun.invoicing_day', 1) : $this->getConfigValue('billrun.charging_day', 1);
+	}
+
+	public static function haveMultipleLineTypes($lineTypes) {		
+		if(isset($lineTypes) && isset($lineTypes[0]) && is_array($lineTypes[0])){
+			return true;
+		}
+		return false;
+	}
+
+	public static function getLineTypesField($fileSettings,  $field, $recordType = 'D') {
+		$fieldValuesByLineType = [];
+		$lineTypes = $fileSettings['line_types'] ?? [];
+		if(!empty($lineTypes) && Billrun_Config::haveMultipleLineTypes($lineTypes)){
+			foreach ($lineTypes as $lineType){
+				if($lineType['record_type'] == $recordType && isset($lineType['line_type']) && !empty(Billrun_Util::getIn($lineType, $field, null))){
+					$fieldValuesByLineType[$lineType['line_type']] = Billrun_Util::getIn($lineType,$field, Billrun_Util::getIn($fileSettings,$field, null));
+				}
+			}
+		}
+		return $fieldValuesByLineType;
+	}
+
+	public Static function getLineTypeConfigByName($fileTypeName, $enabledOnly = false, $linet = null){
+		$fileType = Billrun_Factory::config()->getFileTypeSettings($fileTypeName, $enabledOnly);
+		if(isset($fileType['line_types']) && isset($linet)){
+			foreach ($fileType['line_types']  as $lineType){
+				if(isset($lineType['line_type']) && $lineType['line_type'] == $linet){
+					return $lineType;
+				}
+			}
+		}
+		return $fileType;
+	}
+
+	public function setInternalSubscribersMode() {
+		$this->config['subscribers']['subscriber']['type'] = 'db';
+		$this->config['subscribers']['account']['type'] = 'db';
 	}
 
 }

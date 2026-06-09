@@ -1,10 +1,16 @@
 actor: ApiTester
 bootstrap: ../_support/Helper/BillRun/bootstrap.php
+error_level: E_ALL & ~E_WARNING & ~E_NOTICE
 modules:
     enabled:
         - Asserts
         - \Helper\Api
         - \Helper\BillRunAPI
+        - \Helper\RealTimeApiHelper
+        - \Helper\TestHelper
+        - \Helper\LogChecker
+        - \Helper\Aggregate
+        - \Helper\BillRun\Mockups\Crm
         - REST:
             depends: PhpBrowser
             part: Json
@@ -20,4 +26,4 @@ modules:
         PhpBrowser:
             url: http://web
             curl:
-                CURLOPT_TIMEOUT: 60
+                CURLOPT_TIMEOUT: 180

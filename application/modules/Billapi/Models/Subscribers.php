@@ -20,21 +20,22 @@ class Models_Subscribers extends Models_Entity {
 
 		// TODO: move to translators?
 		if (empty($this->before)) { // this is new subscriber
-			$this->update['plan_activation'] = isset($this->update['from']) ? $this->update['from'] : new MongoDate();
+			$this->update['plan_activation'] = isset($this->update['from']) ? $this->update['from'] : new Mongodloid_Date();
 		} else if (isset($this->before['plan_activation']) && isset($this->update['plan']) && isset($this->before['plan']) && $this->before['plan'] !== $this->update['plan']) { // plan was changed
-			$this->update['plan_activation'] = isset($this->update['from']) ? $this->update['from'] : new MongoDate();
+			$this->update['plan_activation'] = isset($this->update['from']) ? $this->update['from'] : new Mongodloid_Date();
 		} else { // plan was not changed
 			$this->update['plan_activation'] = $this->before['plan_activation'];
 		}
 
 		//transalte to and from fields
-		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
+		Billrun_Utils_Mongo::convertQueryMongodloidDates($this->update);
 		if ($this->action == 'create' && !isset($this->update['to'])) {
-			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+			$this->update['to'] = new Mongodloid_Date(strtotime('+149 years'));
 		}
 		
 		$this->verifyServices();
 		$this->validatePlan();
+		$this->verifyOverrides();
 	}
 
 	public function get() {
@@ -61,6 +62,29 @@ class Models_Subscribers extends Models_Entity {
 		return $this->collectionName . ".subscriber.fields";
 	}
 
+		/**
+	 * Verify overrides plan \ services are correct before update is applied to the subscription
+	 */
+	protected function verifyOverrides() {
+		if (!empty($this->update['overrides'])) {
+			$overrides = Billrun_Util::getIn($this->update, 'overrides', []);
+			foreach ($overrides as $override) {
+				$priceIntervals = Billrun_Util::getIn($override, ['value','price'], []);
+				$type = Billrun_Util::getIn($override, 'type', 'item');
+				$key = Billrun_Util::getIn($override, 'key', '');
+				foreach ($priceIntervals as $price) {
+					if (!isset($price['from']) || $price['from'] === '' || 
+						!isset($price['to']) || $price['to'] === '') {
+						throw new Billrun_Exceptions_Api(0, array(), "Override {$type} {$key} missing cycles parameters");
+					}
+					if (!isset($price['price']) || $price['price'] === '') {
+						throw new Billrun_Exceptions_Api(0, array(), "Override {$type} {$key} missing price parameter");
+					}
+				}
+			}
+		}
+	}
+
 	/**
 	 * Verify services are correct before update is applied to the subscription
 	 * and makes sure it matches his play
@@ -83,13 +107,13 @@ class Models_Subscribers extends Models_Entity {
 					$service = array('name' => $service);
 				}
 				if (gettype($service['from']) == 'string') {
-					$service['from'] = new MongoDate(strtotime($service['from']));
+					$service['from'] = new Mongodloid_Date(strtotime($service['from']));
 				}
 				if (empty($this->before)) { // this is new subscriber
 					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
 				}
 				if (!empty($service['to']) && gettype($service['to']) == 'string') {
-					$service['to'] = new MongoDate(strtotime($service['to']));
+					$service['to'] = new Mongodloid_Date(strtotime($service['to']));
 				}
 				// handle custom period service or limited cycles service
 				$serviceTime = $service['from']->sec ?? time();
@@ -99,25 +123,25 @@ class Models_Subscribers extends Models_Entity {
 					throw new Billrun_Exceptions_Api(66601, array(), "Service was not found");
 				}
 				if (!empty($servicePeriod = @$serviceRate->get('balance_period')) && $servicePeriod !== "default") {
-					$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
+					$service['to'] = new Mongodloid_Date(strtotime($servicePeriod, $service['from']->sec));
 				} else {
 					// Handle limited cycle services
 					$serviceAvailableCycles = $serviceRate->getServiceCyclesCount();
 					if ($serviceAvailableCycles !== Billrun_Service::UNLIMITED_VALUE) {
 						$vDate = date(Billrun_Base::base_datetimeformat, $service['from']->sec);
 						$to = strtotime('+' . $serviceAvailableCycles . ' months', $service['from']->sec);
-						$service['to'] = new MongoDate($to);
+						$service['to'] = new Mongodloid_Date($to);
 					}
 				}
 				if (empty($service['to'])) {
-					$service['to'] =  new MongoDate(strtotime('+149 years'));
+					$service['to'] =  new Mongodloid_Date(strtotime('+149 years'));
 				}
 				if (!isset($service['service_id'])) {
 					$service['service_id'] = hexdec(uniqid());
 				}
 
 				if (!isset($service['creation_time'])) {
-					$service['creation_time'] = new MongoDate();
+					$service['creation_time'] = new Mongodloid_Date();
 				}
 				
 				$this->validateServicePlay($service['name']);
@@ -184,7 +208,7 @@ class Models_Subscribers extends Models_Entity {
 		}
 		if (!isset($this->update[$edge])) {
 			$this->update = array(
-				$edge => new MongoDate()
+				$edge => new Mongodloid_Date()
 			);
 		}
 
@@ -255,7 +279,7 @@ class Models_Subscribers extends Models_Entity {
 		$this->trackChanges($this->query['_id']);
 
 		if (!empty($followingEntry) && !$followingEntry->isEmpty()) {
-			$update = array($otherEdge => new MongoDate($this->update[$edge]->sec));
+			$update = array($otherEdge => new Mongodloid_Date($this->update[$edge]->sec));
 			if ($edge == 'to' && isset($followingEntry['plan_activation']->sec) && $followingEntry['plan_activation']->sec == $this->before[$edge]->sec) {
 				$update['plan_activation'] = $update[$otherEdge];
 			}
@@ -285,7 +309,7 @@ class Models_Subscribers extends Models_Entity {
 		if (isset($this->update['to'])) {
 			$this->update['deactivation_date'] = $this->update['to'];
 		} else {
-			$this->update['to'] = $this->update['deactivation_date'] = new MongoDate();
+			$this->update['to'] = $this->update['deactivation_date'] = new Mongodloid_Date();
 		}
 		return parent::close();
 	}
@@ -353,7 +377,7 @@ class Models_Subscribers extends Models_Entity {
 
 	public function create() {
 		if (empty($this->update['to'])) {
-			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+			$this->update['to'] = new Mongodloid_Date(strtotime('+149 years'));
 		}
 		if (empty($this->update['deactivation_date'])) {
 			$this->update['deactivation_date'] = $this->update['to'];
@@ -381,8 +405,8 @@ class Models_Subscribers extends Models_Entity {
 		$indicator = 0; 
 		$plansDeactivation = array();
 		$previousPlan = '';
-		$revisionsFrom = $this->collection->query($revisionsQuery)->cursor()->sort(array('from' => 1));
-		$subscriberDeactivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('to' => -1))->current()['to'];
+		$revisionsFrom = $this->collection->query($revisionsQuery)->cursor()->sort(array('from' => 1))->setReadPreference('RP_PRIMARY');
+		$subscriberDeactivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('to' => -1))->setReadPreference('RP_PRIMARY')->current()['to'];
 		$subscriberActivation = $revisionsFrom->current()['from'];
 		foreach ($revisionsFrom as $revision) {
 			$revisionsArray[] = $revision->getRawData();
@@ -434,7 +458,7 @@ class Models_Subscribers extends Models_Entity {
 
 		foreach ($needUpdate as $revisionId => $updateValue) {
 			$update = array();
-			$query = array('_id' => new MongoId($revisionId));
+			$query = array('_id' => new Mongodloid_Id($revisionId));
 			foreach ($updateValue as $field => $value) {
 				if ($field == 'former_plan' && $value == 'unset') {
 					$update['$unset'][$field] = true;

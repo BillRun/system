@@ -55,7 +55,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	protected function initConfig() {
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
+		br_yaf_register_autoload('Admin', APPLICATION_PATH . '/application/helpers');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
 	}
@@ -294,7 +294,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			if (isset($entity['source_ref'])) {
 				$source_ref = $entity->get('source_ref', false)->getRawData();
 				unset($source_ref['_id']);
-				$entity['source_ref'] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($source_ref);
+				$entity['source_ref'] = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($source_ref);
 			}
 			$entity = $entity->getRawData();
 			foreach ($model->getHiddenKeys($entity, $type) as $key) {
@@ -420,7 +420,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		unset($data['_id']);
 		$serviceProvider_mongoId = $this->getRequest()->get('mongo_id');
 		$query = array(
-			'_id' => new MongoId($serviceProvider_mongoId),
+			'_id' => new Mongodloid_Id($serviceProvider_mongoId),
 		);
 		Billrun_Factory::db()->serviceprovidersCollection()->update($query, $data);
 		$this->responseSuccess(array("status" => true));
@@ -440,7 +440,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), $query);
 		if (!empty($id = $data['_id'])) {
-			$query['_id'] =  array('$ne' => new MongoId($id));
+			$query['_id'] =  array('$ne' => new Mongodloid_Id($id));
 		}
 		$alreadyExists = Billrun_Factory::db()->serviceprovidersCollection()->query($query)->count() > 0;
 		$this->responseSuccess(array("alreadyExists" => $alreadyExists));
@@ -470,7 +470,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$serviceProvider_mongoId = $this->getRequest()->get('mongo_id');
 		$query = array(
-			'_id' => new MongoId($serviceProvider_mongoId),
+			'_id' => new Mongodloid_Id($serviceProvider_mongoId),
 		);
 		Billrun_Factory::db()->serviceprovidersCollection()->remove($query);
 		$this->responseSuccess(array("status" => true));
@@ -572,7 +572,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = array(
 			'params.interconnect' => TRUE,
 			'params.prefix' => array('$exists' => FALSE),
-			'to' => array('$gte' => new MongoDate()),
+			'to' => array('$gte' => new Mongodloid_Date()),
 		);
 		$interconnect_rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
 		$availableInterconnect = array();
@@ -622,8 +622,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		$data = json_decode($this->getRequest()->get('data'), JSON_OBJECT_AS_ARRAY);
 		$data['external_id'] = intval($data['external_id']);
-		$data['to'] = new MongoDate(strtotime('+100 years'));
-		$data['from'] = new MongoDate(strtotime($data['from']));
+		$data['to'] = new Mongodloid_Date(strtotime('+100 years'));
+		$data['from'] = new Mongodloid_Date(strtotime($data['from']));
 		$data['priority'] = (int) $data['priority'];
 		$data['shared'] = boolval($data['shared']);
 		$data['unlimited'] = boolval($data['unlimited']);
@@ -633,7 +633,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($this->getRequest()->get('new_entity') == 'true') {
 			Billrun_Factory::db()->prepaidincludesCollection()->insert($data);
 		} else {
-			$id = new MongoId($data['_id']['$id']);
+			$id = new Mongodloid_Id($data['_id']['$id']);
 			unset($data['_id']);
 			Billrun_Factory::db()->prepaidincludesCollection()->update(array('_id' => $id), array('$set' => $data), array('upsert' => true));
 		}
@@ -695,7 +695,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (isset($entity['source_ref'])) {
 			$source_ref = $entity->get('source_ref', false)->getRawData();
 			unset($source_ref['_id']);
-			$entity['source_ref'] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($source_ref);
+			$entity['source_ref'] = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($source_ref);
 		}
 
 		// passing values into the view
@@ -767,7 +767,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$params = array();
 		foreach ($ids as $id) {
-			$params['_id']['$in'][] = new MongoId((string) $id);
+			$params['_id']['$in'][] = new Mongodloid_Id((string) $id);
 		}
 
 		// this is just insurance that the loop worked fine
@@ -834,7 +834,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 
 		if ($id) {
-			$params = array_merge($data, array('_id' => new MongoId($id)));
+			$params = array_merge($data, array('_id' => new Mongodloid_Id($id)));
 		} else {
 			$params = $data;
 		}
@@ -1697,7 +1697,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				case 'date':
 				// TODO: If the date is not in this format, should report error?
 				if (Zend_Date::isDate($inputValue, 'yyyy-MM-dd hh:mm:ss')) {
-					$returnValue = new MongoDate((new Zend_Date($inputValue, null, new Zend_Locale('he_IL')))->getTimestamp());
+					$returnValue = new Mongodloid_Date((new Zend_Date($inputValue, null, new Zend_Locale('he_IL')))->getTimestamp());
 					} else {
 					return false;
 					}
@@ -1988,8 +1988,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = array(
 			'key' => array('$ne' => $key),
 			'params.prefix' => array('$in' => array($prefix)),
-			'from' => array('$lte' => new MongoDate()),
-			'to' => array('$gte' => new MongoDate()),
+			'from' => array('$lte' => new Mongodloid_Date()),
+			'to' => array('$gte' => new Mongodloid_Date()),
 		);
 		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
 		$ratesWithSamePrefix = array();
@@ -2010,8 +2010,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = array(
 			'key' => array('$ne' => $key),
 			'params.mcc' => array('$in' => array($mcc)),
-			'from' => array('$lte' => new MongoDate()),
-			'to' => array('$gte' => new MongoDate()),
+			'from' => array('$lte' => new Mongodloid_Date()),
+			'to' => array('$gte' => new Mongodloid_Date()),
 		);
 		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
 		$ratesWithSameMcc = array();
@@ -2032,8 +2032,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = array(
 			'key' => array('$ne' => $key),
 			'params.msc' => array('$in' => array($msc)),
-			'from' => array('$lte' => new MongoDate()),
-			'to' => array('$gte' => new MongoDate()),
+			'from' => array('$lte' => new Mongodloid_Date()),
+			'to' => array('$gte' => new Mongodloid_Date()),
 		);
 		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
 		$ratesWithSameMsc = array();

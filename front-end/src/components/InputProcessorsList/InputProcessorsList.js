@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 
 import { Button } from 'react-bootstrap';
 import List from '../List';
-import { ConfirmModal } from '@/components/Elements';
+import { ConfirmModal, StateIcon } from '@/components/Elements';
 
 import { getList, clearList } from '@/actions/listActions';
 import { deleteInputProcessor, updateInputProcessorEnabled } from '@/actions/inputProcessorActions';
@@ -172,6 +172,7 @@ class InputProcessorsList extends Component {
 
   parseShowEnable = item => !item.get('enabled', true);
   parseShowDisable = item => !(this.parseShowEnable(item));
+  parseInputProcessorStatus = item => (<StateIcon status={item.get('enabled', false) ? 'active' : 'expired'} />);
 
   getListActions = () => [
     { type: 'edit', showIcon: true, helpText: 'Edit', onClick: this.onClickInputProcessor, show: true, onClickColumn: 'file_type' },
@@ -179,10 +180,6 @@ class InputProcessorsList extends Component {
     { type: 'disable', showIcon: true, helpText: 'Disable', onClick: this.onClickDisabled, show: this.parseShowDisable },
     { type: 'remove', showIcon: true, helpText: 'Remove', onClick: this.onClickRemove, show: true },
   ];
-
-  parseInputProcessorStatus = item => (
-    item.get('enabled', true) ? 'Enabled' : 'Disabled'
-  );
 
   render() {
     const { inputProcessors } = this.props;
@@ -192,8 +189,8 @@ class InputProcessorsList extends Component {
     const enableConfirmMessage = `Are you sure you want to enable input processor "${inputProcessorName}"?`;
     const disableConfirmMessage = `Are you sure you want to disable input processor "${inputProcessorName}"?`;
     const fields = [
+      { id: 'active', title: 'Status', parser: this.parseInputProcessorStatus, cssClass: 'state' },
       { id: 'file_type', title: 'Name' },
-      { id: 'enabled', title: 'Status', parser: this.parseInputProcessorStatus, cssClass: 'list-status-col' },
     ];
     const actions = this.getListActions();
 

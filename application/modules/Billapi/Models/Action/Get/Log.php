@@ -17,7 +17,7 @@ class Models_Action_Get_Log extends Models_Action_Get {
 	
 	protected function __construct(array $params = array()) {
 		parent::__construct($params);
-		Billrun_Utils_Mongo::convertQueryMongoDates($this->query);
+		Billrun_Utils_Mongo::convertQueryMongodloidDates($this->query);
 	}
 	
 	protected function getDateFields() {

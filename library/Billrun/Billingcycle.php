@@ -32,6 +32,18 @@ class Billrun_Billingcycle {
 	protected static $cycleStartTable = null;
         
 	/**
+	 * Table holding the values of the following cycle keys, by cycle key.
+	 * @var array
+	 */
+	protected static $followingCycleKeysTable = array();
+	
+	/**
+	 * Table holding the values of the previous cycle keys, by cycle key.
+	 * @var array
+	 */
+	protected static $previousCycleKeysTable = array();
+	
+	/**
 	 * Cycle statuses cache (by page size)
 	 * @var array
 	 */
@@ -40,37 +52,72 @@ class Billrun_Billingcycle {
 	/**
 	 * returns the end timestamp of the input billing period
 	 * @param type $key
+	 * @param type $invoicing_day - in multi day cycle mode, need to send the invoicing day, so the billrun's end time will be calculated respectively.
 	 * @return type int
 	 */
-	public static function getEndTime($key) {
+	public static function getEndTime($key, $invoicing_day = null) {
 		// Create the table if not already initialized
 		if(!self::$cycleEndTable) {
 			self::$cycleEndTable = new Billrun_DataTypes_CachedChargingTimeTable();
 		}
+		$config = Billrun_Factory::config();
+		return (!is_null($invoicing_day) && $config->isMultiDayCycle()) ? self::$cycleEndTable->get($key, $invoicing_day) : self::$cycleEndTable->get($key);
+	}
 		
-		return self::$cycleEndTable->get($key);
+	/**
+	 * 
+	 * @param string $key
+	 * @param array / mongoloid entity $customer
+	 * @return type int - returns the end of the billrun cycle, according to the customer's invoicing_day field.
+	 */
+	public static function getEndTimeByCustomer($key, $customer) {
+		// Create the table if not already initialized
+		if (!self::$cycleEndTable) {
+			self::$cycleEndTable = new Billrun_DataTypes_CachedChargingTimeTable();
+		}
+
+		$config = Billrun_Factory::config();
+		return (!is_null($customer['invoicing_day']) && $config->isMultiDayCycle()) ? self::$cycleEndTable->get($key, $customer['invoicing_day']) : self::$cycleEndTable->get($key);
 	}
 
 	/**
 	 * returns the start timestamp of the input billing period
 	 * @param type $key
+	 * @param type $invoicing_day - in multi day cycle mode, need to send the invoicing day, so the billrun's start time will be calculated respectively.
 	 * @return type int
 	 */
-	public static function getStartTime($key) {
+	public static function getStartTime($key, $invoicing_day = null) {
 		// Create the table if not already initialized
 		if(!self::$cycleStartTable) {
 			self::$cycleStartTable = new Billrun_DataTypes_CachedChargingTimeTable('-1 month');
 		}
 
-		return self::$cycleStartTable->get($key);
+		$config = Billrun_Factory::config();
+		return (!is_null($invoicing_day) && $config->isMultiDayCycle()) ? self::$cycleStartTable->get($key, $invoicing_day) : self::$cycleStartTable->get($key);
+	}
+	
+	/**
+	 * 
+	 * @param string $key
+	 * @param array / mongoloid entity $customer
+	 * @return type int - returns the start of the billrun cycle, according to the customer's invoicing_day field.
+	 */
+	public static function getStartTimeByCustomer($key, $customer) {
+		// Create the table if not already initialized
+		if (!self::$cycleStartTable) {
+			self::$cycleStartTable = new Billrun_DataTypes_CachedChargingTimeTable('-1 month');
+		}
+
+		$config = Billrun_Factory::config();
+		return (!is_null($customer['invoicing_day']) && $config->isMultiDayCycle()) ? self::$cycleStartTable->get($key, $customer['invoicing_day']) : self::$cycleStartTable->get($key);
 	}
 	
 	/**
 	 * Return the date constructed from the current billrun key
 	 * @return string
 	 */
-	public static function getDatetime($billrunKey) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
+	public static function getDatetime($billrunKey, $invoicing_day = null) {
+		$dayofmonth = Billrun_Factory::config()->isMultiDayCycle() && !empty($invoicing_day) ? $invoicing_day : Billrun_Factory::config()->getConfigChargingDay();
 		return $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 	}
 	
@@ -81,20 +128,34 @@ class Billrun_Billingcycle {
 	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
 	 * @return string date string of format YYYYmm
 	 */
-	public static function getBillrunKeyByTimestamp($timestamp=null, $dayofmonth = null) {
+	public static function getBillrunKeyByTimestamp($timestamp=null, $dayofmonth = null,$planConfig = null) {
 		if($timestamp === null) {
 			$timestamp = time();
 		}
 		
 		if (!$dayofmonth) {
-			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
+			$config = Billrun_Factory::config();
+			$dayofmonth = $config->getConfigChargingDay();
 		}
+
 		$format = "Ym";
+
 		if (date("d", $timestamp) < $dayofmonth) {
 			$key = date($format, $timestamp);
 		} else {
 			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
 		}
+
+		//If we're on a non monthly plan
+		if(!empty($planConfig['recurrence']['frequency'])) {
+			// Check iof the current billrun key is a legitimate non monthly key
+			$onLegitimateCycleRegex = '/\d{4}('.implode('|', Billrun_Utils_Cycle::getPlanCycleMonths($planConfig) ).')/';
+			if(!preg_match($onLegitimateCycleRegex, $key))  {
+				//if not move to the next legitimaate billrun key.
+				$key = static::getFollowingBillrunKey($key, $planConfig);
+			}
+		}
+
 		return $key;
 	}
 
@@ -102,20 +163,38 @@ class Billrun_Billingcycle {
 	 * returns the end timestamp of the input billing period
 	 * @param date $date
 	 */
-	public static function getBillrunEndTimeByDate($date) {
+	public static function getBillrunEndTimeByDate($date, $customer = null, $invoicing_day = null) {
 		$dateTimestamp = strtotime($date);
-		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp);
-		return self::getEndTime($billrunKey);
+		$invoice_day = !empty ($customer['invoicing_day']) ? $customer['invoicing_day'] : (!empty ($invoicing_day) ? $invoicing_day : null);
+		return self::getBillrunEndTimeByTimestamp($dateTimestamp, $invoice_day);
 	}
 
 	/**
 	 * returns the start timestamp of the input billing period
 	 * @param date $date
 	 */
-	public static function getBillrunStartTimeByDate($date) {
+	public static function getBillrunStartTimeByDate($date, $customer = null, $invoicing_day = null) {
 		$dateTimestamp = strtotime($date);
-		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp);
-		return self::getStartTime($billrunKey);
+		$invoice_day = !empty ($customer['invoicing_day']) ? $customer['invoicing_day'] : (!empty ($invoicing_day) ? $invoicing_day : null);
+		return self::getBillrunStartTimeByTimestamp($dateTimestamp, $invoice_day);
+	}
+
+	/**
+	 * returns the end timestamp of the input billing period
+	 * @param int $dateTimestamp
+	 */
+	public static function getBillrunEndTimeByTimestamp($dateTimestamp, $invoicing_day = null) {
+		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp, $invoice_day);
+		return self::getEndTime($billrunKey, $invoice_day);
+	}
+
+	/**
+	 * returns the start timestamp of the input billing period
+	 * @param int $dateTimestamp
+	 */
+	public static function getBillrunStartTimeByTimestamp($dateTimestamp, $invoicing_day = null) {
+		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp, $invoice_day);
+		return self::getStartTime($billrunKey, $invoice_day);
 	}
 	
 	/**
@@ -123,10 +202,32 @@ class Billrun_Billingcycle {
 	 * @param string $key - Current key
 	 * @return string The following key
 	 */
-	public static function getFollowingBillrunKey($key) {
+	public static function getFollowingBillrunKey($key, $planConfig  = null ) {
+
+		if(!empty($planConfig['recurrence']['frequency'])) { // using  none querterly cycle
+			$currentMonthNumber = 0 + (substr($key,-2));
+			$year = substr($key,0,4);
+			$nextCycleMonth = false;
+			$monthsList = Billrun_Utils_Cycle::getPlanCycleMonths($planConfig);
+			foreach ($monthsList as  $month) {
+				if($month > $currentMonthNumber && !$nextCycleMonth  || $nextCycleMonth > $month ) {
+					$nextCycleMonth =  str_pad($month,2,'0',STR_PAD_LEFT);
+				}
+			}
+			if(!$nextCycleMonth) {
+				//The current  month key  is bigger then the largest legitimate billing month so
+				// the next billrunkey  must be  in the first legitimate month next year
+				$nextCycleMonth = str_pad(reset($monthsList),2,'0',STR_PAD_LEFT);
+				$year++;
+			}
+			return "${year}${nextCycleMonth}";
+		} else if(!empty(self::$followingCycleKeysTable[$key])) { //regular cached  cycle
+			return self::$followingCycleKeysTable[$key];
+		}
 		$datetime = $key . "01000000";
 		$month_later = strtotime('+1 month', strtotime($datetime));
 		$ret = date("Ym", $month_later);
+		self::$followingCycleKeysTable[$key] = $ret;
 		return $ret;
 	}
 
@@ -136,21 +237,28 @@ class Billrun_Billingcycle {
 	 * @return string The previous key
 	 */
 	public static function getPreviousBillrunKey($key) {
+		if(!empty(self::$previousCycleKeysTable[$key])) {
+			return self::$previousCycleKeysTable[$key];
+		}
 		$datetime = $key . "01000000";
 		$month_before = strtotime('-1 month', strtotime($datetime));
 		$ret = date("Ym", $month_before);
+		self::$previousCycleKeysTable[$key] = $ret;
 		return $ret;
 	}
+	
 	
 	/**
 	 * method to get the last closed billing cycle
 	 * if no cycle exists will return 197001 (equivalent to unix timestamp)
 	 * 
+	 * @param string $invoicing_day
 	 * @return string format YYYYmm
 	 */
-	public static function getLastClosedBillingCycle() {
+	public static function getLastClosedBillingCycle($invoicing_day = null) {
 		$sort = array("billrun_key" => -1);
-		$entry = Billrun_Factory::db()->billing_cycleCollection()->query(array())->cursor()->sort($sort)->limit(1)->current();
+		$query = !is_null($invoicing_day) ? array('invoicing_day' => $invoicing_day) : array();
+		$entry = Billrun_Factory::db()->billing_cycleCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
 		if ($entry->isEmpty()) {
 			return self::getFirstTheoreticalBillingCycle();
 		}
@@ -163,10 +271,14 @@ class Billrun_Billingcycle {
 	 * @param string $billrunKey - Billrun key
 	 * 
 	 */
-    public static function removeBeforeRerun($billrunKey) {
+    public static function removeBeforeRerun($billrunKey, $invoicing_day = null) {
 		$billingCycleCol = self::getBillingCycleColl();
 		Billrun_Factory::log("Removing billing cycle records for " . $billrunKey, Zend_Log::DEBUG);
-		$billingCycleCol->remove(array('billrun_key' => $billrunKey));
+		$removeQuery = array('billrun_key' => $billrunKey);
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$removeQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		}
+		$billingCycleCol->remove($removeQuery);
 		Billrun_Aggregator_Customer::removeBeforeAggregate($billrunKey);
 	}
 
@@ -179,11 +291,14 @@ class Billrun_Billingcycle {
 	 * @param array $moreFields - more fields
 	 * @return bool - True if billing cycle had started.
 	 */
-	protected static function hasCycleStarted($billrunKey, $size, $moreFields = []) {
+	protected static function hasCycleStarted($billrunKey, $size, $invoicing_day = null, $moreFields = []) {
 		$billingCycleCol = self::getBillingCycleColl();
 		$existsKeyQuery = array_merge(array('billrun_key' => $billrunKey, 'page_size' => $size), $moreFields);
-		$keyCount = $billingCycleCol->query($existsKeyQuery)->count();
-		if ($keyCount < 1) {
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$existsKeyQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		}
+		$atLeastOneDoc = $billingCycleCol->query($existsKeyQuery)->cursor()->limit(1)->current();
+		if ($atLeastOneDoc->isEmpty()) {
 			return false;
 		}
 		return true;
@@ -197,12 +312,16 @@ class Billrun_Billingcycle {
 	 * @param array $moreFields - more fields
 	 * @return bool - True if billing cycle is ended.
 	 */
-	public static function hasCycleEnded($billrunKey, $size) {
+	public static function hasCycleEnded($billrunKey, $size, $invoicing_day = null) {
 		$billingCycleCol = self::getBillingCycleColl();
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
-		$numOfPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size))->count();
-		$finishedPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size, 'end_time' => array('$exists' => 1)))->count();
-		if (static::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages) && $numOfPages != 0 && $finishedPages == $numOfPages) {
+		$query = array('billrun_key' => $billrunKey, 'page_size' => $size);
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$query['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		}
+		$numOfPages = $billingCycleCol->query($query)->count();
+		$finishedPages = $billingCycleCol->query(array_merge($query, array('end_time' => array('$exists' => 1))))->count();
+		if (static::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages, $invoicing_day) && $numOfPages != 0 && $finishedPages == $numOfPages) {
 			return true;
 		}
 		return false;
@@ -216,11 +335,11 @@ class Billrun_Billingcycle {
 	 * @param array $moreFields - more fields 
 	 * @return bool - True if generated all the bills from billrun objects
 	 */
-	public static function isCycleRunning($billrunKey, $size, $moreFields = []) {
-		if (!self::hasCycleStarted($billrunKey, $size, $moreFields)) {
+	public static function isCycleRunning($billrunKey, $size, $invoicing_day = null, $moreFields = []) {
+		if (!self::hasCycleStarted($billrunKey, $size, $invoicing_day, $moreFields)) {
 			return false;
 		}
-		if (self::hasCycleEnded($billrunKey, $size)) {
+		if (self::hasCycleEnded($billrunKey, $size, $invoicing_day)) {
 			return false;
 		}
 		return true;
@@ -234,9 +353,9 @@ class Billrun_Billingcycle {
 	 * @param string $host - host 
 	 * @return bool - True if generated all the bills from billrun objects
 	 */
-	public static function isCycleRunningOnHost($billrunKey, $host, $size) {
+	public static function isCycleRunningOnHost($billrunKey, $host, $size, $invoicingDay = null) {
 		$moreFields = ['host' => $host];
-		return self::isCycleRunning($billrunKey, $size, $moreFields);
+		return self::isCycleRunning($billrunKey, $size, $invoicingDay, $moreFields);
 	}
 
 	
@@ -248,7 +367,7 @@ class Billrun_Billingcycle {
 	 * @return bool - returns the keys of confirmed cycles
 	 * 
 	 */
-	public static function getConfirmedCycles($billrunKeys = array()) {
+	public static function getConfirmedCycles($billrunKeys = array(), $invoicing_day = null) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();	
 		if (!empty($billrunKeys)) {
 			$pipelines[] = array(
@@ -257,17 +376,24 @@ class Billrun_Billingcycle {
 				),
 			);
 		}
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$pipelines[0]['$match']['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		}
 		
 		$pipelines[] = array(
 			'$project' => array(
 				'billrun_key' => 1,
 				'confirmed' => array('$cond' => array('if' => array('$eq' => array('$billed', 1)), 'then' => 1 , 'else' => 0)),
+				'invoicing_day' => 1
 			),
 		);
 		
 		$pipelines[] = array(
 			'$group' => array(
-				'_id' => '$billrun_key',
+				'_id' => array(
+					'billrun_key' => '$billrun_key',
+					'invoicing_day' => '$invoicing_day'
+				),
 				'confirmed' => array(
 					'$sum' => '$confirmed',
 				),
@@ -279,7 +405,8 @@ class Billrun_Billingcycle {
 		
 		$pipelines[] = array(
 			'$project' => array(
-				'billrun_key' => '$_id',
+				'billrun_key' => '$_id.billrun_key',
+				'invoicing_day' => '$_id.invoicing_day',
 				'confirmed' => 1,
 				'total' => 1,
 			),
@@ -287,7 +414,7 @@ class Billrun_Billingcycle {
 
 		$potentialConfirmed = array();
 		$results = $billrunColl->aggregate($pipelines);
-		$resetCycles = self::getResetCycles($billrunKeys);
+		$resetCycles = self::getResetCycles($billrunKeys , $invoicing_day);
 		foreach ($results as $billrunDetails) {
 			if ($billrunDetails['confirmed'] == $billrunDetails['total']) {
 				$potentialConfirmed[] = $billrunDetails['billrun_key'];
@@ -309,18 +436,24 @@ class Billrun_Billingcycle {
 	 * 
 	 *  @return cycle completion percentage 
 	 */
-	public static function getCycleCompletionPercentage($billrunKey, $size) {
+	public static function getCycleCompletionPercentage($billrunKey, $size, $invoicing_day = null) {
 		$billingCycleCol = self::getBillingCycleColl();
 		$totalPagesQuery = array(
 			'billrun_key' => $billrunKey
 		);
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$totalPagesQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		}
 		$totalPages = $billingCycleCol->query($totalPagesQuery)->count();
 		$finishedPagesQuery = array(
 			'billrun_key' => $billrunKey,
 			'end_time' => array('$exists' => true)
 		);
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$finishedPagesQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		}
 		$finishedPages = $billingCycleCol->query($finishedPagesQuery)->count();
-		if (self::hasCycleEnded($billrunKey, $size)) {
+		if (self::hasCycleEnded($billrunKey, $size, $invoicing_day)) {
 			$completionPercentage = round(($finishedPages / $totalPages) * 100, 2);
 		} else {
 			$completionPercentage = round(($finishedPages / ($totalPages + 1)) * 100, 2);
@@ -330,17 +463,42 @@ class Billrun_Billingcycle {
 	}
 	
 	/**
+	 * method to receive the last parent job of cycle
+	 * 
+	 * @param type $billrunKey
+	 * @param type $invoicing_day
+	 */
+	public static function getCycleDetails($billrunKey, $invoicing_day = null) {
+		$coll = self::getBillingCycleColl();
+		$query = array(
+			'billrun_key' => $billrunKey,
+		);
+		if ($invoicing_day) {
+			$query['invoicing_day'] = $invoicing_day;
+		}
+
+		$entry = $coll->query($query)->cursor()->sort(['page_number' => 1])->limit(1)->current();
+		if ($entry->isEmpty()) {
+			return FALSE;
+		}
+		return $entry;
+	}
+	
+	/**
 	 * Returns the number of generated bills.
 	 * @param string $billrunKey - Billrun key
 	 *
 	 * @return int - number of generated bills.
 	 */
-	public static function getNumberOfGeneratedBills($billrunKey) {
+	public static function getNumberOfGeneratedBills($billrunKey, $invoicing_day = null) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$query = array(
 			'billrun_key' => $billrunKey,
 			'billed' => 1
 		);
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$query['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		}
 		$generatedBills = $billrunColl->query($query)->count();
 		return $generatedBills;
 	}
@@ -351,11 +509,14 @@ class Billrun_Billingcycle {
 	 * 
 	 * @return int - number of generated Invoices.
 	 */
-	public static function getNumberOfGeneratedInvoices($billrunKey) {
+	public static function getNumberOfGeneratedInvoices($billrunKey, $invoicing_day = null) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$query = array(
 			'billrun_key' => $billrunKey
 		);
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$query['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		}
 		$generatedInvoices = $billrunColl->query($query)->count();
 		return $generatedInvoices;
 	}
@@ -365,35 +526,36 @@ class Billrun_Billingcycle {
 	 * @param string $billrunKey - Billrun key
 	 * @return percentage of completed bills
 	 */
-	public static function getCycleConfirmationPercentage($billrunKey) {
-		$generatedInvoices = self::getNumberOfGeneratedInvoices($billrunKey);
+	public static function getCycleConfirmationPercentage($billrunKey, $invoicing_day = null) {
+		$generatedInvoices = self::getNumberOfGeneratedInvoices($billrunKey, $invoicing_day);
 		if ($generatedInvoices != 0) {
-			return round((self::getNumberOfGeneratedBills($billrunKey) / $generatedInvoices) * 100, 2);
+			return round((self::getNumberOfGeneratedBills($billrunKey, $invoicing_day) / $generatedInvoices) * 100, 2);
 		}
 		return 0;
 	}
 	
-	public static function getCycleStatus($billrunKey, $size = null) {
+	public static function getCycleStatus($billrunKey, $size = null, $invoicing_day = null) {
 		if (is_null($size)) {
 			$size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
 		}
-		if (isset(self::$cycleStatuses[$billrunKey][$size])) {
-			return self::$cycleStatuses[$billrunKey][$size];
+		$key = !empty($invoicing_day) ? $billrunKey . $invoicing_day : $billrunKey;
+		if (isset(self::$cycleStatuses[$key][$size])) {
+			return self::$cycleStatuses[$key][$size];
 		}
 		$cycleStatus = '';
-		$currentBillrunKey = self::getBillrunKeyByTimestamp();	
-		if (empty($cycleStatus) && (self::isToRerun($billrunKey))) {
+		$currentBillrunKey = self::getBillrunKeyByTimestamp(null, $invoicing_day);	
+		if (empty($cycleStatus) && (self::isToRerun($billrunKey, $invoicing_day))) {
 			$cycleStatus = 'to_rerun';
 		}
-		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
-		$cycleRunning = self::isCycleRunning($billrunKey, $size);
+		$cycleEnded = self::hasCycleEnded($billrunKey, $size, $invoicing_day);
+		$cycleRunning = self::isCycleRunning($billrunKey, $size, $invoicing_day);
 		if (empty($cycleStatus) && $billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
 			$cycleStatus = 'to_run';
 		}		
 		if (empty($cycleStatus) && $cycleRunning) {
 			$cycleStatus = 'running';
 		}
-		$cycleConfirmed = empty($cycleStatus) ? !empty(self::getConfirmedCycles(array($billrunKey))) : false;
+		$cycleConfirmed = empty($cycleStatus) ? !empty(self::getConfirmedCycles(array($billrunKey), $invoicing_day)) : false;
 		if (empty($cycleStatus) && !$cycleConfirmed && $cycleEnded) {
 			$cycleStatus = 'finished';
 		}
@@ -405,7 +567,7 @@ class Billrun_Billingcycle {
 		} else if (empty($cycleStatus) && $billrunKey > $currentBillrunKey) {
 			$cycleStatus = 'future';
 		}
-		self::$cycleStatuses[$billrunKey][$size] = $cycleStatus;
+		self::$cycleStatuses[$key][$size] = $cycleStatus;
 		return $cycleStatus;
 	}
 	
@@ -441,21 +603,24 @@ class Billrun_Billingcycle {
 	 * @param $startTime - string time to create billrun key from
 	 * @return billrun key
 	 */
-	public static function getOldestBillrunKey($startTime) {
-		$lastBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime);
+	public static function getOldestBillrunKey($startTime, $invoicing_day = null) {
+		$lastBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime, $invoicing_day);
 		$registrationDate = Billrun_Factory::config()->getConfigValue('registration_date');
 		if (!$registrationDate) {
 			return $lastBillrunKey;
 		}
 		$monthBeforeRegistration = strtotime('- 1 month', $registrationDate->sec);
-		$registrationBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($monthBeforeRegistration);
+		$registrationBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($monthBeforeRegistration, $invoicing_day);
 		return max(array($registrationBillrunKey, $lastBillrunKey));
 	}
 
-	public static function getLastNonRerunnableCycle() {
+	public static function getLastNonRerunnableCycle($invoicing_day = null) {
 		$query = array('billed' => 1, 'billrun_key' => array('$regex' => '^\d{6}$'));
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$query['invoicing_day'] = !is_null($invoicing_day) ? $invoicing_day : Billrun_Factory::config()->getConfigChargingDay();
+		}
 		$sort = array("billrun_key" => -1);
-		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
+		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->project(['billrun_key' => 1])->cursor()->sort($sort)->limit(1)->current();
 		if ($entry->isEmpty()) {
 			return FALSE;
 		}
@@ -463,11 +628,14 @@ class Billrun_Billingcycle {
 	}
 
 	
-	public static function isBillingCycleOver($cycleCol, $stamp, $size, $zeroPages=1){
+	public static function isBillingCycleOver($cycleCol, $stamp, $size, $zeroPages=1, $invoicing_day = null){
 		if (empty($zeroPages) || !Billrun_Util::IsIntegerValue($zeroPages)) {
 			$zeroPages = 1;
 		}
 		$cycleQuery = array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0);
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$cycleQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		}
 		$cycleCount = $cycleCol->query($cycleQuery)->count();
 		
 		if ($cycleCount >= $zeroPages) {
@@ -482,12 +650,19 @@ class Billrun_Billingcycle {
 	 * @param string $billrunKey
 	 * @return array
 	 */
-	public static function getConfirmedAccountIds($billrunKey) {
+	public static function getConfirmedAccountIds($billrunKey, $filter_aids = array()) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$query = array(
 			'billrun_key' => $billrunKey,
 			'billed' => 1,
 		);
+		
+		if (!empty($filter_aids)) {
+			$query['aid'] = array(
+				'$in' => $filter_aids,
+			);
+		}
+		
 		$fields = array(
 			'aid' => 1,
 		);
@@ -503,18 +678,21 @@ class Billrun_Billingcycle {
 	 * @return bool - True if finished cycle was reseted.
 	 * 
 	 */
-	public static function isToRerun($billrunKey) {
+	public static function isToRerun($billrunKey, $invoicing_day = null) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$billingCycleCol = self::getBillingCycleColl();
 		$query = array(
 			'billrun_key' => $billrunKey
 		);
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$query['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		}
 		
-		$billrunDoc = $billrunColl->query($query)->count();
-		$cycleDoc = $billingCycleCol->query($query)->count();
+		$billrunDoc = $billrunColl->query($query)->cursor()->limit(1)->current();
+		$cycleDoc = $billingCycleCol->query($query)->cursor()->limit(1)->current();
 		
 		
-		if ($billrunDoc > 0 && $cycleDoc <= 0) {
+		if (!$billrunDoc->isEmpty() && $cycleDoc->isEmpty()) {
 			return true;
 		}
 		return false;
@@ -527,7 +705,7 @@ class Billrun_Billingcycle {
 	 * @return array - reset billrun keys.
 	 * 
 	 */
-	public static function getResetCycles($billrunKeys) {
+	public static function getResetCycles($billrunKeys, $invoicing_day = null) {
 		$billrunCount = array();
 		$cycleCount = array();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
@@ -542,15 +720,23 @@ class Billrun_Billingcycle {
 			),
 		);
 
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$pipelines[0]['$match']['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		}
+
 		$pipelines[] = array(
 			'$group' => array(
-				'_id' => '$billrun_key',
+				'_id' => array(
+					'billrun_key' => '$billrun_key',
+					'invoicing_day' => '$invoicing_day'
+				),
 			),
 		);
 		
 		$pipelines[] = array(
 			'$project' => array(
-				'billrun_key' => '$_id',
+				'billrun_key' => '$_id.billrun_key',
+				'invoicing_day' => '$_id.invoicing_day',
 			),
 		);
 
@@ -587,8 +773,8 @@ class Billrun_Billingcycle {
 		return $entry['billrun_key'];
 	}
 	
-	public static function getCycleTimeStatus($billrunKey) {
-		$currentBillrunKey = self::getBillrunKeyByTimestamp();
+	public static function getCycleTimeStatus($billrunKey, $invoicing_day = null) {
+		$currentBillrunKey = self::getBillrunKeyByTimestamp(time(), $invoicing_day);
 		if ($billrunKey == $currentBillrunKey) {
 			return 'present';
 		}
@@ -626,4 +812,69 @@ class Billrun_Billingcycle {
             }
             return $invoicesArray;
         }
+		
+	public static function getCustomerInvoicingDay($customer) {
+		if (empty($customer)) {
+			return null;
+		}
+		if ($customer instanceof Mongodloid_Entity) {
+			$customer = $customer->getRawData();
+		}
+		return !empty($customer['invoicing_day']) ? $customer['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+	}
+
+	
+	public static  function getBillrunKeyByRow($row){
+		if($row['connection_type'] != 'prepaid'){
+			$customerInvoicingDay = isset($row['foreign']['account']) ? isset($row['foreign']['account']['invoicing_day'])? $row['foreign']['account']['invoicing_day'] : null : null;
+			if ($row['sid'] == 0 && $row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
+				$plan = null;
+			} else {
+				$planSettings = array(
+					'name' => $row['plan'],
+					'time' => $row['urt']->sec,
+				);
+				$plan = Billrun_Factory::plan($planSettings);
+			}
+			$nonMonthlyPlanConfig = $plan && $plan->isNonMonthly() ? $plan->getRecurrenceConfig() : null;
+			$config = Billrun_Factory::config();
+			if(!empty($nonMonthlyPlanConfig)) {
+				$noneMonthlyConfig['recurrence'] = $nonMonthlyPlanConfig;
+				$noneMonthlyConfig['activation_date'] = Billrun_Util::getFieldVal($row['foreign']['subscriber']['activation_date'],null);
+				$activeBillrun = Billrun_Billrun::getActiveBillrun($customerInvoicingDay,$noneMonthlyConfig);
+				$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun, $customerInvoicingDay,$noneMonthlyConfig);
+				$nextActiveBillrun = Billrun_Billingcycle::getFollowingBillrunKey($activeBillrun,$noneMonthlyConfig);
+				$nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($nextActiveBillrun, $customerInvoicingDay,$noneMonthlyConfig);
+			} else if($config->isMultiDayCycle() && !empty($customerInvoicingDay)) {
+				$activeBillrun = Billrun_Billrun::getActiveBillrun($customerInvoicingDay); 
+				$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun, $customerInvoicingDay);
+				$nextActiveBillrun = Billrun_Billingcycle::getFollowingBillrunKey($activeBillrun);
+				$nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($nextActiveBillrun, $customerInvoicingDay);
+			} else {
+				$activeBillrun =  Billrun_Billrun::getActiveBillrun();
+				$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun);
+				$nextActiveBillrun = Billrun_Billingcycle::getFollowingBillrunKey($activeBillrun); 
+				$nextActiveBillrunEndTime =  Billrun_Billingcycle::getEndTime($nextActiveBillrun);
+			}		
+
+			if (!isset($row['retail_rate']) || $row['retail_rate']) {
+				$urt = $row['urt']->sec;
+				if ($urt < $activeBillrunEndTime) { // lines in current billing cycle
+					$billrunKey = $activeBillrun;
+				} else if ($urt < $nextActiveBillrunEndTime) { // late lines
+					$billrunKey = $nextActiveBillrun;
+				} else { // future lines
+					$billrunKey = ($config->isMultiDayCycle() && !empty($customerInvoicingDay)) ? Billrun_Billingcycle::getBillrunKeyByTimestamp($urt, $customerInvoicingDay) : Billrun_Billingcycle::getBillrunKeyByTimestamp($urt);
+				}
+				return $billrunKey;
+			}
+			return false;
+		}
+	}
+
+	public static function getUpfrontCycle($regularCycle) {
+		$nextCycleKey = Billrun_Billingcycle::getFollowingBillrunKey($regularCycle->key());
+		return new Billrun_DataTypes_CycleTime($nextCycleKey);
+	}
+	
 }

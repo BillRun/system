@@ -282,7 +282,7 @@ class OnBoarding extends Component {
       </Col>
       <Col smPush={1} sm={10}>
         <Button onClick={this.onPending} bsStyle="success">
-          Start Using Billrun!
+          Start Using BillRun
         </Button>
       </Col>
     </Row>

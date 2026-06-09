@@ -86,7 +86,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 		$count = 0;
 		foreach ($this->sortByFileDate($files) as $file) {
 			Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file));
-			Billrun_Factory::log("FTP: Found file " . $file->name . " on remote host", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: Found file " . $file->name . " on remote host", Zend_Log::DEBUG);
 			$extraData = array();
 			Billrun_Factory::dispatcher()->trigger('beforeFTPFileReceived', array(&$file, $this, $hostName, &$extraData));
 			$isFileReceivedMoreFields = array('retrieved_from' => $hostName);
@@ -132,6 +132,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 				$fileData['backed_to'] = $backedTo;
 				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path'], $hostName));
 			}
+			Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file->name, &$fileData));
 			if ($this->logDB($fileData)) {
 				$ret[] = $fileData['path'];
 				$count++; //count the file as recieved
@@ -161,7 +162,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 			Billrun_Factory::log("FTP: " . $file->name . " is not a valid file", Zend_Log::DEBUG);
 			$ret = false;
 		} else if (!$this->lockFileForReceive($file->name, $this->source, $isFileReceivedMoreFields)) {
-			Billrun_Factory::log("FTP: " . $file->name . " received already", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: " . $file->name . " received already", Zend_Log::DEBUG);
 			$ret = false;
 		}
 		return $ret;
@@ -227,7 +228,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 
 		$addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => new MongoDate(),
+			'received_time' => new Mongodloid_Date(),
 			'pg_file_type' => $this->fileType
 		);
 

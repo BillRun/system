@@ -184,7 +184,7 @@ export default class PlanProduct extends Component {
                   value={percentage}
                   editable={editable}
                   suffix="%"
-                  max={100}
+                  max={10000}
                   min={0}
                   step={1}
                 />
@@ -210,7 +210,7 @@ export default class PlanProduct extends Component {
           </FormGroup>
         )}
         { !isPercentage && prices.map((price, i) => (
-          <Col sm={12} key={item.get('key', i)}>
+          <Col sm={12} key={`${item.get('key', i)}_${i}`}>
             <ProductPrice
               item={price}
               index={i}

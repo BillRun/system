@@ -69,13 +69,15 @@ const Templates = {
     },
     "rate_calculators" : {
       "retail": {
-        "call" : [[
-  	{
-  	  "type" : "longestPrefix",
-  	  "rate_key" : "params.prefix",
-  	  "line_key" : "dst"
-  	}
-  ]]
+        "call" : {
+          "priorities": [{
+            "filters": [{
+              "type" : "longestPrefix",
+              "rate_key" : "params.prefix",
+              "line_key" : "dst"
+            }]
+          }]
+        }
       }
     },
     "pricing": {
@@ -207,17 +209,19 @@ const Templates = {
     },
     "rate_calculators" : {
       "retail": {
-        "GPRS_Data" : [[
-  	{
-  	  "type" : "match",
-  	  "rate_key" : "key",
-  	  "line_key" : "apn"
-  	}
-      ]]
-      }
-    },
-    "pricing": {
-      "GPRS_Data": {
+        "GPRS_Data" : {
+          "priorities": [{
+            "filters": [{
+              "type" : "match",
+              "rate_key" : "key",
+              "line_key" : "apn"
+            }]
+          }]
+        }
+      },
+      "pricing": {
+        "GPRS_Data": {
+        }
       }
     }
   },
@@ -285,13 +289,15 @@ const Templates = {
     },
     "rate_calculators" : {
       "retail": {
-        "call" : [[
-  	{
-  	  "type" : "longestPrefix",
-  	  "rate_key" : "params.prefix",
-  	  "line_key" : "caller_id_number"
-  	}
-      ]]
+        "call" : {
+          "priorities": [{
+            "filters": [{
+              "type" : "longestPrefix",
+              "rate_key" : "params.prefix",
+              "line_key" : "caller_id_number"
+            }]
+          }]
+        }
       }
     },
     "pricing": {
@@ -547,13 +553,15 @@ const Templates = {
     },
     "rate_calculators" : {
       "retail": {
-        "NA" : [[
-  	{
-  	  "type" : "longestPrefix",
-  	  "rate_key" : "params.prefix",
-  	  "line_key" : "originalcalledpartynumber"
-  	}
-      ]]
+        "NA" : {
+          "priorities" : [{
+            "filters" : [{
+              "type" : "longestPrefix",
+              "rate_key" : "params.prefix",
+              "line_key" : "originalcalledpartynumber"
+            }]
+          }]
+        }
       }
     },
     "pricing": {
@@ -648,24 +656,24 @@ const Templates = {
       },
       "rate_calculators": {
         "retail": {
-          "inbound_call": [
-            [
-              {
+          "inbound_call": {
+            "priorities": [{
+              "filters": [{
                 "type": "longestPrefix",
                 "rate_key": "prefix",
                 "line_key": "computed"
-              }
-            ]
-          ],
-          "outbound_call": [
-            [
-              {
+              }]
+            }]
+          },
+          "outbound_call": {
+            "priorities": [{
+              "filters":[{
                 "type": "longestPrefix",
                 "rate_key": "params.prefix",
                 "line_key": "Destination"
-              }
-            ]
-          ]
+              }]
+            }]
+          }
         }
       },
       "pricing": {
@@ -802,24 +810,24 @@ const Templates = {
       },
       "rate_calculators": {
         "retail": {
-          "inbound_call": [
-            [
-              {
+          "inbound_call": {
+            "priorities": [{
+              "filters": [{
                 "type": "longestPrefix",
                 "rate_key": "params.prefix",
                 "line_key": "CallSource"
-              }
-            ]
-          ],
-          "outbound_call": [
-            [
-              {
+              }]
+            }]
+          },
+          "outbound_call": {
+            "priorities": [{
+              "filters": [{
                 "type": "longestPrefix",
                 "rate_key": "params.prefix",
                 "line_key": "CallDestination"
-              }
-            ]
-          ]
+              }]
+            }]
+          }
         }
       },
       "pricing": {

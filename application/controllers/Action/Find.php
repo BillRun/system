@@ -33,7 +33,7 @@ class FindAction extends ApiAction {
 			return TRUE;
 		}
 		$query = $this->convertToMongoIds($query);
-		Billrun_Utils_Mongo::convertQueryMongoDates($query);
+		Billrun_Utils_Mongo::convertQueryMongodloidDates($query);
 		if (($project = $this->getArrayParam($request['project'])) === FALSE) {
 			$this->setError('Illegal project: ' . $request['project'], $request);
 			return TRUE;
@@ -115,7 +115,7 @@ class FindAction extends ApiAction {
 
 	protected function convertToMongoIds($query, $idSeen = FALSE) {
 		if ($idSeen && is_string($query) && ctype_alnum($query)) {
-			return new MongoId($query);
+			return new Mongodloid_Id($query);
 		}
 		if (is_array($query)) {
 			foreach ($query as $key => $value) {

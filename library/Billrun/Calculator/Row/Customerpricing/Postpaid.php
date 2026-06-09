@@ -17,10 +17,6 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 
 	protected function init() {
 		parent::init();
-		$this->activeBillrunEndTime = $this->calculator->getActiveBillrunEndTime(); // todo remove this coupling
-		$this->activeBillrun = $this->calculator->getActiveBillrun(); // todo remove this coupling
-		$this->nextActiveBillrun = $this->calculator->getNextActiveBillrun(); // todo remove this coupling
-		$this->nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($this->nextActiveBillrun);
 	}
 
 	protected function validate() {
@@ -33,16 +29,14 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 
 	public function update($pricingOnly = false) {
 		$pricingData = parent::update($pricingOnly);
-		if ($pricingData && (!isset($this->row['retail_rate']) || $this->row['retail_rate'])) {
-			$urt = $this->row['urt']->sec;
-			if ($urt < $this->activeBillrunEndTime) { // lines in current billing cycle
-				$billrunKey = $this->activeBillrun;
-			} else if ($urt < $this->nextActiveBillrunEndTime) { // late lines
-				$billrunKey = $this->nextActiveBillrun;
-			} else { // future lines
-				$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($urt);
-			}
-			$pricingData['billrun'] = $billrunKey;
+		if(isset($this->row['skip_calc']) && in_array('tax', $this->row['skip_calc'])){
+			$billrunKey = Billrun_Billingcycle::getBillrunKeyByRow($this->row);
+			if($billrunKey){
+				$pricingData['billrun'] = $billrunKey;
+			}else{
+				Billrun_Factory::log("Line {$this->row['stamp']} failed to get billrun field." , Zend_Log::ALERT);
+				return false;
+			} 
 		}
 		return $pricingData;
 	}
@@ -71,6 +65,9 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 			$balance = $balances_coll->getRef($balanceRef);
 			if (is_array($balance['tx']) && empty($balance['tx'])) { //TODO: this is a hack because tx is saved as [] instead of {}
 				$balance['tx'] = new stdClass();
+			}
+			if (is_array($balance['tx2']) && empty($balance['tx2'])) { //TODO: this is a hack because tx is saved as [] instead of {}
+				$balance['tx2'] = new stdClass();
 			}
 			$balance->collection($balances_coll);
 			$balance_totals_key = $this->balance->getBalanceTotalsKey($lineToRebalance);

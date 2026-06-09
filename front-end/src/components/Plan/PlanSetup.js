@@ -33,7 +33,7 @@ import {
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
 import { clearItems, getRevisions, clearRevisions } from '@/actions/entityListActions';
 import { showSuccess } from '@/actions/alertsActions';
-import { modeSelector, itemSelector, idSelector, tabSelector, revisionsSelector } from '@/selectors/entitySelector';
+import { modeSelector, itemSelector, idSelector, tabSelector, revisionsSelector, itemSourceSelector } from '@/selectors/entitySelector';
 
 
 class PlanSetup extends Component {
@@ -41,6 +41,7 @@ class PlanSetup extends Component {
   static propTypes = {
     itemId: PropTypes.string,
     item: PropTypes.instanceOf(Immutable.Map),
+    originalPlan: PropTypes.instanceOf(Immutable.Map),
     revisions: PropTypes.instanceOf(Immutable.List),
     mode: PropTypes.string,
     activeTab: PropTypes.oneOfType([
@@ -55,6 +56,7 @@ class PlanSetup extends Component {
 
   static defaultProps = {
     item: Immutable.Map(),
+    originalPlan: Immutable.Map(),
     revisions: Immutable.List(),
     activeTab: 1,
   };
@@ -222,7 +224,7 @@ class PlanSetup extends Component {
 
   render() {
     const { progress, activeTab } = this.state;
-    const { item, mode, revisions } = this.props;
+    const { item, mode, revisions, originalPlan } = this.props;
     if (mode === 'loading') {
       return (<LoadingItemPlaceholder onClick={this.handleBack} />);
     }
@@ -255,6 +257,7 @@ class PlanSetup extends Component {
               <PlanTab
                 mode={mode}
                 plan={item}
+                originalPlan={originalPlan}
                 onChangeFieldValue={this.onChangeFieldValue}
                 onRemoveField={this.onRemoveFieldValue}
                 onPlanCycleUpdate={this.onPlanCycleUpdate}
@@ -332,5 +335,6 @@ const mapStateToProps = (state, props) => ({
   mode: modeSelector(state, props, PlanSetup.entityName),
   activeTab: tabSelector(state, props, PlanSetup.entityName),
   revisions: revisionsSelector(state, props, PlanSetup.entityName),
+  originalPlan: itemSourceSelector(state, props, PlanSetup.entityName),
 });
 export default withRouter(connect(mapStateToProps)(PlanSetup));

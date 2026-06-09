@@ -14,13 +14,13 @@ class Billrun_DataTypes_DateRange {
 	
 	/**
 	 * start time
-	 * @var MongoDate
+	 * @var Mongodloid_Date
 	 */
 	private $start = 0;
 	
 	/**
 	 * end time
-	 * @var MongoDate 
+	 * @var Mongodloid_Date 
 	 */
 	private $end = 31556995200;
 	
@@ -30,13 +30,13 @@ class Billrun_DataTypes_DateRange {
          * @param unix time stamp $endDate : the end date of the dates range.
 	 */
 	public function __construct($startDate, $endDate) {
-		$this->start = new MongoDate($startDate);
-		$this->end = new MongoDate($endDate);
+		$this->start = new Mongodloid_Date($startDate);
+		$this->end = new Mongodloid_Date($endDate);
 	}
 
 	/**
 	 * Get the range start date
-	 * @return MongoDate
+	 * @return Mongodloid_Date
 	 */
 	public function start() {
 		return $this->start;
@@ -44,7 +44,7 @@ class Billrun_DataTypes_DateRange {
 	
 	/**
 	 * Get the range end date
-	 * @return MongoDate
+	 * @return Mongodloid_Date
 	 */
 	public function end() {
 		return $this->end;

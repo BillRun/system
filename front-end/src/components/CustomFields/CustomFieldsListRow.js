@@ -51,7 +51,9 @@ const CustomFieldsListRow = ({
       </span>
     </Col>
     <Col sm={2} className="actions">
-      <Actions actions={actions} data={field} />
+      {!isReordable && (
+        <Actions actions={actions} data={field} />
+      )}
     </Col>
     <Col sm={12}>
       <hr style={{ marginTop: 0, marginBottom: 0 }} />

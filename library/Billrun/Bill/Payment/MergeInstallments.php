@@ -76,7 +76,7 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 		$this->installmentChargeNotBefore = !empty($this->installmentChargeNotBefore) ? $this->installmentChargeNotBefore : (!empty($billChargeNotBefore) ? $billChargeNotBefore : $firstDueDate);
 		if (!empty($mergedBill) && !empty($mergedBill->getId())){
 			$mergedBill->setDueDate($this->installmentDueDate);
-			$mergedBill->setChargeNotBefore($this->installmentChargeNotBefore);
+			$mergedBill->setChargeNotBefore($this->installmentChargeNotBefore);			
 			$success = $mergedBill->insertMergeInstallment();
 			return $success;
 		}
@@ -88,6 +88,8 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 	protected function insertMergeInstallment() {
 		$bill = $this->buildInstallment();
 		$mergedInstallment = new self($bill);
+		$mergedInstallment->setUrt($bill['charge']['not_before']->sec);
+		$mergedInstallment->setProcessTime();
 		$res = $mergedInstallment->save();
 		if ($res) {
 			return true;

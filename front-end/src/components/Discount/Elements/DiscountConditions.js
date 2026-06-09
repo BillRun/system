@@ -5,11 +5,11 @@ import Immutable from 'immutable';
 import { Panel, HelpBlock } from 'react-bootstrap';
 import { CreateButton, Actions } from '@/components/Elements';
 import DiscountCondition from './DiscountCondition';
-import { getConfig } from '@/common/Util';
+import { getConfig, getFieldName } from '@/common/Util';
 import {
   discountSubscriberFieldsSelector,
   discountAccountFieldsSelector,
-  discountSubscriberServicesFieldsSelector,
+  discountServicesFieldsSelector,
 } from '@/selectors/discountSelectors';
 import { showConfirmModal, setFormModalError } from '@/actions/guiStateActions/pageActions';
 
@@ -41,11 +41,12 @@ const DiscountConditions = ({
   conditionsPath,
   accountConditionsPath,
   subscriberConditionsPath,
-  servicesConditionsPath,
+  servicesSubscriberConditionsPath,
+  servicesAccountConditionsPath,
   servicesAnyConditionsPath,
   subscriberConditionFields,
   accountConditionFields,
-  subscriberServicesConditionFields,
+  servicesConditionFields,
   dispatch,
 }) => {
 
@@ -85,10 +86,15 @@ const DiscountConditions = ({
     addNewConditionWithCheckError([...conditionsPath, idx, ...subscriberConditionsPath], defaultNewCondition);
   }, [addNewConditionWithCheckError, conditionsPath, subscriberConditionsPath]);
 
-  const addServiceConditionsGroup = useCallback((idx) => {
-    const path = [...conditionsPath, idx, ...servicesConditionsPath];
+  const addServiceSubscriberConditionsGroup = useCallback((idx) => {
+    const path = [...conditionsPath, idx, ...servicesSubscriberConditionsPath];
     addNewConditionWithCheckError(path, defaultNewServiceConditionsGroup);
-  }, [addNewConditionWithCheckError, conditionsPath, servicesConditionsPath]);
+  }, [addNewConditionWithCheckError, conditionsPath, servicesSubscriberConditionsPath]);
+
+  const addServiceAccountConditionsGroup = useCallback((idx) => {
+    const path = [...conditionsPath, idx, ...servicesAccountConditionsPath];
+    addNewConditionWithCheckError(path, defaultNewServiceConditionsGroup);
+  }, [addNewConditionWithCheckError, conditionsPath, servicesAccountConditionsPath]);
 
   const changeConditionFieldWithClearError = useCallback((path, index, value) => {
     onChangeConditionField(path, index, value);
@@ -131,8 +137,8 @@ const DiscountConditions = ({
       .forEach((error, path) => { dispatch(setFormModalError(path)); })
   }, [removeCondition, errors, dispatch]);
 
-  const removeServiceConditionsGroup = useCallback(({idx, anyIdx}) => {
-    const path = [...conditionsPath, idx, ...servicesConditionsPath];
+  const removeServiceSubscriberConditionsGroup = useCallback(({idx, anyIdx}) => {
+    const path = [...conditionsPath, idx, ...servicesSubscriberConditionsPath];
     const allEmpty = discount.getIn(path, Immutable.List())
       .every(anyCondition => anyCondition.getIn(servicesAnyConditionsPath, Immutable.List()).isEmpty());
     const onOk = () => {
@@ -143,7 +149,7 @@ const DiscountConditions = ({
       onOk();
     } else {
       const confirm = {
-        message: `Are you sure you want to remove service conditions set ${anyIdx + 1} from condition set ${idx+1} ?`,
+        message: `Are you sure you want to remove subscriber service conditions set ${anyIdx + 1} from condition set ${idx+1} ?`,
         onOk,
         labelOk: 'Delete',
         type: 'delete',
@@ -154,7 +160,35 @@ const DiscountConditions = ({
     discount,
     removeConditionWithClearError,
     conditionsPath,
-    servicesConditionsPath,
+    servicesSubscriberConditionsPath,
+    servicesAnyConditionsPath,
+    dispatch,
+  ]);
+
+  const removeServiceAccountConditionsGroup = useCallback(({idx, anyIdx}) => {
+    const path = [...conditionsPath, idx, ...servicesAccountConditionsPath];
+    const allEmpty = discount.getIn(path, Immutable.List())
+      .every(anyCondition => anyCondition.getIn(servicesAnyConditionsPath, Immutable.List()).isEmpty());
+    const onOk = () => {
+      removeConditionWithClearError(path, anyIdx);
+      dispatch(setFormModalError());
+    }
+    if (allEmpty) {
+      onOk();
+    } else {
+      const confirm = {
+        message: `Are you sure you want to remove customer service conditions set ${anyIdx + 1} from condition set ${idx+1} ?`,
+        onOk,
+        labelOk: 'Delete',
+        type: 'delete',
+      };
+      dispatch(showConfirmModal(confirm));
+    }
+  }, [
+    discount,
+    removeConditionWithClearError,
+    conditionsPath,
+    servicesAccountConditionsPath,
     servicesAnyConditionsPath,
     dispatch,
   ]);
@@ -174,7 +208,7 @@ const DiscountConditions = ({
     const path = [...conditionsPath, idx];
     const isAccountEmpty = discount.getIn([...path, ...accountConditionsPath], Immutable.List()).isEmpty();
     const isSubscriberEmpty = discount.getIn([...path, ...subscriberConditionsPath], Immutable.List()).isEmpty();
-    const isServicesEmpty = discount.getIn([...path, ...servicesConditionsPath], Immutable.List()).isEmpty();
+    const isServicesEmpty = discount.getIn([...path, ...servicesSubscriberConditionsPath], Immutable.List()).isEmpty();
     if (isAccountEmpty && isSubscriberEmpty && isServicesEmpty){
       removeConditionWithClearError(conditionsPath, idx);
     } else {
@@ -192,7 +226,7 @@ const DiscountConditions = ({
     conditionsPath,
     accountConditionsPath,
     subscriberConditionsPath,
-    servicesConditionsPath,
+    servicesSubscriberConditionsPath,
     dispatch,
   ]);
 
@@ -203,15 +237,25 @@ const DiscountConditions = ({
     onClick: addAccountConditions,
   }, {
     type: 'add',
+    label: getFieldName('add_customer_service_cond_add_action', 'discount'),
+    showIcon: false,
+    onClick: addServiceAccountConditionsGroup,
+  }, {
+    type: 'add',
     label: 'Subscriber',
     showIcon: false,
     onClick: addSubscriberConditions,
   }, {
     type: 'add',
-    label: 'Service',
+    label: getFieldName('add_sub_service_cond_add_action', 'discount'),
     showIcon: false,
-    onClick: addServiceConditionsGroup,
-  }], [addAccountConditions, addSubscriberConditions, addServiceConditionsGroup]);
+    onClick: addServiceSubscriberConditionsGroup,
+  }], [
+    addAccountConditions,
+    addSubscriberConditions,
+    addServiceSubscriberConditionsGroup,
+    addServiceAccountConditionsGroup
+  ]);
 
   const conditionAddActionsBtns = useMemo(() => [{
     type: 'add',
@@ -221,17 +265,28 @@ const DiscountConditions = ({
     onClick: addAccountConditions,
   }, {
     type: 'add',
+    label: getFieldName('add_customer_service_cond_set_btn', 'discount'),
+    actionSize: 'xsmall',
+    actionStyle: 'primary',
+    onClick: addServiceAccountConditionsGroup
+  }, {
+    type: 'add',
     label: 'Add Subscriber condition(s)',
     actionSize: 'xsmall',
     actionStyle: 'primary',
     onClick: addSubscriberConditions,
   }, {
     type: 'add',
-    label: 'Add Service condition(s) set',
+    label: getFieldName('add_sub_service_cond_set_btn', 'discount'),
     actionSize: 'xsmall',
     actionStyle: 'primary',
-    onClick: addServiceConditionsGroup,
-  }], [addAccountConditions, addSubscriberConditions, addServiceConditionsGroup]);
+    onClick: addServiceSubscriberConditionsGroup,
+  }], [
+    addAccountConditions,
+    addSubscriberConditions,
+    addServiceSubscriberConditionsGroup,
+    addServiceAccountConditionsGroup
+  ]);
 
   const removeGroupHelpText = idx => `Remove conditions set ${idx + 1}`;
 
@@ -244,7 +299,7 @@ const DiscountConditions = ({
     onClick: removeConditionsGroup,
   }], [removeConditionsGroup]);
 
-  const removeServiceGroupHelpText = ({idx, anyIdx}) => `Remove Service set ${anyIdx + 1} from condition set ${idx + 1}`;
+  const removeServiceGroupHelpText = ({idx, anyIdx}) => `Remove subscriber service set ${anyIdx + 1} from condition set ${idx + 1}`;
 
   const conditionServiceGroupActions = useMemo(() => [{
     type: 'remove',
@@ -252,23 +307,43 @@ const DiscountConditions = ({
     showIcon: true,
     actionStyle: 'danger',
     actionSize: 'xsmall',
-    onClick: removeServiceConditionsGroup,
-  }], [removeServiceConditionsGroup]);
+    onClick: removeServiceSubscriberConditionsGroup,
+  }], [removeServiceSubscriberConditionsGroup]);
 
   const conditionServicesActions = useMemo(() => [{
     type: 'add',
-    label: 'Add Service condition(s) set',
+    label: getFieldName('add_sub_service_cond_set_btn', 'discount'),
     showIcon: true,
     actionStyle: 'primary',
     actionSize: 'xsmall',
-    onClick: addServiceConditionsGroup,
-  }], [addServiceConditionsGroup]);
+    onClick: addServiceSubscriberConditionsGroup,
+  }], [addServiceSubscriberConditionsGroup]);
+
+  const removeServiceAccountGroupHelpText = ({idx, anyIdx}) => `Remove Customer service set ${anyIdx + 1} from condition set ${idx + 1}`;
+
+  const conditionServiceAccountGroupActions = useMemo(() => [{
+    type: 'remove',
+    helpText: removeServiceAccountGroupHelpText,
+    showIcon: true,
+    actionStyle: 'danger',
+    actionSize: 'xsmall',
+    onClick: removeServiceAccountConditionsGroup,
+  }], [removeServiceAccountConditionsGroup]);
+
+  const conditionServicesAccountActions = useMemo(() => [{
+    type: 'add',
+    label: getFieldName('add_customer_service_cond_set_btn', 'discount'),
+    showIcon: true,
+    actionStyle: 'primary',
+    actionSize: 'xsmall',
+    onClick: addServiceAccountConditionsGroup,
+  }], [addServiceAccountConditionsGroup]);
 
   const isConditoinsExists = useMemo(() => !discount.getIn(conditionsPath, Immutable.List())
     .every(groupConditions => !groupConditions.getIn(accountConditionsPath, Immutable.List()).isEmpty()
       && !groupConditions.getIn(subscriberConditionsPath, Immutable.List()).isEmpty()
-      && !groupConditions.getIn(servicesConditionsPath, Immutable.List()).isEmpty()
-  ), [discount, conditionsPath, accountConditionsPath, subscriberConditionsPath, servicesConditionsPath]);
+      && !groupConditions.getIn(servicesSubscriberConditionsPath, Immutable.List()).isEmpty()
+  ), [discount, conditionsPath, accountConditionsPath, subscriberConditionsPath, servicesSubscriberConditionsPath]);
 
   const getConditionHeader = useCallback((idx) => (
     <div>
@@ -282,23 +357,41 @@ const DiscountConditions = ({
     </div>
   ), [conditionAddActions, conditionActions]);
 
-  const getConditionServicesHeader = useCallback((idx) => (
+  const getConditionServicesSubscriberHeader = useCallback((idx) => (
     <div>
-      Services
+       {getFieldName('sub_service_cond_set_panel_lbl', 'discount')}
       <div className="pull-right">
         <Actions actions={conditionServicesActions} data={idx} />
       </div>
     </div>
   ), [conditionServicesActions]);
 
-  const getConditionServiceGroupHeader = useCallback(({idx, anyIdx}) => (
+  const getConditionServiceSubscriberGroupHeader = useCallback(({idx, anyIdx}) => (
     <div>
-      {`Service ${anyIdx+1}`}
+      {getFieldName('sub_service_cond_set_panel_lbl', 'discount')} {anyIdx+1}
       <div className="pull-right">
         <Actions actions={conditionServiceGroupActions} data={{idx, anyIdx}} />
       </div>
     </div>
   ), [conditionServiceGroupActions]);
+
+  const getConditionServicesAccountHeader = useCallback((idx) => (
+    <div>
+       {getFieldName('sub_customer_service_cond_set_panel_lbl', 'discount')}
+      <div className="pull-right">
+        <Actions actions={conditionServicesAccountActions} data={idx} />
+      </div>
+    </div>
+  ), [conditionServicesAccountActions]);
+
+  const getConditionServiceAccountGroupHeader = useCallback(({idx, anyIdx}) => (
+    <div>
+      {getFieldName('sub_customer_service_cond_set_panel_lbl', 'discount')} {anyIdx+1}
+      <div className="pull-right">
+        <Actions actions={conditionServiceAccountGroupActions} data={{idx, anyIdx}} />
+      </div>
+    </div>
+  ), [conditionServiceAccountGroupActions]);
 
   const addNewConditionsBtn = useMemo(() => (
     <CreateButton
@@ -320,21 +413,33 @@ const DiscountConditions = ({
       <div className="pull-right">{addNewConditionsBtn}</div>
     </div>
   ), [addNewConditionsBtn, conditionsHeaderDescription]);
+
+  const [action1, action2, ...restActions] = conditionAddActionsBtns;
+
   return (
     <Panel header={conditionsHeader}>
       {discount.getIn(conditionsPath, Immutable.List()).map((conditions, idx) => (
         <Panel header={getConditionHeader(idx)} key={idx} bsStyle={errors.has([...conditionsPath, idx].join('.')) ? "danger" : undefined }>
           { conditions.getIn(accountConditionsPath, Immutable.List()).isEmpty()
           && conditions.getIn(subscriberConditionsPath, Immutable.List()).isEmpty()
-          && conditions.getIn(servicesConditionsPath, Immutable.List()).isEmpty()
-          && (
-            <div className="text-center">
-              <Actions actions={conditionAddActionsBtns} data={idx} />
+          && conditions.getIn(servicesAccountConditionsPath, Immutable.List()).isEmpty()
+          && conditions.getIn(servicesSubscriberConditionsPath, Immutable.List()).isEmpty()
+          && ([(
+            <div className="text-center" key="row_1">
+              <Actions actions={[action1, action2]} data={idx} />
               {errors.get([...conditionsPath, idx].join('.'), '') !== '' && (
                 <HelpBlock className="danger-red"><small>{errors.get([...conditionsPath, idx].join('.'), '')}</small></HelpBlock>
               )}
             </div>
-          )}
+            ),(
+            <div className="text-center pt10" key="row_2" >
+              <Actions actions={restActions} data={idx} />
+              {errors.get([...conditionsPath, idx].join('.'), '') !== '' && (
+                <HelpBlock className="danger-red"><small>{errors.get([...conditionsPath, idx].join('.'), '')}</small></HelpBlock>
+              )}
+            </div>
+            )
+          ])}
           {!conditions.getIn(accountConditionsPath, Immutable.List()).isEmpty() && (
             <Panel header="Customer">
               <DiscountCondition
@@ -351,6 +456,39 @@ const DiscountConditions = ({
                 onRemove={removeConditionWithClearError}
                 errors={errors}
               />
+            </Panel>
+          )}
+          {!conditions.getIn(servicesAccountConditionsPath, Immutable.List()).isEmpty() && (
+            <Panel header={getConditionServicesAccountHeader(idx)}>
+              {conditions.getIn(servicesAccountConditionsPath, Immutable.List()).map((anyConditions, anyIdx) => (
+                <Panel
+                  header={getConditionServiceAccountGroupHeader({idx, anyIdx})}
+                  key={`service_customer_condition_${idx}_any_${anyIdx}`}
+                  bsStyle={errors.has([...conditionsPath, idx, ...servicesAccountConditionsPath, anyIdx].join('.')) ? "danger" : undefined }
+                >
+                  {!anyConditions.getIn(servicesAnyConditionsPath, Immutable.List()).isEmpty() && (
+                    <DiscountCondition
+                      path={[
+                        ...conditionsPath,
+                        idx,
+                        ...servicesAccountConditionsPath,
+                        anyIdx,
+                        ...servicesAnyConditionsPath,
+                      ]}
+                      conditions={anyConditions.getIn(servicesAnyConditionsPath, Immutable.List())}
+                      editable={editable}
+                      fields={servicesConditionFields}
+                      operators={conditionsOperators}
+                      onChangeField={changeConditionFieldWithClearErrorWithSetCleanError}
+                      onChangeOp={changeConditionOpWithClearErrorWithSetCleanError}
+                      onChangeValue={changeConditionValueWithClearErrorWithSetCleanError}
+                      onAdd={addNewConditionWithCheckError}
+                      onRemove={removeServiceCondition}
+                      errors={errors}
+                    />
+                  )}
+                </Panel>
+              ))}
             </Panel>
           )}
           {!conditions.getIn(subscriberConditionsPath, Immutable.List()).isEmpty() && (
@@ -371,20 +509,26 @@ const DiscountConditions = ({
               />
             </Panel>
           )}
-          {!conditions.getIn(servicesConditionsPath, Immutable.List()).isEmpty() && (
-            <Panel header={getConditionServicesHeader(idx)}>
-              {conditions.getIn(servicesConditionsPath, Immutable.List()).map((anyConditions, anyIdx) => (
+          {!conditions.getIn(servicesSubscriberConditionsPath, Immutable.List()).isEmpty() && (
+            <Panel header={getConditionServicesSubscriberHeader(idx)}>
+              {conditions.getIn(servicesSubscriberConditionsPath, Immutable.List()).map((anyConditions, anyIdx) => (
                 <Panel
-                  header={getConditionServiceGroupHeader({idx, anyIdx})}
+                  header={getConditionServiceSubscriberGroupHeader({idx, anyIdx})}
                   key={`service_condition_${idx}_any_${anyIdx}`}
-                  bsStyle={errors.has([...conditionsPath, idx, ...servicesConditionsPath, anyIdx].join('.')) ? "danger" : undefined }
+                  bsStyle={errors.has([...conditionsPath, idx, ...servicesSubscriberConditionsPath, anyIdx].join('.')) ? "danger" : undefined }
                 >
                   {!anyConditions.getIn(servicesAnyConditionsPath, Immutable.List()).isEmpty() && (
                     <DiscountCondition
-                      path={[...conditionsPath, idx, ...servicesConditionsPath, anyIdx, ...servicesAnyConditionsPath]}
+                      path={[
+                        ...conditionsPath,
+                        idx,
+                        ...servicesSubscriberConditionsPath,
+                        anyIdx,
+                        ...servicesAnyConditionsPath
+                      ]}
                       conditions={anyConditions.getIn(servicesAnyConditionsPath, Immutable.List())}
                       editable={editable}
-                      fields={subscriberServicesConditionFields}
+                      fields={servicesConditionFields}
                       operators={conditionsOperators}
                       onChangeField={changeConditionFieldWithClearErrorWithSetCleanError}
                       onChangeOp={changeConditionOpWithClearErrorWithSetCleanError}
@@ -414,9 +558,10 @@ DiscountConditions.propTypes = {
   accountConditionsPath: PropTypes.array,
   subscriberConditionFields: PropTypes.instanceOf(Immutable.List),
   accountConditionFields: PropTypes.instanceOf(Immutable.List),
-  subscriberServicesConditionFields: PropTypes.instanceOf(Immutable.List),
+  servicesAccountConditionsPath: PropTypes.array,
+  servicesConditionFields: PropTypes.instanceOf(Immutable.List),
   subscriberConditionsPath: PropTypes.array,
-  servicesConditionsPath: PropTypes.array,
+  servicesSubscriberConditionsPath: PropTypes.array,
   onChangeConditionField: PropTypes.func.isRequired,
   onChangeConditionOp: PropTypes.func.isRequired,
   onChangeConditionValue: PropTypes.func.isRequired,
@@ -431,20 +576,21 @@ DiscountConditions.defaultProps = {
   editable: true,
   conditionsPath: ['params', 'conditions'],
   accountConditionsPath: ['account', 'fields'],
+  servicesAccountConditionsPath: ['account', 'service', 'any'],
   subscriberConditionsPath: ['subscriber', 0, 'fields'],
-  servicesConditionsPath: ['subscriber', 0, 'service', 'any'],
+  servicesSubscriberConditionsPath: ['subscriber', 0, 'service', 'any'],
   servicesAnyConditionsPath: ['fields'],
   conditionsOperators: getConfig(['discount', 'conditions', 'operators'], Immutable.List()),
   valueOptions: getConfig(['discount', 'conditions', 'valueOptions'], Immutable.List()),
   subscriberConditionFields: Immutable.List(),
   accountConditionFields: Immutable.List(),
-  subscriberServicesConditionFields: Immutable.List(),
+  servicesConditionFields: Immutable.List(),
 };
 
 const mapStateToProps = (state, props) => ({
   subscriberConditionFields: discountSubscriberFieldsSelector(state, props, 'subscriber'),
   accountConditionFields: discountAccountFieldsSelector(state, props, 'account'),
-  subscriberServicesConditionFields: discountSubscriberServicesFieldsSelector(state, props, 'subscriber_services'),
+  servicesConditionFields: discountServicesFieldsSelector(state, props, 'services'),
 });
 
 export default connect(mapStateToProps)(memo(DiscountConditions));

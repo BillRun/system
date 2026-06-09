@@ -6,8 +6,8 @@ import Immutable from 'immutable';
 import { Form, FormGroup, ControlLabel, Col, Panel, Table } from 'react-bootstrap';
 import uuid from 'uuid';
 import moment from 'moment';
-import SubscriptionServicesDetails from './SubscriptionServicesDetails';
-import { ActionButtons, Actions, CreateButton } from '@/components/Elements';
+import SubscriptionServicesDetails from './SubscriptionElements/SubscriptionServicesDetails';
+import { ActionButtons, Actions, CreateButton, OverridePrice } from '@/components/Elements';
 import Field from '@/components/Field';
 import { EntityRevisionDetails, EntityFields } from '../Entity';
 import { DiscountPopup } from '@/components/Discount';
@@ -23,7 +23,10 @@ import {
   buildPageTitle,
   toImmutableList,
   getFieldName,
+  getServiceType,
+  plansOrServicesToSelectOptions,
 } from '@/common/Util';
+
 
 class Subscription extends Component {
 
@@ -58,7 +61,13 @@ class Subscription extends Component {
     this.state = {
       subscription: props.subscription,
       progress: false,
-      discountsHiddenFields: ['key', 'params.min_subscribers', 'params.max_subscribers']
+      discountsHiddenFields: ['key', 'params.min_subscribers', 'params.max_subscribers', 'simultaneous_limit'],
+      planCycleUnlimitedValue: getConfig('planCycleUnlimitedValue', 'UNLIMITED'),
+      defaultTariff: Immutable.Map({
+        price: 0,
+        from: 0,
+        to: getConfig('planCycleUnlimitedValue', 'UNLIMITED'),
+      })
     };
   }
 
@@ -69,11 +78,11 @@ class Subscription extends Component {
   }
 
   initService = (serviceName) => {
-    const { subscription: originSubscription } = this.props;
+    const { subscription: originSubscription, allServices } = this.props;
     const { subscription } = this.state;
-    const type = this.getServiceType(serviceName);
+    const type = getServiceType(allServices.find(option => option.get('name', '') === serviceName));
     const from = getItemDateValue(subscription, 'from').format('YYYY-MM-DD');
-    const to = getItemDateValue(subscription, 'to', moment().add(100, 'years')).toISOString();
+    const to = getItemDateValue(subscription, 'to').format('YYYY-MM-DD');
     const newService = Immutable.Map({ name: serviceName, from, to });
     const originServices = originSubscription.get('services', Immutable.List()) || Immutable.List();
     const existingService = originServices.find(originService => originService.get('name', '') === serviceName);
@@ -86,7 +95,7 @@ class Subscription extends Component {
         return newService.setIn(['ui_flags', 'balance_period'], true);
       }
       default: {
-        return existingService || newService;
+        return newService;
       }
     }
   }
@@ -98,7 +107,7 @@ class Subscription extends Component {
     const subscriptionToSave = compose(
       this.removeServiceUiFlags,
       // Now update services dates runs of sub. From field change,
-      // can be uncommet to be shure that servises date are correct if bugs will be found
+      // can be uncomment to be sure that services date are correct if bugs will be found
       // this.updateServicesDates,
     )(subscription);
 
@@ -149,7 +158,7 @@ class Subscription extends Component {
     }
     const servicesNames = Immutable.Set(services.split(','));
     const originServices = subscription.get('services', Immutable.List()) || Immutable.List();
-    const originServicesNames = Immutable.Set(originServices.map(originServic => originServic.get('name', '')));
+    const originServicesNames = Immutable.Set(originServices.map(originService => originService.get('name', '')));
 
     const addedServices = servicesNames.filter(item => !originServicesNames.has(item));
     const removedServices = originServicesNames.filter(item => !servicesNames.has(item));
@@ -249,7 +258,6 @@ class Subscription extends Component {
     return dispatch(showConfirmModal(confirm));
   }
 
-
   filterCustomFields = (field) => {
     const hiddenFields = ['plan', 'services', 'play'];
     const isCustomField = !hiddenFields.includes(field.get('field_name'));
@@ -298,7 +306,7 @@ class Subscription extends Component {
   }
 
   updateServicesDates = (subscription, newFrom = null) => {
-    const { subscription: originSubscription } = this.props;
+    const { subscription: originSubscription, allServices } = this.props;
     const originServices = originSubscription.get('services', Immutable.List()) || Immutable.List();
     // const services = subscription.get('services', Immutable.List()) || Immutable.List();
     const from = newFrom || getItemDateValue(subscription, 'from').toISOString();
@@ -308,66 +316,52 @@ class Subscription extends Component {
         return Immutable.List();
       }
       return services.map((service) => {
-        const serviceType = this.getServiceType(service); // 'normal', 'quantitative', 'balance_period'
+        const serviceType = getServiceType(allServices.find(option => option.get('name', '') === service.get('name', '')));
         const existingService = originServices.find(originService => originService.getIn(['ui_flags', 'serviceId'], '') === service.getIn(['ui_flags', 'serviceId'], ''));
         const newService = service.getIn(['ui_flags', 'serviceId'], '') === '';
 
         switch (serviceType) {
-          case 'normal': // New -> update to SUB from.
-          return (newService) ? service.set('from', from) : service;
+          case 'normal': { // New -> update to SUB from if its less.
+            if (newService) {
+              const serviceFrom = service.get('from', from);
+              if (moment(serviceFrom).isBefore(from, 'days')) {
+                return service.set('from', from);
+              }
+            }
+            return service;
+          }
 
           case 'quantitative': { // New or Existing with change -> update to SUB from.
-          const existingServiceWithChange = existingService && existingService.get('quantity', '') !== service.get('quantity', '');
-          return (newService || existingServiceWithChange) ? service.set('from', from) : service;
-        }
+            const existingServiceWithChange = existingService && existingService.get('quantity', '') !== service.get('quantity', '');
+            return (newService || existingServiceWithChange) ? service.set('from', from) : service;
+          }
 
-        case 'balance_period': {
-          const existingServiceWithChange = existingService && !moment(existingService.get('from', '')).isSame(moment(service.get('from', '')), 'days');
-          const incorrectForm = moment(service.get('from', '')).isBefore(from, 'days');
-          // New or Existing with change and incorrect FROM -> Update from to SUB from
-          return ((newService || existingServiceWithChange) && incorrectForm) ? service.set('from', from) : service;
-        }
+          case 'balance_period': {
+            const existingServiceWithChange = existingService && !moment(existingService.get('from', '')).isSame(moment(service.get('from', '')), 'days');
+            const incorrectForm = moment(service.get('from', '')).isBefore(from, 'days');
+            // New or Existing with change and incorrect FROM -> Update from to SUB from
+            return ((newService || existingServiceWithChange) && incorrectForm) ? service.set('from', from) : service;
+          }
 
-        default:
-        return service;
-      }
+          default:
+            return service;
+        }
+      });
     });
-  });
-}
+  }
 
   removeSubscriptionField = (path, value) => {
     this.setState(prevState => ({ subscription: prevState.subscription.deleteIn(path, value) }));
   }
-
-  getServiceType = (service) => {
-    const { allServices } = this.props;
-    const serviceName = (Immutable.Map.isMap(service)) ? service.get('name', '') : service;
-    const serviceOption = allServices.find(option => option.get('name', '') === serviceName);
-    if (!serviceOption) {
-      return null;
-    }
-    if (serviceOption.get('quantitative', false)) {
-      return 'quantitative';
-    }
-    if (serviceOption.get('balance_period', 'default') !== 'default') {
-      return 'balance_period';
-    }
-    return 'normal';
-  }
-
-  formatSelectOptions = items => items.map(item => ({
-    value: item.get('name', ''),
-    label: item.get('description', item.get('name', '')),
-  }));
 
   getAvailablePlans = () => {
     const { subscription } = this.state;
     const { allPlans } = this.props;
     const play = subscription.get('play', false);
     if ([false, ''].includes(play)) {
-      return this.formatSelectOptions(allPlans);
+      return plansOrServicesToSelectOptions(allPlans);
     }
-    return this.formatSelectOptions(allPlans
+    return plansOrServicesToSelectOptions(allPlans
       .filter(allPlan => allPlan.get('play', Immutable.List()).isEmpty() || allPlan.get('play', Immutable.List()).includes(play)),
     );
   }
@@ -387,9 +381,9 @@ class Subscription extends Component {
     const { allServices } = this.props;
     const play = subscription.get('play', false);
     if ([false, ''].includes(play)) {
-      return this.formatSelectOptions(allServices);
+      return plansOrServicesToSelectOptions(allServices);
     }
-    return this.formatSelectOptions(allServices
+    return plansOrServicesToSelectOptions(allServices
       .filter(allService => allService.get('play', Immutable.List()).isEmpty() || allService.get('play', Immutable.List()).includes(play)),
     );
   }
@@ -504,13 +498,23 @@ class Subscription extends Component {
     );
   }
 
+  getServiceStartMinDate = () => {
+    const { subscription } = this.state;
+    const subscriptionFrom = getItemDateValue(subscription, 'from');
+    const subscriptionActivation = getItemDateValue(subscription, 'activation_date', subscriptionFrom);
+    return moment.max(subscriptionFrom, subscriptionActivation);
+  }
+
   render() {
     const { progress, subscription } = this.state;
     const { revisions, mode, allServices, subscription: originSubscription } = this.props;
     const allowEdit = ['update', 'clone', 'closeandnew', 'create'].includes(mode);
     const services = subscription.get('services', Immutable.List()) || Immutable.List();
-    const subscriptionFrom = getItemDateValue(subscription, 'from');
+    const overrides = subscription.get('overrides', Immutable.List()) || Immutable.List();
+    const minStartDate = this.getServiceStartMinDate();
     const originServices = originSubscription.get('services', Immutable.List()) || Immutable.List();
+    const servicesOptions = this.getAvailableServices().toJS();
+    const plansOptions = this.getAvailablePlans().toJS();
 
     return (
       <div className="Subscription">
@@ -538,7 +542,7 @@ class Subscription extends Component {
               originSubscriptionServices={originServices}
               servicesOptions={allServices}
               editable={allowEdit}
-              subscriptionFrom={subscriptionFrom}
+              minStartDate={minStartDate}
               onChangeService={this.onChangeServiceDetails}
               onRemoveService={this.onRemoveService}
               onAddService={this.onAddService}
@@ -588,6 +592,23 @@ class Subscription extends Component {
               />
             )}
           </Panel>
+          
+          <OverridePrice
+            type='service'
+            overrides={overrides}
+            options={servicesOptions}
+            onChange={this.updateSubscriptionField}
+            editable={allowEdit}
+          />
+
+          <OverridePrice
+            type='plan'
+            overrides={overrides}
+            options={plansOptions}
+            onChange={this.updateSubscriptionField}
+            editable={allowEdit}
+          />
+
         </Panel>
 
         <ActionButtons

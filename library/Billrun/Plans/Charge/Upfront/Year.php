@@ -46,8 +46,8 @@ class Billrun_Plans_Charge_Upfront_Year extends Billrun_Plans_Charge_Upfront {
 			return $fraction / 12;
 		} 
 		
-		$activationDiffStart = floor(Billrun_Plan::getMonthsDiff($formatActivation, $formatStart));
-		$activationDiffDeactivation = Billrun_Plan::getMonthsDiff($formatActivation, $formatDeactivation);
+		$activationDiffStart = floor(Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart));
+		$activationDiffDeactivation = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatDeactivation);
 		$flooredActDeacDiff = floor($activationDiffDeactivation);
 		if ($activationDiffStart != $flooredActDeacDiff) {
 			return null;
@@ -68,10 +68,10 @@ class Billrun_Plans_Charge_Upfront_Year extends Billrun_Plans_Charge_Upfront {
 			$endMonths = date(Billrun_Base::base_dateformat, $this->cycle->end() - 1);
 		} 
 		
-		return Billrun_Plan::getMonthsDiff($formatActivation, $endMonths);
+		return Billrun_Utils_Time::getMonthsDiff($formatActivation, $endMonths);
 	}
 	
-	public function getRefund(Billrun_DataTypes_CycleTime $cycle) {
+	public function getRefund(Billrun_DataTypes_CycleTime $cycle, $quantity=1) {
 		if (empty($this->deactivation)) {
 			return null;
 		}
@@ -84,8 +84,9 @@ class Billrun_Plans_Charge_Upfront_Year extends Billrun_Plans_Charge_Upfront {
 		$lastUpfrontCharge = $this->getPrice()['value'];
 		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
 		$formatDeactivation = date(Billrun_Base::base_dateformat, $this->deactivation);
-		$monthsDiff = Billrun_Plan::getMonthsDiff($formatActivation, $formatDeactivation);
+		$monthsDiff = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatDeactivation);
 		$refundFraction = 1 - ((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff));
-		return array('value' => -$lastUpfrontCharge * $refundFraction);
+		return array('value' => -$lastUpfrontCharge * $refundFraction * $quantity,
+					 'full_price' => floatval($lastUpfrontCharge),);
 	}
 }

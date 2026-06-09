@@ -226,11 +226,11 @@ class Mongodloid_Entity implements ArrayAccess {
 
 		if (!$getRef) {
 			// TODO: This logic needs to be moved to the collection object.
-			//lazy load MongoId Ref objects or MongoDBRef
+			//lazy load MongoId Ref objects or Mongodloid_Ref
 			//http://docs.mongodb.org/manual/reference/database-references/
-			if ($result[$key] instanceof MongoId && $this->collection()) {
+			if ($result[$key] instanceof Mongodloid_Id && $this->collection()) {
 				$result[$key] = $this->collection()->findOne($result[$key]['$id']);
-			} else if (MongoDBRef::isRef($result[$key])) {
+			} else if (Mongodloid_Ref::isRef($result[$key])) {
 				$collection = $this->collection();
 				// TODO: Report error if collection is null?
 				if($collection) {
@@ -243,11 +243,11 @@ class Mongodloid_Entity implements ArrayAccess {
 	}
 
 	/**
-	 * method to create MongoDBRef from the current entity
+	 * method to create Mongodloid_Ref from the current entity
 	 * 
 	 * @param Mongodloid_Collection $refCollection the collection to reference to
 	 * 
-	 * @return mixed MongoDBRef if succeed, else false
+	 * @return mixed Mongodloid_Ref if succeed, else false
 	 * @todo check if the current id exists in the collection
 	 * @todo Change all calls to this function to calls to the collection createRefByEntity function.
 	 */
@@ -268,7 +268,9 @@ class Mongodloid_Entity implements ArrayAccess {
 		if (!isset($this->_values['_id']) || !$this->_values['_id']) {
 			return false;
 		}
-		
+		if(!Mongodloid_Id::isValid($this->_values['_id'])){
+			return false;
+		}
 		return new Mongodloid_Id($this->_values['_id']);
 	}
 

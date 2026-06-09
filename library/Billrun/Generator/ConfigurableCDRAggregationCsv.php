@@ -151,7 +151,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 
 	protected function getLastRunDate($type) {
 		$lastRun = $this->db->logCollection()->query(array('source' => $type,'type' => $type))->cursor()->sort(array('generated_time' => -1))->limit(1)->current();
-		return empty($lastRun['generated_time']) || !($lastRun['generated_time'] instanceof MongoDate) ? new MongoDate(0) : $lastRun['generated_time'];
+		return empty($lastRun['generated_time']) || !($lastRun['generated_time'] instanceof Mongodloid_Date) ? new Mongodloid_Date(0) : $lastRun['generated_time'];
 	}
 
 	abstract protected function getReportCandiateMatchQuery();
@@ -220,7 +220,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 					} else if (function_exists($trans['translation']['function'])) {
 						$line[$key] = call_user_func($trans['translation']['function'], $line[$key]);
 					} else {
-						Billrun_Factory::log("Couldn't translate field $key",Zend_Log::ERR);
+						Billrun_Factory::log("Couldn't translate field $key",Zend_Log::DEBUG);
 					}
 					break;
 				case 'regex' :
@@ -295,7 +295,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 */
 	protected function markLines($stamps) {
 		$query = array('stamp' => array('$in' => $stamps));
-		$update = array('$set' => array('mediated.' . static::$type => new MongoDate()));
+		$update = array('$set' => array('mediated.' . static::$type => new Mongodloid_Date()));
 		try {
 			$result = $this->collection->update($query, $update, array('multiple' => true));
 		} catch (Exception $e) {
@@ -318,8 +318,8 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			'source' => $fileData['source'],
 			'type' => $fileData['source'],
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => new MongoDate(),
-			'generated_time' => new MongoDate($this->startTime),
+			'received_time' => new Mongodloid_Date(),
+			'generated_time' => new Mongodloid_Date($this->startTime),
 			'direction' => 'out'
 		);
 

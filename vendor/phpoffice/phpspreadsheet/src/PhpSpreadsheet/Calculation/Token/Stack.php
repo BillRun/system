@@ -3,15 +3,9 @@
 namespace PhpOffice\PhpSpreadsheet\Calculation\Token;
 
 use PhpOffice\PhpSpreadsheet\Calculation\Calculation;
-use PhpOffice\PhpSpreadsheet\Calculation\Engine\BranchPruner;
 
 class Stack
 {
-    /**
-     * @var BranchPruner
-     */
-    private $branchPruner;
-
     /**
      * The parser stack for formulae.
      *
@@ -26,15 +20,12 @@ class Stack
      */
     private $count = 0;
 
-    public function __construct(BranchPruner $branchPruner)
-    {
-        $this->branchPruner = $branchPruner;
-    }
-
     /**
      * Return the number of entries on the stack.
+     *
+     * @return int
      */
-    public function count(): int
+    public function count()
     {
         return $this->count;
     }
@@ -42,11 +33,25 @@ class Stack
     /**
      * Push a new entry onto the stack.
      *
+     * @param mixed $type
      * @param mixed $value
+     * @param mixed $reference
+     * @param null|string $storeKey will store the result under this alias
+     * @param null|string $onlyIf will only run computation if the matching
+     *      store key is true
+     * @param null|string $onlyIfNot will only run computation if the matching
+     *      store key is false
      */
-    public function push(string $type, $value, ?string $reference = null): void
-    {
-        $stackItem = $this->getStackItem($type, $value, $reference);
+    public function push(
+        $type,
+        $value,
+        $reference = null,
+        $storeKey = null,
+        $onlyIf = null,
+        $onlyIfNot = null
+    ): void {
+        $stackItem = $this->getStackItem($type, $value, $reference, $storeKey, $onlyIf, $onlyIfNot);
+
         $this->stack[$this->count++] = $stackItem;
 
         if ($type == 'Function') {
@@ -57,37 +62,29 @@ class Stack
         }
     }
 
-    public function pushStackItem(array $stackItem): void
-    {
-        $this->stack[$this->count++] = $stackItem;
-    }
-
-    /**
-     * @param mixed $value
-     */
-    public function getStackItem(string $type, $value, ?string $reference = null): array
-    {
+    public function getStackItem(
+        $type,
+        $value,
+        $reference = null,
+        $storeKey = null,
+        $onlyIf = null,
+        $onlyIfNot = null
+    ) {
         $stackItem = [
             'type' => $type,
             'value' => $value,
             'reference' => $reference,
         ];
 
-        // will store the result under this alias
-        $storeKey = $this->branchPruner->currentCondition();
-        if (isset($storeKey) || $reference === 'NULL') {
+        if (isset($storeKey)) {
             $stackItem['storeKey'] = $storeKey;
         }
 
-        // will only run computation if the matching store key is true
-        $onlyIf = $this->branchPruner->currentOnlyIf();
-        if (isset($onlyIf) || $reference === 'NULL') {
+        if (isset($onlyIf)) {
             $stackItem['onlyIf'] = $onlyIf;
         }
 
-        // will only run computation if the matching store key is false
-        $onlyIfNot = $this->branchPruner->currentOnlyIfNot();
-        if (isset($onlyIfNot) || $reference === 'NULL') {
+        if (isset($onlyIfNot)) {
             $stackItem['onlyIfNot'] = $onlyIfNot;
         }
 
@@ -96,8 +93,10 @@ class Stack
 
     /**
      * Pop the last entry from the stack.
+     *
+     * @return mixed
      */
-    public function pop(): ?array
+    public function pop()
     {
         if ($this->count > 0) {
             return $this->stack[--$this->count];
@@ -108,8 +107,12 @@ class Stack
 
     /**
      * Return an entry from the stack without removing it.
+     *
+     * @param int $n number indicating how far back in the stack we want to look
+     *
+     * @return mixed
      */
-    public function last(int $n = 1): ?array
+    public function last($n = 1)
     {
         if ($this->count - $n < 0) {
             return null;
@@ -125,5 +128,22 @@ class Stack
     {
         $this->stack = [];
         $this->count = 0;
+    }
+
+    public function __toString()
+    {
+        $str = 'Stack: ';
+        foreach ($this->stack as $index => $item) {
+            if ($index > $this->count - 1) {
+                break;
+            }
+            $value = $item['value'] ?? 'no value';
+            while (is_array($value)) {
+                $value = array_pop($value);
+            }
+            $str .= $value . ' |> ';
+        }
+
+        return $str;
     }
 }

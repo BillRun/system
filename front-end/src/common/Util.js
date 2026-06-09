@@ -1,6 +1,8 @@
 import Immutable from 'immutable';
 import moment from 'moment';
 import isNumber from 'is-number';
+import removePrefix from 'remove-prefix';
+import removeSuffix from 'remove-suffix';
 import { titleCase, sentenceCase } from 'change-case';
 import systemConfig from '../config/system';
 import fieldNamesConfig from '../language/fieldNames.json';
@@ -13,7 +15,11 @@ import importConfig from '../config/import.json';
 import exportConfig from '../config/export.json';
 import collectionsConfig from '../config/collections.json';
 import customFieldsConfig from '../config/customFields.json';
+import inputProcessorConfig from '../config/InputProcessor.json';
 import discountConfig from '../config/discount.json';
+import conditionsConfig from '../config/conditions.json';
+import exportGeneratorConfig from '../config/exportGenerator.json';
+
 
 /**
  * Get data from config files
@@ -72,7 +78,13 @@ export const getConfig = (key, defaultValue = null) => {
         break;
       case 'customFields': configCache = configCache.set('customFields', Immutable.fromJS(customFieldsConfig));
         break;
+      case 'inputProcessor': configCache = configCache.set('inputProcessor', Immutable.fromJS(inputProcessorConfig));
+        break;
       case 'discount': configCache = configCache.set('discount', Immutable.fromJS(discountConfig));
+        break;
+      case 'exportGenerator': configCache = configCache.set('exportGenerator', Immutable.fromJS(exportGeneratorConfig));
+        break;
+      case 'conditions': configCache = configCache.set('conditions', Immutable.fromJS(conditionsConfig));
         break;
       default: console.log(`Config category not exists ${path}`);
     }
@@ -80,22 +92,31 @@ export const getConfig = (key, defaultValue = null) => {
   return configCache.getIn(path, defaultValue);
 };
 
-export const getFieldName = (field, category, defaultValue = null) => {
+export const replaceReplacements = (str, replacements = null, defaultValue = '') => {
+  if (replacements === null) {
+    replacements = {}; // force replace placeholders by empty string by default
+  }
+  return str.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return replacements[key] !== undefined ? replacements[key] : defaultValue;
+  });
+};
+
+export const getFieldName = (field, category, defaultValue = null, replacements = null, defaultReplacementValue = '') => {
   const categoryName = getConfig(['fieldNames', category, field], false);
   if (typeof categoryName === 'string' && categoryName.length > 0) {
-    return categoryName;
+    return replaceReplacements(categoryName, replacements, defaultReplacementValue);
   }
   const rootName = getConfig(['fieldNames', field], false);
   if (typeof rootName === 'string' && rootName.length > 0) {
-    return rootName;
+    return replaceReplacements(rootName, replacements, defaultReplacementValue);
   }
   if (defaultValue !== null) {
-    return defaultValue;
+    return replaceReplacements(defaultValue, replacements, defaultReplacementValue);
   }
-  return field;
+  return replaceReplacements(field, replacements, defaultReplacementValue);
 };
 
-/*  Map entity different names to fieldNames.json names */
+
 export const getFieldNameType = (type) => {
   switch (type.toLocaleLowerCase()) {
     case 'account':
@@ -219,15 +240,16 @@ export const buildPageTitle = (mode, entityName, item = Immutable.Map()) => {
 };
 
 export const getItemDateValue = (item, fieldName, defaultValue = moment()) => {
+  const fieldPath = toImmutableList(fieldName).toArray();
   if (Immutable.Map.isMap(item)) {
-    const dateString = item.get(fieldName, false);
+    const dateString = item.getIn(fieldPath, false);
     if (typeof dateString === 'string') {
       const dateFromString = moment(dateString);
       if (dateFromString.isValid()) {
         return dateFromString;
       }
     }
-    const dateUnix = item.getIn([fieldName, 'sec'], false);
+    const dateUnix = item.getIn([...fieldPath, 'sec'], false);
     if (typeof dateUnix === 'number') {
       const dateFromTimestemp = moment.unix(dateUnix);
       if (dateFromTimestemp.isValid()) {
@@ -580,7 +602,12 @@ export const getAvailableFields = (settings, additionalFields = []) => {
     .get('fields', Immutable.List())
     .map(field => (Immutable.Map({ value: field, label: field })))
     .sortBy(field => field.get('value', ''));
-  return fields.concat(Immutable.fromJS(additionalFields));
+  const computedFields = settings
+    .getIn(['processor', 'calculated_fields'], Immutable.List())
+    .map(field => field.get('target_field', ''))
+    .map(field => (Immutable.Map({ value: field, label: `${field} (Computed)`})))
+    .sortBy(field => field.get('value', ''));
+  return Immutable.List([...fields, ...computedFields, ...Immutable.fromJS(additionalFields)])
 };
 
 export const escapeRegExp = text =>
@@ -720,3 +747,204 @@ export const formatPluginLabel = (plugin) => {
   }
   return titleCase(name.substring(0, name.lastIndexOf(plugin_key)));
 }
+
+export const parsePeriodPhpFormat = (value) => {
+  if (typeof value !== 'string' || value === '') {
+    return { suffix: '', prefix: '', number: '' };
+  }
+  const suffixes = {
+    minutes: 'minutes',
+    minute: 'minutes',
+    hours: 'hours',
+    hour: 'hours',
+    days: 'days',
+    day: 'days',
+    weeks: 'weeks',
+    week: 'weeks',
+    months: 'months',
+    month: 'months',
+    years: 'years',
+    year: 'years',
+  };
+  const [valueWithoutPrefix, prefix] = removePrefix(value.toLocaleLowerCase(), ['+', '-', ' ']);
+  const [valueWithoutPrefixAndSuffix, suffix] = removeSuffix(valueWithoutPrefix, Object.keys(suffixes));
+  const number = isNumber(valueWithoutPrefixAndSuffix) ? Math.abs(parseFloat(valueWithoutPrefixAndSuffix)) : '';
+  return { prefix, number, suffix: suffixes[suffix] || '' };
+}
+
+export const getSelectOptionsFromConfig = (configPath) => {
+  return getConfig(configPath, Immutable.List())
+    .map(parseConfigSelectOptions)
+    .toArray();
+}
+
+export const getConditionFromConfig = (configPath) => {
+  const enabledOperators = getConfig(configPath, Immutable.List());
+  return getConditions(enabledOperators);
+}
+
+export const createReportSaveToBillsField = (field, prefix = '') => {
+  let title = field.get('payment_gateway');
+  title += `: ${getFieldName(field.get('field_name', ''), 'bills')}`;
+  if (field.get('is_multi', false)) {
+    title += ` (${field.getIn(['file_type'], '')})`;
+  }
+  title = title.trim();
+  return Immutable.Map({
+    field_name: `${prefix}.${field.get('field_name', '')}`,
+    title,
+    type: field.getIn(['type'], 'text'),
+    payment_gateway: field.get('payment_gateway')
+  });
+}
+
+export const getConditions = (enabledOperators = Immutable.List()) => {
+  const availableOperators = getConfig(['conditions', 'operators'], Immutable.List());
+  return Immutable.List().withMutations((opsWithMutations) => {
+    enabledOperators.forEach((enabledOperator) => {
+      const opConfig = availableOperators.find(op => op.get('id', '') === enabledOperator.get('id', ''), null, null);
+      if (opConfig === null) {
+        opsWithMutations.push(enabledOperator);
+      } else {
+        opsWithMutations.push(opConfig.merge(enabledOperator));
+      }
+    });
+  });
+}
+
+export const convertToOldRecurrence = (item) => {
+  return item.withMutations((itemWithMutations) => {
+    const frequency = item.getIn(['recurrence', 'frequency'], '');
+    if (itemWithMutations.hasIn(['recurrence', 'frequency']) && [1, 12].includes(frequency)) {
+      if (frequency === 12) {
+        itemWithMutations.setIn(['recurrence', 'periodicity'], 'year');
+      } else {
+        itemWithMutations.setIn(['recurrence', 'periodicity'], 'month');
+      }
+      itemWithMutations.deleteIn(['recurrence', 'frequency']);
+      itemWithMutations.deleteIn(['recurrence', 'start']);
+      itemWithMutations.deleteIn(['recurrence', 'converted']);
+    }
+  });
+}
+
+export const convertToNewRecurrence = (item) => {
+  return item.withMutations((itemWithMutations) => {
+    if (!itemWithMutations.hasIn(['recurrence', 'frequency'])) {
+      let frequency = '';
+      const periodicity = itemWithMutations.getIn(['recurrence', 'periodicity'], '');
+      if (periodicity === 'month') {
+        frequency = 1;
+      } else if (periodicity === 'year') {
+        frequency = 12;
+      }
+      itemWithMutations.setIn(['recurrence', 'start'], 1);
+      itemWithMutations.setIn(['recurrence', 'frequency'], frequency);
+      itemWithMutations.setIn(['recurrence', 'converted'], true);
+      itemWithMutations.deleteIn(['recurrence', 'periodicity']);
+    }
+  });
+}
+
+export const reCalculateCycles = (prices, index, value, cycle_unlimited) => prices.reduce((newList, price, i) => {
+  if (i === index) {
+    // set new To
+    if (typeof value === 'undefined') { // first item was removed
+      price = price.set('to', parseInt(price.get('to', 0) || 0) - parseInt(price.get('from', 0) || 0));
+    } else if (value === cycle_unlimited) { // last value set to unlimited
+      price = price.set('to', value);
+    } else { // simple case, update to new value
+      price = price.set('to', parseInt(price.get('from') || 0) + parseInt(value));
+    }
+    // set new From
+    if (index === 0) {
+       price = price.set('from', 0);
+    }
+    return newList.push(price);
+  } else if (i > index) {
+    const from = price.get('from', 0);
+    const to = price.get('to', '');
+    // set new From
+    const prevTo = parseInt(newList.last().get('to', 0) || 0);
+    price = price.set('from', prevTo);
+    // set new To
+    if (to === '') { // TO not set
+      price = price.set('to', price.get('from'));
+    } else if (to === cycle_unlimited) { // TO is unlimited
+      // do nothing
+    } else { // normal case, update with shifting
+      const diff = parseInt(to || 0) - parseInt(from || 0);
+      price = price.set('to', prevTo + diff);
+    }
+    return newList.push(price);
+  }
+  return newList.push(price);
+}, Immutable.List());
+
+export const plansOrServicesToSelectOptions = items => items.map(item => ({
+  value: item.get('name', ''),
+  label: item.get('description', item.get('name', '')),
+  isByCycles: item.get('balance_period', '') === '',
+}));
+
+export const isValueOn = val => {
+  if (val === undefined || val === null) {
+    return false;
+  }
+  if (isNumber(val)) {
+    return parseFloat(val) > 0;
+  }
+  if (typeof val === 'boolean') {
+    return val;
+  }
+  if (typeof val === 'string') {
+    return ['yes', 'true', 'on', 'y'].includes(val.toLocaleLowerCase());
+  }
+  return false;
+}
+
+
+export const parseIncludeExcludeIdsListValue = (value) => value
+  .trim()
+  .split(/\r\n|\r|\n|,/)
+  .map(v => v.trim())
+  .filter(v => v.length)
+  .map(v => isNumber(v) ? parseFloat(v) : v);
+
+export const getChargeStatus = (item) => {
+  if (!Immutable.Map.isMap(item)) {
+    return '';
+  }
+  if (parseInt(item.get('cancelled', '')) === 1) {
+    return 'cancelled';
+  }
+  if (item.get('schedule', '') !== '') {
+    const scheduleTime = moment(item.get('schedule', ''));
+    if (moment.isMoment(scheduleTime) && scheduleTime.isValid() && scheduleTime.isAfter(moment())) {
+      return 'future';
+    }
+  }
+  if (item.get('start_time', '') === '') {
+    return 'idle';
+  }
+  if (item.get('active', false)
+    || (parseInt(item.get('done', 0)) === 0 && item.get('start_time', '') !== '')
+    || (parseInt(item.get('done', 0)) === 1 && item.getIn(['details', 'done'], 0) !== item.getIn(['details', 'total'], 0))
+  ) {
+    return 'active';
+  }
+  return 'done';
+}
+
+export const getServiceType = (service) => {
+    if (!service || !Immutable.Map.isMap(service)) {
+      return null;
+    }
+    if (service.get('quantitative', false)) {
+      return 'quantitative';
+    }
+    if (service.get('balance_period', 'default') !== 'default') {
+      return 'balance_period';
+    }
+    return 'normal';
+  }

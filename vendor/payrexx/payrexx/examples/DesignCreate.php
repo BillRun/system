@@ -32,6 +32,12 @@ $design->setBackground('color'); // color or image
 $design->setBackgroundColor('F9FAFA'); // Hex code
 $design->setHeaderBackground('color'); // color or image
 $design->setHeaderBackgroundColor('00AFF0'); // Hex code
+$design->setHeaderImageCustomLink([
+    '0' => 'https://payrexx.com/en', // default link (All unspecified languages)
+    '1' => 'https://payrexx.com/de', // link for german
+    '3' => 'https://payrexx.com/fr', // link for french
+    '4' => 'https://payrexx.com/it', // link for italian
+]);
 $design->setVPOSGradientColor1('00AFF0'); // Hex code
 $design->setVPOSGradientColor2('00AFF0'); // Hex code
 $design->setFontFamily('Arial');

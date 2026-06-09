@@ -94,7 +94,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 * Get a matching rate by the supplied params
 	 * @param string $called_number the number called
 	 * @param string $usage_type the usage type (call / sms ...)
-	 * @param MongoDate $urt the time of the event
+	 * @param Mongodloid_Date $urt the time of the event
 	 * @param string $ocg the out circuit group of the event. If not supplied, ocg will be ignored in the search.
 	 * @return Mongodloid_Entity the matched rate or UNRATED rate if none found
 	 * @todo make same input as parent method

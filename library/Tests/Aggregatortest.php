@@ -10,7 +10,7 @@
   * @package  calculator
   * @since    0.5
   */
-require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
+(@include_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php')) || require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
 //known isuss fails in 5.13 is : |---|30|--|61|---|62|---|63|---|65|---|71
  define('UNIT_TESTING', 'true');
 
@@ -27,9 +27,16 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
      protected $subscribersCol;
      protected $balancesCol;
      protected $billrunCol;
+     protected $billingCyclr;
      protected $BillrunObj;
      protected $returnBillrun;
+     protected $tests;
+     protected $cases;
+     protected $test_cases_to_run;
+     protected $test_cases_to_skip;
+     protected $numOffLines;
      public $ids;
+     protected $shouldRunAggregate =true;
      public $message;
      public $label = 'aggregate';
      public $defaultOptions = array(
@@ -46,9 +53,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span><br>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span><br>';
 	public function test_cases() {
-    
-	}
 
+	}
+ 
      public function __construct($label = false) {
          parent::__construct("test Aggregatore");
          $this->autoload_tests('aggregatorTestCases');
@@ -77,8 +84,16 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
      public function aggregator($row) {
          $options = array_merge($this->defaultOptions, $row['test']['options']);
          $aggregator = Billrun_Aggregator::getInstance($options);
+         Billrun_Factory::log('puchifff'.  json_encode($aggregator),Zend_Log::INFO);
+        // Check if 'aggregationLogic' exists, if not,dont run the cycle 
+        if (property_exists($aggregator,"aggregationLogic")) {
          $aggregator->load();
          $aggregator->aggregate();
+        } else {
+            $this->shouldRunAggregate = false;
+            $this->message .= "The cycle should not be run ";
+            return;
+        }
      }
 
      /**
@@ -97,27 +112,61 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
       */
     public function TestPerform()
     {
-        $this->tests =  $this->getTestCases($this->tests);
+        $this->tests =  $this->getTestCases();
         if (empty($this->test_cases_to_run)) {
             $this->tests = $this->skip_tests($this->tests, 'test.test_number');
-          }
+        }
+        // execute test cases pass by tests or all if it empty
+        $request = new Yaf_Request_Http;
+        $this->test_cases_to_run = $request->get('tests');
+        if ($this->test_cases_to_run) {
+            $this->test_cases_to_run = explode(',', $this->test_cases_to_run);
+            foreach ($this->tests as $case) {
+                if (in_array($case['test']['test_number'], $this->test_cases_to_run)){
+                    $this->cases[] = $case;
+                }
+             }
+             $this->tests =  $this->cases;
+            }
+        
          foreach ($this->tests as $key => $row) {
-
+             $this->shouldRunAggregate = true;
              $aid = $row['test']['aid'];
 	     $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
 	    if (isset($row['test']['label'])) {
 	         $this->message .= '<br>test label :  ' . $row['test']['label'];
 	      }
 			// run fenctions before the test begin 
-             if (isset($row['preRun']) && !empty($row['preRun'])) {
+            //  if (isset($row['preRun']) && !empty($row['preRun'])) {
+            //      $preRun = $row['preRun'];
+            //      if (!is_array($preRun)) {
+            //          $preRun = array($row['preRun']);
+            //      }
+            //     //  foreach ($preRun as $pre) {
+            //     //      $this->$pre($key, $row);
+            //     //  }
+                
+            //   }
+
+            if (isset($row['preRun'])) {
                  $preRun = $row['preRun'];
                  if (!is_array($preRun)) {
-                     $preRun = array($row['preRun']);
+                    $preRun = array($preRun);
                  }
                  foreach ($preRun as $pre) {
+                    if (is_string($pre)) {
+                        // Invoke the function with no parameters
                      $this->$pre($key, $row);
+                    } elseif (is_array($pre) && isset($pre['function']) && isset($pre['params'])) {
+                        // Extract function name and parameters
+                        $function = $pre['function'];
+                        $params = $pre['params'];
+                        // Invoke the function with parameters
+                        call_user_func_array(array($this, $function), array_merge(array($key, $row), $params));
                  }
              }
+            }
+            
              // run aggregator
              if (array_key_exists('aid', $row['test'])) {
                  $returnBillrun = $this->runT($row);
@@ -183,7 +232,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          $aid = $row['expected']['billrun']['aid'];
          $retun_billrun_key = isset($returnBillrun['billrun_key']) ? $returnBillrun['billrun_key'] : false;
          $retun_aid = isset($returnBillrun['aid']) ? $returnBillrun['aid'] : false;
-         $jiraLink = isset($row['jiraLink']) ? (array) $row['jiraLink'] : '';
+         $jiraLink = isset($row['jiraLink']) ? (array) $row['jiraLink'] : array();
          foreach ($jiraLink as $link) {
 			$this->message .= '<br><a target="_blank" href=' . "'" . $link . "'>issus in jira :" . $link . "</a>";
          }
@@ -201,9 +250,31 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
              $passed = false;
              $this->message .= 'aid :' . $retun_aid . $this->fail;
          }
+         if(isset($row['expected']['shouldRunAggregate'])){
+            if($this->shouldRunAggregate == $row['expected']['shouldRunAggregate'] ){
+                $this->message .= "shouldRunAggregate" . $this->pass;
+            }else{
+                $passed = false;
+                $this->message .= "shouldRunAggregate" . $this->fail;
+            }
+         }
 		return $passed;
 	}
 
+    protected function shouldRun_Aggregate($key =null, $returnBillrun=null, $row= null) {
+        $passed = TRUE;
+        $shouldRunAggregate = isset($row['expected']['shouldRunAggregate'])?$row['expected']['shouldRunAggregate']:null;
+       
+        if(isset($row['expected']['shouldRunAggregate'])){
+           if($this->shouldRunAggregate === $shouldRunAggregate ){
+               $this->message .= "</br> shouldRunAggregate" . $this->pass;
+           }else{
+               $passed = false;
+               $this->message .= "</br> shouldRunAggregate" . $this->fail;
+           }
+        }
+		return $passed;
+	}
 	public function checkInvoiceId($key, $returnBillrun, $row) {
 		$passed = TRUE;
 		$invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
@@ -237,7 +308,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
       */
      public function sumSids($key, $returnBillrun, $row) {
          $this->message .= "<b> sum sid's :</b> <br>";
-         if (count($row['test']['sid']) == count($returnBillrun['subs']) - 1) {
+         $sids = isset($row['test']['sid']) ? (array) $row['test']['sid'] : array();
+         $subs = isset($returnBillrun['subs']) && is_array($returnBillrun['subs']) ? $returnBillrun['subs'] : array();
+         if (count($sids) == count($subs) - 1) {
              $this->message .= "subs equle to sum of sid's" . $this->pass;
              return true;
          } else {
@@ -274,6 +347,16 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
              }
              $this->message .= "Percentage of tax :$vat %<br>";
          }
+         $subsFieldsPaths = (isset($row['expected']['billrun']['subs']) && is_array($row['expected']['billrun']['subs'])) ? $row['expected']['billrun']['subs'] : array();
+        foreach($subsFieldsPaths as $path => $expectedValue){
+            $result = Billrun_Util::getIn($returnBillrun['subs'], $path, '');
+            if (Billrun_Util::isEqual($result, $expectedValue, 0.00001)) {
+                $this->message .= "subs $path is : " . $result . $this->pass;
+            } else {
+                $this->message .= "expected subs $path is : {$expectedValue} <b>result is </b>:  {$result}" . $this->fail;
+                $passed = FALSE; /* Percentage of tax */
+            }
+        }
          return $passed;
      }
 
@@ -332,6 +415,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          return $allLines;
      }
 
+
      /**
       * check if all the lines was created 
       * @param int $key number of the test case
@@ -342,7 +426,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
      public function lineExists($key, $returnBillrun, $row) {
          $passed = true;
          $this->message .= "<b> create lines: </b> <br>";
-         $types = $row['expected']['line']['types'];
+         $types = isset($row['expected']['line']['types']) && is_array($row['expected']['line']['types']) ? $row['expected']['line']['types'] : array();
          $lines = $this->getLines($row);
          $returnTypes = [];
          foreach ($lines as $line) {
@@ -375,9 +459,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
       * @param array $row current test case
       * @return boolean return pass if the billrun was not created
       */
-     public function billrunNotCreated($key, $returnBillrun = null, $row) {
+     public function billrunNotCreated($key, $returnBillrun, $row) {
          $passed = true;
-         $this->lineExists($key, $returnBillrun = null, $row);
+         $this->lineExists($key, $returnBillrun, $row);
          if ($this->numOffLines > 0) {
              $passed = false;
              $this->message .= "lines was created for account {$row['test']['aid']} But they should not have been formed" . $this->fail;
@@ -540,7 +624,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          $aid = $row['test']['fake_aid'];
          $stamp = $row['test']['fake_stamp'];
          $query = array('aid' => $aid, "billrun_key" => $stamp);
-         $billrun = $this->getBillruns($query)->count();
+         $sumBillruns = $this->getBillruns($query)->count();
          if ($sumBillruns > 0) {
              $this->assertTrue(false);
              $this->message .= '<b style="color:red;">aggregate run full cycle</b>' . $this->fail;
@@ -560,7 +644,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          $stamp = $row['test']['options']['stamp'];
          $query = array('aid' => $aid, "billrun_key" => $stamp);
          $billrun = $this->getBillruns($query)->count();
-         if (count($billrun) > 0) {
+         if (count((array)$billrun) > 0) {
              $this->message .= '<b>aggregate run full cycle</b>' . $this->pass;
          } else {
              $passed = false;
@@ -645,7 +729,6 @@ public function passthrough($key, $returnBillrun, $row) {
 		}
 		return $passed;
 	}
-
 
      /**
       *  save invoice_id 
@@ -752,7 +835,7 @@ public function passthrough($key, $returnBillrun, $row) {
      }
 
      /**
-      * check if 'plan' filed under sub in billrun object exists
+      * check if 'plan' field under sub in billrun object exists
       * @param int $key number of the test case
       * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
       * @param array $row current test case
@@ -760,16 +843,16 @@ public function passthrough($key, $returnBillrun, $row) {
       */
      public function planExist($key, $returnBillrun, $row) {
          $passed = true;
-         $this->message .= "<br><b> plan filed  :</b> <br>";
+         $this->message .= "<br><b> plan field  :</b> <br>";
          $sids = (array) $row['test']['sid'];
          foreach ($sids as $sid) {
              foreach ($returnBillrun['subs'] as $sub) {
                  if ($sid == $sub['sid']) {
                      if (!array_key_exists('plan', $sub)) {
-                         $this->message .= "plan filed does NOT exist in billrun object" . $this->fail;
+                         $this->message .= "plan field does NOT exist in billrun object" . $this->fail;
                          $passed = false;
                      } else {
-                         $this->message .= "plan filed exists in billrun object" . $this->pass;
+                         $this->message .= "plan field exists in billrun object" . $this->pass;
                      }
                  }
              }
@@ -821,12 +904,14 @@ public function passthrough($key, $returnBillrun, $row) {
 				$this->message .= "billrun not crate for aid $aid " . $this->fail;
 				$this->assertTrue(0);
 			}
-		}}}
+				}
+			}
+		}
 
 		//Checks that no  billruns have been created that should not be created
 		if (count($billruns_) > count($aids)) {
 
-			$wrongBillrun = array_filter($billruns_, function(array $bill) use ($aids) {
+			$wrongBillrun = array_filter($billruns_, function (array $bill) use ($aids) {
 				return !in_array($bill['aid'], $aids);
 			});
 
@@ -854,9 +939,119 @@ public function passthrough($key, $returnBillrun, $row) {
 		return $passed;
 	}
 
+    public function multi_day_cycle_false()
+    {
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/multi_day_cycle_false.ini');
+        $this->loadConfig();
+	}
+    public function allowPremature($param)
+    {
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/allow_premature_run.ini');
+        $this->loadConfig();
+}
+    public function notallowPremature($param){
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
+        $this->loadConfig();
+	}
+
+	public function MultiDay($key, $returnBillrun, $row) {
+		$passed = true;
+		
+		$aids = [];
+		foreach ($row['expected']['accounts'] as $aid => $day) {
+			$aids[] = $aid;
+			$aid_and_days[$aid] = $day;
+		}
+
+		$billruns = $this->getBillruns();
+		$billruns_ = [];
+		foreach ($billruns as $bill) {
+			$billruns_[] = $bill->getRawData();
+		}
+
+		//Checks that all the  billruns  that should have been created were created
+		$find = false;
+		foreach ($aids as $aid) {
+			$find = false;
+			foreach ($billruns_ as $bills) {
+				if ($bills['aid'] == $aid) {
+                    $this->message .= "billrun created for aid $aid  " . $this->pass;
+					$find = true;
+					continue 2;
+				}
+			}
+			if (!$find) {
+                $this->message .= "billrun not created for aid $aid " . $this->fail;
+				$this->assertTrue(0);
+			}
+		}
+
+		//Checks that no  billruns have been created that should not be created
+		if (count($billruns_) > count($aids)) {
+
+			$wrongBillrun = array_filter($billruns_, function (array $bill) use ($aids) {
+				return !in_array($bill['aid'], $aids);
+			});
+
+			foreach ($wrongBillrun as $wrong => $bill) {
+                $this->message .= "billrun  create for aid {$bill['aid']} and was not meant to be formed " . $this->fail;
+				$this->assertTrue(0);
+			}
+		}
+
+		//Checking that invoicing day is correct
+		foreach ($billruns_ as $bill) {
+			foreach ($aid_and_days as $aid => $day) {
+				if ($bill['aid'] == $aid) {
+					if ($bill['invoicing_day'] == $day) {
+						$this->message .= "billrun  invoicing_day for aid $aid is correct ,day : $day" . $this->pass;
+						continue 2;
+					} else {
+						$this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  : $day , actual result is{$bill['invoicing_day'] } " . $this->fail;
+						$this->assertTrue(0);
+					}
+				}
+			}
+		}
+	}
+
 	public function removeBillruns() {
 		$this->billingCyclr->remove(['billrun_key' => ['$ne' => 'abc']]);
 		$this->billrunCol->remove(['billrun_key' => ['$ne' => 'abc']]);
+	}
+
+	public function MultiDayNotallowPremature($key, $returnBillrun, $row) {
+		$now = date('d');
+        $pass = true;
+		$billruns = $this->getBillruns();
+		$billruns_ = [];
+		$aid_and_days = $row['expected']['accounts'];
+
+        if($row['test']['test_number']==763439){
+            $a=1;
+        };
+		foreach ($billruns as $bill) {
+			$billruns_[] = $bill->getRawData();
+		}
+
+		foreach ($billruns_ as $bill) {
+					if ($bill['invoicing_day'] == $aid_and_days[$bill['aid']]) {
+						$this->message .= "billrun  invoicing_day for aid $aid is correct ,day : {$aid_and_days[$bill['aid']]}" . $this->pass;
+					} else {
+						$this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  :  {$aid_and_days[$bill['aid']]} , actual result is{$bill['invoicing_day'] } " . $this->fail;
+						 $this->assertTrue(0);
+                         $pass = false;
+					}
+					if ($bill['invoicing_day'] <= $now) {
+						$this->message .= "notallowPrematurun  is corrcet now its  $now  and  invoicing day  is{$aid_and_days[$bill['aid']]} aid $aid " . $this->pass;
+					} else {
+						$this->message .= "notallowPrematurun  is not  corrcet now its  $now  and  invoicing day  is {$aid_and_days[$bill['aid']]}  aid $aid " . $this->fail;
+						$this->assertTrue(0);
+                        $pass = false;
+					}
+					$this->message .= '<br>****************************************************************<br>';
+		}
+        return $pass;
 	}
 
 	public function cleanAfterAggregate($key, $row) {
@@ -865,7 +1060,44 @@ public function passthrough($key, $returnBillrun, $row) {
 		Billrun_Aggregator_Customer::removeBeforeAggregate($stamp, $account);
 	}
 
+    public function checkPerLine($key, $returnBillrun, $row){
+        $this->message .="<b>checkPerLine</b></br>";
+        $passed = true;
+        foreach ($row['expected']['lines'] as $line) {
+            $lines = [];
+            $cursor = Billrun_Factory::db()->linesCollection()->query($line['query'])->cursor()->limit(100000);
+            foreach ($cursor as $rowData) {
+                $lines[] = $rowData->getRawData();
+            }
 	
+            if (is_null($lines) || empty($lines)) {
+                $this->message .= "no create line for this query : " . json_encode($line['query']) . $this->fail;
+                $this->assertTrue(0);
+                $passed = false;
+            }
+            $supportTypes = ['aprice', 'final_charge'];
+            foreach($supportTypes as $type){
+                $expectedValue = Billrun_Util::getIn( $line,$type,null);
+                if (!isset($expectedValue)){
+                    continue;
+            }
+                $actualValue =  Billrun_Util::getIn($lines[0],$type,null);
+                if(!is_null($lines) && !empty($lines)){
+                    if(Billrun_Util::isEqual($actualValue, $expectedValue, 0.00001)){
+                        $this->message .= "expected $type is : " . $expectedValue . $this->pass;
+                $this->assertTrue(1);
+                        $passed = true;
+                    }else{
+                        $this->message .= "expected $type is : " . $expectedValue . " actually $type is: " . $actualValue . $this->fail;
+                        $this->assertTrue(0);
+                        $passed = false;
+            }
+        }
+            }   
+        }
+        return $passed;
+    }
+}
 
  
- }
+ 

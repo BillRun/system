@@ -96,13 +96,13 @@ trait Billrun_Traits_FileActions {
 		$query = array(
 			'stamp' => $logData['stamp'],
 			'file_name' => $filename,
-			'fetching_time' => array('$lt' => new MongoDate(time() - $orphan_window)),
+			'fetching_time' => array('$lt' => new Mongodloid_Date(time() - $orphan_window)),
 			'received_time' => array('$exists' => false)
 		);
 
 		$update = array(
 			'$set' => array(
-				'fetching_time' => new MongoDate(time()),
+				'fetching_time' => new Mongodloid_Date(time()),
 				'fetching_host' => Billrun_Util::getHostName(),
 			),
 			'$setOnInsert' => $logData
@@ -111,8 +111,8 @@ trait Billrun_Traits_FileActions {
 		try {
 			$result = $log->update($query, $update, array('upsert' => true));
 		} catch (Exception $e) {
-			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-				Billrun_Factory::log("Billrun_Traits_FileActions::lockFileForReceive - Trying to relock  a file the was already been locked : " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::DEBUG);
+			if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+				Billrun_Factory::log("Billrun_Traits_FileActions::lockFileForReceive - Trying to relock a file the was already locked: " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::DEBUG);
 			} else {
 				throw $e;
 			}
@@ -155,9 +155,24 @@ trait Billrun_Traits_FileActions {
 		$seqData = $this->getFilenameData($filename, $this->getType());
 		$backedTo = array();
 		for ($i = 0; $i < count($backupPaths); $i++) {
-			$backupPath = $this->generateBackupPath($backupPaths[$i], $seqData, $retrievedHostname);
+			$optionsTrigger = [];
+			$currentPath = $backupPaths[$i];
+			Billrun_Factory::dispatcher()->trigger('beforeFileActionsBackup', [&$optionsTrigger, &$currentPath, $filename, $filePath, $this]);
+			$targetFilename = null;
+			if (is_array($currentPath)) {
+				$targetFilename = isset($currentPath['filename']) ? $currentPath['filename'] : null;
+				$currentPath = isset($currentPath['path']) ? $currentPath['path'] : '';
+			}
+			if (!empty($optionsTrigger['useRawPath'])) {
+				$backupPath = $currentPath;
+			} else {
+				$backupPath = $this->generateBackupPath($currentPath, $seqData, $retrievedHostname);
+			}
+			if(!empty($optionsTrigger['skip'])){
+				continue;
+			}
 			$this->prepareBackupPath($backupPath);
-			if ($this->backupToPath($filePath, $backupPath, $this->preserve_timestamps, !($move && $i + 1 == count($backupPaths))) === TRUE) {
+			if ($this->backupToPath($filePath, $backupPath, $this->preserve_timestamps, !($move && $i + 1 == count($backupPaths)), $targetFilename) === TRUE) {
 				Billrun_Factory::log("Success backup file " . $filePath . " to " . $backupPath, Zend_Log::INFO);
 				$backedTo[] = $backupPath;
 			} else {
@@ -192,7 +207,7 @@ trait Billrun_Traits_FileActions {
 	 * 
 	 * @return boolean return true if success to backup
 	 */
-	public function backupToPath($srcPath, $trgtPath, $preserve_timestamps = true, $copy = true) {
+	public function backupToPath($srcPath, $trgtPath, $preserve_timestamps = true, $copy = true, $targetFilename = null) {
 		if ($copy) {
 			$callback = "copy";
 		} else {
@@ -203,7 +218,7 @@ trait Billrun_Traits_FileActions {
 			@mkdir($trgtPath, 0777, true);
 		}
 
-		$filename = basename($srcPath);
+		$filename = $targetFilename ? $targetFilename : basename($srcPath);
 		$target_path = $trgtPath . DIRECTORY_SEPARATOR . $filename;
 		Billrun_Factory::log("Backing up file from : " . $srcPath . " to :  " . $trgtPath, Zend_Log::INFO);
 		$timestamp = filemtime($srcPath); // this will be used after copy/move to preserve timestamp

@@ -121,11 +121,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 *
 	 * @param array $options for the file processor
 	 */
+	 protected $shouldremovefromWorkspace = true;
 	public function __construct($options) {
 
 		parent::__construct($options);
 		if (isset($options['parser']) && $options['parser'] != 'none') {
-			$this->setParser($options['parser']);
+			$lineTypes = $options['line_types'] ?? [];
+			$this->setParser(array_merge($options['parser'], (!empty($lineTypes) ? ['line_types' => $lineTypes] : [])));
 		}
 
 		if (isset($options['processor']['line_numbers'])) {
@@ -218,7 +220,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * method to initialize the data and the file handler of the processor
 	 * useful when processing files in iterations one after another
 	 */
-	protected function init() {
+	public function init() {
 		$this->data = array('data' => array());
 		$this->queue_data = array();
 		if (is_resource($this->fileHandler)) {
@@ -258,8 +260,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 				return FALSE;
 			}
 			Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
-
-			$this->removefromWorkspace($this->getFileStamp());
+			if($this->shouldremovefromWorkspace){
+				$this->removefromWorkspace($this->getFileStamp());
+			}
 			Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this));
 			return count($this->data['data']);
 		}
@@ -313,13 +316,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$resource->set('trailer', $trailer);
 			}
 			$resource->set('process_hostname', Billrun_Util::getHostName());
-			$resource->set('process_time', new MongoDate());
+			$resource->set('process_time', new Mongodloid_Date());
 			return $log->save($resource);
 		} else {
 			// backward compatibility
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
 			$entity = new Mongodloid_Entity($trailer);
-			if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
+			if (!$log->query(array('stamp' => $entity->get('stamp')))->cursor()->limit(1)->current()->isEmpty()) {
 				Billrun_Factory::log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				return FALSE;
 			}
@@ -449,25 +452,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log("Processor orphan time less than one hour: " . $this->orphandFilesAdoptionTime . ". Please set value greater than or equal to one hour. We will take one hour for now", Zend_Log::NOTICE);
 			$adoptThreshold = time() - 3600;
 		}
-		$query = array(
-			'source' => !empty($this->receiverSource) ? $this->receiverSource :static::$type,
-			'process_time' => array(
-				'$exists' => false,
-			),
-			'$or' => array(
-				array('start_process_time' => array('$exists' => false)),
-				array('start_process_time' => array('$lt' => new MongoDate($adoptThreshold))),
-			),
-			'received_time' => array(
-				'$exists' => true,
-			),
-		);
+		$query = $this->getLogFileQuery($adoptThreshold);
 		if(isset($path)){
 			$query['path'] = $path;
 		}
 		$update = array(
 			'$set' => array(
-				'start_process_time' => new MongoDate(time()),
+				'start_process_time' => new Mongodloid_Date(time()),
 				'start_process_host' => Billrun_Util::getHostName(),
 			),
 		);
@@ -480,6 +471,22 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$file = $log->findAndModify($query, $update, array(), $options);
 		$file->collection($log);
 		return $file;
+	}
+
+	protected function getLogFileQuery($adoptThreshold) {
+		return array(
+			'source' => !empty($this->receiverSource) ? $this->receiverSource :static::$type,
+			'process_time' => array(
+				'$exists' => false,
+			),
+			'$or' => array(
+				array('start_process_time' => array('$exists' => false)),
+				array('start_process_time' => array('$lt' => new Mongodloid_Date($adoptThreshold))),
+			),
+			'received_time' => array(
+				'$exists' => true,
+			),
+		);
 	}
 
 	public function fgetsIncrementLine($file_handler) {
@@ -503,7 +510,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 
 		try {
-			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true && Billrun_Factory::db()->compareClientVersion('1.5', '>=') === true) {
+			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
 				// we are on 2.6
 				$bulkOptions = array(
 					'continueOnError' => true,
@@ -529,7 +536,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} catch (Exception $e) {
 			Billrun_Factory::log("Processor store " . basename($this->filePath) . " failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
 
-			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
+			if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
 				Billrun_Factory::log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::NOTICE);
 				return $this->addToCollection($collection);
 			}
@@ -549,7 +556,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
 		}
 		try {
-			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true && Billrun_Factory::db()->compareClientVersion('1.5', '>=') === true) {
+			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
 				// we are on 2.6
 				$bulkOptions = array(
 					'continueOnError' => true,
@@ -575,7 +582,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} catch (Exception $e) {
 			Billrun_Factory::log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
 
-			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
+			if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
 				Billrun_Factory::log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::NOTICE);
 				return $this->addToQueue($queue_data);
 			}
@@ -621,7 +628,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$queueRow = $dataRow;
 			$queueRow['calc_name'] = false;
 			$queueRow['calc_time'] = false;
-			$queueRow['in_queue_since'] = new MongoDate();
+			$queueRow['in_queue_since'] = new Mongodloid_Date();
 			$this->setQueueRow($queueRow);
 		}
 	}
@@ -723,7 +730,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function isQueueFull() {
 		$queue_max_size = Billrun_Factory::config()->getConfigValue("queue.max_size", 999999999);
-		return (Billrun_Factory::db()->queueCollection()->count() >= $queue_max_size);
+		return (Billrun_Factory::db()->queueCollection()->estimatedDocumentCount() >= $queue_max_size);
 	}
 
 	protected function setFileStamp($file) {
@@ -779,7 +786,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return array
 	 */
 	protected function getFilters($row) {
-		if (!isset($this->filters[$row['type']])) {
+		if(isset($row['linet'])){
+			if(!isset($this->filters[$row['type']][$row['linet']])){
+				$filters = Billrun_Factory::config()->getLineTypeConfigByName($row['type'], true, $row['linet'])['filters'] ?? 
+				(Billrun_Factory::config()->getLineTypeConfigByName($row['type'], true)['filters'] ?? [] );
+				$this->filters[$row['type']][$row['linet']] = $filters;
+			}
+			return $this->filters[$row['type']][$row['linet']];
+		} else if (!isset($this->filters[$row['type']])) {
 			$config = Billrun_Factory::config()->getFileTypeSettings($row['type'], true);
 			$this->filters[$row['type']] = isset($config['filters']) ? $config['filters'] : array();
 		}
@@ -835,6 +849,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return;
 	}
 
+	public function setFullCalculationTime(&$entity) {
+		if (in_array('full_calculation', Billrun_Factory::config()->getConfigValue('lines.reference_fields', []))) {
+			$entity['full_calculation'] = new MongoDate();
+		}
+	}
+
 	public function createLogForProcessWithPath($options){
 		$filename = basename($options['path']);
 		$type = $this->receiverSource ?? static::$type;
@@ -882,4 +902,44 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return $result['n'] == 1 && $result['ok'] == 1;
 
 	}
+
+	public function setShouldremovefromWorkspace($flag){
+		$this->shouldremovefromWorkspace = $flag;
+	}
+
+	public function processorByPath($options){
+		$absPath = Billrun_Util::getBillRunPath($options['path']);
+		if (is_dir($absPath)) {
+			return $this->processorByDir($options, $absPath);
+		}
+		if(!$this->createLogForProcessWithPath($options)){
+			return;
+		}
+		$this->setShouldremovefromWorkspace(false);
+		return $this->process_files($absPath);
+	}
+
+	protected function processorByDir($options, $dir) {
+		$entries = glob(rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '*');
+		if ($entries === false) {
+			return;
+		}
+		sort($entries);
+		$hasFiles = false;
+		foreach ($entries as $entry) {
+			if (!is_file($entry)) {
+				continue;
+			}
+			$fileOptions = array_merge($options, array('path' => $entry));
+			if ($this->createLogForProcessWithPath($fileOptions)) {
+				$hasFiles = true;
+			}
+		}
+		if (!$hasFiles) {
+			return;
+		}
+		$this->setShouldremovefromWorkspace(false);
+		return $this->process_files();
+	}
+
 }

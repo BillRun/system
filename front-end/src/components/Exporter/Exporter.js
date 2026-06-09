@@ -16,6 +16,7 @@ class Exporter extends Component {
   static propTypes = {
     entityKey: PropTypes.string,
     exportLabel: PropTypes.string,
+    query: PropTypes.any,
     entityOptions: PropTypes.arrayOf(PropTypes.string),
     onExport: PropTypes.func.isRequired,
   };
@@ -23,6 +24,7 @@ class Exporter extends Component {
   static defaultProps = {
     entityKey: '',
     exportLabel: 'Export',
+    query: null,
     entityOptions: getConfig(['export', 'allowed_entities'], Immutable.List()).toJS(),
   };
 
@@ -40,9 +42,9 @@ class Exporter extends Component {
 
   static getDerivedStateFromProps(props, state) {
     if (props.entityKey !== '' && props.entityKey !== state.entity) {
-      const defaultFuleName = Exporter.defaultOptions.get('file_name', '');
+      const defaultFileName = Exporter.defaultOptions.get('file_name', '');
       const entitiesName = getConfig(['systemItems', props.entityKey, 'itemsType'], props.entityKey);
-      const fileName = `${defaultFuleName}_${entitiesName}`
+      const fileName = `${defaultFileName}_${entitiesName}`;
       return ({
         options: state.options.set('file_name', fileName),
         entity: props.entityKey,
@@ -52,9 +54,10 @@ class Exporter extends Component {
   }
 
   clickExport = () => {
-    const { entity, query, options } = this.state;
+    const { entity, options } = this.state;
+    const { query } = this.props;
     this.setState(() => ({ progress: true }));
-    this.props.onExport(entity, Immutable.Map({query, options}));
+    this.props.onExport(entity, Immutable.fromJS(query).merge(options));
     this.setState(() => ({ progress: false }));
   }
 
@@ -62,6 +65,19 @@ class Exporter extends Component {
     const newEntity = (value.length) ? value : '';
     this.setDefaultFileName({ newEntity });
     this.setState(() => ({ entity: newEntity }));
+  }
+
+  onChangeRange = (range) => {
+    const apiDateTimeFormat = getConfig('apiDateTimeFormat', 'YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+    const to = moment(range.get('to', ''));
+    const from = moment(range.get('from', ''));
+    this.setState((prevState) => ({ query: prevState.query
+      .set('to', to.isValid() ? to.set({ second: 0,millisecond: 0 }).utc().format(apiDateTimeFormat) : null )
+      .set('from', from.isValid() ? from.set({ second: 0,millisecond: 0 }).utc().format(apiDateTimeFormat) : null )
+    }));
+    if (from.isValid()) {
+      this.setDefaultFileName({ newDate: from });
+    }
   }
 
   onChangeFrom = (date) => {
@@ -92,17 +108,18 @@ class Exporter extends Component {
   setDefaultFileName = ({newEntity, newDate}) => {
     const { entity, query, options } = this.state;
     const defaultFileName = Exporter.defaultOptions.get('file_name', '');
-    const correntFileName = options.get('file_name', '');
-    const isDefaultNameChnaged = defaultFileName !== correntFileName;
-    const currentEmpty = correntFileName === '';
+    const currentFileName = options.get('file_name', '');
+    const isDefaultNameChanged = defaultFileName !== currentFileName;
+    const currentEmpty = currentFileName === '';
     const apiDateFormat = getConfig('apiDateFormat', 'YYYY-MM-DD');
 
     if (typeof newDate !== 'undefined') {
-      const newDateLable = newDate !== null ? `_${newDate.format(apiDateFormat)}` : '';
+      const newDateLabel = newDate !== null ? `_${newDate.format(apiDateFormat)}` : '';
       const oldDate = query.get('from', null);
       const oldDateLabel = oldDate !== null ? `_${moment(oldDate).format(apiDateFormat)}` : '';
-      if (`${defaultFileName}_${entity}${oldDateLabel}` === correntFileName || currentEmpty || !isDefaultNameChnaged) {
-        const newFileName = `${defaultFileName}_${entity}${newDateLable}`;
+      const entitiesName = getConfig(['systemItems', entity, 'itemsType'], entity);
+      if (`${defaultFileName}_${entitiesName}${oldDateLabel}` === currentFileName || currentEmpty || !isDefaultNameChanged) {
+        const newFileName = `${defaultFileName}_${entity}${newDateLabel}`;
         this.setState((prevState) => ({
           options: prevState.options.set('file_name', newFileName)
         }));
@@ -110,7 +127,7 @@ class Exporter extends Component {
     } else if (typeof newEntity !== 'undefined') {
       const oldDate = query.get('from', null);
       const dateLabel = oldDate !== null ? `_${moment(oldDate).format(apiDateFormat)}` : '';
-      if (`${defaultFileName}_${entity}${dateLabel}` === correntFileName || currentEmpty || !isDefaultNameChnaged) {
+      if (`${defaultFileName}_${entity}${dateLabel}` === currentFileName || currentEmpty || !isDefaultNameChanged) {
         const newFileName = `${defaultFileName}_${newEntity}${dateLabel}`;
         this.setState((prevState) => ({
           options: prevState.options.set('file_name', newFileName)
@@ -122,11 +139,16 @@ class Exporter extends Component {
   render () {
     const { entityKey, entityOptions, exportLabel } = this.props;
     const { query, options, entity, progress } = this.state;
-    const entitySeletOptions = entityOptions.map(entityKey => ({
+    const entitySelectOptions = entityOptions.map(entityKey => ({
       value: entityKey,
       label: sentenceCase(getConfig(['systemItems', entityKey, 'itemName'], entityKey)),
     }));
-    const fromValue = moment(query.get('from', null));
+    const exportVersion = getConfig(['env', 'exportVersion'], '');
+    const fileNameSuffix = (exportVersion === '') ? '.csv' : `_${exportVersion}.csv`;
+    const fromToValue = Immutable.Map({
+      from: moment(query.get('from', null)).isValid() ? moment(query.get('from', null)) : '',
+      to: moment(query.get('to', null)).isValid() ? moment(query.get('to', null)) : '',
+    });
     return (
       <Form horizontal>
         { entityKey === '' && (
@@ -138,7 +160,7 @@ class Exporter extends Component {
               <Field
                 fieldType="select"
                 onChange={this.onChangeEntity}
-                options={entitySeletOptions}
+                options={entitySelectOptions}
                 value={entity}
                 placeholder="Select entity to export...."
                 clearable={false}
@@ -148,16 +170,16 @@ class Exporter extends Component {
         )}
         <FormGroup>
           <Col componentClass={ControlLabel} sm={3} lg={2}>
-            From
+            Revision date 
           </Col>
           <Col sm={8} lg={9}>
             <Field
-              fieldType="date"
-              onChange={this.onChangeFrom}
-              value={fromValue}
-              isClearable={true}
-              showYearDropdown={true}
-              placeholderText="Select Date..."
+              fieldType="range"
+              onChange={this.onChangeRange}
+              value={fromToValue}
+              inputProps={{fieldType: 'datetime', isClearable: true}}
+              inputFromProps={{selectsStart: true, endDate:'@valueTo@'}}
+              inputToProps={{selectsEnd: true, startDate: '@valueFrom@', endDate: '@valueTo@', minDate: '@valueFrom@'}}
             />
           </Col>
         </FormGroup>
@@ -169,7 +191,7 @@ class Exporter extends Component {
             <Field
               onChange={this.onChangeFileName}
               value={options.get('file_name', '')}
-              suffix=".csv"
+              suffix={fileNameSuffix}
             />
           </Col>
         </FormGroup>

@@ -6,39 +6,36 @@ class Payout extends \Payrexx\Models\Request\Payout
 {
 
     /** @var string */
-    protected $object = '';
+    protected string $object = '';
 
     /** @var int */
-    protected $amount = 0;
+    protected int $amount = 0;
 
-    /** @var int */
-    protected $totalFees = 0;
+    /** @var float */
+    protected float $totalFees = 0;
 
-    /** @var string */
-    protected $currency = '';
+    /** @var ?string */
+    protected ?string $date = '';
 
-    /** @var string */
-    protected $date = '';
+    /** @var ?string */
+    protected ?string $statement = '';
 
-    /** @var string */
-    protected $statement = '';
+    /** @var ?string */
+    protected ?string $status = '';
 
-    /** @var string */
-    protected $status = '';
+    /** @var ?array */
+    protected ?array $destination = [];
 
-    /** @var array */
-    protected $destination = [];
+    /** @var ?array */
+    protected ?array $transfers = [];
 
-    /** @var array */
-    protected $transfers = [];
-
-    /** @var array */
-    protected $merchant = [];
+    /** @var ?array */
+    protected ?array $merchant = [];
 
     /**
      * @return string
      */
-    public function getObject()
+    public function getObject(): string
     {
         return $this->object;
     }
@@ -46,135 +43,103 @@ class Payout extends \Payrexx\Models\Request\Payout
     /**
      * @param string $object
      */
-    public function setObject($object)
+    public function setObject(string $object): void
     {
         $this->object = $object;
     }
 
     /**
-     * @return int
+     * @return float
      */
-    public function getAmount()
-    {
-        return $this->amount;
-    }
-
-    /**
-     * @param int $amount
-     */
-    public function setAmount($amount)
-    {
-        $this->amount = $amount;
-    }
-
-    /**
-     * @return int
-     */
-    public function getTotalFees()
+    public function getTotalFees(): float
     {
         return $this->totalFees;
     }
 
     /**
-     * @param int $totalFees
+     * @param float $totalFees
      */
-    public function setTotalFees($totalFees)
+    public function setTotalFees(float $totalFees): void
     {
         $this->totalFees = $totalFees;
     }
 
     /**
-     * @return string
+     * @return ?string
      */
-    public function getCurrency()
-    {
-        return $this->currency;
-    }
-
-    /**
-     * @param string $currency
-     */
-    public function setCurrency($currency)
-    {
-        $this->currency = $currency;
-    }
-
-    /**
-     * @return string
-     */
-    public function getDate()
+    public function getDate(): ?string
     {
         return $this->date;
     }
 
     /**
-     * @param string $date
+     * @param ?string $date
      */
-    public function setDate($date)
+    public function setDate(?string $date): void
     {
         $this->date = $date;
     }
 
     /**
-     * @return string
+     * @return ?string
      */
-    public function getStatement()
+    public function getStatement(): ?string
     {
         return $this->statement;
     }
 
     /**
-     * @param string $statement
+     * @param ?string $statement
      */
-    public function setStatement($statement)
+    public function setStatement(?string $statement): void
     {
         $this->statement = $statement;
     }
 
     /**
-     * @return string
+     * @return ?string
      */
-    public function getStatus()
+    public function getStatus(): ?string
     {
         return $this->status;
     }
 
     /**
-     * @param string $status
+     * @param ?string $status
      */
-    public function setStatus($status)
+    public function setStatus(?string $status): void
     {
         $this->status = $status;
     }
 
     /**
-     * @return array
+     * @return ?array
      */
-    public function getDestination()
+    public function getDestination(): ?array
     {
         return $this->destination;
     }
 
     /**
-     * @param array $destination
+     * @param ?array $destination
      */
-    public function setDestination($destination)
+    public function setDestination(?array $destination): void
     {
         $this->destination = $destination;
     }
 
     /**
-     * @return array
+     * @return ?array
      */
-    public function getTransfers()
+    public function getTransfers(): ?array
     {
         return $this->transfers;
     }
 
     /**
-     * @param array $transfers
+     * @param ?array $transfers
      */
-    public function setTransfers($transfers)
+    public function setTransfers(?array $transfers): void
     {
         $this->transfers = $transfers;
     }
@@ -182,15 +147,15 @@ class Payout extends \Payrexx\Models\Request\Payout
     /**
      * @return array
      */
-    public function getMerchant()
+    public function getMerchant(): array
     {
         return $this->merchant;
     }
 
     /**
-     * @param array $merchant
+     * @param ?array $merchant
      */
-    public function setMerchant($merchant)
+    public function setMerchant(?array $merchant): void
     {
         $this->merchant = $merchant;
     }

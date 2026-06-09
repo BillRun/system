@@ -13,6 +13,7 @@
  * @since    5.0
  */
 abstract class Billrun_Account extends Billrun_Base {
+	use Billrun_Traits_ConditionsCheck;
 
 	/**
 	 * Type of object
@@ -201,7 +202,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 		$result = $this->load([$accountsQuery]);
 		if(empty($result)) {
-			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($accountsQuery, 1), Zend_Log::DEBUG);
+			Billrun_Factory::log('Failed to load account data for params: ' . print_r($accountsQuery, 1), Zend_Log::DEBUG);
 			return $result;
 		}
 		return $result;
@@ -304,16 +305,23 @@ abstract class Billrun_Account extends Billrun_Base {
 	/**
 	 * method to update account collection status
 	 */
-	public function updateCrmInCollection($updateCollectionStateChanged) {
+	public function updateCrmInCollection($updateCollectionStateChanged, $process) {
+		Billrun_Factory::log()->log("Updating crm with collection information of process: " . $process['label'], Zend_Log::DEBUG);
 		$collectionSteps = Billrun_Factory::collectionSteps();
 		$result = array('in_collection' => array(), 'out_of_collection' => array());
 
 		if (!empty($updateCollectionStateChanged['in_collection'])) {
+			Billrun_Factory::log()->log("Updating crm with accounts that are in collection", Zend_Log::DEBUG);
 			foreach ($updateCollectionStateChanged['in_collection'] as $aid => $item) {
-				$params = array('aid' => $aid, 'time' => date('c'));
+				Billrun_Factory::log()->log("Creating query for account " . $aid, Zend_Log::DEBUG);
+				$params = array('aid' => $aid, 'time' => date(Billrun_Base::base_datetimeformat));
+				Billrun_Factory::log()->log("Loading account " . $aid, Zend_Log::DEBUG);
 				if ($this->loadAccountForQuery($params)) {
-					$new_values = array('in_collection' => true, 'in_collection_from' => new MongoDate());
-					$collectionSteps->createCollectionSteps($aid);
+					Billrun_Factory::log()->log("Creating account " . $aid . " new collection values", Zend_Log::DEBUG);
+					$new_values = array('in_collection' => true, 'in_collection_from' => new Mongodloid_Date());
+					Billrun_Factory::log()->log("Creating collection steps for account " . $aid, Zend_Log::DEBUG);
+					$collectionSteps->createCollectionSteps($aid, $process);
+					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew($new_values)) {
 						$result['in_collection'][] = $aid;
 					} else {
@@ -324,11 +332,27 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 
 		if (!empty($updateCollectionStateChanged['out_of_collection'])) {
+			Billrun_Factory::log()->log("Updating crm with accounts that are out of collection", Zend_Log::DEBUG);
 			foreach ($updateCollectionStateChanged['out_of_collection'] as $aid => $item) {
-				$params = array('aid' => $aid, 'time' => date('c'));
+				Billrun_Factory::log()->log("Creating query for account " . $aid, Zend_Log::DEBUG);
+				$params = array('aid' => $aid, 'time' => date(Billrun_Base::base_datetimeformat));
+				Billrun_Factory::log()->log("Loading account " . $aid, Zend_Log::DEBUG);
 				if ($this->loadAccountForQuery($params)) {
 					$remove_values = array('in_collection', 'in_collection_from');
-					$collectionSteps->removeCollectionSteps($aid);
+					Billrun_Factory::log("Removing collection steps for account " . $aid, Zend_Log::DEBUG);
+					if (!$collectionSteps->removeCollectionSteps($aid)) {
+						Billrun_Factory::log('Retrying to remove aid ' . $aid . ' from collection steps.', Zend_Log::NOTICE);
+						if ($collectionSteps->removeCollectionSteps($aid)) {
+							Billrun_Factory::log("Successfully removed from collection steps on retry for account " . $aid, Zend_Log::INFO);
+						} else {
+							Billrun_Factory::log(
+								"Could not remove collection steps for account " . $aid .
+									". Proceeding with the update of the 'in_collection' status regardless.",
+								Zend_Log::ERR
+							);
+						}
+					} 
+					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew(array(), $remove_values)) {
 						$result['out_of_collection'][] = $aid;
 					} else {
@@ -337,8 +361,9 @@ abstract class Billrun_Account extends Billrun_Base {
 				}
 			}
 		}
-		$collectionSteps->runCollectionStateChange($result['in_collection'], true);
-		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false);
+		Billrun_Factory::log()->log("Running 'collection state changed', for both in_collection and out_of_collection states", Zend_Log::DEBUG);
+		$collectionSteps->runCollectionStateChange($result['in_collection'], true, $process);
+		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false, $process);
 		return $result;
 	}
 	
@@ -384,20 +409,12 @@ abstract class Billrun_Account extends Billrun_Base {
 	public function getData() {
 		return $this->data;
 	}
-	
-	/**
-	 * Function that returns the relevant aids for collection.
-	 * @param array $aids
-	 * @param bollean $is_aids_query
-	 * @param array $rejection_conditions
-	 * @return array of aids
-	 */
-	public static function getBalanceAccountQuery($aids, $is_aids_query, $rejection_conditions) {
-		$rejection_query = [];
-		foreach ($rejection_conditions as $condition) {
-			$rejection_query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];
+
+	public static function convertConditionsToAccountQuery($conditions){
+		$query = [];
+		foreach ($conditions as $condition) {
+			$query[$condition['field']]['$' . $condition['op']] = $condition['value'];
 		}
-		$account_query = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
-		return array_merge($rejection_query, $account_query);
+		return $query;
 	}
 }

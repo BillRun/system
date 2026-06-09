@@ -54,12 +54,12 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot update by parser lines " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
+		if ($this->getType() == 'transactions_response') {
+			$this->updateLeftPaymentsByFileStatus();
+		}
 		if ($this->logDB() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action" . $this->filePath, Zend_Log::WARN);
 			return FALSE;
-		}
-		if ($this->getType() == 'transactions_response') {
-			$this->updateLeftPaymentsByFileStatus();
 		}
 
 		$this->removefromWorkspace($this->getFileStamp());
@@ -77,13 +77,13 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
 		$row['log_stamp'] = $this->getFileStamp();
-		$row['process_time'] = new MongoDate();
+		$row['process_time'] = new Mongodloid_Date();
 		return $row;
 	}
 	
 	protected function logDB() {
 
-		$log = Billrun_Factory::db()->logCollection();
+		$log = Billrun_Factory::db()->logCollection()->setReadPreference('RP_PRIMARY');
 
 		$header = array();
 		if (isset($this->data['header'])) {
@@ -108,13 +108,13 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 				$resource->set('trailer', $trailer, true);
 			}
 			$resource->set('process_hostname', Billrun_Util::getHostName(), true);
-			$resource->set('process_time', new MongoDate(), true);
+			$resource->set('process_time', new Mongodloid_Date(), true);
 			return $log->save($resource);
 		} else {
 			// backward compatibility
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
 			$entity = new Mongodloid_Entity($trailer);
-			if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
+			if (!$log->query(['stamp' => $entity->get('stamp')])->cursor()->limit(1)->current()->isEmpty()) {
 				Billrun_Factory::log()->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				return FALSE;
 			}

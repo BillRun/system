@@ -2,11 +2,9 @@
 
 namespace PhpOffice\PhpSpreadsheet\Reader;
 
-use PhpOffice\PhpSpreadsheet\Exception as PhpSpreadsheetException;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 use PhpOffice\PhpSpreadsheet\Reader\Security\XmlScanner;
 use PhpOffice\PhpSpreadsheet\Shared\File;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 abstract class BaseReader implements IReader
 {
@@ -40,7 +38,7 @@ abstract class BaseReader implements IReader
      * Restrict which sheets should be loaded?
      * This property holds an array of worksheet names to be loaded. If null, then all worksheets will be loaded.
      *
-     * @var null|string[]
+     * @var array of string
      */
     protected $loadSheetsOnly;
 
@@ -68,9 +66,9 @@ abstract class BaseReader implements IReader
         return $this->readDataOnly;
     }
 
-    public function setReadDataOnly($readCellValuesOnly)
+    public function setReadDataOnly($pValue)
     {
-        $this->readDataOnly = (bool) $readCellValuesOnly;
+        $this->readDataOnly = (bool) $pValue;
 
         return $this;
     }
@@ -80,9 +78,9 @@ abstract class BaseReader implements IReader
         return $this->readEmptyCells;
     }
 
-    public function setReadEmptyCells($readEmptyCells)
+    public function setReadEmptyCells($pValue)
     {
-        $this->readEmptyCells = (bool) $readEmptyCells;
+        $this->readEmptyCells = (bool) $pValue;
 
         return $this;
     }
@@ -92,9 +90,9 @@ abstract class BaseReader implements IReader
         return $this->includeCharts;
     }
 
-    public function setIncludeCharts($includeCharts)
+    public function setIncludeCharts($pValue)
     {
-        $this->includeCharts = (bool) $includeCharts;
+        $this->includeCharts = (bool) $pValue;
 
         return $this;
     }
@@ -104,13 +102,13 @@ abstract class BaseReader implements IReader
         return $this->loadSheetsOnly;
     }
 
-    public function setLoadSheetsOnly($sheetList)
+    public function setLoadSheetsOnly($value)
     {
-        if ($sheetList === null) {
+        if ($value === null) {
             return $this->setLoadAllSheets();
         }
 
-        $this->loadSheetsOnly = is_array($sheetList) ? $sheetList : [$sheetList];
+        $this->loadSheetsOnly = is_array($value) ? $value : [$value];
 
         return $this;
     }
@@ -127,9 +125,9 @@ abstract class BaseReader implements IReader
         return $this->readFilter;
     }
 
-    public function setReadFilter(IReadFilter $readFilter)
+    public function setReadFilter(IReadFilter $pValue)
     {
-        $this->readFilter = $readFilter;
+        $this->readFilter = $pValue;
 
         return $this;
     }
@@ -139,52 +137,25 @@ abstract class BaseReader implements IReader
         return $this->securityScanner;
     }
 
-    protected function processFlags(int $flags): void
-    {
-        if (((bool) ($flags & self::LOAD_WITH_CHARTS)) === true) {
-            $this->setIncludeCharts(true);
-        }
-    }
-
-    protected function loadSpreadsheetFromFile(string $filename): Spreadsheet
-    {
-        throw new PhpSpreadsheetException('Reader classes must implement their own loadSpreadsheetFromFile() method');
-    }
-
-    /**
-     * Loads Spreadsheet from file.
-     *
-     * @param int $flags the optional second parameter flags may be used to identify specific elements
-     *                       that should be loaded, but which won't be loaded by default, using these values:
-     *                            IReader::LOAD_WITH_CHARTS - Include any charts that are defined in the loaded file
-     */
-    public function load(string $filename, int $flags = 0): Spreadsheet
-    {
-        $this->processFlags($flags);
-
-        try {
-            return $this->loadSpreadsheetFromFile($filename);
-        } catch (ReaderException $e) {
-            throw $e;
-        }
-    }
-
     /**
      * Open file for reading.
+     *
+     * @param string $pFilename
      */
-    protected function openFile(string $filename): void
+    protected function openFile($pFilename): void
     {
-        $fileHandle = false;
-        if ($filename) {
-            File::assertFile($filename);
+        if ($pFilename) {
+            File::assertFile($pFilename);
 
             // Open file
-            $fileHandle = fopen($filename, 'rb');
+            $fileHandle = fopen($pFilename, 'rb');
+        } else {
+            $fileHandle = false;
         }
-        if ($fileHandle === false) {
-            throw new ReaderException('Could not open file ' . $filename . ' for reading.');
+        if ($fileHandle !== false) {
+            $this->fileHandle = $fileHandle;
+        } else {
+            throw new ReaderException('Could not open file ' . $pFilename . ' for reading.');
         }
-
-        $this->fileHandle = $fileHandle;
     }
 }

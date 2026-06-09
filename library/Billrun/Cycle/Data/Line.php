@@ -19,7 +19,6 @@ abstract class Billrun_Cycle_Data_Line {
 
 	public function __construct($options) {
 		$this->constructOptions($options);
-		;
 	}
 
 	public function getBillableLines() {

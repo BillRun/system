@@ -24,7 +24,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $logo = null;
 	protected $confirmDate;
 	protected $sendEmail = true;
+	protected $sendToRremoteServer = false;
 	protected $filtration = null;
+	protected $invoicing_days = [];
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -33,6 +35,20 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		if (isset($options['send_email'])) {
 			$this->sendEmail = $options['send_email'];
+		}
+		if (isset($options['send_to_remote_server'])) {
+			$this->sendToRremoteServer = $options['send_to_remote_server'];
+		}
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$this->invoicing_days = !empty($options['invoicing_days']) ? [$options['invoicing_days']] : null;
+		}
+		if (isset($options['page'])) {
+			$this->page = (int) $options['page'];
+		}
+		if (isset($options['size'])) {
+			$this->setLimit($options['size']);
+		} else {
+			$this->setLimit(-1);
 		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
@@ -44,12 +60,24 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$invoiceQuery = !empty($this->invoices) ? array('$in' => $this->invoices) : array('$exists' => 1);
 		$query = array(
 			'billrun_key' => (string) $this->stamp,
-			'billed' => array('$ne' => 1),
 			'invoice_id' => $invoiceQuery,
 			'allow_bill' => ['$ne' => 0],
 		);
-		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
+		if (!empty($this->invoicing_days)) {
+			$query['invoicing_day'] = array('$in' => $this->invoicing_days);
+		}
 
+		$invoicesLimit = (int) $this->getLimit();
+		if ($invoicesLimit != -1) {
+			$page = (int) $this->page;
+			$invoicesCursor = $this->billrunColl->query($query)->cursor()->immortal()
+				->sort(array('aid' => 1))
+				->limit($invoicesLimit)->skip($invoicesLimit * $page);
+		} else {
+			$query['billed'] = array('$ne' => 1);
+			$invoicesCursor = $this->billrunColl->query($query)->cursor()->immortal()->sort(array('aid' => 1));
+		}
+		$invoices = $invoicesCursor->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
@@ -62,6 +90,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$result = array('alreadyRunning' => false, 'releasingProblem'=> false);//help in case it's a onetimeinvoice generate
 		$invoices = array();
 		foreach ($this->data as $invoice) {
+			if (!empty($invoice['billed'])) {
+				Billrun_Factory::log("Generator for aid " . $invoice['aid'] . " billrun " . $invoice['billrun_key'] .
+					" invoice_id " . $invoice['invoice_id'] . " was already confirmed", Zend_Log::INFO);
+				continue;
+			}
 			$this->filtration = $invoice['aid'];
 			if (!$this->lock()) {
 				Billrun_Factory::log("Generator for aid " . $invoice['aid'] . " is already running", Zend_Log::NOTICE);
@@ -85,8 +118,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::dispatcher()->trigger('afterInvoicesConfirmation', array($invoices, (string) $this->stamp));
 		if (count($invoicesIds) > 0) {
 			$this->handleSendInvoicesByMail($invoicesIds);
+			$this->handleSendInvoicesRemoteServer($invoices);
 		} else {
-			Billrun_Factory::log()->log('There are no invoices to send by email. No mail was sent.', Zend_Log::INFO);
+			Billrun_Factory::log()->log('There are no invoices to send by email \ move to remote server. No mail was sent \ moved.', Zend_Log::INFO);
 		}
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
@@ -120,28 +154,40 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'BIC' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bic'],null),
 				'IBAN' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['iban'],null),
 				'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'],null),
-				'urt' => new MongoDate(),
+				'urt' => new Mongodloid_Date(),
 				'invoice_date' => $invoice['invoice_date'],
 				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
-                                'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
+        'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
+				'paid' => '0',
+				'total_paid' => 0
 			);
+		if (!empty($invoice['note'])) {
+			$bill['note'] = $invoice['note'];
+		}
+		if (!empty($invoice['invoicing_day'])) {
+			$bill['invoicing_day'] = $invoice['invoicing_day'];
+		}
+		if (!empty($invoice['uf'])) {
+			$bill['uf'] = $invoice['uf'];
+		}
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];
 		}
 		else {
-			$bill['total_paid'] = 0;
 			$bill['left_to_pay'] = $bill['due'];
 			$bill['vatable_left_to_pay'] = $invoice['totals']['before_vat'];
-			$bill['paid'] = '0';
 		}
 		if(!empty($invoice['attributes']['suspend_debit'])) {
 			$bill['suspend_debit'] = $invoice['attributes']['suspend_debit'];
+		}
+		if (!empty($invoice['adjusted_from_invoices'])) {
+			$this->handleAdjustments($bill, $invoice['adjusted_from_invoices']);
 		}
 		
 		$account = Billrun_Factory::account();
 		$foreignData = $this->getForeignFields(array('account' => $account->loadAccountForQuery(['aid' => $invoice['aid']])));
 		$bill = array_merge_recursive($bill, $foreignData);
-		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
+		Billrun_Factory::log('Creating bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
 		$invoice['confirmation_time'] = new MongoDate($this->confirmDate);
 		$should_be_confirmed = true;
 		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice, &$should_be_confirmed));
@@ -149,8 +195,18 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			return false;
 		}
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
-		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
-		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill));
+		Billrun_Factory::log("Checking if bills links should be switched for account " . $invoice['aid'], Zend_Log::DEBUG);
+		$switch_links = Billrun_Bill::shouldSwitchBillsLinks($invoice['aid']);
+		if ($switch_links) {
+			Billrun_Factory::log("System should switch links for aid " . $invoice['aid'] . ". Detaching pending payments for account " . $invoice['aid'], Zend_Log::DEBUG);
+			Billrun_Bill_Payment::detachPendingPayments($invoice['aid']);
+		} else {
+			Billrun_Factory::log("System should not switch links for aid " . $invoice['aid'], Zend_Log::DEBUG);
+		}
+		Billrun_Factory::log("Paying unpaid bills by over paying bills for aid " . $invoice['aid'], Zend_Log::DEBUG);
+		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid'], true, $switch_links);
+		Billrun_Factory::log("Finished paying unpaid bills by over paying bills for aid " . $invoice['aid'], Zend_Log::DEBUG);		
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill, $invoice));
 		return true;
  	}
 	
@@ -159,7 +215,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $data
 	 */
 	protected function updateBillrunONBilled($data) {
-		$confirmation_time = Billrun_Util::getIn($data, 'confirmation_time', new MongoDate());
+		$confirmation_time = Billrun_Util::getIn($data, 'confirmation_time', new Mongodloid_Date());
 		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1, 'confirmation_time' => $confirmation_time)));
 		$data['billed'] = 1;
 		$data['confirmation_time'] = $confirmation_time;
@@ -251,7 +307,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		);
 	}
 	
-	
+
 	public function handleSendInvoicesByMail($invoices) {
 		if (!$this->sendEmail) {
 			return;
@@ -265,11 +321,65 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::emailSenderManager($options)->notify();
 	}
 	
+	public function handleSendInvoicesRemoteServer($invoices) {
+		if (!$this->sendToRremoteServer) {
+			return;
+		}
+		$connections = $this->getActiveInvoicesRemoteServerSenders($invoices);
+		foreach ($connections as $connection) {
+			$sender = $connection['sender'];
+			if ($sender) {
+				$files = $connection['files'];
+				if (!$sender->send($files)) {
+					Billrun_Factory::log()->log("Move to sender {$connection['name']} - failed!", Zend_Log::NOTICE);
+				} else {
+					Billrun_Factory::log()->log("Move to sender {$connection['name']} - done", Zend_Log::INFO);
+				}
+			} else {
+					Billrun_Factory::log()->log("Cannot get sender {$connection['name']}, files will not be moved.", Zend_Log::ERR);
+			}
+		}
+		Billrun_Factory::log()->log("Billrun_Exporter::move - done", Zend_Log::INFO);
+	}
+	
+	protected function getActiveInvoicesRemoteServerSenders($invoices) {
+		$output = [];
+		$invoices_senders = Billrun_Factory::config()->getConfigValue('invoice_export.senders', []);
+		foreach ($invoices_senders as $invoices_sender) {
+			$is_active = Billrun_Util::getIn($invoices_sender, 'active', false);
+			if (!$is_active) {
+				continue;
+			}
+			$conditions = Billrun_Util::getIn($invoices_sender, 'conditions', []);
+			foreach ($invoices as $invoice) {
+				if ($this->isConditionsMeet($invoice, $conditions)) {
+					$connections = Billrun_Util::getIn($invoices_sender, 'connections', []);
+					foreach ($connections as $connection) {
+						$sender_hash = md5($connection['host'].$connection['user'].$connection['password'].$connection['remote_directory']);
+						if (!array_key_exists($sender_hash, $output)) {
+							$sender = Billrun_Sender::getInstance($connection);
+							$output[$sender_hash]['name'] = $connection['name'];
+							if ($sender) {
+								$output[$sender_hash]['sender'] = $sender;
+							} else {
+								$output[$sender_hash]['sender'] = null;
+							}
+						} else if (is_null($output[$sender_hash])) {
+							continue;
+						}
+						$output[$sender_hash]['files'][] = $invoice['invoice_file'];
+					}
+				}
+			}
+		}
+		return $output;
+	}
+	
 	protected function updateDueDate($invoice) {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'confirm_date' && $this->isConditionsMeet($invoice, $option['conditions'])) {
-				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
+				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
 			}
 		}
 		return $invoice['due_date'];
@@ -282,10 +392,10 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		// go through all config options and try to match the relevant
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'confirm_date' && in_array($invoiceType, $option['invoice_type'])) {				
-				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
+				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
 			}
 			if (in_array($invoiceType, $option['invoice_type']) && !empty($invoice[$option['anchor_field']])) {	
-				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $invoice[$option['anchor_field']]->sec));
+				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $invoice[$option['anchor_field']]->sec));
 			}
 		}
 		
@@ -296,11 +406,51 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		
 		// else - get config default value or temporerily use 'invoice_date' with offset
 		Billrun_Factory::log()->log('Failed to match charge date for invoice:' . $invoice['invoice_id'] . ', using default configuration', Zend_Log::NOTICE);
-		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.charge_not_before', '+0 seconds'), $this->confirmDate));
+		return new Mongodloid_Date(strtotime(Billrun_Factory::config()->getConfigValue('billrun.charge_not_before', '+0 seconds'), $this->confirmDate));
 	}
 	
 	protected function getForeignFieldsEntity () {
 		return 'bills';
+	}
+	
+	protected function handleAdjustments(&$bill, $adj) {
+		Billrun_Factory::log("Processing and updating adjustments in bills collection, for invoice " . $bill['invoice_id'], Zend_Log::DEBUG);
+		$invoices_to_adjust = [];
+		try {
+			foreach ($adj as $adjustment) {
+				$amount = $invoice_to_adjust = null;
+				$amount = $adjustment['amount'];
+				//Pulling original bill to adjust
+				if (!isset($invoices_to_adjust[$adjustment['invoice_id']])) {
+					$invoices_to_adjust[$adjustment['invoice_id']] = Billrun_Bill_Invoice::getInstanceByid($adjustment['invoice_id']);
+				} else {
+					$invoices_to_adjust[$adjustment['invoice_id']] = Billrun_Bill_Invoice::getInstanceByData($invoices_to_adjust[$adjustment['invoice_id']]->getRawData());
+				}
+				$invoice_to_adjust = $invoices_to_adjust[$adjustment['invoice_id']];
+				Billrun_Factory::log("Adding original invoice " . $invoice_to_adjust->getId() . " to new immediate invoice bill " . $bill['invoice_id'] . " adjusted_from_invoices list", Zend_Log::DEBUG);
+				$new_adj_array = ["invoice_id" => $invoice_to_adjust->getId(), "amount" => $amount];
+				if (isset($bill['adjusted_from_invoices'])) {
+					$bill['adjusted_from_invoices'][] = $new_adj_array;
+				} else {
+					$bill['adjusted_from_invoices'] = [$new_adj_array];
+				}
+				Billrun_Factory::log("Adding new immediate invoice " . $bill['invoice_id'] . " to original invoice " . $invoice_to_adjust->getId() . " adjusted_by_invoices list", Zend_Log::DEBUG);
+				$invoice_to_adjust->addAdjustmentToOriginalInvoice(["invoice_id" => $bill['invoice_id'], "amount" => $amount]);
+				Billrun_Factory::log("Finished linking adjustment between invoice " . $bill['invoice_id'] . " and " . $invoice_to_adjust->getId() . ". Moving on", Zend_Log::DEBUG);
+			}
+			foreach ($invoices_to_adjust as $invoice_id => $adjusted_invoice_object) {
+				Billrun_Factory::log("Trying to save adjusted invoice " . $invoice_id, Zend_Log::DEBUG);
+				$res = $adjusted_invoice_object->save();
+				Billrun_Factory::log("Successfully saved original invoice " . $adjusted_invoice_object->getId(), Zend_Log::DEBUG);
+				$saved_invoice_ids[$adjusted_invoice_object->getId()] = true;
+			}
+			Billrun_Factory::log("Successfully attached all invoice " . $bill['invoice_id'] . " original invoices adjustments", Zend_Log::DEBUG);
+		} catch (Exception $ex) {
+			Billrun_Factory::log('Something went wrong when trying to handle adjustments. Code - ' . $ex->getCode() . ", message - " . $ex->getMessage() . ". Already saved invoices " . implode(",", array_keys($saved_invoice_ids)), Zend_Log::ALERT);
+			return false;
+		}
+		Billrun_Factory::log("Successfully saved updated original invoices " . implode(",", array_keys($saved_invoice_ids)), Zend_Log::DEBUG);
+		return true;
 	}
 
 }

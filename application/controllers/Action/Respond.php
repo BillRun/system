@@ -26,19 +26,19 @@ class RespondAction extends Action_Base {
 			'export-path' => true
 		);
 
-		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
+		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
 
-		$this->_controller->addOutput("Loading Responder");
+		$this->getController()->addOutput("Loading Responder");
 		$responder = Billrun_Responder::getInstance($options);
-		$this->_controller->addOutput("Responder loaded");
+		$this->getController()->addOutput("Responder loaded");
 
 		if ($responder) {
 			$paths = $responder->respond($options);
-			$this->_controller->addOutput("Responder responded on " . count($paths) . " files.");
+			$this->getController()->addOutput("Responder responded on " . count($paths) . " files.");
 		} else {
-			$this->_controller->addOutput("Responder cannot be loaded");
+			$this->getController()->addOutput("Responder cannot be loaded");
 		}
 	}
 

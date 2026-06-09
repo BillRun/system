@@ -109,6 +109,8 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $htmlForm;
+
+	protected $requestHeaders = array('Accept-encoding' => 'deflate');
 	
 	protected function __construct($instanceName =  null) {
 
@@ -266,6 +268,10 @@ abstract class Billrun_PaymentGateway {
 			Billrun_Factory::log("Redirecting to: " .  $this->billrunName, Zend_Log::DEBUG);
 			return array('content'=> $this->htmlForm, 'content_type' => 'html');
 		}
+	}
+	
+	public function adjustOkPage($okPage) {
+		return $okPage;
 	}
 	
 	 /**
@@ -430,8 +436,8 @@ abstract class Billrun_PaymentGateway {
 	 * @return array - represents the request
 	 */
 	abstract protected function buildSinglePaymentArray($params, $options);
-
-		/**
+	
+	/**
 	 * Creates customer profile on the gateway for recurring billing charge
 	 * and save it for the account
 	 * 
@@ -473,7 +479,7 @@ abstract class Billrun_PaymentGateway {
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			Billrun_Factory::log("Payment gateway token request: " . print_R($postArray, 1), Zend_Log::DEBUG);
-			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, $this->getTokenRequestType(), $this->requestHeaders, null, 0);
 			Billrun_Factory::log("Payment gateway token response: " . print_R($result, 1), Zend_Log::DEBUG);
 			if ($this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage))) {
 				$response = $this->getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $options, $maxTries - 1);
@@ -483,6 +489,10 @@ abstract class Billrun_PaymentGateway {
 		}
 		
 		return $response;
+	}
+	
+	protected function getTokenRequestType() {
+		return Zend_Http_Client::POST;
 	}
 
 	/**
@@ -503,7 +513,7 @@ abstract class Billrun_PaymentGateway {
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
 			Billrun_Factory::log("Requesting transaction details for txId " . $txId, Zend_Log::DEBUG);
 			Billrun_Factory::log("Payment gateway transaction details request: " . print_R($postString, 1), Zend_Log::DEBUG);
-			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, $this->requestHeaders, null, 0);
 			Billrun_Factory::log("Payment gateway transaction details response: " . print_R($result, 1), Zend_Log::DEBUG);
 			if (($retParams = $this->getResponseDetails($result)) === FALSE) {
 				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
@@ -524,7 +534,7 @@ abstract class Billrun_PaymentGateway {
 			$this->savePaymentGateway();
 		}
 		
-		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date']);
+		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date'], 'params' => $this->saveDetails);
 	}
 
 	/**
@@ -541,10 +551,7 @@ abstract class Billrun_PaymentGateway {
 		);
 		$update = array();
 		$setQuery = $this->buildSetQuery();
-		$generateTokenTime = date("Y-m-d H:i:s", $setQuery['active']['generate_token_time']->sec);
-		$generateTokenTimeArray = explode(' ', $generateTokenTime);
-		$generateTokenTimeISOFormat = $generateTokenTimeArray[0] . 'T' . $generateTokenTimeArray[1] . 'Z';
-		$setQuery['active']['generate_token_time'] = $generateTokenTimeISOFormat;
+		$setQuery['active']['generate_token_time'] = $setQuery['active']['generate_token_time']->toDateTime()->format('c');
 		$update['payment_gateway'] = $setQuery;
 		$update['from'] = $time;
 		if (!$this->validateStructureForCharge($update['payment_gateway']['active'])) {
@@ -554,7 +561,7 @@ abstract class Billrun_PaymentGateway {
 		try {
 			$this->account->permanentChange($query, $update);
 		} catch (Exception $ex) {
-			Billrun_Factory::log("Updating payment gateway for account number " . $aid . " has failed", Zend_Log::ALERT);
+			Billrun_Factory::log("Updating payment gateway for account number " . $aid . " has failed. Exception: {$ex->getCode()}: {$ex->getMessage()}", Zend_Log::ALERT);
 			return false;
 		}	
 		Billrun_Factory::log($update['payment_gateway']['active']['name'] . " was defined successfully for " . $aid, Zend_Log::INFO);
@@ -659,7 +666,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	public function getGatewayCredentials() {
 		$gatewayDetails = $this->getGateway();
-		return $gatewayDetails['params'];
+		return $gatewayDetails['params'] ?? null;
 	}
 	
 	protected function getGateway(){
@@ -903,6 +910,13 @@ abstract class Billrun_PaymentGateway {
 	
 	public function queryTransaction($txId, $params) {
 		return true;
+	}
+
+	/**
+	 * Returns relevant data for ok page response
+	 */
+	public function getTransactionDetails($details) {
+		return array('credit_card' => $details['creditCard'], 'expiration_date' => $details['expirationDate'], 'params' => $details['params'] ?? []);
 	}
 
 	/**

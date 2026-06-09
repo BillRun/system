@@ -108,6 +108,7 @@ class ImporterSetup extends Component {
       from: defaultFrom,
       to: defaultTo,
       price_plan: 'BASE',
+      price_service: 'BASE',
       pricing_method: 'tiered',
       price_from: 0,
       price_to: getConfig('productUnlimitedValue', ''),

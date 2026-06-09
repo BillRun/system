@@ -72,6 +72,8 @@ export default class ToggeledInput extends Component {
     switch (fieldType) {
       case 'date':
         return e;
+      case 'datetime':
+        return e;
       default:
         return e.target.value;
     }

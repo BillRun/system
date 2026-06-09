@@ -168,10 +168,10 @@ class ImportPricesListAction extends ApiAction {
 	protected function setDates($rateKey, $oldRate, $newRawData, $oldRawData) {
 		$newFromDate = new Zend_Date($this->rules[$rateKey]['from'], 'yyyy-MM-dd HH:mm:ss');
 		$oldToDate = clone $newFromDate;
-		$oldRawData['to'] = new MongoDate($oldToDate->subSecond(1)->getTimestamp());
+		$oldRawData['to'] = new Mongodloid_Date($oldToDate->subSecond(1)->getTimestamp());
 		$oldRate->setRawData($oldRawData);
 		unset($newRawData['_id']);
-		$newRawData['from'] = new MongoDate($newFromDate->getTimestamp());
+		$newRawData['from'] = new Mongodloid_Date($newFromDate->getTimestamp());
 	}
 
 	/**

@@ -40,9 +40,9 @@ class ExportController extends BillapiController {
 	 * @return string the render layout including the page (component)
 	 */
 	protected function render($tpl, array $parameters = null) {
-		$filename = !empty($this->params['options']['file_name']) ? $this->params['options']['file_name'] : 'export_' . date('Ymd');
+		$filename = !empty($this->params['request']['file_name']) ? json_decode($this->params['request']['file_name']) : 'export_' . date('Ymd');
 		if (isset($this->params['options']['delimiter'])) {
-			$this->getView()->delimiter = $this->params['options']['delimiter'];
+			$this->getView()->delimiter = $this->params['request']['delimiter'];
 		} else if (isset($this->settings['delimiter'])) {
 			$this->getView()->delimiter = $this->settings['delimiter'];
 		} else {

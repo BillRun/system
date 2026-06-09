@@ -1,9 +1,29 @@
 import Immutable from 'immutable';
 import moment from 'moment';
-import { escapeRegExp } from './Util';
+import isNumber from 'is-number';
+import {
+  escapeRegExp,
+  isValueOn,
+} from './Util';
+
+
+export const getAccountsInvoicesQuery = (aid) => {
+  return getEntitesQuery('bills', {
+    aid: 1,
+    amount: 1,
+    invoice_id: 1,
+    invoice_date: 1,
+    due_before_vat: 1,
+  }, { 
+    type: 'inv',
+    aid: parseFloat(aid),
+  }, {
+    invoice_id: 1
+  });
+}
 
 // TODO: fix to uniqueget (for now billAoi can't search by 'rates')
-export const searchProductsByKeyAndUsagetQuery = (usages, notKeys, plays = '') => {
+export const searchProductsByKeyAndUsagetQuery = (usages, notKeys = [], plays = '') => {
   const usagesToQuery = Array.isArray(usages) ? usages : [usages];
   const query = {
     key: {
@@ -35,7 +55,7 @@ export const searchProductsByKeyAndUsagetQuery = (usages, notKeys, plays = '') =
   formData.append('collection', 'rates');
   formData.append('size', 99999);
   formData.append('page', 0);
-  formData.append('project', JSON.stringify({ key: 1, name: 1 }));
+  formData.append('project', JSON.stringify({ key: 1, name: 1, description: 1 }));
   formData.append('query', JSON.stringify(query));
 
   return {
@@ -67,28 +87,50 @@ export const getPaymentGatewaysQuery = () => ({
   action: 'list',
 });
 
-export const getUserLoginQuery = (username, password) => {
+export const getUserLoginQuery = (username, password, protocol = 'Internal', provider = null) => {
   const formData = new FormData();
-  formData.append('username', username);
-  formData.append('password', password);
+  if (username) {
+    formData.append('username', username);
+  }
+  if (password) {
+    formData.append('password', password);
+  }
+  
+  const params = [{ protocol }];
+  if (provider) {
+    params.push({ provider });
+  }
+
   return ({
-    api: 'auth',
+    api: 'Auth',     
+    action: 'login', 
+    params,
     options: {
       method: 'POST',
-      body: formData,
+      body: formData, 
     },
   });
 };
 
-export const getUserLogoutQuery = () => ({
-  api: 'auth',
+export const getUserLogoutQuery = (protocol = 'Internal') => ({
+  api: 'Auth',
+  action: 'logout',
   params: [
-    { action: 'logout' },
+    { protocol },
   ],
 });
 
 export const getUserCheckLoginQuery = () => ({
-  api: 'auth',
+  api: 'Auth',
+  action: 'login',
+  params: [
+    { protocol: 'Internal' },
+  ],
+});
+
+export const getAuthOptionsQuery = () => ({
+  api: 'Auth',
+  action: 'options',
 });
 
 export const saveFileQuery = (file, metadata) => {
@@ -161,6 +203,17 @@ export const getInputProcessorActionQuery = (fileType, action) => ({
     { data: JSON.stringify({ file_type: fileType }) },
   ],
 });
+
+export const getExportGeneratorActionQuery = (name, action) => ({
+  api: 'settings',
+  params: [
+    { category: 'export_generators' },
+    { action },
+    { data: JSON.stringify({ name }) },
+  ],
+});
+
+export const saveExportGeneratorQuery = generator => saveSettingsQuery(generator, 'export_generators');
 
 export const getCreditChargeQuery = params => ({
   api: 'credit',
@@ -255,6 +308,7 @@ export const disablePaymentGatewayQuery = name => ({
 export const apiEntityQuery = (collection, action, body) => ({
   entity: collection,
   action,
+  timeout: 3600000, // 60 minutes
   options: {
     method: 'POST',
     body,
@@ -310,10 +364,12 @@ export const getEntityByIdQuery = (collection, id) => ({
   ],
 });
 
-export const getEntitesQuery = (collection, project = {}, query = {}, sort = null, options = {}) => {
+export const getEntitesQuery = (collection, project = {}, query = {}, sort = null, options = {}, size = 9999) => {
   let action;
   switch (collection) {
     case 'users':
+    case 'suggestions':
+    case 'bills':
       action = 'get';
       break;
     default:
@@ -325,7 +381,7 @@ export const getEntitesQuery = (collection, project = {}, query = {}, sort = nul
     entity: collection,
     params: [
       { page: 0 },
-      { size: 9999 },
+      { size },
       { query: JSON.stringify(query) },
       { project: JSON.stringify(project) },
       { sort: JSON.stringify(sortBy) },
@@ -357,9 +413,11 @@ export const getDeleteLineQuery = id => ({
 
 // List
 export const getAccountsQuery = (project = { aid: 1, firstname: 1, lastname: 1 }) =>
-  getEntitesQuery('subscribers', project, {type: 'account'});
+  getEntitesQuery('accounts', project, {type: 'account'});
 export const getSubscriptionsWithAidQuery = (project = { aid: 1, sid: 1, firstname: 1, lastname: 1 }) =>
   getEntitesQuery('subscribers', project, {type: 'subscriber'});
+export const getSubscribersByAidQuery = (aid) =>
+  getEntitesQuery('subscribers', { aid: 1, sid: 1, firstname: 1, lastname: 1 }, {type: 'subscriber', aid}, { sid: 1 });
 export const getPlansQuery = (project = { name: 1 }) => getEntitesQuery('plans', project);
 export const getServicesQuery = (project = { name: 1 }) => getEntitesQuery('services', project);
 export const getServicesKeysWithInfoQuery = () => getEntitesQuery('services', { name: 1, description: 1, play: 1, quantitative: 1, balance_period: 1 }, {}, { name: 1 	});
@@ -449,11 +507,30 @@ export const runningPaymentFilesListQuery = (paymentGateway, fileType) => ({
     { project: JSON.stringify({ stamp: 1}) },
     { sort: JSON.stringify({}) },
     { query: JSON.stringify({
-      source: "custom_payment_files",
-      cpg_name: paymentGateway,
-      cpg_file_type: fileType,
-      start_process_time:{ $exists: true },
-      process_time :{ $exists: false },
+      cpg_name: { $in: [paymentGateway]},
+      cpg_file_type: { $in: [fileType]},
+      start_process_time: { $exists: true },
+      process_time: { $exists: false },
+    }) },
+  ],
+});
+
+export const runningRequestPaymentFilesListQuery = (paymentGateway, fileType) => 
+  runningPaymentFilesListQuery(paymentGateway, fileType);
+
+export const runningResponsePaymentFilesListQuery = (paymentGateway, fileType) => ({
+  action: 'get',
+  entity: 'log',
+  params: [
+    { page: 0 },
+    { size: 9999 },
+    { project: JSON.stringify({ stamp: 1}) },
+    { sort: JSON.stringify({}) },
+    { query: JSON.stringify({
+      cpg_name: { $in: [paymentGateway]},
+      pg_file_type: fileType,
+      start_process_time: { $exists: true },
+      process_time: { $exists: false },
     }) },
   ],
 });
@@ -470,6 +547,91 @@ export const sendGenerateNewFileQuery = (paymentGateway, fileType, data) => {
     params,
   };
 }
+
+export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file, paymentsFileType, source) => {
+  const formData = new FormData();
+  formData.append('payment_gateway', paymentGateway);
+  formData.append('file_type', fileType);
+  formData.append('payments_file_type', paymentsFileType);
+  // `source` is the value persisted on `log.source` and looked up by the list query.
+  // Pass it explicitly so FE owns the naming contract and BE doesn't need to reconstruct it
+  // from `payment_gateway + payments_file_type` (which mis-handled snake_case gateway keys).
+  if (typeof source !== 'undefined') {
+    formData.append('source', source);
+  }
+  formData.append('file', file);
+  return ({
+    api: 'uploadfile',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+}
+
+export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_charge', sendMail = false, note = '', invoiceUnixtime = '') => {
+  const cdrs = lines
+    .map(line => Immutable.Map({
+      aid: aid,
+      sid: line.get('sid', ''),
+      rate: line.get('rate', ''),
+      credit_time: line.get('date', ''),
+      usagev: line.get('volume', ''),
+      type: line.get('type', ''),
+      aprice: line.get('price', ''),
+    }).filter(val => val !== ''));
+  const params = [
+    { cdrs: JSON.stringify(cdrs) },
+    { aid },
+    { send_email: sendMail ? 1 : 0 },
+  ];
+  const adjusts = lines
+    .map(line => Immutable.Map({
+      invoice_id: line.get('inv_id', ''),
+      amount: line.get('price', ''),
+    }))
+    .filter(adjust => adjust.get('invoice_id', '') !== '');
+  if (adjusts && !adjusts.isEmpty()) {
+    params.push({ adjusts: JSON.stringify(adjusts) });
+  }
+  if (typeof note === 'string' && note.length > 0) {
+      params.push({ note });
+  }
+  if (isNumber(invoiceUnixtime)) {
+      params.push({ invoice_unixtime: invoiceUnixtime });
+  }
+  if (typeof lines === 'string' && lines.length > 0) {
+      params.push({ lines });
+  }
+  if (invoiceType === 'without_charge') {
+    params.push({ step: 1 });
+    params.push({ allow_bill: 1 });
+  } else if (invoiceType === 'charge') {
+    params.push({ step: 2 });
+    params.push({ allow_bill: 1 });
+  } else if (invoiceType === 'successful_charge') {
+    params.push({ step: 2 });
+    params.push({ allow_bill: 1 });
+    params.push({ charge_flow: 'charge_before_invoice' });
+  } else if (invoiceType === 'expected') {
+    params.push({ step: 0 });
+    params.push({ expected: 1 });
+  } else if (invoiceType === 'download_expected') {
+    params.push({ step: 0 });
+    params.push({ expected: 1 });
+    params.push({ send_back_invoices: 1 });
+  }
+  return {
+    api: 'onetimeinvoice',
+    params,
+  };
+}
+
+export const generateOneTimeInvoiceDownloadExpectedQuery = (aid, lines, note = '', invoiceUnixtime = '') =>
+  generateOneTimeInvoiceQuery(aid, lines, 'download_expected', false, note, invoiceUnixtime);
+
+export const generateOneTimeInvoiceExpectedQuery = (aid, lines, note = '', invoiceUnixtime = '') =>
+  generateOneTimeInvoiceQuery(aid, lines, 'expected', false, note, invoiceUnixtime);
 
 export const auditTrailListQuery = (query, page, fields, sort, size) => ({
   action: 'get',
@@ -542,10 +704,17 @@ export const getEntityRevisionsQuery = (collection, revisionByFields, values, si
   });
 };
 
-export const getRebalanceAccountQuery = (aid, billrunKey = '') => {
+export const getRebalanceAccountQuery = (aid, billrunKey = '', rate = '') => {
   const params = [{ aid }];
   if (billrunKey !== '') {
     params.push({ billrun_key: billrunKey });
+  }
+  if (rate !== '') { //BRCD-1396
+    params.push({ query: JSON.stringify([[{
+      field_name : 'arate_key',
+      op : '$eq',
+      value : rate
+    }]]) });
   }
   return {
     api: 'resetlines',
@@ -647,22 +816,34 @@ export const getCollectionDebtQuery = aid => ({
   ],
 });
 
-export const getOfflinePaymentQuery = (method, aid, amount, payerName, chequeNo) => ({
-  api: 'pay',
-  params: [
-    { method },
-    { payments: JSON.stringify([{
-      amount,
-      aid,
-      payer_name: payerName,
-      dir: 'fc',
-      deposit_slip: '',
-      deposit_slip_bank: '',
-      cheque_no: chequeNo,
-      source: 'web',
-    }]) },
-  ],
-});
+export const getOfflinePaymentQuery = (method, aid, amount, payerName, chequeNo, dir, uf, note, urt) => {
+  const payment = {
+    amount,
+    aid,
+    payer_name: payerName,
+    dir,
+    deposit_slip: '',
+    deposit_slip_bank: '',
+    cheque_no: chequeNo,
+    source: 'web',
+  };
+  if (urt !== '') {
+    payment['urt'] = urt;
+  }
+  if ( note !== '') {
+    payment['note'] = note;
+  }
+  if (uf !== undefined && uf.size !== 0) {
+    payment['uf'] = uf;
+  }
+  return {
+    api: 'pay',
+    params: [
+      { method },
+      { payments:  JSON.stringify([payment])},
+    ]
+  }
+};
 
 export const getConfirmationOperationAllQuery = () => ({
   api: 'operations',
@@ -746,10 +927,149 @@ export const getDashboardQuery = action => ({
 });
 // Dashboard reports queries - end
 
-export const getSubscribersQuery = aid => ({
-  action: 'get',
-  entity: 'subscribers',
-  params: [
-    { query: JSON.stringify({ aid, type: 'subscriber' }) },
-  ],
+
+/** Workers */
+
+export const getWorkersQuery = () => ({
+  api: 'billrun',
+  action: 'workerstatus',
 });
+
+export const pushToCycleQueueQuery = (billrun_key, generate_pdf, include_aids = [], exclude_aids = []) => {
+  let config = { billrun_key };
+  if (include_aids.length > 0) {
+    config['include'] = include_aids;
+  }
+  if (exclude_aids.length > 0) {
+    config['exclude'] = exclude_aids;
+  }
+
+  const formData = new FormData();
+  formData.append('job_type', 'Cycle');
+  formData.append('generate_pdf', isValueOn(generate_pdf) ? 1 : 0);
+  formData.append('config', JSON.stringify(config));
+
+  return ({
+    api: 'queue',
+    action: 'push',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+}
+
+export const getChargesQuery = (limit = 1000) => {
+    const formData = new FormData();
+    formData.append('job_type', 'Charging');
+    formData.append('limit', limit);
+    formData.append('include_cancelled', true);
+
+    return ({
+      api: 'queue',
+      action: 'latestjob',
+      options: {
+        method: 'POST',
+        body: formData,
+      },
+    });
+}
+
+export const getChargesScheduleQuery = () => {
+    const formData = new FormData();
+    formData.append('job_type', 'Charging');
+    formData.append('future_only', true);
+
+    return ({
+      api: 'queue',
+      action: 'latestjob',
+      options: {
+        method: 'POST',
+        body: formData,
+      },
+    });
+}
+
+export const getChargeQuery = (md5) => {
+    const formData = new FormData();
+    formData.append('job_md5', md5);
+
+    return ({
+      api: 'queue',
+      action: 'parentjobstats',
+      options: {
+        method: 'POST',
+        body: formData,
+      },
+    });
+}
+
+export const getChargeCancelQuery = (md5) => {
+    const formData = new FormData();
+    formData.append('job_md5', md5);
+
+    return ({
+      api: 'queue',
+      action: 'canceljob',
+      options: {
+        method: 'POST',
+        body: formData,
+      },
+    });
+}
+
+export const getChargeCreateQuery = (data, scheduler) => {
+    const formData = new FormData();
+    formData.append('job_type', 'Charging');
+    formData.append('config', JSON.stringify(data));
+    if (scheduler !== false) {
+        formData.append('schedule', scheduler);
+    }
+
+    return ({
+      api: 'queue',
+      action: 'push',
+      options: {
+        method: 'POST',
+        body: formData,
+      },
+    });
+}
+
+export const pushToConfirmQueueQuery = (billrun_key, include_aids = [], exclude_aids = []) => {
+  let config = { billrun_key };
+  if (include_aids.length > 0) {
+    config['include'] = include_aids;
+  }
+  if (exclude_aids.length > 0) {
+    config['exclude'] = exclude_aids;
+  }
+
+  const formData = new FormData();
+  formData.append('job_type', 'Confirm');
+  formData.append('config', JSON.stringify(config));
+
+  return ({
+    api: 'queue',
+    action: 'push',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+}
+
+export const getExternalLoginQuery = (protocol, returnTo, provider) => {
+  const params = [
+    { protocol },
+    { return_to: returnTo },
+  ];
+  if (provider) {
+    params.push({ provider });
+  }
+  return ({
+    api: 'Auth',
+    action: 'login',
+    params,
+  });
+};

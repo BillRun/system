@@ -1,11 +1,13 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import Immutable from 'immutable';
-import { Row, Col } from 'react-bootstrap';
+import { getConfig, getUnitLabel } from '@/common/Util';
 import Field from '@/components/Field';
+import Immutable from 'immutable';
+import PropTypes from 'prop-types';
+import React, { Component } from 'react';
+import { Col, Row } from 'react-bootstrap';
 import Help from '../Help';
 import UsageTypesSelector from '../UsageTypes/UsageTypesSelector';
-import { getUnitLabel } from '@/common/Util';
+import moment from 'moment-timezone';
+
 
 export default class FieldsMapping extends Component {
 
@@ -14,6 +16,7 @@ export default class FieldsMapping extends Component {
     usageTypes: PropTypes.instanceOf(Immutable.List),
     usageTypesData: PropTypes.instanceOf(Immutable.List),
     propertyTypes: PropTypes.instanceOf(Immutable.List),
+    mongoOps: PropTypes.instanceOf(Immutable.List),
     onSetStaticUsaget: PropTypes.func,
     onSetFieldMapping: PropTypes.func,
   };
@@ -23,6 +26,7 @@ export default class FieldsMapping extends Component {
     usageTypes: Immutable.List(),
     usageTypesData: Immutable.List(),
     propertyTypes: Immutable.List(),
+    mongoOps: getConfig(['inputProcessor', 'dynamicFieldMapping', 'conditions'], Immutable.List()),
     onSetStaticUsaget: () => {},
     onSetFieldMapping: () => {},
   };
@@ -33,14 +37,17 @@ export default class FieldsMapping extends Component {
     this.onChangePattern = this.onChangePattern.bind(this);
     this.onChangeUsaget = this.onChangeUsaget.bind(this);
     this.addUsagetMapping = this.addUsagetMapping.bind(this);
-    this.onChangeUsaget = this.onChangeUsaget.bind(this);
     this.onSetType = this.onSetType.bind(this);
     this.onChangeStaticUsaget = this.onChangeStaticUsaget.bind(this);
     this.addFieldCondition = this.addFieldCondition.bind(this);
-    this.onChangeFieldName = this.onChangeFieldName.bind(this);
-    this.onRemoveCondition = this.onRemoveCondition.bind(this);
-    this.onChangeOperator = this.onChangeOperator.bind(this);
-    this.onChangeMultiValues = this.onChangeMultiValues.bind(this);
+
+    const { settings } = props;
+    let timeZoneOption = 'global';
+    if (settings.getIn(['processor', 'timezone'])) {
+      timeZoneOption = 'timezone';
+    } else if (settings.getIn(['processor', 'timezone_field'])) {
+      timeZoneOption = 'field';
+    }
 
     this.state = {
       fieldName: '',
@@ -50,7 +57,8 @@ export default class FieldsMapping extends Component {
       usaget: "",
       unit: '',
       separateTime: false,
-      separateTimeZone: false,
+      timeZoneOption,
+      timeZoneOptions: moment.tz.names().map(label => ({ label, value: label })),
       volumeType: 'field',
       volumeFields: [],
       volumeHardCodedValue: '',
@@ -61,10 +69,6 @@ export default class FieldsMapping extends Component {
   componentWillMount() {
     if (this.props.settings.getIn(['processor', 'time_field'])) {
       this.setState({ separateTime: true });
-    }
-    const timeZone = this.props.settings.getIn(['processor', 'timezone_field']);
-    if (this.props.settings.get('fields').includes(timeZone)) {
-      this.setState({ separateTimeZone: true });
     }
   }
 
@@ -139,19 +143,10 @@ export default class FieldsMapping extends Component {
     this.setState({ fieldName: value, conditions });
   }
 
-  onChangeOperator = (index, operators, e) => {
+  onChangeOperator = (index, e) => {
     const { conditions } = this.state;
     const { value } = e.target;
-    let label;
-
-    operators.forEach((operator) => {
-      if (operator.value === value) {
-        label = operator.label;
-      }
-    });
-
     conditions[index].op = value;
-    conditions[index].op_label = label;
     this.setState({ op: value, conditions, pattern: '' });
   }
 
@@ -217,13 +212,18 @@ export default class FieldsMapping extends Component {
     this.setState({separateTime: !this.state.separateTime});
   };
 
-  onChangeSeparateTimeZone = (e) => {
-    const { checked } = e.target;
-    if (!checked) {
+  onChangeTimeZoneOption = (e) => {
+    const { value } = e.target;
+    this.setState({ timeZoneOption: value });
+
+    if (value === 'global') {
       this.props.unsetField(['processor', 'timezone_field']);
-      this.onChangeTimeZoneExists();
+      this.props.unsetField(['processor', 'timezone']);
+    } else if (value === 'field') {
+      this.props.unsetField(['processor', 'timezone']);
+    } else if (value === 'timezone') {
+      this.props.unsetField(['processor', 'timezone_field']);
     }
-    this.setState({ separateTimeZone: !this.state.separateTimeZone });
   };
 
   onChangeDynamicUsagetVolumeType = (e) => {
@@ -273,16 +273,6 @@ export default class FieldsMapping extends Component {
     this.onChangeTimeFormat(e);
   }
 
-  onChangeTimeZoneExists = () => {
-    const e = {
-      target: {
-        value: undefined,
-        id: 'timezone_field',
-      },
-    };
-    this.onChangeTimeZoneFormat(e);
-  }
-
   getVolumeOptions = () => this.props.settings
     .get('fields', Immutable.List())
     .sortBy(field => field)
@@ -314,7 +304,6 @@ export default class FieldsMapping extends Component {
   render() {
     const {
       separateTime,
-      separateTimeZone,
       usaget,
       unit,
       volumeType,
@@ -323,10 +312,12 @@ export default class FieldsMapping extends Component {
       conditions,
       fieldName,
       pattern,
+      timeZoneOption,
       op,
     } = this.state;
     const { settings,
             usageTypesData,
+            mongoOps,
             propertyTypes,
             onSetFieldMapping } = this.props;
 
@@ -341,17 +332,12 @@ export default class FieldsMapping extends Component {
     const defaultVolumeType = settings.get('usaget_type', '') !== 'static' ? '' : settings.getIn(['processor', 'default_volume_type'], 'field');
     const defaultVolumeSrc = settings.get('usaget_type', '') !== 'static' ? '' : settings.getIn(['processor', 'default_volume_src'], []);
     const volumeOptions = this.getVolumeOptions();
-    const mongoOps = [
-      { value: '$eq', label: 'Equals' },
-      { value: '$ne', label: 'Not Equals' },
-      { value: '$in', label: 'In' },
-      { value: '$nin', label: 'Not In' },
-      { value: '$regex', label: 'Regex' },
+    const mongoOperators = [
+      (<option disabled value="" key={-1}>Select Field...</option>),
+      ...mongoOps.map((operator, key) => (
+        <option value={operator.get('id', '')} key={key}>{operator.get('title', '')}</option>
+      ))
     ];
-    const mongoOperators = [(<option disabled value="" key={-1}>Select Field...</option>),
-                              ...mongoOps.map((operator, key) => (
-                                <option value={operator.value} key={key}>{operator.label}</option>
-                              ))];
 
     const dateFormat = settings.getIn(['processor', 'date_format']) || '';
 
@@ -380,7 +366,7 @@ export default class FieldsMapping extends Component {
             <label htmlFor="date_field">Date Time</label>
             <p className="help-block">
               Date and time of record creation<br />
-              <a target="_blank" rel="noopener noreferrer" href="http://php.net/manual/en/function.date.php#refsect1-function.date-parameters">Formatting info</a>
+              <a target="_blank" rel="noopener noreferrer" href="https://www.php.net/manual/en/datetime.format.php#refsect1-datetime.format-parameters">Formatting info</a>
             </p>
           </div>
           <div className="col-lg-9">
@@ -446,27 +432,73 @@ export default class FieldsMapping extends Component {
             </div>
           </div>
 
-          <div className="col-lg-offset-3 col-lg-9" style={{ marginTop: 30 }}>
-            <div className="col-lg-offset-1 col-lg-4">
-              <div className="input-group">
-                <div className="input-group-addon">
+          <div className="col-lg-offset-3 col-lg-9" style={{ marginTop: 15 }}>
+            <div className="col-lg-offset-1 col-lg-4" style={{ display: 'flex', alignItems: 'baseline' }}>
+              <label className="control-label" style={{ marginRight: '1px' }} >Timezone</label>
+              <i className="fa fa-long-arrow-right" style={{ margin: '0 15px' }}></i>
+              <div style={{ paddingTop: '5px' }}>
+                <label style={{ marginRight: '10px', fontWeight: 'normal' }}>
                   <input
-                    type="checkbox"
-                    checked={separateTimeZone}
-                    onChange={this.onChangeSeparateTimeZone}
-                  />
-                  <small>&nbsp;Timezone in a separate field</small>
-                </div>
+                    type="radio"
+                    name="timezone-option"
+                    value="global"
+                    checked={timeZoneOption === 'global'}
+                    onChange={this.onChangeTimeZoneOption}
+                  />&nbsp;
+                  Global
+                </label>
+                <label style={{ marginRight: '10px', fontWeight: 'normal' }}>
+                  <input
+                    type="radio"
+                    name="timezone-option"
+                    value="field"
+                    checked={timeZoneOption === 'field'}
+                    onChange={this.onChangeTimeZoneOption}
+                  />&nbsp;
+                  By field
+                </label>
+                <label style={{ fontWeight: 'normal' }}>
+                  <input
+                    type="radio"
+                    name="timezone-option"
+                    value="timezone"
+                    checked={timeZoneOption === 'timezone'}
+                    onChange={this.onChangeTimeZoneOption}
+                  />&nbsp;
+                  By timezone
+                </label>
+              </div>
+            </div>
+            <div className="col-lg-5">
+              {timeZoneOption === 'field' && (
                 <select
                   id="timezone_field"
                   className="form-control"
                   onChange={onSetFieldMapping}
-                  disabled={!separateTimeZone}
                   value={settings.getIn(['processor', 'timezone_field'], '')}
                 >
-                  { available_fields }
+                  {available_fields}
                 </select>
-              </div>
+              )}
+              {timeZoneOption === 'timezone' && (
+                <select
+                  id="timezone"
+                  className="form-control"
+                  onChange={onSetFieldMapping}
+                  value={settings.getIn(['processor', 'timezone'], '')}
+                >
+                  <option disabled value="">Select Timezone...</option>
+                  {this.state.timeZoneOptions.map(opt => (
+                    <option value={opt.value} key={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              )}
+
+              {timeZoneOption === 'global' && (
+                <select className="form-control" disabled>
+                  <option>Global (Default)</option>
+                </select>
+              )}
             </div>
           </div>
         </div>
@@ -614,7 +646,9 @@ export default class FieldsMapping extends Component {
                     { settings.getIn(['processor', 'usaget_mapping', key, 'conditions'], Immutable.List()).map((condition, value) => (
                       <div className="row-lg-12" key={`condition-${value}`}>
                         <div className="col-lg-4" style={{ marginLeft: -4 }}>{condition.get('src_field')}</div>
-                        <div className="col-lg-4" style={{ marginLeft: 18 }}>{condition.get('op_label')}</div>
+                        <div className="col-lg-4" style={{ marginLeft: 18 }}>
+                          {mongoOps.find((op) => op.get('id', '') === condition.get('op', ''), null, Immutable.Map()).get('title', '')}
+                        </div>
                         <div className="col-lg-4" style={{ marginLeft: -75 }}>{condition.get('pattern')}</div>
                       </div>
                     ))}
@@ -667,7 +701,7 @@ export default class FieldsMapping extends Component {
                         <select
                           id="op"
                           className="form-control"
-                          onChange={this.onChangeOperator.bind(this, key, mongoOps)}
+                          onChange={this.onChangeOperator.bind(this, key)}
                           value={condition.op === '' ? '' : condition.op}
                           disabled={settings.get('usaget_type', '') !== 'dynamic'}
                         >
@@ -719,7 +753,7 @@ export default class FieldsMapping extends Component {
                       showDisplayUnits={true}
                     />
                   </div>
-                  <div className="col-lg-2">
+                  <div className="col-lg-2 field-mapping-radio">
                     <Field
                       fieldType="radio"
                       name="dynamic-usaget-volume-type"

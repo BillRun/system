@@ -82,7 +82,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 		$header['source'] = self::$type;
 		$header['type'] = static::$type;
 		$header['file'] = basename($this->filePath);
-		$header['process_time'] = new MongoDate();
+		$header['process_time'] = new Mongodloid_Date();
 		return $header;
 	}
 
@@ -97,7 +97,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = new MongoDate();
+		$trailer['process_time'] = new Mongodloid_Date();
 		return $trailer;
 	}
 
@@ -111,7 +111,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 		$row['type'] = static::$type;
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['file'] = basename($this->filePath);
-		$row['process_time'] = new MongoDate();
+		$row['process_time'] = new Mongodloid_Date();
 		if ($this->line_numbers) {
 			$row['line_number'] = $this->current_line;
 		}

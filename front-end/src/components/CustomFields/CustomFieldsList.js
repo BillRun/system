@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { List, Map } from 'immutable';
-import { Col, Row, ControlLabel, Button } from 'react-bootstrap';
+import { List, Map, OrderedMap } from 'immutable';
+import { Col, Row, ControlLabel, Button, Panel } from 'react-bootstrap';
 import CustomFieldsListRowContainer from './CustomFieldsListRowContainer';
 import { CreateButton, SortableFieldsContainer } from '../Elements';
 import {
-  isFieldPrintable,
   isFieldSortable,
 } from '../../selectors/customFieldsSelectors';
 
@@ -21,9 +20,9 @@ class CustomFieldsList extends Component {
     onEdit: PropTypes.func.isRequired,
     onRemove: PropTypes.func.isRequired,
     onReorder: PropTypes.func.isRequired,
-    onReorederStart: PropTypes.func.isRequired,
-    onReorederSave: PropTypes.func.isRequired,
-    onReorederCancel: PropTypes.func.isRequired,
+    onReorderStart: PropTypes.func.isRequired,
+    onReorderSave: PropTypes.func.isRequired,
+    onReorderCancel: PropTypes.func.isRequired,
   };
 
   static defaultProps = {
@@ -34,21 +33,42 @@ class CustomFieldsList extends Component {
   };
 
   componentWillUnmount() {
-    const { onReorederCancel, reordering } = this.props;
+    const { onReorderCancel, reordering } = this.props;
     if (reordering) {
-      onReorederCancel();
+      onReorderCancel();
     }
   }
 
-  getprintableFields = () => {
-    const { entity, fields, fieldsConfig, onRemove, onEdit, reordering } = this.props;
-    return fields.reduce((acc, field, index) => (
-      (!isFieldPrintable(field, fieldsConfig)) ? acc : acc.push(
+  getFieldsByCategory = () => {
+    const { fields } = this.props;
+  
+    return fields.reduce(
+      (acc, field) => {
+        const category = field.get('category', '') || 'uncategorized';
+        return acc.update(category, List(), cat => cat.push(field));
+      }, OrderedMap()).sortBy((_, category) => (category === 'uncategorized' ? -1 : category));
+  };
+  
+
+  renderFieldsByCategory = () => {
+    const {
+      entity,
+      fieldsConfig,
+      reordering,
+      onReorder,
+      onRemove,
+      onEdit,
+    } = this.props;
+
+    const fieldsByCategory = this.getFieldsByCategory();
+
+    return fieldsByCategory.map((fields, category) => {
+      const rows = fields.map((field, index) => (
         <CustomFieldsListRowContainer
           key={`item-${entity}-${field.get('field_name', '')}-${index}`}
           index={index}
           disabled={!isFieldSortable(field, fieldsConfig) || (isFieldSortable(field, fieldsConfig) && !reordering)}
-          collection={entity}
+          collection={category}
           entity={entity}
           field={field}
           fieldsConfig={fieldsConfig}
@@ -56,14 +76,49 @@ class CustomFieldsList extends Component {
           onRemove={onRemove}
           onEdit={onEdit}
         />
-      )
-    ), List());
+      ))
+
+      return category === 'uncategorized' ? (
+        <SortableFieldsContainer
+          key={`sortable-container-${category}`}
+          lockAxis="y"
+          helperClass="draggable-row"
+          useDragHandle={true}
+          items={rows}
+          onSortEnd={onReorder}
+        >
+          {rows}
+        </SortableFieldsContainer>
+      ) : (
+        <Panel
+          header={category}
+          key={`panel-${category}`}
+          collapsible
+          className="collapsible"
+        >
+          <SortableFieldsContainer
+            key={`sortable-container-${category}`}
+            lockAxis="y"
+            helperClass="draggable-row"
+            useDragHandle={true}
+            items={rows}
+            onSortEnd={onReorder}
+          >
+            {rows}
+          </SortableFieldsContainer>
+        </Panel>
+      );
+    }).toList();
   }
 
   render() {
     const {
-      fields, reordering,
-      onReorder, onNew, onReorederStart, onReorederSave, onReorederCancel,
+      fields,
+      reordering,
+      onNew,
+      onReorderStart,
+      onReorderSave,
+      onReorderCancel,
     } = this.props;
     return (
       <div className="CustomFieldsList">
@@ -80,34 +135,26 @@ class CustomFieldsList extends Component {
             <hr style={{ marginTop: 5, marginBottom: 0 }} />
           </Col>
         </Row>
-        {!fields.isEmpty() && (
-          <SortableFieldsContainer
-            lockAxis="y"
-            helperClass="draggable-row"
-            useDragHandle={true}
-            items={this.getprintableFields()}
-            onSortEnd={onReorder}
-          />
-        )}
+        {!fields.isEmpty() && this.renderFieldsByCategory()}
         {fields.isEmpty() && (
           <Col sm={12} className="text-center mb10">No custom field</Col>
         )}
         { !reordering && (
           <Col sm={12} className="mt10">
             <CreateButton onClick={onNew} type="Field" action="Add" buttonStyle={{ marginTop: 0 }} />
-              {!fields.isEmpty() && (
-                <Button bsSize="xsmall" className="btn-primary" onClick={onReorederStart} title="Change fields order" style={{ float: 'right', minWidth: 90 }}>
-                  <i className="fa fa-arrows-alt" /> Reorder
-                </Button>
-              )}
+            {!fields.isEmpty() && (
+              <Button bsSize="xsmall" className="btn-primary" onClick={onReorderStart} title="Change fields order" style={{ float: 'right', minWidth: 90 }}>
+                <i className="fa fa-arrows-alt" /> Reorder
+              </Button>
+            )}
           </Col>
         )}
         { reordering && (
           <Col sm={12} className="text-right mt10">
-            <Button bsSize="xsmall" onClick={onReorederSave} title="Save new order" bsStyle="primary" style={{ minWidth: 90, marginRight: 10 }}>
+            <Button bsSize="xsmall" onClick={onReorderSave} title="Save new order" bsStyle="primary" style={{ minWidth: 90, marginRight: 10 }}>
               Save order
             </Button>
-            <Button bsSize="xsmall" onClick={onReorederCancel} title="Cancel new order" style={{ minWidth: 90 }}>
+            <Button bsSize="xsmall" onClick={onReorderCancel} title="Cancel new order" style={{ minWidth: 90 }}>
               Cancel order
             </Button>
           </Col>

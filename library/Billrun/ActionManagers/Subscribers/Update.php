@@ -38,7 +38,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	public function execute() {
 		try {
-			$this->time = new MongoDate();
+			$this->time = new Mongodloid_Date();
 			if (!$oldEntity = $this->getOldEntity()) {
 				return false;
 			}
@@ -46,7 +46,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				
 			// Check if changed plans.
 			if($newEntity['plan'] !== $this->oldEntity['plan']) {
-				$this->oldEntity['plan_deactivation'] = new MongoDate();
+				$this->oldEntity['plan_deactivation'] = new Mongodloid_Date();
 			}
 			
 			// Close all the services
@@ -258,7 +258,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		
 		$id = isset($input['_id']['$id'])? $input['_id']['$id'] : $input['_id'];
 		try {
-			$mongoID = new MongoId($id);
+			$mongoID = new Mongodloid_Id($id);
 			
 			// Set the mongo ID in the input array
 			$result['_id'] = $mongoID;

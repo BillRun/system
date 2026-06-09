@@ -15,8 +15,8 @@ class Test_Case_200
         $now->sub(new DateInterval('P1D'));
       
             $plan = generat_plans::generatePlan(['name' => "TEST_GENRATE",
-            "price" => [ json_encode(["price" => 10, "from" => 0, "to" => "UNLIMITED"])]]);
-            $service = generat_services::generateService(['name' => "TEST_GENRATE_SERVICE1", 
+            "price" => [ ["price" => 10, "from" => 0, "to" => "UNLIMITED"] ]]);
+            $service = generat_services::generateService(['name' => "TEST_GENRATE_SERVICE1",
             'from' => $now->format('Y-m-d'),"price" => [ ["price" => 10, "from" => 0, "to" => "UNLIMITED"]]]);
             $discount = generat_discounts::generateDiscount();
             $account = generat_subscribers::generateAccount();
@@ -26,7 +26,7 @@ class Test_Case_200
                 'services' => [
                     [
                         "name" => $service['name'],
-                        "from" =>  $now->format('Y-m-d') ,
+                        "from" => $now->format('Y-m-d'),
                         "to" => "2118-05-06T11:06:07Z"
                     ]
                 ]

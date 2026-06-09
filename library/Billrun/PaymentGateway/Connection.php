@@ -12,8 +12,10 @@
  * @since    5.10
  */
 abstract class Billrun_PaymentGateway_Connection {
-	
-	use Billrun_Traits_FileActions;
+
+	use Billrun_Traits_FileActions {
+		getFileLogData as traitGetFileLogData;
+	}
 
 	protected $host;
 	protected $username;
@@ -28,12 +30,11 @@ abstract class Billrun_PaymentGateway_Connection {
 	protected $fileType;
 	protected $localDir;
 	protected $delete_received;
+	protected $received_extension;
+	protected $cpgName;
+	protected $cpf_type;
 
 	public function __construct($options) {
-		if (!isset($options['connection_type']) || !isset($options['host'])  || !isset($options['user']) ||
-			!isset($options['password'])) {
-			throw new Exception('Missing connection details');
-		}
 		$this->host = $options['host'];
 		$this->username = $options['user'];
 		$this->password = $options['password'];
@@ -42,6 +43,7 @@ abstract class Billrun_PaymentGateway_Connection {
 		$this->recursive_mode = isset($options['recursive_mode']) ? $options['recursive_mode'] : false;
 		$this->filenameRegex = !empty($options['filename_regex']) ? $options['filename_regex'] : '/.*/';
 		$this->delete_received = isset($options['delete_received']) ? $options['delete_received'] : false;
+		$this->received_extension = isset($options['received_extension']) ? $options['received_extension'] : false;
 		$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getFieldVal($options['workspace'], 'workspace'));
 		if (isset($options['backup_path'])) {
 			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath($options['backup_path']);
@@ -52,6 +54,8 @@ abstract class Billrun_PaymentGateway_Connection {
 			$this->limit = $options['limit'];
 		}
 		$this->fileType = isset($options['file_type']) ? $options['file_type'] : null;
+		$this->cpgName = Billrun_Util::getIn($options, 'cpg_name', Billrun_Util::getIn($options, 'payment_gateway', null));
+		$this->cpf_type = isset($options['cpf_type']) ? $options['cpf_type'] : null;
 	}
 
 	/**
@@ -66,8 +70,7 @@ abstract class Billrun_PaymentGateway_Connection {
 		}
 		return isset($connection) ? $connection : NULL;
 	}
-	
-	
+
 	/**
 	 * Get the type name of the current object.
 	 * @return string conatining the current.
@@ -96,17 +99,46 @@ abstract class Billrun_PaymentGateway_Connection {
 		if ($paymentGatewaySettings) {
 			$paymentGatewaySettings = current($paymentGatewaySettings);
 		}
-		
+
 		$transactionsResponses = !empty($paymentGatewaySettings[$type]) ? $paymentGatewaySettings[$type] : array();
 		foreach ($transactionsResponses as $key => $gatewaySettings) {
 			if (!empty($gatewaySettings['receiver'])) {
 				$pgReceivers[$gatewaySettings['file_type']] = $gatewaySettings['receiver'];
 			}
 		}
-		
+
 		return $pgReceivers;
 	}
 
 	abstract public function export($fileName);
+
 	abstract public function receive();
+	
+	public function getWorkspace() {
+		return $this->workspace;
+	}
+
+
+	public function getCustomPaymentGatewayFields() {
+		return [
+			'cpg_name' => [!empty($this->cpgName) ? $this->cpgName : ""],
+			'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""],
+			'pg_file_type' => $this->fileType
+		];
+	}
+
+	/**
+	 * build the structure that will be used as a base to log the file in the DB, and generate the file uniqe stamp.
+	 * @param type $filename
+	 * @param type $type
+	 * @param type $more_fields
+	 * @return type
+	 */
+	protected function getFileLogData($filename, $type, $more_fields = array()) {
+		$log_data = $this->traitGetFileLogData($filename, $type, $more_fields);
+		$cpg_fields = $this->getCustomPaymentGatewayFields();
+		$cpg_fields["type"] = "custom_payment_gateway";
+		$cpg_fields["payments_file_type"] = $this->cpf_type;
+		return array_merge($log_data, $cpg_fields);
+	}
 }

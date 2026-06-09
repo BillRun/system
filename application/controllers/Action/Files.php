@@ -19,7 +19,7 @@ class FilesAction extends ApiAction {
 	
 	/**
 	 * The instance of the Grid FS collection.
-	 * @var MongoGridFS
+	 * @var Mongodloid_GridFS
 	 */
 	protected $collection;
 	
@@ -102,7 +102,7 @@ class FilesAction extends ApiAction {
 	 * @param string $collName - Collection name
 	 */
 	function constructCollection() {
-		$_db = Billrun_Factory::db()->getDb();
+		$_db = Billrun_Factory::db();
 		$this->collection = $_db->getGridFS();
 
 		// If the collection was not found
@@ -122,7 +122,7 @@ class FilesAction extends ApiAction {
 	public function create($fileName, array $metadata) {
 		try {
 			$mongoID = $this->collection->storeUpload($fileName, $metadata);
-		} catch (MongoGridFSException $e) {
+		} catch (Mongodloid_Exception $e) {
 			// TODO: Replace error codes with constants
 			Billrun_Factory::log("GRIDFS ERR: " . $e->getMessage());
 			throw new Exception("GridFS error!", 409, $e);
@@ -165,9 +165,9 @@ class FilesAction extends ApiAction {
 	/**
 	 * Validate the file integrity
 	 * Currently the signature is MD5 (Calculated internaly by the mongo).
-	 * @param MongoGridFSFile $gfsFile
+	 * @param Mongodloid_GridFSFile $gfsFile
 	 */
-	protected function validateFileSignature(MongoGridFSFile $gfsFile) {
+	protected function validateFileSignature(Mongodloid_GridFSFile $gfsFile) {
 		// Check signature.
 		$fileData = $gfsFile->{'file'};
 		
@@ -189,9 +189,9 @@ class FilesAction extends ApiAction {
 	/**
 	 * Validate the file permissions
 	 * TODO: What do we do if a file has no permissions?
-	 * @param MongoGridFSFile $gfsFile
+	 * @param Mongodloid_GridFSFile $gfsFile
 	 */
-	protected function validateFilePermissions(MongoGridFSFile $gfsFile) {
+	protected function validateFilePermissions(Mongodloid_GridFSFile $gfsFile) {
 		// Check permissions.
 		$fileData = $gfsFile->{'file'};
 		

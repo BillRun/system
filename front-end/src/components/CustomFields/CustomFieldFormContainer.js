@@ -52,7 +52,7 @@ const mapStateToProps = (state, props) => {
     disableTitle: inConfigOptionBlackList(fieldTypeConfig, 'title') || !isEditableFiledProperty(item, editable, 'title'),
     disableFieldName: mode !== 'create',
     disableUnique: inConfigOptionBlackList(fieldTypeConfig, 'unique') || !isEditableFiledProperty(item, editable, 'unique'),
-    disableMandatory: inConfigOptionBlackList(fieldTypeConfig, 'mandatory') || !isEditableFiledProperty(item, editable, 'mandatory') || item.get('unique', false),
+    disableMandatory: inConfigOptionBlackList(fieldTypeConfig, 'mandatory') || !isEditableFiledProperty(item, editable, 'mandatory') ,
     disableFieldType: inConfigOptionBlackList(fieldTypeConfig, 'type') || !isEditableFiledProperty(item, editable, 'type'),
     disabledEditable: inConfigOptionBlackList(fieldTypeConfig, 'editable') || !isEditableFiledProperty(item, editable, 'editable'),
     disabledDisplay: inConfigOptionBlackList(fieldTypeConfig, 'display') || !isEditableFiledProperty(item, editable, 'display'),
@@ -64,6 +64,7 @@ const mapStateToProps = (state, props) => {
     disableHelp: inConfigOptionBlackList(fieldTypeConfig, 'help') || !isEditableFiledProperty(item, editable, 'help'),
     disableDescription: inConfigOptionBlackList(fieldTypeConfig, 'description') || !isEditableFiledProperty(item, editable, 'description'),
     disableDefaultValue: inConfigOptionBlackList(fieldTypeConfig, 'default_value') || !isEditableFiledProperty(item, editable, 'default_value'),
+    disableCategoryValue: inConfigOptionBlackList(fieldTypeConfig, 'category') || !isEditableFiledProperty(item, editable, 'category'),
     isErrorTitle: (props.errors) && props.errors.get('title', false),
     isErrorFieldName: (props.errors) && props.errors.get('fieldName', false),
   });
@@ -95,7 +96,7 @@ const mapDispatchToProps = (dispatch, {
 
   onChangeEntityField: (path, value) => {
     // if change default value, remove property in defaultvalue removed
-    if (['description', 'help'].includes(path[0]) && value === '') {
+    if (['description', 'help', 'category'].includes(path[0]) && value === '') {
       removeField(path);
     } else if (path[0] === 'default_value') {
       if (item.get('type', 'text') === 'ranges' && value.isEmpty()) {

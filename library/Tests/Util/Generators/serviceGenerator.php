@@ -21,7 +21,7 @@ class generat_services extends generat_test_data
     $service = array_merge(
       [
         "description" => "aaa",
-        "name" => "AAAA",
+        "name" => self::uniqueName('SVC_'),
         "price" => [
           [
             "from" => 0,

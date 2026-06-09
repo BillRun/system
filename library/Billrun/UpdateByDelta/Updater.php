@@ -259,7 +259,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 	 * @return true if successful.
 	 */
 	protected function deleteEntity($entity) {
-		$deleteQuery = array("to" => new MongoDate());
+		$deleteQuery = array("to" => new Mongodloid_Date());
 		return $this->getCollection()->updateEntity($entity, $deleteQuery);
 	}
 

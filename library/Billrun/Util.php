@@ -100,9 +100,12 @@ class Billrun_Util {
 	 * @param array $ar array to generate the stamp from
 	 * @return string the array stamp
 	 */
-	public static function generateArrayStamp($ar, $filter = array()) {
-		
-		return md5(serialize(empty($filter) ? $ar : array_intersect_key($ar, array_flip($filter))));
+	public static function generateArrayStamp($ar, $filter = array(), $sortEnable = false) {
+		$arrayToHash = empty($filter) ? $ar : array_intersect_key($ar, array_flip($filter));
+		if($sortEnable){
+			ksort($arrayToHash); 
+		}
+		return md5(serialize($arrayToHash));
 	}
         
     /**
@@ -192,6 +195,45 @@ class Billrun_Util {
 	}
 	
 	/**
+	 * method to remove prefix from string
+	 * 
+	 * @param string $str the string to remove prefix
+	 * @param string $prefix the prefix
+	 * @return string the $str without prefix
+	 */
+	public static function removePrefix($str, $prefix) {
+		if(0 === strpos($str, $prefix)) {
+			$str = substr($str, strlen($prefix));
+		}
+		return $str;
+	}
+	
+	/**
+	 * Recursive group array of object by key(s)
+	 * 
+	 * @param type $array_of_objects
+	 * @param array $keys to group by
+	 * @return array of objects grouped by key(s) 
+	 */
+	public static function groupArrayBy($array_of_objects, $keys) {
+		$out = array();
+		$key = array_shift($keys);
+		foreach ($array_of_objects as $array_object){
+			$group_key = $array_object[$key];
+			if (!array_key_exists($array_object[$key], $out)) {
+				$out[$group_key] = [];
+			}
+			$out[$group_key][] = $array_object;
+		}
+		if (!empty($keys)) {
+			foreach ($out as $key => $group) {
+				$out[$key] = self::groupArrayBy($group, $keys);
+			}
+		}
+		return $out;
+	}
+	
+	/**
 	 * Returns a readable date from billrun key.
 	 * example: converts "201607" to : "July 2016"
 	 * 
@@ -208,10 +250,15 @@ class Billrun_Util {
 	 * example: converts "201607" to : "July 2016"
 	 * 
 	 * @param type $billrunKey
+	 * @param string $format - returned date format
+	 * @param string $invoicing_day - custom invoicing day - in case multi day cycle system's mode on.
 	 * @return type
 	 */
-	public static function billrunKeyToPeriodSpan($billrunKey,$format) {
-		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+	public static function billrunKeyToPeriodSpan($billrunKey, $format, $invoicing_day = null) {
+		if (Billrun_Factory::config()->isMultiDayCycle() && empty($invoicing_day)) {
+			$invoicing_day = Billrun_Factory::config()->getConfigChargingDay();
+		} 
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey, $invoicing_day);
 		return date($format, $cycleData->start()) .' - '. date($format, $cycleData->end()-1);
 	}
 
@@ -457,6 +504,7 @@ class Billrun_Util {
 	}
 
 	public static function sendMail($subject, $body, $recipients, $attachments = array(), $html = false) {
+		try {
 		$mailer = Billrun_Factory::mailer()->setSubject($subject);
 		if($html){
 			$mailer->setBodyHtml($body, "UTF-8");
@@ -474,6 +522,10 @@ class Billrun_Util {
 		$mailer->addTo($recipients);
 		//sen email
 		return $mailer->send();
+		} catch (Throwable $th) {
+			Billrun_Factory::log("Error send email. " . $th->getCode() . ': ' . $th->getMessage());
+			return false;
+		}
 	}
 
 	public static function getForkUrl() {
@@ -547,24 +599,40 @@ class Billrun_Util {
 	 * 
 	 * @return Boolean true on success else FALSE
 	 */
-	public static function forkProcessCli($cmd) {
+	public static function forkProcessCli($cmd)
+	{
 		if (!defined('STDERR')) {
 			define('STDERR', fopen('php://stderr', 'w'));
 		}
-		$syscmd = $cmd . " > /dev/null & ";
-		if (defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT) {
+
+		$syscmd = "nohup " . $cmd . " > /dev/null 2>&1 &";
+		if (Billrun_Config::isMultitenantEnabled()) {
 			$syscmd = 'export APPLICATION_MULTITENANT=1 ; ' . $syscmd;
 		}
+
+		//Define empty pipes to prevent Web Server hanging
 		$descriptorspec = array(
-			2 => STDERR,
+			0 => array("file", "/dev/null", "r"),
+			1 => array("file", "/dev/null", "w"),
+			2 => array("file", "/dev/null", "w")
 		);
+
+		Billrun_Factory::log("About to run CLI command: " . $syscmd, Zend_Log::DEBUG);
 		$process = proc_open($syscmd, $descriptorspec, $pipes);
+
 		if ($process === FALSE) {
-			Billrun_Factory::log('Can\'t execute CLI command',Zend_Log::ERR);
+			Billrun_Factory::log('Can\'t execute CLI command', Zend_Log::ERR);
 			return false;
 		}
-		if (proc_close($process) === -1) {
-			Billrun_Factory::log('CLI command returned with error ',Zend_Log::ERR);
+
+
+		// NOTE: Because we use '&' (background), this returns the status of the
+		// Shell Launcher (usually 0 = Success), not the actual background script.
+		$status = proc_close($process);
+
+		// Original Check (Will likely never be -1)
+		if ($status === -1) {
+			Billrun_Factory::log('CLI command returned with error ', Zend_Log::ERR);
 			return false;
 		}
 		return true;
@@ -859,7 +927,7 @@ class Billrun_Util {
 		}
 
 		$credit_time = new Zend_Date($filtered_request['credit_time']);
-		$filtered_request['urt'] = new MongoDate($credit_time->getTimestamp());
+		$filtered_request['urt'] = new Mongodloid_Date($credit_time->getTimestamp());
 		unset($filtered_request['credit_time']);
 
 		$filtered_request['vatable'] = filter_var($filtered_request['vatable'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
@@ -888,7 +956,7 @@ class Billrun_Util {
 	public static function parseServiceRow($service_row, $billrun_key) {
 		$service_row['source'] = 'api';
 		$service_row['usaget'] = $service_row['type'] = 'service';
-		$service_row['urt'] = new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key));
+		$service_row['urt'] = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrun_key));
 		ksort($service_row);
 		$service_row['stamp'] = Billrun_Util::generateArrayStamp($service_row);
 		return $service_row;
@@ -980,9 +1048,13 @@ class Billrun_Util {
 		fclose($fd);
 	}
 
-	public static function logFailedResetLines($sids, $billrun_key) {
+	public static function logFailedResetLines($sids, $billrun_key, $invoicing_day = null) {
 		$fd = fopen(Billrun_Factory::config()->getConfigValue('resetlines.failed_sids_file', './files/failed_resetlines.json'), 'a+');
-		fwrite($fd, json_encode(array('sids' => $sids, 'billrun_key' => $billrun_key)) . PHP_EOL);
+		$output = array('sids' => $sids, 'billrun_key' => $billrun_key);
+		if (!is_null($invoicing_day)) {
+			$output['invoicing_day'] = $invoicing_day;
+		}
+		fwrite($fd, json_encode($output) . PHP_EOL);
 		fclose($fd);
 	}
 
@@ -1118,7 +1190,7 @@ class Billrun_Util {
 	 * @param returnResponse - true - function returns the whole response, false - returns only body.
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null, $returnResponse  = false) {
+	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null, $returnResponse  = false, $params = array()) {
 		if (empty($url)) {
 			Billrun_Factory::log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
@@ -1137,7 +1209,7 @@ class Billrun_Util {
 		if (!is_null($ssl_verify)) {
 			$curl->setCurlOption(CURLOPT_SSL_VERIFYPEER, $ssl_verify);
 		}
-		$client = new Zend_Http_Client($url);
+		$client = new Billrun_Http_Request($url, $params);
 		$client->setHeaders($headers);
 		$client->setAdapter($curl);
 		$client->setMethod($method);
@@ -1473,13 +1545,13 @@ class Billrun_Util {
 	}
 	
 	public static function getCompanyLogo($base64 = true) {
-		$gridFsColl = Billrun_Factory::db()->getDb()->getGridFS();
+		$gridFsColl = Billrun_Factory::db()->getGridFS();
 		$logo = $gridFsColl->find(array('billtype' => 'logo'))->sort(array('uploadDate' => -1))->limit(1)->getNext();
 		if (!$logo) {
 			return '';
 		}
-		if (!($logo instanceof MongoGridFSFile)) {
-			$logo = new MongoGridFSFile($gridFsColl, $logo);
+		if (!($logo instanceof Mongodloid_GridFSFile)) {
+			$logo = new Mongodloid_GridFSFile($gridFsColl, $logo);
 		}
 		$bytes = $logo->getBytes();
 		if ($base64) {
@@ -1500,7 +1572,7 @@ class Billrun_Util {
 	 */
 	public static function getCmdEnvParams() {
 		$ret = '--env ' . Billrun_Factory::config()->getEnv();
-		if (defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT) {
+		if (Billrun_Config::isMultitenantEnabled()) {
 			$ret .= ' --tenant ' . Billrun_Factory::config()->getTenant();
 		}
 		return $ret;
@@ -1528,21 +1600,31 @@ class Billrun_Util {
 		return is_numeric($value) && $value > strtotime('-30 years') &&  $value < strtotime('+30 years');
 	}
 	
-	
-	public static function setHttpSessionTimeout($timeout = null) {
+	/**
+	 * 
+	 * @param int $timeout duration in second session ttl 
+	 * @param string $samesite same cookie
+	 */
+	public static function setHttpSessionTimeout($timeout = null, $samesite = 'Strict') {
 		if (!is_null($timeout)) {
 			$sessionTimeout = $timeout;
 		} else {
 			$sessionTimeout = Billrun_Factory::config()->getConfigValue('session.timeout', 3600);
 		}
 		
-		ini_set('session.gc_maxlifetime', $sessionTimeout);
-		ini_set("session.cookie_lifetime", $sessionTimeout);
-        
 		$cookieParams = session_get_cookie_params();
+        
+		if (version_compare(PHP_VERSION, '7.3.0') >= 0) {
+			$cookieParams['lifetime'] = $sessionTimeout;
+			$cookieParams['samesite'] = $samesite;
+			session_set_cookie_params($cookieParams);
+		} else {
 		session_set_cookie_params(
 			(int) $sessionTimeout, $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure']
 		);
+			ini_set('session.cookie_samesite', $samesite);
+		}
+		ini_set('session.gc_maxlifetime', $sessionTimeout);
 	}
 	
 	public static function isValidIP($subject) {
@@ -1569,7 +1651,7 @@ class Billrun_Util {
 		foreach ($translations as $key => $trans) {
 			$sourceKey = Billrun_Util::getIn($trans, array('translation', 'source_key'), $key);
 			if (!isset($source[$sourceKey])&& empty($trans['nullable'])) {
-				Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
+				Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::DEBUG);
 			} else if(is_string($trans) && isset($source[$sourceKey])){
 				//Handle s simple field copy  translation
 				$retData[$trans] =  $source[$sourceKey];
@@ -1586,8 +1668,7 @@ class Billrun_Util {
 							$val = call_user_func_array($trans['translation']['function'], array(@$source[$sourceKey],
 																										   $userData) );
 						} else {
-							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
-							continue;
+							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::DEBUG);
 						}
 						break;
 					//Handle regex translation
@@ -1599,13 +1680,17 @@ class Billrun_Util {
 						} else if(isset($trans['translation'])) {
 							$val = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
 						} else {
-							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
-							continue;
+							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::DEBUG);
 						}
+						break;
+					//Handle date translation - assuimng mongo date was sent
+					case 'date' :
+						$dateFormat = isset($trans['format']) ? $trans['format'] : Billrun_Base::base_datetimeformat;
+						$dateValue = $source[$sourceKey]->sec;
+						$val = date($dateFormat, $dateValue);
 						break;
 					default :
 							Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
-							continue;
 						break;
 				}
 				if (!is_null($val) || empty($trans['ignore_null'])) {
@@ -1731,7 +1816,28 @@ class Billrun_Util {
 		
 		return $ret;
 	}
-	
+
+	public static function  isSetIn($arr, $keys ) {
+		if (!$arr) {
+			return false;
+		}
+
+		if (!is_array($keys)) {
+			if (isset($arr[$keys])) {
+				return true;
+			}
+			$keys = explode('.', $keys);
+		}
+
+		foreach ($keys as $key) {
+			if (!isset($arr[$key])) {
+				return false;
+			}
+			$arr = $arr[$key];
+		}
+
+		return true;
+	}
 	/**
 	 * Increase the value in an array.
 	 * Also supports deep fetch (for nested arrays)
@@ -1763,17 +1869,25 @@ class Billrun_Util {
 	/**
 	 * Maps a nested array  where the identifing key is in the object (as a field values ) to an hash  where the identifing key is the field name.
 	 * (used to  convert querable objects from the DB to a faster structure in PHP (keyed hash))
+	 * ( last entiry override the first entry with the same identifing value )
 	 * @param type $arrayData the  nested
 	 * @param type $hashKeys the  keys to search for.
 	 * @return type
 	 */
-	public static function mapArrayToStructuredHash($arrayData,$hashKeys) {
+	public static function mapArrayToStructuredHash($arrayData,$hashKeys,$accumulate = false) {
 		$retHash =array();
 		$currentKey = array_shift($hashKeys);
 		if(isset($arrayData[0]) && is_array($arrayData) && $currentKey) {
 			foreach($arrayData as $data) {
 				if(isset($data[$currentKey])) {
-					$retHash[$data[$currentKey]] = static::mapArrayToStructuredHash( $data, $hashKeys );
+					if( $accumulate && !empty($retHash[$data[$currentKey]]) ) {
+							if( Billrun_Util::isAssoc($retHash[$data[$currentKey]]) ) {
+								$retHash[$data[$currentKey]] = [$retHash[$data[$currentKey]]];
+							}
+							$retHash[$data[$currentKey]][] = static::mapArrayToStructuredHash( $data, $hashKeys );
+					} else {
+						$retHash[$data[$currentKey]] = static::mapArrayToStructuredHash( $data, $hashKeys );
+					}
 				} else {
 					Billrun_Factory::log("Could not map the $currentKey in array to hashed value, received array :".print_r($data,1), Zend_Log::WARN);
 				}
@@ -1867,7 +1981,26 @@ class Billrun_Util {
 		
 		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
 	}
-	
+
+	/**
+	 * check all conditions is met
+	 * 
+	 * @param array $row
+	 * @param array $conditions - array of condtions includes the following attributes: "field_name", "op", "value"
+	 * @return boolean
+	 */
+	public static function areConditionsMet($row, $conditions) {
+		 if (empty($conditions)) {
+            return true;
+        }
+		foreach ($conditions as $condition) {
+			if (!Billrun_Util::isConditionMet($row, $condition)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	/**
 	 * try to fork, and if successful update the process log stamp
 	 * to match the correct pid after the fork
@@ -1920,32 +2053,6 @@ class Billrun_Util {
 
 		return $retVal;
 	}
-
-	/**
-	 *  Get all user fields that are used in calculator and rating stages.
-	 * @param string $type - input processor name
-	 * @return array - user fields names
-	 */
-	public static function getCustomerAndRateUf($type) {
-		$fieldNames = array();
-		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
-		$customerIdentificationFields = $fileTypeConfig['customer_identification_fields'];
-		foreach ($customerIdentificationFields as $fields) {
-			$customerFieldNames = array_column($fields, 'src_key');
-			$fieldNames = array_merge($fieldNames, $customerFieldNames);
-		}
-		$rateCalculators = $fileTypeConfig['rate_calculators'];
-		foreach ($rateCalculators as $rateByUsaget) {
-			foreach ($rateByUsaget as $priorityByUsaget) {
-				foreach ($priorityByUsaget as $priority) {
-					$rateFieldNames = array_column($priority, 'line_key');
-					$fieldNames = array_merge($fieldNames, $rateFieldNames);
-				}
-			}
-		}
-
-		return array_unique($fieldNames);
-	}
 	
 	/**
 	 * Aggregate strings representing time from some start point
@@ -1995,7 +2102,91 @@ class Billrun_Util {
 		$url = htmlspecialchars($url);
 		return $url;
 	}
+        
+        public static function formattingValue($formatObj, $value, &$warningMessages = [], $defaultDateFormat = Billrun_Base::base_datetimeformat){
+            $valueType = $formatObj['type'] ?? 'string';
+            switch ($valueType){
+                case 'string'://todo:: allow only 'number' type to to use number format. 
+                case 'number':
+                    if(isset($formatObj['number_format']) && isset($formatObj['number_format']['decimals'])){
+                        if (!isset($formatObj['number_format']['dec_point']) && isset($formatObj['number_format']['thousands_sep'])) {
+                            $message = "'dec_point' is missing: " . print_r($formatObj['number_format'], 1) . ", so only 'decimals' was used to format value: " . $value;
+                            $warningMessages[] = $message;
+                            Billrun_Factory::log($message, Zend_Log::WARN);
+                        } elseif ((isset($formatObj['number_format']['dec_point']) && (!isset($formatObj['number_format']['thousands_sep'])))) {
+                            $message = "'thousands_sep' is missing: " . print_r($formatObj['number_format'], 1) . ", so only 'decimals' was used to format value: " . $value;
+                            $warningMessages[] = $message;
+                            Billrun_Factory::log($message, Zend_Log::WARN);
+                        } 
+                        if (isset($formatObj['number_format']['dec_point']) && isset($formatObj['number_format']['thousands_sep'])){
+                            $value = number_format((float)$value, $formatObj['number_format']['decimals'], $formatObj['number_format']['dec_point'], $formatObj['number_format']['thousands_sep']);
+                        } else {
+                            $value = number_format((float)$value, $formatObj['number_format']['decimals']); 
+                        } 
+                    }
+                    break;
+                case 'date':                   
+                    $dateFormat = isset($formatObj['format']) ? $formatObj['format'] : $defaultDateFormat;
+                    if ($value instanceof Mongodloid_Date) {
+                        $dateValue = $value->sec;
+                    } elseif (intval($value)) {
+                        $dateValue = $value;
+                    } else if (strtotime($value)) {
+                       $dateValue = strtotime($value); 
+                    } else {
+                        $message = "Couldn't convert date string " . $value;
+                        $warningMessages[] = $message;
+                        Billrun_Factory::log($message, Zend_Log::WARN);
+                        break;
+                    }
+                    if (isset($formatObj['relative_time'])) {
+                       $dateValue = strtotime($formatObj['relative_time'], $dateValue);
+                    }
+                    $value = date($dateFormat, $dateValue);
+                    break;
+            }
+            if (isset($formatObj['value_mult'])) {
+                $value = floatval($formatObj['value_mult']) * floatval($value);
+            }
+            $padding = $formatObj['padding'] ?? [];
+            if (!empty($padding)){
+                $padDir = isset($padding['direction']) ? ($padding['direction']==='right' ? STR_PAD_RIGHT :  STR_PAD_LEFT) : STR_PAD_LEFT;
+                $padChar = isset($padding['character']) ? $padding['character'] : '';
+                $length = isset($padding['length']) ? $padding['length'] : strlen($value);
+                $valueToPed = substr($value, 0, $length) ?? '';
+                $value = str_pad($valueToPed, $length, $padChar, $padDir) ?? '';
+            }
+            if (isset($formatObj['substring'])) {
+                if (!isset($formatObj['substring']['offset']) || !isset($formatObj['substring']['length'])) {
+			$message = "substring: " . print_r($formatObj['substring'], 1) . " was defined incorrectly";
+                        $warningMessages[] = $message;
+                        Billrun_Factory::log($message, Zend_Log::WARN);
+		}
+		$value = substr($value, $formatObj['substring']['offset'], $formatObj['substring']['length']);
+            }
+            return $value;
+	}
 
+   /**
+	* Merges two arrays based on a set of predefined rules.
+	*
+	* @param array $mainArr The primary array that will be modified and returned.
+	* @param array $secArr The secondary array which provides values to be merged into the primary array.
+	* @param array $rules An associative array of rules that determine how merging should be done.
+	*     Rule keys can include:
+	*     - '$push': Appends values from the secondary array into the main array.
+	*     - '$addToSet': Appends unique values from the secondary array into the main array.
+	*     - '$mergeArrayByRules': Recursively applies the mergeArrayByRules function to nested arrays.
+	*     - '$mergeMultiArraysByRules': Merges multiple nested arrays from both main and secondary arrays into one, based on specified rules.
+	*     - Other valid PHP functions: Applies native PHP functions to merge array values.
+	*       Supported functions are listed in the config under 'billrun.runnble_functions'
+	* 		default  valid functions  are  ('min','max','array_merge','array_diff')
+	*
+	* The function also uses internal `static::getIn` and `static::setIn` methods
+	* for retrieving and updating nested array values respectively.
+	*
+	* @return array The merged array.
+	*/
 	public static function mergeArrayByRules($mainArr, $secArr, $rules) {
 
 		foreach($rules as $srcFieldKey => $fieldRules) {
@@ -2052,7 +2243,43 @@ class Billrun_Util {
 			}
 		}
 		return $mainArr;
-
 	}
 
+	public static function isArrayDiffer($arr1 ,$arr2 ,$filterFields = []) {
+		return 	Billrun_Util::generateArrayStamp( $arr1, $filterFields, true)
+					!=
+				Billrun_Util::generateArrayStamp( $arr2, $filterFields, true);
+	}
+
+	/**
+	 * Get the base URL from the request object.
+	 */
+	public static function getBaseUrl($request)
+	{
+		$server = $request->getServer();
+		$host = $server['HTTP_HOST'];
+		$protocol = 'http';
+
+		$forwardedProto = !empty($server['HTTP_X_FORWARDED_PROTO'])
+			? trim(explode(',', $server['HTTP_X_FORWARDED_PROTO'])[0])
+			: '';
+
+		if ((!empty($server['HTTPS']) && $server['HTTPS'] !== 'off') ||
+			strtolower($forwardedProto) === 'https'
+		) {
+			$protocol = 'https';
+		}
+
+		return $protocol . '://' . $host . '/';
+	}
+
+	public static function findMatchingEmailTemplate($path, $data = []){
+		$templates = Billrun_Factory::config()->getConfigValue('email_templates.' . $path .'.templates') ?? [];
+		foreach($templates as $template){
+			$conditions = $template['conditions'] ?? [];
+			if (empty($conditions)  || self::areConditionsMet($data, $conditions)){
+				return $template;
+			}
+		}
+	}
 }

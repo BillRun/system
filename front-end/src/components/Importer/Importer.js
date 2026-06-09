@@ -8,6 +8,7 @@ import StepUpload from './StepUpload';
 import StepMapper from './StepMapper';
 import StepValidate from './StepValidate';
 import StepResult from './StepResult';
+import StepImporting from './StepImporting';
 import { ActionButtons, Stepper } from '@/components/Elements';
 import {
   initImporter,
@@ -155,6 +156,7 @@ class Importer extends Component {
     } else {
       steps.push({ id: 'upload', stepDate:{ title: 'Upload File'}, okLabel: 'Import', okAction: this.onImport});
     }
+    steps.push({ id: 'importing', stepDate:{ title: 'Importing'}});
     steps.push({ id: 'finish', stepDate:{ title: 'Finish'}, okLabel: 'Close', okAction: this.onFinish});
     if (index === null) {
       return steps;
@@ -182,6 +184,52 @@ class Importer extends Component {
     }
   }
 
+  getPredefinedValues = () => {
+    const {
+      item,
+      predefinedValues,
+      predefinedValuesOperation,
+    } = this.props;
+    const entity = item.get('entity', '');
+    const operation = item.get('operation', 'create');
+    const operationValues = predefinedValuesOperation.get(operation, Immutable.List());
+    if (!operationValues.includes(entity)) {
+      return Immutable.Map()
+    }
+    return predefinedValues.get(entity, Immutable.Map());
+  }
+
+  getDefaultValues = () => {
+    const {
+      item,
+      defaultValues,
+      defaultValuesOperation,
+    } = this.props;
+    const entity = item.get('entity', '');
+    const operation = item.get('operation', 'create');
+    const operationValues = defaultValuesOperation.get(operation, Immutable.List());
+    if (!operationValues.includes(entity)) {
+      return Immutable.Map()
+    }
+    return defaultValues.get(entity, Immutable.Map());
+  }
+
+  createManualMappingImportData = () => {
+    const { item, importFields } = this.props;
+    return Immutable.Map({
+      files: [item.get('file', '')],
+      map: item.get('map', Immutable.List()),
+      delimiter: item.get('fileDelimiter', ','),
+      linker: item.get('linker', Immutable.Map()),
+      updater: item.get('updater', Immutable.Map()),
+      multi_field_action: item.get('multiFieldAction', Immutable.Map()),
+      predefined_values: this.getPredefinedValues(),
+      default_values: this.getDefaultValues(),
+      import_fields: importFields,
+      mapper_name: item.get('mapperName', Immutable.Map()),
+    });
+  }
+
   onClearItems = (itemName) => {
     if (this.props.onClearItems) {
       this.props.onClearItems(itemName);
@@ -192,13 +240,14 @@ class Importer extends Component {
     const { item } = this.props;
     const entity = item.get('entity', '');
     const operation = item.get('operation', 'create');
-    const rows = (item.get('importType', '') === 'manual_mapping')
-      ? this.alterData(this.getFormattedRows())
+    const collection = getConfig(['systemItems', entity, 'collection'], '');
+    const data = (item.get('importType', '') === 'manual_mapping')
+      ? this.createManualMappingImportData()
       : item;
-    if (rows.size > 0 && entity !== '') {
+    if (entity !== '') {
       this.setState({ status: 'progress' });
-      const collection = getConfig(['systemItems', entity, 'collection'], '');
-      this.props.dispatch(sendImport(collection, rows, operation)).then(this.afterImport);
+      this.onNextStep();
+      this.props.dispatch(sendImport(collection, data, operation)).then(this.afterImport);
     } else {
       this.props.dispatch(showDanger('No Import data found'));
     }
@@ -211,7 +260,12 @@ class Importer extends Component {
 
   onPrevStep = () => {
     const { stepIndex } = this.state;
-    this.setState({ stepIndex: stepIndex - 1 });
+    const step = this.getImporterSteps(stepIndex-1);
+    if (step.id === 'importing') {
+      this.setState({ stepIndex: stepIndex - 2 });
+    } else {
+      this.setState({ stepIndex: stepIndex - 1 });
+    }
   }
 
   combineRateLines = (combinedRate, rateLine, index) => {
@@ -225,6 +279,7 @@ class Importer extends Component {
       '__UPDATER__',
       '__CSVROW__',
       '__ERRORS__',
+      'price_service',
       'price_plan',
       'price_from',
       'price_to',
@@ -233,17 +288,25 @@ class Importer extends Component {
       'usage_type_value',
       'usage_type_unit',
     ];
-    const taxFields = ['tax__type', 'tax__taxation','tax__custom_logic','tax__custom_tax'];
+    const taxFields = ['tax__type', 'tax__taxation', 'tax__custom_logic', 'tax__custom_tax'];
     const roundingRulesFields = ['rounding_type', 'rounding_decimals'];
     return combinedRate.withMutations((combinedRateWithMutations) => {
       // Check price field, if we have pricing or percentage in import but missing pricing data -> return error
-      if (rateLine.get('rates.percentage', '') !== '' && rateLine.get('price_plan', 'BASE') !== 'BASE') {
+      const planName = rateLine.get('price_plan', 'BASE');
+      if (rateLine.get('rates.plans.percentage', '') !== '' && !['BASE', '', null].includes(planName)) {
         const usageType = rateLine.get('usage_type_value', '_KEEP_SOURCE_USAGE_TYPE_');
-        const planName = rateLine.get('price_plan', 'BASE');
-        const ratePath = ['rates', usageType, planName, 'percentage'];
-        const pricePercentage = parseFloat(rateLine.get('rates.percentage', 1));
+        const ratePath = ['rates', usageType, 'plans', planName, 'percentage'];
+        const pricePercentage = parseFloat(rateLine.get('rates.plans.percentage', 1));
         combinedRateWithMutations.setIn(ratePath, pricePercentage);
-      } else if (rateLine.get('price_value', '') !== '') {
+      }
+      const serviceName = rateLine.get('price_service', 'BASE');
+      if (rateLine.get('rates.services.percentage', '') !== '' && !['BASE', '', null].includes(serviceName)) {
+        const usageType = rateLine.get('usage_type_value', '_KEEP_SOURCE_USAGE_TYPE_');
+        const ratePath = ['rates', usageType, 'services', serviceName, 'percentage'];
+        const pricePercentage = parseFloat(rateLine.get('rates.services.percentage', 1));
+        combinedRateWithMutations.setIn(ratePath, pricePercentage);
+      }
+      if (rateLine.get('price_value', '') !== '') {
         if (rateLine.has('price_from')
           && rateLine.has('price_to')
           && rateLine.has('price_interval')
@@ -253,7 +316,48 @@ class Importer extends Component {
           )
         ) {
           const usageType = rateLine.get('usage_type_value', '_KEEP_SOURCE_USAGE_TYPE_');
-          const planName = rateLine.get('price_plan', 'BASE');
+          if (['BASE', '', null].includes(planName) && ['BASE', '', null].includes(serviceName)) {
+            const ratePath = ['rates', usageType, 'product', 'BASE', 'rate'];
+            const priceRate = Immutable.Map({
+              from: rateLine.get('price_from', 0),
+              to: rateLine.get('price_to', 'UNLIMITED'),
+              interval: rateLine.get('price_interval', 0),
+              price: rateLine.get('price_value', 0),
+              uom_display: Immutable.Map({
+                range: rateLine.get('usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+                interval: rateLine.get('usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+              }),
+            });
+            combinedRateWithMutations.updateIn(ratePath, Immutable.List(), rates => rates.push(priceRate));
+          }
+          if (!['BASE', '', null].includes(planName)) {
+            const ratePath = ['rates', usageType, 'plans', planName, 'rate'];
+            const priceRate = Immutable.Map({
+              from: rateLine.get('price_from', 0),
+              to: rateLine.get('price_to', 'UNLIMITED'),
+              interval: rateLine.get('price_interval', 0),
+              price: rateLine.get('price_value', 0),
+              uom_display: Immutable.Map({
+                range: rateLine.get('usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+                interval: rateLine.get('usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+              }),
+            });
+            combinedRateWithMutations.updateIn(ratePath, Immutable.List(), rates => rates.push(priceRate));
+          }
+          if (!['BASE', '', null].includes(serviceName)) {
+            const ratePath = ['rates', usageType, 'services', serviceName, 'rate'];
+            const priceRate = Immutable.Map({
+              from: rateLine.get('price_from', 0),
+              to: rateLine.get('price_to', 'UNLIMITED'),
+              interval: rateLine.get('price_interval', 0),
+              price: rateLine.get('price_value', 0),
+              uom_display: Immutable.Map({
+                range: rateLine.get('usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+                interval: rateLine.get('usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+              }),
+            });
+            combinedRateWithMutations.updateIn(ratePath, Immutable.List(), rates => rates.push(priceRate));
+          }
           const ratePath = ['rates', usageType, planName, 'rate'];
           const priceRate = Immutable.Map({
             from: rateLine.get('price_from', 0),
@@ -353,6 +457,9 @@ class Importer extends Component {
         .delete('tax__custom_tax')
         .delete('tax__taxation')
         .delete('rates.percentage')
+        .delete('rates.services.percentage')
+        .delete('rates.plans.percentage')
+        .delete('price_service')
         .delete('price_plan')
         .delete('price_from')
         .delete('price_to')
@@ -508,6 +615,20 @@ class Importer extends Component {
         // Ignore first (headers) line
         for (let idx = 1; idx < linesToParse; idx++) {
           const row = Immutable.Map().withMutations((mapWithMutations) => {
+
+            // Set CSV row
+            mapWithMutations.set('__CSVROW__', (idx + 1));
+
+            // Set default values
+            if (['create'].includes(operation) && defaultValuesOperation.get(operation, Immutable.List()).includes(entity) && defaultValues.has(entity)) {
+              defaultValues.get(entity, Immutable.Map()).forEach((defaultValue, fieldkey) => {
+                if (mapWithMutations.get(fieldkey, '') === '') {
+                  mapWithMutations.set(fieldkey, defaultValue);
+                }
+              });
+            }
+
+            // Set data from mapper
             map.forEach((mapperValue, fieldName) => {
               let columnValue = mapperValue;
               if (mapperValue.startsWith(mapperPrefix)) {
@@ -530,20 +651,14 @@ class Importer extends Component {
               }
               mapWithMutations.set(fieldName, columnValue);
             });
+
             // Set predefined values
             if (['create'].includes(operation) && predefinedValuesOperation.get(operation, Immutable.List()).includes(entity) && predefinedValues.has(entity)) {
               predefinedValues.get(entity, Immutable.Map()).forEach((predefinedValue, fieldkey) => {
                 mapWithMutations.set(fieldkey, predefinedValue);
               });
             }
-            // Set predefined values
-            if (['create'].includes(operation) && defaultValuesOperation.get(operation, Immutable.List()).includes(entity) && defaultValues.has(entity)) {
-              defaultValues.get(entity, Immutable.Map()).forEach((defaultValue, fieldkey) => {
-                if (mapWithMutations.get(fieldkey, '') === '') {
-                  mapWithMutations.set(fieldkey, defaultValue);
-                }
-              });
-            }
+
             // Set linker for entities with parent<->child relationship
             if (linker !== null && linker.get('field', '') !== '' && linker.get('value', '') !== '') {
               const csvIndex = linker.get('value', '').substring(mapperPrefix.length);
@@ -564,8 +679,6 @@ class Importer extends Component {
             if (multiFieldAction !== null && !multiFieldAction.isEmpty()) {
               mapWithMutations.set('__MULTI_FIELD_ACTION__', multiFieldAction);
             }
-            // Set CSV row
-            mapWithMutations.set('__CSVROW__', (idx + 1));
           });
           rowsWithMutations.push(row);
         }
@@ -575,6 +688,7 @@ class Importer extends Component {
 
   afterImport = (response) => {
     const { item } = this.props;
+    this.onNextStep();
     if ([1, 2].includes(response.status)) {
       const responseData = Immutable.fromJS(response.data) || Immutable.Map();
       const result = responseData.get('imported_entities', responseData.toList());
@@ -590,7 +704,6 @@ class Importer extends Component {
         }
       }
       this.onChange('result', responseData);
-      this.onNextStep();
       this.onClearItems(item.get('entity', ''));
     } else {
       this.onDelete('result');
@@ -640,6 +753,9 @@ class Importer extends Component {
     const id = this.getImporterSteps(stepIndex).id;
 
     switch (id) {
+      case 'importing': return (
+        <StepImporting />
+      );
       case 'upload': return (
         <StepUpload
           item={item}
@@ -691,14 +807,15 @@ class Importer extends Component {
     const inProgress = status === 'progress';
     const inFinish = status === 'finish';
     const validateHasError = stepIndex === 2 && item.get('error', false);
-
+    const step = this.getImporterSteps(stepIndex);
     return (
       <ActionButtons
         cancelLabel={this.getOkButtonLable()}
         onClickCancel={this.getOkButtonAction()}
         disableCancel={inProgress || validateHasError || item.get('importType', '') === ''}
         saveLabel="Back"
-        hideCancel={stepIndex === 3 && this.props.onFinish === null}
+        hideCancel={(stepIndex === 3 && this.props.onFinish === null) || step.id === 'importing'}
+        hideSave={step.id === 'importing'}
         disableSave={stepIndex === 0 || inProgress || inFinish}
         onClickSave={this.onPrevStep}
         reversed={true}

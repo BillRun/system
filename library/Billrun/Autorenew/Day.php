@@ -18,7 +18,7 @@ class Billrun_Autorenew_Day extends Billrun_Autorenew_Record {
 	 */
 	protected function getNextRenewDate() {
 		$nextDay = strtotime("+1 day 00:00:00");
-		return new MongoDate($nextDay);
+		return new Mongodloid_Date($nextDay);
 	}
 
 }

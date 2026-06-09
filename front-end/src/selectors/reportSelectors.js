@@ -6,15 +6,20 @@ import {
   getFieldNameType,
   getConfig,
   sortFieldOption,
+  createReportSaveToBillsField
 } from '@/common/Util';
 import {
   subscriberFieldsWithPlaySelector,
   inputProssesorfilteredFieldsSelector,
+  inputProssesorCalculatedFieldsSelector,
   accountFieldsSelector,
   linesFieldsSelector,
   billsFieldsSelector,
   billsUserFieldsSelector,
-  saveToBillPaymentGatewaySelector,
+  saveToBillPaymentsPaymentGatewaySelector,
+  saveToBillDenialsPaymentGatewaySelector,
+  saveToBillTransactionsResponsePaymentGatewaySelector,
+  saveToBillTransactionsRequestPaymentGatewaySelector,
   rateCategoriesSelector,
   isPlaysEnabledSelector,
 } from './settingsSelector';
@@ -40,6 +45,7 @@ const formatReportFields = (fields) => {
 
 const selectReportLinesFields = (
   customKeys = Immutable.List(),
+  calculatedFields = Immutable.List(),
   billrunFields = Immutable.List(),
   categoryFields = Immutable.List(),
 ) =>
@@ -49,6 +55,12 @@ const selectReportLinesFields = (
       optionsWithMutations.push(Immutable.Map({
         field_name: `uf.${customKey}`,
         title: `${getFieldName(customKey, 'lines', sentenceCase(customKey))} (User field)`,
+      }));
+    });
+    calculatedFields.forEach((calculatedField) => {
+      optionsWithMutations.push(Immutable.Map({
+        field_name: `cf.${calculatedField}`,
+        title: `${getFieldName(calculatedField, 'lines', sentenceCase(calculatedField))} (Calculated field)`,
       }));
     });
     categoryFields.forEach((customKey) => {
@@ -81,17 +93,32 @@ const selectReportLinesFields = (
   const selectReportBillsFields = (
     userFields = Immutable.List(),
     billrunFields = Immutable.List(),
-    saveToBillsFields = Immutable.List(),
+    saveToBillPaymentsFields = Immutable.List(),
+    saveToBillDenialsFields = Immutable.List(),
+    saveToBillTransactionsResponseFields = Immutable.List(),
+    saveToBillTransactionsRequestFields = Immutable.List(),
   ) =>
     Immutable.List().withMutations((optionsWithMutations) => {
       // set fields from IP
-      saveToBillsFields.forEach((saveToBillsField) => {
-        optionsWithMutations.push(Immutable.Map({
-          field_name: `pg_request.${saveToBillsField.get('field_name', '')}`,
-          title: `${saveToBillsField.get('payment_gateway')}: ${getFieldName(saveToBillsField.get('field_name', ''), 'bills')}`,
-          type: saveToBillsField.getIn(['type'], 'text'),
-          payment_gateway: saveToBillsField.get('payment_gateway')
-        }));
+      saveToBillTransactionsRequestFields.forEach((saveToBillsField) => {
+        optionsWithMutations.push(
+          createReportSaveToBillsField(saveToBillsField, 'pg_request')
+        );
+      });
+      saveToBillTransactionsResponseFields.forEach((saveToBillsField) => {
+        optionsWithMutations.push(
+          createReportSaveToBillsField(saveToBillsField, 'pg_response')
+        );
+      });
+      saveToBillDenialsFields.forEach((saveToBillsField) => {
+        optionsWithMutations.push(
+          createReportSaveToBillsField(saveToBillsField, 'pg_denials')
+        );
+      });
+      saveToBillPaymentsFields.forEach((saveToBillsField) => {
+        optionsWithMutations.push(
+          createReportSaveToBillsField(saveToBillsField, 'pg_payments')
+        );
       });
       // Set fields from billrun settings
       billrunFields.forEach((billrunField) => {
@@ -182,6 +209,7 @@ const selectReportFields = (
   paymentDenialsFields,
   paymentsFilesFields,
   queueFields,
+  rebalanceQueueFields,
   eventFields,
   billsFields,
 ) => {
@@ -222,6 +250,7 @@ const selectReportFields = (
 
   return Immutable.Map({
     usage,
+    usage_archive: usage, // use same fields selector as lines, in th BE we use different collection
     subscription,
     customer,
     logFile: logFileFields,
@@ -230,6 +259,7 @@ const selectReportFields = (
     paymentDenials: paymentDenialsFields,
     paymentsFiles: paymentsFilesFields,
     queue: queueFields,
+    rebalance_queue: rebalanceQueueFields,
     event: eventFields,
     bills: billsFields,
   });
@@ -237,6 +267,7 @@ const selectReportFields = (
 
 const reportLinesFieldsSelector = createSelector(
   inputProssesorfilteredFieldsSelector,
+  inputProssesorCalculatedFieldsSelector,
   linesFieldsSelector,
   rateCategoriesSelector,
   selectReportLinesFields,
@@ -256,10 +287,17 @@ export const reportAccountFieldsSelector = createSelector(
   mergeEntityAndReportConfigFields,
 );
 
-const reportlogFileFieldsSelector = createSelector(
+const reportLogFileFieldsSelector = createSelector(
   () => Immutable.List(),
   () => 'logFile',
   isPlaysEnabledSelector,
+  mergeEntityAndReportConfigFields,
+);
+
+const reportRebalanceQueueFieldsSelector = createSelector(
+  () => Immutable.List(),
+  () => 'rebalance_queue',
+  () => true,
   mergeEntityAndReportConfigFields,
 );
 
@@ -315,7 +353,10 @@ const reportQueueFieldsSelector = createSelector(
 export const reportBillsFieldsSelector = createSelector(
   billsUserFieldsSelector,
   billsFieldsSelector,
-  saveToBillPaymentGatewaySelector,
+  saveToBillPaymentsPaymentGatewaySelector,
+  saveToBillDenialsPaymentGatewaySelector,
+  saveToBillTransactionsResponsePaymentGatewaySelector,
+  saveToBillTransactionsRequestPaymentGatewaySelector,
   selectReportBillsFields,
 );
 
@@ -335,12 +376,13 @@ export const reportEntitiesFieldsSelector = createSelector(
   reportSubscriberFieldsSelector,
   reportAccountFieldsSelector,
   reportUsageFieldsSelector,
-  reportlogFileFieldsSelector,
+  reportLogFileFieldsSelector,
   reportPaymentsTransactionsRequestFieldsSelector,
   reportPaymentsTransactionsResponseFieldsSelector,
   reportPaymentDenialsFieldsSelector,
   reportPaymentsFilesFieldsSelector,
   reportQueueFieldsSelector,
+  reportRebalanceQueueFieldsSelector,
   reportEventFileFieldsSelector,
   reportBillsSelector,
   selectReportFields,

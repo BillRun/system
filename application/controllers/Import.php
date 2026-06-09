@@ -22,7 +22,7 @@ class ImportController extends Yaf_Controller_Abstract {
 		// Add interconnect flag
 		$notZeroRates = array();
 		$query = array(
-			'params.prefix' => array('$in' => array(new MongoRegex( "/^01/" ))),
+			'params.prefix' => array('$in' => array(new Mongodloid_Regex( "/^01/" ))),
 		);
 		$internationalRates = Billrun_Factory::db()->ratesCollection()->query($query);
 		foreach ($internationalRates as $internationalRate) {
