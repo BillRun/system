@@ -113,7 +113,7 @@ class Billrun_Collection extends Billrun_Base {
 			}
 			if(isset($debtByAids[$aid]) && $debtByAids[$aid]['total'] >= $processMinDebt){
 				$reallyInCollectionByProcess[$processIndex][$aid] = $debtByAids[$aid];
-				$this->reallyInCollectionAids[]= $aid;
+				$this->reallyInCollectionAids[] = intval($aid);
 			}
 			$aidsAlreadyProcess[$aid] = true;
 			if ($collectDir == 'enter_collection' || empty($collectDir)) {
