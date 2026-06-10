@@ -60,6 +60,7 @@ class Models_Action_Gethierarchy_Accounts extends Models_Action {
 			? intval($revision['parent_aid'])
 			: null;
 		$result[$aid] = array(
+			'_id' => isset($revision['_id']) ? $revision['_id'] : null,
 			'name' => $this->getAccountDisplayName($revision, $aid),
 			'parent_aid' => $parent,
 			'issues_invoice' => Billrun_Util::toBool(isset($revision['issues_invoice']) ? $revision['issues_invoice'] : null, true),
