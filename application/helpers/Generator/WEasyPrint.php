@@ -163,9 +163,13 @@ class Generator_WEasyPrint extends Generator_WkPdf {
 		}
 
 		if (Billrun_Factory::config()->getConfigValue(self::$type . '.exclude_pages')) {
-			$firstPage = $this->view_path . 'first_page/main.phtml';
-			$lastPage  = $this->view_path . 'last_page/main.phtml';
-			$this->excludeFirstAndLastPages($file_name, $pdf_name, $firstPage, $lastPage);
+			// The wkhtmltopdf exclude_pages flow (regenerate first/last page +
+			// pdftk merge) does not apply to WeasyPrint: page exclusion and
+			// dedicated first/last pages are handled in CSS via @page rules.
+			Billrun_Factory::log(
+				'invoice_export.exclude_pages is set but is not supported by the WeasyPrint engine; ignoring.',
+				Zend_Log::NOTICE
+			);
 		}
 
 		chmod($pdf, $this->filePermissions);
