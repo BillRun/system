@@ -111,11 +111,11 @@ class BalanceEvent extends Component {
     const params = ({ propertyTypes, usageTypesData, currency, activityType });
     return (
       <FormGroup key={index} className="mb0">
-        <Col sm={12}>
-          <div className="inline pr100">
+        <Col sm={12} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <div>
             { getConditionDescription(condition, params) }
           </div>
-          <span className="pull-right List row pr10 line-actions">
+          <span>
             <Actions actions={this.getConditionActions(index)} />
           </span>
         </Col>
