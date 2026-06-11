@@ -109,7 +109,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter {
 			$fileExported = $this->fileGenerator->export();
 			$this->created_successfully &= !empty($fileExported);
 			if(file_exists($fileExported)){
-				$exported[] = $fileExported;
+				$exported[$this->logStamp] = $fileExported;
 			}
 			$transactionCounter += $this->fileGenerator->getTransactionsCounter();
 		}

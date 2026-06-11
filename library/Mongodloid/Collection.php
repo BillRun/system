@@ -137,7 +137,7 @@ class Mongodloid_Collection {
 		// This function changes fields, should I clone fields before sending?
 		$this->setEntityFields($entity, $fields);
 
-		return Mongodloid_Result::getResult($this->updateOne($data, array('$set' => $fields)), __FUNCTION__);
+		return Mongodloid_Result::getResult($this->updateOne( Mongodloid_TypeConverter::fromMongodloid($data), array('$set' => $fields)), __FUNCTION__);
 	}
 
 	/**
@@ -164,6 +164,22 @@ class Mongodloid_Collection {
 	 */
 	public function dropIndex($field) {
 		return Mongodloid_Result::getResult($this->_collection->dropIndex($field), __FUNCTION__);
+	}
+
+	/**
+	 * Drop an index by name only if it currently exists. No-op otherwise.
+	 *
+	 * @param string $indexName
+	 * @return bool true if the index was dropped, false if it didn't exist
+	 */
+	public function dropIndexIfExists($indexName) {
+		foreach ($this->getIndexes() as $idx) {
+			if (isset($idx['name']) && $idx['name'] === $indexName) {
+				$this->dropIndex($indexName);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -720,6 +736,7 @@ class Mongodloid_Collection {
 
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = !empty($collName) ? $collName : $this->getName();
+		Billrun_Factory::log("Creating auto increment for collection: " . $collection_name, Zend_Log::DEBUG);
 		//check for existing seq
 		if (!empty($params)) {
 			$key = serialize($params);

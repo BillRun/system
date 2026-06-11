@@ -117,9 +117,6 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if (isset($paramObj['value_mult'])) {
 			$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
 		}
-			if (isset($paramObj['value_mult'])) {
-				$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
-			}
 		if(isset($paramObj['decimals'])){
 			$value = intval($row[$paramObj['name']]);
 			$row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
@@ -140,7 +137,16 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				throw new Exception($message);
 			}
 			$row[$paramObj['name']] = substr($row[$paramObj['name']], $paramObj['substring']['offset'], $paramObj['substring']['length']);
+		}
+		if (isset($paramObj['replace_regex'])) {
+			$value = preg_replace($paramObj['replace_regex']['regex'], $paramObj['replace_regex']['replace_with'], $row[$paramObj['name']]);
+			if(!isset($value)){
+				$message = "Field name " . $paramObj['name'] . " config was defined incorrectly for replace_regex when generating file type " . $this->configByType['file_type'];
+				throw new Exception($message);
+
 			}
+			$row[$paramObj['name']] = $value;
+		}
 		}
 		return $row;
 	}

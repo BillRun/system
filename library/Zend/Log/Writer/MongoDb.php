@@ -187,7 +187,9 @@ class Zend_Log_Writer_MongoDb extends Zend_Log_Writer_Abstract
                 $dataToInsert[$columnName] = $event[$fieldKey];
             }
         }
+        
         $this->_collection->insert($dataToInsert);
+           
     }
     /**
      *

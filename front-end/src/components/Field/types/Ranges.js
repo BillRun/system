@@ -38,7 +38,6 @@ class Ranges extends PureComponent {
     };
   }
 
-
   onChange = (rangeValue, index) => {
     const { value } = this.props;
     this.props.onChange(value.set(index, rangeValue));
@@ -98,7 +97,7 @@ class Ranges extends PureComponent {
             />
             { removable && (
               <InputGroup.Button>
-                <Button onClick={onRemoveRange} disabled={disabled} >
+                <Button onClick={onRemoveRange} disabled={disabled} title="Remove range" className="remove-range">
                   <i className="fa fa-fw fa-trash-o danger-red" />
                 </Button>
               </InputGroup.Button>

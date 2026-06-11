@@ -27,6 +27,7 @@ class Billrun_Parser_Xml {
 	protected $single_fields = [];
 	protected $data_sets_path = "";
 	protected $single_fields_by_data_set = null;
+	protected $validate_config = 0;
 
     public function __construct($options) {
         $this->input_array['header'] = isset($options['header_structure']) ? $options['header_structure'] : null;
@@ -59,7 +60,10 @@ class Billrun_Parser_Xml {
     public function parse($fp) {
         $filename = stream_get_meta_data($fp)["uri"];	
 		try {
-			$this->preXmlBuilding();
+			if (!$this->validate_config) {
+				$this->preXmlBuilding();
+				$this->validate_config = 1;
+			}
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Billrun_Parser_Xml: ' . $ex->getMessage(), Zend_Log::ALERT);
 			return;
@@ -185,16 +189,23 @@ class Billrun_Parser_Xml {
 	}
     
     protected function preXmlBuilding() {
+		Billrun_Factory::log("Running pre xml building validation function", Zend_Log::DEBUG);
 		foreach ($this->input_array as $segment => $indexes) {
+			Billrun_Factory::log("Checking " . $segment . " configuration array", Zend_Log::DEBUG);
 			if(!is_null($indexes)) {
+				Billrun_Factory::log("Found " . count($indexes) . " fields to check", Zend_Log::DEBUG);
 				for ($a = 0; $a < count($indexes); $a++) {
+					Billrun_Factory::log("Validating field " . $a . " configuration", Zend_Log::DEBUG);
 					if (isset($this->input_array[$segment][$a]['path'])) {
+						Billrun_Factory::log('Found path for index ' . $a . " field, named " . $this->input_array[$segment][$a]['name'] . ". Saving path", Zend_Log::DEBUG);
 						$this->paths[] = $this->input_array[$segment][$a]['path'];
 						$this->pathsBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
 					} else {
-						throw new Exception("No path for one of the " . $segment . "'s entity. No parse was made.");
+						throw new Exception("No path was set for " . $this->input_array[$segment][$a]['name'] . " field, index " . $a . ", in segment ". $segment . ". No parse was made.");
 					}
 				}
+			} else {
+				Billrun_Factory::log("No fields to check in " . $segment . " array", Zend_Log::DEBUG);
 			}
 		}
         

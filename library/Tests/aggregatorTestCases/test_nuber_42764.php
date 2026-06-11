@@ -16,7 +16,7 @@ class Test_Case_42764
             [
 
                 "from" => "2019-05-31T22:00:00Z",
-                "name" => "PLAN" . time()+random_int(1,111111111),
+                "name" => generat_test_data::uniqueName("PLAN"),
                 "price" => [
                     [
                         "price" => 100,
@@ -38,7 +38,7 @@ class Test_Case_42764
                 "prorated_termination" => true
             ]
         );
-        $discount_name = time()+random_int(1,111111111);
+        $discount_name = generat_test_data::uniqueName();
 
         $discount = generat_discounts::generateDiscount([
             "from" => "2019-05-31T22:00:00Z",
@@ -116,10 +116,10 @@ class Test_Case_42764
         );
 
 
-
+        // Note!!: there is currently no requirement to prorate the discount in this case; only the last discount override is supported for now.
         return [
             'test' => [
-                'label' => ' 2 revisions (in month) for subscriber that only the second have override discount (only override discount meet condtions and not the general dis) - should get only override discount partial',
+                'label' => ' 2 revisions (in month) for subscriber that only the second have override discount (only override discount meet condtions and not the general dis) - should get only override discount for all relevant revisions',
                 'test_number' => 42764,
                 "aid" => $account['aid'],
                 'sid' => $subscriber['sid'],
@@ -130,9 +130,9 @@ class Test_Case_42764
                 'billrun' => [
                     'billrun_key' => '202206',
                     'aid' => $account['aid'],
-                    'after_vat' => [$subscriber['sid'] => 110.583870968],
-                    'total' => 110.583870968,
-                    'vatable' => 94.516129032,//flat 100 /override discount (17/31*10)
+                    'after_vat' => [$subscriber['sid'] => 105.3],
+                    'total' => 105.3,
+                    'vatable' => 90,//flat 100 /override discount (10)
                     'vat' => 17
                 ],
                 'line' => ['types' => ['flat', 'credit']]

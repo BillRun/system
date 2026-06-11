@@ -13,7 +13,6 @@
  * @since    5.14
  */
 class Portal_Actions_Registration extends Portal_Actions {
-
 	const VALIDITY_TIME = [
 		'DEFAULT' => '24 hours'
 	];
@@ -38,12 +37,12 @@ class Portal_Actions_Registration extends Portal_Actions {
 		}
 		$params['email'] = $email;
 		$token = $this->generateToken($params, self::TOKEN_TYPE_EMAIL_VERIFICATION);
-		$subject = $this->getEmailSubject('email_authentication');
+		$subject = $this->getEmailSubject('email_authentication', $params);
 		$replaces = array_merge([
 			'[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)) . " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
 			'[[email_authentication_link]]' => $this->getWebsite() . '/signup?token=' . $token . '&username=' . $username,
 				], $this->BuildReplacesforCompanyInfo());
-		$body = $this->getEmailBody('email_authentication', $replaces);
+		$body = $this->getEmailBody('email_authentication', $replaces, $params);
 		if (!Billrun_Util::sendMail($subject, $body, [$email], [], true)) {
 			$this->log("Portal_Actions_Registration::sendAuthenticationEmail - failed to send Email to {$email}", Billrun_Log::ERR);
 			throw new Portal_Exception('send_email_failed');
@@ -67,13 +66,13 @@ class Portal_Actions_Registration extends Portal_Actions {
 		}
 		$params['email'] = $email;
 		$token = $this->generateToken($params, self::TOKEN_TYPE_RESET_PASSWORD);
-		$subject = $this->getEmailSubject('reset_password');
+		$subject = $this->getEmailSubject('reset_password', $params);
 		$replaces = array_merge([
 			'[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)) . " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
 			'[[reset_password_link]]' => $this->getWebsite() . '/reset-password?token=' . $token . '&username=' . $username,
 			'[[link_expire]]' => $this->getValidity('reset_password'),
 				], $this->BuildReplacesforCompanyInfo());
-		$body = $this->getEmailBody('reset_password', $replaces);
+		$body = $this->getEmailBody('reset_password', $replaces, $params);
 
 		if (!Billrun_Util::sendMail($subject, $body, [$email], [], true)) {
 			$this->log("Portal_Actions_Registration::sendResetPasswordEmail - failed to send Email to {$email}", Billrun_Log::ERR);
@@ -99,14 +98,14 @@ class Portal_Actions_Registration extends Portal_Actions {
 		$params['email'] = $email;
 		$token = $this->generateToken($params, self::TOKEN_TYPE_WELCOME_ACCOUNT);
 		$email_category = $params['email_category'] ?? self::TOKEN_TYPE_WELCOME_ACCOUNT;
-		$subject = $this->getEmailSubject($email_category);
+		$subject = $this->getEmailSubject($email_category, $params);
 		$replaces = array_merge([
 			'[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)) . " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
 			'[[username]]' => $username,
 			'[[access_from]]' => $params['access_from'] ?? 'now', //todo ::check from where need to take this param?? from api params? config? 
 			'[[link]]' => $this->getWebsite() . '/signup?token=' . $token . '&username=' . $username,
 				], $this->BuildReplacesforCompanyInfo());
-		$body = $this->getEmailBody($email_category, $replaces);
+		$body = $this->getEmailBody($email_category, $replaces, $params);
 
 		if (!Billrun_Util::sendMail($subject, $body, [$email], [], true)) {
 			$this->log("Portal_Actions_Registration::sendWelcomeEmail - failed to send Email to {$email}", Billrun_Log::ERR);
@@ -199,8 +198,9 @@ class Portal_Actions_Registration extends Portal_Actions {
 	 * @param  string $path - the path of the requested email body
 	 * @return string
 	 */
-	protected function getEmailSubject($path) {
-		return Billrun_Factory::config()->getConfigValue('email_templates.' . $path . '.subject', '');
+	protected function getEmailSubject($path, $params) {
+		$template = Billrun_Util::findMatchingEmailTemplate($path, $params);
+		return Billrun_Util::getIn($template, 'subject', '');
 	}
 
 	/**
@@ -217,9 +217,9 @@ class Portal_Actions_Registration extends Portal_Actions {
 	 * @param  string $path - the path of the requested email body
 	 * @return string
 	 */
-	protected function getEmailBody($path, $replaces) {
-		$body = Billrun_Factory::config()->getConfigValue('email_templates.' . $path . '.content', '');
-
+	protected function getEmailBody($path, $replaces, $params) {
+		$template = Billrun_Util::findMatchingEmailTemplate($path, $params);
+		$body = Billrun_Util::getIn($template, 'content', '');
 		return str_replace(array_keys($replaces), array_values($replaces), $body);
 	}
 

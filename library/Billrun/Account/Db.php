@@ -78,9 +78,22 @@ class Billrun_Account_Db extends Billrun_Account {
 			$accountsQuery['invoicing_day'] = [ $inDayOp =>  $daysToInovice ];
 		}
 		Billrun_Factory::dispatcher()->trigger('alterBillableDBActiveAccountQuery',[&$accountsQuery , $page, $size, $aids, $invoicing_days ]);
-		$activeAidsRevs = $this->collection->query($accountsQuery)->cursor()->setRawReturn(true)->fields(['aid'])->sort(['aid'=>1])->skip($page * $size)->limit($size);
+		$pipeline = [
+			['$match' => $accountsQuery],       
+			['$group' => [                         // group by aid
+				'_id' => '$aid'
+			]],
+			['$sort' => ['_id' => 1]],
+			['$skip' => $page * $size],
+			['$limit' => $size],
+			['$project' => [
+				'aid' => '$_id',
+				'_id' => 0
+			]]
+		];
+		$activeAidsRevs = $this->collection->aggregate($pipeline);
 		$activeAids = array_values(array_map(function($ar) { return $ar['aid'];},iterator_to_array($activeAidsRevs)));
-		$finalQuery = array_merge(['aid'=> ['$in' =>$activeAids ] ], $subsActiveQuery);
+		$finalQuery = array_merge(['aid'=> ['$in' =>$activeAids ], 'type' => ['$exists' => true]], $subsActiveQuery);
 		Billrun_Factory::dispatcher()->trigger('alterBillableDBSubcriberRevisionsQuery',[&$finalQuery, $accountsQuery , $page, $size, $aids, $invoicing_days, $subsActiveQuery ]);
 		$results = $this->collection->query($finalQuery)->cursor()->setRawReturn(true)->sort([	'from' => -1]);
 		return iterator_to_array($results);

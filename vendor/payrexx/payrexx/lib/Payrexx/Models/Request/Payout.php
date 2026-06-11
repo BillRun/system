@@ -8,7 +8,7 @@ class Payout extends Base
 {
     protected string $currency;
 
-    protected float $amount;
+    protected int $amount;
 
     protected int $pspId;
 
@@ -31,17 +31,17 @@ class Payout extends Base
     }
 
     /**
-     * @return float
+     * @return int
      */
-    public function getAmount(): float
+    public function getAmount(): int
     {
         return $this->amount;
     }
 
     /**
-     * @param float $amount
+     * @param int $amount
      */
-    public function setAmount(float $amount): void
+    public function setAmount(int $amount): void
     {
         $this->amount = $amount;
     }

@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { titleCase } from 'change-case';
 import { Col } from 'react-bootstrap';
 import { Actions, StateIcon } from '@/components/Elements';
 import List from '@/components/List';

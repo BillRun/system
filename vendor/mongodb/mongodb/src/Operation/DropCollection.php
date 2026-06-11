@@ -32,24 +32,19 @@ use function is_array;
 /**
  * Operation for the drop command.
  *
- * @api
  * @see \MongoDB\Collection::drop()
  * @see \MongoDB\Database::dropCollection()
  * @see https://mongodb.com/docs/manual/reference/command/drop/
  */
 class DropCollection implements Executable
 {
-    /** @var integer */
-    private static $errorCodeNamespaceNotFound = 26;
+    private const ERROR_CODE_NAMESPACE_NOT_FOUND = 26;
 
-    /** @var string */
-    private $databaseName;
+    private string $databaseName;
 
-    /** @var string */
-    private $collectionName;
+    private string $collectionName;
 
-    /** @var array */
-    private $options;
+    private array $options;
 
     /**
      * Constructs a drop command.
@@ -116,7 +111,7 @@ class DropCollection implements Executable
             /* The server may return an error if the collection does not exist.
              * Check for an error code and return the command reply instead of
              * throwing. */
-            if ($e->getCode() === self::$errorCodeNamespaceNotFound) {
+            if ($e->getCode() === self::ERROR_CODE_NAMESPACE_NOT_FOUND) {
                 return $e->getResultDocument();
             }
 

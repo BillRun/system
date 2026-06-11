@@ -11,9 +11,9 @@ class Crm extends \Helper\BillRun\Mockups\Mockup
     return $this->getDomain() . 'crm';
   }
 
-  public function enableExternalModeSettings($data = []) {
+  public function enableExternalModeSettings($data = [], $pluginName = '') {
     $model = new \ConfigModel();
-    $model->updateConfig('subscribers', $this->getExternalConfiguration());
+    $model->updateConfig('subscribers', $this->getExternalConfiguration($pluginName));
     \Billrun_Config::getInstance()->loadDbConfig();
 
   }
@@ -29,20 +29,20 @@ class Crm extends \Helper\BillRun\Mockups\Mockup
 
   }
 
-  public function getExternalConfiguration() {
+  public function getExternalConfiguration($pluginName) {
     return [
         "subscriber" => [
             "type" => "external",
-            "external_url" => $this->getUrl()."/gsd",
+            "external_url" => !empty($pluginName) ? $this->getUrl()."/". $pluginName."/gsd" : $this->getUrl()."/gsd",
             "timeout" => 20
         ],
         "account" => [
             "type" => "external",
-            "external_url" => $this->getUrl()."/gad",
+            "external_url" => !empty($pluginName) ? $this->getUrl()."/". $pluginName."/gad" : $this->getUrl()."/gad",
             "timeout" => 20
         ],
         "billable" => [
-            "url" => $this->getUrl()."/billable"
+            "url" => !empty($pluginName) ? $this->getUrl()."/". $pluginName."/billable" : $this->getUrl()."/billable",
         ],
         
     ];

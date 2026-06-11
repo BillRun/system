@@ -16,7 +16,7 @@ class Test_Case_42766
             [
 
                 "from" => "2019-05-31T22:00:00Z",
-                "name" => "PLAN" . time()+random_int(1,111111111),
+                "name" => generat_test_data::uniqueName("PLAN"),
                 "price" => [
                     [
                         "price" => 100,
@@ -38,7 +38,7 @@ class Test_Case_42766
                 "prorated_termination" => true
             ]
         );
-        $discount_name1 = "DIS1_" . time()+random_int(1,111111111);
+        $discount_name1 = generat_test_data::uniqueName("DIS1_");
 
         $discount1 = generat_discounts::generateDiscount([
           "from" => "2019-05-31T22:00:00Z",
@@ -65,7 +65,7 @@ class Test_Case_42766
             ],
             'key'=> $discount_name1
         ]);
-        $discount_name2 = "DIS2_" . time()+random_int(1,111111111);
+        $discount_name2 = generat_test_data::uniqueName("DIS2_");
 
         $discount2 = generat_discounts::generateDiscount([
           "from" => "2019-05-31T22:00:00Z",

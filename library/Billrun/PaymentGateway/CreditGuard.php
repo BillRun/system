@@ -420,6 +420,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$additionalParams['credit_company'] = $xmlObj->response->doDeal->creditCompany ? current($xmlObj->response->doDeal->creditCompany->attributes()->code) : '';
 			$additionalParams['card_type'] = $xmlObj->response->doDeal->cardType ? current($xmlObj->response->doDeal->cardType->attributes()->code) : '';
 			$additionalParams['uid'] = $xmlObj->response->doDeal->ashraitEmvData->uid ? (string) $xmlObj->response->doDeal->ashraitEmvData->uid : '';
+			$additionalParams['payment_method']['expiration_date'] = $xmlObj->response->doDeal->cardExpiration ? current($xmlObj->response->doDeal->cardExpiration) : '';
+			$additionalParams['payment_method']['last_four_digits'] = $xmlObj->response->doDeal->cardNo ? substr(current($xmlObj->response->doDeal->cardNo), -4) : '';
+			$additionalParams['code'] = $codeResult;
 			$additionalParams['auth_number'] = $xmlObj->response->doDeal->authNumber ? (string) $xmlObj->response->doDeal->authNumber : '';
 			
 		}	
@@ -1065,4 +1068,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			"terminalNumber" => $this->terminalNumber
 		);
 	}
+	
+	public function getTransactionDetails($details) {
+		unset($details['params']['terminal_number']);
+		return parent::getTransactionDetails($details);
+	}
+
 }

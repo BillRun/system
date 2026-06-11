@@ -10,7 +10,9 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
 
     protected function _before()
     {
+     
         $this->tester->setIsraelInvoiceSettings( $this->tester);
+        $this->tester->cleanDB();
     }
 
     protected function _after()
@@ -72,16 +74,17 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
     {
        $data =  $this->createTestData([],[],['name' => 'PLAN_B'.time().time(), "price" => [
             [
-                "price" => 25000,
+                "price" => 10000,
                 "from" => 0,
                 "to" => "UNLIMITED"
             ]
         ]]);
         $this->defaultOptions['force_accounts'] = [$data['account']['aid']];
-        $this->defaultOptions["stamp"] = "202501";
+        $this->defaultOptions["stamp"] = "202602";
+        $billrunKey =$this->defaultOptions["stamp"];
         $this->tester->runCycle($this->defaultOptions);
-        $billrun = $this->tester->getFromCollection('billrun', array('billrun_key' => '202501', 'aid' =>  $data['account']['aid']));
-        $output = $this->tester->confirmInvoices(['stamp'=>$billrun['billrun_key'],'invoices'=>$billrun['invoice_id']]);
+        $billrun = $this->tester->getFromCollection('billrun', array('billrun_key' => $billrunKey, 'aid' =>  $data['account']['aid']));
+        $output = $this->tester->confirmInvoices(['stamp'=> $billrunKey ,'invoices'=>$billrun['invoice_id']]);
         $messages = [
             "Israel Invoice:build invoice {$billrun['invoice_id']} approval API request body",
             "Israel Invoice:build invoice {$billrun['invoice_id']} approval API curl object",  
@@ -96,7 +99,7 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
          foreach($messages as $message) {
             $output->seeInShellOutput($message);
          }
-         $this->tester->seeInCollection('bills', ['billrun_key' => '202501', 'aid' =>  $data['account']['aid'],'invoice_confirmation_number'=>['$exists'=>true,'$ne'=>null]]);
+         $this->tester->seeInCollection('bills', ['billrun_key' => $billrunKey, 'aid' =>  $data['account']['aid'],'invoice_confirmation_number'=>['$exists'=>true,'$ne'=>null]]);
 
     }
 

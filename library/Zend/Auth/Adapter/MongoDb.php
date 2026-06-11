@@ -1,7 +1,5 @@
 <?php
 
-require_once APPLICATION_PATH . '/library/password_compat/password.php';
-
 class Zend_Auth_Adapter_MongoDb implements Zend_Auth_Adapter_Interface {
 
 	/**

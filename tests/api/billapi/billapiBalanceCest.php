@@ -10,6 +10,7 @@ class billapiBalanceCest
     public $serviceDetails;
     public $subscriberDetails;
     public $rateDetails;
+    public $defaultTimezone;
 
     public static $isIPSet = false;
      public function _before(ApiTester $I)
@@ -17,6 +18,8 @@ class billapiBalanceCest
         if (!self::$isIPSet) {
           $this->setUP($I);
             self::$isIPSet = true;
+            Billrun_Factory::config();
+            $this->defaultTimezone = date_default_timezone_get();
         }
     }
     
@@ -125,7 +128,6 @@ class billapiBalanceCest
         $I->generatePlan(array_merge(['name' => 'TEST_PLAN_2'.microtime(true)*10000],$planDetails));
         $this->planDetails = json_decode($I->grabResponse(), true)['entity'];
         $I->generateService(array_merge(['name' => 'TEST_SERVICE'.microtime(true)*10000],$serviceDetails));
-        $this->serviceDetails = json_decode($I->grabResponse(), true)['entity'];
         $I->generateSubscriber(array_merge(
           [
               'aid' => $this->accountDetails['aid'],
@@ -136,7 +138,7 @@ class billapiBalanceCest
         $I->generateRate(array_merge(['tariff_category'=>'retail','key' => microtime(true)*10000],$rateDetails));
         $this->rateDetails = json_decode($I->grabResponse(), true)['entity'];
     }
-    public function testGetBalance(ApiTester $I): void
+    public function testGetUsageBalance(ApiTester $I): void
     {
         $this->createData($I);
         
@@ -175,8 +177,11 @@ class billapiBalanceCest
             'status' => 1
         ]);
         
-        $expectedFromDate = date('Y-m-01\T00:00:00+0000'); // First day of current month
-        $expectedToDate = date('Y-m-01\T00:00:00+0000', strtotime('+1 month')); // First day of next month
+     //   $timezone = new DateTimeZone($this->defaultTimezone);
+        $expectedFromDate = (new DateTime('first day of this month 00:00:00'))
+            ->format('Y-m-01\T00:00:00O'); // First day of current month (local TZ)
+        $expectedToDate = (new DateTime('first day of next month 00:00:00'))
+            ->format('Y-m-01\T00:00:00O'); // First day of next month (local TZ)
         
         // Check that get the correct balance
         $I->seeResponseContainsJson([
@@ -198,7 +203,7 @@ class billapiBalanceCest
                         ]
                     ],
                     'connection_type' => 'postpaid',
-                    'plan_description' => 'plan',
+                    'plan_description' => $this->planDetails['name'],
                     'from' => $expectedFromDate,
                     'to' => $expectedToDate
                 ]
@@ -207,7 +212,8 @@ class billapiBalanceCest
         // Check the details array length is 1 ,  validate the response contains only one balance object
         $details = json_decode($I->grabResponse(), true)['details'];
         $I->assertCount(1, $details);
-     
+          date_default_timezone_set($this->defaultTimezone );
+
     }
    
 }

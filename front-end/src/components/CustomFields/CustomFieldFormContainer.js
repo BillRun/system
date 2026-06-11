@@ -96,21 +96,13 @@ const mapDispatchToProps = (dispatch, {
 
   onChangeEntityField: (path, value) => {
     // if change default value, remove property in defaultvalue removed
-    if (['description', 'help'].includes(path[0]) && value === '') {
+    if (['description', 'help', 'category'].includes(path[0]) && value === '') {
       removeField(path);
     } else if (path[0] === 'default_value') {
       if (item.get('type', 'text') === 'ranges' && value.isEmpty()) {
         removeField('default_value');
       } else if (value === '') {
         removeField('default_value');
-      } else {
-        updateField(path, value);
-      }
-    } else if (path[0] === 'category') {
-      if (item.get('type', 'text') === 'ranges' && value.isEmpty()) {
-        removeField('category');
-      } else if (value === '') {
-        removeField('category');
       } else {
         updateField(path, value);
       }

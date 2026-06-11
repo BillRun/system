@@ -1,0 +1,92 @@
+{
+    "status": 1,
+    "data": [
+      {
+        "aid": 12418,
+        "crm_account_id": null,
+        "type": "account",
+        "from": "2025-10-23 13:02:37",
+        "to": "2200-01-01 02:00:00",
+        "firstname": "xx",
+        "lastname": "zz",
+        "title": null,
+        "email": null,
+        "invoice_shipping_method": "post",
+        "category": "RES",
+        "sub_category": "RESIDENTIAL",
+        "invoice_message": null,
+        "invoice_language": "gr_CY",
+        "invoice_detailed": false,
+        "street": "",
+        "house_number": "",
+        "apartment": "",
+        "province": "",
+        "city": "",
+        "country": "",
+        "zip_code": "",
+        "po_box": "",
+        "creation_time": "2025-10-23 13:02:37",
+        "activation_date": "2025-10-23 13:04:25",
+        "deactivation_date": "2200-01-01 02:00:00"
+      },
+      {
+        "sid": 39149,
+        "aid": 12418,
+        "type": "subscriber",
+        "from": "2025-10-23 13:04:25",
+        "to": "2200-01-01 02:00:00",
+        "plan": "UPFRONT_PLAN_PORATED_START_FALSE",
+        "play": "MOBILE",
+        "firstname": "xx",
+        "lastname": "zz",
+        "activation_date": "2025-10-23 13:04:25",
+        "deactivation_date": "2200-01-01 02:00:00",
+        "plan_activation": "2025-10-23 13:04:25",
+        "plan_deactivation": "2200-01-01 02:00:00",
+        "creation_time": null,
+        "former_plan": null,
+        "services": [],
+        "imsi": [],
+        "sub_number": "",
+        "portability_code": "",
+        "discounts": [
+          {
+            "priority": "",
+            "params": {},
+            "from": "2025-10-23 10:04:25",
+            "subject": {
+              "plan": {
+                "UPFRONT_PLAN_PORATED_START_FALSE": {
+                  "value": 16.806
+                }
+              }
+            },
+            "proration": "inherited",
+            "cycles": 24,
+            "type": "monetary",
+            "to": "2025-12-23 10:04:25",
+            "description": "",
+            "key": "SUBSCRIBER_DISCOUNT_937"
+          }
+        ],
+        "overrides": [
+          {
+            "type": "plan",
+            "id": null,
+            "key": "UPFRONT_PLAN_PORATED_START_FALSE",
+            "value": {
+              "price": [
+                {
+                  "price": 33.605,
+                  "from": 0,
+                  "to": "UNLIMITED"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "options": null,
+    "billableAccounts": {}
+  }

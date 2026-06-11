@@ -69,6 +69,9 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 			$dispatcher = Billrun_Dispatcher::getInstance();
 
 			foreach ($plugins as $plugin_name => $plugins_conf) {
+				if (empty($plugins_conf['enabled'])) {
+					continue;
+				}
 				if (!empty($plugins_conf['configuration']['values'])) {
 					$pluginObject = new $plugin_name($plugins_conf['configuration']['values']);
 				} else {
@@ -80,6 +83,7 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 				if (isset($plugins_conf['configuration']['values'])) {
 					$pluginObject->setOptions($plugins_conf['configuration']['values']);
 				}
+				Billrun_Factory::log()->log("Bootstrap: successfully loaded plugin: " . $plugin_name, Zend_Log::INFO);
 			}
 		}
 

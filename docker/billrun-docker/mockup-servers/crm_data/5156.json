@@ -1,0 +1,62 @@
+{
+   "status" : 1,
+   "data" : [
+      {
+         "activation_date" : "2026-01-16 13:00:00",
+         "aid" : 5156,
+         "creation_time" : "2026-01-16 12:50:00",
+         "discounts" : [
+            {
+               "description" : "Discount (201000003)",
+               "from" : "2026-01-23 01:00:00",
+               "key" : "DISCOUNT_201000003",
+               "params" : {
+                  "max_subscribers" : "",
+                  "min_subscribers" : ""
+               },
+               "profit_center" : "",
+               "proration" : "inherited",
+               "subject" : {
+                  "plan" : {
+                     "201000003" : {
+                        "value" : 0.5
+                     }
+                  }
+               },
+               "to" : "2126-01-23 01:00:00",
+               "type" : "percentage"
+            }
+         ],
+         "email" : "yossi@yossi.com",
+         "firstname" : "yossi",
+         "from" : "2026-01-16 00:00:00",
+         "invoice_detailed" : false,
+         "invoice_language" : "en_US",
+         "invoice_shipping_method" : "email",
+         "language" : "en_US",
+         "lastname" : "yossi",
+         "to" : "2126-01-16 00:00:00",
+         "type" : "account"
+      },
+      {
+         "activation_date" : "2026-01-16 12:51:00",
+         "aid" : 5156,
+         "deactivation_date" : "",
+         "firstname" : "yossi",
+         "from" : "2026-01-16 00:00:00",
+         "identifier" : "133333",
+         "lastname" : "yossi",
+         "overrides" : [],
+         "plan" : "201000003",
+         "plan_activation" : "2026-01-16 00:00:00",
+         "plan_deactivation" : "",
+         "play" : "default",
+         "product_type" : "internet",
+         "services" : [  ],
+         "sid" : 51561,
+         "to" : "2126-01-16 00:00:00",
+         "type" : "subscriber"
+      }
+   ],
+   "options" : []
+}

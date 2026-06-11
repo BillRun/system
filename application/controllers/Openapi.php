@@ -206,8 +206,9 @@ class OpenapiController extends RealtimeController {
 			);
 			$line = $this->getBaseCollection()->query($query)->cursor()
 				->sort(array('urt' => -1))
-				->limit(1);
-			$this->initialRequest = $line->count() ? $line->current() : false;
+				->limit(1)
+				->current();
+			$this->initialRequest = !$line->isEmpty() ? $line : false;
 		}
 
 		return $this->initialRequest;

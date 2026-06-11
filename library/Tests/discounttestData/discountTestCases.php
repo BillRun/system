@@ -689,7 +689,7 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-06-01", 'end' => '2019-06-15', 'aid' => 18, 'sid' => 19, 'final_charge' =>54.599988667,'aprice'=>46.666656980341884, 'full_price' => 46.66666, 'billrun' => '201907', 'tax_data' => [], 'service' => 'A'],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'service', 'start' => "2019-06-01", 'start_date' => "2019-06-01", 'end' => '2019-06-15', 'aid' => 18, 'sid' => 19, 'final_charge' =>54.599988667,'aprice'=>46.666656980341884, 'full_price' => 46.66666, 'billrun' => '201907', 'tax_data' => [], 'service' => 'A'],
 				],
 				'function' => array('checkEligibility')),
 			'expected' => array(

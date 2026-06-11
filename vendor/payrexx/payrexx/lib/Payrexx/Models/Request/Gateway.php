@@ -486,7 +486,7 @@ class Gateway extends \Payrexx\Models\Base
      * @param   string  $value          Value of field
      *                                  For field of type "title" use value "mister" or "miss"
      *                                  For field of type "country" pass the 2 letter ISO code
-     * @param   array   $name           Name of the field (only available for fields of type "custom_field_1-5"
+     * @param   array|string   $name    Name of the field (only available for fields of type "custom_field_1-5"
      */
     public function addField($type, $value, $name = array())
     {

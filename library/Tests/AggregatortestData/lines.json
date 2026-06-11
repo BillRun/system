@@ -110,6 +110,8 @@
 							{
 								"tax": 0.17,
 								"amount": 17,
+								"key" : "DEFAULT_VAT",
+
 								"description": "Vat",
 								"pass_to_customer": 1
 							}
@@ -257,6 +259,7 @@
 						"taxes": [
 							{
 								"tax": 0.17,
+								"key" : "DEFAULT_VAT",
 								"amount": 0,
 								"description": "Vat",
 								"pass_to_customer": 1
@@ -418,6 +421,7 @@
 							{
 								"tax": 0.17,
 								"amount": 0,
+								"key" : "DEFAULT_VAT",
 								"description": "Vat",
 								"pass_to_customer": 1
 							}
@@ -578,6 +582,8 @@
 							{
 								"tax": 0.17,
 								"amount": 0,
+								"key" : "DEFAULT_VAT",
+
 								"description": "Vat",
 								"pass_to_customer": 1
 							}
@@ -724,6 +730,8 @@
 							{
 								"tax": 0.17,
 								"amount": 0,
+								"key" : "DEFAULT_VAT",
+
 								"description": "Vat",
 								"pass_to_customer": 1
 							}
@@ -1147,6 +1155,8 @@
 							{
 								"tax": 0.17,
 								"amount": 0,
+								"key" : "DEFAULT_VAT",
+
 								"description": "Vat",
 								"pass_to_customer": 1
 							}
@@ -1317,6 +1327,7 @@
 						"taxes": [
 							{
 								"tax": 0.17,
+								"key" : "DEFAULT_VAT",
 								"amount": 1.7000000000000002,
 								"description": "Vat",
 								"pass_to_customer": 1
@@ -1488,6 +1499,8 @@
 						"taxes": [
 							{
 								"tax": 0.17,
+								"key" : "DEFAULT_VAT",
+
 								"amount": 1.7000000000000002,
 								"description": "Vat",
 								"pass_to_customer": 1

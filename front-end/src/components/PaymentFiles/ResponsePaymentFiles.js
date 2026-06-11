@@ -373,8 +373,13 @@ class ResponsePaymentFiles extends Component {
   onUploadTransactionsFileClickOK = (paymentFile) => {
     const { paymentGateway, fileType } = this.props;
     const file = paymentFile.get("file", null);
+    // `source` is the value persisted on `log.source` and that the list query matches against
+    // (see `baseFilter.source` below). Build it here on the FE so the BE doesn't have to
+    // reconstruct it from raw `payment_gateway + payments_file_type` — that path mishandled
+    // snake_case gateway keys like `manual_files` and produced `manualfilesTransactionsResponse`.
+    const source = pascalCase(paymentGateway) + 'TransactionsResponse';
     return this.props
-      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'transactions_response'))
+      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'transactions_response', source))
       .then(this.afterSuccessUploadTransactionsFile)
       .catch((error) => Promise.reject());
   };
@@ -451,6 +456,9 @@ class ResponsePaymentFiles extends Component {
               api="get"
               showRevisionBy={false}
               baseFilter={{
+                // Source format mirrors how BE persists `log.source` on upload/CLI receive:
+                // pascalCase(cpg_name) + ucfirst(cpg_type), e.g. `manual_files` + `transactions_response`
+                // → `ManualFilesTransactionsResponse`. Same formula is used on the upload request.
                 source: pascalCase(paymentGateway) + 'TransactionsResponse',
                 pg_file_type: fileType,
               }}

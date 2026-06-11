@@ -59,12 +59,13 @@ class Billrun_Service {
 		} else {
 			$time = time();
 		}
+		$disableServiceCache = isset($params['disable_service_cache']) ? $params['disable_service_cache'] : false;
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
 		} else if (isset($params['id'])) {
-			$this->load(new Mongodloid_Id($params['id']));
+			$this->load(new Mongodloid_Id($params['id']), null, '_id', $disableServiceCache);
 		} else if (isset($params['name'])) {
-			$this->load($params['name'], $time, 'name');
+			$this->load($params['name'], $time, 'name', $disableServiceCache);
 		}
 		
 		if (isset($params['service_start_date'])) {
@@ -90,13 +91,16 @@ class Billrun_Service {
 	 * @param int $time unix timestamp
 	 * @param string $loadByField the field to load by the value
 	 */
-	protected function load($param, $time = null, $loadByField = '_id') {
+	protected function load($param, $time = null, $loadByField = '_id', $disableCache = false) {
 		if (is_null($time)) {
 			$queryTime = new Mongodloid_Date();
 		} else {
 			$queryTime = new Mongodloid_Date($time);
 		}
-		
+		if($disableCache){
+			$this->loadFromDb($param, $queryTime, $loadByField);
+			return;
+		}
 		switch ($loadByField) {
 			case 'name':
 				$this->data = self::getEntityByNameAndTime($param, $queryTime);
@@ -122,6 +126,8 @@ class Billrun_Service {
 			$queryTime = new Mongodloid_Date();
 		} else if (!$time instanceof Mongodloid_Date) {
 			$queryTime = new Mongodloid_Date($time);
+		} else {
+			$queryTime = $time;
 		}
 		$serviceQuery = array(
 			$loadByField => $param,
@@ -672,6 +678,58 @@ class Billrun_Service {
 			self::initEntities();
 		}
 		return self::$entities;
+	}
+
+	public static function applyEntityCacheChange($new, $old){
+		if( !empty(self::$entities)){//only for tests support (insert service on runtime)
+			if($old == null && $new == null){
+				return;
+			}else if($old == null){
+				$old = $new;
+			}
+			$id = strval($old['_id']);
+			if($new == null){//remove
+				unset(self::$entities['by_id'][$id]);
+				unset(self::$entities['by_name'][$old['name']]);
+			}else{
+				if(!($new instanceof Mongodloid_Entity)){
+					$new = new Mongodloid_Entity($new);
+				}
+				self::$entities['by_id'][$id] = $new;
+				if (!isset(self::$entities['by_name'][$old['name']])) {//insert
+					self::$entities['by_name'][$old['name']] = [];
+					self::$entities['by_name'][$old['name']][] = [
+						'entity' => $new,
+						'from'   => $new['from'],
+						'to'     => $new['to'],
+					];
+				}else{
+					$found = false;
+					foreach(self::$entities['by_name'][$old['name']] as &$entity){
+						if(strval($entitty['entity']['id']) == $id){//update
+							$entity = [
+								'entity' => $new,
+								'from'   => $new['from'],
+								'to'     => $new['to'],
+							];
+							$found = true;
+							break;
+						}
+					}
+					if(!$found){
+						self::$entities['by_name'][$old['name']][] = [//insert
+							'entity' => $new,
+							'from'   => $new['from'],
+							'to'     => $new['to']
+						];
+					}
+				}
+				
+				
+			}
+			
+			
+		}
 	}
 
 	/**

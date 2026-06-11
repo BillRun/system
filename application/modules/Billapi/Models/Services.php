@@ -22,6 +22,13 @@ class Models_Services extends Models_Entity {
 		$this->validateTierLimitCycles();
 		$this->validateRecurrence();
 	}
+
+	public function applyCacheChange($new = null, $old = null) {
+
+		$old = $old ?? (!is_null($this->before) ? $this->before->getRawData() : null);
+		$new = $new ?? (!is_null($this->after) ? $this->after->getRawData() : null);
+		$res = Billrun_Service::applyEntityCacheChange($new, $old);
+	}
 	
 	/**
 	 * Verify in case of limit service sycles Recurring Charges cycles has the same sum of cycles.

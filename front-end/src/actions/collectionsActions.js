@@ -21,13 +21,13 @@ const updateCollectionAction = (path, value) => ({
 });
 
 export const getCollections = () => (dispatch) => {
-  dispatch(setPageError('collection')); // reser errors
+  dispatch(setPageError('collection')); // reset errors
   dispatch(setPageFlag('collection')); // reset flags
   return dispatch(getSettings(['collection']));
 }
 
 export const updateCollections = (path, value) => (dispatch, getState) => {
-  const [ index, ...rest ] = path;
+  const [ index, ...rest ] = path; // eslint-disable-line no-unused-vars
   const dirtySets = pageFlagSelector(getState(), {}, 'collection', 'dirtySets') || [];
   const setIndex = (typeof index === 'undefined') ? -1 : index;
   dispatch(setPageFlag('collection', 'dirtySets', Immutable.Set([...dirtySets, setIndex]).toList()));  
