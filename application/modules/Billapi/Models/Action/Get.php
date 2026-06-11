@@ -122,6 +122,34 @@ class Models_Action_Get extends Models_Action {
 		$date_fields_names = array_unique(array_merge($default, $config_date_fields));
 		return $date_fields_names;
 	}
+
+	/**
+	 * gets the names of the fields that are stored encrypted and need to be
+	 * decrypted before being returned. Mirrors getDateFields(): collects from
+	 * both the custom fields config (keyed by 'field_name') and the action
+	 * update_parameters config (keyed by 'name').
+	 *
+	 * @return array
+	 */
+	protected function getEncryptedFields() {
+		$encrypted_fields = array();
+		if (!empty($this->request['collection'])) {
+			$data['collection'] = $this->request['collection'];
+			$data['no_init'] = true;
+			$entityModel = Models_Entity::getInstance($data);
+			$config = Billrun_Factory::config()->getConfigValue("billapi.{$this->request['collection']}", array());
+			$custom_fields = Billrun_Factory::config()->getConfigValue($entityModel->getCustomFieldsPath(), []);
+			$encrypted_custom = array_column(array_filter($custom_fields, function($field) {
+				return Billrun_Util::getFieldVal($field['type'], 'string') === 'encrypted';
+			}), 'field_name');
+			$update_parameters = Billrun_Util::getIn($config, array($this->request['action'], 'update_parameters'), array());
+			$encrypted_params = array_column(array_filter($update_parameters, function($field) {
+				return Billrun_Util::getFieldVal($field['type'], 'string') === 'encrypted';
+			}), 'name');
+			$encrypted_fields = array_values(array_unique(array_merge($encrypted_custom, $encrypted_params)));
+		}
+		return $encrypted_fields;
+	}
 	
 	/**
 	 * add option to query also by custom fields
@@ -132,10 +160,12 @@ class Models_Action_Get extends Models_Action {
 		$customFields = Billrun_Factory::config()->getConfigValue("$customFieldsKey.fields", array());
 		foreach ($customFields as $field) {
 			if (Billrun_Util::getFieldVal($field['searchable'], false)) {
+				$isEncrypted = (Billrun_Util::getFieldVal($field['type'], 'string') === 'encrypted');
 				$ret [] = array(
 					'name' => $field['field_name'],
-					//changed to array to allow search from UI by regex
-					'type' => 'array', //$this->getCustomFieldType($field),
+					// encrypted fields are matched by blind index (exact match);
+					// others use array to allow search from UI by regex
+					'type' => $isEncrypted ? 'encrypted' : 'array', //$this->getCustomFieldType($field),
 				);
 			}
 		}
@@ -187,6 +217,7 @@ class Models_Action_Get extends Models_Action {
 	protected function processResults(Mongodloid_Cursor $cursor) {
 		$records = array_values(iterator_to_array($cursor));
 		Billrun_Factory::log('Billapi get received ' . count($records) . " results", Zend_Log::DEBUG);
+		$encryptedFields = $this->getEncryptedFields();
 		foreach($records as  &$record) {
 			if (isset($record['invoice_id'])) {
 				$record['invoice_id'] = (int)$record['invoice_id'];
@@ -195,6 +226,9 @@ class Models_Action_Get extends Models_Action {
 				$record = Models_Entity::setRevisionInfo($record, $this->getCollectionName(), $this->request['collection']);
 			}
 			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongodloidDatetimeFields($record, $this->getDateFields());
+			if (!empty($encryptedFields)) {
+				$record = Billrun_Utils_Mongo::recursiveDecryptRecordFields($record, $encryptedFields);
+			}
 		}
 		return $records;
 	}
