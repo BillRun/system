@@ -2268,7 +2268,7 @@ runOnce(lastConfig, 'BRCD-4950', function () {
 
 });
 
-runOnce(lastConfig, 'BRCD-4739', function () {
+runOnce(lastConfig, 'BRCD-4739-1', function () {
 	_dropIndex("queue", "hash_1_calc_time_1_type_1");
 	_dropIndex("queue", "urt_1_type_1");
 	db.queue.createIndex({"hash": 1, 'calc_time':1, 'urt':1}, { unique: false , "background": true})
