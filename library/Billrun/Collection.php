@@ -107,13 +107,13 @@ class Billrun_Collection extends Billrun_Base {
 			}
 			$processMinDebt = floatval($matchProcess['settings']['min_debt'] ?? '10');
 
-			$aid = $accountInConditions['aid'];
+			$aid = intval($accountInConditions['aid']);
 			if(isset($accountInConditions['in_collection']) && $accountInConditions['in_collection'] == true ){
 				$markedAsInCollectionByProcess[$processIndex][$aid] = $accountInConditions;
 			}
 			if(isset($debtByAids[$aid]) && $debtByAids[$aid]['total'] >= $processMinDebt){
 				$reallyInCollectionByProcess[$processIndex][$aid] = $debtByAids[$aid];
-				$this->reallyInCollectionAids[] = intval($aid);
+				$this->reallyInCollectionAids[] = $aid;
 			}
 			$aidsAlreadyProcess[$aid] = true;
 			if ($collectDir == 'enter_collection' || empty($collectDir)) {
