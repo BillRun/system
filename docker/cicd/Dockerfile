@@ -10,8 +10,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
         nginx supervisor \
         gettext-base \
         python3-pip libpango-1.0-0 libpangoft2-1.0-0 shared-mime-info \
-        python3-cffi python3-brotli python3-cssselect2 python3-html5lib \
-        python3-pil python3-pyphen python3-tinycss2 \
     && pecl install yaf \
     && pecl install mongodb-2.3.1 \
     && pecl install memcached \
