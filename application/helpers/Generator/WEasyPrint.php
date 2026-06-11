@@ -154,10 +154,20 @@ class Generator_WEasyPrint extends Generator_WkPdf {
 			'Generating invoice ' . $pdf_name . " to : $pdf (WeasyPrint)",
 			Zend_Log::INFO
 		);
-		exec(escapeshellcmd($this->weasyprint_exec) . " {$this->exporterFlags} " . escapeshellarg($html) . " " . escapeshellarg($pdf));
+		// Remove any stale PDF from a previous run so a failed conversion can't be
+		// masked by an old file passing the existence check below.
+		if (file_exists($pdf)) {
+			unlink($pdf);
+		}
 
-		if (!file_exists($pdf)) {
-			Billrun_Factory::log('WeasyPrint failed to generate PDF: ' . $pdf_name, Zend_Log::ERR);
+		$cmd = escapeshellcmd($this->weasyprint_exec) . " {$this->exporterFlags} " . escapeshellarg($html) . " " . escapeshellarg($pdf);
+		exec($cmd . ' 2>&1', $output, $retval);
+
+		if ($retval !== 0 || !file_exists($pdf)) {
+			Billrun_Factory::log(
+				'WeasyPrint failed to generate PDF: ' . $pdf_name . ' (exit code ' . $retval . '): ' . implode("\n", (array) $output),
+				Zend_Log::ERR
+			);
 			Billrun_Factory::dispatcher()->trigger('afterGeneratorEntity', array($this, &$account, &$lines));
 			return;
 		}
@@ -198,8 +208,13 @@ class Generator_WEasyPrint extends Generator_WkPdf {
 	protected function injectHeaderAndFooterIntoHtml($htmlFile) {
 		$htmlContent = $this->sanitizeFilePaths(file_get_contents($htmlFile));
 
-		$headerBody = $this->sanitizeFilePaths($this->extractBodyContent(file_get_contents($this->tmp_paths['header'])));
-		$footerBody = $this->sanitizeFilePaths($this->extractBodyContent(file_get_contents($this->tmp_paths['footer'])));
+		// Header/footer are optional and may legitimately be empty; guard the reads
+		// so a missing temp file doesn't raise a file_get_contents warning.
+		$headerHtml = file_exists($this->tmp_paths['header']) ? file_get_contents($this->tmp_paths['header']) : '';
+		$footerHtml = file_exists($this->tmp_paths['footer']) ? file_get_contents($this->tmp_paths['footer']) : '';
+
+		$headerBody = $this->sanitizeFilePaths($this->extractBodyContent($headerHtml));
+		$footerBody = $this->sanitizeFilePaths($this->extractBodyContent($footerHtml));
 
 		$marginTop    = Billrun_Factory::config()->getConfigValue('weasyprint.margin_top_px',    80);
 		$marginBottom = Billrun_Factory::config()->getConfigValue('weasyprint.margin_bottom_px', 80);
@@ -226,15 +241,29 @@ class Generator_WEasyPrint extends Generator_WkPdf {
 		$footerDiv = "<div class='weasyprint-footer-running'>{$footerBody}</div>";
 
 		// Inject styles before </head>.
-		$htmlContent = str_replace('</head>', $pageStyle . "\n</head>", $htmlContent);
+		$htmlContent = str_replace('</head>', $pageStyle . "\n</head>", $htmlContent, $headCount);
+		if ($headCount === 0) {
+			Billrun_Factory::log(
+				'WeasyPrint: no </head> tag found in invoice HTML; page/header/footer styles were not injected.',
+				Zend_Log::WARN
+			);
+		}
 
 		// Inject running elements as the first children of <body>.
+		$bodyCount = 0;
 		$htmlContent = preg_replace(
 			'/<body([^>]*)>/i',
 			'<body$1>' . "\n" . $headerDiv . "\n" . $footerDiv,
 			$htmlContent,
-			1
+			1,
+			$bodyCount
 		);
+		if ($bodyCount === 0) {
+			Billrun_Factory::log(
+				'WeasyPrint: no <body> tag found in invoice HTML; running header/footer were not injected.',
+				Zend_Log::WARN
+			);
+		}
 
 		file_put_contents($htmlFile, $htmlContent);
 	}
@@ -310,7 +339,7 @@ class Generator_WEasyPrint extends Generator_WkPdf {
 				<tbody>
 				<tr>
 					<td class='header-logo'>
-						<img src='" . $this->logo_path . "' alt='' style='height:36px;object-fit:contain;max-width:130px;'>
+						<img src='" . htmlspecialchars($this->logo_path) . "' alt='' style='height:36px;object-fit:contain;max-width:130px;'>
 					</td>
 					<td class='header-details'>
 						<strong>" . htmlspecialchars($this->getCompanyName()) . "</strong><br>
