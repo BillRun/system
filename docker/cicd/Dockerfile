@@ -9,12 +9,14 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
         libmemcached-dev \
         nginx supervisor \
         gettext-base \
+        python3-pip libpango-1.0-0 libpangoft2-1.0-0 shared-mime-info \
     && pecl install yaf \
     && pecl install mongodb-2.3.1 \
     && pecl install memcached \
     && pecl install redis \
     && docker-php-ext-enable yaf mongodb memcached redis \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp calendar \
+    && pip3 install --break-system-packages 'weasyprint>=62' \
     && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update \
