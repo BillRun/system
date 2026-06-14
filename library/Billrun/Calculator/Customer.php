@@ -142,7 +142,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	public function prepareData($lines) {
-		if ($this->isBulk() && empty($this->subscribers)) {
+		if ($this->isBulk()) {
 			$this->subscribers = $this->loadSubscribers($lines);
 		}
 		if ($this->bulkAccounts) {
@@ -294,7 +294,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}, $configFields);
 		$availableFileds = $subscriber->getAvailableFields();
 		$customerExtraData = $subscriber->getCustomerExtraData();
-		return array_merge($availableFileds, $customerExtraData, array('subscriber_lang', 'plan_ref'), $configFields);
+		return array_merge($availableFileds, $customerExtraData, array('subscriber_lang', 'plan_ref', 'connection_type'), $configFields);
 	}
 
 	/**
@@ -458,7 +458,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$this->getParamsByPrefixAndTranslationRules($translationRules, $params, 'cf', $row, $key);
 			} 
 			else {
-				Billrun_Factory::log('Customer calculator missing field ' . $key . ' for line with stamp ' . $row['stamp'], Zend_Log::ALERT);
+				Billrun_Factory::log('Customer calculator missing field ' . $key . ' for line with stamp ' . $row['stamp'], Zend_Log::WARN);
 			}
 		}
 		if (empty($params) && $row['type'] === 'credit' && isset($row['sid'])) {

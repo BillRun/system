@@ -74,7 +74,7 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 
 	protected function getProrationData($price, $cycle = false) {
 		$endProration =  $this->proratedEnd && !$this->isTerminated() || ($this->proratedTermination && $this->isTerminated());
-		$proratedActivation =  $this->proratedStart  || $this->startOffset ?  $this->activation :  $this->cycle->start();
+		$proratedActivation =  $this->proratedStart  ? $this->activation :Billrun_Billingcycle::getBillrunStartTimeByDate(date(Billrun_Base::base_dateformat,$this->activation));
 		$proratedEnding =  $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE  ;
 		return [	'start_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['start'],  $this->activation )),
 					'start' => $this->proratedStart ? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation) : $this->cycle->start(),
