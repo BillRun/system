@@ -317,6 +317,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 		if ($vatable) {
 			$priceAfterVat = $this->addLineVatableData($pricingData, $breakdownKey, Billrun_Util::getFieldVal($row['tax_data'],array()));
 			if(!empty($row['tax_data']['taxes'])) {
+				$this->data['totals']['tax_data']['total_amount'] = Billrun_Util::getFieldVal($this->data['totals']['tax_data']['total_amount'], 0) + Billrun_Util::getIn($row, 'tax_data.total_amount', 0);
+                $this->data['totals']['tax_data']['total_tax'] = Billrun_Util::getFieldVal($this->data['totals']['tax_data']['total_tax'], 0) + Billrun_Util::getIn($row, 'tax_data.total_tax', 0);
 				foreach ($row['tax_data']['taxes'] as $tax) {
 					if(empty($tax['description'])) {
 						Billrun_Factory::log("Received Tax with empty decription on row {$row['stamp']} , Skipping...",Zend_log::DEBUG);
@@ -328,6 +330,13 @@ class Billrun_Cycle_Subscriber_Invoice {
 						Billrun_Factory::config()->getConfigValue('taxation.CSI.apply_optional_charges',FALSE) && $tax['pass_to_customer'] == 0 && $row['tax_data']['total_amount'] !== 0 ) {
 						$prevAmount = Billrun_Util::getFieldVal($this->data['totals']['taxes'][$tax['description']],0);
 						$this->data['totals']['taxes'][$tax['description']] = $prevAmount + $tax['amount'];
+						$taxKey = $tax['key'];
+						if (!isset($this->data['totals']['tax_data']['taxes'][$taxKey])) {
+							$this->data['totals']['tax_data']['taxes'][$taxKey] = $tax;
+							$this->data['totals']['tax_data']['taxes'][$taxKey]['amount'] = 0;
+						}
+						Billrun_Factory::log("Tax Key: $taxKey | Current Sum: " . $this->data['totals']['tax_data']['taxes'][$taxKey]['amount'] . " | Adding: " . $tax['amount'], Zend_Log::DEBUG);
+						$this->data['totals']['tax_data']['taxes'][$taxKey]['amount'] += $tax['amount'];
 					}
 				}
 			}
@@ -414,6 +423,24 @@ class Billrun_Cycle_Subscriber_Invoice {
 				$newTotals['taxes'][$key] = Billrun_Util::getFieldVal($newTotals['taxes'][$key], 0);
 				$newTotals['taxes'][$key] += $taxAmount; 
 			}
+		}
+
+		$newTotals['tax_data']['total_amount'] = Billrun_Util::getFieldVal($newTotals['tax_data']['total_amount'], 0) + Billrun_Util::getFieldVal($this->data['totals']['tax_data']['total_amount'], 0);
+		$totalBeforeVat = $newTotals['before_vat'];
+
+		if ($totalBeforeVat != 0) {
+			$newTotals['tax_data']['total_tax'] = $newTotals['tax_data']['total_amount'] / $totalBeforeVat;
+		} else {
+			$newTotals['tax_data']['total_tax'] = 0;
+		}
+		$subTaxes = Billrun_Util::getFieldVal($this->data['totals']['tax_data']['taxes'], array());
+		
+		foreach ($subTaxes as $taxKey => $taxInfo) {
+			if (!isset($newTotals['tax_data']['taxes'][$taxKey])) {
+				$newTotals['tax_data']['taxes'][$taxKey] = $taxInfo;
+				$newTotals['tax_data']['taxes'][$taxKey]['amount'] = 0; // Reset amount for clean summation
+			}
+			$newTotals['tax_data']['taxes'][$taxKey]['amount'] += $taxInfo['amount'];
 		}
 		return $newTotals;
 	}

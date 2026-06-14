@@ -7,7 +7,7 @@ import { List, Map, fromJS } from "immutable";
 import moment from "moment";
 import uuid from 'uuid';
 import pluralize from "pluralize";
-import { titleCase } from "change-case";
+import { titleCase, pascalCase } from "change-case";
 import { Form, FormGroup, ControlLabel, Col, Panel } from "react-bootstrap";
 import { WithTooltip, CreateButton } from "@/components/Elements";
 import EntityList from "@/components/EntityList";
@@ -374,8 +374,13 @@ class PaymentsFiles extends Component {
   onUploadTransactionsFileClickOK = (paymentFile) => {
     const { paymentGateway, fileType } = this.props;
     const file = paymentFile.get("file", null);
+    // `source` is the value persisted on `log.source` and that the list query matches against
+    // (see `baseFilter.source` below). Build it here on the FE so the BE doesn't have to
+    // reconstruct it from raw `payment_gateway + payments_file_type` — that path mishandled
+    // snake_case gateway keys like `manual_files` and produced `manualfilesPayments`.
+    const source = pascalCase(paymentGateway) + 'Payments';
     return this.props
-      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'payments'))
+      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'payments', source))
       .then(this.afterSuccessUploadTransactionsFile)
       .catch((error) => Promise.reject());
   };
@@ -452,7 +457,10 @@ class PaymentsFiles extends Component {
               api="get"
               showRevisionBy={false}
               baseFilter={{
-                source: paymentGateway + 'Payments',
+                // Source format mirrors how BE persists `log.source` on upload/CLI receive:
+                // pascalCase(cpg_name) + ucfirst(cpg_type), e.g. `manual_files` + `payments`
+                // → `ManualFilesPayments`. Same formula is used on the upload request.
+                source: pascalCase(paymentGateway) + 'Payments',
                 cpg_file_type: {"$in" : [fileType]},
               }}
               // filterFields={this.getFilterFields()}

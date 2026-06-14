@@ -454,7 +454,7 @@
 		"start_date" : "2025-10-06T13:33:00Z",
 		"end_date" : "2125-10-06T07:00:00Z",
 		"start" : "2025-10-06T13:33:00Z",
-		"discount_from" : "2025-10-06T13:33:00Z",
+		"discount_from" : "2025-10-01T00:00:00Z",
 		"discount_to" : "2025-11-01T00:00:00Z"
 	    }
 
@@ -1123,9 +1123,162 @@
 	    }]
 	  },
 	  "final_charge": -59.0,
-  	  "discount_from": "2025-10-15T00:00:00Z",	  
-          "discount_to": "2025-10-31T23:59:59Z",
+  	  "discount_from": "2025-10-01T00:00:00Z",	  
+          "discount_to": "2025-11-01T00:00:00Z",
         "eligible_line": "noneproration_test_stamp"
+      }
+    ]
+  },
+  "Plan discount gives full amount when service ends on 30th causing revision split with shifted billing period": {
+    "account_revs": [
+      {
+        "aid": 1000,
+        "sid": 0,
+        "type": "account",
+        "account_type": "root",
+        "account_reference": 1000,
+        "discounts": [],
+        "from": "2026-03-01T00:00:00Z",
+        "to": "2126-03-01T00:00:00Z"
+      }
+    ],
+    "subscribers_revs": {
+      "2000": [
+        {
+          "aid": 1000,
+          "sid": 2000,
+          "plan": "PLAN_1G",
+          "type": "subscriber",
+          "activation_date": "2026-04-02T17:38:00Z",
+          "discounts": [
+            {
+              "key": "DISCOUNT_PLAN_1G",
+              "description": "50% discount on PLAN_1G",
+              "type": "percentage",
+              "proration": "inherited",
+              "subject": {
+                "plan": {
+                  "PLAN_1G": {
+                    "value": 0.5
+                  }
+                }
+              },
+              "from": "2026-04-01T00:00:00Z",
+              "to": "2026-07-30T12:00:00Z",
+              "params": {
+                "min_subscribers": "",
+                "max_subscribers": ""
+              }
+            }
+          ],
+          "services": [
+            {
+              "name": "SVC_OPT_IP",
+              "description": "Optional IP service (ends on 30th, causes revision split)",
+              "from": "2026-04-02T17:38:00Z",
+              "to": "2026-04-30T00:00:00Z",
+              "quantity": 1,
+              "service_id": "svc-opt-ip-001"
+            }
+          ],
+          "from": "2026-04-02T00:00:00Z",
+          "to": "2026-04-30T00:00:00Z"
+        },
+        {
+          "aid": 1000,
+          "sid": 2000,
+          "plan": "PLAN_1G",
+          "type": "subscriber",
+          "activation_date": "2026-04-02T17:38:00Z",
+          "discounts": [
+            {
+              "key": "DISCOUNT_PLAN_1G",
+              "description": "50% discount on PLAN_1G",
+              "type": "percentage",
+              "proration": "inherited",
+              "subject": {
+                "plan": {
+                  "PLAN_1G": {
+                    "value": 0.5
+                  }
+                }
+              },
+              "from": "2026-04-01T00:00:00Z",
+              "to": "2026-07-30T12:00:00Z",
+              "params": {
+                "min_subscribers": "",
+                "max_subscribers": ""
+              }
+            }
+          ],
+          "services": [],
+          "from": "2026-04-30T00:00:00Z",
+          "to": "2126-04-30T00:00:00Z"
+        }
+      ]
+    },
+    "cycle": "202605",
+    "flat_lines": [
+      {
+        "_id": "test_shifted_plan_line_001",
+        "aid": 1000,
+        "sid": 2000,
+        "source": "billrun",
+        "billrun": "202605",
+        "type": "flat",
+        "usaget": "flat",
+        "urt": "2026-05-31T22:59:59Z",
+        "plan": "PLAN_1G",
+        "name": "PLAN_1G",
+        "aprice": 96.66666666666667,
+        "full_price": 100,
+        "charge_op": "charge",
+        "cycle": 0,
+        "start_date": "2026-04-02T00:00:00Z",
+        "end_date": "2026-05-01T00:00:00Z",
+        "end": "2026-05-01T00:00:00Z",
+        "prorated_start": true,
+        "prorated_end": true,
+        "stamp": "shifted_billing_period_stamp_001",
+        "tax_data": {
+          "total_amount": 7.83,
+          "total_tax": 0.081,
+          "taxes": [
+            {
+              "tax": 0.081,
+              "amount":7.83,
+              "description": "VAT Normal Rate",
+              "key": "DEFAULT_VAT",
+              "type": "vat",
+              "pass_to_customer": 1
+            }
+          ]
+        },
+        "final_charge": 104.4966666666667
+      }
+    ],
+    "result": [
+      {
+        "name": "50% discount on PLAN_1G",
+        "aprice": -48.333333333333336,
+        "eligible_line": "shifted_billing_period_stamp_001",
+        "discount_from": "2026-04-02T00:00:00Z",
+        "discount_to": "2026-05-01T00:00:00Z",
+        "tax_data": {
+          "total_amount": -3.9150000000000005,
+          "total_tax": 0.081,
+          "taxes": [
+            {
+              "tax": 0.081,
+              "amount": -3.9150000000000005,
+              "description": "VAT Normal Rate",
+              "key": "DEFAULT_VAT",
+              "type": "vat",
+              "pass_to_customer": 1
+            }
+          ]
+        },
+        "final_charge": -52.248333333333335
       }
     ]
   }

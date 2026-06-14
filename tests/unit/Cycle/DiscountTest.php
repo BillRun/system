@@ -29,7 +29,6 @@ class DiscountTest extends \Codeception\Test\Unit {
 		$resDIscountsFieldsToCompare = [
 			'final_charge' => 1,
 			'tax_data' => 1,
-			'tax_data' => 1,
 			'name' => 1,
 			'aprice' => 1,
 			'eligible_line' => 1,
