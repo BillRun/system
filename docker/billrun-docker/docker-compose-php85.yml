@@ -32,6 +32,8 @@ services:
         image: mongo:8.0
         container_name: billrun-mongodb
         restart: always
+        environment:
+            - GLIBC_TUNABLES=glibc.pthread.rseq=1 # fix for mongodb 8 with kernel 6.19+
         volumes:
             - ./data/mongodb8:/data/db/
             - ./../..:/billrun:ro
