@@ -275,5 +275,11 @@
 		"currency": "USD",
 		"max_currencies": 3,
 		"additional_currencies": []
+	},
+	"exchange_rate": {
+		"update_period": "",
+		"url": "",
+		"method": "GET",
+		"api_key": ""
 	}
 }

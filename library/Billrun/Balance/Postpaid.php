@@ -200,6 +200,12 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		if (!is_null($service_name)) {
 			$ret['service_name'] = $service_name;
 		}
+		if (Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled()) {
+			// BRCD-2867: record the customer's currency on the balance (informational).
+			// Currency is account-level (fixed once the account has lines/bills), so it is
+			// not part of the balance uniqueness key and needs no index change.
+			$ret['currency'] = Billrun_Util::getIn($this->row, 'foreign.currency', '') ?: Billrun_CurrencyConvert_Manager::getCustomerCurrency($this->row);
+		}
 		return $ret;
 	}
 

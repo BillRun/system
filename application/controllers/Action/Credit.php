@@ -195,6 +195,11 @@ class CreditAction extends ApiAction {
 	
 	protected function parse($credit_row) {
 		$ret = $this->validateFields($credit_row);
+		// BRCD-2806: allow a credit to carry an explicit currency so it aggregates into
+		// the matching currency bill. Only honored in multi-currency mode.
+		if (Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled() && !empty($credit_row['currency'])) {
+			$ret['currency'] = $credit_row['currency'];
+		}
 		$ret['skip_calc'] = $this->getSkipCalcs($ret);
 		$ret['process_time'] = new Mongodloid_Date();
 		$ret['usaget'] = $this->getCreditUsaget($ret);

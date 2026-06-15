@@ -48,6 +48,14 @@ class Billrun_FraudManager {
 	 */
 	protected static $availableThresholds = ['usagev', 'aprice', 'final_charge', 'in_group', 'over_group', 'out_group'];
 
+	/**
+	 * Monetary thresholds whose values are currency-dependent and must be normalized
+	 * to the default currency before being summed/compared in multi-currency mode.
+	 *
+	 * @param array
+	 */
+	protected static $monetaryThresholds = ['aprice', 'final_charge', 'in_group', 'over_group', 'out_group'];
+
 	private function __construct($params = []) {
 		$this->runTime = time();
 		$this->collection = Billrun_Factory::db()->linesCollection();
@@ -221,11 +229,36 @@ class Billrun_FraudManager {
 			'sid' => [ '$first' => '$sid' ],
 			'max_urt' => [ '$max' => '$urt' ],
 		];
+		$multiCurrency = Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled();
 		foreach (self::$availableThresholds as $availableThreshold) {
-			$group[$availableThreshold] = [ '$sum' => '$' . $availableThreshold ];
+			$group[$availableThreshold] = [ '$sum' => self::buildThresholdSumExpression($availableThreshold, $multiCurrency) ];
 		}
-		
+
 		return [ '$group' => $group ];
+	}
+
+	/**
+	 * Build the aggregation expression used to sum a threshold field.
+	 *
+	 * In multi-currency mode monetary thresholds are summed in the default currency,
+	 * using the per-line original_currency snapshot when present, so thresholds (which
+	 * are defined in the default currency) are compared apples-to-apples regardless of
+	 * the customer's currency. BRCD-2722.
+	 *
+	 * Note: only fields snapshotted under original_currency (currently aprice) are fully
+	 * normalized; others gracefully fall back to the raw field. Full final_charge/group
+	 * normalization requires snapshotting those under original_currency too (follow-up).
+	 *
+	 * @param  string  $threshold
+	 * @param  boolean $multiCurrencyEnabled
+	 * @return string|array aggregation expression
+	 */
+	public static function buildThresholdSumExpression($threshold, $multiCurrencyEnabled) {
+		if ($multiCurrencyEnabled && in_array($threshold, self::$monetaryThresholds, true)) {
+			return [ '$ifNull' => [ '$original_currency.' . $threshold, '$' . $threshold ] ];
+		}
+
+		return '$' . $threshold;
 	}
 	
 	protected function getFraudEventsQueryThresholds($eventSettings) {

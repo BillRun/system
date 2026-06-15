@@ -115,8 +115,15 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return $subscriptionList;
 	}
 	
-	public function currencySymbol() {
-		return Billrun_Rates_Util::getCurrencySymbol(Billrun_Factory::config()->getConfigValue('pricing.currency','USD'));
+	public function currencySymbol($currency = null) {
+		// BRCD-2723: use the explicit currency if given, otherwise the invoice's own
+		// currency (account-level), falling back to the system default currency.
+		if (empty($currency)) {
+			$currency = !empty($this->data['currency'])
+				? $this->data['currency']
+				: Billrun_Factory::config()->getConfigValue('pricing.currency', 'USD');
+		}
+		return Billrun_Rates_Util::getCurrencySymbol($currency);
 	}
 	
 	protected function getLineRatePrice($rate, $line) {

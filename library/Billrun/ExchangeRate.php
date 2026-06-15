@@ -59,7 +59,12 @@ class Billrun_ExchangeRate {
 		$this->baseCurrency = $baseCurrency;
 		$this->targetCurrency = $targetCurrency;
 		$this->rate = is_null($rate) ? $this->getRate() : floatval($rate);
-		$this->rate *= $this->getMultiplier();
+		// Only apply the multiplier when an actual rate exists. Otherwise a missing rate
+		// (null) would be coerced to 0, silently pricing conversions at zero instead of
+		// surfacing the missing-rate condition (convert() returns false).
+		if (!is_null($this->rate) && $this->rate !== false) {
+			$this->rate *= $this->getMultiplier();
+		}
 	}
 
 	/**

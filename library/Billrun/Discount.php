@@ -106,6 +106,13 @@ abstract class Billrun_Discount {
 				$discountLine[$field] = $eligibleRow[$field];
 			}
 		}
+		if (Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled()) {
+			// BRCD-2720: tag the discount line with the customer's currency so it aggregates
+			// into the matching-currency bill. NOTE: the monetary discount value itself is
+			// still expressed in the default currency - converting the value (and recording
+			// original_currency) is a follow-up that requires discount-cycle integration testing.
+			$discountLine['currency'] = Billrun_Util::getIn($eligibleRow, 'foreign.currency', '') ?: Billrun_CurrencyConvert_Manager::getCustomerCurrency($eligibleRow);
+		}
 		if (!empty($this->discountData['cycles'])) {
 			$discountLine['cycles'] = $this->discountData['cycles'];
 		}

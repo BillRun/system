@@ -383,6 +383,13 @@ class ConfigModel {
 			}
 		} else if ($category === 'collection' && $this->validateCollection($data) !== TRUE) {
 			throw new Exception("Can not save collection configuration");
+		} else if ($category === 'pricing') {
+			// Multi-currency: validate currency changes and sync exchange rates against the
+			// previous pricing config (still in $updatedData) before the new pricing is merged in.
+			$this->updateExchangeRates($data, $updatedData);
+			if (!$this->_updateConfig($updatedData, $category, $data)) {
+				return 0;
+			}
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
