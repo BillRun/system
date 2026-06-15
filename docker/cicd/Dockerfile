@@ -1,7 +1,9 @@
 FROM php:8.5-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
-RUN apt-get update && apt-get install --no-install-recommends -y \
+RUN apt-get update && \
+        apt-get upgrade -y perl perl-base && \
+        apt-get install --no-install-recommends -y \
         wget  \
         libpng-dev zlib1g-dev libzip-dev libgmp-dev \
         unzip openjdk-21-jre-headless \
