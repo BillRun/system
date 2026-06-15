@@ -218,7 +218,47 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			return $this->updateSubscriberBalance();
 		}
 		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
+		$this->applyUsageCurrencyConversion($pricingData);
 		return $pricingData;
+	}
+
+	/**
+	 * Convert a usage line's charge to the customer's currency (multi-currency mode).
+	 *
+	 * Balance and monetary-group accounting are performed and stored in the default
+	 * currency (group includes are defined in the default currency); only the invoiced
+	 * charge on the line is converted, with the default-currency amount recorded under
+	 * original_currency - mirroring the convention used for plan/service lines.
+	 * BRCD-2716 (usage lines) / BRCD-2721 (monetary groups).
+	 *
+	 * This runs only for usage lines (types that go through the balance); the cycle
+	 * plan/service path and typesWithoutBalance set their own currency separately, so
+	 * there is no double conversion.
+	 *
+	 * @param array $pricingData line pricing data (modified by reference)
+	 * @return void
+	 */
+	protected function applyUsageCurrencyConversion(&$pricingData) {
+		if (!is_array($pricingData) || !Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled() || !isset($pricingData[$this->pricingField])) {
+			return;
+		}
+		$currency = $this->getCurrency();
+		$defaultCurrency = Billrun_CurrencyConvert_Manager::getDefaultCurrency();
+		if (empty($currency) || $currency === $defaultCurrency) {
+			return;
+		}
+		$baseCharge = $pricingData[$this->pricingField];
+		$converted = Billrun_CurrencyConvert_Manager::convert($defaultCurrency, $currency, $baseCharge, $this->row['urt']->sec ?? null);
+		if ($converted === false) {
+			Billrun_Factory::log("Multi-currency: failed converting usage charge {$defaultCurrency}->{$currency} for line " . ($this->row['stamp'] ?? ''), Zend_Log::ERR);
+			return;
+		}
+		$pricingData[$this->pricingField] = $converted;
+		$pricingData['currency'] = $this->row['currency'] = $currency;
+		$pricingData['original_currency'] = $this->row['original_currency'] = array(
+			'aprice' => $baseCharge,
+			'currency' => $defaultCurrency,
+		);
 	}
 
 	/**

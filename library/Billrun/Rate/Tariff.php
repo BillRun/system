@@ -151,12 +151,45 @@ class Billrun_Rate_Tariff {
 			
 		$tariff = $rates[$key][$usageType];
 		if (isset($tariff['percentage'])) {
-			$this->percentage = floatval($tariff['percentage']);
+			$this->percentage = $this->resolveOverridePercentage($tariff);
 			$this->planName = 'BASE'; // price was already overridden by plan/service based on percentages so no need to check if it was overridden on the rate
 			return false;
 		}
 
 		return $tariff;
+	}
+
+	/**
+	 * resolve the percentage to apply for a plan/service price override.
+	 * In multi-currency mode honors a per-currency percentage override (BRCD-2715),
+	 * mirroring the per-currency overrides products get via currency_rates.
+	 *
+	 * @param  array $tariff override tariff
+	 * @return float
+	 */
+	protected function resolveOverridePercentage($tariff) {
+		$currency = $this->useCurrency() ? $this->getCurrency() : '';
+		return self::pickCurrencyPercentage($tariff, $currency);
+	}
+
+	/**
+	 * pick the currency-specific percentage from a plan/service override tariff if
+	 * defined for the target currency, otherwise the default percentage.
+	 *
+	 * @param  array $tariff override tariff with 'percentage' and optional 'currency_rates'
+	 * @param  string $currency target currency ('' for default currency)
+	 * @return float
+	 */
+	public static function pickCurrencyPercentage($tariff, $currency) {
+		if (!empty($currency) && !empty($tariff['currency_rates'])) {
+			foreach ($tariff['currency_rates'] as $currencyRate) {
+				if (($currencyRate['currency'] ?? null) === $currency && isset($currencyRate['percentage'])) {
+					return floatval($currencyRate['percentage']);
+				}
+			}
+		}
+
+		return floatval($tariff['percentage'] ?? 0);
 	}
 	
 	/**

@@ -433,6 +433,13 @@ class Billrun_Cycle_Account_Invoice {
 		if ($config->isMultiDayCycle()) {
 			$this->setInvoicingDay($rawData, $attributes);
 		}
+		if (Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled()) {
+			// BRCD-2723: record the invoice's (account-level) currency so the invoice
+			// view/PDF can display the correct currency symbol.
+			$rawData['currency'] = !empty($attributes['currency'])
+				? $attributes['currency']
+				: Billrun_CurrencyConvert_Manager::getDefaultCurrency();
+		}
 		$this->data->setRawData($rawData);
 	}
 	

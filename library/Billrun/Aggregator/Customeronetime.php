@@ -116,10 +116,18 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 	protected function addExternalCharges(&$aggregatedEntity) {
 		$externalCharges = $this->getExternalChargesForAID($aggregatedEntity->getInvoice()->getAid());
 
+		// BRCD-2837: in multi-currency mode tag external charges with the account currency.
+		// External charges are operator-entered in the account's currency, so they are
+		// tagged (not converted) for consistency with the rest of the invoice lines.
+		$accountCurrency = Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled() ? $aggregatedEntity->getCurrency() : null;
+
 		foreach($externalCharges as &$externalCharge) {
 			$externalCharge['billrun'] = $this->getCycle()->key();
 			$externalCharge['source'] = 'billrun';
 			$externalCharge['billrun_cycle_credit'] = true;
+			if (!is_null($accountCurrency) && empty($externalCharge['currency'])) {
+				$externalCharge['currency'] = $accountCurrency;
+			}
 			$sub = $aggregatedEntity->getSubscriber($externalCharge['sid']);
 			if(!empty($sub)) {
 				$sub->getInvoice()->addLines([$externalCharge]);
