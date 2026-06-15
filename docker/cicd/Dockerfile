@@ -1,10 +1,10 @@
-FROM php:8.5-fpm
+FROM php:8.5-fpm-bookworm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
         wget  \
         libpng-dev zlib1g-dev libzip-dev libgmp-dev \
-        unzip openjdk-21-jre-headless \
+        unzip openjdk-17-jre-headless \
         libssl-dev pkg-config openssl \
         libmemcached-dev \
         nginx supervisor \
