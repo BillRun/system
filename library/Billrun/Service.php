@@ -390,7 +390,17 @@ class Billrun_Service {
 			if (!isset($this->data['include']['groups'][$groupSelected]['cost'])) {
 				return array('usagev' => 0);
 			}
-			
+
+			// BRCD-2721: monetary (cost-based) group includes are not supported while
+			// multi-currency is enabled (phase 1). A monetary pool is held in the system
+			// default currency and cannot be drawn down correctly for accounts billed in
+			// other currencies, so the group is treated as granting nothing and the usage
+			// is charged normally instead.
+			if (Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled()) {
+				Billrun_Factory::log('Multi-currency: skipping monetary group "' . $groupSelected . '"; monetary groups are disabled while multi-currency is enabled (BRCD-2721)', Billrun_Log::DEBUG);
+				return array('usagev' => 0);
+			}
+
 			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected, $time, $serviceQuantity, $serviceMaximumQuantity);
 			// convert cost to volume
 			if ($cost === Billrun_Service::UNLIMITED_VALUE) {
