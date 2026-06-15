@@ -27,6 +27,7 @@ services:
         - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
         volumes:
             - ./../..:/billrun
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         command: sh -c "mkdir -p /billrun/vendor && cp -r /var/www/html/vendor/* /billrun/vendor/ && php-fpm"
     mongodb:
         image: mongo:8.0
@@ -38,6 +39,7 @@ services:
             - ./data/mongodb8:/data/db/
             - ./../..:/billrun:ro
             - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27017:27017
 
