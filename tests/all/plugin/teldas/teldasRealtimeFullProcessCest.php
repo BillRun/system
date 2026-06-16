@@ -1,23 +1,23 @@
 <?php
 
 /**
- * teldasFullProcessCest
+ * teldasRealtimeFullProcessCest
  *
- * Full-pipeline test (real input processor -> teldas plugin hooks -> queue
- * calculators -> lines) for a zero-duration call to a teldas INA number that
- * has NO tariff (status ALLNO, tariffProfile null). The line must be mapped to
- * ina_vas_call, rated with the teldas rate (not the generic one), saved to the
- * queue, and produce no alerts.
+ * Realtime counterpart of teldasFullProcessCest: drives a /realtime request for
+ * a call to a teldas INA number that has NO tariff (status ALLNO,
+ * tariffProfile null) with zero duration, and verifies that the teldas plugin
+ * maps it to ina_vas_call (via afterRealtimeProcessorParsing), it routes to the
+ * teldas rate (not the generic one), a line is saved, and no alert is logged.
  *
- * All generic teldas fixtures/helpers live in \Helper\Teldas.
+ * /realtime is handled inside the web container, so the teldas plugin is enabled
+ * through config (setPluginSettings) rather than by attaching it to the
+ * in-process dispatcher. All generic teldas fixtures/helpers live in
+ * \Helper\Teldas.
  */
-class teldasFullProcessCest
+class teldasRealtimeFullProcessCest
 {
-    /** Synthetic input-processor / file_type / line_type name. */
-    const FILE_TYPE = 'TeldasTestInput';
-
-    /** Calling subscriber (A-party) used for customer identification. */
-    const CALLER_NUMBER = '0700000001';
+    /** Realtime input-processor / file_type / line_type name. */
+    const FILE_TYPE = 'TeldasRealtimeTestInput';
 
     /** Shared constants (sourced from the helper to avoid duplication). */
     const INA_NUMBER       = \Helper\Teldas::INA_NUMBER;
@@ -37,14 +37,11 @@ class teldasFullProcessCest
         $I->resetBillrunInstances();
         $I->cleanTeldasCollections();
         $I->setTimezone('Europe/Zurich');
-        // In-process file processing: attach the plugin to the dispatcher.
-        $I->enableTeldasPlugin($I->teldasPluginOptions(self::FILE_TYPE));
         $I->clearLogFile();
     }
 
     public function _after(ApiTester $I)
     {
-        $I->disableTeldasPlugins();
         $I->cleanTeldasCollections();
         $I->restoreTimezone();
     }
@@ -68,33 +65,42 @@ class teldasFullProcessCest
                 'input_uom'     => 'seconds',
             ],
         ]);
+        // Enable the teldas plugin in the (web-container) config so the /realtime
+        // request handler attaches it and its hooks fire.
+        $I->setPluginSettings([
+            'name'    => 'teldasPlugin',
+            'enabled' => true,
+            'system'  => true,
+            'configuration' => ['values' => $I->teldasPluginOptions(self::FILE_TYPE)],
+            'label'   => 'Teldas',
+        ]);
         \Billrun_Factory::config()->setConfigValue('queue.calculators', ['customer', 'rate', 'pricing']);
     }
 
     /* ---------- the test ---------- */
 
-    public function testInaNoTariffZeroDuration_mappedToTeldasRate_savedToQueue_noAlerts(ApiTester $I): void
+    public function testRealtimeInaNoTariffZeroDuration_mappedToTeldasRate_noAlerts(ApiTester $I): void
     {
         $I->haveNoTariffInaNumber();
-        $fixtures = $I->createTeldasFixtures(self::CALLER_NUMBER);
-        $account    = $fixtures['account'];
+        $fixtures = $I->createTeldasFixtures('0700000001', 'TELDAS_RT_PLAN_');
         $subscriber = $fixtures['subscriber'];
 
-        $I->processByPath([
-            'type' => self::FILE_TYPE,
-            'path' => 'tests/all/plugin/teldas/test_files/teldas_ina_no_tariff.csv',
+        $I->sendInitialRequestCdr(self::FILE_TYPE, [
+            'sid'               => $subscriber['sid'],
+            'Call_start'        => '2026-01-15T10:00:00+01:00',
+            'Subscriber_Number' => self::INA_NUMBER,
+            'Duration_Seconds'  => 0,
         ]);
 
-        // The call is saved (not dropped) and mapped to ina_vas_call + teldas rate.
-        $I->assertEquals(1, $I->grabCollectionCount('lines', [
+        // The plugin mapped the realtime CDR to ina_vas_call and it routed to the
+        // teldas rate; a line was saved with zero usage.
+        $I->verifyCollectionRecord('lines', [
             'uf.Subscriber_Number' => self::INA_NUMBER,
-            'in_queue'             => true,
             'usaget'               => 'ina_vas_call',
             'usagev'               => 0,
             'arate_key'            => self::TELDAS_RATE_KEY,
-            'aid'                  => $account['aid'],
             'sid'                  => $subscriber['sid'],
-        ]), 'the zero-duration no-tariff INA call must be saved to the queue, not dropped');
+        ]);
 
         // It must NOT have fallen back to the generic (non-teldas) rate.
         $I->assertEquals(0, $I->grabCollectionCount('lines', [
@@ -102,41 +108,41 @@ class teldasFullProcessCest
             'arate_key'            => self::GENERIC_RATE_KEY,
         ]), 'an ina_vas_call must not be rated with the generic call rate');
 
-        // A no-tariff ALLNO number is an expected case: no alert must be logged,
-        // neither from the teldas plugin nor from the pricing calculator falling
-        // back on a null aprice.
+        // A no-tariff ALLNO number is an expected case: no alert must be logged.
         $I->dontSeeInLogFile('is missing or invalid for line');
         $I->dontSeeInLogFile('Too many pricing retries for line stamp');
     }
 
-    /* ---------- input processor config ---------- */
+    /* ---------- realtime input processor config ---------- */
 
     protected function inputProcessor()
     {
         return [
             'file_type' => self::FILE_TYPE,
+            'type'      => 'realtime',
             'parser' => [
-                'type' => 'separator',
-                'line_types' => ['H' => '/^none$/', 'D' => '//', 'T' => '/^none$/'],
-                'separator' => ',',
+                'type' => 'json',
+                'separator' => '',
                 'structure' => [
-                    ['name' => 'Caller_Number', 'checked' => true],
+                    ['name' => 'sid', 'checked' => true],
                     ['name' => 'Call_start', 'checked' => true],
                     ['name' => 'Subscriber_Number', 'checked' => true],
                     ['name' => 'Duration_Seconds', 'checked' => true],
                 ],
-                'csv_has_header' => true,
+                'custom_keys' => ['sid', 'Call_start', 'Subscriber_Number', 'Duration_Seconds'],
+                'csv_has_header' => false,
                 'csv_has_footer' => false,
+                'line_types' => ['H' => '/^none$/', 'D' => '//', 'T' => '/^none$/'],
             ],
             'processor' => [
-                'type' => 'Usage',
+                'type' => 'Realtime',
                 'date_field' => 'Call_start',
                 'default_usaget' => 'call',
                 'default_unit' => 'seconds',
                 'default_volume_src' => ['Duration_Seconds'],
+                'orphan_files_time' => '6 hours',
                 // Two usage types: a generic "call", and "ina_vas_call" which the
-                // teldas plugin assigns ("by plugin") when the dialed number is an
-                // INA number.
+                // teldas plugin assigns ("by plugin") for an INA number.
                 'usaget_mapping' => [
                     [
                         'src_field' => 'Subscriber_Number',
@@ -170,21 +176,21 @@ class teldasFullProcessCest
             ],
             'customer_identification_fields' => [
                 'call' => [[
-                    'target_key' => 'firstname',
-                    'src_key'    => 'Caller_Number',
+                    'target_key' => 'sid',
+                    'src_key'    => 'sid',
                     'conditions' => [['field' => 'usaget', 'regex' => '/.*/']],
                     'clear_regex' => '//',
                 ]],
                 'ina_vas_call' => [[
-                    'target_key' => 'firstname',
-                    'src_key'    => 'Caller_Number',
+                    'target_key' => 'sid',
+                    'src_key'    => 'sid',
                     'conditions' => [['field' => 'usaget', 'regex' => '/.*/']],
                     'clear_regex' => '//',
                 ]],
             ],
+            // Rate is chosen by usaget: ina_vas_call -> teldas rate, call -> generic.
             'rate_calculators' => [
                 'retail' => [
-                    // ina_vas_call -> teldas rate (hard-coded by being an INA call).
                     'ina_vas_call' => [[[
                         'type'     => 'match',
                         'rate_key' => 'key',
@@ -200,7 +206,6 @@ class teldasFullProcessCest
                             ],
                         ],
                     ]]],
-                    // generic call -> non-teldas rate.
                     'call' => [[[
                         'type'     => 'match',
                         'rate_key' => 'key',
@@ -225,16 +230,19 @@ class teldasFullProcessCest
                     'tax_included' => true,
                 ],
             ],
-            'enabled' => true,
-            'filters' => [],
-            'receiver' => [
-                'type' => 'ftp',
-                'connections' => [[
-                    'receiver_type' => 'ftp', 'passive' => false, 'delete_received' => false,
-                    'user' => 'admin', 'password' => '12345678', 'host' => '127.0.0.1',
-                    'name' => 'a', 'remote_directory' => '/home',
-                ]],
+            'realtime' => [
+                'postpay_charge' => true,
             ],
+            'response' => [
+                'encode' => 'json',
+                'fields' => [
+                    ['response_field_name' => 'requestType', 'row_field_name' => 'request_type'],
+                    ['response_field_name' => 'sid',         'row_field_name' => 'sid'],
+                    ['response_field_name' => 'grantedVolume', 'row_field_name' => 'usagev'],
+                ],
+            ],
+            'unify' => [],
+            'enabled' => true,
         ];
     }
 }

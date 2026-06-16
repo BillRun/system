@@ -1497,7 +1497,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
 	public function beforeUpdateSubscriberBalance($balance, &$row, $rate, $calculator, &$enableMultiRetries){
-        if(isset($this->priceByStamp[$row['stamp']]) && $this->priceByStamp[$row['stamp']] === false){
+      $matchingPaths = $this->matchingPathsByType[$row['type']] ?? null;
+      $durationPath = Billrun_Util::getIn($matchingPaths, 'duration.path');
+      $duration = Billrun_Util::getIn($row, $durationPath);
+     if(isset($this->priceByStamp[$row['stamp']]) && $this->priceByStamp[$row['stamp']] === false && empty($duration)){
             $enableMultiRetries = false;
         }
     }
