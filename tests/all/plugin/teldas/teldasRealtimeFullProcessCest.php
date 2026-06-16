@@ -95,6 +95,7 @@ class teldasRealtimeFullProcessCest
             'usagev'               => 0,
             'arate_key'            => self::TELDAS_RATE_KEY,
             'sid'                  => $subscriber['sid'],
+            "in_queue"             => true
         ]);
 
         // It must NOT have fallen back to the generic (non-teldas) rate.
