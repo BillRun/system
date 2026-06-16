@@ -435,6 +435,17 @@ abstract class Billrun_Bill {
 		return iterator_to_array($billsColl->find($query)->sort($sort)->setReadPreference($read_preference), FALSE);
 	}
 	
+	/**
+	 * Get the latest $limit valid bills for the account (newest first by 'urt'),
+	 * with a running 'balance' on each entry — what the customer owed at the time
+	 * of that bill. Includes both invoices and payments.
+	 *
+	 * TODO: exclude pending payments.
+	 *
+	 * @param int $aid
+	 * @param int $limit
+	 * @return array bills with an extra 'balance' field
+	 */
 	public static function getLatestValidBillsWithBalance($aid, $limit) {
 		$total = static::getTotalDueForAccount($aid, null, true)['total'];
 		$validQuery = array_merge(['aid' => (int) $aid], static::getNotRejectedOrCancelledQuery());
