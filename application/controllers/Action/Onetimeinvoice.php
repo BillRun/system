@@ -455,6 +455,15 @@ class OnetimeinvoiceAction extends ApiAction {
 	protected function parseCredit($credit_row) {
 		$credit_row['rand'] = rand(1, 1000000);
 		$ret = $this->validateCDRFields($credit_row);
+		// BRCD-2806: in multi-currency mode every credit must carry an explicit currency so
+		// the resulting line aggregates into the matching-currency invoice/bill; the amount
+		// is recorded as-is in that currency (no conversion). Reject when it is missing.
+		if (Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled()) {
+			if (empty($credit_row['currency'])) {
+				$this->setError('Missing field: currency is mandatory when multi-currency is enabled', $credit_row);
+			}
+			$ret['currency'] = $credit_row['currency'];
+		}
 		$ret['source'] = 'credit';
 		$ret['stamp'] = Billrun_Util::generateArrayStamp($credit_row);
 		$ret['process_time'] = new Mongodloid_Date();
