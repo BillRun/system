@@ -9,8 +9,10 @@ import { Actions, CreateButton } from '@/components/Elements';
 import BalanceEventCondition from './BalanceEventCondition';
 import {
   validateFieldEventCode,
+  validateFieldKey,
 } from '@/actions/eventActions';
 import { usageTypesDataSelector, propertyTypeSelector, currencySelector } from '@/selectors/settingsSelector';
+import { getConfig } from '@/common/Util';
 
 class BalanceEvent extends Component {
 
@@ -41,6 +43,13 @@ class BalanceEvent extends Component {
     const isValid = validateFieldEventCode(value);
     this.props.setError('event_code', isValid === true ? null : isValid);
     this.props.updateField(['event_code'], value);
+  };
+
+  onChangeKey = (e) => {
+    const value = e.target.value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), '_');
+    const isValid = validateFieldKey(value);
+    this.props.setError('key', isValid === true ? null : isValid);
+    this.props.updateField(['key'], value);
   };
 
   onChangeField = path => (e) => {
@@ -134,9 +143,22 @@ class BalanceEvent extends Component {
   render() {
     const { item, errors } = this.props;
     const isEventCodeError = errors.get('event_code', false);
+    const isKeyError = errors.get('key', false);
     return (
       <Form horizontal>
         <Panel header={<span>Details</span>}>
+          <FormGroup validationState={isKeyError ? 'error' : null}>
+            <Col componentClass={ControlLabel} sm={3}>
+              Key
+              <span className="danger-red"> *</span>
+            </Col>
+            <Col sm={7}>
+              <Field id="key" onChange={this.onChangeKey} value={item.get('key', '')} disabled={Boolean(item.get('_id'))} />
+              { isKeyError && (
+                <HelpBlock>{isKeyError}</HelpBlock>
+              )}
+            </Col>
+          </FormGroup>
           <FormGroup validationState={isEventCodeError ? 'error' : null}>
             <Col componentClass={ControlLabel} sm={3}>
               Event Code

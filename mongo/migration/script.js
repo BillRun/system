@@ -2268,6 +2268,42 @@ runOnce(lastConfig, 'BRCD-4950', function () {
 
 });
 
+runOnce(lastConfig, 'BRCD-5355', function () {
+	if (!lastConfig.events) {
+		return;
+	}
+	var now = new Date();
+	var farFuture = new Date(new Date().setFullYear(new Date().getFullYear() + 100));
+	var usedKeys = {};
+	var makeUniqueKey = function (eventCode) {
+		var base = String(eventCode || 'EVENT').toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+		if (base === '') { base = 'EVENT'; }
+		var key = base;
+		var suffix = 1;
+		while (usedKeys[key]) {
+			suffix++;
+			key = base + suffix;
+		}
+		usedKeys[key] = true;
+		return key;
+	};
+	['balance', 'fraud'].forEach(function (type) {
+		var definitions = lastConfig.events[type];
+		if (Array.isArray(definitions)) {
+			definitions.forEach(function (definition) {
+				definition.type = type;
+				definition.key = makeUniqueKey(definition.event_code);
+				definition.from = now;
+				definition.to = farFuture;
+				db.event_settings.insertOne(definition);
+			});
+			delete lastConfig.events[type];
+		}
+	});
+	db.event_settings.createIndex({ 'key': 1 }, { unique: true, background: true });
+	db.event_settings.createIndex({ 'type': 1, 'from': 1, 'to': 1 }, { background: true });
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });

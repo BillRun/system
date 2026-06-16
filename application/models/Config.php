@@ -347,13 +347,6 @@ class ConfigModel {
 		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['footer'], $this->invoice_custom_template_max_size)) {
 			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 2, true);
 			throw new Exception("Custom footer template is too long, maximum size is ${$max}.");
-		} else if (strpos($category, 'events.') === 0 && !$this->validateEvents($category, $data)) {
-			throw new Exception("Error saving events");
-		} else if (strpos($category, 'event.') === 0) {
-			$eventType = explode('.', $category)[1];
-			if ($this->validateEvent($eventType, $data)) {
-				$updatedData['events'][$eventType][] = $data;
-			}
 		} else if ($category === 'plugins') {
 			throw new Exception('Only one plugin can be saved');
 		} else if ($category === 'plugin') {
@@ -1207,54 +1200,6 @@ class ConfigModel {
 		return $this->checkForConflics($config, $fileType);
 	}
 	
-	/**
-	 * 
-	 * @todo Insert validations
-	 * @param string $category
-	 * @param type $data
-	 * @return boolean
-	 */
-	protected function validateEvents($category, $events) {
-		$eventType = explode('.', $category)[1];
-		foreach ($events as $event) {
-			$this->validateEvent($type, $event);
-		}
-		
-		return TRUE;
-	}
-	
-	protected function validateEvent($eventType, $event) {
-		switch ($eventType) {
-			case 'fraud':
-				return $this->validateFraudEvent($event);
-			case 'balance':
-				return $this->validateBalanceEvent($event);
-			case 'settings':
-			default:
-				return true;
-		}
-		return true;
-	}
-
-
-	protected function validateBalanceEvent($event) {
-		if (!isset($event['event_code'])) {
-			throw new Exception('Event code is missing');
-		}
-		return true;
-	}
-
-	protected function validateFraudEvent($event) {
-		if (!isset($event['event_code'])) {
-			throw new Exception('Event code is missing');
-		}
-		$recurrenceBaseUnits = $event['recurrence']['value'] * ($event['recurrence']['type'] == 'hourly' ? 60 : 1);
-		$dateRangeBaseUnits = $event['date_range']['value'] * ($event['date_range']['type'] == 'hourly' ? 60 : 1);
-		if ($dateRangeBaseUnits < $recurrenceBaseUnits) {
-			throw new Exception('Event recurrence must be less than or equal to date range');
-		}
-		return true;
-	}
 
 	protected function validateType($type) {
 		$allowedTypes = array('realtime');
