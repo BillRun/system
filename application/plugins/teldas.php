@@ -962,7 +962,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           return false;
       }
       if (empty($inaNumberRevison['tariffProfile'])) {
-          Billrun_Factory::log("Matching INA number revision not have  tariffProfile. " . print_r($inaNumberRevison, 1), Zend_Log::ALERT);
+          Billrun_Factory::log("Matching INA number revision not have  tariffProfile. " . print_r($inaNumberRevison, 1), Zend_Log::NOTICE);
           return false;
       }
       $activationDatetime = $inaNumberRevison['activationDatetime'] ? strtotime($inaNumberRevison['activationDatetime']) : null;
@@ -1496,6 +1496,12 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       $aprice = $this->priceByStamp[$line['stamp']] !== false ? $this->priceByStamp[$line['stamp']] : null;
   }
 
+	public function beforeUpdateSubscriberBalance($balance, &$row, $rate, $calculator, &$enableMultiRetries){
+        if(isset($this->priceByStamp[$row['stamp']]) && $this->priceByStamp[$row['stamp']] === false){
+            $enableMultiRetries = false;
+        }
+    }
+
   public function beforeGetLinePriceToTax($line, &$aprice, $instance) {
       $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
 
@@ -1524,7 +1530,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
   protected function addCfTeldasFieldsByInaNumber($inaNumberRevison, &$row){
       if (empty($inaNumberRevison['tariffProfile'])) {
-          Billrun_Factory::log("Matching INA number revision not have  tariffProfile. " . print_r($inaNumberRevison, 1), Zend_Log::ALERT);
+          Billrun_Factory::log("Matching INA number revision not have  tariffProfile. " . print_r($inaNumberRevison, 1), Zend_Log::NOTICE);
           return;
       }
       $row['cf']['Tariff'] = "INA_" . strval($inaNumberRevison['tariffProfile']);
