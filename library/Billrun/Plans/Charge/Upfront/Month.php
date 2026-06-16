@@ -75,10 +75,11 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 
 
 		$lastUpfrontCharge = $this->getPriceForCycle($this->cycle);
+		$origUpfrontCharge = $this->lastOrigPrice;
 		$endActivation  =  $this->deactivation;
 		$refundFraction = 1- Billrun_Utils_Time::getDaysSpanDiffUnix($this->cycle->start(), $endActivation, $cycleSpan);
 
-		
+
 		$ret = array(
 			'value' => -$lastUpfrontCharge * $refundFraction * $quantity,
 			'full_price' => floatval($lastUpfrontCharge),
@@ -92,7 +93,7 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 
 		if ($this->shouldAddOriginalCurrency()) {
 			$ret['original_currency'] = [
-				'aprice' => $price['orig_price'],
+				'aprice' => -$origUpfrontCharge * $refundFraction * $quantity,
 				'currency' => $this->defaultCurrency,
 			];
 		}

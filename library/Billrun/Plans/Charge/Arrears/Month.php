@@ -38,7 +38,7 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 
 				if ($this->shouldAddOriginalCurrency()) {
 					$charge['original_currency'] = [
-						'aprice' => $price['orig_price'],
+						'aprice' => $price['orig_price'] * $quantity,
 						'currency' => $this->defaultCurrency,
 					];
 				}
@@ -69,7 +69,8 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 	 *
 	 */
 	protected function getTariffForMonthCover($tariff, $startOffset, $endOffset ,$activation = FALSE) {
-		return Billrun_Plan::getPriceByTariff($tariff, $startOffset, $endOffset ,$activation);
+		$step = new Billrun_Plans_Step($tariff);
+		return $step->getRelativePrice($startOffset, $endOffset, $activation, $this->getChargeCurrency());
 	}
 
 	protected function getProrationData($price, $cycle = false) {

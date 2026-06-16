@@ -26,9 +26,10 @@ class Billrun_Plans_Charge_Singleperiod extends Billrun_Plans_Charge_Base {
 		$charges = array();
 		if($this->activation >= $this->cycle->start() && $this->activation < $this->cycle->end() ) {
 			foreach ($this->price as $tariff) {
-				$price = Billrun_Plan::getPriceByTariff($tariff, 0, 1,$this->activation);
+				$step = new Billrun_Plans_Step($tariff);
+				$price = $step->getRelativePrice(0, 1, $this->activation, $this->getChargeCurrency());
 				if (!empty($price)) {
-					$charges[] = array('value' => $price['price'] * $quantity,
+					$charge = array('value' => $price['price'] * $quantity,
 						'start_date' => new Mongodloid_Date( Billrun_Plan::monthDiffToDate($price['start'], $this->activation) ),
 						'start' => Billrun_Plan::monthDiffToDate($price['start'], $this->activation),
 						'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE),
@@ -38,6 +39,14 @@ class Billrun_Plans_Charge_Singleperiod extends Billrun_Plans_Charge_Base {
 						'activation_date' => $this->activation,
 						'deactivation_date' => $this->deactivation );
 
+					if ($this->shouldAddOriginalCurrency()) {
+						$charge['original_currency'] = [
+							'aprice' => $price['orig_price'] * $quantity,
+							'currency' => $this->defaultCurrency,
+						];
+					}
+
+					$charges[] = $charge;
 				}
 			}
 		}

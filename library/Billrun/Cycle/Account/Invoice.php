@@ -442,6 +442,21 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		$this->data->setRawData($rawData);
 	}
+
+	/**
+	 * BRCD-2723 / BRCD-2837: stamp the invoice with the account's billing currency.
+	 * Authoritative over the attributes/default fallback set at construction time, so
+	 * the invoice document, layout/PDF and invoices screen all reflect the currency the
+	 * account is actually billed in (cycle and immediate invoices alike).
+	 *
+	 * @param string $currency
+	 * @return void
+	 */
+	public function setCurrency($currency) {
+		$rawData = $this->data->getRawData();
+		$rawData['currency'] = $currency;
+		$this->data->setRawData($rawData);
+	}
 	
 	public function save() {
 		if(!$this->isAccountActive()) {

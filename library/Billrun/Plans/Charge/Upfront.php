@@ -15,7 +15,15 @@
 abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 
 	protected $seperatedCrossCycleCharges = true;
-	
+
+	/**
+	 * default-currency price of the tariff resolved by the last getPriceByOffset()
+	 * call, used to record original_currency when charging in a non-default currency.
+	 *
+	 * @var float
+	 */
+	protected $lastOrigPrice = 0;
+
 	public function __construct($plan) {
 		parent::__construct($plan);
 		$this->seperatedCrossCycleCharges = Billrun_Util::getFieldVal(  $plan['separate_cross_cycle_charges'],
@@ -60,11 +68,19 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		$retCahrges = [];
 		foreach($cycles as $cycleData) {
 			$price = $this->getPriceForCycle($cycleData['cycle']);
-			$retCahrges[] = array_merge($this->getProrationData($this->price,$cycleData['cycle']),array(
+			$origPrice = $this->lastOrigPrice;
+			$charge = array_merge($this->getProrationData($this->price,$cycleData['cycle']),array(
 				'value'=> $price * $cycleData['fraction'] * $quantity,
 				'full_price' => floatval($price),
 				'split' => $cycleData['split'] ?? false
 				));
+			if ($this->shouldAddOriginalCurrency()) {
+				$charge['original_currency'] = [
+					'aprice' => $origPrice * $cycleData['fraction'] * $quantity,
+					'currency' => $this->defaultCurrency,
+				];
+			}
+			$retCahrges[] = $charge;
 		}
 		return empty($retCahrges) ? null :  $retCahrges;
 	}
@@ -84,10 +100,13 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	protected function getPriceByOffset($cycleCount) {
 		foreach ($this->price as $tariff) {
 			if ($tariff['from'] <= ceil($cycleCount) && (Billrun_Plan::isValueUnlimited($tariff['to']) ? PHP_INT_MAX : $tariff['to']) > $cycleCount) {
-				return $tariff['price'];
+				$step = new Billrun_Plans_Step($tariff);
+				$this->lastOrigPrice = $step->getPrice();
+				return $step->getPrice($this->getChargeCurrency());
 			}
 		}
-		
+
+		$this->lastOrigPrice = 0;
 		return 0;
 	}
 

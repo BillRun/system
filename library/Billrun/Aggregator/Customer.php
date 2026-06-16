@@ -623,7 +623,18 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 
 		$accountData['invoice'] = $invoice;
-		return new Billrun_Cycle_Account($accountData, $this);
+		$account = new Billrun_Cycle_Account($accountData, $this);
+
+		// BRCD-2723 / BRCD-2837: stamp the invoice with the account's billing currency.
+		// The invoice is built before the cycle account (above), so attributes may not
+		// carry the currency; the account is the authoritative source (same as used for
+		// external charges in the immediate-invoice flow).
+		if (Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled()) {
+			$accountCurrency = $account->getCurrency();
+			$invoice->setCurrency(!empty($accountCurrency) ? $accountCurrency : Billrun_CurrencyConvert_Manager::getDefaultCurrency());
+		}
+
+		return $account;
 	}
 
 	/**

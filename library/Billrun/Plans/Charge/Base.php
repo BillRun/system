@@ -75,4 +75,17 @@ abstract class Billrun_Plans_Charge_Base {
 			(!empty($this->currency) && $this->currency !== $this->defaultCurrency);
 	}
 
+	/**
+	 * The currency a tariff price should be resolved in. Returns the account currency
+	 * only when a real conversion is required (multi-currency on and the account is
+	 * billed in a non-default currency); otherwise returns an empty string so the
+	 * tariff/step pricing yields the untouched default-currency price. This keeps the
+	 * behaviour for default-currency accounts (and single-currency systems) identical.
+	 *
+	 * @return string
+	 */
+	protected function getChargeCurrency() {
+		return $this->shouldAddOriginalCurrency() ? $this->currency : '';
+	}
+
 }

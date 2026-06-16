@@ -170,6 +170,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		if (!empty($invoice['uf'])) {
 			$bill['uf'] = $invoice['uf'];
 		}
+		// BRCD-2723: carry the invoice currency onto the bill so the invoices screen
+		// (bills billapi) reflects the currency the invoice was issued in (multi-currency).
+		if (!empty($invoice['currency'])) {
+			$bill['currency'] = $invoice['currency'];
+		}
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];
 		}
