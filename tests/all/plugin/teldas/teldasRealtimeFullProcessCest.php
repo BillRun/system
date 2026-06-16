@@ -34,16 +34,18 @@ class teldasRealtimeFullProcessCest
             \Billrun_Config::getInstance()->loadDbConfig();
         }
         $I->cleanDB();
-        $I->cleanTeldasCollections();
-        $I->enableTeldasPlugin($I->teldasPluginOptions(self::FILE_TYPE));
-        $I->setTimezone('Europe/Zurich');
         $I->resetBillrunInstances();
+        $I->cleanTeldasCollections();
+        // /realtime is handled by the web container, which loads plugins from
+        // config - so register teldas in config (not the test-process dispatcher).
+        $I->enableTeldasPluginInConfig($I->teldasPluginOptions(self::FILE_TYPE));
+        $I->setTimezone('Europe/Zurich');
         $I->clearLogFile();
     }
 
     public function _after(ApiTester $I)
     {
-        $I->disableTeldasPlugins();
+        $I->disableTeldasPluginInConfig();
         $I->cleanTeldasCollections();
         $I->restoreTimezone();
     }

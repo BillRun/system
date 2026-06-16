@@ -79,11 +79,64 @@ class Teldas extends BillRunAPI
      */
     public function enableTeldasPlugin($options)
     {
-        // 1) Register the plugin in config. The queue calculators (e.g. pricing,
-        //    which fires beforeGetLineAprice) resolve plugins from config, so a
-        //    dispatcher-only attach is not enough - without this the plugin is
-        //    absent during pricing and a no-tariff line gets priced (0) and
-        //    dequeued instead of staying in the queue.
+        // Billrun_Dispatcher keeps a SEPARATE instance per nested run-level
+        // ('default0', 'default1', ...), each a lazy clone of default0. The queue
+        // calculators fire beforeGetLineAprice from a nested level (run=1), so a
+        // clone of default0 made BEFORE we attach (it already exists by the time
+        // _before runs) has no teldas - and attaching only to the current instance
+        // (default0) misses it. Attach a single plugin instance to EVERY existing
+        // dispatcher instance; clones created later derive from default0 (which now
+        // carries it). One instance only -> no double-pricing / retry loop, and no
+        // config registration (that also created the stale clone).
+        $plugin = new \teldasPlugin($options);
+        $plugin->setAvailability(true);
+        $plugin->setOptions(array_merge($options, ['enabled' => true]));
+
+        $instProp = new \ReflectionProperty('Billrun_Dispatcher', 'instance');
+        $instProp->setAccessible(true);
+        $instances = $instProp->getValue();
+        $attached = false;
+        foreach ($instances as $key => $inst) {
+            if (strpos($key, 'default') === 0 && $inst instanceof \Billrun_Spl_Subject) {
+                $inst->attach($plugin);
+                $attached = true;
+            }
+        }
+        if (!$attached) {
+            \Billrun_Dispatcher::getInstance()->attach($plugin);
+        }
+    }
+
+    /**
+     * Remove every teldasPlugin observer from the (process-wide singleton)
+     * dispatcher. Billrun_Spl_Subject::detach() has an off-by-one bug for the
+     * observer at index 0, so we filter the observers list via reflection.
+     */
+    public function disableTeldasPlugin()
+    {
+        // Remove teldas from EVERY dispatcher instance (enableTeldasPlugin attached
+        // it to all of them). detach() has an off-by-one bug for the observer at
+        // index 0, so filter the observers list via reflection.
+        $obsProp = new \ReflectionProperty('Billrun_Spl_Subject', 'observers');
+        $obsProp->setAccessible(true);
+        $instProp = new \ReflectionProperty('Billrun_Dispatcher', 'instance');
+        $instProp->setAccessible(true);
+        foreach ($instProp->getValue() as $inst) {
+            if ($inst instanceof \Billrun_Spl_Subject) {
+                $obsProp->setValue($inst, array_values(array_filter($obsProp->getValue($inst), function ($o) {
+                    return !($o instanceof \teldasPlugin);
+                })));
+            }
+        }
+    }
+
+    /**
+     * Register teldas in config (DB). Use for the realtime flow: /realtime is
+     * handled by the web container, which bootstraps plugins from config per
+     * request, so a test-process dispatcher attach would not reach it.
+     */
+    public function enableTeldasPluginInConfig($options)
+    {
         $this->setPluginSettings([
             'name'          => 'teldasPlugin',
             'enabled'       => true,
@@ -92,32 +145,11 @@ class Teldas extends BillRunAPI
             'configuration' => ['values' => $options],
         ]);
         \Billrun_Config::getInstance()->loadDbConfig();
-
-        // 2) Attach to the in-process dispatcher - the parsing stage
-        //    (afterGetLineUsageType) fires through it during processByPath.
-        $plugin = new \teldasPlugin($options);
-        $plugin->setAvailability(true);
-        $plugin->setOptions(array_merge($options, ['enabled' => true]));
-        \Billrun_Dispatcher::getInstance()->attach($plugin);
     }
 
-    /**
-     * Remove every teldasPlugin observer from the (process-wide singleton)
-     * dispatcher. Billrun_Spl_Subject::detach() has an off-by-one bug for the
-     * observer at index 0, so we filter the observers list via reflection.
-     */
-    public function disableTeldasPlugins()
+    /** Disable the teldas plugin in config so it does not leak into other tests. */
+    public function disableTeldasPluginInConfig()
     {
-        // Detach from the in-process dispatcher.
-        $dispatcher = \Billrun_Dispatcher::getInstance();
-        $prop = new \ReflectionProperty('Billrun_Spl_Subject', 'observers');
-        $prop->setAccessible(true);
-        $observers = array_values(array_filter($prop->getValue($dispatcher), function ($o) {
-            return !($o instanceof \teldasPlugin);
-        }));
-        $prop->setValue($dispatcher, $observers);
-
-        // Disable in config so it does not leak into subsequent tests.
         $this->setPluginSettings([
             'name'         => 'teldasPlugin',
             'enabled'      => false,

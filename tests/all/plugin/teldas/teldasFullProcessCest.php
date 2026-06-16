@@ -34,17 +34,18 @@ class teldasFullProcessCest
             \Billrun_Config::getInstance()->loadDbConfig();
         }
         $I->cleanDB();
+        $I->resetBillrunInstances();
         $I->cleanTeldasCollections();
         $I->setTimezone('Europe/Zurich');
-        // In-process file processing: attach the plugin to the dispatcher.
+        // Register teldas in config so it is attached during both parsing and the
+        // queue calculators (single registration - see the helper).
         $I->enableTeldasPlugin($I->teldasPluginOptions(self::FILE_TYPE));
-        $I->resetBillrunInstances();
         $I->clearLogFile();
     }
 
     public function _after(ApiTester $I)
     {
-        $I->disableTeldasPlugins();
+        $I->disableTeldasPlugin();
         $I->cleanTeldasCollections();
         $I->restoreTimezone();
     }
