@@ -68,7 +68,8 @@ codecept:
     - if [ "$CI_JOB_STATUS" = "success" ]; then exit 0; fi
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-tests.yml ps
-    - docker logs billrun-app
+    - HEALTH=$(docker inspect --format '{{.State.Health.Status}}' billrun-app 2>/dev/null || true)
+    - if [ "$HEALTH" = "unhealthy" ]; then docker logs billrun-app; fi
   artifacts:
     when: on_failure
     paths:
