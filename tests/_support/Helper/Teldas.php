@@ -79,6 +79,22 @@ class Teldas extends BillRunAPI
      */
     public function enableTeldasPlugin($options)
     {
+        // 1) Register the plugin in config. The queue calculators (e.g. pricing,
+        //    which fires beforeGetLineAprice) resolve plugins from config, so a
+        //    dispatcher-only attach is not enough - without this the plugin is
+        //    absent during pricing and a no-tariff line gets priced (0) and
+        //    dequeued instead of staying in the queue.
+        $this->setPluginSettings([
+            'name'          => 'teldasPlugin',
+            'enabled'       => true,
+            'system'        => true,
+            'hide_from_ui'  => true,
+            'configuration' => ['values' => $options],
+        ]);
+        \Billrun_Config::getInstance()->loadDbConfig();
+
+        // 2) Attach to the in-process dispatcher - the parsing stage
+        //    (afterGetLineUsageType) fires through it during processByPath.
         $plugin = new \teldasPlugin($options);
         $plugin->setAvailability(true);
         $plugin->setOptions(array_merge($options, ['enabled' => true]));
@@ -92,6 +108,7 @@ class Teldas extends BillRunAPI
      */
     public function disableTeldasPlugins()
     {
+        // Detach from the in-process dispatcher.
         $dispatcher = \Billrun_Dispatcher::getInstance();
         $prop = new \ReflectionProperty('Billrun_Spl_Subject', 'observers');
         $prop->setAccessible(true);
@@ -99,6 +116,15 @@ class Teldas extends BillRunAPI
             return !($o instanceof \teldasPlugin);
         }));
         $prop->setValue($dispatcher, $observers);
+
+        // Disable in config so it does not leak into subsequent tests.
+        $this->setPluginSettings([
+            'name'         => 'teldasPlugin',
+            'enabled'      => false,
+            'system'       => true,
+            'hide_from_ui' => true,
+        ]);
+        \Billrun_Config::getInstance()->loadDbConfig();
     }
 
     /** Insert the BRCD-5292 no-tariff / ALLNO INA revision verbatim. */

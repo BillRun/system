@@ -34,14 +34,16 @@ class teldasRealtimeFullProcessCest
             \Billrun_Config::getInstance()->loadDbConfig();
         }
         $I->cleanDB();
-        $I->resetBillrunInstances();
         $I->cleanTeldasCollections();
+        $I->enableTeldasPlugin($I->teldasPluginOptions(self::FILE_TYPE));
         $I->setTimezone('Europe/Zurich');
+        $I->resetBillrunInstances();
         $I->clearLogFile();
     }
 
     public function _after(ApiTester $I)
     {
+        $I->disableTeldasPlugins();
         $I->cleanTeldasCollections();
         $I->restoreTimezone();
     }
@@ -64,15 +66,6 @@ class teldasRealtimeFullProcessCest
                 'invoice_uom'   => 'seconds',
                 'input_uom'     => 'seconds',
             ],
-        ]);
-        // Enable the teldas plugin in the (web-container) config so the /realtime
-        // request handler attaches it and its hooks fire.
-        $I->setPluginSettings([
-            'name'    => 'teldasPlugin',
-            'enabled' => true,
-            'system'  => true,
-            'configuration' => ['values' => $I->teldasPluginOptions(self::FILE_TYPE)],
-            'label'   => 'Teldas',
         ]);
         \Billrun_Factory::config()->setConfigValue('queue.calculators', ['customer', 'rate', 'pricing']);
     }

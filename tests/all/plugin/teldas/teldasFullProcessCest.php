@@ -34,11 +34,11 @@ class teldasFullProcessCest
             \Billrun_Config::getInstance()->loadDbConfig();
         }
         $I->cleanDB();
-        $I->resetBillrunInstances();
         $I->cleanTeldasCollections();
         $I->setTimezone('Europe/Zurich');
         // In-process file processing: attach the plugin to the dispatcher.
         $I->enableTeldasPlugin($I->teldasPluginOptions(self::FILE_TYPE));
+        $I->resetBillrunInstances();
         $I->clearLogFile();
     }
 
@@ -86,6 +86,8 @@ class teldasFullProcessCest
         ]);
 
         // The call is saved (not dropped) and mapped to ina_vas_call + teldas rate.
+        // It stays in_queue because a no-tariff line fails pricing (the last
+        // calculator) and is not dequeued.
         $I->assertEquals(1, $I->grabCollectionCount('lines', [
             'uf.Subscriber_Number' => self::INA_NUMBER,
             'in_queue'             => true,
