@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
+import { connect } from 'react-redux';
 import { titleCase, sentenceCase } from 'change-case';
 import isNumber from 'is-number';
 import pluralize from 'pluralize';
@@ -11,7 +12,8 @@ import Field from '@/components/Field';
 import { RecurrenceFrequency, CreateButton, RoundingRules } from '@/components/Elements';
 import { EntityFields } from '../Entity';
 import PlaysSelector from '../Plays/PlaysSelector';
-import PlanPrice from '../Plan/components/PlanPrice';//todo:: need to change component name TarifParice? and need to change location? 
+import PlanPrice from '../Plan/components/PlanPrice';//todo:: need to change component name TarifParice? and need to change location?
+import { manualCurrenciesSelector } from '@/selectors/settingsSelector';
 import {
   getConfig,
   getFieldName,
@@ -19,7 +21,7 @@ import {
 } from '@/common/Util';
 
 
-export default class ServiceDetails extends Component {
+class ServiceDetails extends Component {
 
   static propTypes = {
     onServiceCycleUpdate: PropTypes.func.isRequired,
@@ -31,9 +33,11 @@ export default class ServiceDetails extends Component {
     updateItem: PropTypes.func.isRequired,
     onFieldRemove: PropTypes.func.isRequired,
     errorMessages: PropTypes.object,
+    manualCurrencies: PropTypes.instanceOf(Immutable.List),
   }
 
   static defaultProps = {
+    manualCurrencies: Immutable.List(),
     errorMessages: {
       name: {
         allowedCharacters: 'Key contains illegal characters, key should contain only alphabets, numbers and underscores (A-Z, 0-9, _)',
@@ -146,6 +150,49 @@ export default class ServiceDetails extends Component {
   onServicePriceUpdate = (index, value) => {
     const newValue = isNumber(value) ? parseFloat(value) : value;
     this.props.updateItem(['price', index, 'price'], newValue);
+  }
+
+  // BRCD-2883: set the per-currency price (constant value) of a tier on its currency_rates.
+  onServiceCurrencyPriceUpdate = (index, currency, value) => {
+    const { item } = this.props;
+    const newValue = isNumber(value) ? parseFloat(value) : value;
+    const path = ['price', index, 'currency_rates'];
+    const currencyRates = item.getIn(path, Immutable.List());
+    const pos = currencyRates.findIndex(rate => rate.get('currency') === currency);
+    const updated = pos === -1
+      ? currencyRates.push(Immutable.Map({ currency, value: newValue }))
+      : currencyRates.setIn([pos, 'value'], newValue);
+    this.props.updateItem(path, updated);
+  }
+
+  // BRCD-2883: per manually-defined currency, a tier table mirroring the base cycles.
+  getCurrencyPrices = () => {
+    const { item, mode, manualCurrencies } = this.props;
+    if (manualCurrencies.isEmpty()) {
+      return null;
+    }
+    const allPrices = item.get('price', Immutable.List());
+    const count = allPrices.size;
+    return manualCurrencies.map(currency => (
+      <div key={currency} className="mt10">
+        <h5><strong>{`Prices in ${currency}`}</strong></h5>
+        { allPrices.map((price, i) => (
+          <PlanPrice
+            key={`${currency}_${i}`}
+            index={i}
+            count={count}
+            item={price}
+            mode={mode}
+            isTrialExist={false}
+            currency={currency}
+            onPlanPriceUpdate={this.onServicePriceUpdate}
+            onPlanCycleUpdate={this.props.onServiceCycleUpdate}
+            onPlanTariffRemove={this.props.onServiceTariffRemove}
+            onPlanCurrencyPriceUpdate={this.onServiceCurrencyPriceUpdate}
+          />
+        )) }
+      </div>
+    ));
   }
 
   getPrices = () => {
@@ -374,6 +421,7 @@ export default class ServiceDetails extends Component {
             { this.getPrices() }
             <br />
             { editable && this.getAddPriceButton() }
+            { this.getCurrencyPrices() }
           </Panel>
         )}
 
@@ -386,3 +434,9 @@ export default class ServiceDetails extends Component {
     );
   }
 }
+
+const mapStateToProps = state => ({
+  manualCurrencies: manualCurrenciesSelector(state),
+});
+
+export default connect(mapStateToProps)(ServiceDetails);

@@ -22,6 +22,7 @@ import {
 import {
   usageTypesDataSelector,
   propertyTypeSelector,
+  manualCurrenciesSelector,
 } from '@/selectors/settingsSelector';
 
 
@@ -35,6 +36,7 @@ class Product extends Component {
     mode: PropTypes.string.isRequired,
     usaget: PropTypes.string,
     planName: PropTypes.string,
+    manualCurrencies: PropTypes.instanceOf(Immutable.List),
     errorMessages: PropTypes.object,
     onFieldUpdate: PropTypes.func.isRequired,
     onFieldRemove: PropTypes.func.isRequired,
@@ -51,6 +53,7 @@ class Product extends Component {
     planName: 'BASE',
     product: Immutable.Map(),
     usaget: undefined,
+    manualCurrencies: Immutable.List(),
     errorMessages: {
       name: {
         allowedCharacters: 'Key contains illegal characters, key should contain only alphabets, numbers and underscores (A-Z, 0-9, _)',
@@ -139,6 +142,18 @@ class Product extends Component {
     }
   }
 
+  // BRCD-2883: set the per-currency price (constant value) of a tier on its currency_rates.
+  onProductCurrencyRateUpdate = (index, currency, value) => {
+    const { planName, usaget, product } = this.props;
+    const currencyRatesPath = ['rates', usaget, planName, 'rate', index, 'currency_rates'];
+    const currencyRates = product.getIn(currencyRatesPath, Immutable.List());
+    const pos = currencyRates.findIndex(rate => rate.get('currency') === currency);
+    const updated = pos === -1
+      ? currencyRates.push(Immutable.Map({ currency, value }))
+      : currencyRates.setIn([pos, 'value'], value);
+    this.props.onFieldUpdate(currencyRatesPath, updated);
+  }
+
   onProductRateAdd = () => {
     const { planName, usaget } = this.props;
     const productPath = ['rates', usaget, planName, 'rate'];
@@ -204,6 +219,35 @@ class Product extends Component {
         onProductEditRate={this.onProductRateUpdate}
         onProductRemoveRate={this.onProductRateRemove}
       />
+    ));
+  }
+
+  // BRCD-2883: for each manually-defined additional currency, a separate tier table
+  // mirroring the base tiers (from/to read-only) with an editable price per tier.
+  renderCurrencyPrices = () => {
+    const { product, planName, usaget, mode, manualCurrencies } = this.props;
+    if (manualCurrencies.isEmpty()) {
+      return null;
+    }
+    const prices = product.getIn(['rates', usaget, planName, 'rate'], Immutable.List());
+    return manualCurrencies.map(currency => (
+      <div key={currency} className="mt10">
+        <h5><strong>{`Prices in ${currency}`}</strong></h5>
+        { prices.map((price, i) => (
+          <ProductPrice
+            mode={mode}
+            count={prices.size}
+            index={i}
+            item={price}
+            key={`${currency}_${i}`}
+            unit={this.getUnitLabel()}
+            currency={currency}
+            onProductEditRate={this.onProductRateUpdate}
+            onProductRemoveRate={this.onProductRateRemove}
+            onProductEditCurrencyRate={this.onProductCurrencyRateUpdate}
+          />
+        ))}
+      </div>
     ));
   }
 
@@ -391,6 +435,9 @@ class Product extends Component {
                 { this.renderPrices() }
               </Col>
               { editable && <CreateButton onClick={this.onProductRateAdd} label="Add New" />}
+              <Col sm={12}>
+                { this.renderCurrencyPrices() }
+              </Col>
             </Panel>
             { product.get('tariff_category', '') === 'retail' && (
             <Panel header="Tax">
@@ -421,6 +468,7 @@ class Product extends Component {
 const mapStateToProps = (state, props) => ({
   usageTypesData: usageTypesDataSelector(state, props),
   propertyTypes: propertyTypeSelector(state, props),
+  manualCurrencies: manualCurrenciesSelector(state, props),
 });
 
 export default connect(mapStateToProps)(Product);

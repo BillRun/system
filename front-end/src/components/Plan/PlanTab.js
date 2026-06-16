@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
+import { connect } from 'react-redux';
 import { sentenceCase } from 'change-case';
 import isNumber from 'is-number';
 import { Form, FormGroup, ControlLabel, Col, Row, Panel, HelpBlock } from 'react-bootstrap';
@@ -16,8 +17,9 @@ import {
   getFieldName,
   getFieldNameType,
 } from '@/common/Util';
+import { manualCurrenciesSelector } from '@/selectors/settingsSelector';
 
-export default class Plan extends Component {
+class Plan extends Component {
 
   static propTypes = {
     plan: PropTypes.instanceOf(Immutable.Map).isRequired,
@@ -30,10 +32,12 @@ export default class Plan extends Component {
     onPlanTariffRemove: PropTypes.func.isRequired,
     chargingModeOptions: PropTypes.array,
     errorMessages: PropTypes.object,
+    manualCurrencies: PropTypes.instanceOf(Immutable.List),
   }
 
   static defaultProps = {
     originalPlan: Immutable.Map(),
+    manualCurrencies: Immutable.List(),
     chargingModeOptions: [
       { value: 'true', label: 'Upfront' },
       { value: 'false', label: 'Arrears' }
@@ -100,6 +104,50 @@ export default class Plan extends Component {
   onPlanPriceUpdate = (index, value) => {
     const newValue = isNumber(value) ? parseFloat(value) : value;
     this.props.onChangeFieldValue(['price', index, 'price'], newValue);
+  }
+
+  // BRCD-2883: set the per-currency price (constant value) of a tier on its currency_rates.
+  onPlanCurrencyPriceUpdate = (index, currency, value) => {
+    const { plan } = this.props;
+    const newValue = isNumber(value) ? parseFloat(value) : value;
+    const path = ['price', index, 'currency_rates'];
+    const currencyRates = plan.getIn(path, Immutable.List());
+    const pos = currencyRates.findIndex(rate => rate.get('currency') === currency);
+    const updated = pos === -1
+      ? currencyRates.push(Immutable.Map({ currency, value: newValue }))
+      : currencyRates.setIn([pos, 'value'], newValue);
+    this.props.onChangeFieldValue(path, updated);
+  }
+
+  // BRCD-2883: per manually-defined currency, a tier table mirroring the base cycles.
+  getCurrencyPrices = () => {
+    const { plan, mode, manualCurrencies } = this.props;
+    if (manualCurrencies.isEmpty()) {
+      return null;
+    }
+    const allPrices = plan.get('price', Immutable.List());
+    const isTrialExist = (plan.getIn(['price', 0, 'trial']) === true || plan.getIn(['price', 0, 'trial']) === 'true');
+    const count = allPrices.size;
+    return manualCurrencies.map(currency => (
+      <div key={currency} className="mt10">
+        <h5><strong>{`Prices in ${currency}`}</strong></h5>
+        { allPrices.map((price, i) => (price.get('trial') === true ? null : (
+          <PlanPrice
+            key={`${currency}_${i}`}
+            index={i}
+            count={count}
+            item={price}
+            mode={mode}
+            isTrialExist={isTrialExist}
+            currency={currency}
+            onPlanPriceUpdate={this.onPlanPriceUpdate}
+            onPlanCycleUpdate={this.props.onPlanCycleUpdate}
+            onPlanTariffRemove={this.props.onPlanTariffRemove}
+            onPlanCurrencyPriceUpdate={this.onPlanCurrencyPriceUpdate}
+          />
+        ))) }
+      </div>
+    ));
   }
 
   onChangeUpfront = (value) => {
@@ -307,6 +355,7 @@ export default class Plan extends Component {
               { this.getPrices() }
               <br />
               { editable && this.getAddPriceButton(false) }
+              { this.getCurrencyPrices() }
             </Panel>
 
             <RoundingRules
@@ -321,3 +370,9 @@ export default class Plan extends Component {
     );
   }
 }
+
+const mapStateToProps = state => ({
+  manualCurrencies: manualCurrenciesSelector(state),
+});
+
+export default connect(mapStateToProps)(Plan);

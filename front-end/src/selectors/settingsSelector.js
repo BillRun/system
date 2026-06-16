@@ -361,6 +361,27 @@ export const currencySelector = createSelector(
   (pricing = Immutable.Map()) => pricing.get('currency'),
 );
 
+// BRCD-2840: the configured additional currencies ([{currency, auto_sync, multiplier}]).
+export const additionalCurrenciesSelector = createSelector(
+  pricingSelector,
+  (pricing = Immutable.Map()) => pricing.get('additional_currencies', Immutable.List()),
+);
+
+// Multi-currency is on when at least one additional currency is configured.
+export const isMultiCurrencySelector = createSelector(
+  additionalCurrenciesSelector,
+  (additionalCurrencies = Immutable.List()) => additionalCurrencies.size > 0,
+);
+
+// BRCD-2883: currencies whose exchange rate is manually defined (auto_sync off) -
+// these are the ones a per-currency price can be set for on products/plans/services.
+export const manualCurrenciesSelector = createSelector(
+  additionalCurrenciesSelector,
+  (additionalCurrencies = Immutable.List()) => additionalCurrencies
+    .filter(currency => Immutable.Map.isMap(currency) && currency.get('auto_sync') === false)
+    .map(currency => currency.get('currency')),
+);
+
 export const chargingDaySelector = createSelector(
   billrunSelector,
   (billrun = Immutable.Map()) => {
