@@ -1240,8 +1240,31 @@ class Billrun_DiscountManager {
 	 * @param array $eligibility
 	 * @return array
 	 */
+	/**
+	 * BRCD-2720: pure (config/DB independent) decision whether a discount must be skipped
+	 * because it is monetary and multi-currency is enabled. Only discounts are affected -
+	 * monetary charges ($type == 'charge') are legitimate and never skipped.
+	 *
+	 * @param string $type 'discounts' or 'charge'
+	 * @param array $discount the discount/charge entity
+	 * @param bool $multiCurrencyEnabled
+	 * @return bool true when the entity is a monetary discount that should be skipped
+	 */
+	public static function isMonetaryDiscountDisabled($type, $discount, $multiCurrencyEnabled) {
+		return $type == 'discounts'
+			&& $multiCurrencyEnabled
+			&& Billrun_Util::getIn($discount, 'type', 'percentage') === 'monetary';
+	}
+
 	protected function generateDiscountCdrs($type, $lines, $discount, $eligibility) {
 		$cdrs = [];
+		// BRCD-2720: monetary discounts are disabled while multi-currency is enabled - the
+		// fixed amount is defined in the system default currency and cannot be applied
+		// correctly across currencies in phase 1. Monetary charges are unaffected.
+		if (self::isMonetaryDiscountDisabled($type, $discount, Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled())) {
+			Billrun_Factory::log("Multi-currency: skipping monetary discount '" . Billrun_Util::getIn($discount, 'key', '') . "'; monetary discounts are disabled while multi-currency is enabled (BRCD-2720)", Billrun_Log::DEBUG);
+			return $cdrs;
+		}
 		$discountedAmount = 0;
 		$simultaneousLimit = Billrun_Util::getIn($discount, 'simultaneous_limit', -1);
 		$simultaneousLimit = is_numeric($simultaneousLimit) ? $simultaneousLimit : -1;
