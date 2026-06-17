@@ -2268,15 +2268,6 @@ runOnce(lastConfig, 'BRCD-4950', function () {
 
 });
 
-runOnce(lastConfig, 'BRCD-3562', function () {
-	_dropIndex("queue", "hash_1_calc_time_1_type_1");
-	_dropIndex("queue", "urt_1_type_1");
-	db.queue.createIndex({"hash": 1, 'calc_time':1, 'urt':1}, { unique: false , "background": true})
-	db.queue.createIndex({'calc_name':1, 'type': 1, 'calc_time':1, 'urt': 1  }, { unique: false , background: true });
-	db.queue.createIndex({'calc_name':1, 'calc_time':1, 'urt': 1  }, { unique: false , background: true });
-
-});
-
 
 db.config.insertOne(lastConfig);
 
