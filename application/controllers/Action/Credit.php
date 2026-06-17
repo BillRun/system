@@ -195,9 +195,13 @@ class CreditAction extends ApiAction {
 	
 	protected function parse($credit_row) {
 		$ret = $this->validateFields($credit_row);
-		// BRCD-2806: allow a credit to carry an explicit currency so it aggregates into
-		// the matching currency bill. Only honored in multi-currency mode.
-		if (Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled() && !empty($credit_row['currency'])) {
+		// BRCD-2806: in multi-currency mode a credit must carry an explicit currency so it
+		// aggregates into the matching-currency bill; the amount is recorded as-is in that
+		// currency (no conversion). The request is rejected when the currency is missing.
+		if (Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled()) {
+			if (empty($credit_row['currency'])) {
+				$this->setError('Missing field: currency is mandatory when multi-currency is enabled', $credit_row);
+			}
 			$ret['currency'] = $credit_row['currency'];
 		}
 		$ret['skip_calc'] = $this->getSkipCalcs($ret);

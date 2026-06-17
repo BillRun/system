@@ -149,6 +149,7 @@ class InvoicesList extends Component {
     { id: 'invoice_date', title: 'Date', cssClass: 'short-date', sort: true, type: 'mongodate' },
     { id: 'due_date', title: 'Due', cssClass: 'short-date', sort: true, type: 'mongodate' },
     { id: 'amount', title: 'Amount', sort: true },
+    { id: 'currency', title: 'Currency', sort: true, display: !this.props.settings.getIn(['pricing', 'additional_currencies'], Immutable.List()).isEmpty() },
     { id: 'paid', title: 'Status', parser: this.parserPaidBy },
     { id: 'billrun_key', title: 'Cycle', sort: true },
     { id: 'aid', title: 'Customer ID', sort: true },

@@ -20,12 +20,18 @@ export default class ProductPrice extends Component {
     ]).isRequired,
     onProductEditRate: PropTypes.func.isRequired,
     onProductRemoveRate: PropTypes.func.isRequired,
+    // BRCD-2883: when set, render a read-only base tier (from/to) with an editable
+    // price for this additional currency (written to the step's currency_rates).
+    currency: PropTypes.string,
+    onProductEditCurrencyRate: PropTypes.func,
   }
 
   static defaultProps = {
     productUnlimitedValue: getConfig('productUnlimitedValue', 'UNLIMITED'),
     mode: 'create',
     unit: '',
+    currency: '',
+    onProductEditCurrencyRate: () => {},
   };
 
   state = { fromError: '', toError: '', intervalError: '', priceError: '' }
@@ -109,8 +115,64 @@ export default class ProductPrice extends Component {
     this.props.onProductRemoveRate(index);
   }
 
+  // BRCD-2883: current per-currency price (currency_rates constant value) for this tier.
+  getCurrencyValue = () => {
+    const { item, currency } = this.props;
+    const entry = item.get('currency_rates', Immutable.List())
+      .find(rate => rate.get('currency') === currency);
+    return entry ? entry.get('value', '') : '';
+  }
+
+  onEditCurrencyPrice = (e) => {
+    const { index, currency } = this.props;
+    const { value } = e.target;
+    let priceError = '';
+    if (value !== '' && !isNumber(value)) {
+      priceError = 'Must be number';
+    }
+    this.setState({ priceError });
+    const newValue = isNumber(value) ? parseFloat(value) : value;
+    this.props.onProductEditCurrencyRate(index, currency, newValue);
+  }
+
+  renderCurrencyRow = () => {
+    const { item, index, productUnlimitedValue, mode, unit, currency } = this.props;
+    const isFirst = index === 0;
+    const from = Number(item.get('from', 0));
+    const to = item.get('to', '');
+    const toDisplayValue = (to === productUnlimitedValue) ? 'Infinite' : to;
+    const editable = (mode !== 'view');
+    const unitLabel = unit !== '' ? `(${unit})` : '';
+    return (
+      <Row className="form-inner-edit-row">
+        <Col sm={2} xs={6} className="col-xs-pr5">
+          <FormGroup style={{ margin: 0 }}>
+            {isFirst && <ControlLabel>{`From ${unitLabel}`}</ControlLabel>}
+            <Field value={from} disabled={true} editable={editable} />
+          </FormGroup>
+        </Col>
+        <Col sm={2} xs={6}>
+          <FormGroup style={{ margin: 0 }}>
+            {isFirst && <ControlLabel>{`To ${unitLabel}`}</ControlLabel>}
+            <Field value={toDisplayValue} disabled={true} editable={editable} />
+          </FormGroup>
+        </Col>
+        <Col sm={3} xs={6}>
+          <FormGroup validationState={this.state.priceError.length > 0 ? 'error' : null} style={{ margin: 0 }}>
+            {isFirst && <ControlLabel>{`Price Per Interval (${currency})`}</ControlLabel>}
+            <Field value={this.getCurrencyValue()} onChange={this.onEditCurrencyPrice} fieldType="price" editable={editable} />
+            { this.state.priceError.length > 0 ? <HelpBlock>{this.state.priceError}</HelpBlock> : ''}
+          </FormGroup>
+        </Col>
+      </Row>
+    );
+  }
+
   render() {
-    const { item, index, count, productUnlimitedValue, mode, unit } = this.props;
+    const { item, index, count, productUnlimitedValue, mode, unit, currency } = this.props;
+    if (currency) {
+      return this.renderCurrencyRow();
+    }
     const isFirst = index === 0;
     const isLast = ((count === 0) || (count - 1 === index));
     const from = Number(item.get('from', 0));

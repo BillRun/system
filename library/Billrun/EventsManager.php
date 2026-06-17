@@ -110,6 +110,13 @@ class Billrun_EventsManager {
 		
 				foreach($rawsEventSettingsPaths as $rawEventSettings) {
 					$rawEventSettings = array_merge($rawEventSettings, $additionalEventData);
+					// BRCD-2722: monetary events run only on the system default currency in
+					// phase 1. A cost threshold is configured in the default currency, so
+					// evaluating it against an account billed in a converted currency would
+					// fire (or miss) on the wrong amount; such conditions are skipped.
+					if ($this->isMonetaryConditionOnNonDefaultCurrency($rawEventSettings, $entityBefore, $entityAfter, $extraParams)) {
+						continue;
+					}
 					if (isset($rawEventSettings['entity_type']) && $rawEventSettings['entity_type'] !== $eventType) {
 						$conditionEntityAfter = $conditionEntityBefore = $additionalEntities[$rawEventSettings['entity_type']];
 					} else {
@@ -304,6 +311,54 @@ class Billrun_EventsManager {
 	
 	protected function getWhichEntity($rawEventSettings, $entityBefore, $entityAfter) {
 		return (isset($rawEventSettings['which']) && ($rawEventSettings['which'] == self::ENTITY_BEFORE) ? $entityBefore : $entityAfter);
+	}
+
+	/**
+	 * BRCD-2722: decide whether a monetary event condition must be skipped because
+	 * the entity is billed in a non-default currency.
+	 *
+	 * A condition is monetary when its path targets a cost figure (e.g. balance.cost
+	 * or balance.groups.<group>.cost). Cost thresholds are configured in the system
+	 * default currency, so for accounts billed in a converted currency the comparison
+	 * would be made against the wrong amount. In multi-currency phase 1 such events
+	 * are therefore evaluated only for the default currency.
+	 *
+	 * @param array $rawEventSettings the condition path settings
+	 * @param array $entityBefore
+	 * @param array $entityAfter
+	 * @param array $extraParams
+	 * @return boolean true when the condition should be skipped
+	 */
+	protected function isMonetaryConditionOnNonDefaultCurrency($rawEventSettings, $entityBefore, $entityAfter, $extraParams) {
+		if (!Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled()) {
+			return false;
+		}
+		$entity = $this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter);
+		$currency = Billrun_Util::getIn($entity, 'currency', '');
+		if (empty($currency)) {
+			$currency = Billrun_CurrencyConvert_Manager::getCustomerCurrency(Billrun_Util::getIn($extraParams, 'row', []));
+		}
+		return self::isMonetaryPathOnNonDefaultCurrency(
+			$rawEventSettings['path'] ?? '',
+			$currency,
+			Billrun_CurrencyConvert_Manager::getDefaultCurrency()
+		);
+	}
+
+	/**
+	 * Pure decision (config/DB independent) for BRCD-2722: should a monetary event
+	 * condition be skipped for the given currency.
+	 *
+	 * @param string $path the condition path
+	 * @param string $currency the entity/account currency
+	 * @param string $defaultCurrency the system default currency
+	 * @return boolean true when the path is monetary and the currency is not the default
+	 */
+	public static function isMonetaryPathOnNonDefaultCurrency($path, $currency, $defaultCurrency) {
+		if (strpos((string) $path, '.cost') === false) { // not a monetary condition
+			return false;
+		}
+		return !empty($currency) && $currency !== $defaultCurrency;
 	}
 
 	protected function arrayMatches($data, $path, $operator, $value = NULL) {

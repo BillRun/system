@@ -31,7 +31,7 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 					);
 					if ($this->shouldAddOriginalCurrency()) {
 						$charge['original_currency'] = [
-							'aprice' => $price['orig_price'],
+							'aprice' => $price['orig_price'] * $quantity,
 							'currency' => $this->defaultCurrency,
 						];
 					}

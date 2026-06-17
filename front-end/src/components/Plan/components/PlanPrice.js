@@ -21,11 +21,17 @@ export default class PlanPrice extends Component {
       PropTypes.string,
       PropTypes.number,
     ]).isRequired,
+    // BRCD-2883: when set, render the read-only base tier with an editable price for
+    // this additional currency (written to the step's currency_rates).
+    currency: PropTypes.string,
+    onPlanCurrencyPriceUpdate: PropTypes.func,
   }
 
   static defaultProps = {
     planCycleUnlimitedValue: getConfig('planCycleUnlimitedValue', 'UNLIMITED'),
     mode: 'create',
+    currency: '',
+    onPlanCurrencyPriceUpdate: () => {},
   };
 
   state = {
@@ -95,7 +101,58 @@ export default class PlanPrice extends Component {
     }
   }
 
+  // BRCD-2883: current per-currency price (currency_rates constant value) for this tier.
+  getCurrencyValue = () => {
+    const { item, currency } = this.props;
+    const entry = item.get('currency_rates', Immutable.List())
+      .find(rate => rate.get('currency') === currency);
+    return entry ? entry.get('value', '') : '';
+  }
+
+  onPlanCurrencyPriceUpdate = (e) => {
+    const { index, currency } = this.props;
+    const { value } = e.target;
+    let priceError = '';
+    if (value !== '' && (isNaN(value) || !(Math.sign(value) >= 0))) {
+      priceError = 'Value must be positive number';
+    }
+    this.setState({ priceError });
+    this.props.onPlanCurrencyPriceUpdate(index, currency, value);
+  }
+
+  renderCurrencyRow = () => {
+    const { priceError } = this.state;
+    const { index, isTrialExist, currency } = this.props;
+    const cycle = this.getCycleDisplayValue();
+    const isFirst = (index === 0 || (isTrialExist && index === 1));
+    const editable = (this.props.mode !== 'view');
+    return (
+      <Col sm={12} className="form-inner-edit-row mb0">
+        <Col sm={2} className="text-center">
+          { isFirst && <ControlLabel className="mb5">Period</ControlLabel> }
+          <p className="non-editable-field mb0">{ index + 1 }</p>
+        </Col>
+        <Col sm={3} className="pr0">
+          <FormGroup className="ml0 mr0">
+            { isFirst && <ControlLabel className="mb5">Cycles</ControlLabel> }
+            <Field value={cycle} disabled={true} editable={editable} />
+          </FormGroup>
+        </Col>
+        <Col sm={3} className="pr0">
+          <FormGroup validationState={priceError.length ? 'error' : null} className="ml0 mr0">
+            { isFirst && <ControlLabel className="mb5">{`Price (${currency})`}</ControlLabel> }
+            <Field onChange={this.onPlanCurrencyPriceUpdate} value={this.getCurrencyValue()} editable={editable} fieldType="price" />
+            { priceError.length > 0 && <HelpBlock>{priceError}.</HelpBlock>}
+          </FormGroup>
+        </Col>
+      </Col>
+    );
+  }
+
   render() {
+    if (this.props.currency) {
+      return this.renderCurrencyRow();
+    }
     const { cycleError, priceError } = this.state;
     const { item, index, count, isTrialExist, planCycleUnlimitedValue, mode } = this.props;
     const price = item.get('price', '');

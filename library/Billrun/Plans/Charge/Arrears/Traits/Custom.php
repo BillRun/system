@@ -28,8 +28,8 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 	 *
 	 */
 	protected function getTariffForMonthCover($tariff, $startOffset, $endOffset ,$activation = FALSE) {
-		$frequency = $this->recurrenceConfig['frequency'];
-		return Billrun_Plan::getPriceByTariff($tariff, $startOffset, $endOffset ,$activation);
+		$step = new Billrun_Plans_Step($tariff);
+		return $step->getRelativePrice($startOffset, $endOffset, $activation, $this->getChargeCurrency());
 	}
 
 	/**

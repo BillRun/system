@@ -334,6 +334,7 @@ class CycleData extends Component {
     const { baseFilter, settings } = this.props;
     const { refreshString } = this.state;
     const displayEmailSent = settings.get('billrun', Map()).get('email_after_confirmation', false);
+    const displayCurrency = !settings.getIn(['pricing', 'additional_currencies'], List()).isEmpty();
 
     const filterFields = [
       { id: 'aid', placeholder: 'Customer Number', type: 'number' },
@@ -346,6 +347,7 @@ class CycleData extends Component {
       { id: 'attributes.firstname', title: 'Customer First Name', sort: true, parser: this.parseCycleDataFirstName },
       { id: 'attributes.lastname', title: 'Customer Last Name', sort: true, parser: this.parseCycleDataLastName },
       { id: 'totals.after_vat_rounded', title: 'Invoice Total', sort: true, parser: this.parseCycleDataInvoiceTotal },
+      { id: 'currency', title: 'Currency', sort: true, display: displayCurrency },
       { id: 'subss', title: '# of Subscribers', parser: this.parseCycleDataSubscriptionNum },
       { id: 'invoice_id', title: 'Invoice ID', sort: true, parser: this.parseCycleDataInvoiceId },
       { id: 'download', title: 'Invoice', parser: this.parseCycleDataDownload },

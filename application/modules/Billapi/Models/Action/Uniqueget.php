@@ -38,6 +38,10 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 	protected function initGroup() {
 		if ($this->request['collection'] == 'rates') {
 			$this->group = 'key';
+		} else if ($this->request['collection'] == 'exchangerates') {
+			// base_currency is always the system default, so target_currency uniquely
+			// identifies a rate and is its revision grouping key (BRCD-2852).
+			$this->group = 'target_currency';
 		} else {
 			$this->group = 'name';
 		}

@@ -162,6 +162,7 @@ class Settings extends Component {
     const { currencyOptions } = this.state;
 
     const currency = settings.getIn(['pricing', 'currency'], '');
+    const additionalCurrencies = settings.getIn(['pricing', 'additional_currencies'], Immutable.List());
     const plugins = settings.get('plugins', Immutable.List());
     const billrun = settings.get('billrun', Immutable.Map());
     const sharedSecret = settings.get('shared_secret', Immutable.List());
@@ -186,6 +187,7 @@ class Settings extends Component {
                 onChange={this.onChangeFieldValue}
                 data={currency}
                 currencies={currencyOptions}
+                additionalCurrencies={additionalCurrencies}
               />
             </Panel>
           </Tab>

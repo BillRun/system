@@ -243,6 +243,15 @@
     "order": 1,
     "parent": "tax"
   },
+  "exchange_rates": {
+    "title": "Exchange Rates",
+    "icon": "fa-exchange",
+    "route": "exchangerates",
+    "show": false,
+    "roles": ["admin"],
+    "order": 7.2,
+    "parent": "root"
+  },
   "templates": {
     "title": "Templates",
     "icon": "fa-newspaper-o",

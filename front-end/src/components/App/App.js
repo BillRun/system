@@ -16,7 +16,7 @@ import { setPageTitle, systemRequirementsLoadingComplete } from '@/actions/guiSt
 import { initMainMenu } from '@/actions/guiStateActions/menuActions';
 import { getSettings, fetchFile } from '@/actions/settingsActions';
 import { onBoardingIsRunnigSelector } from '@/selectors/guiSelectors';
-import { taxationTypeSelector } from '@/selectors/settingsSelector';
+import { taxationTypeSelector, isMultiCurrencySelector } from '@/selectors/settingsSelector';
 import { showDanger } from '@/actions/alertsActions';
 import { getWorkersStatus } from '@/actions/guiStateActions/appActions';
 
@@ -186,11 +186,23 @@ class App extends Component {
 }
 
 
+const getMainMenuOverrides = (state) => {
+  // BRCD-2852: show the Exchange Rates menu entry only when multi-currency is enabled.
+  // Gated on settings being loaded so the null -> non-null transition (which triggers
+  // initMainMenu) fires once the multi-currency status is known.
+  const menuOverrides = state.settings.getIn(['menu', 'main']);
+  if (state.settings.isEmpty()) {
+    return menuOverrides;
+  }
+  return (menuOverrides || Immutable.Map())
+    .setIn(['exchange_rates', 'show'], isMultiCurrencySelector(state));
+};
+
 const mapStateToProps = state => ({
   auth: state.user.get('auth'),
   title: state.guiState.page.get('title'),
   systemRequirementsLoad: state.guiState.page.get('systemRequirementsLoad'),
-  mainMenuOverrides: state.settings.getIn(['menu', 'main']),
+  mainMenuOverrides: getMainMenuOverrides(state),
   logo: state.settings.getIn(['files', 'logo']),
   logoName: state.settings.getIn(['tenant', 'logo']),
   isTourRunnig: onBoardingIsRunnigSelector(state),

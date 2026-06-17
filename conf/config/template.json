@@ -166,6 +166,9 @@
 	"paymentsTransactionsRequest":{
 		"fields": []
 	},
+	"exchangerate": {
+		"fields": []
+	},
 	"taxes": {
 		"fields": [
 			{

@@ -1895,14 +1895,18 @@ class ConfigModel {
 		}
 
 		if (count($newCurrencies) > 0) {
-			$newCurrenciesOptions = implode(',', $newCurrenciesNames);
+			// BRCD-2840: the account currency selector offers the default (base) currency
+			// plus the additional currencies, and defaults to the system default currency.
+			$currencyOptions = array_values(array_unique(array_filter(
+				array_merge([$newBaseCurrency], $newCurrenciesNames)
+			)));
 			$fieldParams = [
 				'system' => true,
 				'mandatory' => false,
 				'display' => true,
 				'select_list' => true,
-				'select_options' => $newCurrenciesOptions,
-				'default_value' => null,
+				'select_options' => implode(',', $currencyOptions),
+				'default_value' => $newBaseCurrency ?: null,
 			];
 			$this->setModelField($config['subscribers'], 'account', 'currency', 'Currency', $fieldParams);
 		}
