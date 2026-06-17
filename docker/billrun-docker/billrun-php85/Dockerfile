@@ -40,4 +40,8 @@ COPY composer.lock /var/www/html/
 RUN composer install -d /var/www/html/  # in production we need to add --no-dev
 RUN ln -sf behat/gherkin/i18n.php /var/www/html/vendor/i18n.php
 
+COPY enable_client_plugin.sh /enable_client_plugin.sh
+RUN chmod ug+x /enable_client_plugin.sh
+ENTRYPOINT ["/enable_client_plugin.sh"]
+
 CMD ["php-fpm"]
