@@ -1275,6 +1275,10 @@ class Models_Entity {
 			case 'taxes':
 			case 'rates':
 				return 'key';
+			case 'exchangerates':
+				// base_currency is always the system default, so target_currency
+				// uniquely identifies a rate and is its revision key (BRCD-2852).
+				return 'target_currency';
 			default:
 				return 'name';
 		}

@@ -55,6 +55,7 @@ import { ImmediateInvoiceSetup } from '../components/ImmediateInvoice';
 import { RefundInvoiceSetup } from '../components/RefundInvoice';
 import SuggestionsSetup, { SuggestionsList } from '../components/Suggestions';
 import { TaxList, TaxSetup, TaxMapping } from '@/components/Tax';
+import { ExchangeRatesList, ExchangeRateSetup } from '@/components/ExchangeRates';
 
 
 const routes = () => (
@@ -135,6 +136,12 @@ const routes = () => (
           <Route path="tax" component={Authentication(TaxSetup)} />
           <Route path="tax" component={Authentication(TaxSetup)} />
           <Route path="mapping-rules" component={Authentication(TaxMapping)} />
+        </Route>
+
+        <Route path="exchangerates" >
+          <IndexRoute component={Authentication(ExchangeRatesList)} title="Exchange Rates" />
+          <Route path="exchangerate/:itemId" component={Authentication(ExchangeRateSetup)} />
+          <Route path="exchangerate" component={Authentication(ExchangeRateSetup)} />
         </Route>
 
         <Route path="reports" >

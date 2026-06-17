@@ -154,6 +154,16 @@
     "settingsKey": "taxes",
     "defaultListFields": ["key", "description", "rate"]
   },
+  "exchangerate": {
+    "collection": "exchangerates",
+    "audited": true,
+    "uniqueField": "target_currency",
+    "itemName": "exchange rate",
+    "itemsName": "exchange rates",
+    "itemType": "exchangerate",
+    "itemsType": "exchangerates",
+    "defaultListFields": ["base_currency", "target_currency", "rate"]
+  },
   "logFile": {
     "collection": "log",
     "uniqueField": "stamp",

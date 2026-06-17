@@ -85,6 +85,7 @@ const getItem = (state, props, entityName) => {
     case 'reports':
     case 'importer':
     case 'tax':
+    case 'exchangerate':
     case 'charge-invoice':
     case 'refund-invoice':
       return state.entity.get(entityName);
