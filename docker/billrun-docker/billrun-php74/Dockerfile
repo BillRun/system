@@ -1,6 +1,10 @@
 FROM php:7.4-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
+RUN sed -i '/security.debian.org/d' /etc/apt/sources.list \
+    && sed -i '/bullseye-updates/d' /etc/apt/sources.list \
+    && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+
 RUN apt-get update && apt-get install --no-install-recommends -y \
         wkhtmltopdf wget  \
 		libpng-dev zlib1g-dev libzip-dev libgmp-dev \
