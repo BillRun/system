@@ -15,7 +15,9 @@ const WithTooltip = ({ helpText = '', children = null }) => {
       </Tooltip>
   );
   return (
-      <OverlayTrigger overlay={editTooltip} placement="top">
+      // popperConfig strategy:'fixed' anchors the tooltip to the viewport (not the document),
+      // so it can't grow scrollWidth/Height — fixes the scrollbar flash on hover (Chromium snap).
+      <OverlayTrigger overlay={editTooltip} placement="top" popperConfig={{ strategy: 'fixed' }}>
         {/*https://github.com/react-bootstrap/react-bootstrap/issues/2428#issuecomment-407800236 */}
         <span className="disabled-elements-hack">
           { children }
