@@ -948,3 +948,16 @@ export const getServiceType = (service) => {
     }
     return 'normal';
   }
+
+// BE-equivalent of `str_replace('_', '', ucwords($str, '_'))`: capitalise each
+// '_'-segment's first letter, keep the rest, strip '_'. (Not `pascalCase` — that
+// lower-cases first and breaks keys like `ABC`/`AB_data_files`.)
+export const ucwordsStrip = (str = '') => String(str)
+  .split('_')
+  .map(word => (word ? word.charAt(0).toUpperCase() + word.slice(1) : word))
+  .join('');
+
+// `log.source` for a custom payment gateway, matching the BE: e.g.
+// ('ABC','payments') => 'ABCPayments'; ('manual_files','payments') => 'ManualFilesPayments'.
+export const buildPaymentFileSource = (paymentGateway, paymentsFileType) =>
+  ucwordsStrip(paymentGateway) + ucwordsStrip(paymentsFileType);
