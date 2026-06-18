@@ -7,7 +7,7 @@ import { List, Map, fromJS } from "immutable";
 import moment from "moment";
 import uuid from 'uuid';
 import pluralize from "pluralize";
-import { titleCase, pascalCase } from "change-case";
+import { titleCase } from "change-case";
 import { Form, FormGroup, ControlLabel, Col, Panel } from "react-bootstrap";
 import { WithTooltip, CreateButton } from "@/components/Elements";
 import EntityList from "@/components/EntityList";
@@ -34,7 +34,7 @@ import {
 import { gotEntity } from '@/actions/entityActions';
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
 import { reportBillsFieldsSelector} from '@/selectors/reportSelectors';
-import { getFieldName } from "@/common/Util";
+import { getFieldName, buildPaymentFileSource } from "@/common/Util";
 
 class PaymentsFiles extends Component {
 
@@ -374,11 +374,8 @@ class PaymentsFiles extends Component {
   onUploadTransactionsFileClickOK = (paymentFile) => {
     const { paymentGateway, fileType } = this.props;
     const file = paymentFile.get("file", null);
-    // `source` is the value persisted on `log.source` and that the list query matches against
-    // (see `baseFilter.source` below). Build it here on the FE so the BE doesn't have to
-    // reconstruct it from raw `payment_gateway + payments_file_type` — that path mishandled
-    // snake_case gateway keys like `manual_files` and produced `manualfilesPayments`.
-    const source = pascalCase(paymentGateway) + 'Payments';
+    // Same `source` formula as `baseFilter.source` below, so upload and list agree.
+    const source = buildPaymentFileSource(paymentGateway, 'payments');
     return this.props
       .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'payments', source))
       .then(this.afterSuccessUploadTransactionsFile)
@@ -457,10 +454,8 @@ class PaymentsFiles extends Component {
               api="get"
               showRevisionBy={false}
               baseFilter={{
-                // Source format mirrors how BE persists `log.source` on upload/CLI receive:
-                // pascalCase(cpg_name) + ucfirst(cpg_type), e.g. `manual_files` + `payments`
-                // → `ManualFilesPayments`. Same formula is used on the upload request.
-                source: pascalCase(paymentGateway) + 'Payments',
+                // Must match BE `log.source`, e.g. `ABC`+`payments` => `ABCPayments`.
+                source: buildPaymentFileSource(paymentGateway, 'payments'),
                 cpg_file_type: {"$in" : [fileType]},
               }}
               // filterFields={this.getFilterFields()}
