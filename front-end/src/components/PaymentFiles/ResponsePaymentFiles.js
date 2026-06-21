@@ -33,7 +33,7 @@ import {
 } from "@/actions/paymentFilesActions";
 import { gotEntity } from '@/actions/entityActions';
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
-import { getFieldName } from "@/common/Util";
+import { getFieldName, buildPaymentFileSource } from "@/common/Util";
 import { reportBillsFieldsSelector} from '@/selectors/reportSelectors';
 
 class ResponsePaymentFiles extends Component {
@@ -375,11 +375,8 @@ class ResponsePaymentFiles extends Component {
   onUploadTransactionsFileClickOK = (paymentFile) => {
     const { paymentGateway, fileType } = this.props;
     const file = paymentFile.get("file", null);
-    // `source` is the value persisted on `log.source` and that the list query matches against
-    // (see `baseFilter.source` below). Build it here on the FE so the BE doesn't have to
-    // reconstruct it from raw `payment_gateway + payments_file_type` — that path mishandled
-    // snake_case gateway keys like `manual_files` and produced `manualfilesTransactionsResponse`.
-    const source = pascalCase(paymentGateway) + 'TransactionsResponse';
+    // Same `source` formula as `baseFilter.source` below, so upload and list agree.
+    const source = buildPaymentFileSource(paymentGateway, 'transactions_response');
     return this.props
       .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'transactions_response', source))
       .then(this.afterSuccessUploadTransactionsFile)
@@ -459,10 +456,8 @@ class ResponsePaymentFiles extends Component {
               api="get"
               showRevisionBy={false}
               baseFilter={{
-                // Source format mirrors how BE persists `log.source` on upload/CLI receive:
-                // pascalCase(cpg_name) + ucfirst(cpg_type), e.g. `manual_files` + `transactions_response`
-                // → `ManualFilesTransactionsResponse`. Same formula is used on the upload request.
-                source: pascalCase(paymentGateway) + 'TransactionsResponse',
+                // Must match BE `log.source`, e.g. `ABC`+`transactions_response` => `ABCTransactionsResponse`.
+                source: buildPaymentFileSource(paymentGateway, 'transactions_response'),
                 pg_file_type: fileType,
               }}
               // filterFields={this.getFilterFields()}
