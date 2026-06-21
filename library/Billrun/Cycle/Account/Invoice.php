@@ -265,7 +265,7 @@ class Billrun_Cycle_Account_Invoice {
 
 	protected function projectLastBillsEntry(array $bill) {
 		$out = [];
-		foreach (['type', 'urt', 'invoice_id', 'invoice_type', 'invoice_date', 'balance', 'amount', 'due', 'total_paid', 'left_to_pay', 'left', 'due_before_vat', 'vatable_left_to_pay'] as $field) {
+		foreach (['type', 'urt', 'invoice_id', 'txid', 'invoice_type', 'invoice_date', 'balance', 'amount', 'due', 'total_paid', 'left_to_pay', 'left', 'due_before_vat', 'vatable_left_to_pay'] as $field) {
 			if (isset($bill[$field])) {
 				$out[$field] = $bill[$field];
 			}
