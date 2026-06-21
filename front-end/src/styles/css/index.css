@@ -73,6 +73,27 @@ fieldset[disabled] .btn {
   display: block;
 }
 
+/* Modal open animation — react-bootstrap v2's JS Fade transition does not reliably
+   play on open in this hybrid setup (yeti.css Bootstrap 3 theme + React 19), so the
+   Bootstrap-3 slide+fade is driven from CSS keyframes instead. These run deterministically
+   on every fresh mount of the shown dialog/backdrop, independent of react-transition-group
+   / `appear` timing — reproducing the customer_portal (RB 0.31) behaviour. */
+@keyframes brModalDialogIn {
+  from { opacity: 0; transform: translate(0, -25%); }
+  to   { opacity: 1; transform: translate(0, 0); }
+}
+.modal.show .modal-dialog {
+  animation: brModalDialogIn 0.3s ease-out;
+}
+
+@keyframes brModalBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 0.5; }
+}
+.modal-backdrop.show {
+  animation: brModalBackdropIn 0.15s linear;
+}
+
 /* RB2 close button compatibility on top of BS3 theme.
    RB2 renders .btn-close, but BS3 theme has no styles for it. Recreate
    BS5 close-button rendering via background SVG (no text symbol fallback). */

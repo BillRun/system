@@ -1,12 +1,12 @@
-/* Empirical check: react-joyride v2 actually runs on React 19 AND advances past step 2
-   in NON-controlled mode (the fix). Renders the REAL installed <Joyride> in jsdom. */
+/* react-joyride v2 on React 19 — non-controlled mode (no stepIndex).
+   Covers the v1 stall-at-step-2 bug, Back, and × → beacon → reopen.
+   Step options mirror OnBoarding.getSteps(). */
 import React from 'react';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import Joyride, { EVENTS, STATUS } from 'react-joyride';
 
 global.IS_REACT_ACT_ENVIRONMENT = true;
-// Popper.js v1 / Floater need these in jsdom:
 global.requestAnimationFrame = (cb) => setTimeout(cb, 0);
 global.cancelAnimationFrame = (id) => clearTimeout(id);
 window.scrollTo = () => {};
@@ -18,27 +18,34 @@ document.createRange = () => ({
   commonAncestorContainer: document.documentElement,
 });
 
-const Tooltip = ({ primaryProps, step }) => (
-  <button data-testid="next" {...primaryProps}>{step.title}</button>
+// Mirrors JoyrideTooltipV1's button wiring.
+const Tooltip = ({ backProps, closeProps, primaryProps, index, isLastStep, step }) => (
+  <div>
+    <button data-testid="close" {...closeProps}>×</button>
+    {index > 0 && <button data-testid="back" {...backProps}>Back</button>}
+    <button data-testid="next" {...primaryProps}>{isLastStep ? 'Last' : 'Next'}</button>
+    <span>{step.title}</span>
+  </div>
 );
 
 const flush = async (ms = 60) => {
   await act(async () => { await new Promise((r) => setTimeout(r, ms)); });
 };
 
-test('v2 Joyride runs on React 19 and advances past step 2 (non-controlled)', async () => {
-  // mount 4 targets
+test('v2 tour on React 19: advance, back, and × → beacon → reopen', async () => {
   [0, 1, 2, 3].forEach((i) => {
     const d = document.createElement('div');
     d.className = `t${i}`;
     document.body.appendChild(d);
   });
+  // matches OnBoarding.getSteps(): beacon only off on step 0, overlay click disabled
   const steps = [0, 1, 2, 3].map((i) => ({
     title: `Step ${i + 1}`,
     content: `content ${i}`,
     target: `.t${i}`,
-    disableBeacon: true,
+    disableBeacon: i === 0,
     disableScrolling: true,
+    disableOverlayClose: true,
   }));
 
   const events = [];
@@ -48,40 +55,46 @@ test('v2 Joyride runs on React 19 and advances past step 2 (non-controlled)', as
 
   await act(async () => {
     root.render(
-      <Joyride
-        continuous
-        run
-        scrollToFirstStep={false}
-        disableOverlay
-        tooltipComponent={Tooltip}
-        steps={steps}
-        callback={(d) => events.push(d)}
-      />,
+      <Joyride continuous run scrollToFirstStep={false} disableOverlay
+        tooltipComponent={Tooltip} steps={steps} callback={(d) => events.push(d)} />,
     );
   });
   await flush();
 
-  // (A) COMPAT: Joyride mounted and started on React 19 without hitting a removed API
   const started = events.some((e) => e.type === EVENTS.TOUR_START && e.status === STATUS.RUNNING);
-  expect(started).toBe(true);
-
-  // (B) ADVANCE: click "Next" up to 3 times, record the furthest index seen
-  let maxIndex = 0;
-  for (let click = 0; click < 3; click += 1) {
-    events.forEach((e) => { if (typeof e.index === 'number' && e.index > maxIndex) maxIndex = e.index; });
-    const btn = container.querySelector('[data-testid="next"]')
-      || document.querySelector('[data-testid="next"]');
-    if (!btn) break;
+  const currentStep = () => {
+    const t = [...events].reverse().find((e) => e.type === EVENTS.TOOLTIP);
+    return t ? t.index : -1;
+  };
+  const click = async (id) => {
+    const btn = document.querySelector(`[data-testid="${id}"]`)
+      || document.querySelector('[data-test-id="button-beacon"]');
+    if (!btn) return false;
     await act(async () => { btn.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
     await flush();
-  }
-  events.forEach((e) => { if (typeof e.index === 'number' && e.index > maxIndex) maxIndex = e.index; });
+    return true;
+  };
 
-  // eslint-disable-next-line no-console
-  console.log('TOUR EMPIRICAL >> started:', started, '| maxIndex reached:', maxIndex,
-    '| tooltip rendered:', !!document.querySelector('[data-testid="next"]'),
-    '| event types:', Array.from(new Set(events.map((e) => e.type))).join(','));
+  await click('next');                 // -> step 1
+  await click('next');                 // -> step 2 (past the old stall at index 1)
+  const maxIndex = currentStep();
+  const before = currentStep();
+  await click('back');                 // -> step 1
+  const afterBack = currentStep();
+  await click('next');                 // -> step 2
 
-  // the original bug stalled at ~step 2 (index 1). Passing index 1 proves the fix.
-  expect(maxIndex).toBeGreaterThan(1);
+  // × on step 2: Joyride advances to step 3 and shows a beacon there (v1 behaviour)
+  await click('close');
+  const beaconEvents = events.filter((e) => e.type === EVENTS.BEACON).map((e) => e.index);
+  const beacon = document.querySelector('[data-test-id="button-beacon"]');
+  // click the beacon -> tooltip reopens, tour still running
+  await act(async () => { beacon.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+  await flush();
+  const afterBeacon = currentStep();
+
+  expect(started).toBe(true);
+  expect(maxIndex).toBeGreaterThan(1);          // advanced past step 2 (the fix)
+  expect(afterBack).toBe(before - 1);           // Back works
+  expect(beaconEvents.length).toBeGreaterThan(0); // × leaves a beacon (tour stays alive)
+  expect(afterBeacon).toBeGreaterThan(0);       // beacon click reopens a tooltip
 });
