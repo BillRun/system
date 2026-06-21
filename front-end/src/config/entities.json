@@ -215,5 +215,14 @@
     "itemsName": "recurring charges",
     "itemType": "auto_renew",
     "itemsType": "auto_renews"
+  },
+  "jobs_queue": {
+    "collection": "jobs_messages",
+    "audited": true,
+    "uniqueField": "md5",
+    "itemName": "Job",
+    "itemsName": "Jobs",
+    "itemType": "job",
+    "itemsType": "jobs"
   }
 }

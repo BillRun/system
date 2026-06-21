@@ -113,6 +113,5 @@ abstract class Billrun_Job_Abstract {
 		return $this->queueMsg->try > $this->limitRuns;
 	}
 
-
 	abstract protected function run();
 }
